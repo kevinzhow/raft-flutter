@@ -1,0 +1,1729 @@
+{
+ "name": "raft desktop parity fixture",
+ "scope": "Public deterministic test data for Web vs Flutter desktop real-screen captures. No credentials, no backend.",
+ "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+ "context": {
+  "user": {
+   "id": "visual-user",
+   "email": "artin@slock.ai",
+   "gravatarHash": "",
+   "name": "artin",
+   "displayName": "artin",
+   "description": null,
+   "avatarUrl": null,
+   "emailVerified": true,
+   "preferredLanguage": null,
+   "displayLanguage": null,
+   "preferredTimezone": "Asia/Shanghai",
+   "autoTranslationEnabled": false,
+   "preferredTranslationMode": "manual",
+   "preferredTranslationDisplay": "translated",
+   "preferredTimeFormat": "24h",
+   "preferredMessageBodyFontSize": null,
+   "referralSource": null,
+   "referralSourceOther": null,
+   "referralSourceSkippedAt": null
+  },
+  "server": {
+   "id": "visual-server",
+   "name": "Visual Server",
+   "avatarUrl": null,
+   "slug": "visual",
+   "ownerId": "visual-user",
+   "onboardingAgentId": null,
+   "hideHumansFromMembers": false,
+   "plan": "free",
+   "planDowngradedAt": null,
+   "role": "owner",
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "agents": [
+   {
+    "id": "agent-cindy",
+    "serverId": "visual-server",
+    "name": "Cindy",
+    "displayName": "Cindy",
+    "avatarUrl": "pixel:robot",
+    "description": "Keeps visual testing release notes aligned.",
+    "status": "active",
+    "serverRole": "member",
+    "model": "gpt-5-codex",
+    "runtime": "codex",
+    "reasoningEffort": "medium",
+    "executionMode": "byoc",
+    "envVars": {},
+    "machineId": "computer-mbp",
+    "sessionId": "session-cindy",
+    "runtimeProfile": null,
+    "creatorType": "user",
+    "creatorId": "visual-user",
+    "creator": {
+     "type": "human",
+     "id": "visual-user",
+     "name": "artin",
+     "displayName": "artin",
+     "avatarUrl": null,
+     "gravatarHash": ""
+    },
+    "createdAgents": [],
+    "deletedAt": null,
+    "createdAt": "2026-06-18T00:00:00.000Z"
+   },
+   {
+    "id": "agent-product-ux",
+    "serverId": "visual-server",
+    "name": "Product-UX-Designer",
+    "displayName": "Product UX Designer",
+    "avatarUrl": "pixel:robot",
+    "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+    "status": "active",
+    "serverRole": "member",
+    "model": "gpt-5-codex",
+    "runtime": "codex",
+    "reasoningEffort": "medium",
+    "executionMode": "byoc",
+    "envVars": {},
+    "machineId": "computer-mbp",
+    "sessionId": "session-product-ux",
+    "runtimeProfile": null,
+    "creatorType": "user",
+    "creatorId": "visual-user",
+    "creator": {
+     "type": "human",
+     "id": "visual-user",
+     "name": "artin",
+     "displayName": "artin",
+     "avatarUrl": null,
+     "gravatarHash": ""
+    },
+    "createdAgents": [],
+    "deletedAt": null,
+    "createdAt": "2026-06-18T00:00:00.000Z"
+   }
+  ],
+  "members": [
+   {
+    "userId": "visual-user",
+    "serverId": "visual-server",
+    "email": "artin@slock.ai",
+    "gravatarHash": "",
+    "name": "artin",
+    "displayName": "artin",
+    "description": "Owner",
+    "avatarUrl": null,
+    "role": "owner",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   },
+   {
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "email": "designer@slock.ai",
+    "gravatarHash": "",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Product design",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   }
+  ],
+  "channels": [
+   {
+    "id": "channel-design",
+    "serverId": "visual-server",
+    "name": "design",
+    "description": "Product and UI decisions",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "channel-android",
+    "serverId": "visual-server",
+    "name": "android-artifacts",
+    "description": "Builds and screenshots",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   }
+  ],
+  "mentionMap": {
+   "Cindy": {
+    "displayName": "Cindy",
+    "type": "agent",
+    "id": "agent-cindy",
+    "agent": {
+     "id": "agent-cindy",
+     "serverId": "visual-server",
+     "name": "Cindy",
+     "displayName": "Cindy",
+     "avatarUrl": "pixel:robot",
+     "description": "Keeps visual testing release notes aligned.",
+     "status": "active",
+     "serverRole": "member",
+     "model": "gpt-5-codex",
+     "runtime": "codex",
+     "reasoningEffort": "medium",
+     "executionMode": "byoc",
+     "envVars": {},
+     "machineId": "computer-mbp",
+     "sessionId": "session-cindy",
+     "runtimeProfile": null,
+     "creatorType": "user",
+     "creatorId": "visual-user",
+     "creator": {
+      "type": "human",
+      "id": "visual-user",
+      "name": "artin",
+      "displayName": "artin",
+      "avatarUrl": null,
+      "gravatarHash": ""
+     },
+     "createdAgents": [],
+     "deletedAt": null,
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    }
+   },
+   "Product-UX-Designer": {
+    "displayName": "Product UX Designer",
+    "type": "agent",
+    "id": "agent-product-ux",
+    "agent": {
+     "id": "agent-product-ux",
+     "serverId": "visual-server",
+     "name": "Product-UX-Designer",
+     "displayName": "Product UX Designer",
+     "avatarUrl": "pixel:robot",
+     "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+     "status": "active",
+     "serverRole": "member",
+     "model": "gpt-5-codex",
+     "runtime": "codex",
+     "reasoningEffort": "medium",
+     "executionMode": "byoc",
+     "envVars": {},
+     "machineId": "computer-mbp",
+     "sessionId": "session-product-ux",
+     "runtimeProfile": null,
+     "creatorType": "user",
+     "creatorId": "visual-user",
+     "creator": {
+      "type": "human",
+      "id": "visual-user",
+      "name": "artin",
+      "displayName": "artin",
+      "avatarUrl": null,
+      "gravatarHash": ""
+     },
+     "createdAgents": [],
+     "deletedAt": null,
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    }
+   },
+   "artin": {
+    "displayName": "artin",
+    "type": "user",
+    "id": "visual-user"
+   },
+   "designer": {
+    "displayName": "Designer",
+    "type": "user",
+    "id": "visual-human-designer"
+   }
+  },
+  "agentActivities": {
+   "agent-cindy": {
+    "activity": "working",
+    "activityDetail": "Capturing visual testing baselines",
+    "detailKind": "other"
+   },
+   "agent-product-ux": {
+    "activity": "online",
+    "activityDetail": "Reviewing screenshots",
+    "detailKind": "other"
+   }
+  },
+  "currentUserId": "visual-user",
+  "currentChannelId": "channel-design"
+ },
+ "locale": {
+  "language": "en",
+  "timezone": "Asia/Shanghai",
+  "timeFormat": "24h"
+ },
+ "delays": {},
+ "routes": {
+  "GET /agents": [
+   {
+    "id": "agent-cindy",
+    "serverId": "visual-server",
+    "name": "Cindy",
+    "displayName": "Cindy",
+    "avatarUrl": "pixel:robot",
+    "description": "Keeps visual testing release notes aligned.",
+    "status": "active",
+    "serverRole": "member",
+    "model": "gpt-5-codex",
+    "runtime": "codex",
+    "reasoningEffort": "medium",
+    "executionMode": "byoc",
+    "envVars": {},
+    "machineId": "computer-mbp",
+    "sessionId": "session-cindy",
+    "runtimeProfile": null,
+    "creatorType": "user",
+    "creatorId": "visual-user",
+    "creator": {
+     "type": "human",
+     "id": "visual-user",
+     "name": "artin",
+     "displayName": "artin",
+     "avatarUrl": null,
+     "gravatarHash": ""
+    },
+    "createdAgents": [],
+    "deletedAt": null,
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "activity": "working",
+    "activityDetail": "Capturing visual testing baselines",
+    "detailKind": "other"
+   },
+   {
+    "id": "agent-product-ux",
+    "serverId": "visual-server",
+    "name": "Product-UX-Designer",
+    "displayName": "Product UX Designer",
+    "avatarUrl": "pixel:robot",
+    "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+    "status": "active",
+    "serverRole": "member",
+    "model": "gpt-5-codex",
+    "runtime": "codex",
+    "reasoningEffort": "medium",
+    "executionMode": "byoc",
+    "envVars": {},
+    "machineId": "computer-mbp",
+    "sessionId": "session-product-ux",
+    "runtimeProfile": null,
+    "creatorType": "user",
+    "creatorId": "visual-user",
+    "creator": {
+     "type": "human",
+     "id": "visual-user",
+     "name": "artin",
+     "displayName": "artin",
+     "avatarUrl": null,
+     "gravatarHash": ""
+    },
+    "createdAgents": [],
+    "deletedAt": null,
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "activity": "online",
+    "activityDetail": "Reviewing screenshots",
+    "detailKind": "other"
+   }
+  ],
+  "GET /agents/agent-cindy": {
+   "id": "agent-cindy",
+   "serverId": "visual-server",
+   "name": "Cindy",
+   "displayName": "Cindy",
+   "avatarUrl": "pixel:robot",
+   "description": "Keeps visual testing release notes aligned.",
+   "status": "active",
+   "serverRole": "member",
+   "model": "gpt-5-codex",
+   "runtime": "codex",
+   "reasoningEffort": "medium",
+   "executionMode": "byoc",
+   "envVars": {},
+   "machineId": "computer-mbp",
+   "sessionId": "session-cindy",
+   "runtimeProfile": null,
+   "creatorType": "user",
+   "creatorId": "visual-user",
+   "creator": {
+    "type": "human",
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null,
+    "gravatarHash": ""
+   },
+   "createdAgents": [],
+   "deletedAt": null,
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "GET /agents/agent-cindy/agent-dms": [],
+  "GET /agents/agent-cindy/channels": [],
+  "GET /agents/agent-cindy/runtime-options": {
+   "context": "existing_agent",
+   "machineId": "computer-mbp",
+   "options": []
+  },
+  "GET /agents/agent-cindy/skills": {
+   "global": [],
+   "workspace": []
+  },
+  "GET /agents/agent-product-ux": {
+   "id": "agent-product-ux",
+   "serverId": "visual-server",
+   "name": "Product-UX-Designer",
+   "displayName": "Product UX Designer",
+   "avatarUrl": "pixel:robot",
+   "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+   "status": "active",
+   "serverRole": "member",
+   "model": "gpt-5-codex",
+   "runtime": "codex",
+   "reasoningEffort": "medium",
+   "executionMode": "byoc",
+   "envVars": {},
+   "machineId": "computer-mbp",
+   "sessionId": "session-product-ux",
+   "runtimeProfile": null,
+   "creatorType": "user",
+   "creatorId": "visual-user",
+   "creator": {
+    "type": "human",
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null,
+    "gravatarHash": ""
+   },
+   "createdAgents": [],
+   "deletedAt": null,
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "GET /agents/agent-product-ux/agent-dms": [],
+  "GET /agents/agent-product-ux/channels": [],
+  "GET /agents/agent-product-ux/runtime-options": {
+   "context": "existing_agent",
+   "machineId": "computer-mbp",
+   "options": []
+  },
+  "GET /agents/agent-product-ux/skills": {
+   "global": [],
+   "workspace": []
+  },
+  "GET /announcements/active": {
+   "announcements": []
+  },
+  "GET /attachments/upload-sessions/channel-design/active": {
+   "uploads": []
+  },
+  "GET /attachments/upload-sessions/dm-agent-cindy-artin/active": {
+   "uploads": []
+  },
+  "GET /attachments/upload-sessions/thread-msg-agent-reply/active": {
+   "uploads": []
+  },
+  "GET /auth/identities": {
+   "passwordConfigured": true,
+   "identities": []
+  },
+  "GET /auth/me": {
+   "id": "visual-user",
+   "email": "artin@slock.ai",
+   "gravatarHash": "",
+   "name": "artin",
+   "displayName": "artin",
+   "description": null,
+   "avatarUrl": null,
+   "emailVerified": true,
+   "preferredLanguage": null,
+   "displayLanguage": null,
+   "preferredTimezone": "Asia/Shanghai",
+   "autoTranslationEnabled": false,
+   "preferredTranslationMode": "manual",
+   "preferredTranslationDisplay": "translated",
+   "preferredTimeFormat": "24h",
+   "preferredMessageBodyFontSize": null,
+   "referralSource": null,
+   "referralSourceOther": null,
+   "referralSourceSkippedAt": null
+  },
+  "GET /auth/providers": {
+   "providers": []
+  },
+  "GET /billing/subscription": null,
+  "GET /channels": [
+   {
+    "id": "channel-design",
+    "serverId": "visual-server",
+    "name": "design",
+    "description": "Product and UI decisions",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   },
+   {
+    "id": "channel-android",
+    "serverId": "visual-server",
+    "name": "android-artifacts",
+    "description": "Builds and screenshots",
+    "type": "channel",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "joined": true
+   }
+  ],
+  "GET /channels/channel-android": {
+   "id": "channel-android",
+   "serverId": "visual-server",
+   "name": "android-artifacts",
+   "description": "Builds and screenshots",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/channel-design": {
+   "id": "channel-design",
+   "serverId": "visual-server",
+   "name": "design",
+   "description": "Product and UI decisions",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  "GET /channels/channel-design/files?limit=50": {
+   "files": [
+    {
+     "id": "public-file-design-notes",
+     "messageId": "msg-agent-reply",
+     "channelId": "channel-design",
+     "filename": "Android visual notes.pdf",
+     "mimeType": "application/pdf",
+     "sizeBytes": 4096,
+     "width": null,
+     "height": null,
+     "thumbnailUrl": null,
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "uploader": {
+      "type": "agent",
+      "id": "agent-cindy",
+      "name": "Cindy",
+      "displayName": "Cindy"
+     },
+     "source": {
+      "type": "channel",
+      "channelId": "channel-design",
+      "parentMessageId": null,
+      "parentMessageShortId": null
+     }
+    }
+   ],
+   "nextCursor": null
+  },
+  "GET /channels/channel-design/members": [
+   {
+    "userId": "visual-user",
+    "serverId": "visual-server",
+    "email": "artin@slock.ai",
+    "gravatarHash": "",
+    "name": "artin",
+    "displayName": "artin",
+    "description": "Owner",
+    "avatarUrl": null,
+    "role": "owner",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   },
+   {
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "email": "designer@slock.ai",
+    "gravatarHash": "",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Product design",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   }
+  ],
+  "GET /channels/channel-design/message-display-settings": {
+   "collapseLongMessages": false,
+   "prefsVersion": 0
+  },
+  "GET /channels/channel-design/notification-settings": {
+   "activityMuted": false,
+   "muteFromSeq": null,
+   "activityMuteSupported": true,
+   "prefsVersion": 0
+  },
+  "GET /channels/channel-design/threads/msg-agent-reply": {
+   "threadChannelId": "thread-msg-agent-reply",
+   "parentMessage": {
+    "id": "msg-agent-reply",
+    "channelId": "channel-design",
+    "senderType": "agent",
+    "senderId": "agent-cindy",
+    "senderName": "Cindy",
+    "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+    "threadId": "thread-msg-agent-reply",
+    "createdAt": "2026-06-22T02:30:00.000Z",
+    "reactions": [
+     {
+      "emoji": "👍",
+      "count": 2,
+      "reactorIds": [
+       "visual-user"
+      ],
+      "reactorNames": [
+       "artin"
+      ]
+     }
+    ],
+    "serverId": "visual-server",
+    "seq": 2,
+    "threadChannelId": "thread-msg-agent-reply"
+   },
+   "parentChannelId": "channel-design",
+   "replyCount": 2
+  },
+  "GET /channels/dm": [
+   {
+    "id": "dm-agent-cindy-artin",
+    "serverId": "visual-server",
+    "name": "Cindy",
+    "description": null,
+    "type": "dm",
+    "peerId": "agent-cindy",
+    "peerName": "Cindy",
+    "peerDisplayName": "Cindy",
+    "peerType": "agent",
+    "peerAvatarUrl": "pixel:robot",
+    "createdAt": "2026-06-19T12:24:00.000Z",
+    "joined": true
+   }
+  ],
+  "GET /channels/dm-agent-cindy-artin": {
+   "id": "dm-agent-cindy-artin",
+   "serverId": "visual-server",
+   "name": "Cindy",
+   "description": null,
+   "type": "dm",
+   "peerId": "agent-cindy",
+   "peerName": "Cindy",
+   "peerDisplayName": "Cindy",
+   "peerType": "agent",
+   "peerAvatarUrl": "pixel:robot",
+   "createdAt": "2026-06-19T12:24:00.000Z",
+   "joined": true
+  },
+  "GET /channels/dm-agent-cindy-artin/files": {
+   "files": [],
+   "hasMore": false
+  },
+  "GET /channels/dm-agent-cindy-artin/members": [
+   {
+    "userId": "visual-user",
+    "serverId": "visual-server",
+    "email": "artin@slock.ai",
+    "gravatarHash": "",
+    "name": "artin",
+    "displayName": "artin",
+    "description": "Owner",
+    "avatarUrl": null,
+    "role": "owner",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   },
+   {
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "email": "designer@slock.ai",
+    "gravatarHash": "",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Product design",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   }
+  ],
+  "GET /channels/dm-agent-cindy-artin/message-display-settings": {
+   "collapseLongMessages": false,
+   "prefsVersion": 0
+  },
+  "GET /channels/dm-agent-cindy-artin/notification-settings": {
+   "activityMuted": false,
+   "muteFromSeq": null,
+   "activityMuteSupported": true,
+   "prefsVersion": 0
+  },
+  "GET /channels/inbox": {
+   "hasMore": false,
+   "totalCount": 3,
+   "totalUnreadCount": 3,
+   "items": []
+  },
+  "GET /channels/inbox/done": {
+   "items": [],
+   "hasMore": false,
+   "totalCount": 0,
+   "totalUnreadCount": 0
+  },
+  "GET /channels/inbox/unfollowed": {
+   "items": [],
+   "hasMore": false,
+   "totalCount": 0,
+   "totalUnreadCount": 0
+  },
+  "GET /channels/inbox?offset=0": {
+   "hasMore": false,
+   "totalCount": 3,
+   "totalUnreadCount": 3,
+   "items": [
+    {
+     "kind": "thread",
+     "threadChannelId": "thread-msg-agent-reply",
+     "parentMessageId": "msg-agent-reply",
+     "parentChannelId": "channel-design",
+     "parentChannelName": "design",
+     "parentChannelType": "channel",
+     "parentMessagePreview": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "parentMessageSenderType": "agent",
+     "parentMessageSenderId": "agent-cindy",
+     "latestActivityPreview": "Review the Android composer crop before release.",
+     "latestActivitySenderType": "user",
+     "latestActivitySenderId": "visual-user",
+     "latestActivityMessageId": "msg-visual-activity-reply",
+     "firstUnreadMessageId": "msg-visual-activity-reply",
+     "firstMentionMessageId": "msg-visual-activity-reply",
+     "replyCount": 5,
+     "lastActivityAt": "2026-06-22T02:35:00.000Z",
+     "lastReplyAt": "2026-06-22T02:35:00.000Z",
+     "unreadCount": 2,
+     "hasMention": true,
+     "taskNumber": null,
+     "taskStatus": null,
+     "taskClaimedByName": null
+    },
+    {
+     "kind": "channel",
+     "channelId": "channel-android",
+     "channelName": "android-artifacts",
+     "channelType": "channel",
+     "lastMessageId": "msg-visual-activity-android",
+     "firstUnreadMessageId": "msg-visual-activity-android",
+     "firstMentionMessageId": null,
+     "lastMessageAt": "2026-06-19T12:24:00.000Z",
+     "lastMessagePreview": "Captured the previous visual baseline before leaving the workspace.",
+     "lastMessageSenderType": "agent",
+     "lastMessageSenderId": "agent-cindy",
+     "lastMessageSenderName": "Cindy",
+     "unreadCount": 1,
+     "hasMention": false
+    },
+    {
+     "kind": "dm",
+     "channelId": "dm-agent-cindy-artin",
+     "channelName": "Cindy",
+     "channelType": "dm",
+     "lastMessageId": "msg-visual-activity-dm",
+     "firstUnreadMessageId": null,
+     "firstMentionMessageId": null,
+     "lastMessageAt": "2026-06-19T12:24:00.000Z",
+     "lastMessagePreview": "201继续推进",
+     "lastMessageSenderType": "agent",
+     "lastMessageSenderId": "agent-cindy",
+     "lastMessageSenderName": "Cindy",
+     "unreadCount": 0,
+     "hasMention": false
+    }
+   ]
+  },
+  "GET /channels/saved": {
+   "saved": [],
+   "total": 3,
+   "hasMore": false
+  },
+  "GET /channels/saved/count": {
+   "count": 3
+  },
+  "GET /channels/saved?offset=0": {
+   "saved": [
+    {
+     "messageId": "msg-saved-visual-1",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "savedAt": "2026-06-22T03:00:00.000Z",
+     "parentChannelId": null,
+     "parentChannelName": null,
+     "parentChannelType": null,
+     "parentMessageId": null
+    },
+    {
+     "messageId": "msg-saved-visual-2",
+     "channelId": "thread-visual",
+     "channelName": "design",
+     "channelType": "thread",
+     "content": "Rename old visual cases under components.* before rerunning baseline.",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "createdAt": "2026-06-22T01:40:00.000Z",
+     "savedAt": "2026-06-22T02:10:00.000Z",
+     "parentChannelId": "channel-design",
+     "parentChannelName": "design",
+     "parentChannelType": "channel",
+     "parentMessageId": "msg-parent-visual"
+    },
+    {
+     "messageId": "msg-saved-visual-3",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "content": "Publish preflight is green — report goes live after the next full run.",
+     "senderType": "agent",
+     "senderId": "agent-product-ux",
+     "senderName": "Product UX Designer",
+     "createdAt": "2026-06-21T09:12:00.000Z",
+     "savedAt": "2026-06-21T10:00:00.000Z",
+     "parentChannelId": null,
+     "parentChannelName": null,
+     "parentChannelType": null,
+     "parentMessageId": null
+    }
+   ],
+   "total": 3,
+   "hasMore": false
+  },
+  "GET /channels/thread-msg-agent-reply": {
+   "id": "thread-msg-agent-reply",
+   "serverId": "visual-server",
+   "type": "thread",
+   "name": "msg-agent-reply",
+   "parentChannelId": "channel-design",
+   "parentMessageId": "msg-agent-reply",
+   "joined": true
+  },
+  "GET /channels/threads/followed": {
+   "threads": []
+  },
+  "GET /channels/threads/followers?threadChannelIds=thread-msg-agent-reply": {
+   "threads": [
+    {
+     "threadChannelId": "thread-msg-agent-reply",
+     "agents": [],
+     "canManage": true
+    }
+   ]
+  },
+  "GET /channels/unread": {
+   "channels": {}
+  },
+  "GET /integrations/clients": [],
+  "GET /integrations/marketplace": [],
+  "GET /integrations/overview": [],
+  "GET /messages/attachment-preview/enabled": {
+   "enabled": true
+  },
+  "GET /messages/channel/channel-android": {
+   "messages": [],
+   "historyLimited": false,
+   "threadSummariesByParentMessageId": {}
+  },
+  "GET /messages/channel/channel-design": {
+   "messages": [
+    {
+     "id": "msg-public-system-short",
+     "channelId": "channel-design",
+     "senderType": "user",
+     "senderId": "system",
+     "senderName": "System",
+     "messageType": "system",
+     "content": "Public fixture: workspace settings updated.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "serverId": "visual-server",
+     "seq": 1
+    },
+    {
+     "id": "msg-agent-reply",
+     "channelId": "channel-design",
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "threadId": "thread-msg-agent-reply",
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "reactions": [
+      {
+       "emoji": "👍",
+       "count": 2,
+       "reactorIds": [
+        "visual-user"
+       ],
+       "reactorNames": [
+        "artin"
+       ]
+      }
+     ],
+     "serverId": "visual-server",
+     "seq": 2,
+     "threadChannelId": "thread-msg-agent-reply"
+    },
+    {
+     "id": "msg-share-selection-2",
+     "channelId": "channel-design",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "content": "Review the Android composer crop before release.",
+     "threadId": "thread-msg-share-selection-2",
+     "createdAt": "2026-06-22T02:35:00.000Z",
+     "serverId": "visual-server",
+     "seq": 3
+    }
+   ],
+   "historyLimited": false,
+   "threadSummariesByParentMessageId": {
+    "msg-agent-reply": {
+     "threadChannelId": "thread-msg-agent-reply",
+     "replyCount": 2,
+     "lastReplyAt": "2026-06-22T03:05:00.000Z",
+     "participantIds": [
+      "visual-user",
+      "agent-cindy"
+     ],
+     "unreadCount": 0,
+     "firstUnreadMessageId": null,
+     "latestReplies": [
+      {
+       "messageId": "public-thread-reply-1",
+       "seq": "1",
+       "preview": "Review the Android composer crop before release.",
+       "senderId": "visual-user",
+       "senderType": "user",
+       "senderName": "artin",
+       "senderDisplayName": "artin",
+       "senderAvatarUrl": null,
+       "createdAt": "2026-06-22T02:35:00.000Z"
+      },
+      {
+       "messageId": "public-thread-reply-2",
+       "seq": "2",
+       "preview": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+       "senderId": "agent-cindy",
+       "senderType": "agent",
+       "senderName": "Cindy",
+       "senderDisplayName": "Cindy",
+       "senderAvatarUrl": "pixel:robot",
+       "createdAt": "2026-06-22T02:30:00.000Z"
+      }
+     ]
+    }
+   }
+  },
+  "GET /messages/channel/dm-agent-cindy-artin": {
+   "messages": [
+    {
+     "id": "msg-dm-1",
+     "channelId": "dm-agent-cindy-artin",
+     "serverId": "visual-server",
+     "seq": 1,
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "content": "Can you capture the desktop tasks route next?",
+     "threadId": null,
+     "createdAt": "2026-06-19T12:20:00.000Z"
+    },
+    {
+     "id": "msg-visual-activity-dm",
+     "channelId": "dm-agent-cindy-artin",
+     "serverId": "visual-server",
+     "seq": 2,
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "content": "On it. Desktop tasks, search and settings are queued.",
+     "threadId": null,
+     "createdAt": "2026-06-19T12:24:00.000Z"
+    }
+   ],
+   "historyLimited": false,
+   "threadSummariesByParentMessageId": {}
+  },
+  "GET /messages/channel/thread-msg-agent-reply": {
+   "messages": [
+    {
+     "id": "public-thread-reply-1",
+     "channelId": "thread-msg-agent-reply",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "content": "Review the Android composer crop before release.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:35:00.000Z",
+     "serverId": "visual-server",
+     "seq": 1,
+     "threadChannelId": null,
+     "conversationContext": {
+      "channelType": "thread",
+      "parentMessageId": "msg-agent-reply",
+      "parentChannelId": "channel-design",
+      "parentChannelType": "channel"
+     }
+    },
+    {
+     "id": "public-thread-reply-2",
+     "channelId": "thread-msg-agent-reply",
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "reactions": [
+      {
+       "emoji": "👍",
+       "count": 2,
+       "reactorIds": [
+        "visual-user"
+       ],
+       "reactorNames": [
+        "artin"
+       ]
+      }
+     ],
+     "serverId": "visual-server",
+     "seq": 2,
+     "threadChannelId": null,
+     "conversationContext": {
+      "channelType": "thread",
+      "parentMessageId": "msg-agent-reply",
+      "parentChannelId": "channel-design",
+      "parentChannelType": "channel"
+     }
+    }
+   ],
+   "historyLimited": false,
+   "threadSummariesByParentMessageId": {}
+  },
+  "GET /messages/context/msg-agent-reply": {
+   "messages": [
+    {
+     "id": "msg-public-system-short",
+     "channelId": "channel-design",
+     "senderType": "user",
+     "senderId": "system",
+     "senderName": "System",
+     "messageType": "system",
+     "content": "Public fixture: workspace settings updated.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "serverId": "visual-server",
+     "seq": 1
+    },
+    {
+     "id": "msg-agent-reply",
+     "channelId": "channel-design",
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "threadId": "thread-msg-agent-reply",
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "reactions": [
+      {
+       "emoji": "👍",
+       "count": 2,
+       "reactorIds": [
+        "visual-user"
+       ],
+       "reactorNames": [
+        "artin"
+       ]
+      }
+     ],
+     "serverId": "visual-server",
+     "seq": 2,
+     "threadChannelId": "thread-msg-agent-reply"
+    },
+    {
+     "id": "msg-share-selection-2",
+     "channelId": "channel-design",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "content": "Review the Android composer crop before release.",
+     "threadId": "thread-msg-share-selection-2",
+     "createdAt": "2026-06-22T02:35:00.000Z",
+     "serverId": "visual-server",
+     "seq": 3
+    }
+   ],
+   "targetMessageId": "msg-agent-reply",
+   "hasOlder": false,
+   "hasNewer": false,
+   "historyLimited": false
+  },
+  "GET /messages/context/public-thread-reply-1": {
+   "messages": [
+    {
+     "id": "public-thread-reply-1",
+     "channelId": "thread-msg-agent-reply",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "content": "Review the Android composer crop before release.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:35:00.000Z",
+     "serverId": "visual-server",
+     "seq": 1,
+     "threadChannelId": null,
+     "conversationContext": {
+      "channelType": "thread",
+      "parentMessageId": "msg-agent-reply",
+      "parentChannelId": "channel-design",
+      "parentChannelType": "channel"
+     }
+    },
+    {
+     "id": "public-thread-reply-2",
+     "channelId": "thread-msg-agent-reply",
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "reactions": [
+      {
+       "emoji": "👍",
+       "count": 2,
+       "reactorIds": [
+        "visual-user"
+       ],
+       "reactorNames": [
+        "artin"
+       ]
+      }
+     ],
+     "serverId": "visual-server",
+     "seq": 2,
+     "threadChannelId": null,
+     "conversationContext": {
+      "channelType": "thread",
+      "parentMessageId": "msg-agent-reply",
+      "parentChannelId": "channel-design",
+      "parentChannelType": "channel"
+     }
+    }
+   ],
+   "targetMessageId": "public-thread-reply-1",
+   "hasOlder": false,
+   "hasNewer": false,
+   "historyLimited": false
+  },
+  "GET /messages/context/public-thread-reply-2": {
+   "messages": [
+    {
+     "id": "public-thread-reply-1",
+     "channelId": "thread-msg-agent-reply",
+     "senderType": "user",
+     "senderId": "visual-user",
+     "senderName": "artin",
+     "content": "Review the Android composer crop before release.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:35:00.000Z",
+     "serverId": "visual-server",
+     "seq": 1,
+     "threadChannelId": null,
+     "conversationContext": {
+      "channelType": "thread",
+      "parentMessageId": "msg-agent-reply",
+      "parentChannelId": "channel-design",
+      "parentChannelType": "channel"
+     }
+    },
+    {
+     "id": "public-thread-reply-2",
+     "channelId": "thread-msg-agent-reply",
+     "senderType": "agent",
+     "senderId": "agent-cindy",
+     "senderName": "Cindy",
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "threadId": null,
+     "createdAt": "2026-06-22T02:30:00.000Z",
+     "reactions": [
+      {
+       "emoji": "👍",
+       "count": 2,
+       "reactorIds": [
+        "visual-user"
+       ],
+       "reactorNames": [
+        "artin"
+       ]
+      }
+     ],
+     "serverId": "visual-server",
+     "seq": 2,
+     "threadChannelId": null,
+     "conversationContext": {
+      "channelType": "thread",
+      "parentMessageId": "msg-agent-reply",
+      "parentChannelId": "channel-design",
+      "parentChannelType": "channel"
+     }
+    }
+   ],
+   "targetMessageId": "public-thread-reply-2",
+   "hasOlder": false,
+   "hasNewer": false,
+   "historyLimited": false
+  },
+  "GET /messages/search": {
+   "hasMore": false,
+   "results": [
+    {
+     "id": "msg-visual-search-1",
+     "channelId": "channel-design",
+     "threadId": null,
+     "parentMessageId": null,
+     "parentMessageContent": null,
+     "parentChannelId": "channel-design",
+     "parentChannelName": "design",
+     "parentChannelType": "channel",
+     "parentChannelArchivedAt": null,
+     "senderId": "agent-cindy",
+     "senderType": "agent",
+     "senderName": "Cindy",
+     "channelName": "design",
+     "channelType": "channel",
+     "channelArchivedAt": null,
+     "content": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "snippet": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "createdAt": "2026-06-22T02:30:00.000Z"
+    },
+    {
+     "id": "msg-visual-search-2",
+     "channelId": "thread-msg-agent-reply",
+     "threadId": null,
+     "parentMessageId": "msg-agent-reply",
+     "parentMessageContent": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "parentChannelId": "channel-design",
+     "parentChannelName": "design",
+     "parentChannelType": "channel",
+     "parentChannelArchivedAt": null,
+     "senderId": "visual-user",
+     "senderType": "user",
+     "senderName": "artin",
+     "channelName": "design",
+     "channelType": "thread",
+     "channelArchivedAt": null,
+     "content": "Review the Android composer crop before release.",
+     "snippet": "Review the Android composer crop before release.",
+     "createdAt": "2026-06-22T02:35:00.000Z"
+    }
+   ]
+  },
+  "GET /product-events/config": {
+   "enabled": false
+  },
+  "GET /product-feedback/tickets": {
+   "tickets": [],
+   "unread_total": 0,
+   "has_more": false
+  },
+  "GET /push/vapid-key": {
+   "__status": 404,
+   "body": {
+    "error": "push disabled in fixture"
+   }
+  },
+  "GET /reminders": {
+   "reminders": []
+  },
+  "GET /servers": [
+   {
+    "id": "visual-server",
+    "name": "Visual Server",
+    "avatarUrl": null,
+    "slug": "visual",
+    "ownerId": "visual-user",
+    "onboardingAgentId": null,
+    "hideHumansFromMembers": false,
+    "plan": "free",
+    "planDowngradedAt": null,
+    "role": "owner",
+    "createdAt": "2026-06-18T00:00:00.000Z"
+   }
+  ],
+  "GET /servers/unread-summary": [
+   {
+    "serverId": "visual-server",
+    "unreadCount": 0,
+    "serverPushMuted": false,
+    "activityUnreadCount": 0
+   }
+  ],
+  "GET /servers/visual-server": {
+   "id": "visual-server",
+   "name": "Visual Server",
+   "avatarUrl": null,
+   "slug": "visual",
+   "ownerId": "visual-user",
+   "onboardingAgentId": null,
+   "hideHumansFromMembers": false,
+   "plan": "free",
+   "planDowngradedAt": null,
+   "role": "owner",
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "GET /servers/visual-server/agreement": {
+   "enabled": false,
+   "agreement": null
+  },
+  "GET /servers/visual-server/invites": [],
+  "GET /servers/visual-server/join-links": [],
+  "GET /servers/visual-server/machines": {
+   "machines": [
+    {
+     "id": "computer-mbp",
+     "name": "Jiachengs-MacBook-Pro",
+     "hostname": "Jiachengs-MacBook-Pro.local",
+     "os": "darwin",
+     "status": "online",
+     "statusVersion": 7,
+     "apiKeyPrefix": "slk_vis",
+     "runtimes": [
+      "codex",
+      "claude"
+     ],
+     "daemonVersion": "0.65.0",
+     "computerVersion": "0.0.48",
+     "isComputer": true,
+     "lastHeartbeat": "2026-06-19T12:28:00.000Z",
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    },
+    {
+     "id": "computer-studio",
+     "name": "Studio Test Rig",
+     "hostname": "studio-test-rig.local",
+     "os": "linux",
+     "status": "offline",
+     "statusVersion": 3,
+     "apiKeyPrefix": "slk_off",
+     "runtimes": [
+      "codex"
+     ],
+     "daemonVersion": "0.65.0",
+     "computerVersion": "0.0.50",
+     "isComputer": true,
+     "lastHeartbeat": null,
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    }
+   ],
+   "latestComputerVersion": "0.0.50",
+   "latestComputerReleaseNotes": null
+  },
+  "GET /servers/visual-server/members": [
+   {
+    "userId": "visual-user",
+    "serverId": "visual-server",
+    "email": "artin@slock.ai",
+    "gravatarHash": "",
+    "name": "artin",
+    "displayName": "artin",
+    "description": "Owner",
+    "avatarUrl": null,
+    "role": "owner",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   },
+   {
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "email": "designer@slock.ai",
+    "gravatarHash": "",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Product design",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z"
+   }
+  ],
+  "GET /servers/visual-server/members/visual-human-designer/profile": {
+   "userId": "visual-human-designer",
+   "serverId": "visual-server",
+   "email": "designer@slock.ai",
+   "gravatarHash": "",
+   "name": "designer",
+   "displayName": "Designer",
+   "description": "Product design",
+   "avatarUrl": null,
+   "role": "member",
+   "joinedAt": "2026-06-18T00:00:00.000Z"
+  },
+  "GET /servers/visual-server/members/visual-user/profile": {
+   "userId": "visual-user",
+   "serverId": "visual-server",
+   "email": "artin@slock.ai",
+   "gravatarHash": "",
+   "name": "artin",
+   "displayName": "artin",
+   "description": "Owner",
+   "avatarUrl": null,
+   "role": "owner",
+   "joinedAt": "2026-06-18T00:00:00.000Z"
+  },
+  "GET /servers/visual-server/model-label-catalog": {
+   "labels": []
+  },
+  "GET /servers/visual-server/notification-settings": {
+   "serverPushMuted": false
+  },
+  "GET /servers/visual-server/settings": {},
+  "GET /servers/visual-server/setup-projection": {
+   "surface": "none",
+   "phase": "complete",
+   "currentStep": null,
+   "blocksChat": false,
+   "allowedExits": [],
+   "sideEffectState": {
+    "transitions": "disabled",
+    "completion": "disabled"
+   },
+   "gateReason": "setup_complete"
+  },
+  "GET /servers/visual-server/sidebar-order": {
+   "channelOrder": [
+    "channel-design",
+    "channel-android"
+   ],
+   "agentOrder": [],
+   "dmOrder": [],
+   "pinned": [],
+   "sectionOrder": [
+    "pinned",
+    "joint",
+    "channels",
+    "dms"
+   ],
+   "channelSortMode": "manual"
+  },
+  "GET /servers/visual-server/translation-settings": {
+   "translationEnabled": false,
+   "translationAvailable": true,
+   "canManageTranslation": true
+  },
+  "GET /servers/visual-server/usage": {
+   "agents": 2,
+   "machines": 1,
+   "channels": 4
+  },
+  "GET /tasks/channel/channel-android": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=done": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=in_progress": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=in_review": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=todo": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design": {
+   "tasks": [
+    {
+     "id": "msg-agent-reply",
+     "messageId": "msg-agent-reply",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 10,
+     "title": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "createdById": "visual-user",
+     "createdAt": "2026-06-22T02:30:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/channel/channel-design?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design?status=done": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design?status=in_progress": {
+   "tasks": [
+    {
+     "id": "msg-agent-reply",
+     "messageId": "msg-agent-reply",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 10,
+     "title": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "createdById": "visual-user",
+     "createdAt": "2026-06-22T02:30:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/channel/channel-design?status=in_review": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design?status=todo": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=done": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=in_progress": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=in_review": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=todo": {
+   "tasks": []
+  },
+  "GET /tasks/channel/thread-msg-agent-reply": {
+   "tasks": []
+  },
+  "GET /tasks/server": {
+   "tasks": [
+    {
+     "id": "msg-task-visual-214",
+     "messageId": "msg-task-visual-214",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 214,
+     "title": "Align the tabbar capture crops between React and Android",
+     "description": "Both providers must wrap exactly the tabbar at width 390.",
+     "status": "todo",
+     "claimedByType": null,
+     "claimedById": null,
+     "claimedByName": null,
+     "claimedAt": null,
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-19T12:24:00.000Z",
+     "updatedAt": "2026-06-19T12:24:00.000Z"
+    },
+    {
+     "id": "msg-task-visual-212",
+     "messageId": "msg-task-visual-212",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 212,
+     "title": "Fill the React fixture gaps before the Android diff",
+     "description": null,
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-22T02:30:00.000Z",
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:30:00.000Z"
+    },
+    {
+     "id": "msg-task-visual-210",
+     "messageId": "msg-task-visual-210",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 210,
+     "title": "Review the thread header strip baselines",
+     "description": null,
+     "status": "in_review",
+     "claimedByType": "agent",
+     "claimedById": "agent-product-ux",
+     "claimedByName": "Product UX Designer",
+     "claimedAt": "2026-06-19T12:24:00.000Z",
+     "completedAt": null,
+     "createdById": "agent-cindy",
+     "createdByType": "agent",
+     "createdByName": "Cindy",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:35:00.000Z"
+    },
+    {
+     "id": "msg-task-visual-208",
+     "messageId": "msg-task-visual-208",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 208,
+     "title": "Publish the visual parity report",
+     "description": null,
+     "status": "done",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-19T12:24:00.000Z",
+     "completedAt": "2026-06-22T02:35:00.000Z",
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:35:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/server?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/server?status=done": {
+   "tasks": [
+    {
+     "id": "msg-task-visual-208",
+     "messageId": "msg-task-visual-208",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 208,
+     "title": "Publish the visual parity report",
+     "description": null,
+     "status": "done",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-19T12:24:00.000Z",
+     "completedAt": "2026-06-22T02:35:00.000Z",
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:35:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/server?status=in_progress": {
+   "tasks": [
+    {
+     "id": "msg-task-visual-212",
+     "messageId": "msg-task-visual-212",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 212,
+     "title": "Fill the React fixture gaps before the Android diff",
+     "description": null,
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "claimedAt": "2026-06-22T02:30:00.000Z",
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:30:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/server?status=in_review": {
+   "tasks": [
+    {
+     "id": "msg-task-visual-210",
+     "messageId": "msg-task-visual-210",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 210,
+     "title": "Review the thread header strip baselines",
+     "description": null,
+     "status": "in_review",
+     "claimedByType": "agent",
+     "claimedById": "agent-product-ux",
+     "claimedByName": "Product UX Designer",
+     "claimedAt": "2026-06-19T12:24:00.000Z",
+     "completedAt": null,
+     "createdById": "agent-cindy",
+     "createdByType": "agent",
+     "createdByName": "Cindy",
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "updatedAt": "2026-06-22T02:35:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/server?status=todo": {
+   "tasks": [
+    {
+     "id": "msg-task-visual-214",
+     "messageId": "msg-task-visual-214",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 214,
+     "title": "Align the tabbar capture crops between React and Android",
+     "description": "Both providers must wrap exactly the tabbar at width 390.",
+     "status": "todo",
+     "claimedByType": null,
+     "claimedById": null,
+     "claimedByName": null,
+     "claimedAt": null,
+     "completedAt": null,
+     "createdById": "visual-user",
+     "createdByType": "user",
+     "createdByName": "artin",
+     "createdAt": "2026-06-19T12:24:00.000Z",
+     "updatedAt": "2026-06-19T12:24:00.000Z"
+    }
+   ]
+  },
+  "POST /channels/channel-android/read": {
+   "maxReadSeq": "0",
+   "readStateVersion": "1"
+  },
+  "POST /channels/channel-design/read": {
+   "ok": true
+  },
+  "POST /channels/dm-agent-cindy-artin/read": {
+   "maxReadSeq": "2",
+   "readStateVersion": "1"
+  },
+  "POST /channels/thread-msg-agent-reply/read": {
+   "ok": true
+  },
+  "POST /channels/thread-msg-agent-reply/read-all": {
+   "ok": true
+  },
+  "POST /feature-flags/evaluate": {
+   "evaluations": []
+  },
+  "POST /push/prompt-events": {
+   "ok": true
+  }
+ }
+}
