@@ -7,6 +7,8 @@
 // patched here: the closest product widget is rendered and the diff shows
 // the gap; primitives with no Flutter implementation are listed in
 // [uiPrimitiveUncovered].
+import 'dart:ui' show SemanticsRole;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/page_component_recipes.dart';
@@ -680,23 +682,52 @@ final ParityCase _selectionPopover = ParityCase(
 );
 
 final ParityCase _menuItem = ParityCase(
-  widgets: const ['raft_ui:RaftMenuPanel', 'raft_ui:RaftMenuItem'],
+  widgets: const ['raft_ui:RaftMenuButtonItem'],
   notes:
-      'RaftMenuPanel (full fixture width) + RaftMenuItem as composed by '
-      'thread_actions.dart. RaftMenuItem has no trailing shortcut slot (no '
-      '⌘K) and app menu panels have no per-item divider; touch density keeps '
-      '48px rows, so the content-sized React frame height (148) clips them.',
+      'Container is fixture markup (w-full overflow-hidden border-2 '
+      'border-black bg-white shadow-brutal); the frame is content-sized in '
+      'React (16 + 116 + 16).',
   build: (ctx) => _frame(
     ctx,
     height: 148,
-    child: RaftMenuPanel(
-      width: 310,
-      children: [
-        RaftMenuItem(label: 'Open Channel', onPressed: () {}),
-        RaftMenuItem(label: 'Mark as Read', onPressed: () {}),
-        const RaftMenuItem(label: 'Archive unavailable'),
-        RaftMenuItem(label: 'Delete Message', onPressed: () {}),
-      ],
+    child: Container(
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(width: 2),
+        boxShadow: RaftProductShadows.shadowBrutal.paintOrder,
+      ),
+      child: Semantics(
+        role: SemanticsRole.menu,
+        child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RaftMenuButtonItem(
+            label: 'Open Channel',
+            onPressed: () {},
+            trailing: Builder(
+              builder: (context) => Text(
+                '⌘K',
+                style: TextStyle(
+                  fontFamily: RaftTokens.of(context).monoFont,
+                  fontSize: 12,
+                  height: 16 / 12,
+                  color: Colors.black.withValues(alpha: .4),
+                ),
+              ),
+            ),
+          ),
+          RaftMenuButtonItem(label: 'Mark as Read', onPressed: () {}),
+          const RaftMenuButtonItem(label: 'Archive unavailable'),
+          RaftMenuButtonItem(
+            label: 'Delete Message',
+            onPressed: () {},
+            topDivider: true,
+          ),
+        ],
+      ),
+      ),
     ),
   ),
 );

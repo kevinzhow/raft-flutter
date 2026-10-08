@@ -5,6 +5,7 @@
 // package build on it so every value traces to a recipe or token.
 import 'dart:math' as math;
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'recipes/recipe_runtime.dart';
@@ -205,6 +206,9 @@ class RaftRecipeBox extends StatelessWidget {
     final radius = style.borderRadius ?? BorderRadius.zero;
     final w = width ?? style.width;
     final h = height ?? style.height;
+    // A fixed CSS height smaller than padding + content lets the content
+    // overflow, centred (flex `align-items: center`), instead of clipping.
+    if (content != null && h != null) content = RaftCssOverflowY(child: content);
     Widget box = Container(
       width: w,
       height: h,
@@ -363,4 +367,47 @@ class RaftOuterShadowPainter extends CustomPainter {
   @override
   bool shouldRepaint(RaftOuterShadowPainter old) =>
       old.shadows != shadows || old.radius != radius || old.circle != circle;
+}
+
+/// Lays its child out with unbounded height and centres it vertically in
+/// the incoming height (CSS unsafe centering of an overflowing flex item);
+/// width follows the child like any shrink-wrapping box.
+class RaftCssOverflowY extends SingleChildRenderObjectWidget {
+  const RaftCssOverflowY({super.key, super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) => _RenderCssOverflowY();
+}
+
+class _RenderCssOverflowY extends RenderShiftedBox {
+  _RenderCssOverflowY() : super(null);
+
+  @override
+  void performLayout() {
+    final c = constraints;
+    final child = this.child;
+    if (child == null) {
+      size = c.smallest;
+      return;
+    }
+    child.layout(
+      BoxConstraints(minWidth: c.minWidth, maxWidth: c.maxWidth),
+      parentUsesSize: true,
+    );
+    size = c.constrain(Size(child.size.width, child.size.height));
+    final data = child.parentData! as BoxParentData;
+    data.offset = Offset(0, (size.height - child.size.height) / 2);
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      child?.getMinIntrinsicWidth(double.infinity) ?? 0;
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      child?.getMaxIntrinsicWidth(double.infinity) ?? 0;
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      child?.getMinIntrinsicHeight(width) ?? 0;
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      child?.getMaxIntrinsicHeight(width) ?? 0;
 }

@@ -1,7 +1,12 @@
 // List and section primitives from the Web client's components/ui:
 // SurfaceListItem (raft-ui Card + product overrides), AvatarListRow,
 // SectionEyebrow and SectionHeader. Class lists are cited per widget.
+import 'dart:ui' show SemanticsRole;
+
 import 'package:flutter/material.dart';
+
+import 'design_primitives.dart';
+import 'recipes/button_variants.g.dart';
 
 import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
@@ -359,6 +364,119 @@ class RaftSectionHeader extends StatelessWidget {
           RaftInlineBox(child: action!),
         ],
       ],
+    );
+  }
+}
+
+/// Web `ui/MenuItem`: raft-ui `Button` (variant ghost, size sm) with
+/// `flex w-full items-center gap-2 px-3 py-2 text-sm text-left
+/// font-medium text-foreground-strong hover:bg-fill-muted
+/// hover:!border-transparent disabled:text-foreground-muted` and brutal
+/// `text-black hover:bg-soft-signal/30 disabled:text-black/30`.
+class RaftMenuButtonItem extends StatelessWidget {
+  const RaftMenuButtonItem({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.icon,
+    this.trailing,
+    this.topDivider = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final Widget? icon, trailing;
+
+  /// Callsite `border-t border-black/10` separator.
+  final bool topDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final enabled = onPressed != null;
+    return Semantics(
+      role: SemanticsRole.menuItem,
+      child: RaftInteractive(
+        onPressed: onPressed,
+        button: false,
+        builder: (context, st) {
+          final s = RaftButtonRecipe.resolve(
+            theme: t.recipeTheme,
+            variant: RaftButtonRecipeVariant.ghost,
+            size: RaftButtonRecipeSize.sm,
+            states: t.recipeStates(
+              hovered: st.hovered,
+              pressed: st.pressed,
+              focusVisible: st.focusVisible,
+              disabled: !enabled,
+            ),
+            tokens: rt,
+          ).root;
+          final hover = st.hovered && enabled;
+          final ink = !enabled
+              ? (t.brutal
+                    ? RaftPrimitiveColors.black.withValues(alpha: .3)
+                    : t.semantic.foregroundMuted)
+              : (t.brutal ? RaftPrimitiveColors.black : t.semantic.foregroundStrong);
+          final side = (s.border(rt) ?? const Border()).top;
+          final dividerColor = RaftPrimitiveColors.black.withValues(alpha: .1);
+          return RaftRecipeBox(
+            style: s,
+            tokens: rt,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decorationOverride: (d) {
+              final color = topDivider ? dividerColor : Colors.transparent;
+              BorderSide sideOf(double w) =>
+                  BorderSide(color: color, width: w);
+              return d.copyWith(
+                color: hover
+                    ? (t.brutal
+                          ? t.product.softSignal.withValues(alpha: .3)
+                          : t.semantic.fillMuted)
+                    : d.color,
+                border: Border(
+                  top: sideOf(topDivider ? 1 : side.width),
+                  left: sideOf(side.width),
+                  right: sideOf(side.width),
+                  bottom: sideOf(side.width),
+                ),
+              );
+            },
+            child: Builder(
+              builder: (context) {
+                final base = DefaultTextStyle.of(context).style.copyWith(
+                  fontSize: 14,
+                  height: 20 / 14,
+                  fontWeight: FontWeight.w500,
+                  color: ink,
+                );
+                return DefaultTextStyle(
+                  style: base,
+                  child: Row(
+                    children: [
+                      if (icon != null) ...[icon!, const SizedBox(width: 8)],
+                      Expanded(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (trailing != null) ...[
+                        const SizedBox(width: 8),
+                        trailing!,
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 }
