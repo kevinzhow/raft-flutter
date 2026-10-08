@@ -1,0 +1,17 @@
+{
+  "names": [
+    {
+      "name": "app.raft.raft_flutter.inbox_refresh",
+      "workSpecId": "02c17d5d-579a-4161-84c8-da1da6eef3c3",
+      "state": 0,
+      "intervalMs": 900000,
+      "requiredNetwork": 1
+    }
+  ],
+  "systemIds": [
+    [
+      "02c17d5d-579a-4161-84c8-da1da6eef3c3",
+      1
+    ]
+  ]
+}

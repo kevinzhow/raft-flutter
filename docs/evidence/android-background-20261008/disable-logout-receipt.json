@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "c598e2c18247e217a4798f6cc65fc785c11cbc3b",
+  "device": "emulator-5580",
+  "startedAt": "2026-10-08T06:49:46.065616+00:00",
+  "disabledScopeCleared": true,
+  "disabledPreference": true,
+  "disabledRegisteredJobs": 0,
+  "completed": true,
+  "disabledMessageId": "26be5a06-f6f1-4939-82cc-b607589c7201",
+  "disabledMessageNotNotified": true,
+  "actualLogout": true,
+  "loginFormVisible": true,
+  "logoutScopeAbsent": true,
+  "logoutJobs": 0,
+  "logoutLedgerAbsent": true,
+  "finishedAt": "2026-10-08T06:49:53.875008+00:00"
+}

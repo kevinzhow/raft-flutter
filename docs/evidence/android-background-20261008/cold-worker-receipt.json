@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "c598e2c18247e217a4798f6cc65fc785c11cbc3b",
+  "device": "emulator-5580",
+  "namespace": "androidx.work.systemjobscheduler",
+  "jobId": 2,
+  "startedAt": "2026-10-08T06:26:14.800389+00:00",
+  "scopeHash": "c9249b53969889e496b46a1a9195360a3ac1e294ef5a08fac6ba22ecd0fae484",
+  "processAbsentBeforeSend": true,
+  "sentAt": "2026-10-08T06:26:15.782308+00:00",
+  "messageId": "9804b440-fdc0-4dd7-a983-655da8b47fb0",
+  "channelId": "2495c068-0d42-4fb9-905e-3c4093afb2fa",
+  "jobStateBeforeForce": "ready",
+  "forcedAt": "2026-10-08T06:29:03.761270+00:00",
+  "forceResult": "Running job [FORCED]",
+  "wake": {
+    "mode": "headless",
+    "startedAt": "2026-10-08T06:29:03.989698Z",
+    "finishedAt": "2026-10-08T06:29:04.453017Z",
+    "success": true
+  },
+  "seenMessage": true,
+  "nativeNotificationPresent": true,
+  "actualShadeBody": true,
+  "shadeCapturedAt": "2026-10-08T06:29:08.289837+00:00",
+  "completedColdWorker": true
+}
