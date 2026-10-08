@@ -1745,7 +1745,12 @@ class RaftDropdownMenu extends StatefulWidget {
     this.enabled = true,
     this.triggerStyle = RaftDropdownTriggerStyle.button,
     this.selected = false,
+    this.minimumTargetSize,
   });
+
+  /// Passed to the trigger [RaftControl] (layout follows the Web box when
+  /// set to the visual height).
+  final double? minimumTargetSize;
   final String label;
   final List<RaftMenuEntry> entries;
   final RaftMenuController? controller;
@@ -2029,6 +2034,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
           child: RaftControl(
             focusNode: trigger,
             tooltip: widget.tooltip,
+            minimumTargetSize: widget.minimumTargetSize,
             variant: RaftControlVariant.outline,
             visualHeight: widget.triggerStyle == RaftDropdownTriggerStyle.picker
                 ? t.brutal

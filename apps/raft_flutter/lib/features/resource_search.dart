@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' as rui;
 
 import 'public_avatar_url.dart';
 import 'resource_cards.dart';
@@ -217,18 +218,44 @@ class ResourceSearchResults extends StatelessWidget {
           MediaQuery.sizeOf(context).width <
           RaftLayoutMetrics.desktopBreakpoint,
     );
+    // raft-ui search recipe: SearchResultsSummary / SearchResultsSection /
+    // SearchResultsSectionHeading / SearchResultsList (MessageSearchPage.tsx).
+    final rt = rui.RaftRecipeTokens(t);
+    final slots = rui.RaftSearchRecipe.resolve(
+      theme: t.brutal ? rui.RaftRecipeTheme.brutal : rui.RaftRecipeTheme.elegant,
+      states: rui.RaftRecipeStates({
+        if (t.dark) rui.RaftRecipeStates.dark,
+      }, MediaQuery.sizeOf(context).width),
+      tokens: rt,
+    );
+    Widget slotText(String text, rui.RaftSlotStyle slot) {
+      final base = slot.textStyle(rt);
+      return Text(
+        slot.textTransform == 'uppercase' ? text.toUpperCase() : text,
+        style: base.copyWith(
+          // Unset family/line-height inherit the page (font-sans, 1.5).
+          fontFamily: base.fontFamily ?? t.bodyFont,
+          height: base.height ?? 1.5,
+        ),
+      );
+    }
+
     Widget section(String title, List<Widget> children) => Container(
-      padding: recipe.sectionInset,
-      decoration: BoxDecoration(
-        color: recipe.sectionFill,
-        borderRadius: BorderRadius.circular(recipe.sectionRadius),
-      ),
+      margin: slots.section.margin,
+      padding: slots.section.padding,
+      decoration: slots.section.decoration(rt),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(raftText(context, title), style: recipe.sectionTitle),
-          const SizedBox(height: 8),
-          ...children,
+          Padding(
+            padding: slots.sectionHeading.padding,
+            child: slotText(raftText(context, title), slots.sectionHeading),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: slots.list.rowGap ?? 8,
+            children: children,
+          ),
         ],
       ),
     );
@@ -238,7 +265,7 @@ class ResourceSearchResults extends StatelessWidget {
       VoidCallback open, {
       bool entity = false,
     }) => Padding(
-      padding: EdgeInsets.only(bottom: recipe.gap),
+      padding: EdgeInsets.zero,
       child: Material(
         color: t.panel,
         shape: RoundedRectangleBorder(
@@ -373,13 +400,23 @@ class ResourceSearchResults extends StatelessWidget {
     }
 
     return ListView(
-      padding: recipe.viewportInset,
+      // SearchViewport padding plus the results `<div class="p-4">`.
+      padding: slots.viewport.padding.add(const EdgeInsets.all(16)),
       children: [
-        Text(
-          '${entities.length + rows.length} ${raftText(context, 'results')}',
-          style: recipe.summary,
+        // `<div class="mb-3 px-1"><SearchResultsSummary>`; the summary's own
+        // mb-3 collapses into the wrapper's.
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Padding(
+            padding: slots.summary.padding.add(
+              EdgeInsets.only(bottom: slots.summary.margin.bottom),
+            ),
+            child: slotText(
+              '${entities.length + rows.length} ${raftText(context, 'results')}',
+              slots.summary,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
         if (entities.isNotEmpty) ...[
           section('Server entities', [
             for (final entity in entities)
@@ -448,7 +485,6 @@ class ResourceSearchResults extends StatelessWidget {
                 entity: true,
               ),
           ]),
-          const SizedBox(height: 12),
         ],
         if (rows.isNotEmpty)
           section('Messages', [

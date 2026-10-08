@@ -1157,6 +1157,7 @@ class _ResourceViewState extends State<ResourceView> {
       selection: selected,
       valid: () => accepts(scope),
       closeOnSelect: single,
+      picker: true,
       onToggle: (key) {
         if (!accepts(scope)) return;
         toggle(key);
@@ -1189,6 +1190,12 @@ class _ResourceViewState extends State<ResourceView> {
           ? RaftGlyph.calendarRange
           : RaftGlyph.arrowDownUp,
       trailingGlyph: RaftGlyph.chevronDown,
+      triggerStyle: RaftDropdownTriggerStyle.picker,
+      minimumTargetSize: RaftTokens.of(context).brutal ? 32 : 28,
+      // activeFilterClass when the value differs from the default.
+      selected: title == 'Search date range'
+          ? advanced.timeRange != 'any'
+          : advanced.searchSort != 'relevance',
       enabled: title != 'Sort search results' || query.text.trim().isNotEmpty,
       entries: [
         for (final entry in choices.entries)
@@ -1203,16 +1210,23 @@ class _ResourceViewState extends State<ResourceView> {
           ),
       ],
     );
+    // MessageSearchPage filters row: `px-4 py-3 border-b theme-brutal:border-b-2`.
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: RaftTokens.of(context).line)),
+        border: Border(
+          bottom: BorderSide(
+            color: RaftTokens.of(context).line,
+            width: RaftTokens.of(context).border,
+          ),
+        ),
       ),
       child: SizedBox(
         width: double.infinity,
         child: Wrap(
           spacing: 8,
           runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             picker(
               'From',
@@ -1263,14 +1277,14 @@ class _ResourceViewState extends State<ResourceView> {
               const {
                 'any': 'Any Time',
                 'today': 'Today',
-                '7d': 'Last 7 days',
-                '30d': 'Last 30 days',
+                '7d': 'Last 7 Days',
+                '30d': 'Last 30 Days',
               }[advanced.timeRange]!,
               const {
                 'any': 'Any Time',
                 'today': 'Today',
-                '7d': 'Last 7 days',
-                '30d': 'Last 30 days',
+                '7d': 'Last 7 Days',
+                '30d': 'Last 30 Days',
               },
               (value) => advanced.timeRange = value,
             ),
@@ -1281,9 +1295,12 @@ class _ResourceViewState extends State<ResourceView> {
               (value) => advanced.searchSort = value,
             ),
             if (advanced.hasSearchFilter)
+              // Button ghost xs "Clear All".
               RaftTextButton(
-                label: 'Clear',
-                visualHeight: 28,
+                label: 'Clear All',
+                variant: RaftControlVariant.ghost,
+                visualHeight: RaftMetrics.buttonXs,
+                minimumTargetSize: RaftMetrics.buttonXs,
                 onPressed: () {
                   if (accepts(scope)) {
                     final sort = advanced.searchSort;

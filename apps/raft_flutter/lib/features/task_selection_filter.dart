@@ -21,7 +21,12 @@ class TaskSelectionFilter extends StatefulWidget {
     this.label,
     this.glyph,
     this.closeOnSelect = false,
+    this.picker = false,
   });
+
+  /// Search filters use PickerTriggerButton; task filters an sm outline
+  /// Button.
+  final bool picker;
   final String field;
   final String? tooltip, label;
   final RaftGlyph? glyph;
@@ -60,6 +65,9 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final pickerHeight = widget.picker && !t.brutal
+        ? 28.0
+        : RaftMetrics.buttonMd;
     final width = math.min(248.0, MediaQuery.sizeOf(context).width - 24);
     final entries = widget.options.entries
         .where(
@@ -197,8 +205,14 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                   ? RaftControlVariant.outline
                   : RaftControlVariant.primary,
               selected: widget.selection.isNotEmpty,
-              visualHeight: RaftMetrics.buttonMd,
-              minimumTargetSize: RaftMetrics.buttonMd,
+              recipe: widget.picker
+                  ? RaftPickerTriggerRecipe(
+                      t,
+                      selected: widget.selection.isNotEmpty,
+                    )
+                  : null,
+              visualHeight: pickerHeight,
+              minimumTargetSize: pickerHeight,
               onPressed: () {
                 if (!widget.valid()) return;
                 controller.isOpen ? controller.close() : controller.open();
@@ -211,7 +225,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                     widget.glyph ??
                         switch (widget.field) {
                           'Channel' => RaftGlyph.hash,
-                          'Creator' => RaftGlyph.userCircle2,
+                          'Creator' || 'From' => RaftGlyph.userCircle2,
                           _ => RaftGlyph.user,
                         },
                     size: 14,

@@ -279,7 +279,7 @@ final ParityCase _searchResults = ParityCase(
     await _typeSearch(t);
     await t.tap(find.text('Any Time').last);
     await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.text('Last 7 days').last);
+    await t.tap(find.text('Last 7 Days').last);
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.text('Relevant').last);
     await t.pump(const Duration(milliseconds: 300));
