@@ -11,14 +11,7 @@ class RaftAppearanceSectionRecipe {
   final RaftTokens t;
   static const inset = EdgeInsets.all(16);
   static const gap = 16.0;
-  BoxDecoration get card => BoxDecoration(
-    color: t.panel,
-    border: Border.all(
-      color: t.brutal ? t.strong : t.line,
-      width: t.brutal ? 2 : 1,
-    ),
-    boxShadow: t.shadows,
-  );
+  BoxDecoration get card => RaftSettingsCard.decoration(t);
   TextStyle get heading =>
       RaftTypography.body(t, size: 14, line: 20, weight: FontWeight.w700);
   TextStyle get description =>
@@ -105,7 +98,7 @@ class RaftAppearanceSection extends StatelessWidget {
           card([
             title(
               'Theme',
-              'Choose the visual style for this device. Your choice is saved on this device.',
+              'Choose the visual style for this browser. Your choice is saved on this device.',
             ),
             const SizedBox(height: 12),
             RaftAppearancePicker(
@@ -114,11 +107,10 @@ class RaftAppearanceSection extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: RaftAppearanceSectionRecipe.gap),
-          Text(
-            raftText(context, 'Appearance').toUpperCase(),
-            style: r.annotation,
+          const RaftSettingsSectionHeader(
+            label: 'Appearance',
+            glyph: RaftGlyph.type,
           ),
-          const SizedBox(height: 12),
           card([
             title(
               'Message font size',

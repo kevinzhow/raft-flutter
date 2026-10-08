@@ -410,12 +410,11 @@ ParityCase _settings(
           'as "Set a password"; its mock omits the field, which Flutter would '
           'render as "Sign-in methods could not be verified").',
     if (uploadError)
-      'Error state reached through the real flow: "Change profile image" → '
-          'file picker (FileSelectorPlatform fixture returns a PNG) → POST '
-          '/auth/me/avatar fails with the React/Android fixture message '
-          '"Avatar upload failed: upload_failed". Flutter renders that error '
-          'at the bottom of the account card, so the page is scrolled until '
-          'it is visible (React shows its banner above Save Profile).',
+      'Error state reached through the real flow: tap the profile avatar '
+          '(account-profile-image) → file picker (FileSelectorPlatform fixture '
+          'returns a PNG) → POST /auth/me/avatar fails with the React/Android '
+          'fixture message "Avatar upload failed: upload_failed", shown above '
+          'the profile form like AccountSection.',
     if (tab == 'appearance')
       'Appearance = Light mode, Brutal light theme (the React fixture state).',
     if (tab == 'notifications')

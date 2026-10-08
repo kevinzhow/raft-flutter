@@ -600,3 +600,63 @@ class RaftSettingsActionCard extends StatelessWidget {
     );
   }
 }
+
+/// raft-ui `Badge` rendered from `RaftBadgeRecipe`.
+class RaftRecipeBadge extends StatelessWidget {
+  const RaftRecipeBadge({
+    super.key,
+    required this.label,
+    this.variant,
+    this.appearance,
+    this.uppercase = false,
+    this.glyph,
+  });
+  final String label;
+  final RaftBadgeRecipeVariant? variant;
+  final RaftBadgeRecipeAppearance? appearance;
+  final bool uppercase;
+
+  /// Leading icon (callsite size, e.g. `<Shield size={10} />`).
+  final RaftGlyph? glyph;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), tokens = RaftRecipeTokens(t);
+    final s = RaftBadgeRecipe.resolve(
+      theme: raftRecipeTheme(t),
+      variant: variant,
+      appearance: appearance,
+      uppercase: uppercase,
+      states: RaftRecipeStates({
+        if (glyph != null) 'has:svg',
+        if (t.dark) RaftRecipeStates.dark,
+      }),
+      tokens: tokens,
+    ).root;
+    final text = _slotText(
+      t,
+      s,
+      base: RaftTypography.body(t, size: 10, line: 10),
+    );
+    final value = raftText(context, label);
+    return Container(
+      height: s.height,
+      padding: s.padding,
+      decoration: s.decoration(tokens),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (glyph != null) ...[
+            RaftIcon(glyph!, size: 10, color: text.color),
+            SizedBox(width: s.columnGap ?? 4),
+          ],
+          Text(
+            uppercase ? value.toUpperCase() : value,
+            maxLines: 1,
+            softWrap: false,
+            style: text,
+          ),
+        ],
+      ),
+    );
+  }
+}
