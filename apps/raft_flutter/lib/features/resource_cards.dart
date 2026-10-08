@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
 
 /// Page component tokens traced to SavedPanel SavedItem and ThreadsInbox
 /// InboxRow at Web 26f77ef. A panel card and an inbox card have different fills.
@@ -79,62 +80,78 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
     final recipe = RaftConversationCardRecipe(t, saved: widget.saved);
     final showActions =
         hovered || focused || RaftDensityScope.of(context) == RaftDensity.touch;
+    final rt = RaftRecipeTokens(t);
+    // raft-ui Card root shadow (brutal themeShadowMd, elegant themeShadowXs);
+    // SavedItem opts out with `shadow-none`.
+    final shadows = widget.saved
+        ? const <BoxShadow>[]
+        : RaftCardRecipe.resolve(
+            theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+            states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
+            tokens: rt,
+          ).root.boxShadow.toBoxShadows(rt);
     return MouseRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
       child: Semantics(
         button: true,
         label: widget.semanticLabel,
-        child: Material(
-          color: hovered || focused
-              ? recipe.hoverBackground
-              : recipe.background,
-          shape: RoundedRectangleBorder(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
             borderRadius: recipe.radius,
-            side: recipe.border,
+            boxShadow: shadows,
           ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            splashFactory: NoSplash.splashFactory,
-            highlightColor: Colors.transparent,
-            hoverColor: Colors.transparent,
-            focusColor: Colors.transparent,
-            onTap: widget.onOpen,
-            onLongPress: widget.onContextMenu,
-            onSecondaryTap: widget.onContextMenu,
-            onFocusChange: (value) => setState(() => focused = value),
-            borderRadius: recipe.radius,
-            child: Padding(
-              // CSS content box = border + padding; Material paints the side
-              // inside its shape without insetting the child.
-              padding: RaftConversationCardRecipe.inset.add(
-                EdgeInsets.all(recipe.border.width),
-              ),
-              child: Stack(
-                children: [
-                  widget.child,
-                  if (widget.actions != null)
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: ExcludeSemantics(
-                        excluding: !showActions,
-                        child: IgnorePointer(
-                          ignoring: !showActions,
-                          child: AnimatedOpacity(
-                            opacity: showActions ? 1 : 0,
-                            duration: MediaQuery.disableAnimationsOf(context)
-                                ? Duration.zero
-                                : const Duration(milliseconds: 150),
-                            child: Material(
-                              color: recipe.background,
-                              child: widget.actions!,
+          child: Material(
+            color: hovered || focused
+                ? recipe.hoverBackground
+                : recipe.background,
+            shape: RoundedRectangleBorder(
+              borderRadius: recipe.radius,
+              side: recipe.border,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              splashFactory: NoSplash.splashFactory,
+              highlightColor: Colors.transparent,
+              hoverColor: Colors.transparent,
+              focusColor: Colors.transparent,
+              onTap: widget.onOpen,
+              onLongPress: widget.onContextMenu,
+              onSecondaryTap: widget.onContextMenu,
+              onFocusChange: (value) => setState(() => focused = value),
+              borderRadius: recipe.radius,
+              child: Padding(
+                // CSS content box = border + padding; Material paints the side
+                // inside its shape without insetting the child.
+                padding: RaftConversationCardRecipe.inset.add(
+                  EdgeInsets.all(recipe.border.width),
+                ),
+                child: Stack(
+                  children: [
+                    widget.child,
+                    if (widget.actions != null)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: ExcludeSemantics(
+                          excluding: !showActions,
+                          child: IgnorePointer(
+                            ignoring: !showActions,
+                            child: AnimatedOpacity(
+                              opacity: showActions ? 1 : 0,
+                              duration: MediaQuery.disableAnimationsOf(context)
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 150),
+                              child: Material(
+                                color: recipe.background,
+                                child: widget.actions!,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

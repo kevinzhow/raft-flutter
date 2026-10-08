@@ -666,6 +666,20 @@ class _ResourceViewState extends State<ResourceView> {
 
   @override
   Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    // ThreadsInbox mounts ActivityInboxPanel with `theme-brutal:!border-l`.
+    final activityEdge = widget.section == 'activity' && t.brutal;
+    return Container(
+      decoration: activityEdge
+          ? BoxDecoration(
+              border: Border(left: BorderSide(color: t.colors['color-black']!)),
+            )
+          : null,
+      child: buildBody(context),
+    );
+  }
+
+  Widget buildBody(BuildContext context) {
     final scope = authority;
     return Column(
       children: [
@@ -1286,11 +1300,11 @@ class _ResourceViewState extends State<ResourceView> {
 
   Widget activityToolbar(String scope) {
     final t = RaftTokens.of(context);
+    // ThreadsInbox `inbox-toolbar`: `flex h-[54px] items-center
+    // justify-between gap-3 px-4 border-b theme-brutal:border-b-2`.
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: t.brutal ? 10 : 10,
-      ),
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: t.panel,
         border: Border(
@@ -1309,6 +1323,7 @@ class _ResourceViewState extends State<ResourceView> {
                     ? filter
                     : '',
                 visualHeight: 32,
+                minimumTargetSize: 32,
                 label: raftText(context, 'Activity filters'),
                 items: [
                   for (final value in ['all', 'unread', 'mentions'])
@@ -1331,11 +1346,19 @@ class _ResourceViewState extends State<ResourceView> {
             ),
           ),
           const SizedBox(width: 12),
-          RaftTextButton(
-            label: 'Mark all read',
+          // Button sm outline `h-8 px-2 text-xs font-bold`.
+          RaftControl(
+            variant: RaftControlVariant.outline,
             visualHeight: 32,
+            minimumTargetSize: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            semanticLabel: raftText(context, 'Mark all read'),
             onPressed: () =>
                 command('POST', '/channels/inbox/read-all', sourceScope: scope),
+            child: Text(
+              raftText(context, 'Mark all read'),
+              style: RaftTypography.heading(t, size: 12, line: 16),
+            ),
           ),
           if (extraFilters)
             PopupMenuButton<String>(
@@ -1396,7 +1419,7 @@ class _ResourceViewState extends State<ResourceView> {
       // TasksPanel's server-mode header has no back button or actions; the
       // Saved/Activity PanelHeaders only carry onMobileBack.
       leading: mobile && widget.section != 'tasks'
-          ? RaftBackButton(tooltip: 'Back', onPressed: widget.onBack ?? () {})
+          ? RaftPanelBackAction(onPressed: widget.onBack ?? () {})
           : null,
       actions: [
         if (widget.section == 'activity')
@@ -1581,6 +1604,45 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
+  /// ThreadsInbox context menu: Done (Check 14) and, for threads,
+  /// Unfollow (BellOff 14) / Follow (Bell 14).
+  Future<void> activityMenu(Map<String, dynamic> row, String scope) async {
+    final thread = row['kind'] == 'thread';
+    final following = row['isFollowing'] != false;
+    await scopedDialog<void>(
+      scope,
+      (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: RaftMenuPanel(
+          width: 240,
+          onDismiss: () => closeOwnedDialog(context, scope),
+          children: [
+            RaftMenuItem(
+              label: raftText(context, 'Done'),
+              glyph: RaftGlyph.check,
+              onPressed: () {
+                if (!accepts(scope)) return;
+                closeOwnedDialog(context, scope);
+                activityAction(row, 'done', scope);
+              },
+            ),
+            if (thread)
+              RaftMenuItem(
+                label: raftText(context, following ? 'Unfollow' : 'Follow'),
+                // BellOff is not in the glyph set yet.
+                glyph: RaftGlyph.bell,
+                onPressed: () {
+                  if (!accepts(scope)) return;
+                  closeOwnedDialog(context, scope);
+                  activityAction(row, following ? 'unfollow' : 'follow', scope);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget activityCard(Map<String, dynamic> row, String scope) {
     final t = RaftTokens.of(context),
         recipe = RaftConversationCardRecipe(RaftTokens.of(context));
@@ -1606,39 +1668,24 @@ class _ResourceViewState extends State<ResourceView> {
               'activity-${row['kind']}-${row['channelId'] ?? row['messageId']}',
             ),
       onOpen: () => openConversation(row, scope),
+      onContextMenu: row['kind'] == 'mention_action'
+          ? null
+          : () => activityMenu(row, scope),
       actions: row['kind'] == 'mention_action'
           ? null
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RaftIconButton(
-                  glyph: RaftGlyph.circleCheck,
-                  visualSize: 28,
-                  tooltip: filter == 'done'
-                      ? 'Restore conversation'
-                      : 'Mark conversation done',
-                  onPressed: () => activityAction(
-                    row,
-                    filter == 'done' ? 'undone' : 'done',
-                    scope,
-                  ),
-                ),
-                if (thread)
-                  RaftIconButton(
-                    glyph: row['isFollowing'] == false
-                        ? RaftGlyph.plus
-                        : RaftGlyph.x,
-                    visualSize: 28,
-                    tooltip: row['isFollowing'] == false
-                        ? 'Follow thread'
-                        : 'Unfollow thread',
-                    onPressed: () => activityAction(
-                      row,
-                      row['isFollowing'] == false ? 'follow' : 'unfollow',
-                      scope,
-                    ),
-                  ),
-              ],
+          // ThreadsInbox row action: ghost icon-sm Check 14 (RotateCcw 14 to
+          // restore). Follow/unfollow is only in the context menu.
+          : RaftIconButton(
+              glyph: filter == 'done' ? RaftGlyph.rotateCw : RaftGlyph.check,
+              visualSize: 28,
+              tooltip: filter == 'done'
+                  ? 'Restore conversation'
+                  : 'Mark conversation done',
+              onPressed: () => activityAction(
+                row,
+                filter == 'done' ? 'undone' : 'done',
+                scope,
+              ),
             ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1719,33 +1766,35 @@ class _ResourceViewState extends State<ResourceView> {
             constraints: const BoxConstraints(minHeight: 20),
             child: Wrap(
               spacing: 6,
-              runSpacing: 4,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 if (row['taskNumber'] != null && row['taskStatus'] is String)
                   RaftTaskStatus(status: row['taskStatus']),
                 if (thread)
-                  activityBadge(
-                    '${row['replyCount'] ?? 0} ${raftText(context, 'replies')}',
-                    t.muted,
-                    t.panel,
+                  RaftRecipeBadge(
+                    label:
+                        '${row['replyCount'] ?? 0} ${raftText(context, 'replies')}',
+                    appearance: RaftBadgeRecipeAppearance.outline,
+                    variant: RaftBadgeRecipeVariant.muted,
                   ),
                 if (thread && row['isFollowing'] == false)
-                  activityBadge(
-                    raftText(context, 'Unfollowed'),
-                    t.muted,
-                    t.panel,
+                  RaftRecipeBadge(
+                    label: raftText(context, 'Unfollowed'),
+                    appearance: RaftBadgeRecipeAppearance.outline,
+                    variant: RaftBadgeRecipeVariant.muted,
                   ),
-                if (row['hasMention'] == true)
-                  activityBadge(
-                    '@${raftText(context, 'You')}',
-                    t.strong,
-                    t.primaryFill,
+                // shouldShowMentionBadge: mention with unread messages.
+                if (row['hasMention'] == true && unread > 0)
+                  RaftRecipeBadge(
+                    label: raftText(context, 'you'),
+                    glyph: RaftGlyph.atSign,
+                    variant: RaftBadgeRecipeVariant.primary,
                   ),
                 if (unread > 0)
-                  activityBadge(
-                    '$unread ${raftText(context, 'new')}',
-                    t.accent,
-                    t.accentSoft,
+                  RaftRecipeBadge(
+                    label: '$unread ${raftText(context, 'new')}',
+                    variant: RaftBadgeRecipeVariant.accent,
                   ),
               ],
             ),
@@ -1754,27 +1803,6 @@ class _ResourceViewState extends State<ResourceView> {
       ),
     );
   }
-
-  Widget activityBadge(String label, Color foreground, Color background) =>
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: background,
-          border: Border.all(color: foreground.withValues(alpha: .3)),
-          borderRadius: BorderRadius.circular(
-            RaftTokens.of(context).brutal ? 0 : 99,
-          ),
-        ),
-        child: Text(
-          label,
-          style: RaftTypography.body(
-            RaftTokens.of(context),
-            size: 10,
-            line: 14,
-            color: foreground,
-          ).copyWith(fontWeight: FontWeight.w700),
-        ),
-      );
 
   Widget groupedTasks() {
     final t = RaftTokens.of(context), scope = authority;

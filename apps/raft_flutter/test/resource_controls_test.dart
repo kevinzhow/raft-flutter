@@ -350,7 +350,10 @@ void main() {
         },
       ];
       await mount(t, 'activity');
-      await t.tap(find.byTooltip('Follow thread'));
+      // Follow lives in the row context menu (ThreadsInbox).
+      await t.longPress(find.text('Thread body'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Follow'));
       await t.pumpAndSettle();
       expect(c.mutations.last.path, '/channels/threads/follow');
       expect(c.mutations.last.data, {'parentMessageId': 'p'});

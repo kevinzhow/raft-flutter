@@ -4,6 +4,7 @@ import '../recipes.dart';
 import 'design_primitives.dart';
 import 'flex_shrink_row.dart';
 import 'icons.dart';
+import 'inline_badge_editor.dart';
 import 'localization.dart';
 import 'theme.dart';
 
@@ -202,4 +203,96 @@ class RaftNewTaskButton extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// raft-ui Badge (badge recipe) with an optional leading 10px glyph, as the
+/// Activity rows use it (`uppercase={false}`).
+class RaftRecipeBadge extends StatelessWidget {
+  const RaftRecipeBadge({
+    super.key,
+    required this.label,
+    this.variant = RaftBadgeRecipeVariant.default_,
+    this.appearance = RaftBadgeRecipeAppearance.solid,
+    this.glyph,
+  });
+  final String label;
+  final RaftBadgeRecipeVariant variant;
+  final RaftBadgeRecipeAppearance appearance;
+  final RaftGlyph? glyph;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
+    final root = RaftBadgeRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      appearance: appearance,
+      variant: variant,
+      uppercase: false,
+      states: RaftRecipeStates({
+        if (t.dark) RaftRecipeStates.dark,
+        if (glyph != null) 'has:svg',
+      }),
+      tokens: rt,
+    ).root;
+    final base = root.textStyle(rt);
+    final style = base.copyWith(
+      // Badge sets no family: it inherits the host `font-display`.
+      fontFamily: base.fontFamily ?? t.headingFont,
+      fontFamilyFallback: base.fontFamilyFallback ?? const ['sans-serif'],
+      color: base.color ?? t.strong,
+    );
+    return Container(
+      height: root.height,
+      padding: root.padding,
+      decoration: root.decoration(rt),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: root.columnGap ?? 4,
+        children: [
+          if (glyph != null)
+            RaftIcon(glyph!, size: 10, color: style.color),
+          Text(label, maxLines: 1, style: style),
+        ],
+      ),
+    );
+  }
+}
+
+/// PanelHeader mobile back: raft-ui PanelAction (panelAction recipe) with
+/// ArrowLeft 14 (packages/web/src/components/ui/PanelHeader.tsx). Layout is
+/// the Web box; the touch target stays 48px.
+class RaftPanelBackAction extends StatelessWidget {
+  const RaftPanelBackAction({super.key, this.onPressed, this.label = 'Back'});
+  final VoidCallback? onPressed;
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
+    final base = RaftPanelActionRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
+      tokens: rt,
+    ).base;
+    return RaftTouchTargetExpander(
+      minSize: const Size.square(RaftMetrics.touchTarget),
+      child: Semantics(
+        button: true,
+        label: raftText(context, label),
+        excludeSemantics: true,
+        onTap: onPressed,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onPressed,
+          child: Container(
+            padding: base.padding,
+            decoration: base.decoration(rt),
+            child: RaftIcon(
+              RaftGlyph.arrowLeft,
+              size: base.target('& > svg')?.width ?? 14,
+              color: base.color?.resolve(rt) ?? t.strong,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
