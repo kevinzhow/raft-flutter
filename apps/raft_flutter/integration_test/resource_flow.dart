@@ -78,7 +78,7 @@ Future<void> verifyAdvancedResources(
     );
     await loaded(message: true);
     await tester.enterText(find.byType(TextField), query);
-    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pump(const Duration(milliseconds: 210));
     await loaded(message: true);
     await menu('Sort search results', 'Recent');
     await loaded(message: true);

@@ -13,6 +13,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/resource_search.dart';
 import 'package:raft_flutter/platform/session_store.dart';
 import 'package:raft_flutter/platform/system_bars.dart';
 
@@ -966,11 +967,13 @@ void main() {
         (w) => w is TextField && w.decoration?.hintText == 'Search messages',
       );
       await tester.enterText(searchInput, text);
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump(const Duration(milliseconds: 210));
       await tester.pumpAndSettle();
       final searchResult = find.descendant(
-        of: find.byType(ListTile),
-        matching: find.text(text),
+        of: find.byType(ResourceSearchResults),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is SearchHighlight && widget.text == text,
+        ),
       );
       await until(tester, () => searchResult.evaluate().isNotEmpty);
       await screenshot(tester, 'linux-search');
