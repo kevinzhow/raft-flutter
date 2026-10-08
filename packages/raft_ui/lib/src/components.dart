@@ -792,10 +792,8 @@ class RaftNavItem extends StatelessWidget {
               kind: RaftControlKind.sidebar,
               selected: selected,
               visualHeight: recipe.sourceHeight,
-              minimumTargetSize:
-                  RaftDensityScope.of(context) == RaftDensity.touch
-                  ? RaftMetrics.touchTarget
-                  : 0,
+              // Same box as the Web mobile sidebar row (no 48dp inflation).
+              minimumTargetSize: recipe.sourceHeight,
               recipe: recipe,
               onPressed: onTap,
               child: Row(

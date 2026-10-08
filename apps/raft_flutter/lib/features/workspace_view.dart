@@ -1878,11 +1878,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final scope = mobileAuthority, id = group.id;
     final sortable = !group.custom;
     final anchor = sortable ? sortAnchors.putIfAbsent(id, GlobalKey.new) : null;
+    // Sidebar.tsx renderSectionAddButton: Plus 14 on Channels
+    // (createChannels) and Joint channels (federateChannels) only; Pinned and
+    // Direct messages carry just the sort menu.
     final VoidCallback? onAdd =
         id == 'system:channels' && w.can('createChannels')
         ? createChannel
-        : id == 'system:dms'
-        ? newConversation
+        : id == 'system:joint' && w.can('federateChannels')
+        ? () => select('joint-channels')
         : null;
     return [
       if (sortable)
@@ -1896,8 +1899,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         ),
       if (onAdd != null)
         RaftSidebarSectionAction(
-          label: id == 'system:dms'
-              ? tr('New direct message')
+          label: id == 'system:joint'
+              ? tr('Create joint channel')
               : tr('Create channel'),
           glyph: RaftGlyph.plus,
           onPressed: () {
@@ -1924,64 +1927,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       context: context,
       builder: (_) => ChannelSettings(controller: w, channel: w.channel!),
     );
-  }
-
-  Future<void> newConversation() async {
-    try {
-      final lists = await Future.wait([
-        w.query('/servers/${w.server!.id}/members'),
-        w.query('/agents'),
-      ]);
-      if (!mounted) return;
-      final people = [
-        for (final p in lists[0] as List)
-          {
-            ...Map<String, dynamic>.from(p),
-            'target': 'userId',
-            'targetId': p['userId'] ?? p['id'],
-          },
-        for (final p in lists[1] as List)
-          {
-            ...Map<String, dynamic>.from(p),
-            'target': 'agentId',
-            'targetId': p['id'],
-          },
-      ];
-      final person = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => SimpleDialog(
-          title: Text(tr('New direct message')),
-          children: [
-            for (final person in people.where(
-              (p) => p['targetId'] != w.client.user!.id,
-            ))
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, person),
-                child: ListTile(
-                  leading: RaftAvatar(
-                    name: '${person['displayName'] ?? person['name']}',
-                  ),
-                  title: Text('${person['displayName'] ?? person['name']}'),
-                  subtitle: Text(
-                    person['target'] == 'agentId' ? 'Agent' : 'Member',
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
-      if (person != null) {
-        final result = await w.command(
-          'POST',
-          '/channels/dm',
-          data: {person['target']: person['targetId']},
-        );
-        await w.refreshChannels();
-        await chooseChannel(RaftChannel(Map<String, dynamic>.from(result)));
-      }
-    } catch (e) {
-      w.setError('$e');
-    }
   }
 
   Future<void> createChannel() async {
