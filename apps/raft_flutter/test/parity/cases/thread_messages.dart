@@ -337,6 +337,18 @@ final ParityCase _shareSelection = ParityCase(
 
 ChatStage _forwardStage(ParityContext ctx) => ChatStage(
   ctx,
+  // VisualTestingCases.tsx thread-forward-modal seeds dmChannels artin/Cindy.
+  dms: [
+    for (final (id, name) in [('dm-artin', 'artin'), ('dm-cindy', 'Cindy')])
+      {
+        'id': id,
+        'serverId': ParityIdentities(ctx).serverId,
+        'name': name,
+        'description': null,
+        'type': 'dm',
+        'createdAt': '2026-06-18T00:00:00.000Z',
+      },
+  ],
   messages: [
     {
       'id': 'msg-forward-source',
@@ -364,17 +376,13 @@ ChatStage _forwardStage(ParityContext ctx) => ChatStage(
 final ParityCase _forward = ParityCase(
   widgets: const [
     'raft_flutter:forwardMessages',
-    'raft_flutter:ForwardMessagesDialog',
-    'raft_ui:RaftButton',
+    'raft_flutter:ForwardComposerPage',
+    'raft_ui:RaftIconButton',
+    'raft_ui:RaftControl',
   ],
   notes:
-      'React ForwardComposerDialog is a full-screen "Select destinations" '
-      'page with a Recent list seeded from the channel store. Flutter '
-      'forwardMessages() opens ForwardMessagesDialog (AlertDialog) whose '
-      'targets come only from /messages/forward/targets/search after the '
-      'user types, so its initial state lists no destinations. Opened over '
-      'the mounted #design chat holding the two source messages; the '
-      'dialog is captured over the full viewport (React element = 390x844).',
+      'forwardMessages() on a 390px viewport opens ForwardComposerPage (Web '
+      'ForwardComposerMobile target step) over the mounted #design chat.',
   build: (ctx) => stageFor(ctx, () => _forwardStage(ctx)).build(),
   interact: (t, ctx) async {
     final stage = stageFor(ctx, () => _forwardStage(ctx));

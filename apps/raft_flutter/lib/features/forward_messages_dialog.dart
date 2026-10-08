@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'forward_composer_page.dart';
 import 'private_route_guard.dart';
 
 /// The retry keeps the exact server idempotency payload, including destinations.
@@ -82,6 +83,10 @@ Future<bool> forwardMessages(
     throw const RaftApiException(
       'Only original, ordinary chat messages can be forwarded.',
     );
+  }
+  // Web ForwardComposerDialog: ForwardComposerMobile below `md` (768px).
+  if (MediaQuery.sizeOf(context).width < 768) {
+    return showForwardComposerPage(context, controller, messages);
   }
   return await showDialog<bool>(
         context: context,
