@@ -227,17 +227,19 @@ class RaftRecipeBox extends StatelessWidget {
       ),
       alignment: alignment,
       padding: padding ?? style.padding,
-      decoration: decoration,
-      clipBehavior: clip ? Clip.antiAlias : Clip.none,
-      foregroundDecoration: inset.isEmpty && sheen == null
-          ? null
+      // Background, then (as CSS) the `::before` sheen and inset shadows,
+      // all below the content; border on top of the background.
+      decoration: inset.isEmpty && sheen == null
+          ? decoration
           : _InsetDecoration(
+              decoration,
               inset,
               radius,
               sheen == null ? null : _sheenGradient(sheen),
               decoration.border?.dimensions.resolve(TextDirection.ltr) ??
                   EdgeInsets.zero,
             ),
+      clipBehavior: clip ? Clip.antiAlias : Clip.none,
       child: content,
     );
     if (outerShadows.isNotEmpty) {
@@ -272,38 +274,97 @@ class RaftRecipeBox extends StatelessWidget {
   }
 }
 
-/// `linear-gradient(in oklab 180deg, oklab(100% 0 0 / 8%) 0%, oklab(0% 0 0 / 0%) 100%)`
-/// style sheens on elegant controls (`::before`, inset 0).
+/// Vertical `linear-gradient(in oklab 180deg, oklab(L 0 0 / a%) p%, ...)`
+/// sheens of elegant controls (`::before`, inset 0). Stops are achromatic
+/// oklab (L 100% = white, 0% = black); Skia interpolates premultiplied-free
+/// sRGB, a sub-1% alpha difference for these near-transparent ramps.
 Gradient? _sheenGradient(CssValue v) {
   final text = v.toString();
-  final alphas = RegExp(r'/\s*([\d.]+)%').allMatches(text).toList();
-  if (!text.contains('linear-gradient') || alphas.length < 2) return null;
-  final top = double.parse(alphas.first.group(1)!) / 100;
-  final light = text.contains('oklab(100%');
-  final base = light ? const Color(0xFFFFFFFF) : const Color(0xFF000000);
+  if (!text.startsWith('linear-gradient')) return null;
+  final stop = RegExp(
+    r'oklab\(([\d.]+)%\s+0\s+0\s*/\s*([\d.]+)%\)\s*([\d.]+)%',
+  );
+  final stops = stop.allMatches(text).toList();
+  if (stops.length < 2) return null;
+  var colors = [
+    for (final m in stops)
+      Color.fromRGBO(
+        // achromatic oklab L -> sRGB channel (L^3 linear, then gamma).
+        _oklabLToSrgb(double.parse(m.group(1)!) / 100),
+        _oklabLToSrgb(double.parse(m.group(1)!) / 100),
+        _oklabLToSrgb(double.parse(m.group(1)!) / 100),
+        double.parse(m.group(2)!) / 100,
+      ),
+  ];
+  // CSS interpolates premultiplied: a fully transparent stop contributes no
+  // colour, so it takes its neighbour's channels (Skia interpolates
+  // unpremultiplied and would otherwise darken white fades to grey).
+  colors = [
+    for (var i = 0; i < colors.length; i++)
+      colors[i].a == 0
+          ? colors[i == 0 ? 1 : i - 1].withValues(alpha: 0)
+          : colors[i],
+  ];
   return LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [base.withValues(alpha: top), base.withValues(alpha: 0)],
+    colors: colors,
+    stops: [for (final m in stops) double.parse(m.group(3)!) / 100],
   );
 }
 
+int _oklabLToSrgb(double l) {
+  final lin = l * l * l;
+  final c = lin <= .0031308 ? 12.92 * lin : 1.055 * math.pow(lin, 1 / 2.4) - .055;
+  return (c * 255).round().clamp(0, 255);
+}
+
 class _InsetDecoration extends Decoration {
-  const _InsetDecoration(this.layers, this.radius, this.sheen, this.border);
+  const _InsetDecoration(
+    this.base,
+    this.layers,
+    this.radius,
+    this.sheen,
+    this.border,
+  );
+  final BoxDecoration base;
   final List<RaftCssShadow> layers;
   final BorderRadius radius;
   final Gradient? sheen;
   final EdgeInsets border;
   @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) => _InsetPainter(this);
+  EdgeInsetsGeometry get padding => base.padding;
+  @override
+  bool hitTest(Size size, Offset position, {TextDirection? textDirection}) =>
+      base.hitTest(size, position, textDirection: textDirection);
+  @override
+  Path getClipPath(Rect rect, TextDirection textDirection) =>
+      base.getClipPath(rect, textDirection);
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _InsetPainter(this, onChanged);
 }
 
 class _InsetPainter extends BoxPainter {
-  _InsetPainter(this.d);
+  _InsetPainter(this.d, VoidCallback? onChanged)
+    : fill = BoxDecoration(
+        color: d.base.color,
+        borderRadius: d.base.borderRadius,
+        shape: d.base.shape,
+      ).createBoxPainter(onChanged),
+      super(onChanged);
   final _InsetDecoration d;
+  final BoxPainter fill;
+  @override
+  void dispose() {
+    fill.dispose();
+    super.dispose();
+  }
+
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final size = configuration.size!;
+    fill.paint(canvas, offset, configuration);
     final outer = d.radius.toRRect(offset & size);
     if (d.sheen != null) {
       canvas.drawRRect(
@@ -340,6 +401,12 @@ class _InsetPainter extends BoxPainter {
       canvas.drawPath(path, paint);
       canvas.restore();
     }
+    d.base.border?.paint(
+      canvas,
+      offset & size,
+      shape: d.base.shape,
+      borderRadius: d.base.borderRadius?.resolve(TextDirection.ltr),
+    );
   }
 }
 
