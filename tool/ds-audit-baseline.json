@@ -5,26 +5,25 @@
  "totals": {
   "style.border_radius": 15,
   "style.color_literal": 1,
-  "style.dimension": 69,
+  "style.dimension": 65,
   "style.duration": 3,
   "style.edge_insets": 102,
   "style.font_size": 1,
   "style.font_weight": 11,
   "style.material_colors": 33,
-  "style.material_icons": 100,
+  "style.material_icons": 35,
   "style.material_theme": 40,
   "style.sized_box": 93,
   "style.text_metrics": 5,
   "style.text_style": 17,
   "widget.app_bar": 7,
-  "widget.bottom_sheet": 1,
   "widget.button": 54,
   "widget.chip": 8,
   "widget.dialog": 64,
   "widget.divider": 4,
   "widget.icon_button": 18,
   "widget.ink": 3,
-  "widget.list_tile": 77,
+  "widget.list_tile": 69,
   "widget.menu": 21,
   "widget.navigation": 1,
   "widget.other": 21,
@@ -66,7 +65,6 @@
    "style.edge_insets": 1
   },
   "apps/raft_flutter/lib/features/admin_views.dart": {
-   "style.material_icons": 1,
    "style.material_theme": 1,
    "widget.list_tile": 9
   },
@@ -116,10 +114,6 @@
    "style.material_theme": 1,
    "style.text_style": 1
   },
-  "apps/raft_flutter/lib/features/attachment_preview_dialog.dart": {
-   "style.dimension": 1,
-   "style.material_icons": 1
-  },
   "apps/raft_flutter/lib/features/attachment_view.dart": {
    "style.edge_insets": 1,
    "widget.button": 1,
@@ -146,7 +140,6 @@
   },
   "apps/raft_flutter/lib/features/channel_conversion_section.dart": {
    "style.dimension": 1,
-   "style.material_icons": 1,
    "style.material_theme": 3,
    "style.text_style": 2,
    "widget.list_tile": 1,
@@ -158,10 +151,7 @@
   "apps/raft_flutter/lib/features/chat_view.dart": {
    "style.dimension": 4,
    "style.edge_insets": 3,
-   "style.material_icons": 8,
    "style.sized_box": 2,
-   "widget.bottom_sheet": 1,
-   "widget.list_tile": 8,
    "widget.snackbar": 10,
    "widget.toggle": 1
   },
@@ -176,7 +166,7 @@
   "apps/raft_flutter/lib/features/fleet_views.dart": {
    "style.dimension": 1,
    "style.edge_insets": 5,
-   "style.material_icons": 23,
+   "style.material_icons": 8,
    "style.material_theme": 4,
    "style.sized_box": 4,
    "style.text_style": 2,
@@ -212,7 +202,7 @@
   },
   "apps/raft_flutter/lib/features/integrations_views.dart": {
    "style.edge_insets": 1,
-   "style.material_icons": 5,
+   "style.material_icons": 3,
    "style.material_theme": 1,
    "style.sized_box": 1,
    "widget.app_bar": 2,
@@ -225,7 +215,6 @@
    "widget.text_field": 2
   },
   "apps/raft_flutter/lib/features/joint_channel_views.dart": {
-   "style.material_icons": 3,
    "style.material_theme": 1,
    "style.sized_box": 3,
    "style.text_style": 1,
@@ -267,7 +256,7 @@
   },
   "apps/raft_flutter/lib/features/mcp_views.dart": {
    "style.edge_insets": 1,
-   "style.material_icons": 2,
+   "style.material_icons": 1,
    "style.material_theme": 2,
    "style.sized_box": 1,
    "style.text_style": 1,
@@ -316,7 +305,7 @@
   },
   "apps/raft_flutter/lib/features/provider_views.dart": {
    "style.edge_insets": 1,
-   "style.material_icons": 4,
+   "style.material_icons": 2,
    "style.material_theme": 1,
    "style.sized_box": 2,
    "widget.button": 3,
@@ -341,7 +330,6 @@
    "style.dimension": 5,
    "style.edge_insets": 3,
    "style.font_weight": 3,
-   "style.material_icons": 1,
    "style.sized_box": 7,
    "style.text_style": 1,
    "widget.ink": 1,
@@ -349,12 +337,12 @@
   },
   "apps/raft_flutter/lib/features/resource_view.dart": {
    "style.border_radius": 2,
-   "style.dimension": 12,
+   "style.dimension": 11,
    "style.edge_insets": 20,
    "style.font_size": 1,
    "style.font_weight": 4,
    "style.material_colors": 2,
-   "style.material_icons": 13,
+   "style.material_icons": 4,
    "style.material_theme": 3,
    "style.sized_box": 20,
    "style.text_metrics": 1,
@@ -393,7 +381,6 @@
   "apps/raft_flutter/lib/features/server_setup_gate.dart": {
    "style.dimension": 4,
    "style.edge_insets": 2,
-   "style.material_icons": 1,
    "style.material_theme": 1,
    "style.sized_box": 3,
    "widget.chip": 2,
@@ -403,7 +390,7 @@
   },
   "apps/raft_flutter/lib/features/server_views.dart": {
    "style.edge_insets": 1,
-   "style.material_icons": 3,
+   "style.material_icons": 1,
    "style.material_theme": 4,
    "style.sized_box": 1,
    "style.text_style": 1,
@@ -425,7 +412,7 @@
   },
   "apps/raft_flutter/lib/features/sidebar_preferences_view.dart": {
    "style.edge_insets": 2,
-   "style.material_icons": 7,
+   "style.material_icons": 6,
    "style.material_theme": 4,
    "style.sized_box": 8,
    "widget.icon_button": 2,
@@ -480,9 +467,7 @@
    "widget.tooltip": 1
   },
   "apps/raft_flutter/lib/features/thread_actions.dart": {
-   "style.dimension": 1,
    "style.edge_insets": 1,
-   "style.material_icons": 2,
    "style.material_theme": 1,
    "widget.button": 2
   },
@@ -490,9 +475,9 @@
    "widget.snackbar": 2
   },
   "apps/raft_flutter/lib/features/workspace_view.dart": {
-   "style.dimension": 8,
+   "style.dimension": 7,
    "style.edge_insets": 3,
-   "style.material_icons": 19,
+   "style.material_icons": 4,
    "style.sized_box": 1,
    "widget.button": 1,
    "widget.dialog": 6,

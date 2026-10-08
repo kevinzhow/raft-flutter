@@ -284,7 +284,7 @@ class _AdministrationState extends ManagementState<AdministrationView> {
         ),
       for (final channel in managementRows(public['exposedChannels']))
         ListTile(
-          leading: const Icon(Icons.public),
+          leading: const RaftIcon(RaftGlyph.hash, size: 14, strokeWidth: 2.5),
           title: Text('#${channel['name']}'),
           subtitle: Text('${channel['description'] ?? ''}'),
         ),

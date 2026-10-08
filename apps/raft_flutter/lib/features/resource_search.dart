@@ -482,7 +482,7 @@ class ResourceSearchResults extends StatelessWidget {
             detail: query.isEmpty
                 ? 'Enter words to find messages.'
                 : 'Try different keywords or filters.',
-            icon: Icons.search,
+            glyph: RaftGlyph.search,
           ),
         if (hasMore) RaftTextButton(label: 'Load more', onPressed: onMore),
       ],

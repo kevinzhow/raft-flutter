@@ -242,10 +242,11 @@ class _ThreadActionsState extends State<ThreadActions> {
                 TextButton.icon(
                   key: const Key('thread-follow-toggle'),
                   onPressed: following == null || busy ? null : toggle,
-                  icon: Icon(
+                  // Web ThreadOverflowMenu.tsx:110 MessageCircleOff/MessageCirclePlus.
+                  icon: RaftIcon(
                     following == true
-                        ? Icons.notifications_off_outlined
-                        : Icons.notifications_active_outlined,
+                        ? RaftGlyph.messageCircleOff
+                        : RaftGlyph.messageCirclePlus,
                     size: 18,
                   ),
                   label: Text(

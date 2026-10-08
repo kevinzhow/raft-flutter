@@ -284,8 +284,8 @@ class _RaftRecipeInputState extends State<RaftRecipeInput> {
 
 /// SlugInput.tsx / PrefixedInput: raft-ui `InputGroup` with an
 /// `InputGroupAddon.Text variant="container"` prefix.
-class RaftPrefixedInput extends StatefulWidget {
-  const RaftPrefixedInput({
+class RaftSettingsPrefixedInput extends StatefulWidget {
+  const RaftSettingsPrefixedInput({
     super.key,
     required this.prefix,
     this.controller,
@@ -313,10 +313,10 @@ class RaftPrefixedInput extends StatefulWidget {
   final Color? rootColor, rootBorderColor, textColor;
   final bool flat;
   @override
-  State<RaftPrefixedInput> createState() => _RaftPrefixedInputState();
+  State<RaftSettingsPrefixedInput> createState() => _RaftSettingsPrefixedInputState();
 }
 
-class _RaftPrefixedInputState extends State<RaftPrefixedInput> {
+class _RaftSettingsPrefixedInputState extends State<RaftSettingsPrefixedInput> {
   final focus = FocusNode();
   late final TextEditingController own = TextEditingController(
     text: widget.value ?? '',
@@ -329,7 +329,7 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput> {
   }
 
   @override
-  void didUpdateWidget(covariant RaftPrefixedInput oldWidget) {
+  void didUpdateWidget(covariant RaftSettingsPrefixedInput oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller == null && widget.value != oldWidget.value) {
       own.text = widget.value ?? '';

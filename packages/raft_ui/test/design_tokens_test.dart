@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 Directory _repoRoot() {
   var dir = Directory.current.absolute;
-  while (!File('${dir.path}/docs/theme-tokens/brutal-light.json')
+  while (!File('${dir.path}/tool/design-source/chrome-oracle.json')
       .existsSync()) {
     final parent = dir.parent;
     if (parent.path == dir.path) throw StateError('repository root not found');
@@ -16,60 +18,114 @@ Directory _repoRoot() {
   return dir;
 }
 
-/// Canvas getImageData() stores premultiplied 8-bit; the oracle went through it.
-List<int> _readback(Color c) {
-  int byte(double v) => (v * 255).round();
-  final a = byte(c.a);
-  final rgb = [byte(c.r), byte(c.g), byte(c.b)];
-  if (a == 255 || a == 0) return [...rgb, a];
-  return [
-    for (final v in rgb)
-      (((v * a / 255).round()) * 255 / a).round().clamp(0, 255),
-    a,
-  ];
-}
+/// Swatches whose Chrome bytes no Flutter colour reproduces with source-over
+/// (see docs/design-tokens.md "Exceptions"): Chrome truncates the destination
+/// term, so a translucent black over the dark canvas lands one level below
+/// what any non-negative source can produce, and the out-of-gamut accent edge
+/// needs a red above 1.0 before premultiplication.
+const _fitExceptions = {
+  'elegantDark layer-backdrop canvas',
+  'elegantDark field-inset-top canvas',
+  'elegantDark button-accent-edge canvas',
+  'elegantDark button-accent-edge black',
+};
 
 void main() {
-  const oracleFiles = {
-    RaftThemeId.brutal: 'brutal-light',
-    RaftThemeId.elegantLight: 'elegant-light',
-    RaftThemeId.elegantDark: 'elegant-dark',
+  const scopes = {
+    'brutal': RaftThemeId.brutal,
+    'elegantLight': RaftThemeId.elegantLight,
+    'elegantDark': RaftThemeId.elegantDark,
   };
+  const fitBackdrops = ['white', 'black', 'canvas'];
 
-  test('generated Dart tokens match the browser oracle within 1/255', () {
-    final root = _repoRoot();
-    var compared = 0, maxDelta = 0;
-    for (final MapEntry(key: id, value: file) in oracleFiles.entries) {
-      final oracle =
-          jsonDecode(
-                File('${root.path}/docs/theme-tokens/$file.json')
-                    .readAsStringSync(),
-              )['tokens']
-              as Map<String, dynamic>;
+  test('opaque tokens equal the Chrome oracle bytes exactly', () {
+    final oracle = jsonDecode(
+      File('${_repoRoot().path}/tool/design-source/chrome-oracle.json')
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
+    var compared = 0;
+    for (final MapEntry(key: theme, value: id) in scopes.entries) {
       final colors = raftColorMap(RaftTokenSet.of(id));
-      for (final MapEntry(:key, :value) in oracle.entries) {
-        final want = (value['rgba'] as List).cast<int>();
-        final got = _readback(colors[key]!);
-        expect(got[3], want[3], reason: '$file $key alpha');
-        for (var i = 0; i < 3; i++) {
-          final d = (got[i] - want[i]).abs();
-          if (d > maxDelta) maxDelta = d;
-          expect(d, lessThanOrEqualTo(1), reason: '$file $key channel $i');
-        }
+      final samples = oracle['themes'][theme] as Map<String, dynamic>;
+      for (final MapEntry(:key, :value) in samples.entries) {
+        final c = colors[key]!;
+        if (c.a < 1) continue;
+        final rgb = [
+          for (final v in [c.r, c.g, c.b]) (v * 255).round(),
+        ];
+        expect(
+          rgb,
+          (value['white'] as List).cast<int>(),
+          reason: '$theme $key',
+        );
         compared++;
       }
     }
-    expect(compared, 78);
-    expect(maxDelta, 1);
+    expect(compared, 657);
   });
 
-  test('authored alpha is preserved exactly', () {
-    expect(RaftSemanticColors.elegantDark.ink10.a, .1);
-    expect(RaftSemanticColors.brutal.layerBackdrop.a, .65);
-    expect(
-      RaftSemanticColors.elegantDark.primaryHover.a,
-      closeTo(.3448, 1e-12),
-    );
+  test('translucent tokens composite to Chrome bytes in Flutter', () async {
+    final oracle = jsonDecode(
+      File('${_repoRoot().path}/tool/design-source/chrome-oracle.json')
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
+    final backdropNames = (oracle['backdrops'] as Map).keys
+        .cast<String>()
+        .toList();
+    final misses = <String>{};
+    var fitCompared = 0, extraCompared = 0, extraExact = 0;
+    for (final MapEntry(key: theme, value: id) in scopes.entries) {
+      final set = RaftTokenSet.of(id);
+      final colors = raftColorMap(set);
+      final backdrop = {
+        'white': const Color(0xffffffff),
+        'black': const Color(0xff000000),
+        'canvas': set.colors.layerCanvas,
+        'panel': set.colors.layerPanel,
+        'card': set.colors.layerCard,
+        'popover': set.colors.layerPopover,
+        'canvasMuted': set.colors.layerCanvasMuted,
+      };
+      final samples = (oracle['themes'][theme] as Map<String, dynamic>).entries
+          .where((e) => colors[e.key]!.a > 0 && colors[e.key]!.a < 1)
+          .toList();
+      final w = backdropNames.length;
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
+      for (var i = 0; i < samples.length; i++) {
+        for (var j = 0; j < w; j++) {
+          final r = Rect.fromLTWH(j.toDouble(), i.toDouble(), 1, 1);
+          canvas.drawRect(r, Paint()..color = backdrop[backdropNames[j]]!);
+          canvas.drawRect(r, Paint()..color = colors[samples[i].key]!);
+        }
+      }
+      final image = await recorder.endRecording().toImage(w, samples.length);
+      final data = (await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!;
+      for (var i = 0; i < samples.length; i++) {
+        for (var j = 0; j < w; j++) {
+          final o = (i * w + j) * 4;
+          final got = [for (var ch = 0; ch < 3; ch++) data.getUint8(o + ch)];
+          final want = ((samples[i].value as Map)[backdropNames[j]] as List)
+              .cast<int>();
+          final same = listEquals(got, want);
+          if (fitBackdrops.contains(backdropNames[j])) {
+            fitCompared++;
+            if (!same)
+              misses.add('$theme ${samples[i].key} ${backdropNames[j]}');
+          } else {
+            extraCompared++;
+            if (same) extraExact++;
+          }
+        }
+      }
+      image.dispose();
+    }
+    expect(fitCompared, 216);
+    expect(misses, _fitExceptions);
+    // Other surfaces are not fitted; record how far the fit generalises.
+    expect(extraExact / extraCompared, greaterThan(.9));
   });
 
   test('RaftTokens exposes every generated tier per theme', () {

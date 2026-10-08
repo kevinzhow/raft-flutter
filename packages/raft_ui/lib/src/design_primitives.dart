@@ -1,10 +1,10 @@
 import 'tooltip.dart';
 
 import 'dart:math' as math;
-import 'dart:ui' show FontVariation, SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
@@ -12,6 +12,9 @@ import 'localization.dart';
 import 'theme.dart';
 import 'primitive_tokens.dart';
 import 'tokens/tokens.dart';
+import 'recipe_surface.dart';
+import 'recipes/recipe_runtime.dart';
+import 'recipes/segmented_control.g.dart';
 
 enum RaftDensity { desktop, touch }
 
@@ -1311,69 +1314,6 @@ class RaftTextButton extends StatelessWidget {
   );
 }
 
-class RaftSelectField<T> extends StatelessWidget {
-  const RaftSelectField({
-    super.key,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-    this.label,
-    this.visualHeight = RaftMetrics.buttonMd,
-    this.minimumTargetHeight,
-  });
-  final T? value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?>? onChanged;
-  final String? label;
-  final double visualHeight;
-  final double? minimumTargetHeight;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Semantics(
-      label: label == null ? null : raftText(context, label!),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight:
-              minimumTargetHeight ??
-              (RaftDensityScope.of(context) == RaftDensity.touch
-                  ? RaftMetrics.touchTarget
-                  : visualHeight),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          heightFactor: 1,
-          child: Container(
-            height: visualHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: t.panel,
-              border: Border.all(color: t.fieldLine, width: t.border),
-              borderRadius: RaftShapes.field(t),
-              boxShadow: t.brutal ? t.shadows : null,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<T>(
-                value: value,
-                items: items,
-                onChanged: onChanged,
-                isExpanded: true,
-                isDense: true,
-                itemHeight: RaftMetrics.touchTarget,
-                dropdownColor: t.popover,
-                borderRadius: RaftShapes.field(t),
-                style: t.fieldStyle,
-                icon: const RaftIcon(RaftGlyph.chevronDown, size: 14),
-                menuMaxHeight: 320,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Shared field frame: retains the editor's focus/selection/validation behavior.
 class RaftFieldSurface extends StatefulWidget {
   const RaftFieldSurface({super.key, required this.child});
@@ -2447,11 +2387,17 @@ class RaftSegmentedOption<T> {
     required this.label,
     this.glyph,
     this.tooltip,
+    this.count,
+    this.enabled = true,
   });
   final T value;
   final String label;
   final RaftGlyph? glyph;
   final String? tooltip;
+
+  /// `SegmentedControlCount` (buttons style).
+  final String? count;
+  final bool enabled;
 }
 
 /// One source radio group: arrow keys select and move focus within the group.
@@ -2519,23 +2465,27 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
         label: widget.label,
         container: true,
         child: Wrap(
-          spacing:
-              widget.style == RaftSegmentedStyle.buttons &&
-                  !RaftTokens.of(context).brutal
-              ? 6
+          spacing: widget.style == RaftSegmentedStyle.buttons
+              ? _segmentedRoot(context).columnGap ?? 0
               : 4,
-          runSpacing:
-              widget.style == RaftSegmentedStyle.buttons &&
-                  !RaftTokens.of(context).brutal
-              ? 6
+          runSpacing: widget.style == RaftSegmentedStyle.buttons
+              ? _segmentedRoot(context).rowGap ?? 0
               : 4,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             for (var i = 0; i < widget.items.length; i++) ...[
+              if (widget.style == RaftSegmentedStyle.buttons)
+                _SegmentedItem<T>(
+                  option: widget.items[i],
+                  checked: widget.items[i].value == widget.value,
+                  onPressed:
+                      widget.onChanged == null || !widget.items[i].enabled
+                      ? null
+                      : () => widget.onChanged!(widget.items[i].value),
+                )
+              else
               RaftControl(
-                kind: widget.style == RaftSegmentedStyle.buttons
-                    ? RaftControlKind.segmentedButton
-                    : RaftControlKind.tab,
+                kind: RaftControlKind.tab,
                 variant: widget.items[i].value == widget.value
                     ? RaftControlVariant.primary
                     : RaftControlVariant.outline,
@@ -2549,17 +2499,8 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (widget.items[i].glyph != null) ...[
-                      RaftIcon(
-                        widget.items[i].glyph!,
-                        size: widget.style == RaftSegmentedStyle.buttons
-                            ? 12
-                            : 13,
-                      ),
-                      SizedBox(
-                        width: widget.style == RaftSegmentedStyle.buttons
-                            ? 6
-                            : 4,
-                      ),
+                      RaftIcon(widget.items[i].glyph!, size: 13),
+                      const SizedBox(width: 4),
                     ],
                     Text(widget.items[i].label),
                   ],
@@ -2695,6 +2636,342 @@ class RaftPickerTriggerButton extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+/// Interaction state fed to recipe-painted controls (CSS :hover, :active,
+/// :focus-visible, :disabled).
+@immutable
+class RaftInteractionState {
+  const RaftInteractionState({
+    this.hovered = false,
+    this.pressed = false,
+    this.focusVisible = false,
+    this.enabled = true,
+  });
+  final bool hovered, pressed, focusVisible, enabled;
+}
+
+/// Pointer, keyboard and semantics plumbing for controls whose visuals are
+/// painted from a generated recipe. Layout is exactly the child's (no touch
+/// target inflation: the Web control box is the layout box).
+class RaftInteractive extends StatefulWidget {
+  const RaftInteractive({
+    super.key,
+    required this.builder,
+    this.onPressed,
+    this.busy = false,
+    this.focusNode,
+    this.focusOnPointer = true,
+    this.semanticLabel,
+    this.button = true,
+    this.selected,
+    this.checked,
+    this.tooltip,
+  });
+
+  final Widget Function(BuildContext context, RaftInteractionState state)
+  builder;
+  final VoidCallback? onPressed;
+  final bool busy, focusOnPointer, button;
+  final bool? selected, checked;
+  final FocusNode? focusNode;
+  final String? semanticLabel, tooltip;
+
+  @override
+  State<RaftInteractive> createState() => _RaftInteractiveState();
+}
+
+class _RaftInteractiveState extends State<RaftInteractive> {
+  bool hovered = false, focused = false, pressed = false;
+  bool tooltipKeyboardFocused = false;
+  final ownedFocus = FocusNode();
+  FocusNode get node => widget.focusNode ?? ownedFocus;
+  bool get enabled => widget.onPressed != null && !widget.busy;
+
+  @override
+  void initState() {
+    super.initState();
+    _RaftFocusVisible.shared.acquire();
+    _RaftFocusVisible.shared.addListener(modeChanged);
+  }
+
+  @override
+  void dispose() {
+    _RaftFocusVisible.shared.removeListener(modeChanged);
+    _RaftFocusVisible.shared.release();
+    ownedFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(RaftInteractive oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!enabled) {
+      pressed = hovered = focused = tooltipKeyboardFocused = false;
+    }
+  }
+
+  void modeChanged() {
+    final next = enabled && node.hasFocus && _RaftFocusVisible.shared.keyboard;
+    if (mounted && next != focused) {
+      setState(() {
+        focused = next;
+        tooltipKeyboardFocused = tooltipKeyboardFocused && next;
+      });
+    }
+  }
+
+  void focusChanged(bool hasFocus) {
+    if (!mounted) return;
+    setState(() {
+      focused = enabled && hasFocus && _RaftFocusVisible.shared.keyboard;
+      tooltipKeyboardFocused = focused;
+    });
+  }
+
+  void activateControl() {
+    if (!enabled) return;
+    node.requestFocus();
+    widget.onPressed?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = RaftInteractionState(
+      hovered: hovered,
+      pressed: pressed,
+      focusVisible: focused,
+      enabled: enabled,
+    );
+    Widget result = Semantics(
+      label: widget.semanticLabel,
+      excludeSemantics: widget.busy,
+      button: widget.button,
+      selected: widget.selected,
+      checked: widget.checked,
+      enabled: enabled,
+      onTap: enabled ? activateControl : null,
+      child: MouseRegion(
+        onEnter: enabled ? (_) => setState(() => hovered = true) : null,
+        onExit: (_) => setState(() => hovered = false),
+        child: FocusableActionDetector(
+          focusNode: node,
+          enabled: enabled,
+          mouseCursor: enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          onShowFocusHighlight: (_) => modeChanged(),
+          onFocusChange: focusChanged,
+          actions: {
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                activateControl();
+                return null;
+              },
+            ),
+            ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
+              onInvoke: (_) {
+                activateControl();
+                return null;
+              },
+            ),
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTapDown: enabled
+                ? (_) {
+                    if (widget.focusOnPointer) node.requestFocus();
+                    setState(() => pressed = true);
+                  }
+                : null,
+            onTapUp: enabled
+                ? (_) {
+                    setState(() => pressed = false);
+                    widget.onPressed?.call();
+                  }
+                : null,
+            onTapCancel: enabled ? () => setState(() => pressed = false) : null,
+            child: widget.builder(context, state),
+          ),
+        ),
+      ),
+    );
+    if (RaftDensityScope.of(context) == RaftDensity.touch) {
+      result = RaftTouchTarget(child: result);
+    }
+    if (widget.tooltip != null) {
+      result = RaftTooltip(
+        message: widget.tooltip!,
+        keyboardFocused: tooltipKeyboardFocused,
+        child: result,
+      );
+    }
+    return result;
+  }
+}
+
+/// Touch accessibility without changing the Web layout: hit testing and the
+/// semantics rect extend to at least [minSize] around the visual box (where
+/// the parent routes the pointer), while layout and paint stay exactly the
+/// control's own box. Platform exception: the Web has no touch-target
+/// inflation; Android's 48dp guideline is met this way.
+class RaftTouchTarget extends SingleChildRenderObjectWidget {
+  const RaftTouchTarget({
+    super.key,
+    super.child,
+    this.minSize = const Size.square(RaftMetrics.touchTarget),
+  });
+  final Size minSize;
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTouchTarget(minSize);
+  @override
+  void updateRenderObject(BuildContext context, _RenderTouchTarget r) =>
+      r.minSize = minSize;
+}
+
+class _RenderTouchTarget extends RenderProxyBox {
+  _RenderTouchTarget(this._minSize);
+  Size _minSize;
+  set minSize(Size v) {
+    if (v == _minSize) return;
+    _minSize = v;
+    markNeedsSemanticsUpdate();
+  }
+
+  Rect get _target => Rect.fromCenter(
+    center: size.center(Offset.zero),
+    width: math.max(size.width, _minSize.width),
+    height: math.max(size.height, _minSize.height),
+  );
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_target.contains(position)) return false;
+    // Nearest point inside the box (Size.contains excludes the far edge).
+    final inside = Offset(
+      position.dx.clamp(0, math.max(0, size.width - 1e-3)),
+      position.dy.clamp(0, math.max(0, size.height - 1e-3)),
+    );
+    if (hitTestChildren(result, position: inside)) {
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  Rect get semanticBounds => _target;
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    config.isSemanticBoundary = true;
+  }
+}
+
+RaftSlotStyle _segmentedRoot(BuildContext context) {
+  final t = RaftTokens.of(context);
+  return RaftSegmentedControlRecipe.resolve(
+    theme: t.recipeTheme,
+    states: t.recipeStates(),
+    tokens: t.recipeTokens,
+  ).root;
+}
+
+/// raft-ui `SegmentedControlItem` (+ `SegmentedControlLabel` /
+/// `SegmentedControlCount`) on the `segmentedControl` recipe.
+class _SegmentedItem<T> extends StatelessWidget {
+  const _SegmentedItem({
+    super.key,
+    required this.option,
+    required this.checked,
+    required this.onPressed,
+  });
+  final RaftSegmentedOption<T> option;
+  final bool checked;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    return RaftInteractive(
+      onPressed: onPressed,
+      button: false,
+      checked: checked,
+      tooltip: option.tooltip,
+      builder: (context, st) {
+        final s = RaftSegmentedControlRecipe.resolve(
+          theme: t.recipeTheme,
+          disabled: !option.enabled,
+          states: t.recipeStates(
+            hovered: st.hovered,
+            pressed: st.pressed,
+            focusVisible: st.focusVisible,
+            disabled: !option.enabled,
+            extra: [
+              checked ? 'data-checked' : 'data-unchecked',
+              if (checked) 'group/segmented-control-item:data-checked',
+              if (!option.enabled) 'data-disabled',
+              if (option.count != null) 'has:data-slot=segmented-control-count',
+              if (option.glyph != null) 'has:svg',
+            ],
+          ),
+          tokens: rt,
+        );
+        final svg = s.item.target("& svg:not([class*='size-'])");
+        final gap = s.item.columnGap ?? 0;
+        return RaftRecipeBox(
+          style: s.item,
+          tokens: rt,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (option.glyph != null) ...[
+                Builder(
+                  builder: (context) => RaftIcon(
+                    option.glyph!,
+                    size: svg?.width ?? 14,
+                    strokeWidth: 2.5,
+                    color: DefaultTextStyle.of(context).style.color,
+                  ),
+                ),
+                SizedBox(width: gap),
+              ],
+              Flexible(
+                child: Builder(
+                  builder: (context) => Text(
+                    option.label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: s.label.text(
+                      rt,
+                      base: DefaultTextStyle.of(context).style,
+                    ),
+                  ),
+                ),
+              ),
+              if (option.count != null) ...[
+                SizedBox(width: gap),
+                Builder(
+                  builder: (context) => Text(
+                    option.count!,
+                    style: s.count.text(
+                      rt,
+                      base: DefaultTextStyle.of(context).style,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

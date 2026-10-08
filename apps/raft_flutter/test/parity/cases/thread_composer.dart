@@ -21,11 +21,13 @@
 // reproduced in [_ComposerHost]; suggestions come from the real
 // ComposerDirectory over a WorkspaceController whose client answers the React
 // provider's API mocks (thread_composer/fake_workspace.dart).
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/composer_directory.dart';
+import 'package:raft_flutter/features/pending_mention_actions.dart';
 import 'package:raft_flutter/features/source_channel_files_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -80,21 +82,28 @@ final Map<String, ParityCase> threadComposerCases = {
         'composer plus the "1 attachment(s)" pending label, composed exactly '
         'as RaftChatView does.',
   ),
+  'components.thread.composer.pending-mention-actions': _composer(
+    draft: '@Android-Developer-4 please review the visual diff',
+    height: 290,
+    sendForPendingMentions: true,
+    widgets: const [
+      'raft_flutter:WorkspaceController.send',
+      'raft_flutter:PendingMentionActions',
+      'raft_ui:RaftPendingMentionActionStrip',
+    ],
+    notes:
+        'React clicks Send; its sendMessage mock answers one '
+        'pendingMentionActions row (agent Android-Developer-4, add+notify). '
+        'Flutter clicks the composer Send with a mouse: WorkspaceController.send '
+        'posts /v2/messages to the fake client, which returns the same receipt, '
+        'and RaftChatView\'s accessory PendingMentionActions renders the strip. '
+        'The mouse stays where Send was, so (like React) it hovers Ignore.',
+  ),
   'components.thread.files.list': _files,
   'components.thread.header.states': _header,
 };
 
-final Map<String, ParityUncovered> threadComposerUncovered = {
-  'components.thread.composer.pending-mention-actions': const ParityUncovered(
-    ParityGap.noFlutterSurface,
-    'React sends and renders PendingMentionActionStrip (outside-channel '
-    'mention: avatar, "was not notified because they are not in #design", '
-    'Add / Notify / Ignore). Flutter has no pending-mention action surface: '
-    'RaftChatView.sendCurrent/WorkspaceController.send ignore '
-    'pendingMentionActions, and no widget in apps/raft_flutter/lib or '
-    'packages/raft_ui renders it (only unused localization strings exist).',
-  ),
-};
+final Map<String, ParityUncovered> threadComposerUncovered = {};
 
 String get _seed => 'Review the Android composer crop before release.';
 
@@ -105,6 +114,7 @@ ParityCase _composer({
   String? type,
   bool tapTaskToggle = false,
   bool readyImage = false,
+  bool sendForPendingMentions = false,
   List<String> widgets = const [],
   String notes = '',
 }) => ParityCase(
@@ -116,7 +126,7 @@ ParityCase _composer({
     ...widgets,
   ],
   notes: [
-    'Flutter hint is the app string "Message #{name}" (React: "Message design").',
+    'Hint = the React host placeholder override (fxMessages.composerPlaceholder).',
     if (notes.isNotEmpty) notes,
   ].join(' '),
   build: (ctx) {
@@ -143,13 +153,29 @@ ParityCase _composer({
             readyImage: readyImage
                 ? (fx.files['image'] as Map)['filename'] as String
                 : null,
+            sendForPendingMentions: sendForPendingMentions,
           ),
         ),
       ),
     );
   },
-  interact: (tapTaskToggle || type != null)
+  interact: (tapTaskToggle || type != null || sendForPendingMentions)
       ? (t, ctx) async {
+          if (sendForPendingMentions) {
+            // React: `click button[aria-label='Send']` with the mouse, which
+            // then stays at that point.
+            final at = t.getCenter(find.byTooltip('Send message (Ctrl+Enter)'));
+            final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+            await mouse.addPointer(location: at);
+            await mouse.down(at);
+            await mouse.up();
+            for (var i = 0; i < 6; i++) {
+              await t.pump(const Duration(milliseconds: 40));
+            }
+            // The pointer rests where Send was; the strip now lies under it.
+            await mouse.moveTo(at + const Offset(0, 0.01));
+            await t.pump(const Duration(milliseconds: 40));
+          }
           if (tapTaskToggle) {
             await t.tap(find.byKey(const Key('composer-as-task')));
             await t.pump(const Duration(milliseconds: 120));
@@ -172,16 +198,22 @@ class _ComposerHost extends StatefulWidget {
     required this.fixture,
     required this.draft,
     this.readyImage,
+    this.sendForPendingMentions = false,
   });
   final ParityThreadFixture fixture;
   final String draft;
   final String? readyImage;
+  final bool sendForPendingMentions;
   @override
   State<_ComposerHost> createState() => _ComposerHostState();
 }
 
 class _ComposerHostState extends State<_ComposerHost> {
-  late final WorkspaceController w = widget.fixture.composerWorkspace();
+  late final WorkspaceController w = widget.fixture.composerWorkspace(
+    extraRoutes: widget.sendForPendingMentions
+        ? {'POST /v2/messages': widget.fixture.pendingMentionSendReceipt}
+        : const {},
+  );
   late final ComposerDirectory directory = ComposerDirectory(w);
   bool alsoCreateTask = false;
 
@@ -193,7 +225,7 @@ class _ComposerHostState extends State<_ComposerHost> {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: directory,
+    listenable: Listenable.merge([directory, w]),
     builder: (context, _) => Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -217,6 +249,10 @@ class _ComposerHostState extends State<_ComposerHost> {
           ),
         RaftComposer(
           initialDraft: widget.draft,
+          // As RaftChatView mounts it.
+          accessoryRow: w.pendingMentionsFor().isEmpty
+              ? null
+              : PendingMentionActions(controller: w),
           taskAction: RaftComposerTaskToggle(
             key: const Key('composer-as-task'),
             checked: alsoCreateTask,
@@ -228,12 +264,15 @@ class _ComposerHostState extends State<_ComposerHost> {
           pendingLabel: widget.readyImage == null
               ? null
               : raftFormat(context, '{count} attachment(s)', {'count': 1}),
-          hint: raftFormat(context, 'Message #{name}', {
-            'name': w.channel?.name ?? '',
-          }),
+          // ComposerVisualCaseView passes MessageInput an explicit
+          // `placeholder` (fxMessages.composerPlaceholder); RaftComposer.hint
+          // is the same override (the app default is "Message #name").
+          hint: widget.fixture.messages['composerPlaceholder'] as String,
           suggestions: directory.suggestions,
           onSuggestionsRequested: directory.request,
-          onSendWithMentions: (_, _) async => true,
+          onSendWithMentions: widget.sendForPendingMentions
+              ? (text, mentions) => w.send(text, mentions: mentions)
+              : (_, _) async => true,
           onForceTaskSendWithMentions: (_, _) async => true,
           onSend: (_) async => true,
         ),

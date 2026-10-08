@@ -29,12 +29,14 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
 import json
 import math
 import re
 import shutil
+import struct
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -63,6 +65,26 @@ THEMES = ('brutal', 'elegantLight', 'elegantDark')
 THEME_CSS = {'brutal': 'brutal-light', 'elegantLight': 'elegant-light', 'elegantDark': 'elegant-dark'}
 
 # ─── colour science ──────────────────────────────────────────────────────────
+# Two oklch -> sRGB paths are implemented:
+#
+# * chromium (default): what Chromium 147 paints. Blink converts OKLab through
+#   XYZ-D65, Bradford-adapts to XYZ-D50 (skcms_AdaptToXYZD50) and applies the
+#   inverse of skcms' sRGB gamut matrix (SkNamedGamut::kSRGB, ICC s15Fixed16
+#   values), all in float32, then encodes with the sRGB transfer function in
+#   float32. The D50 round trip and the quantised matrix move channel values by
+#   up to ~0.15/255 versus the exact CSS maths, which flips 8-bit rounding for a
+#   few tokens (e.g. --success red 31.53 exact -> 31.39 -> 31). Verified bit-exact
+#   against tool/design-source/chrome-oracle.json.
+# * spec: CSS Color 4 sample-code maths in float64 (documented fallback; within
+#   1/255 of Chrome). Select with RAFT_TOKENS_PIPELINE=spec.
+PIPELINE = os.environ.get('RAFT_TOKENS_PIPELINE', 'chromium')
+
+
+def f32(x):
+    """Round a Python float to IEEE float32 (Chromium/skcms compute in float)."""
+    return struct.unpack('f', struct.pack('f', x))[0]
+
+
 # CSS Color 4 sample-code matrices (https://drafts.csswg.org/css-color-4/#color-conversion-code).
 OKLAB_TO_LMS = (
     (1.0, 0.3963377773761749, 0.2158037573099136),
@@ -85,19 +107,95 @@ def _mul(m, v):
     return tuple(m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2] for i in range(3))
 
 
+def _mul32(m, v):
+    """skcms_Matrix3x3_apply in float32."""
+    return tuple(f32(f32(f32(m[i][0] * v[0]) + f32(m[i][1] * v[1])) + f32(m[i][2] * v[2])) for i in range(3))
+
+
+def _matmul(a, b):
+    return tuple(tuple(sum(a[i][k] * b[k][j] for k in range(3)) for j in range(3)) for i in range(3))
+
+
+def _inv3(m):
+    (a, b, c), (d, e, f), (g, h, i) = m
+    det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
+    return ((( e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det),
+            ((f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det),
+            ((d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det))
+
+
+def _m32(m):
+    return tuple(tuple(f32(v) for v in row) for row in m)
+
+
+# Chromium ui/gfx/color_conversions.cc constants.
+CR_OKLAB_TO_LMS = _m32((
+    (0.99999999845051981432, 0.39633779217376785678, 0.21580375806075880339),
+    (1.0000000088817607767, -0.1055613423236563494, -0.063854174771705903402),
+    (1.0000000546724109177, -0.089484182094965759684, -1.2914855378640917399),
+))
+CR_LMS_TO_XYZ_D65 = _m32(LMS_TO_XYZ)
+# skcms SkNamedGamut::kSRGB (sRGB primaries -> XYZ D50, ICC s15Fixed16 values).
+SKCMS_SRGB_TO_XYZ_D50 = (
+    (0.436065674, 0.385147095, 0.143066406),
+    (0.222488403, 0.716873169, 0.060607910),
+    (0.013916016, 0.097076416, 0.714096069),
+)
+
+
+def _bradford_to_d50(wx, wy):
+    """skcms_AdaptToXYZD50 for a white point given as xy chromaticity."""
+    bradford = ((0.8951, 0.2664, -0.1614), (-0.7502, 1.7135, 0.0367), (0.0389, -0.0685, 1.0296))
+    src = _mul(bradford, (wx / wy, 1.0, (1 - wx - wy) / wy))
+    dst = _mul(bradford, (0.96422, 1.0, 0.82521))
+    scale = ((dst[0] / src[0], 0, 0), (0, dst[1] / src[1], 0), (0, 0, dst[2] / src[2]))
+    return _matmul(_inv3(bradford), _matmul(scale, bradford))
+
+
+CR_XYZ_D65_TO_D50 = _m32(_bradford_to_d50(0.3127, 0.3290))
+CR_XYZ_D50_TO_LIN_SRGB = _m32(_inv3(SKCMS_SRGB_TO_XYZ_D50))
+# Inverse chain (linear sRGB -> LMS) for colours that must be mixed in OKLab/OKLCH.
+CR_LIN_SRGB_TO_LMS = _inv3(_matmul(CR_XYZ_D50_TO_LIN_SRGB, _matmul(CR_XYZ_D65_TO_D50, CR_LMS_TO_XYZ_D65)))
+CR_LMS_TO_OKLAB = _inv3(CR_OKLAB_TO_LMS)
+
+
+def oklab_to_linear_srgb(lab):
+    """OKLab -> unclamped linear-light sRGB on the selected pipeline."""
+    if PIPELINE == 'spec':
+        lms = tuple(x ** 3 for x in _mul(OKLAB_TO_LMS, lab))
+        return _mul(XYZ_TO_LIN_SRGB, _mul(LMS_TO_XYZ, lms))
+    lab = tuple(f32(v) for v in lab)
+    lms = tuple(f32(x ** 3) for x in _mul32(CR_OKLAB_TO_LMS, lab))
+    return _mul32(CR_XYZ_D50_TO_LIN_SRGB, _mul32(CR_XYZ_D65_TO_D50, _mul32(CR_LMS_TO_XYZ_D65, lms)))
+
+
+def linear_srgb_to_oklab(rgb):
+    if PIPELINE == 'spec':
+        lms = _mul(XYZ_TO_LMS, _mul(LIN_SRGB_TO_XYZ, rgb))
+    else:
+        lms = _mul(CR_LIN_SRGB_TO_LMS, rgb)
+    return _mul(LMS_TO_OKLAB if PIPELINE == 'spec' else CR_LMS_TO_OKLAB,
+                tuple(math.copysign(abs(v) ** (1 / 3), v) for v in lms))
+
+
+def oklch_to_lab(l, c, h):
+    hr = math.radians(h)
+    if PIPELINE == 'spec':
+        return (l, c * math.cos(hr), c * math.sin(hr))
+    return (f32(l), f32(f32(c) * f32(math.cos(hr))), f32(f32(c) * f32(math.sin(hr))))
+
+
 def oklch_to_linear_srgb(l, c, h):
     """OKLCH -> unclamped linear-light sRGB."""
-    hr = math.radians(h)
-    lab = (l, c * math.cos(hr), c * math.sin(hr))
-    lms = tuple(x ** 3 for x in _mul(OKLAB_TO_LMS, lab))
-    return _mul(XYZ_TO_LIN_SRGB, _mul(LMS_TO_XYZ, lms))
+    return oklab_to_linear_srgb(oklch_to_lab(l, c, h))
 
 
 def srgb_encode(x):
     """Linear -> gamma sRGB, extended (sign preserving) like CSS Color 4."""
     sign = -1.0 if x < 0 else 1.0
     x = abs(x)
-    return sign * (1.055 * x ** (1 / 2.4) - 0.055 if x > 0.0031308 else 12.92 * x)
+    v = sign * (1.055 * x ** (1 / 2.4) - 0.055 if x > 0.0031308 else 12.92 * x)
+    return v if PIPELINE == 'spec' else f32(v)
 
 
 def srgb_decode(x):
@@ -108,11 +206,15 @@ def srgb_decode(x):
 
 @dataclass(frozen=True)
 class Rgba:
-    """A colour in unclamped linear sRGB plus exact alpha."""
+    """A colour in unclamped linear sRGB plus exact alpha.
+
+    [lch] keeps the authored OKLCH coordinates (Blink mixes oklch()-specified
+    colours in OKLab/OKLCH from those, without a round trip through sRGB)."""
     r: float
     g: float
     b: float
     a: float
+    lch: tuple = field(default=None, compare=False)
 
     def srgb(self):
         return tuple(srgb_encode(v) for v in (self.r, self.g, self.b))
@@ -143,28 +245,10 @@ def mix_srgb_linear(c1: Rgba, p1: float, c2: Rgba, p2: float) -> Rgba:
     return Rgba(ch[0], ch[1], ch[2], a * mult)
 
 
-def _inv3(m):
-    (a, b, c), (d, e, f), (g, h, i) = m
-    det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
-    return ((( e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det),
-            ((f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det),
-            ((d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det))
-
-
 LIN_SRGB_TO_XYZ = _inv3(XYZ_TO_LIN_SRGB)
 XYZ_TO_LMS = _inv3(LMS_TO_XYZ)
 LMS_TO_OKLAB = _inv3(OKLAB_TO_LMS)
 ACHROMATIC = 4e-6  # chroma below which a converted hue is powerless (CSS Color 4 §12.4)
-
-
-def linear_srgb_to_oklab(rgb):
-    lms = _mul(XYZ_TO_LMS, _mul(LIN_SRGB_TO_XYZ, rgb))
-    return _mul(LMS_TO_OKLAB, tuple(math.copysign(abs(v) ** (1 / 3), v) for v in lms))
-
-
-def oklab_to_linear_srgb(lab):
-    lms = tuple(x ** 3 for x in _mul(OKLAB_TO_LMS, lab))
-    return _mul(XYZ_TO_LIN_SRGB, _mul(LMS_TO_XYZ, lms))
 
 
 def mix_oklab(c1: Rgba, p1: float, c2: Rgba, p2: float, polar: bool) -> Rgba:
@@ -175,12 +259,20 @@ def mix_oklab(c1: Rgba, p1: float, c2: Rgba, p2: float, polar: bool) -> Rgba:
     a = c1.a * p1 + c2.a * p2
     if a == 0:
         return Rgba(0, 0, 0, 0)
-    labs = [linear_srgb_to_oklab((c.r, c.g, c.b)) for c in (c1, c2)]
+    def lab_of(c):
+        if c.lch:
+            l, ch, h = c.lch
+            return (l, ch * math.cos(math.radians(h)), ch * math.sin(math.radians(h)))
+        return linear_srgb_to_oklab((c.r, c.g, c.b))
+    labs = [lab_of(c) for c in (c1, c2)]
     if not polar:
         lab = tuple((x1 * c1.a * p1 + x2 * c2.a * p2) / a for x1, x2 in zip(*labs))
         return Rgba(*oklab_to_linear_srgb(lab), a * mult)
     lch = []
     for (l, aa, bb), c in zip(labs, (c1, c2)):
+        if c.lch:  # authored hue is never powerless
+            lch.append(c.lch)
+            continue
         ch = math.hypot(aa, bb)
         hue = None if ch < ACHROMATIC or c.a == 0 else math.degrees(math.atan2(bb, aa)) % 360
         lch.append((l, ch, hue))
@@ -206,6 +298,64 @@ def mix_srgb(c1: Rgba, p1: float, c2: Rgba, p2: float) -> Rgba:
     enc = lambda c: Rgba(*c.srgb(), c.a)
     m = mix_srgb_linear(enc(c1), p1, enc(c2), p2)
     return Rgba(srgb_decode(m.r), srgb_decode(m.g), srgb_decode(m.b), m.a)
+
+
+# ─── Chrome compositing fit ──────────────────────────────────────────────────
+# Chromium does not composite a translucent colour as c*a + d*(1-a): it blends
+# premultiplied 8-bit values (alpha quantised to a/255 steps, destination term
+# truncated, source sometimes kept in float), so no single (rgb, alpha) pair
+# with the authored alpha reproduces its bytes in Flutter. For every
+# translucent token sampled in chrome-oracle.json we therefore pick the Flutter
+# colour (float rgb + alpha near the authored one) whose float source-over
+# lands inside Chrome's rounding interval on every FIT_BACKDROPS backdrop, with
+# the largest safety margin (deterministic grid search).
+ORACLE_FILE = 'chrome-oracle.json'
+FIT_BACKDROPS = ('white', 'black', 'canvas')
+FIT_MARGIN = 0.05  # output levels; Flutter float error is ~1e-4
+ORACLE_BACKDROPS = {
+    'white': 'white', 'black': 'black', 'canvas': 'var(--layer-canvas)',
+    'panel': 'var(--layer-panel)', 'card': 'var(--layer-card)', 'popover': 'var(--layer-popover)',
+    'canvasMuted': 'var(--layer-canvas-muted)',
+}
+
+
+def flutter_over(c, a, d):
+    """Flutter (Skia, float pipeline) source-over of one channel, 0..255 in/out."""
+    return round(c * a + d * (1 - a))
+
+
+def fit_translucent(targets, a_css, required=3, css_rgb=None):
+    """targets: [(backdrop rgb, chrome rgb)] in priority order; the first
+    `required` are the hard fit set, the rest are honoured when possible.
+    Among alphas that satisfy the most targets with a safety margin of at least
+    FIT_MARGIN output levels, the one closest to the authored alpha wins; each
+    channel stays as close to the authored value as the central half of its
+    feasible interval allows. Returns (misses, margin, alpha, [r, g, b] 0..255)."""
+    css_rgb = css_rgb or (127.5,) * 3
+    best = None
+    step = 1 / 255 / 64
+    for i in range(-256, 257):
+        a = a_css + i * step
+        if not 0 < a < 1:
+            continue
+        chans, margin, misses = [], math.inf, [0, 0]
+        for ch in range(3):
+            lo, hi = 0.0, 255.0
+            for k, (d, t) in enumerate(targets):
+                nlo = max(lo, (t[ch] - 0.5 - d[ch] * (1 - a)) / a)
+                nhi = min(hi, (t[ch] + 0.5 - d[ch] * (1 - a)) / a)
+                if nhi - nlo > 1e-9:
+                    lo, hi = nlo, nhi
+                else:
+                    misses[0 if k < required else 1] += 1
+            quarter = (hi - lo) / 4
+            c = min(hi - quarter, max(lo + quarter, css_rgb[ch]))
+            margin = min(margin, (min(c - lo, hi - c)) * a)
+            chans.append(c)
+        key = (-misses[0], -misses[1], min(round(margin, 6), FIT_MARGIN), -abs(i))
+        if best is None or key > best[0]:
+            best = (key, tuple(misses), margin, round(a, 6), [round(x / 255, 6) * 255 for x in chans])
+    return best[1:]
 
 
 # ─── CSS parsing ─────────────────────────────────────────────────────────────
@@ -396,7 +546,15 @@ def parse_color(text) -> Rgba:
         main, _, alpha = args.partition('/')
         l, c, h = split_ws(main)
         a = parse_number(alpha) if alpha.strip() else 1.0
-        return Rgba(*oklch_to_linear_srgb(parse_number(l), parse_number(c, 0.4), parse_number(h)), a)
+        lch = (parse_number(l), parse_number(c, 0.4), parse_number(h))
+        return Rgba(*oklch_to_linear_srgb(*lch), a, lch=lch)
+    if fn == 'oklab':
+        main, _, alpha = args.partition('/')
+        l, aa, bb = split_ws(main)
+        a = parse_number(alpha) if alpha.strip() else 1.0
+        lab = (parse_number(l), parse_number(aa, 0.4), parse_number(bb, 0.4))
+        lch = (lab[0], math.hypot(lab[1], lab[2]), math.degrees(math.atan2(lab[2], lab[1])) % 360)
+        return Rgba(*oklab_to_linear_srgb(lab), a, lch=lch)
     if fn in ('rgb', 'rgba'):
         if ',' in args:
             vals = [v.strip() for v in args.split(',')]
@@ -568,6 +726,38 @@ class Model:
                                                   ('elegant.dark', self.dark_block)) if n in blk]
                             for n in self.semantic_names}
 
+    # ── Chrome oracle (tool/design-source/chrome-oracle.json) ──
+    _oracle = None
+
+    @property
+    def oracle(self):
+        if self._oracle is None:
+            path = SRC / ORACLE_FILE
+            self._oracle = json.loads(path.read_text()) if path.exists() else {'themes': {}}
+        return self._oracle
+
+    def chrome_fit(self, theme, name):
+        """(alpha, [r, g, b] 0..255 floats) for a translucent token, fitted so
+        Flutter's float source-over reproduces Chrome's sampled bytes over the
+        fit backdrops; None for opaque tokens or tokens not in the oracle."""
+        c = self.color(theme, name)
+        if not 0 < c.alpha < 1:
+            return None
+        sample = self.oracle['themes'].get(theme, {}).get(name[2:])
+        if sample is None:
+            return None
+        backs = self.backdrop_bytes(theme)
+        order = [*FIT_BACKDROPS, *(b for b in ORACLE_BACKDROPS if b not in FIT_BACKDROPS)]
+        css_rgb = [min(255.0, max(0.0, v * 255)) for v in c.srgb()]
+        return fit_translucent([(backs[b], sample[b]) for b in order], c.alpha, len(FIT_BACKDROPS), css_rgb)[2:]
+
+    def backdrop_bytes(self, theme):
+        out = {'white': (255,) * 3, 'black': (0,) * 3}
+        for key, css in ORACLE_BACKDROPS.items():
+            if css.startswith('var('):
+                out[key] = tuple(self.color(theme, css[4:-1]).bytes())
+        return out
+
     # Categorisation of theme-block variables.
     def semantic_color_names(self):
         return [n for n in self.semantic_names if not n.startswith(('--theme-shadow-', '--field-', '--card-title-'))]
@@ -612,8 +802,12 @@ def fmt_double(v):
     return s if '.' in s or 'e' in s else s + '.0'
 
 
-def dart_color(c: Rgba):
+def dart_color(c: Rgba, fit=None):
     r, g, b = c.bytes()
+    if fit is not None:
+        a, chans = fit
+        comps = ', '.join(f'{k}: {v / 255:.6f}' for k, v in zip(('red', 'green', 'blue'), chans))
+        return f'Color.from(alpha: {a:.6f}, {comps})'
     if c.alpha >= 1:
         return f'Color(0xff{r:02x}{g:02x}{b:02x})'
     if c.alpha <= 0:
@@ -685,7 +879,10 @@ def emit_color_class(m: Model, cls, names, doc, value_of, source_of, extra_doc=N
         for n, f in fields:
             src = source_of(theme, n)
             lines.append(f'    // {doc_css(src)}')
-            lines.append(f'    {f}: {dart_color(value_of(theme, n))},')
+            fit = m.chrome_fit(theme, n)
+            if fit is not None:
+                lines.append(f'    // Chrome-composite fit, CSS alpha {fmt_num(value_of(theme, n).alpha)} (see docs/design-tokens.md)')
+            lines.append(f'    {f}: {dart_color(value_of(theme, n), fit)},')
         lines.append('  );')
     lines.append('}')
     return lines
@@ -1056,6 +1253,125 @@ def import_sources(args):
     print('imported', ', '.join(SOURCES.values()))
 
 
+# ─── Chrome oracle sampling ──────────────────────────────────────────────────
+RAFT_SOURCE_DEFAULT = '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'
+CHROMIUM_ARGS = ['--disable-lcd-text', '--font-render-hinting=none']  # tool/parity CHROMIUM_TEXT_ARGS['android']
+ORACLE_SCOPES = (('brutal', {'theme': 'brutal'}), ('elegantLight', {'theme': 'elegant', 'class': 'light'}),
+                 ('elegantDark', {'theme': 'elegant', 'class': 'dark'}))
+RECIPES_DIR = ROOT / 'packages/raft_ui/lib/src/recipes'
+
+
+def oracle_css(m: Model):
+    """The cascade the Web app ships, as plain CSS a browser can load: Tailwind
+    @theme variables (emitted on :root like Tailwind does), foundation.css,
+    fonts.css, the product :root.dark block and component-roles.css."""
+    theme = ':root{' + ';'.join(f'{k}:{v}' for k, v in m.theme_vars.items()
+                                if k.startswith(('--color-', '--shadow-'))) + '}'
+    fonts = re.sub(r'@import[^;]*;', '', read_source('fonts'))
+    web_dark = ':root.dark{' + ';'.join(f'{k}:{v}' for k, v in m.web_dark.items()) + '}'
+    return '\n'.join([theme, read_source('foundation'), fonts, web_dark, read_source(ROLES)])
+
+
+def recipe_literals():
+    """Literal colour sources the recipe generator converted (tool/recipes)."""
+    found = set()
+    for path in sorted(RECIPES_DIR.glob('*.g.dart')):
+        found.update(re.findall(r"CssColor\(0x[0-9A-Fa-f]{8}, '([^']+)'\)", path.read_text()))
+    return sorted(found)
+
+
+def sample_chrome(raft_source):
+    m = Model()
+    names = [*m.ramps, '--color-black', '--color-white', *m.semantic_color_names(),
+             *m.product_color_names(), *m.role_names]
+    css = oracle_css(m)
+    literals = recipe_literals()
+    themes = [{'id': t, 'html': html, 'css': css,
+               'swatches': [{'key': n[2:], 'value': f'var({n})'} for n in names]
+               + [{'key': f'literal:{v}', 'value': v} for v in literals]}
+              for t, html in ORACLE_SCOPES]
+    spec = {'args': CHROMIUM_ARGS, 'backdrops': ORACLE_BACKDROPS, 'themes': themes}
+    rs = Path(raft_source)
+    toolchain = Path('/home/kevinzhow/github/raft-flutter/.local/toolchain-paths.txt')
+    env = {k: v for k, v in os.environ.items() if not k.lower().startswith('npm_config_')}
+    if toolchain.exists():
+        bins = [str(Path(x.strip()).parent) for x in toolchain.read_text().splitlines() if x.strip()]
+        env['PATH'] = os.pathsep.join([*dict.fromkeys(bins), env.get('PATH', '')])
+    env['PARITY_VT_ROOT'] = str(rs / 'packages/visual-testing')
+    import subprocess
+    r = subprocess.run(['node', str(ROOT / 'tool/chrome-oracle.cjs')], input=json.dumps(spec), text=True,
+                       capture_output=True, cwd=rs / 'packages/web', env=env)
+    if r.returncode:
+        raise SystemExit(f'gen-tokens: chrome oracle failed:\n{r.stderr[-3000:]}')
+    out = json.loads(r.stdout)
+    data = {
+        'chromium': out['chromium'],
+        'args': out['args'],
+        'capture': 'Playwright chromium.launch (headless shell), deviceScaleFactor 1, PNG screenshot, centre pixel',
+        'backdrops': ORACLE_BACKDROPS,
+        'sources': {k: json.loads((SRC / 'manifest.json').read_text())['files'][v]['sha256'] for k, v in SOURCES.items()},
+        'themes': {t: {k: v for k, v in res.items() if not k.startswith('literal:')} for t, res in out['themes'].items()},
+        'literals': {src: {t: out['themes'][t][f'literal:{src}'] for t, _ in ORACLE_SCOPES} for src in literals},
+    }
+    lines = ['{']
+    for key in ('chromium', 'args', 'capture', 'backdrops', 'sources'):
+        lines.append(f'  {json.dumps(key)}: {json.dumps(data[key])},')
+    for section in ('themes', 'literals'):
+        lines.append(f'  {json.dumps(section)}: {{')
+        groups = data[section]
+        if section == 'themes':
+            for gi, (t, res) in enumerate(groups.items()):
+                lines.append(f'    {json.dumps(t)}: {{')
+                items = list(res.items())
+                lines += [f'      {json.dumps(k)}: {json.dumps(v)}' + (',' if i < len(items) - 1 else '')
+                          for i, (k, v) in enumerate(items)]
+                lines.append('    }' + (',' if gi < len(groups) - 1 else ''))
+        else:
+            items = list(groups.items())
+            lines += [f'    {json.dumps(k)}: {json.dumps(v)}' + (',' if i < len(items) - 1 else '')
+                      for i, (k, v) in enumerate(items)]
+        lines.append('  }' + (',' if section == 'themes' else ''))
+    lines.append('}')
+    (SRC / ORACLE_FILE).write_text('\n'.join(lines) + '\n')
+    print(f"sampled {sum(len(v) for v in data['themes'].values())} token swatches and "
+          f"{len(data['literals'])} recipe literals in Chromium {data['chromium']}")
+
+
+LITERAL_FITS = ROOT / 'tool/recipes/chrome-literal-fits.json'
+LITERAL_FIT_ORDER = (('brutal', 'white'), ('brutal', 'black'), ('elegantDark', 'canvas'))
+
+
+def literal_fits(m: Model):
+    """Chrome-composite fits for the translucent recipe literals in the oracle,
+    consumed by tool/recipes/gen_dart.mjs. Backdrops: every sampled surface of
+    every theme scope (deduplicated), white/black/dark canvas required."""
+    out = {}
+    for src, scopes in sorted(m.oracle.get('literals', {}).items()):
+        try:
+            c = parse_color(src)
+        except (ValueError, KeyError):
+            continue
+        if not 0 < c.alpha < 1:
+            continue
+        targets, seen = [], set()
+        order = [*LITERAL_FIT_ORDER, *((t, b) for t, _ in ORACLE_SCOPES for b in ORACLE_BACKDROPS)]
+        for t, b in order:
+            d = m.backdrop_bytes(t)[b]
+            if d in seen:
+                continue
+            seen.add(d)
+            targets.append((d, scopes[t][b]))
+        css_rgb = [min(255.0, max(0.0, v * 255)) for v in c.srgb()]
+        misses, margin, a, chans = fit_translucent(targets, c.alpha, len(LITERAL_FIT_ORDER), css_rgb)
+        out[src] = {'alpha': a, 'rgb': [round(x / 255, 6) for x in chans], 'cssAlpha': c.alpha,
+                    'requiredMisses': misses[0], 'otherMisses': misses[1]}
+    lines = ['{', '  "_comment": "GENERATED by tool/gen-tokens from tool/design-source/chrome-oracle.json — do not edit",']
+    items = list(out.items())
+    lines += [f'  {json.dumps(k)}: {json.dumps(v)}' + (',' if i < len(items) - 1 else '') for i, (k, v) in enumerate(items)]
+    lines.append('}')
+    return '\n'.join(lines) + '\n'
+
+
 # ─── oracle comparison ───────────────────────────────────────────────────────
 
 def readback(rgb, alpha):
@@ -1099,10 +1415,14 @@ def main(argv=None):
     p.add_argument('--raft-ui')
     p.add_argument('--raft-source')
     p.add_argument('--tailwind')
+    p.add_argument('--sample-chrome', action='store_true',
+                   help='re-sample tool/design-source/chrome-oracle.json in the parity Chromium')
     args = p.parse_args(argv)
     if args.import_sources:
         import_sources(args)
     verify_manifest()
+    if args.sample_chrome:
+        sample_chrome(args.raft_source or RAFT_SOURCE_DEFAULT)
     if args.oracle:
         rows = oracle_report()
         for r in rows:
@@ -1116,7 +1436,12 @@ def main(argv=None):
               f"maxReadback={max(r['readbackDelta'] for r in compared)}")
         return 0
     files = render()
+    fits_text = literal_fits(Model())
     stale = []
+    if not LITERAL_FITS.exists() or LITERAL_FITS.read_text() != fits_text:
+        stale.append(LITERAL_FITS.name)
+        if not args.check:
+            LITERAL_FITS.write_text(fits_text)
     for name, text in files.items():
         path = OUT / name
         if not path.exists() or path.read_text() != text:

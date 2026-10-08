@@ -47,7 +47,7 @@ Future<void> verifyMessageSelection(
   await tester.pump(const Duration(milliseconds: 300));
   await tester.tap(actions);
   await tester.pump(const Duration(milliseconds: 300));
-  await tester.tap(find.text('Select messages'));
+  await tester.tap(find.text('Select Message'));
   await tester.pump(const Duration(milliseconds: 300));
   expect(find.byType(RaftSelectionToolbar), findsOneWidget);
   expect(find.text('1 selected'), findsOneWidget);

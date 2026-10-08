@@ -453,7 +453,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
         action(
           'Register app',
           () => run(() => edit(), refresh: false),
-          icon: Icons.add,
+          glyph: RaftGlyph.plus,
         ),
       action(
         'MCP',
@@ -904,7 +904,7 @@ class _AppManagementState extends ManagementState<AppManagementView> {
             );
             if (removed && mounted) Navigator.pop(this.context);
           }, refresh: false),
-          icon: Icons.delete,
+          glyph: RaftGlyph.trash2,
         ),
       ],
     ],

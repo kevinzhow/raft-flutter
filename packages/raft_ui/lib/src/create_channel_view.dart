@@ -196,7 +196,7 @@ class _MemberPicker extends StatelessWidget {
     final eyebrowFill = t.brutal
         ? Colors.white.withValues(alpha: .5)
         : t.colors['fill-muted'];
-    Widget eyebrow(String text) => RaftSectionEyebrow(
+    Widget eyebrow(String text) => RaftDialogSectionEyebrow(
       text,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       background: eyebrowFill,

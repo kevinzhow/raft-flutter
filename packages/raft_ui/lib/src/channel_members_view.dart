@@ -233,7 +233,7 @@ class RaftChannelMembersModal extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (humans.isNotEmpty) ...[
-                RaftSectionEyebrow(
+                RaftDialogSectionEyebrow(
                   'Humans',
                   uppercase: false,
                   padding: const EdgeInsets.symmetric(
@@ -245,7 +245,7 @@ class RaftChannelMembersModal extends StatelessWidget {
                 for (final h in humans) row(h),
               ],
               if (agents.isNotEmpty) ...[
-                RaftSectionEyebrow(
+                RaftDialogSectionEyebrow(
                   'Agents',
                   uppercase: false,
                   padding: const EdgeInsets.symmetric(
@@ -281,7 +281,7 @@ class RaftChannelMembersModal extends StatelessWidget {
 
   List<Widget> _addView(BuildContext context, RaftTokens t) {
     final query = search.text;
-    Widget eyebrow(String text) => RaftSectionEyebrow(
+    Widget eyebrow(String text) => RaftDialogSectionEyebrow(
       text,
       uppercase: false,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

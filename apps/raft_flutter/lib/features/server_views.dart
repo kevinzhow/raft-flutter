@@ -335,7 +335,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                 // shadow-none theme-brutal:border-black/30
                 // theme-brutal:bg-gray-50`, input `text-sm
                 // text-foreground-muted theme-brutal:text-black/60`.
-                child: RaftPrefixedInput(
+                child: RaftSettingsPrefixedInput(
                   prefix: '/',
                   value: slug,
                   readOnly: true,
@@ -477,7 +477,7 @@ class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
           ),
         ),
         const SizedBox(height: RaftSpace.x2),
-        RaftPrefixedInput(
+        RaftSettingsPrefixedInput(
           key: const Key('server-delete-slug-input'),
           prefix: '/',
           placeholder: widget.slug,
@@ -747,7 +747,7 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
                   ),
                   trailing: IconButton(
                     tooltip: raftText(context, 'Revoke invitation'),
-                    icon: const Icon(Icons.close),
+                    icon: const RaftIcon(RaftGlyph.x, size: 12),
                     onPressed: busy
                         ? null
                         : () => run(() async {
@@ -778,7 +778,7 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
                   ),
                   trailing: IconButton(
                     tooltip: raftText(context, 'Revoke invitation link'),
-                    icon: const Icon(Icons.link_off),
+                    icon: const RaftIcon(RaftGlyph.x, size: 14),
                     onPressed: busy
                         ? null
                         : () => run(() async {

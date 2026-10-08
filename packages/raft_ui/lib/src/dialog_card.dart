@@ -478,8 +478,8 @@ class RaftProductFormField extends StatelessWidget {
 
 /// Web `SectionEyebrow`: `text-xs font-bold uppercase text-foreground-muted
 /// tracking-widest` plus the call-site [padding]/[background]/[color].
-class RaftSectionEyebrow extends StatelessWidget {
-  const RaftSectionEyebrow(
+class RaftDialogSectionEyebrow extends StatelessWidget {
+  const RaftDialogSectionEyebrow(
     this.text, {
     super.key,
     this.uppercase = true,

@@ -352,7 +352,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             label: 'Username',
             // PrefixedInput "@": `border-line-muted bg-fill-muted
             // shadow-none`, input `text-sm text-foreground-muted`.
-            child: RaftPrefixedInput(
+            child: RaftSettingsPrefixedInput(
               key: ValueKey(
                 'account-username-${user?.id}-${user?.string('name')}',
               ),

@@ -351,7 +351,7 @@ class _JointChannelsState extends _JointState<JointChannelsView> {
     ],
     actions: [
       if (manager)
-        action('Create joint channel', guarded(create), icon: Icons.add),
+        action('Create joint channel', guarded(create), glyph: RaftGlyph.plus),
     ],
   );
 }
@@ -502,13 +502,13 @@ class _JointManagementState extends _JointState<JointChannelManagementView> {
           action(
             'Disconnect workspace',
             guarded(disconnect),
-            icon: Icons.link_off,
+            glyph: RaftGlyph.unplug,
           ),
         ],
       ],
       actions: [
         if (manager && channel.isNotEmpty)
-          action('Invite workspace', guarded(invite), icon: Icons.add),
+          action('Invite workspace', guarded(invite), glyph: RaftGlyph.mail),
       ],
     );
   }
