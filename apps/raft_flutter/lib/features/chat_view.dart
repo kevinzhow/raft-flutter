@@ -717,7 +717,7 @@ class _RaftChatViewState extends State<RaftChatView> {
                   Builder(
                     builder: (c) => RaftMessageThreadGlyph(
                       size: 14,
-                      color: IconTheme.of(c).color,
+                      color: DefaultTextStyle.of(c).style.color,
                     ),
                   ),
                 ),
