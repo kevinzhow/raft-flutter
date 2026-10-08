@@ -184,9 +184,12 @@ for name, marker in [('all-project-tests.txt', 'All tests passed!'), ('analyze-a
 # Do not pass verification fixture paths, secrets, or test feature defines.
 release_env = dict(os.environ)
 release_env.pop('DART_DEFINES', None)
+# Flutter release regeneration excludes dev-only native plugins. --no-pub
+# skips this regeneration and can retain a preceding integration-test registrant.
+# The exact source hash (including lockfiles) must still remain unchanged below.
 for target in ['linux', 'apk']:
     with (root / f'.local/release-{target}.txt').open('w') as log:
-        subprocess.run([str(root / 'tool/flutter'), 'build', target, '--release', '--no-pub', '--target=lib/main.dart'],
+        subprocess.run([str(root / 'tool/flutter'), 'build', target, '--release', '--target=lib/main.dart'],
                        cwd=app, env=release_env, stdout=log, stderr=subprocess.STDOUT, check=True)
     if subprocess.check_output([str(root / 'tool/source-hash')], text=True).strip() != source_hash:
         raise SystemExit('Build stopped: source changed while compiling.')
