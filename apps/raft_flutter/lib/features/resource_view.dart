@@ -786,11 +786,6 @@ class _ResourceViewState extends State<ResourceView> {
                       load();
                     },
                   ),
-                IconButton(
-                  tooltip: raftText(context, 'Refresh'),
-                  onPressed: load,
-                  icon: const Icon(Icons.refresh),
-                ),
                 if (widget.section == 'tasks')
                   IconButton(
                     tooltip: raftText(context, 'Create task'),
@@ -2310,6 +2305,7 @@ class _ResourceViewState extends State<ResourceView> {
               style: RaftSegmentedStyle.tabs,
               value: taskLayout,
               visualHeight: 32,
+              minimumTargetSize: 32,
               label: raftText(context, 'Task view'),
               items: const [
                 RaftSegmentedOption(
@@ -2516,6 +2512,7 @@ class _ResourceViewState extends State<ResourceView> {
                               child: SingleChildScrollView(
                                 primary: false,
                                 child: Column(
+                                  spacing: 10, // taskBoardColumn items gap-2.5
                                   children: [
                                     for (final row
                                         in (lanes[status] ?? []).where(
@@ -2570,153 +2567,40 @@ class _ResourceViewState extends State<ResourceView> {
                 row['peerName'] ??
                 'Conversation')
             .toString();
-    final content =
-        (row['preview'] ??
-                row['lastMessageContent'] ??
-                row['lastMessagePreview'] ??
-                row['latestActivityPreview'] ??
-                row['content'] ??
-                row['description'] ??
-                row['status'] ??
-                row['role'] ??
-                row['hostname'] ??
-                '')
-            .toString();
     if (section == 'tasks') {
       final status = '${row['status'] ?? 'todo'}';
       final role = w.server?.string('role');
       final allowed = ['owner', 'admin'].contains(role)
           ? raftTaskStatuses
           : [status, ...?raftTaskTransitions[status]];
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: RaftTaskCard(
-          key: ValueKey('task-${row['id']}'),
-          title: name,
-          number: '${row['taskNumber'] ?? row['number'] ?? ''}',
-          channel: '${row['channelName'] ?? ''}',
-          status: status,
-          description:
-              '${row['descriptionPreview'] ?? row['description'] ?? ''}',
-          assignee: row['claimedByName'] as String?,
-          onTap: () => taskDetails(row, sourceScope: scope),
-          statusOptions: allowed,
-          onStatus:
-              role == 'guest' ||
-                  row['readOnlyReason'] != null ||
-                  !w.channels.any(
-                    (c) => c.id == row['channelId'] && c.joined && !c.archived,
-                  )
-              ? null
-              : (next) => command(
-                  'PATCH',
-                  '/tasks/${row['id']}/status',
-                  data: {'status': next},
-                  sourceScope: scope,
-                ),
-        ),
+      return RaftTaskCard(
+        key: ValueKey('task-${row['id']}'),
+        title: name,
+        number: '${row['taskNumber'] ?? row['number'] ?? ''}',
+        channel: '${row['channelName'] ?? ''}',
+        status: status,
+        description: '${row['descriptionPreview'] ?? row['description'] ?? ''}',
+        assignee: row['claimedByName'] as String?,
+        onTap: () => taskDetails(row, sourceScope: scope),
+        statusOptions: allowed,
+        onStatus:
+            role == 'guest' ||
+                row['readOnlyReason'] != null ||
+                !w.channels.any(
+                  (c) => c.id == row['channelId'] && c.joined && !c.archived,
+                )
+            ? null
+            : (next) => command(
+                'PATCH',
+                '/tasks/${row['id']}/status',
+                data: {'status': next},
+                sourceScope: scope,
+              ),
       );
     }
     if (section == 'saved') return savedCard(row, scope);
     if (section == 'activity') return activityCard(row, scope);
-    return ListTile(
-      key: section == 'activity' && row['kind'] == 'thread'
-          ? ValueKey('activity-thread-${row['threadChannelId']}')
-          : null,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      leading: section == 'agents' || section == 'members'
-          ? RaftAvatar(name: name)
-          : Icon(
-              section == 'computers'
-                  ? Icons.computer_outlined
-                  : section == 'saved'
-                  ? Icons.bookmark_border
-                  : Icons.forum_outlined,
-            ),
-      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text(content, maxLines: 3, overflow: TextOverflow.ellipsis),
-      trailing: section == 'saved'
-          ? IconButton(
-              tooltip: raftText(context, 'Remove saved message'),
-              icon: const Icon(Icons.bookmark_remove_outlined),
-              onPressed: () => command(
-                'DELETE',
-                '/channels/saved/${row['messageId']}',
-                sourceScope: scope,
-              ),
-            )
-          : section == 'activity' && row['kind'] != 'mention_action'
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: raftText(
-                    context,
-                    filter == 'done'
-                        ? 'Restore conversation'
-                        : 'Mark conversation done',
-                  ),
-                  icon: Icon(filter == 'done' ? Icons.undo : Icons.done),
-                  onPressed: () => activityAction(
-                    row,
-                    filter == 'done' ? 'undone' : 'done',
-                    scope,
-                  ),
-                ),
-                if (row['kind'] == 'thread')
-                  IconButton(
-                    tooltip: raftText(
-                      context,
-                      row['isFollowing'] == false
-                          ? 'Follow thread'
-                          : 'Unfollow thread',
-                    ),
-                    icon: Icon(
-                      row['isFollowing'] == false
-                          ? Icons.notifications_outlined
-                          : Icons.notifications_off_outlined,
-                    ),
-                    onPressed: () => activityAction(
-                      row,
-                      row['isFollowing'] == false ? 'follow' : 'unfollow',
-                      scope,
-                    ),
-                  ),
-              ],
-            )
-          : row['unreadCount'] is num && (row['unreadCount'] as num) > 0
-          ? Badge(label: Text('${row['unreadCount']}'))
-          : null,
-      onTap: () async {
-        if (!accepts(scope)) return;
-        if (['agents', 'computers', 'members'].contains(section)) {
-          await scopedDialog<void>(
-            scope,
-            (context) => AlertDialog(
-              title: Text(name),
-              content: Text(content),
-              actions: [
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope),
-                  child: Text(raftText(context, 'Close')),
-                ),
-              ],
-            ),
-          );
-          return;
-        }
-        final id = row['parentChannelId'] ?? row['channelId'];
-        if (id is! String) return;
-        await widget.onMessage(
-          id,
-          (row['messageId'] ??
-                  row['latestActivityMessageId'] ??
-                  row['lastMessageId'] ??
-                  (section == 'search' ? row['id'] : null))
-              as String?,
-        );
-      },
-    );
+    return const SizedBox.shrink();
   }
 
   Future<void> createTask({String? sourceScope}) async {

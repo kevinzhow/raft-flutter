@@ -186,19 +186,44 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
         ),
         child: Focus(
           focusNode: anchorFocus,
-          child: RaftTextButton(
-            kind: RaftControlKind.filter,
-            glyph:
-                widget.glyph ??
-                (widget.field == 'Channel' ? RaftGlyph.hash : RaftGlyph.user),
-            trailingGlyph: RaftGlyph.chevronDown,
-            label:
-                widget.label ??
-                '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
-            onPressed: () {
-              if (!widget.valid()) return;
-              controller.isOpen ? controller.close() : controller.open();
-            },
+          // TasksPanel filter chip: Button sm outline `h-8 gap-2` with the
+          // field icon (14), label, optional count and ChevronDown 12. Layout
+          // follows the 32px Web box; the touch target stays 48px.
+          child: RaftTouchTargetExpander(
+            minSize: const Size.square(RaftMetrics.touchTarget),
+            child: RaftControl(
+              kind: RaftControlKind.filter,
+              variant: widget.selection.isEmpty
+                  ? RaftControlVariant.outline
+                  : RaftControlVariant.primary,
+              selected: widget.selection.isNotEmpty,
+              visualHeight: RaftMetrics.buttonMd,
+              minimumTargetSize: RaftMetrics.buttonMd,
+              onPressed: () {
+                if (!widget.valid()) return;
+                controller.isOpen ? controller.close() : controller.open();
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [
+                  RaftIcon(
+                    widget.glyph ??
+                        switch (widget.field) {
+                          'Channel' => RaftGlyph.hash,
+                          'Creator' => RaftGlyph.userCircle2,
+                          _ => RaftGlyph.user,
+                        },
+                    size: 14,
+                  ),
+                  Text(
+                    widget.label ??
+                        '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
+                  ),
+                  const RaftIcon(RaftGlyph.chevronDown, size: 12),
+                ],
+              ),
+            ),
           ),
         ),
       ),
