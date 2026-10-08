@@ -52,6 +52,10 @@ enum ParityGap {
 
   /// Only a real device/emulator can show this state honestly.
   deviceOnly,
+
+  /// The official React baseline does not show the component (e.g. an empty
+  /// fixture), so a Flutter match would be meaningless.
+  invalidBaseline,
 }
 
 class ParityUncovered {
@@ -231,7 +235,14 @@ Future<Map<String, dynamic>> captureParityCase(
   addTearDown(t.view.reset);
 
   final rootKey = GlobalKey(debugLabel: 'parity-root');
-  final theme = raftTheme(family, dark: dark);
+  final raft = raftTheme(family, dark: dark);
+  // Playwright screenshots default to caret: "hide"; hide Flutter's text
+  // caret the same way so a focused field is not a spurious diff.
+  final theme = raft.copyWith(
+    textSelectionTheme: raft.textSelectionTheme.copyWith(
+      cursorColor: const Color(0x00000000),
+    ),
+  );
   await t.pumpWidget(
     MaterialApp(
       debugShowCheckedModeBanner: false,
