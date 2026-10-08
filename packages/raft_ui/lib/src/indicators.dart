@@ -544,3 +544,167 @@ class RaftProgressBar extends StatelessWidget {
     );
   }
 }
+
+enum RaftSkeletonVariant {
+  /// `h-3 bg-black/10` text-line stand-in (square).
+  line,
+
+  /// `bg-black/10` filled block (square).
+  block,
+
+  /// `rounded-full border-2 border-black bg-black/5` avatar stand-in.
+  circle,
+}
+
+/// Web `Skeleton` (`animate-pulse` + variant classes). The pulse is
+/// Tailwind's `pulse` (opacity 1 → .5 → 1, 2s cubic-bezier(.4,0,.6,1));
+/// reduced motion keeps it at full opacity.
+class RaftSkeleton extends StatefulWidget {
+  const RaftSkeleton({
+    super.key,
+    this.variant = RaftSkeletonVariant.block,
+    this.width,
+    this.height,
+  });
+
+  final RaftSkeletonVariant variant;
+
+  /// Explicit size classes (`w-*`, `h-*`, `size-*`); `line` defaults to h-3.
+  final double? width, height;
+
+  @override
+  State<RaftSkeleton> createState() => _RaftSkeletonState();
+}
+
+class _RaftSkeletonState extends State<RaftSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 2),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      pulse.stop();
+      pulse.value = 0;
+    } else if (!pulse.isAnimating) {
+      pulse.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    pulse.dispose();
+    super.dispose();
+  }
+
+  static const _curve = Cubic(.4, 0, .6, 1);
+
+  @override
+  Widget build(BuildContext context) {
+    const black = RaftPrimitiveColors.black;
+    final box = switch (widget.variant) {
+      RaftSkeletonVariant.line => Container(
+        width: widget.width,
+        height: widget.height ?? 12,
+        color: black.withValues(alpha: .1),
+      ),
+      RaftSkeletonVariant.block => Container(
+        width: widget.width,
+        height: widget.height,
+        color: black.withValues(alpha: .1),
+      ),
+      RaftSkeletonVariant.circle => Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: black.withValues(alpha: .05),
+          border: Border.all(color: black, width: 2),
+        ),
+      ),
+    };
+    return ExcludeSemantics(
+      child: AnimatedBuilder(
+        animation: pulse,
+        builder: (context, child) {
+          // @keyframes pulse { 50% { opacity: .5 } }
+          final v = pulse.value;
+          final half = v < .5 ? v * 2 : (1 - v) * 2;
+          return Opacity(opacity: 1 - .5 * _curve.transform(half), child: child);
+        },
+        child: box,
+      ),
+    );
+  }
+}
+
+/// Web `SkeletonRow`: optional circle avatar + a column of `line` bars
+/// (`flex min-w-0 flex-1 flex-col gap-1.5`).
+class RaftSkeletonRow extends StatelessWidget {
+  const RaftSkeletonRow({
+    super.key,
+    this.avatar = false,
+    this.avatarSize = 18,
+    this.gap = 0,
+    this.lineWidths = const [null, null],
+    this.lineFractions,
+  });
+
+  final bool avatar;
+  final double avatarSize;
+
+  /// Row `gap-*` from the caller's className.
+  final double gap;
+
+  /// Fixed line widths (`w-32` = 128); null entries stretch.
+  final List<double?> lineWidths;
+
+  /// Fractional widths (`w-3/4`, `w-1/2`); used when non-null.
+  final List<double>? lineFractions;
+
+  @override
+  Widget build(BuildContext context) {
+    final lines = <Widget>[
+      if (lineFractions != null)
+        for (final f in lineFractions!)
+          FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: f,
+            child: const RaftSkeleton(variant: RaftSkeletonVariant.line),
+          )
+      else
+        for (final w in lineWidths)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: RaftSkeleton(variant: RaftSkeletonVariant.line, width: w),
+          ),
+    ];
+    return Row(
+      children: [
+        if (avatar) ...[
+          RaftSkeleton(
+            variant: RaftSkeletonVariant.circle,
+            width: avatarSize,
+            height: avatarSize,
+          ),
+          SizedBox(width: gap),
+        ],
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < lines.length; i++) ...[
+                if (i > 0) const SizedBox(height: 6),
+                lines[i],
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}

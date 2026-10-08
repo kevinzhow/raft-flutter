@@ -513,17 +513,32 @@ final ParityCase _progressBar = ParityCase(
 );
 
 final ParityCase _skeleton = ParityCase(
-  widgets: const ['raft_ui:RaftChatSidebarLoadingRows'],
-  notes:
-      'Flutter has no generic Skeleton primitive; the only skeleton is the '
-      'sidebar loading row (18px bordered circle + 60% line, px8 py8). It '
-      'stands in for the SkeletonRow; the block and circle+line variants have '
-      'no Flutter equivalent and are absent. Pulse frozen via reduced motion.',
+  widgets: const ['raft_ui:RaftSkeleton', 'raft_ui:RaftSkeletonRow'],
+  notes: 'Pulse frozen at full opacity via reduced motion (React frame ~0.999).',
   build: (ctx) => _frame(
     ctx,
     height: 150,
     child: _reducedMotion(
-      _column(12, const [RaftChatSidebarLoadingRows(rows: 1)]),
+      _column(12, const [
+        RaftSkeletonRow(
+          avatar: true,
+          avatarSize: 20,
+          gap: 12,
+          lineWidths: [128, 80],
+        ),
+        RaftSkeleton(height: 48),
+        Row(
+          children: [
+            RaftSkeleton(
+              variant: RaftSkeletonVariant.circle,
+              width: 32,
+              height: 32,
+            ),
+            SizedBox(width: 12),
+            RaftSkeleton(variant: RaftSkeletonVariant.line, width: 160),
+          ],
+        ),
+      ]),
     ),
   ),
 );
