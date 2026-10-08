@@ -451,8 +451,9 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
       padding: _NotificationPrimitives.emptyInnerInset,
       child: Column(
         children: [
+          // Web layout/NotificationCenter.tsx:61 `<CheckCircle2 size={36} />`.
           const RaftIcon(
-            RaftGlyph.circleCheck,
+            RaftGlyph.checkCircle2,
             size: _NotificationPrimitives.emptyGlyph,
           ),
           const SizedBox(height: _NotificationPrimitives.emptyGap),
@@ -492,13 +493,14 @@ class _NotificationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = recipe.tokens;
+    // raft-ui DEFAULT_STATUS_ICON (dist/index.mjs:15045), its lucide 1.48.0.
     final glyph =
         entry.glyph ??
         switch (entry.kind) {
           RaftNotificationKind.error ||
           RaftNotificationKind.warning => RaftGlyph.triangleAlert,
           RaftNotificationKind.info => RaftGlyph.info,
-          RaftNotificationKind.success => RaftGlyph.circleCheck,
+          RaftNotificationKind.success => RaftGlyph.checkCircle2RaftUi,
         };
     return Semantics(
       container: true,

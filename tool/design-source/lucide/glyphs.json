@@ -1,0 +1,6069 @@
+{
+ "about": "Vendored by `tool/gen-glyphs --import-sources`. Do not edit; regenerate.",
+ "sources": {
+  "raftSourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "webLucide": {
+   "version": "0.575.0",
+   "package": "node_modules/.pnpm/lucide-react@0.575.0_react@19.2.4/node_modules/lucide-react"
+  },
+  "raftUi": {
+   "version": "0.5.27",
+   "entry": "dist/index.mjs",
+   "sha256": "eb843b9c5ce2676617abae49f5977b7f0171a0f2a6ac6662d3664f9bd2e5c31a"
+  },
+  "raftUiLucide": {
+   "version": "1.48.0",
+   "package": "node_modules/.pnpm/lucide-react@1.48.0_react@19.2.4/node_modules/lucide-react"
+  }
+ },
+ "usages": {
+  "web": {
+   "Settings2": [
+    "packages/web/src/App.tsx:93"
+   ],
+   "X": [
+    "packages/web/src/App.tsx:93",
+    "packages/web/src/components/AnnouncementModal.tsx:6",
+    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/LocalizedToastProvider.tsx:2",
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:32",
+    "packages/web/src/components/agent/AgentProfileEditDialog.tsx:3",
+    "packages/web/src/components/agent/AgentUnavailablePanel.tsx:2",
+    "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/agent/CreateAgentDialog.tsx:21",
+    "packages/web/src/components/agentMigration/AgentMigrationCancelDialog.tsx:2",
+    "packages/web/src/components/agentMigration/AgentMigrationDialog.tsx:16",
+    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3",
+    "packages/web/src/components/channel/ChannelMemberList.tsx:5",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/channel/JointAttachmentUploadSection.tsx:2",
+    "packages/web/src/components/channel/JointConversionSection.tsx:1",
+    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/layout/SidebarSectionDialog.tsx:4",
+    "packages/web/src/components/layout/SidebarSectionEmojiPicker.tsx:7",
+    "packages/web/src/components/machine/AddMachineDialog.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/RuntimeAccountUsageChip.tsx:8",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:9",
+    "packages/web/src/components/mermaid/MermaidDiagram.tsx:9",
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ForwardComposerDesktop.tsx:4",
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/message/NotificationActivationBanner.tsx:4",
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2",
+    "packages/web/src/components/message/SelectShareLightbox.tsx:6",
+    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
+    "packages/web/src/components/profile/ExternalIdentityDetailPanel.tsx:3",
+    "packages/web/src/components/profile/ProfilePanel.tsx:5",
+    "packages/web/src/components/pwa/PwaInstallPrompt.tsx:4",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/server/CommunityAgreementDialog.tsx:6",
+    "packages/web/src/components/settings/AboutFeedbackDialog.tsx:10",
+    "packages/web/src/components/settings/SettingsPanel.tsx:41",
+    "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
+    "packages/web/src/components/thread/ThreadAgentFollowers.tsx:2",
+    "packages/web/src/components/ui/CloseButton.tsx:1",
+    "packages/web/src/components/ui/DialogCard.tsx:2",
+    "packages/web/src/components/ui/OverflowSheet.tsx:3",
+    "packages/web/src/components/window/ThreadWindowRoute.tsx:3",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+   ],
+   "ChevronLeft": [
+    "packages/web/src/components/AnnouncementModal.tsx:6",
+    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "ChevronRight": [
+    "packages/web/src/components/AnnouncementModal.tsx:6",
+    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/agent/AgentActivityLog.tsx:11",
+    "packages/web/src/components/agent/AgentWorkspace.tsx:4",
+    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/auth/ServerCreatePreview.tsx:1",
+    "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/message/ForwardComposerDialog.tsx:4",
+    "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
+    "packages/web/src/components/message/MentionHoverActivityPreview.tsx:2",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
+    "packages/web/src/components/settings/SettingsPanel.tsx:28",
+    "packages/web/src/components/task/TaskProperties.tsx:4"
+   ],
+   "Download": [
+    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/layout/useSystemNotifications.tsx:4",
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:5",
+    "packages/web/src/components/message/AttachmentChip.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/SelectShareLightbox.tsx:6",
+    "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17",
+    "packages/web/src/components/settings/AboutFeedbackDialog.tsx:10"
+   ],
+   "ImageOff": [
+    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/mermaid/MermaidDiagram.tsx:9"
+   ],
+   "MessageSquareMore": [
+    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17"
+   ],
+   "Pencil": [
+    "packages/web/src/components/InlineBadgeEditor.tsx:7",
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:30",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:10",
+    "packages/web/src/components/message/InlineThreadReplies.tsx:22",
+    "packages/web/src/components/message/ThreadRepliesBadge.tsx:1",
+    "packages/web/src/components/settings/EditProviderConnectionModal.tsx:2",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/settings/SettingsPanel.tsx:53",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "Check": [
+    "packages/web/src/components/InlineBadgeEditor.tsx:7",
+    "packages/web/src/components/actions/ActionCard.tsx:19",
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:31",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3",
+    "packages/web/src/components/agentMigration/MigrationReference.tsx:4",
+    "packages/web/src/components/channel/CreateChannelDialog.tsx:5",
+    "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/channel/JointConversionSection.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:2",
+    "packages/web/src/components/message/ForwardComposerMobile.tsx:3",
+    "packages/web/src/components/message/NotificationActivationBanner.tsx:4",
+    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1",
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2",
+    "packages/web/src/components/message/SelectShareLightbox.tsx:6",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
+    "packages/web/src/components/settings/AppearanceThemePicker.tsx:1",
+    "packages/web/src/components/settings/SettingsPanel.tsx:29",
+    "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/ui/CheckMarker.tsx:1",
+    "packages/web/src/components/ui/CopyIconButton.tsx:1",
+    "packages/web/src/components/ui/SelectionPopover.tsx:2",
+    "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24",
+    "packages/web/src/pages/IntegrationInvitePage.tsx:4",
+    "packages/web/src/pages/PaletteAuditPage.tsx:6"
+   ],
+   "AlertTriangle": [
+    "packages/web/src/components/LocalizedToastProvider.tsx:2",
+    "packages/web/src/components/agent/AgentWorkspace.tsx:11",
+    "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/layout/useSystemNotifications.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/settings/SettingsPanel.tsx:43",
+    "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
+    "packages/web/src/components/ui/Banner.tsx:1",
+    "packages/web/src/pages/PaletteAuditPage.tsx:5"
+   ],
+   "CheckCircle2": [
+    "packages/web/src/components/LocalizedToastProvider.tsx:2",
+    "packages/web/src/components/layout/NotificationCenter.tsx:2",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/ui/Banner.tsx:1"
+   ],
+   "Info": [
+    "packages/web/src/components/LocalizedToastProvider.tsx:2",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/ui/Banner.tsx:1"
+   ],
+   "Activity": [
+    "packages/web/src/components/agent/AgentActivityLog.tsx:11",
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:25",
+    "packages/web/src/components/layout/LeftRail.tsx:7",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3"
+   ],
+   "Play": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:26",
+    "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/task/taskStatusUi.ts:1"
+   ],
+   "Square": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:27",
+    "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4"
+   ],
+   "Trash2": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:28",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:8",
+    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/settings/SettingsPanel.tsx:47",
+    "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
+    "packages/web/src/components/task/CreateTaskDialog.tsx:4",
+    "packages/web/src/components/ui/KeyValueInput.tsx:1",
+    "packages/web/src/pages/PaletteAuditPage.tsx:14"
+   ],
+   "Bug": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:29",
+    "packages/web/src/components/agent/ReportIssueDialog.tsx:3"
+   ],
+   "FolderOpen": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:33",
+    "packages/web/src/components/agent/AgentSkills.tsx:3",
+    "packages/web/src/components/agent/AgentWorkspace.tsx:6",
+    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8"
+   ],
+   "BellRing": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:34",
+    "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
+    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1"
+   ],
+   "BellOff": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:35",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "Link2": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:36",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/settings/SettingsPanel.tsx:45",
+    "packages/web/src/components/settings/settingsNavigation.ts:10",
+    "packages/web/src/pages/IntegrationInvitePage.tsx:4"
+   ],
+   "RotateCcw": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:37",
+    "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
+    "packages/web/src/components/agent/ResetAgentDialog.tsx:3",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "Hash": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:38",
+    "packages/web/src/components/auth/AccountIdentitySetupPage.tsx:7",
+    "packages/web/src/components/auth/ServerCreatePreview.tsx:1",
+    "packages/web/src/components/channel/AddMembersDialog.tsx:19",
+    "packages/web/src/components/channel/CreateChannelDialog.tsx:5",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/channel/channelKindIcon.tsx:1",
+    "packages/web/src/components/layout/SidebarConversationFinder.tsx:3",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/message/forwardComposerModel.tsx:2",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3",
+    "packages/web/src/components/settings/MemberGraphSection.tsx:8",
+    "packages/web/src/components/settings/SettingsPanel.tsx:59",
+    "packages/web/src/components/task/TasksPanel.tsx:31",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/ui/cards/QuotedMessageCard.tsx:3",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
+    "packages/web/src/pages/PaletteAuditPage.tsx:8",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "Lock": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:39",
+    "packages/web/src/components/channel/AddMembersDialog.tsx:19",
+    "packages/web/src/components/channel/CreateChannelDialog.tsx:5",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/channel/channelKindIcon.tsx:1",
+    "packages/web/src/components/layout/SidebarConversationFinder.tsx:3",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/HistoryTopState.tsx:1",
+    "packages/web/src/components/message/forwardComposerModel.tsx:2",
+    "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3"
+   ],
+   "Bot": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:40",
+    "packages/web/src/components/agent/AgentUnavailablePanel.tsx:2",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/SettingsPanel.tsx:32",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3"
+   ],
+   "Plus": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:41",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MobileComputersPanel.tsx:2",
+    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/settings/SettingsPanel.tsx:31",
+    "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
+    "packages/web/src/components/task/CreateTaskDialog.tsx:4",
+    "packages/web/src/components/task/TasksPanel.tsx:31",
+    "packages/web/src/components/ui/KeyValueInput.tsx:1",
+    "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24",
+    "packages/web/src/pages/PaletteAuditPage.tsx:12"
+   ],
+   "Clipboard": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:42",
+    "packages/web/src/components/agentMigration/MigrationReference.tsx:4"
+   ],
+   "HelpCircle": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:43",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:7"
+   ],
+   "MoveRight": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:44",
+    "packages/web/src/components/agentMigration/AgentMigrationSection.tsx:4"
+   ],
+   "Blocks": [
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:45",
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/settings/settingsNavigation.ts:4"
+   ],
+   "ChevronDown": [
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/task/TaskProperties.tsx:4",
+    "packages/web/src/components/task/TasksPanel.tsx:31",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+   ],
+   "ChevronUp": [
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
+    "packages/web/src/components/message/ThreadPanel.tsx:8"
+   ],
+   "FlaskConical": [
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/SettingsPanel.tsx:54",
+    "packages/web/src/components/settings/settingsNavigation.ts:7"
+   ],
+   "Unplug": [
+    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19"
+   ],
+   "Upload": [
+    "packages/web/src/components/agent/AgentProfileEditDialog.tsx:3",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:11",
+    "packages/web/src/components/settings/SettingsPanel.tsx:49"
+   ],
+   "EllipsisVertical": [
+    "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:4"
+   ],
+   "Clock3": [
+    "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8"
+   ],
+   "RefreshCw": [
+    "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
+    "packages/web/src/components/agent/AgentSkills.tsx:3",
+    "packages/web/src/components/agent/AgentWorkspace.tsx:9",
+    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/auth/EmailVerificationPage.tsx:6",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MobileComputersPanel.tsx:2",
+    "packages/web/src/components/machine/RuntimeAccountUsageChip.tsx:8",
+    "packages/web/src/components/settings/MemberGraphSection.tsx:8",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2"
+   ],
+   "Repeat": [
+    "packages/web/src/components/agent/AgentRemindersSection.tsx:2"
+   ],
+   "Globe": [
+    "packages/web/src/components/agent/AgentSkills.tsx:3"
+   ],
+   "TriangleAlert": [
+    "packages/web/src/components/agent/AgentUnavailablePanel.tsx:2",
+    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3",
+    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:4"
+   ],
+   "FolderClosed": [
+    "packages/web/src/components/agent/AgentWorkspace.tsx:5"
+   ],
+   "FileText": [
+    "packages/web/src/components/agent/AgentWorkspace.tsx:7",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/settings/ReleaseNotesPanel.tsx:2",
+    "packages/web/src/components/settings/SettingsPanel.tsx:50",
+    "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "File": [
+    "packages/web/src/components/agent/AgentWorkspace.tsx:8",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1"
+   ],
+   "ArrowLeft": [
+    "packages/web/src/components/agent/AgentWorkspace.tsx:10",
+    "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/auth/ForgotPasswordPage.tsx:6",
+    "packages/web/src/components/auth/InviteAcceptPage.tsx:10",
+    "packages/web/src/components/auth/ResetPasswordPage.tsx:6",
+    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ForwardComposerMobile.tsx:3",
+    "packages/web/src/components/message/ForwardedBundleRouteCard.tsx:3",
+    "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
+    "packages/web/src/components/ui/OverflowSheet.tsx:3",
+    "packages/web/src/components/ui/PanelHeader.tsx:1"
+   ],
+   "Eye": [
+    "packages/web/src/components/agent/AgentWorkspace.tsx:12",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/message/AttachmentChip.tsx:1",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/settings/SettingsPanel.tsx:44",
+    "packages/web/src/components/task/taskStatusUi.ts:1"
+   ],
+   "EyeOff": [
+    "packages/web/src/components/agent/AgentWorkspace.tsx:13",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19"
+   ],
+   "Users": [
+    "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/layout/LeftRail.tsx:18",
+    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/settings/SettingsPanel.tsx:34",
+    "packages/web/src/pages/PaletteAuditPage.tsx:15"
+   ],
+   "Search": [
+    "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4",
+    "packages/web/src/components/channel/CreateChannelDialog.tsx:5",
+    "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
+    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:4",
+    "packages/web/src/components/layout/LeftRail.tsx:15",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/layout/SidebarConversationFinder.tsx:3",
+    "packages/web/src/components/message/ForwardComposerDesktop.tsx:4",
+    "packages/web/src/components/message/ForwardComposerMobile.tsx:3",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:8",
+    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+   ],
+   "CheckCircle": [
+    "packages/web/src/components/agent/ReportIssueDialog.tsx:3",
+    "packages/web/src/components/machine/AddMachineDialog.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/task/taskStatusUi.ts:1"
+   ],
+   "CircleCheck": [
+    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3"
+   ],
+   "Camera": [
+    "packages/web/src/components/auth/AccountIdentitySetupPage.tsx:7"
+   ],
+   "LogOut": [
+    "packages/web/src/components/auth/EmailVerificationPage.tsx:6",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/settings/SettingsPanel.tsx:48"
+   ],
+   "KeyRound": [
+    "packages/web/src/components/auth/EmailVerificationPage.tsx:6",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/settings/settingsNavigation.ts:9"
+   ],
+   "LogIn": [
+    "packages/web/src/components/auth/InviteAcceptPage.tsx:10",
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/ForwardComposerWarnings.tsx:1",
+    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "UserPlus": [
+    "packages/web/src/components/auth/InviteAcceptPage.tsx:10",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1",
+    "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "LockKeyhole": [
+    "packages/web/src/components/auth/ServerCreatePreview.tsx:1"
+   ],
+   "UserMinus": [
+    "packages/web/src/components/channel/ChannelMemberList.tsx:5"
+   ],
+   "CircleStop": [
+    "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4"
+   ],
+   "Settings": [
+    "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4",
+    "packages/web/src/components/layout/LeftRail.tsx:16",
+    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/settings/SettingsPanel.tsx:27",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/pages/PaletteAuditPage.tsx:13"
+   ],
+   "Pin": [
+    "packages/web/src/components/channel/ChannelPinMenuItem.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3"
+   ],
+   "PinOff": [
+    "packages/web/src/components/channel/ChannelPinMenuItem.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "GitBranch": [
+    "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
+    "packages/web/src/components/channel/JointConversionSection.tsx:1",
+    "packages/web/src/components/channel/channelKindIcon.tsx:1",
+    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/forwardComposerModel.tsx:2",
+    "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3",
+    "packages/web/src/components/settings/MemberGraphSection.tsx:8"
+   ],
+   "Archive": [
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3"
+   ],
+   "ArchiveRestore": [
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3"
+   ],
+   "Mail": [
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/settings/SettingsPanel.tsx:35",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "FileUp": [
+    "packages/web/src/components/channel/JointAttachmentUploadSection.tsx:2"
+   ],
+   "CircleAlert": [
+    "packages/web/src/components/channel/JointConversionSection.tsx:1",
+    "packages/web/src/components/ui/Banner.tsx:1"
+   ],
+   "ArrowUpRight": [
+    "packages/web/src/components/layout/LeftRail.tsx:8"
+   ],
+   "Bookmark": [
+    "packages/web/src/components/layout/LeftRail.tsx:9",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/MessageHoverToolbar.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/saved/SavedPanel.tsx:3",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "BookOpenText": [
+    "packages/web/src/components/layout/LeftRail.tsx:10",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "CheckSquare": [
+    "packages/web/src/components/layout/LeftRail.tsx:11",
+    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/task/TasksPanel.tsx:31",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/pages/PaletteAuditPage.tsx:7"
+   ],
+   "CircleHelp": [
+    "packages/web/src/components/layout/LeftRail.tsx:12"
+   ],
+   "MessageSquare": [
+    "packages/web/src/components/layout/LeftRail.tsx:13",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/layout/useSystemNotifications.tsx:4",
+    "packages/web/src/components/message/AttachmentChip.tsx:1",
+    "packages/web/src/components/message/AttachmentCommentRefChip.tsx:1",
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ThreadRepliesBadge.tsx:1",
+    "packages/web/src/components/saved/SavedPanel.tsx:3",
+    "packages/web/src/components/settings/AboutFeedbackDialog.tsx:10",
+    "packages/web/src/components/settings/settingsNavigation.ts:11",
+    "packages/web/src/components/ui/cards/QuotedMessageCard.tsx:3",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/pages/PaletteAuditPage.tsx:10",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "Monitor": [
+    "packages/web/src/components/layout/LeftRail.tsx:14",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/layout/useSystemNotifications.tsx:4",
+    "packages/web/src/components/machine/AddMachineDialog.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MobileComputersPanel.tsx:2",
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/pages/PaletteAuditPage.tsx:11"
+   ],
+   "SquareSplitHorizontal": [
+    "packages/web/src/components/layout/LeftRail.tsx:17"
+   ],
+   "UsersRound": [
+    "packages/web/src/components/layout/LeftRail.tsx:19"
+   ],
+   "Smartphone": [
+    "packages/web/src/components/layout/LeftRail.tsx:20",
+    "packages/web/src/components/pwa/PwaInstallPrompt.tsx:4",
+    "packages/web/src/components/settings/SettingsPanel.tsx:57"
+   ],
+   "Home": [
+    "packages/web/src/components/layout/MainLayout.tsx:83"
+   ],
+   "Bell": [
+    "packages/web/src/components/layout/NotificationTrigger.tsx:3",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/NotificationActivationBanner.tsx:4",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
+    "packages/web/src/components/settings/SettingsPanel.tsx:37",
+    "packages/web/src/components/settings/settingsNavigation.ts:3",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "ArrowRightLeft": [
+    "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "User": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/member/GravatarAvatar.tsx:2",
+    "packages/web/src/components/settings/SettingsPanel.tsx:33",
+    "packages/web/src/components/settings/settingsNavigation.ts:15",
+    "packages/web/src/components/task/TasksPanel.tsx:31",
+    "packages/web/src/components/ui/AvatarSlot.tsx:2",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
+    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "MessageSquareCheck": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "MessageSquareDot": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "Network": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/settingsNavigation.ts:12"
+   ],
+   "AtSign": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+   ],
+   "Building2": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/SettingsPanel.tsx:38",
+    "packages/web/src/components/settings/settingsNavigation.ts:5"
+   ],
+   "ArrowUpDown": [
+    "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "Languages": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/settings/SettingsPanel.tsx:40",
+    "packages/web/src/components/settings/settingsNavigation.ts:8",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "Type": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/SettingsPanel.tsx:52",
+    "packages/web/src/components/settings/settingsNavigation.ts:14",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "CreditCard": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/SettingsPanel.tsx:42",
+    "packages/web/src/components/settings/settingsNavigation.ts:6"
+   ],
+   "Shield": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/SettingsPanel.tsx:36",
+    "packages/web/src/components/settings/settingsNavigation.ts:13"
+   ],
+   "BadgeInfo": [
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/settings/settingsNavigation.ts:2",
+    "packages/web/src/pages/PublicServerPage.tsx:2"
+   ],
+   "FolderInput": [
+    "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "FolderPlus": [
+    "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "SmilePlus": [
+    "packages/web/src/components/layout/SidebarSectionEmojiPicker.tsx:7",
+    "packages/web/src/components/message/MessageHoverToolbar.tsx:4"
+   ],
+   "HardDrive": [
+    "packages/web/src/components/layout/useSystemNotifications.tsx:4"
+   ],
+   "WifiOff": [
+    "packages/web/src/components/layout/useSystemNotifications.tsx:4"
+   ],
+   "Cloud": [
+    "packages/web/src/components/machine/AddMachineDialog.tsx:4"
+   ],
+   "Terminal": [
+    "packages/web/src/components/machine/ComputerCommandGuide.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6"
+   ],
+   "AlertCircle": [
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/RuntimeAccountUsageChip.tsx:8",
+    "packages/web/src/components/thread/ThreadAgentFollowers.tsx:2"
+   ],
+   "Copy": [
+    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/MessageSelectionShortcut.tsx:3",
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2",
+    "packages/web/src/components/message/SelectShareLightbox.tsx:6",
+    "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
+    "packages/web/src/components/saved/SavedPanel.tsx:3",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
+    "packages/web/src/components/settings/SettingsPanel.tsx:30",
+    "packages/web/src/components/ui/CopyIconButton.tsx:1"
+   ],
+   "Code2": [
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:3"
+   ],
+   "Image": [
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:6",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2"
+   ],
+   "Maximize2": [
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:7"
+   ],
+   "ZoomIn": [
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:8"
+   ],
+   "ZoomOut": [
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:9"
+   ],
+   "MapPin": [
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:5",
+    "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
+    "packages/web/src/components/window/ThreadWindowRoute.tsx:3"
+   ],
+   "Paperclip": [
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/MessageInput.tsx:4"
+   ],
+   "Video": [
+    "packages/web/src/components/message/ChannelFilesPanel.tsx:1"
+   ],
+   "ListTodo": [
+    "packages/web/src/components/message/ChatPanel.tsx:7"
+   ],
+   "ArrowDown": [
+    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ThreadPanel.tsx:8"
+   ],
+   "Undo2": [
+    "packages/web/src/components/message/ForwardComposerMobile.tsx:3"
+   ],
+   "Forward": [
+    "packages/web/src/components/message/ForwardedBundleCard.tsx:3"
+   ],
+   "Send": [
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
+   ],
+   "UserX": [
+    "packages/web/src/components/message/MessageInput.tsx:4",
+    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1"
+   ],
+   "ImagePlus": [
+    "packages/web/src/components/message/MessageInput.tsx:4"
+   ],
+   "MessageCirclePlus": [
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:7"
+   ],
+   "MessageCircleOff": [
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:6"
+   ],
+   "ClipboardCheck": [
+    "packages/web/src/components/message/MessageItem.tsx:7"
+   ],
+   "Pause": [
+    "packages/web/src/components/message/MessageItem.tsx:7"
+   ],
+   "Volume2": [
+    "packages/web/src/components/message/MessageItem.tsx:7"
+   ],
+   "Link": [
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/saved/SavedPanel.tsx:3",
+    "packages/web/src/pages/PaletteAuditPage.tsx:9"
+   ],
+   "BookmarkMinus": [
+    "packages/web/src/components/message/MessageItem.tsx:7"
+   ],
+   "Music": [
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17"
+   ],
+   "TextQuote": [
+    "packages/web/src/components/message/MessageSelectionShortcut.tsx:3"
+   ],
+   "MoreHorizontal": [
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2",
+    "packages/web/src/components/ui/OverflowSheet.tsx:3"
+   ],
+   "ListChecks": [
+    "packages/web/src/components/message/SelectModeToolbar.tsx:2"
+   ],
+   "Share2": [
+    "packages/web/src/components/message/SelectShareLightbox.tsx:6"
+   ],
+   "ArrowDownUp": [
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "CalendarRange": [
+    "packages/web/src/components/search/MessageSearchPage.tsx:8"
+   ],
+   "Star": [
+    "packages/web/src/components/search/MessageSearchPage.tsx:8"
+   ],
+   "UserCircle2": [
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/task/TasksPanel.tsx:31"
+   ],
+   "RotateCw": [
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:12"
+   ],
+   "Link2Off": [
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
+   ],
+   "Power": [
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
+   ],
+   "XCircle": [
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
+   ],
+   "Clock": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:39"
+   ],
+   "ExternalLink": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:46",
+    "packages/web/src/pages/IntegrationInvitePage.tsx:4"
+   ],
+   "Tag": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:51"
+   ],
+   "LayoutGrid": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:55"
+   ],
+   "List": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:56"
+   ],
+   "Globe2": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:58"
+   ],
+   "BarChart3": [
+    "packages/web/src/components/settings/UsageDataSettings.tsx:12"
+   ],
+   "Columns3": [
+    "packages/web/src/components/task/TasksPanel.tsx:31",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+   ],
+   "LayoutList": [
+    "packages/web/src/components/task/TasksPanel.tsx:31"
+   ],
+   "Ban": [
+    "packages/web/src/components/task/taskStatusUi.ts:1"
+   ],
+   "Circle": [
+    "packages/web/src/components/task/taskStatusUi.ts:1"
+   ],
+   "ArrowUp": [
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "Inbox": [
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "MessageSquareText": [
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
+    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+   ],
+   "GripVertical": [
+    "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24"
+   ]
+  },
+  "raftUi": {
+   "AlertTriangle": [
+    "raft-ui@0.5.27/dist/index.mjs:14878",
+    "raft-ui@0.5.27/dist/index.mjs:15045",
+    "raft-ui@0.5.27/dist/index.mjs:15046",
+    "raft-ui@0.5.27/dist/index.mjs:15730"
+   ],
+   "Bell": [
+    "raft-ui@0.5.27/dist/index.mjs:14890",
+    "raft-ui@0.5.27/dist/index.mjs:14893"
+   ],
+   "Check": [
+    "raft-ui@0.5.27/dist/index.mjs:2578",
+    "raft-ui@0.5.27/dist/index.mjs:7048",
+    "raft-ui@0.5.27/dist/index.mjs:7466",
+    "raft-ui@0.5.27/dist/index.mjs:7470"
+   ],
+   "CheckCircle2": [
+    "raft-ui@0.5.27/dist/index.mjs:15048",
+    "raft-ui@0.5.27/dist/index.mjs:15730"
+   ],
+   "ChevronDown": [
+    "raft-ui@0.5.27/dist/index.mjs:7382",
+    "raft-ui@0.5.27/dist/index.mjs:7536",
+    "raft-ui@0.5.27/dist/index.mjs:7550"
+   ],
+   "ChevronLeft": [
+    "raft-ui@0.5.27/dist/index.mjs:13503"
+   ],
+   "ChevronRight": [
+    "raft-ui@0.5.27/dist/index.mjs:4241",
+    "raft-ui@0.5.27/dist/index.mjs:10271",
+    "raft-ui@0.5.27/dist/index.mjs:13518"
+   ],
+   "Copy": [
+    "raft-ui@0.5.27/dist/index.mjs:2573"
+   ],
+   "FileText": [
+    "raft-ui@0.5.27/dist/index.mjs:13793",
+    "raft-ui@0.5.27/dist/index.mjs:19517"
+   ],
+   "Image": [
+    "raft-ui@0.5.27/dist/index.mjs:13801"
+   ],
+   "Info": [
+    "raft-ui@0.5.27/dist/index.mjs:15047",
+    "raft-ui@0.5.27/dist/index.mjs:15730"
+   ],
+   "Minus": [
+    "raft-ui@0.5.27/dist/index.mjs:4"
+   ],
+   "Upload": [
+    "raft-ui@0.5.27/dist/index.mjs:13797"
+   ],
+   "X": [
+    "raft-ui@0.5.27/dist/index.mjs:749",
+    "raft-ui@0.5.27/dist/index.mjs:965",
+    "raft-ui@0.5.27/dist/index.mjs:1300",
+    "raft-ui@0.5.27/dist/index.mjs:7065",
+    "raft-ui@0.5.27/dist/index.mjs:7138"
+   ]
+  }
+ },
+ "resolved": {
+  "web": {
+   "Activity": "activity@0.575.0",
+   "AlertCircle": "circle-alert@0.575.0",
+   "AlertTriangle": "triangle-alert@0.575.0",
+   "Archive": "archive@0.575.0",
+   "ArchiveRestore": "archive-restore@0.575.0",
+   "ArrowDown": "arrow-down@0.575.0",
+   "ArrowDownUp": "arrow-down-up@0.575.0",
+   "ArrowLeft": "arrow-left@0.575.0",
+   "ArrowRightLeft": "arrow-right-left@0.575.0",
+   "ArrowUp": "arrow-up@0.575.0",
+   "ArrowUpDown": "arrow-up-down@0.575.0",
+   "ArrowUpRight": "arrow-up-right@0.575.0",
+   "AtSign": "at-sign@0.575.0",
+   "BadgeInfo": "badge-info@0.575.0",
+   "Ban": "ban@0.575.0",
+   "BarChart3": "chart-column@0.575.0",
+   "Bell": "bell@0.575.0",
+   "BellOff": "bell-off@0.575.0",
+   "BellRing": "bell-ring@0.575.0",
+   "Blocks": "blocks@0.575.0",
+   "BookOpenText": "book-open-text@0.575.0",
+   "Bookmark": "bookmark@0.575.0",
+   "BookmarkMinus": "bookmark-minus@0.575.0",
+   "Bot": "bot@0.575.0",
+   "Bug": "bug@0.575.0",
+   "Building2": "building-2@0.575.0",
+   "CalendarRange": "calendar-range@0.575.0",
+   "Camera": "camera@0.575.0",
+   "Check": "check@0.575.0",
+   "CheckCircle": "circle-check-big@0.575.0",
+   "CheckCircle2": "circle-check@0.575.0",
+   "CheckSquare": "square-check-big@0.575.0",
+   "ChevronDown": "chevron-down@0.575.0",
+   "ChevronLeft": "chevron-left@0.575.0",
+   "ChevronRight": "chevron-right@0.575.0",
+   "ChevronUp": "chevron-up@0.575.0",
+   "Circle": "circle@0.575.0",
+   "CircleAlert": "circle-alert@0.575.0",
+   "CircleCheck": "circle-check@0.575.0",
+   "CircleHelp": "circle-question-mark@0.575.0",
+   "CircleStop": "circle-stop@0.575.0",
+   "Clipboard": "clipboard@0.575.0",
+   "ClipboardCheck": "clipboard-check@0.575.0",
+   "Clock": "clock@0.575.0",
+   "Clock3": "clock-3@0.575.0",
+   "Cloud": "cloud@0.575.0",
+   "Code2": "code-xml@0.575.0",
+   "Columns3": "columns-3@0.575.0",
+   "Copy": "copy@0.575.0",
+   "CreditCard": "credit-card@0.575.0",
+   "Download": "download@0.575.0",
+   "EllipsisVertical": "ellipsis-vertical@0.575.0",
+   "ExternalLink": "external-link@0.575.0",
+   "Eye": "eye@0.575.0",
+   "EyeOff": "eye-off@0.575.0",
+   "File": "file@0.575.0",
+   "FileText": "file-text@0.575.0",
+   "FileUp": "file-up@0.575.0",
+   "FlaskConical": "flask-conical@0.575.0",
+   "FolderClosed": "folder-closed@0.575.0",
+   "FolderInput": "folder-input@0.575.0",
+   "FolderOpen": "folder-open@0.575.0",
+   "FolderPlus": "folder-plus@0.575.0",
+   "Forward": "forward@0.575.0",
+   "GitBranch": "git-branch@0.575.0",
+   "Globe": "globe@0.575.0",
+   "Globe2": "earth@0.575.0",
+   "GripVertical": "grip-vertical@0.575.0",
+   "HardDrive": "hard-drive@0.575.0",
+   "Hash": "hash@0.575.0",
+   "HelpCircle": "circle-question-mark@0.575.0",
+   "Home": "house@0.575.0",
+   "Image": "image@0.575.0",
+   "ImageOff": "image-off@0.575.0",
+   "ImagePlus": "image-plus@0.575.0",
+   "Inbox": "inbox@0.575.0",
+   "Info": "info@0.575.0",
+   "KeyRound": "key-round@0.575.0",
+   "Languages": "languages@0.575.0",
+   "LayoutGrid": "layout-grid@0.575.0",
+   "LayoutList": "layout-list@0.575.0",
+   "Link": "link@0.575.0",
+   "Link2": "link-2@0.575.0",
+   "Link2Off": "link-2-off@0.575.0",
+   "List": "list@0.575.0",
+   "ListChecks": "list-checks@0.575.0",
+   "ListTodo": "list-todo@0.575.0",
+   "Lock": "lock@0.575.0",
+   "LockKeyhole": "lock-keyhole@0.575.0",
+   "LogIn": "log-in@0.575.0",
+   "LogOut": "log-out@0.575.0",
+   "Mail": "mail@0.575.0",
+   "MapPin": "map-pin@0.575.0",
+   "Maximize2": "maximize-2@0.575.0",
+   "MessageCircleOff": "message-circle-off@0.575.0",
+   "MessageCirclePlus": "message-circle-plus@0.575.0",
+   "MessageSquare": "message-square@0.575.0",
+   "MessageSquareCheck": "message-square-check@0.575.0",
+   "MessageSquareDot": "message-square-dot@0.575.0",
+   "MessageSquareMore": "message-square-more@0.575.0",
+   "MessageSquareText": "message-square-text@0.575.0",
+   "Monitor": "monitor@0.575.0",
+   "MoreHorizontal": "ellipsis@0.575.0",
+   "MoveRight": "move-right@0.575.0",
+   "Music": "music@0.575.0",
+   "Network": "network@0.575.0",
+   "Paperclip": "paperclip@0.575.0",
+   "Pause": "pause@0.575.0",
+   "Pencil": "pencil@0.575.0",
+   "Pin": "pin@0.575.0",
+   "PinOff": "pin-off@0.575.0",
+   "Play": "play@0.575.0",
+   "Plus": "plus@0.575.0",
+   "Power": "power@0.575.0",
+   "RefreshCw": "refresh-cw@0.575.0",
+   "Repeat": "repeat@0.575.0",
+   "RotateCcw": "rotate-ccw@0.575.0",
+   "RotateCw": "rotate-cw@0.575.0",
+   "Search": "search@0.575.0",
+   "Send": "send@0.575.0",
+   "Settings": "settings@0.575.0",
+   "Settings2": "settings-2@0.575.0",
+   "Share2": "share-2@0.575.0",
+   "Shield": "shield@0.575.0",
+   "Smartphone": "smartphone@0.575.0",
+   "SmilePlus": "smile-plus@0.575.0",
+   "Square": "square@0.575.0",
+   "SquareSplitHorizontal": "square-split-horizontal@0.575.0",
+   "Star": "star@0.575.0",
+   "Tag": "tag@0.575.0",
+   "Terminal": "terminal@0.575.0",
+   "TextQuote": "text-quote@0.575.0",
+   "Trash2": "trash-2@0.575.0",
+   "TriangleAlert": "triangle-alert@0.575.0",
+   "Type": "type@0.575.0",
+   "Undo2": "undo-2@0.575.0",
+   "Unplug": "unplug@0.575.0",
+   "Upload": "upload@0.575.0",
+   "User": "user@0.575.0",
+   "UserCircle2": "circle-user-round@0.575.0",
+   "UserMinus": "user-minus@0.575.0",
+   "UserPlus": "user-plus@0.575.0",
+   "UserX": "user-x@0.575.0",
+   "Users": "users@0.575.0",
+   "UsersRound": "users-round@0.575.0",
+   "Video": "video@0.575.0",
+   "Volume2": "volume-2@0.575.0",
+   "WifiOff": "wifi-off@0.575.0",
+   "X": "x@0.575.0",
+   "XCircle": "circle-x@0.575.0",
+   "ZoomIn": "zoom-in@0.575.0",
+   "ZoomOut": "zoom-out@0.575.0"
+  },
+  "raftUi": {
+   "AlertTriangle": "triangle-alert@1.48.0",
+   "Bell": "bell@1.48.0",
+   "Check": "check@1.48.0",
+   "CheckCircle2": "circle-check@1.48.0",
+   "ChevronDown": "chevron-down@1.48.0",
+   "ChevronLeft": "chevron-left@1.48.0",
+   "ChevronRight": "chevron-right@1.48.0",
+   "Copy": "copy@1.48.0",
+   "FileText": "file-text@1.48.0",
+   "Image": "image@1.48.0",
+   "Info": "info@1.48.0",
+   "Minus": "minus@1.48.0",
+   "Upload": "upload@1.48.0",
+   "X": "x@1.48.0"
+  },
+  "legacy": {
+   "Calendar": "calendar@0.575.0",
+   "CheckCheck": "check-check@0.575.0",
+   "ChevronsUpDown": "chevrons-up-down@0.575.0",
+   "CircleUserRound": "circle-user-round@0.575.0",
+   "Code": "code@0.575.0",
+   "Columns": "columns-2@0.575.0",
+   "Columns2": "columns-2@0.575.0",
+   "Ellipsis": "ellipsis@0.575.0",
+   "Laptop": "laptop@0.575.0",
+   "LoaderCircle": "loader-circle@0.575.0",
+   "Maximize": "maximize@0.575.0",
+   "Menu": "menu@0.575.0",
+   "Minimize": "minimize@0.575.0",
+   "Moon": "moon@0.575.0",
+   "Palette": "palette@0.575.0",
+   "Reply": "reply@0.575.0",
+   "SlidersHorizontal": "sliders-horizontal@0.575.0",
+   "SquareCheck": "square-check@0.575.0",
+   "Sun": "sun@0.575.0",
+   "VolumeX": "volume-x@0.575.0",
+   "Bookmark": "bookmark@0.575.0"
+  }
+ },
+ "icons": {
+  "activity@0.575.0": {
+   "icon": "activity",
+   "version": "0.575.0",
+   "sha256": "a297a71e6136739a86e71c620956ec528208e176d418b68aa74d992ef2fbc821",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+     }
+    }
+   ]
+  },
+  "archive-restore@0.575.0": {
+   "icon": "archive-restore",
+   "version": "0.575.0",
+   "sha256": "9c1ee76ca45a52660231178f5162515a3dfbef3d6d90343d6056e3a14071354f",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "20",
+      "height": "5",
+      "x": "2",
+      "y": "3",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 8v11a2 2 0 0 0 2 2h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 8v11a2 2 0 0 1-2 2h-2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 15 3-3 3 3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 12v9"
+     }
+    }
+   ]
+  },
+  "archive@0.575.0": {
+   "icon": "archive",
+   "version": "0.575.0",
+   "sha256": "b3ccd932ee673c008c30df93d3223411863b2e229ae88a03bb96090acccbd578",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "20",
+      "height": "5",
+      "x": "2",
+      "y": "3",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 12h4"
+     }
+    }
+   ]
+  },
+  "arrow-down-up@0.575.0": {
+   "icon": "arrow-down-up",
+   "version": "0.575.0",
+   "sha256": "8bf9226439b2eaa28bd6e800745e4ff7408c38dca6687c75b455044c6f04ce66",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m3 16 4 4 4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 20V4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 8-4-4-4 4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 4v16"
+     }
+    }
+   ]
+  },
+  "arrow-down@0.575.0": {
+   "icon": "arrow-down",
+   "version": "0.575.0",
+   "sha256": "02bbfbfc580a121a4671e3ff0484bf4d4cef615579fb938118e40bd19f0dffc0",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 5v14"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m19 12-7 7-7-7"
+     }
+    }
+   ]
+  },
+  "arrow-left@0.575.0": {
+   "icon": "arrow-left",
+   "version": "0.575.0",
+   "sha256": "a664bcbd51dd5047c9a9eb1f420178dd70d431245ea8f613141dd3b9f7bcdf78",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m12 19-7-7 7-7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 12H5"
+     }
+    }
+   ]
+  },
+  "arrow-right-left@0.575.0": {
+   "icon": "arrow-right-left",
+   "version": "0.575.0",
+   "sha256": "3364383f8285a87d1c54972a3c170d4ff55908edcdcc55568c2aecd3370ae9d2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 3 4 4-4 4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 7H4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m8 21-4-4 4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 17h16"
+     }
+    }
+   ]
+  },
+  "arrow-up-down@0.575.0": {
+   "icon": "arrow-up-down",
+   "version": "0.575.0",
+   "sha256": "3a9fb7fc848583e72319ac98df937a0d8100466f20784c69906642cf8df368b7",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 16-4 4-4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 20V4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m3 8 4-4 4 4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 4v16"
+     }
+    }
+   ]
+  },
+  "arrow-up-right@0.575.0": {
+   "icon": "arrow-up-right",
+   "version": "0.575.0",
+   "sha256": "c96b7617df66de83874070e6d4874c987ab7adc0bba28b98e744199251ce4403",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 7h10v10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 17 17 7"
+     }
+    }
+   ]
+  },
+  "arrow-up@0.575.0": {
+   "icon": "arrow-up",
+   "version": "0.575.0",
+   "sha256": "719045757eb320128235f29f54074df073d1d355e0eec86f2d954bd892a961ae",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m5 12 7-7 7 7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 19V5"
+     }
+    }
+   ]
+  },
+  "at-sign@0.575.0": {
+   "icon": "at-sign",
+   "version": "0.575.0",
+   "sha256": "67c29020c5aa7ed8c6cac7cb9e51533c3a5fddb40238ee4ecf337812f8ab7b51",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"
+     }
+    }
+   ]
+  },
+  "badge-info@0.575.0": {
+   "icon": "badge-info",
+   "version": "0.575.0",
+   "sha256": "8d544e166eee5761ecb4fdeb6a8f39adbf9266e510a3ada2c4ceb79d31ed0b6e",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "12",
+      "x2": "12",
+      "y1": "16",
+      "y2": "12"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "12",
+      "x2": "12.01",
+      "y1": "8",
+      "y2": "8"
+     }
+    }
+   ]
+  },
+  "ban@0.575.0": {
+   "icon": "ban",
+   "version": "0.575.0",
+   "sha256": "71c6b32a82e6d0ec4bae143b9700e60a955b81fd75ae935102bbcd2a2b02099e",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4.929 4.929 19.07 19.071"
+     }
+    }
+   ]
+  },
+  "bell-off@0.575.0": {
+   "icon": "bell-off",
+   "version": "0.575.0",
+   "sha256": "947296c9774020fe8ce7ea4e62145d7bcc335731d47d8c877ba080c7bea5d66c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.268 21a2 2 0 0 0 3.464 0"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 17H4a1 1 0 0 1-.74-1.673C4.59 13.956 6 12.499 6 8a6 6 0 0 1 .258-1.742"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m2 2 20 20"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8.668 3.01A6 6 0 0 1 18 8c0 2.687.77 4.653 1.707 6.05"
+     }
+    }
+   ]
+  },
+  "bell-ring@0.575.0": {
+   "icon": "bell-ring",
+   "version": "0.575.0",
+   "sha256": "d4d64a008b5514818d08efeea9388000cd0170c9396204a9c60281e62af24131",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.268 21a2 2 0 0 0 3.464 0"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 8c0-2.3-.8-4.3-2-6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 2C2.8 3.7 2 5.7 2 8"
+     }
+    }
+   ]
+  },
+  "bell@0.575.0": {
+   "icon": "bell",
+   "version": "0.575.0",
+   "sha256": "1454801c76df5f5e86f86c150172da081742f2cdc7eebfd9fec495f4acd7bc6c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.268 21a2 2 0 0 0 3.464 0"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+     }
+    }
+   ]
+  },
+  "bell@1.48.0": {
+   "icon": "bell",
+   "version": "1.48.0",
+   "sha256": "356e81abb65d0dc8fb6b924b97329c4d59df114705aef2ff8ae15960b6f9be2d",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.268 21a2 2 0 0 0 3.464 0"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+     }
+    }
+   ]
+  },
+  "blocks@0.575.0": {
+   "icon": "blocks",
+   "version": "0.575.0",
+   "sha256": "315ec6ee4a120e84c5a9f2d77aec4d4f59f4cfd9d967648744526b8902a8e654",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "14",
+      "y": "2",
+      "width": "8",
+      "height": "8",
+      "rx": "1"
+     }
+    }
+   ]
+  },
+  "book-open-text@0.575.0": {
+   "icon": "book-open-text",
+   "version": "0.575.0",
+   "sha256": "e0b0bef96928d825bb78ea7e50745915f211546dbf22d8e7c0f2cdb1fd637a5f",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 7v14"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 12h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 8h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 12h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 8h2"
+     }
+    }
+   ]
+  },
+  "bookmark-minus@0.575.0": {
+   "icon": "bookmark-minus",
+   "version": "0.575.0",
+   "sha256": "5b8edfaa52960ba3b7ca7a24c83738767c96d3c8e99cbd776bd3b8ecf87658e2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 10H9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"
+     }
+    }
+   ]
+  },
+  "bookmark@0.575.0": {
+   "icon": "bookmark",
+   "version": "0.575.0",
+   "sha256": "a74016226e3d050ab4dc210899c6338ca5c3d0505ee2ef6a978241cfd35955f4",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"
+     }
+    }
+   ]
+  },
+  "bot@0.575.0": {
+   "icon": "bot",
+   "version": "0.575.0",
+   "sha256": "2311d6fdbc7afed2359a91f8b99e8f92c1ca2932ce2d50f21f459a0c85993fd6",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 8V4H8"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "16",
+      "height": "12",
+      "x": "4",
+      "y": "8",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 14h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 14h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 13v2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 13v2"
+     }
+    }
+   ]
+  },
+  "bug@0.575.0": {
+   "icon": "bug",
+   "version": "0.575.0",
+   "sha256": "68300b8c98eb81605798be117d188d9f7672375fa55285bff2206c37f932153e",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 20v-9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14.12 3.88 16 2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 21a4 4 0 0 0-3.81-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 5a4 4 0 0 1-3.55 3.97"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 13h-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 21a4 4 0 0 1 3.81-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 5a4 4 0 0 0 3.55 3.97"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 13H2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m8 2 1.88 1.88"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 7.13V6a3 3 0 1 1 6 0v1.13"
+     }
+    }
+   ]
+  },
+  "building-2@0.575.0": {
+   "icon": "building-2",
+   "version": "0.575.0",
+   "sha256": "2bc3276cd3178aa1af4479fa18f623cf360a029c8065a01542e97f3ecbb439f5",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 12h4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 8h4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 21v-3a2 2 0 0 0-4 0v3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"
+     }
+    }
+   ]
+  },
+  "calendar-range@0.575.0": {
+   "icon": "calendar-range",
+   "version": "0.575.0",
+   "sha256": "1cf9cd40192c7d60bba0203202c6979eefbbcc474d0e8f4614d1acc6a15f0af9",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "4",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 2v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 10h18"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 2v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 14h-6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 18H7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 14h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 18h.01"
+     }
+    }
+   ]
+  },
+  "calendar@0.575.0": {
+   "icon": "calendar",
+   "version": "0.575.0",
+   "sha256": "9f05c1af5f9f4c49d9f5ba4b5162f50db2cda6a2617f2de21115b0e8fe3374d5",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 2v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 2v4"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "4",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 10h18"
+     }
+    }
+   ]
+  },
+  "camera@0.575.0": {
+   "icon": "camera",
+   "version": "0.575.0",
+   "sha256": "54bbe99d4e5083d984bee53ef4ec41520db313b189e90d810669f9303b021fe2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "13",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "chart-column@0.575.0": {
+   "icon": "chart-column",
+   "version": "0.575.0",
+   "sha256": "593286be01f6a18f0cf57fe77292908c3cb2c75d621b5d7e55f96f691e35268e",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 3v16a2 2 0 0 0 2 2h16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 17V9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 17V5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 17v-3"
+     }
+    }
+   ]
+  },
+  "check-check@0.575.0": {
+   "icon": "check-check",
+   "version": "0.575.0",
+   "sha256": "d52e1d5d30e97a21facfe7731e7af95339ef8c54b7438aec1f43d9a33035d0aa",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 6 7 17l-5-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m22 10-7.5 7.5L13 16"
+     }
+    }
+   ]
+  },
+  "check@0.575.0": {
+   "icon": "check",
+   "version": "0.575.0",
+   "sha256": "faf2335e56dade1dbe3052c19171d7e916b893a0da403a173b26cecae4a99dd0",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 6 9 17l-5-5"
+     }
+    }
+   ]
+  },
+  "check@1.48.0": {
+   "icon": "check",
+   "version": "1.48.0",
+   "sha256": "4c5db171943c6ff3c16579c6c53be7bef59ae6c13dc513a356b5303f98402cb1",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 6 9 17l-5-5"
+     }
+    }
+   ]
+  },
+  "chevron-down@0.575.0": {
+   "icon": "chevron-down",
+   "version": "0.575.0",
+   "sha256": "90beca9dee51b92652a0fe3ef0373e66be5f660b49bbbe2794a4ece621810147",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6 9 6 6 6-6"
+     }
+    }
+   ]
+  },
+  "chevron-down@1.48.0": {
+   "icon": "chevron-down",
+   "version": "1.48.0",
+   "sha256": "1639b098b1797afe2cb012c9d4f1c1645131ce3b146d12c9371b0125b75088b3",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6 9 6 6 6-6"
+     }
+    }
+   ]
+  },
+  "chevron-left@0.575.0": {
+   "icon": "chevron-left",
+   "version": "0.575.0",
+   "sha256": "603b82433c04b583d293e3816933604ce110cb3b2a408e0eceb244f724892747",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m15 18-6-6 6-6"
+     }
+    }
+   ]
+  },
+  "chevron-left@1.48.0": {
+   "icon": "chevron-left",
+   "version": "1.48.0",
+   "sha256": "5d81280bc88cb8a466d6093dd9470d9a41d484f97711ea5827830e59dbb86489",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m15 18-6-6 6-6"
+     }
+    }
+   ]
+  },
+  "chevron-right@0.575.0": {
+   "icon": "chevron-right",
+   "version": "0.575.0",
+   "sha256": "74dfafb99dfb7bf38153623761a80ddc4750d063a456b83613e166d459d7220c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 18 6-6-6-6"
+     }
+    }
+   ]
+  },
+  "chevron-right@1.48.0": {
+   "icon": "chevron-right",
+   "version": "1.48.0",
+   "sha256": "1b7e83dec6e5fbb923e26174f3925eede6aaa385f57a7039c6ea8aaa3138dc1e",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 18 6-6-6-6"
+     }
+    }
+   ]
+  },
+  "chevron-up@0.575.0": {
+   "icon": "chevron-up",
+   "version": "0.575.0",
+   "sha256": "84026d6c650bb7000fe4b226dba405f62eeb8f4cb67e946828efd84186ac1220",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m18 15-6-6-6 6"
+     }
+    }
+   ]
+  },
+  "chevrons-up-down@0.575.0": {
+   "icon": "chevrons-up-down",
+   "version": "0.575.0",
+   "sha256": "9531586cae5a153f8a12e92b6656ca943a77cb25dd0e3c481c64e2a0a3e6a6ce",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m7 15 5 5 5-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m7 9 5-5 5 5"
+     }
+    }
+   ]
+  },
+  "circle-alert@0.575.0": {
+   "icon": "circle-alert",
+   "version": "0.575.0",
+   "sha256": "2b089423741f924d05e67d542c661cd22b1013676f9cc68dcdbc2bb16afc53a3",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "12",
+      "x2": "12",
+      "y1": "8",
+      "y2": "12"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "12",
+      "x2": "12.01",
+      "y1": "16",
+      "y2": "16"
+     }
+    }
+   ]
+  },
+  "circle-check-big@0.575.0": {
+   "icon": "circle-check-big",
+   "version": "0.575.0",
+   "sha256": "083ab00c02bab61d8a214bb8910e1a37f3cf68de0307caff39a49be935947c41",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21.801 10A10 10 0 1 1 17 3.335"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 11 3 3L22 4"
+     }
+    }
+   ]
+  },
+  "circle-check@0.575.0": {
+   "icon": "circle-check",
+   "version": "0.575.0",
+   "sha256": "a448be32430c0b05e70818070109ff82736378ef0c803a2a63bbac9f4457e930",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 12 2 2 4-4"
+     }
+    }
+   ]
+  },
+  "circle-check@1.48.0": {
+   "icon": "circle-check",
+   "version": "1.48.0",
+   "sha256": "786bb0ced478ff6076b1882698229849e958e55e2ef4416d1c94362843a8bb56",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 9-5.5 5.5L8 12"
+     }
+    }
+   ]
+  },
+  "circle-question-mark@0.575.0": {
+   "icon": "circle-question-mark",
+   "version": "0.575.0",
+   "sha256": "7102ba2645b794ac52392a8d74fa75cf6d6f0c2deb9853674ac100fce810a1d9",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 17h.01"
+     }
+    }
+   ]
+  },
+  "circle-stop@0.575.0": {
+   "icon": "circle-stop",
+   "version": "0.575.0",
+   "sha256": "d6e97dfbd4fb586ff97a99cec7af77d91f040d91c364573b7e0c4ad7810d2ddb",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "9",
+      "y": "9",
+      "width": "6",
+      "height": "6",
+      "rx": "1"
+     }
+    }
+   ]
+  },
+  "circle-user-round@0.575.0": {
+   "icon": "circle-user-round",
+   "version": "0.575.0",
+   "sha256": "bedb75aafc9d47c16ea877e33ce0b7e82eb3f03e32999f1b532969f12945c9e2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 20a6 6 0 0 0-12 0"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "10",
+      "r": "4"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    }
+   ]
+  },
+  "circle-x@0.575.0": {
+   "icon": "circle-x",
+   "version": "0.575.0",
+   "sha256": "b90f37a70e260874ee18c98eb51737ef1099c4501c85ef4456091f80f766f94b",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m15 9-6 6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 9 6 6"
+     }
+    }
+   ]
+  },
+  "circle@0.575.0": {
+   "icon": "circle",
+   "version": "0.575.0",
+   "sha256": "2481d2d2e861314cc3e283a6cadee40ce2ee58e3582b30d659d0c06b1c8af1a3",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    }
+   ]
+  },
+  "clipboard-check@0.575.0": {
+   "icon": "clipboard-check",
+   "version": "0.575.0",
+   "sha256": "116828a1f64a60f76de1c825ced8433116a03ba46d8f284aec02bc00997e75d4",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "8",
+      "height": "4",
+      "x": "8",
+      "y": "2",
+      "rx": "1",
+      "ry": "1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 14 2 2 4-4"
+     }
+    }
+   ]
+  },
+  "clipboard@0.575.0": {
+   "icon": "clipboard",
+   "version": "0.575.0",
+   "sha256": "7636dc0a702785e7dfea421e2c1ab9e8c3818984138e5d4b09ee3a9cd0bdf2c9",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "8",
+      "height": "4",
+      "x": "8",
+      "y": "2",
+      "rx": "1",
+      "ry": "1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+     }
+    }
+   ]
+  },
+  "clock-3@0.575.0": {
+   "icon": "clock-3",
+   "version": "0.575.0",
+   "sha256": "4628d2b07ad4bc25df139d3181d1d33b9f8c9ed276084b800d7e58eff31d137d",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 6v6h4"
+     }
+    }
+   ]
+  },
+  "clock@0.575.0": {
+   "icon": "clock",
+   "version": "0.575.0",
+   "sha256": "d01a0d7578127a131c8fd9c0eff009e2eda3ec5986df657d82f466eef53fda96",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 6v6l4 2"
+     }
+    }
+   ]
+  },
+  "cloud@0.575.0": {
+   "icon": "cloud",
+   "version": "0.575.0",
+   "sha256": "c75e1f309ba0b3f6a9ed28baa336a8df6737d526c00ebcbc69b16086bc7aac00",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"
+     }
+    }
+   ]
+  },
+  "code-xml@0.575.0": {
+   "icon": "code-xml",
+   "version": "0.575.0",
+   "sha256": "254872e8203af468df8bc3cb74bb3ffc845f5b05143f2a4e6a06f1d1cb094f04",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m18 16 4-4-4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6 8-4 4 4 4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m14.5 4-5 16"
+     }
+    }
+   ]
+  },
+  "code@0.575.0": {
+   "icon": "code",
+   "version": "0.575.0",
+   "sha256": "12cc53e2c73991d59feed4d77b8c306405ae83b4a4c5d6d6373143d1236c0b9d",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 18 6-6-6-6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m8 6-6 6 6 6"
+     }
+    }
+   ]
+  },
+  "columns-2@0.575.0": {
+   "icon": "columns-2",
+   "version": "0.575.0",
+   "sha256": "854d534b4ca9466597cc3cef8796a8dcd32547eeb7e3e75325b593f47e7e35f7",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "3",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 3v18"
+     }
+    }
+   ]
+  },
+  "columns-3@0.575.0": {
+   "icon": "columns-3",
+   "version": "0.575.0",
+   "sha256": "87e7e949d85af3d77dce2df2be7dfe27b67d64b09c4411c626cb9db785251dce",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "3",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 3v18"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 3v18"
+     }
+    }
+   ]
+  },
+  "copy@0.575.0": {
+   "icon": "copy",
+   "version": "0.575.0",
+   "sha256": "6a9c1dc074f2f240fe0669638169f80c6b7d23c642c5dfd2a5491e69bbcf5ef0",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "14",
+      "height": "14",
+      "x": "8",
+      "y": "8",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+     }
+    }
+   ]
+  },
+  "copy@1.48.0": {
+   "icon": "copy",
+   "version": "1.48.0",
+   "sha256": "2078f99c89c56a6f43b5b4359b5cd91765b22ef372d46acc135016c3ba5c34f0",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "14",
+      "height": "14",
+      "x": "8",
+      "y": "8",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+     }
+    }
+   ]
+  },
+  "credit-card@0.575.0": {
+   "icon": "credit-card",
+   "version": "0.575.0",
+   "sha256": "92eaeb08d8160057510640150232937d5b6e7d2097c03e5ebc2b70420bc31241",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "20",
+      "height": "14",
+      "x": "2",
+      "y": "5",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "2",
+      "x2": "22",
+      "y1": "10",
+      "y2": "10"
+     }
+    }
+   ]
+  },
+  "download@0.575.0": {
+   "icon": "download",
+   "version": "0.575.0",
+   "sha256": "153d4d5c8076a78c876bb336c58921d2decd8826cac08a5201ac0ed9d04e76b6",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 15V3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m7 10 5 5 5-5"
+     }
+    }
+   ]
+  },
+  "earth@0.575.0": {
+   "icon": "earth",
+   "version": "0.575.0",
+   "sha256": "14f1222fe46f405a8e3e57a329d657791909cce4cf6172aaecd675ae87a599b5",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21.54 15H17a2 2 0 0 0-2 2v4.54"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 3.34V5a3 3 0 0 0 3 3a2 2 0 0 1 2 2c0 1.1.9 2 2 2a2 2 0 0 0 2-2c0-1.1.9-2 2-2h3.17"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M11 21.95V18a2 2 0 0 0-2-2a2 2 0 0 1-2-2v-1a2 2 0 0 0-2-2H2.05"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    }
+   ]
+  },
+  "ellipsis-vertical@0.575.0": {
+   "icon": "ellipsis-vertical",
+   "version": "0.575.0",
+   "sha256": "889220231e13d343bacecf000a22424555722befe9b8002105207f787d90a4ba",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "5",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "19",
+      "r": "1"
+     }
+    }
+   ]
+  },
+  "ellipsis@0.575.0": {
+   "icon": "ellipsis",
+   "version": "0.575.0",
+   "sha256": "caddb390bc8cc9e7689b9888fd6371f3b946113fea2aec98f3121f9a4161d6e3",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "19",
+      "cy": "12",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "5",
+      "cy": "12",
+      "r": "1"
+     }
+    }
+   ]
+  },
+  "external-link@0.575.0": {
+   "icon": "external-link",
+   "version": "0.575.0",
+   "sha256": "2b9983e06ca3eabd5180c5fdb274bf662076c3e02b297e36b20e31e673b5eb52",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 3h6v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 14 21 3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+     }
+    }
+   ]
+  },
+  "eye-off@0.575.0": {
+   "icon": "eye-off",
+   "version": "0.575.0",
+   "sha256": "17d7fe8e1166954fbd813774b20678fa9dc50416852a907be624cf945516ef0b",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14.084 14.158a3 3 0 0 1-4.242-4.242"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m2 2 20 20"
+     }
+    }
+   ]
+  },
+  "eye@0.575.0": {
+   "icon": "eye",
+   "version": "0.575.0",
+   "sha256": "bd83d5eaf433f1d686d68289008ddaa1817ac4464688c7e762c1121eaea3db5a",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "file-text@0.575.0": {
+   "icon": "file-text",
+   "version": "0.575.0",
+   "sha256": "b18380d87d5efd114347da93e05bf8be7880b8cdc1475a667f957c041692e39c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 2v5a1 1 0 0 0 1 1h5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 9H8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 13H8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 17H8"
+     }
+    }
+   ]
+  },
+  "file-text@1.48.0": {
+   "icon": "file-text",
+   "version": "1.48.0",
+   "sha256": "9850a08374ad2e8069904810240a5fb6485dd41b4f6f49a5b8dd99032b1a31d8",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 2v5a1 1 0 0 0 1 1h5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 9H8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 13H8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 17H8"
+     }
+    }
+   ]
+  },
+  "file-up@0.575.0": {
+   "icon": "file-up",
+   "version": "0.575.0",
+   "sha256": "def7e09561487cfb8536f150e572f0051b5e4f49bd962bee18aee44f0ee695e7",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 2v5a1 1 0 0 0 1 1h5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 12v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m15 15-3-3-3 3"
+     }
+    }
+   ]
+  },
+  "file@0.575.0": {
+   "icon": "file",
+   "version": "0.575.0",
+   "sha256": "207238761eeb1eafd0142d7f62e889bc5e205d47398d2c5f3cc37dac05b3650c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 2v5a1 1 0 0 0 1 1h5"
+     }
+    }
+   ]
+  },
+  "flask-conical@0.575.0": {
+   "icon": "flask-conical",
+   "version": "0.575.0",
+   "sha256": "b7f074c6b426fd70e8cb0104ec89c65b55450ba0faa3c5ea8af79c06591631b8",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6.453 15h11.094"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8.5 2h7"
+     }
+    }
+   ]
+  },
+  "folder-closed@0.575.0": {
+   "icon": "folder-closed",
+   "version": "0.575.0",
+   "sha256": "80b740a5b4afa45821509a786026bda9f0c19afae38a010ed0d6c6efd2b15aaf",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 10h20"
+     }
+    }
+   ]
+  },
+  "folder-input@0.575.0": {
+   "icon": "folder-input",
+   "version": "0.575.0",
+   "sha256": "9a7953410440fa361e6a9a9375ceeb2a4c6e7fcaf544d6afb1f25ecf68130d03",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 13h10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 16 3-3-3-3"
+     }
+    }
+   ]
+  },
+  "folder-open@0.575.0": {
+   "icon": "folder-open",
+   "version": "0.575.0",
+   "sha256": "b9d39a154aa47f09d14e87d8c559b297b221ebbc10bbe54e95a45dc013e317dd",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"
+     }
+    }
+   ]
+  },
+  "folder-plus@0.575.0": {
+   "icon": "folder-plus",
+   "version": "0.575.0",
+   "sha256": "2ae428b5d8950ad1b96c2db33e03312445f1a88b75baa8619935c56583da27cd",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 10v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 13h6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
+     }
+    }
+   ]
+  },
+  "forward@0.575.0": {
+   "icon": "forward",
+   "version": "0.575.0",
+   "sha256": "c2f53ea4f4f1382b5e525bffd5eb2864d7ff9b90f4e88509cf78cccc8bb365df",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m15 17 5-5-5-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 18v-2a4 4 0 0 1 4-4h12"
+     }
+    }
+   ]
+  },
+  "git-branch@0.575.0": {
+   "icon": "git-branch",
+   "version": "0.575.0",
+   "sha256": "d7d69089220298979f19da02383ca2c96ab09dd5b5b6dd6403a7b0b809004618",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 6a9 9 0 0 0-9 9V3"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "18",
+      "cy": "6",
+      "r": "3"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "6",
+      "cy": "18",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "globe@0.575.0": {
+   "icon": "globe",
+   "version": "0.575.0",
+   "sha256": "c18e7dcd5683c6d0848fdfbdf6a31a0fd93c7dd9c1b1d9c8873ea6bcd582e65d",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 12h20"
+     }
+    }
+   ]
+  },
+  "grip-vertical@0.575.0": {
+   "icon": "grip-vertical",
+   "version": "0.575.0",
+   "sha256": "497aa89588110e35203fb3147a6c54beace5585fbe8a8f4ddccfa083f25ff73e",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "12",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "5",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "19",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "15",
+      "cy": "12",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "15",
+      "cy": "5",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "15",
+      "cy": "19",
+      "r": "1"
+     }
+    }
+   ]
+  },
+  "hard-drive@0.575.0": {
+   "icon": "hard-drive",
+   "version": "0.575.0",
+   "sha256": "3beeadbc4cb1b07706678a0a24b6fdd48d6f581cb986ce88cfe856a9306b34d1",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 16h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2.212 11.577a2 2 0 0 0-.212.896V18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5.527a2 2 0 0 0-.212-.896L18.55 5.11A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21.946 12.013H2.054"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 16h.01"
+     }
+    }
+   ]
+  },
+  "hash@0.575.0": {
+   "icon": "hash",
+   "version": "0.575.0",
+   "sha256": "b341942ab322cfb9fda65579c240064bcdcf401c8f8f1c5e134f6ddd6fb04247",
+   "nodes": [
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "4",
+      "x2": "20",
+      "y1": "9",
+      "y2": "9"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "4",
+      "x2": "20",
+      "y1": "15",
+      "y2": "15"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "10",
+      "x2": "8",
+      "y1": "3",
+      "y2": "21"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "16",
+      "x2": "14",
+      "y1": "3",
+      "y2": "21"
+     }
+    }
+   ]
+  },
+  "house@0.575.0": {
+   "icon": "house",
+   "version": "0.575.0",
+   "sha256": "10459f2700c362defe3719ad087a9ae8cf0213a6419cb2a358a15b05d20317d4",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+     }
+    }
+   ]
+  },
+  "image-off@0.575.0": {
+   "icon": "image-off",
+   "version": "0.575.0",
+   "sha256": "edac09f81edcb3f4d2977414f400b31d354dc7d54ba169b869425a383d925e82",
+   "nodes": [
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "2",
+      "x2": "22",
+      "y1": "2",
+      "y2": "22"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.41 10.41a2 2 0 1 1-2.83-2.83"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "13.5",
+      "x2": "6",
+      "y1": "13.5",
+      "y2": "21"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "18",
+      "x2": "21",
+      "y1": "12",
+      "y2": "15"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 15V5a2 2 0 0 0-2-2H9"
+     }
+    }
+   ]
+  },
+  "image-plus@0.575.0": {
+   "icon": "image-plus",
+   "version": "0.575.0",
+   "sha256": "0a020724473a6ab5990c2c01574433c1600dce8b58f953f9efb001a587d09a14",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 5h6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 2v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "9",
+      "r": "2"
+     }
+    }
+   ]
+  },
+  "image@0.575.0": {
+   "icon": "image",
+   "version": "0.575.0",
+   "sha256": "2f0e9ea4a58dd94ea146666523224b0fad79239d0a22ac825ba25554950c570a",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "3",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "9",
+      "r": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
+     }
+    }
+   ]
+  },
+  "image@1.48.0": {
+   "icon": "image",
+   "version": "1.48.0",
+   "sha256": "f2c723a1485825b8ffba898844dd21bb1ff4be321a57702be4b7654f938d4150",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "3",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "9",
+      "r": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
+     }
+    }
+   ]
+  },
+  "inbox@0.575.0": {
+   "icon": "inbox",
+   "version": "0.575.0",
+   "sha256": "7cea84dd0a4b8a11afd0fc31e0ac83eb59364a6ce66b08cece3209f8a43c470a",
+   "nodes": [
+    {
+     "tag": "polyline",
+     "attrs": {
+      "points": "22 12 16 12 14 15 10 15 8 12 2 12"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"
+     }
+    }
+   ]
+  },
+  "info@0.575.0": {
+   "icon": "info",
+   "version": "0.575.0",
+   "sha256": "6d5a403f23ac8bcc3f044118f9f0dda8d550124d40c0d962cc9842c3a7ae915b",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 16v-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 8h.01"
+     }
+    }
+   ]
+  },
+  "info@1.48.0": {
+   "icon": "info",
+   "version": "1.48.0",
+   "sha256": "f2a57d82d320ca4c00237960edb607d5d4c9a1e6cfb9a82fdcf58a9209e4e925",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 16v-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 8h.01"
+     }
+    }
+   ]
+  },
+  "key-round@0.575.0": {
+   "icon": "key-round",
+   "version": "0.575.0",
+   "sha256": "f31c3deb287a9a044bca928bd892b33e4d62c40bc152dfd7eddac5d5f0237eae",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "16.5",
+      "cy": "7.5",
+      "r": ".5"
+     },
+     "fill": "currentColor"
+    }
+   ]
+  },
+  "languages@0.575.0": {
+   "icon": "languages",
+   "version": "0.575.0",
+   "sha256": "9bbda94357f19eb6d3dc3b11b8d83805c676274e65dc22eeb6680caa57b307c1",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m5 8 6 6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m4 14 6-6 2-3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 5h12"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 2h1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m22 22-5-10-5 10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 18h6"
+     }
+    }
+   ]
+  },
+  "laptop@0.575.0": {
+   "icon": "laptop",
+   "version": "0.575.0",
+   "sha256": "ac73ca39a1785a6cd1ad823bede8b28dce99649028d6bf82a3aa376ac95ed316",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20.054 15.987H3.946"
+     }
+    }
+   ]
+  },
+  "layout-grid@0.575.0": {
+   "icon": "layout-grid",
+   "version": "0.575.0",
+   "sha256": "f4f608d76f124da41786eeae25b85de47ac05b6c362bac645b86e01226c62812",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "7",
+      "height": "7",
+      "x": "3",
+      "y": "3",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "7",
+      "height": "7",
+      "x": "14",
+      "y": "3",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "7",
+      "height": "7",
+      "x": "14",
+      "y": "14",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "7",
+      "height": "7",
+      "x": "3",
+      "y": "14",
+      "rx": "1"
+     }
+    }
+   ]
+  },
+  "layout-list@0.575.0": {
+   "icon": "layout-list",
+   "version": "0.575.0",
+   "sha256": "445b9f1310b5bb8d5a272256d99fed8dc5089393dda0181f3585d2973ad7e323",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "7",
+      "height": "7",
+      "x": "3",
+      "y": "3",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "7",
+      "height": "7",
+      "x": "3",
+      "y": "14",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 4h7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 9h7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 15h7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 20h7"
+     }
+    }
+   ]
+  },
+  "link-2-off@0.575.0": {
+   "icon": "link-2-off",
+   "version": "0.575.0",
+   "sha256": "3ec62c40e8381ac18ef2c5f41f90baf3627cb50cb92ff1569e6e2ef89bde8c01",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 17H7A5 5 0 0 1 7 7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 7h2a5 5 0 0 1 4 8"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "8",
+      "x2": "12",
+      "y1": "12",
+      "y2": "12"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "2",
+      "x2": "22",
+      "y1": "2",
+      "y2": "22"
+     }
+    }
+   ]
+  },
+  "link-2@0.575.0": {
+   "icon": "link-2",
+   "version": "0.575.0",
+   "sha256": "fc3c16e62dc60093baf4e996203d64d0a5c400222480315f652b7042234b84d3",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 17H7A5 5 0 0 1 7 7h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 7h2a5 5 0 1 1 0 10h-2"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "8",
+      "x2": "16",
+      "y1": "12",
+      "y2": "12"
+     }
+    }
+   ]
+  },
+  "link@0.575.0": {
+   "icon": "link",
+   "version": "0.575.0",
+   "sha256": "5737d7c936ee80b6c41645d2d2ad51128b21251ba90e4df470714b6f6566dc2f",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"
+     }
+    }
+   ]
+  },
+  "list-checks@0.575.0": {
+   "icon": "list-checks",
+   "version": "0.575.0",
+   "sha256": "810723e3d0f0718bc6b41144c81ee05b20d6188e4efff6f1f8a48b050d9fe532",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 5h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 12h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 19h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m3 17 2 2 4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m3 7 2 2 4-4"
+     }
+    }
+   ]
+  },
+  "list-todo@0.575.0": {
+   "icon": "list-todo",
+   "version": "0.575.0",
+   "sha256": "9b41b0ce3b268763ca3177bffd248e2ad8f742736613229012e7b22d66a67442",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 5h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 12h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13 19h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m3 17 2 2 4-4"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "3",
+      "y": "4",
+      "width": "6",
+      "height": "6",
+      "rx": "1"
+     }
+    }
+   ]
+  },
+  "list@0.575.0": {
+   "icon": "list",
+   "version": "0.575.0",
+   "sha256": "52ee67608cc9faf3cd676af10050fc9c5cb259135bcaf533f7c37db741f1c3b9",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 5h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 12h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 19h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 5h13"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 12h13"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 19h13"
+     }
+    }
+   ]
+  },
+  "loader-circle@0.575.0": {
+   "icon": "loader-circle",
+   "version": "0.575.0",
+   "sha256": "dc9c9bf620fe6b80cd1c187610ecc16e9165d9b3b711a1ca59f36645104da90d",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 12a9 9 0 1 1-6.219-8.56"
+     }
+    }
+   ]
+  },
+  "lock-keyhole@0.575.0": {
+   "icon": "lock-keyhole",
+   "version": "0.575.0",
+   "sha256": "7c94942e2821408eeaea945ef297daf6dc1eef762985b7361ce1a3ea14590de5",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "16",
+      "r": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "3",
+      "y": "10",
+      "width": "18",
+      "height": "12",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 10V7a5 5 0 0 1 10 0v3"
+     }
+    }
+   ]
+  },
+  "lock@0.575.0": {
+   "icon": "lock",
+   "version": "0.575.0",
+   "sha256": "8505c5faa6ee1eac36e3bd8760905a2c8c3f039af42e6e2b3a21f9ce8166951a",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "11",
+      "x": "3",
+      "y": "11",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 11V7a5 5 0 0 1 10 0v4"
+     }
+    }
+   ]
+  },
+  "log-in@0.575.0": {
+   "icon": "log-in",
+   "version": "0.575.0",
+   "sha256": "4544fedc833a3cd62396f60081a64350282c3b851be91ff8540083ca8812c4fb",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m10 17 5-5-5-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 12H3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"
+     }
+    }
+   ]
+  },
+  "log-out@0.575.0": {
+   "icon": "log-out",
+   "version": "0.575.0",
+   "sha256": "6c6547f29fa2722637f07b73ba5ce8506c55f647d1d0af4b2d3215b9027b1df3",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 17 5-5-5-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 12H9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+     }
+    }
+   ]
+  },
+  "mail@0.575.0": {
+   "icon": "mail",
+   "version": "0.575.0",
+   "sha256": "f27f7e5bf17f89eb4a8d6137b25e5592d0407a2ffc54c8ae5dced57025239e5c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "2",
+      "y": "4",
+      "width": "20",
+      "height": "16",
+      "rx": "2"
+     }
+    }
+   ]
+  },
+  "map-pin@0.575.0": {
+   "icon": "map-pin",
+   "version": "0.575.0",
+   "sha256": "1c24d9a17ca4b3943619bfcc63cc5f8602d5ea4c84cd6f81ddb5a4c636ce5ec0",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "10",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "maximize-2@0.575.0": {
+   "icon": "maximize-2",
+   "version": "0.575.0",
+   "sha256": "5c2bb6cd9de7dd274db5056212810ec13533699021c682a9c0ddc4a6932531a8",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 3h6v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 3-7 7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m3 21 7-7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 21H3v-6"
+     }
+    }
+   ]
+  },
+  "maximize@0.575.0": {
+   "icon": "maximize",
+   "version": "0.575.0",
+   "sha256": "1659a269f70615dabbd81b7071d6fa76d8bd2c727d758a5144edf095e1023117",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 3H5a2 2 0 0 0-2 2v3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 8V5a2 2 0 0 0-2-2h-3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 16v3a2 2 0 0 0 2 2h3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 21h3a2 2 0 0 0 2-2v-3"
+     }
+    }
+   ]
+  },
+  "menu@0.575.0": {
+   "icon": "menu",
+   "version": "0.575.0",
+   "sha256": "c620e0ad3d41c9df7690569c55c1c85381f735d7b4ce22d03cc83598205385ba",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 5h16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 12h16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 19h16"
+     }
+    }
+   ]
+  },
+  "message-circle-off@0.575.0": {
+   "icon": "message-circle-off",
+   "version": "0.575.0",
+   "sha256": "024ddd935c1893eceebfa0524e5f545e702c2b65c6fc6bb8e8401bd58cff08be",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m2 2 20 20"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4.93 4.929a10 10 0 0 0-1.938 11.412 2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 0 0 11.302-1.989"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8.35 2.69A10 10 0 0 1 21.3 15.65"
+     }
+    }
+   ]
+  },
+  "message-circle-plus@0.575.0": {
+   "icon": "message-circle-plus",
+   "version": "0.575.0",
+   "sha256": "2ca037aad6f5d137006e621d289ac4d5eeb99eb18baa9717d070bd31edfe1d3a",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 12h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 8v8"
+     }
+    }
+   ]
+  },
+  "message-square-check@0.575.0": {
+   "icon": "message-square-check",
+   "version": "0.575.0",
+   "sha256": "eaf2570a9738230299fb937719bfc600e39e19a4d5cc486b22673ba5d63f7039",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.7.7 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 11 2 2 4-4"
+     }
+    }
+   ]
+  },
+  "message-square-dot@0.575.0": {
+   "icon": "message-square-dot",
+   "version": "0.575.0",
+   "sha256": "d6e3e1567675ce6674bc2acc32e207369db96789637ac42f9e520a3b4a3275b2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12.7 3H4a2 2 0 0 0-2 2v16.286a.71.71 0 0 0 1.212.502l2.202-2.202A2 2 0 0 1 6.828 19H20a2 2 0 0 0 2-2v-4.7"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "19",
+      "cy": "6",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "message-square-more@0.575.0": {
+   "icon": "message-square-more",
+   "version": "0.575.0",
+   "sha256": "93d2bf16b7844582588e662782ae5db687b7d6c29b8ff26ec56a7e984eb59b1b",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 11h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 11h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 11h.01"
+     }
+    }
+   ]
+  },
+  "message-square-text@0.575.0": {
+   "icon": "message-square-text",
+   "version": "0.575.0",
+   "sha256": "1e874543c945d005314b76ea50855f8bd73f0053283de7ada4363aa32f4d703c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 11h10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 15h6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7 7h8"
+     }
+    }
+   ]
+  },
+  "message-square@0.575.0": {
+   "icon": "message-square",
+   "version": "0.575.0",
+   "sha256": "ff73c985a7baab1302179481756bfb49a5bdd1ad5106e66cf803d8d1c0a38e02",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"
+     }
+    }
+   ]
+  },
+  "minimize@0.575.0": {
+   "icon": "minimize",
+   "version": "0.575.0",
+   "sha256": "c32b28ad47b65039d9144b8bc7f88598601765224c2b594c95ae36f5599916d6",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 3v3a2 2 0 0 1-2 2H3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 8h-3a2 2 0 0 1-2-2V3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 16h3a2 2 0 0 1 2 2v3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 21v-3a2 2 0 0 1 2-2h3"
+     }
+    }
+   ]
+  },
+  "minus@1.48.0": {
+   "icon": "minus",
+   "version": "1.48.0",
+   "sha256": "38be5c1a2813dac0fe8576d56fd517bee796d22fd32595844928da9f6363da6d",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5 12h14"
+     }
+    }
+   ]
+  },
+  "monitor@0.575.0": {
+   "icon": "monitor",
+   "version": "0.575.0",
+   "sha256": "e592d6400e21fa75ffa02d23e0e40a044d3f2ee01636a2f948af248217bbf529",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "20",
+      "height": "14",
+      "x": "2",
+      "y": "3",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "8",
+      "x2": "16",
+      "y1": "21",
+      "y2": "21"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "12",
+      "x2": "12",
+      "y1": "17",
+      "y2": "21"
+     }
+    }
+   ]
+  },
+  "moon@0.575.0": {
+   "icon": "moon",
+   "version": "0.575.0",
+   "sha256": "00104c114c702b884f057a8c3998c40dc2d9811c0fdd00e4ccb33d7ced040d2d",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+     }
+    }
+   ]
+  },
+  "move-right@0.575.0": {
+   "icon": "move-right",
+   "version": "0.575.0",
+   "sha256": "e63132b9e24fd5b48fd92307c1ac87583c4c7e798d61c31181d528985f8fb0cf",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 8L22 12L18 16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 12H22"
+     }
+    }
+   ]
+  },
+  "music@0.575.0": {
+   "icon": "music",
+   "version": "0.575.0",
+   "sha256": "82e81d397dd3ae80049c770e28d1e1d3568fc8c1c1d9d27aa1f34e501c3b6f57",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 18V5l12-2v13"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "6",
+      "cy": "18",
+      "r": "3"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "18",
+      "cy": "16",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "network@0.575.0": {
+   "icon": "network",
+   "version": "0.575.0",
+   "sha256": "9d00425516082dd2e682b2cde05c1a8b17433abfea3e0b8d5fd231e5cbe3061f",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "16",
+      "y": "16",
+      "width": "6",
+      "height": "6",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "2",
+      "y": "16",
+      "width": "6",
+      "height": "6",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "9",
+      "y": "2",
+      "width": "6",
+      "height": "6",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 12V8"
+     }
+    }
+   ]
+  },
+  "palette@0.575.0": {
+   "icon": "palette",
+   "version": "0.575.0",
+   "sha256": "8f71ae399eaf69c7ae985a6b3d9c18c7be49bce3ac4121d9a67644e17e12f299",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "13.5",
+      "cy": "6.5",
+      "r": ".5"
+     },
+     "fill": "currentColor"
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "17.5",
+      "cy": "10.5",
+      "r": ".5"
+     },
+     "fill": "currentColor"
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "6.5",
+      "cy": "12.5",
+      "r": ".5"
+     },
+     "fill": "currentColor"
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "8.5",
+      "cy": "7.5",
+      "r": ".5"
+     },
+     "fill": "currentColor"
+    }
+   ]
+  },
+  "paperclip@0.575.0": {
+   "icon": "paperclip",
+   "version": "0.575.0",
+   "sha256": "13bb98655b7ec8d3e0554daed2b141427e29f39c0c7b62df78fee599647e6771",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"
+     }
+    }
+   ]
+  },
+  "pause@0.575.0": {
+   "icon": "pause",
+   "version": "0.575.0",
+   "sha256": "9cd5eba6dc6e02b01fdc94a987d397205ce09440ac99d67f93b2eab99512dbc6",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "14",
+      "y": "3",
+      "width": "5",
+      "height": "18",
+      "rx": "1"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "5",
+      "y": "3",
+      "width": "5",
+      "height": "18",
+      "rx": "1"
+     }
+    }
+   ]
+  },
+  "pencil@0.575.0": {
+   "icon": "pencil",
+   "version": "0.575.0",
+   "sha256": "56887cf82e45eb0137238dec001f8cf2e3a6945af2b7ea020b49558ae94bdf80",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m15 5 4 4"
+     }
+    }
+   ]
+  },
+  "pin-off@0.575.0": {
+   "icon": "pin-off",
+   "version": "0.575.0",
+   "sha256": "1e202f51a6ceb0c1f582e28576c3dba8c59a3a76e79b5aeacca7d7ebbc60e4b8",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 17v5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m2 2 20 20"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11"
+     }
+    }
+   ]
+  },
+  "pin@0.575.0": {
+   "icon": "pin",
+   "version": "0.575.0",
+   "sha256": "8d8322e706e98b63ee78fb99068a90b385ce26aec8306589cd276fd5576933c6",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 17v5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"
+     }
+    }
+   ]
+  },
+  "play@0.575.0": {
+   "icon": "play",
+   "version": "0.575.0",
+   "sha256": "7210abbfc4175fbe5b3390e9fc6f41c669b3bad3607a4a9e8bc1e6ff47ca950c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"
+     }
+    }
+   ]
+  },
+  "plus@0.575.0": {
+   "icon": "plus",
+   "version": "0.575.0",
+   "sha256": "2830c9a6436847ef1eaed48649622c073a3e49d0d4e7894b5dff8fc903e5ffbc",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5 12h14"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 5v14"
+     }
+    }
+   ]
+  },
+  "power@0.575.0": {
+   "icon": "power",
+   "version": "0.575.0",
+   "sha256": "25783b04433379e129f6c7ca95a26b018f35183b0977156ec351dceee004efeb",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 2v10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18.4 6.6a9 9 0 1 1-12.77.04"
+     }
+    }
+   ]
+  },
+  "refresh-cw@0.575.0": {
+   "icon": "refresh-cw",
+   "version": "0.575.0",
+   "sha256": "283203b7a3d9b35f602434f975899114a60431bdbc6af30aae541802162dfce7",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 3v5h-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 16H3v5"
+     }
+    }
+   ]
+  },
+  "repeat@0.575.0": {
+   "icon": "repeat",
+   "version": "0.575.0",
+   "sha256": "433ea888eefcbc8f1fe3450e6896536856e22897f8e8b3b066aa2a35203a7904",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m17 2 4 4-4 4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 11v-1a4 4 0 0 1 4-4h14"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m7 22-4-4 4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 13v1a4 4 0 0 1-4 4H3"
+     }
+    }
+   ]
+  },
+  "reply@0.575.0": {
+   "icon": "reply",
+   "version": "0.575.0",
+   "sha256": "c7ec00937ced0d3e4ad463500fa575fe232c34bcc0f8329fcbd7ba80eaee071c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 18v-2a4 4 0 0 0-4-4H4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 17-5-5 5-5"
+     }
+    }
+   ]
+  },
+  "rotate-ccw@0.575.0": {
+   "icon": "rotate-ccw",
+   "version": "0.575.0",
+   "sha256": "27fbfde329a011f6fbb03e37b5cb4c45859fc86e15ae7bb24f5855f8590f4207",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 3v5h5"
+     }
+    }
+   ]
+  },
+  "rotate-cw@0.575.0": {
+   "icon": "rotate-cw",
+   "version": "0.575.0",
+   "sha256": "2660cd025f86a7687cd64d36edd3b85f3f0130c7f00fbdb412a8ed410cbd72c9",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 3v5h-5"
+     }
+    }
+   ]
+  },
+  "search@0.575.0": {
+   "icon": "search",
+   "version": "0.575.0",
+   "sha256": "8940b47c5c0d64f76778aa61a5a25ee4c15a095fbf491fddd5ec59e593723a04",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21 21-4.34-4.34"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "11",
+      "cy": "11",
+      "r": "8"
+     }
+    }
+   ]
+  },
+  "send@0.575.0": {
+   "icon": "send",
+   "version": "0.575.0",
+   "sha256": "203b21260b06d30daf5fd32c4d1e3cd468d848f77e3787ea8444e98ec7b81719",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21.854 2.147-10.94 10.939"
+     }
+    }
+   ]
+  },
+  "settings-2@0.575.0": {
+   "icon": "settings-2",
+   "version": "0.575.0",
+   "sha256": "58e87bdb9db2ed4828ad4c050b4309f551a46024682e612cc4889cf8063a5de0",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 17H5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 7h-9"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "17",
+      "cy": "17",
+      "r": "3"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "7",
+      "cy": "7",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "settings@0.575.0": {
+   "icon": "settings",
+   "version": "0.575.0",
+   "sha256": "cb58d6ccbccc1603d1e4235eb6a24a46f308c292626cc1e129b71dbb04a16b21",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "3"
+     }
+    }
+   ]
+  },
+  "share-2@0.575.0": {
+   "icon": "share-2",
+   "version": "0.575.0",
+   "sha256": "b1621ccdd14150666a6a977100a18effbb6c94d570c90499149f702aad707e88",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "18",
+      "cy": "5",
+      "r": "3"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "6",
+      "cy": "12",
+      "r": "3"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "18",
+      "cy": "19",
+      "r": "3"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "8.59",
+      "x2": "15.42",
+      "y1": "13.51",
+      "y2": "17.49"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "15.41",
+      "x2": "8.59",
+      "y1": "6.51",
+      "y2": "10.49"
+     }
+    }
+   ]
+  },
+  "shield@0.575.0": {
+   "icon": "shield",
+   "version": "0.575.0",
+   "sha256": "449f21b186458359124a266d660d2959d5adfcc5a35d5dfc7ecf029dcc8dda24",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+     }
+    }
+   ]
+  },
+  "sliders-horizontal@0.575.0": {
+   "icon": "sliders-horizontal",
+   "version": "0.575.0",
+   "sha256": "7d024243c8695fadf69a526c29a87c42856b6299a0d16cfc9cfb586891090cbe",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 5H3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 19H3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 3v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 17v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 12h-9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 19h-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 5h-7"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 10v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 12H3"
+     }
+    }
+   ]
+  },
+  "smartphone@0.575.0": {
+   "icon": "smartphone",
+   "version": "0.575.0",
+   "sha256": "c1d46e678ab01aac63ed80ec2acc39b86691ef55778ed24e76e0cd2ccccc868b",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "14",
+      "height": "20",
+      "x": "5",
+      "y": "2",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 18h.01"
+     }
+    }
+   ]
+  },
+  "smile-plus@0.575.0": {
+   "icon": "smile-plus",
+   "version": "0.575.0",
+   "sha256": "a0bfd53eeb8a6110904411cd7cf26e0aad798168067aaf0bbc9f106ecd1e77a6",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 11v1a10 10 0 1 1-9-10"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 14s1.5 2 4 2 4-2 4-2"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "9",
+      "x2": "9.01",
+      "y1": "9",
+      "y2": "9"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "15",
+      "x2": "15.01",
+      "y1": "9",
+      "y2": "9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 5h6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 2v6"
+     }
+    }
+   ]
+  },
+  "square-check-big@0.575.0": {
+   "icon": "square-check-big",
+   "version": "0.575.0",
+   "sha256": "60fd4e8e179efc272aa1f55be0f89daa5efa7e205db151554a43f3c6738b729b",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 11 3 3L22 4"
+     }
+    }
+   ]
+  },
+  "square-check@0.575.0": {
+   "icon": "square-check",
+   "version": "0.575.0",
+   "sha256": "d9da565d85c7b72e0d203c8f09b03d05590adec36671d1d0eead1a21432ef074",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "3",
+      "rx": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m9 12 2 2 4-4"
+     }
+    }
+   ]
+  },
+  "square-split-horizontal@0.575.0": {
+   "icon": "square-split-horizontal",
+   "version": "0.575.0",
+   "sha256": "45850cf6560f9402a2329f7cbe240f9a5a860b307e433ac6969aecef8527a7e3",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 19H5c-1 0-2-1-2-2V7c0-1 1-2 2-2h3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 5h3c1 0 2 1 2 2v10c0 1-1 2-2 2h-3"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "12",
+      "x2": "12",
+      "y1": "4",
+      "y2": "20"
+     }
+    }
+   ]
+  },
+  "square@0.575.0": {
+   "icon": "square",
+   "version": "0.575.0",
+   "sha256": "630d306a04b282a5a73f14e6b55f3d811bf23db137b2db5a5b67d8a008fc379e",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "18",
+      "height": "18",
+      "x": "3",
+      "y": "3",
+      "rx": "2"
+     }
+    }
+   ]
+  },
+  "star@0.575.0": {
+   "icon": "star",
+   "version": "0.575.0",
+   "sha256": "5f308e74ccdd2cb7c2e4a42e798e7537c0bed9514651426fe4ac533348640dcc",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"
+     }
+    }
+   ]
+  },
+  "sun@0.575.0": {
+   "icon": "sun",
+   "version": "0.575.0",
+   "sha256": "d0c7ac00302264cc6973bac9f0ea692891cbb77773ecf374b3a4572bd0a5be7d",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "12",
+      "r": "4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 2v2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 20v2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m4.93 4.93 1.41 1.41"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m17.66 17.66 1.41 1.41"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 12h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 12h2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6.34 17.66-1.41 1.41"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m19.07 4.93-1.41 1.41"
+     }
+    }
+   ]
+  },
+  "tag@0.575.0": {
+   "icon": "tag",
+   "version": "0.575.0",
+   "sha256": "f4c91e4f009c4d0d67a303aeceb89b3120d065caa64bf7fbb685cd2fcdb4cee0",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "7.5",
+      "cy": "7.5",
+      "r": ".5"
+     },
+     "fill": "currentColor"
+    }
+   ]
+  },
+  "terminal@0.575.0": {
+   "icon": "terminal",
+   "version": "0.575.0",
+   "sha256": "158cf113545236c36e1623b75b7c4830e773da27d695d9e7938deec45bce4623",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 19h8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m4 17 6-6-6-6"
+     }
+    }
+   ]
+  },
+  "text-quote@0.575.0": {
+   "icon": "text-quote",
+   "version": "0.575.0",
+   "sha256": "c04b441b3ddf07a2a42d7fa691b01c0ef39d1144ebd7cfa7edc6473d227b4706",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M17 5H3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 12H8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 19H8"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 12v7"
+     }
+    }
+   ]
+  },
+  "trash-2@0.575.0": {
+   "icon": "trash-2",
+   "version": "0.575.0",
+   "sha256": "e4f43a30190e7a7faa8367dda7cafcc6bdef2f1b023b18e7b50e00f41ff29714",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 11v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M14 11v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 6h18"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+     }
+    }
+   ]
+  },
+  "triangle-alert@0.575.0": {
+   "icon": "triangle-alert",
+   "version": "0.575.0",
+   "sha256": "b14363025adfdf8a22a0c173595ce6d857594f8d5ab140ffef57ae4fef0edf6c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 9v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 17h.01"
+     }
+    }
+   ]
+  },
+  "triangle-alert@1.48.0": {
+   "icon": "triangle-alert",
+   "version": "1.48.0",
+   "sha256": "289a0f7c8ce8698e5cd5def7e4ace4430f8f643ced61fe35ef878bb5622bac35",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 9v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 17h.01"
+     }
+    }
+   ]
+  },
+  "type@0.575.0": {
+   "icon": "type",
+   "version": "0.575.0",
+   "sha256": "0dd0bdaa03762ec9a5a46e977257235dc2b1243cf3a930bfcb07dba810fe2ab2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 4v16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 20h6"
+     }
+    }
+   ]
+  },
+  "undo-2@0.575.0": {
+   "icon": "undo-2",
+   "version": "0.575.0",
+   "sha256": "84ae13e581c00d2f251596404a08cd702ba6b64d7fc36a3c68415a6ff6c87d0c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 14 4 9l5-5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"
+     }
+    }
+   ]
+  },
+  "unplug@0.575.0": {
+   "icon": "unplug",
+   "version": "0.575.0",
+   "sha256": "59de1bd00454eca90bee4ff46ba5518bd8586be2d131355922df61163d0a759c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m19 5 3-3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m2 22 3-3"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M7.5 13.5 10 11"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10.5 16.5 13 14"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m12 6 6 6 2.3-2.3a2.4 2.4 0 0 0 0-3.4l-2.6-2.6a2.4 2.4 0 0 0-3.4 0Z"
+     }
+    }
+   ]
+  },
+  "upload@0.575.0": {
+   "icon": "upload",
+   "version": "0.575.0",
+   "sha256": "578d08559d6ab712b12c89c65d430ebdf244397a9df57223c70fa979ebe0a371",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 3v12"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m17 8-5-5-5 5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+     }
+    }
+   ]
+  },
+  "upload@1.48.0": {
+   "icon": "upload",
+   "version": "1.48.0",
+   "sha256": "eb8fa3c0a1931967f3c5e7646c91a6fa65022941a5230c3282b68a6651651006",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 3v12"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m17 8-5-5-5 5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+     }
+    }
+   ]
+  },
+  "user-minus@0.575.0": {
+   "icon": "user-minus",
+   "version": "0.575.0",
+   "sha256": "bb8fdf6586870d0f93edd715f9c84032dfd21cd7ffc9d64ca3c49d276464ff74",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "7",
+      "r": "4"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "22",
+      "x2": "16",
+      "y1": "11",
+      "y2": "11"
+     }
+    }
+   ]
+  },
+  "user-plus@0.575.0": {
+   "icon": "user-plus",
+   "version": "0.575.0",
+   "sha256": "7f2c3707901b24b2cda7629e6f30184f906fac749a29439f1006f6c57744e5e7",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "7",
+      "r": "4"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "19",
+      "x2": "19",
+      "y1": "8",
+      "y2": "14"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "22",
+      "x2": "16",
+      "y1": "11",
+      "y2": "11"
+     }
+    }
+   ]
+  },
+  "user-x@0.575.0": {
+   "icon": "user-x",
+   "version": "0.575.0",
+   "sha256": "0b17e74ab2c738a3668f2edf0474b798065f99dfa11d6829ed7853d77b1afa83",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "7",
+      "r": "4"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "17",
+      "x2": "22",
+      "y1": "8",
+      "y2": "13"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "22",
+      "x2": "17",
+      "y1": "8",
+      "y2": "13"
+     }
+    }
+   ]
+  },
+  "user@0.575.0": {
+   "icon": "user",
+   "version": "0.575.0",
+   "sha256": "9baa650d9f5617388b9c12f4d9d8128e02c27dcf79259adef5221b0305bf9579",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "12",
+      "cy": "7",
+      "r": "4"
+     }
+    }
+   ]
+  },
+  "users-round@0.575.0": {
+   "icon": "users-round",
+   "version": "0.575.0",
+   "sha256": "5868ef66d1d6e9a13b07e0f32bb0e4a11dae930a23574c81b2edd605c6db4680",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 21a8 8 0 0 0-16 0"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "10",
+      "cy": "8",
+      "r": "5"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"
+     }
+    }
+   ]
+  },
+  "users@0.575.0": {
+   "icon": "users",
+   "version": "0.575.0",
+   "sha256": "fe7c5f22ad84f6f7c84c36d763df49d468277a0a234873fef13b3a663496a82c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 3.128a4 4 0 0 1 0 7.744"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 21v-2a4 4 0 0 0-3-3.87"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "9",
+      "cy": "7",
+      "r": "4"
+     }
+    }
+   ]
+  },
+  "video@0.575.0": {
+   "icon": "video",
+   "version": "0.575.0",
+   "sha256": "9931d01243a6569302d34bd6896c96b54f1d4e6edcc07b5c8c862c8378bad403",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"
+     }
+    },
+    {
+     "tag": "rect",
+     "attrs": {
+      "x": "2",
+      "y": "6",
+      "width": "14",
+      "height": "12",
+      "rx": "2"
+     }
+    }
+   ]
+  },
+  "volume-2@0.575.0": {
+   "icon": "volume-2",
+   "version": "0.575.0",
+   "sha256": "61e24237975154a6081fd5fb154dea6de460c332057f9068368ae410607aa73f",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 9a5 5 0 0 1 0 6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19.364 18.364a9 9 0 0 0 0-12.728"
+     }
+    }
+   ]
+  },
+  "volume-x@0.575.0": {
+   "icon": "volume-x",
+   "version": "0.575.0",
+   "sha256": "1c13ff098041dcfde7f71d0074327180878c7fe24df850db4ae0ad51c89ae114",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "22",
+      "x2": "16",
+      "y1": "9",
+      "y2": "15"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "16",
+      "x2": "22",
+      "y1": "9",
+      "y2": "15"
+     }
+    }
+   ]
+  },
+  "wifi-off@0.575.0": {
+   "icon": "wifi-off",
+   "version": "0.575.0",
+   "sha256": "eae4169074f03015e71950c1231e18cd9c357fb71e10b3f8aaf520426ef86e9c",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M12 20h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8.5 16.429a5 5 0 0 1 7 0"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5 12.859a10 10 0 0 1 5.17-2.69"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 12.859a10 10 0 0 0-2.007-1.523"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M2 8.82a15 15 0 0 1 4.177-2.643"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 8.82a15 15 0 0 0-11.288-3.764"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m2 2 20 20"
+     }
+    }
+   ]
+  },
+  "x@0.575.0": {
+   "icon": "x",
+   "version": "0.575.0",
+   "sha256": "b4aa6cda4d03397dc3e77978d4a47bf31b531cd958e5f6336d543f143ae93da8",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 6 6 18"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6 6 12 12"
+     }
+    }
+   ]
+  },
+  "x@1.48.0": {
+   "icon": "x",
+   "version": "1.48.0",
+   "sha256": "ee3a8876027b1fc5f1b1b36bb61de6800e5e1d18b78014f121e2e538567574d6",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 6 6 18"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m6 6 12 12"
+     }
+    }
+   ]
+  },
+  "zoom-in@0.575.0": {
+   "icon": "zoom-in",
+   "version": "0.575.0",
+   "sha256": "2ad4d57d6bbae37ab703fff8d76123b9200f3c1225b8ad9be9113b91e197e8ae",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "11",
+      "cy": "11",
+      "r": "8"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "21",
+      "x2": "16.65",
+      "y1": "21",
+      "y2": "16.65"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "11",
+      "x2": "11",
+      "y1": "8",
+      "y2": "14"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "8",
+      "x2": "14",
+      "y1": "11",
+      "y2": "11"
+     }
+    }
+   ]
+  },
+  "zoom-out@0.575.0": {
+   "icon": "zoom-out",
+   "version": "0.575.0",
+   "sha256": "ca28e3b561f12a01bc6667215ecc0418038a193290ee66f04723e04ccc9e0a3a",
+   "nodes": [
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "11",
+      "cy": "11",
+      "r": "8"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "21",
+      "x2": "16.65",
+      "y1": "21",
+      "y2": "16.65"
+     }
+    },
+    {
+     "tag": "line",
+     "attrs": {
+      "x1": "8",
+      "x2": "14",
+      "y1": "11",
+      "y2": "11"
+     }
+    }
+   ]
+  }
+ }
+}
