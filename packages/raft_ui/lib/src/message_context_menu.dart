@@ -60,19 +60,24 @@ class RaftMessageContextMenu extends StatelessWidget {
     final separator = s.separator;
     Widget divider() {
       final width = separator.borderWidth.top;
+      final m = separator.margin;
+      final color = width > 0
+          ? separator
+                .borderColorOf('top')
+                ?.resolve(resolver, currentColor: t.strong)
+          : separator.backgroundColor?.resolve(resolver);
+      // Elegant `-mx-1 my-1 h-px bg-line-hairline` bleeds into the popup's
+      // p-1 padding; brutal is `border-t-2 border-black` with no margin.
       return Padding(
-        padding: separator.margin,
-        child: width > 0
-            ? Container(
-                height: width,
-                color: separator
-                    .borderColorOf('top')
-                    ?.resolve(resolver, currentColor: t.strong),
-              )
-            : Container(
-                height: separator.height ?? 1,
-                color: separator.backgroundColor?.resolve(resolver),
-              ),
+        padding: EdgeInsets.only(top: m.top, bottom: m.bottom),
+        child: CustomPaint(
+          size: Size(0, width > 0 ? width : (separator.height ?? 1)),
+          painter: _SeparatorPainter(
+            color ?? t.strong,
+            left: m.left,
+            right: m.right,
+          ),
+        ),
       );
     }
 
@@ -104,15 +109,18 @@ class RaftMessageContextMenu extends StatelessWidget {
                 padding: content.padding,
                 decoration: content.decoration(resolver),
                 clipBehavior: Clip.hardEdge,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    for (var i = 0; i < children.length; i++) ...[
-                      if (i > 0 && gap > 0) SizedBox(height: gap),
-                      children[i],
+                // `maxHeight: calc(100dvh - 16px); overflowY: auto`.
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < children.length; i++) ...[
+                        if (i > 0 && gap > 0) SizedBox(height: gap),
+                        children[i],
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -347,3 +355,17 @@ Widget raftMessageMenuIcon(RaftGlyph glyph) => Builder(
   builder: (context) =>
       RaftIcon(glyph, size: 14, color: IconTheme.of(context).color),
 );
+
+class _SeparatorPainter extends CustomPainter {
+  const _SeparatorPainter(this.color, {this.left = 0, this.right = 0});
+  final Color color;
+  final double left, right;
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRect(
+    Rect.fromLTRB(left, 0, size.width - right, size.height),
+    Paint()..color = color,
+  );
+  @override
+  bool shouldRepaint(_SeparatorPainter old) =>
+      old.color != color || old.left != left || old.right != right;
+}

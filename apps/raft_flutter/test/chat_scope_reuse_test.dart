@@ -130,7 +130,7 @@ void main() {
               )
               .onActions!();
           await tester.pumpAndSettle();
-          await tester.tap(find.text('Select messages'));
+          await tester.tap(find.text('Select Message'));
           await tester.pumpAndSettle();
           final toolbar = tester.widget<RaftSelectionToolbar>(
             find.byType(RaftSelectionToolbar),
