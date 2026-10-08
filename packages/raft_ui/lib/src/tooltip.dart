@@ -21,8 +21,9 @@ class RaftTooltipRecipe {
   Duration get transition => const Duration(milliseconds: 150);
   Curve get curve => const Cubic(.22, 1, .36, 1);
   bool get hasArrow => !tokens.brutal;
+  // tooltip recipe `content` brutal background-color: token(primary400).
   Color get background => tokens.brutal
-      ? tokens.primaryFill
+      ? tokens.colors['primary-400']!
       : tokens.dark
       ? tokens.popover
       // foundation.css311 oklch(.263 .009 294.9), converted to sRGB.
@@ -599,7 +600,8 @@ class _TooltipSurface extends StatelessWidget {
           ? _TooltipInset(recipe.radius)
           : null,
       child: Padding(
-        padding: recipe.padding,
+        // CSS border-box: the brutal border sits outside the padding.
+        padding: recipe.padding + EdgeInsets.all(recipe.tokens.brutal ? 2 : 0),
         child: Text(message, style: recipe.text),
       ),
     ),

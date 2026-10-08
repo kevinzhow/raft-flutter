@@ -4,6 +4,9 @@ export 'src/theme.dart';
 export 'src/components.dart';
 
 export 'src/task.dart';
+export 'src/inline_badge_editor.dart';
+export 'src/flex_shrink_row.dart';
+export 'src/resource_rows.dart';
 export 'src/form_dialog.dart';
 
 export 'src/collapsible.dart';
@@ -34,6 +37,8 @@ export 'src/select_field.dart';
 export 'src/recipes/button_variants.g.dart' show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 
 export 'src/icons.dart';
+export 'src/brand.dart';
+export 'src/auth_page.dart';
 
 export 'src/primitive_tokens.dart';
 export 'src/tokens/tokens.dart';
@@ -47,6 +52,9 @@ export 'src/mobile_navigation.dart';
 export 'src/mermaid_toolbar_recipe.dart';
 
 export 'src/sidebar_section.dart';
+export 'src/settings_layout.dart';
+export 'src/settings_controls.dart';
+export 'src/appearance_picker.dart';
 
 export 'src/notification_center.dart';
 
@@ -86,3 +94,7 @@ export 'src/timeline_composition.dart';
 export 'src/panel_layout.dart';
 export 'src/agent_create_form.dart';
 export 'src/agent_profile.dart';
+export 'src/dialog_card.dart';
+export 'src/channel_settings_sheet.dart';
+export 'src/create_channel_view.dart';
+export 'src/channel_members_view.dart';

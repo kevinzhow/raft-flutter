@@ -37,7 +37,6 @@ import 'package:raft_flutter/features/account_onboarding.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
-import 'package:raft_flutter/features/server_views.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -264,14 +263,12 @@ final ParityCase _serverDangerModal = ParityCase(
     'raft_flutter:WorkspaceView',
     'raft_flutter:RaftSettingsPage',
     'raft_flutter:ServerSettingsView',
-    'raft_ui:RaftFormDialog',
+    'raft_ui:RaftConfirmDialog',
   ],
   notes:
-      'Real mobile route: WorkspaceView → Settings tab → "Server profile" '
-      '(ServerSettingsView) → "Delete workspace", which opens the '
-      'WorkspaceActions.leave(delete: true) RaftFormDialog. Flutter has no '
-      'React-style "/slug" confirm prefix input; its dialog asks for the '
-      'workspace name.',
+      'Real mobile route: WorkspaceView → Settings tab → "Server Profile" '
+      '(ServerSettingsView) → "Delete Server" (server-danger-delete-button), '
+      'which opens the DangerZoneSection RaftConfirmDialog.',
   build: (ctx) => ScreenWorkspaceHost(
     create: () => _workspace(ctx, bootstrap: true),
     builder: (context, w) => _workspaceView(ctx, w),
@@ -282,24 +279,10 @@ final ParityCase _serverDangerModal = ParityCase(
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.byKey(const Key('workspace-settings-nav-server')));
     await t.pump(const Duration(milliseconds: 300));
-    // ServerSettingsView resolves its four GETs over several frames.
-    for (var i = 0; i < 5; i++) {
-      await t.pump(const Duration(milliseconds: 100));
-    }
-    final delete = find.text('Delete workspace');
-    await t.scrollUntilVisible(
-      delete,
-      200,
-      scrollable: find
-          .descendant(
-            of: find.byType(ServerSettingsView),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    await t.pump(const Duration(milliseconds: 100));
-    await t.tap(delete);
-    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.byKey(const Key('server-danger-delete-button')));
+    // React waits 120ms after the click.
+    await t.pump(const Duration(milliseconds: 120));
+    await t.pump(const Duration(milliseconds: 300));
   },
 );
 
@@ -371,12 +354,18 @@ final ParityCase _loginSigning = ParityCase(
 );
 
 final ParityCase _profileSetup = ParityCase(
-  widgets: const ['raft_flutter:AccountOnboardingView', 'raft_ui:RaftPanel'],
+  widgets: const [
+    'raft_flutter:AccountOnboardingView',
+    'raft_ui:RaftOnboardingPage',
+    'raft_ui:RaftAuthField',
+  ],
   notes:
-      'AccountOnboardingView profile step (verified email, pending_ name) '
-      'with username/display name typed. Flutter checks username '
-      'availability only on submit, so React\'s live "already taken" error '
-      'has no counterpart before Complete profile is pressed.',
+      'AccountOnboardingView profile step for the React previewUser '
+      '(pending_new_designer, suggested handle new_designer, no display '
+      'name, verified). showSessionFooter false mirrors the React host\'s '
+      'preview mode (OnboardingCreateShell showSessionFooter={!previewMode}). '
+      'The case values are typed like the React fills; leaving the username '
+      'field runs the same on-blur availability precheck.',
   build: (ctx) {
     final wire = ScreenWire(ctx.fixtureData);
     return ScreenClientHost(
@@ -384,8 +373,10 @@ final ParityCase _profileSetup = ParityCase(
         wire.common,
         user: {
           ...wire.me(),
-          'name': 'pending_visual-user',
-          'displayName': '',
+          'name': 'pending_new_designer',
+          'displayName': null,
+          'profileSetupCompletedAt': null,
+          'profileSetupSuggestedHandle': 'new_designer',
           'emailVerified': true,
         },
       ),
@@ -393,6 +384,7 @@ final ParityCase _profileSetup = ParityCase(
         client: client,
         onComplete: () async {},
         onSignOut: () async {},
+        showSessionFooter: false,
       ),
     );
   },
@@ -405,6 +397,7 @@ final ParityCase _profileSetup = ParityCase(
       find.byKey(const Key('onboarding-display-name')),
       '${ctx.props['profileSetupDisplayName'] ?? 'New Designer'}',
     );
+    await t.pump(const Duration(milliseconds: 50));
     await t.pump(const Duration(milliseconds: 50));
   },
 );

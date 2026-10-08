@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'auth_view.dart';
+import 'auth_view.dart' show authLinkToken;
 
 bool accountNeedsProfile(RaftRecord? user) =>
     user != null &&
@@ -96,9 +96,14 @@ class AccountOnboardingView extends StatefulWidget {
     required this.client,
     required this.onComplete,
     required this.onSignOut,
+    this.showSessionFooter = true,
   });
   final RaftClient client;
   final Future<void> Function() onComplete, onSignOut;
+
+  /// OnboardingCreateShell `showSessionFooter` ("Signed in as … Log out").
+  /// Web fixture previews opt out; the app always shows it.
+  final bool showSessionFooter;
   @override
   State<AccountOnboardingView> createState() => _OnboardingState();
 }
@@ -109,8 +114,9 @@ class _OnboardingState extends State<AccountOnboardingView> {
       displayName = TextEditingController(),
       token = TextEditingController();
   StreamSubscription<RaftEvent>? events;
-  bool busy = false;
-  String? error, notice;
+  bool busy = false, displayNameEdited = false;
+  String? error, notice, handleError, displayNameError;
+  final usernameFocus = FocusNode();
   RaftClient get client => widget.client;
   @override
   void initState() {
@@ -118,6 +124,43 @@ class _OnboardingState extends State<AccountOnboardingView> {
     events = client.events.listen((event) {
       if (event.name == 'account:updated' && mounted) setState(() {});
     });
+    final suggested = client.user?.string('profileSetupSuggestedHandle') ?? '';
+    if (suggested.isNotEmpty) {
+      username.text = suggested;
+      displayName.text = suggested;
+    }
+    usernameFocus.addListener(() {
+      if (!usernameFocus.hasFocus) unawaited(usernameBlur());
+    });
+  }
+
+  /// AccountIdentitySetupPage.handleUsernameBlur: format check first, then the
+  /// advisory `/auth/me/username-available` precheck.
+  Future<void> usernameBlur() async {
+    final candidate = username.text.trim();
+    final format = accountUsernameError(candidate);
+    if (format != null) {
+      setState(() => handleError = format);
+      return;
+    }
+    try {
+      final data = await client.get(
+        '/auth/me/username-available',
+        query: {'name': candidate},
+      );
+      if (!mounted || username.text.trim() != candidate) return;
+      // Web: `if (!data.available)` — any body without available:true.
+      if (data != null && (data is! Map || data['available'] != true)) {
+        final message = data is Map ? data['message'] : null;
+        setState(
+          () => handleError = message is String
+              ? message
+              : raftText(context, 'This username is already taken.'),
+        );
+      }
+    } catch (_) {
+      // Best-effort precheck; submit validates authoritatively.
+    }
   }
 
   @override
@@ -125,6 +168,7 @@ class _OnboardingState extends State<AccountOnboardingView> {
     events?.cancel();
     username.dispose();
     displayName.dispose();
+    usernameFocus.dispose();
     token.dispose();
     super.dispose();
   }
@@ -170,7 +214,15 @@ class _OnboardingState extends State<AccountOnboardingView> {
   }
 
   Future<void> completeProfile() async {
-    if (!form.currentState!.validate()) return;
+    final nameError = displayName.text.trim().isEmpty
+        ? 'Enter a display name.'
+        : null;
+    final userError = accountUsernameError(username.text);
+    setState(() {
+      displayNameError = nameError;
+      handleError = userError;
+    });
+    if (nameError != null || userError != null) return;
     final available = await client.get(
       '/auth/me/username-available',
       query: {'name': username.text.trim()},
@@ -193,153 +245,136 @@ class _OnboardingState extends State<AccountOnboardingView> {
   @override
   Widget build(BuildContext context) {
     final verified = client.user?.json['emailVerified'] == true;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: RaftPanel(
-                shadow: true,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      raftText(
-                        context,
-                        verified ? 'Set up your account' : 'Verify your email',
-                      ),
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 16),
-                    if (!verified) ...[
-                      Text(
-                        '${raftText(context, 'Check the verification email sent to')} ${client.user?.string('email') ?? ''}.',
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        key: const Key('verification-token'),
-                        controller: token,
-                        enabled: !busy,
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          labelText: raftText(
-                            context,
-                            'Verification link or code',
-                          ),
-                        ),
-                        onSubmitted: (_) => run(verify),
-                      ),
-                      const SizedBox(height: 16),
-                      RaftButton(
-                        label: raftText(context, 'Verify email'),
-                        busy: busy,
-                        onPressed: () => run(verify),
-                      ),
-                      TextButton(
-                        onPressed: busy
-                            ? null
-                            : () => run(() async {
-                                await client.post('/auth/resend-verification');
-                                if (mounted) {
-                                  setState(
-                                    () => notice = 'Verification email sent.',
-                                  );
-                                }
-                              }),
-                        child: Text(
-                          raftText(context, 'Resend verification email'),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: busy ? null : () => run(client.reloadUser),
-                        child: Text(
-                          raftText(context, 'I have verified my email'),
-                        ),
-                      ),
-                    ] else if (accountNeedsProfile(client.user))
-                      Form(
-                        key: form,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              raftText(
-                                context,
-                                'Choose a permanent username. Your display name can be changed later.',
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              key: const Key('onboarding-username'),
-                              controller: username,
-                              enabled: !busy,
-                              validator: (v) => accountUsernameError(v ?? ''),
-                              decoration: InputDecoration(
-                                labelText: raftText(context, 'Username'),
-                                prefixText: '@',
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              key: const Key('onboarding-display-name'),
-                              controller: displayName,
-                              enabled: !busy,
-                              validator: (v) => v?.trim().isEmpty ?? true
-                                  ? 'Enter a display name.'
-                                  : null,
-                              decoration: InputDecoration(
-                                labelText: raftText(context, 'Display name'),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextButton.icon(
-                              onPressed: busy
-                                  ? null
-                                  : () => run(
-                                      () => AccountMediaActions.uploadAvatar(
-                                        client,
-                                      ),
-                                    ),
-                              icon: const RaftIcon(RaftGlyph.camera, size: 15),
-                              label: Text(
-                                raftText(context, 'Choose profile image'),
-                              ),
-                            ),
-                            RaftButton(
-                              label: raftText(context, 'Complete profile'),
-                              busy: busy,
-                              onPressed: () => run(completeProfile),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (error != null)
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          error!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    if (notice != null)
-                      Semantics(
-                        liveRegion: true,
-                        child: Text(raftText(context, notice!)),
-                      ),
-                    TextButton(
-                      onPressed: busy ? null : widget.onSignOut,
-                      child: Text(raftText(context, 'Sign out')),
-                    ),
-                  ],
-                ),
+    final profile = verified && accountNeedsProfile(client.user);
+    String tr(String s) => raftText(context, s);
+    final t = RaftTokens.of(context);
+    final user = client.user;
+    final avatarUrl = user?.string('avatarUrl') ?? '';
+    final footerName = (user?.string('displayName') ?? '').isNotEmpty
+        ? user!.string('displayName')
+        : user?.string('email') ?? '';
+    return Form(
+      key: form,
+      child: RaftOnboardingPage(
+        title: tr(verified ? 'Set up your account' : 'Verify your email'),
+        banner: error,
+        notice: notice == null ? null : tr(notice!),
+        footer: widget.showSessionFooter
+            ? RaftAuthSessionFooter(
+                name: footerName,
+                onSignOut: busy ? null : widget.onSignOut,
+              )
+            : null,
+        children: [
+          if (!verified) ...[
+            RaftAuthNote(
+              '${tr('Check the verification email sent to')} ${user?.string('email') ?? ''}.',
+            ),
+            RaftAuthField(
+              label: tr('Verification link or code'),
+              child: TextField(
+                key: const Key('verification-token'),
+                controller: token,
+                obscureText: true,
+                style: t.fieldStyle,
+                onSubmitted: (_) => run(verify),
               ),
             ),
-          ),
-        ),
+            RaftAuthWideButton(
+              variant: RaftControlVariant.accent,
+              onPressed: busy ? null : () => run(verify),
+              child: Text(tr('Verify email')),
+            ),
+            Center(
+              child: RaftAuthTextLink(
+                label: tr('Resend verification email'),
+                onTap: busy
+                    ? null
+                    : () => run(() async {
+                        await client.post('/auth/resend-verification');
+                        if (mounted) {
+                          setState(() => notice = 'Verification email sent.');
+                        }
+                      }),
+              ),
+            ),
+            Center(
+              child: RaftAuthTextLink(
+                label: tr('I have verified my email'),
+                onTap: busy ? null : () => run(client.reloadUser),
+              ),
+            ),
+          ] else if (profile)
+            RaftAuthFormColumn(
+              children: [
+                RaftAuthField(
+                  label: tr('Username'),
+                  surface: false,
+                  error: handleError,
+                  helper: tr(
+                    "Your unique name for @mentions and links. It can't be changed later.",
+                  ),
+                  child: RaftAuthHandleGroup(
+                    child: TextFormField(
+                      key: const Key('onboarding-username'),
+                      controller: username,
+                      focusNode: usernameFocus,
+                      style: t.fieldStyle,
+                      autofillHints: const [AutofillHints.username],
+                      decoration: raftAuthGroupedInputDecoration(
+                        hintText: tr('alexchen'),
+                      ),
+                      onChanged: (value) {
+                        final next = value.replaceFirst(RegExp(r'^@+'), '');
+                        if (next != value) username.text = next;
+                        setState(() {
+                          handleError = null;
+                          // Mirror into the display name until edited.
+                          if (!displayNameEdited) {
+                            displayName.text = next;
+                            displayNameError = null;
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                RaftAuthField(
+                  label: tr('Display name'),
+                  error: displayNameError,
+                  helper: tr(
+                    'How your name appears in messages. Change this anytime.',
+                  ),
+                  helperHint: true,
+                  child: TextFormField(
+                    key: const Key('onboarding-display-name'),
+                    controller: displayName,
+                    style: t.fieldStyle,
+                    autofillHints: const [AutofillHints.name],
+                    decoration: InputDecoration(hintText: tr('Alex Chen')),
+                    onChanged: (_) => setState(() {
+                      displayNameEdited = true;
+                      displayNameError = null;
+                    }),
+                  ),
+                ),
+                RaftAuthAvatarField(
+                  name: user?.string('displayName') ?? '',
+                  imageUrl: avatarUrl.isEmpty ? null : avatarUrl,
+                  onUpload: busy
+                      ? null
+                      : () =>
+                            run(() => AccountMediaActions.uploadAvatar(client)),
+                ),
+                RaftAuthWideButton(
+                  key: const Key('onboarding-complete'),
+                  variant: RaftControlVariant.accent,
+                  onPressed: busy ? null : () => run(completeProfile),
+                  child: Text(tr(busy ? 'Saving identity…' : 'Continue')),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }

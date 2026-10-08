@@ -8,19 +8,39 @@ class RaftAccountSignInRecipe {
   final RaftTokens tokens;
   static const gap = 12.0;
   static const rowInset = EdgeInsets.all(12);
+  // `border border-line-muted theme-brutal:border-2 theme-brutal:border-black/30
+  // bg-layer-panel theme-brutal:bg-white p-3`
   BoxDecoration get providerDecoration => BoxDecoration(
-    color: tokens.panel,
+    color: RaftSettingsText(tokens).panel,
     border: Border.all(
-      color: tokens.brutal ? tokens.strong.withValues(alpha: .3) : tokens.line,
+      color: RaftSettingsText(tokens).softEdge,
       width: tokens.brutal ? 2 : 1,
     ),
   );
   TextStyle get heading =>
       RaftTypography.body(tokens, size: 14, line: 20, weight: FontWeight.w700);
-  TextStyle get providerTitle =>
-      RaftTypography.body(tokens, size: 12, line: 16, weight: FontWeight.w700);
-  TextStyle get detail =>
-      RaftTypography.body(tokens, size: 12, line: 16, color: tokens.muted);
-  Color get dividerColor => tokens.brutal ? tokens.strong : tokens.line;
+  TextStyle get providerTitle => RaftTypography.body(
+    tokens,
+    size: 12,
+    line: 16,
+    weight: FontWeight.w700,
+    color: RaftSettingsText(tokens).strong,
+  );
+  // `truncate text-xs text-foreground-muted theme-brutal:text-black/50`
+  TextStyle get detail => RaftTypography.body(
+    tokens,
+    size: 12,
+    line: 16,
+    color: RaftSettingsText(tokens).faint,
+  );
+  // `mt-1 text-xs text-foreground-muted theme-brutal:text-black/60`
+  TextStyle get passwordDetail => RaftTypography.body(
+    tokens,
+    size: 12,
+    line: 16,
+    color: RaftSettingsText(tokens).muted,
+  );
+  // `border-t-2 border-line-muted theme-brutal:border-black`
+  Color get dividerColor => RaftSettingsText(tokens).edge;
   double get dividerWidth => 2;
 }

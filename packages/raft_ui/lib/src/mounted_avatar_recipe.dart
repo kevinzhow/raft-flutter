@@ -5,7 +5,7 @@ import 'theme.dart';
 import 'tooltip.dart';
 
 /// Mounted AvatarSlot contexts, independent of generic Avatar sizing.
-enum RaftMountedAvatarContext { panelHeader, compactList }
+enum RaftMountedAvatarContext { panelHeader, compactList, sidebarList }
 
 enum RaftMountedAvatarIdentity { human, agent, server, app }
 
@@ -40,11 +40,14 @@ class RaftMountedAvatarRecipe {
   final RaftMountedAvatarContext avatarContext;
   final RaftMountedAvatarIdentity identity;
   bool get panelHeader => avatarContext == RaftMountedAvatarContext.panelHeader;
-  double get extent => panelHeader ? 36 : 20;
+  bool get sidebarList => avatarContext == RaftMountedAvatarContext.sidebarList;
+  // RAFT_AVATAR_SPEC: panel-header !size-9, compact-list !size-5,
+  // sidebar-list !size-[18px]; SPEC placeholder/gravatar icon sizes.
+  double get extent => panelHeader ? 36 : sidebarList ? 18 : 20;
   double get borderWidth => panelHeader ? 2 : 1;
   double get contentExtent => extent - borderWidth * 2;
-  double get placeholderExtent => panelHeader ? 18 : 12;
-  double get gravatarFallbackExtent => panelHeader ? 16 : 12;
+  double get placeholderExtent => panelHeader ? 18 : sidebarList ? 10 : 12;
+  double get gravatarFallbackExtent => panelHeader ? 16 : sidebarList ? 10 : 12;
   double get badgeExtent => panelHeader ? 10 : 6;
   double get radius => tokens.brutal ? 0 : extent / 2;
   Color get border => tokens.brutal ? Colors.black : Colors.transparent;

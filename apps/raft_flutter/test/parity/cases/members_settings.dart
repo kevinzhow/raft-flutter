@@ -31,26 +31,17 @@
 // the endpoint mocks of react-provider.spec.ts.
 import 'package:file_selector_platform_interface/file_selector_platform_interface.dart'; // ignore: depend_on_referenced_packages
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/account_settings.dart';
-import 'package:raft_flutter/features/admin_views.dart';
-import 'package:raft_flutter/features/appearance_section.dart';
+import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
-import 'package:raft_flutter/features/im_bridges_view.dart';
-import 'package:raft_flutter/features/integrations_views.dart';
-import 'package:raft_flutter/features/joint_channel_views.dart';
-import 'package:raft_flutter/features/locale_settings_page.dart';
 import 'package:raft_flutter/features/managed_agent_launcher.dart';
-import 'package:raft_flutter/features/notification_settings_view.dart';
-import 'package:raft_flutter/features/provider_views.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
-import 'package:raft_flutter/features/server_views.dart';
-import 'package:raft_flutter/features/settings_page.dart';
-import 'package:raft_flutter/features/sidebar_preferences_view.dart';
+import 'package:raft_flutter/features/workspace_settings.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -369,28 +360,65 @@ ParityCase _agentDetail({required bool lifecycle}) => agentDetailParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Channel settings: the ChannelSettings dialog workspace_view.dart opens.
+// Channel settings: React mounts EditChannelDialog (default "sheet"
+// presentation) for #design without onLeaveChannel / collapseLongMessages
+// props; Flutter opens the product ChannelSettings sheet the same way
+// WorkspaceView.channelSettings does, with leave/collapse off to match those
+// absent props. The add-member case mounts the product ChannelMembers
+// (trigger + modal) at `p-4` and clicks through to its add view like the
+// React interactions (channel-members-open, then add-member-open).
 
-ParityCase _channelSettings({required bool addPanel}) => ParityCase(
-  widgets: [
-    'raft_flutter:ChannelSettings',
-    'raft_flutter:ChannelConversionSection',
-    if (addPanel) 'material:AlertDialog',
-    if (addPanel) 'material:CheckboxListTile',
+ParityCase _channelSettings({required bool addPanel}) => addPanel
+    ? _channelAddMember
+    : ParityCase(
+        widgets: const [
+          'raft_flutter:ChannelSettings',
+          'raft_ui:RaftRecipeButton',
+        ],
+        notes: 'Product ChannelSettings sheet (Web EditChannelDialog sheet).',
+        settle: const Duration(milliseconds: 600),
+        build: (ctx) {
+          final fixture = MsFixture(ctx);
+          final channel = fixture.channel('design');
+          final (w, _) = fixture.workspace({
+            'GET /channels/${channel['id']}/members': (_) => {
+              'agents': [],
+              'humans': [],
+              'externalMembers': [],
+            },
+          });
+          return _Host(
+            page: const Scaffold(),
+            open: (context) => showDialog(
+              context: context,
+              builder: (_) => ChannelSettings(
+                controller: w,
+                channel: RaftChannel(channel),
+                leave: false,
+                collapseLongMessages: false,
+              ),
+            ),
+          );
+        },
+      );
+
+final ParityCase _channelAddMember = ParityCase(
+  widgets: const [
+    'raft_flutter:ChannelMembersButton',
+    'raft_flutter:ChannelMembers',
   ],
-  notes: addPanel
-      ? 'Flutter add-member is ChannelSettings → "Add members" → AlertDialog '
-            'of CheckboxListTiles (server members + agents not in the '
-            'channel). Roster mock = react-provider.spec.ts empty channel '
-            'members; candidates = its /servers/visual-server/members and '
-            '/api/agents payloads.'
-      : 'Flutter channel settings is the ChannelSettings Dialog (not a full '
-            'screen panel). Channel members served empty as in the React '
-            'add-panel mock so the roster request settles.',
+  notes:
+      'Product ChannelMembers trigger at p-4 (React main.p-4), opened and '
+      'switched to the add view with mouse clicks like the Playwright '
+      'interactions, so the pointer rests where add-member-open was. Roster '
+      'mock = react-provider.spec.ts empty channel members; candidates = its '
+      '/servers/visual-server/members and /api/agents payloads.',
   settle: const Duration(milliseconds: 600),
   build: (ctx) {
     final fixture = MsFixture(ctx);
-    final channel = fixture.channel('design');
+    final channel = Map<String, dynamic>.from(fixture.channel('design'))
+      // VisualTestingCases.tsx grants addChannelMembers for this case only.
+      ..['channelCapabilities'] = {'addChannelMembers': true};
     final (w, _) = fixture.workspace({
       'GET /channels/${channel['id']}/members': (_) => {
         'agents': [],
@@ -400,25 +428,41 @@ ParityCase _channelSettings({required bool addPanel}) => ParityCase(
       'GET /servers/visual-server/members': (_) => fixture.members,
       'GET /agents': (_) => fixture.agents,
     });
-    return _Host(
-      page: const Scaffold(),
-      open: (context) => showDialog(
-        context: context,
-        builder: (_) =>
-            ChannelSettings(controller: w, channel: RaftChannel(channel)),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ChannelMembersButton(
+            controller: w,
+            channel: RaftChannel(channel),
+          ),
+        ),
       ),
     );
   },
-  interact: addPanel
-      ? (t, ctx) async {
-          await t.pump(const Duration(milliseconds: 300));
-          final button = find.text('Add members');
-          await t.ensureVisible(button);
-          await t.pump(const Duration(milliseconds: 50));
-          await t.tap(button);
-          await t.pump(const Duration(milliseconds: 100));
-        }
-      : null,
+  interact: (t, ctx) async {
+    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    Future<void> click(Finder target) async {
+      await mouse.moveTo(t.getCenter(target));
+      await t.pump(const Duration(milliseconds: 50));
+      await mouse.down(t.getCenter(target));
+      await mouse.up();
+      await t.pump(const Duration(milliseconds: 300));
+    }
+
+    await t.pump(const Duration(milliseconds: 300));
+    await click(find.byKey(const ValueKey('channel-members-open')));
+    await t.pump(const Duration(milliseconds: 300));
+    await click(find.byKey(const ValueKey('add-member-open')));
+    // Re-dispatch hover at the resting pointer (the add view replaced the
+    // roster under it), then wait for the tooltip.
+    await mouse.moveBy(Offset.zero);
+    await t.pump(const Duration(milliseconds: 250));
+    await t.pump(const Duration(milliseconds: 700));
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -446,7 +490,8 @@ ParityCase _settings(
 }) => ParityCase(
   widgets: [
     'raft_flutter:RaftSettingsPage',
-    if (root) 'raft_ui:RaftNavItem',
+    'raft_flutter:WorkspaceSettings',
+    if (root) 'raft_ui:RaftSettingsSidebarList',
     if (root) 'raft_ui:RaftMobileRootHeader',
     if (tab == 'account' && !root) 'raft_flutter:AccountSettings',
     if (tab == 'server') 'raft_flutter:ServerSettingsView',
@@ -454,19 +499,18 @@ ParityCase _settings(
     if (tab == 'notifications') 'raft_flutter:NotificationSettingsView',
   ],
   notes: [
-    'Destinations mirror WorkspaceView.settings() for the fixture owner '
-        '(Flutter groups Personal/Workspace only; no Resources group).',
+    'WorkspaceSettings (the widget WorkspaceView.settings() mounts) for the '
+        'fixture owner.',
     if (tab == 'account' && !root)
       '/auth/identities adds passwordConfigured:false (the state React shows '
           'as "Set a password"; its mock omits the field, which Flutter would '
           'render as "Sign-in methods could not be verified").',
     if (uploadError)
-      'Error state reached through the real flow: "Change profile image" → '
-          'file picker (FileSelectorPlatform fixture returns a PNG) → POST '
-          '/auth/me/avatar fails with the React/Android fixture message '
-          '"Avatar upload failed: upload_failed". Flutter renders that error '
-          'at the bottom of the account card, so the page is scrolled until '
-          'it is visible (React shows its banner above Save Profile).',
+      'Error state reached through the real flow: tap the profile avatar '
+          '(account-profile-image) → file picker (FileSelectorPlatform fixture '
+          'returns a PNG) → POST /auth/me/avatar fails with the React/Android '
+          'fixture message "Avatar upload failed: upload_failed", shown above '
+          'the profile form like AccountSection.',
     if (tab == 'appearance')
       'Appearance = Light mode, Brutal light theme (the React fixture state).',
     if (tab == 'notifications')
@@ -522,133 +566,14 @@ Widget _settingsPage(
   WorkspaceController w, {
   required String tab,
   required bool root,
-}) {
-  final presentation = PersonalPresentationStore();
-  final notifications = NativeNotificationService(
-    platform: TargetPlatform.android,
-  );
-  return RaftSettingsPage(
-    initialTab: tab,
-    mobileRoot: root,
-    destinations: [
-      RaftSettingsDestination(
-        'account',
-        'Account',
-        RaftGlyph.user,
-        (context) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AccountSettings(controller: w),
-            const SizedBox(height: 24),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: RaftButton(
-                label: raftText(context, 'Sign out'),
-                secondary: true,
-                icon: Icons.logout,
-                onPressed: () {},
-              ),
-            ),
-          ],
-        ),
-      ),
-      RaftSettingsDestination(
-        'language',
-        'Language & Region',
-        RaftGlyph.globe,
-        (_) => LocaleSettingsPage(controller: w),
-      ),
-      RaftSettingsDestination(
-        'appearance',
-        'Appearance',
-        RaftGlyph.palette,
-        (_) => RaftAppearanceSection(
-          appearance: const RaftAppearance(mode: ThemeMode.light),
-          onAppearance: (_) {},
-          presentation: presentation,
-        ),
-      ),
-      RaftSettingsDestination(
-        'notifications',
-        'Notifications',
-        RaftGlyph.info,
-        (_) => NotificationSettingsView(service: notifications),
-      ),
-      RaftSettingsDestination(
-        'sidebar',
-        'Sidebar preferences',
-        RaftGlyph.columns2,
-        (_) => SidebarPreferencesView(controller: w),
-        group: 'Workspace',
-        scroll: false,
-      ),
-      if (w.can('federateChannels'))
-        RaftSettingsDestination(
-          'joint-channels',
-          'Joint channels',
-          RaftGlyph.gitBranch,
-          (_) => JointChannelsView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      RaftSettingsDestination(
-        'server',
-        'Server profile',
-        RaftGlyph.settings,
-        (_) => ServerSettingsView(controller: w),
-        group: 'Workspace',
-        scroll: false,
-      ),
-      if (w.can('viewBilling'))
-        RaftSettingsDestination(
-          'billing',
-          'Plan & Billing',
-          RaftGlyph.fileText,
-          (_) => BillingView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      if (w.can('viewServerSettings'))
-        RaftSettingsDestination(
-          'administration',
-          'Administration',
-          RaftGlyph.settings,
-          (_) => AdministrationView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      if (w.can('manageIntegrations'))
-        RaftSettingsDestination(
-          'applications',
-          'Applications',
-          RaftGlyph.bot,
-          (_) => IntegrationsView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      // providers / IM bridges are feature-flag gated (providerEnabled /
-      // bridgeEnabled default false in WorkspaceView); kept referenced so the
-      // mirror stays in sync with the app's list.
-      if (_flagged)
-        RaftSettingsDestination(
-          'providers',
-          'Providers',
-          RaftGlyph.lock,
-          (_) => ProviderConnectionsView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      if (_flagged)
-        RaftSettingsDestination(
-          'bridges',
-          'IM bridges',
-          RaftGlyph.link,
-          (_) => IMBridgesView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-    ],
-  );
-}
-
-const bool _flagged = false;
+}) => WorkspaceSettings(
+  controller: w,
+  // React fixture state: Light mode, Brutal light theme.
+  appearance: const RaftAppearance(mode: ThemeMode.light),
+  onAppearance: (_) {},
+  presentation: PersonalPresentationStore(),
+  notifications: NativeNotificationService(platform: TargetPlatform.android),
+  onLogout: () async {},
+  initialTab: tab,
+  mobileRoot: root,
+);
