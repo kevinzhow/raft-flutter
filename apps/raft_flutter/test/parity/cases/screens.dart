@@ -370,8 +370,8 @@ final ParityCase _loginSigning = ParityCase(
 final ParityCase _profileSetup = ParityCase(
   widgets: const [
     'raft_flutter:AccountOnboardingView',
-    'raft_flutter:AuthBrandShell',
-    'raft_flutter:AuthFieldBlock',
+    'raft_ui:RaftOnboardingPage',
+    'raft_ui:RaftAuthField',
   ],
   notes:
       'AccountOnboardingView profile step for the React previewUser '

@@ -61,6 +61,7 @@ final Map<String, ParityUncovered> homeTaskUncovered = {
 final ParityCase _register = ParityCase(
   widgets: const [
     'raft_flutter:AuthView',
+    'raft_ui:RaftAuthPage',
     'raft_ui:RaftBrandMark',
     'raft_ui:RaftButton',
     'raft_ui:RaftFieldSurface',
