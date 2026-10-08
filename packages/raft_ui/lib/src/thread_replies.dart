@@ -213,7 +213,10 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
     // The badge sets no family: it inherits MessageItem's `font-display`.
     final text = s
         .textStyle(resolver)
-        .copyWith(fontFamily: tokens.headingFont, leadingDistribution: TextLeadingDistribution.even);
+        .copyWith(
+          fontFamily: tokens.headingFont,
+          leadingDistribution: TextLeadingDistribution.even,
+        );
     final color = text.color;
     final gap = SizedBox(width: s.columnGap ?? 4);
     Widget dot() => Opacity(opacity: .6, child: Text('·', style: text));
@@ -242,11 +245,14 @@ class _RaftThreadRepliesBadgeState extends State<RaftThreadRepliesBadge> {
       ],
       if (widget.hasDraft) ...[
         if (hasReplies || hasUnread) ...[gap, dot()],
-        if (hasReplies) ...[gap, RaftIcon(RaftGlyph.pencil, size: 12, color: color)],
+        if (hasReplies) ...[
+          gap,
+          RaftIcon(RaftGlyph.pencil, size: 12, color: color),
+        ],
         gap,
         Opacity(
           opacity: .8,
-          child: Text(raftText(context, 'Draft'), style: text),
+          child: Text(raftText(context, 'draft'), style: text),
         ),
       ],
     ];

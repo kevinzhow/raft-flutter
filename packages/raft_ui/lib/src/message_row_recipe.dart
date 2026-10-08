@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 
 import 'design_primitives.dart';
@@ -178,6 +179,7 @@ class RaftMessageRow extends StatefulWidget {
     this.toolbar,
     this.onAuthor,
     this.onActions,
+    this.onActionsAt,
     this.onTap,
     this.rowContext = RaftMessageRowContext.main,
     this.continuation = false,
@@ -192,6 +194,11 @@ class RaftMessageRow extends StatefulWidget {
   final Widget? avatar, metadata, attachments, footer, inlineReplies, toolbar;
   final String? subtitle;
   final VoidCallback? onAuthor, onActions, onTap;
+
+  /// Web MessageItem opens its context menu at the pointer: right-click
+  /// (`contextmenu` clientX/Y) and 500ms long-press (touch clientX/Y).
+  /// Receives the global press position; takes precedence over [onActions].
+  final ValueChanged<Offset>? onActionsAt;
   final bool continuation,
       nextContinuation,
       coarsePointer,
@@ -203,6 +210,7 @@ class RaftMessageRow extends StatefulWidget {
 
 class _RaftMessageRowState extends State<RaftMessageRow> {
   bool hovered = false, toolbarHovered = false, focused = false;
+  bool secondaryDown = false;
   final portal = OverlayPortalController()..show();
   ScrollPosition? position;
   bool overlayUpdateQueued = false;
@@ -390,120 +398,146 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         ],
       ),
     );
-    return Focus(
-      canRequestFocus: false,
-      onFocusChange: (value) {
-        if (focused != value) setState(() => focused = value);
+    return Listener(
+      // Right-click reaches the row even over selectable body text (whose
+      // SelectionArea wins the secondary-tap gesture arena), like Web's
+      // `contextmenu` handler on the MessageItem root.
+      onPointerDown: (event) {
+        secondaryDown =
+            widget.onActionsAt != null &&
+            event.kind == PointerDeviceKind.mouse &&
+            (event.buttons & kSecondaryMouseButton) != 0;
       },
-      child: MouseRegion(
-        onEnter: (_) {
-          if (!hovered) setState(() => hovered = true);
+      onPointerUp: (event) {
+        if (!secondaryDown) return;
+        secondaryDown = false;
+        widget.onActionsAt?.call(event.position);
+      },
+      onPointerCancel: (_) => secondaryDown = false,
+      child: Focus(
+        canRequestFocus: false,
+        onFocusChange: (value) {
+          if (focused != value) setState(() => focused = value);
         },
-        onExit: (_) {
-          if (hovered) setState(() => hovered = false);
-        },
-        child: GestureDetector(
-          onTap: widget.onTap,
-          onLongPress: widget.onActions,
-          onSecondaryTap: widget.onActions,
-          behavior: HitTestBehavior.translucent,
-          child: Padding(
-            padding: recipe.margin,
-            child: Container(
-              constraints: BoxConstraints(minHeight: recipe.minimumHeight),
-              decoration: recipe.decoration,
-              foregroundDecoration: recipe.highlightRing,
-              child: portalBody(
-                context,
-                recipe,
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Padding(
-                      padding: recipe.padding,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: recipe.gutterWidth,
-                            height: widget.continuation
-                                ? 14
-                                : recipe.avatarExtent + recipe.avatarTop,
-                            child: widget.continuation
-                                ? Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Positioned(
-                                        right: 4,
-                                        top: 4,
-                                        child: Text(
-                                          widget.timestamp,
-                                          style: recipe.continuationTime,
+        child: MouseRegion(
+          onEnter: (_) {
+            if (!hovered) setState(() => hovered = true);
+          },
+          onExit: (_) {
+            if (hovered) setState(() => hovered = false);
+          },
+          child: GestureDetector(
+            onTap: widget.onTap,
+            onLongPressStart: widget.onActionsAt != null
+                ? (d) => widget.onActionsAt!(d.globalPosition)
+                : widget.onActions == null
+                ? null
+                : (_) => widget.onActions!(),
+            onSecondaryTapUp: widget.onActionsAt != null
+                ? null
+                : widget.onActions == null
+                ? null
+                : (_) => widget.onActions!(),
+            behavior: HitTestBehavior.translucent,
+            child: Padding(
+              padding: recipe.margin,
+              child: Container(
+                constraints: BoxConstraints(minHeight: recipe.minimumHeight),
+                decoration: recipe.decoration,
+                foregroundDecoration: recipe.highlightRing,
+                child: portalBody(
+                  context,
+                  recipe,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Padding(
+                        padding: recipe.padding,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(
+                              width: recipe.gutterWidth,
+                              height: widget.continuation
+                                  ? 14
+                                  : recipe.avatarExtent + recipe.avatarTop,
+                              child: widget.continuation
+                                  ? Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Positioned(
+                                          right: 4,
+                                          top: 4,
+                                          child: Text(
+                                            widget.timestamp,
+                                            style: recipe.continuationTime,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Padding(
+                                      padding: EdgeInsets.only(
+                                        top: recipe.avatarTop,
+                                      ),
+                                      child: OverflowBox(
+                                        alignment: Alignment.topLeft,
+                                        minWidth: recipe.avatarExtent,
+                                        maxWidth: recipe.avatarExtent,
+                                        minHeight: recipe.avatarExtent,
+                                        maxHeight: recipe.avatarExtent,
+                                        child: SizedBox.square(
+                                          dimension: recipe.avatarExtent,
+                                          child: widget.avatar,
                                         ),
                                       ),
-                                    ],
-                                  )
-                                : Padding(
-                                    padding: EdgeInsets.only(
-                                      top: recipe.avatarTop,
                                     ),
-                                    child: OverflowBox(
-                                      alignment: Alignment.topLeft,
-                                      minWidth: recipe.avatarExtent,
-                                      maxWidth: recipe.avatarExtent,
-                                      minHeight: recipe.avatarExtent,
-                                      maxHeight: recipe.avatarExtent,
-                                      child: SizedBox.square(
-                                        dimension: recipe.avatarExtent,
-                                        child: widget.avatar,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                          SizedBox(width: recipe.gap),
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (!widget.continuation) header,
-                                Padding(
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: recipe.bodyGap,
-                                  ),
-                                  child: DefaultTextStyle.merge(
-                                    style: recipe.body,
-                                    child: widget.content,
-                                  ),
-                                ),
-                                if (widget.attachments != null)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      top: recipe.attachmentGap,
-                                    ),
-                                    child: widget.attachments!,
-                                  ),
-                                if (widget.footer != null)
-                                  Padding(
-                                    padding: EdgeInsets.only(
-                                      // Source block margins collapse: body
-                                      // bottom6 + footer top6 paint one6 gap.
-                                      top: widget.attachments == null
-                                          ? (recipe.footerGap - recipe.bodyGap)
-                                                .clamp(0.0, double.infinity)
-                                          : recipe.footerGap,
-                                    ),
-                                    child: widget.footer!,
-                                  ),
-                                if (widget.inlineReplies != null)
-                                  widget.inlineReplies!,
-                              ],
                             ),
-                          ),
-                        ],
+                            SizedBox(width: recipe.gap),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (!widget.continuation) header,
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: recipe.bodyGap,
+                                    ),
+                                    child: DefaultTextStyle.merge(
+                                      style: recipe.body,
+                                      child: widget.content,
+                                    ),
+                                  ),
+                                  if (widget.attachments != null)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        top: recipe.attachmentGap,
+                                      ),
+                                      child: widget.attachments!,
+                                    ),
+                                  if (widget.footer != null)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                        // Source block margins collapse: body
+                                        // bottom6 + footer top6 paint one6 gap.
+                                        top: widget.attachments == null
+                                            ? (recipe.footerGap -
+                                                      recipe.bodyGap)
+                                                  .clamp(0.0, double.infinity)
+                                            : recipe.footerGap,
+                                      ),
+                                      child: widget.footer!,
+                                    ),
+                                  if (widget.inlineReplies != null)
+                                    widget.inlineReplies!,
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

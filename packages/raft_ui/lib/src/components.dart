@@ -900,6 +900,7 @@ class RaftMessageTile extends StatelessWidget {
     required this.timestamp,
     this.onThread,
     this.onActions,
+    this.onActionsAt,
     this.onLink,
     this.threadLabel,
     this.threadPreview,
@@ -950,6 +951,7 @@ class RaftMessageTile extends StatelessWidget {
   /// before reactions (hidden when the inline reply surface replaces it).
   final Widget? threadRepliesBadge;
   final VoidCallback? onThread, onActions, onReact;
+  final ValueChanged<Offset>? onActionsAt;
   final void Function(String href)? onLink;
   final List<Map<String, dynamic>> attachments, reactions;
   final Set<String> reactedEmojis, failedReactionEmojis;
@@ -981,6 +983,7 @@ class RaftMessageTile extends StatelessWidget {
       avatar: avatar ?? RaftAvatar(name: author, size: 36),
       onAuthor: onAuthor,
       onActions: onActions,
+      onActionsAt: onActionsAt,
       onTap: onTap,
       rowContext: rowContext,
       continuation: continuation,

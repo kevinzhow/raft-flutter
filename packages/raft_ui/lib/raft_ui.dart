@@ -21,6 +21,7 @@ export 'src/composer_suggestions.dart';
 export 'src/document_preview.dart';
 export 'src/html_preview.dart';
 export 'src/thread_replies.dart';
+export 'src/message_context_menu.dart';
 
 export 'src/design_primitives.dart';
 

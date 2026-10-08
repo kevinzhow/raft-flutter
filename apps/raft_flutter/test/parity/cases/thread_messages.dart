@@ -25,6 +25,7 @@
 // fed the same Message/Task/threadSummary values VisualTestingCases.tsx
 // passes to MessageItem. Element crops window onto the mounted
 // RaftMessageRow box, sized to React's MessageItem width.
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
@@ -244,21 +245,38 @@ Future<void> _longPressRow(WidgetTester t, int index) async {
   }
 }
 
-/// React opens MessageItem's context menu (right-click). The Flutter app's
-/// message actions are RaftMessageRow.onActions → RaftChatView.actions(), a
-/// modal bottom sheet opened by long-press on touch.
+/// React dispatches `contextmenu` at the centre of `#message-<id>` (the
+/// MessageItem box inside its margins); Flutter right-clicks the same point,
+/// which opens the same RaftMessageContextMenu as a touch long-press.
+Future<void> _contextMenuRow(WidgetTester t, int index) async {
+  // A device runs resumed: the body's SelectableRegion clears its collapsed
+  // right-click selection when the opened menu takes focus.
+  t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  final row = find.byType(RaftMessageRow).at(index);
+  final box = find.descendant(of: row, matching: find.byType(Container)).first;
+  await t.tapAt(
+    t.getCenter(box),
+    kind: PointerDeviceKind.mouse,
+    buttons: kSecondaryMouseButton,
+  );
+  for (var i = 0; i < 12; i++) {
+    await t.pump(const Duration(milliseconds: 50));
+  }
+}
+
 final ParityCase _menu = ParityCase(
-  widgets: [..._rowWidgets, 'raft_flutter:RaftChatView.actions (bottom sheet)'],
-  notes:
-      '$_clockNote React shows a grouped context-menu popover (emoji row, '
-      'Copy Link/Markdown, Select, Open/Follow Thread, Save, Convert to '
-      'Task); Flutter shows its real long-press actions bottom sheet, which '
-      'has no task-specific variant. $_noRepliesChip',
+  widgets: [
+    ..._rowWidgets,
+    'raft_flutter:RaftChatView.actions',
+    'raft_ui:RaftMessageContextMenu',
+    'raft_ui:showRaftMessageContextMenu',
+  ],
+  notes: _clockNote,
   build: (ctx) => stageFor(ctx, () => _menuStage(ctx)).build(),
   interact: (t, ctx) async {
     final stage = stageFor(ctx, () => _menuStage(ctx));
     await stage.alignRow(t);
-    await _longPressRow(t, 0);
+    await _contextMenuRow(t, 0);
   },
 );
 
@@ -294,7 +312,7 @@ final ParityCase _shareSelection = ParityCase(
   ],
   notes:
       '$_clockNote Selection entered through the real path: long-press row '
-      '1 → "Select messages", tap row 2. The whole mounted RaftChatView is '
+      '1 → "Select Message", tap row 2. The whole mounted RaftChatView is '
       'the viewport (timeline header/day divider included); React stacks two '
       'MessageItems over SelectModeToolbar.',
   build: (ctx) => stageFor(ctx, () => _shareStage(ctx)).build(),
@@ -302,8 +320,11 @@ final ParityCase _shareSelection = ParityCase(
     final stage = stageFor(ctx, () => _shareStage(ctx));
     await stage.settle(t, rows: 2);
     await _longPressRow(t, 0);
-    await t.tap(find.text(raftText(t.element(find.byType(Scaffold).first),
-        'Select messages')));
+    await t.tap(
+      find.text(
+        raftText(t.element(find.byType(Scaffold).first), 'Select Message'),
+      ),
+    );
     for (var i = 0; i < 12; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
