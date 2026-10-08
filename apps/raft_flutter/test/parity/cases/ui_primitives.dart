@@ -346,30 +346,29 @@ final ParityCase _textarea = ParityCase(
 );
 
 final ParityCase _checkbox = ParityCase(
-  widgets: const ['material:Checkbox', 'raft_ui:raftTheme.checkboxTheme'],
-  notes:
-      'Material Checkbox themed by raftTheme (as chat_view.dart message '
-      'selection uses it); padded 48px touch target per the theme. No sm/md '
-      'size variants. Row labels are plain fixture markup; the disabled row '
-      'keeps the fixture opacity-60.',
+  widgets: const ['raft_ui:RaftCheckbox'],
+  notes: 'Row labels are fixture markup; the disabled row keeps opacity-60.',
   build: (ctx) => _frame(
     ctx,
     height: 132,
     child: _column(12, [
-      _row(8, [
-        Checkbox(value: true, onChanged: (_) {}),
-        _fixtureLabel('As Task selected'),
-      ]),
-      _row(8, [
-        Checkbox(value: false, onChanged: (_) {}),
-        _fixtureLabel('Permission row unchecked'),
-      ]),
+      _labelRow(8, RaftCheckbox(value: true, onChanged: (_) {}), 'As Task selected'),
+      _labelRow(
+        8,
+        RaftCheckbox(
+          value: false,
+          onChanged: (_) {},
+          size: RaftCheckboxRecipeSize.md,
+        ),
+        'Permission row unchecked',
+      ),
       Opacity(
         opacity: .6,
-        child: _row(8, [
-          const Checkbox(value: true, onChanged: null),
-          _fixtureLabel('Disabled checked'),
-        ]),
+        child: _labelRow(
+          8,
+          const RaftCheckbox(value: true, size: RaftCheckboxRecipeSize.md),
+          'Disabled checked',
+        ),
       ),
     ]),
   ),

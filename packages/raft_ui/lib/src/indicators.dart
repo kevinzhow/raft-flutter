@@ -6,11 +6,15 @@ import 'package:flutter/material.dart';
 import 'icons.dart';
 import 'recipe_surface.dart';
 import 'recipes/badge.g.dart';
+import 'recipes/checkbox.g.dart';
+import 'recipes/checkbox_indicator.g.dart';
+import 'design_primitives.dart';
 import 'recipes/recipe_runtime.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
 export 'recipes/badge.g.dart' show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
+export 'recipes/checkbox.g.dart' show RaftCheckboxRecipeSize;
 
 /// Tailwind default-palette colours used by Web JSX classes (not raft-ui
 /// tokens). Values are Tailwind v4 oklch → sRGB (tool/recipes/css-of.mjs).
@@ -297,4 +301,139 @@ class RaftCheckMarker extends StatelessWidget {
     if (disabled) box = Opacity(opacity: .5, child: box);
     return ExcludeSemantics(child: box);
   }
+}
+
+/// raft-ui `Checkbox` (`checkbox` recipe; brutal draws the
+/// `checkboxIndicator` box with a lucide Check, elegant draws the
+/// `ElegantCheckboxGraphic` rect + `CheckboxCheckIcon`).
+class RaftCheckbox extends StatelessWidget {
+  const RaftCheckbox({
+    super.key,
+    required this.value,
+    this.onChanged,
+    this.size = RaftCheckboxRecipeSize.sm,
+    this.primary = false,
+    this.circle = false,
+    this.semanticLabel,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final RaftCheckboxRecipeSize size;
+
+  /// `color="primary"` / `variant="primary"`: yellow fill.
+  final bool primary;
+  final bool circle;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final disabled = onChanged == null;
+    return RaftInteractive(
+      onPressed: disabled ? null : () => onChanged!(!value),
+      button: false,
+      checked: value,
+      semanticLabel: semanticLabel,
+      builder: (context, st) {
+        final states = t.recipeStates(
+          hovered: st.hovered,
+          pressed: st.pressed,
+          focusVisible: st.focusVisible,
+          extra: [
+            if (value) ...['data-checked', 'group/checkbox:data-checked'],
+            if (disabled) ...['data-disabled', 'group/checkbox:data-disabled'],
+            if (st.hovered) 'group/checkbox:hover',
+            if (st.focusVisible) 'group/checkbox:focus-visible',
+          ],
+        );
+        final c = RaftCheckboxRecipe.resolve(
+          theme: t.recipeTheme,
+          size: size,
+          variant: primary
+              ? RaftCheckboxRecipeVariant.primary
+              : RaftCheckboxRecipeVariant.default_,
+          states: states,
+          tokens: rt,
+        );
+        if (t.brutal) {
+          final i = RaftCheckboxIndicatorRecipe.resolve(
+            theme: t.recipeTheme,
+            shape: circle
+                ? RaftCheckboxIndicatorRecipeShape.circle
+                : RaftCheckboxIndicatorRecipeShape.square,
+            size: RaftCheckboxIndicatorRecipeSize.values.byName(size.name),
+            fill: primary
+                ? RaftCheckboxIndicatorRecipeFill.yellow
+                : RaftCheckboxIndicatorRecipeFill.black,
+            checked: value,
+            disabled: disabled,
+            states: states,
+            tokens: rt,
+          ).root;
+          final svg = i.target("& svg:not([class*='size-'])");
+          final stroke = i.target('& svg')?.length('stroke-width');
+          return RaftRecipeBox(
+            style: c.root,
+            tokens: rt,
+            child: RaftRecipeBox(
+              style: i,
+              tokens: rt,
+              alignment: Alignment.center,
+              child: value
+                  ? Builder(
+                      builder: (context) => RaftIcon(
+                        RaftGlyph.check,
+                        size: svg?.width ?? 10,
+                        strokeWidth: stroke ?? 4,
+                        color: DefaultTextStyle.of(context).style.color,
+                      ),
+                    )
+                  : null,
+            ),
+          );
+        }
+        final fill =
+            RaftColorRef.fromCss(c.outerRect['fill'])?.resolve(rt) ??
+            t.semantic.layerPanel;
+        final ink = c.mark.color?.resolve(rt) ?? t.semantic.foregroundInverse;
+        return RaftRecipeBox(
+          style: c.root,
+          tokens: rt,
+          decorationOverride: (d) =>
+              d.copyWith(color: fill, borderRadius: BorderRadius.circular(circle ? 8 : 3)),
+          alignment: Alignment.center,
+          child: value
+              ? CustomPaint(size: const Size(10, 8), painter: _CheckMarkPainter(ink))
+              : null,
+        );
+      },
+    );
+  }
+}
+
+/// `CheckboxCheckIcon`: `M1 3.5L4 6.5L9 1.5` in a 10×8 box, stroke 1,
+/// round caps and joins.
+class _CheckMarkPainter extends CustomPainter {
+  const _CheckMarkPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawPath(
+      Path()
+        ..moveTo(1, 3.5)
+        ..lineTo(4, 6.5)
+        ..lineTo(9, 1.5),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_CheckMarkPainter old) => old.color != color;
 }
