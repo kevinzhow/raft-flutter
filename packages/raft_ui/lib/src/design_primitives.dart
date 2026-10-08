@@ -12,6 +12,9 @@ import 'localization.dart';
 import 'theme.dart';
 import 'primitive_tokens.dart';
 import 'tokens/tokens.dart';
+import 'recipe_surface.dart';
+import 'recipes/recipe_runtime.dart';
+import 'recipes/segmented_control.g.dart';
 
 enum RaftDensity { desktop, touch }
 
@@ -2447,11 +2450,17 @@ class RaftSegmentedOption<T> {
     required this.label,
     this.glyph,
     this.tooltip,
+    this.count,
+    this.enabled = true,
   });
   final T value;
   final String label;
   final RaftGlyph? glyph;
   final String? tooltip;
+
+  /// `SegmentedControlCount` (buttons style).
+  final String? count;
+  final bool enabled;
 }
 
 /// One source radio group: arrow keys select and move focus within the group.
@@ -2519,23 +2528,27 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
         label: widget.label,
         container: true,
         child: Wrap(
-          spacing:
-              widget.style == RaftSegmentedStyle.buttons &&
-                  !RaftTokens.of(context).brutal
-              ? 6
+          spacing: widget.style == RaftSegmentedStyle.buttons
+              ? _segmentedRoot(context).columnGap ?? 0
               : 4,
-          runSpacing:
-              widget.style == RaftSegmentedStyle.buttons &&
-                  !RaftTokens.of(context).brutal
-              ? 6
+          runSpacing: widget.style == RaftSegmentedStyle.buttons
+              ? _segmentedRoot(context).rowGap ?? 0
               : 4,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             for (var i = 0; i < widget.items.length; i++) ...[
+              if (widget.style == RaftSegmentedStyle.buttons)
+                _SegmentedItem<T>(
+                  option: widget.items[i],
+                  checked: widget.items[i].value == widget.value,
+                  onPressed:
+                      widget.onChanged == null || !widget.items[i].enabled
+                      ? null
+                      : () => widget.onChanged!(widget.items[i].value),
+                )
+              else
               RaftControl(
-                kind: widget.style == RaftSegmentedStyle.buttons
-                    ? RaftControlKind.segmentedButton
-                    : RaftControlKind.tab,
+                kind: RaftControlKind.tab,
                 variant: widget.items[i].value == widget.value
                     ? RaftControlVariant.primary
                     : RaftControlVariant.outline,
@@ -2549,17 +2562,8 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (widget.items[i].glyph != null) ...[
-                      RaftIcon(
-                        widget.items[i].glyph!,
-                        size: widget.style == RaftSegmentedStyle.buttons
-                            ? 12
-                            : 13,
-                      ),
-                      SizedBox(
-                        width: widget.style == RaftSegmentedStyle.buttons
-                            ? 6
-                            : 4,
-                      ),
+                      RaftIcon(widget.items[i].glyph!, size: 13),
+                      const SizedBox(width: 4),
                     ],
                     Text(widget.items[i].label),
                   ],
@@ -2860,5 +2864,108 @@ class _RaftInteractiveState extends State<RaftInteractive> {
       );
     }
     return result;
+  }
+}
+
+RaftSlotStyle _segmentedRoot(BuildContext context) {
+  final t = RaftTokens.of(context);
+  return RaftSegmentedControlRecipe.resolve(
+    theme: t.recipeTheme,
+    states: t.recipeStates(),
+    tokens: t.recipeTokens,
+  ).root;
+}
+
+/// raft-ui `SegmentedControlItem` (+ `SegmentedControlLabel` /
+/// `SegmentedControlCount`) on the `segmentedControl` recipe.
+class _SegmentedItem<T> extends StatelessWidget {
+  const _SegmentedItem({
+    super.key,
+    required this.option,
+    required this.checked,
+    required this.onPressed,
+  });
+  final RaftSegmentedOption<T> option;
+  final bool checked;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    return RaftInteractive(
+      onPressed: onPressed,
+      button: false,
+      checked: checked,
+      tooltip: option.tooltip,
+      builder: (context, st) {
+        final s = RaftSegmentedControlRecipe.resolve(
+          theme: t.recipeTheme,
+          disabled: !option.enabled,
+          states: t.recipeStates(
+            hovered: st.hovered,
+            pressed: st.pressed,
+            focusVisible: st.focusVisible,
+            disabled: !option.enabled,
+            extra: [
+              checked ? 'data-checked' : 'data-unchecked',
+              if (checked) 'group/segmented-control-item:data-checked',
+              if (!option.enabled) 'data-disabled',
+              if (option.count != null) 'has:data-slot=segmented-control-count',
+              if (option.glyph != null) 'has:svg',
+            ],
+          ),
+          tokens: rt,
+        );
+        final svg = s.item.target("& svg:not([class*='size-'])");
+        final gap = s.item.columnGap ?? 0;
+        return RaftRecipeBox(
+          style: s.item,
+          tokens: rt,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (option.glyph != null) ...[
+                Builder(
+                  builder: (context) => RaftIcon(
+                    option.glyph!,
+                    size: svg?.width ?? 14,
+                    strokeWidth: 2.5,
+                    color: DefaultTextStyle.of(context).style.color,
+                  ),
+                ),
+                SizedBox(width: gap),
+              ],
+              Flexible(
+                child: Builder(
+                  builder: (context) => Text(
+                    option.label,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: s.label.text(
+                      rt,
+                      base: DefaultTextStyle.of(context).style,
+                    ),
+                  ),
+                ),
+              ),
+              if (option.count != null) ...[
+                SizedBox(width: gap),
+                Builder(
+                  builder: (context) => Text(
+                    option.count!,
+                    style: s.count.text(
+                      rt,
+                      base: DefaultTextStyle.of(context).style,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
   }
 }

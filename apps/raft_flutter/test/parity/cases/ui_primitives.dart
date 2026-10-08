@@ -136,26 +136,19 @@ Widget _reducedMotion(Widget child) => Builder(
 // ---------------------------------------------------------------------------
 
 final ParityCase _segmentedControl = ParityCase(
-  widgets: const ['raft_ui:RaftSegmentedControl', 'raft_ui:RaftControl'],
-  notes:
-      'Rendered as the app Activity inbox filter (resource_view.dart: '
-      'RaftSegmentedStyle.tabs, visualHeight 32). RaftSegmentedOption has no '
-      'count slot, so the React SegmentedControlCount badges (24 / 3 / 9) are '
-      'absent; item order follows the React fixture (All, Mentions, Unread).',
+  widgets: const ['raft_ui:RaftSegmentedControl'],
   build: (ctx) => _frame(
     ctx,
     height: 96,
     child: Align(
       alignment: Alignment.topLeft,
       child: RaftSegmentedControl<String>(
-        style: RaftSegmentedStyle.tabs,
-        visualHeight: 32,
         value: 'mentions',
         label: 'Inbox filter visual fixture',
         items: const [
-          RaftSegmentedOption(value: 'all', label: 'All'),
-          RaftSegmentedOption(value: 'mentions', label: 'Mentions'),
-          RaftSegmentedOption(value: 'unread', label: 'Unread'),
+          RaftSegmentedOption(value: 'all', label: 'All', count: '24'),
+          RaftSegmentedOption(value: 'mentions', label: 'Mentions', count: '3'),
+          RaftSegmentedOption(value: 'unread', label: 'Unread', count: '9'),
         ],
         onChanged: (_) {},
       ),
