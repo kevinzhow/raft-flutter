@@ -590,43 +590,26 @@ final ParityCase _slugInput = ParityCase(
 );
 
 final ParityCase _sectionEyebrow = ParityCase(
-  widgets: const ['raft_flutter:RaftSettingsLayoutRecipe.modeLabel'],
-  notes:
-      'No SectionEyebrow widget; the app renders eyebrows as uppercase Text '
-      'with RaftSettingsLayoutRecipe.modeLabel (settings_page.dart "MODE", '
-      '12/16 bold, tracking 1.2, muted). The fixture !text-black override has '
-      'no Flutter variant (same muted style); the label row keeps the fixture '
-      'px-2 py-1 inset.',
+  widgets: const ['raft_ui:RaftSectionEyebrow'],
+  notes: 'Second row has the fixture !text-black; third the bg-white/50 px-2 py-1 label.',
   build: (ctx) => _frame(
     ctx,
     height: 92,
-    child: Builder(
-      builder: (context) {
-        final style = RaftSettingsLayoutRecipe(RaftTokens.of(context)).modeLabel;
-        return _column(12, [
-          Text('Recent Activity'.toUpperCase(), style: style),
-          Text('Applications'.toUpperCase(), style: style),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Text('Choose Avatar'.toUpperCase(), style: style),
-            ),
-          ),
-        ]);
-      },
-    ),
+    child: _column(12, [
+      const RaftSectionEyebrow('Recent Activity'),
+      const RaftSectionEyebrow('Applications', color: Colors.black),
+      Container(
+        color: Colors.white.withValues(alpha: .5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: const RaftSectionEyebrow('Choose Avatar'),
+      ),
+    ]),
   ),
 );
 
 final ParityCase _sectionHeader = ParityCase(
-  widgets: const ['raft_ui:RaftSidebarSectionHeader'],
-  notes:
-      'Nearest Flutter header with label + count + action is '
-      'RaftSidebarSectionHeader (static, onExpandedChanged null); its action '
-      'is a 14px plus icon target, not an outline "Add" button, and it keeps '
-      'its own 8/12/8/4 inset. The fixture border-b-2 pb-2 is reproduced '
-      'around it.',
+  widgets: const ['raft_ui:RaftSectionHeader', 'raft_ui:RaftButton'],
+  notes: 'The fixture className border-b-2 border-black pb-2 wraps the header.',
   build: (ctx) => _frame(
     ctx,
     height: 88,
@@ -635,18 +618,15 @@ final ParityCase _sectionHeader = ParityCase(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Colors.black, width: 2)),
       ),
-      child: RaftSidebarSectionHeader(
+      child: RaftSectionHeader(
         label: 'Applications',
         count: 3,
-        expanded: true,
-        onExpandedChanged: null,
-        actions: [
-          RaftSidebarSectionAction(
-            label: 'Add',
-            glyph: RaftGlyph.plus,
-            onPressed: () {},
-          ),
-        ],
+        action: RaftButton(
+          label: 'Add',
+          onPressed: () {},
+          tone: RaftButtonRecipeVariant.outline,
+          size: RaftButtonRecipeSize.xs,
+        ),
       ),
     ),
   ),
@@ -794,61 +774,55 @@ Widget _surfaceItemBody(String title, String detail) => Builder(
 );
 
 final ParityCase _surfaceListItem = ParityCase(
-  widgets: const ['material:Card'],
-  notes:
-      'Flutter list cards are the Material Card + Padding(16) idiom '
-      '(agent_apps_view.dart, mcp_views.dart); raftTheme has no CardTheme, '
-      'so Material defaults apply. No selected state: both rows render the '
-      'same card. Row text is the fixture child markup.',
+  widgets: const ['raft_ui:RaftSurfaceListItem'],
+  notes: 'Row text is the fixture child markup.',
   build: (ctx) => _frame(
     ctx,
     height: 182,
     child: _column(12, [
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _surfaceItemBody('Private app', 'Available to this server'),
-        ),
+      RaftSurfaceListItem(
+        interactive: false,
+        child: _surfaceItemBody('Private app', 'Available to this server'),
       ),
-      Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: _surfaceItemBody(
-            'Active integration',
-            'Selected list item state',
-          ),
-        ),
+      RaftSurfaceListItem(
+        selected: true,
+        interactive: false,
+        child: _surfaceItemBody('Active integration', 'Selected list item state'),
       ),
     ]),
   ),
 );
 
 final ParityCase _avatarListRow = ParityCase(
-  widgets: const ['material:ListTile', 'raft_ui:RaftAvatar', 'raft_ui:RaftButton'],
+  widgets: const ['raft_ui:RaftAvatarListRow', 'raft_ui:RaftAvatar', 'raft_ui:RaftBadge'],
   notes:
-      'Flutter member/agent rows are ListTile(leading: RaftAvatar) themed by '
-      'raftTheme (fleet_views.dart directory). No Badge primitive, so the '
-      '"Online" badge is absent; selected uses ListTile.selected.',
+      'AvatarSlot context="surface-list" humanPlaceholder is rendered with '
+      'the generic RaftAvatar(size 32) (no surface-list mounted context).',
   build: (ctx) => _frame(
     ctx,
     height: 168,
     child: _column(12, [
-      const ListTile(
-        leading: RaftAvatar(name: 'Cindy'),
-        title: Text('Cindy'),
-        subtitle: Text('Claude Code'),
+      const RaftAvatarListRow(
+        avatar: RaftAvatar(name: 'Cindy', size: 32),
+        name: 'Cindy',
+        subtitle: 'Claude Code',
+        rightContent: [
+          RaftBadge(label: 'Online', variant: RaftBadgeRecipeVariant.success),
+        ],
       ),
-      ListTile(
+      RaftAvatarListRow(
+        avatar: const RaftAvatar(name: 'Product UX Designer', size: 32),
+        name: 'Product UX Designer',
+        subtitle: 'product@slock.ai',
         selected: true,
-        leading: const RaftAvatar(name: 'Product UX Designer'),
-        title: const Text('Product UX Designer'),
-        subtitle: const Text('product@slock.ai'),
-        trailing: RaftButton(
-          label: 'Open',
-          onPressed: () {},
-          variant: RaftControlVariant.outline,
-          visualHeight: RaftMetrics.buttonXs,
-        ),
+        rightContent: [
+          RaftButton(
+            label: 'Open',
+            onPressed: () {},
+            tone: RaftButtonRecipeVariant.outline,
+            size: RaftButtonRecipeSize.xs,
+          ),
+        ],
       ),
     ]),
   ),

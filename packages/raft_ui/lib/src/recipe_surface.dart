@@ -180,6 +180,15 @@ class RaftRecipeBox extends StatelessWidget {
       ],
     );
     if (decorationOverride != null) decoration = decorationOverride!(decoration);
+    // CSS outer box-shadows never paint under the border box (a translucent
+    // background must not reveal them), unlike Flutter's BoxDecoration.
+    final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
+    decoration = BoxDecoration(
+      color: decoration.color,
+      border: decoration.border,
+      borderRadius: decoration.borderRadius,
+      shape: decoration.shape,
+    );
     final inset = [for (final l in layers) if (l.inset) l];
     final before = style.before;
     final sheen = before?['background-image'];
@@ -220,6 +229,17 @@ class RaftRecipeBox extends StatelessWidget {
             ),
       child: content,
     );
+    if (outerShadows.isNotEmpty) {
+      box = CustomPaint(
+        painter: RaftOuterShadowPainter(
+          outerShadows,
+          decoration.borderRadius?.resolve(TextDirection.ltr) ??
+              BorderRadius.zero,
+          circle: decoration.shape == BoxShape.circle,
+        ),
+        child: box,
+      );
+    }
     if (applyTransform) {
       final translate = style.translate ?? Offset.zero;
       final scale = style.scale ?? 1;
@@ -310,4 +330,37 @@ class _InsetPainter extends BoxPainter {
       canvas.restore();
     }
   }
+}
+
+/// Paints outer box-shadows clipped to the outside of the border box (CSS
+/// semantics); use behind a translucent box.
+class RaftOuterShadowPainter extends CustomPainter {
+  const RaftOuterShadowPainter(this.shadows, this.radius, {this.circle = false});
+  final List<BoxShadow> shadows;
+  final BorderRadius radius;
+  final bool circle;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    final box = circle
+        ? RRect.fromRectAndRadius(rect, Radius.circular(size.shortestSide / 2))
+        : radius.toRRect(rect);
+    canvas.save();
+    canvas.clipPath(
+      Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRect(rect.inflate(1e4))
+        ..addRRect(box),
+    );
+    for (final s in shadows) {
+      final shape = box.shift(s.offset).inflate(s.spreadRadius);
+      canvas.drawRRect(shape, s.toPaint());
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(RaftOuterShadowPainter old) =>
+      old.shadows != shadows || old.radius != radius || old.circle != circle;
 }
