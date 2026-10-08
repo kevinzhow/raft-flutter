@@ -32,6 +32,9 @@ class ScreenFixtureClient extends RaftClient {
   final ScreenRoute route;
   final requests = <String>[];
   final _stream = StreamController<RaftEvent>.broadcast(sync: true);
+
+  /// Pushes a socket event, like the realtime server would.
+  void emit(RaftEvent event) => _stream.add(event);
   @override
   Stream<RaftEvent> get events => _stream.stream;
   @override
@@ -301,6 +304,21 @@ class ScreenWire {
               }
             : workspaceRoot;
       }
+    }
+    // react-provider.spec.ts `/api/reminders`.
+    if (path == '/reminders') {
+      return {
+        'reminders': [
+          {
+            'reminderId': 'reminder-product-ux-memory',
+            'ownerAgentId': 'agent-product-ux',
+            'title': 'Roll 1-6; if 3, tidy Product-UX memory/files',
+            'fireAt': '2026-06-19T18:30:00.000Z',
+            'status': 'scheduled',
+            'recurrenceDescription': 'daily',
+          },
+        ],
+      };
     }
     if (path == '/servers/$sid/members/${_owner['memberId']}/profile') {
       return ownerProfile();

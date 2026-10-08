@@ -34,7 +34,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/account_onboarding.dart';
-import 'package:raft_flutter/features/agent_apps_view.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
@@ -72,29 +71,30 @@ final Map<String, ParityCase> screenCases = {
     'productUx',
     machinesLoading: true,
   ),
-  'screens.members.agent-detail.workspace': _agentInspection(
-    'workspace-files',
+  'screens.members.agent-detail.workspace': agentDetailParityCase(
+    'productUx',
+    tab: AgentDetailTab.workspace,
   ),
-  'screens.members.agent-detail.activity': _agentInspection('activity-log'),
-  'screens.members.agent-detail.apps': _agentApps,
+  'screens.members.agent-detail.activity': agentDetailParityCase(
+    'productUx',
+    tab: AgentDetailTab.activity,
+  ),
+  'screens.members.agent-detail.apps': agentDetailParityCase(
+    'productUx',
+    tab: AgentDetailTab.apps,
+  ),
+  'screens.members.agent-detail.reminders': agentDetailParityCase(
+    'productUx',
+    tab: AgentDetailTab.reminders,
+  ),
   'screens.members.human.profile': _humanProfile,
   'screens.settings.server-danger-modal': _serverDangerModal,
   'screens.home.loading': _homeLoading,
 };
 
-final Map<String, ParityUncovered> screenUncovered = {
-  'screens.members.agent-detail.reminders': const ParityUncovered(
-    ParityGap.noFlutterSurface,
-    'The Flutter app has no agent Reminders surface: FleetDetail '
-    '(lib/features/fleet_views.dart, the agent detail route) has no tabs and '
-    'no reminders entry, and nothing under lib/ requests /reminders or '
-    'renders a reminder list (grep "reminder" only hits a permission '
-    'description and an integration scope id).',
-  ),
-};
+final Map<String, ParityUncovered> screenUncovered = {};
 
 const _serverId = 'visual-server';
-const _productUxId = 'agent-product-ux';
 
 /// A WorkspaceController bound to the fixture server, like the mounted app
 /// after bootstrap selected `visual-server` (role owner).
@@ -124,106 +124,111 @@ WorkspaceController _workspace(
 }
 
 /// The route stack the app builds on mobile: the Agents directory pushes
-/// `FleetDetail` (fleet_views.dart FleetView onTap) and FleetDetail pushes
-/// its inspection/app-access pages. The directory page under the stack is
-/// offstage and not captured, so it is left empty.
+/// `FleetDetail` (fleet_views.dart FleetView onTap). The directory page under
+/// the stack is offstage and not captured, so it is left empty.
 Widget _agentStack(
+  ParityContext ctx,
   WorkspaceController w,
-  Map<String, dynamic> agent, [
-  WidgetBuilder? pushed,
-]) => ScreenRouteStack(
+  Map<String, dynamic> agent, {
+  AgentDetailTab tab = AgentDetailTab.profile,
+}) => ScreenRouteStack(
   pages: [
     (_) => const SizedBox.expand(),
-    (_) => FleetDetail(controller: w, computers: false, initial: agent),
-    ?pushed,
+    (_) => FleetDetail(
+      controller: w,
+      computers: false,
+      initial: agent,
+      initialTab: tab,
+      clock: () => DateTime.fromMillisecondsSinceEpoch(
+        (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
+        isUtc: true,
+      ),
+    ),
   ],
 );
+
+/// The React host seeds the agent store with the live activity
+/// `working / "Capturing deterministic profile state"` (VisualTestingCases
+/// agent-detail setup); the Flutter equivalent is the `agent:activity`
+/// socket event FleetDetail listens to.
+Future<void> _liveActivity(ScreenFixtureClient client, String agentId) async {
+  client.emit(
+    RaftEvent('agent:activity', {
+      'agentId': agentId,
+      'activity': 'working',
+      'detail': 'Capturing deterministic profile state',
+      'detailKind': 'other',
+    }),
+  );
+}
+
+/// Shared by the components.members.agent-detail cases (members_settings.dart).
+ParityCase agentDetailParityCase(
+  String agentKey, {
+  ParityInteraction? then,
+  AgentDetailTab tab = AgentDetailTab.profile,
+  bool machinesLoading = false,
+  String notes = '',
+}) {
+  ScreenFixtureClient? client;
+  return ParityCase(
+    widgets: const [
+      'raft_flutter:FleetDetail',
+      'raft_flutter:AgentDetailPanel',
+      'raft_ui:RaftPanelHeaderBar',
+      'raft_ui:RaftPanelTabBar',
+    ],
+    notes:
+        'FleetDetail renders AgentDetailPanel (agent_detail_view.dart), '
+        'opened on the ${tab.name} tab like Web ?agentTab=. Live activity is '
+        'pushed as an agent:activity socket event, standing in for the React '
+        'host agent-store seed.$notes',
+    settle: const Duration(milliseconds: 700),
+    build: (ctx) => ScreenWorkspaceHost(
+      create: () {
+        SharedPreferences.setMockInitialValues({});
+        final wire = ScreenWire(ctx.fixtureData);
+        final c = ScreenFixtureClient(
+          (m, p, q) => machinesLoading && p == '/servers/$_serverId/machines'
+              ? ScreenFixtureClient.pending
+              : wire.common(m, p, q),
+          user: wire.me(),
+          server: _serverId,
+        );
+        client = c;
+        final w = WorkspaceController(c, mobileNavigation: true);
+        final server = RaftRecord(wire.server());
+        w
+          ..servers = [server]
+          ..server = server;
+        w.ledger.switchServer(_serverId);
+        return w;
+      },
+      builder: (context, w) => _agentStack(
+        ctx,
+        w,
+        ScreenWire(ctx.fixtureData).agent(agentKey),
+        tab: tab,
+      ),
+    ),
+    interact: (t, ctx) async {
+      await t.pump(const Duration(milliseconds: 50));
+      final id = ScreenWire(ctx.fixtureData).agent(agentKey)['id'] as String;
+      await _liveActivity(client!, id);
+      await t.pump(const Duration(milliseconds: 300));
+      if (then != null) await then(t, ctx);
+    },
+  );
+}
 
 ParityCase _agentProfile(String agentKey, {bool machinesLoading = false}) =>
-    ParityCase(
-      widgets: const ['raft_flutter:FleetDetail', 'material:AppBar'],
-      notes:
-          'Flutter agent detail is FleetDetail (fleet_views.dart), a Material '
-          'Scaffold/AppBar + ListTile list with no Profile/Activity/Chat tab '
-          'strip, no avatar, no Computer/Computer status/version rows, no '
-          'runtime chips, env vars or created-agents section. It reads only '
-          'GET /agents/<id>, so the computer offline/missing/none/long-name/'
-          'daemon-only states are not represented.'
-          '${machinesLoading ? ' Machines request held in flight like React; FleetDetail never requests machines, so it renders the same as the default profile.' : ''}'
-          '${agentKey == 'noMembership' ? ' serverRole omitted on the wire: FleetDetail hides its "Workspace role" tile.' : ''}',
-      build: (ctx) => ScreenWorkspaceHost(
-        create: () {
-          final wire = ScreenWire(ctx.fixtureData);
-          return _workspace(
-            ctx,
-            route: (m, p, q) =>
-                machinesLoading && p == '/servers/$_serverId/machines'
-                ? ScreenFixtureClient.pending
-                : wire.common(m, p, q),
-          );
-        },
-        builder: (context, w) =>
-            _agentStack(w, ScreenWire(ctx.fixtureData).agent(agentKey)),
-      ),
+    agentDetailParityCase(
+      agentKey,
+      machinesLoading: machinesLoading,
+      notes: machinesLoading
+          ? ' GET /servers/visual-server/machines held in flight like React.'
+          : '',
     );
-
-ParityCase _agentInspection(String kind) => ParityCase(
-  widgets: const [
-    'raft_flutter:FleetInspection',
-    'raft_flutter:FleetDetail',
-    'material:AppBar',
-    'material:ListTile',
-  ],
-  notes:
-      'Flutter has no agent ${kind == 'activity-log' ? 'Activity' : 'Workspace'} '
-      'tab; the equivalent is the "${kind == 'activity-log' ? 'Activity log' : 'Workspace files'}" '
-      'page FleetDetail pushes (FleetInspection kind=$kind), shown here on top '
-      'of the real route stack with the same mocked '
-      '/agents/$_productUxId/$kind payload.'
-      '${kind == 'activity-log' ? ' FleetInspection reads name/detail/message keys, so the {timestamp, entry} rows render as generic "Entry" tiles.' : ''}',
-  build: (ctx) => ScreenWorkspaceHost(
-    create: () => _workspace(ctx),
-    builder: (context, w) => _agentStack(
-      w,
-      ScreenWire(ctx.fixtureData).agent('productUx'),
-      (_) => FleetInspection(
-        controller: w,
-        base: '/agents/$_productUxId',
-        kind: kind,
-        computers: false,
-      ),
-    ),
-  ),
-);
-
-final ParityCase _agentApps = ParityCase(
-  widgets: const [
-    'raft_flutter:AgentAppAccessView',
-    'raft_flutter:FleetDetail',
-  ],
-  notes:
-      'Flutter has no agent Apps tab; the equivalent is the "App access" '
-      'page FleetDetail pushes (AgentAppAccessView), with the same empty '
-      '/integrations/agents/<id> mocks. PRODUCT DEFECT: the app pushes it in '
-      'a bare MaterialPageRoute with no Material ancestor (debug assertion '
-      '"No Material widget found" from its DropdownButton); the capture adds '
-      'a transparent, non-painting Material so it can build.',
-  build: (ctx) => ScreenWorkspaceHost(
-    create: () => _workspace(ctx),
-    builder: (context, w) => _agentStack(
-      w,
-      ScreenWire(ctx.fixtureData).agent('productUx'),
-      // The product pushes AgentAppAccessView in a bare MaterialPageRoute
-      // with no Material ancestor, which asserts "No Material widget found"
-      // (DropdownButton/IconButton) in debug. A transparent Material (no
-      // paint) is the minimum host needed to build it at all.
-      (_) => Material(
-        type: MaterialType.transparency,
-        child: AgentAppAccessView(controller: w, agentId: _productUxId),
-      ),
-    ),
-  ),
-);
 
 final ParityCase _humanProfile = ParityCase(
   widgets: const ['raft_flutter:MemberProfileView', 'material:Scaffold'],

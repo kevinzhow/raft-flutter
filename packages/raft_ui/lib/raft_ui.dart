@@ -74,3 +74,4 @@ export 'src/popover_surface.dart';
 export 'src/conversation_surface.dart';
 
 export 'src/timeline_composition.dart';
+export 'src/panel_layout.dart';
