@@ -325,6 +325,24 @@ byte-identical.
   because its host lacks the runtime-options mock), composer image preview
   (React baseline shows an upload-limit error state), lifecycle actions
   (Flutter has no "More actions" menu; its restart confirmation is captured).
+* **Host artifact: "Workspace mode" card on the Account settings cases**
+  (`components.settings.account.page`, `components.settings.account.error-state`).
+  The React baseline shows a "Workspace mode" card above the ACCOUNT section,
+  which pushes everything below it down by about 115px. The card is not part
+  of the production page; it comes from how the render host is served:
+  - `packages/web/playwright.visual-testing.config.ts` serves the host with the
+    Vite **dev** server (`pnpm exec vite --host 127.0.0.1 --port …`), so
+    `import.meta.env.DEV` is true.
+  - `SettingsPanel.tsx` `WorkspaceModeSettingsCard` renders only when
+    `useWorkspaceGridAvailability()` resolves enabled
+    (`components/workspace/workspaceGridAvailability.ts`:
+    `if (import.meta.env.DEV) return { resolved: true, enabled: true };`).
+    In production that hook is gated by the `WORKSPACE_GRID_DEMO_FLAG_KEY`
+    server feature flag.
+  Flutter has no workspace-grid feature, so it does not add a toggle that
+  would do nothing. These two cases therefore cannot reach the tolerance until
+  the host is served from a production build (`vite build` + `vite preview`)
+  or the card is suppressed in the visual-testing host.
 * Several React baselines have fixture defects (raw markdown/HTML shown in
   mono in some `message-row.md-*` cases; notification-center empty). These
   are measured as-is; they lower scores without being Flutter gaps.
