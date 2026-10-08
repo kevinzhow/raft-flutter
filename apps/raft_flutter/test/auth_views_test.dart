@@ -69,12 +69,32 @@ void main() {
       await tester.tap(find.byKey(const Key('login-submit')));
       await tester.pumpAndSettle();
       expect(calls.single.last, '  password  ');
-      await tester.enterText(
-        find.byKey(const Key('login-origin')),
-        'https://user:secret@example.invalid',
+      // A native client's server origin is validated before the parent is
+      // called (the origin is edited from the brand bar).
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.brutal),
+          home: AuthView(
+            key: const ValueKey('bad-origin'),
+            origin: 'https://user:secret@example.invalid',
+            onLogin: (b, e, p) async {
+              calls.add([b, e, p]);
+            },
+            onRegister: (b, e, p, a) async {},
+          ),
+        ),
       );
+      await tester.enterText(
+        find.byKey(const Key('login-email')),
+        'alice@example.invalid',
+      );
+      await tester.enterText(find.byKey(const Key('login-password')), 'pw');
       await tester.tap(find.byKey(const Key('login-submit')));
       await tester.pumpAndSettle();
+      expect(
+        find.text('Enter the server origin, such as https://raft.example.com.'),
+        findsOneWidget,
+      );
       expect(calls, hasLength(1));
     },
   );
@@ -95,7 +115,7 @@ void main() {
         ),
       ),
     );
-    await tester.tap(find.text('Create account'));
+    await tester.tapOnText(find.textRange.ofSubstring('Create one'));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('login-email')),
@@ -108,11 +128,9 @@ void main() {
     await tester.ensureVisible(find.byKey(const Key('login-submit')));
     await tester.tap(find.byKey(const Key('login-submit')));
     await tester.pumpAndSettle();
+    // RegisterPage.tsx: the submit button stays disabled until the legal
+    // checkbox is ticked.
     expect(registered, 0);
-    expect(
-      find.text('Accept the terms and privacy policy to create an account.'),
-      findsOneWidget,
-    );
     await tester.ensureVisible(find.byKey(const Key('register-legal')));
     await tester.tap(find.byKey(const Key('register-legal')));
     await tester.pumpAndSettle();

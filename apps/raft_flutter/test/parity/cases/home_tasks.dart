@@ -50,28 +50,49 @@ final Map<String, ParityUncovered> homeTaskUncovered = {
 };
 
 // ---------------------------------------------------------------------------
-// Auth register — React mounts RegisterPage in a 390x844 box and fills the
-// email/password inputs. Flutter's signed-out surface is AuthView (main.dart
-// sessionHome); register is its 'register' mode, reached by the
-// "Create account" switch.
+// Auth register — React's AuthVisualCaseView mounts RegisterPage in a plain
+// block 390x844 `overflow: hidden` box (not a flex column), so AuthBrandShell
+// gets an auto height and its content is top-aligned. Flutter's signed-out
+// surface is AuthView (main.dart sessionHome) in register mode, reached by the
+// "Create one" link; it is mounted with unbounded height inside the clipped
+// 390x844 box to reproduce that host context.
 
 final ParityCase _register = ParityCase(
-  widgets: const ['raft_flutter:AuthView', 'raft_ui:RaftPanel', 'raft_ui:RaftButton'],
+  widgets: const [
+    'raft_flutter:AuthView',
+    'raft_ui:RaftBrandMark',
+    'raft_ui:RaftButton',
+    'raft_ui:RaftFieldSurface',
+  ],
   notes:
       'AuthView mounted like main.dart (default origin http://localhost:13041, '
       'onOAuth set); /auth/providers answered with Google+GitHub like the React '
-      'stub. Register mode reached by tapping "Create account", then the case '
-      'props are typed into the email/password fields.',
-  build: (ctx) => AuthView(
-    origin: 'http://localhost:13041',
-    onLogin: (_, _, _) async {},
-    onRegister: (_, _, _, _) async {},
-    onOAuth: (_, _, _, _) async {},
-    anonymousClientFactory: ParityAuthClient.new,
+      'stub. Register mode reached through "No account? Create one", then the '
+      'case props are typed into the email/password fields. Mounted with '
+      'unbounded height in the clipped 390x844 box like the React block host.',
+  build: (ctx) => SizedBox(
+    width: 390,
+    height: 844,
+    child: ctx.target(
+      ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.topCenter,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: AuthView(
+            origin: 'http://localhost:13041',
+            onLogin: (_, _, _) async {},
+            onRegister: (_, _, _, _) async {},
+            onOAuth: (_, _, _, _) async {},
+            anonymousClientFactory: ParityAuthClient.new,
+          ),
+        ),
+      ),
+    ),
   ),
   interact: (t, ctx) async {
     await t.pump(const Duration(milliseconds: 50));
-    await t.tap(find.text('Create account').last);
+    await t.tapOnText(find.textRange.ofSubstring('Create one'));
     await t.pump(const Duration(milliseconds: 100));
     await t.enterText(
       find.byKey(const Key('login-email')),
@@ -81,6 +102,7 @@ final ParityCase _register = ParityCase(
       find.byKey(const Key('login-password')),
       ctx.props['registerPassword'] as String,
     );
+    FocusManager.instance.primaryFocus?.unfocus();
     await t.pump(const Duration(milliseconds: 100));
   },
 );

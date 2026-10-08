@@ -13,6 +13,7 @@ dependencies:
   re_highlight: ^0.0.3
   flutter_widget_from_html_core: ^0.17.4
   html: ^0.15.6
+  path_parsing: ^1.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -25,6 +25,7 @@ export 'src/thread_replies.dart';
 export 'src/design_primitives.dart';
 
 export 'src/icons.dart';
+export 'src/brand.dart';
 
 export 'src/primitive_tokens.dart';
 export 'src/tokens/tokens.dart';
