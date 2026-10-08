@@ -296,3 +296,31 @@ class RaftPanelBackAction extends StatelessWidget {
     );
   }
 }
+
+/// Web box metrics of the resource pages that are written directly in the
+/// product JSX (not in a raft-ui recipe), resolved from their Tailwind classes.
+abstract final class RaftResourceMetrics {
+  /// Tailwind preflight `html { line-height: 1.5 }`, inherited by text whose
+  /// recipe leaves line-height unset.
+  static const double documentLineHeight = 1.5;
+
+  /// `gap-2` (flex/wrap rows of filter chips, trigger icon gaps).
+  static const double gap2 = 8;
+
+  /// `gap-2.5` (task card stacks).
+  static const double gap2_5 = 10;
+
+  /// MessageSearchPage results wrapper `<div class="p-4">`.
+  static const EdgeInsets searchResultsInset = EdgeInsets.all(16);
+
+  /// MessageSearchPage summary wrapper `<div class="mb-3 px-1">`.
+  static const EdgeInsets searchSummaryInset = EdgeInsets.symmetric(
+    horizontal: 4,
+  );
+
+  /// ThreadsInbox `inbox-toolbar`: `h-[54px] px-4`.
+  static const double activityToolbarHeight = 54;
+  static const EdgeInsets activityToolbarInset = EdgeInsets.symmetric(
+    horizontal: 16,
+  );
+}

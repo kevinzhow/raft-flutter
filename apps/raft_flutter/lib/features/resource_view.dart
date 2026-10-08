@@ -1191,7 +1191,9 @@ class _ResourceViewState extends State<ResourceView> {
           : RaftGlyph.arrowDownUp,
       trailingGlyph: RaftGlyph.chevronDown,
       triggerStyle: RaftDropdownTriggerStyle.picker,
-      minimumTargetSize: RaftTokens.of(context).brutal ? 32 : 28,
+      minimumTargetSize: RaftTokens.of(context).brutal
+          ? RaftMetrics.buttonMd
+          : RaftMetrics.buttonSm,
       // activeFilterClass when the value differs from the default.
       selected: title == 'Search date range'
           ? advanced.timeRange != 'any'
@@ -1320,8 +1322,8 @@ class _ResourceViewState extends State<ResourceView> {
     // ThreadsInbox `inbox-toolbar`: `flex h-[54px] items-center
     // justify-between gap-3 px-4 border-b theme-brutal:border-b-2`.
     return Container(
-      height: 54,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: RaftResourceMetrics.activityToolbarHeight,
+      padding: RaftResourceMetrics.activityToolbarInset,
       decoration: BoxDecoration(
         color: t.panel,
         border: Border(
@@ -1339,8 +1341,8 @@ class _ResourceViewState extends State<ResourceView> {
                 value: ['all', 'unread', 'mentions'].contains(filter)
                     ? filter
                     : '',
-                visualHeight: 32,
-                minimumTargetSize: 32,
+                visualHeight: RaftMetrics.buttonMd,
+                minimumTargetSize: RaftMetrics.buttonMd,
                 label: raftText(context, 'Activity filters'),
                 items: [
                   for (final value in ['all', 'unread', 'mentions'])
@@ -1366,8 +1368,8 @@ class _ResourceViewState extends State<ResourceView> {
           // Button sm outline `h-8 px-2 text-xs font-bold`.
           RaftControl(
             variant: RaftControlVariant.outline,
-            visualHeight: 32,
-            minimumTargetSize: 32,
+            visualHeight: RaftMetrics.buttonMd,
+            minimumTargetSize: RaftMetrics.buttonMd,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             semanticLabel: raftText(context, 'Mark all read'),
             onPressed: () =>
@@ -1557,67 +1559,59 @@ class _ResourceViewState extends State<ResourceView> {
   Future<void> savedMenu(Map<String, dynamic> row, String scope) async {
     await scopedDialog<void>(
       scope,
-      (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: RaftMenuPanel(
-          width: 240,
-          onDismiss: () => closeOwnedDialog(context, scope),
-          children: [
-            RaftMenuItem(
-              label: raftText(context, 'Copy link'),
-              glyph: RaftGlyph.link,
-              onPressed: w.server?.string('slug').isEmpty != false
-                  ? null
-                  : () async {
-                      if (!accepts(scope)) return;
-                      final thread = row['channelType'] == 'thread';
-                      final text = ContentLinks.messageUrl(
-                        origin: ContentLinks.originFor(w.client.origin),
-                        slug: w.server!.string('slug'),
-                        channelId:
-                            '${row['parentChannelId'] ?? row['channelId']}',
-                        messageId: '${row['messageId']}',
-                        kind:
-                            '${thread ? row['parentChannelType'] : row['channelType']}',
-                        parentMessageId: thread
-                            ? row['parentMessageId'] as String?
-                            : null,
-                      ).toString();
-                      closeOwnedDialog(context, scope);
-                      if (accepts(scope)) {
-                        await Clipboard.setData(ClipboardData(text: text));
-                      }
-                    },
-            ),
-            RaftMenuItem(
-              label: raftText(context, 'Copy Markdown'),
-              glyph: RaftGlyph.copy,
-              onPressed: () async {
-                if (!accepts(scope)) return;
-                closeOwnedDialog(context, scope);
-                if (accepts(scope)) {
-                  await Clipboard.setData(
-                    ClipboardData(text: '${row['content'] ?? ''}'),
-                  );
-                }
-              },
-            ),
-            RaftMenuItem(
-              label: raftText(context, 'Remove saved message'),
-              glyph: RaftGlyph.bookmark,
-              onPressed: () {
-                if (!accepts(scope)) return;
-                closeOwnedDialog(context, scope);
-                command(
-                  'DELETE',
-                  '/channels/saved/${row['messageId']}',
-                  sourceScope: scope,
-                );
-              },
-            ),
-          ],
+      (context) => rowMenu(context, scope, [
+        RaftMenuItem(
+          label: raftText(context, 'Copy link'),
+          glyph: RaftGlyph.link,
+          onPressed: w.server?.string('slug').isEmpty != false
+              ? null
+              : () async {
+                  if (!accepts(scope)) return;
+                  final thread = row['channelType'] == 'thread';
+                  final text = ContentLinks.messageUrl(
+                    origin: ContentLinks.originFor(w.client.origin),
+                    slug: w.server!.string('slug'),
+                    channelId: '${row['parentChannelId'] ?? row['channelId']}',
+                    messageId: '${row['messageId']}',
+                    kind:
+                        '${thread ? row['parentChannelType'] : row['channelType']}',
+                    parentMessageId: thread
+                        ? row['parentMessageId'] as String?
+                        : null,
+                  ).toString();
+                  closeOwnedDialog(context, scope);
+                  if (accepts(scope)) {
+                    await Clipboard.setData(ClipboardData(text: text));
+                  }
+                },
         ),
-      ),
+        RaftMenuItem(
+          label: raftText(context, 'Copy Markdown'),
+          glyph: RaftGlyph.copy,
+          onPressed: () async {
+            if (!accepts(scope)) return;
+            closeOwnedDialog(context, scope);
+            if (accepts(scope)) {
+              await Clipboard.setData(
+                ClipboardData(text: '${row['content'] ?? ''}'),
+              );
+            }
+          },
+        ),
+        RaftMenuItem(
+          label: raftText(context, 'Remove saved message'),
+          glyph: RaftGlyph.bookmark,
+          onPressed: () {
+            if (!accepts(scope)) return;
+            closeOwnedDialog(context, scope);
+            command(
+              'DELETE',
+              '/channels/saved/${row['messageId']}',
+              sourceScope: scope,
+            );
+          },
+        ),
+      ]),
     );
   }
 
@@ -1628,37 +1622,41 @@ class _ResourceViewState extends State<ResourceView> {
     final following = row['isFollowing'] != false;
     await scopedDialog<void>(
       scope,
-      (context) => Dialog(
+      (context) => rowMenu(context, scope, [
+        RaftMenuItem(
+          label: raftText(context, 'Done'),
+          glyph: RaftGlyph.check,
+          onPressed: () {
+            if (!accepts(scope)) return;
+            closeOwnedDialog(context, scope);
+            activityAction(row, 'done', scope);
+          },
+        ),
+        if (thread)
+          RaftMenuItem(
+            label: raftText(context, following ? 'Unfollow' : 'Follow'),
+            // BellOff is not in the glyph set yet.
+            glyph: RaftGlyph.bell,
+            onPressed: () {
+              if (!accepts(scope)) return;
+              closeOwnedDialog(context, scope);
+              activityAction(row, following ? 'unfollow' : 'follow', scope);
+            },
+          ),
+      ]),
+    );
+  }
+
+  /// Context-menu dialog shared by the Saved and Activity rows.
+  Widget rowMenu(BuildContext context, String scope, List<Widget> children) =>
+      Dialog(
         backgroundColor: Colors.transparent,
         child: RaftMenuPanel(
           width: 240,
           onDismiss: () => closeOwnedDialog(context, scope),
-          children: [
-            RaftMenuItem(
-              label: raftText(context, 'Done'),
-              glyph: RaftGlyph.check,
-              onPressed: () {
-                if (!accepts(scope)) return;
-                closeOwnedDialog(context, scope);
-                activityAction(row, 'done', scope);
-              },
-            ),
-            if (thread)
-              RaftMenuItem(
-                label: raftText(context, following ? 'Unfollow' : 'Follow'),
-                // BellOff is not in the glyph set yet.
-                glyph: RaftGlyph.bell,
-                onPressed: () {
-                  if (!accepts(scope)) return;
-                  closeOwnedDialog(context, scope);
-                  activityAction(row, following ? 'unfollow' : 'follow', scope);
-                },
-              ),
-          ],
+          children: children,
         ),
-      ),
-    );
-  }
+      );
 
   Widget activityCard(Map<String, dynamic> row, String scope) {
     final t = RaftTokens.of(context),
@@ -2349,8 +2347,8 @@ class _ResourceViewState extends State<ResourceView> {
             RaftSegmentedControl<String>(
               style: RaftSegmentedStyle.tabs,
               value: taskLayout,
-              visualHeight: 32,
-              minimumTargetSize: 32,
+              visualHeight: RaftMetrics.buttonMd,
+              minimumTargetSize: RaftMetrics.buttonMd,
               label: raftText(context, 'Task view'),
               items: const [
                 RaftSegmentedOption(
@@ -2557,7 +2555,8 @@ class _ResourceViewState extends State<ResourceView> {
                               child: SingleChildScrollView(
                                 primary: false,
                                 child: Column(
-                                  spacing: 10, // taskBoardColumn items gap-2.5
+                                  spacing: RaftResourceMetrics
+                                      .gap2_5, // taskBoardColumn items
                                   children: [
                                     for (final row
                                         in (lanes[status] ?? []).where(

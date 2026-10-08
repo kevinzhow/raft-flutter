@@ -155,8 +155,8 @@ void main() {
       _role(w, 'owner');
       await tester.pumpWidget(_host(w, 'activity'));
       await tester.pumpAndSettle();
-      final action = tester.widget<RaftTextButton>(
-        find.widgetWithText(RaftTextButton, 'Mark all read'),
+      final action = tester.widget<RaftControl>(
+        find.widgetWithText(RaftControl, 'Mark all read'),
       );
       _role(w, 'member');
       await tester.pumpAndSettle();

@@ -219,7 +219,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
               },
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                spacing: 8,
+                spacing: RaftResourceMetrics.gap2,
                 children: [
                   RaftIcon(
                     widget.glyph ??
