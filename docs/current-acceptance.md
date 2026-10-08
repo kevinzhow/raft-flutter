@@ -1,8 +1,8 @@
 # Current acceptance checkpoint
 
-The current product and verification input hash is `0e049d15ba2903ad884f9139c29bc0927752c0220972c672176f7c6afbd78d75`. Original Web is pinned to `26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6`, Web1.17.5 / raft-ui0.5.27.
+The current product and verification input hash is `4b37c978f1eb768510be493b7ecc0e49a5b2c0a4a811ffbeeb8cc583e909e83e`. The visual capture checkpoint is `0e049d15ba2903ad884f9139c29bc0927752c0220972c672176f7c6afbd78d75`; the subsequent product/verification path changes are `integration_test/workspace_test.dart` and `integration_test/resource_flow.dart`, updating actual labels/keys, debounced Search cards, the advanced Activity entrance and test pointer lifecycle. Product UI source is unchanged. Captures retain their original input hash; they are never retagged. Original Web is pinned to `26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6`, Web1.17.5 / raft-ui0.5.27.
 
-463 Dart tests,29 host collector tests and whole-project static analysis passed. Linux and Android complete native runs for this checkpoint are now being executed. The previously completed6ab functional runs remain historical; they do not validate subsequent visual edits. Acceptance artifacts for the current checkpoint have not yet been built.
+463 Dart tests,29 host collector tests and whole-project static analysis passed. Linux complete native execution is in progress; Android follows serially. Earlier Linux attempts stopped at obsolete form/board/Search locators, the changed Search submission behavior, the advanced Activity entrance and a test mouse device reused before removal. Failure receipts are retained; the assertions and actual API operations remain required. The previously completed6ab functional runs remain historical; they do not validate subsequent visual edits. Acceptance artifacts for the current checkpoint have not yet been built.
 
 ## Actual visual and interaction evidence
 

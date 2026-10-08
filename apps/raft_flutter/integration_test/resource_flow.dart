@@ -337,22 +337,33 @@ Future<void> verifyActivityThreadLifecycle(
 
   Future<void> rowAction(String tooltip) async {
     await locate();
-    if (RaftDensityScope.of(tester.element(tile)) == RaftDensity.desktop) {
-      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
-      await mouse.addPointer(location: tester.getCenter(tile));
-      await mouse.moveTo(tester.getCenter(tile));
-      await tester.pump(const Duration(milliseconds: 200));
-      addTearDown(mouse.removePointer);
+    TestGesture? mouse;
+    try {
+      if (RaftDensityScope.of(tester.element(tile)) == RaftDensity.desktop) {
+        mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: tester.getCenter(tile));
+        await mouse.moveTo(tester.getCenter(tile));
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      final button = find.descendant(
+        of: tile,
+        matching: find.byTooltip(tooltip),
+      );
+      expect(button, findsOneWidget);
+      await tester.ensureVisible(button);
+      await tester.pumpAndSettle();
+      await tester.tap(button);
+      await loaded();
+    } finally {
+      if (mouse != null) await mouse.removePointer();
     }
-    final button = find.descendant(of: tile, matching: find.byTooltip(tooltip));
-    expect(button, findsOneWidget);
-    await tester.ensureVisible(button);
-    await tester.pumpAndSettle();
-    await tester.tap(button);
-    await loaded();
   }
 
   Future<void> view(String label) async {
+    if (find.byTooltip('Activity actions').evaluate().isEmpty) {
+      await tester.tap(find.byTooltip('Filters'));
+      await tester.pump(const Duration(milliseconds: 200));
+    }
     await tester.tap(find.byTooltip('Activity actions'));
     await tester.pumpAndSettle();
     await tester.tap(find.text(label));
