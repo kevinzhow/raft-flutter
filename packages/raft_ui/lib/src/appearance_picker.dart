@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'theme.dart';
@@ -119,26 +120,16 @@ class RaftAppearancePicker extends StatelessWidget {
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerLeft,
-          child: RaftSegmentedControl<ThemeMode>(
+          // raft-ui SegmentedControl (AppearanceThemePicker.tsx), recipe
+          // geometry without touch-target growth.
+          child: RaftRecipeSegmentedControl<ThemeMode>(
             key: const Key('appearance-mode'),
-            style: RaftSegmentedStyle.tabs,
             value: appearance.mode,
             label: 'Appearance mode',
-            visualHeight: 32,
-            items: [
-              for (final mode in [
-                ThemeMode.light,
-                ThemeMode.dark,
-                ThemeMode.system,
-              ])
-                RaftSegmentedOption(
-                  value: mode,
-                  label: raftText(context, switch (mode) {
-                    ThemeMode.light => 'Light',
-                    ThemeMode.dark => 'Dark',
-                    _ => 'System',
-                  }),
-                ),
+            items: const [
+              (ThemeMode.light, null, 'Light'),
+              (ThemeMode.dark, null, 'Dark'),
+              (ThemeMode.system, null, 'System'),
             ],
             onChanged: (mode) => onChanged(appearance.copyWith(mode: mode)),
           ),
@@ -198,7 +189,9 @@ class _ThemeChoiceState extends State<_ThemeChoice> {
                       ? host.colors['color-soft-signal']!
                       : t.colors['accent-strong']!)
                 : t.colors['line-muted']!,
-            width: .5,
+            // `border-[0.5px]`: Chromium lays out and paints sub-1px borders
+            // as 1px (measured in the Web capture: 118px card, 3 device px).
+            width: 1,
           );
     final previewLine = brutal ? 2.0 : 1.0;
     return Theme(
