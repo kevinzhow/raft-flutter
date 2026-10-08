@@ -26,6 +26,7 @@ import 'package:flutter/scheduler.dart';
 import 'resource_view.dart';
 import 'page_layout.dart';
 import 'channel_settings.dart';
+import 'create_channel_dialog.dart';
 import 'server_views.dart';
 import 'account_settings.dart';
 import 'settings_page.dart';
@@ -1929,39 +1930,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Future<void> createChannel() async {
-    await showDialog<bool>(
-      context: context,
-      builder: (_) => RaftFormDialog(
-        title: tr('Create channel'),
-        submitLabel: tr('Create'),
-        fields: [
-          RaftFormField('name', 'Channel name', required: true),
-          RaftFormField('description', 'Description', multiline: true),
-          RaftFormField(
-            'visibility',
-            'Visibility',
-            initial: 'public',
-            choices: {'public': 'Public channel', 'private': 'Private channel'},
-          ),
-        ],
-        onSubmit: (values) async {
-          final result = await w.command(
-            'POST',
-            '/channels',
-            data: {
-              'name': values['name'],
-              'description': values['description'],
-              'visibility': values['visibility'],
-              'type': 'channel',
-            },
-          );
-          await w.refreshChannels();
-          await chooseChannel(RaftChannel(Map<String, dynamic>.from(result)));
-        },
-      ),
-    );
-  }
+  Future<void> createChannel() => CreateChannelDialog.show(
+    context,
+    controller: w,
+    onCreated: (channel) => chooseChannel(channel),
+  );
 
   Widget settings() {
     final scope = mobileAuthority;

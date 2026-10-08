@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/mobile_workspace_navigation.dart';
+import 'package:raft_flutter/features/create_channel_dialog.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -343,7 +344,10 @@ final ParityCase _tasksPanel = ParityCase(
     await t.pump(const Duration(milliseconds: 100));
     final done = find.byKey(const ValueKey('task-group-done'));
     final list = find
-        .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
         .first;
     await t.scrollUntilVisible(done, 200, scrollable: list);
     await t.tap(done);
@@ -396,69 +400,65 @@ final ParityCase _statusMenu = ParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Create channel — React: CreateChannelDialog over the 390x844 viewport,
-// prefilled name/description/public + one agent and one human selected.
-// Flutter: WorkspaceView.createChannel's RaftFormDialog (name, description,
-// visibility); the values are typed into its fields.
+// Create channel — React (VisualTestingCases.tsx CreateChannelVisualCaseView):
+// CreateChannelDialog over the 390x844 viewport, prefilled name/description/
+// public + agent-cindy and visual-human-designer selected, stores primed by
+// primeCreateChannelStores (agents Cindy + Visual QA; members owner +
+// designer). Flutter mounts the product CreateChannelDialog with the same
+// props over a workspace answering /agents and /servers/:id/members with that
+// roster.
+
+class _CreateChannelWorkspace extends ParityFixtureWorkspace {
+  _CreateChannelWorkspace(super.client, super.ctx);
+  @override
+  Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
+    final fx = ctx.fixtureData;
+    if (path == '/agents') {
+      final cindy = Map<String, dynamic>.from(fx['agents']['cindy'] as Map);
+      return [
+        {
+          'id': cindy['id'],
+          'name': cindy['name'],
+          'displayName': cindy['displayName'],
+          'avatarUrl': cindy['avatar'],
+          'description': cindy['description'],
+          'deletedAt': null,
+        },
+        // primeCreateChannelStores' inline second agent.
+        {
+          'id': 'agent-qa',
+          'name': 'Visual-QA',
+          'displayName': 'Visual QA',
+          'avatarUrl': 'pixel:eye',
+          'description': 'Checks screenshots before release.',
+          'deletedAt': null,
+        },
+      ];
+    }
+    return super.query(path, query: query);
+  }
+}
 
 final ParityCase _createChannel = ParityCase(
-  widgets: const ['raft_ui:RaftFormDialog', 'raft_ui:RaftFormField'],
+  widgets: const ['raft_flutter:CreateChannelDialog', 'raft_ui:RaftDialogCard'],
   notes:
-      'Fields copied from WorkspaceView.createChannel (private method). The '
-      'Flutter create-channel dialog has no members picker, so the React '
-      'prefilled agent/human selection has no Flutter counterpart.',
-  build: (ctx) => const Scaffold(body: _CreateChannelLauncher()),
-  interact: (t, ctx) async {
-    await t.pump(const Duration(milliseconds: 300));
-    await t.enterText(
-      find.byKey(const ValueKey('field-name')),
-      ctx.props['name'] as String,
+      'Product CreateChannelDialog mounted with the React prefill props '
+      '(name, description, public, agent-cindy + visual-human-designer).',
+  build: (ctx) {
+    final base = parityWorkspace(ctx);
+    final w = _CreateChannelWorkspace(base.client, ctx)
+      ..server = base.server
+      ..channels = base.channels
+      ..section = base.section;
+    return Scaffold(
+      body: CreateChannelDialog(
+        controller: w,
+        prefilledName: ctx.props['name'] as String,
+        prefilledDescription: ctx.props['description'] as String,
+        prefilledVisibility: 'public',
+        prefilledAgentIds: const ['agent-cindy'],
+        prefilledHumanIds: const ['visual-human-designer'],
+      ),
     );
-    await t.enterText(
-      find.byKey(const ValueKey('field-description')),
-      ctx.props['description'] as String,
-    );
-    await t.pump(const Duration(milliseconds: 100));
   },
 );
-
-class _CreateChannelLauncher extends StatefulWidget {
-  const _CreateChannelLauncher();
-  @override
-  State<_CreateChannelLauncher> createState() => _CreateChannelLauncherState();
-}
-
-class _CreateChannelLauncherState extends State<_CreateChannelLauncher> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      String tr(String s) => raftText(context, s);
-      showDialog<bool>(
-        context: context,
-        builder: (_) => RaftFormDialog(
-          title: tr('Create channel'),
-          submitLabel: tr('Create'),
-          fields: [
-            RaftFormField('name', 'Channel name', required: true),
-            RaftFormField('description', 'Description', multiline: true),
-            RaftFormField(
-              'visibility',
-              'Visibility',
-              initial: 'public',
-              choices: {
-                'public': 'Public channel',
-                'private': 'Private channel',
-              },
-            ),
-          ],
-          onSubmit: (_) async {},
-        ),
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => const SizedBox.expand();
-}

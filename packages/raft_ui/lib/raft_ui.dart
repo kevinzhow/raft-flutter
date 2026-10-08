@@ -75,3 +75,7 @@ export 'src/popover_surface.dart';
 export 'src/conversation_surface.dart';
 
 export 'src/timeline_composition.dart';
+export 'src/dialog_card.dart';
+export 'src/channel_settings_sheet.dart';
+export 'src/create_channel_view.dart';
+export 'src/channel_members_view.dart';

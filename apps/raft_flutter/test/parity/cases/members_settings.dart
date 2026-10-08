@@ -31,6 +31,7 @@
 // the endpoint mocks of react-provider.spec.ts.
 import 'package:file_selector_platform_interface/file_selector_platform_interface.dart'; // ignore: depend_on_referenced_packages
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -39,6 +40,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/account_settings.dart';
 import 'package:raft_flutter/features/admin_views.dart';
 import 'package:raft_flutter/features/appearance_section.dart';
+import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/im_bridges_view.dart';
@@ -83,16 +85,15 @@ final Map<String, ParityCase> membersSettingsCases = {
     empty: true,
   ),
   'components.members.create-agent.claude-dialog': _createAgent('claude'),
-  'components.members.create-agent.claude-custom-provider-dialog':
-      _createAgent(
-        'claude',
-        customProvider: true,
-        extraNotes:
-            ' Provider set to Custom, API URL/API key/Claude Command filled like '
-            'react-provider.spec.ts applyCaseFixtureState; Flutter has no MORE '
-            'disclosure (advanced fields are always inline), dialog scrolled '
-            'back to top.',
-      ),
+  'components.members.create-agent.claude-custom-provider-dialog': _createAgent(
+    'claude',
+    customProvider: true,
+    extraNotes:
+        ' Provider set to Custom, API URL/API key/Claude Command filled like '
+        'react-provider.spec.ts applyCaseFixtureState; Flutter has no MORE '
+        'disclosure (advanced fields are always inline), dialog scrolled '
+        'back to top.',
+  ),
   'components.members.create-agent.builtin-provider-dialog': _createAgent(
     'builtin',
     extraNotes:
@@ -270,9 +271,7 @@ final ParityCase _noComputer = ParityCase(
       'GET /servers/visual-server/machines': (_) => {'machines': []},
     });
     return Scaffold(
-      body: SafeArea(
-        child: FleetView(controller: w, computers: false),
-      ),
+      body: SafeArea(child: FleetView(controller: w, computers: false)),
     );
   },
   interact: (t, ctx) async {
@@ -328,28 +327,65 @@ ParityCase _agentDetail({required bool lifecycle}) => ParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Channel settings: the ChannelSettings dialog workspace_view.dart opens.
+// Channel settings: React mounts EditChannelDialog (default "sheet"
+// presentation) for #design without onLeaveChannel / collapseLongMessages
+// props; Flutter opens the product ChannelSettings sheet the same way
+// WorkspaceView.channelSettings does, with leave/collapse off to match those
+// absent props. The add-member case mounts the product ChannelMembers
+// (trigger + modal) at `p-4` and clicks through to its add view like the
+// React interactions (channel-members-open, then add-member-open).
 
-ParityCase _channelSettings({required bool addPanel}) => ParityCase(
-  widgets: [
-    'raft_flutter:ChannelSettings',
-    'raft_flutter:ChannelConversionSection',
-    if (addPanel) 'material:AlertDialog',
-    if (addPanel) 'material:CheckboxListTile',
+ParityCase _channelSettings({required bool addPanel}) => addPanel
+    ? _channelAddMember
+    : ParityCase(
+        widgets: const [
+          'raft_flutter:ChannelSettings',
+          'raft_ui:RaftRecipeButton',
+        ],
+        notes: 'Product ChannelSettings sheet (Web EditChannelDialog sheet).',
+        settle: const Duration(milliseconds: 600),
+        build: (ctx) {
+          final fixture = MsFixture(ctx);
+          final channel = fixture.channel('design');
+          final (w, _) = fixture.workspace({
+            'GET /channels/${channel['id']}/members': (_) => {
+              'agents': [],
+              'humans': [],
+              'externalMembers': [],
+            },
+          });
+          return _Host(
+            page: const Scaffold(),
+            open: (context) => showDialog(
+              context: context,
+              builder: (_) => ChannelSettings(
+                controller: w,
+                channel: RaftChannel(channel),
+                leave: false,
+                collapseLongMessages: false,
+              ),
+            ),
+          );
+        },
+      );
+
+final ParityCase _channelAddMember = ParityCase(
+  widgets: const [
+    'raft_flutter:ChannelMembersButton',
+    'raft_flutter:ChannelMembers',
   ],
-  notes: addPanel
-      ? 'Flutter add-member is ChannelSettings → "Add members" → AlertDialog '
-            'of CheckboxListTiles (server members + agents not in the '
-            'channel). Roster mock = react-provider.spec.ts empty channel '
-            'members; candidates = its /servers/visual-server/members and '
-            '/api/agents payloads.'
-      : 'Flutter channel settings is the ChannelSettings Dialog (not a full '
-            'screen panel). Channel members served empty as in the React '
-            'add-panel mock so the roster request settles.',
+  notes:
+      'Product ChannelMembers trigger at p-4 (React main.p-4), opened and '
+      'switched to the add view with mouse clicks like the Playwright '
+      'interactions, so the pointer rests where add-member-open was. Roster '
+      'mock = react-provider.spec.ts empty channel members; candidates = its '
+      '/servers/visual-server/members and /api/agents payloads.',
   settle: const Duration(milliseconds: 600),
   build: (ctx) {
     final fixture = MsFixture(ctx);
-    final channel = fixture.channel('design');
+    final channel = Map<String, dynamic>.from(fixture.channel('design'))
+      // VisualTestingCases.tsx grants addChannelMembers for this case only.
+      ..['channelCapabilities'] = {'addChannelMembers': true};
     final (w, _) = fixture.workspace({
       'GET /channels/${channel['id']}/members': (_) => {
         'agents': [],
@@ -359,25 +395,41 @@ ParityCase _channelSettings({required bool addPanel}) => ParityCase(
       'GET /servers/visual-server/members': (_) => fixture.members,
       'GET /agents': (_) => fixture.agents,
     });
-    return _Host(
-      page: const Scaffold(),
-      open: (context) => showDialog(
-        context: context,
-        builder: (_) =>
-            ChannelSettings(controller: w, channel: RaftChannel(channel)),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ChannelMembersButton(
+            controller: w,
+            channel: RaftChannel(channel),
+          ),
+        ),
       ),
     );
   },
-  interact: addPanel
-      ? (t, ctx) async {
-          await t.pump(const Duration(milliseconds: 300));
-          final button = find.text('Add members');
-          await t.ensureVisible(button);
-          await t.pump(const Duration(milliseconds: 50));
-          await t.tap(button);
-          await t.pump(const Duration(milliseconds: 100));
-        }
-      : null,
+  interact: (t, ctx) async {
+    final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(mouse.removePointer);
+    Future<void> click(Finder target) async {
+      await mouse.moveTo(t.getCenter(target));
+      await t.pump(const Duration(milliseconds: 50));
+      await mouse.down(t.getCenter(target));
+      await mouse.up();
+      await t.pump(const Duration(milliseconds: 300));
+    }
+
+    await t.pump(const Duration(milliseconds: 300));
+    await click(find.byKey(const ValueKey('channel-members-open')));
+    await t.pump(const Duration(milliseconds: 300));
+    await click(find.byKey(const ValueKey('add-member-open')));
+    // Re-dispatch hover at the resting pointer (the add view replaced the
+    // roster under it), then wait for the tooltip.
+    await mouse.moveBy(Offset.zero);
+    await t.pump(const Duration(milliseconds: 250));
+    await t.pump(const Duration(milliseconds: 700));
+  },
 );
 
 // ---------------------------------------------------------------------------
