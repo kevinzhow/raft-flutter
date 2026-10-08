@@ -57,7 +57,12 @@ class RaftPanel extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolved =
         style ?? (shadow ? RaftPanelStyle.legacyCard : RaftPanelStyle.panel);
-    final body = Material(type: MaterialType.transparency, child: child);
+    // Material ancestor for ink/fields, without resetting CSS-inherited text.
+    final body = Material(
+      type: MaterialType.transparency,
+      textStyle: DefaultTextStyle.of(context).style,
+      child: child,
+    );
     switch (resolved) {
       case RaftPanelStyle.card:
         final rt = t.recipeTokens;
