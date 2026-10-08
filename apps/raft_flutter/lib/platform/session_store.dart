@@ -4,7 +4,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:raft_client/raft_client.dart';
 
 class SecureSessionStore implements SessionStore {
+  // Credentials are not shared across apps. Preserve the macOS local-build
+  // backend and permit iOS scheduled work after the first device unlock.
   final storage = const FlutterSecureStorage(
+    mOptions: MacOsOptions(usesDataProtectionKeychain: false),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),

@@ -1,3 +1,2 @@
-# Preserve verbatim upstream license text and patch context whitespace.
-packages/raft_ui/assets/fonts/*-OFL.txt -whitespace
-tool/reference-patches/*.patch -whitespace
+# Preserve verbatim upstream font license copies.
+docs/licenses/*.txt whitespace=-blank-at-eol,-blank-at-eof

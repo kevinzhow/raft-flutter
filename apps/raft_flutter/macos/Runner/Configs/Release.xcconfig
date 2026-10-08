@@ -1,0 +1,6 @@
+#include "../../Flutter/Flutter-Release.xcconfig"
+#include "Warnings.xcconfig"
+
+// Release uses only the declared sandbox permissions, without Xcode's local
+// debugger entitlement injection. Profile declares its own debugger permission.
+CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO

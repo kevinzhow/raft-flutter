@@ -225,6 +225,12 @@ const notificationInitialization = InitializationSettings(
     requestBadgePermission: false,
     requestSoundPermission: false,
   ),
+  macOS: DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+    defaultPresentBadge: false,
+  ),
   linux: LinuxInitializationSettings(defaultActionName: 'Open Raft'),
 );
 const notificationDetails = NotificationDetails(
@@ -237,6 +243,7 @@ const notificationDetails = NotificationDetails(
     visibility: NotificationVisibility.private,
   ),
   iOS: DarwinNotificationDetails(),
+  macOS: DarwinNotificationDetails(),
   linux: LinuxNotificationDetails(),
 );
 Future<bool> notificationPermission(
