@@ -57,10 +57,16 @@ final class CssString extends CssValue {
 }
 
 final class CssColor extends CssValue {
-  const CssColor(this.argb, [this.source]);
+  const CssColor(this.argb, [this.source, this.paint]);
   final int argb;
   final String? source;
-  Color get color => Color(argb);
+
+  /// Chrome-composite fit for translucent literals (tool/gen-tokens,
+  /// tool/recipes/chrome-literal-fits.json): the Flutter colour whose
+  /// source-over reproduces Chromium's bytes. Null for opaque literals, whose
+  /// [argb] already equals what Chromium paints.
+  final Color? paint;
+  Color get color => paint ?? Color(argb);
   @override
   Object? toJson() => {'t': 'color', 'argb': argb};
   @override
@@ -318,8 +324,8 @@ sealed class RaftColorRef {
 
   static RaftColorRef? fromCss(CssValue? v) {
     switch (v) {
-      case CssColor(:final argb):
-        return RaftLiteralColor(Color(argb));
+      case CssColor(:final color):
+        return RaftLiteralColor(color);
       case CssVar(:final token?, :final fallback):
         return RaftTokenColor(TokenRef(token), fromCss(fallback));
       case CssKeyword(value: 'currentcolor'):
@@ -713,32 +719,83 @@ class _EvalContext {
 // --------------------------------------------------------------- colour math
 
 double _srgbToLinear(double c) => c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
-double _linearToSrgb(double c) => c <= 0.0031308 ? 12.92 * c : 1.055 * math.pow(c, 1 / 2.4) - 0.055;
 double _cbrt(double x) => x < 0 ? -math.pow(-x, 1 / 3).toDouble() : math.pow(x, 1 / 3).toDouble();
 
-List<double> _toOklab(int argb) {
-  final r = _srgbToLinear(((argb >> 16) & 255) / 255);
-  final g = _srgbToLinear(((argb >> 8) & 255) / 255);
-  final b = _srgbToLinear((argb & 255) / 255);
-  final l = _cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
-  final m = _cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
-  final s = _cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+// OKLab -> sRGB on Chromium 147's path, bit-exact with tool/gen-tokens and
+// tool/recipes (docs/design-tokens.md): OKLab -> LMS -> XYZ-D65 -> Bradford ->
+// XYZ-D50 -> inverse skcms sRGB gamut, float32 throughout.
+final Float32List _f32 = Float32List(1);
+double _f(double x) => (_f32..[0] = x)[0];
+List<List<double>> _m32(List<List<double>> m) => [for (final r in m) [for (final v in r) _f(v)]];
+List<double> _mul(List<List<double>> m, List<double> v) => [for (final r in m) r[0] * v[0] + r[1] * v[1] + r[2] * v[2]];
+List<double> _mul32(List<List<double>> m, List<double> v) =>
+    [for (final r in m) _f(_f(_f(r[0] * v[0]) + _f(r[1] * v[1])) + _f(r[2] * v[2]))];
+List<List<double>> _matmul(List<List<double>> a, List<List<double>> b) =>
+    [for (var i = 0; i < 3; i++) [for (var j = 0; j < 3; j++) a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j]]];
+List<List<double>> _inv3(List<List<double>> m) {
+  final [a, b, c] = m[0];
+  final [d, e, f] = m[1];
+  final [g, h, i] = m[2];
+  final det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
   return [
-    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+    [(e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det],
+    [(f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det],
+    [(d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det],
   ];
 }
 
-int _fromOklab(List<double> lab, double alpha) {
-  final l = math.pow(lab[0] + 0.3963377774 * lab[1] + 0.2158037573 * lab[2], 3).toDouble();
-  final m = math.pow(lab[0] - 0.1055613458 * lab[1] - 0.0638541728 * lab[2], 3).toDouble();
-  final s = math.pow(lab[0] - 0.0894841775 * lab[1] - 1.291485548 * lab[2], 3).toDouble();
-  final lin = [
-    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+final _oklabToLms = _m32(const [
+  [0.99999999845051981432, 0.39633779217376785678, 0.21580375806075880339],
+  [1.0000000088817607767, -0.1055613423236563494, -0.063854174771705903402],
+  [1.0000000546724109177, -0.089484182094965759684, -1.2914855378640917399],
+]);
+final _lmsToXyzD65 = _m32(const [
+  [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+  [-0.0405757452148008, 1.1122868032803170, -0.0717110580655164],
+  [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816],
+]);
+final _xyzD65ToD50 = () {
+  const bradford = [
+    [0.8951, 0.2664, -0.1614],
+    [-0.7502, 1.7135, 0.0367],
+    [0.0389, -0.0685, 1.0296],
   ];
+  const wx = 0.3127, wy = 0.3290;
+  final src = _mul(bradford, [wx / wy, 1, (1 - wx - wy) / wy]);
+  final dst = _mul(bradford, const [0.96422, 1.0, 0.82521]);
+  final scale = [
+    [dst[0] / src[0], 0.0, 0.0],
+    [0.0, dst[1] / src[1], 0.0],
+    [0.0, 0.0, dst[2] / src[2]],
+  ];
+  return _m32(_matmul(_inv3(bradford), _matmul(scale, bradford)));
+}();
+final _xyzD50ToLinSrgb = _m32(_inv3(const [
+  [0.436065674, 0.385147095, 0.143066406],
+  [0.222488403, 0.716873169, 0.060607910],
+  [0.013916016, 0.097076416, 0.714096069],
+]));
+final _linSrgbToLms = _inv3(_matmul(_xyzD50ToLinSrgb, _matmul(_xyzD65ToD50, _lmsToXyzD65)));
+final _lmsToOklab = _inv3(_oklabToLms);
+
+double _linearToSrgb(double c) {
+  final x = c.abs();
+  final v = x <= 0.0031308 ? 12.92 * x : 1.055 * math.pow(x, 1 / 2.4) - 0.055;
+  return _f(c < 0 ? -v : v);
+}
+
+List<double> _toOklab(int argb) {
+  final rgb = [
+    _srgbToLinear(((argb >> 16) & 255) / 255),
+    _srgbToLinear(((argb >> 8) & 255) / 255),
+    _srgbToLinear((argb & 255) / 255),
+  ];
+  return _mul(_lmsToOklab, [for (final v in _mul(_linSrgbToLms, rgb)) _cbrt(v)]);
+}
+
+int _fromOklab(List<double> lab, double alpha) {
+  final lms = [for (final v in _mul32(_oklabToLms, [for (final x in lab) _f(x)])) _f(v * v * v)];
+  final lin = _mul32(_xyzD50ToLinSrgb, _mul32(_xyzD65ToD50, _mul32(_lmsToXyzD65, lms)));
   int ch(double x) => (_linearToSrgb(x).clamp(0.0, 1.0) * 255).round();
   final a = (alpha * 255).round().clamp(0, 255);
   return (a << 24) | (ch(lin[0]) << 16) | (ch(lin[1]) << 8) | ch(lin[2]);
@@ -771,8 +828,8 @@ int? raftMixColors(String space, int c1, double? p1, int c2, double? p2) {
     double chroma(List<double> v) => math.sqrt(v[1] * v[1] + v[2] * v[2]);
     final cx = chroma(x);
     final cy = chroma(y);
-    final hx = cx < 1e-6 ? null : math.atan2(x[2], x[1]);
-    final hy = cy < 1e-6 ? null : math.atan2(y[2], y[1]);
+    final hx = cx < 4e-6 || a1 == 0 ? null : math.atan2(x[2], x[1]);
+    final hy = cy < 4e-6 || a2 == 0 ? null : math.atan2(y[2], y[1]);
     var h1 = hx ?? hy ?? 0;
     var h2 = hy ?? hx ?? 0;
     if (h2 - h1 > math.pi) {
@@ -783,7 +840,7 @@ int? raftMixColors(String space, int c1, double? p1, int c2, double? p2) {
     final l = (x[0] * a1 * w1 + y[0] * a2 * w2) / alpha;
     final c = (cx * a1 * w1 + cy * a2 * w2) / alpha;
     final h = h1 * w1 + h2 * w2;
-    lab = [l, c * math.cos(h), c * math.sin(h)];
+    lab = [_f(l), _f(_f(c) * _f(math.cos(h))), _f(_f(c) * _f(math.sin(h)))];
   } else {
     lab = [for (var i = 0; i < 3; i++) (x[i] * a1 * w1 + y[i] * a2 * w2) / alpha];
   }
