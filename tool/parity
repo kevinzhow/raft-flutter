@@ -207,12 +207,38 @@ def summarize():
         if x['verdict'] == 'not-covered':
             summary['notCoveredByReason'].setdefault(x['flutterMapping']['status'], []).append(x['id'])
     (OUT / 'summary.json').write_text(json.dumps(summary, indent=2))
+    (OUT / 'summary.md').write_text(summary_markdown(summary))
     t = summary['totals']
     print(f"parity {PAIR}: {t['passing']}/{t['total']} passing = {t['percentage']}% "
           f"(react {t['reactCaptured']}, flutter {t['flutterCaptured']}, failing {t['failing']}, "
           f"not covered {t['notCovered']}, flutter capture failed {t['flutterCaptureFailed']}, "
           f"react missing {t['reactMissing']}) -> {OUT / 'summary.json'}")
     return summary
+
+
+def summary_markdown(summary):
+    t = summary['totals']
+    lines = [
+        f"Run {summary['generatedAt']} · raft-source {summary['raftSourceCommit']} · flutter {summary['flutterCommit']}",
+        '',
+        '| total | react captured | flutter captured | passing | (strict >99%) | failing | not covered | flutter capture failed | percentage |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        f"| {t['total']} | {t['reactCaptured']} | {t['flutterCaptured']} | {t['passing']} | {t['strictPass']} | "
+        f"{t['failing']} | {t['notCovered']} | {t['flutterCaptureFailed']} | **{t['percentage']}%** |",
+        '',
+        'By theme: ' + ', '.join(f"{k} {v['passing']}/{v['total']}" for k, v in summary['byTheme'].items())
+        + '; elegant-dark: 0 official cases.',
+        '',
+        '| case | verdict | official status | pixelPerfect | flutter mapping |',
+        '| --- | --- | --- | --- | --- |',
+    ]
+    for c in sorted(summary['cases'], key=lambda c: (c['verdict'], c['id'])):
+        px = c['pixelPerfectSimilarity']
+        m = c['flutterMapping']
+        detail = ', '.join(m.get('widgets', [])) if m['status'] == 'mapped' else f"{m['status']}: {m.get('reason', '')}"
+        lines.append(f"| `{c['id']}` | {c['verdict']} | {c['officialStatus']} | "
+                     f"{'' if px is None else f'{px * 100:.2f}%'} | {detail.replace('|', '/')} |")
+    return '\n'.join(lines) + '\n'
 
 
 def cmd_run(a):
@@ -236,6 +262,7 @@ def cmd_run(a):
     (OUT / 'site-stamp.txt').write_text(stamp)
     summary = summarize()
     shutil.copy(OUT / 'summary.json', SITE / 'flutter-parity-summary.json')
+    shutil.copy(OUT / 'summary.md', SITE / 'flutter-parity-summary.md')
     return summary
 
 

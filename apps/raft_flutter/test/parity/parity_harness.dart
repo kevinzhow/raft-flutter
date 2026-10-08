@@ -185,6 +185,10 @@ Future<List<String>> loadParityFonts() async {
       '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
     ],
     'Noto Color Emoji': ['/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf'],
+    // flutter_test has no OS fallback chain. On Android the system resolves
+    // emoji through its own fallback; here the theme's trailing `sans-serif`
+    // fallback family stands in for it so emoji do not render as tofu.
+    'sans-serif': ['/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf'],
   };
   for (final MapEntry(key: family, value: paths) in systemFallbacks.entries) {
     final files = paths.map(File.new).where((f) => f.existsSync()).toList();
