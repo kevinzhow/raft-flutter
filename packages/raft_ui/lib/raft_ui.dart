@@ -27,6 +27,7 @@ export 'src/recipe_surface.dart';
 export 'src/indicators.dart';
 export 'src/form_controls.dart';
 export 'src/list_items.dart';
+export 'src/select_field.dart';
 export 'src/recipes/button_variants.g.dart' show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 
 export 'src/icons.dart';

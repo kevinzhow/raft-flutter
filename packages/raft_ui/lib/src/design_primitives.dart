@@ -1314,69 +1314,6 @@ class RaftTextButton extends StatelessWidget {
   );
 }
 
-class RaftSelectField<T> extends StatelessWidget {
-  const RaftSelectField({
-    super.key,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-    this.label,
-    this.visualHeight = RaftMetrics.buttonMd,
-    this.minimumTargetHeight,
-  });
-  final T? value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?>? onChanged;
-  final String? label;
-  final double visualHeight;
-  final double? minimumTargetHeight;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Semantics(
-      label: label == null ? null : raftText(context, label!),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight:
-              minimumTargetHeight ??
-              (RaftDensityScope.of(context) == RaftDensity.touch
-                  ? RaftMetrics.touchTarget
-                  : visualHeight),
-        ),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          heightFactor: 1,
-          child: Container(
-            height: visualHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: t.panel,
-              border: Border.all(color: t.fieldLine, width: t.border),
-              borderRadius: RaftShapes.field(t),
-              boxShadow: t.brutal ? t.shadows : null,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<T>(
-                value: value,
-                items: items,
-                onChanged: onChanged,
-                isExpanded: true,
-                isDense: true,
-                itemHeight: RaftMetrics.touchTarget,
-                dropdownColor: t.popover,
-                borderRadius: RaftShapes.field(t),
-                style: t.fieldStyle,
-                icon: const RaftIcon(RaftGlyph.chevronDown, size: 14),
-                menuMaxHeight: 320,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Shared field frame: retains the editor's focus/selection/validation behavior.
 class RaftFieldSurface extends StatefulWidget {
   const RaftFieldSurface({super.key, required this.child});

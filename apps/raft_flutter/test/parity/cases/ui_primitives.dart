@@ -734,16 +734,11 @@ final ParityCase _menuItem = ParityCase(
 
 final ParityCase _select = ParityCase(
   widgets: const ['raft_ui:RaftSelectField'],
-  notes:
-      'RaftSelectField (locale_settings_page.dart / resource_view.dart). It '
-      'has no placeholder/hint, so the disabled empty select shows no '
-      '"Select..." text.',
   build: (ctx) => _frame(
     ctx,
     height: 194,
     child: _column(16, [
       RaftSelectField<String>(
-        label: 'Runtime',
         value: 'codex',
         items: const [
           DropdownMenuItem(value: 'codex', child: Text('Codex')),
@@ -757,7 +752,6 @@ final ParityCase _select = ParityCase(
         onChanged: (_) {},
       ),
       const RaftSelectField<String>(
-        label: 'Runtime',
         value: null,
         items: [DropdownMenuItem(value: 'codex', child: Text('Codex'))],
         onChanged: null,
