@@ -1371,6 +1371,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       body: MessagePresentation(
         controller: w,
         message: m,
+        taskByNumber: taskProjection.taskByNumber,
         onExternalLink: link,
         directoryReferences: referenceDirectory.references,
         fontSize: PersonalPresentationScope.bodyFontSize(

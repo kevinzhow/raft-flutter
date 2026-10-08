@@ -32,7 +32,12 @@ class MessagePresentation extends StatelessWidget {
     this.directoryReferences = const [],
     this.exportMode = false,
     this.exportAttachmentBuilder,
+    this.taskByNumber,
   });
+
+  /// Loaded task for an in-body `#N` reference (Web `taskByNumber`); null
+  /// when unknown.
+  final Map<String, dynamic>? Function(int number)? taskByNumber;
   final WorkspaceController controller;
   final RaftMessage message;
   final ValueChanged<String> onExternalLink;
@@ -435,6 +440,48 @@ class MessagePresentation extends StatelessWidget {
             ).toString()
           : null,
       onLink: exportMode ? null : (href) => open(context, href),
+      knownTaskNumber: taskByNumber == null
+          ? null
+          : (n) => taskByNumber!(n) != null,
+      referenceAppearance: appearance,
     );
+  }
+
+  /// Web MessageItem markdown `a` renderer → reference treatment.
+  RaftReferenceAppearance? appearance(String href) {
+    final uri = Uri.tryParse(href);
+    if (uri == null || uri.scheme != 'raft-ref') return null;
+    final parts = uri.pathSegments;
+    switch (uri.host) {
+      case 'mention' when parts.length == 2:
+        return RaftReferenceAppearance(
+          parts[0] == 'user' && parts[1] == controller.client.user?.id
+              ? RaftReferenceKind.selfMention
+              : RaftReferenceKind.mention,
+        );
+      case 'channel':
+        return const RaftReferenceAppearance(RaftReferenceKind.channel);
+      case 'thread':
+        return const RaftReferenceAppearance(RaftReferenceKind.thread);
+      case 'message':
+        return const RaftReferenceAppearance(RaftReferenceKind.message);
+      case 'task' when parts.length == 1:
+        final task = taskByNumber?.call(int.tryParse(parts[0]) ?? 0);
+        final status = switch (task?['status']) {
+          'todo' => RaftMessageTaskStatus.todo,
+          'in_progress' => RaftMessageTaskStatus.inProgress,
+          'in_review' => RaftMessageTaskStatus.inReview,
+          'done' => RaftMessageTaskStatus.done,
+          'closed' => RaftMessageTaskStatus.closed,
+          _ => null,
+        };
+        return status == null
+            ? const RaftReferenceAppearance(RaftReferenceKind.unknownTask)
+            : RaftReferenceAppearance(
+                RaftReferenceKind.task,
+                taskStatus: status,
+              );
+    }
+    return null;
   }
 }

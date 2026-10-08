@@ -1,8 +1,10 @@
 import 'mermaid_toolbar_recipe.dart';
+import 'message_reference_chip.dart';
 
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -70,6 +72,7 @@ String raftMessageReferences(
   String source, {
   List<RaftTextReference> references = const [],
   String Function(int number)? taskHref,
+  bool Function(int number)? knownTaskNumber,
 }) {
   final protected = RegExp(
     r'(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1|`+[^`]*`+|!?\[[^\]]*\]\([^)]*\)|https?://[^\s]+',
@@ -106,24 +109,37 @@ String raftMessageReferences(
             (right == '~' || text.substring(0, m.start).endsWith('dm:'))) {
           continue;
         }
+        // `#chan:shortId` / `dm:@peer:shortId` belong to the thread-ref
+        // pass (Web runs it first); a plain `#design:` is still a channel.
         if ((ref.text.startsWith('#') || ref.text.startsWith('dm:')) &&
-            (right == ':' || right == '~')) {
+            (right == '~' ||
+                (right == ':' &&
+                    RegExp(
+                      r'^:[0-9a-f]{6,8}(?![0-9a-z])',
+                      caseSensitive: false,
+                    ).hasMatch(text.substring(m.end))))) {
           continue;
         }
         matches.add((start: m.start, end: m.end, label: m[0]!, href: ref.href));
       }
     }
     if (taskHref != null) {
+      // Web createRaftBareTaskRefRegex: `task #N` always, bare `#N` only for
+      // a known task.
       for (final m in RegExp(
-        r'\btask[ \t]+#([1-9][0-9]*)\b',
+        r'(?:^|(?<=[^\w/]))(task\s+)?#([1-9][0-9]*)\b',
         caseSensitive: false,
       ).allMatches(text)) {
-        final start = m.end - m[1]!.length - 1;
+        final number = int.parse(m[2]!);
+        if (m[1] == null && !(knownTaskNumber?.call(number) ?? false)) {
+          continue;
+        }
+        final start = m.end - m[2]!.length - 1;
         matches.add((
           start: start,
           end: m.end,
-          label: '#${m[1]}',
-          href: taskHref(int.parse(m[1]!)),
+          label: '#${m[2]}',
+          href: taskHref(number),
         ));
       }
     }
@@ -175,8 +191,17 @@ class RaftMessageBody extends StatelessWidget {
     this.onCopyCode,
     this.onExportDiagram,
     this.exportMode = false,
+    this.referenceAppearance,
+    this.knownTaskNumber,
   });
   final String content;
+
+  /// Chip/text treatment for an identity-backed reference href (Web
+  /// MessageItem markdown `a` renderer); null keeps a plain link.
+  final RaftReferenceAppearance? Function(String href)? referenceAppearance;
+
+  /// Web `knownTaskNumbers`: bare `#N` links only for loaded tasks.
+  final bool Function(int number)? knownTaskNumber;
   final Future<void> Function(String)? onCopyCode;
   final Future<void> Function(String, Uint8List)? onExportDiagram;
   final double fontSize;
@@ -195,6 +220,7 @@ class RaftMessageBody extends StatelessWidget {
       content,
       references: references,
       taskHref: taskHref,
+      knownTaskNumber: knownTaskNumber,
     );
     final blocks = <Widget>[];
     final lines = prepared.split('\n');
@@ -207,7 +233,7 @@ class RaftMessageBody extends StatelessWidget {
           // MessageItem context menu, never a separate text-selection menu.
           contextMenuBuilder: (_, _) => const SizedBox.shrink(),
           child: MarkdownBody(
-            builders: {'a': _MessageLinkBuilder(onLink)},
+            builders: {'a': _MessageLinkBuilder(onLink, referenceAppearance)},
             paddingBuilders: MessageContentRecipe(
               t,
               fontSize: fontSize,
@@ -249,8 +275,9 @@ class RaftMessageBody extends StatelessWidget {
     }
 
     for (var i = 0; i < lines.length; i++) {
-      final start = RegExp(r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$')
-          .firstMatch(lines[i]);
+      final start = RegExp(
+        r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$',
+      ).firstMatch(lines[i]);
       if (start == null) {
         markdown.writeln(lines[i]);
         continue;
@@ -258,8 +285,9 @@ class RaftMessageBody extends StatelessWidget {
       final fence = start[1]!;
       var end = i + 1;
       while (end < lines.length &&
-          !RegExp('^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$')
-              .hasMatch(lines[end])) {
+          !RegExp(
+            '^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$',
+          ).hasMatch(lines[end])) {
         end++;
       }
       if (end == lines.length) {
@@ -793,8 +821,13 @@ class _MermaidToolbar extends StatelessWidget {
 /// Inline Markdown links need an explicit focus/action widget. The upstream
 /// recognizer alone is pointer-only and omits the link URL from Web semantics.
 class _MessageLinkBuilder extends MarkdownElementBuilder {
-  _MessageLinkBuilder(this.onLink);
+  _MessageLinkBuilder(this.onLink, this.appearanceOf);
   final ValueChanged<String>? onLink;
+  final RaftReferenceAppearance? Function(String href)? appearanceOf;
+
+  /// Returns a `Text.rich` so flutter_markdown merges the link (or the inline
+  /// chip WidgetSpan) into the paragraph's single RichText; the sentence then
+  /// wraps around it like CSS inline content instead of breaking the line.
   @override
   Widget? visitElementAfterWithContext(
     BuildContext context,
@@ -804,66 +837,39 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
   ) {
     final href = element.attributes['href'] as String?;
     if (href == null) return null;
-    return _MessageLink(
-      label: element.textContent as String,
-      href: href,
-      style: parentStyle?.merge(preferredStyle),
-      onLink: onLink,
+    final label = element.textContent as String;
+    final base = parentStyle ?? DefaultTextStyle.of(context).style;
+    void open() => onLink?.call(href);
+    final recognizer = onLink == null
+        ? null
+        : (TapGestureRecognizer()..onTap = open);
+    final appearance = appearanceOf?.call(href);
+    if (appearance != null) {
+      return Text.rich(
+        TextSpan(
+          children: [
+            raftReferenceSpan(
+              context,
+              label: label,
+              appearance: appearance,
+              base: base,
+              recognizer: recognizer,
+              onTap: onLink == null ? null : open,
+            ),
+          ],
+        ),
+      );
+    }
+    return Text.rich(
+      TextSpan(
+        text: label,
+        style: base.merge(preferredStyle),
+        recognizer: recognizer,
+        mouseCursor: SystemMouseCursors.click,
+        semanticsLabel: label,
+      ),
     );
   }
-}
-
-class _MessageLink extends StatefulWidget {
-  const _MessageLink({
-    required this.label,
-    required this.href,
-    this.style,
-    this.onLink,
-  });
-  final String label, href;
-  final TextStyle? style;
-  final ValueChanged<String>? onLink;
-  @override
-  State<_MessageLink> createState() => _MessageLinkState();
-}
-
-class _MessageLinkState extends State<_MessageLink> {
-  bool focused = false;
-  void openLink() => widget.onLink?.call(widget.href);
-  @override
-  Widget build(BuildContext context) => FocusableActionDetector(
-    onShowFocusHighlight: (value) => setState(() => focused = value),
-    actions: {
-      ActivateIntent: CallbackAction<ActivateIntent>(
-        onInvoke: (_) {
-          openLink();
-          return null;
-        },
-      ),
-    },
-    child: Semantics(
-      link: true,
-      linkUrl: Uri.tryParse(widget.href),
-      label: widget.label,
-      onTap: widget.onLink == null ? null : openLink,
-      child: ExcludeSemantics(
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: openLink,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: focused
-                    ? Border.all(color: RaftTokens.of(context).accent)
-                    : null,
-              ),
-              child: Text(widget.label, style: widget.style),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 final _codeHighlighter = Highlight();

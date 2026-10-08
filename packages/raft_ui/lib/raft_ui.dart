@@ -13,6 +13,7 @@ export 'src/attachment_card.dart';
 export 'src/adaptive_workspace.dart';
 export 'src/localization.dart';
 export 'src/message_body.dart';
+export 'src/message_reference_chip.dart';
 export 'src/action_card.dart';
 export 'src/message_export.dart';
 export 'src/forwarded_bundle.dart';
