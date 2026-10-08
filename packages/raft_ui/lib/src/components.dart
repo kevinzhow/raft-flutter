@@ -17,6 +17,9 @@ import 'mounted_avatar_recipe.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'tokens/tokens.dart';
+import 'recipe_surface.dart';
+import 'recipes/button_variants.g.dart';
+import 'recipes/recipe_runtime.dart';
 
 class RaftPanel extends StatelessWidget {
   const RaftPanel({
@@ -44,6 +47,9 @@ class RaftPanel extends StatelessWidget {
   }
 }
 
+/// raft-ui `Button` (`buttonVariants` recipe): root box + `content` span
+/// (`inline-flex gap-[inherit]`), the elegant `::before` sheen, and the
+/// loading indicator that hides the content (`data-loading=true`).
 class RaftButton extends StatelessWidget {
   const RaftButton({
     super.key,
@@ -54,52 +60,132 @@ class RaftButton extends StatelessWidget {
     this.secondary = false,
     this.destructive = false,
     this.variant,
+    this.tone,
+    this.size,
     this.visualHeight = RaftMetrics.buttonMd,
+    this.expand = false,
+    this.focusNode,
+    this.tooltip,
   });
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
   final bool busy, secondary, destructive;
+
+  /// Legacy variant axis; mapped onto the recipe variant.
   final RaftControlVariant? variant;
+
+  /// Recipe variant (wins over [variant]): information, success, muted,
+  /// warning, danger-secondary, danger-outline, link, ...
+  final RaftButtonRecipeVariant? tone;
+
+  /// Recipe size; when null it follows [visualHeight] (24 xs, 28 sm, 32 md,
+  /// larger lg).
+  final RaftButtonRecipeSize? size;
   final double visualHeight;
+
+  /// `w-full` (stretch to the parent width; content stays centered).
+  final bool expand;
+  final FocusNode? focusNode;
+  final String? tooltip;
+
+  RaftButtonRecipeVariant get recipeVariant =>
+      tone ??
+      switch (variant ??
+          (destructive
+              ? RaftControlVariant.danger
+              : secondary
+              ? RaftControlVariant.outline
+              : RaftControlVariant.accent)) {
+        RaftControlVariant.surface => RaftButtonRecipeVariant.default_,
+        RaftControlVariant.primary => RaftButtonRecipeVariant.primary,
+        RaftControlVariant.accent => RaftButtonRecipeVariant.accent,
+        RaftControlVariant.outline => RaftButtonRecipeVariant.outline,
+        RaftControlVariant.ghost => RaftButtonRecipeVariant.ghost,
+        RaftControlVariant.danger => RaftButtonRecipeVariant.danger,
+      };
+
+  RaftButtonRecipeSize get recipeSize =>
+      size ??
+      (visualHeight <= 24
+          ? RaftButtonRecipeSize.xs
+          : visualHeight <= 28
+          ? RaftButtonRecipeSize.sm
+          : visualHeight <= 32
+          ? RaftButtonRecipeSize.md
+          : RaftButtonRecipeSize.lg);
+
   @override
   Widget build(BuildContext context) {
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (icon != null) ...[
-          RaftSymbol(icon!, size: visualHeight <= 28 ? 14 : 16),
-          const SizedBox(width: 5.5),
-        ],
-        Flexible(
-          child: Text(raftText(context, label), textAlign: TextAlign.center),
-        ),
-      ],
-    );
-    return MergeSemantics(
-      child: Semantics(
-        label: null,
-        child: RaftControl(
-          onPressed: onPressed,
-          busy: busy,
-          semanticLabel: busy ? raftText(context, label) : null,
-          variant:
-              variant ??
-              (destructive
-                  ? RaftControlVariant.danger
-                  : secondary
-                  ? RaftControlVariant.outline
-                  : RaftControlVariant.accent),
-          visualHeight: visualHeight,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(opacity: busy ? 0 : 1, child: content),
-              if (busy) const RaftSpinner(),
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final text = raftText(context, label);
+    return RaftInteractive(
+      onPressed: onPressed,
+      busy: busy,
+      focusNode: focusNode,
+      tooltip: tooltip,
+      semanticLabel: busy ? text : null,
+      builder: (context, st) {
+        final s = RaftButtonRecipe.resolve(
+          theme: t.recipeTheme,
+          variant: recipeVariant,
+          size: recipeSize,
+          states: t.recipeStates(
+            hovered: st.hovered,
+            pressed: st.pressed,
+            focusVisible: st.focusVisible,
+            disabled: onPressed == null,
+            extra: [
+              if (busy) RaftRecipeStates.loading,
+              if (icon != null) RaftRecipeStates.iconInlineStart,
             ],
           ),
-        ),
-      ),
+          tokens: rt,
+        ).root;
+        final svg = s.target("& svg:not([class*='size-'])");
+        final gap = s.columnGap ?? 0;
+        final content = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              RaftSymbol(icon!, size: svg?.width ?? 16),
+              SizedBox(width: gap),
+            ],
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        );
+        return RaftRecipeBox(
+          style: s,
+          tokens: rt,
+          width: expand ? double.infinity : null,
+          child: Row(
+            mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: busy
+                    ? Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Visibility.maintain(visible: false, child: content),
+                          const RaftSpinner(),
+                        ],
+                      )
+                    : content,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

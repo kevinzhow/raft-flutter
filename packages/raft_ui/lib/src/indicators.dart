@@ -1,0 +1,300 @@
+// Small status primitives: Badge (raft-ui `badge` recipe), and the Web
+// client's StatusDot / AttentionDot / CheckMarker (packages/web/src/components
+// /ui/*.tsx — plain Tailwind classes, resolved in the comments below).
+import 'package:flutter/material.dart';
+
+import 'icons.dart';
+import 'recipe_surface.dart';
+import 'recipes/badge.g.dart';
+import 'recipes/recipe_runtime.dart';
+import 'theme.dart';
+import 'tokens/tokens.dart';
+
+export 'recipes/badge.g.dart' show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
+
+/// Tailwind default-palette colours used by Web JSX classes (not raft-ui
+/// tokens). Values are Tailwind v4 oklch → sRGB (tool/recipes/css-of.mjs).
+abstract final class RaftWebPalette {
+  /// `bg-gray-400` = oklch(70.7% 0.022 261.325).
+  static const gray400 = Color(0xFF99A1AF);
+
+  /// `text-neutral-500` = oklch(55.6% 0 0).
+  static const neutral500 = Color(0xFF737373);
+}
+
+/// raft-ui `Badge`: `<span>` with the `badge` recipe root.
+class RaftBadge extends StatefulWidget {
+  const RaftBadge({
+    super.key,
+    required this.label,
+    this.appearance = RaftBadgeRecipeAppearance.solid,
+    this.variant = RaftBadgeRecipeVariant.default_,
+    this.uppercase = false,
+    this.leading,
+    this.onPressed,
+  });
+
+  final String label;
+  final RaftBadgeRecipeAppearance appearance;
+  final RaftBadgeRecipeVariant variant;
+  final bool uppercase;
+  final Widget? leading;
+
+  /// Rendered as a `<button>` (`render={<button/>}`): enables hover filter.
+  final VoidCallback? onPressed;
+
+  @override
+  State<RaftBadge> createState() => _RaftBadgeState();
+}
+
+class _RaftBadgeState extends State<RaftBadge> {
+  bool hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final interactive = widget.onPressed != null;
+    final s = RaftBadgeRecipe.resolve(
+      theme: t.recipeTheme,
+      appearance: widget.appearance,
+      variant: widget.variant,
+      uppercase: widget.uppercase,
+      // `enabled:hover:` only matches a real <button>.
+      states: t.recipeStates(
+        hovered: hovered && interactive,
+        extra: [if (interactive) 'enabled'],
+      ),
+      tokens: rt,
+    ).root;
+    final upper = s.textTransform == 'uppercase';
+    Widget badge = RaftRecipeBox(
+      style: s,
+      tokens: rt,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.leading != null) ...[
+            widget.leading!,
+            SizedBox(width: s.columnGap ?? 0),
+          ],
+          Flexible(
+            child: Text(
+              upper ? widget.label.toUpperCase() : widget.label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.clip,
+            ),
+          ),
+        ],
+      ),
+    );
+    final brightness = _brightness(s['filter']);
+    if (brightness != null) {
+      badge = ColorFiltered(
+        colorFilter: ColorFilter.matrix([
+          brightness, 0, 0, 0, 0, //
+          0, brightness, 0, 0, 0, //
+          0, 0, brightness, 0, 0, //
+          0, 0, 0, 1, 0,
+        ]),
+        child: badge,
+      );
+    }
+    if (!interactive) return badge;
+    return Semantics(
+      button: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: GestureDetector(onTap: widget.onPressed, child: badge),
+      ),
+    );
+  }
+}
+
+double? _brightness(CssValue? v) {
+  final m = RegExp(r'brightness\(([\d.]+)(%?)\)').firstMatch('$v');
+  if (m == null) return null;
+  final n = double.parse(m.group(1)!);
+  return m.group(2) == '%' ? n / 100 : n;
+}
+
+enum RaftStatusDotSize {
+  /// `size-2`
+  sm(8),
+
+  /// `size-2.5`
+  md(10),
+
+  /// `size-[11px]`
+  lg(11);
+
+  const RaftStatusDotSize(this.px);
+  final double px;
+}
+
+/// Agent activity → dot tone (`getActivityDotClass`, web utils/activity.ts).
+enum RaftActivityTone { online, thinking, working, error, offline }
+
+/// Web `StatusDot`: `inline-block shrink-0 rounded-full border
+/// border-line-strong theme-brutal:border-black` + size + tone.
+class RaftStatusDot extends StatelessWidget {
+  const RaftStatusDot({
+    super.key,
+    this.color,
+    this.activity,
+    this.external = false,
+    this.size = RaftStatusDotSize.md,
+  });
+
+  /// Explicit fill (Web `tone`, e.g. `bg-brutal-lime`); default `bg-gray-400`.
+  final Color? color;
+  final RaftActivityTone? activity;
+
+  /// External agents: neutral `bg-brutal-cyan` regardless of activity.
+  final bool external;
+  final RaftStatusDotSize size;
+
+  static Color activityColor(RaftTokens t, RaftActivityTone a) =>
+      switch (a) {
+        RaftActivityTone.online => t.product.brutalLime,
+        RaftActivityTone.thinking ||
+        RaftActivityTone.working => t.product.statusBusy,
+        RaftActivityTone.error => t.product.brutalOrange,
+        RaftActivityTone.offline => RaftWebPalette.gray400,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final fill = external
+        ? t.product.brutalCyan
+        : activity != null
+        ? activityColor(t, activity!)
+        : color ?? RaftWebPalette.gray400;
+    return Container(
+      width: size.px,
+      height: size.px,
+      decoration: BoxDecoration(
+        color: fill,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: t.brutal ? RaftPrimitiveColors.black : t.semantic.lineStrong,
+        ),
+      ),
+    );
+  }
+}
+
+/// Web `AttentionDot`. Brutal: `border border-black` + `bg-brutal-pink`
+/// (or the warning `bg-brutal-orange`); elegant: borderless `bg-accent`
+/// (`bg-warning` for warning tones).
+class RaftAttentionDot extends StatelessWidget {
+  const RaftAttentionDot({super.key, this.compact = false, this.warning = false});
+
+  /// `sm` = `size-1` (4px); default `lg` = `size-2.5` (10px).
+  final bool compact;
+  final bool warning;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final size = compact ? 4.0 : 10.0;
+    final fill = t.brutal
+        ? (warning ? t.product.brutalOrange : t.product.brutalPink)
+        : (warning ? t.semantic.warning : t.colors['accent']!);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: fill,
+        shape: BoxShape.circle,
+        border: t.brutal ? Border.all(color: RaftPrimitiveColors.black) : null,
+      ),
+    );
+  }
+}
+
+enum RaftCheckMarkerSize {
+  /// `size-3.5`, Check 10px stroke 4
+  sm(14, 10, 4),
+
+  /// `size-4`, Check 12px stroke 4
+  md(16, 12, 4),
+
+  /// `size-5`, Check 13px stroke 3
+  lg(20, 13, 3);
+
+  const RaftCheckMarkerSize(this.box, this.icon, this.stroke);
+  final double box, icon, stroke;
+}
+
+/// Web `CheckMarker` (`check-marker-brutal inline-flex items-center
+/// justify-center border border-line-strong theme-brutal:border-2
+/// theme-brutal:border-black`).
+class RaftCheckMarker extends StatelessWidget {
+  const RaftCheckMarker({
+    super.key,
+    required this.checked,
+    this.circle = false,
+    this.size = RaftCheckMarkerSize.sm,
+    this.yellow = false,
+    this.disabled = false,
+    this.previewOnHover = false,
+    this.hovered = false,
+  });
+
+  final bool checked, circle, yellow, disabled, previewOnHover;
+
+  /// Parent `group` hover (for [previewOnHover]).
+  final bool hovered;
+  final RaftCheckMarkerSize size;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final s = t.semantic;
+    final Color fill;
+    final Color ink;
+    if (checked) {
+      fill = yellow
+          ? (t.brutal ? t.product.softSignal : s.primarySoft)
+          : (t.brutal ? RaftPrimitiveColors.black : s.foregroundStrong);
+      ink = yellow
+          ? (t.brutal ? RaftPrimitiveColors.black : s.primaryStrong)
+          : (t.brutal ? RaftPrimitiveColors.white : s.foregroundInverse);
+    } else {
+      fill = t.brutal ? RaftPrimitiveColors.white : s.layerPanel;
+      ink = previewOnHover && hovered
+          ? (t.brutal
+                ? RaftPrimitiveColors.black.withValues(alpha: .2)
+                : s.foregroundMuted)
+          : Colors.transparent;
+    }
+    Widget box = Container(
+      width: size.box,
+      height: size.box,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: fill,
+        shape: circle ? BoxShape.circle : BoxShape.rectangle,
+        border: Border.all(
+          color: t.brutal ? RaftPrimitiveColors.black : s.lineStrong,
+          width: t.brutal ? 2 : 1,
+        ),
+      ),
+      child: checked || previewOnHover
+          ? RaftIcon(
+              RaftGlyph.check,
+              size: size.icon,
+              strokeWidth: size.stroke,
+              color: ink,
+            )
+          : null,
+    );
+    if (disabled) box = Opacity(opacity: .5, child: box);
+    return ExcludeSemantics(child: box);
+  }
+}

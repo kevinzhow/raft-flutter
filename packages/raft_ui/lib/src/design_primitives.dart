@@ -2698,3 +2698,167 @@ class RaftPickerTriggerButton extends StatelessWidget {
     );
   }
 }
+
+/// Interaction state fed to recipe-painted controls (CSS :hover, :active,
+/// :focus-visible, :disabled).
+@immutable
+class RaftInteractionState {
+  const RaftInteractionState({
+    this.hovered = false,
+    this.pressed = false,
+    this.focusVisible = false,
+    this.enabled = true,
+  });
+  final bool hovered, pressed, focusVisible, enabled;
+}
+
+/// Pointer, keyboard and semantics plumbing for controls whose visuals are
+/// painted from a generated recipe. Layout is exactly the child's (no touch
+/// target inflation: the Web control box is the layout box).
+class RaftInteractive extends StatefulWidget {
+  const RaftInteractive({
+    super.key,
+    required this.builder,
+    this.onPressed,
+    this.busy = false,
+    this.focusNode,
+    this.focusOnPointer = true,
+    this.semanticLabel,
+    this.button = true,
+    this.selected,
+    this.checked,
+    this.tooltip,
+  });
+
+  final Widget Function(BuildContext context, RaftInteractionState state)
+  builder;
+  final VoidCallback? onPressed;
+  final bool busy, focusOnPointer, button;
+  final bool? selected, checked;
+  final FocusNode? focusNode;
+  final String? semanticLabel, tooltip;
+
+  @override
+  State<RaftInteractive> createState() => _RaftInteractiveState();
+}
+
+class _RaftInteractiveState extends State<RaftInteractive> {
+  bool hovered = false, focused = false, pressed = false;
+  bool tooltipKeyboardFocused = false;
+  final ownedFocus = FocusNode();
+  FocusNode get node => widget.focusNode ?? ownedFocus;
+  bool get enabled => widget.onPressed != null && !widget.busy;
+
+  @override
+  void initState() {
+    super.initState();
+    _RaftFocusVisible.shared.acquire();
+    _RaftFocusVisible.shared.addListener(modeChanged);
+  }
+
+  @override
+  void dispose() {
+    _RaftFocusVisible.shared.removeListener(modeChanged);
+    _RaftFocusVisible.shared.release();
+    ownedFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(RaftInteractive oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!enabled) {
+      pressed = hovered = focused = tooltipKeyboardFocused = false;
+    }
+  }
+
+  void modeChanged() {
+    final next = enabled && node.hasFocus && _RaftFocusVisible.shared.keyboard;
+    if (mounted && next != focused) {
+      setState(() {
+        focused = next;
+        tooltipKeyboardFocused = tooltipKeyboardFocused && next;
+      });
+    }
+  }
+
+  void focusChanged(bool hasFocus) {
+    if (!mounted) return;
+    setState(() {
+      focused = enabled && hasFocus && _RaftFocusVisible.shared.keyboard;
+      tooltipKeyboardFocused = focused;
+    });
+  }
+
+  void activateControl() {
+    if (!enabled) return;
+    node.requestFocus();
+    widget.onPressed?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = RaftInteractionState(
+      hovered: hovered,
+      pressed: pressed,
+      focusVisible: focused,
+      enabled: enabled,
+    );
+    Widget result = Semantics(
+      label: widget.semanticLabel,
+      excludeSemantics: widget.busy,
+      button: widget.button,
+      selected: widget.selected,
+      checked: widget.checked,
+      enabled: enabled,
+      onTap: enabled ? activateControl : null,
+      child: MouseRegion(
+        onEnter: enabled ? (_) => setState(() => hovered = true) : null,
+        onExit: (_) => setState(() => hovered = false),
+        child: FocusableActionDetector(
+          focusNode: node,
+          enabled: enabled,
+          mouseCursor: enabled
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          onShowFocusHighlight: (_) => modeChanged(),
+          onFocusChange: focusChanged,
+          actions: {
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                activateControl();
+                return null;
+              },
+            ),
+          },
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTapDown: enabled
+                ? (_) {
+                    if (widget.focusOnPointer) node.requestFocus();
+                    setState(() => pressed = true);
+                  }
+                : null,
+            onTapUp: enabled
+                ? (_) {
+                    setState(() => pressed = false);
+                    widget.onPressed?.call();
+                  }
+                : null,
+            onTapCancel: enabled ? () => setState(() => pressed = false) : null,
+            child: widget.builder(context, state),
+          ),
+        ),
+      ),
+    );
+    if (widget.tooltip != null) {
+      result = RaftTooltip(
+        message: widget.tooltip!,
+        keyboardFocused: tooltipKeyboardFocused,
+        child: result,
+      );
+    }
+    return result;
+  }
+}

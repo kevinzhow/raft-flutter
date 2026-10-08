@@ -29,6 +29,8 @@ final Map<String, ParityCase> uiPrimitiveCases = {
   'components.ui.checkbox.states.elegant': _checkbox,
   'components.ui.check-marker.states': _checkMarker,
   'components.ui.attention-dot.states': _attentionDot,
+  'components.ui.status-dot.states': _statusDot,
+  'components.ui.badge.states': _badge,
   'components.ui.progress-bar.states': _progressBar,
   'components.ui.skeleton.states': _skeleton,
   'components.ui.spinner.states': _spinner,
@@ -42,24 +44,7 @@ final Map<String, ParityCase> uiPrimitiveCases = {
   'components.ui.avatar-list-row.states': _avatarListRow,
 };
 
-final Map<String, ParityUncovered> uiPrimitiveUncovered = {
-  'components.ui.badge.states': const ParityUncovered(
-    ParityGap.noFlutterSurface,
-    'No shared Badge primitive in raft_ui or the app. Badge-like labels are '
-    'private, single-purpose feature helpers (resource_search.dart _badge / '
-    '_entityBadge, resource_view.dart activityBadge, source_channel_files '
-    'extension chip, RaftActionCard success badge) with no '
-    'outline/success/warning/muted/danger/accent tones or uppercase toggle, '
-    'and none is instantiable from a test.',
-  ),
-  'components.ui.status-dot.states': const ParityUncovered(
-    ParityGap.noFlutterSurface,
-    'No standalone StatusDot widget. Presence dots only exist as the private '
-    '_PresenceDot overlay inside RaftMountedAvatarFrame (mounted_avatar_'
-    'recipe.dart) and an inline 8px Container in live_agent_activity_bar.dart; '
-    'there is no public lime/orange/gray/external tone or sm/md/lg size API.',
-  ),
-};
+final Map<String, ParityUncovered> uiPrimitiveUncovered = {};
 
 // ---------------------------------------------------------------------------
 // Fixture scaffolding helpers (frame + plain markup text), not product UI.
@@ -78,11 +63,24 @@ Widget _frame(
   height: height,
   child: Material(
     type: MaterialType.transparency,
-    child: OverflowBox(
-      alignment: Alignment.topLeft,
-      minHeight: 0,
-      maxHeight: double.infinity,
-      child: child,
+    child: Builder(
+      // <main class="font-display text-black">: heading font, black, the
+      // preflight html line-height 1.5 at 16px.
+      builder: (context) => DefaultTextStyle(
+        style: TextStyle(
+          fontFamily: RaftTokens.of(context).headingFont,
+          fontSize: 16,
+          height: 1.5,
+          color: Colors.black,
+          leadingDistribution: TextLeadingDistribution.even,
+        ),
+        child: OverflowBox(
+          alignment: Alignment.topLeft,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: child,
+        ),
+      ),
     ),
   ),
 );
@@ -102,6 +100,7 @@ Widget _column(double gap, List<Widget> children) => Column(
 /// `flex items-center gap-N`.
 Widget _row(double gap, List<Widget> children) => Row(
   mainAxisSize: MainAxisSize.min,
+  crossAxisAlignment: CrossAxisAlignment.center,
   children: [
     for (var i = 0; i < children.length; i++) ...[
       if (i > 0) SizedBox(width: gap),
@@ -110,21 +109,21 @@ Widget _row(double gap, List<Widget> children) => Row(
   ],
 );
 
-/// Plain fixture label markup (`text-sm font-bold`, inherits text-black).
-Widget _fixtureLabel(String text) => Builder(
-  builder: (context) {
-    final t = RaftTokens.of(context);
-    return Text(
-      text,
-      style: TextStyle(
-        fontFamily: t.bodyFont,
-        fontSize: 14,
-        height: 20 / 14,
-        fontWeight: FontWeight.w700,
-        color: t.ink,
-      ),
-    );
-  },
+/// Plain fixture label markup (`text-sm font-bold`, inherits text-black and
+/// font-display from the frame).
+Widget _fixtureLabel(String text) => Text(
+  text,
+  style: const TextStyle(
+    fontSize: 14,
+    height: 20 / 14,
+    fontWeight: FontWeight.w700,
+  ),
+);
+
+/// `flex items-center gap-N` row whose line box is the `text-sm` 20px.
+Widget _labelRow(double gap, Widget lead, String label) => Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [lead, SizedBox(width: gap), _fixtureLabel(label)],
 );
 
 Widget _reducedMotion(Widget child) => Builder(
@@ -165,61 +164,50 @@ final ParityCase _segmentedControl = ParityCase(
 );
 
 final ParityCase _button = ParityCase(
-  widgets: const ['raft_ui:RaftButton', 'raft_ui:RaftControl'],
-  notes:
-      'React Button tones information/success/muted have no RaftControlVariant; '
-      'rendered with the nearest Flutter variants (surface/primary/ghost).',
+  widgets: const ['raft_ui:RaftButton'],
   build: (ctx) => _frame(
     ctx,
     height: 150,
     child: _column(12, [
-      Row(
-        children: [
-          RaftButton(
-            label: 'Save',
-            onPressed: () {},
-            variant: RaftControlVariant.outline,
-            visualHeight: RaftMetrics.buttonSm,
-          ),
-          const SizedBox(width: 12),
-          RaftButton(
-            label: 'Sync',
-            onPressed: () {},
-            variant: RaftControlVariant.primary,
-            visualHeight: RaftMetrics.buttonSm,
-          ),
-          const SizedBox(width: 12),
-          RaftButton(
-            label: 'Delete',
-            onPressed: () {},
-            variant: RaftControlVariant.accent,
-            visualHeight: RaftMetrics.buttonSm,
-          ),
-        ],
-      ),
-      Row(
-        children: [
-          RaftButton(
-            label: 'Add',
-            onPressed: () {},
-            variant: RaftControlVariant.surface,
-            visualHeight: RaftMetrics.buttonXs,
-          ),
-          const SizedBox(width: 12),
-          RaftButton(
-            label: 'Continue',
-            onPressed: () {},
-            variant: RaftControlVariant.primary,
-            visualHeight: RaftMetrics.buttonMd,
-          ),
-          const SizedBox(width: 12),
-          const RaftButton(
-            label: 'Disabled',
-            variant: RaftControlVariant.ghost,
-            visualHeight: RaftMetrics.buttonSm,
-          ),
-        ],
-      ),
+      _row(12, [
+        RaftButton(
+          label: 'Save',
+          onPressed: () {},
+          tone: RaftButtonRecipeVariant.outline,
+          size: RaftButtonRecipeSize.sm,
+        ),
+        RaftButton(
+          label: 'Sync',
+          onPressed: () {},
+          tone: RaftButtonRecipeVariant.primary,
+          size: RaftButtonRecipeSize.sm,
+        ),
+        RaftButton(
+          label: 'Delete',
+          onPressed: () {},
+          tone: RaftButtonRecipeVariant.accent,
+          size: RaftButtonRecipeSize.sm,
+        ),
+      ]),
+      _row(12, [
+        RaftButton(
+          label: 'Add',
+          onPressed: () {},
+          tone: RaftButtonRecipeVariant.information,
+          size: RaftButtonRecipeSize.xs,
+        ),
+        RaftButton(
+          label: 'Continue',
+          onPressed: () {},
+          tone: RaftButtonRecipeVariant.success,
+          size: RaftButtonRecipeSize.md,
+        ),
+        const RaftButton(
+          label: 'Disabled',
+          tone: RaftButtonRecipeVariant.muted,
+          size: RaftButtonRecipeSize.sm,
+        ),
+      ]),
     ]),
   ),
 );
@@ -373,69 +361,117 @@ final ParityCase _checkbox = ParityCase(
 );
 
 final ParityCase _checkMarker = ParityCase(
-  widgets: const ['raft_ui:RaftComposerTaskToggle'],
-  notes:
-      'The only Flutter CheckMarker is the composer "As Task" marker inside '
-      'RaftComposerTaskToggle (14px square, black fill, label owned by the '
-      'widget). No md/lg sizes, circle shape or yellow-fill tone: the circle '
-      'yellow row uses the same square checked marker.',
+  widgets: const ['raft_ui:RaftCheckMarker'],
   build: (ctx) => _frame(
     ctx,
     height: 112,
     child: Align(
       alignment: Alignment.topLeft,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RaftComposerTaskToggle(
+      child: _column(12, [
+        _labelRow(12, const RaftCheckMarker(checked: true), 'Square checked'),
+        _labelRow(
+          12,
+          const RaftCheckMarker(checked: false, size: RaftCheckMarkerSize.md),
+          'Square unchecked',
+        ),
+        _labelRow(
+          12,
+          const RaftCheckMarker(
             checked: true,
-            label: 'Square checked',
-            onChanged: (_) {},
+            circle: true,
+            size: RaftCheckMarkerSize.lg,
+            yellow: true,
           ),
-          const SizedBox(height: 12),
-          RaftComposerTaskToggle(
-            checked: false,
-            label: 'Square unchecked',
-            onChanged: (_) {},
-          ),
-          const SizedBox(height: 12),
-          RaftComposerTaskToggle(
-            checked: true,
-            label: 'Circle yellow',
-            onChanged: (_) {},
-          ),
-        ],
-      ),
+          'Circle yellow',
+        ),
+      ]),
     ),
   ),
 );
 
 final ParityCase _attentionDot = ParityCase(
-  widgets: const ['raft_ui:RaftNotificationAttention'],
-  notes:
-      'RaftNotificationAttention is the only public attention dot (10px, the '
-      'canonical lg size). No sm size or orange warning tone: all three rows '
-      'use the default dot. Labels are plain fixture markup.',
+  widgets: const ['raft_ui:RaftAttentionDot'],
   build: (ctx) => _frame(
     ctx,
     height: 80,
     child: Align(
       alignment: Alignment.topLeft,
       child: _row(20, [
-        _row(8, [
-          const RaftNotificationAttention(count: 1),
-          _fixtureLabel('Unread'),
-        ]),
-        _row(8, [
-          const RaftNotificationAttention(count: 1),
-          _fixtureLabel('Compact'),
-        ]),
-        _row(8, [
-          const RaftNotificationAttention(count: 1),
-          _fixtureLabel('Warning'),
-        ]),
+        _labelRow(8, const RaftAttentionDot(), 'Unread'),
+        _labelRow(8, const RaftAttentionDot(compact: true), 'Compact'),
+        _labelRow(8, const RaftAttentionDot(warning: true), 'Warning'),
       ]),
+    ),
+  ),
+);
+
+final ParityCase _statusDot = ParityCase(
+  widgets: const ['raft_ui:RaftStatusDot'],
+  build: (ctx) => _frame(
+    ctx,
+    height: 92,
+    child: Align(
+      alignment: Alignment.topLeft,
+      child: Builder(
+        builder: (context) {
+          final p = RaftTokens.of(context).product;
+          // `flex items-center gap-3` inside the `text-sm` column: the row's
+          // cross size is the tallest dot (11px), as in CSS.
+          return _row(12, [
+            RaftStatusDot(color: p.brutalLime),
+            RaftStatusDot(color: p.brutalOrange, size: RaftStatusDotSize.sm),
+            const RaftStatusDot(
+              color: RaftWebPalette.gray400,
+              size: RaftStatusDotSize.lg,
+            ),
+            const RaftStatusDot(external: true),
+          ]);
+        },
+      ),
+    ),
+  ),
+);
+
+final ParityCase _badge = ParityCase(
+  widgets: const ['raft_ui:RaftBadge'],
+  build: (ctx) => _frame(
+    ctx,
+    height: 92,
+    child: Align(
+      alignment: Alignment.topLeft,
+      // `flex flex-wrap items-center gap-2`
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const RaftBadge(
+            label: 'Shared',
+            appearance: RaftBadgeRecipeAppearance.outline,
+          ),
+          const RaftBadge(
+            label: 'Installed',
+            variant: RaftBadgeRecipeVariant.success,
+          ),
+          const RaftBadge(
+            label: 'Update',
+            variant: RaftBadgeRecipeVariant.warning,
+          ),
+          const RaftBadge(
+            label: 'Built In',
+            variant: RaftBadgeRecipeVariant.muted,
+          ),
+          const RaftBadge(
+            label: 'task #273',
+            variant: RaftBadgeRecipeVariant.danger,
+          ),
+          RaftBadge(
+            label: 'Install',
+            variant: RaftBadgeRecipeVariant.accent,
+            onPressed: () {},
+          ),
+        ],
+      ),
     ),
   ),
 );

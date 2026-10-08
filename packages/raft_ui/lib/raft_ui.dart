@@ -23,6 +23,9 @@ export 'src/html_preview.dart';
 export 'src/thread_replies.dart';
 
 export 'src/design_primitives.dart';
+export 'src/recipe_surface.dart';
+export 'src/indicators.dart';
+export 'src/recipes/button_variants.g.dart' show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 
 export 'src/icons.dart';
 
