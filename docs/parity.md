@@ -121,3 +121,70 @@ theme, so units = cases.
 * **failing** = both providers captured, status `different`.
 * **not covered** = no Flutter builder (any reason).
 * **percentage = passing / total**.
+
+## Latest result (run 20261008T220459Z, flutter 1f8b34b, raft-source 26f77ef)
+
+Report: <http://100.109.192.23:18931/raft_flutter_parity/latest/> (immutable copy:
+`raft_flutter_parity/20261008T220459Z/`). Machine-readable:
+`latest/flutter-parity-summary.json`, per-case table `latest/flutter-parity-summary.md`.
+
+| units (case x variant x theme) | React captured | Flutter captured | passing (official, >96%) | strict pass (>99%) | failing | not covered | percentage |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 99 | 99 | 92 | 4 | 1 | 88 | 7 | **4.04%** |
+
+By theme: brutal-light 4/94, elegant-light 0/5, elegant-dark 0/0 (no official
+case declares dark; the React host only renders brutal and `.elegant`).
+
+Passing: `components.home.titlebar.states` (99.32%, pass),
+`components.ui.spinner.states` (98.55%), `components.thread.composer.empty`
+(96.09%), `screens.members.agent-detail.workspace` (96.05%). Caveat: the last
+one is a basic-pass only because both screens are mostly white; the Flutter
+screen (FleetInspection "Workspace files") is visibly different from React's
+tabbed agent page. The official metric counts exact pixel matches, so large
+blank areas inflate full-viewport scores — read screen-level numbers with the
+side-by-side images.
+
+Not covered (7):
+
+| case | gap | reason |
+| --- | --- | --- |
+| components.ui.badge.states | noFlutterSurface | no shared Badge widget; only private single-use labels |
+| components.ui.status-dot.states | noFlutterSurface | no standalone status dot (only private avatar presence overlay) |
+| components.thread.composer.pending-mention-actions | noFlutterSurface | no Add/Notify/Ignore pending-mention strip; send response field ignored |
+| components.thread.comment-anchor | noFlutterSurface | no attachment comments surface/API use |
+| components.members.avatar-management | noFlutterSurface | no agent avatar picker |
+| screens.members.agent-detail.reminders | noFlutterSurface | FleetDetail has no reminders; nothing requests reminders |
+| components.home.notification-center.states | invalidBaseline | React fixture renders an empty 390x844 box; an empty-vs-empty 100% would be hollow |
+
+Reproducibility: two consecutive Flutter captures of all 92 cases were
+byte-identical.
+
+## Known harness limitations
+
+* Flutter captures are host `flutter test` rasters (software Skia, Linux), not
+  Android device screenshots; Impeller/GPU antialiasing on a phone can differ
+  slightly. Fonts are the app's bundled fonts; CJK/emoji come from the host's
+  Noto files because flutter_test has no OS fallback chain (`sans-serif` is
+  mapped to Noto Color Emoji to stand in for Android's emoji fallback).
+* No injectable clock: product code that calls `DateTime.now()` renders with
+  the host clock (TZ is pinned to Asia/Shanghai). Current fixtures' labels are
+  unaffected, but relative-time labels could drift.
+* `ctx.target` only wraps widgets the builder creates; rows deep inside a
+  product composite (message rows in `RaftChatView`) are captured through a
+  clipped window aligned to React's element rect, so style probes there
+  include neighbouring paragraphs.
+* Some app compositions live in private `WorkspaceView` methods (mobile nav,
+  mobile home header, create-channel, settings destination list); those
+  builders copy that code and say so in `notes` — if the app changes, the
+  copy must follow.
+* State substitutions are documented per case in `notes` and in metadata
+  (`flutter.notes`), e.g. create-agent dialogs (React never selects a runtime
+  because its host lacks the runtime-options mock), composer image preview
+  (React baseline shows an upload-limit error state), lifecycle actions
+  (Flutter has no "More actions" menu; its restart confirmation is captured).
+* Several React baselines have fixture defects (raw markdown/HTML shown in
+  mono in some `message-row.md-*` cases; notification-center empty). These
+  are measured as-is; they lower scores without being Flutter gaps.
+* The React baseline was captured from a raft-source checkout at 26f77ef with
+  pre-existing local edits (additive diagnostic cases in
+  `VisualTestingCases.tsx`); see `build/parity/react-source.json`.
