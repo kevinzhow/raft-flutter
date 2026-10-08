@@ -617,8 +617,8 @@ class RaftSettingsActionCard extends StatelessWidget {
 }
 
 /// raft-ui `Badge` rendered from `RaftBadgeRecipe`.
-class RaftRecipeBadge extends StatelessWidget {
-  const RaftRecipeBadge({
+class RaftSettingsRecipeBadge extends StatelessWidget {
+  const RaftSettingsRecipeBadge({
     super.key,
     required this.label,
     this.variant,

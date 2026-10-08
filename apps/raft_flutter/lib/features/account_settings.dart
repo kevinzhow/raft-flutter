@@ -384,14 +384,14 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                 ),
                 const SizedBox(width: RaftSpace.x2),
                 user?.json['emailVerified'] == true
-                    ? const RaftRecipeBadge(
+                    ? const RaftSettingsRecipeBadge(
                         label: 'Verified',
                         variant: RaftBadgeRecipeVariant.success,
                         appearance: RaftBadgeRecipeAppearance.soft,
                         uppercase: true,
                         glyph: RaftGlyph.shield,
                       )
-                    : const RaftRecipeBadge(
+                    : const RaftSettingsRecipeBadge(
                         label: 'Unverified',
                         variant: RaftBadgeRecipeVariant.warning,
                         appearance: RaftBadgeRecipeAppearance.soft,

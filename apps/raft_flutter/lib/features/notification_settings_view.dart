@@ -63,7 +63,7 @@ class NotificationSettingsView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: RaftSpace.x3),
-                    RaftRecipeBadge(
+                    RaftSettingsRecipeBadge(
                       label: service.enabled ? 'Enabled' : 'Disabled',
                       variant: RaftBadgeRecipeVariant.muted,
                       uppercase: true,
