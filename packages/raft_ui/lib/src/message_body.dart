@@ -8,6 +8,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:mermaid_flutter/mermaid_flutter.dart';
 import 'package:mermaid_core/mermaid_core.dart' as core;
 
@@ -77,7 +78,11 @@ String raftMessageReferences(
   final protected = RegExp(
     r'(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1|`+[^`]*`+|!?\[[^\]]*\]\([^)]*\)|https?://[^\s]+',
   );
-  String plain(String text) {
+  // Inside an authored link label a reference cannot become a nested
+  // markdown link; it is wrapped in private-use sentinels that
+  // _ReferenceSentinelSyntax turns into a `raftref` element (Web chips
+  // refs inside link labels too: MessageItem only protects code).
+  String plain(String text, {bool sentinel = false}) {
     final matches = <({int start, int end, String label, String href})>[];
     for (final ref in references) {
       if (ref.text.isEmpty) continue;
@@ -153,6 +158,11 @@ String raftMessageReferences(
     for (final m in matches) {
       if (m.start < cursor) continue;
       result.write(text.substring(cursor, m.start));
+      if (sentinel) {
+        result.write('\u{E000}${m.href}\u{E001}${m.label}\u{E002}');
+        cursor = m.end;
+        continue;
+      }
       final label = m.label
           .replaceAll(r'\', r'\\')
           .replaceAll('[', r'\[')
@@ -166,9 +176,13 @@ String raftMessageReferences(
 
   final out = StringBuffer();
   var cursor = 0;
+  final authoredLink = RegExp(r'^\[([^\]]*)\](\([^)]*\))$');
   for (final m in protected.allMatches(source)) {
     out.write(plain(source.substring(cursor, m.start)));
-    out.write(m[0]);
+    final link = authoredLink.firstMatch(m[0]!);
+    out.write(
+      link == null ? m[0] : '[${plain(link[1]!, sentinel: true)}]${link[2]}',
+    );
     cursor = m.end;
   }
   out.write(plain(source.substring(cursor)));
@@ -233,7 +247,11 @@ class RaftMessageBody extends StatelessWidget {
           // MessageItem context menu, never a separate text-selection menu.
           contextMenuBuilder: (_, _) => const SizedBox.shrink(),
           child: MarkdownBody(
-            builders: {'a': _MessageLinkBuilder(onLink, referenceAppearance)},
+            builders: {
+              'a': _MessageLinkBuilder(onLink, referenceAppearance),
+              'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
+            },
+            inlineSyntaxes: [_ReferenceSentinelSyntax()],
             paddingBuilders: MessageContentRecipe(
               t,
               fontSize: fontSize,
@@ -820,10 +838,41 @@ class _MermaidToolbar extends StatelessWidget {
 
 /// Inline Markdown links need an explicit focus/action widget. The upstream
 /// recognizer alone is pointer-only and omits the link URL from Web semantics.
+/// `\uE000href\uE001label\uE002` → `raftref` element (see
+/// [raftMessageReferences]).
+class _ReferenceSentinelSyntax extends md.InlineSyntax {
+  _ReferenceSentinelSyntax()
+    : super('\u{E000}([^\u{E001}]*)\u{E001}([^\u{E002}]*)\u{E002}');
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(
+      md.Element('raftref', [md.Text(match[2]!)])
+        ..attributes['href'] = match[1]!,
+    );
+    return true;
+  }
+}
+
 class _MessageLinkBuilder extends MarkdownElementBuilder {
   _MessageLinkBuilder(this.onLink, this.appearanceOf);
   final ValueChanged<String>? onLink;
   final RaftReferenceAppearance? Function(String href)? appearanceOf;
+
+  InlineSpan _reference(
+    BuildContext context,
+    String href,
+    String label,
+    TextStyle base,
+    TextStyle? linkStyle,
+  ) => raftReferenceSpan(
+    context,
+    label: label,
+    href: href,
+    base: base,
+    linkStyle: linkStyle,
+    appearance: appearanceOf?.call(href),
+    onTap: onLink == null ? null : () => onLink!(href),
+  );
 
   /// Returns a `Text.rich` so flutter_markdown merges the link (or the inline
   /// chip WidgetSpan) into the paragraph's single RichText; the sentence then
@@ -839,34 +888,41 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     if (href == null) return null;
     final label = element.textContent as String;
     final base = parentStyle ?? DefaultTextStyle.of(context).style;
-    void open() => onLink?.call(href);
-    final recognizer = onLink == null
-        ? null
-        : (TapGestureRecognizer()..onTap = open);
-    final appearance = appearanceOf?.call(href);
-    if (appearance != null) {
+    // Identity-backed references (`raft-ref:` hrefs, also nested inside an
+    // authored link label as `raftref` elements) are focusable inline links.
+    if (element.tag == 'raftref' || href.startsWith('raft-ref:')) {
       return Text.rich(
         TextSpan(
-          children: [
-            raftReferenceSpan(
-              context,
-              label: label,
-              appearance: appearance,
-              base: base,
-              recognizer: recognizer,
-              onTap: onLink == null ? null : open,
-            ),
-          ],
+          children: [_reference(context, href, label, base, preferredStyle)],
         ),
       );
     }
+    final linkStyle = base.merge(preferredStyle);
+    final recognizer = onLink == null
+        ? null
+        : (TapGestureRecognizer()..onTap = () => onLink!(href));
+    final children = (element.children as List?) ?? const [];
     return Text.rich(
       TextSpan(
-        text: label,
-        style: base.merge(preferredStyle),
-        recognizer: recognizer,
-        mouseCursor: SystemMouseCursors.click,
-        semanticsLabel: label,
+        children: [
+          for (final child in children)
+            if (child is md.Element && child.tag == 'raftref')
+              _reference(
+                context,
+                child.attributes['href'] ?? '',
+                child.textContent,
+                base,
+                preferredStyle,
+              )
+            else
+              TextSpan(
+                text: (child as md.Node).textContent,
+                style: linkStyle,
+                recognizer: recognizer,
+                mouseCursor: SystemMouseCursors.click,
+                semanticsLabel: child.textContent,
+              ),
+        ],
       ),
     );
   }

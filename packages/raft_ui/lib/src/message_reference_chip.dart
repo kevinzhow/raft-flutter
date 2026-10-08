@@ -5,7 +5,6 @@
 // raft-ui TaskChip variant="inline" (status icon + `#N`), unknown tasks →
 // Badge variant muted. Every visual value resolves from the generated
 // raft-ui recipes.
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'mounted_task_chip.dart';
@@ -51,17 +50,24 @@ RaftRecipeTheme _theme(RaftTokens t) =>
 
 /// Inline span for one reference inside a markdown paragraph. [base] is the
 /// surrounding paragraph style (the recipes use `font-size: inherit`).
+/// References are short `whitespace-nowrap` boxes, so they are WidgetSpans
+/// that stay focusable links (Web renders `<a href>`): Enter/Space activate,
+/// semantics carry the link URL.
 InlineSpan raftReferenceSpan(
   BuildContext context, {
   required String label,
-  required RaftReferenceAppearance appearance,
+  required String href,
   required TextStyle base,
-  GestureRecognizer? recognizer,
+  RaftReferenceAppearance? appearance,
+  TextStyle? linkStyle,
   VoidCallback? onTap,
 }) {
   final t = RaftTokens.of(context);
   final resolver = RaftRecipeTokens(t);
-  if (appearance.kind == RaftReferenceKind.mention) {
+  Widget child;
+  if (appearance == null) {
+    child = Text(label, style: base.merge(linkStyle));
+  } else if (appearance.kind == RaftReferenceKind.mention) {
     // `display: inline` text: bold, underline (decoration-black/30,
     // decoration-2, underline-offset-2).
     final s = RaftMessageReferenceRecipe.resolve(
@@ -70,10 +76,8 @@ InlineSpan raftReferenceSpan(
       tokens: resolver,
     ).root;
     final decoration = RaftColorRef.fromCss(s['text-decoration-color']);
-    return TextSpan(
-      text: label,
-      recognizer: recognizer,
-      mouseCursor: SystemMouseCursors.basic,
+    child = Text(
+      label,
       style: base.copyWith(
         fontWeight: s.fontWeight,
         color: s.color?.resolve(resolver) ?? base.color,
@@ -85,17 +89,74 @@ InlineSpan raftReferenceSpan(
         decorationThickness: 2,
       ),
     );
-  }
-  return WidgetSpan(
-    alignment: PlaceholderAlignment.baseline,
-    baseline: TextBaseline.alphabetic,
-    child: RaftReferenceChip(
+  } else {
+    child = RaftReferenceChip(
       label: label,
       appearance: appearance,
       fontSize: base.fontSize ?? 14,
       fontFamily: base.fontFamily,
       fontFamilyFallback: base.fontFamilyFallback,
-      onTap: onTap,
+    );
+  }
+  return WidgetSpan(
+    alignment: PlaceholderAlignment.baseline,
+    baseline: TextBaseline.alphabetic,
+    child: _ReferenceLink(label: label, href: href, onTap: onTap, child: child),
+  );
+}
+
+class _ReferenceLink extends StatefulWidget {
+  const _ReferenceLink({
+    required this.label,
+    required this.href,
+    required this.child,
+    this.onTap,
+  });
+  final String label, href;
+  final Widget child;
+  final VoidCallback? onTap;
+  @override
+  State<_ReferenceLink> createState() => _ReferenceLinkState();
+}
+
+class _ReferenceLinkState extends State<_ReferenceLink> {
+  bool focused = false;
+  @override
+  Widget build(BuildContext context) => FocusableActionDetector(
+    enabled: widget.onTap != null,
+    onShowFocusHighlight: (value) => setState(() => focused = value),
+    actions: {
+      ActivateIntent: CallbackAction<ActivateIntent>(
+        onInvoke: (_) {
+          widget.onTap?.call();
+          return null;
+        },
+      ),
+    },
+    child: Semantics(
+      link: true,
+      linkUrl: Uri.tryParse(widget.href),
+      label: widget.label,
+      onTap: widget.onTap,
+      child: ExcludeSemantics(
+        child: MouseRegion(
+          // In-message refs keep the arrow cursor (`cursor-default`).
+          cursor: SystemMouseCursors.basic,
+          child: GestureDetector(
+            onTap: widget.onTap,
+            child: DecoratedBox(
+              // `focus-visible:outline-2 focus-visible:outline-offset-2`.
+              position: DecorationPosition.foreground,
+              decoration: BoxDecoration(
+                border: focused
+                    ? Border.all(color: RaftTokens.of(context).strong, width: 2)
+                    : null,
+              ),
+              child: widget.child,
+            ),
+          ),
+        ),
+      ),
     ),
   );
 }
@@ -110,14 +171,12 @@ class RaftReferenceChip extends StatelessWidget {
     this.fontSize = 14,
     this.fontFamily,
     this.fontFamilyFallback,
-    this.onTap,
   });
   final String label;
   final RaftReferenceAppearance appearance;
   final double fontSize;
   final String? fontFamily;
   final List<String>? fontFamilyFallback;
-  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -206,7 +265,7 @@ class RaftReferenceChip extends StatelessWidget {
       leadingDistribution: TextLeadingDistribution.even,
     );
     final gap = s.columnGap ?? 4;
-    Widget chip = Container(
+    final chip = Container(
       height: appearance.kind == RaftReferenceKind.unknownTask
           ? s.height
           : null,
@@ -234,13 +293,6 @@ class RaftReferenceChip extends StatelessWidget {
         ],
       ),
     );
-    if (onTap != null) {
-      chip = GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: chip,
-      );
-    }
-    return Semantics(link: onTap != null, label: label, child: chip);
+    return chip;
   }
 }

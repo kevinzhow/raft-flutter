@@ -294,9 +294,9 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
         kind: RaftControlKind.textLink,
         shadow: true,
         visualHeight: widget.visualHeight,
-        minimumTargetSize: RaftDensityScope.of(context) == RaftDensity.touch
-            ? RaftMetrics.touchTarget
-            : widget.visualHeight,
+        // Web ShowMoreToggle is the bare 11px text on touch too: no
+        // touch-target expansion that would push the content below it.
+        minimumTargetSize: widget.visualHeight,
         padding: EdgeInsets.zero,
         semanticLabel: widget.label,
         onPressed: widget.onPressed,

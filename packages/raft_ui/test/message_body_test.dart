@@ -36,7 +36,16 @@ void main() {
       expect(value, contains('[@Mona](<raft-ref://mention/user/known>)'));
       expect(value, contains('task [#27](<raft-ref://task/27>)'));
       expect(value, contains('x@Mona.com @MonaMore @unknown'));
-      expect(value, contains('`@Mona task #27` [@Mona](https://example.org)'));
+      // Web chips references inside authored link labels too (MessageItem
+      // only protects code); the label carries the reference sentinel.
+      expect(
+        value,
+        contains(
+          '`@Mona task #27` '
+          '[\u{E000}raft-ref://mention/user/known\u{E001}@Mona\u{E002}]'
+          '(https://example.org)',
+        ),
+      );
       expect(value, contains('```txt\n@Mona #team\n```'));
     },
   );

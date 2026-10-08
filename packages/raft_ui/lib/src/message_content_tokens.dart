@@ -152,6 +152,13 @@ class MessageContentRecipe {
                 },
           precedingGap: gap,
         ),
+      // Web markdown `hr`: `my-2`, collapsing with the neighbours' `mb-1`
+      // (flutter_markdown already inserts blockSpacing between blocks).
+      'hr': _RulePadding(
+        first: source.trimLeft().startsWith(RegExp(r'(-{3,}|\*{3,}|_{3,})\s*(\n|$)')),
+        margin: 8,
+        blockGap: gap,
+      ),
     };
   }
 
@@ -170,6 +177,14 @@ class MessageContentRecipe {
   MarkdownStyleSheet stylesheet(BuildContext context) =>
       MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
         p: body,
+        // `border-t border-line-muted`; brutal `border-t-2 border-black`.
+        horizontalRuleDecoration: BoxDecoration(
+          border: Border(
+            top: tokens.brutal
+                ? const BorderSide(color: Colors.black, width: 2)
+                : BorderSide(color: tokens.colors['line-muted']!),
+          ),
+        ),
         blockSpacing: document
             ? MessageContentPrimitive.documentGap
             : MessageContentPrimitive.compactGap,
@@ -282,6 +297,26 @@ class DocumentAttachmentRecipe {
 }
 
 /// Per-build heading padding, never cached across account/content changes.
+class _RulePadding extends MarkdownPaddingBuilder {
+  _RulePadding({
+    required this.first,
+    required this.margin,
+    required this.blockGap,
+  });
+  bool first;
+  final double margin, blockGap;
+  EdgeInsets current = EdgeInsets.zero;
+  @override
+  void visitElementBefore(dynamic element) {
+    final collapsed = (margin - blockGap).clamp(0.0, margin).toDouble();
+    current = EdgeInsets.only(top: first ? margin : collapsed, bottom: collapsed);
+    first = false;
+  }
+
+  @override
+  EdgeInsets getPadding() => current;
+}
+
 class _HeadingPadding extends MarkdownPaddingBuilder {
   _HeadingPadding({
     required this.first,

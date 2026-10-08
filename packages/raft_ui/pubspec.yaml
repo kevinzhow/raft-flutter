@@ -8,6 +8,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_markdown_plus: ^1.0.12
+  markdown: ^7.3.0
   mermaid_flutter: ^0.3.0
   mermaid_core: ^0.3.0
   re_highlight: ^0.0.3
