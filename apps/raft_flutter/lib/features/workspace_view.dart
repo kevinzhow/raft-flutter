@@ -590,7 +590,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               'joint-channels' => 'Joint channels',
               _ => route[0].toUpperCase() + route.substring(1),
             });
-      Widget content = w.loading
+      // Mobile home keeps the sidebar mounted while the lists load and shows
+      // SidebarRowsSkeleton rows (Sidebar.tsx channelsLoading), not a spinner.
+      final homeSkeleton = route == 'home' && !wide && w.server != null;
+      Widget content = w.loading && !homeSkeleton
           ? const Center(child: CircularProgressIndicator())
           : route == 'settings'
           ? settings()
@@ -1379,8 +1382,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget mobileNavigation() {
     final scope = mobileAuthority;
-    return RaftMobileNav(
-      key: const Key('workspace-mobile-navigation'),
+    return WorkspaceMobileTabBar(
+      controller: w,
       selectedId:
           mobileWorkspaceRootTab(
             w.section,
@@ -1391,33 +1394,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       // The enclosing SafeArea consumed this inset exactly once.
       bottomInset: 0,
       onSelected: (tab) => selectMobileTab(tab, scope),
-      items: [
-        RaftMobileNavItem(
-          id: 'chat',
-          label: tr('Home'),
-          glyph: RaftGlyph.home,
-          key: const Key('mobile-tab-home'),
-        ),
-        RaftMobileNavItem(
-          id: 'tasks',
-          label: tr('Tasks'),
-          glyph: RaftGlyph.checkSquare,
-          key: const Key('mobile-tab-tasks'),
-        ),
-        if (w.server?.string('role') != 'guest' && w.can('viewMembers'))
-          RaftMobileNavItem(
-            id: 'members',
-            label: tr('Members'),
-            glyph: RaftGlyph.users,
-            key: const Key('mobile-tab-members'),
-          ),
-        RaftMobileNavItem(
-          id: 'settings',
-          label: tr('Settings'),
-          glyph: RaftGlyph.settings,
-          key: const Key('mobile-tab-settings'),
-        ),
-      ],
     );
   }
 
@@ -1643,19 +1619,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         child: Column(
           children: [
             if (mobileHome)
-              RaftMobileRootHeader(
-                leading: RaftMobileServerSelector(
-                  key: const Key('mobile-server-selector'),
-                  label: w.server?.name ?? tr('Workspace'),
-                  onPressed: showWorkspaceSwitcher,
-                ),
-                actions: [
-                  SystemNotificationBell(
-                    key: const Key('mobile-home-notifications'),
-                    controller: w,
-                    onBilling: () => select('billing'),
-                  ),
-                ],
+              WorkspaceMobileHomeHeader(
+                controller: w,
+                onServer: showWorkspaceSwitcher,
+                onBilling: () => select('billing'),
               )
             else
               SizedBox(

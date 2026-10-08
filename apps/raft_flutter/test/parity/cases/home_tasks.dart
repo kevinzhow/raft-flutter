@@ -18,8 +18,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/auth_view.dart';
+import 'package:raft_flutter/features/mobile_workspace_navigation.dart';
 import 'package:raft_flutter/features/resource_view.dart';
-import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
@@ -113,47 +113,31 @@ final ParityCase _register = ParityCase(
 // builds for an owner (Home/Tasks/Members/Settings), Home selected.
 
 final ParityCase _tabbar = ParityCase(
-  widgets: const ['raft_ui:RaftMobileNav', 'raft_ui:RaftMobileNavItem'],
+  widgets: const [
+    'raft_flutter:WorkspaceMobileTabBar',
+    'raft_ui:RaftMobileNav',
+    'raft_ui:RaftMobileNavItem',
+  ],
   notes:
-      'Items/ids/glyphs copied from WorkspaceView.mobileNavigation (owner role, '
-      'so Members is present); bottomInset 0 as the app passes.',
-  build: (ctx) => Align(
-    alignment: Alignment.topLeft,
-    child: SizedBox(
-      width: 390,
-      child: ctx.target(
-        Builder(
-          builder: (context) => RaftMobileNav(
+      'WorkspaceMobileTabBar (the bar WorkspaceView.mobileNavigation mounts) '
+      'for the fixture owner, so Members is present; Home selected, '
+      'bottomInset 0 as the app passes.',
+  build: (ctx) {
+    final w = parityWorkspace(ctx);
+    return Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: 390,
+        child: ctx.target(
+          WorkspaceMobileTabBar(
+            controller: w,
             selectedId: 'chat',
-            bottomInset: 0,
             onSelected: (_) {},
-            items: [
-              RaftMobileNavItem(
-                id: 'chat',
-                label: raftText(context, 'Home'),
-                glyph: RaftGlyph.home,
-              ),
-              RaftMobileNavItem(
-                id: 'tasks',
-                label: raftText(context, 'Tasks'),
-                glyph: RaftGlyph.checkSquare,
-              ),
-              RaftMobileNavItem(
-                id: 'members',
-                label: raftText(context, 'Members'),
-                glyph: RaftGlyph.users,
-              ),
-              RaftMobileNavItem(
-                id: 'settings',
-                label: raftText(context, 'Settings'),
-                glyph: RaftGlyph.settings,
-              ),
-            ],
           ),
         ),
       ),
-    ),
-  ),
+    );
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -165,14 +149,15 @@ final ParityCase _tabbar = ParityCase(
 
 final ParityCase _titlebar = ParityCase(
   widgets: const [
+    'raft_flutter:WorkspaceMobileHomeHeader',
     'raft_ui:RaftMobileRootHeader',
     'raft_ui:RaftMobileServerSelector',
     'raft_flutter:SystemNotificationBell',
     'raft_ui:RaftMobileNotificationButton',
   ],
   notes:
-      'Composition copied from WorkspaceView.sidebar(mobileHome: true) (private '
-      'method); server name "Raft Design" as primeNavigationVisualStores seeds. '
+      'WorkspaceMobileHomeHeader, the header WorkspaceView.sidebar(mobileHome: '
+      'true) mounts; server name "Raft Design" as primeNavigationVisualStores seeds. '
       'The app passes no server-unread attention to the selector, so none is shown.',
   build: (ctx) {
     final w = parityWorkspace(ctx, serverName: 'Raft Design');
@@ -206,17 +191,10 @@ final ParityCase _titlebar = ParityCase(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        RaftMobileRootHeader(
-                          leading: RaftMobileServerSelector(
-                            label: w.server?.name ?? 'Workspace',
-                            onPressed: () {},
-                          ),
-                          actions: [
-                            SystemNotificationBell(
-                              controller: w,
-                              onBilling: () {},
-                            ),
-                          ],
+                        WorkspaceMobileHomeHeader(
+                          controller: w,
+                          onServer: () {},
+                          onBilling: () {},
                         ),
                         // Sidebar body below the header (clipped by the
                         // React 62px slot, as in the fixture).
