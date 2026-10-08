@@ -17,6 +17,25 @@ import 'mounted_avatar_recipe.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'tokens/tokens.dart';
+import 'recipe_surface.dart';
+import 'recipes/button_variants.g.dart';
+import 'recipes/card.g.dart';
+import 'recipes/recipe_runtime.dart';
+
+/// Surface styles of [RaftPanel].
+enum RaftPanelStyle {
+  /// Flat bordered panel (no shadow).
+  panel,
+
+  /// raft-ui `Card` root (`card` recipe, variant default).
+  card,
+
+  /// The Web client's `.card-brutal` composition class
+  /// (packages/web/src/index.css): elegant `border border-line-muted
+  /// bg-layer-panel shadow-raft-md`; brutal `border-2 border-black bg-white
+  /// shadow-brutal`.
+  legacyCard,
+}
 
 class RaftPanel extends StatelessWidget {
   const RaftPanel({
@@ -24,26 +43,76 @@ class RaftPanel extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.shadow = false,
+    this.style,
   });
   final Widget child;
   final EdgeInsetsGeometry padding;
+
+  /// Shorthand for [RaftPanelStyle.legacyCard] when [style] is null.
   final bool shadow;
+  final RaftPanelStyle? style;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.line, width: t.border),
-        borderRadius: BorderRadius.circular(t.radius),
-        boxShadow: shadow ? t.shadows : null,
-      ),
-      child: Material(color: t.panel, child: child),
-    );
+    final resolved =
+        style ?? (shadow ? RaftPanelStyle.legacyCard : RaftPanelStyle.panel);
+    final body = Material(type: MaterialType.transparency, child: child);
+    switch (resolved) {
+      case RaftPanelStyle.card:
+        final rt = t.recipeTokens;
+        final s = RaftCardRecipe.resolve(
+          theme: t.recipeTheme,
+          states: t.recipeStates(),
+          tokens: rt,
+        ).root;
+        return RaftRecipeBox(
+          style: s,
+          tokens: rt,
+          padding: padding.resolve(Directionality.of(context)),
+          clip: true,
+          child: body,
+        );
+      case RaftPanelStyle.legacyCard:
+        return Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: t.brutal ? RaftPrimitiveColors.white : t.semantic.layerPanel,
+            border: t.brutal
+                ? Border.all(color: RaftPrimitiveColors.black, width: 2)
+                : Border.all(color: t.semantic.lineMuted),
+            boxShadow: t.brutal
+                ? RaftProductShadows.shadowBrutal.paintOrder
+                : [
+                    for (final l in t.themeShadows.md.layers.reversed)
+                      if (!l.inset)
+                        BoxShadow(
+                          color: l.color,
+                          offset: l.offset,
+                          blurRadius: raftCssBlurRadius(l.blur),
+                          spreadRadius: l.spread,
+                        ),
+                  ],
+          ),
+          child: body,
+        );
+      case RaftPanelStyle.panel:
+        return Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: t.panel,
+            border: Border.all(color: t.line, width: t.border),
+            borderRadius: BorderRadius.circular(t.radius),
+          ),
+          child: body,
+        );
+    }
   }
 }
 
+/// raft-ui `Button` (`buttonVariants` recipe): root box + `content` span
+/// (`inline-flex gap-[inherit]`), the elegant `::before` sheen, and the
+/// loading indicator that hides the content (`data-loading=true`).
 class RaftButton extends StatelessWidget {
   const RaftButton({
     super.key,
@@ -55,7 +124,12 @@ class RaftButton extends StatelessWidget {
     this.secondary = false,
     this.destructive = false,
     this.variant,
+    this.tone,
+    this.size,
     this.visualHeight = RaftMetrics.buttonMd,
+    this.expand = false,
+    this.focusNode,
+    this.tooltip,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -64,49 +138,150 @@ class RaftButton extends StatelessWidget {
   /// Lucide glyph; wins over [icon].
   final RaftGlyph? glyph;
   final bool busy, secondary, destructive;
+
+  /// Legacy variant axis; mapped onto the recipe variant.
   final RaftControlVariant? variant;
+
+  /// Recipe variant (wins over [variant]): information, success, muted,
+  /// warning, danger-secondary, danger-outline, link, ...
+  final RaftButtonRecipeVariant? tone;
+
+  /// Recipe size; when null it follows [visualHeight] (24 xs, 28 sm, 32 md,
+  /// larger lg).
+  final RaftButtonRecipeSize? size;
   final double visualHeight;
+
+  /// `w-full` (stretch to the parent width; content stays centered).
+  final bool expand;
+  final FocusNode? focusNode;
+  final String? tooltip;
+
+  RaftButtonRecipeVariant get recipeVariant =>
+      tone ??
+      switch (variant ??
+          (destructive
+              ? RaftControlVariant.danger
+              : secondary
+              ? RaftControlVariant.outline
+              : RaftControlVariant.accent)) {
+        RaftControlVariant.surface => RaftButtonRecipeVariant.default_,
+        RaftControlVariant.primary => RaftButtonRecipeVariant.primary,
+        RaftControlVariant.accent => RaftButtonRecipeVariant.accent,
+        RaftControlVariant.outline => RaftButtonRecipeVariant.outline,
+        RaftControlVariant.ghost => RaftButtonRecipeVariant.ghost,
+        RaftControlVariant.danger => RaftButtonRecipeVariant.danger,
+      };
+
+  RaftButtonRecipeSize get recipeSize =>
+      size ??
+      (visualHeight <= 24
+          ? RaftButtonRecipeSize.xs
+          : visualHeight <= 28
+          ? RaftButtonRecipeSize.sm
+          : visualHeight <= 32
+          ? RaftButtonRecipeSize.md
+          : RaftButtonRecipeSize.lg);
+
   @override
   Widget build(BuildContext context) {
-    final content = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (glyph != null) ...[
-          RaftIcon(glyph!, size: visualHeight <= 28 ? 14 : 16),
-          const SizedBox(width: 5.5),
-        ] else if (icon != null) ...[
-          RaftSymbol(icon!, size: visualHeight <= 28 ? 14 : 16),
-          const SizedBox(width: 5.5),
-        ],
-        Flexible(
-          child: Text(raftText(context, label), textAlign: TextAlign.center),
-        ),
-      ],
-    );
-    return MergeSemantics(
-      child: Semantics(
-        label: null,
-        child: RaftControl(
-          onPressed: onPressed,
-          busy: busy,
-          semanticLabel: busy ? raftText(context, label) : null,
-          variant:
-              variant ??
-              (destructive
-                  ? RaftControlVariant.danger
-                  : secondary
-                  ? RaftControlVariant.outline
-                  : RaftControlVariant.accent),
-          visualHeight: visualHeight,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Opacity(opacity: busy ? 0 : 1, child: content),
-              if (busy) const RaftSpinner(),
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final text = raftText(context, label);
+    return RaftInteractive(
+      onPressed: onPressed,
+      busy: busy,
+      focusNode: focusNode,
+      tooltip: tooltip,
+      semanticLabel: busy ? text : null,
+      builder: (context, st) {
+        final s = RaftButtonRecipe.resolve(
+          theme: t.recipeTheme,
+          variant: recipeVariant,
+          size: recipeSize,
+          states: t.recipeStates(
+            hovered: st.hovered,
+            pressed: st.pressed,
+            focusVisible: st.focusVisible,
+            disabled: onPressed == null,
+            extra: [
+              if (busy) RaftRecipeStates.loading,
+              if (icon != null || glyph != null)
+                RaftRecipeStates.iconInlineStart,
             ],
           ),
-        ),
-      ),
+          tokens: rt,
+        ).root;
+        final svg = s.target("& svg:not([class*='size-'])");
+        final gap = s.columnGap ?? 0;
+        // Accessibility exception (not in the Web): with platform high
+        // contrast, elegant danger uses the in-repo component roles
+        // `--button-danger-high-contrast(-foreground)` (WCAG AA text).
+        final highContrastDanger =
+            !t.brutal &&
+            MediaQuery.highContrastOf(context) &&
+            recipeVariant == RaftButtonRecipeVariant.danger;
+        final content = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (glyph != null) ...[
+              RaftIcon(glyph!, size: svg?.width ?? 16),
+              SizedBox(width: gap),
+            ] else if (icon != null) ...[
+              RaftSymbol(icon!, size: svg?.width ?? 16),
+              SizedBox(width: gap),
+            ],
+            Flexible(
+              child: Text(
+                text,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        );
+        Widget content2 = Row(
+          mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: busy
+                  ? Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Visibility.maintain(visible: false, child: content),
+                        const RaftSpinner(),
+                      ],
+                    )
+                  : content,
+            ),
+          ],
+        );
+        if (highContrastDanger) {
+          content2 = DefaultTextStyle.merge(
+            style: TextStyle(
+              color: t.components.buttonDangerHighContrastForeground,
+            ),
+            child: IconTheme.merge(
+              data: IconThemeData(
+                color: t.components.buttonDangerHighContrastForeground,
+              ),
+              child: content2,
+            ),
+          );
+        }
+        return RaftRecipeBox(
+          style: s,
+          tokens: rt,
+          overflowCenter: true,
+          width: expand ? double.infinity : null,
+          decorationOverride: highContrastDanger
+              ? (d) => d.copyWith(color: t.components.buttonDangerHighContrast)
+              : null,
+          child: content2,
+        );
+      },
     );
   }
 }
