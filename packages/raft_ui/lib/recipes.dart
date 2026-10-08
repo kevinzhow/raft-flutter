@@ -36,3 +36,4 @@ library;
 
 export 'src/recipes/recipe_runtime.dart';
 export 'src/recipes/recipes.g.dart';
+export 'src/recipes/token_binding.dart';
