@@ -23,7 +23,7 @@ Linux 和 Android 优先、已加入 macOS 和 iOS 宿主的 Raft Flutter 客户
 
 Linux 首次构建先运行 `tool/prepare-media-linux`，它只下载并展开固定 media 运行库到被忽略的本地目录，不修改主机或 Pub 缓存。PDF 应用内预览需要系统提供 `poppler-utils`；缺少时显示下载回退。具体版本、打包及兼容边界见 [Linux media 运行时](docs/linux-media-runtime.md)。
 
-macOS 在安装 Xcode 与 CocoaPods 的本机运行以下命令；最低系统版本为 macOS 12。构建产物为 `Raft.app`，后台打开方式及实际平台覆盖见 [macOS 验收记录](docs/macos-evidence.md)。
+macOS 在安装 Xcode 与 CocoaPods 的本机运行以下命令；最低系统版本为 macOS 12，仅构建 Apple Silicon（ARM64）版本。构建产物为 `Raft.app`，后台打开方式及实际平台覆盖见 [macOS 验收记录](docs/macos-evidence.md)。
 
 ```sh
 fvm install

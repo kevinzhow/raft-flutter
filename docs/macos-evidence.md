@@ -1,6 +1,6 @@
 # macOS target、权限与验收
 
-2026-10-08：新增 `apps/raft_flutter/macos` 宿主，应用名 `Raft`，Bundle ID `app.raft.raftFlutter`，最低 macOS 12。工具链固定 Flutter 3.47.6 / Dart 3.13.5；本机使用 Xcode 27.0。本文单独记录 macOS 覆盖，Linux / Android 的既有证据不作为 macOS 验收结果。
+2026-10-08：新增 `apps/raft_flutter/macos` 宿主，应用名 `Raft`，Bundle ID `app.raft.raftFlutter`，最低 macOS 12，仅构建 Apple Silicon（ARM64）版本。工具链固定 Flutter 3.47.6 / Dart 3.13.5；本机使用 Xcode 27.0。本文单独记录 macOS 覆盖，Linux / Android 的既有证据不作为 macOS 验收结果。
 
 ## 本机构建和打开
 
@@ -14,6 +14,8 @@ fvm flutter pub get
 fvm flutter build macos --release
 open -g build/macos/Build/Products/Release/Raft.app
 ```
+
+Debug / Profile / Release 的项目配置固定 `ARCHS = arm64` 并排除 `x86_64`，CocoaPods targets 使用相同架构限制；不改全局 Flutter 配置。
 
 `open -g` 在后台启动应用。宿主窗口首次显示也保持后台，异步加载不得抢走其他应用的焦点。本机构建使用本地签名；本次不包含 Developer ID 发行、notarization 或商店上架。
 
@@ -60,3 +62,7 @@ Debug / Profile 与 Release 均启用 App Sandbox，权限位于 `macos/Runner/D
 媒体插件当前通过 CocoaPods 接入，其尚未支持 Swift Package Manager；构建有上游弃用/宏定义警告，但最终编译通过。此记录不代表 macOS 完整功能轮次通过。
 
 权限配置依据 [Flutter macOS 宿主说明](https://docs.flutter.dev/platform-integration/macos/building)；Keychain 配置依据 [flutter_secure_storage 11.2.0 官方说明](https://pub.dev/packages/flutter_secure_storage)。
+
+## ARM64 构建验证
+
+后续按用户要求将 macOS Debug / Profile / Release 与 CocoaPods targets 固定为 ARM64，并通过 FVM 重新构建 Release（64.5 MB）。逐一检查 bundle 中 25 个 Mach-O 文件，主程序、Dart AOT、Flutter 引擎、SQLite 和媒体运行库均仅含 `arm64`，没有 `x86_64` slice；`codesign --verify --deep --strict` 通过。上文 118.0 MB 为更早构建的历史记录。

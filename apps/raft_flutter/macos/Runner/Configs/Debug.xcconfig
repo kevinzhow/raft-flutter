@@ -1,2 +1,6 @@
 #include "../../Flutter/Flutter-Debug.xcconfig"
 #include "Warnings.xcconfig"
+
+// Build only for Apple Silicon, including the Flutter Assemble target.
+ARCHS = arm64
+EXCLUDED_ARCHS = $(inherited) x86_64
