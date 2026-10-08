@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 
 import 'page_component_recipes.dart';
 

@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 
 import '../data/workspace_controller.dart';
 import '../platform/oauth_broker.dart';
