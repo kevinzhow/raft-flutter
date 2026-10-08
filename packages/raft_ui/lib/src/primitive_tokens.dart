@@ -3,6 +3,17 @@
 import 'package:flutter/material.dart';
 
 abstract final class RaftPrimitives {
+  // Product index.css327 mobile selector vector-shadow atom.
+  static const rgbaff141111 = Color(0xff141111);
+  // Original switch.tsx: duration-180/ease-out and OKLCH thumb atoms.
+  static const Duration switchDuration = Duration(milliseconds: 180);
+  static const Curve switchCurve = Cubic(0, 0, .58, 1);
+  static const switchDarkThumb = Color(0xff555552); // .45 .006 106.42
+  static const switchDarkCheckedThumb = Color(0xff171715); // .205 .004 106.42
+  static const switchDarkDisabledThumb = Color(0xff424241); // .38 .002 106.42
+  static const switchDarkCheckedDisabledThumb = Color(
+    0xff292928,
+  ); // .28 .002 106.42
   // foundation.css148: disabled foreground30% of the original ink atom.
   static const rgba4d141110 = Color(0x4d141110);
   // foundation.css299/407: disabled foreground semantic atoms.
@@ -138,6 +149,8 @@ abstract final class RaftPrimitives {
   static const rgba0a000000 = Color(0x0a000000);
   static const rgba0a1a1a1a = Color(0x0a1a1a1a);
   static const rgba0affffff = Color(0x0affffff);
+  // Input recipe: oklch(.985 .004 106.42 / .04) outer bottom shadow.
+  static const rgba0afafaf7 = Color(0x0afafaf7);
   static const rgba0f000000 = Color(0x0f000000);
   static const rgba0f111111 = Color(0x0f111111);
   static const rgba0fffffff = Color(0x0fffffff);

@@ -122,9 +122,11 @@ class FleetView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.computers,
+    this.attentionOnly = false,
   });
   final WorkspaceController controller;
   final bool computers;
+  final bool attentionOnly;
   @override
   State<FleetView> createState() => _FleetViewState();
 }
@@ -193,7 +195,12 @@ class _FleetViewState extends State<FleetView> {
         rows = [
           for (final row
               in (widget.computers ? result['machines'] : result) as List)
-            if (widget.computers || row['deletedAt'] == null)
+            if ((widget.computers || row['deletedAt'] == null) &&
+                (!widget.attentionOnly ||
+                    widget.computers &&
+                        row['isComputer'] == true &&
+                        (row['computerUpgradeAvailable'] == true ||
+                            row['status'] == 'offline')))
               Map<String, dynamic>.from(row),
         ];
         error = null;

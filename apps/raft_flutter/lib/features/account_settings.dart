@@ -3,6 +3,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/personal_presentation.dart';
 import 'account_onboarding.dart';
 import 'account_connections_view.dart';
 import 'management_support.dart';
@@ -22,7 +23,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   WorkspaceController get w => controller;
   @override
   String get authority =>
-      '${controller.client.generation}|${controller.client.user?.id}';
+      '${identityHashCode(controller.client)}|${controller.client.origin}|${controller.client.generation}|${controller.client.user?.id}';
   @override
   void initState() {
     super.initState();
@@ -60,7 +61,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
 
   void hydrateProfile() {
     final user = controller.client.user;
-    final key = '${controller.client.generation}|${user?.id}';
+    final key = authority;
     final display = user == null
         ? ''
         : user.string('displayName', user.string('name'));
@@ -190,6 +191,8 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   }
 
   Future<void> preferences(BuildContext context) async {
+    final local = PersonalPresentationScope.maybeOf(context);
+    final localKey = local?.key;
     final sourceScope = authority;
     final user = controller.client.user!;
     await scopedDialog<void>(
@@ -230,6 +233,8 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           );
           checkAccount(sourceScope);
           await controller.client.reloadUser();
+          checkAccount(sourceScope);
+          local?.update(localKey, font: values['preferredMessageBodyFontSize']);
         },
       ),
     );
@@ -267,53 +272,6 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           );
           checkAccount(sourceScope);
           await controller.client.reloadUser();
-        },
-      ),
-    );
-  }
-
-  Future<void> password(BuildContext context) async {
-    final sourceScope = authority;
-    await scopedDialog<void>(
-      (_) => RaftFormDialog(
-        title: raftText(context, 'Change password'),
-        fields: [
-          const RaftFormField(
-            'currentPassword',
-            'Current password',
-            obscure: true,
-            trim: false,
-            required: true,
-          ),
-          RaftFormField(
-            'newPassword',
-            'New password',
-            obscure: true,
-            trim: false,
-            required: true,
-            validator: (v) =>
-                v.length < 8 ? 'Use at least 8 characters.' : null,
-          ),
-          const RaftFormField(
-            'confirmation',
-            'Confirm new password',
-            obscure: true,
-            trim: false,
-            required: true,
-          ),
-        ],
-        onSubmit: (values) async {
-          checkAccount(sourceScope);
-          if (values['newPassword'] != values['confirmation']) {
-            throw const RaftApiException('The new passwords must match.');
-          }
-          await controller.client.patch(
-            '/auth/me',
-            data: {
-              'currentPassword': values['currentPassword'],
-              'newPassword': values['newPassword'],
-            },
-          );
         },
       ),
     );
@@ -468,6 +426,14 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
               ),
             ),
           const SizedBox(height: 16),
+          Divider(height: 1, thickness: t.brutal ? 2 : 1, color: t.line),
+          const SizedBox(height: 16),
+          AccountConnectionsView(
+            key: ValueKey('account-sign-in-$authority'),
+            controller: controller,
+            inline: true,
+          ),
+          const SizedBox(height: 16),
           Divider(height: 1, color: t.line),
           const SizedBox(height: 16),
           Wrap(
@@ -502,11 +468,6 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                 label: raftText(context, 'Reading preferences'),
                 secondary: true,
                 onPressed: () => preferences(context),
-              ),
-              RaftButton(
-                label: raftText(context, 'Change password'),
-                secondary: true,
-                onPressed: () => password(context),
               ),
               RaftButton(
                 key: const Key('account-connections'),

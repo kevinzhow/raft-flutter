@@ -401,23 +401,30 @@ class _MessageImageReviewState extends State<MessageImageReview> {
     canPop: !busy,
     child: Dialog.fullscreen(
       backgroundColor: RaftLightboxRecipe(RaftTokens.of(context)).backdrop,
-      child: SafeArea(child: Center(child: SizedBox(
-        width: 768,
-        height: MediaQuery.sizeOf(context).height * .85,
-        child: RaftImageReview(
-          preview: Image.memory(
-            widget.bytes,
-            fit: BoxFit.contain,
-            semanticLabel: raftText(context, 'Preview of selected messages'),
-            gaplessPlayback: false,
+      child: SafeArea(
+        child: Center(
+          child: SizedBox(
+            width: 768,
+            height: MediaQuery.sizeOf(context).height * .85,
+            child: RaftImageReview(
+              preview: Image.memory(
+                widget.bytes,
+                fit: BoxFit.contain,
+                semanticLabel: raftText(
+                  context,
+                  'Preview of selected messages',
+                ),
+                gaplessPlayback: false,
+              ),
+              onClose: () => Navigator.pop(context, false),
+              onSave: () => act(false),
+              onShare: sharing.supported ? () => act(true) : null,
+              busy: busy,
+              error: error,
+            ),
           ),
-          onClose: () => Navigator.pop(context, false),
-          onSave: () => act(false),
-          onShare: sharing.supported ? () => act(true) : null,
-          busy: busy,
-          error: error,
         ),
-      ))),
+      ),
     ),
   );
 }

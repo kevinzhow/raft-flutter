@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
@@ -10,22 +13,37 @@ class MessageReferenceDirectory extends ChangeNotifier {
   MessageReferenceDirectory(this.w) {
     w.addListener(changed);
     changed();
+    events = w.client.events.listen((event) {
+      if ([
+        'agent:updated',
+        'agent:created',
+        'agent:removed',
+      ].contains(event.name)) {
+        scope = null;
+        changed();
+      }
+    });
   }
   final WorkspaceController w;
   String? scope;
   bool ended = false;
+  int requestRevision = 0;
   List<RaftTextReference> references = [];
+  List<Map<String, dynamic>> agents = [];
+  StreamSubscription<RaftEvent>? events;
   void changed() {
     final next = workspaceAuthority(w);
     if (scope == next) return;
     scope = next;
     references = [];
+    agents = [];
     notifyListeners();
-    load(next);
+    load(next, ++requestRevision);
   }
 
-  Future<void> load(String authority) async {
+  Future<void> load(String authority, int ticket) async {
     final result = <String, Map<String, RaftTextReference>>{};
+    final permittedAgents = <Map<String, dynamic>>[];
     void add(String text, String href) {
       result.putIfAbsent(text, () => {})[href] = RaftTextReference(
         text: text,
@@ -38,6 +56,13 @@ class MessageReferenceDirectory extends ChangeNotifier {
         final out = await w.query(path),
             rows = out is List ? out : out[key] ?? [];
         for (final row in (rows as List).whereType<Map>()) {
+          if (kind == 'agent' &&
+              row['id'] is String &&
+              row['deletedAt'] == null) {
+            permittedAgents.add(
+              Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(row)),
+            );
+          }
           final name = row['name'],
               id = kind == 'user' ? row['userId'] ?? row['id'] : row['id'];
           if (name is! String || name.isEmpty || id is! String) continue;
@@ -54,16 +79,25 @@ class MessageReferenceDirectory extends ChangeNotifier {
       }
     }
 
-    if (w.can('viewAgents')) await read('/agents', 'agents', 'agent');
-    if (ended || scope != authority || workspaceAuthority(w) != authority) {
+    if (w.server != null && w.can('viewAgents')) {
+      await read('/agents', 'agents', 'agent');
+    }
+    if (ended ||
+        ticket != requestRevision ||
+        scope != authority ||
+        workspaceAuthority(w) != authority) {
       return;
     }
     if (w.can('viewMembers') && w.server != null) {
       await read('/servers/${w.server!.id}/members', 'members', 'user');
     }
-    if (ended || scope != authority || workspaceAuthority(w) != authority) {
+    if (ended ||
+        ticket != requestRevision ||
+        scope != authority ||
+        workspaceAuthority(w) != authority) {
       return;
     }
+    agents = List.unmodifiable(permittedAgents);
     references = [
       for (final targets in result.values)
         if (targets.length == 1) targets.values.single,
@@ -76,6 +110,8 @@ class MessageReferenceDirectory extends ChangeNotifier {
     ended = true;
     w.removeListener(changed);
     references = [];
+    agents = [];
+    events?.cancel();
     super.dispose();
   }
 }

@@ -22,11 +22,19 @@ class _SendAttempt {
 }
 
 class WorkspaceController extends ChangeNotifier {
-  WorkspaceController(this.client, {this.cache}) {
+  WorkspaceController(
+    this.client, {
+    this.cache,
+    this.mobileNavigation = false,
+  }) {
     subscription = client.events.listen(_event);
   }
   final RaftClient client;
   final WorkspaceCache? cache;
+
+  /// Set by the host from its actual logical width before bootstrap. Home
+  /// retains selection/drafts, but is not an open conversation/read surface.
+  bool mobileNavigation;
   final messageSync = MessageSync();
   final threadRepliesSync = ThreadRepliesSync();
   final notificationPrefsSync = NotificationPrefsSync();
@@ -621,6 +629,7 @@ class WorkspaceController extends ChangeNotifier {
   Future<void> selectServer(RaftRecord next) async {
     if (_revokedServers.contains(next.id)) return;
     server = next;
+    if (mobileNavigation) section = 'home';
     if (!canVisitSection(section)) section = 'chat';
     sidebarOrder = {};
     client.selectServer(next.id);
@@ -762,9 +771,14 @@ class WorkspaceController extends ChangeNotifier {
     if (joined.isNotEmpty &&
         selectionAtStart == channelGeneration &&
         threadAtStart == threadGeneration) {
-      await selectChannel(
-        joined.where((c) => c.id == channel?.id).firstOrNull ?? joined.first,
-      );
+      final selected =
+          joined.where((c) => c.id == channel?.id).firstOrNull ?? joined.first;
+      if (mobileNavigation && section == 'home') {
+        channel = selected;
+        await _restoreDraft(selected.id);
+      } else {
+        await selectChannel(selected);
+      }
     }
     notifyListeners();
   }
@@ -900,21 +914,28 @@ class WorkspaceController extends ChangeNotifier {
   Future<void> loadSidebar() async {
     final request = ++_sidebarRequest;
     final generation = client.generation, id = client.serverId;
+    final authority = jsonEncode([
+      client.user?.id,
+      server?.id,
+      server?.string('role'),
+    ]);
+    bool accepts() =>
+        !_disposed &&
+        request == _sidebarRequest &&
+        generation == client.generation &&
+        id == client.serverId &&
+        authority ==
+            jsonEncode([client.user?.id, server?.id, server?.string('role')]);
     if (id == null) return;
     final cached = await _cached('sidebar-order', '');
-    if (_disposed ||
-        request != _sidebarRequest ||
-        generation != client.generation) {
-      return;
-    }
+    if (!accepts()) return;
     if (cached is Map) {
       sidebarOrder = Map<String, dynamic>.from(cached);
       notifyListeners();
     }
     try {
       final value = await client.get('/servers/$id/sidebar-order');
-      if (_disposed || generation != client.generation) return;
-      if (request != _sidebarRequest) return;
+      if (!accepts()) return;
       sidebarOrder = Map<String, dynamic>.from(value);
       _save('sidebar-order', '', sidebarOrder);
       notifyListeners();
@@ -976,6 +997,7 @@ class WorkspaceController extends ChangeNotifier {
     }[name];
     if (capability != null) return can(capability);
     return const {
+      'home',
       'chat',
       'activity',
       'search',
@@ -1480,8 +1502,20 @@ class WorkspaceController extends ChangeNotifier {
 
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) =>
       client.get(path, query: query);
+  int savedRevision = 0;
   Future<dynamic> command(String method, String path, {dynamic data}) async {
+    final generation = client.generation,
+        principal = client.user?.id,
+        serverId = client.serverId;
     final value = await client.request(method, path, data: data);
+    if (generation == client.generation &&
+        principal == client.user?.id &&
+        serverId == client.serverId &&
+        ((method == 'POST' && path == '/channels/saved') ||
+            (method == 'DELETE' && path.startsWith('/channels/saved/')))) {
+      ++savedRevision;
+      notifyListeners();
+    }
     await refreshUnread();
     return value;
   }
@@ -1645,7 +1679,11 @@ class WorkspaceController extends ChangeNotifier {
       }
       if (row['channelId'] == channel?.id ||
           row['channelId'] == threadChannelId) {
-        markRead('${row['channelId']}');
+        if (section == 'home') {
+          refreshUnread();
+        } else {
+          markRead('${row['channelId']}');
+        }
       } else {
         refreshUnread();
       }

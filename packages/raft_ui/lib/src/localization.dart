@@ -22,6 +22,35 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
+  "#{channel} will become read-only": "#{channel} 即将变为只读",
+  "#{channel} is read-only": "#{channel} 已变为只读",
+  "Notification center ({count} active)": "通知中心（{count} 条待处理）",
+  "{count} feedback conversation has unread replies.": "{count} 条反馈有未读回复。",
+  "{count} feedback conversations have unread replies.": "{count} 条反馈有未读回复。",
+  "{count} agent over the limit.": "超出限制 {count} 个 Agent。",
+  "{count} agents over the limit.": "超出限制 {count} 个 Agent。",
+  "{count} computer over the limit.": "超出限制 {count} 台 Computer。",
+  "{count} computers over the limit.": "超出限制 {count} 台 Computer。",
+  "{count} channel over the limit.": "超出限制 {count} 个频道。",
+  "{count} channels over the limit.": "超出限制 {count} 个频道。",
+  "Computers need attention: {counts}": "Computer 需要处理：{counts}",
+  "{count} needs upgrade": "{count} 台需要升级",
+  "{count} need upgrade": "{count} 台需要升级",
+  "{count} offline": "{count} 台离线",
+  "A computer you added is low on disk space": "你添加的 {count} 台计算机磁盘空间不足",
+  "{count} computers you added are low on disk space":
+      "你添加的 {count} 台计算机磁盘空间不足",
+  "{free} free ({percent}%). Agents may fail to save work or start until space is freed.":
+      "剩余 {free}（{percent}%）。腾出空间之前，Agent 可能无法保存工作或启动。",
+  "{names} is offline": "共 {count} 台 Computer 离线：{names}",
+  "{names} are offline": "共 {count} 台 Computer 离线：{names}",
+  "{count} agent is active on this computer and can't run until it reconnects.":
+      "{count} 个 Agent 正在这台计算机上运行，重连前无法继续。",
+  "{count} agents are active on this computer and can't run until it reconnects.":
+      "{count} 个 Agent 正在这台计算机上运行，重连前无法继续。",
+  "{count} item": "{count} 项",
+  "{count} items": "{count} 项",
+  "This Joint Channel has more than 2 free servers and becomes read-only on {deadline}. To keep it writable, one server's admin needs to upgrade, or a free server needs to leave.": "这个联合频道有超过 2 个免费服务器，将在 {deadline} 变为只读。要保持可写，需要其中一个服务器的管理员升级，或者一个免费服务器退出。",
   "Background inbox checks could not be scheduled. Open Raft to retry.":
       "无法安排后台检查。请打开 Raft 重试。",
   "Messages arrive while connected. Background inbox checks provide a fallback when the system allows them; delivery may be delayed.":

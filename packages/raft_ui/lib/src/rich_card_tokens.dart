@@ -22,7 +22,9 @@ class RichCardSemantic {
   final RaftTokens tokens;
   Color get success => tokens.colors[tokens.brutal ? 'color-brutal-lime' : 'success']!;
   Color get successText => tokens.brutal ? tokens.strong : tokens.colors[tokens.dark ? 'foreground-inverse' : 'success-foreground']!;
-  Color get embedCanvas => tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.sidebar;
+  // messageEmbed extends messageBlock's bg-layer-card. Header/footer are
+  // transparent over that card; layer-canvas-muted belongs to the sidebar.
+  Color get embedCanvas => tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.card;
   Color get content => tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.panel;
   Color get prose => tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong;
   Color get divider => RaftPrimitives.rgbaff000000.withValues(alpha: .1);

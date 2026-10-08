@@ -113,7 +113,12 @@ Future<void> verifyMessageSelection(
   expect(find.byType(MessageImageReview), findsNothing);
   expect(find.byType(RaftSelectionToolbar), findsOneWidget);
   expect(find.text('1 selected'), findsOneWidget);
-  await tester.tap(find.byTooltip('Exit selection'));
+  await tester.tap(
+    find.descendant(
+      of: find.byType(RaftSelectionToolbar),
+      matching: find.byTooltip('Exit selection'),
+    ),
+  );
   await tester.pump(const Duration(milliseconds: 300));
   expect(find.byType(RaftSelectionToolbar), findsNothing);
   expect(find.byType(RaftComposer), findsWidgets);

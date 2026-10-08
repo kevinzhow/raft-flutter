@@ -29,6 +29,7 @@ dependencies:
   drift: ^2.35.1
   path_provider: ^2.1.6
   path: ^1.9.1
+  intl: ^0.20.3
   html: ^0.15.6
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1

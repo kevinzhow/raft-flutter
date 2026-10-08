@@ -110,6 +110,50 @@ def atomic_copy(path, data):
     temporary.write_bytes(data)
     temporary.replace(path)
 
+def sanitize_mobile_geometry(raw, name, run_id, source_hash):
+    """Allow only public, run-bound numerical Home geometry from this test."""
+    match = re.fullmatch(r'android-mobile-home-(brutal-light|elegant-light|elegant-dark)', name)
+    if not match or not raw or len(raw) > 32768:
+        return None
+    try:
+        value = json.loads(raw)
+        if (not isinstance(value, dict) or value.get('runId') != run_id or
+                value.get('sourceHash') != source_hash or value.get('platform') != 'android' or
+                value.get('theme') != match.group(1) or value.get('screenshotRasterDpr') != 1):
+            return None
+        def number(v, positive=False):
+            return (type(v) in (int, float) and v == v and abs(v) < 100000 and
+                    (not positive or v > 0))
+        viewport = value.get('logicalViewport')
+        if (not isinstance(viewport, dict) or set(viewport) != {'width', 'height'} or
+                not all(number(v, True) for v in viewport.values()) or
+                not number(value.get('deviceDpr'), True)):
+            return None
+        rows = value.get('nav')
+        if not isinstance(rows, list) or not 3 <= len(rows) <= 4:
+            return None
+        names = set()
+        clean_rows = []
+        for row in rows:
+            if not isinstance(row, dict) or row.get('name') not in {'home', 'tasks', 'members', 'settings'} or row['name'] in names:
+                return None
+            names.add(row['name'])
+            clean = {'name': row['name']}
+            for kind in ['visual', 'glyph', 'hit']:
+                rect = row.get(kind)
+                if (not isinstance(rect, dict) or set(rect) != {'x', 'y', 'width', 'height'} or
+                        not all(number(v) for v in rect.values()) or rect['width'] <= 0 or rect['height'] <= 0):
+                    return None
+                clean[kind] = rect
+            clean_rows.append(clean)
+        if not {'home', 'tasks', 'settings'} <= names:
+            return None
+        clean = {k: value[k] for k in ['runId', 'sourceHash', 'platform', 'theme', 'logicalViewport', 'deviceDpr', 'screenshotRasterDpr']}
+        clean['nav'] = clean_rows
+        return json.dumps(clean).encode()
+    except (ValueError, TypeError, KeyError):
+        return None
+
 def collect_current_evidence(reports, run_id, source_hash, read, acknowledge):
     """Only the run announced by this newly launched Flutter process may ACK."""
     try:
@@ -139,6 +183,13 @@ def collect_current_evidence(reports, run_id, source_hash, read, acknowledge):
             if not png_complete(png):
                 return False
             atomic_copy(reports / (name + '.png'), png)
+            if re.fullmatch(r'android-mobile-home-(brutal-light|elegant-light|elegant-dark)', name):
+                target = reports / (name + '.geometry.json')
+                geometry = sanitize_mobile_geometry(read(name + '.geometry.json'), name, run_id, source_hash)
+                if geometry is None:
+                    target.unlink(missing_ok=True)
+                else:
+                    atomic_copy(target, geometry)
         if read('native-android-run.json') != raw_manifest or read('native-android-checkpoints.tsv') != raw_checkpoints:
             return False
         atomic_copy(reports / 'native-android-checkpoints.tsv', raw_checkpoints)

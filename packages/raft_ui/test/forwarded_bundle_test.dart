@@ -17,7 +17,12 @@ Map<String, dynamic> bundle() => {
           'labelVisibility': i == 0 ? 'restricted' : 'public',
         },
         'sourceAuthorSnapshot': {'type': 'user', 'uniqueName': 'author$i'},
-        'contentSnapshot': i == 0 ? List.generate(12, (line) => 'Copied **message $i** line $line').join('\n') : 'Copied **message $i**',
+        'contentSnapshot': i == 0
+            ? List.generate(
+                12,
+                (line) => 'Copied **message $i** line $line',
+              ).join('\n')
+            : 'Copied **message $i**',
         'sourceCreatedAt': '2026-10-07T09:0${2 - i}:00Z',
         'sourceMessageSeq': 3 - i,
         'attachmentPolicy': i == 0 ? 'excluded' : 'projected',

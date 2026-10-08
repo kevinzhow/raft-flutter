@@ -7,6 +7,8 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/search_memory.dart';
+import 'search_home.dart';
 import 'resource_filters.dart';
 import 'page_layout.dart';
 import 'resource_cards.dart';
@@ -25,6 +27,8 @@ class ResourceView extends StatefulWidget {
     this.clock,
     this.initialQuery,
     this.onSearchEntity,
+    this.searchMemory,
+    this.restoreSearchState = true,
   });
   final WorkspaceController controller;
   final String section;
@@ -32,6 +36,8 @@ class ResourceView extends StatefulWidget {
   final VoidCallback? onBack;
   final DateTime Function()? clock;
   final String? initialQuery;
+  final SearchMemoryStore? searchMemory;
+  final bool restoreSearchState;
   final Future<void> Function(SearchEntity)? onSearchEntity;
   @override
   State<ResourceView> createState() => _ResourceViewState();
@@ -45,6 +51,140 @@ class _ResourceViewState extends State<ResourceView> {
       searchAgents = [],
       searchComputers = [];
   final queryFocus = FocusNode();
+  late final ownedSearchMemory = SearchMemoryStore(clock: widget.clock);
+  SearchMemoryStore get searchMemory =>
+      widget.searchMemory ?? ownedSearchMemory;
+  String? memoryReadyKey, restoringSenderKey;
+  SearchMemoryScope? get memoryScope {
+    final server = w.server?.id, principal = w.client.user?.id;
+    return widget.section == 'search' && server != null && principal != null
+        ? SearchMemoryScope(w.client.origin, server, principal)
+        : null;
+  }
+
+  SearchStateSnapshot get currentSearchState => SearchStateSnapshot(
+    query: query.text,
+    channelId: advanced.channelId,
+    senderKey: restoringSenderKey ?? advanced.sender?.key,
+    scopes: advanced.scopes.toList(),
+    range: advanced.timeRange,
+    sort: advanced.searchSort,
+  );
+  void saveSearchState() {
+    final personal = memoryScope;
+    if (personal != null && memoryReadyKey == personal.key) {
+      searchMemory.saveState(personal, currentSearchState);
+    }
+  }
+
+  Future<void> activateSearchMemory({required bool restore}) async {
+    final personal = memoryScope, scope = authority;
+    if (personal == null) return;
+    final before = jsonEncode(currentSearchState.toJson());
+    final data = await searchMemory.load(personal);
+    if (!accepts(scope) || memoryScope?.key != personal.key) return;
+    final untouched = before == jsonEncode(currentSearchState.toJson());
+    setState(() {
+      memoryReadyKey = personal.key;
+      if (restore && untouched && widget.initialQuery == null) {
+        final snapshot = data.state;
+        query.text = snapshot.query;
+        advanced.scopes.addAll(snapshot.scopes);
+        advanced.timeRange = snapshot.range;
+        advanced.searchSort = snapshot.sort;
+        advanced.channelId =
+            [...w.channels, ...w.dms].any((c) => c.id == snapshot.channelId)
+            ? snapshot.channelId
+            : null;
+        restoringSenderKey = snapshot.senderKey;
+        resolveRestoredSender();
+      }
+    });
+    saveSearchState();
+    if (restore && untouched) await load();
+  }
+
+  void resolveRestoredSender() {
+    if (restoringSenderKey == null ||
+        catalogScope != authority ||
+        senders.isEmpty) {
+      return;
+    }
+    advanced.selectSender(
+      senders.where((s) => s.key == restoringSenderKey).firstOrNull,
+    );
+    restoringSenderKey = null;
+  }
+
+  List<SearchEntity> get authorizedSearchCatalog => searchEntities(
+    '',
+    includeAll: true,
+    channels: w.channels.map((c) => c.json).toList(),
+    computers: searchComputers,
+    agents: searchAgents,
+    people: searchPeople,
+    principal: w.client.user?.id,
+  );
+  List<SearchEntity> get frequentEntities {
+    final personal = memoryScope;
+    return personal == null || memoryReadyKey != personal.key
+        ? []
+        : frequentSearchEntities(
+            catalog: authorizedSearchCatalog,
+            usage: searchMemory.current(personal).usage,
+            principal: w.client.user?.id,
+            now: widget.clock?.call() ?? DateTime.now(),
+            hiddenDmIds: (w.sidebarOrder['hiddenDmIds'] as List? ?? const [])
+                .whereType<String>()
+                .toSet(),
+            dms: w.dms.map((c) => c.json).toList(),
+          );
+  }
+
+  void rememberSearchOpen(
+    String scope, {
+    SearchEntity? entity,
+    String? queryText,
+  }) {
+    final personal = memoryScope;
+    if (personal == null || !accepts(scope)) return;
+    searchMemory.rememberQuery(personal, queryText ?? query.text);
+    if (entity != null) {
+      searchMemory.recordOpen(personal, searchUsageEntityKey(entity));
+    }
+  }
+
+  Widget searchHome(String scope) {
+    final personal = memoryScope;
+    final history = personal == null || memoryReadyKey != personal.key
+        ? const <String>[]
+        : searchMemory.current(personal).history;
+    return ResourceSearchHome(
+      key: ValueKey('search-home-$scope'),
+      history: history,
+      frequent: frequentEntities,
+      origin: w.client.origin,
+      onQuery: (text) {
+        if (!accepts(scope)) return;
+        query.text = text;
+        query.selection = TextSelection.collapsed(offset: text.length);
+        queryFocus.requestFocus();
+        searchChanged(text);
+      },
+      onRemove: (text) {
+        if (personal != null && accepts(scope)) {
+          setState(() => searchMemory.removeQuery(personal, text));
+        }
+      },
+      onClear: () {
+        if (personal != null && accepts(scope)) {
+          setState(() => searchMemory.clearHistory(personal));
+        }
+      },
+      onEntity: (entity) => openSearchEntity(entity, scope),
+    );
+  }
+
   List<Map<String, dynamic>> rows = [];
   bool loading = true;
   String? error;
@@ -137,6 +277,8 @@ class _ResourceViewState extends State<ResourceView> {
     searchAgents = [];
     searchComputers = [];
     selectedSearchKey = null;
+    restoringSenderKey = null;
+    memoryReadyKey = null;
     searchDebounce?.cancel();
     catalogScope = null;
     ++catalogRequest;
@@ -183,6 +325,7 @@ class _ResourceViewState extends State<ResourceView> {
       error = null;
       loading = true;
     });
+    unawaited(activateSearchMemory(restore: false));
     load();
   }
 
@@ -285,6 +428,7 @@ class _ResourceViewState extends State<ResourceView> {
     query.text = widget.initialQuery ?? '';
     w.addListener(authorityChanged);
     subscribeEvents();
+    unawaited(activateSearchMemory(restore: widget.restoreSearchState));
     load();
   }
 
@@ -342,6 +486,7 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   Future<void> load({bool append = false}) async {
+    saveSearchState();
     final request = ++requestGeneration, scope = authority;
     if (['search', 'tasks', 'activity'].contains(widget.section)) {
       unawaited(loadSenders(scope));
@@ -675,6 +820,10 @@ class _ResourceViewState extends State<ResourceView> {
         Expanded(
           child: loading && rows.isEmpty
               ? Center(child: CircularProgressIndicator())
+              : widget.section == 'search' &&
+                    query.text.trim().isEmpty &&
+                    !advanced.hasSearchFilter
+              ? searchHome(scope)
               : widget.section == 'search'
               ? ResourceSearchResults(
                   query: query.text,
@@ -752,16 +901,23 @@ class _ResourceViewState extends State<ResourceView> {
     final channel = row['channelId'], message = row['id'];
     if (channel is! String || message is! String) return;
     setState(() => selectedSearchKey = 'message:$message');
+    final committed = query.text;
+    rememberSearchOpen(scope, queryText: committed);
     await widget.onMessage(channel, message);
   }
 
   Future<void> openSearchEntity(SearchEntity entity, String scope) async {
     if (!accepts(scope) ||
-        !currentSearchEntities.any((e) => e.key == entity.key)) {
+        !([
+          ...currentSearchEntities,
+          if (query.text.trim().isEmpty) ...frequentEntities,
+        ].any((e) => e.key == entity.key))) {
       return;
     }
     setState(() => selectedSearchKey = entity.key);
+    final committed = query.text;
     if (entity.kind == 'channel') {
+      rememberSearchOpen(scope, entity: entity, queryText: committed);
       await widget.onMessage(entity.id, null);
     } else if (entity.kind == 'computer') {
       if (w.can('viewMachines')) await widget.onSearchEntity?.call(entity);
@@ -774,6 +930,7 @@ class _ResourceViewState extends State<ResourceView> {
         );
         if (!accepts(scope)) return;
         if (result is Map && result['id'] is String) {
+          rememberSearchOpen(scope, entity: entity, queryText: committed);
           await widget.onMessage(result['id'], null);
         }
       } catch (e) {
@@ -793,6 +950,7 @@ class _ResourceViewState extends State<ResourceView> {
     if (query.value.composing.isValid && !query.value.composing.isCollapsed) {
       return;
     }
+    saveSearchState();
     final scope = authority;
     searchDebounce = Timer(const Duration(milliseconds: 200), () {
       if (accepts(scope)) load();
@@ -838,7 +996,10 @@ class _ResourceViewState extends State<ResourceView> {
               onKeyEvent: (_, event) {
                 if (event is! KeyDownEvent) return KeyEventResult.ignored;
                 final keys = [
-                  ...currentSearchEntities.map((e) => e.key),
+                  ...(query.text.trim().isEmpty
+                          ? frequentEntities
+                          : currentSearchEntities)
+                      .map((e) => e.key),
                   ...rows.map((r) => 'message:${r['id']}'),
                 ];
                 if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
@@ -888,11 +1049,18 @@ class _ResourceViewState extends State<ResourceView> {
                   searchDebounce?.cancel();
                   final selected =
                       selectedSearchKey ??
-                      currentSearchEntities.firstOrNull?.key ??
+                      (query.text.trim().isEmpty
+                              ? frequentEntities
+                              : currentSearchEntities)
+                          .firstOrNull
+                          ?.key ??
                       (rows.isEmpty ? null : 'message:${rows.first['id']}');
-                  final entity = currentSearchEntities
-                      .where((e) => e.key == selected)
-                      .firstOrNull;
+                  final entity =
+                      (query.text.trim().isEmpty
+                              ? frequentEntities
+                              : currentSearchEntities)
+                          .where((e) => e.key == selected)
+                          .firstOrNull;
                   final row = rows
                       .where((r) => 'message:${r['id']}' == selected)
                       .firstOrNull;
@@ -967,6 +1135,11 @@ class _ResourceViewState extends State<ResourceView> {
       key: ValueKey('$scope:$title'),
       tooltip: title,
       label: label,
+      glyph: title == 'Search date range'
+          ? RaftGlyph.calendarRange
+          : RaftGlyph.arrowDownUp,
+      trailingGlyph: RaftGlyph.chevronDown,
+      enabled: title != 'Sort search results' || query.text.trim().isNotEmpty,
       entries: [
         for (final entry in choices.entries)
           RaftMenuEntry(
@@ -1752,12 +1925,18 @@ class _ResourceViewState extends State<ResourceView> {
           );
         }
       }
+      final restoring = restoringSenderKey != null;
       setState(() {
         senders = options.values.toList();
         searchPeople = people;
         searchAgents = agents;
         searchComputers = computers;
+        resolveRestoredSender();
       });
+      if (widget.section == 'search') {
+        saveSearchState();
+        if (restoring && accepts(scope)) unawaited(load());
+      }
     } catch (e) {
       if (!accepts(scope) || ticket != catalogRequest) return;
       catalogScope = null;

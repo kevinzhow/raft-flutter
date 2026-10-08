@@ -249,3 +249,23 @@ class RaftAppearanceCardRecipe {
   );
   List<BoxShadow> get shadow => selected && t.brutal ? t.shadows : const [];
 }
+
+/// Component tokens: pinned MessageSearchPage.tsx Search-home p-4, gap-2,
+/// SectionEyebrow and history-tag recipe; semantic roles come from raft_ui.
+class RaftSearchHomeRecipe {
+  const RaftSearchHomeRecipe(this.tokens);
+  final RaftTokens tokens;
+  static const inset = EdgeInsets.all(16);
+  static const sectionGap = 24.0;
+  static const tagGap = 8.0;
+  static const headingInset = EdgeInsets.fromLTRB(4, 0, 4, 8);
+  static const tagInset = EdgeInsets.fromLTRB(10, 6, 4, 6);
+  static const tagHeight = 28.0;
+  static const desktopColumnsBreakpoint = 640.0;
+  static const touchHistoryBreakpoint = 768.0;
+  Color get tagBackground => tokens.card;
+  Color get tagBorder =>
+      tokens.brutal ? tokens.strong.withValues(alpha: .2) : tokens.line;
+  TextStyle get historyLabel =>
+      RaftTypography.body(tokens, size: 12, line: 16, weight: FontWeight.w500);
+}

@@ -8,6 +8,12 @@ import 'rich_visual_previews.dart';
 
 @RichVisualPreviews('Forwarded snapshot')
 Widget visualForwardedSnapshot() => const _SurfaceFixture(kind: 'forwarded');
+@RichVisualPreviews('Forwarded long source')
+Widget visualForwardedLongSource() => const _SurfaceFixture(kind: 'forwarded-long');
+@RichVisualPreviews('Outside list markers')
+Widget visualOutsideListMarkers() => const _SurfaceFixture(kind: 'list-markers');
+@RichVisualPreviews('Collapsed table borders')
+Widget visualCollapsedTableBorders() => const _SurfaceFixture(kind: 'table-borders');
 @RichVisualPreviews('Action card')
 Widget visualActionCard() => const _SurfaceFixture(kind: 'action');
 @RichVisualPreviews('Collapsed prose')
@@ -53,6 +59,10 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
   void initState() {
     super.initState();
     metadata = visualForwardedMetadata();
+    if (widget.kind == 'forwarded-long') {
+      final first = (metadata!['forwardedItems'] as List).first as Map;
+      (first['sourceTargetSnapshot'] as Map)['label'] = '#a-very-long-public-channel-name-that-needs-truncation';
+    }
     for (final ms in [500, 1500, 3000]) {
       timers.add(Timer(Duration(milliseconds: ms), measure));
     }
@@ -78,6 +88,7 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
         RaftAttachmentLightbox() => 'attachment-lightbox',
         Tooltip(:final message) => message,
         RaftShowMoreToggle(:final label) => label,
+        Text(:final data) when data?.startsWith('from ') == true => 'forwarded-bundle-source-label',
         _ => null,
       };
       final render = element.findRenderObject();
@@ -103,7 +114,9 @@ class _SurfaceFixtureState extends State<_SurfaceFixture> {
   @override
   Widget build(BuildContext context) {
     final child = switch (widget.kind) {
-      'forwarded' => RaftForwardedBundle(metadata: metadata!),
+      'forwarded' || 'forwarded-long' => RaftForwardedBundle(metadata: metadata!),
+      'list-markers' => const RaftMessageBody(content: '- First\n  - Nested\n- Second\n\n99. First ordinal\n100. Second ordinal'),
+      'table-borders' => const RaftMessageBody(content: '| Status | Count |\n|---|---|\n|Draft|3|\n|Review|4|\n|Ready|5|'),
       'action' => const RaftActionCard(title: 'Create public channel #design', state: 'executed',
         details: [(label: 'Description', value: 'Review before shipping.')],
         hint: 'Public component fixture.', completedBy: 'Kevin'),

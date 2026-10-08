@@ -574,7 +574,7 @@ const elegant_dark = <String, Color>{
   'accent': RaftPrimitives.pink400,
   'brutal-cream': RaftPrimitives.cream200,
   // Input dark inset roles, original raft-ui input.recipe index.mjs6283.
-  'field-inset-line': RaftPrimitives.rgba4d000000,
-  'field-inset-top': RaftPrimitives.rgba59000000,
-  'field-inset-bottom': RaftPrimitives.rgba0affffff,
+  'field-inset-line': RaftPrimitives.rgba59000000,
+  'field-inset-top': RaftPrimitives.rgba4d000000,
+  'field-inset-bottom': RaftPrimitives.rgba0afafaf7,
 };

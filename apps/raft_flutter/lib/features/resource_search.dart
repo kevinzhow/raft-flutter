@@ -21,8 +21,9 @@ List<SearchEntity> searchEntities(
   required List<Map<String, dynamic>> agents,
   required List<Map<String, dynamic>> people,
   String? principal,
+  bool includeAll = false,
 }) {
-  if (query.trim().isEmpty) return [];
+  if (query.trim().isEmpty && !includeAll) return [];
   final entries = <SearchRankEntry<SearchEntity>>[];
   void add(
     String kind,
@@ -109,6 +110,7 @@ List<SearchEntity> searchEntities(
     );
     return title != 0 ? title : a.value.key.compareTo(b.value.key);
   });
+  if (query.trim().isEmpty) return entries.map((e) => e.value).toList();
   final prefix = query.trim()[0];
   return rankSearchEntries(
     query,

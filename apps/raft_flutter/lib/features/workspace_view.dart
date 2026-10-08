@@ -10,6 +10,12 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/personal_presentation.dart';
+import '../data/sidebar_disclosure.dart';
+import 'appearance_section.dart';
+import 'message_reference_directory.dart';
+import 'chat_agent_presentation.dart';
+import 'live_agent_activity_bar.dart';
 import 'chat_view.dart';
 import 'message_selection.dart';
 
@@ -21,6 +27,7 @@ import 'channel_settings.dart';
 import 'server_views.dart';
 import 'account_settings.dart';
 import 'settings_page.dart';
+import 'mobile_workspace_navigation.dart';
 import 'locale_settings_page.dart';
 import 'fleet_views.dart';
 import 'integrations_views.dart';
@@ -31,6 +38,9 @@ import 'server_setup_gate.dart';
 import 'notification_settings_view.dart';
 import 'sidebar_preferences_view.dart';
 import 'sidebar_projection.dart';
+import 'sidebar_sort_menu.dart';
+import 'saved_sidebar_entry.dart';
+import 'system_notification_center.dart';
 import 'incoming_share_review.dart';
 import 'im_bridges_view.dart';
 import 'joint_channel_views.dart';
@@ -47,10 +57,12 @@ class WorkspaceView extends StatefulWidget {
     required this.onLogout,
     this.notifications,
     this.sharing,
+    this.presentation,
   });
   final WorkspaceController controller;
   final NativeNotificationService? notifications;
   final NativeSharing? sharing;
+  final PersonalPresentationStore? presentation;
 
   final RaftAppearance appearance;
   final Future<void> Function(RaftAppearance) onAppearance;
@@ -67,6 +79,105 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   String? lastAuthority, lastChannelId;
   Map<String, dynamic>? lastChannelAuthority;
   int channelAuthorityRevision = 0;
+  int searchEntryRevision = 0;
+  int mobileSettingsRevision = 0;
+  bool mobileSettingsDetail = false;
+  String get mobileAuthority => jsonEncode([
+    identityHashCode(w),
+    w.client.generation,
+    w.client.user?.id,
+    w.server?.id,
+    w.server?.string('role'),
+  ]);
+  String? mobileRouteAuthority;
+  bool mobileRouteInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final wasMobile = w.mobileNavigation;
+    w.mobileNavigation = !wide;
+    if (wasMobile && wide && w.section == 'home') {
+      w.section = 'chat';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && wide && w.section == 'chat') {
+          w.setForeground(w.foreground);
+        }
+      });
+    }
+    if (!mobileRouteInitialized) {
+      mobileRouteInitialized = true;
+      if (!wide && w.section == 'chat' && w.threadParent == null) {
+        // The production controller starts Home before bootstrap. This also
+        // normalizes manually supplied controllers without rendering Chat.
+        w.section = 'home';
+      }
+    }
+  }
+
+  void selectMobileTab(String tab, String scope) {
+    if (!mounted || scope != mobileAuthority || wide) {
+      return;
+    }
+    if (tab == 'members' &&
+        (w.server?.string('role') == 'guest' || !w.can('viewMembers'))) {
+      return;
+    }
+    if (!['chat', 'tasks', 'members', 'settings'].contains(tab)) {
+      return;
+    }
+    mainSelection.dismiss();
+    threadSelection.dismiss();
+    w.closeThread();
+    setState(() {
+      mobileSettingsDetail = false;
+      mobileSettingsRevision++;
+    });
+    select(tab == 'chat' ? 'home' : tab);
+  }
+
+  late final ownedPresentation = PersonalPresentationStore(
+    desktop:
+        !kIsWeb &&
+        [
+          TargetPlatform.linux,
+          TargetPlatform.macOS,
+          TargetPlatform.windows,
+        ].contains(defaultTargetPlatform),
+  );
+  PersonalPresentationStore get presentation =>
+      widget.presentation ?? ownedPresentation;
+  final sidebarDisclosure = SidebarDisclosureStore();
+  final sortAnchors = <String, GlobalKey>{};
+  final sortingGroups = <String>{};
+  void syncSidebarDisclosure() {
+    unawaited(
+      sidebarDisclosure.bind(
+        origin: w.client.origin,
+        principal: w.client.user?.id,
+        server: w.server?.id,
+        scope: mobileAuthority,
+      ),
+    );
+  }
+
+  late MessageReferenceDirectory activityDirectory;
+  late ChatAgentPresentation liveActivities;
+  void syncPresentation() {
+    unawaited(
+      presentation.bind(
+        w.client.origin,
+        w.client.user?.id,
+        profileFont: w.client.user?.string('preferredMessageBodyFontSize'),
+      ),
+    );
+  }
+
+  Widget liveActivityBar() => NativeLiveAgentActivityBar(
+    activities: liveActivities,
+    presentation: presentation,
+    origin: w.client.origin,
+  );
   bool get wide =>
       MediaQuery.sizeOf(context).width >= RaftAdaptiveWorkspace.desktopMinWidth;
   double sidebarWidth = 240, threadWidth = 400;
@@ -86,6 +197,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   @override
   void initState() {
     super.initState();
+    activityDirectory = MessageReferenceDirectory(w);
+    liveActivities = ChatAgentPresentation(w, activityDirectory);
+    w.addListener(syncPresentation);
+    syncPresentation();
+    w.addListener(syncSidebarDisclosure);
+    syncSidebarDisclosure();
     mainSelection.addListener(chatSelectionChanged);
     threadSelection.addListener(chatSelectionChanged);
     restorePanels();
@@ -195,6 +312,19 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void didUpdateWidget(covariant WorkspaceView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, w)) {
+      mobileRouteInitialized = false;
+      mobileRouteAuthority = null;
+      w.mobileNavigation = !wide;
+      oldWidget.controller.removeListener(syncPresentation);
+      oldWidget.controller.removeListener(syncSidebarDisclosure);
+      liveActivities.dispose();
+      activityDirectory.dispose();
+      activityDirectory = MessageReferenceDirectory(w);
+      liveActivities = ChatAgentPresentation(w, activityDirectory);
+      w.addListener(syncPresentation);
+      syncPresentation();
+      w.addListener(syncSidebarDisclosure);
+      syncSidebarDisclosure();
       oldWidget.controller.removeListener(syncSidebarAgents);
       oldWidget.controller.removeListener(syncSharing);
       oldWidget.controller.removeListener(syncBridgeFlag);
@@ -254,6 +384,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   @override
   void dispose() {
     persistPanels?.cancel();
+    w.removeListener(syncPresentation);
+    w.removeListener(syncSidebarDisclosure);
+    sidebarDisclosure.dispose();
+    liveActivities.dispose();
+    activityDirectory.dispose();
+    ownedPresentation.dispose();
     mainSelection.dispose();
     threadSelection.dispose();
     w.removeListener(syncSidebarAgents);
@@ -271,12 +407,20 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       scaffold.currentState?.closeDrawer();
     } else if (w.threadParent != null && w.section == 'chat') {
       w.closeThread();
-    } else if (w.section != 'chat') {
+    } else if (!wide && w.section == 'settings' && mobileSettingsDetail) {
+      setState(() {
+        mobileSettingsDetail = false;
+        mobileSettingsRevision++;
+      });
+    } else if (!wide && w.section != 'home') {
+      select(mobileWorkspaceBackSection(w.section));
+    } else if (w.section != 'chat' && w.section != 'home') {
       select('chat');
     }
   }
 
   void select(String section) {
+    if (section == 'search') setState(() => searchEntryRevision++);
     if (w.section == 'administration' || section == 'settings') {
       bridgeScope = null;
       syncBridgeFlag();
@@ -285,14 +429,33 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     scaffold.currentState?.closeDrawer();
   }
 
-  Future<void> chooseChannel(RaftChannel c) async {
+  Future<void> chooseChannel(RaftChannel c, {String? expectedScope}) async {
+    if (!mounted || expectedScope != null && expectedScope != mobileAuthority) {
+      return;
+    }
+    final fresh = [
+      ...w.channels,
+      ...w.dms,
+    ].where((row) => row.id == c.id).firstOrNull;
+    if (fresh == null && expectedScope != null) {
+      return;
+    }
     scaffold.currentState?.closeDrawer();
-    await w.selectChannel(c);
+    await w.selectChannel(fresh ?? c);
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
-    listenable: w,
+  Widget build(BuildContext context) => PersonalPresentationScope(
+    store: presentation,
+    child: buildWorkspace(context),
+  );
+  Widget buildWorkspace(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([
+      w,
+      presentation,
+      liveActivities,
+      sidebarDisclosure,
+    ]),
     builder: (context, _) {
       final currentChannelAuthority = w.channel == null
           ? null
@@ -341,9 +504,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           observer.scopeChanged(authority);
         }
       }
+      if (mobileRouteAuthority != mobileAuthority) {
+        mobileRouteAuthority = mobileAuthority;
+        mobileSettingsDetail = false;
+        mobileSettingsRevision++;
+      }
       final t = RaftTokens.of(context);
       final thread = w.section == 'chat' && w.threadParent != null;
-      final title = w.section == 'chat'
+      final title = w.section == 'chat' || w.section == 'home'
           ? (w.channel?.name ?? tr('Workspace'))
           : tr(switch (w.section) {
               'workspace-settings' => 'Workspace settings',
@@ -403,7 +571,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               controller: w,
             )
           : w.section == 'members'
-          ? MembersView(key: ValueKey('members-${w.server!.id}'), controller: w)
+          ? MembersView(
+              key: ValueKey('members-${w.server!.id}'),
+              controller: w,
+              mobileRoot: !wide,
+            )
           : w.section == 'providers'
           ? ProviderConnectionsView(
               key: ValueKey('providers-${w.server!.id}'),
@@ -437,7 +609,18 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               controller: w,
               computers: w.section == 'computers',
             )
-          : w.section == 'chat'
+          : w.section == 'home' && !wide
+          ? Material(
+              key: const Key('workspace-mobile-home'),
+              color: RaftSidebarRecipe(
+                t,
+                viewportWidth: MediaQuery.sizeOf(context).width,
+                viewportHeight: MediaQuery.sizeOf(context).height,
+                variant: RaftSidebarVariant.mountedProduct,
+              ).bodyBackground,
+              child: sidebar(mobileHome: true),
+            )
+          : w.section == 'chat' || w.section == 'home'
           ? ServerSetupGate(
               controller: w,
               child: RaftChatView(
@@ -446,9 +629,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
             )
           : ResourceView(
-              key: ValueKey('${w.server?.id}:${w.section}'),
+              key: ValueKey(
+                '${w.server?.id}:${w.section}:${w.section == 'search' ? searchEntryRevision : 0}',
+              ),
               controller: w,
               section: w.section,
+              restoreSearchState: searchEntryRevision == 0,
               onBack: dismissPanel,
               onSearchEntity: (entity) async {
                 if (entity.kind != 'computer' || !w.can('viewMachines')) return;
@@ -487,59 +673,28 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               !mainSelection.active &&
               !threadSelection.active &&
               !thread &&
-              (wide || w.section == 'chat'),
+              (wide || w.section == 'home'),
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) dismissPanel();
           },
           child: Scaffold(
             key: scaffold,
             drawer: wide ? null : Drawer(child: sidebar()),
-            appBar:
-                wide ||
-                    [
-                          'tasks',
-                          'saved',
-                          'activity',
-                          'search',
-                          'members',
-                        ].contains(w.section) &&
-                        !thread
-                ? null
-                : AppBar(
-                    title: Text(thread ? tr('Thread') : title),
-                    leading: thread
-                        ? IconButton(
-                            tooltip: tr(
-                              threadSelection.active
-                                  ? 'Exit selection'
-                                  : 'Close thread',
-                            ),
-                            onPressed: dismissPanel,
-                            icon: const Icon(Icons.arrow_back),
-                          )
-                        : null,
-                    actions: [
-                      if (w.section == 'chat' && w.channel != null && !thread)
-                        IconButton(
-                          tooltip: tr('Channel settings'),
-                          onPressed: () => channelSettings(),
-                          icon: const Icon(Icons.tune),
-                        ),
-                      IconButton(
-                        tooltip: tr('Search messages'),
-                        onPressed: () => select('search'),
-                        icon: const Icon(Icons.search),
-                      ),
-                      IconButton(
-                        tooltip: tr('Settings'),
-                        onPressed: () => select('settings'),
-                        icon: const Icon(Icons.settings_outlined),
-                      ),
-                    ],
-                  ),
             body: SafeArea(
               child: Column(
                 children: [
+                  if (!wide &&
+                      (thread ||
+                          ![
+                            'home',
+                            'tasks',
+                            'saved',
+                            'activity',
+                            'search',
+                            'members',
+                            'settings',
+                          ].contains(w.section)))
+                    mobilePageHeader(title, thread),
                   if (w.error != null)
                     MaterialBanner(
                       content: Text(w.error!),
@@ -561,11 +716,25 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       threadResizeLabel: tr('Resize thread'),
                       sidebar: sidebar(),
                       rail: workspaceRail(),
-                      mobileNavigation: thread ? null : mobileNavigation(),
+                      mobileNavigationFloating: !t.brutal,
+                      mobileNavigation:
+                          mobileWorkspaceRootTab(
+                                    w.section,
+                                    threadOpen: thread,
+                                    settingsDetail: mobileSettingsDetail,
+                                  ) ==
+                                  null ||
+                              w.server == null
+                          ? null
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [liveActivityBar(), mobileNavigation()],
+                            ),
                       content: Column(
                         children: [
                           if (wide &&
                               ![
+                                'home',
                                 'tasks',
                                 'saved',
                                 'activity',
@@ -573,7 +742,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                 'members',
                               ].contains(w.section))
                             RaftPageHeader(
-                              title: title,
+                              title: w.section == 'home'
+                                  ? (w.channel?.name ?? title)
+                                  : title,
                               height: raftPageHeaderHeight(context),
                               icon: RaftIcon(sectionGlyph(w.section)),
                               subtitle: w.section == 'chat'
@@ -681,58 +852,66 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     _ => RaftGlyph.settings,
   };
 
+  Widget railIcon(RaftGlyph glyph) => RaftIcon(
+    glyph,
+    size: RaftRailRecipe(
+      RaftTokens.of(context),
+      viewportHeight: MediaQuery.sizeOf(context).height,
+    ).glyphSize,
+  );
+
   List<RaftRailDestination> get railDestinations => [
     RaftRailDestination(
       id: 'chat',
       label: tr('Chat'),
       icon: Icons.chat_bubble_outline,
-      iconWidget: const RaftIcon(RaftGlyph.messageSquare),
+      iconWidget: railIcon(RaftGlyph.messageSquare),
     ),
     RaftRailDestination(
       id: 'activity',
       label: tr('Activity'),
       icon: Icons.inbox_outlined,
-      iconWidget: const RaftIcon(RaftGlyph.activity),
+      iconWidget: railIcon(RaftGlyph.activity),
       unread: w.unread.values.fold(0, (a, b) => a + b),
     ),
     RaftRailDestination(
       id: 'search',
       label: tr('Search'),
       icon: Icons.search,
-      iconWidget: const RaftIcon(RaftGlyph.search),
+      iconWidget: railIcon(RaftGlyph.search),
     ),
     RaftRailDestination(
       id: 'tasks',
       label: tr('Tasks'),
       icon: Icons.check_box_outlined,
-      iconWidget: const RaftIcon(RaftGlyph.checkSquare),
+      iconWidget: railIcon(RaftGlyph.checkSquare),
     ),
     RaftRailDestination(
       id: 'saved',
       label: tr('Saved'),
       icon: Icons.bookmark_border,
-      iconWidget: const RaftIcon(RaftGlyph.bookmark),
+      iconWidget: railIcon(RaftGlyph.bookmark),
     ),
     if (w.can('viewAgents'))
       RaftRailDestination(
         id: 'agents',
         label: tr('Agents'),
         icon: Icons.smart_toy_outlined,
-        iconWidget: const RaftIcon(RaftGlyph.bot),
+        iconWidget: railIcon(RaftGlyph.bot),
       ),
     if (w.can('viewMachines'))
       RaftRailDestination(
         id: 'computers',
         label: tr('Computers'),
         icon: Icons.computer_outlined,
-        iconWidget: const RaftIcon(RaftGlyph.monitor),
+        iconWidget: railIcon(RaftGlyph.monitor),
       ),
     if (w.can('viewMembers'))
       RaftRailDestination(
         id: 'members',
         label: tr('Members'),
         icon: Icons.people_outline,
-        iconWidget: const RaftIcon(RaftGlyph.users),
+        iconWidget: railIcon(RaftGlyph.users),
       ),
   ];
 
@@ -743,16 +922,27 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     workspaceName: w.server?.name ?? 'Raft',
     workspaceTooltip: tr('Switch workspace'),
     onWorkspace: () => showWorkspaceSwitcher(),
-    footer: RaftIconButton(
-      key: const Key('rail-settings'),
-      tooltip: 'Settings',
-      onPressed: () => select('settings'),
-      glyph: RaftGlyph.settings,
-      visualSize: RaftMetrics.railItem,
+    footer: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SystemNotificationBell(
+          controller: w,
+          mobile: false,
+          onBilling: () => select('billing'),
+        ),
+        RaftIconButton(
+          key: const Key('rail-settings'),
+          tooltip: 'Settings',
+          onPressed: () => select('settings'),
+          glyph: RaftGlyph.settings,
+          visualSize: RaftMetrics.railItem,
+        ),
+      ],
     ),
   );
 
   Future<void> showWorkspaceSwitcher() async {
+    final scope = mobileAuthority;
     final choice = await showDialog<String>(
       context: context,
       builder: (context) => SimpleDialog(
@@ -779,7 +969,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         ],
       ),
     );
-    if (choice == null || !mounted) return;
+    if (choice == null || !mounted || scope != mobileAuthority) return;
     if (choice == 'create') {
       await WorkspaceActions.create(context, w);
     } else if (choice == 'join') {
@@ -790,30 +980,78 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
-  Widget mobileNavigation() => NavigationBar(
-    key: const Key('workspace-mobile-navigation'),
-    selectedIndex: switch (w.section) {
-      'activity' => 1,
-      'tasks' => 2,
-      _ => 0,
-    },
-    onDestinationSelected: (index) =>
-        select(['chat', 'activity', 'tasks'][index]),
-    destinations: [
-      NavigationDestination(
-        icon: const Icon(Icons.chat_bubble_outline),
-        label: tr('Chat'),
-      ),
-      NavigationDestination(
-        icon: Badge(
-          isLabelVisible: w.unread.values.any((n) => n > 0),
-          child: const Icon(Icons.inbox_outlined),
+  Widget mobileNavigation() {
+    final scope = mobileAuthority;
+    return RaftMobileNav(
+      key: const Key('workspace-mobile-navigation'),
+      selectedId:
+          mobileWorkspaceRootTab(
+            w.section,
+            threadOpen: w.threadParent != null,
+            settingsDetail: mobileSettingsDetail,
+          ) ??
+          'chat',
+      // The enclosing SafeArea consumed this inset exactly once.
+      bottomInset: 0,
+      onSelected: (tab) => selectMobileTab(tab, scope),
+      items: [
+        RaftMobileNavItem(
+          id: 'chat',
+          label: tr('Home'),
+          glyph: RaftGlyph.home,
+          key: const Key('mobile-tab-home'),
         ),
-        label: tr('Activity'),
+        RaftMobileNavItem(
+          id: 'tasks',
+          label: tr('Tasks'),
+          glyph: RaftGlyph.checkSquare,
+          key: const Key('mobile-tab-tasks'),
+        ),
+        if (w.server?.string('role') != 'guest' && w.can('viewMembers'))
+          RaftMobileNavItem(
+            id: 'members',
+            label: tr('Members'),
+            glyph: RaftGlyph.users,
+            key: const Key('mobile-tab-members'),
+          ),
+        RaftMobileNavItem(
+          id: 'settings',
+          label: tr('Settings'),
+          glyph: RaftGlyph.settings,
+          key: const Key('mobile-tab-settings'),
+        ),
+      ],
+    );
+  }
+
+  Widget mobilePageHeader(String title, bool thread) => RaftPageHeader(
+    key: const Key('workspace-mobile-detail-header'),
+    title: thread ? tr('Thread') : title,
+    height: raftPageHeaderHeight(context),
+    mobile: true,
+    leading: RaftBackButton(
+      key: const Key('mobile-detail-back'),
+      tooltip: thread
+          ? (threadSelection.active ? 'Exit selection' : 'Close thread')
+          : (mainSelection.active ? 'Exit selection' : 'Back'),
+      onPressed: dismissPanel,
+    ),
+    actions: [
+      if (w.section == 'chat' && w.channel != null && !thread)
+        RaftIconButton(
+          tooltip: 'Channel settings',
+          onPressed: channelSettings,
+          glyph: RaftGlyph.slidersHorizontal,
+        ),
+      RaftIconButton(
+        tooltip: 'Search messages',
+        onPressed: () => select('search'),
+        glyph: RaftGlyph.search,
       ),
-      NavigationDestination(
-        icon: const Icon(Icons.check_box_outlined),
-        label: tr('Tasks'),
+      RaftIconButton(
+        tooltip: 'Settings',
+        onPressed: () => select('settings'),
+        glyph: RaftGlyph.settings,
       ),
     ],
   );
@@ -919,11 +1157,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   List<Widget> conversationSections() => [
     for (final group in sidebarGroups)
       if (group.entries.isNotEmpty ||
-          group.custom ||
-          group.id == 'system:channels' ||
-          group.id == 'system:dms') ...[
+          !presentation.value.hideEmptySections &&
+              (group.custom ||
+                  group.id == 'system:channels' ||
+                  group.id == 'system:dms')) ...[
         sectionLabel(
           group.custom ? group.label : tr(group.label),
+          group: group,
           onAdd: group.id == 'system:channels' && w.can('createChannels')
               ? () => createChannel()
               : group.id == 'system:dms'
@@ -933,314 +1173,465 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ? tr('New direct message')
               : tr('Create channel'),
         ),
-        ...group.entries.map(sidebarEntry),
-        const SizedBox(height: 18),
+        if (sidebarDisclosure.collapsed[group.id] != true)
+          ...group.entries.map(sidebarEntry),
       ],
   ];
-  Widget channelItem(RaftChannel c) => RaftNavItem(
-    key: ValueKey('sidebar-channel-${c.id}'),
-    label: c.type == 'dm'
-        ? c.string('peerDisplayName', c.string('peerName', c.name))
-        : c.name,
-    icon: c.type == 'dm'
-        ? Icons.person_outline
-        : c.archived
-        ? Icons.archive_outlined
-        : c.type == 'private'
-        ? Icons.lock_outline
-        : c.type == 'joint'
-        ? Icons.link
-        : Icons.tag,
-    selected: w.section == 'chat' && w.channel?.id == c.id,
-    unread: w.unread[c.id] ?? 0,
-    onTap: () => chooseChannel(c),
-  );
-  Widget sidebar() => SafeArea(
-    child: Column(
-      children: [
-        SizedBox(
-          height: raftPageHeaderHeight(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: RaftLayoutMetrics.panelInset,
-            ),
-            child: Row(
-              children: [
-                Text(
-                  tr('Chat'),
-                  style: RaftTypography.heading(
-                    RaftTokens.of(context),
-                    size: 18,
-                    line: 28,
-                  ),
+  Widget channelItem(RaftChannel c) {
+    final scope = mobileAuthority;
+    return RaftNavItem(
+      key: ValueKey('sidebar-channel-${c.id}'),
+      label: c.type == 'dm'
+          ? c.string('peerDisplayName', c.string('peerName', c.name))
+          : c.name,
+      icon: c.type == 'dm'
+          ? Icons.person_outline
+          : c.archived
+          ? Icons.archive_outlined
+          : c.type == 'private'
+          ? Icons.lock_outline
+          : c.type == 'joint'
+          ? Icons.link
+          : Icons.tag,
+      glyph: c.type == 'dm'
+          ? RaftGlyph.user
+          : c.type == 'private'
+          ? RaftGlyph.lock
+          : c.type == 'joint'
+          ? RaftGlyph.gitBranch
+          : RaftGlyph.hash,
+      conversationKind: c.type == 'dm'
+          ? RaftConversationNavKind.directMessage
+          : RaftConversationNavKind.channel,
+      selected: w.section == 'chat' && w.channel?.id == c.id,
+      unread: w.unread[c.id] ?? 0,
+      onTap: () => chooseChannel(c, expectedScope: scope),
+    );
+  }
+
+  Widget sidebar({bool mobileHome = false}) {
+    final recipe = RaftSidebarRecipe(
+      RaftTokens.of(context),
+      viewportWidth: MediaQuery.sizeOf(context).width,
+      viewportHeight: MediaQuery.sizeOf(context).height,
+      variant: RaftSidebarVariant.mountedProduct,
+    );
+    final latest = liveActivities.latest;
+    final liveActivityVisible =
+        presentation.value.liveActivity &&
+        latest != null &&
+        liveActivities.agent(latest.agentId) != null;
+    return ColoredBox(
+      color: recipe.bodyBackground,
+      child: SafeArea(
+        child: Column(
+          children: [
+            if (mobileHome)
+              RaftMobileRootHeader(
+                leading: RaftMobileServerSelector(
+                  key: const Key('mobile-server-selector'),
+                  label: w.server?.name ?? tr('Workspace'),
+                  onPressed: showWorkspaceSwitcher,
                 ),
-                const Spacer(),
-                PopupMenuButton<String>(
-                  tooltip: tr('Switch workspace'),
-                  onSelected: (value) async {
-                    scaffold.currentState?.closeDrawer();
-                    if (value == 'create') {
-                      await WorkspaceActions.create(context, w);
-                    } else if (value == 'join') {
-                      await WorkspaceActions.join(context, w);
-                    } else if (value == 'settings') {
-                      select('workspace-settings');
-                    } else {
-                      await w.selectServer(
-                        w.servers.firstWhere((s) => s.id == value),
-                      );
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    for (final s in w.servers)
-                      PopupMenuItem(
-                        value: s.id,
-                        child: Listener(
-                          onPointerDown:
-                              defaultTargetPlatform == TargetPlatform.linux &&
-                                  workspaceBrowserOrigin(w.client.origin) !=
-                                      null
-                              ? (event) {
-                                  if (event.buttons == kMiddleMouseButton) {
-                                    Navigator.of(context).pop();
-                                    unawaited(
-                                      openWorkspaceInBrowser(context, w, s),
-                                    );
-                                  }
-                                }
-                              : null,
-                          child: Row(
-                            children: [
-                              Expanded(child: Text(s.name)),
-                              if (defaultTargetPlatform ==
-                                      TargetPlatform.linux &&
-                                  workspaceBrowserOrigin(w.client.origin) !=
-                                      null)
-                                IconButton(
-                                  key: ValueKey('workspace-browser-${s.id}'),
-                                  tooltip: tr('Open workspace in browser'),
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                    unawaited(
-                                      openWorkspaceInBrowser(context, w, s),
-                                    );
-                                  },
-                                  constraints: const BoxConstraints(
-                                    minWidth: 48,
-                                    minHeight: 48,
-                                  ),
-                                  icon: const Icon(Icons.open_in_new),
-                                ),
-                            ],
+                actions: [
+                  SystemNotificationBell(
+                    key: const Key('mobile-home-notifications'),
+                    controller: w,
+                    onBilling: () => select('billing'),
+                  ),
+                ],
+              )
+            else
+              SizedBox(
+                height: recipe.headerHeight,
+                child: Padding(
+                  padding: recipe.headerInset,
+                  child: Row(
+                    children: [
+                      if (!mobileHome)
+                        Text(
+                          tr('Chat'),
+                          style: RaftTypography.heading(
+                            RaftTokens.of(context),
+                            size: 18,
+                            line: 28,
                           ),
                         ),
-                      ),
-                    const PopupMenuDivider(),
-                    if (w.server != null)
-                      PopupMenuItem(
-                        value: 'settings',
-                        child: Text(tr('Workspace settings')),
-                      ),
-                    PopupMenuItem(
-                      value: 'create',
-                      child: Text(tr('Create workspace')),
-                    ),
-                    PopupMenuItem(
-                      value: 'join',
-                      child: Text(tr('Join workspace')),
-                    ),
-                  ],
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 115),
-                        child: Text(
-                          w.server?.name ?? tr('Workspace'),
-                          overflow: TextOverflow.ellipsis,
+                      const Spacer(),
+                      PopupMenuButton<String>(
+                        tooltip: tr('Switch workspace'),
+                        onSelected: (value) async {
+                          scaffold.currentState?.closeDrawer();
+                          if (value == 'create') {
+                            await WorkspaceActions.create(context, w);
+                          } else if (value == 'join') {
+                            await WorkspaceActions.join(context, w);
+                          } else if (value == 'settings') {
+                            select('workspace-settings');
+                          } else {
+                            await w.selectServer(
+                              w.servers.firstWhere((s) => s.id == value),
+                            );
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          for (final s in w.servers)
+                            PopupMenuItem(
+                              value: s.id,
+                              child: Listener(
+                                onPointerDown:
+                                    defaultTargetPlatform ==
+                                            TargetPlatform.linux &&
+                                        workspaceBrowserOrigin(
+                                              w.client.origin,
+                                            ) !=
+                                            null
+                                    ? (event) {
+                                        if (event.buttons ==
+                                            kMiddleMouseButton) {
+                                          Navigator.of(context).pop();
+                                          unawaited(
+                                            openWorkspaceInBrowser(
+                                              context,
+                                              w,
+                                              s,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                                child: Row(
+                                  children: [
+                                    Expanded(child: Text(s.name)),
+                                    if (defaultTargetPlatform ==
+                                            TargetPlatform.linux &&
+                                        workspaceBrowserOrigin(
+                                              w.client.origin,
+                                            ) !=
+                                            null)
+                                      IconButton(
+                                        key: ValueKey(
+                                          'workspace-browser-${s.id}',
+                                        ),
+                                        tooltip: tr(
+                                          'Open workspace in browser',
+                                        ),
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                          unawaited(
+                                            openWorkspaceInBrowser(
+                                              context,
+                                              w,
+                                              s,
+                                            ),
+                                          );
+                                        },
+                                        constraints: const BoxConstraints(
+                                          minWidth: 48,
+                                          minHeight: 48,
+                                        ),
+                                        icon: const Icon(Icons.open_in_new),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          const PopupMenuDivider(),
+                          if (w.server != null)
+                            PopupMenuItem(
+                              value: 'settings',
+                              child: Text(tr('Workspace settings')),
+                            ),
+                          PopupMenuItem(
+                            value: 'create',
+                            child: Text(tr('Create workspace')),
+                          ),
+                          PopupMenuItem(
+                            value: 'join',
+                            child: Text(tr('Join workspace')),
+                          ),
+                        ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 115),
+                              child: Text(
+                                w.server?.name ?? tr('Workspace'),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(Icons.expand_more, size: 16),
+                          ],
                         ),
                       ),
-                      const Icon(Icons.expand_more, size: 16),
                     ],
                   ),
                 ),
-              ],
+              ),
+            if (!mobileHome)
+              Divider(
+                height: RaftTokens.of(context).border,
+                thickness: RaftTokens.of(context).border,
+              ),
+            Expanded(
+              child: ListView(
+                key: const Key('workspace-sidebar'),
+                padding: recipe.contentInset(
+                  headerInFlow: true,
+                  liveActivity: mobileHome && liveActivityVisible,
+                  bottomInset: 0,
+                ),
+                children: [
+                  if (mobileHome)
+                    RaftNavItem(
+                      key: const Key('nav-search'),
+                      role: RaftNavItemRole.search,
+                      viewportHeight: MediaQuery.sizeOf(context).height,
+                      label: tr('Search'),
+                      icon: Icons.search,
+                      glyph: RaftGlyph.search,
+                      selected: w.section == 'search',
+                      onTap: () => select('search'),
+                    ),
+                  RaftNavItem(
+                    key: const Key('nav-activity'),
+                    role: RaftNavItemRole.activity,
+                    viewportHeight: MediaQuery.sizeOf(context).height,
+                    label: tr('Activity'),
+                    icon: Icons.inbox_outlined,
+                    glyph: RaftGlyph.activity,
+                    selected: w.section == 'activity',
+                    unread: w.unread.values.fold(0, (a, b) => a + b),
+                    onTap: () => select('activity'),
+                  ),
+                  if (!mobileHome)
+                    RaftNavItem(
+                      key: const Key('nav-search'),
+                      role: RaftNavItemRole.search,
+                      viewportHeight: MediaQuery.sizeOf(context).height,
+                      label: tr('Search'),
+                      icon: Icons.search,
+                      glyph: RaftGlyph.search,
+                      selected: w.section == 'search',
+                      onTap: () => select('search'),
+                    ),
+                  SavedSidebarEntry(
+                    key: const Key('nav-saved'),
+                    controller: w,
+                    onTap: () => select('saved'),
+                  ),
+                  if (!mobileHome)
+                    RaftNavItem(
+                      key: const Key('nav-tasks'),
+                      label: tr('Tasks'),
+                      icon: Icons.check_box_outlined,
+                      glyph: RaftGlyph.checkSquare,
+                      selected: w.section == 'tasks',
+                      onTap: () => select('tasks'),
+                    ),
+                  ...conversationSections(),
+                  sectionLabel(tr('WORKSPACE')),
+                  if (w.can('viewAgents'))
+                    RaftNavItem(
+                      key: const Key('nav-agents'),
+                      label: tr('Agents'),
+                      icon: Icons.smart_toy_outlined,
+                      glyph: RaftGlyph.bot,
+                      onTap: () => select('agents'),
+                      selected: w.section == 'agents',
+                    ),
+                  if (w.can('viewMachines'))
+                    RaftNavItem(
+                      key: const Key('nav-computers'),
+                      label: tr('Computers'),
+                      icon: Icons.computer_outlined,
+                      glyph: RaftGlyph.monitor,
+                      onTap: () => select('computers'),
+                      selected: w.section == 'computers',
+                    ),
+                  if (w.can('viewMembers'))
+                    RaftNavItem(
+                      key: const Key('nav-members'),
+                      label: tr('Members'),
+                      icon: Icons.people_outline,
+                      glyph: RaftGlyph.users,
+                      onTap: () => select('members'),
+                      selected: w.section == 'members',
+                    ),
+                  if (w.can('manageIntegrations'))
+                    RaftNavItem(
+                      key: const Key('nav-integrations'),
+                      label: tr('Integrations'),
+                      icon: Icons.extension_outlined,
+                      glyph: RaftGlyph.bot,
+                      onTap: () => select('integrations'),
+                      selected: w.section == 'integrations',
+                    ),
+                  if (w.can('federateChannels'))
+                    RaftNavItem(
+                      key: const Key('nav-joint-channels'),
+                      label: tr('Joint channels'),
+                      icon: Icons.link,
+                      glyph: RaftGlyph.link,
+                      onTap: () => select('joint-channels'),
+                      selected: w.section == 'joint-channels',
+                    ),
+                  if (bridgeEnabled && w.can('manageIntegrations'))
+                    RaftNavItem(
+                      key: const Key('nav-im-bridges'),
+                      label: tr('IM bridges'),
+                      icon: Icons.hub_outlined,
+                      glyph: RaftGlyph.link,
+                      onTap: () => select('im-bridges'),
+                      selected: w.section == 'im-bridges',
+                    ),
+                  if (providerEnabled && w.can('manageExternalAuth'))
+                    RaftNavItem(
+                      key: const Key('nav-providers'),
+                      label: tr('Provider connections'),
+                      icon: Icons.vpn_key_outlined,
+                      glyph: RaftGlyph.lock,
+                      onTap: () => select('providers'),
+                      selected: w.section == 'providers',
+                    ),
+                  if (w.can('viewServerSettings'))
+                    RaftNavItem(
+                      key: const Key('nav-administration'),
+                      label: tr('Administration'),
+                      icon: Icons.admin_panel_settings_outlined,
+                      glyph: RaftGlyph.settings,
+                      onTap: () => select('administration'),
+                      selected: w.section == 'administration',
+                    ),
+                  if (w.can('viewBilling'))
+                    RaftNavItem(
+                      key: const Key('nav-billing'),
+                      label: tr('Billing'),
+                      icon: Icons.receipt_long_outlined,
+                      glyph: RaftGlyph.fileText,
+                      onTap: () => select('billing'),
+                      selected: w.section == 'billing',
+                    ),
+                  if (w.server != null)
+                    RaftNavItem(
+                      key: const Key('nav-sidebar-settings'),
+                      label: tr('Sidebar preferences'),
+                      icon: Icons.view_sidebar_outlined,
+                      glyph: RaftGlyph.columns2,
+                      onTap: () => select('sidebar-settings'),
+                      selected: w.section == 'sidebar-settings',
+                    ),
+                  if (w.server != null)
+                    RaftNavItem(
+                      key: const Key('nav-workspace-settings'),
+                      label: tr('Workspace settings'),
+                      icon: Icons.settings_outlined,
+                      glyph: RaftGlyph.settings,
+                      onTap: () => select('workspace-settings'),
+                      selected: w.section == 'workspace-settings',
+                    ),
+                ],
+              ),
             ),
-          ),
-        ),
-        Divider(
-          height: RaftTokens.of(context).border,
-          thickness: RaftTokens.of(context).border,
-        ),
-        Expanded(
-          child: ListView(
-            key: const Key('workspace-sidebar'),
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            children: [
+            if (!mobileHome) ...[
+              liveActivityBar(),
+              const Divider(height: 1),
               RaftNavItem(
-                key: const Key('nav-activity'),
-                label: tr('Activity'),
-                icon: Icons.inbox_outlined,
-                selected: w.section == 'activity',
-                unread: w.unread.values.fold(0, (a, b) => a + b),
-                onTap: () => select('activity'),
+                key: const Key('account-navigation'),
+                label: w.client.user?.name ?? tr('Account'),
+                icon: Icons.account_circle_outlined,
+                glyph: RaftGlyph.circleUserRound,
+                onTap: () => select('settings'),
+                selected: w.section == 'settings',
               ),
-              RaftNavItem(
-                key: const Key('nav-search'),
-                label: tr('Search'),
-                icon: Icons.search,
-                selected: w.section == 'search',
-                onTap: () => select('search'),
-              ),
-              RaftNavItem(
-                key: const Key('nav-saved'),
-                label: tr('Saved'),
-                icon: Icons.bookmark_border,
-                selected: w.section == 'saved',
-                onTap: () => select('saved'),
-              ),
-              RaftNavItem(
-                key: const Key('nav-tasks'),
-                label: tr('Tasks'),
-                icon: Icons.check_box_outlined,
-                selected: w.section == 'tasks',
-                onTap: () => select('tasks'),
-              ),
-              const SizedBox(height: 18),
-              ...conversationSections(),
-              sectionLabel(tr('WORKSPACE')),
-              if (w.can('viewAgents'))
-                RaftNavItem(
-                  key: const Key('nav-agents'),
-                  label: tr('Agents'),
-                  icon: Icons.smart_toy_outlined,
-                  onTap: () => select('agents'),
-                  selected: w.section == 'agents',
-                ),
-              if (w.can('viewMachines'))
-                RaftNavItem(
-                  key: const Key('nav-computers'),
-                  label: tr('Computers'),
-                  icon: Icons.computer_outlined,
-                  onTap: () => select('computers'),
-                  selected: w.section == 'computers',
-                ),
-              if (w.can('viewMembers'))
-                RaftNavItem(
-                  key: const Key('nav-members'),
-                  label: tr('Members'),
-                  icon: Icons.people_outline,
-                  onTap: () => select('members'),
-                  selected: w.section == 'members',
-                ),
-              if (w.can('manageIntegrations'))
-                RaftNavItem(
-                  key: const Key('nav-integrations'),
-                  label: tr('Integrations'),
-                  icon: Icons.extension_outlined,
-                  onTap: () => select('integrations'),
-                  selected: w.section == 'integrations',
-                ),
-              if (w.can('federateChannels'))
-                RaftNavItem(
-                  key: const Key('nav-joint-channels'),
-                  label: tr('Joint channels'),
-                  icon: Icons.link,
-                  onTap: () => select('joint-channels'),
-                  selected: w.section == 'joint-channels',
-                ),
-              if (bridgeEnabled && w.can('manageIntegrations'))
-                RaftNavItem(
-                  key: const Key('nav-im-bridges'),
-                  label: tr('IM bridges'),
-                  icon: Icons.hub_outlined,
-                  onTap: () => select('im-bridges'),
-                  selected: w.section == 'im-bridges',
-                ),
-              if (providerEnabled && w.can('manageExternalAuth'))
-                RaftNavItem(
-                  key: const Key('nav-providers'),
-                  label: tr('Provider connections'),
-                  icon: Icons.vpn_key_outlined,
-                  onTap: () => select('providers'),
-                  selected: w.section == 'providers',
-                ),
-              if (w.can('viewServerSettings'))
-                RaftNavItem(
-                  key: const Key('nav-administration'),
-                  label: tr('Administration'),
-                  icon: Icons.admin_panel_settings_outlined,
-                  onTap: () => select('administration'),
-                  selected: w.section == 'administration',
-                ),
-              if (w.can('viewBilling'))
-                RaftNavItem(
-                  key: const Key('nav-billing'),
-                  label: tr('Billing'),
-                  icon: Icons.receipt_long_outlined,
-                  onTap: () => select('billing'),
-                  selected: w.section == 'billing',
-                ),
-              if (w.server != null)
-                RaftNavItem(
-                  key: const Key('nav-sidebar-settings'),
-                  label: tr('Sidebar preferences'),
-                  icon: Icons.view_sidebar_outlined,
-                  onTap: () => select('sidebar-settings'),
-                  selected: w.section == 'sidebar-settings',
-                ),
-              if (w.server != null)
-                RaftNavItem(
-                  key: const Key('nav-workspace-settings'),
-                  label: tr('Workspace settings'),
-                  icon: Icons.settings_outlined,
-                  onTap: () => select('workspace-settings'),
-                  selected: w.section == 'workspace-settings',
-                ),
             ],
-          ),
+          ],
         ),
-        const Divider(height: 1),
-        RaftNavItem(
-          key: const Key('account-navigation'),
-          label: w.client.user?.name ?? tr('Account'),
-          icon: Icons.account_circle_outlined,
-          onTap: () => select('settings'),
-          selected: w.section == 'settings',
-        ),
-      ],
-    ),
-  );
+      ),
+    );
+  }
+
+  Future<void> sortSidebarGroup(SidebarGroup group) async {
+    final scope = mobileAuthority;
+    if (sortingGroups.contains(group.id)) return;
+    final prefs = Map<String, dynamic>.from(w.sidebarOrder);
+    final key = switch (group.id) {
+      'system:pinned' => 'pinnedSortMode',
+      'system:joint' => 'jointChannelSortMode',
+      'system:channels' => 'channelSortMode',
+      'system:dms' => 'dmSortMode',
+      _ => null,
+    };
+    if (key == null || w.server == null) return;
+    final mode = await showSidebarSortMenu(
+      context,
+      w,
+      sortAnchors[group.id]!,
+      '${prefs[key] ?? 'manual'}',
+    );
+    if (!mounted || scope != mobileAuthority || mode == null) return;
+    sortingGroups.add(group.id);
+    setState(() {});
+    try {
+      await w.command(
+        'PATCH',
+        '/servers/${w.server!.id}/sidebar-order',
+        data: {key: mode},
+      );
+      if (!mounted || scope != mobileAuthority) return;
+      await w.loadSidebar();
+    } catch (error) {
+      if (mounted && scope == mobileAuthority) w.setError('$error');
+    } finally {
+      sortingGroups.remove(group.id);
+      if (mounted && scope == mobileAuthority) setState(() {});
+    }
+  }
+
   Widget sectionLabel(
     String label, {
+    SidebarGroup? group,
     VoidCallback? onAdd,
     String addLabel = 'Create channel',
-  }) => Padding(
-    padding: const EdgeInsets.only(left: 12),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: RaftTokens.of(context).muted,
-              letterSpacing: 1,
-            ),
+  }) {
+    final scope = mobileAuthority;
+    final id = group?.id;
+    final sortable = id != null && !group!.custom;
+    final anchor = sortable ? sortAnchors.putIfAbsent(id, GlobalKey.new) : null;
+    return RaftSidebarSectionHeader(
+      key: id == null ? null : ValueKey('sidebar-section-$id'),
+      disclosureKey: id == null ? null : ValueKey('sidebar-disclosure-$id'),
+      label: label,
+      expanded: id == null || sidebarDisclosure.collapsed[id] != true,
+      count: group?.entries.length,
+      onExpandedChanged: id == null
+          ? null
+          : (expanded) {
+              sidebarDisclosure.setExpanded(scope, id, expanded);
+            },
+      actions: [
+        if (sortable)
+          RaftSidebarSectionAction(
+            key: anchor,
+            label: tr('Sort'),
+            glyph: RaftGlyph.arrowDownUp,
+            onPressed: sortingGroups.contains(id)
+                ? null
+                : () => sortSidebarGroup(group),
           ),
-        ),
         if (onAdd != null)
-          IconButton(
-            tooltip: addLabel,
-            onPressed: onAdd,
-            icon: const Icon(Icons.add, size: 16),
-          )
-        else
-          const SizedBox(height: 32),
+          RaftSidebarSectionAction(
+            label: addLabel,
+            glyph: RaftGlyph.plus,
+            onPressed: () {
+              if (scope == mobileAuthority) onAdd();
+            },
+          ),
       ],
-    ),
-  );
+    );
+  }
+
   Future<void> joinChannel() async {
     try {
       final c = w.channel!;
@@ -1352,112 +1743,122 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Widget settings() => KeyedSubtree(
-    key: const Key('workspace-account-settings'),
-    child: RaftSettingsPage(
-      key: ValueKey(
-        'workspace-account-settings-${w.client.generation}-${w.client.user?.id}-${w.server?.id}-${w.server?.string('role')}',
-      ),
-      destinations: [
-        RaftSettingsDestination(
-          'account',
-          'Account',
-          RaftGlyph.user,
-          (_) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AccountSettings(controller: w),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: RaftButton(
-                  label: tr('Sign out'),
-                  secondary: true,
-                  icon: Icons.logout,
-                  onPressed: widget.onLogout,
+  Widget settings() {
+    final scope = mobileAuthority;
+    return KeyedSubtree(
+      key: const Key('workspace-account-settings'),
+      child: RaftSettingsPage(
+        key: ValueKey(
+          'workspace-account-settings-${w.client.generation}-${w.client.user?.id}-${w.server?.id}-${w.server?.string('role')}',
+        ),
+        mobileRoot: true,
+        mobileResetRevision: mobileSettingsRevision,
+        onMobileDetailChanged: (detail) {
+          if (!mounted || scope != mobileAuthority) return;
+          setState(() => mobileSettingsDetail = detail);
+        },
+        destinations: [
+          RaftSettingsDestination(
+            'account',
+            'Account',
+            RaftGlyph.user,
+            (_) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AccountSettings(controller: w),
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: RaftButton(
+                    label: tr('Sign out'),
+                    secondary: true,
+                    icon: Icons.logout,
+                    onPressed: widget.onLogout,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        RaftSettingsDestination(
-          'language',
-          'Language & Region',
-          RaftGlyph.globe,
-          (_) => LocaleSettingsPage(controller: w),
-        ),
-        RaftSettingsDestination(
-          'appearance',
-          'Appearance',
-          RaftGlyph.palette,
-          (_) => RaftAppearancePicker(
-            appearance: widget.appearance,
-            onChanged: (appearance) => widget.onAppearance(appearance),
-          ),
-        ),
-        if (widget.notifications != null)
-          RaftSettingsDestination(
-            'notifications',
-            'Notifications',
-            RaftGlyph.info,
-            (_) => NotificationSettingsView(service: widget.notifications!),
-          ),
-        if (w.server != null) ...[
-          RaftSettingsDestination(
-            'server',
-            'Server profile',
-            RaftGlyph.settings,
-            (_) => ServerSettingsView(controller: w),
-            group: 'Workspace',
-            scroll: false,
-          ),
-          if (w.can('viewBilling'))
-            RaftSettingsDestination(
-              'billing',
-              'Plan & Billing',
-              RaftGlyph.fileText,
-              (_) => BillingView(controller: w),
-              group: 'Workspace',
-              scroll: false,
+              ],
             ),
-          if (w.can('viewServerSettings'))
+          ),
+          RaftSettingsDestination(
+            'language',
+            'Language & Region',
+            RaftGlyph.globe,
+            (_) => LocaleSettingsPage(controller: w),
+          ),
+          RaftSettingsDestination(
+            'appearance',
+            'Appearance',
+            RaftGlyph.palette,
+            (_) => RaftAppearanceSection(
+              appearance: widget.appearance,
+              onAppearance: (appearance) => widget.onAppearance(appearance),
+              presentation: presentation,
+            ),
+          ),
+          if (widget.notifications != null)
             RaftSettingsDestination(
-              'administration',
-              'Administration',
+              'notifications',
+              'Notifications',
+              RaftGlyph.info,
+              (_) => NotificationSettingsView(service: widget.notifications!),
+            ),
+          if (w.server != null) ...[
+            RaftSettingsDestination(
+              'server',
+              'Server profile',
               RaftGlyph.settings,
-              (_) => AdministrationView(controller: w),
+              (_) => ServerSettingsView(controller: w),
               group: 'Workspace',
               scroll: false,
             ),
-          if (w.can('manageIntegrations'))
-            RaftSettingsDestination(
-              'applications',
-              'Applications',
-              RaftGlyph.bot,
-              (_) => IntegrationsView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
-          if (providerEnabled && w.can('manageExternalAuth'))
-            RaftSettingsDestination(
-              'providers',
-              'Providers',
-              RaftGlyph.lock,
-              (_) => ProviderConnectionsView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
-          if (bridgeEnabled && w.can('manageIntegrations'))
-            RaftSettingsDestination(
-              'bridges',
-              'IM bridges',
-              RaftGlyph.link,
-              (_) => IMBridgesView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
+            if (w.can('viewBilling'))
+              RaftSettingsDestination(
+                'billing',
+                'Plan & Billing',
+                RaftGlyph.fileText,
+                (_) => BillingView(controller: w),
+                group: 'Workspace',
+                scroll: false,
+              ),
+            if (w.can('viewServerSettings'))
+              RaftSettingsDestination(
+                'administration',
+                'Administration',
+                RaftGlyph.settings,
+                (_) => AdministrationView(controller: w),
+                group: 'Workspace',
+                scroll: false,
+              ),
+            if (w.can('manageIntegrations'))
+              RaftSettingsDestination(
+                'applications',
+                'Applications',
+                RaftGlyph.bot,
+                (_) => IntegrationsView(controller: w),
+                group: 'Workspace',
+                scroll: false,
+              ),
+            if (providerEnabled && w.can('manageExternalAuth'))
+              RaftSettingsDestination(
+                'providers',
+                'Providers',
+                RaftGlyph.lock,
+                (_) => ProviderConnectionsView(controller: w),
+                group: 'Workspace',
+                scroll: false,
+              ),
+            if (bridgeEnabled && w.can('manageIntegrations'))
+              RaftSettingsDestination(
+                'bridges',
+                'IM bridges',
+                RaftGlyph.link,
+                (_) => IMBridgesView(controller: w),
+                group: 'Workspace',
+                scroll: false,
+              ),
+          ],
         ],
-      ],
-    ),
-  );
+      ),
+    );
+  }
 }

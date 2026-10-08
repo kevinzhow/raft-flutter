@@ -485,7 +485,10 @@ class _MessageActionCardState extends State<MessageActionCard> {
         'agentName',
         'clientKey',
       ]) {
-        if (key == 'name' && {'channel:create', 'agent:create'}.contains(type)) continue;
+        if (key == 'name' &&
+            {'channel:create', 'agent:create'}.contains(type)) {
+          continue;
+        }
         if (action[key] is String) {
           details.add((
             label: const {
@@ -501,8 +504,16 @@ class _MessageActionCardState extends State<MessageActionCard> {
       }
     }
     final fallbackTitle = switch (type) {
-      'channel:create' => raftFormat(context, action['visibility'] == 'private' ? 'Create private channel #{name}' : 'Create public channel #{name}', {'name': action['name'] ?? ''}),
-      'agent:create' => raftFormat(context, 'Create agent {name}', {'name': action['name'] ?? ''}),
+      'channel:create' => raftFormat(
+        context,
+        action['visibility'] == 'private'
+            ? 'Create private channel #{name}'
+            : 'Create public channel #{name}',
+        {'name': action['name'] ?? ''},
+      ),
+      'agent:create' => raftFormat(context, 'Create agent {name}', {
+        'name': action['name'] ?? '',
+      }),
       _ => raftText(context, labels[type] ?? 'Action'),
     };
     return RaftActionCard(

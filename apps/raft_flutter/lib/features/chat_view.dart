@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:raft_client/raft_client.dart';
@@ -10,6 +11,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/personal_presentation.dart';
 import '../platform/file_selection.dart';
 import 'attachment_view.dart';
 import 'thread_actions.dart';
@@ -48,6 +50,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   final retiredAdapters = <chat.InMemoryChatController>{};
   final retiredViewports = <ScrollController>{};
   int listRevision = 0;
+  bool initialEndPending = true;
   String? scope;
   String? scrolledHighlight;
   int? scrolledWindow, adapterWindow;
@@ -221,6 +224,7 @@ class _RaftChatViewState extends State<RaftChatView> {
     adapter = chat.InMemoryChatController(messages: messages);
     viewport = ScrollController();
     listRevision++;
+    initialEndPending = w.highlightedMessageId == null;
     setState(() {});
     // A keyed Chat owns a new observer and controller. The retired list's
     // dispose can only detach its own focus methods, never the new observer.
@@ -362,6 +366,41 @@ class _RaftChatViewState extends State<RaftChatView> {
                         : w.channelGeneration)) {
               return;
             }
+            if (!focusReceiptVisible(target)) {
+              // Observer estimates can be stale after a variable-height row
+              // replaces its content. Recover from the committed row's actual
+              // viewport transform, never from a previously retained offset.
+              final row = focusAnchors[target]?.currentContext
+                  ?.findRenderObject();
+              final renderedViewport = row == null
+                  ? null
+                  : RenderAbstractViewport.maybeOf(row);
+              if (row != null &&
+                  row.attached &&
+                  renderedViewport != null &&
+                  ownedViewport.hasClients) {
+                final position = ownedViewport.position;
+                final offset = renderedViewport
+                    .getOffsetToReveal(row, .3)
+                    .offset;
+                ownedViewport.jumpTo(
+                  offset.clamp(
+                    position.minScrollExtent,
+                    position.maxScrollExtent,
+                  ),
+                );
+                WidgetsBinding.instance.scheduleFrame();
+                await WidgetsBinding.instance.endOfFrame;
+                if (!currentContext() ||
+                    target != w.highlightedMessageId ||
+                    window !=
+                        (widget.thread
+                            ? w.threadGeneration
+                            : w.channelGeneration)) {
+                  return;
+                }
+              }
+            }
             if (focusReceiptVisible(target)) {
               scrolledHighlight = target;
               scrolledWindow = window;
@@ -374,9 +413,13 @@ class _RaftChatViewState extends State<RaftChatView> {
   }
 
   bool focusReceiptVisible(String target) {
-    if (!viewport.hasClients) return false;
+    if (!viewport.hasClients || viewport.position.outOfRange) {
+      return false;
+    }
     final row = focusAnchors[target]?.currentContext?.findRenderObject();
-    final view = viewport.position.context.storageContext.findRenderObject();
+    final Object? view = row == null
+        ? null
+        : RenderAbstractViewport.maybeOf(row);
     if (row is! RenderBox ||
         view is! RenderBox ||
         !row.attached ||
@@ -385,9 +428,16 @@ class _RaftChatViewState extends State<RaftChatView> {
         !view.hasSize) {
       return false;
     }
-    return (row.localToGlobal(Offset.zero) & row.size).overlaps(
-      view.localToGlobal(Offset.zero) & view.size,
-    );
+    final rowRect = row.localToGlobal(Offset.zero) & row.size;
+    final viewRect = view.localToGlobal(Offset.zero) & view.size;
+    if (!rowRect.overlaps(viewRect)) {
+      return false;
+    }
+    // A partial intersection under a page header is not a focus receipt. Short
+    // messages must fit; tall messages expose their header and half a viewport.
+    final requiredHeight = rowRect.height.clamp(0.0, viewRect.height * .5);
+    return rowRect.top >= viewRect.top - .5 &&
+        rowRect.top + requiredHeight <= viewRect.bottom + .5;
   }
 
   Future<void> link(String url) async {
@@ -684,6 +734,22 @@ class _RaftChatViewState extends State<RaftChatView> {
     );
   }
 
+  String? currentAgentModel(RaftMessage message) {
+    if (message.string('senderType') != 'agent' ||
+        PersonalPresentationScope.maybeOf(context)?.value.modelName == false ||
+        referenceDirectory.scope != workspaceAuthority(w) ||
+        !w.can('viewAgents') ||
+        message.json['sourceServerId'] != null &&
+            message.json['sourceServerId'] != w.server?.id) {
+      return null;
+    }
+    final agent = referenceDirectory.agents
+        .where((a) => a['id'] == message.json['senderId'])
+        .firstOrNull;
+    final model = agent == null ? null : agent['model'];
+    return model is String && model.trim().isNotEmpty ? model.trim() : null;
+  }
+
   Widget messageTile(RaftMessage m, {bool parent = false}) => RaftMessageTile(
     key: ValueKey('message-${m.id}'),
     author: m.author,
@@ -693,19 +759,16 @@ class _RaftChatViewState extends State<RaftChatView> {
       message: m,
       onExternalLink: link,
       directoryReferences: referenceDirectory.references,
-      fontSize: switch (w.client.user?.string('preferredMessageBodyFontSize')) {
-        'sm' => 12,
-        'lg' => 16,
-        _ => 14,
-      },
+      fontSize: PersonalPresentationScope.bodyFontSize(
+        context,
+        w.client.user?.string('preferredMessageBodyFontSize'),
+      ),
     ),
-    bodyFontSize: switch (w.client.user?.string(
-      'preferredMessageBodyFontSize',
-    )) {
-      'sm' => 12,
-      'lg' => 16,
-      _ => 14,
-    },
+    bodyFontSize: PersonalPresentationScope.bodyFontSize(
+      context,
+      w.client.user?.string('preferredMessageBodyFontSize'),
+    ),
+    modelLabel: currentAgentModel(m),
     collapseLongMessages:
         (m.json['actionMetadata'] is! Map ||
             m.json['actionMetadata']['kind'] != 'action-card') &&
@@ -784,6 +847,7 @@ class _RaftChatViewState extends State<RaftChatView> {
 
   @override
   Widget build(BuildContext context) {
+    final anchorRevision = listRevision, anchorViewport = viewport;
     final loading = widget.thread ? w.threadLoading : w.channelLoading;
     final composeScope = w.draftScope(thread: widget.thread),
         composeAuthority = workspaceAuthority(w);
@@ -882,16 +946,28 @@ class _RaftChatViewState extends State<RaftChatView> {
                 required isSentByMe,
                 groupStatus,
               }) => tile(RaftMessage(message.metadata!)),
-              chatAnimatedListBuilder: (context, item) => ChatAnimatedList(
-                scrollController: viewport,
-                key: ValueKey(
-                  'chat-list-${widget.thread ? 'thread' : 'channel'}',
+              chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
+                controller: viewport,
+                enabled: w.highlightedMessageId == null,
+                onInitialReady: () {
+                  if (mounted &&
+                      listRevision == anchorRevision &&
+                      identical(viewport, anchorViewport) &&
+                      initialEndPending) {
+                    setState(() => initialEndPending = false);
+                  }
+                },
+                child: ChatAnimatedList(
+                  scrollController: viewport,
+                  key: ValueKey(
+                    'chat-list-${widget.thread ? 'thread' : 'channel'}',
+                  ),
+                  itemBuilder: item,
+                  onEndReached: initialEndPending
+                      ? null
+                      : () => w.older(thread: widget.thread),
+                  initialScrollToEndMode: InitialScrollToEndMode.none,
                 ),
-                itemBuilder: item,
-                onEndReached: () => w.older(thread: widget.thread),
-                initialScrollToEndMode: w.highlightedMessageId == null
-                    ? InitialScrollToEndMode.jump
-                    : InitialScrollToEndMode.none,
               ),
               emptyChatListBuilder: (_) => RaftEmptyState(
                 title: raftText(context, 'Start the conversation'),

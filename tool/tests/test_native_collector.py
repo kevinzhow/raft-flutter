@@ -2,7 +2,7 @@
 import ast, json, pathlib, struct, subprocess, tempfile, unittest, zlib, re
 root = pathlib.Path(__file__).resolve().parents[2]
 source = ast.parse((root/'tool/native-test').read_text())
-selected = ast.Module(body=[n for n in source.body if isinstance(n,ast.FunctionDef) and n.name in {'png_complete','atomic_copy','collect_current_evidence'}],type_ignores=[])
+selected = ast.Module(body=[n for n in source.body if isinstance(n,ast.FunctionDef) and n.name in {'png_complete','atomic_copy','sanitize_mobile_geometry','collect_current_evidence'}],type_ignores=[])
 ns = dict(json=json,pathlib=pathlib,struct=struct,subprocess=subprocess,zlib=zlib,re=re)
 exec(compile(selected,'tool/native-test','exec'),ns)
 collect = ns['collect_current_evidence']
@@ -27,6 +27,32 @@ class CollectorTest(unittest.TestCase):
             self.acks.append(json.loads(value)); return True
         self.assertTrue(collect(self.reports,self.run,self.sha,lambda name:self.files.get(name,b''),ack))
         self.assertEqual(self.acks,[{'runId':self.run,'sourceHash':self.sha,'collected':True}])
+    def home_geometry(self):
+        rect={'x':4,'y':4,'width':44,'height':44}
+        return {'runId':self.run,'sourceHash':self.sha,'platform':'android','theme':'elegant-light','logicalViewport':{'width':390,'height':844},'deviceDpr':2.625,'screenshotRasterDpr':1,'nav':[{'name':n,'visual':rect,'glyph':rect,'hit':rect} for n in ['home','tasks','members','settings']]}
+    def home_files(self, geometry):
+        name='android-mobile-home-elegant-light'
+        self.files['native-android-checkpoints.tsv']=f'{name}\t2026-10-08T01:00:01.000000Z\t{self.run}\n'.encode()
+        self.files[name+'.png']=png
+        self.files[name+'.geometry.json']=json.dumps(geometry).encode()
+        return self.reports/(name+'.geometry.json')
+    def test_current_geometry_is_collected_and_unknown_payload_removed(self):
+        geometry=self.home_geometry();geometry['unexpected']='credential-shaped private payload'
+        target=self.home_files(geometry)
+        self.assertTrue(self.perform())
+        self.assertEqual(json.loads(target.read_bytes()),self.home_geometry())
+    def test_old_run_geometry_cannot_survive_next_checkpoint(self):
+        geometry=self.home_geometry();geometry['runId']='previous-run'
+        target=self.home_files(geometry);target.write_text('old geometry')
+        self.assertTrue(self.perform());self.assertFalse(target.exists())
+    def test_old_source_geometry_is_rejected_without_retagging(self):
+        geometry=self.home_geometry();geometry['sourceHash']='b'*64
+        target=self.home_files(geometry)
+        self.assertTrue(self.perform());self.assertFalse(target.exists())
+    def test_non_numerical_geometry_is_rejected(self):
+        geometry=self.home_geometry();geometry['nav'][0]['visual']['x']='private payload'
+        target=self.home_files(geometry)
+        self.assertTrue(self.perform());self.assertFalse(target.exists())
     def test_previous_completed_run_never_acknowledges(self):
         self.meta['runId']='2026-10-08T00:00:00.000000Z'; self.files['native-android-run.json']=json.dumps(self.meta).encode()
         self.assertFalse(self.perform()); self.assertFalse(self.acks)

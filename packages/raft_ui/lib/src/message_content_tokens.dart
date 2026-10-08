@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import 'design_primitives.dart';
+import 'message_table_border.dart';
 import 'theme.dart';
 import 'primitive_tokens.dart';
 
@@ -75,6 +76,14 @@ class MessageContentRecipe {
         ),
     };
   }
+  // Elegant's th/td/table all have the same 1px collapsed stroke. Flutter
+  // TableBorder paints about grid lines without allocating layout space. Split
+  // each shared stroke across neighboring cells and contain outer paint with
+  // half-stroke padding. Brutal's mixed header/body strokes require a separate
+  // per-row renderer; do not pretend uniform allocation is correct there.
+  double get collapsedTableHalfStroke => tokens.brutal ? 0 : tokens.border / 2;
+  EdgeInsets get tableCellInset => MessageContentPrimitive.tableInset + EdgeInsets.all(collapsedTableHalfStroke);
+  EdgeInsets get tableOuterInset => const EdgeInsets.symmetric(vertical: 4) + EdgeInsets.all(collapsedTableHalfStroke);
   MarkdownStyleSheet stylesheet(BuildContext context) =>
       MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
         p: body,
@@ -97,11 +106,13 @@ class MessageContentRecipe {
         tableHeadAlign: TextAlign.left,
         tableBody: body,
         tableColumnWidth: const IntrinsicColumnWidth(),
-        tablePadding: const EdgeInsets.symmetric(vertical: 4),
+        tablePadding: tableOuterInset,
         tableHeadCellsDecoration: BoxDecoration(color: tokens.brutal ? tokens.colors['color-brutal-cyan'] : tokens.colors['info-soft']),
-        tableCellsPadding: MessageContentPrimitive.tableInset,
-        tableHeadCellsPadding: MessageContentPrimitive.tableInset,
-        tableBorder: TableBorder.all(color: tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.colors['line-muted']!, width: tokens.border),
+        tableCellsPadding: tableCellInset,
+        tableHeadCellsPadding: tableCellInset,
+        tableBorder: tokens.brutal
+            ? TableBorder.all(color: RaftPrimitives.rgbaff000000, width: tokens.border)
+            : MessageCollapsedTableBorder(color: tokens.colors['line-muted']!, width: tokens.border),
         a: body.copyWith(color: semantic.link, decoration: TextDecoration.underline, decorationThickness: 2, decorationColor: semantic.link),
         code: RaftTypography.mono(tokens, size: fontSize * MessageContentPrimitive.inlineCodeScale, line: fontSize * MessageContentPrimitive.inlineCodeScale * 1.3, color: tokens.ink).copyWith(backgroundColor: tokens.brutal ? tokens.strong.withValues(alpha: .05) : tokens.colors['fill-muted']),
       );

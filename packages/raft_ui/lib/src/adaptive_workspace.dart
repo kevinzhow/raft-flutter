@@ -15,6 +15,7 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     required this.rail,
     this.thread,
     this.mobileNavigation,
+    this.mobileNavigationFloating = false,
     this.sidebarWidth = 240,
     this.threadWidth = 400,
     this.onPanelWidthsChanged,
@@ -23,6 +24,9 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   });
   final Widget content, sidebar, rail;
   final Widget? thread, mobileNavigation;
+
+  /// Source MobileBottomBarStack overlays Elegant bars; Brutal stays in flow.
+  final bool mobileNavigationFloating;
   final double sidebarWidth, threadWidth;
   final void Function(double sidebarWidth, double threadWidth)?
   onPanelWidthsChanged;
@@ -66,10 +70,29 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
     builder: (context, constraints) {
       final width = constraints.maxWidth;
       if (width < RaftAdaptiveWorkspace.desktopMinWidth) {
+        // Keep the content's parent chain stable when a detail hides the bar
+        // or the theme switches between in-flow and floating navigation.
         return Column(
           children: [
-            Expanded(child: widget.thread ?? widget.content),
-            if (widget.mobileNavigation != null) widget.mobileNavigation!,
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  widget.thread ?? widget.content,
+                  if (widget.mobileNavigationFloating &&
+                      widget.mobileNavigation != null)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: widget.mobileNavigation!,
+                    ),
+                ],
+              ),
+            ),
+            if (!widget.mobileNavigationFloating &&
+                widget.mobileNavigation != null)
+              widget.mobileNavigation!,
           ],
         );
       }
@@ -344,7 +367,7 @@ class RaftWorkspaceRail extends StatelessWidget {
                                 ),
                                 child:
                                     d.iconWidget ??
-                                    Icon(d.icon, size: RaftMetrics.railGlyph),
+                                    Icon(d.icon, size: recipe.glyphSize),
                               ),
                             ),
                             onPressed: () => onSelected(d.id),

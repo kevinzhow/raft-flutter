@@ -225,7 +225,15 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     if (!mounted || !identical(c, client) || accountNeedsOnboarding(c.user)) {
       return;
     }
-    final next = workspace ?? WorkspaceController(c, cache: cache);
+    final view = View.of(context);
+    final logicalWidth = view.physicalSize.width / view.devicePixelRatio;
+    final next =
+        workspace ??
+        WorkspaceController(
+          c,
+          cache: cache,
+          mobileNavigation: logicalWidth < RaftLayoutMetrics.desktopBreakpoint,
+        );
     workspace = next;
     setState(() {});
     await next.bootstrap();

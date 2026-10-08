@@ -11,6 +11,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'theme.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'primitive_tokens.dart';
 
 class RaftPanel extends StatelessWidget {
   const RaftPanel({
@@ -179,6 +180,271 @@ class RaftAvatar extends StatelessWidget {
   }
 }
 
+/// Mounted Sidebar.tsx product roles; generic preserves existing SDK callers.
+enum RaftNavItemRole { generic, search, activity, saved }
+
+/// Source border/content/padding composition, not a fixed Material row height.
+class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
+  const RaftMountedSidebarNavigationRecipe(
+    super.tokens, {
+    required this.role,
+    required this.viewportWidth,
+    required this.viewportHeight,
+    super.selected,
+    this.pointerPressed = false,
+  }) : assert(role != RaftNavItemRole.generic);
+  final RaftNavItemRole role;
+  final bool pointerPressed;
+  final double viewportWidth, viewportHeight;
+  bool get compact =>
+      viewportHeight <= 600 ||
+      (viewportWidth >= 768 &&
+          (tokens.brutal || role != RaftNavItemRole.saved));
+  bool get active => selected && role != RaftNavItemRole.search;
+  double get sourceBorder => tokens.brutal ? 2 : 1;
+  double get glyphSize => 14;
+  double get gap => 6;
+  double get marginBottom => 4;
+  double get fontSize =>
+      !tokens.brutal && role == RaftNavItemRole.saved ? 13 : 14;
+  double get contentHeight =>
+      !tokens.brutal && role == RaftNavItemRole.saved ? 19.5 : 20;
+  double get verticalInset => compact
+      ? 4
+      : !tokens.brutal && role == RaftNavItemRole.saved
+      ? 6
+      : 8;
+  double get sourceHeight =>
+      contentHeight + verticalInset * 2 + sourceBorder * 2;
+  @override
+  bool get transformsOnInteraction => false;
+  @override
+  EdgeInsets get padding => EdgeInsets.symmetric(
+    horizontal: tokens.brutal || role != RaftNavItemRole.saved ? 8 : 6,
+  );
+  @override
+  BorderRadius get radius => BorderRadius.circular(
+    !tokens.brutal && role == RaftNavItemRole.saved ? 6 : 0,
+  );
+  @override
+  Gradient? get overlayGradient => null;
+  @override
+  double get insetHighlightAlpha => 0;
+  @override
+  Color get foreground => tokens.brutal
+      ? Colors.black
+      : role == RaftNavItemRole.saved && !active
+      ? tokens.muted
+      : tokens.strong;
+  @override
+  Color foregroundFor({bool hovered = false}) =>
+      (hovered || pointerPressed) &&
+          !tokens.brutal &&
+          role == RaftNavItemRole.saved &&
+          !active
+      ? tokens.ink
+      : foreground;
+  @override
+  Color get background => !active
+      ? Colors.transparent
+      : tokens.brutal
+      ? tokens.colors['color-brutal-pink']!
+      : tokens.colors['fill-muted']!;
+  @override
+  Color backgroundFor({bool hovered = false}) {
+    if (active || (!hovered && !pointerPressed)) {
+      return background;
+    }
+    if (tokens.brutal) {
+      return tokens.panel;
+    }
+    if (role != RaftNavItemRole.saved) {
+      return tokens.colors['fill-muted']!;
+    }
+    return tokens.dark
+        ? tokens.colors['ink-6']!
+        : tokens.colors['fill-strong']!.withValues(
+            alpha: tokens.colors['fill-strong']!.a * .8,
+          );
+  }
+
+  @override
+  Color backgroundForInteraction({
+    bool hovered = false,
+    bool pressed = false,
+  }) => backgroundFor(hovered: hovered || pressed);
+  @override
+  BorderSide side({bool hovered = false}) => BorderSide(
+    width: sourceBorder,
+    color:
+        !tokens.brutal && role == RaftNavItemRole.saved ||
+            (!active && !hovered && !pointerPressed)
+        ? Colors.transparent
+        : tokens.brutal
+        ? Colors.black
+        : tokens.colors['line-strong']!,
+  );
+  @override
+  TextStyle get textStyle => RaftTypography.heading(
+    tokens,
+    size: fontSize,
+    line: contentHeight,
+    weight: active && role == RaftNavItemRole.activity
+        ? FontWeight.w700
+        : FontWeight.w500,
+  ).copyWith(color: null);
+  @override
+  List<BoxShadow> shadows({
+    bool hovered = false,
+    bool pressed = false,
+    bool focused = false,
+  }) {
+    if (focused) {
+      return [
+        BoxShadow(
+          color: tokens.brutal ? Colors.black : tokens.colors['line-strong']!,
+          spreadRadius: 2,
+        ),
+      ];
+    }
+    if (!active && !hovered && !pressed) {
+      return const [];
+    }
+    if (!tokens.brutal && role == RaftNavItemRole.saved) {
+      return const [];
+    }
+    if (tokens.brutal && (role != RaftNavItemRole.saved || active)) {
+      return const [
+        BoxShadow(color: RaftPrimitives.rgbaff141111, offset: Offset(2, 2)),
+      ];
+    }
+    return tokens.shadows;
+  }
+
+  TextStyle get savedCount => RaftTypography.mono(
+    tokens,
+    size: 10,
+    line: 15,
+    color: tokens.brutal
+        ? Colors.black.withValues(alpha: .4)
+        : tokens.colors['foreground-placeholder'],
+  ).copyWith(fontWeight: FontWeight.w500);
+}
+
+/// Mounted ChannelRow and DM unread counts are product variants, independent
+/// of the generic SidebarItemChannelIcon slot and management/navigation rows.
+enum RaftConversationNavKind { channel, directMessage }
+
+/// ChannelKindIcon is the mounted product default. The generic component slot
+/// is retained explicitly for SDK compositions that actually mount that slot.
+enum RaftChannelGlyphVariant { mountedProduct, genericComponent }
+
+class RaftConversationNavigationRecipe {
+  const RaftConversationNavigationRecipe(
+    this.tokens, {
+    required this.kind,
+    this.channelGlyphVariant = RaftChannelGlyphVariant.mountedProduct,
+  });
+  final RaftTokens tokens;
+  final RaftConversationNavKind kind;
+  final RaftChannelGlyphVariant channelGlyphVariant;
+
+  // Sidebar.tsx866: fixed18 slot; channelKindIcon.tsx4: default14, Lucide2.
+  // RUI index.mjs3824/3852/3880: separate generic SVG12Br/14El, stroke1.5.
+  double? get glyphSize => kind == RaftConversationNavKind.directMessage
+      ? null
+      : channelGlyphVariant == RaftChannelGlyphVariant.mountedProduct
+      ? 14
+      : tokens.brutal
+      ? 12
+      : 14;
+  double? get glyphSlotSize =>
+      kind == RaftConversationNavKind.channel &&
+          channelGlyphVariant == RaftChannelGlyphVariant.mountedProduct
+      ? 18
+      : null;
+  double get glyphStrokeWidth =>
+      kind == RaftConversationNavKind.channel &&
+          channelGlyphVariant == RaftChannelGlyphVariant.genericComponent
+      ? 1.5
+      : 2;
+
+  // Mounted ChannelRow title inherits Sidebar's heading face. Selection does
+  // not make it bold: only the loud unread marker applies font-bold.
+  TextStyle? titleStyle({required bool loudUnread}) =>
+      kind == RaftConversationNavKind.channel &&
+          channelGlyphVariant == RaftChannelGlyphVariant.mountedProduct
+      ? RaftTypography.heading(
+          tokens,
+          size: 14,
+          line: 20,
+          weight: loudUnread ? FontWeight.w700 : FontWeight.w500,
+        )
+      : null;
+
+  // SidebarItemCount solid/accent merges Sidebar count and Badge recipes.
+  double get countHeight => 16;
+  double get countMinimumWidth => tokens.brutal ? 0 : 16;
+  EdgeInsets get countPadding => EdgeInsets.symmetric(
+    horizontal: tokens.brutal ? 6 : 4,
+    vertical: tokens.brutal ? 2 : 0,
+  );
+  Color get countBackground => tokens.brutal
+      ? tokens.colors['color-brutal-pink']!
+      : tokens.colors['accent-soft']!;
+  Color get countForeground =>
+      tokens.brutal ? Colors.white : tokens.colors['accent-strong']!;
+  BoxDecoration get countDecoration => BoxDecoration(
+    color: countBackground,
+    border: Border.all(
+      color: tokens.brutal ? Colors.black : Colors.transparent,
+    ),
+    borderRadius: BorderRadius.circular(2),
+  );
+  // Elegant inherits the mounted Sidebar Inter face; Brutal font-sans resolves
+  // Hanken. Generic navigation and DM label typography stay unchanged.
+  TextStyle get countTextStyle =>
+      RaftTypography.heading(
+        tokens,
+        size: 10,
+        line: 10,
+        weight: tokens.brutal ? FontWeight.w700 : FontWeight.w400,
+      ).copyWith(
+        color: countForeground,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+}
+
+/// Only the loud positive unread badge. Quiet/muted/draft indicators and DM
+/// avatars are separate product contracts; this widget invents none of them.
+class RaftConversationUnreadCount extends StatelessWidget {
+  const RaftConversationUnreadCount({
+    super.key,
+    required this.count,
+    required this.kind,
+  });
+  final int count;
+  final RaftConversationNavKind kind;
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) {
+      return const SizedBox.shrink();
+    }
+    final recipe = RaftConversationNavigationRecipe(
+      RaftTokens.of(context),
+      kind: kind,
+    );
+    return Container(
+      height: recipe.countHeight,
+      constraints: BoxConstraints(minWidth: recipe.countMinimumWidth),
+      padding: recipe.countPadding,
+      decoration: recipe.countDecoration,
+      alignment: Alignment.center,
+      child: Text(count > 99 ? '99+' : '$count', style: recipe.countTextStyle),
+    );
+  }
+}
+
 class RaftNavItem extends StatelessWidget {
   const RaftNavItem({
     super.key,
@@ -190,7 +456,13 @@ class RaftNavItem extends StatelessWidget {
     this.selected = false,
     this.unread = 0,
     this.trailing,
-  }) : assert(icon != null || glyph != null);
+    this.role = RaftNavItemRole.generic,
+    this.viewportHeight,
+    this.count,
+    this.conversationKind,
+    this.channelGlyphVariant = RaftChannelGlyphVariant.mountedProduct,
+  }) : assert(icon != null || glyph != null),
+       assert(conversationKind == null || role == RaftNavItemRole.generic);
   final String label;
   final IconData? icon;
   final RaftGlyph? glyph;
@@ -199,9 +471,41 @@ class RaftNavItem extends StatelessWidget {
   final bool selected;
   final int unread;
   final Widget? trailing;
+  final RaftNavItemRole role;
+  final double? viewportHeight;
+
+  /// Saved total is metadata, independent of an unread/activity badge.
+  final int? count;
+
+  /// Opt in only for mounted conversation rows; existing roles/defaults stay
+  /// unchanged. DM avatars must be supplied by the product, not inferred here.
+  final RaftConversationNavKind? conversationKind;
+  final RaftChannelGlyphVariant channelGlyphVariant;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (role != RaftNavItemRole.generic) {
+      return _mounted(context, t);
+    }
+    final conversation = conversationKind == null
+        ? null
+        : RaftConversationNavigationRecipe(
+            t,
+            kind: conversationKind!,
+            channelGlyphVariant: channelGlyphVariant,
+          );
+    final leading = glyph != null
+        ? RaftIcon(
+            glyph!,
+            size: glyphSize ?? conversation?.glyphSize ?? (t.brutal ? 12 : 18),
+            strokeWidth: conversation?.glyphStrokeWidth ?? 2,
+            color: t.brutal ? t.strong : t.colors['foreground-icon'],
+          )
+        : RaftSymbol(
+            icon!,
+            size: conversation?.glyphSize ?? (t.brutal ? 12 : 18),
+            color: t.brutal ? t.strong : t.colors['foreground-icon'],
+          );
     return Semantics(
       selected: selected,
       onTap: onTap,
@@ -225,38 +529,40 @@ class RaftNavItem extends StatelessWidget {
             : RaftControlVariant.ghost,
         child: Row(
           children: [
-            if (glyph != null)
-              RaftIcon(
-                glyph!,
-                size: glyphSize ?? (t.brutal ? 12 : 18),
-                color: t.brutal ? t.strong : t.colors['foreground-icon'],
+            if (conversation?.glyphSlotSize case final double slot)
+              SizedBox.square(
+                dimension: slot,
+                child: Center(child: leading),
               )
             else
-              RaftSymbol(
-                icon!,
-                size: t.brutal ? 12 : 18,
-                color: t.brutal ? t.strong : t.colors['foreground-icon'],
-              ),
+              leading,
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: RaftTypography.body(
-                  t,
-                  size: t.brutal ? 14 : 13,
-                  line: 20,
-                  weight: selected || unread > 0
-                      ? FontWeight.w700
-                      : t.brutal
-                      ? FontWeight.w400
-                      : FontWeight.w500,
-                ),
+                style:
+                    conversation?.titleStyle(loudUnread: unread > 0) ??
+                    RaftTypography.body(
+                      t,
+                      size: t.brutal ? 14 : 13,
+                      line: 20,
+                      weight: selected || unread > 0
+                          ? FontWeight.w700
+                          : t.brutal
+                          ? FontWeight.w400
+                          : FontWeight.w500,
+                    ),
               ),
             ),
             if (trailing != null)
               trailing!
+            else if (unread > 0 && conversationKind != null)
+              RaftConversationUnreadCount(
+                count: unread,
+                kind: conversationKind!,
+              )
             else if (unread > 0)
               Container(
                 height: 16,
@@ -285,6 +591,143 @@ class RaftNavItem extends StatelessWidget {
       ),
     );
   }
+
+  Widget _mounted(BuildContext context, RaftTokens t) {
+    return _MountedNavigationPointerSurface(
+      builder: (pointerPressed) {
+        final size = MediaQuery.sizeOf(context);
+        final recipe = RaftMountedSidebarNavigationRecipe(
+          t,
+          role: role,
+          viewportWidth: size.width,
+          viewportHeight: viewportHeight ?? size.height,
+          selected: selected,
+          pointerPressed: pointerPressed,
+        );
+        final saved =
+            role == RaftNavItemRole.saved && count != null && count! > 0;
+        final savedLabel = saved
+            ? Localizations.localeOf(context).languageCode == 'zh'
+                  ? '$count 项'
+                  : '$count'
+            : '';
+        return Padding(
+          padding: EdgeInsets.only(bottom: recipe.marginBottom),
+          child: Semantics(
+            selected: selected,
+            button: true,
+            onTap: onTap,
+            excludeSemantics: true,
+            label: saved
+                ? '$label, $savedLabel'
+                : unread > 0
+                ? raftFormat(context, '{label}, {count} unread', {
+                    'label': label,
+                    'count': unread,
+                  })
+                : label,
+            child: RaftControl(
+              kind: RaftControlKind.sidebar,
+              selected: selected,
+              visualHeight: recipe.sourceHeight,
+              minimumTargetSize:
+                  RaftDensityScope.of(context) == RaftDensity.touch
+                  ? RaftMetrics.touchTarget
+                  : 0,
+              recipe: recipe,
+              onPressed: onTap,
+              child: Row(
+                children: [
+                  if (glyph != null)
+                    RaftIcon(glyph!, size: recipe.glyphSize)
+                  else
+                    RaftSymbol(icon!, size: recipe.glyphSize),
+                  SizedBox(width: recipe.gap),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (trailing != null)
+                    trailing!
+                  else if (saved)
+                    Text(savedLabel, style: recipe.savedCount)
+                  else if (role == RaftNavItemRole.activity && unread > 0)
+                    Container(
+                      height: 16,
+                      constraints: const BoxConstraints(minWidth: 16),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: t.brutal ? 6 : 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: t.brutal
+                            ? t.colors['color-brutal-pink']
+                            : t.colors['accent-soft'],
+                        border: t.brutal
+                            ? Border.all(color: Colors.black)
+                            : null,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        unread > 99 ? '99+' : '$unread',
+                        style:
+                            RaftTypography.heading(
+                              t,
+                              size: 10,
+                              line: 10,
+                              weight: t.brutal
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
+                            ).copyWith(
+                              color: t.brutal
+                                  ? Colors.white
+                                  : t.colors['accent-strong'],
+                            ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// RaftControl owns activation/focus/hover. This projects source :active into
+// border/foreground recipes, whose shared side() API currently receives hover only.
+class _MountedNavigationPointerSurface extends StatefulWidget {
+  const _MountedNavigationPointerSurface({required this.builder});
+  final Widget Function(bool pressed) builder;
+  @override
+  State<_MountedNavigationPointerSurface> createState() =>
+      _MountedNavigationPointerSurfaceState();
+}
+
+class _MountedNavigationPointerSurfaceState
+    extends State<_MountedNavigationPointerSurface> {
+  int? pointer;
+  void release(int id) {
+    if (mounted && id == pointer) {
+      setState(() => pointer = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    onPointerDown: (event) {
+      if (pointer == null && (event.buttons & 1) == 1) {
+        setState(() => pointer = event.pointer);
+      }
+    },
+    onPointerUp: (event) => release(event.pointer),
+    onPointerCancel: (event) => release(event.pointer),
+    child: widget.builder(pointer != null),
+  );
 }
 
 class RaftMessageTile extends StatelessWidget {
@@ -299,6 +742,7 @@ class RaftMessageTile extends StatelessWidget {
     this.threadLabel,
     this.threadPreview,
     this.badge,
+    this.modelLabel,
     this.attachments = const [],
     this.onAttachment,
     this.attachmentBuilder,
@@ -313,6 +757,9 @@ class RaftMessageTile extends StatelessWidget {
   });
   final String author, content, timestamp;
   final String? threadLabel, badge;
+
+  /// Permitted adapter-projected label; this component performs no model lookup.
+  final String? modelLabel;
   final bool collapseLongMessages;
   final double bodyFontSize;
 
@@ -356,6 +803,19 @@ class RaftMessageTile extends StatelessWidget {
                           fontSize: 14,
                         ),
                       ),
+                      if (modelLabel != null && modelLabel!.trim().isNotEmpty)
+                        Tooltip(
+                          message: modelLabel!,
+                          child: Text(
+                            modelLabel!,
+                            style: RaftTypography.body(
+                              t,
+                              size: 11,
+                              line: 16.5,
+                              color: t.muted,
+                            ),
+                          ),
+                        ),
                       Text(
                         timestamp,
                         style: TextStyle(color: t.muted, fontSize: 11),

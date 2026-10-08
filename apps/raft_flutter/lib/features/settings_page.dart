@@ -26,17 +26,37 @@ class RaftSettingsPage extends StatefulWidget {
     required this.destinations,
     this.initialTab = 'account',
     this.onBack,
+    this.mobileRoot = false,
+    this.mobileResetRevision = 0,
+    this.onMobileDetailChanged,
   });
   final List<RaftSettingsDestination> destinations;
   final String initialTab;
   final VoidCallback? onBack;
+  final bool mobileRoot;
+  final int mobileResetRevision;
+  final ValueChanged<bool>? onMobileDetailChanged;
   @override
   State<RaftSettingsPage> createState() => _RaftSettingsPageState();
 }
 
 class _RaftSettingsPageState extends State<RaftSettingsPage> {
   late String selected = widget.initialTab;
-  bool mobileNavigation = false;
+  late bool mobileNavigation = widget.mobileRoot;
+  @override
+  void didUpdateWidget(covariant RaftSettingsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.mobileResetRevision != widget.mobileResetRevision) {
+      mobileNavigation = true;
+    }
+  }
+
+  void showNavigation() {
+    if (!mounted) return;
+    setState(() => mobileNavigation = true);
+    widget.onMobileDetailChanged?.call(false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), recipe = RaftSettingsLayoutRecipe(t);
@@ -51,23 +71,27 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SizedBox(
-            height: RaftLayoutMetrics.shellHeaderHeight(
-              t,
-              MediaQuery.sizeOf(context).height,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  raftText(context, 'Settings'),
-                  style: RaftTypography.heading(t),
+          if (mobile)
+            const RaftMobileRootHeader(title: 'Settings')
+          else ...[
+            SizedBox(
+              height: RaftLayoutMetrics.shellHeaderHeight(
+                t,
+                MediaQuery.sizeOf(context).height,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    raftText(context, 'Settings'),
+                    style: RaftTypography.heading(t),
+                  ),
                 ),
               ),
             ),
-          ),
-          Divider(height: 1, color: recipe.navigationLine),
+            Divider(height: 1, color: recipe.navigationLine),
+          ],
           Expanded(
             child: ListView(
               primary: false,
@@ -100,10 +124,16 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
                               glyphSize:
                                   RaftSettingsLayoutRecipe.navigationGlyphSize,
                               selected: active.id == destination.id,
-                              onTap: () => setState(() {
-                                selected = destination.id;
-                                mobileNavigation = false;
-                              }),
+                              onTap: () {
+                                if (!mounted) return;
+                                setState(() {
+                                  selected = destination.id;
+                                  mobileNavigation = false;
+                                });
+                                if (mobile) {
+                                  widget.onMobileDetailChanged?.call(true);
+                                }
+                              },
                             ),
                           ),
                       ],
@@ -129,10 +159,11 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
             children: [
               if (mobile) ...[
                 RaftIconButton(
+                  key: const Key('mobile-settings-back'),
                   glyph: RaftGlyph.arrowLeft,
                   tooltip: 'Settings navigation',
                   visualSize: 28,
-                  onPressed: () => setState(() => mobileNavigation = true),
+                  onPressed: showNavigation,
                 ),
                 const SizedBox(width: 12),
               ],

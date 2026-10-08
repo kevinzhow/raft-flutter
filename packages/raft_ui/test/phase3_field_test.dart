@@ -49,10 +49,13 @@ void main() {
         }
       });
       expect(data, isNotNull);
-      expect(
-        data!.getUint8(150 * 4),
-        lessThan(data.getUint8((19 * 300 + 150) * 4)),
-      );
+      // A transparent 1px CSS border retains the fill at the border edge;
+      // the black inset ring begins inside it, at the padding edge.
+      final interior = data!.getUint8((19 * 300 + 150) * 4);
+      expect(data.getUint8(150 * 4), interior);
+      expect(data.getUint8((300 + 150) * 4), lessThan(interior));
+      expect(data.getUint8((19 * 300) * 4), interior);
+      expect(data.getUint8((19 * 300 + 1) * 4), lessThan(interior));
       expect(boundary.size, const Size(300, 38));
       await tester.pumpWidget(const SizedBox.shrink());
     },

@@ -7,7 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/main.dart' as app;
 
 import 'sidebar_flow.dart';
@@ -19,9 +19,17 @@ void main() {
   testWidgets('actual native reversible sidebar preferences and drag', (
     tester,
   ) async {
-    final fixture = jsonDecode(
-      File(const String.fromEnvironment('RAFT_TEST_CONFIG')).readAsStringSync(),
-    ) as Map;
+    final fixtureFile = File(const String.fromEnvironment('RAFT_TEST_CONFIG'));
+    await tester.runAsync(() async {
+      final deadline = DateTime.now().add(const Duration(seconds: 45));
+      while (!await fixtureFile.exists()) {
+        if (DateTime.now().isAfter(deadline)) {
+          throw TestFailure('Private test fixture was not installed.');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+    });
+    final fixture = jsonDecode(fixtureFile.readAsStringSync()) as Map;
     final report = Directory(const String.fromEnvironment('RAFT_TEST_REPORT'));
     await report.create(recursive: true);
     Future<void> until(bool Function() ready) async {
@@ -41,9 +49,9 @@ void main() {
       await tester.enterText(find.byKey(Key('login-$field')), fixture[field]);
     }
     await tester.tap(find.byKey(const Key('login-submit')));
-    await until(() => find.byType(RaftChatView).evaluate().isNotEmpty);
+    await until(() => find.byType(WorkspaceView).evaluate().isNotEmpty);
     final w = tester
-        .widget<RaftChatView>(find.byType(RaftChatView).first)
+        .widget<WorkspaceView>(find.byType(WorkspaceView).first)
         .controller;
     await until(() => !w.loading && w.server != null);
     try {
@@ -70,7 +78,10 @@ void main() {
       );
       await File('${report.path}/sidebar-result.json').writeAsString(
         jsonEncode({
-          'platform': 'linux',
+          'platform': const String.fromEnvironment(
+            'RAFT_TEST_PLATFORM',
+            defaultValue: 'linux',
+          ),
           'completed': true,
           'flow': 'actual-login-preferences-pointer-drag-restored',
           'sourceHash': const String.fromEnvironment('RAFT_TEST_SOURCE_HASH'),

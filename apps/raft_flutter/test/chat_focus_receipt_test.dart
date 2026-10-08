@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -82,6 +83,103 @@ void main() {
         findsOneWidget,
       );
       expect(state.scrolledHighlight, 'new-79');
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'partial row under page header is rejected and actual render geometry repairs stale observer focus',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final (w, a) = (await tester.runAsync(() => fixture('member')))!;
+      addTearDown(w.dispose);
+      w.ledger.switchServer('s1');
+      final page = [
+        for (var i = 0; i < 80; i++)
+          {
+            'id': 'focus-$i',
+            'channelId': 'c1',
+            'seq': '${i + 1}',
+            'senderId': 'alice',
+            'content': 'Public focus fixture $i',
+          },
+      ];
+      w.ledger.ingest(page, expectedGeneration: w.ledger.generation);
+      w.visibleIds['c1'] = page.map((row) => row['id'] as String).toSet();
+      a.routes['GET /messages/context/focus-0'] = (_) => {'messages': page};
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.elegant),
+          home: Scaffold(
+            appBar: AppBar(title: const Text('Source channel header')),
+            body: RaftChatView(controller: w),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final dynamic state = tester.state(find.byType(RaftChatView));
+      await tester.runAsync(() => w.jumpToMessage('c1', 'focus-0'));
+      await tester.pump();
+      bool? partialReceipt;
+      state.adapter.attachScrollMethods(
+        scrollToMessageId:
+            (
+              String id, {
+              Duration duration = Duration.zero,
+              Curve curve = Curves.linear,
+              double alignment = 0,
+              double offset = 0,
+            }) async {
+              final row = find.byKey(const ValueKey('message-focus-0'));
+              if (row.evaluate().isEmpty) {
+                return;
+              }
+              final render = tester.renderObject<RenderBox>(row);
+              final view = RenderAbstractViewport.of(render);
+              final position = state.viewport.position as ScrollPosition;
+              final staleOffset =
+                  view.getOffsetToReveal(render, 0).offset +
+                  render.size.height / 2;
+              state.viewport.jumpTo(
+                staleOffset.clamp(
+                  position.minScrollExtent,
+                  position.maxScrollExtent,
+                ),
+              );
+              await WidgetsBinding.instance.endOfFrame;
+              partialReceipt = state.focusReceiptVisible(id) as bool;
+            },
+        scrollToIndex: (
+          int index, {
+          Duration duration = Duration.zero,
+          Curve curve = Curves.linear,
+          double alignment = 0,
+          double offset = 0,
+        }) async {},
+      );
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        if (state.scrolledHighlight == 'focus-0') {
+          break;
+        }
+      }
+      expect(partialReceipt, false);
+      expect(state.scrolledHighlight, 'focus-0');
+      expect(state.focusReceiptVisible('focus-0'), true);
+      final actions = find.descendant(
+        of: find.byKey(const ValueKey('message-focus-0')),
+        matching: find.byTooltip('Message actions'),
+      );
+      expect(actions.hitTestable(), findsOneWidget);
+      expect(
+        tester.getRect(actions).top,
+        greaterThanOrEqualTo(tester.getRect(find.byType(AppBar)).bottom),
+      );
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
       expect(tester.takeException(), isNull);

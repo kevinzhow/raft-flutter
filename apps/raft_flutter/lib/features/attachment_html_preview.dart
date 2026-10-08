@@ -165,18 +165,55 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   Widget build(BuildContext context) => RaftAttachmentLightbox(
     title: '${widget.metadata['filename'] ?? 'HTML'}',
     onClose: widget.onClose,
-    actions: [RaftIconButton(glyph: RaftGlyph.download, tooltip: 'Download', visualSize: 28,
-      minimumTargetSize: 48, variant: RaftControlVariant.ghost,
-      onPressed: current ? widget.onDownload : null)],
-    child: Column(children: [
-      if (error != null) Semantics(liveRegion: true, child: Text(raftText(context, error!), style: TextStyle(color: Theme.of(context).colorScheme.error))),
-      Expanded(child: loading ? const Center(child: RaftSpinner())
-          : html == null ? Center(child: Wrap(spacing: 8, runSpacing: 8, children: [
-              RaftButton(label: 'Retry preview', onPressed: current ? load : null),
-              RaftButton(label: 'Open interactive preview in browser', busy: opening,
-                onPressed: current && !opening ? interactive : null),
-            ]))
-          : RaftHtmlPreview(html: html!, onLink: link, onInteractive: interactive, busy: opening)),
-    ]),
+    actions: [
+      RaftIconButton(
+        glyph: RaftGlyph.download,
+        tooltip: 'Download',
+        visualSize: 28,
+        minimumTargetSize: 48,
+        variant: RaftControlVariant.ghost,
+        onPressed: current ? widget.onDownload : null,
+      ),
+    ],
+    child: Column(
+      children: [
+        if (error != null)
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              raftText(context, error!),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
+        Expanded(
+          child: loading
+              ? const Center(child: RaftSpinner())
+              : html == null
+              ? Center(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      RaftButton(
+                        label: 'Retry preview',
+                        onPressed: current ? load : null,
+                      ),
+                      RaftButton(
+                        label: 'Open interactive preview in browser',
+                        busy: opening,
+                        onPressed: current && !opening ? interactive : null,
+                      ),
+                    ],
+                  ),
+                )
+              : RaftHtmlPreview(
+                  html: html!,
+                  onLink: link,
+                  onInteractive: interactive,
+                  busy: opening,
+                ),
+        ),
+      ],
+    ),
   );
 }

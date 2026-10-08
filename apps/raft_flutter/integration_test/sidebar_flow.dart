@@ -44,7 +44,7 @@ Future<void> verifySidebarFlow(
   final edited = '$marker edited';
   final list = find.byKey(const Key('sidebar-preferences'));
   final mobile =
-      tester.view.physicalSize.width / tester.view.devicePixelRatio < 900;
+      tester.view.physicalSize.width / tester.view.devicePixelRatio < 768;
   Future<Map<String, dynamic>> prefs() async =>
       Map<String, dynamic>.from(await w.query(path));
   Future<void> openPreferences() async {
@@ -213,11 +213,7 @@ Future<void> verifySidebarFlow(
     await tester.pump(const Duration(milliseconds: 600));
     current = await prefs();
     expect((current['hiddenDmIds'] as List? ?? []).contains(dm.id), !hidden);
-    await section('chat');
-    if (mobile) {
-      await tester.tap(find.byTooltip('Open navigation menu'));
-      await tester.pumpAndSettle();
-    }
+    await section(mobile ? 'home' : 'chat');
     final sidebar = find.byKey(const Key('workspace-sidebar'));
     final sidebarDm = find.byKey(ValueKey('sidebar-channel-${dm.id}'));
     if (hidden) {
@@ -226,7 +222,17 @@ Future<void> verifySidebarFlow(
       await _reveal(tester, sidebarDm, sidebar);
       expect(sidebarDm, findsOneWidget);
     }
-    await _reveal(tester, find.text('🧭 $edited'), sidebar);
+    final customHeader = find.byKey(ValueKey('sidebar-section-$id'));
+    await _reveal(tester, customHeader, sidebar);
+    final header = tester.widget<RaftSidebarSectionHeader>(customHeader);
+    expect(header.label, '🧭 $edited');
+    expect(
+      find.descendant(
+        of: customHeader,
+        matching: find.text('🧭 $edited'.toUpperCase()),
+      ),
+      findsOneWidget,
+    );
     if (!hidden) expect(sidebarDm, findsNothing);
     await capture('native-sidebar-custom-section');
   } finally {
@@ -260,7 +266,10 @@ Future<void> verifySidebarFlow(
     if (mobile &&
         find.byKey(const Key('workspace-sidebar')).evaluate().isNotEmpty) {
       await tester.tapAt(
-        Offset(tester.view.physicalSize.width / tester.view.devicePixelRatio - 8, 80),
+        Offset(
+          tester.view.physicalSize.width / tester.view.devicePixelRatio - 8,
+          80,
+        ),
       );
       await tester.pumpAndSettle();
     }

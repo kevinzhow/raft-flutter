@@ -217,8 +217,11 @@ void main() {
     (tester) async {
       final (w, a) = (await tester.runAsync(() => _fixture('owner')))!;
       addTearDown(w.dispose);
-      await tester.pumpWidget(host(AccountSettings(controller: w)));
+      await tester.pumpWidget(
+        host(SingleChildScrollView(child: AccountSettings(controller: w))),
+      );
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Edit profile'));
       await tester.tap(find.text('Edit profile'));
       await tester.pumpAndSettle();
       expect(find.byType(RaftFormDialog), findsOneWidget);

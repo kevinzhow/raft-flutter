@@ -4,10 +4,12 @@ import 'package:raft_ui/previews.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/personal_presentation.dart';
+import '../data/search_memory.dart';
+import 'appearance_section.dart';
 import 'page_alignment_fixtures.dart';
 import 'resource_view.dart';
 import 'account_settings.dart';
-import 'settings_page.dart';
 
 @RaftPreviews('Page Tasks reference phone', size: Size(390, 844))
 @RaftPreviews('Page Tasks reference desktop', size: Size(957, 689))
@@ -139,18 +141,14 @@ class _AccountPagePreview extends StatefulWidget {
 }
 
 class _AccountPagePreviewState extends State<_AccountPagePreview> {
-  late final client =
-      RaftClient(
-          origin: 'https://public-visual-fixture.invalid',
-          sessionStore: MemorySessionStore(),
-        )
-        ..user = RaftRecord({
-          'id': 'visual-user',
-          'name': 'artin',
-          'displayName': 'artin',
-          'email': 'artin@slock.ai',
-          'emailVerified': true,
-        });
+  late final client = _AccountProfileFixtureClient()
+    ..user = RaftRecord({
+      'id': 'visual-user',
+      'name': 'artin',
+      'displayName': 'artin',
+      'email': 'artin@slock.ai',
+      'emailVerified': true,
+    });
   late final workspace = _FixtureWorkspace(client);
   @override
   void dispose() {
@@ -175,21 +173,81 @@ class _AppearancePagePreview extends StatefulWidget {
 
 class _AppearancePagePreviewState extends State<_AppearancePagePreview> {
   RaftAppearance? value;
+  final presentation = PersonalPresentationStore(
+    storage: _VisualPresentationStorage(),
+  );
+  @override
+  void initState() {
+    super.initState();
+    presentation.bind(
+      'https://public-visual-fixture.invalid',
+      'visual-user',
+      profileFont: 'md',
+    );
+  }
+
+  @override
+  void dispose() {
+    presentation.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return SingleChildScrollView(
       primary: false,
       padding: const EdgeInsets.all(16),
-      child: RaftAppearancePicker(
+      child: RaftAppearanceSection(
         appearance:
             value ??
             RaftAppearance(
               mode: t.dark ? ThemeMode.dark : ThemeMode.light,
               light: t.family,
             ),
-        onChanged: (next) => setState(() => value = next),
+        onAppearance: (next) => setState(() => value = next),
+        presentation: presentation,
       ),
     );
+  }
+}
+
+class _AccountProfileFixtureClient extends RaftClient {
+  _AccountProfileFixtureClient()
+    : super(
+        origin: 'https://public-visual-fixture.invalid',
+        sessionStore: MemorySessionStore(),
+      );
+  @override
+  Future<dynamic> request(
+    String method,
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? query,
+    bool authorized = true,
+    bool retried = false,
+    UploadCancellation? cancellation,
+    void Function(int, int)? onSendProgress,
+    Map<String, dynamic>? headers,
+    bool acceptServerExit = false,
+    Duration? receiveTimeout,
+  }) async {
+    if (method == 'GET' && path == '/auth/identities') {
+      return {'identities': [], 'passwordConfigured': true};
+    }
+    if (method == 'GET' && path == '/auth/providers') return {'providers': []};
+    throw const RaftApiException(
+      'This public account fixture does not execute mutations.',
+    );
+  }
+}
+
+class _VisualPresentationStorage implements SearchMemoryStorage {
+  final values = <String, String>{};
+  @override
+  Future<String?> read(String key) async => values[key];
+  @override
+  Future<void> write(String key, String value) async {
+    values[key] = value;
   }
 }

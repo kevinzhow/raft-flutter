@@ -30,3 +30,14 @@ export 'src/primitive_tokens.dart';
 
 export 'src/attachment_gallery.dart';
 export 'src/attachment_lightbox.dart';
+
+export 'src/switch.dart';
+
+export 'src/mobile_navigation.dart';
+export 'src/mermaid_toolbar_recipe.dart';
+
+export 'src/sidebar_section.dart';
+
+export 'src/notification_center.dart';
+
+export 'src/initial_end_anchor.dart';

@@ -1,3 +1,5 @@
+import 'mermaid_toolbar_recipe.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -42,6 +44,7 @@ import 'package:re_highlight/languages/xml.dart';
 import 'package:re_highlight/languages/yaml.dart';
 
 import 'icons.dart';
+import 'message_list_marker.dart';
 import 'message_content_tokens.dart';
 import 'attachment_lightbox.dart';
 import 'diagram_theme.dart';
@@ -200,20 +203,36 @@ class RaftMessageBody extends StatelessWidget {
         SelectionArea(
           child: MarkdownBody(
             builders: {'a': _MessageLinkBuilder(onLink)},
-            paddingBuilders: MessageContentRecipe(t, fontSize: fontSize, document: documentMode, foreground: foregroundColor).headingPadding(markdown.toString()),
+            paddingBuilders: MessageContentRecipe(
+              t,
+              fontSize: fontSize,
+              document: documentMode,
+              foreground: foregroundColor,
+            ).headingPadding(markdown.toString()),
             data: markdown.toString(),
             softLineBreak: true,
             onTapLink: (_, href, _) {
               if (href != null) onLink?.call(href);
             },
-            bulletBuilder: (parameters) => Text(
-              parameters.style == BulletStyle.orderedList
-                  ? '${parameters.index + 1}.'
-                  : '•',
-              style: MessageContentRecipe(t, fontSize: fontSize, foreground: foregroundColor).body,
+            bulletBuilder: (parameters) => RaftMarkdownListMarker(
+              orderedIndex: parameters.style == BulletStyle.orderedList
+                  ? parameters.index
+                  : null,
+              indent: documentMode
+                  ? MessageContentPrimitive.documentListIndent
+                  : MessageContentPrimitive.compactListIndent,
+              style: MessageContentRecipe(
+                t,
+                fontSize: fontSize,
+                document: documentMode,
+                foreground: foregroundColor,
+              ).body,
             ),
             styleSheet: MessageContentRecipe(
-              t, fontSize: fontSize, document: documentMode, foreground: foregroundColor,
+              t,
+              fontSize: fontSize,
+              document: documentMode,
+              foreground: foregroundColor,
             ).stylesheet(context),
           ),
         ),
@@ -456,12 +475,22 @@ class _RaftMermaidBlockState extends State<RaftMermaidBlock> {
     final route = DialogRoute<void>(
       context: context,
       builder: (dialogContext) => RaftAttachmentLightbox(
-        title: raftText(dialogContext, 'Diagram'), closeLabel: 'Close',
+        title: raftText(dialogContext, 'Diagram'),
+        closeLabel: 'Close',
         onClose: closeExpanded,
-        child: ClipRect(child: Center(child: InteractiveViewer(
-          minScale: .05, maxScale: 8, constrained: false,
-          child: Padding(padding: const EdgeInsets.all(24), child: diagram()),
-        ))),
+        child: ClipRect(
+          child: Center(
+            child: InteractiveViewer(
+              minScale: .05,
+              maxScale: 8,
+              constrained: false,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: diagram(),
+              ),
+            ),
+          ),
+        ),
       ),
     );
     expandedRoute = route;
@@ -602,17 +631,15 @@ class _MermaidToolbar extends StatelessWidget {
           return width;
         }
 
-        // Fit actual labels, font scale and controls before choosing the desktop
-        // recipe. A narrow message bubble can live in a wide window.
-        const iconCount = 5;
-        final desktopWidth =
-            16 +
-            tabWidth('Diagram') +
-            tabWidth('Code') +
-            iconCount * (RaftMetrics.buttonSm + 4);
-        final desktop =
-            MediaQuery.sizeOf(context).width >= 640 &&
-            constraints.maxWidth >= desktopWidth;
+        final toolbarRecipe = RaftMermaidToolbarRecipe(
+          viewportWidth: MediaQuery.sizeOf(context).width,
+          availableWidth: constraints.maxWidth,
+          density: RaftDensityScope.of(context),
+          showSource: showSource,
+          diagramTabWidth: tabWidth('Diagram'),
+          sourceTabWidth: tabWidth('Code'),
+        );
+        final desktop = toolbarRecipe.desktop;
         final line = t.brutal ? Colors.black : t.colors['line'] ?? t.line;
         Widget control(
           RaftGlyph icon,
@@ -620,19 +647,19 @@ class _MermaidToolbar extends StatelessWidget {
           VoidCallback? action, {
           String? label,
           bool selected = false,
+          bool ownTooltip = true,
         }) {
-          if (label == null)
+          if (label == null) {
             return RaftIconButton(
               glyph: icon,
-              tooltip: tooltip,
+              tooltip: ownTooltip ? tooltip : null,
               onPressed: action,
               visualSize: RaftMetrics.buttonSm,
-              minimumTargetSize: desktop
-                  ? RaftMetrics.buttonSm
-                  : RaftMetrics.touchTarget,
+              minimumTargetSize: toolbarRecipe.targetSize(RaftMetrics.buttonSm),
               glyphSize: RaftMetrics.iconSm,
               variant: RaftControlVariant.outline,
             );
+          }
           return RaftControl(
             key: ValueKey((icon, desktop)),
             kind: RaftControlKind.tab,
@@ -640,12 +667,12 @@ class _MermaidToolbar extends StatelessWidget {
             shadow: !t.brutal,
             onPressed: action,
             tooltip: raftText(context, tooltip),
-            visualHeight: desktop ? RaftMetrics.buttonXs : RaftMetrics.buttonSm,
+            visualHeight: toolbarRecipe.tabVisualHeight,
             visualWidth: desktop ? null : RaftMetrics.buttonSm,
             padding: desktop ? null : EdgeInsets.zero,
-            minimumTargetSize: desktop
-                ? RaftMetrics.buttonXs
-                : RaftMetrics.touchTarget,
+            minimumTargetSize: toolbarRecipe.targetSize(
+              toolbarRecipe.tabVisualHeight,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -659,6 +686,80 @@ class _MermaidToolbar extends StatelessWidget {
           );
         }
 
+        final wrap = toolbarRecipe.wrap;
+        final controls = <Widget>[
+          control(
+            RaftGlyph.image,
+            'Show diagram',
+            () => onSource(false),
+            label: 'Diagram',
+            selected: !showSource,
+          ),
+          SizedBox(width: toolbarRecipe.gap),
+          control(
+            RaftGlyph.code2,
+            'Show source',
+            () => onSource(true),
+            label: 'Code',
+            selected: showSource,
+          ),
+          if (!wrap) const Spacer(),
+          if (!showSource && desktop) ...[
+            control(
+              RaftGlyph.zoomOut,
+              'Zoom Mermaid diagram out',
+              valid ? () => onZoom(1 / 1.2) : null,
+            ),
+            SizedBox(width: toolbarRecipe.gap),
+            control(
+              RaftGlyph.zoomIn,
+              'Zoom Mermaid diagram in',
+              valid ? () => onZoom(1.2) : null,
+            ),
+            SizedBox(width: toolbarRecipe.gap),
+          ],
+          control(
+            copied ? RaftGlyph.check : RaftGlyph.copy,
+            copied ? 'Copied' : 'Copy code',
+            onCopy,
+          ),
+          SizedBox(width: toolbarRecipe.gap),
+          PopupMenuButton<String>(
+            tooltip: raftText(context, 'Download Mermaid diagram'),
+            enabled: onExport != null,
+            onSelected: onExport,
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'mmd', child: Text('Download source')),
+              PopupMenuItem(
+                value: 'png',
+                enabled: valid,
+                child: const Text('Download PNG'),
+              ),
+              PopupMenuItem(
+                value: 'svg',
+                enabled: valid,
+                child: const Text('Download SVG'),
+              ),
+            ],
+            padding: EdgeInsets.zero,
+            child: IgnorePointer(
+              child: control(
+                RaftGlyph.download,
+                'Download Mermaid diagram',
+                onExport == null ? null : () {},
+                ownTooltip: false,
+              ),
+            ),
+          ),
+          if (!showSource) ...[
+            SizedBox(width: toolbarRecipe.gap),
+            control(
+              RaftGlyph.maximize2,
+              'Expand diagram',
+              valid ? onExpand : null,
+            ),
+          ],
+        ];
         return Container(
           key: const ValueKey('mermaid-toolbar'),
           decoration: BoxDecoration(
@@ -666,84 +767,15 @@ class _MermaidToolbar extends StatelessWidget {
               bottom: BorderSide(color: line, width: t.border),
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          child: Row(
-            children: [
-              control(
-                RaftGlyph.image,
-                'Show diagram',
-                () => onSource(false),
-                label: 'Diagram',
-                selected: !showSource,
-              ),
-              const SizedBox(width: 4),
-              control(
-                RaftGlyph.code2,
-                'Show source',
-                () => onSource(true),
-                label: 'Code',
-                selected: showSource,
-              ),
-              const Spacer(),
-              if (!showSource && desktop) ...[
-                control(
-                  RaftGlyph.zoomOut,
-                  'Zoom Mermaid diagram out',
-                  valid ? () => onZoom(1 / 1.2) : null,
-                ),
-                const SizedBox(width: 4),
-                control(
-                  RaftGlyph.zoomIn,
-                  'Zoom Mermaid diagram in',
-                  valid ? () => onZoom(1.2) : null,
-                ),
-                const SizedBox(width: 4),
-              ],
-              control(
-                copied ? RaftGlyph.check : RaftGlyph.copy,
-                copied ? 'Copied' : 'Copy code',
-                onCopy,
-              ),
-              const SizedBox(width: 4),
-              PopupMenuButton<String>(
-                tooltip: raftText(context, 'Download Mermaid diagram'),
-                enabled: onExport != null,
-                onSelected: onExport,
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'mmd',
-                    child: Text('Download source'),
-                  ),
-                  PopupMenuItem(
-                    value: 'png',
-                    enabled: valid,
-                    child: const Text('Download PNG'),
-                  ),
-                  PopupMenuItem(
-                    value: 'svg',
-                    enabled: valid,
-                    child: const Text('Download SVG'),
-                  ),
-                ],
-                padding: EdgeInsets.zero,
-                child: IgnorePointer(
-                  child: control(
-                    RaftGlyph.download,
-                    'Download Mermaid diagram',
-                    onExport == null ? null : () {},
-                  ),
-                ),
-              ),
-              if (!showSource) ...[
-                const SizedBox(width: 4),
-                control(
-                  RaftGlyph.maximize2,
-                  'Expand diagram',
-                  valid ? onExpand : null,
-                ),
-              ],
-            ],
-          ),
+          padding: RaftMermaidToolbarRecipe.inset,
+          child: wrap
+              ? Wrap(
+                  spacing: 0,
+                  runSpacing: toolbarRecipe.gap,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: controls,
+                )
+              : Row(children: controls),
         );
       },
     );
@@ -932,9 +964,13 @@ class _ScopedCodeRenderer implements HighlightRenderer {
   TextSpan get span => TextSpan(style: base, children: roots);
   @override
   void addText(String text) {
-    final span = TextSpan(text: text, style: stack.isEmpty ? base : stack.last.style);
+    final span = TextSpan(
+      text: text,
+      style: stack.isEmpty ? base : stack.last.style,
+    );
     (stack.isEmpty ? roots : stack.last.children).add(span);
   }
+
   @override
   void openNode(DataNode node) {
     var scope = node.scope;
@@ -944,12 +980,18 @@ class _ScopedCodeRenderer implements HighlightRenderer {
       if (style != null || !scope.contains('.')) break;
       scope = scope.substring(0, scope.lastIndexOf('.'));
     }
-    stack.add((style: (stack.isEmpty ? base : stack.last.style).merge(style), children: <InlineSpan>[]));
+    stack.add((
+      style: (stack.isEmpty ? base : stack.last.style).merge(style),
+      children: <InlineSpan>[],
+    ));
   }
+
   @override
   void closeNode(DataNode node) {
     final completed = stack.removeLast();
-    (stack.isEmpty ? roots : stack.last.children).add(TextSpan(style: completed.style, children: completed.children));
+    (stack.isEmpty ? roots : stack.last.children).add(
+      TextSpan(style: completed.style, children: completed.children),
+    );
   }
 }
 
@@ -1079,7 +1121,8 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                           tooltip: copied ? 'Copied' : 'Copy code',
                           onPressed: widget.code.isEmpty ? null : copy,
                           visualSize: RaftMetrics.buttonXs,
-                          minimumTargetSize: MediaQuery.sizeOf(context).width < 768
+                          minimumTargetSize:
+                              MediaQuery.sizeOf(context).width < 768
                               ? RaftMetrics.touchTarget
                               : RaftMetrics.buttonXs,
                           glyphSize: RaftMetrics.iconSm,
@@ -1106,7 +1149,15 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
 /// tokenizer's semantic scopes. Scope boundaries are independently compared.
 Map<String, TextStyle> raftCodeTokenTheme({required bool dark}) {
   if (!dark)
-    return {for (final entry in githubTheme.entries) entry.key.split('.').map((scope) => scope.replaceFirst(RegExp(r'_+$'), '')).join('.'): entry.value, 'root': const TextStyle(color: Color(0xff24292e))};
+    return {
+      for (final entry in githubTheme.entries)
+        entry.key
+                .split('.')
+                .map((scope) => scope.replaceFirst(RegExp(r'_+$'), ''))
+                .join('.'):
+            entry.value,
+      'root': const TextStyle(color: Color(0xff24292e)),
+    };
   const colors = <int, int>{
     0xffc9d1d9: 0xfff0f3f6,
     0xffff7b72: 0xffff9492,
@@ -1119,7 +1170,10 @@ Map<String, TextStyle> raftCodeTokenTheme({required bool dark}) {
   };
   return {
     for (final entry in githubDarkTheme.entries)
-      entry.key.split('.').map((scope) => scope.replaceFirst(RegExp(r'_+$'), '')).join('.'): entry.key == 'root'
+      entry.key
+          .split('.')
+          .map((scope) => scope.replaceFirst(RegExp(r'_+$'), ''))
+          .join('.'): entry.key == 'root'
           ? const TextStyle(color: Color(0xfff0f3f6))
           : entry.value.copyWith(
               color: Color(

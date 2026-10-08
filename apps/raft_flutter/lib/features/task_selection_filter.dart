@@ -191,6 +191,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
             glyph:
                 widget.glyph ??
                 (widget.field == 'Channel' ? RaftGlyph.hash : RaftGlyph.user),
+            trailingGlyph: RaftGlyph.chevronDown,
             label:
                 widget.label ??
                 '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',

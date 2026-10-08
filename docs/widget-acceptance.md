@@ -23,28 +23,48 @@ Preview 不依赖服务端或原生插件，避免 dart:io/ffi 的传递依赖�
 
 | 范围 | SDK Preview 与交互 | 定向验证 | 原生/未覆盖 |
 | --- | --- | --- | --- |
-| RaftAttachmentCard | attachment_previews.dart 的 attachmentPreview，经 RaftPreviews 生成 Brutal light、Elegant light、Elegant dark；打开/下载/分享/错误重试回调与无操作按钮的 exportMode | 三主题打开/下载、48px 目标、上传时可编辑、exportMode callback；App 撤权/宿主消失/迟到 bytes/关闭缓存清理 | GTK/X11 与 Android DocumentsUI 真实选择/保存/取消；Linux 主应用图片检查点已通过。Android当前6ab完整主运行通过；系统文件查看器打开断言未证明 |
+| RaftAttachmentCard | attachment_previews.dart 的 attachmentPreview，经 RaftPreviews 生成 Brutal light、Elegant light、Elegant dark；打开/下载/分享/错误重试回调与无操作按钮的 exportMode | 三主题打开/下载、48px 目标、上传时可编辑、exportMode callback；App 撤权/宿主消失/迟到 bytes/关闭缓存清理 | GTK/X11 与 Android DocumentsUI 真实选择/保存/取消；Linux 主应用图片检查点已通过。历史 Android 6ab 完整主运行通过；系统文件查看器打开断言未证明 |
 | PNG/文件分享与接收 | 纯 PNG review/消息选择组件由独立组件验收覆盖；平台 FileProvider/chooser 没有浏览器 SDK Preview | 私有 lease、fresh scope、迟到读取、草稿追加/取消、grant/path/数量边界 | Android 独立系统 chooser/receiver/ContentResolver 实际 bytes 与 URL 接收通过；Linux 真实保存。主应用新版本分享/接收完整链路待验收 |
-| 通知/内容 URI | 产品设置复用现有 RaftPanel/表单组件；原生通知 daemon、系统 permission 和 URI 转发不属于纯 UI Preview | scope/persistent preference/restart/race、fresh message routing、body/credential stripping | 隔离 Android 权限拒绝/允许、通知栏点击、warm/cold URI；Linux X11/private DBus popup 与 GLib 转发通过。Linux 服务端 desktop push 不支持；Android 仅在线 Socket |
-| Fleet 私有页/操作 | 复用既有 RaftPanel/表单/菜单；本轮无新增纯 raft_ui 组件 | 五项同代账户/角色、迟到目录/凭证/文件、socket 删除与 HTTP 删除顺序回归通过 | Linux 01:49:11 完整主运行的 CRUD/inspection/runtime 检查点通过；Android当前6ab源码整轮已通过；Linux同源码整轮已通过（6ab功能基线）。凭证与权限回归不由 Preview 代替 |
-| Search/Saved/Activity/Tasks 筛选 | 标准 Material 控件与有作用域的搜索/多选 dialog；本轮无新增纯 raft_ui 组件 | exact mounted 参数、typed identity OR/AND、Unassigned、storage frontier、迟到目录/权限 popup、360px 布局 | Linux 01:49:11 完整主运行通过 Search/self-mentions/Saved query-sort/Activity grouping、Task 多选/board 检查点；终态清理为定向测试证据，Android当前6ab源码整轮已通过；Linux同源码整轮已通过（6ab功能基线） |
+| 通知/内容 URI | 产品设置复用现有 RaftPanel/表单组件；原生通知 daemon、系统 permission 和 URI 转发不属于纯 UI Preview | scope/persistent preference/restart/race、fresh message routing、body/credential stripping | 隔离 Android 权限拒绝/允许、通知栏点击、warm/cold URI；Linux X11/private DBus popup 与 GLib 转发通过。Linux 服务端 desktop push 不支持；历史主应用仅验收在线 Socket；后台冷进程兜底另见 android-background-evidence.md |
+| Fleet 私有页/操作 | 复用既有 RaftPanel/表单/菜单；本轮无新增纯 raft_ui 组件 | 五项同代账户/角色、迟到目录/凭证/文件、socket 删除与 HTTP 删除顺序回归通过 | Linux 01:49:11 完整主运行的 CRUD/inspection/runtime 检查点通过；历史 Android 6ab 源码整轮已通过；Linux同源码整轮已通过（6ab功能基线）。凭证与权限回归不由 Preview 代替 |
+| Search/Saved/Activity/Tasks 筛选 | 已迁移共享筛选、选择与页面控件，Search/Saved/Activity/Tasks 保留作用域和权限约束；新源码的完整平台结果见下方 | exact mounted 参数、typed identity OR/AND、Unassigned、storage frontier、迟到目录/权限 popup、360px 布局 | Linux 01:49:11 完整主运行通过 Search/self-mentions/Saved query-sort/Activity grouping、Task 多选/board 检查点；终态清理为定向测试证据，历史 Android 6ab 源码整轮已通过；Linux同源码整轮已通过（6ab功能基线） |
 
-Attachment SDK 的真实交互截图由组件验收报告记录；它们不是与 Web 同数据逐像素比较的 golden，也不证明 TalkBack、Linux 辅助技术或全部 hover/focus/text-scale 状态已验收。PDF/media 现提供原生应用内预览，text/Markdown/CSV/XLSX 提供结构化服务端预览；未知格式保留系统查看器。新增原生 media helper 已随较早 b20 源码的 Linux 01:49:11 完整主运行通过，Android当前6ab源码整轮已通过；Linux同源码整轮已通过（6ab功能基线）。
+Attachment SDK 的真实交互截图由组件验收报告记录；它们不是与 Web 同数据逐像素比较的 golden，也不证明 TalkBack、Linux 辅助技术或全部 hover/focus/text-scale 状态已验收。PDF/media 现提供原生应用内预览，text/Markdown/CSV/XLSX 提供结构化服务端预览；未知格式保留系统查看器。新增原生 media helper 已随较早 b20 源码的 Linux 01:49:11 完整主运行通过，历史 Android 6ab 源码整轮已通过；Linux同源码整轮已通过（6ab功能基线）。
 
 Document/media 的 SDK browser 三主题实际交互已通过：XLSX 第二工作表数据与语义文本、Play/Pause、键盘定位 0:06、音量 95%；报告为 agent workspace `reports/raft-reference/html/preview-interactions.json`。新增 media 解码及 PDF 页面截图仍以父 native helper 为平台证明。
 
-## 最终工程与预览检查
+## 已验证的源码与当前边界
 
-父串行工程检查已通过全部 353 项 Dart 测试、29 项 host 测试与全仓 analyze，当前源码哈希为 `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701`。75 个实际 SDK 浏览器主题交互记录及所引用截图均已核验通过，包括三主题 inline thread reply preview。它们不替代主应用整轮；较早 b20 源码的 Linux 01:49:11 完整主运行已通过，53个截图检查点记录均已核验。移动线程/主聊天状态复用修复后的当前源码，Android完整主运行已完成，Linux同源码整轮已通过（6ab功能基线）；不宣称两平台均已完成。
+| 源码检查点 | 工程检查 | Linux 完整主应用 | Android 完整主应用 |
+| --- | --- | --- | --- |
+| 历史 `6ab79f33` | 353 Dart、29 host、分析器通过 | 通过；53 检查点，03:11:25 run | 通过；54 检查点，03:02:43 run |
+| 历史 `0ea636e6` | 不由旧平台结果推断新版工程状态 | 通过；53 检查点，07:53:47 run | 失败；08:00:19 run，8 检查点后旧移动导航定位失效 |
+| 移动导航 `518ad5e4` | 533 Dart、29 host、分析器通过 | 未运行 | 失败；08:56:29 run，44 检查点后 Mermaid 窄屏工具栏溢出及退出选择定位歧义 |
+| 后续修正 `1b8906fa` | 541 Dart、29 host、分析器通过 | 未运行 | 未运行 |
+| 共享布局 `348911c8` | 548 Dart、29 host、分析器通过 | 未运行 | 已开始后中断；09:28:15 run，Home/详情/历史通过，Search 全局等待停滞 |
+| 历史修正 `e1ac2c23` | 549 Dart、29 host、分析器通过 | 未运行 | 失败；09:41:21 run，三主题 Home 与 Search 目标可见通过，随后显示源码后的复制点击失败 |
+| 分组基础 `2b85d1b4` | 562 Dart、29 host、分析器通过 | 未运行 | 失败；10:01:22 run，分组组件挂载后，Search 部分遮挡的消息被接受，真实操作点击失败 |
+| 可见范围修正 `d6cf1b57` | 563 Dart、33 host、分析器通过 | 未运行 | 失败；10:13:43 run，Search/Save 真实点击与 Copy 精确剪贴板通过；Expand 原本可点击，辅助滚动后移出命中区域 |
+| 富文本点击辅助修正 `4df9efd8` | 563 Dart、33 host、分析器通过 | 未运行 | 失败；10:24:11 run，25 个检查点后切回聊天时 pumpAndSettle 超时；运行时采样确认持续重排 |
+| 新导航、通知、Feedback 与初始布局 `ad337ead` | 696 Dart、33 host、分析器通过 | 未运行 | 失败；11:36:09 run，60 个检查点通过后，侧栏标题测试仍按旧大小写定位；保留此失败后修正测试 |
+| 侧栏定位与独立复验 `7f39a5f4` | 696 Dart、33 host、分析器通过 | 未运行 | 独立侧栏实际操作、API 结果与恢复设置通过；完整流程未开始，此通过不替代整轮验收 |
+| 共享会话规则与桌面铃铛复验 `1ca110f6` | 709 Dart、33 host、分析器通过 | 未运行 | 通过；12:06:34 run，66 个完整流程检查点与实际退出登录通过，原始证据已归档 |
+| 最终共享规则与完整原生复验 `3ac80c8f` | 709 Dart、33 host、分析器通过 | 通过；12:13:48 run，56 检查点 | 通过；12:20:19 run，66 检查点；两平台实际退出登录与会话清除通过 |
 
-当前源码另有 Linux 窄显示语言测试通过：真实保存 `zh-cn`，验证中文 Locale 和 Appearance/Account 标题，验证外观/深色/浅色译后控件文本后恢复偏好，没有点击主题切换。实际 Dark/Light 切换由较早 b20 Linux 整轮证明；Android当前6ab版本完整主运行已通过；Linux同源码整轮已通过（6ab功能基线）。
+以上时间均为 2026-10-08 UTC；完整源码哈希分别为 `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701`、`0ea636e658e0d8042b6342e9e50d9ba504cc87492f1e51ad2e9b1a4f99b7baed`、`518ad5e4ca0686df5eb7805fcbde752a4d774fab9bd627a4dbae44e9f36947e3`、`1b8906fa579960daa933c0c18dc18cda7ecc3d648834e83967e2269840040d95`、`348911c8c934e37a7d5dcc39d5a8812115400a4e6aae9866c6a6de5fccbca916`、`e1ac2c23eff8c980e405b01ed92beaed54dd9e69e953aeb9429d5860fe216c5d`、`2b85d1b4a9ee271ab23eb582add5c8277d1e22821d6a37ddf645a3833413e9a6`、`d6cf1b57d689b28d4c2d88adb524ce727771ffd4aab79e88f217c822981d2a12`、`4df9efd8a0374ecaa877fe925c22377ec0ba273835d122a410546de93f96f032`、`ad337eade5901c79658179a06863646ea5f7d3b1a76398eb51878151c9e20b87`、`7f39a5f4f8b4d4265da6fb00a128dcb880e05f432b2803a11399b7bbdae64b40`、`1ca110f694349b8a540d073a810f8e77fdfdce34ce336c28b4f23f1082229877`、`3ac80c8fe00d6dd9cf1e5f58407a8c526cfccec9a28790fa3bbce5aa35a416d6`。6ab 基线归档于 `.local/functional-baseline-6ab`，0ea Linux 归档于 `.local/functional-phase4-0ea636e658e0`。源码和 runId 决定证据适用范围；旧通过不能计为当前修改通过。
 
-Android 专用 MediaCodec Surface 视频输出与 sticky-fatal 修复已通过两项实际 native_player_test，当前042哈希辅助receipt有160×90真实帧、332ms推进、暂停/定位1500ms/音量40；见 attachment-evidence.md。该辅助证据不替代当前两平台主应用整轮。
+Search、Account、Appearance 和移动四项导航已有后续实现与定向回归。依据用户要求继续完善共享尺寸、响应式与布局约束；后续 348、e1ac、2b85、d6cf、4df9 与 ad337 已分别冻结并实际运行 Android，均未完成通过两平台流程。最终 3ac 已完成同源码 Linux 56 与 Android 66 个原生功能检查点；新安装包构建、实际安装验证与交付仍待完成。
 
-## 设计对齐尚未完成
+视觉验收未完成。旧 `0e049d15` 的 30 组实际失败配对保留为历史；`518ad5e4`、`348911c8`、`e1ac2c23`、`2b85d1b4` 与 `d6cf1b57` 的三主题 Android Home 结构对照也均未通过。e1ac 背景色与按钮居中已有实测改进，2b85 已显示共享分组计数、折叠与排序操作；触摸适配后的布局、导航分组间距及原版提醒中心仍未完整验收。ad337 的三主题 Home 与真实系统通知弹窗已发布为六张原始截图；实际打开、320×288 尺寸及关闭操作通过，但没有判定像素通过。固定清单为 523 项，另有三组移动诊断。移动诊断使用原 Web 和原生各自真实的 412×915 图，不裁剪或缩放，但公开参考数据与原生工作区数据、安全区不同，不能充当同数据逐像素验收。原生根页面操作通过不代表字体、布局、颜色或全部状态与 Web 一致。
 
-当前没有逐组件像素级Web/native等价证明。75个实际SDK主题交互、tokens映射、语义测试与原生功能整轮，不证明组件形状、字体、行高、间距、阴影和全部交互状态逐像素一致。默认Material控件及页面呈现仍需逐项审查和修正。必须用同Web版本、同数据、同主题、同尺寸的组件基准与差异报告建立视觉验收；目前该项未完成，不能将本页前面的验收要求误读为已通过结果。
+## 共享尺寸和响应式验收
 
-当前工程353 Dart/29 host/analyze通过。Android完整主运行 `2026-10-08T03:02:43.361866Z` 已完成，54个同runId截图检查点和PNG已核验；Linux相同6ab哈希 `2026-10-08T03:11:25.507223Z` 已完成通过，53个同runId截图检查点已核验。Android功能通过不改变以上视觉缺口。
+提取组件 recipe 及产品 CSS 的共同合同：主题、密度、宽高断点、方向性 inset、图标与文字度量、布局/绘制/命中范围、安全区和容器可用空间。共享组件处理其约束；页面不另写相同尺寸。尺寸相同仍不足以证明布局正确：伸展与居中、Wrap/Row、浮动覆盖和正常流需要相应组合合同。
 
-功能基线6ab现已通过两平台完整主应用验收：Android `2026-10-08T03:02:43.361866Z` /54检查点、Linux `2026-10-08T03:11:25.507223Z` /53检查点，归档于 `.local/functional-baseline-6ab`。用户已授权新的页面/组件像素级对齐；该视觉修正工作正在进行，新版源码需重新工程/原生验收，最终安装包暂未发行。这些功能基线记录不证明像素等价。
+用同源真实渲染度量与组件测试验证长文本、窄屏、多个操作和文本缩放，检查回调、键盘顺序、命中范围与内容无重叠。触摸目标扩大不得默默扩大原版绘制尺寸或截取邻接内容的输入。当前源码的源绑定尺寸合同和这批原生复验仍在完善中。
+
+## 历史 SDK 与平台证据
+
+75 项历史实际 SDK 浏览器主题交互及对应截图已验证，包含附件、多主题文档/media 和 inline thread reply。它们不是同数据逐像素 golden，不证明 TalkBack、Linux 辅助技术或全部 hover/focus/text-scale 状态。较早 Android 042 MediaCodec Surface 与 Linux 原生 media helper 的定向结果仍保留各自源码边界；最终包中的实际解码和系统文件查看器打开还需验证。
+
+共享尺寸来源及尚未绑定的布局规则见 [尺寸合同](design-dimensions.md)；详细源文件、行号、摘录与 SHA 在同名 JSON 中。该审计快照不代表像素或原生验收通过。

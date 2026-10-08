@@ -1,3 +1,4 @@
+import 'package:raft_ui/switch_previews.dart' as source_switches;
 import 'package:raft_ui/rich_surface_visual_previews.dart' as surface;
 import 'package:flutter/material.dart';
 
@@ -147,3 +148,16 @@ Widget appVisualAttachmentLightbox() => surface.visualAttachmentLightbox();
 
 @RichVisualPreviews('visualDocumentSheet')
 Widget appVisualDocumentSheet() => surface.visualDocumentSheet();
+
+@RaftPreviews('Source switches', size: Size(640, 440))
+Widget appSourceSwitchesPreview() => source_switches.sourceSwitchesPreview();
+
+@RichVisualPreviews('visualForwardedLongSource')
+Widget appVisualForwardedLongSource() => surface.visualForwardedLongSource();
+
+@RichVisualPreviews('visualOutsideListMarkers')
+Widget appVisualOutsideListMarkers() => surface.visualOutsideListMarkers();
+
+@RichVisualPreviews('visualCollapsedTableBorders')
+Widget appVisualCollapsedTableBorders() =>
+    surface.visualCollapsedTableBorders();

@@ -26,20 +26,33 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
     super.initState();
     FocusManager.instance.addListener(focusChanged);
   }
+
   @override
   void dispose() {
     FocusManager.instance.removeListener(focusChanged);
     super.dispose();
   }
+
   void focusChanged() {
-    if (mounted && widget.enabled && !expanded && height > MessageContentPrimitive.collapseHeight) {
+    if (mounted &&
+        widget.enabled &&
+        !expanded &&
+        height > MessageContentPrimitive.collapseHeight) {
       WidgetsBinding.instance.addPostFrameCallback((_) => expandHiddenFocus());
     }
   }
+
   void expandHiddenFocus() {
-    final focus = FocusManager.instance.primaryFocus?.context?.findRenderObject();
+    final focus = FocusManager.instance.primaryFocus?.context
+        ?.findRenderObject();
     final content = contentKey.currentContext?.findRenderObject();
-    if (!mounted || expanded || focus is! RenderBox || content is! RenderBox || !focus.hasSize || !content.hasSize) return;
+    if (!mounted ||
+        expanded ||
+        focus is! RenderBox ||
+        content is! RenderBox ||
+        !focus.hasSize ||
+        !content.hasSize)
+      return;
     // Only focus inside this message may reveal its hidden content.
     var ancestor = focus.parent;
     var owned = identical(focus, content);
@@ -49,9 +62,12 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
     }
     if (!owned) return;
     final bottom = focus.localToGlobal(Offset(0, focus.size.height)).dy;
-    final clippedBottom = content.localToGlobal(Offset.zero).dy + MessageContentPrimitive.collapseHeight;
+    final clippedBottom =
+        content.localToGlobal(Offset.zero).dy +
+        MessageContentPrimitive.collapseHeight;
     if (bottom > clippedBottom) setState(() => expanded = true);
   }
+
   @override
   Widget build(BuildContext context) {
     final overflow = height > MessageContentPrimitive.collapseHeight;
@@ -59,35 +75,68 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Focus(onFocusChange: (focused) {
-          if (focused && collapsed) {
-            WidgetsBinding.instance.addPostFrameCallback((_) => expandHiddenFocus());
-          }
-        }, child: ClipRect(child: Stack(children: [
-          Align(
-            key: contentKey,
-            alignment: Alignment.topLeft,
-            heightFactor: collapsed ? MessageContentPrimitive.collapseHeight / height : 1,
-            child: RaftContentMeasure(
-              onSize: (size) {
-                if (mounted && (height - size.height).abs() > .5) {
-                  setState(() => height = size.height);
-                }
-              },
-              child: widget.child,
+        Focus(
+          onFocusChange: (focused) {
+            if (focused && collapsed) {
+              WidgetsBinding.instance.addPostFrameCallback(
+                (_) => expandHiddenFocus(),
+              );
+            }
+          },
+          child: ClipRect(
+            child: Stack(
+              children: [
+                Align(
+                  key: contentKey,
+                  alignment: Alignment.topLeft,
+                  heightFactor: 1,
+                  child: RaftContentMeasure(
+                    // Pending content is bounded on its very first layout, like
+                    // the original Web maxHeight rule. The child stays natural.
+                    maxHeight: widget.enabled && !expanded
+                        ? MessageContentPrimitive.collapseHeight
+                        : null,
+                    onSize: (size) {
+                      if (mounted && (height - size.height).abs() > .5) {
+                        setState(() => height = size.height);
+                      }
+                    },
+                    child: widget.child,
+                  ),
+                ),
+                if (collapsed)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: MessageContentPrimitive.collapseFadeHeight,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [
+                              MessageContentSemantic(RaftTokens.of(context))
+                                  .collapseFade,
+                              MessageContentSemantic(RaftTokens.of(context))
+                                  .collapseFade
+                                  .withValues(alpha: 0),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (collapsed) Positioned(left: 0, right: 0, bottom: 0,
-            height: MessageContentPrimitive.collapseFadeHeight,
-            child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(
-              gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter,
-                colors: [MessageContentSemantic(RaftTokens.of(context)).collapseFade,
-                  MessageContentSemantic(RaftTokens.of(context)).collapseFade.withValues(alpha: 0)]),
-            )))),
-        ]))),
+        ),
         if (widget.enabled && overflow)
           Padding(
-            padding: const EdgeInsets.only(top: MessageContentPrimitive.toggleGap),
+            padding: const EdgeInsets.only(
+              top: MessageContentPrimitive.toggleGap,
+            ),
             child: RaftShowMoreToggle(
               label: raftText(context, expanded ? 'Collapse' : 'Show more'),
               onPressed: () => setState(() => expanded = !expanded),
@@ -99,35 +148,127 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
 }
 
 class RaftContentMeasure extends SingleChildRenderObjectWidget {
-  const RaftContentMeasure({required this.onSize, required super.child});
+  const RaftContentMeasure({
+    super.key,
+    required this.onSize,
+    required super.child,
+    this.maxHeight,
+  }) : assert(maxHeight == null || maxHeight >= 0);
   final ValueChanged<Size> onSize;
+
+  /// Bounds this viewport, while measuring the unconstrained natural child.
+  /// Null preserves the original unbounded measurement behavior.
+  final double? maxHeight;
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _SizeReporter(onSize);
+      _SizeReporter(onSize, maxHeight);
   @override
   void updateRenderObject(
     BuildContext context,
     covariant _SizeReporter renderObject,
-  ) => renderObject.onSize = onSize;
+  ) {
+    renderObject
+      ..onSize = onSize
+      ..maxHeight = maxHeight;
+  }
 }
 
 class _SizeReporter extends RenderProxyBox {
-  _SizeReporter(this.onSize);
-  ValueChanged<Size> onSize;
-  Size? reported;
+  _SizeReporter(this._onSize, this._maxHeight);
+  ValueChanged<Size> _onSize;
+  double? _maxHeight;
+  Size? _delivered, _pending, _natural;
+  int _receiptRevision = 0;
+
+  set onSize(ValueChanged<Size> value) {
+    if (value == _onSize) return;
+    _onSize = value;
+    _receiptRevision++;
+    _pending = null;
+    markNeedsLayout();
+  }
+
+  set maxHeight(double? value) {
+    if (value == _maxHeight) return;
+    _maxHeight = value;
+    markNeedsLayout();
+  }
+
+  BoxConstraints get _childConstraints => _maxHeight == null
+      ? constraints
+      : constraints.copyWith(minHeight: 0, maxHeight: double.infinity);
+  Size _viewportSize(Size natural, BoxConstraints parent) {
+    final limit = _maxHeight;
+    return parent.constrain(
+      Size(
+        natural.width,
+        limit == null || natural.height <= limit ? natural.height : limit,
+      ),
+    );
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final childConstraints = _maxHeight == null
+        ? constraints
+        : constraints.copyWith(minHeight: 0, maxHeight: double.infinity);
+    return _viewportSize(
+      child?.getDryLayout(childConstraints) ?? Size.zero,
+      constraints,
+    );
+  }
+
   @override
   void performLayout() {
-    super.performLayout();
-    if (reported == size) return;
-    reported = size;
-    final next = size;
-    WidgetsBinding.instance.addPostFrameCallback((_) => onSize(next));
+    child?.layout(_childConstraints, parentUsesSize: true);
+    final next = child?.size ?? Size.zero;
+    // A pending B receipt is obsolete if another layout returns to A before
+    // post-frame delivery. Clear it even when A was already delivered, so a
+    // later B can enqueue a fresh receipt rather than be starved forever.
+    if (_pending != null && _pending != next) {
+      _pending = null;
+      _receiptRevision++;
+    }
+    _natural = next;
+    size = _viewportSize(next, constraints);
+    if (_delivered == next || _pending == next) return;
+    _pending = next;
+    final revision = _receiptRevision;
+    final callback = _onSize;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // A recycled/disposed row or newer child/width receipt cannot publish
+      // an obsolete height into the current callback/state.
+      if (!attached ||
+          revision != _receiptRevision ||
+          _pending != next ||
+          _natural != next)
+        return;
+      _pending = null;
+      _delivered = next;
+      callback(next);
+    });
+  }
+
+  @override
+  void detach() {
+    _receiptRevision++;
+    _pending = null;
+    // Reattachment must deliver even if its first size equals the old size.
+    _delivered = null;
+    super.detach();
   }
 }
 
 /// Canonical source ShowMoreToggle; shared controls own keyboard and focus.
 class RaftShowMoreToggle extends StatefulWidget {
-  const RaftShowMoreToggle({super.key, required this.label, required this.onPressed, this.icon, this.style, this.visualHeight = 16});
+  const RaftShowMoreToggle({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.style,
+    this.visualHeight = 16,
+  });
   final String label;
   final VoidCallback onPressed;
   final Widget? icon;
@@ -143,15 +284,36 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
     final style = widget.style ?? MessageContentRecipe(tokens).toggle;
-    final color = hovered ? MessageContentSemantic(tokens).toggleHover : style.color;
-    return MouseRegion(onEnter: (_) => setState(() => hovered = true), onExit: (_) => setState(() => hovered = false), child: RaftControl(
-      kind: RaftControlKind.textLink, shadow: true,
-      visualHeight: widget.visualHeight, minimumTargetSize: RaftDensityScope.of(context) == RaftDensity.touch ? RaftMetrics.touchTarget : widget.visualHeight,
-      padding: EdgeInsets.zero, semanticLabel: widget.label, onPressed: widget.onPressed,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        if (widget.icon != null) ...[widget.icon!, const SizedBox(width: 4)],
-        Text(widget.label, style: style.copyWith(color: color, decorationColor: color)),
-      ]),
-    ));
+    final color = hovered
+        ? MessageContentSemantic(tokens).toggleHover
+        : style.color;
+    return MouseRegion(
+      onEnter: (_) => setState(() => hovered = true),
+      onExit: (_) => setState(() => hovered = false),
+      child: RaftControl(
+        kind: RaftControlKind.textLink,
+        shadow: true,
+        visualHeight: widget.visualHeight,
+        minimumTargetSize: RaftDensityScope.of(context) == RaftDensity.touch
+            ? RaftMetrics.touchTarget
+            : widget.visualHeight,
+        padding: EdgeInsets.zero,
+        semanticLabel: widget.label,
+        onPressed: widget.onPressed,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.icon != null) ...[
+              widget.icon!,
+              const SizedBox(width: 4),
+            ],
+            Text(
+              widget.label,
+              style: style.copyWith(color: color, decorationColor: color),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -150,7 +150,8 @@ class RaftFieldRecipe {
       : tokens.fieldLine;
 }
 
-/// Original dark Input's three inset shadows, after semantic role resolution.
+/// Original dark Input's two inset shadows and outer bottom shadow.
+/// Source: raft-ui 0.5.27 input.recipe, after semantic role resolution.
 @immutable
 class RaftFieldInsetRecipe {
   const RaftFieldInsetRecipe(this.tokens);
@@ -160,11 +161,16 @@ class RaftFieldInsetRecipe {
   Color get bottom => tokens.colors['field-inset-bottom']!;
   double get lineWidth => 1;
   double get topOffset => 1;
-  double get topBlurSigma => .5;
-  double get bottomOffset => -1;
+  double get topBlurRadius => 2;
+  double get topBlurSigma => topBlurRadius / 2;
+  double get bottomOffset => 1;
+
+  /// CSS inset shadows clip to the padding edge, inside even transparent borders.
+  RRect paddingBox(Rect rect, BorderRadius radius, double borderWidth) =>
+      radius.toRRect(rect).deflate(borderWidth);
 }
 
-/// CSS inset shadows stay inside the field, including during border animations.
+/// CSS inset shadows use the padding box; the faint bottom shadow is exterior.
 class RaftFieldBorder extends OutlineInputBorder {
   const RaftFieldBorder({
     super.borderSide,
@@ -214,8 +220,24 @@ class RaftFieldBorder extends OutlineInputBorder {
     final recipe = insets;
     if (recipe != null) {
       final outer = borderRadius.toRRect(rect);
+      final padding = recipe.paddingBox(rect, borderRadius, borderSide.width);
+      // The final CSS shadow is not inset. Draw its shifted silhouette outside
+      // the border box, before the inset layers and actual border.
       canvas.save();
-      canvas.clipRRect(outer);
+      canvas.clipPath(
+        Path.combine(
+          PathOperation.difference,
+          Path()..addRect(rect.inflate(recipe.bottomOffset)),
+          Path()..addRRect(outer),
+        ),
+      );
+      canvas.drawRRect(
+        outer.shift(Offset(0, recipe.bottomOffset)),
+        Paint()..color = recipe.bottom,
+      );
+      canvas.restore();
+      canvas.save();
+      canvas.clipRRect(padding);
       // Keep Material floating-label gaps legible for existing API callers.
       if (gapStart != null && gapPercentage > 0) {
         final gap = Rect.fromLTWH(
@@ -235,8 +257,8 @@ class RaftFieldBorder extends OutlineInputBorder {
       void shadow(Color color, double offset, double sigma) {
         final path = Path()
           ..fillType = PathFillType.evenOdd
-          ..addRect(rect.inflate(4))
-          ..addRRect(outer.shift(Offset(0, offset)));
+          ..addRect(rect.inflate(recipe.topBlurRadius * 2))
+          ..addRRect(padding.shift(Offset(0, offset)));
         final paint = Paint()..color = color;
         if (sigma > 0) {
           paint.maskFilter = MaskFilter.blur(BlurStyle.normal, sigma);
@@ -244,14 +266,14 @@ class RaftFieldBorder extends OutlineInputBorder {
         canvas.drawPath(path, paint);
       }
 
-      // CSS shadow lists paint first-on-top: bottom, blurred top, then ring.
-      shadow(recipe.bottom, recipe.bottomOffset, 0);
-      shadow(recipe.top, recipe.topOffset, recipe.topBlurSigma);
+      // CSS lists paint first-on-top: the blurred top (first) overlays the
+      // 1px spread ring (second), both clipped to the padding edge.
       final ring = Path()
         ..fillType = PathFillType.evenOdd
-        ..addRRect(outer)
-        ..addRRect(outer.deflate(recipe.lineWidth));
+        ..addRRect(padding)
+        ..addRRect(padding.deflate(recipe.lineWidth));
       canvas.drawPath(ring, Paint()..color = recipe.line);
+      shadow(recipe.top, recipe.topOffset, recipe.topBlurSigma);
       canvas.restore();
     }
     super.paint(

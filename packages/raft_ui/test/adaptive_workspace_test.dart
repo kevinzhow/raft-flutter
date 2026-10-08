@@ -25,6 +25,62 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
   }
 
+  testWidgets(
+    'floating mobile bars keep full content and do not intercept side gaps',
+    (tester) async {
+      await viewport(tester, 390);
+      var bodyTaps = 0;
+      var navTaps = 0;
+      final body = GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => bodyTaps++,
+        child: const SizedBox.expand(key: ValueKey('floating-body')),
+      );
+      Widget layout(bool floating) => MaterialApp(
+        theme: raftTheme(RaftFamily.elegant),
+        home: Scaffold(
+          body: RaftAdaptiveWorkspace(
+            content: body,
+            sidebar: const SizedBox(),
+            rail: const SizedBox(),
+            mobileNavigationFloating: floating,
+            mobileNavigation: Align(
+              heightFactor: 1,
+              child: GestureDetector(
+                onTap: () => navTaps++,
+                behavior: HitTestBehavior.opaque,
+                child: const SizedBox(
+                  width: 208,
+                  height: 52,
+                  key: ValueKey('floating-bar'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(layout(true));
+      expect(
+        tester.getSize(find.byKey(const ValueKey('floating-body'))),
+        const Size(390, 700),
+      );
+      await tester.tapAt(const Offset(10, 680));
+      expect(bodyTaps, 1);
+      expect(navTaps, 0);
+      await tester.tapAt(
+        tester.getCenter(find.byKey(const ValueKey('floating-bar'))),
+      );
+      expect(bodyTaps, 1);
+      expect(navTaps, 1);
+      await tester.pumpWidget(layout(false));
+      expect(
+        tester.getSize(find.byKey(const ValueKey('floating-body'))),
+        const Size(390, 648),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('sidebar pointer and keyboard resizing respects Web bounds', (
     tester,
   ) async {

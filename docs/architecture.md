@@ -72,13 +72,51 @@ UI、纯Dart协议/同步、平台适配在 P0 合同后可并行，feature任�
 
 - raft_ui 提供独立 tokens、主题、导航、表单、消息、附件与原生 Mermaid 组件，SDK Widget Preview 覆盖三种实际主题。API 与原生系统服务位于 app/platform 或 feature 层。
 - raft_client 提供人类认证、刷新去重、Socket.IO、账户/工作区 generation fence、上传重试与安全错误。main 对跨客户端登录尝试的安全存储提交另加串行栅栏。
-- raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；当前消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。source-enabled thread-replies 的最新三条、epoch rebaseline 与 accepted unread refresh 已接入；notification-prefs 使用真实条件开关，保留 legacy 路径。19 项新增 reply/preferences/controller 回归均已通过；最终工程检查 353 Dart、29 host 与全仓 analyze 通过，较早 b20 源码 Linux 整轮通过；新增 mobile thread/main 状态复用修复后的当前源码整轮，Android完整主运行已通过、同哈希Linux正在验证。Activity TypeSpec experimental cutover 不由纯 reducer 证明替代。
+- raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。source-enabled thread-replies 的最新三条、epoch rebaseline 与 accepted unread refresh 已接入；notification-prefs 使用真实条件开关并保留 legacy 路径。工程和平台结果按下方源码检查点记录，Activity TypeSpec experimental cutover 不由纯 reducer 或旧平台基线替代。
 - Drift 缓存按账户与工作区隔离，保存真实离线消息、草稿与 read frontier；撤权立即清 UI 并串行清缓存。签名附件地址及凭据不进入缓存。
 - 管理页面使用现网挂载路径与能力校验：providers、MCP、Apps、Slack、analytics、billing、setup、agents 和 Computers。未配置的第三方 OAuth、计费和 Slack provisioning 不产生模拟成功状态。
-- go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。后台 FCM、Linux 服务端消息推送及桌面多窗口不属于当前已验证能力。
+- go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。Android 周期后台收件箱兜底已有独立冷进程、去重和系统点击证据；iOS 仅源码接入。FCM/APNs 注册、Linux 服务端消息推送及独立桌面多窗口不属于当前已验证能力。
 
-## 视觉实现与验收缺口
+## 当前共享组件与领域边界
 
-设计tokens及75项SDK主题交互已有具体证据，逐组件像素级一致性尚未完成。原生默认Material控件与Web产品组件的呈现需审查和修正，并建立同版本/数据/主题/尺寸的截图和差异验收。功能测试、主题可切换与原生整轮通过不能替代该项；架构中的golden与同源视觉比对是待完成目标，不是当前完成声明。当前6ab源码Android整轮已完成，Linux同源码仍在运行。
+共享侧栏规则区分 raft-ui 通用组件与实际产品覆写。产品分组标题、计数、折叠与排序使用共享 recipe；Search/Activity 与 Saved 使用各自实际挂载角色，Saved 的总数来自真实 GET 元数据，与未读数分离。48 像素触摸范围属于原生适配，不能计为原版 24 像素动作布局相同。
 
-功能基线6ab现已通过两平台完整主应用验收：Android `2026-10-08T03:02:43.361866Z` /54检查点、Linux `2026-10-08T03:11:25.507223Z` /53检查点，归档于 `.local/functional-baseline-6ab`。用户已授权新的页面/组件像素级对齐；该视觉修正工作正在进行，新版源码需重新工程/原生验收，最终安装包暂未发行。这些功能基线记录不证明像素等价。
+系统提醒中心分为无网络的 raft_ui 展示组件、纯提醒投影、作用域数据 store 与挂载 Bell 适配。它独立于消息 Activity 和 OS 通知。适配读取现有 Computers、agents、server、channels 与 Feedback 未读数据，不创造提醒列表或已读 API；本地只持久化有界的提醒指纹。账号、server、权限和请求版本变化会撤销旧结果与弹层，暂时读取失败保留已接受的未读数。
+
+Feedback 页面读取已挂载列表与详情接口；详情 GET 本身推进服务端阅读游标。列表、详情和回复只保存在当前账号作用域内存，晚到结果不能恢复旧未读数或跨作用域内容。本次页面提供阅读，不提供创建、评论或关闭操作；实际后端未配置时显示错误，不生成空列表成功状态。
+
+会话组件按实际挂载来源区分频道图标与 DM 头像。频道使用 ChannelKindIcon 的 14px 图标、18px 槽位、2px 线宽和联合频道 GitBranch；通用组件的 12/14px 与 1.5px 线宽不是这个页面的规则。频道标题为 14/20、常规 500，仅真实未读增加粗体。频道与 DM 的响亮未读徽标共享 accent 规则；DM 徽标修正不表示其头像与行布局已对齐。当前尺寸合同绑定 39 项规则、101 个所选文件内的公开类及 462 个产品与验证输入，只验证来源和散列，不验证完整 CSS、算式或像素相等。
+
+长内容的共享组件从首次布局限制折叠视口，同时保留自然内容测量。测量回调、延迟富文本、列表回收与初始定位必须配合验证；原版以消息及其视口内偏移保持阅读位置，展开内容属于阅读操作。针对性回归与修改前后的聊天列表测试不替代下方同源码完整原生流程，最终 3ac 工程及两平台原生功能断言已通过，逐像素验收仍未完成。
+
+## 已验证的源码与当前边界
+
+| 源码检查点 | 工程检查 | Linux 完整主应用 | Android 完整主应用 |
+| --- | --- | --- | --- |
+| 历史 `6ab79f33` | 353 Dart、29 host、分析器通过 | 通过；53 检查点，03:11:25 run | 通过；54 检查点，03:02:43 run |
+| 历史 `0ea636e6` | 不由旧平台结果推断新版工程状态 | 通过；53 检查点，07:53:47 run | 失败；08:00:19 run，8 检查点后旧移动导航定位失效 |
+| 移动导航 `518ad5e4` | 533 Dart、29 host、分析器通过 | 未运行 | 失败；08:56:29 run，44 检查点后 Mermaid 窄屏工具栏溢出及退出选择定位歧义 |
+| 后续修正 `1b8906fa` | 541 Dart、29 host、分析器通过 | 未运行 | 未运行 |
+| 共享布局 `348911c8` | 548 Dart、29 host、分析器通过 | 未运行 | 已开始后中断；09:28:15 run，Home/详情/历史通过，Search 全局等待停滞 |
+| 历史修正 `e1ac2c23` | 549 Dart、29 host、分析器通过 | 未运行 | 失败；09:41:21 run，三主题 Home 与 Search 目标可见通过，随后显示源码后的复制点击失败 |
+| 分组基础 `2b85d1b4` | 562 Dart、29 host、分析器通过 | 未运行 | 失败；10:01:22 run，分组组件挂载后，Search 部分遮挡的消息被接受，真实操作点击失败 |
+| 可见范围修正 `d6cf1b57` | 563 Dart、33 host、分析器通过 | 未运行 | 失败；10:13:43 run，Search/Save 真实点击与 Copy 精确剪贴板通过；Expand 原本可点击，辅助滚动后移出命中区域 |
+| 富文本点击辅助修正 `4df9efd8` | 563 Dart、33 host、分析器通过 | 未运行 | 失败；10:24:11 run，25 个检查点后切回聊天时 pumpAndSettle 超时；运行时采样确认持续重排 |
+| 新导航、通知、Feedback 与初始布局 `ad337ead` | 696 Dart、33 host、分析器通过 | 未运行 | 失败；11:36:09 run，60 个检查点通过后，侧栏标题测试仍按旧大小写定位；保留此失败后修正测试 |
+| 侧栏定位与独立复验 `7f39a5f4` | 696 Dart、33 host、分析器通过 | 未运行 | 独立侧栏实际操作、API 结果与恢复设置通过；完整流程未开始，此通过不替代整轮验收 |
+| 共享会话规则与桌面铃铛复验 `1ca110f6` | 709 Dart、33 host、分析器通过 | 未运行 | 通过；12:06:34 run，66 个完整流程检查点与实际退出登录通过，原始证据已归档 |
+| 最终共享规则与完整原生复验 `3ac80c8f` | 709 Dart、33 host、分析器通过 | 通过；12:13:48 run，56 检查点 | 通过；12:20:19 run，66 检查点；两平台实际退出登录与会话清除通过 |
+
+以上时间均为 2026-10-08 UTC；完整源码哈希分别为 `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701`、`0ea636e658e0d8042b6342e9e50d9ba504cc87492f1e51ad2e9b1a4f99b7baed`、`518ad5e4ca0686df5eb7805fcbde752a4d774fab9bd627a4dbae44e9f36947e3`、`1b8906fa579960daa933c0c18dc18cda7ecc3d648834e83967e2269840040d95`、`348911c8c934e37a7d5dcc39d5a8812115400a4e6aae9866c6a6de5fccbca916`、`e1ac2c23eff8c980e405b01ed92beaed54dd9e69e953aeb9429d5860fe216c5d`、`2b85d1b4a9ee271ab23eb582add5c8277d1e22821d6a37ddf645a3833413e9a6`、`d6cf1b57d689b28d4c2d88adb524ce727771ffd4aab79e88f217c822981d2a12`、`4df9efd8a0374ecaa877fe925c22377ec0ba273835d122a410546de93f96f032`、`ad337eade5901c79658179a06863646ea5f7d3b1a76398eb51878151c9e20b87`、`7f39a5f4f8b4d4265da6fb00a128dcb880e05f432b2803a11399b7bbdae64b40`、`1ca110f694349b8a540d073a810f8e77fdfdce34ce336c28b4f23f1082229877`、`3ac80c8fe00d6dd9cf1e5f58407a8c526cfccec9a28790fa3bbce5aa35a416d6`。6ab 基线归档于 `.local/functional-baseline-6ab`，0ea Linux 归档于 `.local/functional-phase4-0ea636e658e0`。源码和 runId 决定证据适用范围；旧通过不能计为当前修改通过。
+
+Search、Account、Appearance 和移动四项导航已有后续实现与定向回归。依据用户要求继续完善共享尺寸、响应式与布局约束；后续 348、e1ac、2b85、d6cf、4df9 与 ad337 已分别冻结并实际运行 Android，均未完成通过两平台流程。最终 3ac 已完成同源码 Linux 56 与 Android 66 个原生功能检查点；新安装包构建、实际安装验证与交付仍待完成。
+
+视觉验收未完成。旧 `0e049d15` 的 30 组实际失败配对保留为历史；`518ad5e4`、`348911c8`、`e1ac2c23`、`2b85d1b4` 与 `d6cf1b57` 的三主题 Android Home 结构对照也均未通过。e1ac 背景色与按钮居中已有实测改进，2b85 已显示共享分组计数、折叠与排序操作；触摸适配后的布局、导航分组间距及原版提醒中心仍未完整验收。ad337 的三主题 Home 与真实系统通知弹窗已发布为六张原始截图；实际打开、320×288 尺寸及关闭操作通过，但没有判定像素通过。固定清单为 523 项，另有三组移动诊断。移动诊断使用原 Web 和原生各自真实的 412×915 图，不裁剪或缩放，但公开参考数据与原生工作区数据、安全区不同，不能充当同数据逐像素验收。原生根页面操作通过不代表字体、布局、颜色或全部状态与 Web 一致。
+
+## 共享设计系统与布局约束
+
+raft_ui 的颜色映射已有生成来源；部分尺寸与布局约束仍分散在手写 recipes 和产品组合中。原版规范同时来自 raft-ui 组件 recipe、foundation.css 与 Web 的响应式覆写，不能只提取主题颜色或单组数值。当前完善工作从共享规则入手：记录源版本和方向性间距，区分绘制尺寸与触摸范围，表达容器约束、窄屏换行、断点和安全区。页面应使用这些共享规则；实际失败用例验证规则，不能靠页面局部坐标掩盖差异。
+
+历史 75 项 SDK 主题交互证明相应浏览器交互，不证明当前源码的逐像素对齐，也不能替代原生系统输入、无障碍或完整平台流程。
+
+共享尺寸来源及尚未绑定的布局规则见 [尺寸合同](design-dimensions.md)；详细源文件、行号、摘录与 SHA 在同名 JSON 中。该审计快照不代表像素或原生验收通过。

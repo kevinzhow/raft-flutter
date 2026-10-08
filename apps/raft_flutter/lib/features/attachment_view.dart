@@ -60,6 +60,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     // Native never feeds authored SVG bytes to the raster decoder.
     return type.startsWith('image/') && type != 'image/svg+xml';
   }
+
   bool get visibleExportDescendant =>
       widget.exportMode &&
       w.messages.any((parent) {
@@ -392,17 +393,30 @@ class _AttachmentViewState extends State<AttachmentView> {
     previewRoute = DialogRoute<void>(
       context: context,
       builder: (dialogContext) => RaftAttachmentLightbox(
-        title: name, titleBold: true,
+        title: name,
+        titleBold: true,
         onClose: () {
           final route = previewRoute;
           if (route?.isActive == true) route!.navigator?.removeRoute(route);
         },
-        footer: RaftTextButton(label: 'Download original', glyph: RaftGlyph.download,
-          onPressed: authorized ? download : null, variant: RaftControlVariant.ghost),
-        child: Center(child: InteractiveViewer(
-          child: Image.memory(image!, key: ValueKey('attachment-image-${widget.metadata['id']}'),
-            fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('Preview unavailable. Download the original file.')),
-        )),
+        footer: RaftTextButton(
+          label: 'Download original',
+          glyph: RaftGlyph.download,
+          onPressed: authorized ? download : null,
+          variant: RaftControlVariant.ghost,
+        ),
+        child: Center(
+          child: InteractiveViewer(
+            child: Image.memory(
+              image!,
+              key: ValueKey('attachment-image-${widget.metadata['id']}'),
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => const Text(
+                'Preview unavailable. Download the original file.',
+              ),
+            ),
+          ),
+        ),
       ),
     );
     await Navigator.of(context, rootNavigator: true).push(previewRoute!);
