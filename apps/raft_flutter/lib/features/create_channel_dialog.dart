@@ -5,8 +5,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 
 import '../data/workspace_controller.dart';
 import 'channel_form_fields.dart';
@@ -182,291 +180,43 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final agents = [
-      for (final c in candidates)
-        if (c.kind == 'agent' && c.matches(search.text)) c,
-    ];
-    final humans = [
-      for (final c in candidates)
-        if (c.kind == 'human' && c.matches(search.text)) c,
-    ];
-    // space-y-4 between the form's direct children.
-    const gap = SizedBox(height: 16);
-    return RaftModalBackdrop(
-      child: RaftDialogCard(
-        title: 'Create Channel',
-        onClose: close,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (error != null) ...[ChannelFormBanner(error!), gap],
-            RaftProductFormField(
-              label: 'Name',
-              required: true,
-              child: ChannelTextInput(
-                controller: name,
-                placeholder: 'e.g. ai-research',
-                autofocus: true,
-                onSubmitted: (_) => submit(),
-              ),
-            ),
-            gap,
-            RaftProductFormField(
-              label: 'Description',
-              optional: true,
-              child: ChannelTextInput(
-                controller: description,
-                placeholder: 'What is this channel about?',
-                multiline: true,
-              ),
-            ),
-            gap,
-            RaftProductFormField(
-              label: 'Visibility',
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: RaftRecipeSegmentedControl<String>(
-                  label: raftText(context, 'Channel visibility'),
-                  value: visibility,
-                  items: const [
-                    ('public', RaftGlyph.hash, 'Public'),
-                    ('private', RaftGlyph.lock, 'Private'),
-                  ],
-                  onChanged: submitting
-                      ? null
-                      : (v) => setState(() => visibility = v),
-                ),
-              ),
-            ),
-            gap,
-            RaftProductFormField(
-              label: 'Members',
-              optional: true,
-              child: candidates.isEmpty
-                  ? Text(
-                      raftText(context, 'No members available'),
-                      style: raftCssTextStyle(
-                        family: t.monoFont,
-                        step: RaftTextSteps.sm,
-                        color: t.colors['foreground-muted'],
-                      ),
-                    )
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ChannelTextInput(
-                          controller: search,
-                          placeholder: 'Search members by name',
-                          leadingGlyph: RaftGlyph.search,
-                        ),
-                        const SizedBox(height: 8), // space-y-2
-                        _MemberPicker(
-                          agents: agents,
-                          humans: humans,
-                          selected: (c) =>
-                              (c.kind == 'agent' ? agentIds : humanIds)
-                                  .contains(c.id),
-                          query: search.text,
-                          onToggle: submitting
-                              ? null
-                              : (c) => setState(() {
-                                  final set = c.kind == 'agent'
-                                      ? agentIds
-                                      : humanIds;
-                                  if (!set.remove(c.id)) set.add(c.id);
-                                }),
-                        ),
-                      ],
-                    ),
-            ),
-            gap,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                RaftRecipeButton(
-                  label: 'Cancel',
-                  variant: RaftButtonRecipeVariant.outline,
-                  size: RaftButtonRecipeSize.sm,
-                  // px-4 py-2 text-sm
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStep: RaftTextSteps.sm,
-                  disabled: submitting,
-                  onPressed: close,
-                ),
-                const SizedBox(width: 12), // gap-3
-                RaftRecipeButton(
-                  label: submitting ? 'Creating…' : 'Create Channel',
-                  variant: RaftButtonRecipeVariant.accent,
-                  size: RaftButtonRecipeSize.sm,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStep: RaftTextSteps.sm,
-                  disabled: submitting,
-                  onPressed: submit,
-                ),
-              ],
-            ),
-          ],
-        ),
+    RaftPickerItem item(ChannelMemberCandidate c) => RaftPickerItem(
+      key: '${c.kind}:${c.id}',
+      label: c.label,
+      description: c.description,
+      avatar: ChannelCandidateAvatar(
+        candidate: c,
+        avatarContext: RaftMountedAvatarContext.sidebarList,
+        humanPlaceholder: true,
       ),
     );
-  }
-}
-
-/// `Card max-h-48 overflow-y-auto` with SectionEyebrow headers
-/// (`px-3 py-1.5 bg-fill-muted theme-brutal:bg-white/50`) and member rows.
-class _MemberPicker extends StatelessWidget {
-  const _MemberPicker({
-    required this.agents,
-    required this.humans,
-    required this.selected,
-    required this.onToggle,
-    required this.query,
-  });
-  final List<ChannelMemberCandidate> agents, humans;
-  final bool Function(ChannelMemberCandidate) selected;
-  final ValueChanged<ChannelMemberCandidate>? onToggle;
-  final String query;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final eyebrowFill = t.brutal
-        ? Colors.white.withValues(alpha: .5)
-        : t.colors['fill-muted'];
-    Widget eyebrow(String text) => RaftSectionEyebrow(
-      text,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      background: eyebrowFill,
-    );
-    return RaftRecipeCard(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 192 - 4),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (agents.isNotEmpty) ...[
-                eyebrow('Agents'),
-                for (final c in agents)
-                  _MemberRow(
-                    candidate: c,
-                    selected: selected(c),
-                    onTap: onToggle == null ? null : () => onToggle!(c),
-                  ),
-              ],
-              if (humans.isNotEmpty) ...[
-                eyebrow('Humans'),
-                for (final c in humans)
-                  _MemberRow(
-                    candidate: c,
-                    selected: selected(c),
-                    onTap: onToggle == null ? null : () => onToggle!(c),
-                  ),
-              ],
-              if (agents.isEmpty && humans.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 16,
-                  ),
-                  child: Text(
-                    raftText(context, 'No matches for "${query.trim()}"'),
-                    textAlign: TextAlign.center,
-                    style: raftCssTextStyle(
-                      family: t.monoFont,
-                      step: RaftTextSteps.sm,
-                      color: t.colors['foreground-muted'],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// `flex w-full items-center gap-2 px-3 py-1.5 text-sm font-medium`; selected
-/// `bg-accent-soft theme-brutal:bg-brutal-pink/20`, hover
-/// `hover:bg-primary-soft theme-brutal:hover:bg-soft-signal`.
-class _MemberRow extends StatefulWidget {
-  const _MemberRow({
-    required this.candidate,
-    required this.selected,
-    required this.onTap,
-  });
-  final ChannelMemberCandidate candidate;
-  final bool selected;
-  final VoidCallback? onTap;
-  @override
-  State<_MemberRow> createState() => _MemberRowState();
-}
-
-class _MemberRowState extends State<_MemberRow> {
-  bool hovered = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final pink = t.colors['color-brutal-pink']!;
-    final fill = widget.selected
-        ? (t.brutal ? pink.withValues(alpha: .2) : t.colors['accent-soft'])
-        : hovered
-        ? (t.brutal ? t.colors['color-soft-signal'] : t.colors['primary-soft'])
-        : null;
-    final c = widget.candidate;
-    return Semantics(
-      button: true,
-      selected: widget.selected,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onTap,
-          child: Container(
-            color: fill,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
-              children: [
-                ChannelCandidateAvatar(
-                  candidate: c,
-                  avatarContext: RaftMountedAvatarContext.sidebarList,
-                  humanPlaceholder: true,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    c.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssTextStyle(
-                      family: t.headingFont,
-                      step: RaftTextSteps.sm,
-                      weight: FontWeight.w500,
-                      color: t.brutal ? Colors.black : t.strong,
-                    ),
-                  ),
-                ),
-                if (widget.selected) ...[
-                  const SizedBox(width: 8),
-                  RaftIcon(RaftGlyph.check, size: 14, color: pink),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
+    return RaftCreateChannelDialogView(
+      name: name,
+      description: description,
+      search: search,
+      visibility: visibility,
+      onVisibilityChanged: (v) => setState(() => visibility = v),
+      agents: [
+        for (final c in candidates)
+          if (c.kind == 'agent' && c.matches(search.text)) item(c),
+      ],
+      humans: [
+        for (final c in candidates)
+          if (c.kind == 'human' && c.matches(search.text)) item(c),
+      ],
+      hasCandidates: candidates.isNotEmpty,
+      isSelected: (key) => key.startsWith('agent:')
+          ? agentIds.contains(key.substring(6))
+          : humanIds.contains(key.substring(6)),
+      onToggle: (key) => setState(() {
+        final set = key.startsWith('agent:') ? agentIds : humanIds;
+        final id = key.substring(6);
+        if (!set.remove(id)) set.add(id);
+      }),
+      onClose: close,
+      onSubmit: submit,
+      error: error,
+      submitting: submitting,
     );
   }
 }

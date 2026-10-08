@@ -3,12 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftButtonRecipeVariant, RaftButtonRecipeSize;
+import 'package:raft_ui/recipes.dart' show RaftButtonRecipeVariant;
 
 import '../data/workspace_controller.dart';
 import 'channel_conversion_section.dart';
-import 'channel_form_fields.dart';
 
 class ChannelSettings extends StatefulWidget {
   const ChannelSettings({
@@ -232,112 +230,8 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   });
   bool cap(String name) => w.can(name, resource: channel);
 
-  /// One `py-3` preference row: title `text-sm font-medium`, description
-  /// `mt-1 text-xs text-foreground-muted`, trailing `Switch size="md"`.
-  Widget _switchRow(
-    RaftTokens t,
-    String title,
-    String body,
-    bool value,
-    ValueChanged<bool>? onChanged,
-  ) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                raftText(context, title),
-                style: raftCssTextStyle(
-                  family: t.headingFont,
-                  step: RaftTextSteps.sm,
-                  weight: FontWeight.w500,
-                  color: t.strong,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                raftText(context, body),
-                style: raftCssTextStyle(
-                  family: t.headingFont,
-                  step: RaftTextSteps.xs,
-                  color: t.colors['foreground-muted'],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        RaftSwitch(
-          value: value,
-          size: RaftSwitchSize.md,
-          semanticLabel: raftText(context, title),
-          // The row keeps CSS geometry; the switch is its own tap target.
-          minimumTargetSize: 0,
-          onChanged: busy ? null : onChanged,
-        ),
-      ],
-    ),
-  );
-
-  /// `<section className="mt-5">` + `h3 text-base font-bold` + `mt-2
-  /// divide-y divide-black/10` rows.
-  Widget _section(RaftTokens t, String title, List<Widget> rows) {
-    final divider = t.brutal
-        ? Colors.black.withValues(alpha: .1)
-        : t.colors['line-muted']!;
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            raftText(context, title),
-            style: raftCssTextStyle(
-              family: t.headingFont,
-              step: RaftTextSteps.base,
-              weight: FontWeight.w700,
-              color: t.strong,
-            ),
-          ),
-          const SizedBox(height: 8),
-          for (var i = 0; i < rows.length; i++)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: i == 0 ? null : Border(top: BorderSide(color: divider)),
-              ),
-              child: rows[i],
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Sheet action: `Button size="sm"` with `flex w-full items-center
-  /// justify-center gap-1.5 px-4 py-2 text-sm`.
-  Widget _action(
-    String label,
-    RaftGlyph glyph,
-    RaftButtonRecipeVariant variant,
-    VoidCallback? onPressed,
-  ) => RaftRecipeButton(
-    label: label,
-    glyph: glyph,
-    variant: variant,
-    size: RaftButtonRecipeSize.sm,
-    expand: true,
-    gap: 6,
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    textStep: RaftTextSteps.sm,
-    disabled: busy,
-    onPressed: onPressed,
-  );
-
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     final c = channel;
     final dm = c.type == 'dm';
     final all = c.name == 'all';
@@ -355,381 +249,145 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final pinned = (sidebar['pinned'] as List? ?? []).any(
       (p) => p is Map && p['kind'] == 'channel' && p['id'] == c.id,
     );
-    // theme-brutal:bg-brutal-cream / bg-layer-canvas-muted.
-    final paper = t.brutal
-        ? t.colors['color-brutal-cream']!
-        : t.colors['layer-canvas-muted']!;
-    final strongEdge = t.brutal ? Colors.black : t.colors['line-muted']!;
-    final edgeWidth = t.brutal ? 2.0 : 1.0;
-    final muted = t.colors['foreground-muted']!;
-    final hairline = t.brutal
-        ? Colors.black.withValues(alpha: .1)
-        : t.colors['line-muted']!;
-    final width = MediaQuery.sizeOf(context).width;
-
-    final header = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: t.brutal
-            ? t.colors['color-soft-signal']
-            : t.colors['primary-soft'],
-        border: Border(
-          bottom: BorderSide(color: strongEdge, width: edgeWidth),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // text-[10px] font-bold tracking-wide (inherited 1.5 leading).
-                Text(
-                  raftText(context, 'Channel'),
-                  style: raftCssTextStyle(
-                    family: t.headingFont,
-                    step: (10, 15),
-                    weight: FontWeight.w700,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .55)
-                        : muted,
-                    trackingEm: .025,
-                  ),
-                ),
-                Semantics(
-                  header: true,
-                  child: Text(
-                    raftText(
-                      context,
-                      dm ? 'Conversation settings' : 'Settings',
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssTextStyle(
-                      family: t.headingFont,
-                      step: RaftTextSteps.xl,
-                      weight: FontWeight.w700,
-                      color: t.brutal ? Colors.black : t.strong,
-                    ),
-                  ),
-                ),
-                Text(
-                  '#${widget.channel.name}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: raftCssTextStyle(
-                    family: t.monoFont,
-                    step: RaftTextSteps.xs,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .6)
-                        : muted,
-                  ),
-                ),
-              ],
+    final info = !dm && canEdit;
+    return RaftChannelSettingsSheet(
+      channelName: widget.channel.name,
+      title: dm ? 'Conversation settings' : 'Settings',
+      onClose: () => Navigator.of(context).maybePop(),
+      loading: loading,
+      busy: busy,
+      error: error,
+      // ChannelConversionSection hides itself unless conversion applies.
+      lead: info
+          ? ChannelConversionSection(
+              key: ValueKey('conversion-${w.server?.id}-${c.id}'),
+              controller: w,
+              channelId: c.id,
+            )
+          : null,
+      nameController: info ? name : null,
+      descriptionController: info ? description : null,
+      nameEnabled: !all && !archived,
+      descriptionEnabled: !archived,
+      nameHint: all ? 'The #all channel cannot be renamed.' : null,
+      onSubmitName: (_) => save(),
+      sections: [
+        if (guestFeature && cap('manageGuestAccess') && !archived && !dm)
+          RaftSheetSection('Guest access', [
+            RaftSheetSwitchRow(
+              title: 'Guests can see this channel',
+              description:
+                  'Guests in this server can find and read this channel.',
+              value: c.flag('guestVisible'),
+              onChanged: (v) => run(() async {
+                await w.command(
+                  'PATCH',
+                  '/channels/${c.id}',
+                  data: {'guestVisible': v},
+                );
+              }),
             ),
+            RaftSheetSwitchRow(
+              title: 'Guests can join this channel',
+              description: 'Guests can join and post in this channel.',
+              value: c.flag('guestJoinable'),
+              onChanged: (v) => run(() async {
+                await w.command(
+                  'PATCH',
+                  '/channels/${c.id}',
+                  data: v
+                      ? {'guestVisible': true, 'guestJoinable': true}
+                      : {'guestJoinable': false},
+                );
+              }),
+            ),
+          ]),
+        RaftSheetSection('Preferences', [
+          RaftSheetSwitchRow(
+            title: 'Pin channel',
+            description: 'Keep this channel pinned to the top of your sidebar.',
+            value: pinned,
+            onChanged: pin,
           ),
-          const SizedBox(width: 16),
-          RaftRecipeButton(
-            glyph: RaftGlyph.x,
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.sm,
-            padding: const EdgeInsets.all(4), // p-1
-            tooltip: raftText(context, 'Close channel settings'),
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-        ],
-      ),
-    );
-
-    final body = <Widget>[
-      if (error != null) ...[
-        ChannelFormBanner(error!),
-        const SizedBox(height: 20),
-      ],
-      if (!dm && canEdit) ...[
-        // ChannelConversionSection hides itself unless conversion applies.
-        ChannelConversionSection(
-          key: ValueKey('conversion-${w.server?.id}-${c.id}'),
-          controller: w,
-          channelId: c.id,
-        ),
-        // section space-y-3 border-b border-line-muted pb-5.
-        Container(
-          padding: const EdgeInsets.only(bottom: 20),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: hairline)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              RaftProductFormField(
-                label: 'Name',
-                uppercase: false,
-                required: true,
-                labelWeight: FontWeight.w500,
-                hint: all ? 'The #all channel cannot be renamed.' : null,
-                child: ChannelTextInput(
-                  controller: name,
-                  placeholder: 'e.g. ai-research',
-                  autofocus: true,
-                  enabled: !all && !archived && !busy,
-                  onSubmitted: (_) => save(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              RaftProductFormField(
-                label: 'Description',
-                uppercase: false,
-                optional: true,
-                labelWeight: FontWeight.w500,
-                child: ChannelTextInput(
-                  controller: description,
-                  placeholder: 'What is this channel about?',
-                  multiline: true,
-                  enabled: !archived && !busy,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-      if (guestFeature && cap('manageGuestAccess') && !archived && !dm)
-        _section(t, 'Guest access', [
-          _switchRow(
-            t,
-            'Guests can see this channel',
-            'Guests in this server can find and read this channel.',
-            c.flag('guestVisible'),
-            (v) => run(() async {
-              await w.command(
-                'PATCH',
-                '/channels/${c.id}',
-                data: {'guestVisible': v},
-              );
-            }),
-          ),
-          _switchRow(
-            t,
-            'Guests can join this channel',
-            'Guests can join and post in this channel.',
-            c.flag('guestJoinable'),
-            (v) => run(() async {
-              await w.command(
-                'PATCH',
-                '/channels/${c.id}',
-                data: v
-                    ? {'guestVisible': true, 'guestJoinable': true}
-                    : {'guestJoinable': false},
-              );
-            }),
-          ),
+          if (widget.collapseLongMessages &&
+              display.containsKey('collapseLongMessages'))
+            RaftSheetSwitchRow(
+              title: 'Collapse long messages',
+              description:
+                  'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
+              value: display['collapseLongMessages'] != false,
+              onChanged: (v) => run(() async {
+                await w.command(
+                  'PATCH',
+                  '/channels/${c.id}/message-display-settings',
+                  data: {'collapseLongMessages': v},
+                );
+              }),
+            ),
         ]),
-      _section(t, 'Preferences', [
-        _switchRow(
-          t,
-          'Pin channel',
-          'Keep this channel pinned to the top of your sidebar.',
-          pinned,
-          pin,
-        ),
-        if (widget.collapseLongMessages &&
-            display.containsKey('collapseLongMessages'))
-          _switchRow(
-            t,
-            'Collapse long messages',
-            'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
-            display['collapseLongMessages'] != false,
-            (v) => run(() async {
-              await w.command(
-                'PATCH',
-                '/channels/${c.id}/message-display-settings',
-                data: {'collapseLongMessages': v},
-              );
-            }),
-          ),
-      ]),
-      if (!dm &&
-          (showLeave || showManage || (archived && cap('archiveChannels'))))
-        Padding(
-          padding: const EdgeInsets.only(top: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                raftText(context, 'Channel actions'),
-                style: raftCssTextStyle(
-                  family: t.headingFont,
-                  step: RaftTextSteps.xs,
-                  weight: FontWeight.w700,
-                  color: muted,
-                  trackingEm: .025,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                raftText(
-                  context,
-                  'Membership, visibility, conversion, archive, and destructive controls.',
-                ),
-                style: raftCssTextStyle(
-                  family: t.headingFont,
-                  step: RaftTextSteps.xs,
-                  color: muted,
-                ),
-              ),
-              for (final action in [
-                if (showLeave)
-                  _action(
-                    'Leave Channel',
-                    RaftGlyph.logOut,
-                    RaftButtonRecipeVariant.warning,
-                    () => confirm(
-                      'Leave channel?',
-                      'You can rejoin a public channel later.',
-                      'POST',
-                      '/channels/${c.id}/leave',
-                    ),
-                  ),
-                if (showVisibility)
-                  _action(
-                    private ? 'Make Public' : 'Make Private',
-                    private ? RaftGlyph.hash : RaftGlyph.lock,
-                    RaftButtonRecipeVariant.warning,
-                    () => confirm(
-                      private
-                          ? 'Make channel public?'
-                          : 'Make channel private?',
-                      private
-                          ? 'Everyone in this workspace can read this channel.'
-                          : 'Only channel members can read this channel.',
-                      'PATCH',
-                      '/channels/${c.id}',
-                      data: {'visibility': private ? 'public' : 'private'},
-                    ),
-                  ),
-                if (!all && cap('archiveChannels'))
-                  archived
-                      ? _action(
-                          'Unarchive Channel',
-                          RaftGlyph.archiveRestore,
-                          RaftButtonRecipeVariant.success,
-                          () => run(() async {
-                            await w.command(
-                              'POST',
-                              '/channels/${c.id}/unarchive',
-                            );
-                          }),
-                        )
-                      : _action(
-                          'Archive Channel',
-                          RaftGlyph.archive,
-                          RaftButtonRecipeVariant.warning,
-                          () => confirm(
-                            'Archive channel?',
-                            'Archived channels retain history and stop new messages.',
-                            'POST',
-                            '/channels/${c.id}/archive',
-                          ),
-                        ),
-                if (!all && !archived && cap('deleteChannels'))
-                  _action(
-                    'Delete Channel',
-                    RaftGlyph.trash2,
-                    RaftButtonRecipeVariant.danger,
-                    deleteChannel,
-                  ),
-              ]) ...[const SizedBox(height: 12), action],
-            ],
-          ),
-        ),
-    ];
-
-    final footer = Container(
-      // `safe-bottom` = 1rem + inset bottom; py-3 elsewhere.
-      padding: EdgeInsets.fromLTRB(
-        16,
-        12,
-        16,
-        16 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: paper,
-        border: Border(
-          top: BorderSide(color: strongEdge, width: edgeWidth),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          RaftRecipeButton(
-            label: 'Cancel',
-            variant: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.sm,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            textStep: RaftTextSteps.sm,
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-          if (canEdit && !dm) ...[
-            const SizedBox(width: 12),
-            RaftRecipeButton(
-              label: busy ? 'Saving…' : 'Save',
-              variant: RaftButtonRecipeVariant.accent,
-              size: RaftButtonRecipeSize.sm,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              textStep: RaftTextSteps.sm,
-              disabled: busy || archived,
-              onPressed: save,
-            ),
-          ],
-        ],
-      ),
-    );
-
-    // DrawerContent: right sheet, `w-full max-w-[min(100vw,34rem)] h-dvh`,
-    // `theme-brutal:border-l-2 border-line-strong`.
-    return Align(
-      alignment: Alignment.centerRight,
-      child: SizedBox(
-        width: width < 544 ? width : 544,
-        height: double.infinity,
-        child: Material(
-          color: paper,
-          // Container (not DecoratedBox) so the border-l insets the content
-          // like the CSS border box.
-          child: Container(
-            decoration: BoxDecoration(
-              border: t.brutal
-                  ? Border(
-                      left: BorderSide(
-                        color: t.colors['line-strong']!,
-                        width: 2,
-                      ),
-                    )
-                  : null,
-            ),
-            child: DefaultTextStyle.merge(
-              style: TextStyle(fontFamily: t.headingFont, color: t.strong),
-              child: Column(
-                children: [
-                  header,
-                  Expanded(
-                    child: loading
-                        ? const Center(child: RaftSpinner())
-                        : SingleChildScrollView(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: body,
-                            ),
-                          ),
-                  ),
-                  footer,
-                ],
-              ),
+      ],
+      showActions:
+          !dm &&
+          (showLeave || showManage || (archived && cap('archiveChannels'))),
+      actions: [
+        if (showLeave)
+          RaftSheetAction(
+            'Leave Channel',
+            RaftGlyph.logOut,
+            RaftButtonRecipeVariant.warning,
+            () => confirm(
+              'Leave channel?',
+              'You can rejoin a public channel later.',
+              'POST',
+              '/channels/${c.id}/leave',
             ),
           ),
-        ),
-      ),
+        if (showVisibility)
+          RaftSheetAction(
+            private ? 'Make Public' : 'Make Private',
+            private ? RaftGlyph.hash : RaftGlyph.lock,
+            RaftButtonRecipeVariant.warning,
+            () => confirm(
+              private ? 'Make channel public?' : 'Make channel private?',
+              private
+                  ? 'Everyone in this workspace can read this channel.'
+                  : 'Only channel members can read this channel.',
+              'PATCH',
+              '/channels/${c.id}',
+              data: {'visibility': private ? 'public' : 'private'},
+            ),
+          ),
+        if (!all && cap('archiveChannels'))
+          archived
+              ? RaftSheetAction(
+                  'Unarchive Channel',
+                  RaftGlyph.archiveRestore,
+                  RaftButtonRecipeVariant.success,
+                  () => run(() async {
+                    await w.command('POST', '/channels/${c.id}/unarchive');
+                  }),
+                )
+              : RaftSheetAction(
+                  'Archive Channel',
+                  RaftGlyph.archive,
+                  RaftButtonRecipeVariant.warning,
+                  () => confirm(
+                    'Archive channel?',
+                    'Archived channels retain history and stop new messages.',
+                    'POST',
+                    '/channels/${c.id}/archive',
+                  ),
+                ),
+        if (!all && !archived && cap('deleteChannels'))
+          RaftSheetAction(
+            'Delete Channel',
+            RaftGlyph.trash2,
+            RaftButtonRecipeVariant.danger,
+            deleteChannel,
+          ),
+      ],
+      onSave: canEdit && !dm ? save : null,
+      saveDisabled: archived,
     );
   }
 

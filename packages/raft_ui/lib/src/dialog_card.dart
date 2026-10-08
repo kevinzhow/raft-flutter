@@ -12,6 +12,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
+import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
@@ -647,3 +648,103 @@ class _RecipeSegmentState extends State<_RecipeSegment> {
     );
   }
 }
+
+/// raft-ui `Input` (single line) or `Textarea rows={2}` (multiline:
+/// textarea recipe `min-height: 96px`, scrolling inside that box).
+class RaftDialogTextInput extends StatelessWidget {
+  const RaftDialogTextInput({
+    super.key,
+    required this.controller,
+    this.placeholder,
+    this.multiline = false,
+    this.autofocus = false,
+    this.enabled = true,
+    this.leadingGlyph,
+    this.onSubmitted,
+    this.fieldKey,
+  });
+  final TextEditingController controller;
+  final String? placeholder;
+  final bool multiline, autofocus, enabled;
+  final RaftGlyph? leadingGlyph;
+  final ValueChanged<String>? onSubmitted;
+  final Key? fieldKey;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final base = Theme.of(context).inputDecorationTheme.contentPadding;
+    final resolved = base?.resolve(Directionality.of(context));
+    Widget field = TextField(
+      key: fieldKey,
+      controller: controller,
+      enabled: enabled,
+      autofocus: autofocus,
+      style: t.fieldStyle,
+      minLines: multiline ? null : 1,
+      maxLines: multiline ? null : 1,
+      expands: multiline,
+      textAlignVertical: multiline ? TextAlignVertical.top : null,
+      onSubmitted: onSubmitted,
+      decoration: InputDecoration(
+        hintText: placeholder == null ? null : raftText(context, placeholder!),
+        // `pl-9` replaces the input's left padding when a glyph leads.
+        contentPadding: leadingGlyph == null || resolved == null
+            ? null
+            : resolved.copyWith(left: resolved.left - 12 + 36),
+      ),
+    );
+    if (multiline) field = SizedBox(height: 96, child: field);
+    if (leadingGlyph != null) {
+      field = Stack(
+        alignment: Alignment.centerLeft,
+        children: [
+          field,
+          Positioned(
+            left: 12 + t.border, // left-3 inside the border box
+            child: IgnorePointer(
+              child: RaftIcon(
+                leadingGlyph!,
+                size: 14,
+                color: t.colors['foreground-muted'],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return RaftFieldSurface(child: field);
+  }
+}
+
+/// Web `Banner intent="warning" className="font-bold"`.
+class RaftWarningBanner extends StatelessWidget {
+  const RaftWarningBanner(this.message, {super.key});
+  final String message;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: t.colors['warning-soft'],
+          border: Border.all(
+            color: t.brutal ? t.colors['line-strong']! : t.colors['warning']!,
+            width: t.border,
+          ),
+        ),
+        child: Text(
+          message,
+          style: raftCssTextStyle(
+            family: t.headingFont,
+            step: RaftTextSteps.sm,
+            weight: FontWeight.w700,
+            color: t.strong,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
