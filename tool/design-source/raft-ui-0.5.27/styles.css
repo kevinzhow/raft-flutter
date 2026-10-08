@@ -1,0 +1,252 @@
+@import "./components/combobox-select/combobox-select.css";
+@import "./foundation.css";
+@import "./components/float-button/float-button.css";
+@import "./components/timeline/timeline.css";
+
+/* `dark:` tracks the elegant theme's explicit dark context and its pre-hydration
+   system-dark fallback. Explicit .light/.dark classes always win.
+   Nearest theme scope wins: a `[data-theme]` element without `.dark` (a brutal or
+   elegant-light preview island) re-enters light context for its subtree even when
+   the document root is dark. Supports one level of scope nesting. */
+@custom-variant dark {
+  &:where(
+    :is([data-theme="elegant"].dark, [data-theme="elegant"].dark *):not(
+      :where(
+        [data-theme="elegant"].dark :is([data-theme]:not(.dark)),
+        [data-theme="elegant"].dark :is([data-theme]:not(.dark)) *
+      )
+    )
+  ) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(
+      :is(
+        [data-theme="elegant"]:not(.light):not(.dark),
+        [data-theme="elegant"]:not(.light):not(.dark) *
+      ):not(
+        :where(
+          [data-theme="elegant"]:not(.light):not(.dark) [data-theme],
+          [data-theme="elegant"]:not(.light):not(.dark) [data-theme] *
+        )
+      )
+    ) {
+      @slot;
+    }
+  }
+}
+
+@theme {
+  --color-black: oklch(0 0 0);
+  --color-white: oklch(1 0 0);
+
+  /* Bare brutal palette utilities. The numbered ramps are plain variables
+     further down — deliberately not registered as utilities; reach for
+     semantic tokens or these bare aliases instead. */
+  --color-brutal-yellow: var(--color-brutal-yellow-400);
+  /* Semantic alias for source "Soft Signal" callsites (matches brisk yellow). */
+  --color-soft-signal: var(--color-brutal-yellow);
+  /* Semantic alias for source "Soft Haze" callsites (matches slock #BBAFE6). */
+  --color-brutal-lavender: var(--color-brutal-purple-400);
+  --color-brutal-pink: var(--color-brutal-pink-400);
+  --color-brutal-cyan: var(--color-brutal-cyan-400);
+  --color-brutal-orange: var(--color-brutal-orange-400);
+  --color-brutal-lime: var(--color-brutal-lime-400);
+  --color-brutal-red: var(--color-brutal-red-400);
+  --color-brutal-stone: var(--color-brutal-stone-400);
+  --color-brutal-cream: var(--color-brutal-cream-200);
+
+  --ease-slide: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@theme inline {
+  --color-foreground: var(--foreground);
+  --color-foreground-strong: var(--foreground-strong);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-foreground-hint: var(--foreground-hint);
+  --color-foreground-icon: var(--foreground-icon);
+  --color-foreground-placeholder: var(--foreground-placeholder);
+  --color-foreground-disabled: var(--foreground-disabled);
+  --color-foreground-inverse: var(--foreground-inverse);
+  --color-foreground-active: var(--foreground-active);
+  --color-foreground-hover: var(--foreground-hover);
+
+  --color-layer-canvas: var(--layer-canvas);
+  --color-layer-canvas-muted: var(--layer-canvas-muted);
+  --color-layer-panel: var(--layer-panel);
+  --color-layer-popover: var(--layer-popover);
+  --color-layer-backdrop: var(--layer-backdrop);
+  --color-layer-inset: var(--layer-inset);
+  --color-layer-card: var(--layer-card);
+  --color-layer-hud: var(--layer-hud);
+  --color-layer-hud-foreground: var(--layer-hud-foreground);
+
+  --color-fill-muted: var(--fill-muted);
+  --color-fill-strong: var(--fill-strong);
+
+  --color-line-strong: var(--line-strong);
+  --color-line: var(--line);
+  --color-line-muted: var(--line-muted);
+  --color-line-hairline: var(--line-hairline);
+  --color-line-field: var(--line-field);
+  --color-line-field-hover: var(--line-field-hover);
+
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-4: var(--ink-4);
+  --color-ink-6: var(--ink-6);
+  --color-ink-8: var(--ink-8);
+  --color-ink-10: var(--ink-10);
+  --color-ink-16: var(--ink-16);
+  --color-ink-20: var(--ink-20);
+  --color-ink-30: var(--ink-30);
+  --color-ink-40: var(--ink-40);
+
+  --color-primary: var(--primary-400);
+  --color-primary-50: var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+  --color-primary-950: var(--primary-950);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+
+  --color-accent: var(--accent-400);
+  --color-accent-50: var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+  --color-accent-800: var(--accent-800);
+  --color-accent-900: var(--accent-900);
+  --color-accent-950: var(--accent-950);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+
+  --color-secondary: var(--secondary-400);
+  --color-secondary-50: var(--secondary-50);
+  --color-secondary-100: var(--secondary-100);
+  --color-secondary-200: var(--secondary-200);
+  --color-secondary-300: var(--secondary-300);
+  --color-secondary-400: var(--secondary-400);
+  --color-secondary-500: var(--secondary-500);
+  --color-secondary-600: var(--secondary-600);
+  --color-secondary-700: var(--secondary-700);
+  --color-secondary-800: var(--secondary-800);
+  --color-secondary-900: var(--secondary-900);
+  --color-secondary-950: var(--secondary-950);
+
+  --color-info: var(--info);
+  --color-info-strong: var(--info-strong);
+  --color-info-muted: var(--info-muted);
+  --color-info-soft: var(--info-soft);
+  --color-info-hover: var(--info-hover);
+  --color-info-active: var(--info-active);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-strong: var(--success-strong);
+  --color-success-muted: var(--success-muted);
+  --color-success-soft: var(--success-soft);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-strong: var(--warning-strong);
+  --color-warning-muted: var(--warning-muted);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-active: var(--warning-active);
+
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-strong: var(--danger-strong);
+  --color-danger-muted: var(--danger-muted);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-active: var(--danger-active);
+
+  --color-inactive: var(--inactive);
+  --color-inactive-foreground: var(--inactive-foreground);
+
+  --shadow-raft-xs: var(--theme-shadow-xs);
+  --shadow-raft-sm: var(--theme-shadow-sm);
+  --shadow-raft-md: var(--theme-shadow-md);
+  --shadow-raft-lg: var(--theme-shadow-lg);
+  --shadow-raft-xl: var(--theme-shadow-xl);
+
+  --font-heading: var(--heading-font, system-ui, sans-serif);
+  --font-sans: var(--sans-font, system-ui, sans-serif);
+  --font-mono: var(--mono-font, ui-monospace, monospace);
+  /* ─── Field metric axis ─────────────────────────────────────────────────────
+     The first non-colour token axis in this file. It exists because a form
+     field had no declared metrics at all: `Input` got its height from `py-2`
+     plus inherited line-height, `SelectTrigger` borrowed the Button size scale
+     because it is built on Button, and a Select popup declared its own per-theme
+     typography (brutal 12/700/24, elegant 13/400/20) with no relation to the
+     field it belongs to. Three components, three different sizes for the same
+     value.
+
+     Consumers: `Input`, `Textarea`, the field variant of `SelectTrigger`, and
+     Select popup options. Textarea shares the Input typography contract while
+     retaining its independent min-height and resize behavior. Options share
+     font-size/weight/line-height with the trigger so a value does not change
+     size when the list opens; their height and padding stay independent,
+     because a list row is not a control and must not be stretched to the
+     field's height.
+
+     Raft's Select contract, not an industry rule — both conventions exist. */
+  --text-field: var(--field-font-size);
+  --text-field--line-height: var(--field-line-height);
+  --font-weight-field: var(--field-font-weight);
+  /* ─── Card-title metric axis ────────────────────────────────────────────────
+     Same pattern as the field axis, for CardTitle. Consumers that vertically
+     align a control (radio, checkbox) with a card title need the title's
+     line-height to size the alignment container — without it, the value must
+     be hard-coded per theme and drifts when the title recipe changes.
+
+     Consumers: `CardTitle`, plus any composition that lays a control beside a
+     card title (radio-card, checkbox-card patterns in Slock — 6 callsites). */
+  --text-card-title: var(--card-title-font-size);
+  --text-card-title--line-height: var(--card-title-line-height);
+  --font-weight-card-title: var(--card-title-font-weight);
+}
+
+*,
+::before,
+::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  position: relative;
+}
+
+@utility image-transparency-bg {
+  --checker-cell: light-dark(oklch(0.1813 0.00497 17.62 / 0.12), oklch(1 0 0 / 0.1));
+  background-color: light-dark(oklch(1 0 0), oklch(0.23 0 0));
+  background-image:
+    linear-gradient(45deg, var(--checker-cell) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--checker-cell) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--checker-cell) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--checker-cell) 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+}

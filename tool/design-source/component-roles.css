@@ -1,0 +1,88 @@
+/* Component colour roles — AUTHORED in this repository (not vendored).
+   Each value is the CSS a raft-ui 0.5.27 recipe (dist/index.mjs) or a Web
+   product callsite applies, translated from its Tailwind class to plain CSS,
+   so tool/gen-tokens resolves it through the same var()/color-mix() engine as
+   the foundation tokens. Same cascade as foundation.css: the root/brutal block
+   holds defaults, elegant overrides, elegant.dark overrides elegant.
+   Cite the source of every role; never paste a sampled pixel value here. */
+
+:where(:root),
+[data-theme="brutal"] {
+  /* Brutal Button recipe: theme=brutal variant=primary/accent → bg-brutal-yellow / bg-brutal-pink
+     (product @theme re-declares both). Elegant uses the ladder solid via --color-primary. */
+  --primary: var(--color-brutal-yellow);
+  --accent: var(--color-brutal-pink);
+  --brutal-cream: var(--color-brutal-cream);
+
+  /* Button elegant variant=default: bg-foreground, hover:bg-[oklch(0.31_0.006_106.42)];
+     dark:bg-ink, dark:hover:bg-foreground-strong. Brutal uses bg-layer-panel (not this role). */
+  --button-default-fill: var(--foreground);
+  --button-default-hover: oklch(0.31 0.006 106.42);
+  /* Button elegant variant=primary/accent: hover:bg-primary-hover / hover:bg-accent-hover. */
+  --button-primary-hover: var(--primary-hover);
+  --button-accent-hover: var(--accent-hover);
+  /* Button elegant variant=accent ring: 0_0_0_1px_color-mix(in_srgb-linear,var(--accent-strong)_28%,transparent). */
+  --button-accent-edge: color-mix(in srgb-linear, var(--accent-strong) 28%, transparent);
+  /* Button elegant variant=danger: bg-danger text-danger-foreground hover:bg-danger-hover. */
+  --button-danger-fill: var(--danger);
+  --button-danger-hover: var(--danger-hover);
+  --button-danger-foreground: var(--danger-foreground);
+  /* High-contrast destructive confirm. Web callsite not re-located in 26f77ef; mapping kept from
+     the prior port (d06fd48), which named the brutal red 700 ramp step. */
+  --button-danger-high-contrast: var(--color-brutal-red-700);
+  --button-danger-high-contrast-foreground: var(--color-white);
+
+  /* TaskSection (taskListSection recipe): brutal has no fill. */
+  --task-section-fill: transparent;
+  /* CodePre border: brutal theme-brutal:border-black; elegant border-line. */
+  --code-border: var(--color-black);
+
+  /* Input recipe dark shadow: inset_0_0_0_1px_oklch(0_0_0/0.35), inset_0_1px_2px_oklch(0_0_0/0.3),
+     0_1px_0_oklch(0.985_0.004_106.42/0.04). Light themes draw none. */
+  --field-inset-line: transparent;
+  --field-inset-top: transparent;
+  --field-inset-bottom: transparent;
+
+  /* Switch recipe thumb (elegant): bg-layer-popover, data-disabled:bg-[oklch(0.88_0.004_106.42)].
+     Brutal: thumb bg-line-strong, data-disabled:bg-line. */
+  --switch-thumb: var(--line-strong);
+  --switch-thumb-checked: var(--line-strong);
+  --switch-thumb-disabled: var(--line);
+  --switch-thumb-checked-disabled: var(--line);
+  /* Switch root dark shadow tail: 0_1px_0_oklch(0.985_0.004_106.42/0.04). Light themes: none. */
+  --switch-shadow-bottom: transparent;
+}
+
+[data-theme="elegant"] {
+  --primary: var(--primary-400);
+  --accent: var(--accent-400);
+  /* taskListSection elegant root: bg-[color-mix(in_oklch,var(--ink-4),var(--layer-panel))]. */
+  --task-section-fill: color-mix(in oklch, var(--ink-4), var(--layer-panel));
+  --code-border: var(--line);
+  --switch-thumb: var(--layer-popover);
+  --switch-thumb-checked: var(--layer-popover);
+  --switch-thumb-disabled: oklch(0.88 0.004 106.42);
+  --switch-thumb-checked-disabled: oklch(0.88 0.004 106.42);
+}
+
+[data-theme="elegant"].dark {
+  --button-default-fill: var(--ink);
+  --button-default-hover: var(--foreground-strong);
+  /* Button elegant variant=danger dark: dark:bg-[oklch(0.58_0.21_27)] dark:text-[oklch(0.985_0.004_106.42)]
+     dark:hover:bg-[oklch(0.61_0.21_27)]. */
+  --button-danger-fill: oklch(0.58 0.21 27);
+  --button-danger-hover: oklch(0.61 0.21 27);
+  --button-danger-foreground: oklch(0.985 0.004 106.42);
+  /* taskListSection elegant root: dark:bg-layer-card. */
+  --task-section-fill: var(--layer-card);
+  --field-inset-line: oklch(0 0 0 / 0.35);
+  --field-inset-top: oklch(0 0 0 / 0.3);
+  --field-inset-bottom: oklch(0.985 0.004 106.42 / 0.04);
+  /* Switch thumb dark: dark:bg-[oklch(0.45_0.006_106.42)] dark:data-checked:bg-[oklch(0.205_0.004_106.42)]
+     dark:data-disabled:bg-[oklch(0.38_0.002_106.42)] dark:data-checked:data-disabled:bg-[oklch(0.28_0.002_106.42)]. */
+  --switch-thumb: oklch(0.45 0.006 106.42);
+  --switch-thumb-checked: oklch(0.205 0.004 106.42);
+  --switch-thumb-disabled: oklch(0.38 0.002 106.42);
+  --switch-thumb-checked-disabled: oklch(0.28 0.002 106.42);
+  --switch-shadow-bottom: oklch(0.985 0.004 106.42 / 0.04);
+}

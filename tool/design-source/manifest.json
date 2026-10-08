@@ -1,0 +1,24 @@
+{
+  "files": {
+    "raft-ui-0.5.27/foundation.css": {
+      "origin": "raft-ui:dist/foundation.css",
+      "sha256": "da6697018c374a213fbfbd7f201c22ca756a81213a26d61e71c0680a0ed9fc51"
+    },
+    "raft-ui-0.5.27/styles.css": {
+      "origin": "raft-ui:dist/styles.css",
+      "sha256": "1cafe22b9584d802538739e284f1831455b89e80b179b684d9b064afec2951d1"
+    },
+    "raft-ui-0.5.27/fonts.css": {
+      "origin": "raft-ui:dist/fonts.css",
+      "sha256": "2640cf7720c1d0ac5aaeeaa6cfd27958711b4256eb62e7a029a29ce9a7a22137"
+    },
+    "tailwindcss-4.2.2/theme.css": {
+      "origin": "tailwind:theme.css",
+      "sha256": "ce91efc0ca2e741e56fe263662e5282dc0a16f19a8647f0c38b60fcc4e2119b1"
+    },
+    "raft-web-26f77ef/index.css": {
+      "origin": "raft-source:packages/web/src/index.css",
+      "sha256": "63aa747750fef8437ad38a1deb2018090c5c3354053f439bec06c80c2aa9d803"
+    }
+  }
+}

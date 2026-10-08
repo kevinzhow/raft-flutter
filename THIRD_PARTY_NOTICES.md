@@ -9,3 +9,5 @@ The dependency versions are fixed in `pubspec.lock`. Flutter includes package li
 Exact icon geometry from the pinned Web dependency lucide-react 0.575.0 carries its ISC notice in `docs/licenses/lucide-0.575.0-ISC.txt` and `packages/raft_ui/LICENSE-LUCIDE`.
 
 Liberation Sans (diagram-only): unchanged fonts from fonts-liberation 1:2.1.5-3build1, copyright Google Corporation and Red Hat, Inc.; SIL OFL 1.1. See docs/licenses/LiberationSans-OFL.txt and docs/diagram-font-provenance.json.
+
+Design-token sources vendored for `tool/gen-tokens` live in `tool/design-source/` (hashes in `manifest.json`): raft-ui 0.5.27 `dist/foundation.css`, `dist/styles.css`, `dist/fonts.css` (MIT, per the npm package metadata), tailwindcss 4.2.2 `theme.css` (MIT, license copied beside it), and raft-source 26f77ef `packages/web/src/index.css` (covered by the raft-source license above). See docs/design-tokens.md.

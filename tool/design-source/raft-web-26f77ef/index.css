@@ -1,0 +1,1101 @@
+@import "raft-ui/fonts.css";
+
+@import "tailwindcss";
+@import "raft-ui/styles.css";
+@import "./components/mermaid/mermaid.css";
+
+/* Tailwind utilities scoped to the app's Brutal theme root. */
+@custom-variant theme-brutal (&:where([data-theme="brutal"], [data-theme="brutal"] *));
+
+/* Typography follows raft-ui/fonts.css contract */
+
+/*
+ * Space Grotesk keeps Raft's established typography, but its straight double
+ * quote is visually too close to the closing curly quote. This face reuses
+ * Hanken Grotesk only for the neutral straight-quote code point. Curly quotes
+ * remain owned by Space Grotesk. The browser
+ * selects it per glyph through unicode-range; DOM text, copy/paste, search,
+ * wrapping ownership, and accessibility content remain unchanged.
+ *
+ * #7347 dropped this block while switching the file's top to
+ * `@import "raft-ui/fonts.css"`; the visual suite caught it — its font
+ * contract requires this woff2 to be requested, and `Raft Quote Glyphs` is
+ * probed by name. Restored verbatim from 7a1558117:packages/web/src/index.css.
+ */
+@font-face {
+  font-family: 'Raft Quote Glyphs';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/hankengrotesk/v12/ieVn2YZDLWuGJpnzaiwFXS9tYtpd59CxCis4.woff2') format('woff2');
+  unicode-range: U+0022;
+}
+
+/*
+ * Tailwind v4 source scanning. These directives travel WITH this CSS
+ * file, so any package that imports `@botiverse/raft-web/src/index.css`
+ * (currently `@botiverse/raft-web`, `@botiverse/raft-ui-inventory`, future internal
+ * apps) automatically gets utility-class generation for the shared
+ * primitive surface — primitives that use `sr-only` / `ml-2` etc.
+ * keep working without each consumer re-declaring scan paths.
+ *
+ * Without this, an out-of-package consumer's Tailwind only scans its
+ * own src tree; primitives looked correct in the web app but rendered
+ * with raw `<input type=checkbox>` and zero-gap section headers in the
+ * inventory — stdrc #proj-theme:ac79cf20 msg=12665926.
+ */
+@source "./components";
+@source "./pages";
+@source "../../ui-inventory/src";
+@source "../node_modules/raft-ui/dist";
+
+@theme {
+  /* Soft pastel palette (stdrc 2026-04-28 #wg-theme) — base 5 from him +
+     3 derived by lowering saturation of the existing brutal-cyan/orange/lime. */
+  --color-brutal-yellow: #FFD440;   /* Soft Signal */
+  --color-soft-signal: var(--color-brutal-yellow); /* Semantic alias for source callsites; do not use bg-brutal-yellow directly in TS/TSX. */
+  --color-status-busy: #FFD440; /* FIXED busy/thinking status-light yellow. Status lights are semantic (red/green/yellow) and must NOT follow the skin — desktop skins re-hue --color-soft-signal and the brutal-yellow scale, so status callsites use this token instead (@WAWQAQ 2026-09-10 #kabi-desktop 5c2901df). */
+  --color-workspace-mode-active: #E3B100; /* Depressed Workspace rail toggle; deliberately darker than the rail. */
+  --color-brutal-pink: #FE7DA8;     /* Bubble Pink */
+  --color-brutal-lavender: #BBAFE6; /* Soft Haze */
+  --color-brutal-cream: #FFFAEF;    /* Cotton Core — sidebar bg per stdrc 2026-05-02 #proj-uiux:95e25b5b inversion: sidebar warm cream, main panel white. */
+  --color-brutal-black: #141111;    /* Slock Ink */
+  /* The 3 derived colors are aligned to the OKLCH average of Plan A's
+     3 figma-anchored colors (yellow / pink / lavender): L=80.5, C=0.134.
+     Only hue varies — gives perceptual equal-brightness + equal-saturation
+     across the derived trio (#proj-uiux:0e6befb8 stdrc 2026-05-03). */
+  --color-brutal-cyan: #27CCF3;     /* OKLCH(78.3%, 0.135, 219°) — locked to soft-haze (lavender)'s L per stdrc 17:50 "设到 lavender 同样值". Helmholtz–Kohlrausch consideration absorbed into the choice of anchor — lavender is the closest cool figma color, matches blue/cyan perceptually better than yellow does. */
+  --color-brutal-orange: #F8A16F;   /* OKLCH(78.5%, 0.123, 50°) — figma-avg L pulled down 2% per stdrc 17:01 "orange 要能再深一点点点" */
+  --color-brutal-lime: #A9D877;     /* OKLCH(82.6%, 0.135, 130°) — figma-avg L pulled up 2% per stdrc 17:01 "lime 在淡一点点点" */
+  /* Red sits OUTSIDE the figma-avg perceptual ring on purpose: a danger
+     color at L=80 reads coral/pink, not danger. Kept at L≈69 so it stays
+     distinct from brutal-pink and communicates "destructive". */
+  --color-brutal-red: #F97264;      /* OKLCH(71%, 0.168, 28°) — coral-red, distinct from brutal-pink. Sits OUTSIDE the figma L envelope on purpose: a danger color at L≥75 reads coral/pink. Tweaked from #F26C5E → #F97264 per stdrc 17:25 "red 其实可以再淡一点点" — same hue/chroma, L 69 → 71. */
+  /* Stone is the warm-neutral terminal-state color. Used for task statuses
+     that mean "stopped / archived / won't-do" (currently `closed`). Sits
+     between the saturated active-state ring (L≈80, C≈0.13) and `gray-400`
+     disabled grey: low chroma so it visually retreats, but warm-tinted
+     hue=55° so it stays inside the brand palette instead of reading "tech
+     grey". Reserved for non-active / exited semantic states — NOT for
+     destructive actions (those stay `brutal-red`). Joy/Bugen 2026-05-08
+     #proj-uiux task #145 (daily UI audit Finding 1). */
+  --color-brutal-stone: #C0B9B1;    /* OKLCH(76%, 0.010, 55°) — warm stone gray */
+
+  /* Match the two Shiki themes, including plaintext/loading fallbacks. */
+  --color-code-surface: #ffffff;
+  --color-code-foreground: #24292e;
+
+  --font-display: var(--font-heading, var(--heading-font, "Hanken Grotesk", system-ui, sans-serif));
+  --font-mono: var(--mono-font, "Geist Mono", ui-monospace, monospace);
+
+  --shadow-brutal: 4px 4px 0px #141111;
+  --shadow-brutal-sm: 2px 2px 0px #141111;
+  --shadow-brutal-lg: 6px 6px 0px #141111;
+  --shadow-brutal-hover: 2px 2px 0px #141111;
+  --shadow-brutal-active: 1px 1px 0px #141111;
+  --shadow-workspace-mode-active: inset 3px 3px 0px rgb(20 17 17 / 35%);
+  /* Directional occlusion cues for horizontally clipped content. Unlike the
+     brutal elevation shadows, these cast inward so the edge reads as another
+     item continuing underneath the viewport. */
+  /* Soft popover shadow for tiny transient overlays (reaction picker,
+     tooltip, dropdown menu, hover popover). Exception to brutal hard
+     shadow — only valid on surfaces that auto-dismiss on click-outside.
+     See CLAUDE.md "Shadow Boundary — Hard vs Soft". */
+  --shadow-soft-popover: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  --border-width-3: 3px;
+}
+
+/* Legacy header consumers share the theme's RUI shell height, so Sidebar
+   and panel columns keep the same top edge (56px Elegant / 62px Brutal). */
+@utility h-panel-header {
+  height: var(--shell-header-height, 62px);
+}
+@media (max-height: 600px) {
+  [data-slot="app-shell-root"] {
+    --shell-header-height: 48px;
+  }
+}
+
+/* Header icon-container utility — 36px square. Used for the icon slots
+   inside panel headers. The container size DOES NOT shrink on short
+   viewports per stdrc 2026-05-02 #proj-uiux:648f8735 f1966eb3
+   ("不是高度放回去，是 button 和 icon 放回去") — the rectangular
+   header rectangle gets shorter (48px) but the inner icon button
+   stays 36x36 so it doesn't lose visual weight. */
+@utility size-icon-header {
+  width: 36px;
+  height: 36px;
+}
+
+@layer base {
+  /* Remove iOS tap highlight for native-feeling touch interactions */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Cursor contract: enabled interactive app chrome uses the same link-hand
+     affordance as the Website. Disabled controls keep their own explicit
+     not-allowed/default state; non-navigation chips, drag handles, and busy
+     refs opt back into default/wait/grab at their callsites. */
+  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), a[href="#"] {
+    cursor: pointer;
+  }
+
+  /* Prevent text selection on interactive elements (feels more app-like) */
+  button, [role="button"], a {
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+
+  /* On touch devices, prevent text selection during long-press on messages */
+  @media (hover: none) {
+    [id^="message-"] {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    [data-message-selectable="true"],
+    [data-message-selectable="true"] * {
+      -webkit-touch-callout: default;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+  }
+
+  html {
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--layer-canvas-muted);
+  }
+
+  /* Prevent rubber-band bounce on desktop; mobile needs it for native-feeling scroll */
+  @media (hover: hover) {
+    html, body {
+      overscroll-behavior: none;
+    }
+  }
+
+  body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-sans, var(--sans-font, system-ui, sans-serif));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--layer-canvas-muted);
+    color: var(--foreground);
+  }
+
+  /* #root is pinned to the visual viewport via --vv-height / --vv-offset-top
+     CSS variables set by trackVisualViewport() in main.tsx. The variables
+     are only set when the software keyboard is up — otherwise we fall back
+     to 100dvh, the dynamic viewport unit, which on iOS PWA standalone is
+     the *real* visible height (the previous use of visualViewport.height
+     reported a smaller value on real iPhones, leaving a cream gap below).
+     Two iOS-specific cases this handles:
+       (1) Mobile Safari translating position:fixed content upward when a
+           focused input needs to reach the visual viewport above the keyboard
+           — handled by the visualViewport override while the keyboard is up;
+       (2) PWA standalone mode where the layout viewport can be taller than
+           the visible webview — handled by 100dvh as the fallback. */
+  #root {
+    /* Task #15: fixed box + 100dvh for the no-keyboard path (PWA/safe-area).
+       When the soft keyboard is up, trackVisualViewport() sets --vv-height /
+       --vv-offset-top so the shell shrinks to the visual viewport (#5888/#725)
+       without reintroducing always-on JS pinning (which left a PWA bottom gap). */
+    position: fixed;
+    top: var(--vv-offset-top, 0px);
+    left: 0;
+    right: 0;
+    /* Default: 100dvh for address/tool bar. Keyboard-up override via --vv-height. */
+    height: var(--vv-height, 100dvh);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--layer-canvas-muted);
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--line-strong);
+    outline-offset: 2px;
+  }
+
+  /* Scrollbars: shared desktop treatment with native touch overlays.
+     stdrc 2026-05-20 #proj-uiux:d7e5c75b (task #282): "桌面端还是加回来滚动时
+     显示进度条吧，移动端本身就会有进度条". Reverts the 5/11 desktop-hide
+     rule. Desktop pointer devices keep a quiet 10px hit area around a 6px
+     thumb on a transparent track; scroller and thumb hover progressively
+     strengthen it. Touch devices stay on their platform overlay indicator.
+     Surfaces that need to opt out entirely (e.g. horizontal tab strips) keep
+     using `.scrollbar-none` below. */
+  @media (hover: hover) and (pointer: fine) {
+    /* `scrollbar-color` is an INHERITED property. Changing it on the scroller
+       (`:hover` below) used to make every descendant recompute its style:
+       entering/leaving the message list or sidebar restyled ~10k elements
+       (up to 15k; 66 of 528 pointer moves across the window, measured on a
+       real busy channel). Children get a constant value instead of inheriting,
+       so the hover change stays on the scroller itself. Declared before the
+       `.scrollbar-quiet` rule so a nested `.scrollbar-quiet` scroller still
+       uses its own (equal specificity, later wins). */
+    .scrollbar-quiet > * {
+      scrollbar-color: rgba(0, 0, 0, 0.24) transparent;
+    }
+
+    .scrollbar-quiet {
+      scrollbar-color: rgba(0, 0, 0, 0.24) transparent;
+      scrollbar-width: thin;
+    }
+
+    .scrollbar-quiet:hover {
+      scrollbar-color: rgba(0, 0, 0, 0.36) transparent;
+    }
+
+    .scrollbar-quiet::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .scrollbar-quiet::-webkit-scrollbar-track,
+    .scrollbar-quiet::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    .scrollbar-quiet::-webkit-scrollbar-thumb {
+      min-height: 32px;
+      background: rgba(0, 0, 0, 0.24);
+      background-clip: padding-box;
+      border: 2px solid transparent;
+      border-radius: 5px;
+    }
+
+    .scrollbar-quiet:hover::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.36);
+      background-clip: padding-box;
+      border: 2px solid transparent;
+    }
+
+    .scrollbar-quiet::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.52);
+      background-clip: padding-box;
+      border: 2px solid transparent;
+    }
+  }
+}
+
+@layer components {
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-left { padding-left: env(safe-area-inset-left); }
+  .safe-right { padding-right: env(safe-area-inset-right); }
+
+  /* Tilted server-name / legacy badge box used by the sidebar and older callsites.
+     Combines the -2deg rotation with translateZ(0) so Safari composites the
+     element onto its own GPU layer — without this, Safari rasterizes the
+     rotated 2px black border with visible jagged/aliased edges. The
+     backface-visibility hint reinforces GPU compositing on older Safaris. */
+  .tilt-neg-2 {
+    transform: rotate(-2deg) translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  /* Render the mobile server selector's high-contrast slanted surface as
+     already-rotated SVG polygon geometry instead of transforming a DOM box or
+     SVG layer. The measured points preserve the exact -2deg angle for every
+     server-name width, including its fixed hard-shadow offset. */
+  .mobile-server-selector-vector {
+    isolation: isolate;
+  }
+
+  .mobile-server-selector-vector-surface {
+    position: absolute;
+    z-index: -1;
+    inset: -2px;
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .mobile-server-selector-vector-surface polygon {
+    shape-rendering: geometricPrecision;
+  }
+
+  .mobile-server-selector-vector-face {
+    fill: #000;
+  }
+
+  .mobile-server-selector-vector-shadow {
+    fill: #141111;
+  }
+
+  .mobile-server-selector-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    rotate: -2deg;
+  }
+
+  /* Keep the attention dot fixed to the selector's visual top-right after the
+     selector rotates. The face is drawn as already-rotated polygon geometry,
+     so this zero-chrome coordinate frame follows the same -2deg edge and the
+     dot rotates with the whole selector instead of the unrotated button box. */
+  .mobile-server-selector-corner-anchor {
+    rotate: -2deg;
+  }
+
+  @media (max-height: 600px) {
+    .mobile-server-selector-vector-surface {
+      display: none;
+    }
+
+    .mobile-server-selector-content {
+      rotate: none;
+    }
+
+    .mobile-server-selector-corner-anchor {
+      rotate: none;
+    }
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .overflow-y-overlay {
+    overflow-y: auto;
+  }
+
+  @supports (overflow: overlay) {
+    .overflow-y-overlay {
+      overflow-y: overlay;
+    }
+  }
+
+  @keyframes reaction-count-bump {
+    0% {
+      opacity: 0.7;
+      transform: translateY(1px) scale(0.92);
+    }
+    45% {
+      opacity: 1;
+      transform: translateY(-1px) scale(1.16);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .reaction-count-bump {
+    animation: reaction-count-bump 180ms cubic-bezier(0.2, 0, 0.2, 1);
+    display: inline-block;
+    transform-origin: center;
+  }
+  @keyframes onboarding-connect-success-reveal {
+    0% { opacity: 0; transform: translateY(-4px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes onboarding-runtime-reveal {
+    0% { opacity: 0; transform: translateY(-4px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .onboarding-connect-success-reveal {
+    animation: onboarding-connect-success-reveal 160ms cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  .onboarding-runtime-reveal {
+    animation: onboarding-runtime-reveal 160ms cubic-bezier(0.2, 0, 0.2, 1);
+  }
+
+  @keyframes notification-activation-progress {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+
+  .notification-activation-progress {
+    animation: notification-activation-progress 3000ms linear forwards;
+  }
+
+  @keyframes notification-activation-dismiss-timer {
+    from { opacity: 0; }
+    to { opacity: 0; }
+  }
+
+  .notification-activation-dismiss-timer {
+    animation: notification-activation-dismiss-timer 3000ms linear forwards;
+  }
+
+  @keyframes onboarding-preview-pop {
+    0% {
+      transform: rotate(var(--onboarding-pop-rotate, 0deg)) translateY(1px) scale(0.96);
+      box-shadow: 2px 2px 0 #141111;
+    }
+    48% {
+      transform: rotate(var(--onboarding-pop-rotate, 0deg)) translateY(-1px) scale(1.14);
+      box-shadow: 4px 4px 0 #141111;
+    }
+    100% {
+      transform: rotate(var(--onboarding-pop-rotate, 0deg)) translateY(0) scale(1);
+      box-shadow: 2px 2px 0 #141111;
+    }
+  }
+
+  .onboarding-preview-pop {
+    animation: onboarding-preview-pop 180ms cubic-bezier(0.2, 0, 0.2, 1);
+    transform-origin: center;
+  }
+
+  @keyframes onboarding-live-message {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.98);
+    }
+    64% {
+      opacity: 1;
+      transform: translateY(-1px) scale(1.02);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .onboarding-live-message {
+    animation: onboarding-live-message 240ms cubic-bezier(0.2, 0, 0.2, 1);
+    transform-origin: left bottom;
+  }
+
+  @keyframes onboarding-identity-pop {
+    0% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.16);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  .onboarding-identity-pop {
+    animation: onboarding-identity-pop 300ms cubic-bezier(0.2, 0, 0.2, 1);
+    transform-origin: center;
+  }
+
+  @keyframes onboarding-identity-card-enter {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--identity-card-rotate, 0deg)) translateY(12px) scale(0.96);
+    }
+    56% {
+      opacity: 1;
+      transform: rotate(var(--identity-card-rotate, 0deg)) translateY(-2px) scale(1.04);
+    }
+    100% {
+      opacity: 1;
+      transform: rotate(var(--identity-card-rotate, 0deg)) translateY(0) scale(1);
+    }
+  }
+
+  .onboarding-identity-card-enter {
+    animation: onboarding-identity-card-enter 240ms cubic-bezier(0.2, 0, 0.2, 1) both;
+    animation-delay: var(--identity-card-delay, 0ms);
+    transform-origin: center;
+  }
+
+  @keyframes onboarding-cindy-hop {
+    0% {
+      opacity: 0;
+      transform: translateY(-72px) rotate(-5deg) scale(1);
+    }
+    12% {
+      opacity: 1;
+    }
+    30% {
+      transform: translateY(0) rotate(0deg) scale(1.12, 0.86);
+    }
+    44% {
+      transform: translateY(-24px) rotate(2deg) scale(0.94, 1.08);
+    }
+    60% {
+      transform: translateY(0) rotate(0deg) scale(1.08, 0.92);
+    }
+    76% {
+      transform: translateY(-8px) scale(0.98, 1.03);
+    }
+    90% {
+      transform: translateY(0) scale(1.02, 0.98);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1) rotate(0deg);
+    }
+  }
+
+  .onboarding-cindy-entrance {
+    animation: onboarding-cindy-hop 580ms cubic-bezier(0.2, 0, 0.2, 1) both;
+    transform-origin: center bottom;
+  }
+  @keyframes onboarding-pop-mark {
+    0%, 42% {
+      opacity: 0;
+      transform: scale(0) rotate(-8deg);
+    }
+    62% {
+      opacity: 1;
+      transform: scale(1.12) rotate(3deg);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.86) rotate(8deg);
+    }
+  }
+
+  .onboarding-cindy-pop-mark {
+    animation: onboarding-pop-mark 580ms cubic-bezier(0.2, 0, 0.2, 1) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reaction-count-bump {
+      animation: none;
+    }
+    .onboarding-connect-success-reveal,
+    .onboarding-runtime-reveal {
+      animation: none;
+    }
+    .notification-activation-progress {
+      animation: none;
+      width: 100%;
+    }
+    .onboarding-preview-pop,
+    .onboarding-live-message,
+    .onboarding-identity-pop,
+    .onboarding-identity-card-enter,
+    .onboarding-cindy-entrance,
+    .onboarding-cindy-pop-mark {
+      animation: none;
+    }
+  }
+
+  .btn-brutal {
+    @apply border border-line-strong font-display font-bold shadow-raft-sm
+           transition-all duration-100 active:shadow-raft-xs;
+  }
+  .btn-brutal:hover {
+    @apply shadow-raft-md;
+  }
+
+  /* High elevation is an explicit emphasis choice, never a size side effect.
+     Existing buttons default to `.btn-brutal` / `.btn-brutal-sm` (small →
+     medium); only a caller that deliberately sets high emphasis gets medium →
+     large. */
+
+  .btn-brutal-sm {
+    @apply border border-line-strong font-display font-bold shadow-raft-xs
+           transition-all duration-100 active:shadow-none;
+  }
+  .btn-brutal-sm:hover {
+    @apply shadow-raft-sm;
+  }
+  /* Disabled state — canonical token across all .btn-brutal-sm callsites.
+     Faded over whatever bg the button carries (bg-white, bg-brutal-pink,
+     etc.) instead of hand-rolled bg-gray-200 text-black/40. Mirrors the
+     `.btn-flat-sm:disabled` shape (stdrc 2026-05-09). */
+  .btn-brutal-sm:disabled {
+    @apply pointer-events-none opacity-40 shadow-raft-xs;
+    transform: none;
+  }
+  .btn-brutal:disabled {
+    @apply pointer-events-none opacity-40 shadow-raft-sm;
+    transform: none;
+  }
+
+  /* Flat icon button — the "non-card" variant of `.btn-brutal-sm`. Used
+     for *secondary* small actions in panel/section headers (Stop /
+     Settings / Leave / Reset / Restart / Message / mobile back / close).
+     Drops the 2px border + brutal shadow so the title and avatar stay
+     dominant; hover/active states are signalled by background fill +
+     ink shift. Reserve `.btn-brutal-sm` for primary CTAs that should
+     read as discrete cards (Send icon button in composer, Add buttons
+     etc.) and for buttons inside dialogs where the heavier brutal
+     chrome is intentional.
+
+     stdrc 2026-05-08 #proj-uiux task #130 ("section header 上的小按
+     钮，能不能换成非卡片按钮"). */
+  .btn-flat-sm {
+    @apply inline-flex items-center justify-center font-display font-bold text-foreground-muted
+           transition-colors duration-100;
+  }
+  .btn-flat-sm:hover {
+    @apply bg-fill-muted text-foreground-strong;
+  }
+  .btn-flat-sm:active {
+    @apply bg-fill-strong;
+  }
+  /* Suppress the global *:focus-visible 2px outline (index.css:156) on
+     flat buttons — the whole point of .btn-flat-sm is "no chrome".
+     Keyboard focus still has a visible affordance via the bg-black/5 +
+     text-black state (same as hover). stdrc 2026-05-09
+     #proj-uiux:4454ed3c "Active 的时候好像没必要有边框吧". */
+  .btn-flat-sm:focus,
+  .btn-flat-sm:focus-visible {
+    @apply outline-none;
+  }
+  .btn-flat-sm:focus-visible {
+    @apply bg-fill-muted text-foreground-strong;
+  }
+  .btn-flat-sm:disabled {
+    @apply pointer-events-none opacity-40;
+  }
+
+  .card-brutal {
+    @apply border border-line-muted bg-layer-panel shadow-raft-md;
+  }
+
+  .image-transparency-bg {
+    background-color: #fff;
+    background-image:
+      linear-gradient(45deg, rgba(20, 17, 17, 0.12) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(20, 17, 17, 0.12) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(20, 17, 17, 0.12) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(20, 17, 17, 0.12) 75%);
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-size: 16px 16px;
+  }
+
+  .image-gallery-bg {
+    background: #fff;
+  }
+
+  .input-brutal {
+    @apply border border-line-field bg-layer-panel px-3 py-2 font-display text-foreground-strong shadow-raft-xs
+           focus:outline-none focus:border-line-strong focus:shadow-raft-sm;
+  }
+
+  /* Legacy-named composition utilities are theme-aware primitives. Their
+     semantic default follows Raft UI; only the Brutal root opts back into the
+     established hard-border, hard-shadow and pressed-translation recipe. */
+  [data-theme="brutal"] .btn-brutal {
+    @apply border-2 border-black shadow-brutal-sm active:translate-x-[2px] active:translate-y-[2px] active:shadow-brutal-active;
+  }
+  [data-theme="brutal"] .btn-brutal:hover {
+    @apply -translate-y-[1px] shadow-brutal;
+  }
+  [data-theme="brutal"] .btn-brutal-sm {
+    @apply border-2 border-black shadow-brutal-sm active:translate-x-[1px] active:translate-y-[1px] active:shadow-brutal-active;
+  }
+  [data-theme="brutal"] .btn-brutal-sm:hover {
+    @apply -translate-y-[1px] shadow-brutal;
+  }
+  [data-theme="brutal"] .btn-brutal-sm:disabled,
+  [data-theme="brutal"] .btn-brutal:disabled {
+    @apply shadow-brutal-sm;
+  }
+  [data-theme="brutal"] .btn-flat-sm {
+    @apply text-black/70;
+  }
+  [data-theme="brutal"] .btn-flat-sm:hover,
+  [data-theme="brutal"] .btn-flat-sm:focus-visible {
+    @apply bg-black/5 text-black;
+  }
+  [data-theme="brutal"] .btn-flat-sm:active {
+    @apply bg-black/10;
+  }
+  [data-theme="brutal"] .card-brutal {
+    @apply border-2 border-black bg-white shadow-brutal;
+  }
+  [data-theme="brutal"] .input-brutal {
+    @apply border-2 border-black bg-white text-black shadow-brutal-sm focus:border-black focus:shadow-brutal;
+  }
+
+  /* iOS Safari zooms the viewport when a focused form control renders below
+     16px. Member search stays visually compact on mouse/trackpad desktops,
+     while touch-primary devices get a real 16px font (no transform/viewport
+     workaround, so layout geometry and user pinch zoom remain intact). */
+  .input-member-search {
+    font-size: 0.875rem;
+  }
+
+  .input-member-search {
+    border-color: var(--line-field);
+    background: var(--layer-panel);
+    color: var(--foreground-strong);
+    box-shadow: none;
+  }
+
+  .input-member-search::placeholder {
+    color: var(--foreground-muted);
+  }
+
+  [data-theme="brutal"] .input-member-search {
+    border: 2px solid var(--line-strong);
+    background: white;
+    color: black;
+    box-shadow: var(--theme-shadow-sm);
+  }
+
+  [data-theme="brutal"] .input-member-search::placeholder {
+    color: rgb(0 0 0 / 50%);
+  }
+
+  @media (pointer: coarse) {
+    .input-member-search {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer utilities {
+  /* Keep one bottom rhythm across every surface, then add the device inset. */
+  .safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+  /* task #1187: compact action bars (e.g. select-mode toolbar) stay optically
+     symmetric on desktop — only the device inset lifts them. Touch devices
+     keep the 1rem thumb rhythm of .safe-bottom. */
+  .safe-bottom-action-bar { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  @media (pointer: coarse) {
+    .safe-bottom-action-bar { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem); }
+  }
+  /* task #678: in elegant themes the mobile tab bar floats over the content as
+     a capsule, so tab-root scrolling surfaces reserve clearance for it
+     (mt-2 + capsule + mb ≈ 68px) plus the device inset. Brutal keeps its
+     in-flow edge bar and does not need the clearance. */
+  @media (max-width: 767.98px) {
+    html[data-theme="elegant"] .mobile-nav-clearance {
+      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    }
+    /* The live-activity strip stacks above the capsule (~48px incl. its
+       padding) and is part of the same overlay, so the clearance grows with
+       it while the strip is actually rendering. The slot element itself is
+       always present on mobile tab roots; only its rendered child marks the
+       strip. */
+    html[data-theme="elegant"]:has([data-testid="mobile-live-activity-slot"] > *) .mobile-nav-clearance {
+      padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+
+/* Anchor jump flash (attachment comments task #15): orientation highlight on
+   the structure a comment anchor points at. Color = Soft Signal yellow. */
+.anchor-flash {
+  animation: anchor-flash 1.6s ease-out;
+}
+@keyframes anchor-flash {
+  0%, 35% { background-color: var(--color-brutal-yellow); }
+  100% { background-color: transparent; }
+}
+
+/* Responsive high-frequency actions use the width of their owning surface,
+   not a viewport breakpoint. This keeps split panes and narrow desktop
+   drawers readable while preserving the same affordance on phones. */
+.workspace-grid-tabset-actions,
+.workspace-grid-tabset-action-host,
+.channel-file-row {
+  container-type: inline-size;
+}
+
+.agent-profile-header-container {
+  container-type: inline-size;
+}
+
+.agent-profile-responsive-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.agent-profile-responsive-actions .agent-profile-inline-actions {
+  display: flex;
+}
+
+.agent-profile-responsive-actions .agent-profile-overflow-actions {
+  display: none;
+}
+
+/* The profile drawer is commonly ~600px wide even on a very wide desktop
+   viewport. Keep its compact icon actions visible there; reserve the menu
+   for genuinely narrow drawers and phones. */
+@container (max-width: 480px) {
+  .agent-profile-responsive-actions .agent-profile-inline-actions {
+    display: none;
+  }
+
+  .agent-profile-responsive-actions .agent-profile-overflow-actions {
+    display: flex;
+  }
+}
+
+.channel-file-responsive-actions {
+  display: flex;
+  align-items: center;
+}
+
+.channel-file-inline-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.channel-file-overflow-actions {
+  display: none;
+}
+
+@container (max-width: 560px) {
+  .channel-file-inline-actions {
+    display: none;
+  }
+
+  .channel-file-overflow-actions {
+    display: flex;
+  }
+}
+
+/* A side thread is only useful when both the shell and the actual chat row can
+   support two readable panes. The rail and sidebar are outside this named
+   container, so the 680px threshold measures usable content width instead of
+   guessing it from the viewport. Portrait phone/tablet shells stay thread-only
+   below xl even when their full-width row happens to clear that bare geometric
+   minimum (iPad mini is 744px wide in portrait). Keep browser resize CSS-only:
+   crossing either boundary does not run a React resize listener or disturb
+   timeline anchoring. */
+.thread-layout-container {
+  container-type: inline-size;
+  container-name: thread-layout;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.thread-side-column-resizer {
+  display: none;
+}
+
+.thread-layout-container:has(> .thread-side-column) > .thread-main-column {
+  display: none;
+}
+
+/* When a profile is opened from the side thread, the channel is temporarily
+   folded out of the row.  The profile wrapper is `display: contents`, so the
+   two real surfaces remain direct flex children: Thread on the left and
+   Profile on the right.  Removing the profile marker restores the ordinary
+   Channel | Thread row without remounting either surface. */
+.thread-profile-side-column {
+  display: contents;
+}
+
+.thread-side-column {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+.thread-side-column [data-testid="thread-mobile-back"] {
+  display: flex;
+}
+
+.thread-side-column [data-testid="thread-close"] {
+  display: none;
+}
+
+/* Every divider between panes belongs to the pane on its right, and the pane
+   that is first in the row draws none: the sidebar already owns that edge
+   (task #683). The thread panel's own left border is the Channel | Thread
+   divider, so it is dropped whenever the thread is first — the thread-only
+   modes below, and the folded-channel split further down. */
+@container thread-layout (max-width: 679.98px) {
+  .thread-side-column > [data-slot="thread-panel-root"] {
+    border-left-width: 0;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 1279.98px) {
+  .thread-side-column > [data-slot="thread-panel-root"] {
+    border-left-width: 0;
+  }
+}
+
+/* Landscape viewports can use two panes as soon as the real row fits them.
+   Portrait viewports intentionally wait until xl: all current iPads remain a
+   single readable thread surface in portrait, while wide portrait desktop
+   displays can still use the desktop split. */
+@media (orientation: landscape), (min-width: 1280px) {
+  @container thread-layout (min-width: 680px) {
+    .thread-layout-container:has(> .thread-side-column) > .thread-main-column {
+      display: flex;
+    }
+
+    .thread-side-column {
+      position: relative;
+      inset: auto;
+      z-index: auto;
+      flex-shrink: 0;
+      width: var(--thread-panel-width);
+      max-width: calc(100% - 320px);
+    }
+
+    .thread-side-column-resizer {
+      display: block;
+    }
+
+    .thread-side-column [data-testid="thread-mobile-back"] {
+      display: none;
+    }
+
+    .thread-side-column [data-testid="thread-close"] {
+      display: flex;
+    }
+
+  }
+}
+
+/* ProfilePanel switches from an absolute mobile surface to an inline desktop
+   pane at Tailwind's lg (1024px) breakpoint.  Keep the reversible split on
+   that same breakpoint; a narrow landscape tablet still gets the mobile-style
+   profile cover instead of a squeezed Thread | Profile pair. */
+@media (min-width: 1024px) {
+  @container thread-layout (min-width: 680px) {
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="true"]) > .thread-main-column {
+      display: none;
+    }
+
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="true"]) > .thread-side-column {
+      flex: 1 1 auto;
+      min-width: 0;
+      width: auto;
+      max-width: none;
+    }
+
+    /* The channel is folded, so the thread is first in the row: the sidebar
+       already draws that edge, and the profile owns the divider on its right. */
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="true"]) > .thread-side-column > [data-slot="thread-panel-root"] {
+      border-left-width: 0;
+    }
+
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="true"]) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      position: relative;
+      inset: auto;
+      z-index: auto;
+      flex: 0 0 auto;
+      min-width: 0;
+      max-width: calc(100% - 320px);
+      overflow: hidden;
+      border-left: 1px solid var(--line-muted);
+    }
+
+    [data-theme="brutal"] .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="true"]) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      border-left: 2px solid #000;
+    }
+
+    /* A Channel avatar opens Profile without leaving the Channel. In the
+       existing Channel + Thread row, fold only the retained Thread pane; the
+       same Profile pane geometry is reused for both entry sources. */
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-thread="true"]) > .thread-main-column {
+      display: flex;
+    }
+
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-thread="true"]) > .thread-side-column {
+      display: none;
+    }
+
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-thread="true"]) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      position: relative;
+      inset: auto;
+      z-index: auto;
+      flex: 0 0 auto;
+      min-width: 0;
+      max-width: calc(100% - 320px);
+      overflow: hidden;
+      border-left: 1px solid var(--line-muted);
+    }
+
+    [data-theme="brutal"] .thread-layout-container:has(> .thread-profile-side-column[data-collapse-thread="true"]) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      border-left: 2px solid #000;
+    }
+
+    /* Chat | Profile with no thread in the row. The profile pane owns the one
+       divider on its own box, so nothing inside the chat column (the composer
+       bar stacks above the resize handle) can cover it, and the chat keeps a
+       readable width instead of shrinking to a strip. */
+    .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="false"][data-collapse-thread="false"]) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      max-width: calc(100% - 320px);
+      border-left: 1px solid var(--line-muted);
+    }
+
+    [data-theme="brutal"] .thread-layout-container:has(> .thread-profile-side-column[data-collapse-channel="false"][data-collapse-thread="false"]) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      border-left: 2px solid #000;
+    }
+  }
+
+  /* Too narrow for two readable panes: fold the conversation away and let the
+     profile take the row, next to the sidebar, which already draws that edge. */
+  @container thread-layout (max-width: 679.98px) {
+    .thread-layout-container:has(> .thread-profile-side-column) > .thread-main-column,
+    .thread-layout-container:has(> .thread-profile-side-column) > .thread-side-column {
+      display: none;
+    }
+
+    .thread-layout-container:has(> .thread-profile-side-column) > .thread-profile-side-column > [data-testid="profile-panel"] {
+      /* ProfilePanel sets width/flex inline for its resizable desktop size. */
+      flex: 1 1 auto !important;
+      width: auto !important;
+      max-width: none;
+      min-width: 0;
+      border-left: 0;
+    }
+  }
+}
+
+
+@layer base {
+  ::selection {
+    background-color: var(--primary-soft);
+    color: var(--primary-strong);
+  }
+}
+
+/* Shiki retains both palettes so mode changes recolor existing token nodes. */
+:root.dark {
+  --color-code-surface: #0a0c10;
+  --color-code-foreground: #f0f3f6;
+}
+
+.r-code-token {
+  color: var(--shiki-light-color, inherit);
+}
+
+:root.dark .r-code-token {
+  color: var(--shiki-dark-color, inherit);
+}
+
+.r-code-copy {
+  color: var(--color-code-foreground);
+  opacity: 0;
+}
+
+.group:hover .r-code-copy,
+.r-code-copy:focus-visible {
+  opacity: 0.55;
+}
+
+.r-code-copy:hover,
+.r-code-copy.r-code-copy--copied {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .r-code-copy { opacity: 0.55; }
+}
+
+/* RUI's tooltip positioner (the `isolate z-50` wrapper around the bubble) has
+   no pointer-events guidance, so an open tooltip swallows hover/clicks aimed
+   at whatever it covers — header action rows, sidebar rows, chips. Our
+   tooltips are text-only, so keep the whole tooltip layer inert; if a future
+   tooltip needs interactive content, re-enable pointer events on that one
+   content element explicitly. */
+[data-slot="tooltip-portal"],
+[data-slot="tooltip-portal"] > * {
+  pointer-events: none;
+}

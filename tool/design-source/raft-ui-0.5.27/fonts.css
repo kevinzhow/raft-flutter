@@ -1,0 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@300..700&family=Hanken+Grotesk:wght@300..700&family=Inter:wght@400;500;600;700&display=swap");
+
+:where(:root),
+[data-theme="brutal"] {
+  --heading-font: "Hanken Grotesk", system-ui, sans-serif;
+  --sans-font: "Hanken Grotesk", system-ui, sans-serif;
+  --mono-font: "Geist Mono", ui-monospace, monospace;
+}
+
+[data-theme="elegant"] {
+  --heading-font: "Inter", system-ui, sans-serif;
+  --sans-font: "Geist", system-ui, sans-serif;
+  --mono-font: "Geist Mono", ui-monospace, monospace;
+}

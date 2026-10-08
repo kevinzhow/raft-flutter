@@ -1,0 +1,1141 @@
+#!/usr/bin/env python3
+"""Translate the raft-ui design-system CSS into Flutter design tokens.
+
+Source of truth (vendored, hashed in tool/design-source/manifest.json):
+  raft-ui 0.5.27 dist/foundation.css   raw ramps + theme blocks (brutal, elegant, elegant.dark)
+  raft-ui 0.5.27 dist/styles.css       Tailwind @theme aliases (black/white, brutal bare aliases, ease)
+  raft-ui 0.5.27 dist/fonts.css        per-theme font stacks
+  tailwindcss 4.2.2 theme.css          default scale (spacing, radius, text, weights, ...)
+  raft-source 26f77ef web index.css    product @theme overrides (+ :root.dark code colours)
+
+Output: packages/raft_ui/lib/src/tokens/*.g.dart (GENERATED — do not edit).
+
+Usage:
+  tool/gen-tokens                 regenerate Dart
+  tool/gen-tokens --check         exit 1 if the generated Dart is stale
+  tool/gen-tokens --oracle        compare against docs/theme-tokens/*.json (browser readback)
+  tool/gen-tokens --import-sources --raft-ui DIR --raft-source DIR [--tailwind DIR]
+                                  refresh the vendored CSS copies and manifest hashes
+
+Stdlib only. The colour pipeline follows CSS Color 4 + Chrome:
+  oklch -> OKLab -> LMS (cubed) -> XYZ-D65 -> linear sRGB (unclamped)
+  color-mix(in srgb-linear, ...) interpolates premultiplied in linear sRGB (unclamped)
+  final paint: gamma-encode (sign preserving), clip each channel to [0, 1], round to 8 bits.
+Chrome does not apply the CSS Color 4 chroma-reduction gamut map when painting;
+it clips per channel, which is what this file does (verified against the oracle).
+Alpha is carried exactly (oklch(... / 0.1) emits opacity 0.1, never 26/255).
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import re
+import shutil
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC = ROOT / 'tool/design-source'
+OUT = ROOT / 'packages/raft_ui/lib/src/tokens'
+ORACLE = ROOT / 'docs/theme-tokens'
+
+SOURCES = {
+    'foundation': 'raft-ui-0.5.27/foundation.css',
+    'styles': 'raft-ui-0.5.27/styles.css',
+    'fonts': 'raft-ui-0.5.27/fonts.css',
+    'tailwind': 'tailwindcss-4.2.2/theme.css',
+    'web': 'raft-web-26f77ef/index.css',
+}
+IMPORT_ORIGINS = {
+    'foundation': ('raft-ui', 'dist/foundation.css'),
+    'styles': ('raft-ui', 'dist/styles.css'),
+    'fonts': ('raft-ui', 'dist/fonts.css'),
+    'tailwind': ('tailwind', 'theme.css'),
+    'web': ('raft-source', 'packages/web/src/index.css'),
+}
+ROLES = 'component-roles.css'  # authored in-repo, see its header
+ROOT_FONT_SIZE = 16.0  # rem -> px (Web root font-size is the UA default)
+
+THEMES = ('brutal', 'elegantLight', 'elegantDark')
+THEME_CSS = {'brutal': 'brutal-light', 'elegantLight': 'elegant-light', 'elegantDark': 'elegant-dark'}
+
+# ─── colour science ──────────────────────────────────────────────────────────
+# CSS Color 4 sample-code matrices (https://drafts.csswg.org/css-color-4/#color-conversion-code).
+OKLAB_TO_LMS = (
+    (1.0, 0.3963377773761749, 0.2158037573099136),
+    (1.0, -0.1055613458156586, -0.0638541728258133),
+    (1.0, -0.0894841775298119, -1.2914855480194092),
+)
+LMS_TO_XYZ = (
+    (1.2268798758459243, -0.5578149944602171, 0.2813910456659647),
+    (-0.0405757452148008, 1.1122868032803170, -0.0717110580655164),
+    (-0.0763729366746601, -0.4214933324022432, 1.5869240198367816),
+)
+XYZ_TO_LIN_SRGB = (
+    (12831 / 3959, -329 / 214, -1974 / 3959),
+    (-851781 / 878810, 1648619 / 878810, 36519 / 878810),
+    (705 / 12673, -2585 / 12673, 705 / 667),
+)
+
+
+def _mul(m, v):
+    return tuple(m[i][0] * v[0] + m[i][1] * v[1] + m[i][2] * v[2] for i in range(3))
+
+
+def oklch_to_linear_srgb(l, c, h):
+    """OKLCH -> unclamped linear-light sRGB."""
+    hr = math.radians(h)
+    lab = (l, c * math.cos(hr), c * math.sin(hr))
+    lms = tuple(x ** 3 for x in _mul(OKLAB_TO_LMS, lab))
+    return _mul(XYZ_TO_LIN_SRGB, _mul(LMS_TO_XYZ, lms))
+
+
+def srgb_encode(x):
+    """Linear -> gamma sRGB, extended (sign preserving) like CSS Color 4."""
+    sign = -1.0 if x < 0 else 1.0
+    x = abs(x)
+    return sign * (1.055 * x ** (1 / 2.4) - 0.055 if x > 0.0031308 else 12.92 * x)
+
+
+def srgb_decode(x):
+    sign = -1.0 if x < 0 else 1.0
+    x = abs(x)
+    return sign * (((x + 0.055) / 1.055) ** 2.4 if x > 0.04045 else x / 12.92)
+
+
+@dataclass(frozen=True)
+class Rgba:
+    """A colour in unclamped linear sRGB plus exact alpha."""
+    r: float
+    g: float
+    b: float
+    a: float
+
+    def srgb(self):
+        return tuple(srgb_encode(v) for v in (self.r, self.g, self.b))
+
+    def bytes(self):
+        """Chrome paint result: clip per channel, quantise to 8 bits."""
+        return tuple(int(math.floor(min(1.0, max(0.0, v)) * 255 + 0.5)) for v in self.srgb())
+
+    def in_gamut(self, eps=1e-4):
+        return all(-eps <= v <= 1 + eps for v in self.srgb())
+
+    @property
+    def alpha(self):
+        return round(self.a, 9)
+
+
+def mix_srgb_linear(c1: Rgba, p1: float, c2: Rgba, p2: float) -> Rgba:
+    """color-mix() in srgb-linear, premultiplied, CSS Color 5 percentage normalisation."""
+    total = p1 + p2
+    if total <= 0:
+        raise ValueError('color-mix percentages sum to zero')
+    mult = min(total, 1.0)
+    p1, p2 = p1 / total, p2 / total
+    a = c1.a * p1 + c2.a * p2
+    if a == 0:
+        return Rgba(0, 0, 0, 0)
+    ch = [(x1 * c1.a * p1 + x2 * c2.a * p2) / a for x1, x2 in ((c1.r, c2.r), (c1.g, c2.g), (c1.b, c2.b))]
+    return Rgba(ch[0], ch[1], ch[2], a * mult)
+
+
+def _inv3(m):
+    (a, b, c), (d, e, f), (g, h, i) = m
+    det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g)
+    return ((( e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det),
+            ((f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det),
+            ((d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det))
+
+
+LIN_SRGB_TO_XYZ = _inv3(XYZ_TO_LIN_SRGB)
+XYZ_TO_LMS = _inv3(LMS_TO_XYZ)
+LMS_TO_OKLAB = _inv3(OKLAB_TO_LMS)
+ACHROMATIC = 4e-6  # chroma below which a converted hue is powerless (CSS Color 4 §12.4)
+
+
+def linear_srgb_to_oklab(rgb):
+    lms = _mul(XYZ_TO_LMS, _mul(LIN_SRGB_TO_XYZ, rgb))
+    return _mul(LMS_TO_OKLAB, tuple(math.copysign(abs(v) ** (1 / 3), v) for v in lms))
+
+
+def oklab_to_linear_srgb(lab):
+    lms = tuple(x ** 3 for x in _mul(OKLAB_TO_LMS, lab))
+    return _mul(XYZ_TO_LIN_SRGB, _mul(LMS_TO_XYZ, lms))
+
+
+def mix_oklab(c1: Rgba, p1: float, c2: Rgba, p2: float, polar: bool) -> Rgba:
+    """color-mix() in oklab / oklch (shorter hue), premultiplied, missing hue adopts the other."""
+    total = p1 + p2
+    mult = min(total, 1.0)
+    p1, p2 = p1 / total, p2 / total
+    a = c1.a * p1 + c2.a * p2
+    if a == 0:
+        return Rgba(0, 0, 0, 0)
+    labs = [linear_srgb_to_oklab((c.r, c.g, c.b)) for c in (c1, c2)]
+    if not polar:
+        lab = tuple((x1 * c1.a * p1 + x2 * c2.a * p2) / a for x1, x2 in zip(*labs))
+        return Rgba(*oklab_to_linear_srgb(lab), a * mult)
+    lch = []
+    for (l, aa, bb), c in zip(labs, (c1, c2)):
+        ch = math.hypot(aa, bb)
+        hue = None if ch < ACHROMATIC or c.a == 0 else math.degrees(math.atan2(bb, aa)) % 360
+        lch.append((l, ch, hue))
+    h1, h2 = lch[0][2], lch[1][2]
+    if h1 is None and h2 is None:
+        h = 0.0
+    elif h1 is None or h2 is None:
+        h = h2 if h1 is None else h1
+    else:
+        d = h2 - h1
+        if d > 180:
+            h1 += 360
+        elif d < -180:
+            h2 += 360
+        h = (h1 * p1 + h2 * p2) % 360
+    l = (lch[0][0] * c1.a * p1 + lch[1][0] * c2.a * p2) / a
+    ch = (lch[0][1] * c1.a * p1 + lch[1][1] * c2.a * p2) / a
+    return Rgba(*oklch_to_linear_srgb(l, ch, h), a * mult)
+
+
+def mix_srgb(c1: Rgba, p1: float, c2: Rgba, p2: float) -> Rgba:
+    """color-mix() in srgb (gamma space), premultiplied."""
+    enc = lambda c: Rgba(*c.srgb(), c.a)
+    m = mix_srgb_linear(enc(c1), p1, enc(c2), p2)
+    return Rgba(srgb_decode(m.r), srgb_decode(m.g), srgb_decode(m.b), m.a)
+
+
+# ─── CSS parsing ─────────────────────────────────────────────────────────────
+
+def strip_comments(text):
+    return re.sub(r'/\*.*?\*/', '', text, flags=re.S)
+
+
+@dataclass
+class Rule:
+    prelude: str
+    body: str            # raw text between braces
+    children: list       # nested Rule objects
+
+
+def parse_rules(text):
+    """Brace-aware split into top-level rules; nested blocks become children."""
+    rules, i, n = [], 0, len(text)
+    while i < n:
+        j = i
+        depth_paren = 0
+        while j < n and not (text[j] in '{;' and depth_paren == 0):
+            if text[j] == '(':
+                depth_paren += 1
+            elif text[j] == ')':
+                depth_paren -= 1
+            elif text[j] in '"\'':
+                j = text.index(text[j], j + 1)
+            j += 1
+        if j >= n:
+            break
+        if text[j] == ';':  # at-statement like @import / @custom-variant x (...);
+            i = j + 1
+            continue
+        prelude = text[i:j].strip()
+        depth, k = 1, j + 1
+        while depth:
+            if text[k] == '{':
+                depth += 1
+            elif text[k] == '}':
+                depth -= 1
+            elif text[k] in '"\'':
+                k = text.index(text[k], k + 1)
+            k += 1
+        body = text[j + 1:k - 1]
+        rules.append(Rule(prelude, body, parse_rules(body) if '{' in body else []))
+        i = k
+    return rules
+
+
+def declarations(body):
+    """Custom-property declarations directly inside a block (nested blocks skipped)."""
+    out = {}
+    # Remove nested blocks (e.g. @keyframes inside @theme) first.
+    buf, depth = [], 0
+    for ch in body:
+        if ch == '{':
+            depth += 1
+            if depth == 1:
+                # drop the selector/prelude that preceded this nested block
+                while buf and buf[-1] not in ';':
+                    buf.pop()
+            continue
+        if ch == '}':
+            depth -= 1
+            continue
+        if depth == 0:
+            buf.append(ch)
+    text = ''.join(buf)
+    for part in split_top(text, ';'):
+        part = part.strip()
+        if not part.startswith('--') or ':' not in part:
+            continue
+        name, value = part.split(':', 1)
+        out[name.strip()] = ' '.join(value.split())
+    return out
+
+
+def split_top(text, sep):
+    """Split on `sep` outside parentheses/quotes."""
+    parts, depth, cur, quote = [], 0, [], None
+    for ch in text:
+        if quote:
+            cur.append(ch)
+            if ch == quote:
+                quote = None
+            continue
+        if ch in '"\'':
+            quote = ch
+        elif ch == '(':
+            depth += 1
+        elif ch == ')':
+            depth -= 1
+        if ch == sep and depth == 0:
+            parts.append(''.join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    parts.append(''.join(cur))
+    return parts
+
+
+def split_ws(text):
+    return [p for p in split_top(' '.join(text.split()), ' ') if p]
+
+
+def norm_sel(prelude):
+    return ' '.join(prelude.replace('\n', ' ').split())
+
+
+def find_rule(rules, prelude, nth=0):
+    hits = [r for r in rules if norm_sel(r.prelude) == prelude]
+    if len(hits) <= nth:
+        raise SystemExit(f'gen-tokens: block {prelude!r} not found (source changed?)')
+    return hits[nth]
+
+
+# ─── value evaluation ────────────────────────────────────────────────────────
+
+class Scope:
+    """Merged custom-property declarations for one theme scope (the html element)."""
+
+    def __init__(self, decls):
+        self.decls = dict(decls)
+
+    def substitute(self, value, stack=()):
+        """CSS var() substitution (textual, recursive, with fallbacks)."""
+        out, i = [], 0
+        while True:
+            m = re.compile(r'var\(').search(value, i)
+            if not m:
+                out.append(value[i:])
+                return ''.join(out)
+            out.append(value[i:m.start()])
+            depth, k = 1, m.end()
+            while depth:
+                depth += {'(': 1, ')': -1}.get(value[k], 0)
+                k += 1
+            inner = value[m.end():k - 1]
+            parts = split_top(inner, ',')
+            name = parts[0].strip()
+            fallback = ','.join(parts[1:]).strip() if len(parts) > 1 else None
+            if name in stack:
+                raise ValueError(f'cyclic var({name})')
+            if name in self.decls:
+                out.append(self.substitute(self.decls[name], stack + (name,)))
+            elif fallback is not None:
+                out.append(self.substitute(fallback, stack))
+            else:
+                raise KeyError(f'unresolved var({name})')
+            i = k
+
+    def resolve(self, name):
+        return self.substitute(self.decls[name], (name,))
+
+
+def parse_number(tok, pct_scale=1.0):
+    tok = tok.strip()
+    if tok == 'none':
+        return 0.0
+    if tok.endswith('%'):
+        return float(tok[:-1]) / 100 * pct_scale
+    if tok.endswith('deg'):
+        return float(tok[:-3])
+    return float(tok)
+
+
+NAMED = {'transparent': Rgba(0, 0, 0, 0), 'black': Rgba(0, 0, 0, 1), 'white': Rgba(1, 1, 1, 1)}
+
+
+def parse_color(text) -> Rgba:
+    t = text.strip()
+    low = t.lower()
+    if low in NAMED:
+        return NAMED[low]
+    if t.startswith('#'):
+        h = t[1:]
+        if len(h) in (3, 4):
+            h = ''.join(ch * 2 for ch in h)
+        vals = [int(h[i:i + 2], 16) for i in range(0, len(h), 2)]
+        a = vals[3] / 255 if len(vals) == 4 else 1.0
+        return Rgba(*(srgb_decode(v / 255) for v in vals[:3]), a)
+    m = re.fullmatch(r'([a-z-]+)\((.*)\)', t, flags=re.S)
+    if not m:
+        raise ValueError(f'not a colour: {text!r}')
+    fn, args = m.group(1), m.group(2).strip()
+    if fn == 'oklch':
+        main, _, alpha = args.partition('/')
+        l, c, h = split_ws(main)
+        a = parse_number(alpha) if alpha.strip() else 1.0
+        return Rgba(*oklch_to_linear_srgb(parse_number(l), parse_number(c, 0.4), parse_number(h)), a)
+    if fn in ('rgb', 'rgba'):
+        if ',' in args:
+            vals = [v.strip() for v in args.split(',')]
+            rgb, alpha = vals[:3], (vals[3] if len(vals) > 3 else '')
+        else:
+            main, _, alpha = args.partition('/')
+            rgb = split_ws(main)
+        chans = [parse_number(v, 255.0) / 255 for v in rgb]
+        a = parse_number(alpha) if alpha.strip() else 1.0
+        return Rgba(*(srgb_decode(v) for v in chans), a)
+    if fn == 'color-mix':
+        parts = [p.strip() for p in split_top(args, ',')]
+        space = parts[0]
+        if not space.startswith('in '):
+            raise ValueError(f'bad color-mix: {text}')
+        space = space[3:].strip()
+        items = []
+        for p in parts[1:]:
+            toks = split_ws(p)
+            pct = None
+            if toks[-1].endswith('%') and len(toks) > 1:
+                pct = parse_number(toks[-1])
+                toks = toks[:-1]
+            elif toks[0].endswith('%') and len(toks) > 1:
+                pct = parse_number(toks[0])
+                toks = toks[1:]
+            items.append((parse_color(' '.join(toks)), pct))
+        (c1, p1), (c2, p2) = items
+        if p1 is None and p2 is None:
+            p1 = p2 = 0.5
+        elif p1 is None:
+            p1 = 1 - p2
+        elif p2 is None:
+            p2 = 1 - p1
+        if space == 'srgb-linear':
+            return mix_srgb_linear(c1, p1, c2, p2)
+        if space == 'srgb':
+            return mix_srgb(c1, p1, c2, p2)
+        if space in ('oklab', 'oklch'):
+            return mix_oklab(c1, p1, c2, p2, polar=space == 'oklch')
+        raise ValueError(f'color-mix space {space!r} not supported')
+    raise ValueError(f'colour function {fn!r} not supported: {text}')
+
+
+def is_color(text):
+    try:
+        parse_color(text)
+        return True
+    except (ValueError, KeyError):
+        return False
+
+
+def parse_length(tok):
+    tok = tok.strip()
+    if tok.endswith('px'):
+        return float(tok[:-2])
+    if tok.endswith('rem'):
+        return float(tok[:-3]) * ROOT_FONT_SIZE
+    if tok.endswith('em'):
+        return float(tok[:-2])  # em kept as a factor (tracking)
+    v = float(tok)
+    if v != 0:
+        raise ValueError(f'unitless length {tok}')
+    return 0.0
+
+
+def eval_number(text):
+    t = text.strip()
+    m = re.fullmatch(r'calc\(\s*([\d.]+)\s*/\s*([\d.]+)\s*\)', t)
+    if m:
+        return float(m.group(1)) / float(m.group(2))
+    return float(t)
+
+
+@dataclass
+class Shadow:
+    inset: bool
+    x: float
+    y: float
+    blur: float
+    spread: float
+    color: Rgba
+    css: str
+
+
+def parse_shadows(text):
+    if text.strip() == 'none':
+        return []
+    out = []
+    for layer in split_top(text, ','):
+        toks = split_ws(layer)
+        inset = 'inset' in toks
+        toks = [t for t in toks if t != 'inset']
+        lengths, color = [], None
+        for t in toks:
+            if re.fullmatch(r'-?[\d.]+(px)?', t):
+                lengths.append(parse_length(t if t.endswith('px') or float(t) == 0 else t + 'px'))
+            else:
+                color = parse_color(t)
+        lengths += [0.0] * (4 - len(lengths))
+        out.append(Shadow(inset, *lengths[:4], color or NAMED['black'], ' '.join(layer.split())))
+    return out
+
+
+# ─── source model ────────────────────────────────────────────────────────────
+
+def read_source(key):
+    return strip_comments((SRC / SOURCES.get(key, key)).read_text())
+
+
+def theme_body(rules, prelude):
+    return find_rule(rules, prelude).body
+
+
+class Model:
+    def __init__(self):
+        foundation = parse_rules(read_source('foundation'))
+        styles = parse_rules(read_source('styles'))
+        fonts = parse_rules(read_source('fonts'))
+        tailwind = parse_rules(read_source('tailwind'))
+        web = parse_rules(read_source('web'))
+
+        self.ramps = declarations(find_rule(foundation, ':where(:root)').body)
+        self.brutal_block = declarations(theme_body(foundation, ':where(:root), [data-theme="brutal"]'))
+        self.elegant_block = declarations(theme_body(foundation, '[data-theme="elegant"]'))
+        self.dark_block = declarations(theme_body(foundation, '[data-theme="elegant"].dark'))
+        media = [r for r in foundation if r.prelude.startswith('@media (prefers-color-scheme: dark)')]
+        mirrored = declarations(find_rule(media[0].children, '[data-theme="elegant"]:not(.light):not(.dark)').body)
+        if mirrored != self.dark_block:
+            diff = sorted(set(mirrored.items()) ^ set(self.dark_block.items()))
+            raise SystemExit(f'gen-tokens: dark media fallback no longer mirrors .dark block: {diff[:4]}')
+
+        self.tw_default = declarations(find_rule(tailwind, '@theme default').body)
+        self.rui_theme = declarations(find_rule(styles, '@theme').body)
+        self.rui_theme_inline = declarations(find_rule(styles, '@theme inline').body)
+        self.web_theme = declarations(find_rule(web, '@theme').body)
+        self.web_dark = declarations(find_rule(web, ':root.dark').body)
+        self.fonts_brutal = declarations(theme_body(fonts, ':where(:root), [data-theme="brutal"]'))
+        self.fonts_elegant = declarations(theme_body(fonts, '[data-theme="elegant"]'))
+
+        # Tailwind @theme merge: default < raft-ui @theme < raft-ui @theme inline < product @theme.
+        self.theme_vars = {**self.tw_default, **self.rui_theme, **self.rui_theme_inline, **self.web_theme}
+        base = {**self.theme_vars, **self.ramps}
+        self.scopes = {
+            'brutal': Scope({**base, **self.fonts_brutal, **self.brutal_block}),
+            'elegantLight': Scope({**base, **self.fonts_brutal, **self.brutal_block,
+                                   **self.fonts_elegant, **self.elegant_block}),
+            'elegantDark': Scope({**base, **self.fonts_brutal, **self.brutal_block,
+                                  **self.fonts_elegant, **self.elegant_block,
+                                  **self.dark_block, **self.web_dark}),
+        }
+        roles = parse_rules(read_source(ROLES))
+        self.roles = {
+            'brutal': declarations(theme_body(roles, ':where(:root), [data-theme="brutal"]')),
+            'elegant': declarations(theme_body(roles, '[data-theme="elegant"]')),
+            'dark': declarations(theme_body(roles, '[data-theme="elegant"].dark')),
+        }
+        clash = set().union(*self.roles.values()) & set(self.scopes['elegantDark'].decls)
+        if clash:
+            raise SystemExit(f'gen-tokens: component roles shadow design-system variables: {sorted(clash)}')
+        chain = {'brutal': ['brutal'], 'elegantLight': ['brutal', 'elegant'], 'elegantDark': ['brutal', 'elegant', 'dark']}
+        for theme, layers in chain.items():
+            for layer in layers:
+                self.scopes[theme].decls.update(self.roles[layer])
+        self.role_names = list(dict.fromkeys([*self.roles['brutal'], *self.roles['elegant'], *self.roles['dark']]))
+        # Every semantic name, in first-declared order across the three theme blocks.
+        self.semantic_names = list(dict.fromkeys([*self.brutal_block, *self.elegant_block, *self.dark_block]))
+        self.declared_in = {n: [t for t, blk in (('brutal', self.brutal_block), ('elegant', self.elegant_block),
+                                                  ('elegant.dark', self.dark_block)) if n in blk]
+                            for n in self.semantic_names}
+
+    # Categorisation of theme-block variables.
+    def semantic_color_names(self):
+        return [n for n in self.semantic_names if not n.startswith(('--theme-shadow-', '--field-', '--card-title-'))]
+
+    def shadow_names(self):
+        return [n for n in self.semantic_names if n.startswith('--theme-shadow-')]
+
+    def metric_names(self):
+        return [n for n in self.semantic_names if n.startswith(('--field-', '--card-title-'))]
+
+    def product_color_names(self):
+        """Effective Tailwind colour aliases from raft-ui @theme + product @theme (not ramps)."""
+        names = [n for n in [*self.rui_theme, *self.web_theme] if n.startswith('--color-')]
+        return [n for n in dict.fromkeys(names) if n not in ('--color-black', '--color-white')]
+
+    def product_shadow_names(self):
+        return [n for n in self.web_theme if n.startswith('--shadow-')]
+
+    def color(self, theme, name):
+        return parse_color(self.scopes[theme].resolve(name))
+
+
+# ─── Dart emission ───────────────────────────────────────────────────────────
+
+def camel(css_name, drop_prefix=None):
+    n = css_name.lstrip('-')
+    if drop_prefix and n.startswith(drop_prefix):
+        n = n[len(drop_prefix):]
+    parts = re.split(r'-+', n)
+    return parts[0] + ''.join(p[:1].upper() + p[1:] for p in parts[1:])
+
+
+def fmt_num(v):
+    v = round(v, 9)
+    if v == int(v):
+        return f'{int(v)}'
+    return repr(v)
+
+
+def fmt_double(v):
+    s = fmt_num(v)
+    return s if '.' in s or 'e' in s else s + '.0'
+
+
+def dart_color(c: Rgba):
+    r, g, b = c.bytes()
+    if c.alpha >= 1:
+        return f'Color(0xff{r:02x}{g:02x}{b:02x})'
+    if c.alpha <= 0:
+        return f'Color(0x00{r:02x}{g:02x}{b:02x})'
+    return f'Color.fromRGBO({r}, {g}, {b}, {fmt_double(c.alpha)})'
+
+
+def doc_css(text, limit=110):
+    t = ' '.join(text.split())
+    return t if len(t) <= limit else t[:limit - 1] + '…'
+
+
+HEADER = """// GENERATED — do not edit. Regenerate with `tool/gen-tokens`.
+// Source: {sources}
+// dart format off
+// ignore_for_file: constant_identifier_names, lines_longer_than_80_chars
+"""
+
+
+def header(keys):
+    return HEADER.format(sources=', '.join(SOURCES[k] for k in keys))
+
+
+def emit_primitives(m: Model):
+    lines = [header(['foundation', 'styles']), "import 'dart:ui';", '',
+             '/// Tier 1: raw brutal ramps (`--color-brutal-{hue}-{step}`) and the Tailwind',
+             '/// `--color-black` / `--color-white` atoms. Names are the CSS names in lowerCamel',
+             '/// without the `color-` prefix. Theme-scoped colours (ink ramp, families) live in',
+             '/// [RaftSemanticColors]; never reach for a ramp where a semantic token exists.',
+             'abstract final class RaftPrimitiveColors {']
+    scope = m.scopes['brutal']
+    for name in m.ramps:
+        c = parse_color(scope.resolve(name))
+        lines.append(f'  /// `{name}: {doc_css(m.ramps[name])}`')
+        lines.append(f'  static const {camel(name, "color-")} = {dart_color(c)};')
+    for name in ('--color-black', '--color-white'):
+        lines.append(f'  /// `{name}: {m.theme_vars[name]}` (raft-ui styles.css @theme)')
+        lines.append(f'  static const {camel(name, "color-")} = {dart_color(parse_color(scope.resolve(name)))};')
+    lines.append('')
+    lines.append('  /// Every primitive keyed by its CSS custom-property name.')
+    lines.append('  static const Map<String, Color> byCssName = {')
+    for name in [*m.ramps, '--color-black', '--color-white']:
+        lines.append(f"    '{name}': {camel(name, 'color-')},")
+    lines.append('  };')
+    lines.append('}')
+    return '\n'.join(lines) + '\n'
+
+
+def emit_color_class(m: Model, cls, names, doc, value_of, source_of, extra_doc=None, drop_prefix=None):
+    lines = [f'/// {doc}', '@immutable', f'class {cls} {{', f'  const {cls}({{']
+    fields = [(n, camel(n, drop_prefix)) for n in names]
+    for _, f in fields:
+        lines.append(f'    required this.{f},')
+    lines.append('  });')
+    lines.append('')
+    for n, f in fields:
+        lines.append(f'  /// `{n}`' + (f' — {extra_doc(n)}' if extra_doc else ''))
+        lines.append(f'  final Color {f};')
+    lines.append('')
+    lines.append('  /// All tokens keyed by CSS custom-property name (without the leading `--`).')
+    lines.append('  Map<String, Color> toCssMap() => {')
+    for n, f in fields:
+        lines.append(f"    '{n[2:]}': {f},")
+    lines.append('  };')
+    lines.append('')
+    for theme in THEMES:
+        lines.append(f'  /// `{THEME_CSS[theme]}` resolved values.')
+        lines.append(f'  static const {theme} = {cls}(')
+        for n, f in fields:
+            src = source_of(theme, n)
+            lines.append(f'    // {doc_css(src)}')
+            lines.append(f'    {f}: {dart_color(value_of(theme, n))},')
+        lines.append('  );')
+    lines.append('}')
+    return lines
+
+
+def emit_semantic(m: Model):
+    names = m.semantic_color_names()
+    lines = [header(['foundation', 'styles']), "import 'dart:ui';", '', "import 'package:flutter/foundation.dart';", '']
+
+    lines += emit_color_class(
+        m, 'RaftSemanticColors', names,
+        'Tier 2: every colour variable of the raft-ui theme blocks, resolved per theme.\n'
+        '///\n'
+        '/// Cascade (all on the html element): `:where(:root),[data-theme=brutal]` →\n'
+        '/// `[data-theme=elegant]` → `[data-theme=elegant].dark`. var() and\n'
+        '/// color-mix() resolve against the merged scope, so e.g. elegant-dark\n'
+        '/// `primary-active` mixes elegant-dark `--ink` into `--primary-400`.',
+        lambda t, n: m.color(t, n), lambda t, n: m.scopes[t].decls[n],
+        extra_doc=lambda n: 'declared in ' + ', '.join(m.declared_in[n]))
+    return '\n'.join(lines) + '\n'
+
+
+def emit_product(m: Model):
+    names = m.product_color_names()
+    lines = [header(['styles', 'web']), "import 'dart:ui';", '', "import 'package:flutter/foundation.dart';", '']
+
+    def origin(n):
+        if n in m.web_theme and n in m.rui_theme:
+            return f'product @theme overrides raft-ui `{doc_css(m.rui_theme[n], 60)}`'
+        if n in m.web_theme:
+            return 'product @theme' + (' (:root.dark override)' if n in m.web_dark else '')
+        return 'raft-ui @theme'
+    lines += emit_color_class(
+        m, 'RaftProductColors', names,
+        'Tier 2b: effective Tailwind colour aliases (`bg-brutal-cyan`, `text-status-busy`, ...).\n'
+        '///\n'
+        '/// raft-ui styles.css @theme declares the bare brutal aliases; the Web product\n'
+        '/// index.css @theme re-declares several with hex literals and wins (later\n'
+        '/// @theme declaration). These are NOT the `--primary-*` ladders.',
+        lambda t, n: m.color(t, n), lambda t, n: m.scopes[t].decls[n],
+        extra_doc=origin, drop_prefix='color-')
+    return '\n'.join(lines) + '\n'
+
+
+def emit_components(m: Model):
+    lines = [header(['foundation', 'styles', 'web']).replace('// Source: ', '// Source: component-roles.css over '),
+             "import 'dart:ui';", '', "import 'package:flutter/foundation.dart';", '']
+    lines += emit_color_class(
+        m, 'RaftComponentColors', m.role_names,
+        'Tier 3: component colour roles from tool/design-source/component-roles.css.\n'
+        '///\n'
+        '/// Each role is the CSS a raft-ui recipe class resolves to (see the comment\n'
+        '/// on each role in the .css file); values resolve through the same cascade.',
+        lambda t, n: m.color(t, n), lambda t, n: m.scopes[t].decls[n])
+    return '\n'.join(lines) + '\n'
+
+
+def dart_shadow(s: Shadow):
+    return (f'RaftCssShadow(inset: {str(s.inset).lower()}, offset: Offset({fmt_double(s.x)}, {fmt_double(s.y)}), '
+            f'blur: {fmt_double(s.blur)}, spread: {fmt_double(s.spread)}, color: {dart_color(s.color)})')
+
+
+SHADOW_RUNTIME = '''
+/// One layer of a CSS `box-shadow` list, in CSS units.
+///
+/// Flutter's [BoxShadow] has no `inset`. Outer layers convert with
+/// [toBoxShadow]; inset layers must be painted by the component inside its
+/// padding box (clip to the inner rounded rect, draw an even-odd ring offset by
+/// [offset], deflated by [spread], blurred with [blurSigma]) — see
+/// `RaftFieldBorder` for the reference painter and docs/design-tokens.md.
+@immutable
+class RaftCssShadow {
+  const RaftCssShadow({
+    required this.inset,
+    required this.offset,
+    required this.blur,
+    required this.spread,
+    required this.color,
+  });
+  final bool inset;
+  final Offset offset;
+
+  /// CSS blur radius (px). CSS blurs with a Gaussian of sigma = blur / 2.
+  final double blur;
+  final double spread;
+  final Color color;
+
+  /// Gaussian sigma the browser uses for this layer.
+  double get blurSigma => blur / 2;
+
+  /// Outer layer as a Flutter [BoxShadow]. `blurRadius` carries the CSS blur
+  /// value verbatim (the repository-wide convention); Flutter derives sigma as
+  /// `0.57735 * blurRadius + 0.5`, slightly softer than CSS `blur / 2`.
+  BoxShadow toBoxShadow() {
+    assert(!inset, 'inset shadows cannot be expressed as BoxShadow');
+    return BoxShadow(color: color, offset: offset, blurRadius: blur, spreadRadius: spread);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is RaftCssShadow &&
+      other.inset == inset &&
+      other.offset == offset &&
+      other.blur == blur &&
+      other.spread == spread &&
+      other.color == color;
+
+  @override
+  int get hashCode => Object.hash(inset, offset, blur, spread, color);
+}
+
+/// A full CSS `box-shadow` value. [layers] keeps CSS order (first = top-most).
+@immutable
+class RaftShadow {
+  const RaftShadow(this.layers);
+  final List<RaftCssShadow> layers;
+
+  /// Outer layers as BoxShadows in CSS declaration order.
+  List<BoxShadow> get outer => [
+    for (final l in layers)
+      if (!l.inset) l.toBoxShadow(),
+  ];
+
+  /// Outer layers in Flutter paint order: BoxDecoration paints index 0 first
+  /// (bottom-most) while CSS paints the first layer on top, so this reverses.
+  List<BoxShadow> get paintOrder => outer.reversed.toList(growable: false);
+
+  /// Inset layers in CSS order; paint inside the padding box (see class docs).
+  List<RaftCssShadow> get inset => [
+    for (final l in layers)
+      if (l.inset) l,
+  ];
+  bool get hasInset => layers.any((l) => l.inset);
+}
+'''
+
+
+def emit_shadows(m: Model):
+    lines = [header(['foundation', 'web', 'tailwind']),
+             "import 'package:flutter/painting.dart';", "import 'package:flutter/foundation.dart';", SHADOW_RUNTIME]
+    names = m.shadow_names()
+    lines += ['/// `--theme-shadow-*` (Tailwind `shadow-raft-*`) per theme.', '@immutable',
+              'class RaftThemeShadows {', '  const RaftThemeShadows({']
+    lines += [f'    required this.{camel(n, "theme-shadow-")},' for n in names]
+    lines += ['  });']
+    lines += [f'  /// `{n}`\n  final RaftShadow {camel(n, "theme-shadow-")};' for n in names]
+    lines.append('')
+    lines.append('  Map<String, RaftShadow> toCssMap() => {')
+    lines += [f"    '{n[2:]}': {camel(n, 'theme-shadow-')}," for n in names]
+    lines.append('  };')
+    for theme in THEMES:
+        lines.append(f'  static const {theme} = RaftThemeShadows(')
+        for n in names:
+            raw = m.scopes[theme].decls[n]
+            lines.append(f'    // {doc_css(raw, 140)}')
+            layers = parse_shadows(m.scopes[theme].resolve(n))
+            lines.append(f'    {camel(n, "theme-shadow-")}: RaftShadow([')
+            lines += [f'      {dart_shadow(s)},' for s in layers]
+            lines.append('    ]),')
+        lines.append('  );')
+    lines.append('}')
+    lines.append('')
+    lines.append('/// Product (`packages/web/src/index.css` @theme) shadows and the Tailwind default')
+    lines.append('/// shadow scale. Theme-invariant.')
+    lines.append('abstract final class RaftProductShadows {')
+    tw = [n for n in m.tw_default if re.match(r'--(inset-)?shadow-', n)]
+    for n in [*m.product_shadow_names(), *tw]:
+        scope = m.scopes['brutal']
+        layers = parse_shadows(scope.resolve(n))
+        lines.append(f'  /// `{n}: {doc_css(scope.decls[n])}`')
+        lines.append(f'  static const {camel(n)} = RaftShadow([')
+        lines += [f'    {dart_shadow(s)},' for s in layers]
+        lines.append('  ]);')
+    lines.append('}')
+    return '\n'.join(lines) + '\n'
+
+
+FONT_ASSETS = {
+    'Hanken Grotesk': 'packages/raft_ui/HankenGrotesk',
+    'Geist': 'packages/raft_ui/Geist',
+    'Geist Mono': 'packages/raft_ui/GeistMono',
+    'Inter': 'packages/raft_ui/Inter',
+}
+
+
+def font_stack(value):
+    return [f.strip().strip('"\'') for f in split_top(value, ',')]
+
+
+def emit_metrics(m: Model):
+    lines = [header(['foundation', 'fonts', 'styles', 'tailwind']),
+             "import 'package:flutter/animation.dart';", "import 'package:flutter/foundation.dart';", '']
+    metric = m.metric_names()
+    lines += ['/// Per-theme non-colour axes: field + card-title metrics (foundation.css) and',
+              '/// font stacks (fonts.css). [headingFont]/[sansFont]/[monoFont] are the bundled',
+              '/// Flutter asset families for the first face of each CSS stack.',
+              '@immutable', 'class RaftThemeMetrics {', '  const RaftThemeMetrics({']
+    lines += [f'    required this.{camel(n)},' for n in metric]
+    lines += ['    required this.headingFontStack,', '    required this.sansFontStack,', '    required this.monoFontStack,',
+              '    required this.headingFont,', '    required this.sansFont,', '    required this.monoFont,', '  });']
+    for n in metric:
+        lines.append(f'  /// `{n}`' + (' (px)' if 'weight' not in n else ' (CSS weight)'))
+        lines.append(f'  final double {camel(n)};')
+    lines += ['  /// `--heading-font` CSS stack.', '  final List<String> headingFontStack;',
+              '  /// `--sans-font` CSS stack.', '  final List<String> sansFontStack;',
+              '  /// `--mono-font` CSS stack.', '  final List<String> monoFontStack;',
+              '  final String headingFont;', '  final String sansFont;', '  final String monoFont;']
+    for theme in THEMES:
+        scope = m.scopes[theme]
+        lines.append(f'  static const {theme} = RaftThemeMetrics(')
+        for n in metric:
+            v = scope.resolve(n)
+            num = parse_length(v) if v.endswith('px') else float(v)
+            lines.append(f'    {camel(n)}: {fmt_double(num)}, // {v}')
+        for key, var in (('heading', '--heading-font'), ('sans', '--sans-font'), ('mono', '--mono-font')):
+            stack = font_stack(scope.resolve(var))
+            lines.append(f'    {key}FontStack: [{", ".join(repr(f) for f in stack)}],')
+        for key, var in (('heading', '--heading-font'), ('sans', '--sans-font'), ('mono', '--mono-font')):
+            first = font_stack(scope.resolve(var))[0]
+            if first not in FONT_ASSETS:
+                raise SystemExit(f'gen-tokens: no bundled asset for font {first!r}')
+            lines.append(f"    {key}Font: '{FONT_ASSETS[first]}',")
+        lines.append('  );')
+    lines.append('}')
+    lines.append('')
+    lines += emit_scale(m)
+    return '\n'.join(lines) + '\n'
+
+
+def emit_scale(m: Model):
+    tv = m.theme_vars
+    lines = ['/// Tailwind 4 @theme scale (tailwindcss 4.2.2 theme.css + raft-ui/product @theme),',
+             f'/// converted to logical px at a {fmt_num(ROOT_FONT_SIZE)}px root font size.',
+             'abstract final class RaftScale {']
+    sp = parse_length(tv['--spacing'])
+    lines += [f"  /// `--spacing: {tv['--spacing']}`. Utility `p-N` = N * spacing.",
+              f'  static const double spacing = {fmt_double(sp)};',
+              '  static double space(num step) => spacing * step;', '']
+
+    def group(prefix):
+        return [n for n in tv if n.startswith(prefix) and '--' not in n[len(prefix):]]
+    for prefix, label in (('--radius-', 'radius'), ('--breakpoint-', 'breakpoint'), ('--container-', 'container'),
+                          ('--blur-', 'blur')):
+        names = group(prefix)
+        lines.append(f'  static const Map<String, double> {label} = {{')
+        for n in names:
+            lines.append(f"    '{n[len(prefix):]}': {fmt_double(parse_length(tv[n]))}, // {tv[n]}")
+        lines.append('  };')
+    # text sizes with line heights
+    lines.append('  /// `--text-{size}` font size and `--text-{size}--line-height` (absolute px).')
+    lines.append('  static const Map<String, RaftTextStep> text = {')
+    for n in [n for n in tv if re.fullmatch(r'--text-[a-z0-9]+', n)]:
+        v = tv[n]
+        if 'var(' in v:
+            continue  # field/card-title metrics: per theme, see RaftThemeMetrics
+        size = parse_length(v)
+        lh_raw = tv.get(n + '--line-height')
+        lh = eval_number(lh_raw) * size if lh_raw else None
+        lines.append(f"    '{n[7:]}': RaftTextStep({fmt_double(size)}, {fmt_double(lh) if lh is not None else 'null'}), "
+                     f"// {v} / {lh_raw}")
+    lines.append('  };')
+    lines.append('  static const Map<String, int> fontWeight = {')
+    for n in [n for n in tv if n.startswith('--font-weight-') and 'var(' not in tv[n]]:
+        lines.append(f"    '{n[14:]}': {int(float(tv[n]))},")
+    lines.append('  };')
+    lines.append('  /// `--leading-*` unitless line-height factors.')
+    lines.append('  static const Map<String, double> leading = {')
+    for n in [n for n in tv if n.startswith('--leading-')]:
+        lines.append(f"    '{n[10:]}': {fmt_double(float(tv[n]))},")
+    lines.append('  };')
+    lines.append('  /// `--tracking-*` letter-spacing in em (multiply by font size).')
+    lines.append('  static const Map<String, double> trackingEm = {')
+    for n in [n for n in tv if n.startswith('--tracking-')]:
+        lines.append(f"    '{n[11:]}': {fmt_double(parse_length(tv[n]))},")
+    lines.append('  };')
+    lines.append('  /// `--ease-*` timing functions.')
+    lines.append('  static const Map<String, Cubic> ease = {')
+    for n in [n for n in tv if n.startswith('--ease-')]:
+        mm = re.fullmatch(r'cubic-bezier\(([^)]*)\)', tv[n])
+        a = [fmt_double(float(x)) for x in mm.group(1).split(',')]
+        lines.append(f"    '{n[7:]}': Cubic({', '.join(a)}),")
+    lines.append('  };')
+    d = tv['--default-transition-duration']
+    mm = re.fullmatch(r'cubic-bezier\(([^)]*)\)', tv['--default-transition-timing-function'])
+    lines.append(f'  /// `--default-transition-duration: {d}`')
+    lines.append(f'  static const Duration defaultTransitionDuration = Duration(milliseconds: {int(float(d[:-2]))});')
+    lines.append(f"  /// `--default-transition-timing-function: {tv['--default-transition-timing-function']}`")
+    lines.append(f"  static const Cubic defaultTransitionCurve = Cubic({', '.join(fmt_double(float(x)) for x in mm.group(1).split(','))});")
+    lines.append(f"  /// `--border-width-3: {tv['--border-width-3']}` (product @theme)")
+    lines.append(f"  static const double borderWidth3 = {fmt_double(parse_length(tv['--border-width-3']))};")
+    lines.append('}')
+    lines += ['', '/// A Tailwind text step: font size and absolute line height (px).', '@immutable',
+              'class RaftTextStep {', '  const RaftTextStep(this.fontSize, this.lineHeight);',
+              '  final double fontSize;', '  final double? lineHeight;',
+              '  /// Flutter `TextStyle.height` factor.', '  double? get height => lineHeight == null ? null : lineHeight! / fontSize;',
+              '}']
+    return lines
+
+
+def emit_token_set():
+    lines = [header(['foundation']).replace(SOURCES['foundation'], 'the generated tier files in this directory'),
+             "import 'package:flutter/foundation.dart';", '',
+             "import 'component_colors.g.dart';", "import 'metrics.g.dart';", "import 'product_colors.g.dart';", "import 'semantic_colors.g.dart';",
+             "import 'shadows.g.dart';", '',
+             '/// The three Web theme presets.',
+             'enum RaftThemeId { brutal, elegantLight, elegantDark }', '',
+             '/// Everything one theme resolves to: semantic, product and component colours,',
+             '/// shadows and metrics.',
+             '@immutable', 'class RaftTokenSet {',
+             '  const RaftTokenSet._(this.id, this.colors, this.product, this.components, this.shadows, this.metrics);',
+             '  final RaftThemeId id;', '  final RaftSemanticColors colors;', '  final RaftProductColors product;',
+             '  final RaftComponentColors components;',
+             '  final RaftThemeShadows shadows;', '  final RaftThemeMetrics metrics;', '']
+    for theme in THEMES:
+        lines.append(f'  static const {theme} = RaftTokenSet._(RaftThemeId.{theme}, RaftSemanticColors.{theme}, '
+                     f'RaftProductColors.{theme}, RaftComponentColors.{theme}, RaftThemeShadows.{theme}, '
+                     f'RaftThemeMetrics.{theme});')
+    lines += ['', '  static RaftTokenSet of(RaftThemeId id) => switch (id) {']
+    lines += [f'    RaftThemeId.{t} => {t},' for t in THEMES]
+    lines += ['  };', '}']
+    return '\n'.join(lines) + '\n'
+
+
+def render():
+    m = Model()
+    return {
+        'primitive_colors.g.dart': emit_primitives(m),
+        'semantic_colors.g.dart': emit_semantic(m),
+        'product_colors.g.dart': emit_product(m),
+        'component_colors.g.dart': emit_components(m),
+        'shadows.g.dart': emit_shadows(m),
+        'metrics.g.dart': emit_metrics(m),
+        'token_set.g.dart': emit_token_set(),
+    }
+
+
+# ─── provenance ──────────────────────────────────────────────────────────────
+
+def sha256(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def verify_manifest():
+    manifest = json.loads((SRC / 'manifest.json').read_text())
+    bad = [rel for rel, meta in manifest['files'].items() if sha256(SRC / rel) != meta['sha256']]
+    if bad:
+        raise SystemExit(f'gen-tokens: vendored sources differ from manifest: {bad}. '
+                         'Re-import with --import-sources instead of editing them.')
+    return manifest
+
+
+def import_sources(args):
+    origins = {'raft-ui': args.raft_ui, 'raft-source': args.raft_source, 'tailwind': args.tailwind}
+    if not args.tailwind and args.raft_source:
+        pnpm = Path(args.raft_source) / 'node_modules/.pnpm'
+        hits = sorted(pnpm.glob('tailwindcss@*/node_modules/tailwindcss'))
+        origins['tailwind'] = str(hits[-1]) if hits else None
+    manifest = json.loads((SRC / 'manifest.json').read_text()) if (SRC / 'manifest.json').exists() else {'files': {}}
+    for key, rel in SOURCES.items():
+        base, sub = IMPORT_ORIGINS[key]
+        if not origins.get(base):
+            raise SystemExit(f'gen-tokens: --import-sources needs the {base} directory')
+        src = Path(origins[base]) / sub
+        shutil.copyfile(src, SRC / rel)
+        entry = manifest['files'].setdefault(rel, {})
+        entry.update({'origin': f'{base}:{sub}', 'sha256': sha256(SRC / rel)})
+    (SRC / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    print('imported', ', '.join(SOURCES.values()))
+
+
+# ─── oracle comparison ───────────────────────────────────────────────────────
+
+def readback(rgb, alpha):
+    """Simulate a canvas getImageData() readback: premultiplied 8-bit storage."""
+    a8 = int(math.floor(alpha * 255 + 0.5))
+    if a8 == 255:
+        return list(rgb), a8
+    if a8 == 0:
+        return [0, 0, 0], 0
+    pm = [int(math.floor(c * a8 / 255 + 0.5)) for c in rgb]
+    return [min(255, int(math.floor(p * 255 / a8 + 0.5))) for p in pm], a8
+
+
+def oracle_report(m: Model = None):
+    m = m or Model()
+    rows = []
+    for theme in THEMES:
+        data = json.loads((ORACLE / f'{THEME_CSS[theme]}.json').read_text())
+        for key, entry in data['tokens'].items():
+            name = '--' + key
+            if name not in m.scopes[theme].decls:
+                rows.append({'theme': theme, 'token': key, 'status': 'missing'})
+                continue
+            c = m.color(theme, name)
+            gen = list(c.bytes())
+            want = entry['rgba']
+            raw = max(abs(a - b) for a, b in zip(gen, want[:3]))
+            sim, a8 = readback(gen, c.alpha)
+            simd = max(abs(a - b) for a, b in zip(sim, want[:3]))
+            rows.append({'theme': theme, 'token': key, 'generated': gen, 'alpha': c.alpha, 'oracle': want,
+                         'rawDelta': raw, 'readbackDelta': simd, 'alphaByteDelta': abs(a8 - want[3]),
+                         'srgb255': [round(v * 255, 3) for v in c.srgb()]})
+    return rows
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--check', action='store_true', help='fail if generated files are stale')
+    p.add_argument('--oracle', action='store_true', help='print the browser-oracle comparison')
+    p.add_argument('--import-sources', action='store_true')
+    p.add_argument('--raft-ui')
+    p.add_argument('--raft-source')
+    p.add_argument('--tailwind')
+    args = p.parse_args(argv)
+    if args.import_sources:
+        import_sources(args)
+    verify_manifest()
+    if args.oracle:
+        rows = oracle_report()
+        for r in rows:
+            if r.get('status') == 'missing':
+                print(f"{r['theme']:13} {r['token']:24} MISSING")
+            else:
+                print(f"{r['theme']:13} {r['token']:24} gen={r['generated']} a={r['alpha']} oracle={r['oracle']} "
+                      f"raw={r['rawDelta']} readback={r['readbackDelta']}")
+        compared = [r for r in rows if 'rawDelta' in r]
+        print(f"compared={len(compared)} maxRaw={max(r['rawDelta'] for r in compared)} "
+              f"maxReadback={max(r['readbackDelta'] for r in compared)}")
+        return 0
+    files = render()
+    stale = []
+    for name, text in files.items():
+        path = OUT / name
+        if not path.exists() or path.read_text() != text:
+            stale.append(name)
+            if not args.check:
+                OUT.mkdir(parents=True, exist_ok=True)
+                path.write_text(text)
+    extra = sorted(p.name for p in OUT.glob('*.g.dart') if p.name not in files) if OUT.exists() else []
+    if args.check:
+        if stale or extra:
+            print(f'gen-tokens: stale {stale} unexpected {extra}; run tool/gen-tokens', file=sys.stderr)
+            return 1
+        print('gen-tokens: up to date')
+        return 0
+    for name in extra:
+        (OUT / name).unlink()
+    print(f"gen-tokens: wrote {len(stale)} file(s){': ' + ', '.join(stale) if stale else ''}")
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
