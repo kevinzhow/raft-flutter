@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Regenerate the raft-ui component recipe layer end to end:
+#   extract.mjs  -> build/recipes/recipes.raw.json
+#   resolve.mjs  -> build/recipes/{recipes,coverage}.json, docs/component-recipes.md
+#   gen_dart.mjs -> packages/raft_ui/lib/src/recipes/*.g.dart (+ parity fixtures)
+#
+# Usage: tool/recipes/run [--test] [--raft-ui-only]
+#   --test          also run the node tests (incl. determinism) and the Dart recipe tests
+#   --raft-ui-only  compile without the Web client's @theme overrides
+# Environment:
+#   RAFT_UI_SOURCE   raft-ui package root (default /tmp/rui)
+#   RAFT_WEB_CSS     Web client index.css to snapshot @theme from (optional)
+#   RAFT_PNPM_STORE  pnpm store with the JS dependencies (see link-deps.sh)
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="$(cd "$here/../.." && pwd)"
+
+# Node toolchain: prefer the repo's pinned toolchain list (also from the main
+# checkout when running in a worktree).
+common="$(git -C "$root" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+for list in "$root/.local/toolchain-paths.txt" "${common:+$common/../.local/toolchain-paths.txt}"; do
+  if [[ -n "$list" && -f "$list" ]]; then
+    while IFS= read -r bin; do [[ -n "$bin" ]] && PATH="$(dirname "$bin"):$PATH"; done < "$list"
+    break
+  fi
+done
+export PATH
+while IFS= read -r v; do unset "$v"; done < <(env | grep -o '^npm_config_[^=]*' || true)
+
+export RAFT_UI_SOURCE="${RAFT_UI_SOURCE:-/tmp/rui}"
+default_web_css="/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source/packages/web/src/index.css"
+export RAFT_WEB_CSS="${RAFT_WEB_CSS:-$default_web_css}"
+
+run_tests=0
+resolve_args=()
+for a in "$@"; do
+  case "$a" in
+    --test) run_tests=1 ;;
+    --raft-ui-only) resolve_args+=(--raft-ui-only) ;;
+    *) echo "unknown argument: $a" >&2; exit 2 ;;
+  esac
+done
+
+"$here/link-deps.sh"
+cd "$root"
+node "$here/sync-web-theme.mjs"
+node "$here/extract.mjs" --source "$RAFT_UI_SOURCE"
+node "$here/resolve.mjs" --source "$RAFT_UI_SOURCE" "${resolve_args[@]}"
+node "$here/gen_dart.mjs"
+
+if [[ $run_tests == 1 ]]; then
+  node --test "$here"/test/*.test.mjs
+  (cd "$root/packages/raft_ui" && "$root/tool/flutter" test test/recipes)
+fi
