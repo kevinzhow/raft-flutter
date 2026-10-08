@@ -8,6 +8,8 @@
 //
 // Values come from the generated recipes (package:raft_ui/recipes.dart) and
 // tokens; Tailwind classes written in the Web JSX are resolved in comments.
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import 'icons.dart';
@@ -167,9 +169,9 @@ class _RaftRecipeButtonState extends State<RaftRecipeButton> {
       padding: root.height == null
           ? padding
           : EdgeInsets.only(left: padding.left, right: padding.right),
-      alignment: Alignment.center,
       decoration: decoration,
-      child: content,
+      // inline-flex: shrink-wraps its content unless `w-full`.
+      child: Center(widthFactor: widget.expand ? null : 1, child: content),
     );
     box = Transform.translate(offset: translate, child: box);
     if (root.opacity != null && root.opacity! < 1) {
@@ -246,17 +248,21 @@ class RaftModalBackdrop extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return ColoredBox(
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .6)
-          : t.colors['layer-backdrop']!,
-      child: LayoutBuilder(
-        builder: (context, box) => SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: box.maxHeight),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Center(child: child),
+    // backdrop-blur-[2px]: CSS blur radius is the Gaussian standard deviation.
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+      child: ColoredBox(
+        color: t.brutal
+            ? Colors.black.withValues(alpha: .6)
+            : t.colors['layer-backdrop']!,
+        child: LayoutBuilder(
+          builder: (context, box) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: box.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Center(child: child),
+              ),
             ),
           ),
         ),
