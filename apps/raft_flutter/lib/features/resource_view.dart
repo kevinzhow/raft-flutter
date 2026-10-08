@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -899,14 +900,21 @@ class _ResourceViewState extends State<ResourceView> {
                       : RaftTokens.of(context).sidebar,
                   child: ListView.separated(
                     padding: const EdgeInsets.all(16),
+                    // SavedPanel loads the next page when its sentinel comes
+                    // within `rootMargin: 240px` of the scroller.
+                    scrollCacheExtent: widget.section == 'saved'
+                        ? const ScrollCacheExtent.pixels(240)
+                        : null,
                     itemCount: visibleRows.length + (hasMore ? 1 : 0),
                     separatorBuilder: (_, _) =>
                         const SizedBox(height: RaftConversationCardRecipe.gap),
                     itemBuilder: (context, index) => index == visibleRows.length
-                        ? TextButton(
-                            onPressed: () => load(append: true),
-                            child: Text(raftText(context, 'Load more')),
-                          )
+                        ? widget.section == 'saved'
+                              ? savedSentinel()
+                              : TextButton(
+                                  onPressed: () => load(append: true),
+                                  child: Text(raftText(context, 'Load more')),
+                                )
                         : item(visibleRows[index]),
                   ),
                 ),
@@ -1444,6 +1452,16 @@ class _ResourceViewState extends State<ResourceView> {
     final label = dm
         ? '@$sender'
         : '#${thread ? row['parentChannelName'] : row['channelName']}';
+    // SavedItem (packages/web/src/components/saved/SavedPanel.tsx): meta row
+    // `flex items-center gap-2 mb-1 text-xs`, content `text-sm line-clamp-3`,
+    // PanelToggleAction on the right (`ml-auto shrink-0 self-center`, gap-3).
+    TextStyle meta(Color brutal, Color elegant) => RaftTypography.body(
+      t,
+      size: 12,
+      line: 16,
+      weight: FontWeight.w700,
+      color: t.brutal ? brutal : elegant,
+    );
     return RaftConversationCard(
       key: ValueKey('saved-${row['messageId']}'),
       saved: true,
@@ -1455,71 +1473,77 @@ class _ResourceViewState extends State<ResourceView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                RaftFlexShrinkRow(
+                  gap: 8,
                   children: [
-                    Flexible(child: Text(label, style: recipe.metadata)),
-                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: meta(
+                        Colors.black.withValues(alpha: .5),
+                        t.colors['foreground-muted']!,
+                      ),
+                    ),
                     if (thread)
-                      Flexible(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RaftIcon(
-                              RaftGlyph.messageSquare,
-                              size: 10,
-                              color: t.muted,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                raftText(context, 'Thread'),
-                                style: recipe.metadata,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 4,
+                        children: [
+                          RaftIcon(
+                            RaftGlyph.messageSquare,
+                            size: 10,
+                            color: t.brutal
+                                ? Colors.black.withValues(alpha: .4)
+                                : t.colors['foreground-muted'],
+                          ),
+                          Flexible(
+                            child: Text(
+                              raftText(context, 'Thread'),
+                              style: meta(
+                                Colors.black.withValues(alpha: .4),
+                                t.colors['foreground-muted']!,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    if (thread) const SizedBox(width: 8),
                     if (sender.isNotEmpty)
-                      Flexible(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RaftAvatar(
-                              name: sender,
-                              size: 16,
-                              kind: row['senderType'] == 'agent'
-                                  ? RaftAvatarKind.agent
-                                  : row['senderType'] == 'external_projection'
-                                  ? RaftAvatarKind.app
-                                  : RaftAvatarKind.human,
-                              imageUrl: raftPublicAvatarUrl(
-                                w.client.origin,
-                                row['senderAvatarUrl'] as String?,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: 4,
+                        children: [
+                          RaftAvatar(
+                            name: sender,
+                            size: 16,
+                            kind: row['senderType'] == 'agent'
+                                ? RaftAvatarKind.agent
+                                : row['senderType'] == 'external_projection'
+                                ? RaftAvatarKind.app
+                                : RaftAvatarKind.human,
+                            imageUrl: raftPublicAvatarUrl(
+                              w.client.origin,
+                              row['senderAvatarUrl'] as String?,
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              sender,
+                              style: meta(
+                                Colors.black,
+                                t.colors['foreground-strong']!,
                               ),
                             ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                sender,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: recipe.metadata.copyWith(
-                                  color: t.strong,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        relativeTime(row['createdAt']),
-                        style: recipe.timestamp,
+                    Text(
+                      relativeTime(row['createdAt']),
+                      style: RaftTypography.mono(
+                        t,
+                        size: 12,
+                        line: 16,
+                        color: t.brutal
+                            ? Colors.black.withValues(alpha: .4)
+                            : t.colors['foreground-muted'],
                       ),
                     ),
                   ],
@@ -1535,7 +1559,7 @@ class _ResourceViewState extends State<ResourceView> {
             ),
           ),
           const SizedBox(width: 12),
-          RaftSavedActionButton(
+          RaftSavedToggle(
             tooltip: 'Remove saved message',
             onPressed: () => command(
               'DELETE',
@@ -1545,6 +1569,34 @@ class _ResourceViewState extends State<ResourceView> {
           ),
         ],
       ),
+    );
+  }
+
+  /// SavedPanel `saved-infinite-scroll-sentinel`: `flex min-h-10
+  /// items-center justify-center py-3`, "Loading" while a page is in flight.
+  Widget savedSentinel() {
+    final t = RaftTokens.of(context);
+    if (!loading && hasMore) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !loading && hasMore) load(append: true);
+      });
+    }
+    return Container(
+      constraints: const BoxConstraints(minHeight: 40),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      alignment: Alignment.center,
+      child: loading
+          ? Text(
+              raftText(context, 'Loading'),
+              style: RaftTypography.body(
+                t,
+                size: 12,
+                line: 16,
+                weight: FontWeight.w700,
+                color: t.colors['foreground-muted'],
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
 
