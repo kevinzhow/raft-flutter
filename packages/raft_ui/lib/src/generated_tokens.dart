@@ -11,6 +11,7 @@ const brutal_light = <String, Color>{
   'button-danger-high-contrast-foreground': RaftPrimitives.rgbaffffffff,
 
   'code-border': RaftPrimitives.rgbaff000000,
+  'line': RaftPrimitives.rgbaff141110,
   'foreground': RaftPrimitives.rgbaff141110,
   'foreground-strong': RaftPrimitives.rgbaff141110,
   'foreground-muted': RaftPrimitives.rgba99141111,
@@ -166,6 +167,7 @@ const brutal_light = <String, Color>{
   'foreground-inverse': RaftPrimitives.rgbaffffffff,
   'foreground-icon': RaftPrimitives.rgbaad151210,
   'foreground-placeholder': RaftPrimitives.rgba80141210,
+  'foreground-disabled': RaftPrimitives.rgba4d141110,
   'layer-card': RaftPrimitives.rgbafffbfaf8,
   'layer-inset': RaftPrimitives.rgbafffcfcfa,
   'layer-popover': RaftPrimitives.rgbaffffffff,
@@ -198,7 +200,9 @@ const elegant_light = <String, Color>{
   'button-danger-hover': RaftPrimitives.rgbaffe50b1e,
   'button-danger-foreground': RaftPrimitives.rgbaffffffff,
 
-  'code-border': RaftPrimitives.rgbaffe5e5e2,
+  // CodePre border-line uses the canonical line role (foundation.css318).
+  'code-border': RaftPrimitives.rgbaffcbcbc6,
+  'line': RaftPrimitives.rgbaffcbcbc6,
   'foreground': RaftPrimitives.rgbaff191815,
   'foreground-strong': RaftPrimitives.rgbaff0a0a0a,
   'foreground-muted': RaftPrimitives.rgbaff3d3d3a,
@@ -354,6 +358,7 @@ const elegant_light = <String, Color>{
   'foreground-inverse': RaftPrimitives.rgbaffffffff,
   'foreground-icon': RaftPrimitives.rgbaad3c3c39,
   'foreground-placeholder': RaftPrimitives.rgbaff7b7b77,
+  'foreground-disabled': RaftPrimitives.rgbaff9f9f9a,
   'layer-card': RaftPrimitives.rgbafffbfaf8,
   'layer-inset': RaftPrimitives.rgbafffcfcfb,
   'layer-popover': RaftPrimitives.rgbaffffffff,
@@ -386,7 +391,9 @@ const elegant_dark = <String, Color>{
   'button-danger-hover': RaftPrimitives.rgbaffe63935,
   'button-danger-foreground': RaftPrimitives.rgbafffafaf7,
 
-  'code-border': RaftPrimitives.rgba1af5f5f5,
+  // CodePre border-line uses the canonical line role (foundation.css430).
+  'code-border': RaftPrimitives.rgbaff757571,
+  'line': RaftPrimitives.rgbaff757571,
   'foreground': RaftPrimitives.rgbaffd8d8d5,
   'foreground-strong': RaftPrimitives.rgbaffe5e5e2,
   'foreground-muted': RaftPrimitives.rgbaffc4c4c1,
@@ -542,6 +549,7 @@ const elegant_dark = <String, Color>{
   'foreground-inverse': RaftPrimitives.rgbaff0a0a0a,
   'foreground-icon': RaftPrimitives.rgbaadc4c4c1,
   'foreground-placeholder': RaftPrimitives.rgbaffa5a5a1,
+  'foreground-disabled': RaftPrimitives.rgbaff8f8f8c,
   'layer-card': RaftPrimitives.rgbaff1b1b19,
   'layer-inset': RaftPrimitives.rgbaff131311,
   'layer-popover': RaftPrimitives.rgbaff292927,

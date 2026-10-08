@@ -153,6 +153,7 @@ const raftChinese = <String, String>{
   "Forwarded messages unavailable.": "转发的消息不可用。",
   "Forwarded · {count} messages": "已转发 · {count} 条消息",
   "From {target}": "来自 {target}",
+  "from {target}": "来自 {target}",
   "Unknown author": "未知发送者",
   "Collapse forwarded messages": "收起转发的消息",
   "View all {count} messages": "查看全部 {count} 条消息",

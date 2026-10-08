@@ -23,12 +23,36 @@ String raftTaskStatusLabel(String status) => switch (status) {
   _ => status,
 };
 
+/// Component scales from raft-ui Badge and the product InlineBadgeEditor.
+/// Status colors remain semantic status roles, resolved by RaftTaskStatus.
+@immutable
+class RaftTaskBadgeRecipe {
+  const RaftTaskBadgeRecipe(this.tokens);
+  final RaftTokens tokens;
+  double get height => 20;
+  double get radius => tokens.brutal ? 0 : 999;
+  EdgeInsets get inset =>
+      EdgeInsets.symmetric(horizontal: tokens.brutal ? 6 : 10, vertical: 2);
+  TextStyle label(Color foreground) => RaftTypography.body(
+    tokens,
+    size: tokens.brutal ? 10 : 11,
+    line: 12,
+    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
+    color: foreground,
+  ).copyWith(letterSpacing: tokens.brutal ? 0 : .22);
+  BoxConstraints target(RaftDensity density) => BoxConstraints(
+    minWidth: density == RaftDensity.touch ? RaftMetrics.touchTarget : 0,
+    minHeight: density == RaftDensity.touch ? RaftMetrics.touchTarget : height,
+  );
+}
+
 class RaftTaskStatus extends StatelessWidget {
   const RaftTaskStatus({super.key, required this.status});
   final String status;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final recipe = RaftTaskBadgeRecipe(t);
     final (semantic, brutal, icon) = switch (status) {
       'in_progress' => ('info', 'cyan', Icons.play_arrow_outlined),
       'in_review' => ('accent', 'lavender', Icons.visibility_outlined),
@@ -48,25 +72,21 @@ class RaftTaskStatus extends StatelessWidget {
               ? 'foreground-strong'
               : '$semantic-strong']!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      height: recipe.height,
+      padding: recipe.inset,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
+        borderRadius: BorderRadius.circular(recipe.radius),
         border: t.brutal ? Border.all(color: t.ink) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        spacing: 5,
+        spacing: 4,
         children: [
           ExcludeSemantics(child: RaftSymbol(icon, size: 10, color: fg)),
           Text(
             raftText(context, raftTaskStatusLabel(status)),
-            style: TextStyle(
-              fontSize: 10,
-              height: 1.2,
-              fontWeight: FontWeight.w600,
-              color: fg,
-            ),
+            style: recipe.label(fg),
           ),
         ],
       ),
@@ -135,11 +155,13 @@ class RaftTaskCard extends StatelessWidget {
                               weight: t.brutal
                                   ? FontWeight.w700
                                   : FontWeight.w500,
-                              color: t.muted,
+                              color: t.brutal
+                                  ? t.strong.withValues(alpha: .6)
+                                  : t.muted,
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                       ],
                       Text(
                         '#$number',
@@ -170,6 +192,7 @@ class RaftTaskCard extends StatelessWidget {
                       size: 14,
                       line: 20,
                       weight: t.brutal ? FontWeight.w700 : FontWeight.w500,
+                      color: t.brutal ? t.strong : t.ink,
                     ),
                   ),
                   if (description.isNotEmpty)
@@ -183,7 +206,9 @@ class RaftTaskCard extends StatelessWidget {
                           t,
                           size: t.brutal ? 12 : 13,
                           line: t.brutal ? 16 : 18,
-                          color: t.muted,
+                          color: t.brutal
+                              ? t.strong.withValues(alpha: .7)
+                              : t.muted,
                         ),
                       ),
                     ),
@@ -202,10 +227,8 @@ class RaftTaskCard extends StatelessWidget {
                                 ),
                             ],
                             child: ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minWidth: 48,
-                                minHeight: 48,
-                              ),
+                              constraints: RaftTaskBadgeRecipe(t)
+                                  .target(RaftDensityScope.of(context)),
                               child: Align(
                                 widthFactor: 1,
                                 heightFactor: 1,

@@ -34,6 +34,7 @@ enum RaftGlyph {
   bot,
   monitor,
   bookmark,
+  bookmarkFilled,
   activity,
   squareCheck,
   chevronsUpDown,
@@ -139,7 +140,11 @@ class _LucidePainter extends CustomPainter {
           double.tryParse(a[k]?.toString() ?? '') ?? fallback;
       switch (node.$1) {
         case 'path':
-          canvas.drawPath(_svgPath(a['d']! as String), paint);
+          final path = _svgPath(a['d']! as String);
+          if (glyph == RaftGlyph.bookmarkFilled) {
+            canvas.drawPath(path, Paint()..color = color);
+          }
+          canvas.drawPath(path, paint);
         case 'circle':
           canvas.drawCircle(Offset(n('cx'), n('cy')), n('r'), paint);
         case 'ellipse':
@@ -193,6 +198,7 @@ RaftGlyph _canonical(RaftGlyph glyph) => switch (glyph) {
   RaftGlyph.userCircle2 => RaftGlyph.circleUserRound,
   RaftGlyph.columns => RaftGlyph.columns2,
   RaftGlyph.moreHorizontal => RaftGlyph.ellipsis,
+  RaftGlyph.bookmarkFilled => RaftGlyph.bookmark,
   _ => glyph,
 };
 

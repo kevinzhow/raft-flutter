@@ -166,6 +166,7 @@ class RaftMessageBody extends StatelessWidget {
     this.references = const [],
     this.taskHref,
     this.fontSize = 14,
+    this.foregroundColor,
     this.documentMode = false,
     this.onCopyCode,
     this.onExportDiagram,
@@ -175,6 +176,7 @@ class RaftMessageBody extends StatelessWidget {
   final Future<void> Function(String)? onCopyCode;
   final Future<void> Function(String, Uint8List)? onExportDiagram;
   final double fontSize;
+  final Color? foregroundColor;
   final bool documentMode;
   final bool exportMode;
   final List<RaftTextReference> references;
@@ -198,6 +200,7 @@ class RaftMessageBody extends StatelessWidget {
         SelectionArea(
           child: MarkdownBody(
             builders: {'a': _MessageLinkBuilder(onLink)},
+            paddingBuilders: MessageContentRecipe(t, fontSize: fontSize, document: documentMode, foreground: foregroundColor).headingPadding(markdown.toString()),
             data: markdown.toString(),
             softLineBreak: true,
             onTapLink: (_, href, _) {
@@ -207,10 +210,10 @@ class RaftMessageBody extends StatelessWidget {
               parameters.style == BulletStyle.orderedList
                   ? '${parameters.index + 1}.'
                   : '•',
-              style: MessageContentRecipe(t, fontSize: fontSize).body,
+              style: MessageContentRecipe(t, fontSize: fontSize, foreground: foregroundColor).body,
             ),
             styleSheet: MessageContentRecipe(
-              t, fontSize: fontSize, document: documentMode,
+              t, fontSize: fontSize, document: documentMode, foreground: foregroundColor,
             ).stylesheet(context),
           ),
         ),

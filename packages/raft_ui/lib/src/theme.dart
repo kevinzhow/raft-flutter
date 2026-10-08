@@ -117,6 +117,39 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       other == null || t < .5 ? this : other;
 }
 
+@immutable
+class RaftFieldRecipe {
+  const RaftFieldRecipe(this.tokens);
+  final RaftTokens tokens;
+  Color fill({bool disabled = false}) => disabled && !tokens.brutal
+      ? tokens.colors['fill-muted']!.withValues(
+          alpha: tokens.colors['fill-muted']!.a * .5,
+        )
+      : tokens.dark && !tokens.brutal
+      ? tokens.card
+      : tokens.panel;
+  Color placeholder({bool disabled = false}) {
+    final placeholder = tokens.colors['foreground-placeholder'] ?? tokens.muted;
+    if (disabled && !tokens.brutal) {
+      return tokens.colors['foreground-disabled'] ?? placeholder;
+    }
+    return tokens.brutal
+        ? placeholder
+        : placeholder.withValues(alpha: placeholder.a * .7);
+  }
+
+  Color border({bool disabled = false, bool hovered = false}) =>
+      disabled && !tokens.brutal
+      ? tokens.colors['line-muted']!.withValues(
+          alpha: tokens.colors['line-muted']!.a * .6,
+        )
+      : tokens.dark && !tokens.brutal
+      ? Colors.transparent
+      : hovered && !tokens.brutal
+      ? tokens.colors['line-field-hover']!
+      : tokens.fieldLine;
+}
+
 ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
   if (dark) family = RaftFamily.elegant;
   final t = RaftTokens(
@@ -300,27 +333,30 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: t.dark && !t.brutal ? t.card : t.panel,
+      fillColor: WidgetStateColor.resolveWith(
+        (states) =>
+            RaftFieldRecipe(t)
+                .fill(disabled: states.contains(WidgetState.disabled)),
+      ),
       isDense: true,
       // CSS field outer height includes borders; Material outlines paint inside.
       contentPadding: EdgeInsets.symmetric(
         horizontal: 12,
         vertical: 8 + t.border,
       ),
-      hintStyle: t.fieldStyle.copyWith(
-        color: t.colors['foreground-placeholder']!.withValues(
-          alpha: t.brutal ? 1 : .7,
+      hintStyle: WidgetStateTextStyle.resolveWith(
+        (states) => t.fieldStyle.copyWith(
+          color: RaftFieldRecipe(t)
+              .placeholder(disabled: states.contains(WidgetState.disabled)),
         ),
       ),
       labelStyle: textTheme.bodySmall,
       floatingLabelStyle: textTheme.bodySmall,
       errorStyle: textTheme.bodySmall!.copyWith(color: scheme.error),
       helperStyle: textTheme.bodySmall,
-      border: fieldBorder(t.fieldLine),
-      enabledBorder: fieldBorder(t.fieldLine),
-      disabledBorder: fieldBorder(
-        t.brutal ? t.fieldLine : t.colors['line-muted']!.withValues(alpha: .6),
-      ),
+      border: fieldBorder(RaftFieldRecipe(t).border()),
+      enabledBorder: fieldBorder(RaftFieldRecipe(t).border()),
+      disabledBorder: fieldBorder(RaftFieldRecipe(t).border(disabled: true)),
       focusedBorder: fieldBorder(
         t.brutal ? t.strong : t.primaryFill,
         t.brutal ? 2 : 1,

@@ -30,20 +30,22 @@ class MessageContentSemantic {
       ? RaftPrimitives.rgbaff000000.withValues(alpha: .4)
       : tokens.colors['line-muted']!;
   Color get collapseFade => tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.panel;
+  Color get toggleHover => tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong;
   Color get toggle => tokens.brutal
       ? RaftPrimitives.rgbaff000000.withValues(alpha: .6)
       : tokens.muted;
 }
 
 class MessageContentRecipe {
-  MessageContentRecipe(this.tokens, {this.fontSize = 14, this.document = false})
+  MessageContentRecipe(this.tokens, {this.fontSize = 14, this.document = false, this.foreground})
     : semantic = MessageContentSemantic(tokens);
   final RaftTokens tokens;
   final double fontSize;
   final bool document;
+  final Color? foreground;
   final MessageContentSemantic semantic;
   TextStyle get body => RaftTypography.body(tokens,
-      size: fontSize, line: document ? 24 : fontSize * 20 / 14, color: tokens.ink).copyWith(fontFamily: document ? tokens.headingFont : tokens.bodyFont);
+      size: fontSize, line: document ? 24 : fontSize * 20 / 14, color: foreground ?? tokens.strong).copyWith(fontFamily: document ? tokens.headingFont : tokens.bodyFont);
   TextStyle get toggle => RaftTypography.body(tokens,
       size: MessageContentPrimitive.toggleSize, line: 16,
       weight: FontWeight.w900, color: semantic.toggle).copyWith(
@@ -55,7 +57,23 @@ class MessageContentRecipe {
         : fontSize * switch (level) { 1 => 1.286, 2 => 1.143, 3 => 1.071, _ => 1.0 };
     // Markdown headings inherit the prose face, unlike Text.Heading.
     return RaftTypography.body(tokens, size: size, line: size * 1.25,
-        weight: FontWeight.w700, color: level == 6 ? tokens.muted : tokens.ink).copyWith(fontFamily: document ? tokens.headingFont : tokens.bodyFont);
+        weight: FontWeight.w700, color: level == 6 ? tokens.muted : foreground ?? tokens.strong).copyWith(fontFamily: document ? tokens.headingFont : tokens.bodyFont);
+  }
+  /// The Markdown builder adds blockSpacing before each non-first block.
+  /// Remove that contribution from heading top margins and avoid adding the
+  /// source bottom margin a second time. The first heading has no prior gap.
+  Map<String, MarkdownPaddingBuilder> headingPadding(String source) {
+    final first = RegExp(r'^#{1,6}\s').firstMatch(source.trimLeft());
+    final firstLevel = first == null ? 0 : first.group(0)!.trim().length;
+    final gap = document ? MessageContentPrimitive.documentGap : MessageContentPrimitive.compactGap;
+    return {
+      for (var level = 1; level <= 6; level++)
+        'h$level': _HeadingPadding(
+          first: firstLevel == level,
+          firstTop: document ? switch (level) {1 => 24.0, 2 => 20.0, 3 => 16.0, _ => 4.0} : switch (level) {1 => 12.0, 2 || 3 => 8.0, _ => 4.0},
+          precedingGap: gap,
+        ),
+    };
   }
   MarkdownStyleSheet stylesheet(BuildContext context) =>
       MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
@@ -66,16 +84,16 @@ class MessageContentRecipe {
         listBullet: body,
         h1: heading(1), h2: heading(2), h3: heading(3),
         h4: heading(4), h5: heading(5), h6: heading(6),
-        h1Padding: EdgeInsets.only(top: document ? 24 : 12, bottom: document ? 12 : 4),
-        h2Padding: EdgeInsets.only(top: document ? 20 : 8, bottom: document ? 10 : 4),
-        h3Padding: EdgeInsets.only(top: document ? 16 : 8, bottom: document ? 8 : 4),
-        h4Padding: const EdgeInsets.only(top: 4, bottom: 2),
-        h5Padding: const EdgeInsets.only(top: 4, bottom: 2),
-        h6Padding: const EdgeInsets.only(top: 4, bottom: 2),
+        h1Padding: EdgeInsets.only(top: document ? 12 : 8, bottom: 0),
+        h2Padding: EdgeInsets.only(top: document ? 8 : 4, bottom: 0),
+        h3Padding: EdgeInsets.only(top: 4, bottom: 0),
+        h4Padding: const EdgeInsets.only(top: 0, bottom: 0),
+        h5Padding: const EdgeInsets.only(top: 0, bottom: 0),
+        h6Padding: const EdgeInsets.only(top: 0, bottom: 0),
         blockquote: body.copyWith(color: semantic.quote, fontStyle: FontStyle.italic),
         blockquotePadding: const EdgeInsets.only(left: 12),
         blockquoteDecoration: BoxDecoration(border: Border(left: BorderSide(color: semantic.quoteEdge, width: 2))),
-        tableHead: body.copyWith(fontWeight: FontWeight.w700),
+        tableHead: body.copyWith(fontWeight: FontWeight.w700, color: tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong),
         tableHeadAlign: TextAlign.left,
         tableBody: body,
         tableColumnWidth: const IntrinsicColumnWidth(),
@@ -111,4 +129,19 @@ class DocumentAttachmentRecipe {
   Color get rowStripe => RaftPrimitives.rgbaff000000.withValues(alpha: .03);
   BorderSide get border => BorderSide(color: tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.colors['line-muted']!, width: tokens.border);
   EdgeInsets get cellInset => MessageContentPrimitive.tableInset;
+}
+
+/// Per-build heading padding, never cached across account/content changes.
+class _HeadingPadding extends MarkdownPaddingBuilder {
+  _HeadingPadding({required this.first, required this.firstTop, required this.precedingGap});
+  bool first;
+  final double firstTop, precedingGap;
+  EdgeInsets current = EdgeInsets.zero;
+  @override
+  void visitElementBefore(dynamic element) {
+    current = EdgeInsets.only(top: first ? firstTop : (firstTop - precedingGap).clamp(0.0, double.infinity).toDouble());
+    first = false;
+  }
+  @override
+  EdgeInsets getPadding() => current;
 }

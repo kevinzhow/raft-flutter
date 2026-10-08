@@ -126,19 +126,32 @@ class _SizeReporter extends RenderProxyBox {
 }
 
 /// Canonical source ShowMoreToggle; shared controls own keyboard and focus.
-class RaftShowMoreToggle extends StatelessWidget {
-  const RaftShowMoreToggle({super.key, required this.label, required this.onPressed, this.icon});
+class RaftShowMoreToggle extends StatefulWidget {
+  const RaftShowMoreToggle({super.key, required this.label, required this.onPressed, this.icon, this.style, this.visualHeight = 16});
   final String label;
   final VoidCallback onPressed;
   final Widget? icon;
+  final TextStyle? style;
+  final double visualHeight;
   @override
-  Widget build(BuildContext context) => RaftControl(
-    kind: RaftControlKind.textLink, shadow: true,
-    visualHeight: 16, minimumTargetSize: MediaQuery.sizeOf(context).width < 768 ? 48 : 16,
-    padding: EdgeInsets.zero, semanticLabel: label, onPressed: onPressed,
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      if (icon != null) ...[icon!, const SizedBox(width: 4)],
-      Text(label, style: RaftTypography.body(RaftTokens.of(context), size: MessageContentPrimitive.toggleSize, line: 16, weight: FontWeight.w900).copyWith(decoration: TextDecoration.underline)),
-    ]),
-  );
+  State<RaftShowMoreToggle> createState() => _RaftShowMoreToggleState();
+}
+
+class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
+  bool hovered = false;
+  @override
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final style = widget.style ?? MessageContentRecipe(tokens).toggle;
+    final color = hovered ? MessageContentSemantic(tokens).toggleHover : style.color;
+    return MouseRegion(onEnter: (_) => setState(() => hovered = true), onExit: (_) => setState(() => hovered = false), child: RaftControl(
+      kind: RaftControlKind.textLink, shadow: true,
+      visualHeight: widget.visualHeight, minimumTargetSize: RaftDensityScope.of(context) == RaftDensity.touch ? RaftMetrics.touchTarget : widget.visualHeight,
+      padding: EdgeInsets.zero, semanticLabel: widget.label, onPressed: widget.onPressed,
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (widget.icon != null) ...[widget.icon!, const SizedBox(width: 4)],
+        Text(widget.label, style: style.copyWith(color: color, decorationColor: color)),
+      ]),
+    ));
+  }
 }

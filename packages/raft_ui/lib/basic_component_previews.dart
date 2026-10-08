@@ -321,69 +321,34 @@ Widget sourceAvatarsPreview() => const Padding(
 @RaftPreviews('Source menus', size: Size(640, 440))
 Widget sourceMenusPreview() => const _SourceMenus();
 
-class _SourceMenus extends StatefulWidget {
+class _SourceMenus extends StatelessWidget {
   const _SourceMenus();
   @override
-  State<_SourceMenus> createState() => _SourceMenusState();
-}
-
-class _SourceMenusState extends State<_SourceMenus> {
-  bool open = true;
-  @override
-  Widget build(BuildContext context) {
-    final recipe = RaftMenuRecipe(
-      RaftTokens.of(context),
-      viewportHeight: MediaQuery.sizeOf(context).height,
-    );
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          RaftButton(
-            label: 'Message actions',
-            secondary: true,
-            onPressed: () => setState(() => open = !open),
-          ),
-          if (open) ...[
-            SizedBox(height: recipe.popupGap),
-            RaftMenuPanel(
-              onDismiss: () => setState(() => open = false),
-              children: [
-                RaftMenuItem(
-                  label: 'Copy link',
-                  glyph: RaftGlyph.copy,
-                  onPressed: () => setState(() => open = false),
-                ),
-                RaftMenuItem(
-                  label: 'Download',
-                  glyph: RaftGlyph.download,
-                  onPressed: () => setState(() => open = false),
-                ),
-                SizedBox(
-                  height: RaftTokens.of(context).brutal ? 2 : 9,
-                  child: Center(
-                    child: Divider(
-                      height: 1,
-                      thickness: RaftTokens.of(context).brutal ? 2 : 1,
-                      color: RaftTokens.of(context).brutal
-                          ? Colors.black
-                          : RaftTokens.of(context).colors['line-muted'],
-                    ),
-                  ),
-                ),
-                RaftMenuItem(
-                  label: 'Delete',
-                  glyph: RaftGlyph.trash2,
-                  onPressed: () => setState(() => open = false),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(24),
+    child: RaftDropdownMenu(
+      label: 'Message actions',
+      defaultOpen: true,
+      entries: [
+        RaftMenuEntry(
+          label: 'Copy link',
+          glyph: RaftGlyph.copy,
+          onPressed: () {},
+        ),
+        RaftMenuEntry(
+          label: 'Download',
+          glyph: RaftGlyph.download,
+          onPressed: () {},
+        ),
+        const RaftMenuEntry.separator(),
+        RaftMenuEntry(
+          label: 'Delete',
+          glyph: RaftGlyph.trash2,
+          onPressed: () {},
+        ),
+      ],
+    ),
+  );
 }
 
 @RaftPreviews('Source text headings', size: Size(640, 440))

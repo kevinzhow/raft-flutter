@@ -3,6 +3,14 @@
 import 'package:flutter/material.dart';
 
 abstract final class RaftPrimitives {
+  // foundation.css148: disabled foreground30% of the original ink atom.
+  static const rgba4d141110 = Color(0x4d141110);
+  // foundation.css299/407: disabled foreground semantic atoms.
+  static const rgbaff9f9f9a = Color(0xff9f9f9a);
+  static const rgbaff8f8f8c = Color(0xff8f8f8c);
+  // foundation.css318/430: OKLCH line atoms, converted to sRGB (not samples).
+  static const rgbaffcbcbc6 = Color(0xffcbcbc6);
+  static const rgbaff757571 = Color(0xff757571);
   static const rgba85f5f5f5 = Color(0x85f5f5f5);
   static const rgba00000000 = Color(0x00000000);
   static const rgbaA6000000 = Color(0xa6000000);
