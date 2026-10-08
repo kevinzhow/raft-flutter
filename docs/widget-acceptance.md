@@ -35,7 +35,7 @@ Document/media 的 SDK browser 三主题实际交互已通过：XLSX 第二工�
 
 ## 最终工程与预览检查
 
-父串行工程检查已通过全部 353 项 Dart 测试、29 项 host 测试与全仓 analyze，当前源码哈希为 `4baf6f56d45c29caf6d564243bf73e42498fca0495a096faff78d5f800d684b1`。75 个实际 SDK 浏览器主题交互记录及所引用截图均已核验通过，包括三主题 inline thread reply preview。它们不替代主应用整轮；较早 b20 源码的 Linux 01:49:11 完整主运行已通过，53个截图检查点记录均已核验。移动线程/主聊天状态复用修复后的当前源码，Android 完整主运行正在验证，Linux 随后串行重跑；两者仍待父报告。
+父串行工程检查已通过全部 353 项 Dart 测试、29 项 host 测试与全仓 analyze，当前源码哈希为 `a05a8dd506db705120502b656e4641e38fcf9685fa245167ab0aaa9f0752415b`。75 个实际 SDK 浏览器主题交互记录及所引用截图均已核验通过，包括三主题 inline thread reply preview。它们不替代主应用整轮；较早 b20 源码的 Linux 01:49:11 完整主运行已通过，53个截图检查点记录均已核验。移动线程/主聊天状态复用修复后的当前源码，Android 完整主运行正在验证，Linux 随后串行重跑；两者仍待父报告。
 
 当前源码另有 Linux 窄显示语言测试通过：真实保存 `zh-cn`，验证中文 Locale 和 Appearance/Account 标题，验证外观/深色/浅色译后控件文本后恢复偏好，没有点击主题切换。实际 Dark/Light 切换由较早 b20 Linux 整轮证明；Android 同版本完整主运行仍待主报告。
 

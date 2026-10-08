@@ -8,6 +8,7 @@ import 'package:media_kit/media_kit.dart';
 import 'package:raft_flutter/platform/attachment_player.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_preview_dialog.dart';
+import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../test/fixtures/preview_samples.dart';
@@ -48,6 +49,14 @@ Future<void> verifyNativeMediaPreviewFlow(
             }
           }
         }
+      } else {
+        for (final view in find.byType(RaftChatView).evaluate()) {
+          final dynamic state = (view as StatefulElement).state;
+          debugPrint(
+            'Media context diagnostic: loading=${w.channelLoading} rows=${w.messages.length} role=${(view.widget as RaftChatView).thread} adapter=${state.adapter.messages.length} target=${state.adapter.messages.any((dynamic m) => m.id == w.highlightedMessageId)} visible=${w.highlightedMessageId != null && state.focusReceiptVisible(w.highlightedMessageId!)} attached=${state.viewport.hasClients} offset=${state.viewport.hasClients ? state.viewport.offset : null} max=${state.viewport.hasClients ? state.viewport.position.maxScrollExtent : null}',
+          );
+        }
+        await capture('failure-media-context');
       }
     }
     expect(ready(), true);

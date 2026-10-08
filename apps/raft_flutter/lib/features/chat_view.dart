@@ -43,8 +43,11 @@ class _RaftChatViewState extends State<RaftChatView> {
   late MessageSelection selection;
   bool capturingSelection = false;
   String? selectionError;
-  final adapter = chat.InMemoryChatController();
-  final viewport = ScrollController();
+  var adapter = chat.InMemoryChatController();
+  var viewport = ScrollController();
+  final retiredAdapters = <chat.InMemoryChatController>{};
+  final retiredViewports = <ScrollController>{};
+  int listRevision = 0;
   String? scope;
   String? scrolledHighlight;
   int? scrolledWindow, adapterWindow;
@@ -199,7 +202,32 @@ class _RaftChatViewState extends State<RaftChatView> {
     w.removeListener(sync);
     adapter.dispose();
     viewport.dispose();
+    for (final retired in retiredAdapters) {
+      retired.dispose();
+    }
+    for (final retired in retiredViewports) {
+      retired.dispose();
+    }
+    retiredAdapters.clear();
+    retiredViewports.clear();
     super.dispose();
+  }
+
+  void replaceContext(List<chat.Message> messages) {
+    final oldAdapter = adapter, oldViewport = viewport;
+    if (oldViewport.hasClients) oldViewport.jumpTo(0);
+    retiredAdapters.add(oldAdapter);
+    retiredViewports.add(oldViewport);
+    adapter = chat.InMemoryChatController(messages: messages);
+    viewport = ScrollController();
+    listRevision++;
+    setState(() {});
+    // A keyed Chat owns a new observer and controller. The retired list's
+    // dispose can only detach its own focus methods, never the new observer.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (retiredAdapters.remove(oldAdapter)) oldAdapter.dispose();
+      if (retiredViewports.remove(oldViewport)) oldViewport.dispose();
+    });
   }
 
   void sync() {
@@ -242,17 +270,20 @@ class _RaftChatViewState extends State<RaftChatView> {
         // history offset into its first layout can leave the sliver entirely
         // outside the viewport, preventing the observer from finding a target.
         // Ordinary diffs and history prepend do not enter this branch.
-        if (viewport.hasClients) viewport.jumpTo(0);
-        await adapter.setMessages(projected, animated: false);
-        if (!currentBinding()) return;
+        replaceContext(projected);
         scrolledHighlight = null;
         adapterWindow = window;
       }
+      final ownedAdapter = adapter, ownedViewport = viewport;
+      bool currentContext() =>
+          currentBinding() &&
+          identical(adapter, ownedAdapter) &&
+          identical(viewport, ownedViewport);
       final wanted = projected.map((m) => m.id).toSet();
       for (final old in List<chat.Message>.of(adapter.messages)) {
         if (!wanted.contains(old.id)) {
           await adapter.removeMessage(old, animated: false);
-          if (!currentBinding()) return;
+          if (!currentContext()) return;
         }
       }
       for (var i = 0; i < projected.length; i++) {
@@ -265,14 +296,14 @@ class _RaftChatViewState extends State<RaftChatView> {
         } else if (jsonEncode(existing.metadata) != jsonEncode(next.metadata)) {
           await adapter.updateMessage(existing, next);
         }
-        if (!currentBinding()) return;
+        if (!currentContext()) return;
       }
       if (!loading &&
           target != null &&
           (target != scrolledHighlight || window != scrolledWindow) &&
           adapter.messages.any((m) => m.id == target)) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
-          if (!currentBinding() ||
+          if (!currentContext() ||
               target != w.highlightedMessageId ||
               window !=
                   (widget.thread ? w.threadGeneration : w.channelGeneration)) {
@@ -281,7 +312,7 @@ class _RaftChatViewState extends State<RaftChatView> {
           // ChatAnimatedList consumes controller operations asynchronously.
           // Allow its next layout to attach the message observer before jumping.
           await WidgetsBinding.instance.endOfFrame;
-          if (!currentBinding() ||
+          if (!currentContext() ||
               target != w.highlightedMessageId ||
               window !=
                   (widget.thread ? w.threadGeneration : w.channelGeneration)) {
@@ -298,7 +329,7 @@ class _RaftChatViewState extends State<RaftChatView> {
             );
             await WidgetsBinding.instance.endOfFrame;
           }
-          if (!currentBinding() ||
+          if (!currentContext() ||
               target != w.highlightedMessageId ||
               window !=
                   (widget.thread ? w.threadGeneration : w.channelGeneration)) {
@@ -308,7 +339,7 @@ class _RaftChatViewState extends State<RaftChatView> {
           // or a target not yet consumed by its operation listener. Confirm
           // the actual lazy row, and retry only this authorized context.
           for (var attempt = 0; attempt < 8; attempt++) {
-            if (!currentBinding() ||
+            if (!currentContext() ||
                 target != w.highlightedMessageId ||
                 window !=
                     (widget.thread
@@ -316,14 +347,14 @@ class _RaftChatViewState extends State<RaftChatView> {
                         : w.channelGeneration)) {
               return;
             }
-            await adapter.scrollToMessage(
+            await ownedAdapter.scrollToMessage(
               target,
               duration: Duration.zero,
               alignment: .3,
             );
             WidgetsBinding.instance.scheduleFrame();
             await WidgetsBinding.instance.endOfFrame;
-            if (!currentBinding() ||
+            if (!currentContext() ||
                 target != w.highlightedMessageId ||
                 window !=
                     (widget.thread
@@ -769,6 +800,7 @@ class _RaftChatViewState extends State<RaftChatView> {
           ),
         Expanded(
           child: Chat(
+            key: ValueKey('chat-context-$listRevision'),
             currentUserId: w.client.user?.id ?? '',
             resolveUser: (id) async => chat.User(id: id),
             chatController: adapter,

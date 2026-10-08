@@ -58,7 +58,7 @@ ChatView now owns the scroll controller. A committed context or conversation rep
 
 A regression first failed with the measured 5,364 px offset after the 16-row commit. It now passes and verifies visible target focus and unchanged position during an ordinary update. All five chat jump/composer tests pass, including delayed repeated replacement, history list preservation and both send-receipt fences. The earlier b20-source Linux run started at 01:49:11 UTC passed corrected rich/context navigation, Mermaid and prepared-card checkpoints and the complete aggregate. Android same-source full remains pending.
 
-Current acceptance revision: `4baf6f56d45c29caf6d564243bf73e42498fca0495a096faff78d5f800d684b1` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
+Current acceptance revision: `a05a8dd506db705120502b656e4641e38fcf9685fa245167ab0aaa9f0752415b` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
 
 ## Mobile main/thread state reuse repair
 

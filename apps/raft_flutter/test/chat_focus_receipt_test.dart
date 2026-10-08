@@ -40,6 +40,8 @@ void main() {
       final dynamic state = tester.state(find.byType(RaftChatView));
       var attempts = 0;
       bool? firstMounted;
+      await tester.runAsync(() => w.jumpToMessage('c1', 'new-79'));
+      await tester.pump();
       state.adapter.attachScrollMethods(
         scrollToMessageId:
             (
@@ -69,7 +71,7 @@ void main() {
           double offset = 0,
         }) async {},
       );
-      await tester.runAsync(() => w.jumpToMessage('c1', 'new-79'));
+
       for (var i = 0; i < 30; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

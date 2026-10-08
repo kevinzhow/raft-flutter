@@ -32,7 +32,7 @@ Source `attachmentPreviewGate.ts` 默认开启预览；`attachmentPreview.ts` �
 
 该运行首先复现了媒体加载失败：禁用外部引用时，media_kit 的临时播放列表 `loadlist` 被 libmpv 拒绝。修复保留 `access-references=no`、禁用脚本/自动配对文件及仅允许 file 协议，使用公开原生 `loadfile` 命令直接加载已授权的私有本地输入；不把签名地址交给播放器，也不启用外部播放列表。[mpv 的引用限制与加载命令](https://mpv.io/manual/stable/) 是该适配的底层合同。
 
-Current acceptance revision: `4baf6f56d45c29caf6d564243bf73e42498fca0495a096faff78d5f800d684b1` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
+Current acceptance revision: `a05a8dd506db705120502b656e4641e38fcf9685fa245167ab0aaa9f0752415b` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
 
 ## Android 原生视频 Surface 修复及辅助证据
 

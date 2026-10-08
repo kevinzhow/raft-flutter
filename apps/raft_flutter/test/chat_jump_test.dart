@@ -275,7 +275,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       final list = tester.state(find.byType(ChatAnimatedList));
-      final viewport = tester
+      var viewport = tester
           .widget<CustomScrollView>(
             find.descendant(
               of: find.byType(ChatAnimatedList),
@@ -296,6 +296,8 @@ void main() {
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
+      final dynamic chatState = tester.state(find.byType(RaftChatView));
+      viewport = chatState.viewport as ScrollController;
       expect(
         viewport.offset,
         inInclusiveRange(
@@ -307,7 +309,7 @@ void main() {
         find.byKey(const ValueKey('message-offset-94')).hitTestable(),
         findsOneWidget,
       );
-      expect(tester.state(find.byType(ChatAnimatedList)), same(list));
+      expect(tester.state(find.byType(ChatAnimatedList)), isNot(same(list)));
       final anchor = viewport.offset;
       w.setError(null);
       await tester.pump();
@@ -317,7 +319,7 @@ void main() {
     },
   );
   testWidgets(
-    'same-chat context jump retains observer and reveals replaced target; history append retains list',
+    'same-chat context jump replaces its observer and reveals target; history append retains the new list',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
@@ -362,7 +364,8 @@ void main() {
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      expect(tester.state(find.byType(ChatAnimatedList)), same(list));
+      final replacementList = tester.state(find.byType(ChatAnimatedList));
+      expect(replacementList, isNot(same(list)));
       final target = find.byKey(const ValueKey('message-context-16'));
       expect(target, findsOneWidget);
       expect(target.hitTestable(), findsOneWidget);
@@ -377,7 +380,10 @@ void main() {
       w.visibleIds['c1']!.add('older');
       w.setError(null);
       await tester.pump(const Duration(milliseconds: 300));
-      expect(tester.state(find.byType(ChatAnimatedList)), same(list));
+      expect(
+        tester.state(find.byType(ChatAnimatedList)),
+        same(replacementList),
+      );
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     },
