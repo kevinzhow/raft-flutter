@@ -88,12 +88,13 @@ Future<(_Workspace, _Adapter)> _fixture() async {
   return (w, adapter);
 }
 
-Widget _host(_Workspace w, String section) => MaterialApp(
+Widget _host(_Workspace w, String section, {String? channelId}) => MaterialApp(
   theme: raftTheme(RaftFamily.elegant),
   home: Scaffold(
     body: ResourceView(
       controller: w,
       section: section,
+      channelId: channelId,
       onMessage: (_, _) async {},
     ),
   ),
@@ -284,8 +285,8 @@ void main() {
       await tester.pumpWidget(_host(w, 'saved'));
       await tester.pumpAndSettle();
       expect(find.text('Private saved body'), findsOneWidget);
-      await tester.tap(find.text('Load more'));
-      await tester.pump();
+      // SavedPanel pages by infinite scroll: the sentinel already requested
+      // the next page.
       final generation = w.client.generation;
       _role(w, 'member');
       await tester.pump();
@@ -361,9 +362,9 @@ void main() {
       final (w, a) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
       _taskRoutes(w, a);
-      await tester.pumpWidget(_host(w, 'tasks'));
+      await tester.pumpWidget(_host(w, 'tasks', channelId: 'c1'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Create task'));
+      await tester.tap(find.text('New Task'));
       await tester.pumpAndSettle();
       final submit = tester
           .widget<RaftFormDialog>(find.byType(RaftFormDialog))
@@ -412,7 +413,7 @@ void main() {
       a.routes['DELETE /channels/saved/m1'] = (_) => mutation.future;
       await tester.pumpWidget(_host(w, 'saved'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Remove saved message'));
+      await tester.tap(find.byType(RaftSavedToggle));
       await tester.pump();
       _role(w, 'member');
       await tester.pumpAndSettle();

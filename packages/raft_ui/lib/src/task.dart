@@ -159,11 +159,10 @@ class RaftTaskStatusEditor extends StatelessWidget {
       onOpenChanged: onOpenChanged,
       alignRight: alignRight,
     );
-    return ConstrainedBox(
-      constraints: RaftTaskBadgeRecipe(
-        t,
-      ).target(RaftDensityScope.of(context)).copyWith(minHeight: 0),
-      child: Align(widthFactor: 1, heightFactor: 1, child: editor),
+    final target = RaftTaskBadgeRecipe(t).target(RaftDensityScope.of(context));
+    return RaftTouchTargetExpander(
+      minSize: Size(target.minWidth, target.minHeight),
+      child: editor,
     );
   }
 }
@@ -227,6 +226,8 @@ class RaftTaskCard extends StatelessWidget {
           children: [
             GestureDetector(
               behavior: HitTestBehavior.opaque,
+              // The card-level Semantics above exposes the open action.
+              excludeFromSemantics: true,
               onTap: onTap,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
@@ -322,7 +322,7 @@ class _InlineBadgeMenuRowState extends State<_InlineBadgeMenuRow> {
         // hover:bg-fill-muted
         : t.colors['fill-muted']!;
     return Semantics(
-      button: true,
+      role: SemanticsRole.menuItem,
       selected: widget.selected,
       label: widget.label,
       excludeSemantics: true,
@@ -397,4 +397,70 @@ class RaftInlineLineBox extends StatelessWidget {
     strutStyle: StrutStyle.fromTextStyle(style),
     textScaler: TextScaler.noScaling,
   );
+}
+
+/// Grows the hit-test and semantics rectangle of [child] to [minSize]
+/// (centred) without changing layout, so a Web-sized control keeps the
+/// native touch target while every pixel stays where the Web puts it.
+class RaftTouchTargetExpander extends SingleChildRenderObjectWidget {
+  const RaftTouchTargetExpander({
+    super.key,
+    required this.minSize,
+    required super.child,
+  });
+  final Size minSize;
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTouchTargetExpander(minSize);
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderTouchTargetExpander renderObject,
+  ) => renderObject.minSize = minSize;
+}
+
+class _RenderTouchTargetExpander extends RenderProxyBox {
+  _RenderTouchTargetExpander(this._minSize);
+  Size _minSize;
+  set minSize(Size value) {
+    if (value == _minSize) return;
+    _minSize = value;
+    markNeedsSemanticsUpdate();
+  }
+
+  Rect get _target {
+    final w = size.width < _minSize.width ? _minSize.width : size.width;
+    final h = size.height < _minSize.height ? _minSize.height : size.height;
+    return Rect.fromCenter(
+      center: size.center(Offset.zero),
+      width: w,
+      height: h,
+    );
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_target.contains(position)) return false;
+    final clamped = Offset(
+      position.dx.clamp(0, size.width).toDouble(),
+      position.dy.clamp(0, size.height).toDouble(),
+    );
+    if (hitTestChildren(result, position: clamped) || hitTestSelf(clamped)) {
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  Rect get semanticBounds => _target;
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    // Own the control's node so its rectangle is the expanded target.
+    config
+      ..isSemanticBoundary = true
+      ..isMergingSemanticsOfDescendants = true;
+  }
 }

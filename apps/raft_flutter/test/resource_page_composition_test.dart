@@ -172,7 +172,7 @@ void main() {
         greaterThan(card.color!.computeLuminance() + .3),
       );
       expect(find.text('5 saved items'), findsOneWidget);
-      await t.tap(find.byTooltip('Remove saved message').first);
+      await t.tap(find.byType(RaftSavedToggle).first);
       await t.pumpAndSettle();
       expect(client.mutations, ['DELETE /channels/saved/msg-saved-visual-1']);
       expect(navigated, false);

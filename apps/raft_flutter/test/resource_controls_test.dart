@@ -125,7 +125,8 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    if (['saved', 'activity'].contains(section)) {
+    // SavedPanel has no filter controls; Activity keeps its filter toggle.
+    if (section == 'activity') {
       await t.tap(find.byTooltip('Filters'));
       await t.pumpAndSettle();
     }
@@ -278,7 +279,8 @@ void main() {
     w.channels = [
       RaftChannel({
         'id': 'c',
-        'name': 'A very long accessible conversation name for the native filter menu',
+        'name':
+            'A very long accessible conversation name for the native filter menu',
         'joined': true,
       }),
     ];
@@ -289,17 +291,6 @@ void main() {
       '#A very long accessible conversation name for the native filter menu',
     );
     expect(t.takeException(), isNull);
-  });
-  testWidgets('Saved sort/channel changes use server query filters', (t) async {
-    await mount(t, 'saved');
-    await menu(t, 'Sort conversations', 'Oldest first');
-    await menu(t, 'Filter by channel', '#General');
-    expect(w.calls.last.query, {
-      'limit': 20,
-      'offset': 0,
-      'sort': 'asc',
-      'channelId': 'c',
-    });
   });
   for (final special in [
     ('Done conversations', '/channels/inbox/done'),

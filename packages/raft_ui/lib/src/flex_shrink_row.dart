@@ -57,7 +57,9 @@ class _RenderFlexShrinkRow extends RenderBox
 
   List<double> _widths(double available) {
     final kids = _children;
-    final basis = [for (final c in kids) c.getMaxIntrinsicWidth(double.infinity)];
+    final basis = [
+      for (final c in kids) c.getMaxIntrinsicWidth(double.infinity),
+    ];
     final floor = [
       for (var i = 0; i < kids.length; i++)
         math.min(basis[i], kids[i].getMinIntrinsicWidth(double.infinity)),
@@ -158,9 +160,7 @@ class _RenderFlexShrinkRow extends RenderBox
       );
       x += child.size.width + _gap;
     }
-    size = constraints.constrain(
-      Size(kids.isEmpty ? 0 : x - _gap, height),
-    );
+    size = constraints.constrain(Size(kids.isEmpty ? 0 : x - _gap, height));
   }
 
   @override

@@ -56,7 +56,11 @@ final Map<String, ParityUncovered> homeTaskUncovered = {
 // "Create account" switch.
 
 final ParityCase _register = ParityCase(
-  widgets: const ['raft_flutter:AuthView', 'raft_ui:RaftPanel', 'raft_ui:RaftButton'],
+  widgets: const [
+    'raft_flutter:AuthView',
+    'raft_ui:RaftPanel',
+    'raft_ui:RaftButton',
+  ],
   notes:
       'AuthView mounted like main.dart (default origin http://localhost:13041, '
       'onOAuth set); /auth/providers answered with Google+GitHub like the React '
@@ -343,7 +347,10 @@ final ParityCase _tasksPanel = ParityCase(
     await t.pump(const Duration(milliseconds: 100));
     final done = find.byKey(const ValueKey('task-group-done'));
     final list = find
-        .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
         .first;
     await t.scrollUntilVisible(done, 200, scrollable: list);
     await t.tap(done);

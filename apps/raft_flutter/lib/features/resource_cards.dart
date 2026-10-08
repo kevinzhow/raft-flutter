@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
 
 /// Page component tokens traced to SavedPanel SavedItem and ThreadsInbox
 /// InboxRow at Web 26f77ef. A panel card and an inbox card have different fills.
@@ -15,7 +14,7 @@ class RaftConversationCardRecipe {
   BorderSide get border => BorderSide(
     // SavedItem Card: `theme-brutal:border-2 theme-brutal:border-black`.
     color: saved && tokens.brutal
-        ? Colors.black
+        ? tokens.colors['color-black']!
         : saved && tokens.dark
         ? Colors.transparent
         : tokens.brutal && !saved
@@ -196,72 +195,4 @@ String resourceRelativeTime(
   if (unit == 'day' && count == 1) return 'tomorrow';
   final label = '$unit${count.abs() == 1 ? '' : 's'}';
   return count < 0 ? '${count.abs()} $label ago' : 'in $count $label';
-}
-
-
-/// SavedItem's remove control: raft-ui PanelToggleAction `pressed` with
-/// `data-pressed:text-accent-strong theme-brutal:data-pressed:text-brutal-orange
-/// data-pressed:bg-accent-soft/30` and a filled Bookmark 14
-/// (packages/web/src/components/saved/SavedPanel.tsx).
-class RaftSavedToggle extends StatefulWidget {
-  const RaftSavedToggle({super.key, required this.onPressed, this.tooltip});
-  final VoidCallback onPressed;
-  final String? tooltip;
-  @override
-  State<RaftSavedToggle> createState() => _RaftSavedToggleState();
-}
-
-class _RaftSavedToggleState extends State<RaftSavedToggle> {
-  bool hovered = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
-    final base = RaftPanelToggleActionRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-      states: RaftRecipeStates({
-        'data-pressed',
-        if (hovered) RaftRecipeStates.hover,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).base;
-    final icon = t.brutal
-        ? t.colors['color-brutal-orange']!
-        : t.colors['accent-strong']!;
-    final decoration = base.decoration(rt);
-    final svg = base.target('& > svg');
-    return Semantics(
-      button: true,
-      toggled: true,
-      label: raftText(context, widget.tooltip ?? 'Remove saved message'),
-      excludeSemantics: true,
-      onTap: widget.onPressed,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onPressed,
-          child: Transform.translate(
-            offset: base.translate ?? Offset.zero,
-            child: Container(
-              padding: base.padding,
-              decoration: decoration.copyWith(
-                color: Color.alphaBlend(
-                  t.colors['accent-soft']!.withValues(alpha: .3),
-                  t.brutal ? Colors.white : Colors.transparent,
-                ),
-              ),
-              child: RaftIcon(
-                RaftGlyph.bookmarkFilled,
-                size: svg?.width ?? 14,
-                color: icon,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

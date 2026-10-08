@@ -1441,11 +1441,10 @@ class _ResourceViewState extends State<ResourceView> {
   );
 
   Widget savedCard(Map<String, dynamic> row, String scope) {
-    final t = RaftTokens.of(context),
-        recipe = RaftConversationCardRecipe(
-          RaftTokens.of(context),
-          saved: true,
-        );
+    final recipe = RaftConversationCardRecipe(
+      RaftTokens.of(context),
+      saved: true,
+    );
     final thread = row['channelType'] == 'thread';
     final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
     final sender = '${row['senderName'] ?? ''}';
@@ -1455,13 +1454,6 @@ class _ResourceViewState extends State<ResourceView> {
     // SavedItem (packages/web/src/components/saved/SavedPanel.tsx): meta row
     // `flex items-center gap-2 mb-1 text-xs`, content `text-sm line-clamp-3`,
     // PanelToggleAction on the right (`ml-auto shrink-0 self-center`, gap-3).
-    TextStyle meta(Color brutal, Color elegant) => RaftTypography.body(
-      t,
-      size: 12,
-      line: 16,
-      weight: FontWeight.w700,
-      color: t.brutal ? brutal : elegant,
-    );
     return RaftConversationCard(
       key: ValueKey('saved-${row['messageId']}'),
       saved: true,
@@ -1473,80 +1465,24 @@ class _ResourceViewState extends State<ResourceView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RaftFlexShrinkRow(
-                  gap: 8,
-                  children: [
-                    Text(
-                      label,
-                      style: meta(
-                        Colors.black.withValues(alpha: .5),
-                        t.colors['foreground-muted']!,
-                      ),
+                RaftSavedItemMeta(
+                  channelLabel: label,
+                  thread: thread,
+                  sender: sender,
+                  time: relativeTime(row['createdAt']),
+                  avatar: RaftAvatar(
+                    name: sender,
+                    size: 16,
+                    kind: row['senderType'] == 'agent'
+                        ? RaftAvatarKind.agent
+                        : row['senderType'] == 'external_projection'
+                        ? RaftAvatarKind.app
+                        : RaftAvatarKind.human,
+                    imageUrl: raftPublicAvatarUrl(
+                      w.client.origin,
+                      row['senderAvatarUrl'] as String?,
                     ),
-                    if (thread)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 4,
-                        children: [
-                          RaftIcon(
-                            RaftGlyph.messageSquare,
-                            size: 10,
-                            color: t.brutal
-                                ? Colors.black.withValues(alpha: .4)
-                                : t.colors['foreground-muted'],
-                          ),
-                          Flexible(
-                            child: Text(
-                              raftText(context, 'Thread'),
-                              style: meta(
-                                Colors.black.withValues(alpha: .4),
-                                t.colors['foreground-muted']!,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (sender.isNotEmpty)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        spacing: 4,
-                        children: [
-                          RaftAvatar(
-                            name: sender,
-                            size: 16,
-                            kind: row['senderType'] == 'agent'
-                                ? RaftAvatarKind.agent
-                                : row['senderType'] == 'external_projection'
-                                ? RaftAvatarKind.app
-                                : RaftAvatarKind.human,
-                            imageUrl: raftPublicAvatarUrl(
-                              w.client.origin,
-                              row['senderAvatarUrl'] as String?,
-                            ),
-                          ),
-                          Flexible(
-                            child: Text(
-                              sender,
-                              style: meta(
-                                Colors.black,
-                                t.colors['foreground-strong']!,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    Text(
-                      relativeTime(row['createdAt']),
-                      style: RaftTypography.mono(
-                        t,
-                        size: 12,
-                        line: 16,
-                        color: t.brutal
-                            ? Colors.black.withValues(alpha: .4)
-                            : t.colors['foreground-muted'],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1560,7 +1496,7 @@ class _ResourceViewState extends State<ResourceView> {
           ),
           const SizedBox(width: 12),
           RaftSavedToggle(
-            tooltip: 'Remove saved message',
+            label: 'Remove saved message',
             onPressed: () => command(
               'DELETE',
               '/channels/saved/${row['messageId']}',
@@ -1575,29 +1511,12 @@ class _ResourceViewState extends State<ResourceView> {
   /// SavedPanel `saved-infinite-scroll-sentinel`: `flex min-h-10
   /// items-center justify-center py-3`, "Loading" while a page is in flight.
   Widget savedSentinel() {
-    final t = RaftTokens.of(context);
     if (!loading && hasMore) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && !loading && hasMore) load(append: true);
       });
     }
-    return Container(
-      constraints: const BoxConstraints(minHeight: 40),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      alignment: Alignment.center,
-      child: loading
-          ? Text(
-              raftText(context, 'Loading'),
-              style: RaftTypography.body(
-                t,
-                size: 12,
-                line: 16,
-                weight: FontWeight.w700,
-                color: t.colors['foreground-muted'],
-              ),
-            )
-          : const SizedBox.shrink(),
-    );
+    return RaftInfiniteScrollSentinel(loading: loading);
   }
 
   Future<void> savedMenu(Map<String, dynamic> row, String scope) async {
@@ -1864,16 +1783,18 @@ class _ResourceViewState extends State<ResourceView> {
 
   Widget groupedTasks() {
     final t = RaftTokens.of(context), scope = authority;
-    final mobile =
-        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     // TasksPanelViewport + `bg-layer-canvas-muted p-4 theme-brutal:bg-white`;
     // list view is TaskVirtualLayout `space-y-6` of TaskSections.
     return ColoredBox(
-      color: t.brutal ? Colors.white : t.colors['layer-canvas-muted']!,
+      color: t.colors[t.brutal ? 'color-white' : 'layer-canvas-muted']!,
       child: ListView(
-        padding: t.brutal || !mobile
-            ? const EdgeInsets.all(16)
-            : const EdgeInsets.fromLTRB(20, 16, 14, 16),
+        padding: RaftTasksPanelRecipe.resolve(
+          theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+          states: RaftRecipeStates({
+            if (t.dark) RaftRecipeStates.dark,
+          }, MediaQuery.sizeOf(context).width),
+          tokens: RaftRecipeTokens(t),
+        ).viewport.padding,
         children: [
           for (final status in raftTaskStatuses.where(
             (s) => filter == 'all' || filter == s,
@@ -2379,6 +2300,11 @@ class _ResourceViewState extends State<ResourceView> {
                     },
                   );
                 },
+              ),
+            // TasksPanel.tsx: "New Task" (Plus 12) is channel mode only.
+            if (widget.channelId != null && w.server?.string('role') != 'guest')
+              RaftNewTaskButton(
+                onPressed: () => createTask(sourceScope: scope),
               ),
             RaftSegmentedControl<String>(
               style: RaftSegmentedStyle.tabs,
