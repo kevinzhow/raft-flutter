@@ -177,21 +177,27 @@ class AgentBadge extends StatelessWidget {
   }
 }
 
-/// An `inline-flex` element sitting in the `text-sm` (14/20) line box of an
-/// InfoRow value: baseline-aligned with the line's strut, so the row grows
-/// exactly as CSS inline layout does.
+/// A Badge sitting inline in the `text-sm` (14/20) line of an InfoRow value
+/// (`<dd>` text flow), baseline-aligned like Web inline layout.
 class InlineInLine extends StatelessWidget {
   const InlineInLine({super.key, required this.child});
   final Widget child;
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.baseline,
-    textBaseline: TextBaseline.alphabetic,
-    children: [
-      Text('\u200B', style: RaftInfoRow.valueStyle(RaftTokens.of(context))),
-      Flexible(child: child),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final s = RaftBadgeRecipe.resolve(theme: raftRecipeTheme(t)).root;
+    return RaftInlineBox(
+      lineText: RaftInfoRow.valueStyle(t),
+      childText: RaftTypography.body(
+        t,
+        size: s.fontSize ?? 10,
+        line: (s.lineHeight ?? 1) * (s.fontSize ?? 10),
+        weight: FontWeight.w700,
+      ),
+      height: s.height ?? 20,
+      child: child,
+    );
+  }
 }
 
 /// Web AvatarSlot (components/ui/AvatarSlot.tsx RAFT_AVATAR_SPEC): raft-ui
@@ -1395,7 +1401,12 @@ class _AgentActivityTabState extends State<AgentActivityTab>
               ),
               if ('${entry['toolInput'] ?? ''}'.isNotEmpty) ...[
                 const WidgetSpan(child: SizedBox(width: 6)),
-                TextSpan(text: '${entry['toolInput']}', style: monoMuted),
+                // `break-all`: any character may end a line.
+                TextSpan(
+                  text: '${entry['toolInput']}'.characters.join('\u200B'),
+                  // Inline in the `text-sm` (20px) line box.
+                  style: monoMuted.copyWith(height: 20 / 12),
+                ),
               ],
             ],
           ),
@@ -1422,8 +1433,12 @@ class _AgentActivityTabState extends State<AgentActivityTab>
                 child: Text(
                   '${entry['text']}',
                   style: monoMuted,
+                  // `line-clamp-2` only while a long (>200 chars) entry is
+                  // collapsed.
                   maxLines: '${entry['text']}'.length > 200 ? 2 : null,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: '${entry['text']}'.length > 200
+                      ? TextOverflow.ellipsis
+                      : null,
                 ),
               ),
           ],

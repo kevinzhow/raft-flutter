@@ -43,6 +43,13 @@ class _FleetScope {
       generation == w.client.generation;
 }
 
+/// GET /servers/:id/machines answers `{machines: [...]}` or a bare array;
+/// Web accepts both.
+List<dynamic> _machineRows(dynamic result) {
+  final rows = result is Map ? result['machines'] : result;
+  return rows is List ? rows.whereType<Map>().toList() : const [];
+}
+
 Future<T?> _fleetDialog<T>(
   BuildContext context,
   WorkspaceController w,
@@ -197,7 +204,7 @@ class _FleetViewState extends State<FleetView> {
       setState(() {
         rows = [
           for (final row
-              in (widget.computers ? result['machines'] : result) as List)
+              in (widget.computers ? _machineRows(result) : result) as List)
             if ((widget.computers || row['deletedAt'] == null) &&
                 (!widget.attentionOnly ||
                     widget.computers &&
@@ -518,7 +525,7 @@ class _FleetDetailState extends State<FleetDetail> {
       );
       if (!current || ticket != request) return;
       final next = widget.computers
-          ? (result['machines'] as List).where((r) => r['id'] == id).firstOrNull
+          ? _machineRows(result).where((r) => r['id'] == id).firstOrNull
           : result;
       if (next == null ||
           next['id'] != id ||

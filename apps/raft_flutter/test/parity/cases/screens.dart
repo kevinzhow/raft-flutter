@@ -231,24 +231,22 @@ ParityCase _agentProfile(String agentKey, {bool machinesLoading = false}) =>
     );
 
 final ParityCase _humanProfile = ParityCase(
-  widgets: const ['raft_flutter:MemberProfileView', 'material:Scaffold'],
+  widgets: const [
+    'raft_flutter:MemberProfileView',
+    'raft_ui:RaftPanelHeaderBar',
+  ],
   notes:
-      'MemberProfileView is the Flutter HumanRoute/ProfilePanel contract '
-      '(desktop master-detail pane); the mobile Members list instead opens '
-      'an AlertDialog. It is hosted in a plain Scaffold here, standing in for '
-      'the workspace shell Scaffold that hosts it in the app. Loads the same '
-      '/servers/visual-server/members/visual-human-1/profile payload.',
+      'MemberProfileView rebuilt from Web HumanDetailPanel.tsx, mounted as '
+      'the mobile human route (onBack = PanelHeader mobile back). Loads the '
+      'same /servers/visual-server/members/visual-human-1/profile payload.',
   build: (ctx) => ScreenWorkspaceHost(
     create: () => _workspace(ctx),
-    builder: (context, w) => Scaffold(
-      body: SafeArea(
-        child: MemberProfileView(
-          controller: w,
-          userId: ctx.fixtureData['humans']['owner']['memberId'] as String,
-          onClose: () {},
-          onMessage: () async {},
-        ),
-      ),
+    builder: (context, w) => MemberProfileView(
+      controller: w,
+      userId: ctx.fixtureData['humans']['owner']['memberId'] as String,
+      onClose: () {},
+      onBack: () {},
+      onMessage: () async {},
     ),
   ),
 );

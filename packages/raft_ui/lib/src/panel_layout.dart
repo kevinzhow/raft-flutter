@@ -640,3 +640,57 @@ class _RaftPanelIconButtonState extends State<RaftPanelIconButton> {
     );
   }
 }
+
+/// Distance from the top of a CSS line box to its baseline as Blink lays it
+/// out: the font's ascent and descent are rounded to whole pixels and the
+/// half-leading `(line-height - (ascent + descent)) / 2` is floored onto the
+/// ascent. [style] must carry fontSize and height (line-height / size).
+double raftCssBaseline(TextStyle style) {
+  final size = style.fontSize ?? 14;
+  final lineHeight = (style.height ?? 1.2) * size;
+  final probe = TextPainter(
+    text: TextSpan(text: 'Hg', style: style.copyWith(height: null)),
+    textDirection: TextDirection.ltr,
+  )..layout();
+  final ascent = probe.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+  final descent = probe.height - ascent;
+  probe.dispose();
+  final a = ascent.roundToDouble(), d = descent.roundToDouble();
+  return a + ((lineHeight - (a + d)) / 2).floorToDouble();
+}
+
+/// An `inline-flex` box of [height] whose text (style [childText], centred
+/// by `items-center`) is baseline-aligned in a line of [lineText]: the line
+/// box grows below/above exactly as Blink's inline layout does.
+class RaftInlineBox extends StatelessWidget {
+  const RaftInlineBox({
+    super.key,
+    required this.lineText,
+    required this.childText,
+    required this.height,
+    required this.child,
+  });
+  final TextStyle lineText, childText;
+  final double height;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final lineHeight = (lineText.height ?? 1.2) * (lineText.fontSize ?? 14);
+    final childLine = (childText.height ?? 1.2) * (childText.fontSize ?? 14);
+    final childBaseline = (height - childLine) / 2 + raftCssBaseline(childText);
+    final top = raftCssBaseline(lineText) - childBaseline;
+    final shift = top < 0 ? -top : 0.0;
+    return SizedBox(
+      height: [lineHeight + shift, top + shift + height].reduce(
+        (a, b) => a > b ? a : b,
+      ),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: Padding(
+          padding: EdgeInsets.only(top: top + shift),
+          child: SizedBox(height: height, child: child),
+        ),
+      ),
+    );
+  }
+}
