@@ -274,6 +274,17 @@ Future<Map<String, dynamic>> captureParityCase(
 
   final rootBox =
       rootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+  // Playwright captures with caret: "hide". Product fields may set their own
+  // cursorColor (bypassing the theme override above), so hide every caret on
+  // the render objects for this frame only; the zero-duration pump repaints
+  // without advancing the blink timer or rebuilding the fields.
+  void hideCarets(RenderObject node) {
+    if (node is RenderEditable) node.cursorColor = const Color(0x00000000);
+    node.visitChildren(hideCarets);
+  }
+
+  hideCarets(rootBox);
+  await t.pump();
   Rect rect = Offset.zero & size;
   String? targetNote;
   if (ctx.targetUsed && ctx.targetKey.currentContext != null) {
