@@ -1,0 +1,884 @@
+{
+ "reference": "tool/glyph_parity/reference/chromium.png",
+ "chromium": "147.0.7727.15",
+ "samples": 36,
+ "sizes": [
+  16.0,
+  20.0,
+  24.0
+ ],
+ "cells": 108,
+ "overall": {
+  "max": 64,
+  "meanInk": 0.159,
+  "meanCell": 0.024,
+  "worstCellMeanInk": 2.523,
+  "worstCoverageDelta": 0.0047
+ },
+ "cellsDetail": [
+  {
+   "id": "x",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "x",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "x",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.033,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "check",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "check",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "check",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "plus",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "plus",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.038,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "plus",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "chevronDown",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "chevronDown",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "chevronDown",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "hash",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.02,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "hash",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.025,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "hash",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "search",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "search",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.015,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "search",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "settings",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "settings",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "settings",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bell",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bell",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bell",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkSquare",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkSquare",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkSquare",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkCircle2",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkCircle2",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkCircle2",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkCircle2RaftUi",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkCircle2RaftUi",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "checkCircle2RaftUi",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "minus",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "minus",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "minus",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "alertTriangle",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "alertTriangle",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "alertTriangle",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "share2",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.006,
+   "meanInk": 0.058,
+   "coverageDelta": 0.0004
+  },
+  {
+   "id": "share2",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.007,
+   "meanInk": 0.042,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "share2",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.009,
+   "meanInk": 0.045,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "copy",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "copy",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "copy",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "calendarRange",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.005,
+   "meanInk": 0.031,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "calendarRange",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.006,
+   "meanInk": 0.022,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "calendarRange",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "monitor",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "monitor",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.006,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "monitor",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "inbox",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.009,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "inbox",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.015,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "inbox",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.005,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "moreHorizontal",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "moreHorizontal",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "moreHorizontal",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "atSign",
+   "size": 16.0,
+   "max": 39,
+   "meanCell": 0.21,
+   "meanInk": 1.335,
+   "coverageDelta": 0.0013
+  },
+  {
+   "id": "atSign",
+   "size": 20.0,
+   "max": 37,
+   "meanCell": 0.174,
+   "meanInk": 0.809,
+   "coverageDelta": 0.0042
+  },
+  {
+   "id": "atSign",
+   "size": 24.0,
+   "max": 12,
+   "meanCell": 0.098,
+   "meanInk": 0.368,
+   "coverageDelta": 0.0009
+  },
+  {
+   "id": "home",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "home",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.02,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "home",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "send",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.035,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "send",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.008,
+   "meanInk": 0.048,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "send",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.008,
+   "meanInk": 0.036,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "paperclip",
+   "size": 16.0,
+   "max": 64,
+   "meanCell": 0.382,
+   "meanInk": 2.523,
+   "coverageDelta": 0.0026
+  },
+  {
+   "id": "paperclip",
+   "size": 20.0,
+   "max": 63,
+   "meanCell": 0.406,
+   "meanInk": 1.962,
+   "coverageDelta": 0.0026
+  },
+  {
+   "id": "paperclip",
+   "size": 24.0,
+   "max": 35,
+   "meanCell": 0.491,
+   "meanInk": 1.87,
+   "coverageDelta": 0.0022
+  },
+  {
+   "id": "wifiOff",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.009,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "wifiOff",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.005,
+   "meanInk": 0.028,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "wifiOff",
+   "size": 24.0,
+   "max": 9,
+   "meanCell": 0.159,
+   "meanInk": 0.755,
+   "coverageDelta": 0.004
+  },
+  {
+   "id": "users",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "users",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "users",
+   "size": 24.0,
+   "max": 3,
+   "meanCell": 0.004,
+   "meanInk": 0.021,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "smilePlus",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "smilePlus",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "smilePlus",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "keyRound",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "keyRound",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.013,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "keyRound",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "palette",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.015,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "palette",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.021,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "palette",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bookmarkFilled",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.005,
+   "meanInk": 0.031,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bookmarkFilled",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bookmarkFilled",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.006,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "play-filled",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.006,
+   "meanInk": 0.045,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "play-filled",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.01,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "play-filled",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.006,
+   "meanInk": 0.023,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "x-stroke3",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.05,
+   "coverageDelta": 0.0003
+  },
+  {
+   "id": "x-stroke3",
+   "size": 20.0,
+   "max": 2,
+   "meanCell": 0.023,
+   "meanInk": 0.214,
+   "coverageDelta": 0.001
+  },
+  {
+   "id": "x-stroke3",
+   "size": 24.0,
+   "max": 7,
+   "meanCell": 0.121,
+   "meanInk": 0.939,
+   "coverageDelta": 0.0047
+  },
+  {
+   "id": "hash-stroke2.5",
+   "size": 16.0,
+   "max": 6,
+   "meanCell": 0.125,
+   "meanInk": 1.143,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "hash-stroke2.5",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.023,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "hash-stroke2.5",
+   "size": 24.0,
+   "max": 22,
+   "meanCell": 0.23,
+   "meanInk": 0.937,
+   "coverageDelta": 0.0011
+  },
+  {
+   "id": "monitor-absolute",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "monitor-absolute",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "monitor-absolute",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "probe-database",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.01,
+   "meanInk": 0.068,
+   "coverageDelta": 0.0004
+  },
+  {
+   "id": "probe-database",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.013,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "probe-database",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.004,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "probe-codepen",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.018,
+   "meanInk": 0.107,
+   "coverageDelta": 0.0005
+  },
+  {
+   "id": "probe-codepen",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.012,
+   "meanInk": 0.052,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "probe-codepen",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.019,
+   "meanInk": 0.066,
+   "coverageDelta": 0.0004
+  },
+  {
+   "id": "probe-navigation",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "probe-navigation",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "probe-navigation",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  }
+ ]
+}

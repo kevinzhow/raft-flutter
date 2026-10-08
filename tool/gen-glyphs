@@ -1,0 +1,499 @@
+#!/usr/bin/env python3
+"""Generate the Lucide glyph set the Raft Web client renders, as Flutter geometry.
+
+Two Lucide builds reach the Web screen and both are pinned here:
+  lucide-react 0.575.0   imported by Web product code (packages/web/src/**/*.ts[x])
+  lucide-react 1.48.0    imported by raft-ui 0.5.27 itself (dist/index.mjs), so
+                         every icon drawn INSIDE a raft-ui component comes from it
+
+Pipeline:
+  tool/gen-glyphs --import-sources --raft-source DIR [--raft-ui DIR]
+      scan Web + raft-ui for `import {..} from "lucide-react"`, resolve every
+      imported name through the pinned package's export map, read each icon's
+      iconNode array from dist/esm/icons/<icon>.js(.mjs), and vendor the result
+      (nodes, file sha256, usage file:line) in tool/design-source/lucide/glyphs.json
+  tool/gen-glyphs           write packages/raft_ui/lib/src/glyphs.g.dart from the vendored JSON
+  tool/gen-glyphs --check   exit 1 if glyphs.g.dart is stale
+  tool/gen-glyphs --list    print the enum table (name, lucide icon, version, users)
+
+Naming: one `RaftGlyph` value per imported name (lowerCamel, `Icon`/`Lucide`
+affixes dropped), so a Flutter call site reads like the Web import it mirrors.
+Names only raft-ui imports carry raft-ui (1.48.0) geometry. A name imported by
+both whose geometry differs between the two builds gets a second value with the
+`RaftUi` suffix carrying the 1.48.0 geometry. LEGACY keeps older Flutter enum
+names compiling; they resolve through the 0.575.0 export map like a Web import.
+
+Stdlib only.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+VENDOR = ROOT / 'tool/design-source/lucide/glyphs.json'
+OUT = ROOT / 'packages/raft_ui/lib/src/glyphs.g.dart'
+
+WEB_LUCIDE = '0.575.0'
+RAFT_UI_LUCIDE = '1.48.0'
+RAFT_UI_VERSION = '0.5.27'
+RAFT_UI_ENTRY = 'dist/index.mjs'  # dist/wip.mjs is not imported by Web (raft-ui/wip unused)
+
+# Pre-generator RaftGlyph names that no Web/raft-ui import uses. Kept so existing
+# call sites compile; each resolves as the 0.575.0 export of the same PascalCase name.
+LEGACY = [
+    'calendar', 'checkCheck', 'chevronsUpDown', 'circleUserRound', 'code', 'columns', 'columns2',
+    'ellipsis', 'laptop', 'loaderCircle', 'maximize', 'menu', 'minimize', 'moon',
+    'palette', 'reply', 'slidersHorizontal', 'squareCheck', 'sun', 'volumeX',
+]
+# Whole-icon fill (`<Bookmark fill="currentColor">` in Web, see citations).
+FILLED = {
+    'bookmarkFilled': ('Bookmark', ['packages/web/src/components/message/MessageItem.tsx:4915',
+                                    'packages/web/src/components/saved/SavedPanel.tsx:146']),
+}
+NODE_ATTRS = {
+    'path': {'d'},
+    'circle': {'cx', 'cy', 'r'},
+    'ellipse': {'cx', 'cy', 'rx', 'ry'},
+    'rect': {'x', 'y', 'width', 'height', 'rx', 'ry'},
+    'line': {'x1', 'y1', 'x2', 'y2'},
+    'polyline': {'points'},
+    'polygon': {'points'},
+}
+DART_RESERVED = {
+    'assert', 'break', 'case', 'catch', 'class', 'const', 'continue', 'default', 'do', 'else',
+    'enum', 'extends', 'false', 'final', 'finally', 'for', 'if', 'in', 'is', 'new', 'null',
+    'rethrow', 'return', 'super', 'switch', 'this', 'throw', 'true', 'try', 'var', 'void',
+    'while', 'with', 'values', 'index', 'name', 'hashCode', 'runtimeType', 'toString',
+}
+
+
+class GlyphError(RuntimeError):
+    pass
+
+
+# ─── JS literal reader (the iconNode arrays are plain object/array literals) ──
+
+class _Js:
+    def __init__(self, text, pos):
+        self.s, self.i = text, pos
+
+    def ws(self):
+        while self.i < len(self.s) and self.s[self.i] in ' \t\r\n':
+            self.i += 1
+
+    def value(self):
+        self.ws()
+        c = self.s[self.i]
+        if c == '[':
+            self.i += 1
+            out = []
+            while True:
+                self.ws()
+                if self.s[self.i] == ']':
+                    self.i += 1
+                    return out
+                out.append(self.value())
+                self.ws()
+                if self.s[self.i] == ',':
+                    self.i += 1
+        if c == '{':
+            self.i += 1
+            out = {}
+            while True:
+                self.ws()
+                if self.s[self.i] == '}':
+                    self.i += 1
+                    return out
+                m = re.compile(r'"([^"]*)"|([A-Za-z_$][\w$-]*)').match(self.s, self.i)
+                if not m:
+                    raise GlyphError(f'bad object key at {self.s[self.i:self.i + 30]!r}')
+                key = m.group(1) if m.group(1) is not None else m.group(2)
+                self.i = m.end()
+                self.ws()
+                assert self.s[self.i] == ':'
+                self.i += 1
+                out[key] = self.value()
+                self.ws()
+                if self.s[self.i] == ',':
+                    self.i += 1
+        if c in '"\'':
+            m = re.compile(c + r'((?:\\.|[^\\' + c + r'])*)' + c).match(self.s, self.i)
+            self.i = m.end()
+            return json.loads('"' + m.group(1).replace("\\'", "'") + '"')
+        m = re.compile(r'-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?').match(self.s, self.i)
+        if m:
+            self.i = m.end()
+            return m.group(0)
+        raise GlyphError(f'unsupported JS literal at {self.s[self.i:self.i + 30]!r}')
+
+
+def read_icon_nodes(path: Path):
+    text = path.read_text()
+    m = re.search(r'const __iconNode = ', text) or re.search(r'const __iconData = \{[^\[]*?node: ', text)
+    if not m:
+        raise GlyphError(f'no iconNode in {path}')
+    nodes = _Js(text, m.end()).value()
+    out = []
+    for node in nodes:
+        tag, attrs = node[0], dict(node[1])
+        attrs.pop('key', None)
+        if tag not in NODE_ATTRS:
+            raise GlyphError(f'{path.name}: unsupported element <{tag}>')
+        fill = attrs.pop('fill', None)
+        unknown = set(attrs) - NODE_ATTRS[tag]
+        if unknown:
+            raise GlyphError(f'{path.name}: unsupported attributes {sorted(unknown)} on <{tag}>')
+        if fill not in (None, 'currentColor'):  # 'none' would need per-node override of RaftIcon.filled
+            raise GlyphError(f'{path.name}: unsupported fill {fill!r}')
+        entry = {'tag': tag, 'attrs': {k: str(v) for k, v in attrs.items()}}
+        if fill:
+            entry['fill'] = fill
+        out.append(entry)
+    return out
+
+
+# ─── source scan ─────────────────────────────────────────────────────────────
+
+IMPORT_RE = re.compile(r'import\s+(type\s+)?\{([^}]*)\}\s*from\s*["\']lucide-react["\']')
+
+
+def scan_imports(path: Path, rel: str):
+    """Yield (exportName, 'rel:line') for each value specifier importing lucide-react."""
+    text = path.read_text()
+    for m in IMPORT_RE.finditer(text):
+        if m.group(1):
+            continue
+        offset = m.start(2)
+        for spec in re.finditer(r'[^,]+', m.group(2)):
+            raw = spec.group(0).strip()
+            if not raw or raw.startswith('type '):
+                continue
+            name = raw.split(' as ')[0].strip()
+            line = text.count('\n', 0, offset + spec.start() + (len(spec.group(0)) - len(spec.group(0).lstrip()))) + 1
+            yield name, f'{rel}:{line}'
+
+
+def export_map(pkg: Path):
+    esm = pkg / 'dist/esm'
+    entry = esm / 'lucide-react.js'
+    if not entry.exists():
+        entry = esm / 'lucide-react.mjs'
+    table = {}
+    for m in re.finditer(r"export \{([^}]*)\} from '\./icons/([^']+?)\.m?js';", entry.read_text()):
+        for spec in m.group(1).split(','):
+            table[spec.strip().split(' as ')[-1].strip()] = m.group(2)
+    if not table:
+        raise GlyphError(f'empty export map in {entry}')
+    return table
+
+
+def icon_file(pkg: Path, icon: str):
+    for ext in ('.js', '.mjs'):
+        p = pkg / 'dist/esm/icons' / (icon + ext)
+        if p.exists():
+            return p
+    raise GlyphError(f'missing icon file {icon} in {pkg}')
+
+
+def pkg_version(pkg: Path):
+    return json.loads((pkg / 'package.json').read_text())['version']
+
+
+def sha256(path: Path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def import_sources(raft_source: Path, raft_ui: Path | None):
+    web = raft_source / 'packages/web'
+    web_lucide = Path(os.path.realpath(web / 'node_modules/lucide-react'))
+    raft_ui = Path(os.path.realpath(raft_ui or web / 'node_modules/raft-ui'))
+    rui_lucide = Path(os.path.realpath(raft_ui.parent / 'lucide-react'))
+    if not rui_lucide.exists():
+        hits = sorted(raft_source.glob(f'node_modules/.pnpm/lucide-react@{RAFT_UI_LUCIDE}_*/node_modules/lucide-react'))
+        if not hits:
+            raise GlyphError('cannot locate raft-ui lucide-react')
+        rui_lucide = hits[0]
+    for pkg, want in ((web_lucide, WEB_LUCIDE), (rui_lucide, RAFT_UI_LUCIDE), (raft_ui, RAFT_UI_VERSION)):
+        if pkg_version(pkg) != want:
+            raise GlyphError(f'{pkg} is {pkg_version(pkg)}, pinned {want}; update the pins in tool/gen-glyphs')
+    usages = {'web': {}, 'raftUi': {}}
+    for path in sorted((web / 'src').rglob('*')):
+        if path.suffix in ('.ts', '.tsx') and path.is_file():
+            for name, where in scan_imports(path, str(path.relative_to(raft_source))):
+                usages['web'].setdefault(name, []).append(where)
+    entry = raft_ui / RAFT_UI_ENTRY
+    entry_lines = entry.read_text().split('\n')
+    for name, where in scan_imports(entry, f'raft-ui@{RAFT_UI_VERSION}/{RAFT_UI_ENTRY}'):
+        # Cite the JSX render sites (raft-ui is bundled, so its import line alone says little).
+        import_line = int(where.rsplit(':', 1)[1])
+        sites = [f'{where.rsplit(":", 1)[0]}:{n}' for n, text in enumerate(entry_lines, 1)
+                 if n != import_line and 'jsx' in text and re.search(rf'(?<![\w$.]){re.escape(name)}(?![\w$])', text)]
+        usages['raftUi'].setdefault(name, []).extend(sites or [where])
+
+    builds = {'web': (web_lucide, WEB_LUCIDE), 'raftUi': (rui_lucide, RAFT_UI_LUCIDE)}
+    exports = {k: export_map(p) for k, (p, _) in builds.items()}
+    icons, resolved = {}, {'web': {}, 'raftUi': {}, 'legacy': {}}
+
+    def need(build, export):
+        pkg, version = builds[build]
+        icon = exports[build].get(export)
+        if icon is None:
+            return None
+        key = f'{icon}@{version}'
+        if key not in icons:
+            f = icon_file(pkg, icon)
+            icons[key] = {'icon': icon, 'version': version, 'sha256': sha256(f), 'nodes': read_icon_nodes(f)}
+        return key
+
+    for build in ('web', 'raftUi'):
+        for name in sorted(usages[build]):
+            key = need(build, name)
+            if key is None:
+                if name.startswith('Lucide') and not name[6:7].isupper() or name in ('LucideIcon', 'LucideProps', 'createLucideIcon', 'Icon'):
+                    usages[build].pop(name)
+                    continue
+                raise GlyphError(f'{name} (imported by {usages[build][name][0]}) is not a lucide-react icon export')
+            resolved[build][name] = key
+    for legacy in LEGACY + [v[0] for v in FILLED.values()]:
+        export = legacy[0].upper() + legacy[1:]
+        key = need('web', export)
+        if key is None:
+            raise GlyphError(f'legacy name {legacy} has no {WEB_LUCIDE} export {export}')
+        resolved['legacy'][export] = key
+    doc = {
+        'about': 'Vendored by `tool/gen-glyphs --import-sources`. Do not edit; regenerate.',
+        'sources': {
+            'raftSourceCommit': _git_head(raft_source),
+            'webLucide': {'version': WEB_LUCIDE, 'package': str(web_lucide.relative_to(raft_source))},
+            'raftUi': {'version': RAFT_UI_VERSION, 'entry': RAFT_UI_ENTRY, 'sha256': sha256(raft_ui / RAFT_UI_ENTRY)},
+            'raftUiLucide': {'version': RAFT_UI_LUCIDE, 'package': str(rui_lucide.relative_to(raft_source))},
+        },
+        'usages': usages,
+        'resolved': resolved,
+        'icons': dict(sorted(icons.items())),
+    }
+    VENDOR.parent.mkdir(parents=True, exist_ok=True)
+    VENDOR.write_text(json.dumps(doc, indent=1, sort_keys=False) + '\n')
+    print(f'vendored {len(icons)} icon geometries '
+          f'(web names {len(resolved["web"])}, raft-ui names {len(resolved["raftUi"])}) -> {VENDOR.relative_to(ROOT)}')
+
+
+def _git_head(path: Path):
+    head = path / '.git/HEAD'
+    try:
+        ref = head.read_text().strip()
+        if ref.startswith('ref: '):
+            return (path / '.git' / ref[5:]).read_text().strip()
+        return ref
+    except OSError:
+        return None
+
+
+# ─── model ───────────────────────────────────────────────────────────────────
+
+def lower_camel(export: str):
+    name = export
+    if name.startswith('Lucide') and name[6:7].isupper():
+        name = name[6:]
+    if name.endswith('Icon') and len(name) > 4:
+        name = name[:-4]
+    name = name[0].lower() + name[1:]
+    return name + 'Glyph' if name in DART_RESERVED else name
+
+
+def build_model(doc):
+    """Return (entries, geometries). entry: name, key, filled, web[], raftUi[], legacy."""
+    icons = doc['icons']
+    entries = {}
+
+    def add(name, key, **kw):
+        e = entries.setdefault(name, {'name': name, 'key': key, 'filled': False, 'web': [], 'raftUi': [],
+                                      'legacy': False, 'citations': []})
+        if e['key'] != key:
+            raise GlyphError(f'{name}: conflicting geometry {e["key"]} vs {key}')
+        for k, v in kw.items():
+            e[k] = e[k] + v if isinstance(v, list) else v
+        return e
+
+    for export, key in doc['resolved']['web'].items():
+        add(lower_camel(export), key, web=doc['usages']['web'][export])
+    for export, key in doc['resolved']['raftUi'].items():
+        name = lower_camel(export)
+        users = doc['usages']['raftUi'][export]
+        if name in entries and icons[entries[name]['key']]['nodes'] != icons[key]['nodes']:
+            name += 'RaftUi'
+        if name in entries:
+            entries[name]['raftUi'] += users  # same geometry in both builds
+        else:
+            add(name, key, raftUi=users)
+    for export, key in doc['resolved']['legacy'].items():
+        name = lower_camel(export)
+        if name not in entries:
+            add(name, key, legacy=True)
+    for name, (export, cites) in FILLED.items():
+        add(name, doc['resolved']['legacy'][export], filled=True, citations=cites)
+    ordered = [entries[n] for n in sorted(entries, key=lambda n: (n.lower(), n))]
+    used = sorted({e['key'] for e in ordered})
+    return ordered, used
+
+
+# ─── Dart emission ───────────────────────────────────────────────────────────
+
+def _num(v: str):
+    f = float(v)
+    s = repr(f)
+    return s[:-2] + '.0' if s.endswith('.0') else s
+
+
+def _points(v: str):
+    return [_num(x) for x in re.findall(r'[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?', v)]
+
+
+def dart_str(v: str):
+    if "'" in v or '\\' in v or '$' in v:
+        raise GlyphError(f'unexpected character in {v!r}')
+    return f"'{v}'"
+
+
+def dart_node(node):
+    """One `_LucideNode` const expression. Numeric kinds carry SVG attribute order."""
+    tag, a = node['tag'], node['attrs']
+    fill = ', fill: true' if node.get('fill') == 'currentColor' else ''
+    if tag == 'path':
+        if fill:
+            return f"_LucideNode(_LucideKind.path, [], d: {dart_str(a['d'])}{fill})"
+        return f"_LucideNode.path({dart_str(a['d'])})"
+    if tag in ('polyline', 'polygon'):
+        values = _points(a['points'])
+    elif tag == 'rect':
+        # SVG 2 auto radii: a missing rx/ry takes the other's value.
+        rx, ry = a.get('rx'), a.get('ry')
+        rx, ry = rx or ry or '0', ry or rx or '0'
+        values = [_num(a.get(k, '0')) for k in ('x', 'y', 'width', 'height')] + [_num(rx), _num(ry)]
+    else:
+        order = {'circle': ('cx', 'cy', 'r'), 'ellipse': ('cx', 'cy', 'rx', 'ry'),
+                 'line': ('x1', 'y1', 'x2', 'y2')}[tag]
+        values = [_num(a.get(k, '0')) for k in order]
+    return f"_LucideNode(_LucideKind.{tag}, [{', '.join(values)}]{fill})"
+
+
+def geometry_ident(key):
+    icon, version = key.split('@')
+    parts = re.split(r'[-_]', icon)
+    return '_' + parts[0] + ''.join(p[:1].upper() + p[1:] for p in parts[1:]) + 'V' + version.replace('.', '_')
+
+
+def render(doc):
+    entries, used = build_model(doc)
+    src = doc['sources']
+    lines = [
+        '// GENERATED — do not edit. Regenerate with `tool/gen-glyphs`.',
+        f"// Geometry: lucide-react {src['webLucide']['version']} (Web product imports) and "
+        f"{src['raftUiLucide']['version']} (raft-ui {src['raftUi']['version']} imports), ISC;",
+        '// see packages/raft_ui/LICENSE-LUCIDE. Vendored source: tool/design-source/lucide/glyphs.json',
+        f"// (raft-source {src['raftSourceCommit']}).",
+        '// dart format off',
+        '// ignore_for_file: constant_identifier_names, lines_longer_than_80_chars',
+        "part of 'icons.dart';",
+        '',
+        '/// Every Lucide icon the Raft Web client renders (Web product code and the',
+        '/// raft-ui components it mounts), plus legacy Flutter names. See',
+        '/// docs/glyph-mapping.md and `tool/gen-glyphs --list`.',
+        'enum RaftGlyph {',
+    ]
+    for i, e in enumerate(entries):
+        icon = doc['icons'][e['key']]
+        doc_lines = [f"lucide `{icon['icon']}` {icon['version']}."]
+        if e['web']:
+            more = f" (+{len(e['web']) - 1} more)" if len(e['web']) > 1 else ''
+            doc_lines.append(f"Web: {e['web'][0].removeprefix('packages/web/src/')}{more}.")
+        if e['raftUi']:
+            more = f" (+{len(e['raftUi']) - 1} more)" if len(e['raftUi']) > 1 else ''
+            doc_lines.append(f"raft-ui: {e['raftUi'][0]}{more}.")
+        if e['legacy']:
+            doc_lines.append('Legacy Flutter name; no Web import uses it.')
+        if e['filled']:
+            doc_lines.append(f"Filled with currentColor as in {', '.join(c.removeprefix('packages/web/src/') for c in e['citations'])}.")
+        for d in doc_lines:
+            lines.append(f'  /// {d}')
+        args = [geometry_ident(e['key']), dart_str(icon['icon']), dart_str(icon['version'])]
+        if e['filled']:
+            args.append('filled: true')
+        lines.append(f"  {e['name']}({', '.join(args)}){';' if i == len(entries) - 1 else ','}")
+    lines += [
+        '',
+        '  const RaftGlyph(this._nodes, this.lucideName, this.lucideVersion, {this.filled = false});',
+        '  final List<_LucideNode> _nodes;',
+        '',
+        '  /// Lucide icon file name (kebab-case) the geometry comes from.',
+        '  final String lucideName;',
+        '',
+        '  /// lucide-react version the geometry comes from.',
+        '  final String lucideVersion;',
+        '',
+        '  /// True when the Web renders this glyph with `fill="currentColor"`.',
+        '  final bool filled;',
+        '}',
+        '',
+    ]
+    for key in used:
+        icon = doc['icons'][key]
+        lines.append(f'// {icon["icon"]}.js lucide-react {icon["version"]} sha256 {icon["sha256"][:16]}')
+        lines.append(f'const {geometry_ident(key)} = <_LucideNode>[')
+        for node in icon['nodes']:
+            lines.append(f'  {dart_node(node)},')
+        lines.append('];')
+    return '\n'.join(lines) + '\n'
+
+
+def load_vendor():
+    if not VENDOR.exists():
+        raise GlyphError(f'{VENDOR.relative_to(ROOT)} missing; run --import-sources first')
+    return json.loads(VENDOR.read_text())
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--check', action='store_true', help='fail if glyphs.g.dart is stale')
+    p.add_argument('--list', action='store_true', help='print the enum table')
+    p.add_argument('--import-sources', action='store_true')
+    p.add_argument('--raft-source', type=Path)
+    p.add_argument('--raft-ui', type=Path, help='raft-ui package dir (default: Web node_modules/raft-ui)')
+    args = p.parse_args(argv)
+    try:
+        if args.import_sources:
+            if not args.raft_source:
+                p.error('--import-sources needs --raft-source')
+            import_sources(args.raft_source, args.raft_ui)
+        doc = load_vendor()
+        if args.list:
+            entries, _ = build_model(doc)
+            for e in entries:
+                icon = doc['icons'][e['key']]
+                src = 'web' if e['web'] else 'raft-ui' if e['raftUi'] else 'filled' if e['filled'] else 'legacy'
+                print(f"{e['name']:24} {icon['icon']:24} {icon['version']:8} {src:8} {len(e['web'])} web / {len(e['raftUi'])} raft-ui")
+            return 0
+        text = render(doc)
+        if args.check:
+            if not OUT.exists() or OUT.read_text() != text:
+                print(f'gen-glyphs: {OUT.relative_to(ROOT)} is stale; run tool/gen-glyphs', file=sys.stderr)
+                return 1
+            print('gen-glyphs: up to date')
+            return 0
+        OUT.write_text(text)
+        entries, used = build_model(doc)
+        print(f'wrote {OUT.relative_to(ROOT)}: {len(entries)} glyphs, {len(used)} geometries')
+        return 0
+    except GlyphError as error:
+        print(f'gen-glyphs: {error}', file=sys.stderr)
+        return 2
+
+
+if __name__ == '__main__':
+    sys.exit(main())

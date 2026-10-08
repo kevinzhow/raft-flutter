@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Pixel parity of RaftIcon (Flutter) against lucide-react (Chromium).
+
+  tool/glyph-parity
+      run packages/raft_ui/test/glyph_parity_test.dart against the committed
+      Chromium reference, write tool/glyph_parity/results.json (max / mean
+      per icon and size) and .local/glyph-parity-flutter.png, print a summary
+  tool/glyph-parity --refresh-reference --raft-source DIR   (Node 24: $NODE,
+      .local/toolchain-paths.txt or PATH)
+      first re-render tool/glyph_parity/reference/{chromium.png,manifest.json}:
+      lucide-react 0.575.0 / 1.48.0 markup from react-dom/server, painted by the
+      Playwright Chromium (playwright-core 1.59 from DIR, browsers from
+      ~/.cache/ms-playwright) at deviceScaleFactor 1
+
+The sample (glyphs, lucide props, sizes 16/20/24) is tool/glyph_parity/samples.json.
+The same test runs in tool/check-project with fixed ceilings (see the test).
+"""
+import argparse
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+HERE = ROOT / 'tool/glyph_parity'
+TOOLCHAIN = ROOT / '.local/toolchain-paths.txt'  # node + pnpm paths written by tool/raft-stack
+
+
+def node_binary():
+    if os.environ.get('NODE'):
+        return os.environ['NODE']
+    if TOOLCHAIN.is_file():
+        for line in TOOLCHAIN.read_text().splitlines():
+            if line.endswith('/node'):
+                return line
+    found = shutil.which('node')
+    if not found:
+        raise SystemExit('glyph-parity: node not found (set NODE)')
+    return found
+
+
+def main(argv=None):
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument('--refresh-reference', action='store_true')
+    p.add_argument('--raft-source', type=pathlib.Path)
+    args = p.parse_args(argv)
+    if args.refresh_reference:
+        if not args.raft_source:
+            p.error('--refresh-reference needs --raft-source')
+        subprocess.run([node_binary(), str(HERE / 'render_reference.mjs'), str(args.raft_source),
+                        str(HERE / 'samples.json'), str(HERE / 'reference')], check=True)
+    (ROOT / '.local').mkdir(exist_ok=True)
+    raw = ROOT / '.local/glyph-parity.json'
+    env = dict(os.environ, GLYPH_PARITY_OUT=str(raw))
+    test = subprocess.run([str(ROOT / 'tool/flutter'), 'test', '--no-pub', 'test/glyph_parity_test.dart'],
+                          cwd=ROOT / 'packages/raft_ui', env=env, capture_output=True, text=True)
+    if not raw.exists():
+        sys.stdout.write(test.stdout[-4000:] + test.stderr[-2000:])
+        return 1
+    data = json.loads(raw.read_text())
+    raw.unlink()
+    (HERE / 'results.json').write_text(json.dumps(data, indent=1) + '\n')
+    o = data['overall']
+    print(f"glyph-parity: {data['samples']} samples x sizes {data['sizes']} = {data['cells']} cells "
+          f"vs Chromium {data['chromium']}")
+    print(f"  max channel delta {o['max']}/255; mean delta {o['meanCell']} per cell pixel, "
+          f"{o['meanInk']} per ink pixel; worst cell mean-ink {o['worstCellMeanInk']}; "
+          f"worst ink-coverage delta {o['worstCoverageDelta'] * 100:.2f}%")
+    for size in data['sizes']:
+        cells = [c for c in data['cellsDetail'] if c['size'] == size]
+        print(f"  {size:>4.0f}px: max {max(c['max'] for c in cells):3}, "
+              f"mean-ink {sum(c['meanInk'] for c in cells) / len(cells):.3f}")
+    worst = sorted(data['cellsDetail'], key=lambda c: -c['meanInk'])[:5]
+    print('  worst cells: ' + ', '.join(f"{c['id']}@{c['size']:.0f} ({c['meanInk']})" for c in worst))
+    print(f"  wrote {(HERE / 'results.json').relative_to(ROOT)}; Flutter raster .local/glyph-parity-flutter.png")
+    if test.returncode != 0:
+        sys.stdout.write(test.stdout[-4000:])
+        print('glyph-parity: ceilings exceeded (see test output)', file=sys.stderr)
+    return test.returncode
+
+
+if __name__ == '__main__':
+    sys.exit(main())
