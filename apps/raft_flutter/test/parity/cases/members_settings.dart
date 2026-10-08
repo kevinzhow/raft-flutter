@@ -40,11 +40,11 @@ import 'package:raft_flutter/features/account_settings.dart';
 import 'package:raft_flutter/features/admin_views.dart';
 import 'package:raft_flutter/features/appearance_section.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
-import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/im_bridges_view.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_flutter/features/joint_channel_views.dart';
 import 'package:raft_flutter/features/locale_settings_page.dart';
+import 'package:raft_flutter/features/managed_agent_launcher.dart';
 import 'package:raft_flutter/features/notification_settings_view.dart';
 import 'package:raft_flutter/features/provider_views.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
@@ -56,6 +56,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../parity_harness.dart';
+import 'screens.dart' show agentDetailParityCase;
 import 'members_settings/fixture_client.dart';
 import 'members_settings/runtime_forms.dart';
 
@@ -65,18 +66,12 @@ final Map<String, ParityCase> membersSettingsCases = {
     'codex',
     name: 'bad name!!',
     extraNotes:
-        ' Flutter RuntimeFormDialog has no client-side agent-name format rule '
-        '(React NAME_REGEX inline error "Start with a letter..."); the invalid '
-        'name is shown as typed with no inline error, which is the real Flutter '
-        'state until the server rejects the submit.',
+        ' The invalid prefill reports the NAME_REGEX error from the first '
+        'render (Web task #1139 E-state).',
   ),
   'components.members.create-agent.dialog-onboarding': _createAgent(
     'codex',
     onboarding: true,
-    extraNotes:
-        ' Onboarding = RuntimeFormDialog(onboarding: true) as opened by '
-        'server_setup_gate.dart (locked name "Cindy"); Flutter has no "Meet '
-        'Cindy" hero layout.',
   ),
   'components.members.create-agent.dialog-empty': _createAgent(
     'codex',
@@ -88,18 +83,12 @@ final Map<String, ParityCase> membersSettingsCases = {
         'claude',
         customProvider: true,
         extraNotes:
-            ' Provider set to Custom, API URL/API key/Claude Command filled like '
-            'react-provider.spec.ts applyCaseFixtureState; Flutter has no MORE '
-            'disclosure (advanced fields are always inline), dialog scrolled '
+            ' Provider set to Custom, API URL/API key filled, MORE opened and '
+            'Claude Command filled like react-provider.spec.ts, modal scrolled '
             'back to top.',
       ),
   'components.members.create-agent.builtin-provider-dialog': _createAgent(
     'builtin',
-    extraNotes:
-        ' Built-in Pi option sources need the Computer catalog; with no '
-        'backend the real server answers 409 builtin_catalog_unavailable and '
-        'the form has no option_source.status capability, so Flutter shows '
-        'its load-error state.',
   ),
   'components.members.create-agent.pi-provider-dialog': _createAgent('pi'),
   'components.members.create-agent.dialog-no-computer': _noComputer,
@@ -162,8 +151,29 @@ Map<String, dynamic>? _staticSource(String runtime, String source) {
 }
 
 // ---------------------------------------------------------------------------
-// Create agent: RuntimeFormDialog, the form managed_agent_launcher.dart opens
-// after the computer and runtime are chosen.
+// Create agent: showManagedAgentForm → CreateAgentDialog, the dialog every
+// "Create agent" entry opens (FleetView, action cards).
+
+/// react-provider.spec.ts visualBillingInfo() for a non-billing case (Free
+/// plan, 2/2 agents): the capacity Banner React shows on every create case.
+Map<String, dynamic> _visualBilling() => {
+  'plan': 'free',
+  'displayName': 'Free',
+  'serverPlan': 'free',
+  'source': 'server',
+  'capacity': {'maxHumans': 1, 'maxAgents': 2, 'maxUniversalSeats': -1},
+  'usage': {'humans': 2, 'agents': 2, 'universalSeats': 0},
+};
+
+/// VisualTestingCases.tsx primeCreateAgentStores: the primary computer with
+/// the case's runtimes plus the offline studio rig.
+List<Map<String, dynamic>> _createAgentMachines(
+  MsFixture fixture,
+  List<String> runtimes,
+) => [
+  {...fixture.machine('primary'), 'status': 'online', 'runtimes': runtimes},
+  {...fixture.machine('studio'), 'status': 'offline', 'runtimes': ['codex']},
+];
 
 ParityCase _createAgent(
   String runtime, {
@@ -173,28 +183,70 @@ ParityCase _createAgent(
   bool customProvider = false,
   String extraNotes = '',
 }) => ParityCase(
-  widgets: const [
-    'raft_flutter:RuntimeFormDialog',
-    'raft_ui:RaftButton',
-    'material:AlertDialog',
-  ],
-  notes:
-      'Flutter create-agent picks computer and runtime in two SimpleDialogs '
-      '(managed_agent_launcher.dart) and then opens RuntimeFormDialog; the '
-      'case props (computer Jiachengs-MacBook-Pro, runtime $runtime, name, '
-      'description) are rendered as that final form. Form definition = the '
-      'server registry v2 payload for "$runtime"; machine-probed option '
-      'sources are unserved like in the React host (React itself never '
-      'selects the runtime because it mocks no runtime-options, so its '
-      'baseline shows "Select..."). No capacity banner exists in Flutter.'
-      '$extraNotes',
+  widgets: onboarding
+      ? const [
+          'raft_flutter:RuntimeFormDialog',
+          'raft_ui:RaftAgentDialogCard',
+          'raft_ui:RaftStableField',
+        ]
+      : const [
+          'raft_flutter:CreateAgentDialog',
+          'raft_ui:RaftAgentDialogCard',
+          'raft_ui:RaftStableField',
+          'raft_ui:RaftAgentSelect',
+          'raft_ui:RaftAgentTextInput',
+          'raft_ui:RaftAgentBanner',
+          'raft_ui:RaftButton',
+        ],
+  notes: onboarding
+      ? 'Onboarding create = RuntimeFormDialog(onboarding: true) as opened by '
+            'server_setup_gate.dart after its computer/runtime pickers: '
+            'DialogCard with locked name "Cindy", runtime "$runtime" v2 '
+            'fields and Create Agent. Flutter has no "Meet Cindy" step '
+            'layout (header, pixel-avatar hero, footer CTA).$extraNotes'
+      : 'showManagedAgentForm → CreateAgentDialog (DialogCard, capacity '
+            'Banner from /billing/subscription, COMPUTER / NAME / DESCRIPTION '
+            'StableFields, RUNTIME select from runtime-options, then the '
+            "runtime's v2 fields; Cancel / Create Agent). Served like the "
+            'React host: visualBillingInfo, the primed machines '
+            '(Jiachengs-MacBook-Pro runtimes ${customProvider ? '[claude, codex]' : '[$runtime, ...]'} + offline studio), '
+            '${customProvider ? 'the scoped claude runtime-options catalog and the claude v2 form' : 'no runtime-options catalog, so RUNTIME stays "Select..." and the declared-Claude pre-admission MODEL picker shows the bundled catalog with the failed machine source'}.'
+            '$extraNotes',
   settle: const Duration(milliseconds: 600),
   build: (ctx) {
     final fixture = MsFixture(ctx);
-    final base =
-        'GET /servers/visual-server/machines/computer-mbp/runtime-forms/v2/$runtime';
+    final machineRuntimes = switch (runtime) {
+      'claude' => ['claude', 'codex'],
+      'codex' => ['codex', 'claude'],
+      _ => [runtime, 'claude', 'codex'],
+    };
+    final server = '/servers/visual-server/machines';
+    final base = 'GET $server/computer-mbp/runtime-forms/v2/$runtime';
     final form = _forms(runtime);
-    final routes = <String, Object? Function(dynamic)>{base: (_) => form};
+    final routes = <String, Object? Function(dynamic)>{
+      'GET /billing/subscription': (_) => _visualBilling(),
+      'GET $server': (_) => {
+        'machines': _createAgentMachines(fixture, machineRuntimes),
+      },
+      base: (_) => form,
+      if (customProvider)
+        'GET $server/computer-mbp/runtime-options': (_) => {
+          'context': 'new_agent',
+          'machineId': 'computer-mbp',
+          'options': [
+            {
+              'runtimeId': 'claude',
+              'capabilityStatus': 'available',
+              'admissionStatus': 'available_for_new',
+              'admissionReason': null,
+              'current': false,
+              'availableForNew': true,
+              'manageableForCurrentAgent': false,
+              'canSelectInThisContext': true,
+            },
+          ],
+        },
+    };
     for (final id in (form['optionSources'] as Map).keys) {
       final source = _staticSource(runtime, id as String);
       routes['$base/option-sources/$id'] = (_) =>
@@ -210,31 +262,38 @@ ParityCase _createAgent(
     final props = ctx.props;
     return _Host(
       page: const Scaffold(),
-      open: (context) => showDialog(
-        context: context,
-        builder: (_) => RuntimeFormDialog(
-          controller: w,
-          machineId: 'computer-mbp',
-          runtimeId: runtime,
-          onboarding: onboarding,
-          initialName: empty ? null : name ?? props['name'] as String?,
-          initialDescription: empty ? null : props['description'] as String?,
-        ),
-      ),
+      open: (context) => onboarding
+          ? showDialog(
+              context: context,
+              builder: (_) => RuntimeFormDialog(
+                controller: w,
+                machineId: 'computer-mbp',
+                runtimeId: runtime,
+                onboarding: true,
+              ),
+            )
+          : showManagedAgentForm(
+              context,
+              w,
+              suggestedComputer: 'computer-mbp',
+              initialName: empty ? null : name ?? props['name'] as String?,
+              initialDescription: empty
+                  ? null
+                  : props['description'] as String?,
+            ),
     );
   },
   interact: customProvider ? _fillCustomProvider : null,
 );
 
+/// react-provider.spec.ts: provider → Custom, fill API URL / API key, open
+/// MORE, fill the Claude command, scroll the modal back to the top.
 Future<void> _fillCustomProvider(WidgetTester t, ParityContext ctx) async {
   await t.pump(const Duration(milliseconds: 300));
-  final dialog = find.byType(AlertDialog);
-  await t.tap(
-    find.descendant(of: dialog, matching: find.text('Default')).first,
-  );
-  await t.pump(const Duration(milliseconds: 400));
+  await t.tap(find.byKey(const ValueKey('runtime-provider')));
+  await t.pump(const Duration(milliseconds: 200));
   await t.tap(find.text('Custom').last);
-  await t.pump(const Duration(milliseconds: 400));
+  await t.pump(const Duration(milliseconds: 200));
   await t.enterText(
     find.byKey(const ValueKey('runtime-apiUrl')),
     'https://gateway.example.com',
@@ -243,86 +302,68 @@ Future<void> _fillCustomProvider(WidgetTester t, ParityContext ctx) async {
     find.byKey(const ValueKey('runtime-apiKey')),
     'visual-test-key',
   );
+  await t.ensureVisible(find.text('MORE'));
+  await t.pump(const Duration(milliseconds: 100));
+  await t.tap(find.text('MORE'));
+  await t.pump(const Duration(milliseconds: 100));
   await t.enterText(find.byKey(const ValueKey('runtime-command')), 'claude');
   await t.pump(const Duration(milliseconds: 100));
   FocusManager.instance.primaryFocus?.unfocus();
   await t.pump(const Duration(milliseconds: 100));
-  final scrollable = find
-      .descendant(of: dialog, matching: find.byType(Scrollable))
+  final modal = find
+      .descendant(
+        of: find.byType(SingleChildScrollView).first,
+        matching: find.byType(Scrollable),
+      )
       .first;
-  t.state<ScrollableState>(scrollable).position.jumpTo(0);
+  t.state<ScrollableState>(modal).position.jumpTo(0);
   await t.pump(const Duration(milliseconds: 100));
 }
 
-/// Zero machines: FleetView "Create managed agent" → showManagedAgentForm
-/// throws "Connect a computer..." and FleetView shows it inline.
+/// Zero machines: showManagedAgentForm opens CreateAgentDialog's
+/// "Connect a computer first" branch.
 final ParityCase _noComputer = ParityCase(
-  widgets: const ['raft_flutter:FleetView', 'raft_ui:RaftButton'],
+  widgets: const [
+    'raft_flutter:CreateAgentDialog',
+    'raft_ui:RaftAgentDialogCard',
+    'raft_ui:RaftAgentBanner',
+    'raft_ui:RaftButton',
+  ],
   notes:
-      'Flutter has no zero-computer create-agent dialog: FleetView (agents) '
-      '"Create managed agent" → showManagedAgentForm throws "Connect a '
-      'computer before creating a managed agent." which FleetView renders as '
-      'inline error text above the agent list.',
+      'showManagedAgentForm with zero computers → CreateAgentDialog '
+      'needs-computer branch: DialogCard, info Banner "Connect a computer '
+      'first", Cancel / Connect a Computer.',
+  settle: const Duration(milliseconds: 400),
   build: (ctx) {
     final fixture = MsFixture(ctx);
     final (w, _) = fixture.workspace({
-      'GET /agents': (_) => fixture.agents,
+      'GET /billing/subscription': (_) => _visualBilling(),
       'GET /servers/visual-server/machines': (_) => {'machines': []},
     });
-    return Scaffold(
-      body: SafeArea(
-        child: FleetView(controller: w, computers: false),
-      ),
+    return _Host(
+      page: const Scaffold(),
+      open: (context) => showManagedAgentForm(context, w),
     );
-  },
-  interact: (t, ctx) async {
-    await t.pump(const Duration(milliseconds: 100));
-    await t.tap(find.text('Create managed agent'));
-    await t.pump(const Duration(milliseconds: 100));
   },
 );
 
 // ---------------------------------------------------------------------------
-// Agent detail: FleetDetail pushed from FleetView like on mobile.
+// Agent detail: the same FleetDetail/AgentDetailPanel route as
+// screens.members.agent-detail.profile (screens.dart).
 
-ParityCase _agentDetail({required bool lifecycle}) => ParityCase(
-  widgets: const ['raft_flutter:FleetDetail', 'material:AppBar'],
+ParityCase _agentDetail({required bool lifecycle}) => agentDetailParityCase(
+  'productUx',
   notes: lifecycle
-      ? 'React opens the AgentDetailPanel "More actions" menu (Direct Message, '
-            'Stop Agent, Restart / Reset). Flutter FleetDetail has no actions '
-            'menu: lifecycle controls are inline Start/Stop buttons and '
-            'Restart/Reset tiles. Captured the Flutter lifecycle step instead: '
-            'tapping "Restart runtime" opens the "Restart agent?" confirmation '
-            '(same state the KMP fixture captures).'
-      : 'Flutter agent detail is FleetDetail (Scaffold/AppBar + ListTiles); '
-            'it has no Profile/Activity/Chat/Reminders tabs, avatar, info '
-            'grid or runtime-config chips.',
-  settle: const Duration(milliseconds: 700),
-  build: (ctx) {
-    final fixture = MsFixture(ctx);
-    final row = fixture.agent('productUx');
-    final (w, _) = fixture.workspace({
-      'GET /agents/${row['id']}': (_) => row,
-      'GET /agents': (_) => fixture.agents,
-    });
-    return _Host(
-      page: const Scaffold(),
-      open: (context) => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              FleetDetail(controller: w, computers: false, initial: row),
-        ),
-      ),
-    );
-  },
-  interact: lifecycle
+      ? ' Lifecycle actions = the header "More actions" overflow menu '
+            '(Direct Message, Stop Agent, Restart / Reset), opened by tapping '
+            'its trigger.'
+      : '',
+  then: lifecycle
       ? (t, ctx) async {
-          await t.pump(const Duration(milliseconds: 600));
-          final tile = find.text('Restart runtime');
-          await t.ensureVisible(tile);
-          await t.pump(const Duration(milliseconds: 50));
-          await t.tap(tile);
-          await t.pump(const Duration(milliseconds: 100));
+          await t.tap(
+            find.byKey(const Key('agent-profile-overflow-trigger')),
+          );
+          await t.pump(const Duration(milliseconds: 200));
         }
       : null,
 );
