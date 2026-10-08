@@ -1,0 +1,19 @@
+{
+  "comment": "Recipe classes for which Tailwind v4 (4.2.2, the Web's version) emits no CSS. They are inert on the Web too, so the Flutter recipes correctly ignore them. tool/recipes/test asserts this list matches the pipeline output exactly.",
+  "classes": {
+    "blur-0": "Tailwind v4 has no `blur-0` (v4 spells it `blur-none`).",
+    "data-[state=copied]:[&_[data-icon=check]]:blur-0": "Wraps `blur-0`, which is not a v4 utility.",
+    "data-[state=idle]:[&_[data-icon=copy]]:blur-0": "Wraps `blur-0`, which is not a v4 utility.",
+    "scrollbar-none": "No `scrollbar-*` utility/plugin in raft-ui or the Web build.",
+    "data-[selected][data-highlighted]:bg-primary/30": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "data-[nested=true][data-selected=true]:bg-[oklch(0.96299649_0.06890535_97.696701)]": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "data-[nested=true][data-selected=true]:bg-fill-muted": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "data-[nested=true][data-selected=true]:border-black": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "data-[nested=true][data-selected=true]:border-line-hairline": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "data-[nested=true][data-selected=true]:ring-0": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "data-[nested=true][data-selected=true]:shadow-none": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "dark:data-[nested=true][data-selected=true]:bg-fill-muted": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "dark:data-[nested=true][data-selected=true]:border-ink-10": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax.",
+    "dark:data-[nested=true][data-selected=true]:hover:bg-fill-muted": "Two bracket groups in one `data-[...]` variant are not valid Tailwind v4 syntax."
+  }
+}

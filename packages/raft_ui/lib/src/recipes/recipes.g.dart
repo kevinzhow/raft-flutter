@@ -1,0 +1,368 @@
+// GENERATED — do not edit. Regenerate with `tool/recipes/run`.
+// Source: raft-ui 0.5.27 dist/index.mjs (sha256 eb843b9c5ce26766),
+// tailwindcss 4.2.2 with raft-ui styles.css + Web @theme overrides. Barrel and registry.
+// ignore_for_file: type=lint
+
+import 'recipe_runtime.dart';
+import 'spinner.g.dart';
+import 'button_variants.g.dart';
+import 'alert_dialog.g.dart';
+import 'dialog.g.dart';
+import 'drawer.g.dart';
+import 'drawer_extend.g.dart';
+import 'tooltip.g.dart';
+import 'card.g.dart';
+import 'status.g.dart';
+import 'status_extend.g.dart';
+import 'app_rail.g.dart';
+import 'copyable_code.g.dart';
+import 'checkbox_indicator.g.dart';
+import 'checkbox.g.dart';
+import 'scroll_area.g.dart';
+import 'sidebar_recipe.g.dart';
+import 'sidebar_menu_recipe.g.dart';
+import 'badge.g.dart';
+import 'sidebar_item_recipe.g.dart';
+import 'sidebar_section_recipe.g.dart';
+import 'panel.g.dart';
+import 'conversation_panel.g.dart';
+import 'conversation_panel_empty_state.g.dart';
+import 'kbd.g.dart';
+import 'context_menu.g.dart';
+import 'dropdown_menu.g.dart';
+import 'lightbox.g.dart';
+import 'mobile_nav.g.dart';
+import 'popover.g.dart';
+import 'preview_card.g.dart';
+import 'label.g.dart';
+import 'input.g.dart';
+import 'field.g.dart';
+import 'input_group.g.dart';
+import 'combobox.g.dart';
+import 'picker_trigger_button.g.dart';
+import 'select.g.dart';
+import 'radio_group.g.dart';
+import 'switch_recipe.g.dart';
+import 'segmented_control.g.dart';
+import 'toggle_group.g.dart';
+import 'textarea.g.dart';
+import 'textarea_group.g.dart';
+import 'textarea_counter.g.dart';
+import 'description_list.g.dart';
+import 'avatar.g.dart';
+import 'code_block.g.dart';
+import 'inline_code.g.dart';
+import 'markdown.g.dart';
+import 'message_item.g.dart';
+import 'message_footer.g.dart';
+import 'message_reaction.g.dart';
+import 'message_reference.g.dart';
+import 'message_multi_select.g.dart';
+import 'message_text_selection_toolbar.g.dart';
+import 'message_system.g.dart';
+import 'message_block.g.dart';
+import 'message_embed.g.dart';
+import 'message_quoted_preview.g.dart';
+import 'message_replies.g.dart';
+import 'message_action_card.g.dart';
+import 'message_action_card_content.g.dart';
+import 'message_attachment.g.dart';
+import 'message_image_gallery.g.dart';
+import 'message_video_preview.g.dart';
+import 'message_forwarded_bundle.g.dart';
+import 'message_forwarded_bundle_item.g.dart';
+import 'message_forwarded_bundle_gallery.g.dart';
+import 'progress.g.dart';
+import 'message_translation.g.dart';
+import 'message_list.g.dart';
+import 'heading.g.dart';
+import 'sans.g.dart';
+import 'mono.g.dart';
+import 'table.g.dart';
+import 'file_preview.g.dart';
+import 'files.g.dart';
+import 'composer.g.dart';
+import 'composer_attachment.g.dart';
+import 'composer_drop_overlay.g.dart';
+import 'composer_suggestion_list.g.dart';
+import 'composer_root.g.dart';
+import 'composer_toolbar_label.g.dart';
+import 'skeleton.g.dart';
+import 'banner.g.dart';
+import 'empty_state.g.dart';
+import 'notification_center.g.dart';
+import 'toast_styles.g.dart';
+import 'toast_action.g.dart';
+import 'tabs.g.dart';
+import 'separator.g.dart';
+import 'panel_action_base.g.dart';
+import 'panel_action.g.dart';
+import 'panel_toggle_action.g.dart';
+import 'app_shell.g.dart';
+import 'resizable.g.dart';
+import 'panel_header.g.dart';
+import 'profile_panel.g.dart';
+import 'thread_panel.g.dart';
+import 'live_agent_activity_bar.g.dart';
+import 'task_status.g.dart';
+import 'task_board_column.g.dart';
+import 'task_card_status.g.dart';
+import 'task_card.g.dart';
+import 'task_dnd.g.dart';
+import 'task_list_section.g.dart';
+import 'tasks_panel.g.dart';
+import 'task_loading.g.dart';
+import 'task_chip.g.dart';
+import 'legacy_task_panel.g.dart';
+import 'activity_inbox_shell.g.dart';
+import 'activity_inbox_sidebar.g.dart';
+import 'activity_inbox_toolbar.g.dart';
+import 'inbox_item.g.dart';
+import 'search.g.dart';
+import 'search_entity.g.dart';
+import 'search_message.g.dart';
+import 'search_thread.g.dart';
+
+export 'recipe_utilities.g.dart';
+export 'spinner.g.dart';
+export 'button_variants.g.dart';
+export 'alert_dialog.g.dart';
+export 'dialog.g.dart';
+export 'drawer.g.dart';
+export 'drawer_extend.g.dart';
+export 'tooltip.g.dart';
+export 'card.g.dart';
+export 'status.g.dart';
+export 'status_extend.g.dart';
+export 'app_rail.g.dart';
+export 'copyable_code.g.dart';
+export 'checkbox_indicator.g.dart';
+export 'checkbox.g.dart';
+export 'scroll_area.g.dart';
+export 'sidebar_recipe.g.dart';
+export 'sidebar_menu_recipe.g.dart';
+export 'badge.g.dart';
+export 'sidebar_item_recipe.g.dart';
+export 'sidebar_section_recipe.g.dart';
+export 'panel.g.dart';
+export 'conversation_panel.g.dart';
+export 'conversation_panel_empty_state.g.dart';
+export 'kbd.g.dart';
+export 'context_menu.g.dart';
+export 'dropdown_menu.g.dart';
+export 'lightbox.g.dart';
+export 'mobile_nav.g.dart';
+export 'popover.g.dart';
+export 'preview_card.g.dart';
+export 'label.g.dart';
+export 'input.g.dart';
+export 'field.g.dart';
+export 'input_group.g.dart';
+export 'combobox.g.dart';
+export 'picker_trigger_button.g.dart';
+export 'select.g.dart';
+export 'radio_group.g.dart';
+export 'switch_recipe.g.dart';
+export 'segmented_control.g.dart';
+export 'toggle_group.g.dart';
+export 'textarea.g.dart';
+export 'textarea_group.g.dart';
+export 'textarea_counter.g.dart';
+export 'description_list.g.dart';
+export 'avatar.g.dart';
+export 'code_block.g.dart';
+export 'inline_code.g.dart';
+export 'markdown.g.dart';
+export 'message_item.g.dart';
+export 'message_footer.g.dart';
+export 'message_reaction.g.dart';
+export 'message_reference.g.dart';
+export 'message_multi_select.g.dart';
+export 'message_text_selection_toolbar.g.dart';
+export 'message_system.g.dart';
+export 'message_block.g.dart';
+export 'message_embed.g.dart';
+export 'message_quoted_preview.g.dart';
+export 'message_replies.g.dart';
+export 'message_action_card.g.dart';
+export 'message_action_card_content.g.dart';
+export 'message_attachment.g.dart';
+export 'message_image_gallery.g.dart';
+export 'message_video_preview.g.dart';
+export 'message_forwarded_bundle.g.dart';
+export 'message_forwarded_bundle_item.g.dart';
+export 'message_forwarded_bundle_gallery.g.dart';
+export 'progress.g.dart';
+export 'message_translation.g.dart';
+export 'message_list.g.dart';
+export 'heading.g.dart';
+export 'sans.g.dart';
+export 'mono.g.dart';
+export 'table.g.dart';
+export 'file_preview.g.dart';
+export 'files.g.dart';
+export 'composer.g.dart';
+export 'composer_attachment.g.dart';
+export 'composer_drop_overlay.g.dart';
+export 'composer_suggestion_list.g.dart';
+export 'composer_root.g.dart';
+export 'composer_toolbar_label.g.dart';
+export 'skeleton.g.dart';
+export 'banner.g.dart';
+export 'empty_state.g.dart';
+export 'notification_center.g.dart';
+export 'toast_styles.g.dart';
+export 'toast_action.g.dart';
+export 'tabs.g.dart';
+export 'separator.g.dart';
+export 'panel_action_base.g.dart';
+export 'panel_action.g.dart';
+export 'panel_toggle_action.g.dart';
+export 'app_shell.g.dart';
+export 'resizable.g.dart';
+export 'panel_header.g.dart';
+export 'profile_panel.g.dart';
+export 'thread_panel.g.dart';
+export 'live_agent_activity_bar.g.dart';
+export 'task_status.g.dart';
+export 'task_board_column.g.dart';
+export 'task_card_status.g.dart';
+export 'task_card.g.dart';
+export 'task_dnd.g.dart';
+export 'task_list_section.g.dart';
+export 'tasks_panel.g.dart';
+export 'task_loading.g.dart';
+export 'task_chip.g.dart';
+export 'legacy_task_panel.g.dart';
+export 'activity_inbox_shell.g.dart';
+export 'activity_inbox_sidebar.g.dart';
+export 'activity_inbox_toolbar.g.dart';
+export 'inbox_item.g.dart';
+export 'search.g.dart';
+export 'search_entity.g.dart';
+export 'search_message.g.dart';
+export 'search_thread.g.dart';
+
+typedef RaftRecipeResolver = Map<String, RaftSlotStyle> Function(Map<String, String?> props, {RaftRecipeStates states, RaftTokenResolver? tokens});
+
+/// tailwind-variants recipe name -> resolver.
+const Map<String, RaftRecipeResolver> raftRecipes = {
+  'spinner': RaftSpinnerRecipe.resolveProps,
+  'buttonVariants': RaftButtonRecipe.resolveProps,
+  'alertDialog': RaftAlertDialogRecipe.resolveProps,
+  'dialog': RaftDialogRecipe.resolveProps,
+  'drawer': RaftDrawerRecipe.resolveProps,
+  'drawer\$extend': RaftDrawerBaseRecipe.resolveProps,
+  'tooltip': RaftTooltipRecipe.resolveProps,
+  'card': RaftCardRecipe.resolveProps,
+  'status': RaftStatusRecipe.resolveProps,
+  'status\$extend': RaftStatusBaseRecipe.resolveProps,
+  'appRail': RaftAppRailRecipe.resolveProps,
+  'copyableCode': RaftCopyableCodeRecipe.resolveProps,
+  'checkboxIndicator': RaftCheckboxIndicatorRecipe.resolveProps,
+  'checkbox': RaftCheckboxRecipe.resolveProps,
+  'scrollArea': RaftScrollAreaRecipe.resolveProps,
+  'sidebarRecipe': RaftSidebarRecipe.resolveProps,
+  'sidebarMenuRecipe': RaftSidebarMenuRecipe.resolveProps,
+  'badge': RaftBadgeRecipe.resolveProps,
+  'sidebarItemRecipe': RaftSidebarItemRecipe.resolveProps,
+  'sidebarSectionRecipe': RaftSidebarSectionRecipe.resolveProps,
+  'panel': RaftPanelRecipe.resolveProps,
+  'conversationPanel': RaftConversationPanelRecipe.resolveProps,
+  'conversationPanelEmptyState': RaftConversationPanelEmptyStateRecipe.resolveProps,
+  'kbd': RaftKbdRecipe.resolveProps,
+  'contextMenu': RaftContextMenuRecipe.resolveProps,
+  'dropdownMenu': RaftDropdownMenuRecipe.resolveProps,
+  'lightbox': RaftLightboxRecipe.resolveProps,
+  'mobileNav': RaftMobileNavRecipe.resolveProps,
+  'popover': RaftPopoverRecipe.resolveProps,
+  'previewCard': RaftPreviewCardRecipe.resolveProps,
+  'label': RaftLabelRecipe.resolveProps,
+  'input': RaftInputRecipe.resolveProps,
+  'field': RaftFieldRecipe.resolveProps,
+  'inputGroup': RaftInputGroupRecipe.resolveProps,
+  'combobox': RaftComboboxRecipe.resolveProps,
+  'pickerTriggerButton': RaftPickerTriggerButtonRecipe.resolveProps,
+  'select': RaftSelectRecipe.resolveProps,
+  'radioGroup': RaftRadioGroupRecipe.resolveProps,
+  'switchRecipe': RaftSwitchRecipe.resolveProps,
+  'segmentedControl': RaftSegmentedControlRecipe.resolveProps,
+  'toggleGroup': RaftToggleGroupRecipe.resolveProps,
+  'textarea': RaftTextareaRecipe.resolveProps,
+  'textareaGroup': RaftTextareaGroupRecipe.resolveProps,
+  'textareaCounter': RaftTextareaCounterRecipe.resolveProps,
+  'descriptionList': RaftDescriptionListRecipe.resolveProps,
+  'avatar': RaftAvatarRecipe.resolveProps,
+  'codeBlock': RaftCodeBlockRecipe.resolveProps,
+  'inlineCode': RaftInlineCodeRecipe.resolveProps,
+  'markdown': RaftMarkdownRecipe.resolveProps,
+  'messageItem': RaftMessageItemRecipe.resolveProps,
+  'messageFooter': RaftMessageFooterRecipe.resolveProps,
+  'messageReaction': RaftMessageReactionRecipe.resolveProps,
+  'messageReference': RaftMessageReferenceRecipe.resolveProps,
+  'messageMultiSelect': RaftMessageMultiSelectRecipe.resolveProps,
+  'messageTextSelectionToolbar': RaftMessageTextSelectionToolbarRecipe.resolveProps,
+  'messageSystem': RaftMessageSystemRecipe.resolveProps,
+  'messageBlock': RaftMessageBlockRecipe.resolveProps,
+  'messageEmbed': RaftMessageEmbedRecipe.resolveProps,
+  'messageQuotedPreview': RaftMessageQuotedPreviewRecipe.resolveProps,
+  'messageReplies': RaftMessageRepliesRecipe.resolveProps,
+  'messageActionCard': RaftMessageActionCardRecipe.resolveProps,
+  'messageActionCardContent': RaftMessageActionCardContentRecipe.resolveProps,
+  'messageAttachment': RaftMessageAttachmentRecipe.resolveProps,
+  'messageImageGallery': RaftMessageImageGalleryRecipe.resolveProps,
+  'messageVideoPreview': RaftMessageVideoPreviewRecipe.resolveProps,
+  'messageForwardedBundle': RaftMessageForwardedBundleRecipe.resolveProps,
+  'messageForwardedBundleItem': RaftMessageForwardedBundleItemRecipe.resolveProps,
+  'messageForwardedBundleGallery': RaftMessageForwardedBundleGalleryRecipe.resolveProps,
+  'progress': RaftProgressRecipe.resolveProps,
+  'messageTranslation': RaftMessageTranslationRecipe.resolveProps,
+  'messageList': RaftMessageListRecipe.resolveProps,
+  'heading': RaftHeadingRecipe.resolveProps,
+  'sans': RaftSansRecipe.resolveProps,
+  'mono': RaftMonoRecipe.resolveProps,
+  'table': RaftTableRecipe.resolveProps,
+  'filePreview': RaftFilePreviewRecipe.resolveProps,
+  'files': RaftFilesRecipe.resolveProps,
+  'composer': RaftComposerRecipe.resolveProps,
+  'composerAttachment': RaftComposerAttachmentRecipe.resolveProps,
+  'composerDropOverlay': RaftComposerDropOverlayRecipe.resolveProps,
+  'composerSuggestionList': RaftComposerSuggestionListRecipe.resolveProps,
+  'composerRoot': RaftComposerRootRecipe.resolveProps,
+  'composerToolbarLabel': RaftComposerToolbarLabelRecipe.resolveProps,
+  'skeleton': RaftSkeletonRecipe.resolveProps,
+  'banner': RaftBannerRecipe.resolveProps,
+  'emptyState': RaftEmptyStateRecipe.resolveProps,
+  'notificationCenter': RaftNotificationCenterRecipe.resolveProps,
+  'toastStyles': RaftToastRecipe.resolveProps,
+  'toastAction': RaftToastActionRecipe.resolveProps,
+  'tabs': RaftTabsRecipe.resolveProps,
+  'separator': RaftSeparatorRecipe.resolveProps,
+  'panelActionBase': RaftPanelActionBaseRecipe.resolveProps,
+  'panelAction': RaftPanelActionRecipe.resolveProps,
+  'panelToggleAction': RaftPanelToggleActionRecipe.resolveProps,
+  'appShell': RaftAppShellRecipe.resolveProps,
+  'resizable': RaftResizableRecipe.resolveProps,
+  'panelHeader': RaftPanelHeaderRecipe.resolveProps,
+  'profilePanel': RaftProfilePanelRecipe.resolveProps,
+  'threadPanel': RaftThreadPanelRecipe.resolveProps,
+  'liveAgentActivityBar': RaftLiveAgentActivityBarRecipe.resolveProps,
+  'taskStatus': RaftTaskStatusRecipe.resolveProps,
+  'taskBoardColumn': RaftTaskBoardColumnRecipe.resolveProps,
+  'taskCardStatus': RaftTaskCardStatusRecipe.resolveProps,
+  'taskCard': RaftTaskCardRecipe.resolveProps,
+  'taskDnd': RaftTaskDndRecipe.resolveProps,
+  'taskListSection': RaftTaskListSectionRecipe.resolveProps,
+  'tasksPanel': RaftTasksPanelRecipe.resolveProps,
+  'taskLoading': RaftTaskLoadingRecipe.resolveProps,
+  'taskChip': RaftTaskChipRecipe.resolveProps,
+  'legacyTaskPanel': RaftLegacyTaskPanelRecipe.resolveProps,
+  'activityInboxShell': RaftActivityInboxShellRecipe.resolveProps,
+  'activityInboxSidebar': RaftActivityInboxSidebarRecipe.resolveProps,
+  'activityInboxToolbar': RaftActivityInboxToolbarRecipe.resolveProps,
+  'inboxItem': RaftInboxItemRecipe.resolveProps,
+  'search': RaftSearchRecipe.resolveProps,
+  'searchEntity': RaftSearchEntityRecipe.resolveProps,
+  'searchMessage': RaftSearchMessageRecipe.resolveProps,
+  'searchThread': RaftSearchThreadRecipe.resolveProps,
+};
