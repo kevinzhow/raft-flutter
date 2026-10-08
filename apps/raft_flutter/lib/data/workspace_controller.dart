@@ -622,6 +622,44 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
+  /// Outside-channel mention actions from the latest send per draft scope
+  /// (Web MessageInput `pendingMentionActions`).
+  final Map<String, List<Map<String, dynamic>>> pendingMentionActions = {};
+
+  List<Map<String, dynamic>> pendingMentionsFor({bool thread = false}) =>
+      pendingMentionActions[draftScope(thread: thread)] ?? const [];
+
+  void dismissPendingMention(String resolutionId, {bool thread = false}) {
+    final scope = draftScope(thread: thread);
+    final list = pendingMentionActions[scope];
+    if (list == null) return;
+    pendingMentionActions[scope!] = [
+      for (final a in list)
+        if (a['resolutionId'] != resolutionId) a,
+    ];
+    notifyListeners();
+  }
+
+  /// `POST /messages/mention-actions/execute`; returns ids whose result
+  /// status matches the action (`queued` for notify, `delivered` for add).
+  Future<Set<String>> executeMentionActions(
+    String action,
+    List<String> resolutionIds,
+  ) async {
+    final value = await command(
+      'POST',
+      '/messages/mention-actions/execute',
+      data: {'action': action, 'resolutionIds': resolutionIds},
+    );
+    final ok = action == 'notify' ? 'queued' : 'delivered';
+    return {
+      if (value is Map && value['results'] is List)
+        for (final r in (value['results'] as List).whereType<Map>())
+          if (r['status'] == ok && r['resolutionId'] is String)
+            r['resolutionId'] as String,
+    };
+  }
+
   String? draftScope({bool thread = false}) => thread
       ? (threadParent == null ? null : 'thread:${threadParent!.id}')
       : channel?.id;
@@ -1558,7 +1596,7 @@ class WorkspaceController extends ChangeNotifier {
         });
       }
       if (!currentSend()) return false;
-      final message = await client.send(
+      final sent = await client.sendWithReceipt(
         id,
         text,
         attachments: ids,
@@ -1566,7 +1604,12 @@ class WorkspaceController extends ChangeNotifier {
         randomId: attempt.randomId,
         asTask: asTask,
       );
+      final message = sent.message;
       if (!currentSend()) return true;
+      // Web MessageInput replaces the strip with each send's receipt.
+      pendingMentionActions[scope] = normalizePendingMentionActions(
+        sent.receipt['pendingMentionActions'],
+      );
       _attempts.remove(scope);
       _save('attempt', scope, null);
       _uploads.remove(scope);
@@ -2044,3 +2087,13 @@ class WorkspaceController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+/// Web `normalizePendingMentionActions`: keep well-formed rows only.
+List<Map<String, dynamic>> normalizePendingMentionActions(dynamic value) => [
+  if (value is List)
+    for (final row in value.whereType<Map>())
+      if (row['resolutionId'] is String &&
+          row['targetType'] is String &&
+          row['availableActions'] is List)
+        Map<String, dynamic>.from(row),
+];

@@ -1644,8 +1644,14 @@ class _RaftComposerState extends State<RaftComposer> {
     );
   }
 
+  // CSS places line-height leading evenly above and below the glyphs.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => DefaultTextHeightBehavior(
+    textHeightBehavior: raftCssTextHeightBehavior,
+    child: Builder(builder: buildContent),
+  );
+
+  Widget buildContent(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftComposerRecipe(
       t,

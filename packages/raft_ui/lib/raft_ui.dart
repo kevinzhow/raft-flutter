@@ -22,6 +22,7 @@ export 'src/document_preview.dart';
 export 'src/html_preview.dart';
 export 'src/thread_replies.dart';
 export 'src/message_context_menu.dart';
+export 'src/composer_pending_mentions.dart';
 
 export 'src/design_primitives.dart';
 

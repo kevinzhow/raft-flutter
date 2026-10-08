@@ -25,6 +25,10 @@ String parityGeometryDump(RenderObject root, Rect crop, RenderObject ancestor) {
             node.decoration is BoxDecoration) {
           final d = node.decoration as BoxDecoration;
           detail = 'box color=${d.color} border=${d.border} radius=${d.borderRadius}';
+        } else if (node is RenderEditable) {
+          final st = node.text?.style;
+          detail =
+              'editable "${node.plainText.length > 40 ? node.plainText.substring(0, 40) : node.plainText}" ${st?.fontSize}/${st?.height} prefLine=${node.preferredLineHeight.toStringAsFixed(2)}';
         } else if (node is RenderPadding) {
           detail = 'pad ${node.padding}';
         }

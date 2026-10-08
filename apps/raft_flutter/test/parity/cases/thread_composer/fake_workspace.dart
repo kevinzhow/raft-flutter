@@ -95,11 +95,13 @@ class ParityThreadFixture {
       Map<String, dynamic>.from(_humans[key]);
   Map<String, dynamic> agent(String key) =>
       Map<String, dynamic>.from(_agents[key]);
-  Map<String, dynamic> get channels => Map<String, dynamic>.from(fx['channels']);
+  Map<String, dynamic> get channels =>
+      Map<String, dynamic>.from(fx['channels']);
   Map<String, dynamic> get server => Map<String, dynamic>.from(fx['server']);
   Map<String, dynamic> get times => Map<String, dynamic>.from(fx['times']);
   Map<String, dynamic> get files => Map<String, dynamic>.from(fx['files']);
-  Map<String, dynamic> get messages => Map<String, dynamic>.from(fx['messages']);
+  Map<String, dynamic> get messages =>
+      Map<String, dynamic>.from(fx['messages']);
   String get composerChannelId =>
       (channels['composerHost'] as Map)['id'] as String;
 
@@ -223,7 +225,9 @@ class ParityThreadFixture {
 
   /// `/channels/visual-thread-composer/files` mock.
   Map<String, dynamic> get channelFiles {
-    final o = human('owner'), cindy = agent('cindy'), dev = agent('androidDev4');
+    final o = human('owner'),
+        cindy = agent('cindy'),
+        dev = agent('androidDev4');
     final image = Map<String, dynamic>.from(files['image']),
         pdf = Map<String, dynamic>.from(files['pdf']),
         zip = Map<String, dynamic>.from(files['zip']);
@@ -292,12 +296,43 @@ class ParityThreadFixture {
     };
   }
 
+  /// VisualTestingCases.tsx primeComposerStores `sendMessage` mock for
+  /// pendingMentionActionsAfterSend, as a /v2/messages receipt.
+  Map<String, dynamic> get pendingMentionSendReceipt => {
+    'message': {
+      'id': 'visual-pending-mention-message',
+      'channelId': composerChannelId,
+      'seq': '1',
+      'messageType': 'chat',
+      'senderType': 'user',
+      'senderId': authUser['id'],
+      'content': '@Android-Developer-4 please review the visual diff',
+      'createdAt': fx['times']['entityCreatedAtIso'],
+    },
+    'unresolvedMentionHandles': [],
+    'pendingMentionActions': [
+      {
+        'resolutionId': 'visual-pending-mention-resolution',
+        'messageId': 'visual-pending-mention-message',
+        'targetType': 'agent',
+        'targetHandle': fx['agents']['androidDev4']['name'],
+        'targetAvatarUrl': fx['agents']['cindy']['avatar'],
+        'reason': 'target_not_in_channel',
+        'availableActions': ['add', 'notify'],
+        'expiresAt': null,
+      },
+    ],
+  };
+
   /// Controller scoped to the composer host channel (#design), like the React
   /// render host's useMessageStore.currentChannelId.
-  WorkspaceController composerWorkspace() {
+  WorkspaceController composerWorkspace({
+    Map<String, dynamic> extraRoutes = const {},
+  }) {
     final client = ParityFakeClient(
       user: authUser,
       routes: {
+        ...extraRoutes,
         'GET /channels/$composerChannelId/members': channelMembers,
         'GET /servers/${server['id']}/members': serverMembers,
         'GET /agents': serverAgents,

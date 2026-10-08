@@ -17,6 +17,7 @@ import '../data/personal_presentation.dart';
 import '../platform/file_selection.dart';
 import 'attachment_view.dart';
 import 'message_presentation.dart';
+import 'pending_mention_actions.dart';
 import 'message_reference_directory.dart';
 import 'share_message_link.dart';
 import 'private_route_guard.dart';
@@ -1783,6 +1784,9 @@ class _RaftChatViewState extends State<RaftChatView> {
           )
         else
           RaftComposer(
+            accessoryRow: w.pendingMentionsFor(thread: widget.thread).isEmpty
+                ? null
+                : PendingMentionActions(controller: w, thread: widget.thread),
             autofocus:
                 widget.thread &&
                 RaftDensityScope.of(context) == RaftDensity.desktop,
