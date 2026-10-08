@@ -1,6 +1,6 @@
 # Shared dimension and constraint contract
 
-Source RUI0.5.27 / pinned 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6. Native HEAD ac9543118b40e2fdb14bef3523bd4ff2981286e9; file SHAs capture the frozen working tree.
+Source RUI0.5.27 / pinned 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6. Native HEAD cad434fc630733cf4519af7d8f344078fe2318cf; file SHAs capture the frozen working tree.
 
 This is an implementation/provenance audit, not pixel acceptance. Every scoped public class is inventoried; unmatched consumer rules stay partial. Library defaults and mounted product overrides are distinct.
 
@@ -64,4 +64,4 @@ Each visual acceptance case must record theme, mounted variant, viewport width/h
 
 The JSON contains exact source excerpts, full file/excerpt SHA256, resolved values/conditions, native field anchors, caller contracts and the exhaustive scoped class inventory. Empty contractIds in the inventory explicitly mark missing per-class source geometry binding; they are not complete or pass.
 
-Snapshot full source hash: `3ac80c8fe00d6dd9cf1e5f58407a8c526cfccec9a28790fa3bbce5aa35a416d6`. 462 product/verification inputs are bound by native-file-shas.json. Existing same-source engineering checks passed; this audit does not claim native or visual acceptance.
+Snapshot full source hash: `b98e0a301b74980654be7a5268f2ada2202541b2c2ba026b9a8b3f575a7fc079`. 463 product/verification inputs are bound by native-file-shas.json. Existing same-source engineering checks passed; this audit does not claim native or visual acceptance.

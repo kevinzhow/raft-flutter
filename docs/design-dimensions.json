@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "createdAt": "2026-10-08T12:14:10.564451+00:00",
+  "createdAt": "2026-10-08T13:04:18.669308+00:00",
   "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
   "uiVersion": "0.5.27",
-  "nativeHead": "ac9543118b40e2fdb14bef3523bd4ff2981286e9",
+  "nativeHead": "cad434fc630733cf4519af7d8f344078fe2318cf",
   "nativeWorkingTree": "Current shared foundation changes are uncommitted and frozen; file SHAs bind this audit.",
   "rules": [
     {
@@ -2584,17 +2584,17 @@
     }
   ],
   "validation": "Read-only source inspection; no SDK, tests, browser captures or native acceptance performed by this audit.",
-  "fullNativeSourceHash": "3ac80c8fe00d6dd9cf1e5f58407a8c526cfccec9a28790fa3bbce5aa35a416d6",
-  "allSourceSha256": "3ac80c8fe00d6dd9cf1e5f58407a8c526cfccec9a28790fa3bbce5aa35a416d6",
+  "fullNativeSourceHash": "b98e0a301b74980654be7a5268f2ada2202541b2c2ba026b9a8b3f575a7fc079",
+  "allSourceSha256": "b98e0a301b74980654be7a5268f2ada2202541b2c2ba026b9a8b3f575a7fc079",
   "allNativeInputs": {
-    "count": 462,
+    "count": 463,
     "manifest": "native-file-shas.json",
-    "manifestSha256": "b42dfe4705f8de98a3b112bb4a80d90dd88ff6d0270891620c5d5453c45a8af3",
+    "manifestSha256": "ba156c9650f1c60e4b2902f5d91f0e5bc9174bfffacc11951548539c55fa2622",
     "hasher": "tool/source-hash",
     "hasherSha256": "9caab2404a5da86a75237826a5ba352f0e57f6adf30b250e915d91f65e53f615"
   },
   "engineeringReceipt": {
-    "sourceHash": "3ac80c8fe00d6dd9cf1e5f58407a8c526cfccec9a28790fa3bbce5aa35a416d6",
+    "sourceHash": "b98e0a301b74980654be7a5268f2ada2202541b2c2ba026b9a8b3f575a7fc079",
     "completed": true,
     "checks": {
       "host-collector-tests.txt": true,
@@ -2603,5 +2603,5 @@
     }
   },
   "engineeringReceiptScope": "Existing Pages-owned complete engineering receipt copied read-only. This static contract validator ran no SDK/native/visual checks.",
-  "immutableSnapshot": "/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/reports/design-parity/components/dimensions/3ac80c8fe00d"
+  "immutableSnapshot": "/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/reports/design-parity/components/dimensions/b98e0a301b74"
 }
