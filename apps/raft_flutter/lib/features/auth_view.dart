@@ -93,10 +93,9 @@ class _AuthState extends State<AuthView> {
       );
       if (mounted && request == providerRequest) {
         setState(
-          () =>
-              providers = managementRows(data['providers'])
-                  .where((p) => p['enabled'] == true)
-                  .toList(),
+          () => providers = managementRows(
+            data['providers'],
+          ).where((p) => p['enabled'] == true).toList(),
         );
       }
     } catch (_) {
@@ -207,7 +206,8 @@ class _AuthState extends State<AuthView> {
           });
           if (mounted) {
             setState(
-              () => notice = 'If an account exists with that email, a reset link has been sent.',
+              () => notice =
+                  'If an account exists with that email, a reset link has been sent.',
             );
           }
         case 'reset':
@@ -312,7 +312,7 @@ class _AuthState extends State<AuthView> {
     String tr(String s) => raftText(context, s);
     final socialModes = mode == 'login' || mode == 'register';
     final banner = error ?? widget.bootError;
-    return _AuthBrandShell(
+    return AuthBrandShell(
       server: Uri.tryParse(base.text.trim())?.authority ?? base.text.trim(),
       onServer: busy ? null : editServer,
       child: Form(
@@ -321,7 +321,7 @@ class _AuthState extends State<AuthView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _AuthIntro(
+              AuthIntro(
                 title: tr(title),
                 description: mode == 'forgot'
                     ? tr(
@@ -332,16 +332,16 @@ class _AuthState extends State<AuthView> {
               if (banner != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16), // mb-4
-                  child: _AuthBanner(text: banner),
+                  child: AuthBanner(text: banner),
                 ),
               if (notice != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: _AuthBanner(text: tr(notice!), info: true),
+                  child: AuthBanner(text: tr(notice!), info: true),
                 ),
               // <form className="space-y-4">
               if (mode != 'reset')
-                _AuthField(
+                AuthFieldBlock(
                   label: tr('Email'),
                   child: TextFormField(
                     key: const Key('login-email'),
@@ -354,7 +354,7 @@ class _AuthState extends State<AuthView> {
                   ),
                 ),
               if (mode == 'reset')
-                _AuthField(
+                AuthFieldBlock(
                   label: tr('Password reset link or code'),
                   child: TextFormField(
                     key: const Key('reset-token'),
@@ -368,7 +368,7 @@ class _AuthState extends State<AuthView> {
                 ),
               if (mode != 'forgot') ...[
                 const SizedBox(height: 16),
-                _AuthField(
+                AuthFieldBlock(
                   label: tr(mode == 'reset' ? 'New password' : 'Password'),
                   child: TextFormField(
                     key: const Key('login-password'),
@@ -399,9 +399,7 @@ class _AuthState extends State<AuthView> {
                 const SizedBox(height: 16),
                 _AuthLegalCheckbox(
                   checked: accepted,
-                  onChanged: busy
-                      ? null
-                      : (v) => setState(() => accepted = v),
+                  onChanged: busy ? null : (v) => setState(() => accepted = v),
                 ),
               ],
               const SizedBox(height: 16),
@@ -409,8 +407,7 @@ class _AuthState extends State<AuthView> {
                 key: const Key('login-submit'),
                 label: tr(submitLabel),
                 // RegisterPage: disabled={loading || !acceptedLegal}.
-                onPressed:
-                    busy || (mode == 'register' && !accepted)
+                onPressed: busy || (mode == 'register' && !accepted)
                     ? null
                     : submitChecked,
               ),
@@ -431,7 +428,7 @@ class _AuthState extends State<AuthView> {
                 if (broker != null) ...[
                   const SizedBox(height: 8),
                   Center(
-                    child: _AuthTextLink(
+                    child: AuthTextLink(
                       label: tr('Cancel browser sign-in'),
                       onTap: () => broker!.cancel(),
                     ),
@@ -447,7 +444,7 @@ class _AuthState extends State<AuthView> {
                 ),
                 const SizedBox(height: 12), // mt-3
                 Center(
-                  child: _AuthTextLink(
+                  child: AuthTextLink(
                     label: tr('Forgot password?'),
                     onTap: () => switchMode('forgot'),
                   ),
@@ -469,7 +466,7 @@ class _AuthState extends State<AuthView> {
                 const SizedBox(height: 16),
                 if (mode == 'forgot') ...[
                   Center(
-                    child: _AuthTextLink(
+                    child: AuthTextLink(
                       label: tr('I have a reset link'),
                       onTap: busy ? null : () => switchMode('reset'),
                     ),
@@ -477,7 +474,7 @@ class _AuthState extends State<AuthView> {
                   const SizedBox(height: 8),
                 ],
                 Center(
-                  child: _AuthTextLink(
+                  child: AuthTextLink(
                     label: tr('Back to sign in'),
                     onTap: busy ? null : () => switchMode('login'),
                   ),
@@ -499,22 +496,28 @@ TextStyle _authFieldText(RaftTokens t) => t.fieldStyle;
 /// `w-full max-w-md`. With a bounded height the stack is `min-h-full` (content
 /// centred); in an unbounded host it shrink-wraps like CSS `min-h-full` of an
 /// auto-height parent.
-class _AuthBrandShell extends StatelessWidget {
-  const _AuthBrandShell({
+class AuthBrandShell extends StatelessWidget {
+  const AuthBrandShell({
+    super.key,
     required this.child,
-    required this.server,
-    required this.onServer,
+    this.server,
+    this.onServer,
+    this.padding = const EdgeInsets.fromLTRB(20, 40, 20, 40),
   });
   final Widget child;
-  final String server;
+  final String? server;
   final VoidCallback? onServer;
+
+  /// `px-5 pb-10 pt-10` (AuthBrandShell); OnboardingCreateShell's form panel
+  /// is `px-6 py-10`.
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final padding = MediaQuery.paddingOf(context);
+    final safe = MediaQuery.paddingOf(context);
     final content = Padding(
-      padding: const EdgeInsets.fromLTRB(20, 40, 20, 40),
+      padding: padding,
       child: Center(
         heightFactor: 1,
         child: ConstrainedBox(
@@ -526,12 +529,16 @@ class _AuthBrandShell extends StatelessWidget {
     return Material(
       color: t.canvas,
       child: DefaultTextStyle.merge(
-        style: TextStyle(fontFamily: t.headingFont, color: t.semantic.foreground),
+        style: TextStyle(
+          fontFamily: t.headingFont,
+          color: t.semantic.foreground,
+        ),
         child: Padding(
-          padding: EdgeInsets.only(top: padding.top, bottom: padding.bottom),
+          // `safe-top`; `safe-bottom` = inset + 1rem (index.css .safe-bottom).
+          padding: EdgeInsets.only(top: safe.top, bottom: safe.bottom + 16),
           child: LayoutBuilder(
             builder: (context, box) {
-              final bar = _AuthBrandTopBar(server: server, onServer: onServer);
+              final bar = AuthBrandTopBar(server: server, onServer: onServer);
               if (!box.hasBoundedHeight) {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
@@ -571,9 +578,11 @@ class _AuthBrandShell extends StatelessWidget {
 /// AUTH_BRAND_TOP_BAR_CLASS: `h-panel-header border-b border-line-hairline
 /// bg-layer-panel px-4 theme-brutal:border-b-2 theme-brutal:border-black
 /// theme-brutal:bg-soft-signal`, RaftBrandLockup `h-5 w-auto`.
-class _AuthBrandTopBar extends StatelessWidget {
-  const _AuthBrandTopBar({required this.server, required this.onServer});
-  final String server;
+class AuthBrandTopBar extends StatelessWidget {
+  const AuthBrandTopBar({super.key, this.server, this.onServer});
+
+  /// Native-only server origin control; null hides it (onboarding pages).
+  final String? server;
   final VoidCallback? onServer;
 
   @override
@@ -598,16 +607,17 @@ class _AuthBrandTopBar extends StatelessWidget {
           const RaftBrandMark(RaftBrandMarkKind.logo, height: 20),
           const Spacer(),
           // Native-only server origin control (see _AuthState.editServer).
-          Semantics(
-            button: true,
-            label: raftText(context, 'Server URL'),
-            child: _AuthTextLink(
-              key: const Key('login-server'),
-              label: server,
-              onTap: onServer,
-              small: true,
+          if (server != null)
+            Semantics(
+              button: true,
+              label: raftText(context, 'Server URL'),
+              child: AuthTextLink(
+                key: const Key('login-server'),
+                label: server!,
+                onTap: onServer,
+                small: true,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -616,8 +626,8 @@ class _AuthBrandTopBar extends StatelessWidget {
 
 /// AuthBrandIntro: `mb-5 text-center`; icon `mx-auto mb-4 size-9`; h1
 /// `text-xl font-bold`; description `mt-2 text-sm text-foreground-muted`.
-class _AuthIntro extends StatelessWidget {
-  const _AuthIntro({required this.title, this.description});
+class AuthIntro extends StatelessWidget {
+  const AuthIntro({super.key, required this.title, this.description});
   final String title;
   final String? description;
 
@@ -666,24 +676,54 @@ class _AuthIntro extends StatelessWidget {
 /// FormField labelStyle="plain" over raft-ui Field: label `mb-1 block text-sm`
 /// (field label recipe: 14/20, 700 brutal / 500 elegant, foreground), Field
 /// `gap-1` before the control.
-class _AuthField extends StatelessWidget {
-  const _AuthField({required this.label, required this.child});
+class AuthFieldBlock extends StatelessWidget {
+  const AuthFieldBlock({
+    super.key,
+    required this.label,
+    required this.child,
+    this.after,
+    this.error,
+    this.surface = true,
+  });
   final String label;
   final Widget child;
+
+  /// Children rendered after the control inside the field (helper `<p>`s).
+  final List<Widget>? after;
+
+  /// FieldError `mt-1` (field recipe error slot).
+  final String? error;
+
+  /// Wrap [child] in the shared field frame (false when the child draws its
+  /// own frame, e.g. an input group).
+  final bool surface;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final tokens = RaftRecipeTokens(t);
     final style = RaftFieldRecipe.resolve(
       theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-      tokens: RaftRecipeTokens(t),
+      tokens: tokens,
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(label, style: style.label.textStyle(RaftRecipeTokens(t))),
+        Text(label, style: style.label.textStyle(tokens)),
         SizedBox(height: 4 + (style.root.rowGap ?? 0)),
-        RaftFieldSurface(child: child),
+        surface ? RaftFieldSurface(child: child) : child,
+        // Field `gap` separates every direct child of the field.
+        if (after != null) ...[
+          SizedBox(height: style.root.rowGap ?? 0),
+          ...after!,
+        ],
+        if (error != null) ...[
+          SizedBox(height: (style.root.rowGap ?? 0) + 4),
+          Semantics(
+            liveRegion: true,
+            child: Text(error!, style: style.error.textStyle(tokens)),
+          ),
+        ],
       ],
     );
   }
@@ -696,7 +736,7 @@ class _AuthSubmit extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => _AuthWideButton(
+  Widget build(BuildContext context) => AuthWideButton(
     onPressed: onPressed,
     variant: RaftControlVariant.accent,
     child: Text(label, maxLines: 1),
@@ -706,8 +746,9 @@ class _AuthSubmit extends StatelessWidget {
 /// `size="lg" className="w-full"` raft-ui Button. The layout box is the CSS
 /// box (lg height), as on Web; the loading state is the disabled label
 /// ("Signing in…"), not a spinner.
-class _AuthWideButton extends StatelessWidget {
-  const _AuthWideButton({
+class AuthWideButton extends StatelessWidget {
+  const AuthWideButton({
+    super.key,
     required this.child,
     required this.variant,
     this.onPressed,
@@ -795,7 +836,7 @@ class _AuthSocialButton extends StatelessWidget {
       'github' => RaftBrandMarkKind.github,
       _ => RaftBrandMarkKind.apple,
     };
-    return _AuthWideButton(
+    return AuthWideButton(
       onPressed: onPressed,
       variant: RaftControlVariant.outline,
       child: Row(
@@ -941,9 +982,17 @@ class _AuthLegalNoticeState extends State<_AuthLegalNotice> {
         style: base,
         children: [
           TextSpan(text: '${tr('By continuing, you agree to the')} '),
-          TextSpan(text: tr('Terms of Service'), style: link, recognizer: terms),
+          TextSpan(
+            text: tr('Terms of Service'),
+            style: link,
+            recognizer: terms,
+          ),
           TextSpan(text: ' ${tr('and')} '),
-          TextSpan(text: tr('Privacy Policy'), style: link, recognizer: privacy),
+          TextSpan(
+            text: tr('Privacy Policy'),
+            style: link,
+            recognizer: privacy,
+          ),
           const TextSpan(text: '.'),
         ],
       ),
@@ -955,8 +1004,8 @@ class _AuthLegalNoticeState extends State<_AuthLegalNotice> {
 /// `text-foreground-muted underline`, `primary` = `font-bold text-accent-strong
 /// underline theme-brutal:text-brutal-pink`; `disabled:opacity-50`. Used in
 /// `text-sm` paragraphs.
-class _AuthTextLink extends StatelessWidget {
-  const _AuthTextLink({
+class AuthTextLink extends StatelessWidget {
+  const AuthTextLink({
     super.key,
     required this.label,
     this.onTap,
@@ -974,10 +1023,7 @@ class _AuthTextLink extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: Text(
-          label,
-          style: _linkStyle(t, size: small ? 12 : 14),
-        ),
+        child: Text(label, style: _linkStyle(t, size: small ? 12 : 14)),
       ),
     );
   }
@@ -1044,8 +1090,8 @@ class _AuthPromptState extends State<_AuthPrompt> {
 }
 
 /// `<Banner intent="warning" className="mb-4 font-bold">` (raft-ui banner).
-class _AuthBanner extends StatelessWidget {
-  const _AuthBanner({required this.text, this.info = false});
+class AuthBanner extends StatelessWidget {
+  const AuthBanner({super.key, required this.text, this.info = false});
   final String text;
   final bool info;
 
@@ -1055,7 +1101,9 @@ class _AuthBanner extends StatelessWidget {
     final tokens = RaftRecipeTokens(t);
     final s = RaftBannerRecipe.resolve(
       theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-      status: info ? RaftBannerRecipeStatus.info : RaftBannerRecipeStatus.warning,
+      status: info
+          ? RaftBannerRecipeStatus.info
+          : RaftBannerRecipeStatus.warning,
       tokens: tokens,
     );
     return Semantics(

@@ -368,12 +368,18 @@ final ParityCase _loginSigning = ParityCase(
 );
 
 final ParityCase _profileSetup = ParityCase(
-  widgets: const ['raft_flutter:AccountOnboardingView', 'raft_ui:RaftPanel'],
+  widgets: const [
+    'raft_flutter:AccountOnboardingView',
+    'raft_flutter:AuthBrandShell',
+    'raft_flutter:AuthFieldBlock',
+  ],
   notes:
-      'AccountOnboardingView profile step (verified email, pending_ name) '
-      'with username/display name typed. Flutter checks username '
-      'availability only on submit, so React\'s live "already taken" error '
-      'has no counterpart before Complete profile is pressed.',
+      'AccountOnboardingView profile step for the React previewUser '
+      '(pending_new_designer, suggested handle new_designer, no display '
+      'name, verified). showSessionFooter false mirrors the React host\'s '
+      'preview mode (OnboardingCreateShell showSessionFooter={!previewMode}). '
+      'The case values are typed like the React fills; leaving the username '
+      'field runs the same on-blur availability precheck.',
   build: (ctx) {
     final wire = ScreenWire(ctx.fixtureData);
     return ScreenClientHost(
@@ -381,8 +387,10 @@ final ParityCase _profileSetup = ParityCase(
         wire.common,
         user: {
           ...wire.me(),
-          'name': 'pending_visual-user',
-          'displayName': '',
+          'name': 'pending_new_designer',
+          'displayName': null,
+          'profileSetupCompletedAt': null,
+          'profileSetupSuggestedHandle': 'new_designer',
           'emailVerified': true,
         },
       ),
@@ -390,6 +398,7 @@ final ParityCase _profileSetup = ParityCase(
         client: client,
         onComplete: () async {},
         onSignOut: () async {},
+        showSessionFooter: false,
       ),
     );
   },
@@ -402,6 +411,7 @@ final ParityCase _profileSetup = ParityCase(
       find.byKey(const Key('onboarding-display-name')),
       '${ctx.props['profileSetupDisplayName'] ?? 'New Designer'}',
     );
+    await t.pump(const Duration(milliseconds: 50));
     await t.pump(const Duration(milliseconds: 50));
   },
 );
