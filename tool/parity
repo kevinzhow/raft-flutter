@@ -1,0 +1,388 @@
+#!/usr/bin/env python3
+"""Plug raft-flutter into the official Raft visual parity tool.
+
+  tool/parity run [--cases <id|glob>[,...]] [--refresh-react] [--shards N]
+  tool/parity publish [--no-verify]
+  tool/parity summary
+
+`run` = official React capture (cached unless --refresh-react or missing),
+Flutter provider capture (apps/raft_flutter/test/parity, provider `android`,
+metadata source `flutter`), official `diff --pairs react__android`, official
+`site`, then summary.json. Everything is written under build/parity/ (or
+$PARITY_OUT); the raft-source checkout is only read, except Playwright's own
+test-results/ scratch dir inside packages/web.
+"""
+import argparse
+import datetime as dt
+import fnmatch
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+import urllib.request
+
+root = pathlib.Path(__file__).resolve().parent.parent
+RAFT_SOURCE = pathlib.Path(os.environ.get(
+    'PARITY_RAFT_SOURCE',
+    '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source'))
+VT = RAFT_SOURCE / 'packages/visual-testing'
+SHARED = VT / 'shared'
+OUT = pathlib.Path(os.environ.get('PARITY_OUT', root / 'build/parity'))
+RESULTS = OUT / 'visual-testing-results'
+SITE = OUT / 'site'
+TOOLCHAIN = pathlib.Path(os.environ.get(
+    'PARITY_TOOLCHAIN_PATHS', '/home/kevinzhow/github/raft-flutter/.local/toolchain-paths.txt'))
+REPORTS = pathlib.Path(os.environ.get(
+    'PARITY_REPORTS_ROOT', '/home/kevinzhow/github/miraa-app/build/e2e_reports'))
+PUBLISH_DIR = REPORTS / 'raft_flutter_parity'
+BASE_URL = os.environ.get('PARITY_BASE_URL', 'http://100.109.192.23:18931')
+WEB_PORT = os.environ.get('PARITY_WEB_PORT', '4391')
+PAIR = 'react__android'
+PASS_STATUSES = {'same', 'pass', 'basic-pass'}
+
+
+def node_env():
+    env = {k: v for k, v in os.environ.items() if not k.lower().startswith('npm_config_')}
+    bins = [pathlib.Path(line.strip()).parent for line in TOOLCHAIN.read_text().splitlines() if line.strip()]
+    env['PATH'] = os.pathsep.join([*dict.fromkeys(str(b) for b in bins), env.get('PATH', '')])
+    env['SLOCK_VISUAL_REPO_ROOT'] = str(OUT)
+    env['SLOCK_REACT_REPO_DIR'] = str(RAFT_SOURCE)
+    env['PLAYWRIGHT_WEB_PORT'] = WEB_PORT
+    return env
+
+
+def cli(*args, log=None):
+    cmd = ['node', str(VT / 'src/cli.mjs'), *args, '--manifest', 'shared']
+    print('+', ' '.join(cmd), flush=True)
+    with (open(log, 'a') if log else open(os.devnull, 'w')) as sink:
+        result = subprocess.run(cmd, cwd=VT, env=node_env(),
+                                stdout=sink if log else None, stderr=subprocess.STDOUT if log else None)
+    if result.returncode != 0:
+        sys.exit(f'official CLI failed: {" ".join(args)} (exit {result.returncode})'
+                 + (f'; see {log}' if log else ''))
+
+
+def manifest_cases():
+    cases = json.loads((SHARED / 'sharedCases.json').read_text())['cases']
+
+    def skipped(c):
+        s = c.get('skip')
+        return s is True or (isinstance(s, dict) and s.get('enabled', True) is not False)
+    return [c for c in cases if not skipped(c) and c.get('baselineStatus') != 'pending']
+
+
+def select(cases, patterns):
+    if not patterns:
+        return cases
+    pats = [p.strip() for p in patterns.split(',') if p.strip()]
+    return [c for c in cases if any(fnmatch.fnmatchcase(c['id'], p) for p in pats)]
+
+
+def git(cwd, *args):
+    r = subprocess.run(['git', *args], cwd=cwd, capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ''
+
+
+def react_capture(cases, refresh):
+    react_dir = RESULTS / 'react'
+    need = [c['id'] for c in cases
+            if refresh or not (react_dir / f"{c['id']}.png").is_file()]
+    if not need:
+        print(f'react: cached captures for all {len(cases)} selected cases ({react_dir})')
+        return
+    log = OUT / 'react-capture.log'
+    log.write_text('')
+    print(f'react: capturing {len(need)} case(s); log {log}')
+    # The official provider; --case limits it to the cases that need capture.
+    cli('capture', '--providers', 'react', '--webPort', WEB_PORT, '--case', ','.join(need), log=log)
+    (OUT / 'react-source.json').write_text(json.dumps({
+        'raftSource': str(RAFT_SOURCE),
+        'commit': git(RAFT_SOURCE, 'rev-parse', 'HEAD'),
+        'dirtyFiles': git(RAFT_SOURCE, 'status', '--short').splitlines(),
+        'capturedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+    }, indent=2))
+
+
+def flutter_capture(cases, patterns, shards):
+    android = RESULTS / 'android'
+    android.mkdir(parents=True, exist_ok=True)
+    for c in cases:  # stale captures must never survive a failed run
+        for suffix in ('.png', '.metadata.json'):
+            (android / f"{c['id']}{suffix}").unlink(missing_ok=True)
+    for old in RESULTS.glob('android-coverage.shard*.json'):
+        old.unlink()
+    run_info = json.dumps({
+        'flutterCommit': git(root, 'rev-parse', 'HEAD'),
+        'flutterDirty': bool(git(root, 'status', '--porcelain')),
+        'flutterVersion': json.loads((root / '.fvmrc').read_text())['flutter'],
+    })
+    procs = []
+    log_dir = OUT / 'flutter-logs'
+    log_dir.mkdir(parents=True, exist_ok=True)
+    for i in range(shards):
+        env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PARITY_SHARED_DIR': str(SHARED),
+               'PARITY_RESULT_ROOT': str(RESULTS), 'PARITY_CASES': patterns or '',
+               'PARITY_RUN_INFO': run_info, 'PARITY_SHARD_INDEX': str(i),
+               'PARITY_SHARD_TOTAL': str(shards)}
+        log = open(log_dir / f'shard{i}.log', 'w')
+        procs.append((subprocess.Popen(
+            [str(root / 'tool/flutter'), 'test', 'test/parity/parity_capture_test.dart',
+             '--no-pub', '--reporter', 'expanded'],
+            cwd=root / 'apps/raft_flutter', env=env, stdout=log, stderr=subprocess.STDOUT), log))
+    failed = 0
+    for proc, log in procs:
+        failed += proc.wait() != 0
+        log.close()
+    print(f'flutter: {shards} shard(s), {failed} with failing cases; logs {log_dir}')
+
+
+def summarize():
+    diff = json.loads((RESULTS / 'diff' / f'{PAIR}.json').read_text())
+    case_map_file = RESULTS / 'android-case-map.json'
+    case_map = json.loads(case_map_file.read_text()) if case_map_file.is_file() else {}
+    rows = []
+    for r in diff['results']:
+        m = case_map.get(r['id'], {'status': 'harnessTodo', 'reason': 'No Flutter builder mapped yet.'})
+        react = bool(r.get('baselineImage'))
+        flutter = bool(r.get('currentImage'))
+        if m['status'] != 'mapped':
+            verdict = 'not-covered'
+        elif not flutter:
+            verdict = 'flutter-capture-failed'
+        elif not react:
+            verdict = 'react-missing'
+        elif r['status'] in PASS_STATUSES:
+            verdict = 'passing'
+        else:
+            verdict = 'failing'
+        pixel = (r.get('metrics') or {}).get('pixelPerfectSimilarity')
+        rows.append({
+            'id': r['id'], 'captureType': r.get('captureType'),
+            'theme': 'elegant-light' if r['id'].endswith('.elegant') else 'brutal-light',
+            'variant': next((c['variants'][0]['id'] for c in manifest_cases() if c['id'] == r['id']), None),
+            'react': react, 'flutter': flutter, 'officialStatus': r['status'],
+            'pixelPerfectSimilarity': pixel, 'verdict': verdict,
+            'flutterMapping': m,
+        })
+    count = lambda v: sum(1 for x in rows if x['verdict'] == v)
+    total = len(rows)
+    themes = {}
+    for x in rows:
+        t = themes.setdefault(x['theme'], {'total': 0, 'passing': 0})
+        t['total'] += 1
+        t['passing'] += x['verdict'] == 'passing'
+    summary = {
+        'generatedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+        'pair': PAIR,
+        'definition': {
+            'unit': 'official case x variant x theme (each default case declares exactly 1 variant and 1 theme)',
+            'total': 'non-skipped, non-pending cases in sharedCases.json (official CLI default selection)',
+            'passing': 'official diff status same|pass|basic-pass (pixelPerfectSimilarity > 0.96, the site\'s pass count)',
+            'strictPass': 'official status same|pass (pixelPerfectSimilarity > 0.99)',
+            'percentage': 'passing / total; not-covered and failed captures count against it',
+        },
+        'raftSourceCommit': git(RAFT_SOURCE, 'rev-parse', '--short', 'HEAD'),
+        'flutterCommit': git(root, 'rev-parse', '--short', 'HEAD'),
+        'totals': {
+            'total': total,
+            'reactCaptured': sum(x['react'] for x in rows),
+            'flutterCaptured': sum(x['flutter'] for x in rows),
+            'flutterMapped': sum(x['flutterMapping']['status'] == 'mapped' for x in rows),
+            'passing': count('passing'),
+            'strictPass': sum(x['verdict'] == 'passing' and x['officialStatus'] in ('same', 'pass') for x in rows),
+            'failing': count('failing'),
+            'notCovered': count('not-covered'),
+            'flutterCaptureFailed': count('flutter-capture-failed'),
+            'reactMissing': count('react-missing'),
+            'percentage': round(100 * count('passing') / total, 2) if total else 0.0,
+        },
+        'byTheme': themes,
+        'themesWithoutOfficialCases': ['elegant-dark'],
+        'notCoveredByReason': {},
+        'cases': rows,
+    }
+    for x in rows:
+        if x['verdict'] == 'not-covered':
+            summary['notCoveredByReason'].setdefault(x['flutterMapping']['status'], []).append(x['id'])
+    (OUT / 'summary.json').write_text(json.dumps(summary, indent=2))
+    (OUT / 'summary.md').write_text(summary_markdown(summary))
+    t = summary['totals']
+    print(f"parity {PAIR}: {t['passing']}/{t['total']} passing = {t['percentage']}% "
+          f"(react {t['reactCaptured']}, flutter {t['flutterCaptured']}, failing {t['failing']}, "
+          f"not covered {t['notCovered']}, flutter capture failed {t['flutterCaptureFailed']}, "
+          f"react missing {t['reactMissing']}) -> {OUT / 'summary.json'}")
+    return summary
+
+
+def summary_markdown(summary):
+    t = summary['totals']
+    lines = [
+        f"Run {summary['generatedAt']} · raft-source {summary['raftSourceCommit']} · flutter {summary['flutterCommit']}",
+        '',
+        '| total | react captured | flutter captured | passing | (strict >99%) | failing | not covered | flutter capture failed | percentage |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        f"| {t['total']} | {t['reactCaptured']} | {t['flutterCaptured']} | {t['passing']} | {t['strictPass']} | "
+        f"{t['failing']} | {t['notCovered']} | {t['flutterCaptureFailed']} | **{t['percentage']}%** |",
+        '',
+        'By theme: ' + ', '.join(f"{k} {v['passing']}/{v['total']}" for k, v in summary['byTheme'].items())
+        + '; elegant-dark: 0 official cases.',
+        '',
+        '| case | verdict | official status | pixelPerfect | flutter mapping |',
+        '| --- | --- | --- | --- | --- |',
+    ]
+    for c in sorted(summary['cases'], key=lambda c: (c['verdict'], c['id'])):
+        px = c['pixelPerfectSimilarity']
+        m = c['flutterMapping']
+        detail = ', '.join(m.get('widgets', [])) if m['status'] == 'mapped' else f"{m['status']}: {m.get('reason', '')}"
+        lines.append(f"| `{c['id']}` | {c['verdict']} | {c['officialStatus']} | "
+                     f"{'' if px is None else f'{px * 100:.2f}%'} | {detail.replace('|', '/')} |")
+    return '\n'.join(lines) + '\n'
+
+
+def cmd_run(a):
+    OUT.mkdir(parents=True, exist_ok=True)
+    cases = manifest_cases()
+    chosen = select(cases, a.cases)
+    if not chosen:
+        sys.exit(f'no default cases match {a.cases!r}')
+    react_capture(chosen, a.refresh_react)
+    if not a.skip_flutter:
+        flutter_capture(chosen, a.cases, a.shards)
+    log = OUT / 'cli.log'
+    log.write_text('')
+    # diff/site always cover the full default selection so totals stay honest.
+    cli('diff', '--pairs', PAIR, log=log)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    shutil.rmtree(SITE, ignore_errors=True)
+    cli('site', '--pairs', PAIR, '--skip-analysis', '--site-dir', str(SITE),
+        '--run-id', f'{stamp}-flutter-{git(root, "rev-parse", "--short", "HEAD") or "local"}',
+        '--commit-subject', 'raft-flutter parity (Flutter provider as android, source=flutter)', log=log)
+    (OUT / 'site-stamp.txt').write_text(stamp)
+    summary = summarize()
+    shutil.copy(OUT / 'summary.json', SITE / 'flutter-parity-summary.json')
+    shutil.copy(OUT / 'summary.md', SITE / 'flutter-parity-summary.md')
+    return summary
+
+
+def cmd_probe(a):
+    """Capture a few Flutter cases into a private dir and score them against
+    the cached React captures with the official image-diff script. Does not
+    touch build/parity results, the site or the summary."""
+    out = pathlib.Path(a.out)
+    results = out / 'visual-testing-results'
+    android = results / 'android'
+    shutil.rmtree(android, ignore_errors=True)
+    env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PARITY_SHARED_DIR': str(SHARED),
+           'PARITY_RESULT_ROOT': str(results), 'PARITY_CASES': a.cases}
+    r = subprocess.run([str(root / 'tool/flutter'), 'test', 'test/parity/parity_capture_test.dart',
+                        '--no-pub', '--reporter', 'expanded'],
+                       cwd=root / 'apps/raft_flutter', env=env, capture_output=True, text=True)
+    (out / 'flutter.log').write_text(r.stdout + r.stderr)
+    if r.returncode != 0:
+        print(f'flutter test failed (exit {r.returncode}); log {out / "flutter.log"}')
+        for line in (r.stdout + r.stderr).splitlines():
+            if 'EXCEPTION' in line or 'Error' in line or 'threw' in line or ': Error:' in line:
+                print('  ' + line[:300])
+    for c in select(manifest_cases(), a.cases):
+        cid = c['id']
+        flutter_png = android / f'{cid}.png'
+        react_png = RESULTS / 'react' / f'{cid}.png'
+        if not flutter_png.is_file():
+            print(f'{cid}: no flutter capture')
+            continue
+        side, metrics = out / 'diff' / f'{cid}.side-by-side.png', out / 'diff' / f'{cid}.metrics.json'
+        side.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(['node', str(VT / 'src/sharp-image-diff.mjs'), str(react_png), str(flutter_png),
+                        str(side), str(metrics), cid, cid, 'React', 'Android'],
+                       cwd=VT, env=node_env(), check=True, capture_output=True)
+        m = json.loads(metrics.read_text())
+        print(f"{cid}: pixelPerfect={m.get('pixelPerfectSimilarity'):.4f} rgb={m.get('rgbSimilarity', 0):.4f} "
+              f"react={m.get('baselineWidth')}x{m.get('baselineHeight')} "
+              f"flutter={m.get('currentWidth')}x{m.get('currentHeight')}\n"
+              f"  react {react_png}\n  flutter {flutter_png}\n  side-by-side {side}")
+
+
+def cmd_publish(a):
+    if not (SITE / 'index.html').is_file():
+        sys.exit('no site; run `tool/parity run` first')
+    stamp = (OUT / 'site-stamp.txt').read_text().strip()
+    dest = PUBLISH_DIR / stamp
+    if dest.exists():
+        shutil.rmtree(dest)
+    shutil.copytree(SITE, dest)
+    latest = PUBLISH_DIR / 'latest'
+    if latest.is_symlink() or latest.exists():
+        latest.unlink() if latest.is_symlink() else shutil.rmtree(latest)
+    latest.symlink_to(stamp)
+    runs = sorted((p.name for p in PUBLISH_DIR.iterdir() if p.is_dir() and not p.is_symlink()), reverse=True)
+    summary = json.loads((OUT / 'summary.json').read_text())['totals']
+    items = '\n'.join(f'<li><a href="{r}/">{r}</a></li>' for r in runs)
+    (PUBLISH_DIR / 'index.html').write_text(
+        '<!doctype html><meta charset="utf-8"><title>raft-flutter parity</title>'
+        '<meta http-equiv="refresh" content="0; url=latest/">'
+        f'<p>Latest: <a href="latest/">latest/</a> ({summary["passing"]}/{summary["total"]} = '
+        f'{summary["percentage"]}% passing)</p><ul>{items}</ul>')
+    print(f'published {dest} (latest -> {stamp})')
+    if a.no_verify:
+        return
+    for rel in [f'raft_flutter_parity/{stamp}/', 'raft_flutter_parity/latest/',
+                'raft_flutter_parity/latest/flutter-parity-summary.json',
+                'raft_flutter_parity/latest/latest/home-cases.json']:
+        verify(f'{BASE_URL}/{rel}')
+    home = json.loads(urllib.request.urlopen(f'{BASE_URL}/raft_flutter_parity/latest/latest/home-cases.json').read())
+    images = []
+    for case in home.get('cases', []):
+        for prov in (case.get('providers') or {}).values():
+            if prov.get('image'):
+                images.append(prov['image'])
+        for pair in (case.get('pairs') or {}).values():
+            if pair.get('sideBySideImage'):
+                images.append(pair['sideBySideImage'])
+    bad = 0
+    for img in images:
+        url = f'{BASE_URL}/raft_flutter_parity/latest/{img.lstrip("./")}'
+        try:
+            urllib.request.urlopen(url).read(16)
+        except Exception as exc:  # noqa: BLE001
+            bad += 1
+            print(f'  image FAIL {url}: {exc}')
+    print(f'images: {len(images) - bad}/{len(images)} resolve (HTTP 200)')
+    print(f'URL: {BASE_URL}/raft_flutter_parity/latest/')
+    if bad:
+        sys.exit(1)
+
+
+def verify(url):
+    code = urllib.request.urlopen(url).status
+    print(f'  {code} {url}')
+    if code != 200:
+        sys.exit(f'publish verification failed: {url}')
+
+
+def main():
+    p = argparse.ArgumentParser(prog='tool/parity', description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest='cmd', required=True)
+    r = sub.add_parser('run')
+    r.add_argument('--cases', help='comma list of case ids or globs (default: all default cases)')
+    r.add_argument('--refresh-react', action='store_true', help='recapture React even when cached')
+    r.add_argument('--shards', type=int, default=int(os.environ.get('PARITY_SHARDS', '4')))
+    r.add_argument('--skip-flutter', action='store_true', help='reuse existing Flutter captures')
+    r.set_defaults(fn=cmd_run)
+    pub = sub.add_parser('publish')
+    pub.add_argument('--no-verify', action='store_true')
+    pub.set_defaults(fn=cmd_publish)
+    pr = sub.add_parser('probe', help='capture + score a few cases privately (for builder authoring)')
+    pr.add_argument('--cases', required=True)
+    pr.add_argument('--out', default=f'/tmp/parity-probe-{os.getpid()}')
+    pr.set_defaults(fn=cmd_probe)
+    s = sub.add_parser('summary')
+    s.set_defaults(fn=lambda a: summarize())
+    a = p.parse_args()
+    a.fn(a)
+
+
+if __name__ == '__main__':
+    main()
