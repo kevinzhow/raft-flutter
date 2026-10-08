@@ -133,6 +133,7 @@ class _LucideNode {
     : kind = _LucideKind.path,
       values = const [],
       fill = false;
+
   /// Mirrors tool/gen-glyphs `dart_node` (SVG attribute defaults, rect auto radii).
   factory _LucideNode.fromSvg(String tag, Map<String, String> a) {
     double n(String k) => double.parse(a[k] ?? '0');
@@ -180,14 +181,13 @@ class _LucideNode {
         return Path()
           ..addOval(Rect.fromCircle(center: Offset(v[0], v[1]), radius: v[2]));
       case _LucideKind.ellipse:
-        return Path()
-          ..addOval(
-            Rect.fromCenter(
-              center: Offset(v[0], v[1]),
-              width: v[2] * 2,
-              height: v[3] * 2,
-            ),
-          );
+        return Path()..addOval(
+          Rect.fromCenter(
+            center: Offset(v[0], v[1]),
+            width: v[2] * 2,
+            height: v[3] * 2,
+          ),
+        );
       case _LucideKind.rect:
         // SVG clamps each radius to half the matching side.
         final rect = Rect.fromLTWH(v[0], v[1], v[2], v[3]);

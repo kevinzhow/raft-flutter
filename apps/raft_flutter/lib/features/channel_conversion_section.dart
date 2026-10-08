@@ -489,7 +489,7 @@ class _ConversionSectionState
                 action(
                   'Convert to joint channel',
                   guard(() => command('start')),
-                  icon: Icons.hub_outlined,
+                  glyph: RaftGlyph.gitBranch,
                 ),
               if (pending == null && snapshot.job['status'] == 'failed')
                 action('Retry conversion', guard(() => command('retry'))),

@@ -50,6 +50,7 @@ class RaftButton extends StatelessWidget {
     required this.label,
     this.onPressed,
     this.icon,
+    this.glyph,
     this.busy = false,
     this.secondary = false,
     this.destructive = false,
@@ -59,6 +60,9 @@ class RaftButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+
+  /// Lucide glyph; wins over [icon].
+  final RaftGlyph? glyph;
   final bool busy, secondary, destructive;
   final RaftControlVariant? variant;
   final double visualHeight;
@@ -67,7 +71,10 @@ class RaftButton extends StatelessWidget {
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (icon != null) ...[
+        if (glyph != null) ...[
+          RaftIcon(glyph!, size: visualHeight <= 28 ? 14 : 16),
+          const SizedBox(width: 5.5),
+        ] else if (icon != null) ...[
           RaftSymbol(icon!, size: visualHeight <= 28 ? 14 : 16),
           const SizedBox(width: 5.5),
         ],
@@ -1980,10 +1987,14 @@ class RaftEmptyState extends StatelessWidget {
     required this.title,
     required this.detail,
     this.icon = Icons.forum_outlined,
+    this.glyph,
     this.action,
   });
   final String title, detail;
   final IconData icon;
+
+  /// Lucide glyph; wins over [icon].
+  final RaftGlyph? glyph;
   final Widget? action;
   @override
   Widget build(BuildContext context) => Center(
@@ -1992,7 +2003,10 @@ class RaftEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 40),
+          if (glyph != null)
+            RaftIcon(glyph!, size: 40)
+          else
+            Icon(icon, size: 40),
           const SizedBox(height: 18),
           Text(
             title,

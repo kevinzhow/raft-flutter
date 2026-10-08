@@ -594,13 +594,13 @@ class _RaftChatViewState extends State<RaftChatView> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.check_circle_outline),
+                leading: const RaftIcon(RaftGlyph.checkCircle, size: 14),
                 title: Text(raftText(context, 'Select messages')),
                 onTap: () => Navigator.pop(context, 'select'),
               ),
               if (ordinary(message))
                 ListTile(
-                  leading: const Icon(Icons.forward),
+                  leading: const RaftIcon(RaftGlyph.send, size: 14),
                   title: Text(raftText(context, 'Forward')),
                   onTap: () => Navigator.pop(context, 'forward'),
                 ),
@@ -616,12 +616,12 @@ class _RaftChatViewState extends State<RaftChatView> {
                   onTap: () => Navigator.pop(context, 'share-link'),
                 ),
               ListTile(
-                leading: const Icon(Icons.link),
+                leading: const RaftIcon(RaftGlyph.link, size: 14),
                 title: Text(raftText(context, 'Copy link')),
                 onTap: () => Navigator.pop(context, 'copy-link'),
               ),
               ListTile(
-                leading: const Icon(Icons.bookmark_border),
+                leading: const RaftIcon(RaftGlyph.bookmark, size: 14),
                 title: Text(raftText(context, 'Save message')),
                 onTap: () => Navigator.pop(context, 'save'),
               ),
@@ -631,7 +631,7 @@ class _RaftChatViewState extends State<RaftChatView> {
                 onTap: () => Navigator.pop(context, 'react'),
               ),
               ListTile(
-                leading: const Icon(Icons.check_box_outlined),
+                leading: const RaftIcon(RaftGlyph.clipboardCheck, size: 14),
                 title: Text(raftText(context, 'Create task from message')),
                 onTap: () => Navigator.pop(context, 'task'),
               ),

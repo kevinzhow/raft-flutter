@@ -455,7 +455,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                   ),
                   trailing: IconButton(
                     tooltip: raftText(context, 'Revoke invitation'),
-                    icon: const Icon(Icons.close),
+                    icon: const RaftIcon(RaftGlyph.x, size: 12),
                     onPressed: busy
                         ? null
                         : () => run(() async {
@@ -486,7 +486,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                   ),
                   trailing: IconButton(
                     tooltip: raftText(context, 'Revoke invitation link'),
-                    icon: const Icon(Icons.link_off),
+                    icon: const RaftIcon(RaftGlyph.x, size: 14),
                     onPressed: busy
                         ? null
                         : () => run(() async {

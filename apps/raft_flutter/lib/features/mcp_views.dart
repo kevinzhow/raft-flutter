@@ -494,7 +494,12 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
           () => run(() => testConfiguration(), refresh: false),
         ),
       if (w.can('manageIntegrations'))
-        action('Add connection', () => run(() => edit()), icon: Icons.add),
+        action(
+          'Add connection',
+          () => run(() => edit()),
+          glyph: RaftGlyph.plus,
+          glyphSize: 13,
+        ),
     ],
   );
 }

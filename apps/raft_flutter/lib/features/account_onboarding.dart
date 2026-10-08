@@ -302,7 +302,7 @@ class _OnboardingState extends State<AccountOnboardingView> {
                                         client,
                                       ),
                                     ),
-                              icon: const Icon(Icons.add_a_photo),
+                              icon: const RaftIcon(RaftGlyph.camera, size: 15),
                               label: Text(
                                 raftText(context, 'Choose profile image'),
                               ),
