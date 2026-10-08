@@ -231,7 +231,7 @@ class RaftRecipeBox extends StatelessWidget {
       // all below the content; border on top of the background.
       decoration: inset.isEmpty && sheen == null
           ? decoration
-          : _InsetDecoration(
+          : RaftLayeredDecoration(
               decoration,
               inset,
               radius,
@@ -319,8 +319,10 @@ int _oklabLToSrgb(double l) {
   return (c * 255).round().clamp(0, 255);
 }
 
-class _InsetDecoration extends Decoration {
-  const _InsetDecoration(
+/// A recipe box's background + border with the CSS layers between them
+/// (`::before` sheen, inset shadows). [base] holds the plain box paint.
+class RaftLayeredDecoration extends Decoration {
+  const RaftLayeredDecoration(
     this.base,
     this.layers,
     this.radius,
@@ -353,7 +355,7 @@ class _InsetPainter extends BoxPainter {
         shape: d.base.shape,
       ).createBoxPainter(onChanged),
       super(onChanged);
-  final _InsetDecoration d;
+  final RaftLayeredDecoration d;
   final BoxPainter fill;
   @override
   void dispose() {

@@ -109,7 +109,13 @@ void main() {
               .widgetList<Container>(
                 find.descendant(of: button, matching: find.byType(Container)),
               )
-              .map((c) => c.decoration)
+              .map(
+                (c) => switch (c.decoration) {
+                  RaftLayeredDecoration(:final base) => base,
+                  final BoxDecoration d => d,
+                  _ => null,
+                },
+              )
               .whereType<BoxDecoration>()
               .first;
   for (final (family, dark) in [
