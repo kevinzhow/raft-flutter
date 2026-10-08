@@ -213,11 +213,15 @@ Future<void> verifySidebarFlow(
     expect((current['hiddenDmIds'] as List? ?? []).contains(dm.id), !hidden);
     await section('chat');
     final sidebar = find.byKey(const Key('workspace-sidebar'));
+    final sidebarDm = find.byKey(ValueKey('sidebar-channel-${dm.id}'));
+    if (hidden) {
+      // Showing the DM does not mount it while the lazy sidebar is scrolled
+      // to a different section. Reveal its real row before asserting visibility.
+      await _reveal(tester, sidebarDm, sidebar);
+      expect(sidebarDm, findsOneWidget);
+    }
     await _reveal(tester, find.text('🧭 $edited'), sidebar);
-    expect(
-      find.byKey(ValueKey('sidebar-channel-${dm.id}')),
-      hidden ? findsOneWidget : findsNothing,
-    );
+    if (!hidden) expect(sidebarDm, findsNothing);
     await capture('native-sidebar-custom-section');
   } finally {
     final latest = await prefs();

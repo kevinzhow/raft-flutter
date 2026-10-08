@@ -32,10 +32,10 @@ Source `attachmentPreviewGate.ts` 默认开启预览；`attachmentPreview.ts` �
 
 该运行首先复现了媒体加载失败：禁用外部引用时，media_kit 的临时播放列表 `loadlist` 被 libmpv 拒绝。修复保留 `access-references=no`、禁用脚本/自动配对文件及仅允许 file 协议，使用公开原生 `loadfile` 命令直接加载已授权的私有本地输入；不把签名地址交给播放器，也不启用外部播放列表。[mpv 的引用限制与加载命令](https://mpv.io/manual/stable/) 是该适配的底层合同。
 
-Current acceptance revision: `8e61f8adae7c81e62ff201d83fe57eb01ed9b8d472b21e10e485a954f65562b0` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Linux full is running first, then Android will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
+Current acceptance revision: `4baf6f56d45c29caf6d564243bf73e42498fca0495a096faff78d5f800d684b1` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
 
 ## Android 原生视频 Surface 修复及辅助证据
 
 较早 Android35730整轮通过操作卡/runtime、TXT、PDF两页和WAV暂停/定位/音量后，视频输出失败：mpv `vo=gpu` 在该设备的 EGL GLES context 上发生 fatal，播放进入 idle。Android 已切换为平台专用的 `mediacodec_embed` / MediaCodec Surface 输出，继续使用官方 media_kit1.2.6 / media_kit_video2.0.1；Linux 的视频输出路径不随此修复改变。普通状态流不能覆盖已经确认的错误，fatal 错误保持直到新输入/重试明确清理。
 
-实际 Android `native_player_test` 两项通过。辅助运行 `.local/player-smoke-android/result.json` 记录 completed=true，且 sourceHash记录较早媒体修复版本 `042f2347f3424508538bfbc9dce000d3f63f50935b1490ec37ec2606adfd6295`：真实视频160×90，播放位置332ms，暂停成功，定位1500ms，音量40，原生 `idle-active=no`、`vo=mediacodec_embed`、`pause=yes`。证据还有 `.local/player-smoke-android/video-playing.png`、`android-screen.png` 和 `.local/native-player-android.txt`；截图已存在。该辅助原生 probe证明真实解码、Surface及播放器控制，不能替代整个主应用工作流。较早 Android49113已通过真实主应用视频/media及通知栏点击，但整轮在点击通知后立即查询消息而未等待异步加载的测试断言失败。该测试等待已修复；当前0c源码先运行 Linux58892，再串行重跑 Android，两平台完整验收仍pending，之前 Linux b20整轮保留为较早版本证据。
+实际 Android `native_player_test` 两项通过。辅助运行 `.local/player-smoke-android/result.json` 记录 completed=true，且 sourceHash记录较早媒体修复版本 `042f2347f3424508538bfbc9dce000d3f63f50935b1490ec37ec2606adfd6295`：真实视频160×90，播放位置332ms，暂停成功，定位1500ms，音量40，原生 `idle-active=no`、`vo=mediacodec_embed`、`pause=yes`。证据还有 `.local/player-smoke-android/video-playing.png`、`android-screen.png` 和 `.local/native-player-android.txt`；截图已存在。该辅助原生 probe证明真实解码、Surface及播放器控制，不能替代整个主应用工作流。较早 Android49113已通过真实主应用视频/media及通知栏点击，但整轮在点击通知后立即查询消息而未等待异步加载的测试断言失败。该测试等待已修复；当前4baf源码先运行 Android19417，再串行重跑 Linux，两平台完整验收仍pending，之前 Linux b20整轮保留为较早版本证据。

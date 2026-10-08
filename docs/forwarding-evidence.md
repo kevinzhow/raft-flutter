@@ -10,4 +10,4 @@
 
 服务器投影决定转发内容与来源是否可见；客户端不以原始附件签名地址或私有来源 ID 构造可点击链接。转发块展示与 SDK Preview 的结果由独立消息展示证据记录。
 
-Current acceptance revision: `8e61f8adae7c81e62ff201d83fe57eb01ed9b8d472b21e10e485a954f65562b0` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Linux full is running first, then Android will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
+Current acceptance revision: `4baf6f56d45c29caf6d564243bf73e42498fca0495a096faff78d5f800d684b1` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.

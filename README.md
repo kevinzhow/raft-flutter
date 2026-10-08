@@ -1,6 +1,6 @@
 # Raft Flutter
 
-Linux 和 Android 优先的 Raft Flutter 客户端，参照 Web 1.17.5 / `26f77ef`。当前源码已通过全部工程检查；修复移动线程/主聊天状态复用及 Android MediaCodec 视频输出后的 当前 Linux 完整验收正在运行，Android 将随后串行重跑。之前 Linux b20 版本完整验收通过，不能替代当前源码结果。能力边界与逐项证据见功能清单，尚未封版。
+Linux 和 Android 优先的 Raft Flutter 客户端，参照 Web 1.17.5 / `26f77ef`。当前源码已通过全部工程检查；修复移动线程/主聊天状态复用及 Android MediaCodec 视频输出后的当前 Android 完整验收正在运行，Linux 将随后串行重跑。之前 Linux b20 版本完整验收通过，不能替代当前源码结果。能力边界与逐项证据见功能清单，尚未封版。
 
 - [架构与阶段](docs/architecture.md)
 - [Web 来源版本](docs/source-reference.json)
@@ -23,4 +23,4 @@ Linux 首次构建先运行 `tool/prepare-media-linux`，它只下载并展开�
 
 完整工程检查用 `tool/check-project`。原生验收分别用 `tool/native-linux` 和 `tool/native-test emulator-5580`，需要自行建立隔离本地服务并在 `.local/test-user.json` 配置私有验收身份，不能把登录资料放进源码、资源或编译参数。两平台当前源码验收通过后，`tool/build-deliverables` 串行生成 Linux bundle 和 Android APK，并附 SHA256。APK 使用本地验收签名，尚未接入商店发布签名。
 
-当前能力边界见 [最终对齐审查](docs/parity-review.md)：独立原生工作区多窗口尚未实现，超出原生 Mermaid 解析器的语法显示源码回退；外部 OAuth、Slack、Stripe、默认关闭的 conversion worker 与完整 Computer/Cindy 流程尚无配置后真实执行证明。最终工程检查已通过353项 Dart 测试、29项 Python host 测试与全仓 analyze。当前工程源码哈希 `8e61f8adae7c81e62ff201d83fe57eb01ed9b8d472b21e10e485a954f65562b0`；Linux 整轮正在运行，Android 同版本将随后串行重跑。此前 Linux 完整验收的 b20 哈希和53检查点作为较早版本证据保留。
+当前能力边界见 [最终对齐审查](docs/parity-review.md)：独立原生工作区多窗口尚未实现，超出原生 Mermaid 解析器的语法显示源码回退；外部 OAuth、Slack、Stripe、默认关闭的 conversion worker 与完整 Computer/Cindy 流程尚无配置后真实执行证明。最终工程检查已通过353项 Dart 测试、29项 Python host 测试与全仓 analyze。当前工程源码哈希 `4baf6f56d45c29caf6d564243bf73e42498fca0495a096faff78d5f800d684b1`；Android 整轮正在运行，Linux 同版本将随后串行重跑。此前 Linux 完整验收的 b20 哈希和53检查点作为较早版本证据保留。
