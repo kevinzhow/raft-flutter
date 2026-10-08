@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart'
+    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
@@ -11,8 +13,11 @@ import 'public_avatar_url.dart';
 import 'page_component_recipes.dart';
 
 class AccountSettings extends StatefulWidget {
-  const AccountSettings({super.key, required this.controller});
+  const AccountSettings({super.key, required this.controller, this.onLogout});
   final WorkspaceController controller;
+
+  /// AccountSignOutSection; the host owns the session teardown.
+  final Future<void> Function()? onLogout;
   @override
   State<AccountSettings> createState() => _AccountSettingsState();
 }
@@ -291,7 +296,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         field,
       ],
     );
-    return RaftSettingsProfileCard(
+    final card = RaftSettingsProfileCard(
       avatar: Tooltip(
         message: raftText(context, 'Change profile image'),
         child: InkWell(
@@ -503,5 +508,50 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         ],
       ),
     );
+    // AccountSection: `mb-6` sections (SectionHeader mb-3 + card), then the
+    // sibling AccountSignOutSection.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const RaftSettingsSectionHeader(label: 'Account', glyph: RaftGlyph.user),
+        card,
+        const SizedBox(height: 24),
+        const RaftSettingsSectionHeader(
+          label: 'Session',
+          glyph: RaftGlyph.logOut,
+        ),
+        RaftSettingsActionCard(
+          title: 'Log out',
+          description:
+              'Log out of this browser. Your account and data stay; you can log back in any time.',
+          // `variant="warning" size="md"`, text only.
+          action: RaftRecipeButton(
+            key: const Key('account-logout'),
+            label: 'Log out',
+            variant: RaftButtonRecipeVariant.warning,
+            onPressed: widget.onLogout == null
+                ? null
+                : () => confirmLogout(context),
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Future<void> confirmLogout(BuildContext context) async {
+    final ok = await RaftConfirmDialog.show(
+      context,
+      const RaftConfirmDialog(
+        title: 'Log out',
+        message:
+            'Log out of this browser? Your account and data are kept; you can log back in any time.',
+        confirmLabel: 'Log out',
+        // confirmColor="bg-brutal-orange" -> warning tone.
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        confirmKey: Key('account-logout-confirm-button'),
+      ),
+    );
+    if (ok == true) await widget.onLogout?.call();
   }
 }

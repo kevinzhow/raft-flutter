@@ -3,8 +3,9 @@ import 'package:raft_ui/raft_ui.dart';
 
 import 'page_component_recipes.dart';
 
-/// SettingsPanel/SettingsNavList composition. Account transport and platform
-/// notification ownership are supplied by the caller, never by this UI shell.
+/// SettingsPanel / Sidebar(mobileInline) SettingsSidebarList composition.
+/// Account transport and platform notification ownership are supplied by the
+/// caller, never by this UI shell.
 class RaftSettingsDestination {
   const RaftSettingsDestination(
     this.id,
@@ -13,10 +14,28 @@ class RaftSettingsDestination {
     this.builder, {
     this.group = 'Personal',
     this.scroll = true,
-  });
+    this.title,
+    this.onOpen,
+  }) : assert(builder != null || onOpen != null);
+
+  /// A row that leaves the Settings page (external link or another route),
+  /// like the Sidebar.tsx Documentation / Computers / Release Notes rows.
+  const RaftSettingsDestination.action(
+    this.id,
+    this.label,
+    this.glyph, {
+    required VoidCallback this.onOpen,
+    this.group = 'Personal',
+  }) : builder = null,
+       scroll = false,
+       title = null;
   final String id, label, group;
+
+  /// Panel title (SETTINGS_TAB_TITLE_ID) when it differs from the nav label.
+  final String? title;
   final RaftGlyph glyph;
-  final WidgetBuilder builder;
+  final WidgetBuilder? builder;
+  final VoidCallback? onOpen;
   final bool scroll;
 }
 
@@ -61,140 +80,106 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), recipe = RaftSettingsLayoutRecipe(t);
     final available = widget.destinations;
-    if (available.isEmpty) return const SizedBox.shrink();
+    final pages = available.where((d) => d.builder != null).toList();
+    if (pages.isEmpty) return const SizedBox.shrink();
     final active =
-        available.where((d) => d.id == selected).firstOrNull ?? available.first;
+        pages.where((d) => d.id == selected).firstOrNull ?? pages.first;
     final mobile =
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
-    Widget navigation() => Material(
-      color: recipe.navigationFill,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (mobile)
-            const RaftMobileRootHeader(title: 'Settings')
-          else ...[
-            SizedBox(
-              height: RaftLayoutMetrics.shellHeaderHeight(
-                t,
-                MediaQuery.sizeOf(context).height,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    raftText(context, 'Settings'),
-                    style: RaftTypography.heading(t),
-                  ),
-                ),
-              ),
+    void open(RaftSettingsDestination destination) {
+      if (destination.onOpen != null) {
+        destination.onOpen!();
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        selected = destination.id;
+        mobileNavigation = false;
+      });
+      if (mobile) widget.onMobileDetailChanged?.call(true);
+    }
+
+    final groups = [
+      for (final group in available.map((d) => d.group).toSet())
+        RaftSettingsNavGroup(group, [
+          for (final d in available.where((d) => d.group == group))
+            RaftSettingsNavEntry(
+              id: d.id,
+              label: d.label,
+              glyph: d.glyph,
+              onTap: () => open(d),
             ),
-            Divider(height: 1, color: recipe.navigationLine),
-          ],
-          Expanded(
-            child: ListView(
-              primary: false,
-              padding: RaftSettingsLayoutRecipe.navigationInset,
-              children: [
-                for (final group in available.map((d) => d.group).toSet())
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-                          child: Text(
-                            raftText(context, group).toUpperCase(),
-                            style: recipe.groupLabel,
-                          ),
-                        ),
-                        for (final destination in available.where(
-                          (d) => d.group == group,
-                        ))
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 2),
-                            child: RaftNavItem(
-                              key: ValueKey(
-                                'workspace-settings-nav-${destination.id}',
-                              ),
-                              label: raftText(context, destination.label),
-                              glyph: destination.glyph,
-                              glyphSize:
-                                  RaftSettingsLayoutRecipe.navigationGlyphSize,
-                              selected: active.id == destination.id,
-                              onTap: () {
-                                if (!mounted) return;
-                                setState(() {
-                                  selected = destination.id;
-                                  mobileNavigation = false;
-                                });
-                                if (mobile) {
-                                  widget.onMobileDetailChanged?.call(true);
-                                }
-                              },
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        ]),
+    ];
+    // Sidebar.tsx mobile root highlights nothing until a sub-page is open.
+    Widget list(String? activeId) => ListView(
+      primary: false,
+      padding: RaftSettingsLayoutRecipe.navigationInset,
+      children: [RaftSettingsSidebarList(groups: groups, activeId: activeId)],
     );
-    Widget content() => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          height: recipe.headerHeight(MediaQuery.sizeOf(context).height),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: t.panel,
-            border: Border(bottom: BorderSide(color: recipe.navigationLine)),
-          ),
-          child: Row(
-            children: [
-              if (mobile) ...[
-                RaftIconButton(
-                  key: const Key('mobile-settings-back'),
-                  glyph: RaftGlyph.arrowLeft,
-                  tooltip: 'Settings navigation',
-                  visualSize: 28,
-                  onPressed: showNavigation,
-                ),
-                const SizedBox(width: 12),
+    Widget navigation() => mobile
+        ? ColoredBox(
+            // Sidebar mobileInline: `theme-brutal:bg-white`.
+            color: t.brutal ? Colors.white : t.panel,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const RaftMobileRootHeader(title: 'Settings'),
+                Expanded(child: list(null)),
               ],
-              Expanded(
-                child: Text(
-                  raftText(context, active.label),
-                  style: RaftTypography.heading(t),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: active.scroll
-              ? ListView(
-                  key: ValueKey('settings-page-${active.id}'),
-                  primary: false,
-                  padding: RaftSettingsLayoutRecipe.contentInset,
-                  children: [
-                    KeyedSubtree(
-                      key: ValueKey(active.id),
-                      child: active.builder(context),
+            ),
+          )
+        : Material(
+            color: recipe.navigationFill,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(
+                  height: RaftLayoutMetrics.shellHeaderHeight(
+                    t,
+                    MediaQuery.sizeOf(context).height,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        raftText(context, 'Settings'),
+                        style: RaftTypography.heading(t),
+                      ),
                     ),
-                  ],
-                )
-              : KeyedSubtree(
-                  key: ValueKey(active.id),
-                  child: active.builder(context),
+                  ),
                 ),
-        ),
-      ],
+                Divider(height: 1, color: recipe.navigationLine),
+                Expanded(child: list(active.id)),
+              ],
+            ),
+          );
+    Widget content() => RaftSettingsPanelFrame(
+      header: RaftSettingsPanelHeader(
+        title: active.title ?? active.label,
+        glyph: active.glyph,
+        mobile: mobile,
+        backKey: const Key('mobile-settings-back'),
+        backTooltip: 'Back',
+        onMobileBack: showNavigation,
+      ),
+      child: active.scroll
+          ? ListView(
+              key: ValueKey('settings-page-${active.id}'),
+              primary: false,
+              padding: RaftSettingsPanelFrame.contentInset,
+              children: [
+                KeyedSubtree(
+                  key: ValueKey(active.id),
+                  child: active.builder!(context),
+                ),
+              ],
+            )
+          : KeyedSubtree(
+              key: ValueKey(active.id),
+              child: active.builder!(context),
+            ),
     );
     if (mobile) return mobileNavigation ? navigation() : content();
     return Row(
@@ -203,7 +188,6 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
           width: RaftSettingsLayoutRecipe.navigationWidth,
           child: navigation(),
         ),
-        VerticalDivider(width: 1, color: recipe.navigationLine),
         Expanded(child: content()),
       ],
     );

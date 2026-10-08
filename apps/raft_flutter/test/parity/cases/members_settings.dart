@@ -36,21 +36,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/account_settings.dart';
-import 'package:raft_flutter/features/admin_views.dart';
-import 'package:raft_flutter/features/appearance_section.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
-import 'package:raft_flutter/features/im_bridges_view.dart';
-import 'package:raft_flutter/features/integrations_views.dart';
-import 'package:raft_flutter/features/joint_channel_views.dart';
-import 'package:raft_flutter/features/locale_settings_page.dart';
-import 'package:raft_flutter/features/notification_settings_view.dart';
-import 'package:raft_flutter/features/provider_views.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
-import 'package:raft_flutter/features/server_views.dart';
-import 'package:raft_flutter/features/settings_page.dart';
-import 'package:raft_flutter/features/sidebar_preferences_view.dart';
+import 'package:raft_flutter/features/workspace_settings.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -405,7 +394,8 @@ ParityCase _settings(
 }) => ParityCase(
   widgets: [
     'raft_flutter:RaftSettingsPage',
-    if (root) 'raft_ui:RaftNavItem',
+    'raft_flutter:WorkspaceSettings',
+    if (root) 'raft_ui:RaftSettingsSidebarList',
     if (root) 'raft_ui:RaftMobileRootHeader',
     if (tab == 'account' && !root) 'raft_flutter:AccountSettings',
     if (tab == 'server') 'raft_flutter:ServerSettingsView',
@@ -413,8 +403,8 @@ ParityCase _settings(
     if (tab == 'notifications') 'raft_flutter:NotificationSettingsView',
   ],
   notes: [
-    'Destinations mirror WorkspaceView.settings() for the fixture owner '
-        '(Flutter groups Personal/Workspace only; no Resources group).',
+    'WorkspaceSettings (the widget WorkspaceView.settings() mounts) for the '
+        'fixture owner.',
     if (tab == 'account' && !root)
       '/auth/identities adds passwordConfigured:false (the state React shows '
           'as "Set a password"; its mock omits the field, which Flutter would '
@@ -481,133 +471,14 @@ Widget _settingsPage(
   WorkspaceController w, {
   required String tab,
   required bool root,
-}) {
-  final presentation = PersonalPresentationStore();
-  final notifications = NativeNotificationService(
-    platform: TargetPlatform.android,
-  );
-  return RaftSettingsPage(
-    initialTab: tab,
-    mobileRoot: root,
-    destinations: [
-      RaftSettingsDestination(
-        'account',
-        'Account',
-        RaftGlyph.user,
-        (context) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            AccountSettings(controller: w),
-            const SizedBox(height: 24),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: RaftButton(
-                label: raftText(context, 'Sign out'),
-                secondary: true,
-                icon: Icons.logout,
-                onPressed: () {},
-              ),
-            ),
-          ],
-        ),
-      ),
-      RaftSettingsDestination(
-        'language',
-        'Language & Region',
-        RaftGlyph.globe,
-        (_) => LocaleSettingsPage(controller: w),
-      ),
-      RaftSettingsDestination(
-        'appearance',
-        'Appearance',
-        RaftGlyph.palette,
-        (_) => RaftAppearanceSection(
-          appearance: const RaftAppearance(mode: ThemeMode.light),
-          onAppearance: (_) {},
-          presentation: presentation,
-        ),
-      ),
-      RaftSettingsDestination(
-        'notifications',
-        'Notifications',
-        RaftGlyph.info,
-        (_) => NotificationSettingsView(service: notifications),
-      ),
-      RaftSettingsDestination(
-        'sidebar',
-        'Sidebar preferences',
-        RaftGlyph.columns2,
-        (_) => SidebarPreferencesView(controller: w),
-        group: 'Workspace',
-        scroll: false,
-      ),
-      if (w.can('federateChannels'))
-        RaftSettingsDestination(
-          'joint-channels',
-          'Joint channels',
-          RaftGlyph.gitBranch,
-          (_) => JointChannelsView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      RaftSettingsDestination(
-        'server',
-        'Server profile',
-        RaftGlyph.settings,
-        (_) => ServerSettingsView(controller: w),
-        group: 'Workspace',
-        scroll: false,
-      ),
-      if (w.can('viewBilling'))
-        RaftSettingsDestination(
-          'billing',
-          'Plan & Billing',
-          RaftGlyph.fileText,
-          (_) => BillingView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      if (w.can('viewServerSettings'))
-        RaftSettingsDestination(
-          'administration',
-          'Administration',
-          RaftGlyph.settings,
-          (_) => AdministrationView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      if (w.can('manageIntegrations'))
-        RaftSettingsDestination(
-          'applications',
-          'Applications',
-          RaftGlyph.bot,
-          (_) => IntegrationsView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      // providers / IM bridges are feature-flag gated (providerEnabled /
-      // bridgeEnabled default false in WorkspaceView); kept referenced so the
-      // mirror stays in sync with the app's list.
-      if (_flagged)
-        RaftSettingsDestination(
-          'providers',
-          'Providers',
-          RaftGlyph.lock,
-          (_) => ProviderConnectionsView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-      if (_flagged)
-        RaftSettingsDestination(
-          'bridges',
-          'IM bridges',
-          RaftGlyph.link,
-          (_) => IMBridgesView(controller: w),
-          group: 'Workspace',
-          scroll: false,
-        ),
-    ],
-  );
-}
-
-const bool _flagged = false;
+}) => WorkspaceSettings(
+  controller: w,
+  // React fixture state: Light mode, Brutal light theme.
+  appearance: const RaftAppearance(mode: ThemeMode.light),
+  onAppearance: (_) {},
+  presentation: PersonalPresentationStore(),
+  notifications: NativeNotificationService(platform: TargetPlatform.android),
+  onLogout: () async {},
+  initialTab: tab,
+  mobileRoot: root,
+);
