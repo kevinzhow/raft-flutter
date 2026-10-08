@@ -217,6 +217,12 @@ elements sized by their container, not from their text).
   i.e. its own t=0 frame (brutal has no dash phase). The two t=0 frames
   differ in arc start angle (Flutter's arc spans ~9:30–12:30); that is a
   `RaftSpinner` painter difference left for the UI track, not a capture issue.
+* **Flutter shadows:** flutter_test's binding sets `debugDisableShadows`,
+  which paints every `BoxShadow` without blur. `parity_capture_test.dart`
+  installs `_ParityBinding extends AutomatedTestWidgetsFlutterBinding` with
+  `disableShadows => false` (UI track, 22f1af2), so shadows are blurred as on
+  a device; a 20px CSS blur matches Chrome pixel for pixel with
+  sigma = blur / 2. Keep this binding when changing the entry point.
 * **Flutter caret:** Playwright captures with `caret: "hide"`. The harness
   already made the theme's cursor colour transparent, but product fields now
   set `cursorColor` explicitly, so the harness also sets every
