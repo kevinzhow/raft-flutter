@@ -72,6 +72,7 @@ class RaftRecipeButton extends StatefulWidget {
     this.tooltip,
     this.brutalSurface,
     this.foreground,
+    this.gap,
   });
   final String? label;
   final RaftGlyph? glyph;
@@ -86,6 +87,9 @@ class RaftRecipeButton extends StatefulWidget {
   final String? tooltip;
   final BoxDecoration Function(RaftTokens t, bool hovered)? brutalSurface;
   final Color? foreground;
+
+  /// `gap-*` override of the recipe gap.
+  final double? gap;
   @override
   State<RaftRecipeButton> createState() => _RaftRecipeButtonState();
 }
@@ -124,7 +128,7 @@ class _RaftRecipeButtonState extends State<RaftRecipeButton> {
     );
     final svg = root.target("& svg:not([class*='size-'])");
     final iconSize = widget.glyphSize ?? svg?.width ?? 16;
-    final gap = root.columnGap ?? 0;
+    final gap = widget.gap ?? root.columnGap ?? 0;
     Widget content =
         widget.child ??
         Row(
@@ -195,16 +199,14 @@ class _RaftRecipeButtonState extends State<RaftRecipeButton> {
 
 /// Web `CloseButton`: ghost `icon-sm` Button with
 /// `theme-brutal:border-2 theme-brutal:border-black theme-brutal:shadow-brutal-sm
-/// theme-brutal:bg-white theme-brutal:text-black` and an `X` of [glyphSize].
+/// theme-brutal:bg-white theme-brutal:text-black` and an `X`.
 class RaftCloseButton extends StatelessWidget {
   const RaftCloseButton({
     super.key,
     required this.onPressed,
-    this.glyphSize = 20,
     this.tooltip = 'Close',
   });
   final VoidCallback? onPressed;
-  final double glyphSize;
   final String tooltip;
   @override
   Widget build(BuildContext context) {
@@ -212,8 +214,9 @@ class RaftCloseButton extends StatelessWidget {
     return RaftRecipeButton(
       variant: RaftButtonRecipeVariant.ghost,
       size: RaftButtonRecipeSize.iconSm,
+      // `<X size={20} />`, but the recipe's `& svg:not([class*='size-'])`
+      // width/height win over Lucide's size attributes.
       glyph: RaftGlyph.x,
-      glyphSize: glyphSize,
       tooltip: raftText(context, tooltip),
       onPressed: onPressed,
       // text-foreground-muted (elegant) / theme-brutal:text-black.
