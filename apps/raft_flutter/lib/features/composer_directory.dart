@@ -22,7 +22,12 @@ class ComposerDirectory extends ChangeNotifier {
     ...people,
     for (final c in w.channels)
       if (!c.archived && ['channel', 'private', 'joint'].contains(c.type))
-        RaftComposerSuggestion(type: 'channel', id: c.id, name: c.name),
+        RaftComposerSuggestion(
+          type: 'channel',
+          id: c.id,
+          name: c.name,
+          detail: c.description.isEmpty ? null : c.description,
+        ),
   ];
   void changed() {
     final next = workspaceAuthority(w);

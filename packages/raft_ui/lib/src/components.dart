@@ -14,6 +14,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import 'theme.dart';
 import 'recipes/badge.g.dart';
+import 'recipes/composer_suggestion_list.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'mounted_avatar_recipe.dart';
@@ -1995,7 +1996,9 @@ class _RaftComposerSuggestionRowState
                           color: recipe.suggestionAuxiliary,
                         ),
                       ],
-                    ] else
+                    ] else if (s.type == 'channel')
+                      const _FramedSuggestionIcon(glyph: RaftGlyph.hash)
+                    else
                       RaftIcon(
                         switch (s.type) {
                           'channel' => RaftGlyph.hash,
@@ -2036,7 +2039,9 @@ class _RaftComposerSuggestionRowState
                                       s.detail!,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: recipe.suggestionMeta,
+                                      style: recipe.suggestionMetaFor(
+                                        highlighted: widget.highlighted,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -2048,6 +2053,38 @@ class _RaftComposerSuggestionRowState
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// `ComposerSuggestionIcon variant="framed"` (channel rows), from the
+/// raft-ui composerSuggestionList recipe: brutal 20px `bg-primary` box with
+/// a black border and a 12px glyph; elegant bare 14px icon (`-mr-1`).
+class _FramedSuggestionIcon extends StatelessWidget {
+  const _FramedSuggestionIcon({required this.glyph});
+  final RaftGlyph glyph;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final resolver = RaftRecipeTokens(t);
+    final s = RaftComposerSuggestionListRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      iconVariant: RaftComposerSuggestionListRecipeIconVariant.framed,
+      tokens: resolver,
+    ).icon;
+    return Padding(
+      padding: EdgeInsets.only(right: s.margin.right),
+      child: Container(
+        width: s.width,
+        height: s.height,
+        alignment: Alignment.center,
+        decoration: s.decoration(resolver),
+        child: RaftIcon(
+          glyph,
+          size: t.brutal ? 12 : (s.width ?? 14),
+          color: s.color?.resolve(resolver),
         ),
       ),
     );
