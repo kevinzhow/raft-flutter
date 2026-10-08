@@ -1,0 +1,579 @@
+{
+ "version": 1,
+ "scope": "apps/raft_flutter/lib",
+ "about": "Ratchet for tool/ds-audit. Counts may only go down. Regenerate with `tool/ds-audit --update-baseline` after removing violations.",
+ "totals": {
+  "style.border_radius": 21,
+  "style.color_literal": 1,
+  "style.dimension": 98,
+  "style.duration": 3,
+  "style.edge_insets": 123,
+  "style.font_size": 2,
+  "style.font_weight": 15,
+  "style.material_colors": 33,
+  "style.material_icons": 113,
+  "style.material_theme": 52,
+  "style.sized_box": 134,
+  "style.text_metrics": 5,
+  "style.text_style": 26,
+  "widget.app_bar": 8,
+  "widget.bottom_sheet": 1,
+  "widget.button": 73,
+  "widget.chip": 8,
+  "widget.dialog": 73,
+  "widget.divider": 12,
+  "widget.icon_button": 20,
+  "widget.ink": 4,
+  "widget.list_tile": 91,
+  "widget.menu": 25,
+  "widget.navigation": 1,
+  "widget.other": 22,
+  "widget.progress": 19,
+  "widget.scaffold": 13,
+  "widget.select": 14,
+  "widget.snackbar": 38,
+  "widget.surface": 18,
+  "widget.text_field": 45,
+  "widget.toggle": 1,
+  "widget.tooltip": 6
+ },
+ "files": {
+  "apps/raft_flutter/lib/features/account_auth_previews.dart": {
+   "style.edge_insets": 1
+  },
+  "apps/raft_flutter/lib/features/account_connections_view.dart": {
+   "style.dimension": 1,
+   "style.sized_box": 3,
+   "widget.divider": 1,
+   "widget.list_tile": 1
+  },
+  "apps/raft_flutter/lib/features/account_onboarding.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.material_icons": 1,
+   "style.material_theme": 2,
+   "style.sized_box": 6,
+   "style.text_style": 1,
+   "widget.button": 4,
+   "widget.scaffold": 1,
+   "widget.text_field": 6
+  },
+  "apps/raft_flutter/lib/features/account_password_editor.dart": {
+   "style.edge_insets": 2,
+   "style.sized_box": 5,
+   "widget.text_field": 2
+  },
+  "apps/raft_flutter/lib/features/account_settings.dart": {
+   "style.border_radius": 1,
+   "style.dimension": 6,
+   "style.edge_insets": 6,
+   "style.material_theme": 2,
+   "style.sized_box": 5,
+   "style.text_style": 2,
+   "widget.app_bar": 1,
+   "widget.button": 1,
+   "widget.dialog": 1,
+   "widget.divider": 2,
+   "widget.ink": 1,
+   "widget.other": 2,
+   "widget.scaffold": 1,
+   "widget.text_field": 4,
+   "widget.tooltip": 1
+  },
+  "apps/raft_flutter/lib/features/account_sign_in_recipe.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1
+  },
+  "apps/raft_flutter/lib/features/admin_views.dart": {
+   "style.material_icons": 1,
+   "style.material_theme": 1,
+   "widget.list_tile": 9
+  },
+  "apps/raft_flutter/lib/features/agent_apps_view.dart": {
+   "style.edge_insets": 1,
+   "style.material_icons": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 1,
+   "widget.button": 1,
+   "widget.dialog": 1,
+   "widget.list_tile": 1,
+   "widget.other": 1,
+   "widget.select": 3,
+   "widget.surface": 1,
+   "widget.text_field": 1
+  },
+  "apps/raft_flutter/lib/features/agent_migration_view.dart": {
+   "style.edge_insets": 1,
+   "style.material_icons": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 2,
+   "widget.app_bar": 1,
+   "widget.button": 2,
+   "widget.icon_button": 1,
+   "widget.other": 1,
+   "widget.progress": 1,
+   "widget.scaffold": 1
+  },
+  "apps/raft_flutter/lib/features/agent_scopes_view.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 1,
+   "widget.app_bar": 1,
+   "widget.button": 1,
+   "widget.list_tile": 1,
+   "widget.progress": 1,
+   "widget.scaffold": 1,
+   "widget.snackbar": 2
+  },
+  "apps/raft_flutter/lib/features/appearance_section.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.sized_box": 9
+  },
+  "apps/raft_flutter/lib/features/attachment_html_preview.dart": {
+   "style.dimension": 2,
+   "style.material_theme": 1,
+   "style.text_style": 1
+  },
+  "apps/raft_flutter/lib/features/attachment_preview_dialog.dart": {
+   "style.dimension": 1,
+   "style.material_icons": 1
+  },
+  "apps/raft_flutter/lib/features/attachment_view.dart": {
+   "style.edge_insets": 1,
+   "widget.button": 1,
+   "widget.dialog": 1,
+   "widget.progress": 1,
+   "widget.snackbar": 9
+  },
+  "apps/raft_flutter/lib/features/auth_view.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.font_size": 1,
+   "style.font_weight": 1,
+   "style.material_icons": 3,
+   "style.material_theme": 3,
+   "style.sized_box": 9,
+   "style.text_style": 2,
+   "widget.button": 8,
+   "widget.icon_button": 1,
+   "widget.list_tile": 1,
+   "widget.scaffold": 1,
+   "widget.text_field": 8
+  },
+  "apps/raft_flutter/lib/features/channel_conversion_previews.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 1,
+   "widget.button": 2,
+   "widget.chip": 1
+  },
+  "apps/raft_flutter/lib/features/channel_conversion_progress.dart": {
+   "style.edge_insets": 1,
+   "style.material_theme": 1,
+   "style.text_style": 1,
+   "widget.progress": 1
+  },
+  "apps/raft_flutter/lib/features/channel_conversion_section.dart": {
+   "style.dimension": 1,
+   "style.material_icons": 1,
+   "style.material_theme": 3,
+   "style.text_style": 2,
+   "widget.list_tile": 1,
+   "widget.progress": 1
+  },
+  "apps/raft_flutter/lib/features/channel_settings.dart": {
+   "style.dimension": 3,
+   "style.edge_insets": 3,
+   "style.font_weight": 3,
+   "style.material_icons": 6,
+   "style.material_theme": 2,
+   "style.sized_box": 2,
+   "style.text_style": 4,
+   "widget.button": 3,
+   "widget.dialog": 6,
+   "widget.divider": 3,
+   "widget.icon_button": 1,
+   "widget.list_tile": 11,
+   "widget.menu": 4,
+   "widget.other": 1,
+   "widget.progress": 1
+  },
+  "apps/raft_flutter/lib/features/chat_view.dart": {
+   "style.dimension": 4,
+   "style.edge_insets": 3,
+   "style.material_icons": 8,
+   "style.sized_box": 2,
+   "widget.bottom_sheet": 1,
+   "widget.list_tile": 8,
+   "widget.snackbar": 10,
+   "widget.toggle": 1
+  },
+  "apps/raft_flutter/lib/features/desktop_directory_view.dart": {
+   "style.edge_insets": 2,
+   "style.sized_box": 1,
+   "widget.surface": 1
+  },
+  "apps/raft_flutter/lib/features/desktop_master_detail.dart": {
+   "style.dimension": 1
+  },
+  "apps/raft_flutter/lib/features/fleet_views.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 5,
+   "style.material_icons": 23,
+   "style.material_theme": 4,
+   "style.sized_box": 4,
+   "style.text_style": 2,
+   "widget.app_bar": 2,
+   "widget.button": 5,
+   "widget.dialog": 4,
+   "widget.icon_button": 2,
+   "widget.list_tile": 26,
+   "widget.other": 2,
+   "widget.progress": 2,
+   "widget.scaffold": 2,
+   "widget.snackbar": 4
+  },
+  "apps/raft_flutter/lib/features/forward_messages_dialog.dart": {
+   "style.dimension": 1,
+   "style.material_icons": 2,
+   "style.sized_box": 1,
+   "widget.button": 2,
+   "widget.chip": 1,
+   "widget.dialog": 2,
+   "widget.list_tile": 3,
+   "widget.progress": 1,
+   "widget.text_field": 4
+  },
+  "apps/raft_flutter/lib/features/im_bridges_view.dart": {
+   "widget.list_tile": 1
+  },
+  "apps/raft_flutter/lib/features/incoming_share_review.dart": {
+   "style.edge_insets": 2,
+   "widget.button": 2,
+   "widget.dialog": 1,
+   "widget.snackbar": 4
+  },
+  "apps/raft_flutter/lib/features/integrations_views.dart": {
+   "style.edge_insets": 1,
+   "style.material_icons": 5,
+   "style.material_theme": 1,
+   "style.sized_box": 1,
+   "widget.app_bar": 2,
+   "widget.button": 2,
+   "widget.dialog": 1,
+   "widget.list_tile": 2,
+   "widget.other": 1,
+   "widget.scaffold": 2,
+   "widget.surface": 3,
+   "widget.text_field": 2
+  },
+  "apps/raft_flutter/lib/features/joint_channel_views.dart": {
+   "style.material_icons": 3,
+   "style.material_theme": 1,
+   "style.sized_box": 3,
+   "style.text_style": 1,
+   "widget.button": 4,
+   "widget.dialog": 2,
+   "widget.list_tile": 6,
+   "widget.text_field": 2
+  },
+  "apps/raft_flutter/lib/features/live_agent_activity_bar.dart": {
+   "style.color_literal": 1,
+   "style.dimension": 2,
+   "style.edge_insets": 1,
+   "style.material_colors": 1,
+   "style.sized_box": 2,
+   "widget.tooltip": 1
+  },
+  "apps/raft_flutter/lib/features/locale_settings_page.dart": {
+   "style.edge_insets": 2,
+   "style.material_theme": 1,
+   "style.sized_box": 2,
+   "style.text_style": 1,
+   "widget.progress": 1,
+   "widget.select": 1
+  },
+  "apps/raft_flutter/lib/features/managed_agent_launcher.dart": {
+   "widget.dialog": 7
+  },
+  "apps/raft_flutter/lib/features/management_support.dart": {
+   "style.dimension": 2,
+   "style.edge_insets": 4,
+   "style.material_icons": 2,
+   "style.material_theme": 3,
+   "style.sized_box": 1,
+   "style.text_style": 1,
+   "widget.button": 2,
+   "widget.dialog": 2,
+   "widget.icon_button": 1,
+   "widget.progress": 1
+  },
+  "apps/raft_flutter/lib/features/mcp_views.dart": {
+   "style.edge_insets": 1,
+   "style.material_icons": 2,
+   "style.material_theme": 2,
+   "style.sized_box": 1,
+   "style.text_style": 1,
+   "widget.button": 1,
+   "widget.dialog": 1,
+   "widget.list_tile": 3,
+   "widget.other": 1,
+   "widget.surface": 1
+  },
+  "apps/raft_flutter/lib/features/member_profile_view.dart": {
+   "style.edge_insets": 4,
+   "style.sized_box": 1,
+   "widget.other": 2
+  },
+  "apps/raft_flutter/lib/features/message_action_card.dart": {
+   "widget.dialog": 1,
+   "widget.list_tile": 1
+  },
+  "apps/raft_flutter/lib/features/message_image_export.dart": {
+   "style.edge_insets": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 1,
+   "widget.dialog": 2
+  },
+  "apps/raft_flutter/lib/features/message_presentation.dart": {
+   "style.sized_box": 1,
+   "widget.button": 1,
+   "widget.dialog": 3
+  },
+  "apps/raft_flutter/lib/features/notification_settings_view.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "widget.button": 2,
+   "widget.list_tile": 1
+  },
+  "apps/raft_flutter/lib/features/page_alignment_previews.dart": {
+   "style.edge_insets": 2
+  },
+  "apps/raft_flutter/lib/features/page_component_recipes.dart": {
+   "style.dimension": 3,
+   "style.edge_insets": 16,
+   "style.font_weight": 2,
+   "style.material_colors": 1,
+   "style.text_metrics": 4,
+   "widget.divider": 1,
+   "widget.surface": 1,
+   "widget.tooltip": 2
+  },
+  "apps/raft_flutter/lib/features/page_layout.dart": {
+   "style.dimension": 1,
+   "style.sized_box": 2
+  },
+  "apps/raft_flutter/lib/features/provider_views.dart": {
+   "style.edge_insets": 1,
+   "style.material_icons": 4,
+   "style.material_theme": 1,
+   "style.sized_box": 2,
+   "widget.button": 3,
+   "widget.dialog": 3,
+   "widget.icon_button": 1,
+   "widget.list_tile": 2,
+   "widget.other": 2,
+   "widget.surface": 1
+  },
+  "apps/raft_flutter/lib/features/resource_cards.dart": {
+   "style.border_radius": 1,
+   "style.dimension": 1,
+   "style.duration": 1,
+   "style.edge_insets": 1,
+   "style.font_weight": 1,
+   "style.material_colors": 4,
+   "widget.ink": 1,
+   "widget.surface": 2
+  },
+  "apps/raft_flutter/lib/features/resource_search.dart": {
+   "style.border_radius": 3,
+   "style.dimension": 5,
+   "style.edge_insets": 3,
+   "style.font_weight": 3,
+   "style.material_icons": 1,
+   "style.sized_box": 7,
+   "style.text_style": 1,
+   "widget.ink": 1,
+   "widget.surface": 1
+  },
+  "apps/raft_flutter/lib/features/resource_view.dart": {
+   "style.border_radius": 2,
+   "style.dimension": 12,
+   "style.edge_insets": 20,
+   "style.font_size": 1,
+   "style.font_weight": 4,
+   "style.material_colors": 2,
+   "style.material_icons": 13,
+   "style.material_theme": 3,
+   "style.sized_box": 20,
+   "style.text_metrics": 1,
+   "style.text_style": 4,
+   "widget.button": 14,
+   "widget.chip": 3,
+   "widget.dialog": 8,
+   "widget.divider": 1,
+   "widget.icon_button": 6,
+   "widget.list_tile": 2,
+   "widget.menu": 9,
+   "widget.other": 1,
+   "widget.progress": 1,
+   "widget.select": 1,
+   "widget.surface": 2,
+   "widget.text_field": 6
+  },
+  "apps/raft_flutter/lib/features/runtime_form_dialog.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 3,
+   "widget.button": 3,
+   "widget.chip": 1,
+   "widget.dialog": 1,
+   "widget.list_tile": 1,
+   "widget.progress": 1,
+   "widget.select": 3,
+   "widget.text_field": 6
+  },
+  "apps/raft_flutter/lib/features/search_home.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 2,
+   "style.sized_box": 3
+  },
+  "apps/raft_flutter/lib/features/server_setup_gate.dart": {
+   "style.dimension": 4,
+   "style.edge_insets": 2,
+   "style.material_icons": 1,
+   "style.material_theme": 1,
+   "style.sized_box": 3,
+   "widget.chip": 2,
+   "widget.dialog": 4,
+   "widget.icon_button": 1,
+   "widget.other": 1
+  },
+  "apps/raft_flutter/lib/features/server_views.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 2,
+   "style.material_icons": 5,
+   "style.material_theme": 6,
+   "style.sized_box": 5,
+   "style.text_style": 1,
+   "widget.button": 5,
+   "widget.dialog": 12,
+   "widget.icon_button": 3,
+   "widget.list_tile": 3,
+   "widget.menu": 3,
+   "widget.other": 2,
+   "widget.progress": 2,
+   "widget.select": 4,
+   "widget.text_field": 1
+  },
+  "apps/raft_flutter/lib/features/settings_page.dart": {
+   "style.border_radius": 5,
+   "style.dimension": 14,
+   "style.edge_insets": 9,
+   "style.material_theme": 1,
+   "style.sized_box": 10,
+   "widget.divider": 2,
+   "widget.ink": 1,
+   "widget.surface": 2
+  },
+  "apps/raft_flutter/lib/features/share_message_link.dart": {
+   "widget.snackbar": 2
+  },
+  "apps/raft_flutter/lib/features/sidebar_preferences_view.dart": {
+   "style.edge_insets": 2,
+   "style.material_icons": 7,
+   "style.material_theme": 4,
+   "style.sized_box": 8,
+   "widget.icon_button": 2,
+   "widget.list_tile": 5,
+   "widget.other": 3,
+   "widget.progress": 1,
+   "widget.select": 2,
+   "widget.text_field": 1
+  },
+  "apps/raft_flutter/lib/features/sidebar_sort_menu.dart": {
+   "style.duration": 1,
+   "style.material_colors": 2,
+   "widget.surface": 1
+  },
+  "apps/raft_flutter/lib/features/source_channel_file_glyph.dart": {
+   "style.border_radius": 8
+  },
+  "apps/raft_flutter/lib/features/source_channel_files_actions.dart": {
+   "widget.snackbar": 2
+  },
+  "apps/raft_flutter/lib/features/source_channel_files_view.dart": {
+   "style.border_radius": 1,
+   "style.dimension": 8,
+   "style.duration": 1,
+   "style.edge_insets": 4,
+   "style.material_colors": 19,
+   "style.sized_box": 1,
+   "widget.button": 1,
+   "widget.menu": 2
+  },
+  "apps/raft_flutter/lib/features/source_feedback_view.dart": {
+   "style.dimension": 4,
+   "style.edge_insets": 1,
+   "style.sized_box": 3,
+   "widget.other": 2,
+   "widget.surface": 1
+  },
+  "apps/raft_flutter/lib/features/system_notification_center.dart": {
+   "widget.app_bar": 1,
+   "widget.scaffold": 1
+  },
+  "apps/raft_flutter/lib/features/system_notification_copy.dart": {
+   "style.font_weight": 1,
+   "style.text_style": 1
+  },
+  "apps/raft_flutter/lib/features/task_selection_filter.dart": {
+   "style.dimension": 2,
+   "style.edge_insets": 4,
+   "style.material_colors": 1,
+   "widget.menu": 1,
+   "widget.text_field": 2,
+   "widget.tooltip": 1
+  },
+  "apps/raft_flutter/lib/features/thread_actions.dart": {
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "style.material_icons": 2,
+   "style.material_theme": 1,
+   "widget.button": 2
+  },
+  "apps/raft_flutter/lib/features/workspace_browser.dart": {
+   "widget.snackbar": 2
+  },
+  "apps/raft_flutter/lib/features/workspace_view.dart": {
+   "style.dimension": 8,
+   "style.edge_insets": 3,
+   "style.material_icons": 20,
+   "style.sized_box": 2,
+   "widget.button": 1,
+   "widget.dialog": 10,
+   "widget.divider": 2,
+   "widget.icon_button": 1,
+   "widget.list_tile": 2,
+   "widget.menu": 6,
+   "widget.navigation": 1,
+   "widget.progress": 1,
+   "widget.scaffold": 1,
+   "widget.snackbar": 3,
+   "widget.surface": 1,
+   "widget.tooltip": 1
+  },
+  "apps/raft_flutter/lib/main.dart": {
+   "widget.progress": 2,
+   "widget.scaffold": 2
+  },
+  "apps/raft_flutter/lib/platform/system_bars.dart": {
+   "style.material_colors": 3,
+   "style.material_theme": 2
+  }
+ }
+}

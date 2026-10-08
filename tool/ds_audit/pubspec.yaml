@@ -1,0 +1,10 @@
+name: ds_audit
+description: Design-system drift scanner for apps/raft_flutter/lib (see tool/ds-audit).
+publish_to: none
+environment:
+  sdk: ^3.13.5
+resolution: workspace
+dependencies:
+  analyzer: ^12.1.0
+dev_dependencies:
+  lints: ^6.1.0

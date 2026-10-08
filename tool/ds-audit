@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""Measure and ratchet design-system drift in apps/raft_flutter/lib.
+
+The scan itself is a resolved-AST Dart program (tool/ds_audit) run with the
+pinned SDK; this wrapper aggregates its findings, writes .local/ds-audit.json,
+prints a summary and compares per-file/per-category counts with the checked-in
+baseline tool/ds-audit-baseline.json.
+
+  tool/ds-audit                     summary + baseline comparison (exit 0)
+  tool/ds-audit --check             exit 1 if any file/category count grew
+  tool/ds-audit --update-baseline   lower the baseline to the current counts
+  tool/ds-audit --json PATH...      print aggregated JSON for given paths
+
+Rules for every category: docs/ds-migration.md ("Audit rules").
+Escape hatch for genuinely platform-only code (reviewed, counted separately):
+  // ds-allow: <reason>     on the offending line or the line directly above.
+"""
+import argparse
+import collections
+import json
+import pathlib
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+SCOPE = 'apps/raft_flutter/lib'
+BASELINE = ROOT / 'tool/ds-audit-baseline.json'
+REPORT = ROOT / '.local/ds-audit.json'
+UPDATE_HINT = 'tool/ds-audit --update-baseline'
+
+
+class AuditError(RuntimeError):
+    pass
+
+
+def dart_executable():
+    out = subprocess.run([str(ROOT / 'tool/flutter'), '--version', '--machine'],
+                         capture_output=True, text=True)
+    if out.returncode != 0:
+        raise AuditError(out.stderr.strip() or out.stdout.strip() or 'tool/flutter failed')
+    try:
+        flutter_root = json.loads(out.stdout)['flutterRoot']
+    except (ValueError, KeyError) as error:
+        raise AuditError(f'cannot read flutterRoot from tool/flutter: {error}')
+    return pathlib.Path(flutter_root) / 'bin/dart'
+
+
+def run_scanner(paths):
+    """Return the raw scanner document ({scanned, errors, findings})."""
+    package_config = ROOT / '.dart_tool/package_config.json'
+    if not package_config.is_file() or '"ds_audit"' not in package_config.read_text():
+        raise AuditError('workspace is not resolved; run `tool/flutter pub get` at the repository root')
+    out = subprocess.run(
+        [str(dart_executable()), f'--packages={package_config}',
+         str(ROOT / 'tool/ds_audit/bin/ds_audit.dart'), '--root', str(ROOT), *paths],
+        cwd=ROOT, capture_output=True, text=True)
+    if out.returncode != 0:
+        raise AuditError(f'ds_audit scanner failed (exit {out.returncode}):\n{out.stderr.strip()}')
+    document = json.loads(out.stdout)
+    if not document['scanned']:
+        raise AuditError(f'ds_audit scanned no Dart files under {paths}')
+    return document
+
+
+def aggregate(document):
+    """Per-file counts for enforced (non-allowlisted) and allowlisted findings."""
+    files = collections.defaultdict(collections.Counter)
+    allowed = collections.defaultdict(collections.Counter)
+    malformed = []
+    for f in document['findings']:
+        (allowed if f['allowed'] else files)[f['file']][f['category']] += 1
+        if f.get('allowError'):
+            malformed.append(f"{f['file']}:{f['line']}: {f['allowError']}")
+    as_dict = lambda table: {name: dict(sorted(c.items())) for name, c in sorted(table.items()) if c}
+    files, allowed = as_dict(files), as_dict(allowed)
+    return {
+        'version': 1,
+        'scope': SCOPE,
+        'scannedFiles': len(document['scanned']),
+        'totals': totals(files),
+        'allowedTotals': totals(allowed),
+        'files': files,
+        'allowed': allowed,
+        'malformedAllows': malformed,
+        'findings': document['findings'],
+    }
+
+
+def totals(files):
+    counter = collections.Counter()
+    for counts in files.values():
+        counter.update(counts)
+    return dict(sorted(counter.items()))
+
+
+def compare(baseline_files, current_files):
+    """Return (regressions, improvements) as sorted (file, category, before, now) tuples.
+
+    A regression is any file/category whose count is above the baseline,
+    including files or categories the baseline does not list (baseline 0).
+    """
+    regressions, improvements = [], []
+    for name in sorted(set(baseline_files) | set(current_files)):
+        before, now = baseline_files.get(name, {}), current_files.get(name, {})
+        for category in sorted(set(before) | set(now)):
+            b, n = before.get(category, 0), now.get(category, 0)
+            if n > b:
+                regressions.append((name, category, b, n))
+            elif n < b:
+                improvements.append((name, category, b, n))
+    return regressions, improvements
+
+
+def baseline_document(report):
+    return {
+        'version': 1,
+        'scope': SCOPE,
+        'about': 'Ratchet for tool/ds-audit. Counts may only go down. '
+                 f'Regenerate with `{UPDATE_HINT}` after removing violations.',
+        'totals': report['totals'],
+        'files': report['files'],
+    }
+
+
+def load_baseline():
+    if not BASELINE.is_file():
+        return {'files': {}, 'totals': {}}
+    return json.loads(BASELINE.read_text())
+
+
+def format_summary(report, top):
+    lines = [f"ds-audit: {report['scannedFiles']} files in {report['scope']}"]
+    t = report['totals']
+    widget = sum(v for k, v in t.items() if k.startswith('widget.'))
+    style = sum(v for k, v in t.items() if k.startswith('style.'))
+    lines.append(f'enforced violations: {widget + style} (widget {widget}, style {style}); '
+                 f"allowlisted: {sum(report['allowedTotals'].values())}")
+    for category, count in sorted(t.items(), key=lambda kv: (-kv[1], kv[0])):
+        allowed = report['allowedTotals'].get(category, 0)
+        lines.append(f'  {category:28} {count:5}' + (f'  (+{allowed} allowlisted)' if allowed else ''))
+    ranked = sorted(report['files'].items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))
+    lines.append(f'top {min(top, len(ranked))} files:')
+    for name, counts in ranked[:top]:
+        w = sum(v for k, v in counts.items() if k.startswith('widget.'))
+        s = sum(v for k, v in counts.items() if k.startswith('style.'))
+        lines.append(f'  {sum(counts.values()):4}  (widget {w:3}, style {s:3})  {name}')
+    return '\n'.join(lines)
+
+
+def format_comparison(regressions, improvements):
+    lines = []
+    if regressions:
+        lines.append(f'DESIGN-SYSTEM DRIFT GREW in {len(regressions)} file/category pair(s):')
+        lines += [f'  {f}: {c} {b} -> {n}' for f, c, b, n in regressions]
+        lines.append('Use raft_ui components/tokens instead (docs/ds-migration.md). Genuinely '
+                     'platform-only code may carry `// ds-allow: <reason>` for review.')
+    if improvements:
+        lines.append(f'{len(improvements)} file/category count(s) went down; lock them in with '
+                     f'`{UPDATE_HINT}` and commit tool/ds-audit-baseline.json:')
+        lines += [f'  {f}: {c} {b} -> {n}' for f, c, b, n in improvements]
+    if not regressions and not improvements:
+        lines.append('baseline: no change')
+    return '\n'.join(lines)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('paths', nargs='*', help=f'files/dirs relative to the repo (default {SCOPE})')
+    parser.add_argument('--check', action='store_true', help='fail on any count above the baseline')
+    parser.add_argument('--update-baseline', action='store_true', help='write current counts to the baseline')
+    parser.add_argument('--accept-increase', action='store_true',
+                        help='with --update-baseline: also accept counts that grew (needs review)')
+    parser.add_argument('--json', action='store_true', help='print the aggregated report as JSON')
+    parser.add_argument('--top', type=int, default=15)
+    args = parser.parse_args(argv)
+    custom = bool(args.paths)
+    if custom and (args.check or args.update_baseline):
+        parser.error('--check/--update-baseline always scan the full scope; do not pass paths')
+    try:
+        report = aggregate(run_scanner(args.paths or [SCOPE]))
+    except AuditError as error:
+        print(f'ds-audit: {error}', file=sys.stderr)
+        return 2
+    if args.json:
+        print(json.dumps(report, indent=1))
+        return 0
+    if not custom:
+        REPORT.parent.mkdir(exist_ok=True)
+        REPORT.write_text(json.dumps(report, indent=1) + '\n')
+    print(format_summary(report, args.top))
+    if custom:
+        return 0
+    print(f'full report: {REPORT.relative_to(ROOT)}')
+    regressions, improvements = compare(load_baseline().get('files', {}), report['files'])
+    print(format_comparison(regressions, improvements))
+    for problem in report['malformedAllows']:
+        print(f'malformed allow: {problem}')
+    if args.update_baseline:
+        if regressions and not args.accept_increase:
+            print('refusing to raise the baseline; fix the regressions or pass --accept-increase',
+                  file=sys.stderr)
+            return 1
+        BASELINE.write_text(json.dumps(baseline_document(report), indent=1) + '\n')
+        print(f'wrote {BASELINE.relative_to(ROOT)}')
+        return 0
+    if args.check and (regressions or report['malformedAllows']):
+        return 1
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
