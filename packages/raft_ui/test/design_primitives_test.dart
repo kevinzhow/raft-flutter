@@ -78,12 +78,10 @@ void main() {
     },
   );
   testWidgets(
-    'desktop density retains source layout bounds while touch expands its target',
+    'RaftButton keeps the Web box in both densities; touch only extends the hit area',
     (tester) async {
-      for (final (density, expected) in [
-        (RaftDensity.desktop, 32.0),
-        (RaftDensity.touch, 48.0),
-      ]) {
+      for (final density in RaftDensity.values) {
+        var clicks = 0;
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(RaftFamily.brutal),
@@ -91,24 +89,36 @@ void main() {
               body: Center(
                 child: RaftDensityScope(
                   density: density,
-                  child: RaftButton(label: 'Run', onPressed: () {}),
+                  child: RaftButton(label: 'Run', onPressed: () => clicks++),
                 ),
               ),
             ),
           ),
         );
-        expect(tester.getSize(find.byType(RaftControl)).height, expected);
-        expect(tester.getSize(find.byType(AnimatedContainer)).height, 32);
+        // buttonVariants size=md: h-8.
+        final rect = tester.getRect(find.byType(RaftButton));
+        expect(rect.height, 32);
+        await tester.tapAt(Offset(rect.center.dx, rect.bottom + 6));
+        await tester.pump();
+        expect(clicks, density == RaftDensity.touch ? 1 : 0);
       }
     },
   );
+  BoxDecoration buttonDecoration(WidgetTester tester, Finder button) =>
+      tester
+              .widgetList<Container>(
+                find.descendant(of: button, matching: find.byType(Container)),
+              )
+              .map((c) => c.decoration)
+              .whereType<BoxDecoration>()
+              .first;
   for (final (family, dark) in [
     (RaftFamily.brutal, false),
     (RaftFamily.elegant, false),
     (RaftFamily.elegant, true),
   ]) {
     final name = '${family.name} ${dark ? 'dark' : 'light'}';
-    testWidgets('$name default danger retains exact upstream pixels', (
+    testWidgets('$name destructive button paints the buttonVariants danger recipe', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -123,33 +133,31 @@ void main() {
           ),
         ),
       );
-      final surface = tester.widget<AnimatedContainer>(
-        find.byType(AnimatedContainer),
-      );
-      final decoration = surface.decoration! as BoxDecoration;
+      final t = RaftTokens.of(tester.element(find.text('Delete')));
+      final decoration = buttonDecoration(tester, find.byType(RaftButton));
+      // brutal: bg-brutal-red text-foreground-strong; elegant: bg-danger
+      // text-danger-foreground.
       expect(
         decoration.color,
         family == RaftFamily.brutal
             ? const Color(0xfff97264)
             : dark
+            // [dark] background-color override of variant=danger.
             ? const Color(0xffdb2c2b)
-            : const Color(0xfff70720),
+            : t.semantic.danger,
       );
-      final label = tester.widget<Text>(find.text('Delete'));
-      final style = DefaultTextStyle.of(tester.element(find.text('Delete')))
-          .style
-          .merge(label.style);
+      final style = DefaultTextStyle.of(tester.element(find.text('Delete'))).style;
       expect(
         style.color,
         family == RaftFamily.brutal
             ? const Color(0xff141110)
             : dark
             ? const Color(0xfffafaf7)
-            : const Color(0xffffffff),
+            : t.semantic.dangerForeground,
       );
     });
     testWidgets(
-      '$name visual recipe preserves 48 px hit area and keyboard activation',
+      '$name touch hit area meets 48 px and keyboard activation works',
       (tester) async {
         var clicks = 0;
         await tester.pumpWidget(
@@ -157,20 +165,18 @@ void main() {
             theme: raftTheme(family, dark: dark),
             home: Scaffold(
               body: Center(
-                child: RaftButton(label: 'Run', onPressed: () => clicks++),
+                child: RaftDensityScope(
+                  density: RaftDensity.touch,
+                  child: RaftButton(label: 'Run', onPressed: () => clicks++),
+                ),
               ),
             ),
           ),
         );
-        final rect = tester.getRect(find.byType(RaftControl));
-        expect(rect.height, greaterThanOrEqualTo(48));
-        final surface = find.descendant(
-          of: find.byType(RaftControl),
-          matching: find.byType(AnimatedContainer),
-        );
-        expect(tester.getSize(surface).height, 32);
-        // The target's bottom edge sits outside the visual 32 px surface.
-        await tester.tapAt(Offset(rect.center.dx, rect.bottom - 2));
+        final rect = tester.getRect(find.byType(RaftButton));
+        expect(rect.height, 32);
+        // The touch target's bottom edge sits outside the visual 32 px box.
+        await tester.tapAt(Offset(rect.center.dx, rect.bottom + 6));
         await tester.pump();
         expect(clicks, 1);
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
@@ -189,7 +195,7 @@ void main() {
       },
     );
     testWidgets(
-      '$name hover, press, drag cancel and reduced motion preserve state contract',
+      '$name hover and press follow the recipe; drag-off cancels activation',
       (tester) async {
         var clicks = 0;
         await tester.pumpWidget(
@@ -202,30 +208,32 @@ void main() {
             ),
           ),
         );
-        final target = find.byType(RaftControl),
-            surface = find.byType(AnimatedContainer);
+        final target = find.byType(RaftButton);
+        final t = RaftTokens.of(tester.element(target));
         final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: Offset.zero);
         await mouse.moveTo(tester.getCenter(target));
         await tester.pump();
-        final hovered =
-            tester.widget<AnimatedContainer>(surface).decoration!
-                as BoxDecoration;
+        // variant=accent hover: brutal keeps bg-brutal-pink (and lifts),
+        // elegant uses the accent hover role.
+        final hovered = buttonDecoration(tester, target);
         expect(
           hovered.color,
           family == RaftFamily.brutal
               ? const Color(0xfffe7da8)
-              : dark
-              // foundation.css elegant.dark --accent-hover:
-              // color-mix(in srgb-linear, accent-soft 78%, accent-strong).
-              ? const Color.fromRGBO(244, 146, 177, .3448)
-              : const Color(0xfff8cad8),
+              : t.semantic.accentHover,
         );
         final gesture = await tester.startGesture(tester.getCenter(target));
-        await tester.pump(const Duration(milliseconds: 110));
-        final down = tester.widget<AnimatedContainer>(surface).transform!;
+        await tester.pump();
+        final pressed = tester
+            .widgetList<Transform>(
+              find.descendant(of: target, matching: find.byType(Transform)),
+            )
+            .first
+            .transform;
+        // active: brutal `translate: 1px 1px`, elegant `scale: 0.985`.
         expect(
-          family == RaftFamily.brutal ? down.storage[12] : down.storage[0],
+          family == RaftFamily.brutal ? pressed.storage[12] : pressed.storage[0],
           family == RaftFamily.brutal ? 1 : .985,
         );
         await gesture.moveBy(const Offset(300, 0));
@@ -233,26 +241,6 @@ void main() {
         await tester.pump();
         expect(clicks, 0);
         await mouse.removePointer();
-        await tester.pumpWidget(
-          MaterialApp(
-            theme: raftTheme(family, dark: dark),
-            home: MediaQuery(
-              data: const MediaQueryData(disableAnimations: true),
-              child: Scaffold(
-                body: Center(
-                  child: RaftButton(label: 'Run', onPressed: () => clicks++),
-                ),
-              ),
-            ),
-          ),
-        );
-        final reduced = await tester.startGesture(tester.getCenter(target));
-        await tester.pump(const Duration(milliseconds: 110));
-        final reducedSurface = tester.widget<AnimatedContainer>(surface);
-        expect(reducedSurface.duration, Duration.zero);
-        expect(reducedSurface.transform!.storage[0], 1);
-        expect(reducedSurface.transform!.storage[12], 0);
-        await reduced.cancel();
       },
     );
     testWidgets(

@@ -1,10 +1,10 @@
 import 'tooltip.dart';
 
 import 'dart:math' as math;
-import 'dart:ui' show FontVariation, SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
@@ -2771,6 +2771,12 @@ class _RaftInteractiveState extends State<RaftInteractive> {
                 return null;
               },
             ),
+            ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
+              onInvoke: (_) {
+                activateControl();
+                return null;
+              },
+            ),
           },
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
@@ -2793,6 +2799,9 @@ class _RaftInteractiveState extends State<RaftInteractive> {
         ),
       ),
     );
+    if (RaftDensityScope.of(context) == RaftDensity.touch) {
+      result = RaftTouchTarget(child: result);
+    }
     if (widget.tooltip != null) {
       result = RaftTooltip(
         message: widget.tooltip!,
@@ -2801,6 +2810,66 @@ class _RaftInteractiveState extends State<RaftInteractive> {
       );
     }
     return result;
+  }
+}
+
+/// Touch accessibility without changing the Web layout: hit testing and the
+/// semantics rect extend to at least [minSize] around the visual box (where
+/// the parent routes the pointer), while layout and paint stay exactly the
+/// control's own box. Platform exception: the Web has no touch-target
+/// inflation; Android's 48dp guideline is met this way.
+class RaftTouchTarget extends SingleChildRenderObjectWidget {
+  const RaftTouchTarget({
+    super.key,
+    super.child,
+    this.minSize = const Size.square(RaftMetrics.touchTarget),
+  });
+  final Size minSize;
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTouchTarget(minSize);
+  @override
+  void updateRenderObject(BuildContext context, _RenderTouchTarget r) =>
+      r.minSize = minSize;
+}
+
+class _RenderTouchTarget extends RenderProxyBox {
+  _RenderTouchTarget(this._minSize);
+  Size _minSize;
+  set minSize(Size v) {
+    if (v == _minSize) return;
+    _minSize = v;
+    markNeedsSemanticsUpdate();
+  }
+
+  Rect get _target => Rect.fromCenter(
+    center: size.center(Offset.zero),
+    width: math.max(size.width, _minSize.width),
+    height: math.max(size.height, _minSize.height),
+  );
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (!_target.contains(position)) return false;
+    // Nearest point inside the box (Size.contains excludes the far edge).
+    final inside = Offset(
+      position.dx.clamp(0, math.max(0, size.width - 1e-3)),
+      position.dy.clamp(0, math.max(0, size.height - 1e-3)),
+    );
+    if (hitTestChildren(result, position: inside)) {
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  Rect get semanticBounds => _target;
+
+  @override
+  void describeSemanticsConfiguration(SemanticsConfiguration config) {
+    super.describeSemanticsConfiguration(config);
+    config.isSemanticBoundary = true;
   }
 }
 

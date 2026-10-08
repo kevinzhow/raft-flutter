@@ -208,6 +208,13 @@ class RaftButton extends StatelessWidget {
         ).root;
         final svg = s.target("& svg:not([class*='size-'])");
         final gap = s.columnGap ?? 0;
+        // Accessibility exception (not in the Web): with platform high
+        // contrast, elegant danger uses the in-repo component roles
+        // `--button-danger-high-contrast(-foreground)` (WCAG AA text).
+        final highContrastDanger =
+            !t.brutal &&
+            MediaQuery.highContrastOf(context) &&
+            recipeVariant == RaftButtonRecipeVariant.danger;
         final content = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -226,11 +233,7 @@ class RaftButton extends StatelessWidget {
             ),
           ],
         );
-        return RaftRecipeBox(
-          style: s,
-          tokens: rt,
-          width: expand ? double.infinity : null,
-          child: Row(
+        Widget content2 = Row(
             mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -246,7 +249,28 @@ class RaftButton extends StatelessWidget {
                     : content,
               ),
             ],
-          ),
+          );
+        if (highContrastDanger) {
+          content2 = DefaultTextStyle.merge(
+            style: TextStyle(
+              color: t.components.buttonDangerHighContrastForeground,
+            ),
+            child: IconTheme.merge(
+              data: IconThemeData(
+                color: t.components.buttonDangerHighContrastForeground,
+              ),
+              child: content2,
+            ),
+          );
+        }
+        return RaftRecipeBox(
+          style: s,
+          tokens: rt,
+          width: expand ? double.infinity : null,
+          decorationOverride: highContrastDanger
+              ? (d) => d.copyWith(color: t.components.buttonDangerHighContrast)
+              : null,
+          child: content2,
         );
       },
     );
