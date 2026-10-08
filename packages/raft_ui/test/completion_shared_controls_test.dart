@@ -22,9 +22,10 @@ void main() {
       expect(box.outerRect, const Rect.fromLTWH(1, 1, 298, 36));
       expect(box.tlRadiusX, 5);
       expect(recipe.line.a, closeTo(.35, 1 / 255));
-      expect(recipe.line.r, 0);
-      expect(recipe.top.a, closeTo(.30, 1 / 255));
-      expect(recipe.top.r, 0);
+      // Chrome-composite fit of oklch(0 0 0 / .35) (docs/design-tokens.md).
+      expect(recipe.line.r, closeTo(0, 1 / 255));
+      expect(recipe.top.a, closeTo(.30, 2 / 255)); // Chrome-composite fit
+      expect(recipe.top.r, closeTo(0, 1 / 255));
       expect(recipe.topOffset, 1);
       expect(recipe.topBlurRadius, 2);
       expect(recipe.topBlurSigma, 1);

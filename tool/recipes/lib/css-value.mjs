@@ -279,33 +279,78 @@ function hexColor(hex) {
 }
 
 const srgbToLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-const linearToSrgb = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
 
-export function linearSrgbToOklab([r, g, b]) {
-  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
-  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
-  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+// OKLab -> sRGB follows Chromium 147 bit-exactly (same rule as tool/gen-tokens,
+// see docs/design-tokens.md): OKLab -> LMS -> XYZ-D65 -> Bradford -> XYZ-D50
+// -> inverse skcms sRGB gamut (ICC s15Fixed16 values), all in float32, then
+// the sRGB transfer function in float32. Verified against
+// tool/design-source/chrome-oracle.json.
+const f32 = Math.fround;
+const m32 = (m) => m.map((row) => row.map(f32));
+const mul = (m, v) => m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const mul32 = (m, v) => m.map((r) => f32(f32(f32(r[0] * v[0]) + f32(r[1] * v[1])) + f32(r[2] * v[2])));
+const matmul = (a, b) => a.map((_, i) => [0, 1, 2].map((j) => a[i][0] * b[0][j] + a[i][1] * b[1][j] + a[i][2] * b[2][j]));
+function inv3([[a, b, c], [d, e, f], [g, h, i]]) {
+  const det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
   return [
-    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+    [(e * i - f * h) / det, (c * h - b * i) / det, (b * f - c * e) / det],
+    [(f * g - d * i) / det, (a * i - c * g) / det, (c * d - a * f) / det],
+    [(d * h - e * g) / det, (b * g - a * h) / det, (a * e - b * d) / det],
   ];
 }
+const OKLAB_TO_LMS = m32([
+  [0.99999999845051981432, 0.39633779217376785678, 0.21580375806075880339],
+  [1.0000000088817607767, -0.1055613423236563494, -0.063854174771705903402],
+  [1.0000000546724109177, -0.089484182094965759684, -1.2914855378640917399],
+]);
+const LMS_TO_XYZ_D65 = m32([
+  [1.2268798758459243, -0.5578149944602171, 0.2813910456659647],
+  [-0.0405757452148008, 1.1122868032803170, -0.0717110580655164],
+  [-0.0763729366746601, -0.4214933324022432, 1.5869240198367816],
+]);
+const SKCMS_SRGB_TO_XYZ_D50 = [
+  [0.436065674, 0.385147095, 0.143066406],
+  [0.222488403, 0.716873169, 0.060607910],
+  [0.013916016, 0.097076416, 0.714096069],
+];
+function bradfordToD50(wx, wy) {
+  const B = [[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]];
+  const src = mul(B, [wx / wy, 1, (1 - wx - wy) / wy]);
+  const dst = mul(B, [0.96422, 1.0, 0.82521]);
+  const S = [[dst[0] / src[0], 0, 0], [0, dst[1] / src[1], 0], [0, 0, dst[2] / src[2]]];
+  return matmul(inv3(B), matmul(S, B));
+}
+const XYZ_D65_TO_D50 = m32(bradfordToD50(0.3127, 0.3290));
+const XYZ_D50_TO_LIN_SRGB = m32(inv3(SKCMS_SRGB_TO_XYZ_D50));
+const LIN_SRGB_TO_LMS = inv3(matmul(XYZ_D50_TO_LIN_SRGB, matmul(XYZ_D65_TO_D50, LMS_TO_XYZ_D65)));
+const LMS_TO_OKLAB = inv3(OKLAB_TO_LMS);
+const linearToSrgb = (c) => {
+  const s = c < 0 ? -1 : 1;
+  const x = Math.abs(c);
+  return f32(s * (x <= 0.0031308 ? 12.92 * x : 1.055 * x ** (1 / 2.4) - 0.055));
+};
 
-export function oklabToLinearSrgb([L, a, b]) {
-  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  return [
-    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-  ];
+export function linearSrgbToOklab(rgb) {
+  return mul(LMS_TO_OKLAB, mul(LIN_SRGB_TO_LMS, rgb).map(Math.cbrt));
 }
 
-// Colour in a working form: {lab:[L,a,b], alpha, hueMissing}
-function colorFromArgb(argb) {
+export function oklabToLinearSrgb(lab) {
+  const lms = mul32(OKLAB_TO_LMS, lab.map(f32)).map((x) => f32(x ** 3));
+  return mul32(XYZ_D50_TO_LIN_SRGB, mul32(XYZ_D65_TO_D50, mul32(LMS_TO_XYZ_D65, lms)));
+}
+
+// OKLCH (hue in radians) -> OKLab the way Blink does it (float32 trig).
+const lchToLab = (L, C, H) => [f32(L), f32(f32(C) * f32(Math.cos(H))), f32(f32(C) * f32(Math.sin(H)))];
+
+// Colour in a working form: {lab:[L,a,b], alpha, lch?}. Authored oklch()/oklab()
+// coordinates are kept: Blink mixes them without a round trip through sRGB.
+function colorFromArgb(argb, authored) {
   const a = ((argb >>> 24) & 255) / 255;
+  if (authored?.lch) {
+    const [L, C, H] = authored.lch;
+    return { lab: [L, C * Math.cos(H), C * Math.sin(H)], alpha: authored.alpha ?? a, lch: authored.lch };
+  }
+  if (authored?.lab) return { lab: authored.lab, alpha: authored.alpha ?? a };
   const rgb = [(argb >>> 16) & 255, (argb >>> 8) & 255, argb & 255].map((x) => srgbToLinear(x / 255));
   return { lab: linearSrgbToOklab(rgb), alpha: a };
 }
@@ -332,10 +377,11 @@ function literalColorFn(fn) {
     const L = v(comps[0], 1);
     const C = v(comps[1], 0.4);
     const H = ((comps[2].t === 'kw' ? 0 : comps[2].v) * Math.PI) / 180;
-    return { t: 'color', argb: argbFromLab([L, C * Math.cos(H), C * Math.sin(H)], alpha), src };
+    return { t: 'color', argb: argbFromLab(lchToLab(L, C, H), alpha), src, authored: { lch: [L, C, H], alpha } };
   }
   if (fn.name === 'oklab') {
-    return { t: 'color', argb: argbFromLab([v(comps[0], 1), v(comps[1], 0.4), v(comps[2], 0.4)], alpha), src };
+    const lab = [v(comps[0], 1), v(comps[1], 0.4), v(comps[2], 0.4)];
+    return { t: 'color', argb: argbFromLab(lab, alpha), src, authored: { lab, alpha } };
   }
   if (fn.name === 'rgb' || fn.name === 'rgba') {
     const [r, g, b] = comps.slice(0, 3).map((x) => v(x, 255));
@@ -345,7 +391,7 @@ function literalColorFn(fn) {
 }
 
 // CSS Color 5 color-mix() of two literal colours.
-export function mixColors(space, c1, p1, c2, p2) {
+export function mixColors(space, c1, p1, c2, p2, authored1, authored2) {
   if (p1 == null && p2 == null) { p1 = 0.5; p2 = 0.5; }
   else if (p1 == null) p1 = 1 - p2;
   else if (p2 == null) p2 = 1 - p1;
@@ -353,17 +399,18 @@ export function mixColors(space, c1, p1, c2, p2) {
   if (sum <= 0) return null;
   const alphaMult = Math.min(sum, 1);
   p1 /= sum; p2 /= sum;
-  const a = colorFromArgb(c1);
-  const b = colorFromArgb(c2);
+  const a = colorFromArgb(c1, authored1);
+  const b = colorFromArgb(c2, authored2);
   const alpha = a.alpha * p1 + b.alpha * p2;
   if (alpha === 0) return argbFromLab([0, 0, 0], 0);
   let lab;
   if (space === 'oklch') {
     const toLch = (c) => {
+      if (c.lch) return { L: c.lch[0], C: c.lch[1], H: c.lch[2], alpha: c.alpha }; // authored hue is never powerless
       const [L, A, B] = c.lab;
       const C = Math.hypot(A, B);
       // Achromatic colours (incl. transparent) have a missing (powerless) hue.
-      return { L, C, H: C < 1e-6 ? null : Math.atan2(B, A), alpha: c.alpha };
+      return { L, C, H: C < 4e-6 || c.alpha === 0 ? null : Math.atan2(B, A), alpha: c.alpha };
     };
     const x = toLch(a);
     const y = toLch(b);
@@ -375,7 +422,7 @@ export function mixColors(space, c1, p1, c2, p2) {
     const L = (x.L * x.alpha * p1 + y.L * y.alpha * p2) / alpha;
     const C = (x.C * x.alpha * p1 + y.C * y.alpha * p2) / alpha;
     const H = h1 * p1 + h2 * p2; // hue is not premultiplied
-    lab = [L, C * Math.cos(H), C * Math.sin(H)];
+    lab = lchToLab(L, C, H);
   } else {
     // oklab (and srgb approximated in oklab is NOT done: only oklab/oklch supported)
     lab = [0, 1, 2].map((i) => (a.lab[i] * a.alpha * p1 + b.lab[i] * b.alpha * p2) / alpha);
@@ -547,7 +594,7 @@ function evalColorMix(fn) {
   const b = part(fn.args[2]);
   if (a.color?.t !== 'color' || b.color?.t !== 'color') return null;
   if (space !== 'oklab' && space !== 'oklch') return null;
-  const argb = mixColors(space, a.color.argb, a.p, b.color.argb, b.p);
+  const argb = mixColors(space, a.color.argb, a.p, b.color.argb, b.p, a.color.authored, b.color.authored);
   if (argb == null) return null;
   return { t: 'color', argb, src: serialize(fn) };
 }

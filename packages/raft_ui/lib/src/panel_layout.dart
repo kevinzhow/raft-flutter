@@ -16,109 +16,19 @@ import 'recipes/panel_action.g.dart';
 import 'recipes/panel_header.g.dart';
 import 'recipes/tabs.g.dart';
 import 'recipes/token_binding.dart';
+import 'recipe_surface.dart' show raftCssText;
 import 'theme.dart';
 import 'tooltip.dart';
 
 RaftRecipeTheme raftRecipeTheme(RaftTokens t) =>
     t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
 
-/// CSS line boxes put half the leading above and half below the glyphs.
-TextStyle raftCssText(TextStyle style) =>
-    style.copyWith(leadingDistribution: TextLeadingDistribution.even);
-
 /// `theme-brutal:text-black/<n>` overrides used across the Web panels; other
 /// themes keep the semantic token.
 Color raftPanelInk(RaftTokens t, double brutalAlpha, Color elegant) =>
     t.brutal ? Colors.black.withValues(alpha: brutalAlpha) : elegant;
 
-/// SectionEyebrow.tsx: `text-xs font-bold uppercase text-foreground-muted
-/// tracking-widest`.
-class RaftSectionEyebrow extends StatelessWidget {
-  const RaftSectionEyebrow(this.label, {super.key, this.trailing});
-  final String label;
 
-  /// Inline `<span class="ml-2 font-mono text-foreground-placeholder
-  /// theme-brutal:text-black/40">` (SectionHeader count).
-  final String? trailing;
-
-  static TextStyle style(RaftTokens t) => raftCssText(
-    RaftTypography.body(
-      t,
-      size: 12,
-      line: 16,
-      weight: FontWeight.w700,
-      color: t.colors['foreground-muted'],
-    ).copyWith(letterSpacing: 12 * .1),
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Text.rich(
-      TextSpan(
-        text: label.toUpperCase(),
-        children: [
-          if (trailing != null) ...[
-            const WidgetSpan(child: SizedBox(width: 8)),
-            TextSpan(
-              text: trailing,
-              style: raftCssText(
-                RaftTypography.mono(
-                  t,
-                  size: 12,
-                  line: 16,
-                  color: raftPanelInk(
-                    t,
-                    .4,
-                    t.colors['foreground-placeholder']!,
-                  ),
-                ).copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.2),
-              ),
-            ),
-          ],
-        ],
-      ),
-      style: style(t),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-  }
-}
-
-/// SectionHeader.tsx: `flex items-center justify-between gap-2`, optional
-/// leading icon, eyebrow + count and a trailing action.
-class RaftSectionHeader extends StatelessWidget {
-  const RaftSectionHeader({
-    super.key,
-    required this.label,
-    this.count,
-    this.action,
-    this.icon,
-  });
-  final String label;
-  final int? count;
-  final Widget? action;
-  final Widget? icon;
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Expanded(
-        child: Row(
-          children: [
-            if (icon != null) ...[icon!, const SizedBox(width: 8)],
-            Flexible(
-              child: RaftSectionEyebrow(
-                label,
-                trailing: count != null && count! >= 0 ? '$count' : null,
-              ),
-            ),
-          ],
-        ),
-      ),
-      if (action != null) ...[const SizedBox(width: 8), action!],
-    ],
-  );
-}
 
 /// AgentDetailPanel.tsx InfoRow: `grid grid-cols-[6.5rem_minmax(0,1fr)]
 /// items-start gap-x-4`; the term is `flex min-h-5 items-center gap-1.5
@@ -135,7 +45,7 @@ class RaftInfoRow extends StatelessWidget {
   final Widget child;
   final List<Widget> actions;
 
-  static TextStyle valueStyle(RaftTokens t) => raftCssText(
+  static TextStyle valueStyle(RaftTokens t) => raftCssText.merge(
     RaftTypography.body(
       t,
       size: 14,
@@ -161,7 +71,7 @@ class RaftInfoRow extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: raftCssText(
+                    style: raftCssText.merge(
                       RaftTypography.body(
                         t,
                         size: 12,
@@ -340,7 +250,7 @@ class RaftPanelHeaderBar extends StatelessWidget {
       tokens: rt,
     );
     final base = RaftTypography.body(t, size: 16, line: 20);
-    TextStyle text(RaftSlotStyle slot) => raftCssText(
+    TextStyle text(RaftSlotStyle slot) => raftCssText.merge(
       base.merge(slot.textStyle(rt)).copyWith(
         fontFamily: slot.fontFamily == null ? t.bodyFont : null,
       ),
@@ -519,7 +429,7 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
         2;
     final fg = s.color?.resolve(rt) ?? (t.brutal ? Colors.black : t.strong);
     final iconColor = s.target('& svg')?.color?.resolve(rt) ?? fg;
-    final label = raftCssText(
+    final label = raftCssText.merge(
       RaftTypography.body(t, size: 12, line: 16).merge(
         s.textStyle(rt).copyWith(color: fg),
       ),
@@ -675,8 +585,8 @@ double raftCssBaseline(TextStyle style) {
 /// An `inline-flex` box of [height] whose text (style [childText], centred
 /// by `items-center`) is baseline-aligned in a line of [lineText]: the line
 /// box grows below/above exactly as Blink's inline layout does.
-class RaftInlineBox extends StatelessWidget {
-  const RaftInlineBox({
+class RaftCssInlineBox extends StatelessWidget {
+  const RaftCssInlineBox({
     super.key,
     required this.lineText,
     required this.childText,

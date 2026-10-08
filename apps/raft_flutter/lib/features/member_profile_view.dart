@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftBadgeRecipeAppearance, RaftButtonRecipeVariant;
 
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
@@ -280,8 +278,12 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
               children: [
                 for (final a in created)
                   RaftAvatarListRow(
+                    avatar: RaftAvatarSlot(
+                      name: '${a['displayName'] ?? a['name']}',
+                      avatarUrl: a['avatarUrl'] as String?,
+                      slot: RaftAvatarSlotContext.surfaceList,
+                    ),
                     name: '${a['displayName'] ?? a['name']}',
-                    avatarUrl: a['avatarUrl'] as String?,
                     subtitle: sourceRuntimeDisplayNames['${a['runtime']}'],
                   ),
               ],

@@ -774,10 +774,11 @@ class _ResourceViewState extends State<ResourceView> {
                           ? 'Show task list'
                           : 'Show task board',
                     ),
-                    icon: Icon(
+                    icon: RaftIcon(
                       taskLayout == 'board'
-                          ? Icons.view_list_outlined
-                          : Icons.view_kanban_outlined,
+                          ? RaftGlyph.layoutList
+                          : RaftGlyph.columns3,
+                      size: 12,
                     ),
                     onPressed: () {
                       taskLayout = taskLayout == 'board' ? 'list' : 'board';
@@ -795,7 +796,7 @@ class _ResourceViewState extends State<ResourceView> {
                     onPressed: w.server?.string('role') == 'guest'
                         ? null
                         : () => createTask(sourceScope: scope),
-                    icon: const Icon(Icons.add),
+                    icon: const RaftIcon(RaftGlyph.plus, size: 12),
                   ),
                 if (widget.section == 'activity')
                   PopupMenuButton<String>(
@@ -2015,7 +2016,7 @@ class _ResourceViewState extends State<ResourceView> {
                 ),
               ),
               const SizedBox(width: 4),
-              const Icon(Icons.expand_more, size: 18),
+              const RaftIcon(RaftGlyph.chevronDown, size: 18),
             ],
           ),
         ),
@@ -2688,7 +2689,7 @@ class _ResourceViewState extends State<ResourceView> {
       trailing: section == 'saved'
           ? IconButton(
               tooltip: raftText(context, 'Remove saved message'),
-              icon: const Icon(Icons.bookmark_remove_outlined),
+              icon: const RaftIcon(RaftGlyph.bookmarkFilled, size: 14),
               onPressed: () => command(
                 'DELETE',
                 '/channels/saved/${row['messageId']}',
@@ -2706,7 +2707,10 @@ class _ResourceViewState extends State<ResourceView> {
                         ? 'Restore conversation'
                         : 'Mark conversation done',
                   ),
-                  icon: Icon(filter == 'done' ? Icons.undo : Icons.done),
+                  icon: RaftIcon(
+                    filter == 'done' ? RaftGlyph.rotateCcw : RaftGlyph.check,
+                    size: 14,
+                  ),
                   onPressed: () => activityAction(
                     row,
                     filter == 'done' ? 'undone' : 'done',
@@ -2721,10 +2725,11 @@ class _ResourceViewState extends State<ResourceView> {
                           ? 'Follow thread'
                           : 'Unfollow thread',
                     ),
-                    icon: Icon(
+                    icon: RaftIcon(
                       row['isFollowing'] == false
-                          ? Icons.notifications_outlined
-                          : Icons.notifications_off_outlined,
+                          ? RaftGlyph.bell
+                          : RaftGlyph.bellOff,
+                      size: 14,
                     ),
                     onPressed: () => activityAction(
                       row,

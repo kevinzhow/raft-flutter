@@ -959,56 +959,17 @@ class RaftAgentDialogButton extends StatelessWidget {
   final bool primary, busy, expand;
   @override
   Widget build(BuildContext context) {
-    final height = raftAgentLgButtonHeight(context);
-    final variant = primary
-        ? RaftControlVariant.accent
-        : RaftControlVariant.outline;
-    // Web buttons have no enlarged touch target: hit area = the 40px box.
-    final Widget button = busy
-        ? RaftButton(
-            label: label,
-            busy: true,
-            variant: variant,
-            visualHeight: height,
-          )
-        : _lgButton(context, variant, height);
-    return expand ? SizedBox(width: double.infinity, child: button) : button;
-  }
-}
-
-/// Button(size="lg") label/padding come from the button recipe; the shared
-/// control supplies chrome, states and press feedback.
-extension on RaftAgentDialogButton {
-  Widget _lgButton(
-    BuildContext context,
-    RaftControlVariant variant,
-    double height,
-  ) {
-    final t = RaftTokens.of(context);
-    final tokens = RaftRecipeTokens(t);
-    final lg = RaftButtonRecipe.resolve(
-      theme: _theme(t),
-      variant: primary
+    // `<Button size="lg">`: the recipe-exact shared button (touch target is
+    // an overlay, not layout).
+    return RaftButton(
+      label: label,
+      busy: busy,
+      tone: primary
           ? RaftButtonRecipeVariant.accent
           : RaftButtonRecipeVariant.outline,
       size: RaftButtonRecipeSize.lg,
-      states: _states(t),
-      tokens: tokens,
-    ).root;
-    return RaftControl(
+      expand: expand,
       onPressed: onPressed,
-      variant: variant,
-      visualHeight: height,
-      minimumTargetSize: height,
-      padding: lg.padding,
-      semanticLabel: raftText(context, label),
-      child: Text(
-        raftText(context, label),
-        maxLines: 1,
-        style: lg.textStyle(tokens).copyWith(
-          leadingDistribution: TextLeadingDistribution.even,
-        ),
-      ),
     );
   }
 }

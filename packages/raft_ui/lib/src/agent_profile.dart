@@ -14,9 +14,10 @@ import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'recipes/avatar.g.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/button_variants.g.dart';
-import 'recipes/card.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
+import 'list_items.dart';
+import 'recipe_surface.dart' show raftCssText;
 import 'theme.dart';
 
 /// Tailwind `bg-gray-400` (oklch(70.7% 0.022 261.325)), StatusDot default.
@@ -43,7 +44,7 @@ class RaftPanelTextScope extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return DefaultTextStyle(
-      style: raftCssText(RaftTypography.body(t, color: t.ink)),
+      style: raftCssText.merge(RaftTypography.body(t, color: t.ink)),
       child: ColoredBox(color: t.colors['layer-panel']!, child: child),
     );
   }
@@ -113,7 +114,7 @@ class RaftRecipeBadge extends StatelessWidget {
           uppercase ? label.toUpperCase() : label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: raftCssText(
+          style: raftCssText.merge(
             RaftTypography.body(t, size: 10, line: 10).merge(s.textStyle(rt)),
           ),
         ),
@@ -132,9 +133,9 @@ class RaftInlineBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final s = RaftBadgeRecipe.resolve(theme: raftRecipeTheme(t)).root;
-    return RaftInlineBox(
+    return RaftCssInlineBox(
       lineText: bodyLine
-          ? raftCssText(RaftTypography.body(t))
+          ? raftCssText.merge(RaftTypography.body(t))
           : RaftInfoRow.valueStyle(t),
       childText: RaftTypography.body(
         t,
@@ -221,96 +222,7 @@ class RaftAvatarSlot extends StatelessWidget {
   }
 }
 
-/// Web SurfaceListItem: the raft-ui Card surface.
-class RaftSurfaceListItem extends StatelessWidget {
-  const RaftSurfaceListItem({super.key, required this.child, this.onTap});
-  final Widget child;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    final s = RaftCardRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      tokens: rt,
-      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
-    ).root;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: s.padding == EdgeInsets.zero
-            ? const EdgeInsets.all(16)
-            : s.padding,
-        decoration: s.decoration(rt),
-        child: child,
-      ),
-    );
-  }
-}
 
-/// AvatarListRow inside a SurfaceListItem (created agents).
-class RaftAvatarListRow extends StatelessWidget {
-  const RaftAvatarListRow({
-    super.key,
-    required this.name,
-    this.avatarUrl,
-    this.subtitle,
-    this.dot,
-    this.onTap,
-  });
-  final String name;
-  final String? avatarUrl, subtitle;
-  final Color? dot;
-  final VoidCallback? onTap;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return RaftSurfaceListItem(
-      onTap: onTap,
-      child: Row(
-        children: [
-          RaftAvatarSlot(
-            name: name,
-            avatarUrl: avatarUrl,
-            slot: RaftAvatarSlotContext.surfaceList,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: raftCssText(
-                    RaftTypography.body(
-                      t,
-                      size: 14,
-                      line: 20,
-                      weight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssText(RaftTypography.mono(t)),
-                  ),
-              ],
-            ),
-          ),
-          if (dot != null) ...[
-            const SizedBox(width: 8),
-            RaftActivityDot(color: dot!),
-          ],
-        ],
-      ),
-    );
-  }
-}
 
 /// Web className text-size overrides on a Button: `text-[11px]`, `text-sm`.
 enum RaftButtonText { recipe, px11, sm }
@@ -371,7 +283,7 @@ class _RaftRecipeTextButtonState extends State<RaftRecipeTextButton> {
     var text = RaftTypography.body(t, size: size, line: size * 1.4286)
         .merge(s.textStyle(rt).copyWith(fontSize: size));
     if (widget.bold) text = text.copyWith(fontWeight: FontWeight.w700);
-    text = raftCssText(text);
+    text = raftCssText.merge(text);
     final pad = widget.horizontalPadding;
     return Semantics(
       button: true,
@@ -502,7 +414,7 @@ abstract final class RaftPanelText {
       value(t).copyWith(fontFamily: t.monoFont);
   static TextStyle monoSemibold(RaftTokens t) =>
       mono(t).copyWith(fontWeight: FontWeight.w600);
-  static TextStyle label(RaftTokens t) => raftCssText(
+  static TextStyle label(RaftTokens t) => raftCssText.merge(
     RaftTypography.body(
       t,
       size: 12,
@@ -510,7 +422,7 @@ abstract final class RaftPanelText {
       color: raftPanelInk(t, .5, t.colors['foreground-muted']!),
     ),
   );
-  static TextStyle caption(RaftTokens t) => raftCssText(
+  static TextStyle caption(RaftTokens t) => raftCssText.merge(
     RaftTypography.body(
       t,
       size: 12,
@@ -518,7 +430,7 @@ abstract final class RaftPanelText {
       color: t.colors['foreground-muted'],
     ),
   );
-  static TextStyle monoCaption(RaftTokens t) => raftCssText(
+  static TextStyle monoCaption(RaftTokens t) => raftCssText.merge(
     RaftTypography.mono(
       t,
       color: raftPanelInk(t, .5, t.colors['foreground-muted']!),
@@ -596,7 +508,7 @@ class RaftProfileIdentity extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: raftCssText(
+                          style: raftCssText.merge(
                             RaftTypography.body(
                               t,
                               size: 18,
@@ -622,7 +534,7 @@ class RaftProfileIdentity extends StatelessWidget {
                     '@$handle',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: raftCssText(
+                    style: raftCssText.merge(
                       RaftTypography.mono(
                         t,
                         size: 14,
@@ -645,7 +557,7 @@ class RaftProfileIdentity extends StatelessWidget {
                               statusText!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: raftCssText(
+                              style: raftCssText.merge(
                                 RaftTypography.mono(
                                   t,
                                   size: 14,
@@ -745,7 +657,7 @@ class RaftEnvVarChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final style = raftCssText(
+    final style = raftCssText.merge(
       RaftTypography.mono(t, color: t.brutal ? Colors.black : t.strong),
     );
     return Wrap(
@@ -903,7 +815,7 @@ class RaftActivityLogView extends StatelessWidget {
 
   Widget _row(RaftTokens t, RaftActivityLogEntry e) {
     final strong = t.brutal ? Colors.black : t.strong;
-    final primary = raftCssText(
+    final primary = raftCssText.merge(
       RaftTypography.body(
         t,
         size: 14,
@@ -923,7 +835,7 @@ class RaftActivityLogView extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               e.time,
-              style: raftCssText(
+              style: raftCssText.merge(
                 RaftTypography.mono(
                   t,
                   color: raftPanelInk(
@@ -1021,7 +933,7 @@ class RaftReminderListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = raftPanelInk(t, .5, t.colors['foreground-muted']!);
-    final bold = raftCssText(
+    final bold = raftCssText.merge(
       RaftTypography.body(t, size: 12, line: 16, weight: FontWeight.w700, color: muted),
     );
     return ColoredBox(
@@ -1085,7 +997,7 @@ class RaftReminderListView extends StatelessWidget {
                   const SizedBox(width: 4),
                   Text(
                     r.relative,
-                    style: raftCssText(
+                    style: raftCssText.merge(
                       RaftTypography.body(
                         t,
                         size: 12,
@@ -1264,7 +1176,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
   }
 
   Widget _node(RaftTokens t, RaftWorkspaceNode n) {
-    final text = raftCssText(
+    final text = raftCssText.merge(
       RaftTypography.body(
         t,
         size: 14,

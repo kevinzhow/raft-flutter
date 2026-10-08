@@ -1270,40 +1270,40 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     RaftRailDestination(
       id: 'search',
       label: tr('Search'),
-      icon: Icons.search,
+      glyph: RaftGlyph.search,
       iconWidget: railIcon(RaftGlyph.search),
     ),
     RaftRailDestination(
       id: 'chat',
       label: tr('Chat'),
-      icon: Icons.chat_bubble_outline,
+      glyph: RaftGlyph.messageSquare,
       iconWidget: railIcon(RaftGlyph.messageSquare),
     ),
     RaftRailDestination(
       id: 'activity',
       label: tr('Activity'),
-      icon: Icons.inbox_outlined,
+      glyph: RaftGlyph.activity,
       iconWidget: railIcon(RaftGlyph.activity),
       unread: w.unread.values.fold(0, (a, b) => a + b),
     ),
     RaftRailDestination(
       id: 'tasks',
       label: tr('Tasks'),
-      icon: Icons.check_box_outlined,
+      glyph: RaftGlyph.checkSquare,
       iconWidget: railIcon(RaftGlyph.checkSquare),
     ),
     if (w.can('viewMembers'))
       RaftRailDestination(
         id: 'members',
         label: tr('Members'),
-        icon: Icons.people_outline,
+        glyph: RaftGlyph.users,
         iconWidget: railIcon(RaftGlyph.users),
       ),
     if (w.can('viewMachines'))
       RaftRailDestination(
         id: 'computers',
         label: tr('Computers'),
-        icon: Icons.computer_outlined,
+        glyph: RaftGlyph.monitor,
         iconWidget: railIcon(RaftGlyph.monitor),
       ),
   ];
@@ -1351,7 +1351,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               child: ListTile(
                 title: Text(server.name),
                 trailing: server.id == w.server?.id
-                    ? const Icon(Icons.check)
+                    ? const RaftIcon(RaftGlyph.check, size: 14)
                     : null,
               ),
             ),
@@ -1600,15 +1600,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       label: c.type == 'dm'
           ? c.string('peerDisplayName', c.string('peerName', c.name))
           : c.name,
-      icon: c.type == 'dm'
-          ? Icons.person_outline
-          : c.archived
-          ? Icons.archive_outlined
-          : c.type == 'private'
-          ? Icons.lock_outline
-          : c.type == 'joint'
-          ? Icons.link
-          : Icons.tag,
       glyph: c.type == 'dm'
           ? RaftGlyph.user
           : c.type == 'private'
@@ -1777,7 +1768,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const Icon(Icons.expand_more, size: 16),
+                            const RaftIcon(RaftGlyph.chevronDown, size: 16),
                           ],
                         ),
                       ),
@@ -1805,7 +1796,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       role: RaftNavItemRole.search,
                       viewportHeight: MediaQuery.sizeOf(context).height,
                       label: tr('Search'),
-                      icon: Icons.search,
                       glyph: RaftGlyph.search,
                       selected: w.section == 'search',
                       onTap: () => select('search'),
@@ -1816,7 +1806,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       role: RaftNavItemRole.activity,
                       viewportHeight: MediaQuery.sizeOf(context).height,
                       label: tr('Activity'),
-                      icon: Icons.inbox_outlined,
                       glyph: RaftGlyph.activity,
                       selected: w.section == 'activity',
                       unread: w.unread.values.fold(0, (a, b) => a + b),

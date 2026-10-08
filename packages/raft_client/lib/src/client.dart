@@ -610,10 +610,14 @@ class RaftClient {
   Future<List<RaftRecord>> servers() async => (await get('/servers') as List)
       .map((e) => RaftRecord(Map<String, dynamic>.from(e)))
       .toList();
-  Future<List<RaftChannel>> channels({bool dm = false}) async => (await get(
-    dm ? '/channels/dm' : '/channels',
-    query: dm ? null : {'archived': 'include'},
-  ) as List).map((e) => RaftChannel(Map<String, dynamic>.from(e))).toList();
+  Future<List<RaftChannel>> channels({bool dm = false}) async =>
+      (await get(
+                dm ? '/channels/dm' : '/channels',
+                query: dm ? null : {'archived': 'include'},
+              )
+              as List)
+          .map((e) => RaftChannel(Map<String, dynamic>.from(e)))
+          .toList();
   Future<Map<String, dynamic>> messagePage(
     String id, {
     BigInt? before,
@@ -660,6 +664,25 @@ class RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+  }) async => (await sendWithReceipt(
+    channelId,
+    content,
+    attachments: attachments,
+    mentions: mentions,
+    randomId: randomId,
+    asTask: asTask,
+  )).message;
+
+  /// [send] plus the wrapped receipt fields of `POST /v2/messages`
+  /// (`pendingMentionActions`, `unresolvedMentionHandles`,
+  /// `deliveryWarnings`); an unwrapped body yields an empty receipt.
+  Future<({RaftMessage message, Map<String, dynamic> receipt})> sendWithReceipt(
+    String channelId,
+    String content, {
+    List<String>? attachments,
+    List<Map<String, dynamic>>? mentions,
+    String? randomId,
+    bool asTask = false,
   }) async {
     final value = await post(
       '/v2/messages',
@@ -675,7 +698,15 @@ class RaftClient {
           ],
       },
     );
-    return RaftMessage(Map<String, dynamic>.from(value['message'] ?? value));
+    final wrapped = value is Map && value['message'] is Map;
+    return (
+      message: RaftMessage(
+        Map<String, dynamic>.from(value['message'] ?? value),
+      ),
+      receipt: wrapped
+          ? Map<String, dynamic>.from(value)
+          : const <String, dynamic>{},
+    );
   }
 
   Future<void> dispose() async {

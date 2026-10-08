@@ -317,7 +317,7 @@ class _FleetViewState extends State<FleetView> {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: managed,
-              icon: const Icon(Icons.computer),
+              icon: const RaftIcon(RaftGlyph.bot, size: 14),
               label: Text(raftText(context, 'Create managed agent')),
             ),
           ),
@@ -349,7 +349,7 @@ class _FleetViewState extends State<FleetView> {
                   return ListTile(
                     key: ValueKey('fleet-${row['id']}'),
                     leading: widget.computers
-                        ? const Icon(Icons.computer)
+                        ? const RaftIcon(RaftGlyph.monitor, size: 20)
                         : RaftAvatar(name: name),
                     title: Text(name),
                     subtitle: Text(
@@ -968,7 +968,7 @@ class _FleetDetailState extends State<FleetDetail> {
                 widget.computers ? 'Edit computer' : 'Edit agent',
               ),
             ),
-            leading: const Icon(Icons.edit),
+            leading: const RaftIcon(RaftGlyph.pencil, size: 14),
             onTap: busy ? null : edit,
           ),
         if (!widget.computers &&
@@ -977,7 +977,7 @@ class _FleetDetailState extends State<FleetDetail> {
             allowed('editAgents'))
           ListTile(
             title: Text(raftText(context, 'Edit runtime configuration')),
-            leading: const Icon(Icons.tune),
+            leading: const RaftIcon(RaftGlyph.pencil, size: 12),
             onTap: busy
                 ? null
                 : () async {
@@ -1048,7 +1048,7 @@ class _FleetDetailState extends State<FleetDetail> {
               mode == 'full' ? 'resetAgentWorkspace' : 'controlAgentRuntime',
             ))
               ListTile(
-                leading: const Icon(Icons.restart_alt),
+                leading: const RaftIcon(RaftGlyph.rotateCcw, size: 14),
                 title: Text(
                   raftText(
                     context,
@@ -1063,7 +1063,7 @@ class _FleetDetailState extends State<FleetDetail> {
               ),
           if (allowed('migrateAgents'))
             ListTile(
-              leading: const Icon(Icons.move_up),
+              leading: const RaftIcon(RaftGlyph.moveRight, size: 14),
               title: Text(raftText(context, 'Agent migration')),
               onTap: busy
                   ? null
@@ -1083,7 +1083,7 @@ class _FleetDetailState extends State<FleetDetail> {
           if (widget.computers)
             ListTile(
               title: Text(raftText(context, 'Workspaces')),
-              leading: const Icon(Icons.folder),
+              leading: const RaftIcon(RaftGlyph.folderOpen, size: 14),
               onTap: () => inspect('workspaces'),
             )
           else ...[
@@ -1107,7 +1107,7 @@ class _FleetDetailState extends State<FleetDetail> {
             ),
             ListTile(
               title: Text(raftText(context, 'App access')),
-              leading: const Icon(Icons.apps),
+              leading: const RaftIcon(RaftGlyph.link2, size: 12),
               onTap: () async {
                 if (!allowed('editAgents')) return;
                 await Navigator.push(
@@ -1121,7 +1121,7 @@ class _FleetDetailState extends State<FleetDetail> {
             ),
             ListTile(
               title: Text(raftText(context, 'MCP servers')),
-              leading: const Icon(Icons.extension_outlined),
+              leading: const RaftIcon(RaftGlyph.blocks, size: 12),
               onTap: () async {
                 if (!allowed('editAgents')) return;
                 await Navigator.push(
@@ -1134,7 +1134,7 @@ class _FleetDetailState extends State<FleetDetail> {
             ),
             ListTile(
               title: Text(raftText(context, 'Activity log')),
-              leading: const Icon(Icons.history),
+              leading: const RaftIcon(RaftGlyph.activity, size: 12),
               onTap: () => inspect('activity-log'),
             ),
             ListTile(
@@ -1149,7 +1149,7 @@ class _FleetDetailState extends State<FleetDetail> {
             ),
             ListTile(
               title: Text(raftText(context, 'Workspace files')),
-              leading: const Icon(Icons.folder),
+              leading: const RaftIcon(RaftGlyph.folderOpen, size: 12),
               onTap: () => inspect('workspace-files'),
             ),
           ],
@@ -1163,7 +1163,7 @@ class _FleetDetailState extends State<FleetDetail> {
               ),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-            leading: const Icon(Icons.delete_outline),
+            leading: const RaftIcon(RaftGlyph.trash2, size: 14),
             onTap: busy ? null : remove,
           ),
       ],
@@ -1322,7 +1322,7 @@ class _FleetInspectionState extends State<FleetInspection> {
         IconButton(
           tooltip: raftText(context, 'Refresh'),
           onPressed: load,
-          icon: const Icon(Icons.refresh),
+          icon: const RaftIcon(RaftGlyph.refreshCw, size: 12),
         ),
       ],
     ),
@@ -1369,11 +1369,12 @@ class _FleetInspectionState extends State<FleetInspection> {
                     '${row['detail'] ?? row['message'] ?? row['description'] ?? row['createdAt'] ?? row['status'] ?? ''}',
                   ),
                   leading: widget.kind == 'workspace-files'
-                      ? Icon(
+                      ? RaftIcon(
                           row['type'] == 'directory' ||
                                   row['isDirectory'] == true
-                              ? Icons.folder
-                              : Icons.insert_drive_file,
+                              ? RaftGlyph.folderClosed
+                              : RaftGlyph.fileText,
+                          size: 14,
                         )
                       : null,
                   onTap: widget.kind == 'workspace-files'

@@ -203,6 +203,9 @@ class RaftMessageBody extends StatelessWidget {
       if (markdown.isEmpty) return;
       blocks.add(
         SelectionArea(
+          // Web: right-click / long-press on a message body opens the
+          // MessageItem context menu, never a separate text-selection menu.
+          contextMenuBuilder: (_, _) => const SizedBox.shrink(),
           child: MarkdownBody(
             builders: {'a': _MessageLinkBuilder(onLink)},
             paddingBuilders: MessageContentRecipe(

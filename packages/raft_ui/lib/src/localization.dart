@@ -22,6 +22,7 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
+  "React with {emoji}": "用 {emoji} 回应",
   "#{channel} will become read-only": "#{channel} 即将变为只读",
   "#{channel} is read-only": "#{channel} 已变为只读",
   "Notification center ({count} active)": "通知中心（{count} 条待处理）",

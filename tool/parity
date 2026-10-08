@@ -173,10 +173,29 @@ const webFontRoot = resolve(packageRoot, "../web/src/assets/fonts");"""),
      """          capturedAt: new Date().toISOString(),
           fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",
           fontFaces: (globalThis as any).__parityFontFaces,
-          platformFonts: parityPlatformFonts,"""),
+          platformFonts: parityPlatformFonts,
+          textRendering: {
+            chromiumArgs: JSON.parse(process.env.PARITY_CHROMIUM_ARGS || "[]"),
+            textRunWidths: await parityTextRunWidths(page, selector),
+          },"""),
 ]
 
 SPEC_APPENDIX = r"""
+
+// raft-flutter parity: unrounded widths of the first text-bearing elements in
+// the capture target (evidence for subpixel glyph positioning).
+async function parityTextRunWidths(page: Page, selector: string) {
+  return page.evaluate((sel) => {
+    const out: Array<{ text: string; width: number }> = [];
+    for (const element of [...document.querySelectorAll(`${sel}, ${sel} *`)]) {
+      if (out.length >= 60) break;
+      const own = [...element.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent || "").join("").trim();
+      if (!own) continue;
+      out.push({ text: own.slice(0, 40), width: Math.round(element.getBoundingClientRect().width * 10000) / 10000 });
+    }
+    return out;
+  }, selector);
+}
 
 // raft-flutter parity: the faces Chromium actually used to draw the capture's
 // text (CDP CSS.getPlatformFontsForNode), glyph counts summed per family.
@@ -229,6 +248,10 @@ def prepare_react_provider():
         ('  testDir: "../visual-testing/tests",',
          f'  testDir: {json.dumps(str(REACT_GEN))},\n  testMatch: "react-provider.spec.ts",\n'
          f'  outputDir: {json.dumps(str(OUT / "playwright-test-results"))},'),
+        ('    deviceScaleFactor: 3,',
+         '    deviceScaleFactor: 3,\n'
+         '    // raft-flutter parity: Chromium text rasterization flags (see docs/parity.md "Text rendering").\n'
+         '    launchOptions: { args: JSON.parse(process.env.PARITY_CHROMIUM_ARGS || "[]") },'),
         ('    url: `http://127.0.0.1:${port}`,',
          f'    cwd: {json.dumps(str(web))},\n    url: `http://127.0.0.1:${{port}}`,'),
     ]:
@@ -237,7 +260,18 @@ def prepare_react_provider():
     return REACT_GEN / 'playwright.visual-testing.config.ts'
 
 
-def run_react_production_fonts(case_ids, log):
+# The official cases are mobile (390x844 @3x) and their production target is
+# Android, where Chrome draws text with grayscale AA and subpixel glyph
+# positioning. Desktop Linux Chromium defaults to LCD subpixel AA and
+# whole-pixel advances, so the React provider emulates Android unless asked
+# for the desktop default.
+CHROMIUM_TEXT_ARGS = {
+    'android': ['--disable-lcd-text', '--font-render-hinting=none'],
+    'desktop': [],
+}
+
+
+def run_react_production_fonts(case_ids, log, text_render='android'):
     """Same env and Playwright invocation as the CLI's runReactProvider, with
     the generated spec/config."""
     cmd_fonts(argparse.Namespace(refresh=False))
@@ -251,6 +285,7 @@ def run_react_production_fonts(case_ids, log):
         'SLOCK_ANDROID_REPO_ROOT': str(OUT),
         'PARITY_VT_ROOT': str(VT),
         'PARITY_FONT_CACHE': str(FONT_CACHE),
+        'PARITY_CHROMIUM_ARGS': json.dumps(CHROMIUM_TEXT_ARGS[text_render]),
     })
     cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
     print('+', ' '.join(cmd), flush=True)
@@ -260,7 +295,7 @@ def run_react_production_fonts(case_ids, log):
         sys.exit(f'react provider (production fonts) failed (exit {r.returncode}); see {log}')
 
 
-def react_capture(cases, refresh, fonts='production'):
+def react_capture(cases, refresh, fonts='production', text_render='android'):
     react_dir = RESULTS / 'react'
     need = [c['id'] for c in cases
             if refresh or not (react_dir / f"{c['id']}.png").is_file()]
@@ -275,9 +310,10 @@ def react_capture(cases, refresh, fonts='production'):
         # The unmodified official provider (Space Grotesk stub for raft-ui's URL).
         cli('capture', '--providers', 'react', '--webPort', WEB_PORT, '--case', ','.join(need), log=log)
     else:
-        run_react_production_fonts(need, log)
+        run_react_production_fonts(need, log, text_render)
     (OUT / 'react-source.json').write_text(json.dumps({
         'fonts': fonts,
+        'textRender': text_render if fonts == 'production' else 'upstream-default',
         'raftSource': str(RAFT_SOURCE),
         'commit': git(RAFT_SOURCE, 'rev-parse', 'HEAD'),
         'dirtyFiles': git(RAFT_SOURCE, 'status', '--short').splitlines(),
@@ -427,7 +463,7 @@ def cmd_run(a):
     chosen = select(cases, a.cases)
     if not chosen:
         sys.exit(f'no default cases match {a.cases!r}')
-    react_capture(chosen, a.refresh_react, a.react_fonts)
+    react_capture(chosen, a.refresh_react, a.react_fonts, a.react_text_render)
     if not a.skip_flutter:
         flutter_capture(chosen, a.cases, a.shards)
     log = OUT / 'cli.log'
@@ -530,6 +566,23 @@ def cmd_fonts(a):
     return m
 
 
+def cmd_render_evidence(a):
+    """Measure LCD-AA pixels, text run widths and loaded faces for the
+    desktop-default vs Android-emulating Chromium text flags."""
+    out = OUT / 'render-evidence'
+    out.mkdir(parents=True, exist_ok=True)
+    env = node_env()
+    env.update({'PARITY_VT_ROOT': str(VT), 'PARITY_FONT_CACHE': str(FONT_CACHE),
+                'PARITY_EVIDENCE_DIR': str(out),
+                'PARITY_EVIDENCE_MODES': json.dumps(CHROMIUM_TEXT_ARGS)})
+    r = subprocess.run(['node', str(root / 'tool/parity-render-evidence.cjs')], cwd=RAFT_SOURCE / 'packages/web',
+                       env=env, capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(r.stderr)
+    (out / 'evidence.json').write_text(r.stdout)
+    print(r.stdout)
+
+
 def cmd_publish(a):
     if not (SITE / 'index.html').is_file():
         sys.exit('no site; run `tool/parity run` first')
@@ -598,6 +651,8 @@ def main():
     r.add_argument('--react-fonts', choices=['production', 'upstream'], default='production',
                    help='production: serve the real Google Fonts response for raft-ui (default); '
                         'upstream: the official spec unmodified (Space Grotesk stub)')
+    r.add_argument('--react-text-render', choices=['android', 'desktop'], default='android',
+                   help='android: grayscale AA + subpixel positioning (default); desktop: Linux Chromium default')
     r.add_argument('--skip-flutter', action='store_true', help='reuse existing Flutter captures')
     r.set_defaults(fn=cmd_run)
     pub = sub.add_parser('publish')
@@ -610,6 +665,8 @@ def main():
     f = sub.add_parser('fonts', help='verify (or --refresh) the production raft-ui font cache')
     f.add_argument('--refresh', action='store_true')
     f.set_defaults(fn=cmd_fonts)
+    ev = sub.add_parser('render-evidence', help='LCD/advance/font evidence for the Chromium text flags')
+    ev.set_defaults(fn=cmd_render_evidence)
     s = sub.add_parser('summary')
     s.set_defaults(fn=lambda a: summarize())
     a = p.parse_args()

@@ -11,8 +11,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant, RaftButtonRecipeSize, RaftButtonRecipeVariant;
 
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
@@ -335,24 +333,27 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     final buttons = <Widget>[
       if (!external) ...[
         if (widget.actions.onMigrate != null)
-          RaftRecipeTextButton(
+          RaftButton(
             label: raftText(context, 'Move to another computer'),
             glyph: RaftGlyph.moveRight,
+            tone: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.md,
             expand: true,
             onPressed: widget.busy ? null : widget.actions.onMigrate,
           ),
         if (widget.canControlRuntime) ...[
-          RaftRecipeTextButton(
+          RaftButton(
             label: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
             glyph: online ? RaftGlyph.square : RaftGlyph.play,
+            tone: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.md,
             expand: true,
             onPressed: widget.busy ? null : widget.actions.onStartStop,
           ),
-          RaftRecipeTextButton(
+          RaftButton(
             label: raftText(context, 'Restart / Reset'),
             glyph: RaftGlyph.rotateCcw,
+            tone: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.md,
             expand: true,
             onPressed: widget.busy ? null : widget.actions.onRestartReset,
@@ -360,10 +361,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         ],
       ],
       if (widget.actions.onDelete != null)
-        RaftRecipeTextButton(
+        RaftButton(
           label: raftText(context, 'Delete Agent'),
           glyph: RaftGlyph.trash2,
-          variant: RaftButtonRecipeVariant.danger,
+          tone: RaftButtonRecipeVariant.danger,
           size: RaftButtonRecipeSize.md,
           expand: true,
           onPressed: widget.busy ? null : widget.actions.onDelete,
@@ -543,15 +544,23 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                 children: [
                   for (final c in created)
                     RaftAvatarListRow(
+                      avatar: RaftAvatarSlot(
+                        name: '${c['displayName'] ?? c['name']}',
+                        avatarUrl: c['avatarUrl'] as String?,
+                        slot: RaftAvatarSlotContext.surfaceList,
+                      ),
                       name: '${c['displayName'] ?? c['name']}',
-                      avatarUrl: c['avatarUrl'] as String?,
                       subtitle:
                           sourceRuntimeDisplayNames['${c['runtime']}'] ??
                           '${c['runtime'] ?? ''}',
-                      dot: raftActivityDotColor(
-                        t,
-                        c['status'] == 'active' ? 'online' : 'offline',
-                      ),
+                      rightContent: [
+                        RaftActivityDot(
+                          color: raftActivityDotColor(
+                            t,
+                            c['status'] == 'active' ? 'online' : 'offline',
+                          ),
+                        ),
+                      ],
                     ),
                 ],
               ),
