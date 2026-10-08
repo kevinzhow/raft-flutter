@@ -216,9 +216,9 @@ void main() {
           family == RaftFamily.brutal
               ? const Color(0xfffe7da8)
               : dark
-              // foundation.css elegant.dark --accent-hover:
-              // color-mix(in srgb-linear, accent-soft 78%, accent-strong).
-              ? const Color.fromRGBO(244, 146, 177, .3448)
+              // foundation.css elegant.dark --accent-hover (color-mix(in
+              // srgb-linear, accent-soft 78%, accent-strong)), Chrome-composite fit.
+              ? RaftSemanticColors.elegantDark.accentHover
               : const Color(0xfff8cad8),
         );
         final gesture = await tester.startGesture(tester.getCenter(target));

@@ -1,7 +1,9 @@
 """tool/gen-tokens: colour science, CSS resolution, oracle parity, freshness."""
 import importlib.machinery
 import importlib.util
+import json
 import pathlib
+import re
 import sys
 import unittest
 
@@ -12,14 +14,14 @@ gen = importlib.util.module_from_spec(_spec)
 sys.modules['gen_tokens'] = gen  # dataclasses resolve their module by name
 _loader.exec_module(gen)
 
-# Oracle tokens whose 8-bit value differs by exactly 1 from round(exact sRGB).
-# All three exact channel values sit within 0.02 of a .5 rounding boundary, so
-# Chrome's float32 skcms transfer-function approximation lands on the other
-# side. Listed with the exact value so a real regression cannot hide here.
-NEAR_TIE_EXCEPTIONS = {
-    ('elegantLight', 'warning-soft'): 222.484,   # oklch(0.95 0.03 44.33) blue
-    ('elegantLight', 'info-strong'): 9.501,      # oklch(0.441 0.078 221.2) red
-    ('elegantDark', 'line-strong'): 238.503,     # oklch(0.95 0.003 106.42) red
+# Translucent swatches whose Chrome bytes no non-negative Flutter source-over
+# reproduces (Chrome truncates the destination term; the dark accent edge is
+# out of gamut). Mirrors _fitExceptions in packages/raft_ui/test/design_tokens_test.dart.
+FIT_EXCEPTIONS = {
+    ('elegantDark', 'layer-backdrop', 'canvas'),
+    ('elegantDark', 'field-inset-top', 'canvas'),
+    ('elegantDark', 'button-accent-edge', 'canvas'),
+    ('elegantDark', 'button-accent-edge', 'black'),
 }
 
 
@@ -41,8 +43,9 @@ class ColourScience(unittest.TestCase):
 
     def test_round_trip_through_oklab(self):
         lab = gen.linear_srgb_to_oklab(gen.oklch_to_linear_srgb(0.5, 0.1, 40))
-        self.assertAlmostEqual(lab[0], 0.5, places=9)
-        self.assertAlmostEqual((lab[1] ** 2 + lab[2] ** 2) ** 0.5, 0.1, places=9)
+        # float32 pipeline: ~1e-7 round-trip error.
+        self.assertAlmostEqual(lab[0], 0.5, places=6)
+        self.assertAlmostEqual((lab[1] ** 2 + lab[2] ** 2) ** 0.5, 0.1, places=6)
 
     def test_out_of_gamut_clips_per_channel_like_chrome(self):
         c = gen.parse_color('oklch(0.44 0.09 91.39)')  # --primary-strong
@@ -118,26 +121,88 @@ class CascadeResolution(unittest.TestCase):
         self.assertEqual(scope.resolve('--card-title-line-height'), '22px')
 
 
-class OracleParity(unittest.TestCase):
-    def test_generated_matches_browser_oracle(self):
+class ChromeOracle(unittest.TestCase):
+    """tool/design-source/chrome-oracle.json: bytes painted by the parity Chromium."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.m = gen.Model()
+        cls.oracle = cls.m.oracle
+
+    def test_oracle_matches_sources_and_browser(self):
+        self.assertEqual(self.oracle['chromium'], '147.0.7727.15')
+        self.assertEqual(self.oracle['args'], gen.CHROMIUM_ARGS)
+        manifest = json.loads((gen.SRC / 'manifest.json').read_text())['files']
+        for key, rel in gen.SOURCES.items():
+            self.assertEqual(self.oracle['sources'][key], manifest[rel]['sha256'], 're-run --sample-chrome')
+
+    def test_opaque_tokens_equal_chrome_bytes(self):
+        compared = 0
+        for theme, samples in self.oracle['themes'].items():
+            for key, sample in samples.items():
+                c = self.m.color(theme, '--' + key)
+                if c.alpha < 1:
+                    continue
+                with self.subTest(theme=theme, token=key):
+                    self.assertEqual(list(c.bytes()), sample['white'])
+                compared += 1
+        self.assertEqual(compared, 657)
+
+    def test_spec_pipeline_is_off_by_one_on_known_tokens(self):
+        # The rule that makes the difference: without the Chromium D50 path the
+        # CSS sample-code maths rounds these to the neighbouring byte.
+        old = gen.PIPELINE
+        try:
+            gen.PIPELINE = 'spec'
+            self.assertEqual(gen.parse_color('oklch(0.714 0.176 153.079)').bytes(), (32, 193, 107))
+        finally:
+            gen.PIPELINE = old
+        self.assertEqual(gen.parse_color('oklch(0.714 0.176 153.079)').bytes(), (31, 193, 107))
+
+    def test_translucent_fits_composite_to_chrome_bytes(self):
+        misses, compared = set(), 0
+        for theme, samples in self.oracle['themes'].items():
+            backs = self.m.backdrop_bytes(theme)
+            for key, sample in samples.items():
+                fit = self.m.chrome_fit(theme, '--' + key)
+                if fit is None:
+                    continue
+                a, chans = fit
+                for b in gen.FIT_BACKDROPS:
+                    compared += 1
+                    got = [gen.flutter_over(chans[i], a, backs[b][i]) for i in range(3)]
+                    if got != sample[b]:
+                        misses.add((theme, key, b))
+        self.assertEqual(compared, 216)
+        self.assertEqual(misses, FIT_EXCEPTIONS)
+
+    def test_recipe_opaque_literals_equal_chrome_bytes(self):
+        literals = self.oracle['literals']
+        compared = 0
+        for path in sorted(gen.RECIPES_DIR.glob('*.g.dart')):
+            for argb, src in re.findall(r"CssColor\(0x([0-9A-Fa-f]{8}), '([^']+)'", path.read_text()):
+                v = int(argb, 16)
+                if v >> 24 != 255:
+                    continue
+                with self.subTest(literal=src):
+                    self.assertEqual([(v >> 16) & 255, (v >> 8) & 255, v & 255], literals[src]['brutal']['white'])
+                compared += 1
+        self.assertGreaterEqual(compared, 77)
+
+
+class LegacyReadbackOracle(unittest.TestCase):
+    """docs/theme-tokens/*.json: earlier canvas getImageData() readbacks
+    (premultiplied 8-bit storage, simulated before comparing)."""
+
+    def test_generated_matches_readback_oracle(self):
         rows = gen.oracle_report()
         self.assertFalse([r for r in rows if r.get('status') == 'missing'])
         compared = [r for r in rows if 'rawDelta' in r]
         self.assertEqual(len(compared), 78)
         for r in compared:
-            key = (r['theme'], r['token'])
-            with self.subTest(token=key):
+            with self.subTest(token=(r['theme'], r['token'])):
                 self.assertEqual(r['alphaByteDelta'], 0)
-                # Translucent oracle entries are canvas readbacks (premultiplied
-                # 8-bit); compare after simulating that storage.
-                self.assertLessEqual(r['readbackDelta'], 1)
-                if r['readbackDelta'] == 1:
-                    self.assertIn(key, NEAR_TIE_EXCEPTIONS)
-                    exact = NEAR_TIE_EXCEPTIONS[key]
-                    self.assertIn(exact, r['srgb255'])
-                    self.assertLess(abs(exact % 1 - 0.5), 0.02)
-                if r['alpha'] == 1:
-                    self.assertEqual(r['rawDelta'], r['readbackDelta'])
+                self.assertEqual(r['readbackDelta'], 0)
 
 
 class Freshness(unittest.TestCase):
@@ -151,6 +216,7 @@ class Freshness(unittest.TestCase):
                 self.assertEqual((gen.OUT / name).read_text(), text, 'run tool/gen-tokens')
         on_disk = {p.name for p in gen.OUT.glob('*.g.dart')}
         self.assertEqual(on_disk, set(files))
+        self.assertEqual(gen.LITERAL_FITS.read_text(), gen.literal_fits(gen.Model()), 'run tool/gen-tokens')
 
 
 if __name__ == '__main__':
