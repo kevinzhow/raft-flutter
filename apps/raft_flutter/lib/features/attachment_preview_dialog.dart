@@ -9,6 +9,7 @@ import '../data/workspace_controller.dart';
 import '../platform/attachment_player.dart';
 import '../platform/attachment_preview_files.dart';
 import '../platform/native_sharing.dart';
+import 'attachment_comments_view.dart';
 
 String? attachmentPreviewKind(Map<String, dynamic> metadata) {
   final name = '${metadata['filename'] ?? ''}'.toLowerCase();
@@ -373,6 +374,26 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
                     : null,
               ),
             ],
+          ),
+        // Web suppresses attachment comments for PDF and image surfaces.
+        if (current &&
+            kind != 'pdf' &&
+            widget.metadata['id'] is String)
+          RaftTextButton(
+            label: 'Comments',
+            glyph: RaftGlyph.messageSquare,
+            variant: RaftControlVariant.ghost,
+            onPressed: () => Navigator.of(context).push(
+              PageRouteBuilder<void>(
+                pageBuilder: (_, _, _) => RaftAttachmentCommentsPage(
+                  child: AttachmentCommentsView(
+                    controller: widget.controller,
+                    attachmentId: widget.metadata['id'] as String,
+                    filename: '${widget.metadata['filename'] ?? ''}',
+                  ),
+                ),
+              ),
+            ),
           ),
         RaftTextButton(
           label: 'Download original',

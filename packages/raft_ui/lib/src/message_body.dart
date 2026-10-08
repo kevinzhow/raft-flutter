@@ -207,7 +207,11 @@ class RaftMessageBody extends StatelessWidget {
     this.exportMode = false,
     this.referenceAppearance,
     this.knownTaskNumber,
+    this.lineHeight,
   });
+
+  /// Optional prose line height (px) for non-message surfaces.
+  final double? lineHeight;
   final String content;
 
   /// Chip/text treatment for an identity-backed reference href (Web
@@ -255,6 +259,7 @@ class RaftMessageBody extends StatelessWidget {
             paddingBuilders: MessageContentRecipe(
               t,
               fontSize: fontSize,
+              lineHeight: lineHeight,
               document: documentMode,
               mountedMessage: mountedMessage,
               foreground: foregroundColor,
@@ -274,6 +279,7 @@ class RaftMessageBody extends StatelessWidget {
               style: MessageContentRecipe(
                 t,
                 fontSize: fontSize,
+                lineHeight: lineHeight,
                 document: documentMode,
                 mountedMessage: mountedMessage,
                 foreground: foregroundColor,
@@ -282,6 +288,7 @@ class RaftMessageBody extends StatelessWidget {
             styleSheet: MessageContentRecipe(
               t,
               fontSize: fontSize,
+              lineHeight: lineHeight,
               document: documentMode,
               mountedMessage: mountedMessage,
               foreground: foregroundColor,

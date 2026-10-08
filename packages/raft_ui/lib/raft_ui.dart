@@ -25,6 +25,7 @@ export 'src/thread_replies.dart';
 export 'src/message_context_menu.dart';
 export 'src/composer_pending_mentions.dart';
 export 'src/forward_composer.dart';
+export 'src/attachment_comments.dart';
 
 export 'src/design_primitives.dart';
 export 'src/recipe_surface.dart';

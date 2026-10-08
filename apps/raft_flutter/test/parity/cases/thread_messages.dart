@@ -28,6 +28,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/attachment_comments_view.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/forward_messages_dialog.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -451,6 +454,7 @@ final Map<String, ParityCase> threadMessageCases = {
   'components.thread.message-menu.task': _menu,
   'components.thread.message-share.selection': _shareSelection,
   'components.thread.forward-modal': _forward,
+  'components.thread.comment-anchor': _commentAnchor,
   'components.thread.message-row.rich-content': _rowCase(
     notes: _noRepliesChip,
     stage: (ctx) => ChatStage(
@@ -754,13 +758,72 @@ ParityCase _mdCase({
   ),
 );
 
-final Map<String, ParityUncovered> threadMessageUncovered = {
-  'components.thread.comment-anchor': const ParityUncovered(
-    ParityGap.noFlutterSurface,
-    'React AttachmentCommentsPanel (attachment comments list with md-section '
-    'anchor chips + pending-anchor composer). raft_flutter has no attachment '
-    'comments surface: no /attachments/<id>/comments client call, no '
-    'comments panel/dialog in lib/features or packages/raft_ui (only '
-    'source_feedback_view comments, a different feature).',
-  ),
-};
+final Map<String, ParityUncovered> threadMessageUncovered = {};
+
+/// VisualTestingCases.tsx thread-comment-anchor: AttachmentCommentsPanel for
+/// att-anchor-1 (390x844) with an md-section pending anchor; the comments
+/// come from react-provider.spec's /attachments/att-anchor-1/comments stub.
+final ParityCase _commentAnchor = ParityCase(
+  widgets: const [
+    'raft_flutter:AttachmentCommentsView',
+    'raft_ui:RaftAttachmentCommentsPanel',
+    'raft_ui:RaftCommentAnchorChip',
+    'raft_ui:RaftComposer(compact)',
+  ],
+  notes:
+      'Same comment payload as the React spec stub, served by the canned client.',
+  build: (ctx) {
+    final ids = ParityIdentities(ctx);
+    final client = ParityRaftClient({
+      'GET /attachments/att-anchor-1/comments': (_) => {
+        'comments': [
+          {
+            'id': 'comment-anchor-1',
+            'channelId': 'channel-anchor-1',
+            'senderType': 'user',
+            'senderId': 'user-anchor-2',
+            'senderName': 'Artea',
+            'content':
+                'Please keep the tag inset consistent with the field below.',
+            'createdAt': '2026-06-25T10:32:00.000Z',
+            'reactions': [],
+            'anchor': {
+              'type': 'md-section',
+              'data': {
+                'headingId': 'agent-tabs-full-page-review',
+                'headingTitle': 'agent-tabs-full-page-review.mp4',
+              },
+            },
+            'senderAvatarUrl': null,
+            'senderGravatarHash': null,
+          },
+        ],
+        'threadChannelId': 'channel-anchor-1',
+        'viewer': {'canComment': true},
+      },
+    }, user: ids.user);
+    final w = WorkspaceController(client)
+      ..server = RaftRecord(ids.server)
+      ..channels = [RaftChannel(ids.channel('design'))];
+    return Scaffold(
+      body: ctx.target(
+        SizedBox(
+          width: 390,
+          height: 844,
+          child: AttachmentCommentsView(
+            controller: w,
+            attachmentId: 'att-anchor-1',
+            filename: 'agent-tabs-full-page-review.mp4',
+            pendingAnchor: const {
+              'type': 'md-section',
+              'data': {
+                'headingId': 'agent-tabs-full-page-review',
+                'headingTitle': 'agent-tabs-full-page-review.mp4',
+              },
+            },
+          ),
+        ),
+      ),
+    );
+  },
+);

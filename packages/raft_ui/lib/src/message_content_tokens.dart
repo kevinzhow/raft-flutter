@@ -46,7 +46,11 @@ class MessageContentRecipe {
     this.document = false,
     this.mountedMessage = false,
     this.foreground,
+    this.lineHeight,
   }) : semantic = MessageContentSemantic(tokens);
+
+  /// Caller line-height override (e.g. `leading-relaxed` comment bodies).
+  final double? lineHeight;
   final RaftTokens tokens;
   final double fontSize;
   final bool document;
@@ -59,7 +63,7 @@ class MessageContentRecipe {
       RaftTypography.body(
         tokens,
         size: fontSize,
-        line: document
+        line: lineHeight ?? (document
             ? 24
             : mountedMessage
             ? switch (fontSize) {
@@ -67,7 +71,7 @@ class MessageContentRecipe {
                 16 => 24.0,
                 _ => fontSize * 20 / 14,
               }
-            : fontSize * 20 / 14,
+            : fontSize * 20 / 14),
         // raft-ui messageItem `body`: brutal `text-sm text-black`.
         color:
             foreground ??
