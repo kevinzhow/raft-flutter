@@ -239,6 +239,44 @@ def cmd_run(a):
     return summary
 
 
+def cmd_probe(a):
+    """Capture a few Flutter cases into a private dir and score them against
+    the cached React captures with the official image-diff script. Does not
+    touch build/parity results, the site or the summary."""
+    out = pathlib.Path(a.out)
+    results = out / 'visual-testing-results'
+    android = results / 'android'
+    shutil.rmtree(android, ignore_errors=True)
+    env = {**os.environ, 'TZ': 'Asia/Shanghai', 'PARITY_SHARED_DIR': str(SHARED),
+           'PARITY_RESULT_ROOT': str(results), 'PARITY_CASES': a.cases}
+    r = subprocess.run([str(root / 'tool/flutter'), 'test', 'test/parity/parity_capture_test.dart',
+                        '--no-pub', '--reporter', 'expanded'],
+                       cwd=root / 'apps/raft_flutter', env=env, capture_output=True, text=True)
+    (out / 'flutter.log').write_text(r.stdout + r.stderr)
+    if r.returncode != 0:
+        print(f'flutter test failed (exit {r.returncode}); log {out / "flutter.log"}')
+        for line in (r.stdout + r.stderr).splitlines():
+            if 'EXCEPTION' in line or 'Error' in line or 'threw' in line or ': Error:' in line:
+                print('  ' + line[:300])
+    for c in select(manifest_cases(), a.cases):
+        cid = c['id']
+        flutter_png = android / f'{cid}.png'
+        react_png = RESULTS / 'react' / f'{cid}.png'
+        if not flutter_png.is_file():
+            print(f'{cid}: no flutter capture')
+            continue
+        side, metrics = out / 'diff' / f'{cid}.side-by-side.png', out / 'diff' / f'{cid}.metrics.json'
+        side.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(['node', str(VT / 'src/sharp-image-diff.mjs'), str(react_png), str(flutter_png),
+                        str(side), str(metrics), cid, cid, 'React', 'Android'],
+                       cwd=VT, env=node_env(), check=True, capture_output=True)
+        m = json.loads(metrics.read_text())
+        print(f"{cid}: pixelPerfect={m.get('pixelPerfectSimilarity'):.4f} rgb={m.get('rgbSimilarity', 0):.4f} "
+              f"react={m.get('baselineWidth')}x{m.get('baselineHeight')} "
+              f"flutter={m.get('currentWidth')}x{m.get('currentHeight')}\n"
+              f"  react {react_png}\n  flutter {flutter_png}\n  side-by-side {side}")
+
+
 def cmd_publish(a):
     if not (SITE / 'index.html').is_file():
         sys.exit('no site; run `tool/parity run` first')
@@ -309,6 +347,10 @@ def main():
     pub = sub.add_parser('publish')
     pub.add_argument('--no-verify', action='store_true')
     pub.set_defaults(fn=cmd_publish)
+    pr = sub.add_parser('probe', help='capture + score a few cases privately (for builder authoring)')
+    pr.add_argument('--cases', required=True)
+    pr.add_argument('--out', default=f'/tmp/parity-probe-{os.getpid()}')
+    pr.set_defaults(fn=cmd_probe)
     s = sub.add_parser('summary')
     s.set_defaults(fn=lambda a: summarize())
     a = p.parse_args()
