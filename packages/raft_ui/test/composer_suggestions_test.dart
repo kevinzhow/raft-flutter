@@ -44,13 +44,18 @@ void main() {
           MaterialApp(
             theme: raftTheme(family, dark: dark),
             home: Scaffold(
-              body: RaftComposer(
-                suggestions: choices,
-                onSend: (_) async => false,
-                onSendWithMentions: (_, mentions) async {
-                  sends.add(mentions);
-                  return success;
-                },
+              body: Column(
+                children: [
+                  const Spacer(),
+                  RaftComposer(
+                    suggestions: choices,
+                    onSend: (_) async => false,
+                    onSendWithMentions: (_, mentions) async {
+                      sends.add(mentions);
+                      return success;
+                    },
+                  ),
+                ],
               ),
             ),
           ),
@@ -105,14 +110,19 @@ void main() {
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),
           home: Scaffold(
-            body: RaftComposer(
-              suggestions: choices,
-              onSend: (_) async => false,
-              onSendWithMentions: (text, mentions) async {
-                sent = text;
-                payload = mentions;
-                return false;
-              },
+            body: Column(
+              children: [
+                const Spacer(),
+                RaftComposer(
+                  suggestions: choices,
+                  onSend: (_) async => false,
+                  onSendWithMentions: (text, mentions) async {
+                    sent = text;
+                    payload = mentions;
+                    return false;
+                  },
+                ),
+              ],
             ),
           ),
         ),

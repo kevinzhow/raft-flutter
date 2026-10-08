@@ -14,7 +14,8 @@ dependencies:
   raft_client: ^0.1.0
   raft_sync: ^0.1.0
   flutter_riverpod: ^3.4.3
-  flutter_chat_ui: ^2.12.0
+  flutter_chat_ui:
+    path: ../../packages/flutter_chat_ui
   flutter_chat_core: ^2.9.0
   flutter_secure_storage: ^11.2.0
   shared_preferences: ^2.5.4
@@ -30,6 +31,7 @@ dependencies:
   path_provider: ^2.1.6
   path: ^1.9.1
   intl: ^0.20.3
+  timezone: ^0.11.1
   html: ^0.15.6
   media_kit: ^1.2.6
   media_kit_video: ^2.0.1

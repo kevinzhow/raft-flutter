@@ -80,6 +80,7 @@ Widget _host(
   InitialScrollToEndMode mode, {
   required bool rich,
   double? cacheExtent,
+  bool sourceComposition = false,
 }) => MaterialApp(
   theme: raftTheme(RaftFamily.elegant),
   home: Scaffold(
@@ -130,6 +131,16 @@ Widget _host(
               enabled: mode == InitialScrollToEndMode.jump,
               child: ChatAnimatedList(
                 itemBuilder: item,
+                topPadding: sourceComposition ? 0 : 8,
+                bottomPadding: sourceComposition ? 0 : 20,
+                handleSafeArea: !sourceComposition,
+                messageSliverWrapper: sourceComposition
+                    ? (context, messageSliver) => RaftTimelineCompositionSliver(
+                        anchor: RaftTimelineSparseAnchor.bottom,
+                        messagesSliver: messageSliver,
+                        footer: const RaftTimelineFooter(),
+                      )
+                    : null,
                 scrollController: viewport,
                 initialScrollToEndMode: InitialScrollToEndMode.none,
                 cacheExtent: cacheExtent,
@@ -191,118 +202,122 @@ Future<List<Map<String, Object?>>> _settle(
 }
 
 void main() {
-  for (final (mode, rich, rotation, largeCache) in [
-    (InitialScrollToEndMode.jump, false, 0, false),
-    (InitialScrollToEndMode.jump, false, 2, false),
-    (InitialScrollToEndMode.jump, false, 4, false),
-    (InitialScrollToEndMode.none, false, 0, false),
-    (InitialScrollToEndMode.jump, true, 0, false),
-    (InitialScrollToEndMode.none, true, 0, false),
-    // Diagnostic control only: never use expanded cache as the product repair.
-    (InitialScrollToEndMode.jump, false, 0, true),
-  ]) {
-    testWidgets(
-      'actual mixed ChatAnimatedList settles $mode rich=$rich rotation=$rotation largeCache=$largeCache',
-      (tester) async {
-        final original = _messages(rotation);
-        final chat = core.InMemoryChatController(messages: original);
-        final viewport = ScrollController();
-        final stats = _Mounts();
-        await tester.pumpWidget(
-          _host(
-            chat,
-            viewport,
-            stats,
-            mode,
-            rich: rich,
-            cacheExtent: largeCache ? 100000 : null,
-          ),
-        );
-        // Record the initial frame without failing early: the jump/none traces
-        // must still distinguish settlement from the separate first-layout rule.
-        final firstClipSizes = find
-            .byType(RaftCollapsible)
-            .evaluate()
-            .map(
-              (element) => tester
-                  .getSize(
-                    find
-                        .descendant(
-                          of: find.byWidget(element.widget),
-                          matching: find.byType(ClipRect),
-                        )
-                        .first,
-                  )
-                  .height,
-            )
-            .toList();
-        await _settle(tester, viewport, stats);
-        expect(
-          chat.messages.map((message) => message.id),
-          original.map((message) => message.id),
-        );
-        expect(viewport.position.pixels.isFinite, isTrue);
-        expect(
-          viewport.position.pixels,
-          inInclusiveRange(
-            viewport.position.minScrollExtent,
-            viewport.position.maxScrollExtent,
-          ),
-        );
-        if (mode == InitialScrollToEndMode.jump) {
-          expect(find.text('Fixture row-47').hitTestable(), findsOneWidget);
-        } else {
-          expect(viewport.position.pixels, 0);
-          expect(find.text('Fixture row-0').hitTestable(), findsOneWidget);
-        }
-        // A successful fixed-content settlement is not enough: source pending
-        // content is capped during the actual first layout as well.
-        expect(firstClipSizes, isNotEmpty);
-        expect(
-          firstClipSizes.every((height) => height <= 320),
-          isTrue,
-          reason: 'Initial clip sizes: $firstClipSizes',
-        );
-        if (!largeCache) {
-          final before = Set<String>.of(stats.live);
-          viewport.jumpTo(
-            mode == InitialScrollToEndMode.jump
-                ? 0
-                : viewport.position.maxScrollExtent,
+  for (final sourceComposition in [false, true]) {
+    for (final (mode, rich, rotation, largeCache) in [
+      (InitialScrollToEndMode.jump, false, 0, false),
+      (InitialScrollToEndMode.jump, false, 2, false),
+      (InitialScrollToEndMode.jump, false, 4, false),
+      (InitialScrollToEndMode.none, false, 0, false),
+      (InitialScrollToEndMode.jump, true, 0, false),
+      (InitialScrollToEndMode.none, true, 0, false),
+      // Diagnostic control only: never use expanded cache as the product repair.
+      (InitialScrollToEndMode.jump, false, 0, true),
+    ]) {
+      testWidgets(
+        'actual mixed ChatAnimatedList settles $mode rich=$rich rotation=$rotation largeCache=$largeCache composition=$sourceComposition',
+        (tester) async {
+          final original = _messages(rotation);
+          final chat = core.InMemoryChatController(messages: original);
+          final viewport = ScrollController();
+          final stats = _Mounts();
+          await tester.pumpWidget(
+            _host(
+              chat,
+              viewport,
+              stats,
+              mode,
+              rich: rich,
+              sourceComposition: sourceComposition,
+              cacheExtent: largeCache ? 100000 : null,
+            ),
           );
-          await _settle(tester, viewport, stats);
-          expect(stats.disposed, greaterThan(0));
-          expect(
-            stats.live.difference(before),
-            isNotEmpty,
-            reason: 'Must actually recycle multiple rows, not retain one child',
-          );
-          final scrollable = find
-              .descendant(
-                of: find.byType(ChatAnimatedList),
-                matching: find.byType(Scrollable),
+          // Record the initial frame without failing early: the jump/none traces
+          // must still distinguish settlement from the separate first-layout rule.
+          final firstClipSizes = find
+              .byType(RaftCollapsible)
+              .evaluate()
+              .map(
+                (element) => tester
+                    .getSize(
+                      find
+                          .descendant(
+                            of: find.byWidget(element.widget),
+                            matching: find.byType(ClipRect),
+                          )
+                          .first,
+                    )
+                    .height,
               )
-              .first;
-          await tester.scrollUntilVisible(
-            find.text('Fixture row-47'),
-            300,
-            scrollable: scrollable,
-            maxScrolls: 100,
-          );
+              .toList();
           await _settle(tester, viewport, stats);
-          expect(find.text('Fixture row-47').hitTestable(), findsOneWidget);
           expect(
             chat.messages.map((message) => message.id),
             original.map((message) => message.id),
           );
-        }
-        await tester.pumpWidget(const SizedBox());
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(stats.live, isEmpty);
-        viewport.dispose();
-        chat.dispose();
-        expect(tester.takeException(), isNull);
-      },
-    );
+          expect(viewport.position.pixels.isFinite, isTrue);
+          expect(
+            viewport.position.pixels,
+            inInclusiveRange(
+              viewport.position.minScrollExtent,
+              viewport.position.maxScrollExtent,
+            ),
+          );
+          if (mode == InitialScrollToEndMode.jump) {
+            expect(find.text('Fixture row-47').hitTestable(), findsOneWidget);
+          } else {
+            expect(viewport.position.pixels, 0);
+            expect(find.text('Fixture row-0').hitTestable(), findsOneWidget);
+          }
+          // A successful fixed-content settlement is not enough: source pending
+          // content is capped during the actual first layout as well.
+          expect(firstClipSizes, isNotEmpty);
+          expect(
+            firstClipSizes.every((height) => height <= 320),
+            isTrue,
+            reason: 'Initial clip sizes: $firstClipSizes',
+          );
+          if (!largeCache) {
+            final before = Set<String>.of(stats.live);
+            viewport.jumpTo(
+              mode == InitialScrollToEndMode.jump
+                  ? 0
+                  : viewport.position.maxScrollExtent,
+            );
+            await _settle(tester, viewport, stats);
+            expect(stats.disposed, greaterThan(0));
+            expect(
+              stats.live.difference(before),
+              isNotEmpty,
+              reason:
+                  'Must actually recycle multiple rows, not retain one child',
+            );
+            final scrollable = find
+                .descendant(
+                  of: find.byType(ChatAnimatedList),
+                  matching: find.byType(Scrollable),
+                )
+                .first;
+            await tester.scrollUntilVisible(
+              find.text('Fixture row-47'),
+              300,
+              scrollable: scrollable,
+              maxScrolls: 100,
+            );
+            await _settle(tester, viewport, stats);
+            expect(find.text('Fixture row-47').hitTestable(), findsOneWidget);
+            expect(
+              chat.messages.map((message) => message.id),
+              original.map((message) => message.id),
+            );
+          }
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(stats.live, isEmpty);
+          viewport.dispose();
+          chat.dispose();
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
   }
 }

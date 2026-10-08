@@ -15,11 +15,17 @@ class RaftInitialEndAnchor extends StatefulWidget {
     required this.controller,
     required this.child,
     this.enabled = true,
+    this.presentationActive = true,
+    this.contentReady = true,
     this.onInitialReady,
   });
   final ScrollController controller;
   final Widget child;
   final bool enabled;
+  final bool presentationActive;
+
+  /// Empty first-page loading must not retire the initial positioning epoch.
+  final bool contentReady;
   final VoidCallback? onInitialReady;
   @override
   State<RaftInitialEndAnchor> createState() => _RaftInitialEndAnchorState();
@@ -50,7 +56,7 @@ class _RaftInitialEndAnchorState extends State<RaftInitialEndAnchor> {
   }
 
   bool keyInput(KeyEvent event) {
-    if (!following || event is! KeyDownEvent) {
+    if (!following || !widget.presentationActive || event is! KeyDownEvent) {
       return false;
     }
     var owned = false;
@@ -71,14 +77,17 @@ class _RaftInitialEndAnchorState extends State<RaftInitialEndAnchor> {
 
   void scrolled() {
     // Includes explicit history/focus jumps; corrections may never undo them.
-    if (!correcting) {
+    if (!correcting && widget.presentationActive) {
       retire();
     }
   }
 
   void awaitReadiness() {
     readiness?.cancel();
-    if (!following || !widget.enabled) {
+    if (!following ||
+        !widget.enabled ||
+        !widget.presentationActive ||
+        !widget.contentReady) {
       return;
     }
     final controller = widget.controller, ticket = revision;
@@ -105,7 +114,11 @@ class _RaftInitialEndAnchorState extends State<RaftInitialEndAnchor> {
   }
 
   void correctEnd() {
-    if (!following || !widget.enabled || queued) {
+    if (!following ||
+        !widget.enabled ||
+        !widget.presentationActive ||
+        !widget.contentReady ||
+        queued) {
       return;
     }
     queued = true;
@@ -115,7 +128,9 @@ class _RaftInitialEndAnchorState extends State<RaftInitialEndAnchor> {
           ticket != revision ||
           !identical(controller, widget.controller) ||
           !following ||
-          !widget.enabled) {
+          !widget.enabled ||
+          !widget.presentationActive ||
+          !widget.contentReady) {
         return;
       }
       queued = false;
@@ -154,6 +169,18 @@ class _RaftInitialEndAnchorState extends State<RaftInitialEndAnchor> {
       correctEnd();
     } else if (!widget.enabled) {
       retire();
+    } else if (oldWidget.presentationActive != widget.presentationActive) {
+      ++revision;
+      queued = false;
+      readiness?.cancel();
+      if (widget.presentationActive) correctEnd();
+    } else if (oldWidget.contentReady != widget.contentReady) {
+      ++revision;
+      queued = false;
+      readiness?.cancel();
+      if (widget.contentReady) {
+        correctEnd();
+      }
     }
   }
 

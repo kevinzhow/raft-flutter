@@ -334,14 +334,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.1"
-  flutter_chat_ui:
-    dependency: transitive
-    description:
-      name: flutter_chat_ui
-      sha256: de81af24364a3f881847477b0fbf4356d0fd1675eed780a9957976862d85c76c
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.12.0"
   flutter_driver:
     dependency: transitive
     description: flutter
@@ -1507,4 +1499,4 @@ packages:
     version: "3.1.4"
 sdks:
   dart: ">=3.13.5 <4.0.0"
-  flutter: ">=3.44.0"
+  flutter: ">=3.47.6"

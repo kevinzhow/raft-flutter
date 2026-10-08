@@ -376,10 +376,12 @@ class FleetDetail extends StatefulWidget {
     required this.controller,
     required this.computers,
     required this.initial,
+    this.onClose,
   });
   final WorkspaceController controller;
   final bool computers;
   final Map<String, dynamic> initial;
+  final VoidCallback? onClose;
   @override
   State<FleetDetail> createState() => _FleetDetailState();
 }
@@ -424,6 +426,12 @@ class _FleetDetailState extends State<FleetDetail> {
       row = {};
       error = null;
     });
+    if (widget.onClose != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onClose!();
+      });
+      return;
+    }
     final route = profileRoute;
     // An HTTP/socket completion can arrive while this route has already popped
     // but its State is still mounted for the transition. Remove only our route.
@@ -723,7 +731,18 @@ class _FleetDetailState extends State<FleetDetail> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text('${row['displayName'] ?? row['name']}')),
+    appBar: AppBar(
+      title: Text('${row['displayName'] ?? row['name'] ?? ''}'),
+      automaticallyImplyLeading: widget.onClose == null,
+      actions: [
+        if (widget.onClose != null)
+          RaftIconButton(
+            glyph: RaftGlyph.x,
+            tooltip: 'Close profile',
+            onPressed: widget.onClose,
+          ),
+      ],
+    ),
     body: ListView(
       key: const Key('fleet-detail'),
       padding: const EdgeInsets.all(24),

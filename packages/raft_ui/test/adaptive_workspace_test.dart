@@ -135,7 +135,7 @@ void main() {
         tester.getSize(find.byKey(const Key('workspace-thread-panel'))).width,
         400,
       );
-      tester.view.physicalSize = const Size(1000, 700);
+      tester.view.physicalSize = const Size(960, 700);
       await tester.pumpAndSettle();
       expect(find.text('Conversation'), findsNothing);
       expect(find.text('Thread conversation'), findsOneWidget);
@@ -175,7 +175,19 @@ void main() {
         .getSize(find.byKey(const Key('thread-resize-handle')))
         .width;
     expect(rail, 56);
-    expect(thread, 1200 - rail - sidebar - sidebarHandle - threadHandle - 320);
+    expect(thread, 1200 - rail - sidebar - 320);
+    expect(sidebarHandle, 8);
+    expect(threadHandle, 8);
+    final main = tester.getRect(find.widgetWithText(Center, 'Conversation'));
+    expect(main.left, rail + sidebar);
+    expect(
+      tester.getCenter(find.byKey(const Key('sidebar-resize-handle'))).dx,
+      main.left,
+    );
+    expect(
+      tester.getCenter(find.byKey(const Key('thread-resize-handle'))).dx,
+      main.right,
+    );
     expect(
       tester.getSize(find.widgetWithText(Center, 'Conversation')).width,
       greaterThanOrEqualTo(320),

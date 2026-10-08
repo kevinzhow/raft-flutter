@@ -9,6 +9,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'data/workspace_controller.dart';
+import 'data/source_time_formatter.dart';
 import 'data/workspace_cache.dart';
 import 'features/workspace_view.dart';
 import 'features/auth_view.dart';
@@ -24,8 +25,11 @@ import 'platform/background_notifications.dart';
 
 final raftScreenshotKey = GlobalKey();
 
-void main([List<String> args = const []]) =>
-    runApp(ProviderScope(child: RaftApp(initialArguments: args)));
+Future<void> main([List<String> args = const []]) async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeSourceTimeFormatting();
+  runApp(ProviderScope(child: RaftApp(initialArguments: args)));
+}
 
 /// The server stores only locales shipped by the UI. Translation language is separate.
 Locale displayLocale(String? preference, {Locale? device}) {
@@ -372,7 +376,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       builder: (context, child) => RepaintBoundary(
         key: raftScreenshotKey,
-        child: RaftSystemBars(child: child!),
+        child: RaftTooltipProvider(
+          delay: const Duration(milliseconds: 600),
+          child: RaftSystemBars(child: child!),
+        ),
       ),
       debugShowCheckedModeBanner: false,
       theme: raftTheme(appearance.light),

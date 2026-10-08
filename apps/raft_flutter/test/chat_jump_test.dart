@@ -58,14 +58,15 @@ void main() {
         find.byType(TextField),
         'Send after refreshing history',
       );
+      await tester.pump();
       final editor = tester
           .widget<EditableText>(find.byType(EditableText))
           .controller;
       final before = w.channelGeneration;
-      final button = tester.widget<RaftIconButton>(
+      final button = tester.widget<RaftComposerAction>(
         find.byWidgetPredicate(
           (widget) =>
-              widget is RaftIconButton &&
+              widget is RaftComposerAction &&
               widget.tooltip == 'Send message (Ctrl+Enter)',
         ),
       );
@@ -112,10 +113,11 @@ void main() {
         isTrue,
       );
       expect(oldController.text, 'Old pending draft');
-      final button = tester.widget<RaftIconButton>(
+      final button = tester.widget<RaftComposerAction>(
         find.byWidgetPredicate(
           (w) =>
-              w is RaftIconButton && w.tooltip == 'Send message (Ctrl+Enter)',
+              w is RaftComposerAction &&
+              w.tooltip == 'Send message (Ctrl+Enter)',
         ),
       );
       await tester.runAsync(() async {

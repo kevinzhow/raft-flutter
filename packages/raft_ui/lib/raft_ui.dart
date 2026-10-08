@@ -41,3 +41,35 @@ export 'src/sidebar_section.dart';
 export 'src/notification_center.dart';
 
 export 'src/initial_end_anchor.dart';
+
+export 'src/system_message.dart';
+
+export 'src/composer_recipe.dart';
+
+export 'src/avatar_content.dart';
+
+export 'src/message_row_recipe.dart';
+export 'src/tooltip.dart';
+
+export 'src/message_toolbar_glyphs.dart';
+export 'src/mounted_reaction_recipe.dart';
+
+export 'src/inline_thread_surface.dart';
+
+export 'src/mounted_avatar_recipe.dart';
+
+export 'src/chat_composition.dart';
+
+export 'src/quick_reaction_picker.dart';
+
+export 'src/thread_composition.dart';
+
+export 'src/attachment_tokens.dart';
+
+export 'src/mounted_task_chip.dart';
+
+export 'src/popover_surface.dart';
+
+export 'src/conversation_surface.dart';
+
+export 'src/timeline_composition.dart';

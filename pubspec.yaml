@@ -7,3 +7,4 @@ workspace:
   - packages/raft_ui
   - packages/raft_client
   - packages/raft_sync
+  - packages/flutter_chat_ui

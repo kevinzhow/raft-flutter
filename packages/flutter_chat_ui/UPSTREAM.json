@@ -1,0 +1,140 @@
+{
+  "package": "flutter_chat_ui",
+  "version": "2.12.0",
+  "source": "Actual resolved hosted pub package; local package_config/lock verified",
+  "upstreamRepository": "https://github.com/flyerhq/flutter_chat_ui",
+  "sourceCommit": "UNKNOWN; not inferred from package version",
+  "scope": "W-only pristine provenance snapshot; not R adoption or SDK proof",
+  "files": [
+    {
+      "path": "pubspec.yaml",
+      "sha256": "1cdcc2f2a6ba50da2f8b7f70e17c102c2a4285c81f519c3ca07a5bec58b75512",
+      "bytes": 629
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "7fce8e062bc5aa1126bf93c33ef45670bb6623f119d8e95a033d8ae843cfb044",
+      "bytes": 11344
+    },
+    {
+      "path": "lib/flutter_chat_ui.dart",
+      "sha256": "182521254171ed77a35bbc8c6945fc0613302bd743562b3d501a34dcdb54b84e",
+      "bytes": 645
+    },
+    {
+      "path": "lib/src/avatar.dart",
+      "sha256": "e5e6d7888cae9a2819bed75fa894cb924dfe2c087283c42e3cc88e16c8dcb3b3",
+      "bytes": 6060
+    },
+    {
+      "path": "lib/src/chat.dart",
+      "sha256": "ecc6cde7606f44397fb9105c810691bfea433450b1a992a594e65a7f7cad3000",
+      "bytes": 6584
+    },
+    {
+      "path": "lib/src/chat_animated_list/chat_animated_list.dart",
+      "sha256": "afd7324d66cdd85b9762fd69bb76c5b534ff4221a278e5e742d74a950af24c8f",
+      "bytes": 51371
+    },
+    {
+      "path": "lib/src/chat_animated_list/chat_animated_list_reversed.dart",
+      "sha256": "04fe016255771f4fac5e94c12b99aac9813005b3bc8c77ef257642cabe1e5261",
+      "bytes": 7161
+    },
+    {
+      "path": "lib/src/chat_animated_list/sliver_spacing.dart",
+      "sha256": "964661b4ad2228d43714cebc9329e5eddf5f045e07dffe06552cdf15754a6c8e",
+      "bytes": 2109
+    },
+    {
+      "path": "lib/src/chat_message/chat_message.dart",
+      "sha256": "5b855792dd4e683b904b82d62141494912ed215c131831270f54c3ff5da374c5",
+      "bytes": 10068
+    },
+    {
+      "path": "lib/src/chat_message/chat_message_internal.dart",
+      "sha256": "e9c6bf3ccd670f36686f50bbd73d91c9f1273127f1840b0d996f1bdd31aef046",
+      "bytes": 10916
+    },
+    {
+      "path": "lib/src/composer.dart",
+      "sha256": "dae6c5fb135bf1b7f05017506b2a5b735c8524566fb8ccbb711860b191ddd409",
+      "bytes": 14848
+    },
+    {
+      "path": "lib/src/empty_chat_list.dart",
+      "sha256": "723dfb82ef07966ce7adac565782da9a85098926863c590a784769908626e8c2",
+      "bytes": 2297
+    },
+    {
+      "path": "lib/src/is_typing.dart",
+      "sha256": "e827c2615767a154cdef2a19bf46cd74331b000cf35ddeab2bc5d3200f86e9cc",
+      "bytes": 3327
+    },
+    {
+      "path": "lib/src/load_more.dart",
+      "sha256": "7ad0d663fe1d071c32cb8353d03e1a8c1b6aa49c48003862834b1668ca83aa6a",
+      "bytes": 1210
+    },
+    {
+      "path": "lib/src/scroll_to_bottom.dart",
+      "sha256": "b8b707924b96db0c68b2b5551e0b5a9dc2adc4a46ce9312c87b0b7e4b01c7177",
+      "bytes": 3065
+    },
+    {
+      "path": "lib/src/simple_text_message.dart",
+      "sha256": "e38c660af834acecb664b23c8041c0bf97bb2e567584dbb4f6ed2bbc9053e1c1",
+      "bytes": 9879
+    },
+    {
+      "path": "lib/src/username.dart",
+      "sha256": "881d72d162de8781895064601287338c56df500342ac48f1e7faa4e640768451",
+      "bytes": 1758
+    },
+    {
+      "path": "lib/src/utils/composer_height_notifier.dart",
+      "sha256": "dbf6f66a6b08645150d96e67f26453f775f49748a42daed8c3a02d14a1597837",
+      "bytes": 605
+    },
+    {
+      "path": "lib/src/utils/keyboard_mixin.dart",
+      "sha256": "81fddd1f7ce9921a255837cdcc035af1a5e7ef9bd490cd88fe1723265d15c646",
+      "bytes": 1879
+    },
+    {
+      "path": "lib/src/utils/load_more_notifier.dart",
+      "sha256": "95f4b73c0def5d8e239264e696a855e19fbce81b8f94cf5f23da1528718ffe4f",
+      "bytes": 1022
+    },
+    {
+      "path": "lib/src/utils/message_list_diff.dart",
+      "sha256": "7bd0104e59c39be057201d014abad2e8a0979bf2508d70ea7653144758fcdb9f",
+      "bytes": 1117
+    },
+    {
+      "path": "lib/src/utils/typedefs.dart",
+      "sha256": "057c2e23465dbb1665384a14c410466ca2c18364b935a9bca6b922b711d2dacf",
+      "bytes": 3001
+    }
+  ],
+  "modifications": [
+    {
+      "path": "lib/src/chat_animated_list/chat_animated_list.dart",
+      "purpose": "Optional keyed-message-sliver composition; retain public cacheExtent via equivalent ScrollCacheExtent.pixels SDK API.",
+      "beforeSHA256": "afd7324d66cdd85b9762fd69bb76c5b534ff4221a278e5e742d74a950af24c8f",
+      "afterSHA256": "cb3114aa68b6e03f101d7323661958c6061a04e014df8b3c046ded5596406dc4"
+    },
+    {
+      "path": "lib/src/chat_message/chat_message.dart",
+      "purpose": "Remove deprecated explicit axisAlignment:0; SizeTransition default remains centered.",
+      "beforeSHA256": "5b855792dd4e683b904b82d62141494912ed215c131831270f54c3ff5da374c5",
+      "afterSHA256": "c91723eb25e54cf223da49bf1ad54037dcd9f966f37f50083059d45c13b22bfd"
+    },
+    {
+      "path": "pubspec.yaml",
+      "purpose": "Local nonpublishable fork bound to project Flutter3.47.6 API.",
+      "beforeSHA256": "1cdcc2f2a6ba50da2f8b7f70e17c102c2a4285c81f519c3ca07a5bec58b75512",
+      "afterSHA256": "74a9bd456d7d4345e18078663e1f8291ca989a11f7fb5d837a65f4c2db4c3e36"
+    }
+  ]
+}

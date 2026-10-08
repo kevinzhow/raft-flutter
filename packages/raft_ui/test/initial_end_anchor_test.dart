@@ -9,6 +9,8 @@ void main() {
     ScrollController c, {
     required double height,
     bool enabled = true,
+    bool contentReady = true,
+    bool presentationActive = true,
     VoidCallback? ready,
     Widget? action,
   }) async {
@@ -21,6 +23,8 @@ void main() {
             child: RaftInitialEndAnchor(
               controller: c,
               enabled: enabled,
+              presentationActive: presentationActive,
+              contentReady: contentReady,
               onInitialReady: ready,
               child: SingleChildScrollView(
                 key: ValueKey(c),
@@ -39,6 +43,68 @@ void main() {
     );
     await t.pump();
   }
+
+  testWidgets('hidden initial epoch pauses without retiring and resumes once', (
+    t,
+  ) async {
+    final c = ScrollController();
+    var retired = 0;
+    await frame(t, c, height: 700, contentReady: false, ready: () => retired++);
+    await frame(
+      t,
+      c,
+      height: 1000,
+      presentationActive: false,
+      ready: () => retired++,
+    );
+    await t.pump(const Duration(seconds: 1));
+    expect(c.offset, 0);
+    expect(retired, 0);
+    expect(t.binding.hasScheduledFrame, isFalse);
+    await frame(t, c, height: 1000, ready: () => retired++);
+    await t.pump(const Duration(milliseconds: 300));
+    expect(c.offset, c.position.maxScrollExtent);
+    expect(retired, 1);
+    final offset = c.offset;
+    await frame(
+      t,
+      c,
+      height: 1400,
+      presentationActive: false,
+      ready: () => retired++,
+    );
+    await frame(t, c, height: 1400, ready: () => retired++);
+    expect(c.offset, offset);
+    expect(retired, 1);
+    await t.pumpWidget(const SizedBox());
+    c.dispose();
+  });
+  testWidgets(
+    'deferred empty page does not retire before real content, reading still owns viewport',
+    (t) async {
+      final c = ScrollController();
+      var retired = 0;
+      await frame(t, c, height: 0, contentReady: false, ready: () => retired++);
+      await t.pump(const Duration(seconds: 1));
+      expect(retired, 0);
+      await frame(
+        t,
+        c,
+        height: 1400,
+        contentReady: true,
+        ready: () => retired++,
+      );
+      await t.pump(const Duration(milliseconds: 300));
+      expect(c.offset, c.position.maxScrollExtent);
+      expect(retired, 1);
+      c.jumpTo(100);
+      await frame(t, c, height: 1600, ready: () => retired++);
+      expect(c.offset, 100);
+      expect(retired, 1);
+      await t.pumpWidget(const SizedBox());
+      c.dispose();
+    },
+  );
 
   testWidgets(
     'delayed initial growth follows actual end then retires before later append/prepend',

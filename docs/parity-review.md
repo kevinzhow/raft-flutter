@@ -1,5 +1,15 @@
 # Client parity review
 
+## Current restoration scope
+
+The b98 delivery passed functional and artifact checks. Its route, message-variant and interaction-state restoration remained incomplete. The task is active again after user reports of incorrect desktop navigation, selected rows, avatars, loading, composers, bottom tabs, messages and threads. Historical native passes below remain bound to their original source.
+
+The current work must compare mounted Web and Flutter routes before and after actual actions, including shared state recipes and compact system-message variants. Missing mandatory cases and unresolved differences prevent a restoration claim. See [the coverage and evidence gate](widget-acceptance.md) for the required cases and evidence boundaries. Current source changes have no aggregate native or visual acceptance result yet.
+
+The first restoration checkpoint `6b3fe56da798` passed 59 shared focused tests, 17 app focused tests and a separate resize regression. Linux produced 21 actual component frames and Android produced 18. These are controlled component diagnostics. The 390×480 capture boundary did not replace Linux's 1280×720 ambient MediaQuery, so Composer selected a different responsive branch from the Web reference. The failing comparison remains recorded; a viewport- and focus-controlled rerun is required. These results do not establish full-route, API, pixel or new release acceptance.
+
+The live report preserves 21 new diagnostic pairs and 72 historical pairs, with separate capture/run/comparison times and repair/retest state. Its code inventory is explicitly incomplete: 810 exports are not an interactive-control denominator; 118 recipes and 1,326 preliminary theme/state declaration rows still need mounted-role, override and compound-state review. The route atlas has 22 sequences across three themes, with full native pair evidence still missing.
+
 Mounted source `26f77ef` / Web 1.17.5 / raft-ui 0.5.27. Functional results, visual reviews, native execution and final artifact verification are separate evidence.
 
 ## 已验证的源码与当前边界

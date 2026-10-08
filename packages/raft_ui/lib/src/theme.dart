@@ -666,6 +666,7 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
       labelTextStyle: WidgetStatePropertyAll(textTheme.labelMedium),
     ),
     tooltipTheme: TooltipThemeData(
+      waitDuration: const Duration(milliseconds: 600),
       decoration: BoxDecoration(
         color: scheme.inverseSurface,
         borderRadius: BorderRadius.circular(t.brutal ? 0 : 4),

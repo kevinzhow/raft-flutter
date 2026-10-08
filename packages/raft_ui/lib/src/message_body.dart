@@ -171,6 +171,7 @@ class RaftMessageBody extends StatelessWidget {
     this.fontSize = 14,
     this.foregroundColor,
     this.documentMode = false,
+    this.mountedMessage = false,
     this.onCopyCode,
     this.onExportDiagram,
     this.exportMode = false,
@@ -181,6 +182,7 @@ class RaftMessageBody extends StatelessWidget {
   final double fontSize;
   final Color? foregroundColor;
   final bool documentMode;
+  final bool mountedMessage;
   final bool exportMode;
   final List<RaftTextReference> references;
   final String Function(int)? taskHref;
@@ -207,6 +209,7 @@ class RaftMessageBody extends StatelessWidget {
               t,
               fontSize: fontSize,
               document: documentMode,
+              mountedMessage: mountedMessage,
               foreground: foregroundColor,
             ).headingPadding(markdown.toString()),
             data: markdown.toString(),
@@ -225,6 +228,7 @@ class RaftMessageBody extends StatelessWidget {
                 t,
                 fontSize: fontSize,
                 document: documentMode,
+                mountedMessage: mountedMessage,
                 foreground: foregroundColor,
               ).body,
             ),
@@ -232,6 +236,7 @@ class RaftMessageBody extends StatelessWidget {
               t,
               fontSize: fontSize,
               document: documentMode,
+              mountedMessage: mountedMessage,
               foreground: foregroundColor,
             ).stylesheet(context),
           ),

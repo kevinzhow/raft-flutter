@@ -53,6 +53,8 @@ void main() {
         w.visibleIds['thread'] = {'reply'};
         w.threadSummaries['parent'] = {
           'replyCount': 1,
+          'unreadCount': 1,
+          'firstUnreadMessageId': 'reply',
           'latestReplies': [
             {
               'messageId': 'reply',
@@ -98,7 +100,14 @@ void main() {
         await tester.pumpWidget(application(true));
         await tester.pumpAndSettle();
         expect(find.byKey(const ValueKey('message-reply')), findsOneWidget);
-        final original = tester.state(find.byType(RaftChatView));
+        Finder chat(bool thread, {bool includeHidden = false}) =>
+            find.byWidgetPredicate(
+              (widget) => widget is RaftChatView && widget.thread == thread,
+              skipOffstage: !includeHidden,
+            );
+        final original = tester.state(
+          chat(adaptive ? false : true, includeHidden: adaptive),
+        );
         w.closeThread();
         if (!adaptive) {
           // Let the old thread widget process the close before the next widget
@@ -107,12 +116,9 @@ void main() {
           await tester.pumpWidget(application(false));
         }
         await tester.pumpAndSettle();
+        expect(identical(tester.state(chat(false)), original), isTrue);
         expect(
-          identical(tester.state(find.byType(RaftChatView)), original),
-          isTrue,
-        );
-        expect(
-          find.byKey(const ValueKey('thread-preview-reply')),
+          find.byKey(const ValueKey('inline-thread-parent')),
           findsOneWidget,
         );
         expect(find.byKey(const ValueKey('message-parent')), findsOneWidget);
@@ -136,10 +142,10 @@ void main() {
           await tester.pumpAndSettle();
         }
         final open = tester
-            .widget<TextButton>(
-              find.byKey(const ValueKey('thread-preview-reply')),
+            .widget<RaftInlineThreadSurface>(
+              find.byKey(const ValueKey('inline-thread-parent')),
             )
-            .onPressed!;
+            .onOpen!;
         await tester.runAsync(() async {
           open();
           for (var i = 0; i < 50 && w.threadLoading; i++) {
@@ -156,19 +162,24 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         expect(
-          identical(tester.state(find.byType(RaftChatView)), original),
+          identical(
+            tester.state(
+              chat(adaptive ? false : true, includeHidden: adaptive),
+            ),
+            original,
+          ),
           isTrue,
         );
         expect(w.highlightedMessageId, 'reply');
-        final dynamic state = tester.state(find.byType(RaftChatView));
+        final dynamic state = tester.state(chat(true));
         expect(
           find.byKey(const ValueKey('message-reply')),
           findsOneWidget,
           reason:
-              'workspace=${w.replies.map((m) => m.id)} adapter=${state.adapter.messages.map((m) => m.id)} scope=${state.scope} thread=${tester.widget<RaftChatView>(find.byType(RaftChatView)).thread} pixels=${state.viewport.hasClients ? state.viewport.position.pixels : null}',
+              'workspace=${w.replies.map((m) => m.id)} adapter=${state.adapter.messages.map((m) => m.id)} scope=${state.scope} thread=${tester.widget<RaftChatView>(chat(true)).thread} pixels=${state.viewport.hasClients ? state.viewport.position.pixels : null}',
         );
         expect(
-          find.byKey(const ValueKey('thread-preview-reply')),
+          find.byKey(const ValueKey('inline-thread-parent')),
           findsNothing,
         );
         await tester.pumpWidget(const SizedBox());

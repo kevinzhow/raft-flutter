@@ -572,6 +572,7 @@ const raftChinese = <String, String>{
   "At least one task title is required": "至少需要填写一个任务标题",
   "Attach at most 3 screenshots.": "最多添加 3 张截图。",
   "Attach file": "添加文件",
+  "Attach image": "添加图片",
   "Attach files in Chat, or drag files into the message composer. They will appear here after the message is sent.":
       "在聊天中添加附件，或将文件拖入消息编辑框。消息发送后文件会显示在这里。",
   "Attach media": "添加媒体",

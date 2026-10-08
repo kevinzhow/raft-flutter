@@ -210,6 +210,37 @@ void main() {
     expect(mobile.section, 'home');
     expect(c.calls.where((call) => call.endsWith('/read')).length, readsBefore);
   });
+  test('folded main receives live data without read ACK; visible thread retains read admission', () async {
+    final c = _Client();
+    final w = WorkspaceController(c);
+    addTearDown(() async {
+      w.dispose();
+      await c.stream.close();
+    });
+    await w.bootstrap();
+    w.threadChannelId = 'thread';
+    w.ledger.ingest([
+      {...c.message('reply'), 'channelId': 'thread'},
+    ], expectedGeneration: w.ledger.generation);
+    w.visibleIds['thread'] = {'reply'};
+    final owner = Object();
+    w.setConversationPresentation(owner, main: false, thread: true);
+    c.calls.clear();
+    w.setForeground(true);
+    c.stream.add(RaftEvent('message:new', c.message('new')));
+    await Future<void>.delayed(Duration.zero);
+    await w.markRead('c');
+    await w.markRead('thread');
+    expect(w.messages.map((m) => m.id), contains('new'));
+    expect(c.calls, isNot(contains('POST:/channels/c/read')));
+    expect(c.calls, contains('POST:/channels/thread/read'));
+    w.releaseConversationPresentation(Object());
+    await w.markRead('c');
+    expect(c.calls, isNot(contains('POST:/channels/c/read')));
+    w.setConversationPresentation(owner, main: true, thread: false);
+    await w.markRead('c');
+    expect(c.calls, contains('POST:/channels/c/read'));
+  });
   test('Home retains selected channel without suppressing its notification; actual Chat suppresses', () async {
     final c = _Client();
     c.selectServer('s');
@@ -342,8 +373,12 @@ void main() {
       );
       expect(tester.widget<RaftSidebarSectionHeader>(section).count, 1);
       expect(
-        tester.getRect(section).top,
+        tester.getRect(find.byKey(const ValueKey('sidebar-group-system:pinned'))).top,
         tester.getRect(find.byKey(const Key('nav-saved'))).bottom,
+      );
+      expect(
+        tester.getRect(section).top,
+        tester.getRect(find.byKey(const ValueKey('sidebar-group-system:joint'))).bottom,
       );
       expect(tester.getRect(disclosure).top - tester.getRect(section).top, 12);
       await tester.tap(disclosure);

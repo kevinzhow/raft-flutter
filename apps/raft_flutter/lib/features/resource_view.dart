@@ -27,10 +27,13 @@ class ResourceView extends StatefulWidget {
     this.clock,
     this.initialQuery,
     this.onSearchEntity,
+    this.onActivityItem,
     this.searchMemory,
     this.restoreSearchState = true,
+    this.channelId,
   });
   final WorkspaceController controller;
+  final String? channelId;
   final String section;
   final Future<void> Function(String, String?) onMessage;
   final VoidCallback? onBack;
@@ -39,6 +42,7 @@ class ResourceView extends StatefulWidget {
   final SearchMemoryStore? searchMemory;
   final bool restoreSearchState;
   final Future<void> Function(SearchEntity)? onSearchEntity;
+  final Future<void> Function(Map<String, dynamic>)? onActivityItem;
   @override
   State<ResourceView> createState() => _ResourceViewState();
 }
@@ -210,6 +214,17 @@ class _ResourceViewState extends State<ResourceView> {
   StreamSubscription<RaftEvent>? events;
   Timer? refreshTimer;
   WorkspaceController get w => widget.controller;
+  String get taskPath => widget.channelId == null
+      ? '/tasks/server'
+      : '/tasks/channel/${widget.channelId}';
+  bool get acceptsTaskChannel =>
+      widget.channelId == null ||
+      [...w.channels, ...w.dms].any(
+        (channel) =>
+            channel.id == widget.channelId &&
+            w.can('viewChannel', resource: channel),
+      );
+
   String? acceptedAuthority;
   int authorityRevision = 0;
   final Set<ModalRoute<dynamic>> dialogs = {};
@@ -226,6 +241,7 @@ class _ResourceViewState extends State<ResourceView> {
       w.server?.id,
       w.server?.string('role'),
       widget.section,
+      widget.channelId,
       authorityRevision,
       for (final c in channels)
         {
@@ -488,6 +504,16 @@ class _ResourceViewState extends State<ResourceView> {
   Future<void> load({bool append = false}) async {
     saveSearchState();
     final request = ++requestGeneration, scope = authority;
+    if (widget.section == 'tasks' && !acceptsTaskChannel) {
+      if (accepts(scope, request)) {
+        setState(() {
+          clearRows();
+          loading = false;
+          error = 'This channel is not available.';
+        });
+      }
+      return;
+    }
     if (['search', 'tasks', 'activity'].contains(widget.section)) {
       unawaited(loadSenders(scope));
     }
@@ -515,7 +541,7 @@ class _ResourceViewState extends State<ResourceView> {
         final pages = await Future.wait(
           raftTaskStatuses.map(
             (status) => w.query(
-              '/tasks/server',
+              taskPath,
               query: {'status': status, 'detail': 'summary', 'limit': 30},
             ),
           ),
@@ -542,7 +568,7 @@ class _ResourceViewState extends State<ResourceView> {
         },
         'saved' => '/channels/saved',
         'search' => '/messages/search',
-        'tasks' => '/tasks/server',
+        'tasks' => taskPath,
         'agents' => '/agents',
         'computers' => '/servers/${w.server!.id}/machines',
         'members' => '/servers/${w.server!.id}/members',
@@ -641,9 +667,10 @@ class _ResourceViewState extends State<ResourceView> {
     final scope = authority;
     return Column(
       children: [
-        widget.section == 'search'
-            ? searchHeader(scope)
-            : resourceHeader(scope),
+        if (widget.channelId == null)
+          widget.section == 'search'
+              ? searchHeader(scope)
+              : resourceHeader(scope),
         if (widget.section != 'search' &&
             widget.section != 'activity' &&
             (widget.section != 'tasks' || extraFilters) &&
@@ -923,6 +950,11 @@ class _ResourceViewState extends State<ResourceView> {
       if (w.can('viewMachines')) await widget.onSearchEntity?.call(entity);
     } else {
       if (!w.can(entity.kind == 'agent' ? 'viewAgents' : 'viewMembers')) return;
+      if (widget.onSearchEntity != null) {
+        rememberSearchOpen(scope, entity: entity, queryText: committed);
+        await widget.onSearchEntity!(entity);
+        return;
+      }
       try {
         final result = await w.client.post(
           '/channels/dm',
@@ -1389,6 +1421,10 @@ class _ResourceViewState extends State<ResourceView> {
 
   Future<void> openConversation(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope)) return;
+    if (widget.section == 'activity' && widget.onActivityItem != null) {
+      await widget.onActivityItem!(Map<String, dynamic>.from(row));
+      return;
+    }
     final id = row['parentChannelId'] ?? row['channelId'];
     if (id is! String) return;
     final unread = (row['unreadCount'] as num? ?? 0) > 0;
@@ -2254,7 +2290,11 @@ class _ResourceViewState extends State<ResourceView> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final field in ['Channel', 'Creator', 'Assignee'])
+            for (final field in [
+              if (widget.channelId == null) 'Channel',
+              'Creator',
+              'Assignee',
+            ])
               Builder(
                 builder: (context) {
                   final selection = switch (field) {
@@ -2363,7 +2403,7 @@ class _ResourceViewState extends State<ResourceView> {
     setState(() => laneBusy.add(status));
     try {
       final page = await w.query(
-        '/tasks/server',
+        taskPath,
         query: {
           'status': status,
           'detail': 'summary',

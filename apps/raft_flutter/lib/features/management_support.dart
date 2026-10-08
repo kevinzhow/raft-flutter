@@ -42,6 +42,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   String? error;
   int _request = 0;
   String? _authority;
+  WorkspaceController? _listenedController;
   String? _operationAuthority;
   String get authority =>
       '${w.client.generation}|${w.client.user?.id}|${w.server?.id}|${w.server?.string("role")}';
@@ -50,6 +51,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   void startManagement() {
     _authority = authority;
     WidgetsBinding.instance.addObserver(this);
+    _listenedController = w;
     w.addListener(_workspaceChanged);
     reload();
   }
@@ -71,6 +73,21 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
       });
       reload();
     }
+  }
+
+  /// Rebind an explicitly reused page State to its new controller. Old HTTP
+  /// tickets and private projections are retired before any new request.
+  void rebindManagementController() {
+    if (identical(_listenedController, w)) return;
+    _listenedController?.removeListener(_workspaceChanged);
+    _listenedController = w;
+    w.addListener(_workspaceChanged);
+    _authority = authority;
+    ++_request;
+    clearData();
+    loading = true;
+    error = null;
+    reload();
   }
 
   /// Reevaluate authority after a source event invalidates a page-specific scope.
@@ -349,7 +366,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    w.removeListener(_workspaceChanged);
+    _listenedController?.removeListener(_workspaceChanged);
     _request++;
     super.dispose();
   }

@@ -16,4 +16,14 @@ Future<PickedUpload?> selectUpload() async {
 
 /// Uses the host document picker, including Android's Storage Access Framework.
 /// Read one selected file at a time so large batches do not duplicate buffers.
-Future<List<XFile>> selectUploads() => openFiles();
+Future<List<XFile>> selectUploads({bool imagesOnly = false}) => openFiles(
+  acceptedTypeGroups: imagesOnly
+      ? const [
+          XTypeGroup(
+            label: 'Images',
+            extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'],
+            mimeTypes: ['image/*'],
+          ),
+        ]
+      : const [],
+);

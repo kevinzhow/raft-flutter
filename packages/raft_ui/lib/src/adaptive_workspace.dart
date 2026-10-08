@@ -14,6 +14,8 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     required this.sidebar,
     required this.rail,
     this.thread,
+    this.onPresentationChanged,
+    this.sidebarVisible = true,
     this.mobileNavigation,
     this.mobileNavigationFloating = false,
     this.sidebarWidth = 240,
@@ -23,7 +25,13 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     this.threadResizeLabel = 'Resize thread',
   });
   final Widget content, sidebar, rail;
+
+  /// The host derives this from the mounted route, not panel width or theme.
+  /// Tasks and content masters must not retain hidden conversation navigation.
+  final bool sidebarVisible;
   final Widget? thread, mobileNavigation;
+  final void Function(bool mainVisible, bool threadVisible)?
+  onPresentationChanged;
 
   /// Source MobileBottomBarStack overlays Elegant bars; Brutal stays in flow.
   final bool mobileNavigationFloating;
@@ -41,6 +49,43 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
 }
 
 class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
+  final mainSlot = GlobalKey();
+  final threadSlot = GlobalKey();
+
+  Widget conversation({required bool split, double threadSize = 0}) {
+    final folded = widget.thread != null && !split;
+    // Visibility keeps the same state owner, excludes hidden focus/semantics,
+    // and exposes presentation admission independently of accepted row data.
+    widget.onPresentationChanged?.call(!folded, widget.thread != null);
+    Widget thread() => KeyedSubtree(key: threadSlot, child: widget.thread!);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: KeyedSubtree(
+                key: mainSlot,
+                child: Visibility(
+                  visible: !folded,
+                  maintainState: true,
+                  child: widget.content,
+                ),
+              ),
+            ),
+            if (split && widget.thread != null)
+              SizedBox(
+                key: const Key('workspace-thread-panel'),
+                width: threadSize,
+                child: thread(),
+              ),
+          ],
+        ),
+        if (folded) Positioned.fill(child: thread()),
+      ],
+    );
+  }
+
   late double sidebarWidth = widget.sidebarWidth.clamp(180, 320);
   late double threadWidth = widget.threadWidth;
 
@@ -78,7 +123,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  widget.thread ?? widget.content,
+                  conversation(split: false),
                   if (widget.mobileNavigationFloating &&
                       widget.mobileNavigation != null)
                     Positioned(
@@ -102,56 +147,79 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
         MediaQuery.sizeOf(context).height,
       );
       final hasThread = widget.thread != null;
+      final conversationWidth =
+          width - railWidth - (widget.sidebarVisible ? sidebarWidth : 0);
+      // index.css thread-layout: real container680 + landscape or viewport xl.
       final sideThread =
-          hasThread && width >= RaftAdaptiveWorkspace.threadMinWidth;
+          hasThread &&
+          conversationWidth >= RaftLayoutMetrics.threadSplitContainerWidth &&
+          (width >= RaftLayoutMetrics.threadPortraitSplitViewport ||
+              width > MediaQuery.sizeOf(context).height);
       // Keep the main conversation usable while resizing a narrow window.
-      final threadMax = (width - railWidth - sidebarWidth - 16 - 320).clamp(
-        360.0,
-        width * .6,
-      );
+      final threadMax =
+          (width - railWidth - (widget.sidebarVisible ? sidebarWidth : 0) - 320)
+              .clamp(360.0, width * .6);
       final actualThread = threadWidth.clamp(360.0, threadMax);
-      return Row(
+      // Web resizers overlay panel boundaries; their hit area never consumes
+      // conversation width (MainLayout's absolute w-2/-right-1 handles).
+      return Stack(
+        fit: StackFit.expand,
         children: [
-          SizedBox(width: railWidth, child: widget.rail),
-          Container(
-            key: const Key('workspace-sidebar-panel'),
-            width: sidebarWidth,
-            child: Material(
-              color: t.brutal ? t.colors['brutal-cream'] : t.sidebar,
-              child: widget.sidebar,
-            ),
+          Row(
+            children: [
+              SizedBox(width: railWidth, child: widget.rail),
+              if (widget.sidebarVisible)
+                Container(
+                  key: const Key('workspace-sidebar-panel'),
+                  width: sidebarWidth,
+                  child: Material(
+                    color: t.brutal ? t.colors['brutal-cream'] : t.sidebar,
+                    child: widget.sidebar,
+                  ),
+                ),
+              Expanded(
+                child: conversation(
+                  split: sideThread,
+                  threadSize: actualThread,
+                ),
+              ),
+            ],
           ),
-          _ResizeHandle(
-            key: const Key('sidebar-resize-handle'),
-            label: widget.sidebarResizeLabel,
-            value: sidebarWidth,
-            onChanged: resizeSidebar,
-          ),
-          Expanded(
-            child: hasThread && !sideThread ? widget.thread! : widget.content,
-          ),
-          if (sideThread) ...[
-            _ResizeHandle(
-              key: const Key('thread-resize-handle'),
-              label: widget.threadResizeLabel,
-              value: actualThread,
-              reversed: true,
-              onChanged: (value) => resizeThread(value, threadMax),
+          if (widget.sidebarVisible)
+            Positioned(
+              left: railWidth + sidebarWidth - 4,
+              top: 0,
+              bottom: 0,
+              width: 8,
+              child: RaftPanelResizeHandle(
+                key: const Key('sidebar-resize-handle'),
+                label: widget.sidebarResizeLabel,
+                value: sidebarWidth,
+                onChanged: resizeSidebar,
+              ),
             ),
-            SizedBox(
-              key: const Key('workspace-thread-panel'),
-              width: actualThread,
-              child: Material(color: t.canvas, child: widget.thread),
+          if (sideThread)
+            Positioned(
+              right: actualThread - 4,
+              top: 0,
+              bottom: 0,
+              width: 8,
+              child: RaftPanelResizeHandle(
+                key: const Key('thread-resize-handle'),
+                label: widget.threadResizeLabel,
+                value: actualThread,
+                reversed: true,
+                onChanged: (value) => resizeThread(value, threadMax),
+              ),
             ),
-          ],
         ],
       );
     },
   );
 }
 
-class _ResizeHandle extends StatefulWidget {
-  const _ResizeHandle({
+class RaftPanelResizeHandle extends StatefulWidget {
+  const RaftPanelResizeHandle({
     super.key,
     required this.label,
     required this.value,
@@ -163,10 +231,10 @@ class _ResizeHandle extends StatefulWidget {
   final ValueChanged<double> onChanged;
   final bool reversed;
   @override
-  State<_ResizeHandle> createState() => _ResizeHandleState();
+  State<RaftPanelResizeHandle> createState() => _ResizeHandleState();
 }
 
-class _ResizeHandleState extends State<_ResizeHandle> {
+class _ResizeHandleState extends State<RaftPanelResizeHandle> {
   bool focused = false, hovering = false;
   double? dragValue;
   void change(double delta) => widget.onChanged(widget.value + delta);
@@ -215,9 +283,7 @@ class _ResizeHandleState extends State<_ResizeHandle> {
               width: 8,
               color: focused || hovering
                   ? t.accent.withValues(alpha: .2)
-                  : t.brutal
-                  ? t.colors['brutal-cream']
-                  : t.sidebar,
+                  : Colors.transparent,
               child: Center(
                 child: Container(
                   width: focused || hovering ? 3 : 1,

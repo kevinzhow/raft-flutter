@@ -6,6 +6,21 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'workspace_cache.dart';
+import 'message_window_snapshot.dart';
+import 'attachment_image_repository.dart';
+
+class WorkspaceAttachmentImageLease {
+  WorkspaceAttachmentImageLease(this.lease, this._releaseAuthority);
+  final AttachmentImageLease lease;
+  final VoidCallback _releaseAuthority;
+  bool _released = false;
+  void release() {
+    if (_released) return;
+    _released = true;
+    lease.release();
+    _releaseAuthority();
+  }
+}
 
 class UploadDraft {
   UploadDraft(this.filename, this.bytes);
@@ -31,6 +46,88 @@ class WorkspaceController extends ChangeNotifier {
   }
   final RaftClient client;
   final WorkspaceCache? cache;
+  AttachmentImageRepository? _attachmentImages;
+  int get retainedImageCount => _attachmentImages?.entryCount ?? 0;
+  int get retainedImageEncodedBytes => _attachmentImages?.encodedByteCount ?? 0;
+  final _imageAuthorities =
+      <AttachmentImageKey, Map<Object, bool Function()>>{};
+  AttachmentImageScope get attachmentImageScope => AttachmentImageScope(
+    origin: client.origin,
+    principal: client.user?.id ?? '',
+    server: client.serverId ?? '',
+    generation: client.generation,
+    role: server?.string('role') ?? '',
+  );
+
+  bool _retainsAttachment(AttachmentImageKey key) {
+    if (_disposed ||
+        key.scope != attachmentImageScope ||
+        client.user == null ||
+        server?.id != client.serverId) {
+      return false;
+    }
+    // A freshly accepted Files row is an independent permission projection.
+    // Its active owner never grants authority through a cached URL or count.
+    if (_imageAuthorities[key]?.values.any((admitted) => admitted()) == true) {
+      return true;
+    }
+    for (final channel in [...channels, ...dms]) {
+      if (_revokedChannels.contains(channel.id) ||
+          !can('viewChannel', resource: channel)) {
+        continue;
+      }
+      final roots = ledger.messages(channel.id);
+      final channelIds = <String>{channel.id};
+      for (final message in roots) {
+        final thread = RaftMessage(message).threadId;
+        if (thread != null) channelIds.add(thread);
+      }
+      if (!channelIds.contains(key.channelId)) continue;
+      for (final message in ledger.messages(key.channelId)) {
+        for (final metadata in RaftMessage(message).attachments) {
+          if (metadata['id'] != key.attachmentId) continue;
+          final canonical = AttachmentImageKey.fromMetadata(
+            scope: key.scope,
+            channelId: key.channelId,
+            metadata: metadata,
+            rendition: key.rendition,
+          );
+          if (canonical == key) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  WorkspaceAttachmentImageLease acquireAttachmentImage(
+    AttachmentImageKey key, {
+    required AttachmentImageLoader load,
+    required bool Function() authorized,
+  }) {
+    final owner = Object();
+    _imageAuthorities.putIfAbsent(key, () => {})[owner] = authorized;
+    void releaseAuthority() {
+      final owners = _imageAuthorities[key];
+      owners?.remove(owner);
+      if (owners?.isEmpty == true) _imageAuthorities.remove(key);
+      _attachmentImages?.synchronize(attachmentImageScope);
+    }
+
+    try {
+      final repository = _attachmentImages ??= AttachmentImageRepository(
+        scope: attachmentImageScope,
+        retainedAuthority: _retainsAttachment,
+      );
+      repository.synchronize(attachmentImageScope);
+      return WorkspaceAttachmentImageLease(
+        repository.acquire(key, load: load, authorized: authorized),
+        releaseAuthority,
+      );
+    } catch (_) {
+      releaseAuthority();
+      rethrow;
+    }
+  }
 
   /// Set by the host from its actual logical width before bootstrap. Home
   /// retains selection/drafts, but is not an open conversation/read surface.
@@ -275,6 +372,42 @@ class WorkspaceController extends ChangeNotifier {
   final Map<String, String> drafts = {};
   final Set<String> _revokedChannels = {};
   final Set<String> _revokedServers = {};
+  Object? _presentationOwner;
+  bool _mainPresented = true, _threadPresented = true;
+  Object? _tabPresentationOwner;
+  bool _chatTabPresented = true;
+
+  /// Channel tabs and folded panels are independent presentation owners.
+  /// Neither loaded data nor an offstage retained editor admits a read receipt.
+  void setChatTabPresentation(Object owner, bool visible) {
+    _tabPresentationOwner = owner;
+    _chatTabPresented = visible;
+  }
+
+  void releaseChatTabPresentation(Object owner) {
+    if (!identical(owner, _tabPresentationOwner)) return;
+    _tabPresentationOwner = null;
+    _chatTabPresented = true;
+  }
+
+  /// Mounted layout admission, separate from accepted message windows. This
+  /// changes synchronously without notifying/rebuilding the controller tree.
+  void setConversationPresentation(
+    Object owner, {
+    required bool main,
+    required bool thread,
+  }) {
+    _presentationOwner = owner;
+    _mainPresented = main;
+    _threadPresented = thread;
+  }
+
+  void releaseConversationPresentation(Object owner) {
+    if (!identical(owner, _presentationOwner)) return;
+    _presentationOwner = null;
+    _mainPresented = _threadPresented = true;
+  }
+
   bool foreground = true;
   void setForeground(bool value) {
     foreground = value;
@@ -300,6 +433,10 @@ class WorkspaceController extends ChangeNotifier {
       _attempts.clear();
       drafts.clear();
       visibleIds.clear();
+      _windowState.clear();
+      _windowHistoryLimited.clear();
+      historyLimited = threadHistoryLimited = false;
+      _contextWindows.clear();
       channel = null;
       channels = [];
       dms = [];
@@ -417,16 +554,55 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
-  Future<void> _saveWindow(String id, {bool thread = false}) =>
-      _save('window', id, {
-        'messages': (thread ? replies : messages).map((m) => m.json).toList(),
-        'parentChannelId': thread ? threadParent?.channelId : id,
-        'hasMore': thread ? threadHasMore : hasMore,
-        'hasNewer': thread ? false : hasNewer,
-        'threadSummaries': thread
-            ? {}
-            : Map<String, dynamic>.from(threadSummaries),
-      });
+  String _windowAuthority() =>
+      messageWindowAuthority(server?.string('role'), channel?.json ?? const {});
+
+  Future<void> _saveWindow(String id, {bool thread = false}) async {
+    if (_disposed ||
+        channel == null ||
+        (thread ? id != threadChannelId : id != channel!.id) ||
+        _revokedChannels.contains(id) ||
+        hasNewer ||
+        highlightedMessageId != null) {
+      return;
+    }
+    final rows = (thread ? replies : messages);
+    _windowState[id] = (_windowAuthority(), thread ? threadHasMore : hasMore);
+    _windowHistoryLimited[id] = thread ? threadHistoryLimited : historyLimited;
+    _contextWindows.remove(id);
+    await _save('window', id, {
+      'version': 1,
+      'authority': _windowAuthority(),
+      'windowKind': 'tail',
+      'messages': rows
+          .skip(
+            rows.length > messageWindowLimit
+                ? rows.length - messageWindowLimit
+                : 0,
+          )
+          .map((m) => m.json)
+          .toList(),
+      'parentChannelId': thread ? threadParent?.channelId : id,
+      'hasMore': thread ? threadHasMore : hasMore,
+      'historyLimited': thread ? threadHistoryLimited : historyLimited,
+      'hasNewer': false,
+      'threadSummaries': thread
+          ? {}
+          : Map<String, dynamic>.from(threadSummaries),
+    });
+  }
+
+  bool _acceptCachedWindow(dynamic page, String id) =>
+      page is Map &&
+      page['version'] == 1 &&
+      page['windowKind'] == 'tail' &&
+      page['hasNewer'] != true &&
+      page['authority'] == _windowAuthority() &&
+      can('viewChannel', resource: channel) &&
+      !_revokedChannels.contains(id) &&
+      !_revokedServers.contains(server?.id) &&
+      page['parentChannelId'] == channel?.id;
+
   late final StreamSubscription<RaftEvent> subscription;
   final ledger = MessageLedger();
   final reactionViewer = ReactionViewerLedger();
@@ -439,6 +615,7 @@ class WorkspaceController extends ChangeNotifier {
   int? _creatingThreadWindow;
   @override
   void notifyListeners() {
+    _attachmentImages?.synchronize(attachmentImageScope);
     if (!_disposed) {
       _ensureSyncIdentity();
       super.notifyListeners();
@@ -544,7 +721,11 @@ class WorkspaceController extends ChangeNotifier {
 
   final readState = ReadStateLedger();
   final Map<String, Set<String>> visibleIds = {};
+  final Map<String, (String, bool)> _windowState = {};
+  final Set<String> _contextWindows = {};
   bool hasNewer = false, threadHasMore = false;
+  bool threadHistoryLimited = false, historyLimited = false;
+  final Map<String, bool> _windowHistoryLimited = {};
   String? highlightedMessageId;
   List<RaftRecord> servers = [];
   List<RaftChannel> channels = [], dms = [];
@@ -649,6 +830,10 @@ class WorkspaceController extends ChangeNotifier {
     _attempts.clear();
     drafts.clear();
     visibleIds.clear();
+    _windowState.clear();
+    _windowHistoryLimited.clear();
+    historyLimited = threadHistoryLimited = false;
+    _contextWindows.clear();
     _revokedChannels.clear();
     highlightedMessageId = null;
     hasNewer = false;
@@ -683,15 +868,12 @@ class WorkspaceController extends ChangeNotifier {
         channel = initial;
         final page = await _cached('window', initial.id);
         if (generation != client.generation) return;
-        if (page is Map) {
-          ledger.ingest(
-            (page['messages'] as List).map((e) => Map<String, dynamic>.from(e)),
-            expectedGeneration: ledger.generation,
-          );
-          visibleIds[initial.id] = (page['messages'] as List)
-              .map((e) => e['id'] as String)
-              .toSet();
+        if (_acceptCachedWindow(page, initial.id)) {
+          final rows = acceptedWindowRows(page['messages'], initial.id);
+          ledger.ingest(rows, expectedGeneration: ledger.generation);
+          visibleIds[initial.id] = rows.map((e) => e['id'] as String).toSet();
           hasMore = page['hasMore'] == true;
+          historyLimited = page['historyLimited'] == true;
           hasNewer = page['hasNewer'] == true;
           threadSummaries = _hydrateThreadSummaries(
             page['threadSummaries'],
@@ -867,6 +1049,8 @@ class WorkspaceController extends ChangeNotifier {
       threadRepliesSync.revokeChannel(scope);
       notificationPrefsSync.revokeChannel(scope);
       visibleIds.remove(scope);
+      _windowState.remove(scope);
+      _contextWindows.remove(scope);
       unread.remove(scope);
       if (serverId != null && principal != null) {
         readState.revoke(serverId, principal, scope);
@@ -1076,46 +1260,105 @@ class WorkspaceController extends ChangeNotifier {
     channel = next;
     hasNewer = false;
     highlightedMessageId = null;
+    final priorWindow = _windowState[next.id];
+    if (priorWindow != null && priorWindow.$1 != _windowAuthority()) {
+      visibleIds.remove(next.id);
+      _windowState.remove(next.id);
+      _windowHistoryLimited.remove(next.id);
+    }
+    hasMore =
+        priorWindow != null &&
+        priorWindow.$1 == _windowAuthority() &&
+        priorWindow.$2;
+    historyLimited = priorWindow != null && priorWindow.$1 == _windowAuthority()
+        ? _windowHistoryLimited[next.id] == true
+        : false;
+    if (_contextWindows.remove(next.id)) visibleIds.remove(next.id);
     section = 'chat';
     threadParent = null;
     threadChannelId = null;
     threadGeneration++;
+    loadingOlder = false;
     channelLoading = true;
     error = null;
     final window = ++channelGeneration;
     final generation = ledger.generation;
     final replyAuthority = _replyToken();
+    final authority = _windowAuthority();
+    bool current() =>
+        !_disposed &&
+        window == channelGeneration &&
+        generation == ledger.generation &&
+        channel?.id == next.id &&
+        authority == _windowAuthority() &&
+        replyAuthority == _replyToken() &&
+        !_revokedChannels.contains(next.id) &&
+        can('viewChannel', resource: channel);
     notifyListeners();
     await _restoreDraft(next.id);
-    if (window != channelGeneration || generation != ledger.generation) return;
+    if (!current()) return;
     try {
-      client.joinChannel(next.id);
-      final page = await client.messagePage(next.id);
-      if (window != channelGeneration || generation != ledger.generation) {
-        return;
+      final page = await _cached('window', next.id);
+      if (!current()) return;
+      if (_acceptCachedWindow(page, next.id)) {
+        final rows = acceptedWindowRows(page['messages'], next.id);
+        // The ledger may be newer than disk after a live event. Ingest applies
+        // its canonical versions/tombstones; visibility is never raw cache data.
+        ledger.ingest(rows, expectedGeneration: generation);
+        visibleIds
+            .putIfAbsent(next.id, () => {})
+            .addAll(rows.map((e) => e['id'] as String));
+        hasMore = page['hasMore'] == true;
+        historyLimited = page['historyLimited'] == true;
+        threadSummaries = _hydrateThreadSummaries(
+          page['threadSummaries'],
+          next.id,
+          expectedToken: replyAuthority,
+        );
+        notifyListeners();
       }
-      ledger.ingest(
-        (page['messages'] as List).map((e) => Map<String, dynamic>.from(e)),
-        expectedGeneration: generation,
-      );
-      visibleIds[next.id] = (page['messages'] as List)
-          .map((e) => e['id'] as String)
-          .toSet();
-      threadSummaries = _hydrateThreadSummaries(
-        page['threadSummariesByParentMessageId'],
-        next.id,
-        expectedToken: replyAuthority,
-      );
+      final retained = messages.map((m) => m.json).toList();
+      final retainedHasMore = hasMore;
+      client.joinChannel(next.id);
+      final fresh = await client.messagePage(next.id);
+      if (!current()) return;
+      final rows = (fresh['messages'] as List)
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      ledger.ingest(rows, expectedGeneration: generation);
+      historyLimited = fresh['historyLimited'] == true;
+      visibleIds[next.id] = fresh['historyLimited'] == true
+          ? rows.map((e) => e['id'] as String).toSet()
+          : reconcileTailWindow(retained, rows);
+      threadSummaries = {
+        for (final row in retained)
+          if (threadSummaries[row['id']] != null)
+            row['id'] as String: threadSummaries[row['id']],
+        ..._hydrateThreadSummaries(
+          fresh['threadSummariesByParentMessageId'],
+          next.id,
+          expectedToken: replyAuthority,
+        ),
+      };
       hasMore =
-          (page['messages'] as List).length >= 50 &&
-          page['historyLimited'] != true;
+          fresh['historyLimited'] != true &&
+          (visibleIds[next.id]!.length > rows.length
+              ? retainedHasMore
+              : rows.length >= 50);
       await _saveWindow(next.id);
+      if (!current()) return;
       await _save('selection', '', next.id);
-      if (autoRead) await markRead(next.id);
+      if (current() && autoRead) await markRead(next.id);
     } catch (e) {
-      if (window == channelGeneration) error = '$e';
+      if (current()) {
+        if (e is RaftApiException && (e.status == 403 || e.status == 404)) {
+          _revokeChannel(next.id);
+        } else {
+          error = '$e';
+        }
+      }
     } finally {
-      if (window == channelGeneration) {
+      if (current()) {
         channelLoading = false;
         notifyListeners();
       }
@@ -1134,11 +1377,18 @@ class WorkspaceController extends ChangeNotifier {
     final window = thread ? threadGeneration : channelGeneration;
     final generation = ledger.generation;
     final replyAuthority = _replyToken();
+    final authority = _windowAuthority();
+    bool currentWindow() =>
+        !_disposed &&
+        window == (thread ? threadGeneration : channelGeneration) &&
+        generation == ledger.generation &&
+        authority == _windowAuthority() &&
+        replyAuthority == _replyToken() &&
+        !_revokedChannels.contains(id);
     notifyListeners();
     try {
       final page = await client.messagePage(id, before: current.first.seq);
-      if (window != (thread ? threadGeneration : channelGeneration) ||
-          generation != ledger.generation) {
+      if (!currentWindow()) {
         return;
       }
       final rows = (page['messages'] as List);
@@ -1150,9 +1400,11 @@ class WorkspaceController extends ChangeNotifier {
           .putIfAbsent(id, () => {})
           .addAll(rows.map((e) => e['id'] as String));
       if (thread) {
-        threadHasMore = rows.length >= 50;
+        threadHistoryLimited = page['historyLimited'] == true;
+        threadHasMore = !threadHistoryLimited && rows.length >= 50;
       } else {
-        hasMore = rows.length >= 50;
+        historyLimited = page['historyLimited'] == true;
+        hasMore = !historyLimited && rows.length >= 50;
       }
       threadSummaries.addAll(
         _hydrateThreadSummaries(
@@ -1161,16 +1413,21 @@ class WorkspaceController extends ChangeNotifier {
           expectedToken: replyAuthority,
         ),
       );
+      await _saveWindow(id, thread: thread);
     } catch (e) {
-      error = '$e';
+      if (currentWindow()) error = '$e';
     } finally {
-      loadingOlder = false;
-      notifyListeners();
+      if (currentWindow()) {
+        loadingOlder = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> markRead(String id) async {
     if (!foreground ||
+        id == channel?.id && (!_mainPresented || !_chatTabPresented) ||
+        id == threadChannelId && !_threadPresented ||
         section != 'chat' ||
         id != channel?.id && id != threadChannelId ||
         id == channel?.id && hasNewer) {
@@ -1181,11 +1438,25 @@ class WorkspaceController extends ChangeNotifier {
         .where((m) => visibleIds[id]?.contains(m['id']) ?? false)
         .toList();
     if (rows.isEmpty) return;
+    final origin = client.origin,
+        principal = client.user?.id,
+        serverId = client.serverId,
+        generation = ledger.generation;
+    final window = id == threadChannelId ? threadGeneration : channelGeneration;
     try {
       final receipt = await client.post(
         '/channels/$id/read',
         data: {'seq': rows.last['seq']},
       );
+      if (client.origin != origin ||
+          client.user?.id != principal ||
+          client.serverId != serverId ||
+          ledger.generation != generation ||
+          window !=
+              (id == threadChannelId ? threadGeneration : channelGeneration) ||
+          id != channel?.id && id != threadChannelId) {
+        return;
+      }
       if (receipt is Map && client.serverId != null && client.user != null) {
         readState.consumeUpdate(
           {
@@ -1209,6 +1480,7 @@ class WorkspaceController extends ChangeNotifier {
     List<String>? attachments,
     List<Map<String, dynamic>>? mentions,
     String? randomId,
+    bool asTask = false,
     void Function(int window)? onWindowRefreshed,
   }) async {
     if (conversationPaused) {
@@ -1273,6 +1545,7 @@ class WorkspaceController extends ChangeNotifier {
         text,
         ids,
         if (selectedMentions.isNotEmpty) selectedMentions,
+        if (asTask) true,
       ]);
       var attempt = _attempts[scope];
       if (attempt == null || attempt.fingerprint != fingerprint) {
@@ -1291,6 +1564,7 @@ class WorkspaceController extends ChangeNotifier {
         attachments: ids,
         mentions: selectedMentions.isEmpty ? null : selectedMentions,
         randomId: attempt.randomId,
+        asTask: asTask,
       );
       if (!currentSend()) return true;
       _attempts.remove(scope);
@@ -1354,6 +1628,7 @@ class WorkspaceController extends ChangeNotifier {
     threadChannelId = null;
     threadLoading = true;
     threadHasMore = false;
+    threadHistoryLimited = false;
     highlightedMessageId = focusedMessageId;
     final window = ++threadGeneration, generation = ledger.generation;
     notifyListeners();
@@ -1383,8 +1658,9 @@ class WorkspaceController extends ChangeNotifier {
         expectedGeneration: generation,
       );
       visibleIds[threadChannelId!] = rows.map((e) => e['id'] as String).toSet();
+      threadHistoryLimited = page['historyLimited'] == true;
       threadHasMore = focusedMessageId == null
-          ? rows.length >= 50
+          ? !threadHistoryLimited && rows.length >= 50
           : page['hasOlder'] == true;
       client.joinChannel(threadChannelId!);
       await markRead(threadChannelId!);
@@ -1466,6 +1742,7 @@ class WorkspaceController extends ChangeNotifier {
           rows.map((e) => Map<String, dynamic>.from(e)),
           expectedGeneration: generation,
         );
+        _contextWindows.add(channelId);
         visibleIds[channelId] = rows.map((e) => e['id'] as String).toSet();
         hasMore = context['hasOlder'] == true;
         hasNewer = context['hasNewer'] == true;
@@ -1491,6 +1768,7 @@ class WorkspaceController extends ChangeNotifier {
     threadParent = null;
     threadChannelId = null;
     threadLoading = false;
+    threadHistoryLimited = false;
     notifyListeners();
   }
 
@@ -1753,6 +2031,8 @@ class WorkspaceController extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _imageAuthorities.clear();
+    _attachmentImages?.dispose();
     for (final drafts in _uploads.values) {
       for (final draft in drafts) {
         draft.cancel.cancel();

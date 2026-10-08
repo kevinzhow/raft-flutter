@@ -1,0 +1,29 @@
+name: flutter_chat_ui
+publish_to: none
+version: 2.12.0
+description: >
+  Free and open-source chat SDK. Build fast, real-time apps and generative
+  AI agents with a high-performance, customizable, cross-platform UI.
+homepage: https://flyer.chat
+repository: https://github.com/flyerhq/flutter_chat_ui
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+  flutter: ">=3.47.6"
+
+resolution: workspace
+
+dependencies:
+  cross_cache: ^1.1.1
+  diffutil_dart: ^4.0.1
+  flutter:
+    sdk: flutter
+  flutter_chat_core: ^2.9.1
+  provider: ^6.1.5+1
+  scrollview_observer: ^1.26.2
+
+  material_ui: any
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

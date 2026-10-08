@@ -659,12 +659,14 @@ class RaftClient {
     List<String>? attachments,
     List<Map<String, dynamic>>? mentions,
     String? randomId,
+    bool asTask = false,
   }) async {
     final value = await post(
       '/v2/messages',
       data: {
         'channelId': channelId,
         'content': content,
+        if (asTask) 'asTask': true,
         'randomId': randomId ?? const Uuid().v4(),
         if (attachments != null) 'attachmentIds': attachments,
         if (mentions != null)

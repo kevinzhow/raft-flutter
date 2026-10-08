@@ -171,13 +171,15 @@ void main() {
       expect(partialReceipt, false);
       expect(state.scrolledHighlight, 'focus-0');
       expect(state.focusReceiptVisible('focus-0'), true);
-      final actions = find.descendant(
+      // The source message body replaces the removed always-visible Material
+      // actions button. Observe its real hit geometry without scrolling it.
+      final body = find.descendant(
         of: find.byKey(const ValueKey('message-focus-0')),
-        matching: find.byTooltip('Message actions'),
+        matching: find.text('Public focus fixture 0'),
       );
-      expect(actions.hitTestable(), findsOneWidget);
+      expect(body.hitTestable(), findsOneWidget);
       expect(
-        tester.getRect(actions).top,
+        tester.getRect(body).top,
         greaterThanOrEqualTo(tester.getRect(find.byType(AppBar)).bottom),
       );
       await tester.pumpWidget(const SizedBox());

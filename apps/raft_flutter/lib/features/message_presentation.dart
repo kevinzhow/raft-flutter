@@ -11,6 +11,15 @@ import 'attachment_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
 
+/// Full MessageDTO uses `user`; legacy/native human rows use `human`.
+/// Presentation consumers use one identity kind without altering transport data.
+String? messageSenderIdentityKind(RaftMessage message) =>
+    switch (message.string('senderType')) {
+      'user' || 'human' => 'human',
+      'agent' => 'agent',
+      _ => null,
+    };
+
 /// Resolves message references only in the current authority. Structured
 /// mention IDs survive renamed handles; unknown references preserve raw text.
 class MessagePresentation extends StatelessWidget {
@@ -410,6 +419,7 @@ class MessagePresentation extends StatelessWidget {
       );
     }
     return RaftMessageBody(
+      mountedMessage: true,
       content: message.content,
       exportMode: exportMode,
       fontSize: fontSize,

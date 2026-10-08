@@ -120,6 +120,12 @@ class _MobileItemRecipe extends RaftControlRecipe {
   @override
   Color get focusRing =>
       tokens.brutal ? Colors.black : tokens.colors['line-strong']!;
+  // CSS :focus-visible is an outside outline, separate from selected shadows.
+  // Consumed by RaftControl's modality-gated outside-RRect painter.
+  @override
+  double get focusOutlineWidth => 2;
+  @override
+  double get focusOutlineOffset => 2;
   @override
   BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 22);
   @override
@@ -204,7 +210,6 @@ class _MobileItemRecipe extends RaftControlRecipe {
         spreadRadius: 1,
       ),
     ],
-    if (focused) BoxShadow(color: focusRing, spreadRadius: 2),
   ];
 }
 

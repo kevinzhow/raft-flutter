@@ -9,7 +9,7 @@ import 'message_presentation_test.dart' show fixture, host;
 
 void main() {
   testWidgets(
-    'inline reply opens real focused context and stale authority callback does not navigate',
+    'inline reply opens the parent thread and stale authority callback does not navigate',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
@@ -44,8 +44,7 @@ void main() {
       a.routes['GET /channels/c1/threads/parent'] = (_) => {
         'threadChannelId': 'thread',
       };
-      a.routes['GET /messages/context/reply'] = (options) {
-        expect(options.queryParameters['channelId'], 'thread');
+      a.routes['GET /messages/channel/thread'] = (options) {
         return {
           'messages': [
             {
@@ -61,10 +60,10 @@ void main() {
       a.routes['POST /channels/thread/read'] = (_) => {};
       await tester.pumpWidget(host(RaftChatView(controller: w)));
       await tester.pumpAndSettle();
-      final row = find.byKey(const ValueKey('thread-preview-reply'));
+      final row = find.byKey(const ValueKey('inline-thread-parent'));
       expect(row, findsOneWidget);
       expect(find.text('System event'), findsNothing);
-      final callback = tester.widget<TextButton>(row).onPressed!;
+      final callback = tester.widget<RaftInlineThreadSurface>(row).onOpen!;
       await tester.runAsync(() async {
         callback();
         for (var i = 0; i < 50 && w.threadLoading; i++) {
@@ -72,7 +71,7 @@ void main() {
         }
       });
       expect(w.threadParent?.id, 'parent');
-      expect(w.highlightedMessageId, 'reply');
+      expect(w.highlightedMessageId, isNull);
       expect(w.replies.any((m) => m.id == 'reply'), isTrue);
       w.closeThread();
       w.server = RaftRecord({'id': 's1', 'role': 'guest'});
@@ -121,7 +120,7 @@ void main() {
       a.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
       await tester.pumpWidget(host(RaftChatView(controller: w, thread: true)));
       await tester.pumpAndSettle();
-      expect(find.byType(RaftThreadReplies), findsNothing);
+      expect(find.byType(RaftInlineThreadSurface), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
     },

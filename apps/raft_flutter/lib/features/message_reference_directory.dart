@@ -28,22 +28,28 @@ class MessageReferenceDirectory extends ChangeNotifier {
   String? scope;
   bool ended = false;
   int requestRevision = 0;
+  int acceptedRevision = 0;
+  bool loading = false;
   List<RaftTextReference> references = [];
-  List<Map<String, dynamic>> agents = [];
+  List<Map<String, dynamic>> agents = [], members = [];
   StreamSubscription<RaftEvent>? events;
   void changed() {
     final next = workspaceAuthority(w);
     if (scope == next) return;
     scope = next;
+    loading = true;
+    final request = ++requestRevision;
     references = [];
     agents = [];
+    members = [];
     notifyListeners();
-    load(next, ++requestRevision);
+    load(next, request);
   }
 
   Future<void> load(String authority, int ticket) async {
     final result = <String, Map<String, RaftTextReference>>{};
     final permittedAgents = <Map<String, dynamic>>[];
+    final permittedMembers = <Map<String, dynamic>>[];
     void add(String text, String href) {
       result.putIfAbsent(text, () => {})[href] = RaftTextReference(
         text: text,
@@ -60,6 +66,11 @@ class MessageReferenceDirectory extends ChangeNotifier {
               row['id'] is String &&
               row['deletedAt'] == null) {
             permittedAgents.add(
+              Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(row)),
+            );
+          }
+          if (kind == 'user' && (row['userId'] ?? row['id']) is String) {
+            permittedMembers.add(
               Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(row)),
             );
           }
@@ -98,6 +109,9 @@ class MessageReferenceDirectory extends ChangeNotifier {
       return;
     }
     agents = List.unmodifiable(permittedAgents);
+    members = List.unmodifiable(permittedMembers);
+    acceptedRevision = ticket;
+    loading = false;
     references = [
       for (final targets in result.values)
         if (targets.length == 1) targets.values.single,
@@ -111,6 +125,7 @@ class MessageReferenceDirectory extends ChangeNotifier {
     w.removeListener(changed);
     references = [];
     agents = [];
+    members = [];
     events?.cancel();
     super.dispose();
   }

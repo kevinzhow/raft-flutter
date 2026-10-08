@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/attachment_image_repository.dart';
 import '../platform/attachment_files.dart';
 import '../platform/native_sharing.dart';
 import 'attachment_preview_dialog.dart';
@@ -38,11 +40,15 @@ class AttachmentView extends StatefulWidget {
 }
 
 class _AttachmentViewState extends State<AttachmentView> {
-  late final files = widget.files ?? AttachmentFiles();
+  late AttachmentFiles files;
+  int bindingRevision = 0;
+  late String metadataFingerprint;
   final sharing = NativeSharing();
   SharedFileLease? sharedLease;
   CancelToken imageCancel = CancelToken(), downloadCancel = CancelToken();
   Uint8List? image;
+  MemoryImage? imageProvider;
+  WorkspaceAttachmentImageLease? imageLease;
   String? error;
   bool loading = false, saving = false, invalidated = false;
   bool exportReadyReported = false, opening = false;
@@ -87,6 +93,31 @@ class _AttachmentViewState extends State<AttachmentView> {
   @override
   void initState() {
     super.initState();
+    files = widget.files ?? AttachmentFiles();
+    metadataFingerprint = fingerprint();
+    captureAuthority();
+    w.addListener(scopeChanged);
+    beginImage();
+  }
+
+  String fingerprint() => jsonEncode([
+    widget.messageId,
+    widget.exportMode,
+    for (final key in [
+      'id',
+      'channelId',
+      'mimeType',
+      'sizeBytes',
+      'width',
+      'height',
+      'contentVersion',
+      'contentHash',
+      'updatedAt',
+    ])
+      widget.metadata[key],
+  ]);
+
+  void captureAuthority() {
     generation = w.client.generation;
     principal = w.client.user?.id;
     server = w.client.serverId;
@@ -102,7 +133,9 @@ class _AttachmentViewState extends State<AttachmentView> {
           };
     projectedServer = w.server?.id;
     role = w.server?.string('role');
-    w.addListener(scopeChanged);
+  }
+
+  void beginImage() {
     if (isImage &&
         (widget.metadata['sizeBytes'] as num? ?? 0) <= 50 * 1024 * 1024) {
       loadImage();
@@ -111,10 +144,47 @@ class _AttachmentViewState extends State<AttachmentView> {
     }
   }
 
+  @override
+  void didUpdateWidget(AttachmentView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final nextFingerprint = fingerprint();
+    if (oldWidget.controller == w &&
+        oldWidget.files == widget.files &&
+        nextFingerprint == metadataFingerprint) {
+      return;
+    }
+    oldWidget.controller.removeListener(scopeChanged);
+    ++bindingRevision;
+    imageCancel.cancel();
+    downloadCancel.cancel();
+    imageLease?.release();
+    imageLease = null;
+    if (sharedLease != null) unawaited(sharedLease!.dispose());
+    sharedLease = null;
+    for (final route in [previewRoute, progressRoute]) {
+      if (route?.isActive == true) route!.navigator?.removeRoute(route);
+    }
+    previewRoute = progressRoute = null;
+    imageCancel = CancelToken();
+    downloadCancel = CancelToken();
+    files = widget.files ?? files;
+    metadataFingerprint = nextFingerprint;
+    image = null;
+    imageProvider = null;
+    error = null;
+    loading = saving = opening = invalidated = exportReadyReported = false;
+    captureAuthority();
+    w.addListener(scopeChanged);
+    beginImage();
+  }
+
   void exportReady() {
     if (!widget.exportMode || exportReadyReported) return;
+    final revision = bindingRevision;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!authorized || exportReadyReported) return;
+      if (revision != bindingRevision || !authorized || exportReadyReported) {
+        return;
+      }
       exportReadyReported = true;
       widget.onExportReady?.call();
     });
@@ -130,19 +200,27 @@ class _AttachmentViewState extends State<AttachmentView> {
       for (final route in [previewRoute, progressRoute]) {
         if (route?.isActive == true) route!.navigator?.removeRoute(route);
       }
-      if (image != null) unawaited(MemoryImage(image!).evict());
-      if (image != null && mounted) setState(() => image = null);
+      imageLease?.release();
+      imageLease = null;
+      if (image != null && mounted) {
+        setState(() {
+          image = null;
+          imageProvider = null;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
+    ++bindingRevision;
     w.removeListener(scopeChanged);
     if (sharedLease != null) unawaited(sharedLease!.dispose());
     sharedLease = null;
     imageCancel.cancel();
     downloadCancel.cancel();
-    if (image != null) unawaited(MemoryImage(image!).evict());
+    imageLease?.release();
+    imageLease = null;
     for (final route in [previewRoute, progressRoute]) {
       if (route?.isActive == true) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -151,6 +229,7 @@ class _AttachmentViewState extends State<AttachmentView> {
       }
     }
     image = null;
+    imageProvider = null;
     super.dispose();
   }
 
@@ -164,52 +243,87 @@ class _AttachmentViewState extends State<AttachmentView> {
 
   Future<void> loadImage() async {
     if (!authorized || loading) return;
+    final revision = bindingRevision, controller = w;
+    final metadata = Map<String, dynamic>.from(widget.metadata);
+    final transfer = files;
+    bool current() => revision == bindingRevision && authorized;
     setState(() {
       loading = true;
       error = null;
     });
-    imageCancel = CancelToken();
     try {
-      final url = await resolve('inline');
-      if (!authorized) return;
-      final bytes = await files.image(url, cancel: imageCancel);
-      if (authorized) setState(() => image = bytes);
+      imageLease?.release();
+      final ownerChannel =
+          '${widget.metadata['channelId'] ?? (w.replies.any((m) => m.id == widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
+      final key = AttachmentImageKey.fromMetadata(
+        scope: w.attachmentImageScope,
+        channelId: ownerChannel,
+        metadata: widget.metadata,
+      );
+      final lease = w.acquireAttachmentImage(
+        key,
+        authorized: current,
+        load: (cancel) async {
+          final value = await controller.query(
+            '/attachments/${metadata['id']}/url',
+            query: {'disposition': 'inline'},
+          );
+          final url = value['url'] as String;
+          if (cancel.isCancelled) throw const StaleAttachmentImage();
+          return transfer.image(url, cancel: cancel);
+        },
+      );
+      imageLease = lease;
+      final provider = await lease.lease.ready;
+      if (current() && identical(imageLease, lease)) {
+        setState(() {
+          image = provider.bytes;
+          imageProvider = provider;
+        });
+      }
     } catch (_) {
-      if (authorized && !imageCancel.isCancelled) {
+      if (current() && !imageCancel.isCancelled) {
         setState(() => error = 'The image could not be loaded.');
       }
     } finally {
-      if (mounted) setState(() => loading = false);
-      if (image != null || error != null) exportReady();
+      if (mounted && revision == bindingRevision) {
+        setState(() => loading = false);
+      }
+      if (revision == bindingRevision && (image != null || error != null)) {
+        exportReady();
+      }
     }
   }
 
   Future<void> shareAttachment() async {
-    if (!authorized || saving || !sharing.supported) return;
+    final revision = bindingRevision;
+    bool current() => revision == bindingRevision && authorized;
+    if (!current() || saving || !sharing.supported) return;
     setState(() => saving = true);
-    downloadCancel = CancelToken();
+    final operationCancel = CancelToken();
+    downloadCancel = operationCancel;
     try {
       final url = await resolve('attachment');
-      if (!authorized) return;
+      if (!current()) return;
       if (sharedLease != null) await sharedLease!.dispose();
-      sharedLease = await sharing.prepareAttachment(
+      final prepared = await sharing.prepareAttachment(
         url: url,
         filename: name,
-        cancel: downloadCancel,
-        authorized: () => authorized,
+        cancel: operationCancel,
+        authorized: current,
         onProgress: (_, _) {
-          if (!authorized) downloadCancel.cancel();
+          if (!current()) operationCancel.cancel();
         },
       );
-      if (sharedLease == null) return;
-      if (!authorized) {
-        await sharedLease!.dispose();
-        sharedLease = null;
+      if (prepared == null) return;
+      if (!current()) {
+        await prepared.dispose();
         return;
       }
-      await sharing.shareFile(sharedLease!, mime);
+      sharedLease = prepared;
+      await sharing.shareFile(prepared, mime);
     } catch (_) {
-      if (mounted && authorized && !downloadCancel.isCancelled) {
+      if (mounted && current() && !operationCancel.isCancelled) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -219,35 +333,41 @@ class _AttachmentViewState extends State<AttachmentView> {
         );
       }
     } finally {
-      if (mounted) setState(() => saving = false);
+      if (mounted && revision == bindingRevision) {
+        setState(() => saving = false);
+      }
     }
   }
 
   Future<void> download() async {
-    if (!authorized || saving) return;
+    final revision = bindingRevision;
+    bool current() => revision == bindingRevision && authorized;
+    if (!current() || saving) return;
     setState(() => saving = true);
-    downloadCancel = CancelToken();
+    final operationCancel = CancelToken();
+    downloadCancel = operationCancel;
     final progress = ValueNotifier<double?>(null);
     var dialogVisible = true;
     var progressOpened = false;
+    DialogRoute<void>? operationRoute;
     // Use the platform save picker first; show progress only after it closes.
     try {
       final url = await resolve('attachment');
-      if (!authorized) return;
+      if (!current()) return;
       final saved = await files.save(
         url: url,
         filename: name,
         mimeType: mime,
-        cancel: downloadCancel,
-        authorized: () => authorized,
+        cancel: operationCancel,
+        authorized: current,
         onProgress: (received, total) {
-          if (!authorized) {
-            downloadCancel.cancel();
+          if (!current()) {
+            operationCancel.cancel();
             return;
           }
           if (!progressOpened) {
             progressOpened = true;
-            progressRoute = DialogRoute<void>(
+            operationRoute = DialogRoute<void>(
               context: context,
               barrierDismissible: false,
               builder: (context) => AlertDialog(
@@ -259,25 +379,26 @@ class _AttachmentViewState extends State<AttachmentView> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: downloadCancel.cancel,
+                    onPressed: operationCancel.cancel,
                     child: const Text('Cancel'),
                   ),
                 ],
               ),
             );
+            progressRoute = operationRoute;
             Navigator.of(
               context,
               rootNavigator: true,
-            ).push(progressRoute!).whenComplete(() => dialogVisible = false);
+            ).push(operationRoute!).whenComplete(() => dialogVisible = false);
           }
           progress.value = total > 0 ? received / total : null;
         },
       );
       if (progressOpened && mounted && dialogVisible) {
-        progressRoute?.navigator?.removeRoute(progressRoute!);
+        operationRoute?.navigator?.removeRoute(operationRoute!);
         dialogVisible = false;
       }
-      if (saved != null && mounted && authorized) {
+      if (saved != null && mounted && current()) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Saved $name'),
@@ -301,17 +422,17 @@ class _AttachmentViewState extends State<AttachmentView> {
         );
       }
     } catch (_) {
-      if (mounted && authorized && !downloadCancel.isCancelled) {
+      if (mounted && current() && !operationCancel.isCancelled) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Download failed. Try again.')),
         );
       }
     } finally {
-      saving = false;
-      if (progressOpened && progressRoute?.isActive == true) {
-        progressRoute!.navigator?.removeRoute(progressRoute!);
+      if (revision == bindingRevision) saving = false;
+      if (progressOpened && operationRoute?.isActive == true) {
+        operationRoute!.navigator?.removeRoute(operationRoute!);
       }
-      progressRoute = null;
+      if (identical(progressRoute, operationRoute)) progressRoute = null;
       // The dialog builder may still be mounted for its closing animation.
       Future<void>.delayed(const Duration(seconds: 1), progress.dispose);
     }
@@ -319,15 +440,18 @@ class _AttachmentViewState extends State<AttachmentView> {
 
   Future<void> open() async {
     if (!authorized || opening || previewRoute?.isActive == true) return;
+    final revision = bindingRevision;
     opening = true;
     try {
       await openCurrent();
     } finally {
-      opening = false;
+      if (revision == bindingRevision) opening = false;
     }
   }
 
   Future<void> openCurrent() async {
+    final revision = bindingRevision;
+    bool current() => revision == bindingRevision && authorized;
     final html =
         '${widget.metadata['mimeType'] ?? ''}'
                 .toLowerCase()
@@ -340,29 +464,31 @@ class _AttachmentViewState extends State<AttachmentView> {
       var enabled = true;
       try {
         final gate = await w.query('/messages/attachment-preview/enabled');
-        if (!authorized) return;
+        if (!current()) return;
         enabled = gate is Map && gate['enabled'] == true;
       } on RaftApiException catch (error) {
-        if (!authorized || [401, 403].contains(error.status)) return;
+        if (!current() || [401, 403].contains(error.status)) return;
       } catch (_) {
-        if (!authorized) return;
+        if (!current()) return;
       }
       if (!enabled) {
         await download();
         return;
       }
-      if (!mounted || !authorized) return;
-      previewRoute = DialogRoute<void>(
+      if (!mounted || !current()) return;
+      late final DialogRoute<void> operationRoute;
+      operationRoute = DialogRoute<void>(
         context: context,
         builder: (dialogContext) => html
             ? HtmlAttachmentPreviewDialog(
                 controller: w,
                 metadata: widget.metadata,
-                authorized: () => authorized,
+                authorized: current,
                 onClose: () {
                   if (dialogContext.mounted &&
-                      previewRoute?.isCurrent == true) {
-                    previewRoute!.navigator?.pop();
+                      identical(previewRoute, operationRoute) &&
+                      operationRoute.isCurrent) {
+                    operationRoute.navigator?.pop();
                   }
                 },
                 onDownload: download,
@@ -370,18 +496,20 @@ class _AttachmentViewState extends State<AttachmentView> {
             : AttachmentPreviewDialog(
                 controller: w,
                 metadata: widget.metadata,
-                authorized: () => authorized,
+                authorized: current,
                 onClose: () {
                   if (dialogContext.mounted &&
-                      previewRoute?.isCurrent == true) {
-                    previewRoute!.navigator?.pop();
+                      identical(previewRoute, operationRoute) &&
+                      operationRoute.isCurrent) {
+                    operationRoute.navigator?.pop();
                   }
                 },
                 onDownload: download,
               ),
       );
-      await Navigator.of(context, rootNavigator: true).push(previewRoute!);
-      previewRoute = null;
+      previewRoute = operationRoute;
+      await Navigator.of(context, rootNavigator: true).push(operationRoute);
+      if (identical(previewRoute, operationRoute)) previewRoute = null;
       return;
     }
     if (!isImage) {
@@ -389,26 +517,29 @@ class _AttachmentViewState extends State<AttachmentView> {
       return;
     }
     if (image == null) await loadImage();
-    if (!mounted || !authorized || image == null) return;
-    previewRoute = DialogRoute<void>(
+    if (!mounted || !current() || image == null) return;
+    late final DialogRoute<void> operationRoute;
+    operationRoute = DialogRoute<void>(
       context: context,
       builder: (dialogContext) => RaftAttachmentLightbox(
         title: name,
         titleBold: true,
         onClose: () {
-          final route = previewRoute;
-          if (route?.isActive == true) route!.navigator?.removeRoute(route);
+          if (identical(previewRoute, operationRoute) &&
+              operationRoute.isActive) {
+            operationRoute.navigator?.removeRoute(operationRoute);
+          }
         },
         footer: RaftTextButton(
           label: 'Download original',
           glyph: RaftGlyph.download,
-          onPressed: authorized ? download : null,
+          onPressed: current() ? download : null,
           variant: RaftControlVariant.ghost,
         ),
         child: Center(
           child: InteractiveViewer(
-            child: Image.memory(
-              image!,
+            child: Image(
+              image: imageProvider!,
               key: ValueKey('attachment-image-${widget.metadata['id']}'),
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) => const Text(
@@ -419,8 +550,9 @@ class _AttachmentViewState extends State<AttachmentView> {
         ),
       ),
     );
-    await Navigator.of(context, rootNavigator: true).push(previewRoute!);
-    previewRoute = null;
+    previewRoute = operationRoute;
+    await Navigator.of(context, rootNavigator: true).push(operationRoute);
+    if (identical(previewRoute, operationRoute)) previewRoute = null;
   }
 
   @override
@@ -441,8 +573,8 @@ class _AttachmentViewState extends State<AttachmentView> {
     onCancel: saving ? downloadCancel.cancel : null,
     preview: image == null
         ? null
-        : Image.memory(
-            image!,
+        : Image(
+            image: imageProvider!,
             fit: widget.imageFit,
             errorBuilder: (_, _, _) => const Padding(
               padding: EdgeInsets.all(16),

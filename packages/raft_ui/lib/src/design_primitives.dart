@@ -1,7 +1,10 @@
+import 'tooltip.dart';
+
 import 'dart:math' as math;
 import 'dart:ui' show FontVariation, SemanticsRole;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
@@ -86,6 +89,9 @@ abstract final class RaftLayoutMetrics {
             : 64
       : 56;
   static const double desktopBreakpoint = 768, threadOverlayBreakpoint = 1024;
+  // index.css900–940: actual thread-layout container + portrait xl rule.
+  static const threadSplitContainerWidth = 680.0;
+  static const threadPortraitSplitViewport = 1280.0;
   static const double panelInset = 20, panelIcon = 36, panelGap = 12;
   static const EdgeInsets toolbarInset = EdgeInsets.symmetric(
     horizontal: 16,
@@ -415,6 +421,10 @@ class RaftControlRecipe {
   final RaftControlVariant variant;
   final double visualHeight;
   bool get transformsOnInteraction => true;
+
+  /// Optional CSS outline, independent of selected borders/rings/shadows.
+  double get focusOutlineWidth => 0;
+  double get focusOutlineOffset => 0;
   double get disabledOpacity => .4;
   Color foregroundFor({bool hovered = false}) => foreground;
   Color backgroundForInteraction({
@@ -760,6 +770,7 @@ class RaftControl extends StatefulWidget {
     this.semanticLabel,
     this.padding,
     this.focusNode,
+    this.focusOnPointer = true,
     this.recipe,
   });
   final Widget child;
@@ -772,6 +783,9 @@ class RaftControl extends StatefulWidget {
   final double? visualWidth;
   final String? tooltip;
   final bool busy, shadow;
+
+  /// Composer actions retain editor focus on pointer; keyboard activation stays available.
+  final bool focusOnPointer;
   final String? semanticLabel;
   final EdgeInsetsGeometry? padding;
   final FocusNode? focusNode;
@@ -780,12 +794,81 @@ class RaftControl extends StatefulWidget {
   State<RaftControl> createState() => _RaftControlState();
 }
 
+/// CSS focus-visible is keyboard modality, not Flutter's mouse/traditional
+/// focus mode. This process-local tracker stores no account or product state.
+class _RaftFocusVisible extends ChangeNotifier {
+  static final shared = _RaftFocusVisible();
+  bool keyboard = true;
+  int users = 0;
+  void acquire() {
+    if (users++ == 0) {
+      HardwareKeyboard.instance.addHandler(key);
+      GestureBinding.instance.pointerRouter.addGlobalRoute(pointer);
+    }
+  }
+
+  void release() {
+    if (--users == 0) {
+      HardwareKeyboard.instance.removeHandler(key);
+      GestureBinding.instance.pointerRouter.removeGlobalRoute(pointer);
+      keyboard = true;
+    }
+  }
+
+  void update(bool value) {
+    if (keyboard == value) return;
+    keyboard = value;
+    notifyListeners();
+  }
+
+  bool key(KeyEvent event) {
+    if (event is KeyDownEvent) update(true);
+    return false;
+  }
+
+  void pointer(PointerEvent event) {
+    if (event is PointerDownEvent) update(false);
+  }
+}
+
 class _RaftControlState extends State<RaftControl> {
   bool hovered = false, focused = false, pressed = false;
+  // Tooltip admission follows a focus entry, while outline paint follows the
+  // current modality. Escape can change the latter without entering focus.
+  bool tooltipKeyboardFocused = false;
   final ownedFocus = FocusNode();
   FocusNode get controlFocus => widget.focusNode ?? ownedFocus;
   @override
+  void initState() {
+    super.initState();
+    _RaftFocusVisible.shared.acquire();
+    _RaftFocusVisible.shared.addListener(focusModeChanged);
+  }
+
+  void focusModeChanged() {
+    final next =
+        enabled && controlFocus.hasFocus && _RaftFocusVisible.shared.keyboard;
+    final tooltipNext = tooltipKeyboardFocused && next;
+    if (mounted && (focused != next || tooltipKeyboardFocused != tooltipNext)) {
+      setState(() {
+        focused = next;
+        tooltipKeyboardFocused = tooltipNext;
+      });
+    }
+  }
+
+  void focusEntered(bool hasFocus) {
+    if (!mounted) return;
+    setState(() {
+      focused = enabled && hasFocus && _RaftFocusVisible.shared.keyboard;
+      tooltipKeyboardFocused = focused;
+    });
+  }
+
+  @override
   void dispose() {
+    _RaftFocusVisible.shared.removeListener(focusModeChanged);
+    _RaftFocusVisible.shared.release();
     ownedFocus.dispose();
     super.dispose();
   }
@@ -804,6 +887,7 @@ class _RaftControlState extends State<RaftControl> {
       pressed = false;
       hovered = false;
       focused = false;
+      tooltipKeyboardFocused = false;
     }
   }
 
@@ -872,7 +956,8 @@ class _RaftControlState extends State<RaftControl> {
           mouseCursor: enabled
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
-          onShowFocusHighlight: (value) => setState(() => focused = value),
+          onShowFocusHighlight: (_) => focusModeChanged(),
+          onFocusChange: focusEntered,
           actions: {
             ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
               onInvoke: (_) {
@@ -892,7 +977,7 @@ class _RaftControlState extends State<RaftControl> {
             excludeFromSemantics: true,
             onTapDown: enabled
                 ? (_) {
-                    controlFocus.requestFocus();
+                    if (widget.focusOnPointer) controlFocus.requestFocus();
                     setState(() => pressed = true);
                   }
                 : null,
@@ -978,6 +1063,21 @@ class _RaftControlState extends State<RaftControl> {
                       alignment: Alignment.center,
                       clipBehavior: Clip.none,
                       children: [
+                        if (focused && recipe.focusOutlineWidth > 0)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: CustomPaint(
+                                painter: _ControlFocusOutlinePainter(
+                                  color: recipe.focusRing,
+                                  width: recipe.focusOutlineWidth,
+                                  offset: recipe.focusOutlineOffset,
+                                  radius: recipe.radius.resolve(
+                                    Directionality.of(context),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         if (focused &&
                             (widget.kind == RaftControlKind.textLink ||
                                 widget.kind == RaftControlKind.savedAction &&
@@ -1057,8 +1157,13 @@ class _RaftControlState extends State<RaftControl> {
         ),
       ),
     );
-    if (widget.tooltip != null)
-      result = Tooltip(message: widget.tooltip!, child: result);
+    if (widget.tooltip != null) {
+      result = RaftTooltip(
+        message: widget.tooltip!,
+        keyboardFocused: tooltipKeyboardFocused,
+        child: result,
+      );
+    }
     return result;
   }
 }
@@ -2257,6 +2362,43 @@ class _InsetHighlightPainter extends CustomPainter {
   @override
   bool shouldRepaint(_InsetHighlightPainter old) =>
       old.radius != radius || old.color != color;
+}
+
+class _ControlFocusOutlinePainter extends CustomPainter {
+  const _ControlFocusOutlinePainter({
+    required this.color,
+    required this.width,
+    required this.offset,
+    required this.radius,
+  });
+  final Color color;
+  final double width, offset;
+  final BorderRadius radius;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final expansion = offset + width / 2;
+    final rect = (Offset.zero & size).inflate(expansion);
+    final rounded = BorderRadius.only(
+      topLeft: Radius.circular(radius.topLeft.x + expansion),
+      topRight: Radius.circular(radius.topRight.x + expansion),
+      bottomLeft: Radius.circular(radius.bottomLeft.x + expansion),
+      bottomRight: Radius.circular(radius.bottomRight.x + expansion),
+    );
+    canvas.drawRRect(
+      rounded.toRRect(rect),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = width,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ControlFocusOutlinePainter old) =>
+      old.color != color ||
+      old.width != width ||
+      old.offset != offset ||
+      old.radius != radius;
 }
 
 class _TextLinkFocusPainter extends CustomPainter {

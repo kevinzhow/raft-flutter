@@ -33,14 +33,133 @@ class _Files extends AttachmentFiles {
   }
 }
 
+class _RebindingFiles extends AttachmentFiles {
+  final pending = <Completer<Uint8List>>[];
+  final cancellations = <CancelToken>[];
+  @override
+  Future<Uint8List> image(String url, {required CancelToken cancel}) {
+    final next = Completer<Uint8List>();
+    pending.add(next);
+    cancellations.add(cancel);
+    return next.future;
+  }
+}
+
+Future<void> decodedPreview(WidgetTester tester) async {
+  for (var i = 0; i < 40; i++) {
+    final cards = find.byType(RaftAttachmentCard).evaluate();
+    if (cards.isNotEmpty &&
+        (cards.single.widget as RaftAttachmentCard).preview != null) {
+      return;
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+  expect(
+    tester.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
+    isNotNull,
+  );
+}
+
 void main() {
+  testWidgets(
+    'same keyed attachment slot withdraws old pending revision and rebinds controller',
+    (t) async {
+      WorkspaceController owner(String user) {
+        final client = _Client()..user = RaftRecord({'id': user});
+        client.selectServer('server');
+        final w = WorkspaceController(client)
+          ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+          ..channel = RaftChannel({'id': 'channel', 'joined': true});
+        w.channels = [w.channel!];
+        return w;
+      }
+
+      final first = owner('alice'), second = owner('bob');
+      addTearDown(() async {
+        first.dispose();
+        second.dispose();
+        await first.client.dispose();
+        await second.client.dispose();
+      });
+      final files = _RebindingFiles();
+      Widget host(WorkspaceController w, int revision) => MaterialApp(
+        theme: raftTheme(RaftFamily.elegant),
+        home: Scaffold(
+          body: AttachmentView(
+            key: const Key('same-slot'),
+            controller: w,
+            files: files,
+            metadata: {
+              'id': 'same-image',
+              'filename': 'image.png',
+              'mimeType': 'image/png',
+              'contentVersion': revision,
+            },
+          ),
+        ),
+      );
+      await t.pumpWidget(host(first, 1));
+      await t.pump();
+      final state = t.state(find.byType(AttachmentView));
+      expect(files.pending.length, 1);
+      await t.pumpWidget(host(first, 2));
+      await t.pump();
+      expect(t.state(find.byType(AttachmentView)), same(state));
+      expect(files.pending.length, 2);
+      expect(files.cancellations[0].isCancelled, true);
+      final bytes = base64Decode(
+        'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
+      );
+      files.pending[0].complete(bytes);
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await t.pump();
+      expect(
+        t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
+        null,
+      );
+      files.pending[1].complete(bytes);
+      await decodedPreview(t);
+      expect(
+        t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
+        isNotNull,
+      );
+      await t.pumpWidget(host(second, 2));
+      await t.pump();
+      expect(t.state(find.byType(AttachmentView)), same(state));
+      expect(files.pending.length, 3);
+      expect(
+        t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
+        null,
+      );
+      first.revokeServer('server');
+      await t.pump();
+      expect(files.cancellations[2].isCancelled, false);
+      files.pending[2].complete(bytes);
+      await decodedPreview(t);
+      second.revokeServer('server');
+      await t.pump();
+      expect(
+        t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
+        null,
+      );
+      await t.pumpWidget(const SizedBox());
+    },
+  );
+
   testWidgets(
     'server revocation cancels image transfer and late private bytes never render',
     (tester) async {
       final client = _Client()..user = RaftRecord({'id': 'alice'});
       client.selectServer('server');
       final w = WorkspaceController(client)
-        ..channel = RaftChannel({'id': 'channel'});
+        ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+        ..channel = RaftChannel({'id': 'channel', 'joined': true});
+      w.channels = [w.channel!];
       final files = _Files();
       await tester.pumpWidget(
         MaterialApp(
@@ -86,7 +205,9 @@ void main() {
     final client = _Client()..user = RaftRecord({'id': 'alice'});
     client.selectServer('server');
     final w = WorkspaceController(client)
-      ..channel = RaftChannel({'id': 'channel'});
+      ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+      ..channel = RaftChannel({'id': 'channel', 'joined': true});
+    w.channels = [w.channel!];
     final files = _Files()
       ..pending.complete(
         base64Decode(
@@ -109,6 +230,7 @@ void main() {
         ),
       ),
     );
+    await decodedPreview(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Preview private.png'));
     await tester.pumpAndSettle();
@@ -132,7 +254,9 @@ void main() {
       final client = _Client()..user = RaftRecord({'id': 'alice'});
       client.selectServer('server');
       final w = WorkspaceController(client)
-        ..channel = RaftChannel({'id': 'channel'});
+        ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+        ..channel = RaftChannel({'id': 'channel', 'joined': true});
+      w.channels = [w.channel!];
       w.ledger.switchServer('server');
       w.ledger.ingest([
         {
@@ -164,6 +288,7 @@ void main() {
           ),
         ),
       );
+      await decodedPreview(tester);
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Preview private.png'));
       await tester.pumpAndSettle();
@@ -196,7 +321,9 @@ void main() {
       final client = _Client()..user = RaftRecord({'id': 'alice'});
       client.selectServer('server');
       final w = WorkspaceController(client)
-        ..channel = RaftChannel({'id': 'channel'});
+        ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+        ..channel = RaftChannel({'id': 'channel', 'joined': true});
+      w.channels = [w.channel!];
       final files = _Files();
       var ready = 0;
       await tester.pumpWidget(
@@ -224,11 +351,14 @@ void main() {
           'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
         ),
       );
+      await decodedPreview(tester);
       await tester.pumpAndSettle();
+      await tester.pump();
       expect(ready, 1);
       expect(find.byTooltip('Download proof.png'), findsNothing);
       w.revokeServer('server');
       await tester.pumpAndSettle();
+      await tester.pump();
       expect(ready, 1);
       await tester.pumpWidget(const SizedBox());
       w.dispose();
@@ -241,7 +371,9 @@ void main() {
     final client = _Client()..user = RaftRecord({'id': 'alice'});
     client.selectServer('server');
     final w = WorkspaceController(client)
-      ..channel = RaftChannel({'id': 'channel'});
+      ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+      ..channel = RaftChannel({'id': 'channel', 'joined': true});
+    w.channels = [w.channel!];
     final files = _Files()
       ..pending.complete(
         base64Decode(
@@ -270,6 +402,7 @@ void main() {
         ),
       ),
     );
+    await decodedPreview(tester);
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Preview private.png'));
     await tester.pumpAndSettle();
@@ -289,7 +422,9 @@ void main() {
       final client = _Client()..user = RaftRecord({'id': 'alice'});
       client.selectServer('server');
       final w = WorkspaceController(client)
-        ..channel = RaftChannel({'id': 'channel'});
+        ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+        ..channel = RaftChannel({'id': 'channel', 'joined': true});
+      w.channels = [w.channel!];
       w.ledger.switchServer('server');
       w.ledger.ingest([
         {
@@ -330,7 +465,9 @@ void main() {
         'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
       );
       files.pending.complete(bytes);
+      await decodedPreview(t);
       await t.pumpAndSettle();
+      await t.pump();
       expect(ready, 1);
       expect(
         t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
@@ -348,6 +485,7 @@ void main() {
         PaintingBinding.instance.imageCache.containsKey(MemoryImage(bytes)),
         false,
       );
+      await t.pump();
       expect(ready, 1);
       await t.pumpWidget(const SizedBox());
       w.dispose();

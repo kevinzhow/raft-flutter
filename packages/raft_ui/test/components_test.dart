@@ -30,6 +30,7 @@ void main() {
           ),
         );
         await tester.enterText(find.byType(TextField), '你好 · 日本語');
+        await tester.pump();
         await tester.tap(find.byTooltip('Send message (Ctrl+Enter)'));
         await tester.pump();
         expect(sent, ['你好 · 日本語']);
@@ -55,6 +56,7 @@ void main() {
       ),
     );
     await tester.enterText(find.byType(TextField), 'First message');
+    await tester.pump();
     await tester.tap(find.byTooltip('Send message (Ctrl+Enter)'));
     await tester.pump();
     expect(tester.widget<TextField>(find.byType(TextField)).enabled, true);

@@ -159,7 +159,9 @@ abstract final class RaftPrimitives {
   static const rgba14fffff2 = Color(0x14fffff2);
   static const rgba1a000000 = Color(0x1a000000);
   static const rgba1a1d1414 = Color(0x1a1d1414);
-  static const rgba1af5f5f5 = Color(0x1af5f5f5);
+  // Browser transparent-canvas palette preserves its CSS alpha .1. Packing
+  // that alpha as 26/255 changes the mounted dark divider composite by 1 RGB.
+  static const rgba1af5f5f5 = Color.fromRGBO(245, 245, 245, .1);
   static const rgba2614140d = Color(0x2614140d);
   static const rgba29000000 = Color(0x29000000);
   static const rgba29191913 = Color(0x29191913);
