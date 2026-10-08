@@ -40,6 +40,13 @@ PUBLISH_DIR = REPORTS / 'raft_flutter_parity'
 BASE_URL = os.environ.get('PARITY_BASE_URL', 'http://100.109.192.23:18931')
 WEB_PORT = os.environ.get('PARITY_WEB_PORT', '4391')
 PAIR = 'react__android'
+FONT_CACHE = root / 'tool/parity-fonts'
+RAFT_UI_FONT_CSS_URL = ('https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@300..700'
+                        '&family=Hanken+Grotesk:wght@300..700&family=Inter:wght@400;500;600;700&display=swap')
+# UA of the pinned Playwright Chromium (headless shell 147); Google serves the
+# same woff2 + unicode-range CSS to the headed Chrome 147 UA (checked).
+FONT_FETCH_UA = ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
+                 'HeadlessChrome/147.0.7727.15 Safari/537.36')
 PASS_STATUSES = {'same', 'pass', 'basic-pass'}
 
 
@@ -85,7 +92,175 @@ def git(cwd, *args):
     return r.stdout.strip() if r.returncode == 0 else ''
 
 
-def react_capture(cases, refresh):
+# --- React provider with production fonts --------------------------------
+# Owner decision: the React baseline must render what the production Web
+# renders. The upstream spec fulfils raft-ui's Google Fonts URL with a local
+# Space Grotesk/Space Mono stub, so raft-ui's Hanken Grotesk/Geist/Geist
+# Mono/Inter fall back to Chromium's system-ui. We run a GENERATED copy of the
+# official spec + Playwright config (raft-source stays untouched) whose only
+# changes are: path wiring, serving the cached production Google Fonts
+# response for raft-ui's URL, font assertions retargeted to the production
+# families, and font provenance (document.fonts + CDP platform fonts) added to
+# each capture's metadata. Every patch anchor must match exactly once.
+REACT_GEN = OUT / 'react-provider'
+
+SPEC_PATCHES = [
+    ('const require = createRequire(import.meta.url);',
+     'const require = createRequire(resolve(process.env.SLOCK_REACT_REPO_DIR!, "packages/web/package.json"));'),
+    ('const packageRoot = resolve(testDir, "..");',
+     'const packageRoot = resolve(process.env.PARITY_VT_ROOT!);'),
+    ('const webFontRoot = resolve(packageRoot, "../web/src/assets/fonts");',
+     """// raft-flutter parity: production Google Fonts response for RAFT_UI_FONT_CSS_URL
+// (cached by `tool/parity fonts`, sha256-pinned in its manifest).
+const PARITY_FONT_CACHE = resolve(process.env.PARITY_FONT_CACHE!);
+const PARITY_FONT_MANIFEST = JSON.parse(readFileSync(resolve(PARITY_FONT_CACHE, "manifest.json"), "utf8"));
+function parityPinned(entry: { file: string; sha256: string }): string {
+  const file = resolve(PARITY_FONT_CACHE, entry.file);
+  if (createHash("sha256").update(readFileSync(file)).digest("hex") !== entry.sha256) {
+    throw new Error(`parity font cache digest mismatch: ${file}`);
+  }
+  return file;
+}
+if (PARITY_FONT_MANIFEST.cssUrl !== RAFT_UI_FONT_CSS_URL) {
+  throw new Error("parity font cache was fetched for a different raft-ui font URL");
+}
+const PARITY_RAFT_UI_CSS = readFileSync(parityPinned(PARITY_FONT_MANIFEST.css), "utf8");
+const PARITY_FONT_FILES = new Map<string, string>(
+  Object.entries(PARITY_FONT_MANIFEST.files).map(([url, entry]: [string, any]) => [url, parityPinned(entry)]),
+);
+const webFontRoot = resolve(packageRoot, "../web/src/assets/fonts");"""),
+    ('    if (GOOGLE_FONT_CSS_URLS.has(requestUrl)) {',
+     """    if (requestUrl === RAFT_UI_FONT_CSS_URL) {
+      visualFonts.served.add(requestUrl);
+      route.fulfill({ status: 200, contentType: "text/css; charset=utf-8", body: PARITY_RAFT_UI_CSS });
+      return;
+    }
+    const parityFontFile = PARITY_FONT_FILES.get(requestUrl);
+    if (parityFontFile) {
+      visualFonts.served.add(requestUrl);
+      route.fulfill({ status: 200, contentType: "font/woff2", path: parityFontFile });
+      return;
+    }
+    if (GOOGLE_FONT_CSS_URLS.has(requestUrl)) {"""),
+    ("""      { family: "Space Grotesk", descriptor: "400 16px 'Space Grotesk'", text: "Raft" },
+      { family: "Space Grotesk", descriptor: "700 16px 'Space Grotesk'", text: "Raft" },
+      { family: "Space Mono", descriptor: "400 16px 'Space Mono'", text: "Raft" },
+      { family: "Space Mono", descriptor: "700 16px 'Space Mono'", text: "Raft" },""",
+     """      { family: "Hanken Grotesk", descriptor: "400 16px 'Hanken Grotesk'", text: "Raft" },
+      { family: "Hanken Grotesk", descriptor: "700 16px 'Hanken Grotesk'", text: "Raft" },
+      { family: "Geist", descriptor: "400 16px 'Geist'", text: "Raft" },
+      { family: "Geist", descriptor: "700 16px 'Geist'", text: "Raft" },
+      { family: "Geist Mono", descriptor: "400 16px 'Geist Mono'", text: "Raft" },
+      { family: "Geist Mono", descriptor: "700 16px 'Geist Mono'", text: "Raft" },
+      { family: "Inter", descriptor: "400 16px 'Inter'", text: "Raft" },
+      { family: "Inter", descriptor: "700 16px 'Inter'", text: "Raft" },"""),
+    ('  expect(visualFonts.unexpectedExternalUrls).toEqual([]);',
+     """  (globalThis as any).__parityFontFaces = faces;
+  expect(visualFonts.unexpectedExternalUrls).toEqual([]);
+  // raft-flutter parity: every production family's latin subset must be served.
+  for (const family of ["geist/", "geistmono/", "hankengrotesk/", "inter/"]) {
+    expect([...visualFonts.served].some((url) => url.startsWith(`https://fonts.gstatic.com/s/${family}`))).toBe(true);
+  }"""),
+    ('  for (const assetUrl of VISUAL_FONT_ASSETS.keys()) {',
+     '  // Space Grotesk/Mono stub files are no longer requested (production CSS).\n'
+     '  for (const assetUrl of [...VISUAL_FONT_ASSETS.keys()].filter((url) => !url.startsWith("/src/assets/fonts/"))) {'),
+    ("""    writeFileSync(
+      resolve(outputDir, `${visualCase.id}.metadata.json`),""",
+     """    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);
+    writeFileSync(
+      resolve(outputDir, `${visualCase.id}.metadata.json`),"""),
+    ('          capturedAt: new Date().toISOString(),',
+     """          capturedAt: new Date().toISOString(),
+          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",
+          fontFaces: (globalThis as any).__parityFontFaces,
+          platformFonts: parityPlatformFonts,"""),
+]
+
+SPEC_APPENDIX = r"""
+
+// raft-flutter parity: the faces Chromium actually used to draw the capture's
+// text (CDP CSS.getPlatformFontsForNode), glyph counts summed per family.
+async function parityCollectPlatformFonts(page: Page, selector: string) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("DOM.enable");
+  await cdp.send("CSS.enable");
+  const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+  const { nodeIds } = await cdp.send("DOM.querySelectorAll", { nodeId: root.nodeId, selector: `${selector}, ${selector} *` });
+  const usage: Record<string, number> = {};
+  for (const nodeId of nodeIds.slice(0, 600)) {
+    try {
+      const { fonts } = await cdp.send("CSS.getPlatformFontsForNode", { nodeId });
+      for (const font of fonts) {
+        const key = `${font.familyName}${font.isCustomFont ? "" : " (system)"}`;
+        usage[key] = (usage[key] || 0) + font.glyphCount;
+      }
+    } catch {
+      // nodes without layout have no platform fonts
+    }
+  }
+  await cdp.detach();
+  return Object.fromEntries(Object.entries(usage).sort((a, b) => b[1] - a[1]));
+}
+"""
+
+
+def patch_exactly_once(text, old, new, what):
+    count = text.count(old)
+    if count != 1:
+        sys.exit(f'upstream {what} changed: patch anchor found {count}x:\n{old[:200]}')
+    return text.replace(old, new)
+
+
+def prepare_react_provider():
+    REACT_GEN.mkdir(parents=True, exist_ok=True)
+    spec = (VT / 'tests/react-provider.spec.ts').read_text()
+    for old, new in SPEC_PATCHES:
+        spec = patch_exactly_once(spec, old, new, 'react-provider.spec.ts')
+    (REACT_GEN / 'react-provider.spec.ts').write_text(spec + SPEC_APPENDIX)
+    # Same module type as the upstream package (packages/visual-testing is ESM).
+    (REACT_GEN / 'package.json').write_text(json.dumps({'type': json.loads((VT / 'package.json').read_text())['type']}) + '\n')
+    web = RAFT_SOURCE / 'packages/web'
+    config = (web / 'playwright.visual-testing.config.ts').read_text()
+    for old, new in [
+        ('const require = createRequire(import.meta.url);',
+         f'const require = createRequire({json.dumps(str(web / "package.json"))});'),
+        ('require("../visual-testing/shared/fixtureData.json")',
+         f'require({json.dumps(str(SHARED / "fixtureData.json"))})'),
+        ('  testDir: "../visual-testing/tests",',
+         f'  testDir: {json.dumps(str(REACT_GEN))},\n  testMatch: "react-provider.spec.ts",\n'
+         f'  outputDir: {json.dumps(str(OUT / "playwright-test-results"))},'),
+        ('    url: `http://127.0.0.1:${port}`,',
+         f'    cwd: {json.dumps(str(web))},\n    url: `http://127.0.0.1:${{port}}`,'),
+    ]:
+        config = patch_exactly_once(config, old, new, 'playwright.visual-testing.config.ts')
+    (REACT_GEN / 'playwright.visual-testing.config.ts').write_text(config)
+    return REACT_GEN / 'playwright.visual-testing.config.ts'
+
+
+def run_react_production_fonts(case_ids, log):
+    """Same env and Playwright invocation as the CLI's runReactProvider, with
+    the generated spec/config."""
+    cmd_fonts(argparse.Namespace(refresh=False))
+    config = prepare_react_provider()
+    env = node_env()
+    env.update({
+        'SLOCK_VISUAL_PROVIDER': 'react',
+        'SLOCK_VISUAL_CASE_IDS': ','.join(case_ids),
+        'SLOCK_VISUAL_CASE_MANIFEST': str(SHARED / 'sharedCases.json'),
+        'SLOCK_VISUAL_RESULT_ROOT': str(RESULTS),
+        'SLOCK_ANDROID_REPO_ROOT': str(OUT),
+        'PARITY_VT_ROOT': str(VT),
+        'PARITY_FONT_CACHE': str(FONT_CACHE),
+    })
+    cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
+    print('+', ' '.join(cmd), flush=True)
+    with open(log, 'a') as sink:
+        r = subprocess.run(cmd, cwd=RAFT_SOURCE / 'packages/web', env=env, stdout=sink, stderr=subprocess.STDOUT)
+    if r.returncode != 0:
+        sys.exit(f'react provider (production fonts) failed (exit {r.returncode}); see {log}')
+
+
+def react_capture(cases, refresh, fonts='production'):
     react_dir = RESULTS / 'react'
     need = [c['id'] for c in cases
             if refresh or not (react_dir / f"{c['id']}.png").is_file()]
@@ -96,8 +271,13 @@ def react_capture(cases, refresh):
     log.write_text('')
     print(f'react: capturing {len(need)} case(s); log {log}')
     # The official provider; --case limits it to the cases that need capture.
-    cli('capture', '--providers', 'react', '--webPort', WEB_PORT, '--case', ','.join(need), log=log)
+    if fonts == 'upstream':
+        # The unmodified official provider (Space Grotesk stub for raft-ui's URL).
+        cli('capture', '--providers', 'react', '--webPort', WEB_PORT, '--case', ','.join(need), log=log)
+    else:
+        run_react_production_fonts(need, log)
     (OUT / 'react-source.json').write_text(json.dumps({
+        'fonts': fonts,
         'raftSource': str(RAFT_SOURCE),
         'commit': git(RAFT_SOURCE, 'rev-parse', 'HEAD'),
         'dirtyFiles': git(RAFT_SOURCE, 'status', '--short').splitlines(),
@@ -247,7 +427,7 @@ def cmd_run(a):
     chosen = select(cases, a.cases)
     if not chosen:
         sys.exit(f'no default cases match {a.cases!r}')
-    react_capture(chosen, a.refresh_react)
+    react_capture(chosen, a.refresh_react, a.react_fonts)
     if not a.skip_flutter:
         flutter_capture(chosen, a.cases, a.shards)
     log = OUT / 'cli.log'
@@ -302,6 +482,52 @@ def cmd_probe(a):
               f"react={m.get('baselineWidth')}x{m.get('baselineHeight')} "
               f"flutter={m.get('currentWidth')}x{m.get('currentHeight')}\n"
               f"  react {react_png}\n  flutter {flutter_png}\n  side-by-side {side}")
+
+
+def fetch(url):
+    req = urllib.request.Request(url, headers={'User-Agent': FONT_FETCH_UA})
+    return urllib.request.urlopen(req, timeout=60).read()
+
+
+def cmd_fonts(a):
+    """Production raft-ui font cache for the React baseline. Default: verify
+    the committed cache against its manifest. --refresh: re-download from
+    Google and rewrite the cache + manifest (review the diff before committing)."""
+    import hashlib
+    import re
+    manifest_path = FONT_CACHE / 'manifest.json'
+    if a.refresh:
+        css = fetch(RAFT_UI_FONT_CSS_URL)
+        files = {}
+        shutil.rmtree(FONT_CACHE / 'files', ignore_errors=True)
+        (FONT_CACHE / 'files').mkdir(parents=True)
+        for url in sorted(set(re.findall(rb'url\((https://fonts\.gstatic\.com/[^)]+)\)', css))):
+            url = url.decode()
+            body = fetch(url)
+            name = url.removeprefix('https://fonts.gstatic.com/s/').replace('/', '_')
+            (FONT_CACHE / 'files' / name).write_bytes(body)
+            files[url] = {'file': f'files/{name}', 'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body)}
+        (FONT_CACHE / 'raft-ui.css').write_bytes(css)
+        manifest_path.write_text(json.dumps({
+            'cssUrl': RAFT_UI_FONT_CSS_URL,
+            'css': {'file': 'raft-ui.css', 'sha256': hashlib.sha256(css).hexdigest(), 'bytes': len(css)},
+            'userAgent': FONT_FETCH_UA,
+            'fetchedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+            'files': files,
+        }, indent=2) + '\n')
+        print(f'fonts: cached CSS + {len(files)} files in {FONT_CACHE}')
+    m = json.loads(manifest_path.read_text())
+    bad = []
+    for entry in [m['css'], *m['files'].values()]:
+        data = (FONT_CACHE / entry['file']).read_bytes()
+        if hashlib.sha256(data).hexdigest() != entry['sha256']:
+            bad.append(entry['file'])
+    css = (FONT_CACHE / m['css']['file']).read_text()
+    missing = [u for u in re.findall(r'url\((https://fonts\.gstatic\.com/[^)]+)\)', css) if u not in m['files']]
+    if bad or missing:
+        sys.exit(f'font cache invalid: hash mismatch {bad}, unmapped urls {missing}')
+    print(f'fonts: cache OK ({len(m["files"])} files, fetched {m["fetchedAt"]})')
+    return m
 
 
 def cmd_publish(a):
@@ -369,6 +595,9 @@ def main():
     r.add_argument('--cases', help='comma list of case ids or globs (default: all default cases)')
     r.add_argument('--refresh-react', action='store_true', help='recapture React even when cached')
     r.add_argument('--shards', type=int, default=int(os.environ.get('PARITY_SHARDS', '4')))
+    r.add_argument('--react-fonts', choices=['production', 'upstream'], default='production',
+                   help='production: serve the real Google Fonts response for raft-ui (default); '
+                        'upstream: the official spec unmodified (Space Grotesk stub)')
     r.add_argument('--skip-flutter', action='store_true', help='reuse existing Flutter captures')
     r.set_defaults(fn=cmd_run)
     pub = sub.add_parser('publish')
@@ -378,6 +607,9 @@ def main():
     pr.add_argument('--cases', required=True)
     pr.add_argument('--out', default=f'/tmp/parity-probe-{os.getpid()}')
     pr.set_defaults(fn=cmd_probe)
+    f = sub.add_parser('fonts', help='verify (or --refresh) the production raft-ui font cache')
+    f.add_argument('--refresh', action='store_true')
+    f.set_defaults(fn=cmd_fonts)
     s = sub.add_parser('summary')
     s.set_defaults(fn=lambda a: summarize())
     a = p.parse_args()
