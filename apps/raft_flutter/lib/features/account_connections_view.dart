@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart'
+    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 
 import '../data/workspace_controller.dart';
 import '../platform/oauth_broker.dart';
@@ -194,21 +196,9 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           style: recipe.detail,
         ),
       if (visible.isNotEmpty) ...[
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                raftText(context, 'Connected accounts'),
-                style: recipe.heading,
-              ),
-            ),
-            RaftIconButton(
-              glyph: RaftGlyph.refreshCw,
-              tooltip: 'Refresh sign-in methods',
-              onPressed: busy ? null : reload,
-            ),
-          ],
-        ),
+        // `mb-2 text-sm font-bold`
+        Text(raftText(context, 'Connected accounts'), style: recipe.heading),
+        const SizedBox(height: RaftSpace.x2),
         for (final provider in visible) ...[
           Builder(
             builder: (context) {
@@ -230,15 +220,32 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${provider['label'] ?? id}',
-                              style: recipe.providerTitle,
+                            // `mb-1 flex items-center gap-2 text-xs`:
+                            // SocialProviderIcon `size-[18px]` + label.
+                            Row(
+                              children: [
+                                const SizedBox.square(
+                                  dimension: RaftSpace.providerIcon,
+                                ),
+                                const SizedBox(width: RaftSpace.x2),
+                                Text(
+                                  '${provider['label'] ?? id}',
+                                  style: recipe.providerTitle,
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: RaftSpace.x1),
                             Text(
                               identity == null
                                   ? raftText(context, 'Not connected')
-                                  : '${identity['providerEmail'] ?? ''}',
+                                  : raftFormat(
+                                      context,
+                                      'Connected as {email}',
+                                      {
+                                        'email':
+                                            identity['providerEmail'] ?? '',
+                                      },
+                                    ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: recipe.detail,
@@ -246,11 +253,10 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      RaftButton(
+                      const SizedBox(width: RaftSpace.x3),
+                      RaftSettingsRecipeButton(
                         label: identity == null ? 'Connect' : 'Disconnect',
-                        secondary: true,
-                        visualHeight: 28,
+                        size: RaftButtonRecipeSize.sm,
                         onPressed: loading || busy || !passwordStateKnown
                             ? null
                             : identity != null
@@ -265,13 +271,11 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
               );
             },
           ),
-          const SizedBox(height: RaftAccountSignInRecipe.gap),
+          // `space-y-2`
+          const SizedBox(height: RaftSpace.x2),
         ],
-        Divider(
-          height: 1,
-          thickness: recipe.dividerWidth,
-          color: recipe.dividerColor,
-        ),
+        const SizedBox(height: RaftSpace.x1),
+        Container(height: recipe.dividerWidth, color: recipe.dividerColor),
         const SizedBox(height: RaftAccountSignInRecipe.gap),
       ],
       if (!loading && passwordStateKnown)
@@ -282,22 +286,23 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
             onUpdated: reload,
           )
         else ...[
-          Text(raftText(context, 'Set password'), style: recipe.heading),
-          const SizedBox(height: 4),
+          Text(raftText(context, 'Set a password'), style: recipe.heading),
+          const SizedBox(height: RaftSpace.x1),
           Text(
             raftText(
               context,
               'Add an email and password sign-in method before removing your final connected account.',
             ),
-            style: recipe.detail,
+            style: recipe.passwordDetail,
           ),
           const SizedBox(height: RaftAccountSignInRecipe.gap),
           Align(
             alignment: Alignment.centerLeft,
-            child: RaftButton(
-              label: 'Set password by email',
-              visualHeight: 28,
-              busy: busy,
+            // `variant="accent" size="sm"`
+            child: RaftSettingsRecipeButton(
+              label: busy ? 'Sending setup email...' : 'Set password by email',
+              variant: RaftButtonRecipeVariant.accent,
+              size: RaftButtonRecipeSize.sm,
               onPressed: busy
                   ? null
                   : () {

@@ -40,6 +40,9 @@ export 'src/mobile_navigation.dart';
 export 'src/mermaid_toolbar_recipe.dart';
 
 export 'src/sidebar_section.dart';
+export 'src/settings_layout.dart';
+export 'src/settings_controls.dart';
+export 'src/appearance_picker.dart';
 
 export 'src/notification_center.dart';
 

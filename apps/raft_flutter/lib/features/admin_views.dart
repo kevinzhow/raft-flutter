@@ -3,6 +3,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
+import 'server_views.dart';
 import 'server_setup_gate.dart';
 
 class AdministrationView extends StatefulWidget {
@@ -127,7 +128,8 @@ class _AdministrationState extends ManagementState<AdministrationView> {
           },
         );
       },
-      description: 'New invitees must explicitly accept the active agreement before joining.',
+      description:
+          'New invitees must explicitly accept the active agreement before joining.',
     );
   }
 
@@ -172,6 +174,7 @@ class _AdministrationState extends ManagementState<AdministrationView> {
 
   @override
   Widget build(BuildContext context) => page('Workspace administration', [
+    WorkspaceAccessSettings(controller: w),
     heading('Usage data'),
     SwitchListTile(
       title: const Text('Share product usage data'),
@@ -298,7 +301,9 @@ class _AdministrationState extends ManagementState<AdministrationView> {
           : (v) => run(() async {
               await confirm(
                 v ? 'Enable workspace Labs?' : 'Disable workspace Labs?',
-                v ? 'This lets admins opt in to available Labs features.' : 'All Labs features will stop being effective in this workspace.',
+                v
+                    ? 'This lets admins opt in to available Labs features.'
+                    : 'All Labs features will stop being effective in this workspace.',
                 () async {
                   await w.client.patch(
                     '$base/labs/access',
@@ -563,7 +568,8 @@ class _BillingState extends ManagementState<BillingView> {
         }
       },
       submit: subscribed ? 'Review changes' : 'Review purchase',
-      description: 'Choose the total capacity after this purchase. Human seats and agent seats must cover current workspace usage.',
+      description:
+          'Choose the total capacity after this purchase. Human seats and agent seats must cover current workspace usage.',
     );
   }
 
@@ -620,7 +626,8 @@ class _BillingState extends ManagementState<BillingView> {
                     'Keep current access until the billing period ends. Your subscription will stop renewing.',
                     () async {
                       await w.client.post('/billing/cancel');
-                      notice = 'Cancellation scheduled for the end of the billing period.';
+                      notice =
+                          'Cancellation scheduled for the end of the billing period.';
                     },
                     submit: 'Cancel subscription',
                     destructive: true,

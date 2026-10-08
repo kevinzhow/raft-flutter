@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart'
+    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
+
+import 'page_component_recipes.dart';
 
 import '../data/workspace_controller.dart';
 
@@ -161,6 +165,11 @@ class WorkspaceActions {
   }
 }
 
+/// SettingsPanel.tsx ServerTabContent for the fixture capabilities:
+/// ProfileSection + DangerZoneSection. (PublicVisibilitySection and
+/// ArchivedChannelsSection render nothing without public visibility /
+/// archived channels.) Invitations and the workspace push mode live in
+/// [WorkspaceAccessSettings] under Administration.
 class ServerSettingsView extends StatefulWidget {
   const ServerSettingsView({super.key, required this.controller});
   final WorkspaceController controller;
@@ -169,6 +178,329 @@ class ServerSettingsView extends StatefulWidget {
 }
 
 class _ServerSettingsViewState extends State<ServerSettingsView> {
+  WorkspaceController get w => widget.controller;
+  final name = TextEditingController();
+  String? savedName, error;
+  bool saving = false, saved = false;
+  Timer? savedReset;
+
+  @override
+  void initState() {
+    super.initState();
+    name.text = savedName = w.server?.name ?? '';
+  }
+
+  @override
+  void didUpdateWidget(covariant ServerSettingsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final current = w.server?.name ?? '';
+    if (current != savedName) name.text = savedName = current;
+  }
+
+  @override
+  void dispose() {
+    savedReset?.cancel();
+    name.dispose();
+    super.dispose();
+  }
+
+  bool get dirty =>
+      name.text.trim().isNotEmpty && name.text.trim() != w.server?.name;
+
+  Future<void> save() async {
+    final id = w.server?.id;
+    if (id == null || !dirty || saving) return;
+    setState(() {
+      error = null;
+      saved = false;
+      saving = true;
+    });
+    try {
+      await w.command(
+        'PATCH',
+        '/servers/$id',
+        data: {'name': name.text.trim()},
+      );
+      await w.recoverMembership();
+      if (!mounted) return;
+      savedName = name.text.trim();
+      setState(() => saved = true);
+      savedReset?.cancel();
+      savedReset = Timer(const Duration(seconds: 2), () {
+        if (mounted) setState(() => saved = false);
+      });
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
+  Future<void> confirmDelete() async {
+    final server = w.server;
+    if (server == null) return;
+    final matches = ValueNotifier(false);
+    final ok = await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        title: 'Delete Server',
+        confirmLabel: 'Delete Server',
+        confirmKey: const Key('server-delete-confirm-button'),
+        content: _DeleteServerConfirm(
+          name: server.name,
+          slug: server.string('slug'),
+          matches: matches,
+        ),
+        confirmEnabled: matches,
+      ),
+    );
+    matches.dispose();
+    if (ok == true) await exitServer(delete: true);
+  }
+
+  Future<void> confirmLeave() async {
+    final server = w.server;
+    if (server == null) return;
+    final ok = await RaftConfirmDialog.show(
+      context,
+      RaftConfirmDialog(
+        title: 'Leave Server',
+        message: raftFormat(
+          context,
+          "You'll lose access to {serverName} and all of its channels. You can be re-invited later.",
+          {'serverName': server.name},
+        ),
+        confirmLabel: 'Leave Server',
+        // confirmColor="bg-brutal-orange" -> warning tone.
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        confirmKey: const Key('server-leave-confirm-button'),
+      ),
+    );
+    if (ok == true) await exitServer(delete: false);
+  }
+
+  Future<void> exitServer({required bool delete}) async {
+    final server = w.server;
+    if (server == null) return;
+    await w.client.exitServer(server.id, delete: delete);
+    w.revokeServer(server.id);
+    await w.recoverMembership();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final server = w.server;
+    if (server == null) return const SizedBox.shrink();
+    final t = RaftTokens.of(context);
+    final canEdit = w.can('editServerSettings');
+    final role = server.string('role');
+    final canLeave = role == 'admin' || role == 'member' || role == 'guest';
+    final slug = server.string('slug');
+    final initial = (server.name.trim().isEmpty ? 'S' : server.name.trim())
+        .substring(0, 1)
+        .toUpperCase();
+    return ListView(
+      primary: false,
+      padding: RaftSettingsPanelFrame.contentInset,
+      children: [
+        const RaftSettingsSectionHeader(
+          label: 'Profile',
+          glyph: RaftGlyph.building2,
+        ),
+        RaftSettingsProfileCard(
+          avatar: RaftServerProfileTile(initial: initial),
+          title: server.name,
+          subtitle: '/$slug',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              RaftSettingsField(
+                label: 'Name',
+                child: canEdit
+                    ? RaftRecipeInput(
+                        fieldKey: const Key('server-profile-name-input'),
+                        controller: name,
+                        onChanged: (_) => setState(() => saved = false),
+                        onSubmitted: (_) => save(),
+                      )
+                    : RaftSettingsReadonlyValue(
+                        key: const Key('server-profile-name-readonly'),
+                        value: server.name,
+                      ),
+              ),
+              const SizedBox(height: RaftSpace.x3),
+              RaftSettingsField(
+                label: 'Slug',
+                // SlugInput readOnly: `border-line-strong bg-layer-inset
+                // shadow-none theme-brutal:border-black/30
+                // theme-brutal:bg-gray-50`, input `text-sm
+                // text-foreground-muted theme-brutal:text-black/60`.
+                child: RaftPrefixedInput(
+                  prefix: '/',
+                  value: slug,
+                  readOnly: true,
+                  flat: true,
+                  rootColor: RaftSettingsText(t).insetFill,
+                  rootBorderColor: t.brutal
+                      ? RaftSettingsText(t).softEdge
+                      : t.colors['line-strong'],
+                  textColor: RaftSettingsText(t).muted,
+                ),
+              ),
+              if (error != null) ...[
+                const SizedBox(height: RaftSpace.x3),
+                Text(error!, style: RaftSettingsText(t).alert),
+              ],
+              if (canEdit) ...[
+                const SizedBox(height: RaftSpace.x3),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: RaftSettingsRecipeButton(
+                    key: const Key('server-profile-save-button'),
+                    label: saving
+                        ? 'Saving...'
+                        : saved
+                        ? 'Saved'
+                        : 'Save Profile',
+                    glyph: saved && !saving ? RaftGlyph.check : null,
+                    glyphSize: 14,
+                    variant: RaftButtonRecipeVariant.accent,
+                    size: RaftButtonRecipeSize.sm,
+                    onPressed: dirty && !saving ? save : null,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: RaftSpace.x6),
+        const RaftSettingsSectionHeader(
+          label: 'Danger Zone',
+          glyph: RaftGlyph.triangleAlert,
+        ),
+        if (canLeave) ...[
+          RaftSettingsActionCard(
+            title: 'Leave Server',
+            description:
+                "You will lose access to this server's channels and DMs. You can rejoin if invited again.",
+            action: RaftSettingsRecipeButton(
+              key: const Key('server-danger-leave-button'),
+              label: 'Leave Server',
+              variant: RaftButtonRecipeVariant.warning,
+              onPressed: confirmLeave,
+            ),
+          ),
+          const SizedBox(height: RaftSpace.x3),
+        ],
+        if (role == 'owner')
+          RaftSettingsActionCard(
+            key: const Key('server-danger-delete-card'),
+            stacked: true,
+            title: 'Delete Server',
+            description:
+                'Permanently remove this server and all its data. This cannot be undone.',
+            action: RaftSettingsRecipeButton(
+              key: const Key('server-danger-delete-button'),
+              label: 'Delete Server',
+              glyph: RaftGlyph.trash2,
+              glyphSize: 14,
+              variant: RaftButtonRecipeVariant.danger,
+              expand: true,
+              onPressed: confirmDelete,
+            ),
+          ),
+        const SizedBox(height: RaftSpace.x6),
+      ],
+    );
+  }
+}
+
+/// DangerZoneSection delete confirmation body: `space-y-4`, warning copy
+/// with the bold server name, then "Type `slug` to confirm:" over SlugInput.
+class _DeleteServerConfirm extends StatefulWidget {
+  const _DeleteServerConfirm({
+    required this.name,
+    required this.slug,
+    required this.matches,
+  });
+  final String name, slug;
+  final ValueNotifier<bool> matches;
+  @override
+  State<_DeleteServerConfirm> createState() => _DeleteServerConfirmState();
+}
+
+class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final text = RaftSettingsText(t);
+    // `<span className="font-bold">` inside the dialog copy.
+    final bold = RaftConfirmDialog.messageStyle(t)
+        .merge(text.title)
+        .copyWith(
+          fontSize: RaftConfirmDialog.messageStyle(t).fontSize,
+          height: RaftConfirmDialog.messageStyle(t).height,
+          color: RaftConfirmDialog.messageStyle(t).color,
+        );
+    // `text-sm text-foreground-muted theme-brutal:text-black/60 mb-2`
+    final prompt = text.bodyMuted;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: raftText(context, 'This will permanently delete '),
+              ),
+              TextSpan(text: widget.name, style: bold),
+              TextSpan(
+                text: raftText(
+                  context,
+                  ' and all its data (agents, channels, messages). This cannot be undone.',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: RaftSpace.x4),
+        Text.rich(
+          // CSS gives the inline mono span the paragraph's 20px line box.
+          strutStyle: StrutStyle.fromTextStyle(prompt, forceStrutHeight: true),
+          TextSpan(
+            style: prompt,
+            children: [
+              TextSpan(text: raftText(context, 'Type ')),
+              TextSpan(text: widget.slug, style: text.monoBold),
+              TextSpan(text: raftText(context, ' to confirm:')),
+            ],
+          ),
+        ),
+        const SizedBox(height: RaftSpace.x2),
+        RaftPrefixedInput(
+          key: const Key('server-delete-slug-input'),
+          prefix: '/',
+          placeholder: widget.slug,
+          mono: true,
+          // Inherits the confirm copy's `text-foreground-muted`.
+          textColor: RaftConfirmDialog.messageStyle(t).color,
+          onChanged: (v) => widget.matches.value = v == widget.slug,
+        ),
+      ],
+    );
+  }
+}
+
+/// Workspace push mode and invitations (Administration).
+class WorkspaceAccessSettings extends StatefulWidget {
+  const WorkspaceAccessSettings({super.key, required this.controller});
+  final WorkspaceController controller;
+  @override
+  State<WorkspaceAccessSettings> createState() =>
+      _WorkspaceAccessSettingsState();
+}
+
+class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
   WorkspaceController get w => widget.controller;
   Map<String, dynamic> profile = {}, prefs = {};
   List<Map<String, dynamic>> invites = [], links = [];
@@ -244,29 +576,6 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
     }
   }
 
-  Future<void> edit() async {
-    final id = w.server!.id;
-    await showDialog(
-      context: context,
-      builder: (_) => RaftFormDialog(
-        title: 'Edit workspace',
-        fields: [
-          RaftFormField(
-            'name',
-            'Workspace name',
-            initial: '${profile['name'] ?? w.server!.name}',
-            required: true,
-          ),
-        ],
-        onSubmit: (values) async {
-          await w.command('PATCH', '/servers/$id', data: values);
-          await w.recoverMembership();
-        },
-      ),
-    );
-    if (mounted) await load();
-  }
-
   Future<void> invite() async {
     final id = w.server!.id;
     await showDialog(
@@ -326,9 +635,9 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
               if (values['maxUses']!.isNotEmpty)
                 'maxUses': int.parse(values['maxUses']!),
               if (values['expiresAt']!.isNotEmpty)
-                'expiresAt': DateTime.parse(values['expiresAt']!)
-                    .toUtc()
-                    .toIso8601String(),
+                'expiresAt': DateTime.parse(
+                  values['expiresAt']!,
+                ).toUtc().toIso8601String(),
             },
           );
           token = result['token'];
@@ -363,9 +672,9 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
 
   @override
   Widget build(BuildContext context) => loading
-      ? Center(child: CircularProgressIndicator())
-      : ListView(
-          padding: const EdgeInsets.all(24),
+      ? const Center(child: CircularProgressIndicator())
+      : Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (error != null)
               Semantics(
@@ -376,27 +685,10 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                 ),
               ),
             Text(
-              '${profile['name'] ?? w.server?.name ?? 'Workspace'}',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            Text(
-              'Address: ${profile['slug'] ?? w.server?.string('slug') ?? ''}',
-            ),
-            if (w.can('editServerSettings'))
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: busy ? null : edit,
-                  icon: const Icon(Icons.edit_outlined),
-                  label: Text(raftText(context, 'Edit workspace')),
-                ),
-              ),
-            const SizedBox(height: 24),
-            Text(
               raftText(context, 'Notifications'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
             DropdownButtonFormField<String>(
               initialValue: '${prefs['serverPushMode'] ?? 'all'}',
               decoration: InputDecoration(
@@ -432,9 +724,9 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                 raftText(context, 'Invitations'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: RaftSpace.x3),
               Wrap(
-                spacing: 12,
+                spacing: RaftSpace.x3,
                 children: [
                   RaftButton(
                     label: 'Invite member',
@@ -498,29 +790,6 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                   ),
                 ),
             ],
-            const SizedBox(height: 32),
-            Text(
-              raftText(context, 'Membership'),
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => WorkspaceActions.leave(context, w),
-                icon: const Icon(Icons.logout),
-                label: Text(raftText(context, 'Leave workspace')),
-              ),
-            ),
-            if (w.server?.string('role') == 'owner')
-              Align(
-                alignment: Alignment.centerLeft,
-                child: RaftButton(
-                  label: 'Delete workspace',
-                  destructive: true,
-                  onPressed: () =>
-                      WorkspaceActions.leave(context, w, delete: true),
-                ),
-              ),
           ],
         );
 }

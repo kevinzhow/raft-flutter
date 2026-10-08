@@ -81,7 +81,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byTooltip('Settings navigation'));
+      await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(const ValueKey('workspace-settings-nav-appearance')),

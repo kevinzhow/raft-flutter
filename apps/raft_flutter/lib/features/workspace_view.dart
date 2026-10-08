@@ -12,7 +12,6 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../data/personal_presentation.dart';
 import '../data/sidebar_disclosure.dart';
-import 'appearance_section.dart';
 import 'message_reference_directory.dart';
 import 'chat_agent_presentation.dart';
 import 'live_agent_activity_bar.dart';
@@ -27,9 +26,8 @@ import 'resource_view.dart';
 import 'page_layout.dart';
 import 'channel_settings.dart';
 import 'create_channel_dialog.dart';
+import 'workspace_settings.dart';
 import 'server_views.dart';
-import 'account_settings.dart';
-import 'settings_page.dart';
 import 'mobile_workspace_navigation.dart';
 import 'desktop_navigation_policy.dart';
 import 'desktop_master_detail.dart';
@@ -37,14 +35,12 @@ import 'desktop_directory_view.dart';
 import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
 import 'member_profile_view.dart';
-import 'locale_settings_page.dart';
 import 'fleet_views.dart';
 import 'integrations_views.dart';
 import 'provider_views.dart';
 import 'admin_views.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
-import 'notification_settings_view.dart';
 import 'sidebar_preferences_view.dart';
 import 'sidebar_projection.dart';
 import 'sidebar_sort_menu.dart';
@@ -1940,134 +1936,24 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final scope = mobileAuthority;
     return KeyedSubtree(
       key: const Key('workspace-account-settings'),
-      child: RaftSettingsPage(
+      child: WorkspaceSettings(
         key: ValueKey(
           'workspace-account-settings-${w.client.generation}-${w.client.user?.id}-${w.server?.id}-${w.server?.string('role')}',
         ),
+        controller: w,
+        appearance: widget.appearance,
+        onAppearance: (appearance) => widget.onAppearance(appearance),
+        presentation: presentation,
+        notifications: widget.notifications,
+        onLogout: widget.onLogout,
         mobileRoot: true,
         mobileResetRevision: mobileSettingsRevision,
         onMobileDetailChanged: (detail) {
           if (!mounted || scope != mobileAuthority) return;
           setState(() => mobileSettingsDetail = detail);
         },
-        destinations: [
-          RaftSettingsDestination(
-            'account',
-            'Account',
-            RaftGlyph.user,
-            (_) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AccountSettings(controller: w),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: RaftButton(
-                    label: tr('Sign out'),
-                    secondary: true,
-                    icon: Icons.logout,
-                    onPressed: widget.onLogout,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          RaftSettingsDestination(
-            'language',
-            'Language & Region',
-            RaftGlyph.globe,
-            (_) => LocaleSettingsPage(controller: w),
-          ),
-          RaftSettingsDestination(
-            'appearance',
-            'Appearance',
-            RaftGlyph.palette,
-            (_) => RaftAppearanceSection(
-              appearance: widget.appearance,
-              onAppearance: (appearance) => widget.onAppearance(appearance),
-              presentation: presentation,
-            ),
-          ),
-          if (widget.notifications != null)
-            RaftSettingsDestination(
-              'notifications',
-              'Notifications',
-              RaftGlyph.info,
-              (_) => NotificationSettingsView(service: widget.notifications!),
-            ),
-          if (w.server != null) ...[
-            RaftSettingsDestination(
-              'sidebar',
-              'Sidebar preferences',
-              RaftGlyph.columns2,
-              (_) => SidebarPreferencesView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
-            if (w.can('federateChannels'))
-              RaftSettingsDestination(
-                'joint-channels',
-                'Joint channels',
-                RaftGlyph.gitBranch,
-                (_) => JointChannelsView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            RaftSettingsDestination(
-              'server',
-              'Server profile',
-              RaftGlyph.settings,
-              (_) => ServerSettingsView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
-            if (w.can('viewBilling'))
-              RaftSettingsDestination(
-                'billing',
-                'Plan & Billing',
-                RaftGlyph.fileText,
-                (_) => BillingView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (w.can('viewServerSettings'))
-              RaftSettingsDestination(
-                'administration',
-                'Administration',
-                RaftGlyph.settings,
-                (_) => AdministrationView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (w.can('manageIntegrations'))
-              RaftSettingsDestination(
-                'applications',
-                'Applications',
-                RaftGlyph.bot,
-                (_) => IntegrationsView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (providerEnabled && w.can('manageExternalAuth'))
-              RaftSettingsDestination(
-                'providers',
-                'Providers',
-                RaftGlyph.lock,
-                (_) => ProviderConnectionsView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (bridgeEnabled && w.can('manageIntegrations'))
-              RaftSettingsDestination(
-                'bridges',
-                'IM bridges',
-                RaftGlyph.link,
-                (_) => IMBridgesView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-          ],
-        ],
+        providerEnabled: providerEnabled,
+        bridgeEnabled: bridgeEnabled,
       ),
     );
   }
