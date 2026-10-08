@@ -103,6 +103,7 @@ class WorkspaceSettings extends StatelessWidget {
             RaftGlyph.building2,
             (_) => ServerSettingsView(controller: w),
             group: workspace,
+            scroll: false,
           ),
           if (w.can('viewBilling'))
             RaftSettingsDestination(
@@ -329,9 +330,10 @@ class _ReleaseNotesViewState extends State<ReleaseNotesView> {
                     style: RaftTypography.mono(t),
                   ),
                   const SizedBox(height: 8),
-                  for (final entry in release['entries'] is List
-                      ? release['entries'] as List
-                      : const [])
+                  for (final entry
+                      in release['entries'] is List
+                          ? release['entries'] as List
+                          : const [])
                     if (entry is Map)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),

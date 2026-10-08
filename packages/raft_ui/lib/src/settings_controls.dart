@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
@@ -43,6 +44,23 @@ TextStyle _slotText(RaftTokens t, RaftSlotStyle s, {TextStyle? base}) {
       );
 }
 
+/// A borderless, padding-free field decoration: the recipe container owns
+/// border, fill and padding (the app theme's input decoration must not apply).
+InputDecoration _bare({String? hint, TextStyle? hintStyle}) => InputDecoration(
+  isCollapsed: true,
+  isDense: true,
+  filled: false,
+  contentPadding: EdgeInsets.zero,
+  border: InputBorder.none,
+  enabledBorder: InputBorder.none,
+  focusedBorder: InputBorder.none,
+  disabledBorder: InputBorder.none,
+  errorBorder: InputBorder.none,
+  focusedErrorBorder: InputBorder.none,
+  hintText: hint,
+  hintStyle: hintStyle,
+);
+
 /// raft-ui `Button` rendered from `RaftButtonRecipe`.
 class RaftRecipeButton extends StatefulWidget {
   const RaftRecipeButton({
@@ -85,7 +103,12 @@ class _RaftRecipeButtonState extends State<RaftRecipeButton> {
       theme: raftRecipeTheme(t),
       variant: widget.variant,
       size: widget.size,
-      states: _states(t, hovered: hovered, pressed: pressed, disabled: disabled),
+      states: _states(
+        t,
+        hovered: hovered,
+        pressed: pressed,
+        disabled: disabled,
+      ),
       tokens: tokens,
     ).root;
     final text = _slotText(t, s);
@@ -164,10 +187,7 @@ class RaftSettingsField extends StatelessWidget {
     );
     // tailwind-merge: the callsite `text-xs` replaces the recipe `text-sm`
     // and drops `leading-none`, so the label is 12px / 16px.
-    final style = _slotText(
-      t,
-      f.label,
-    ).copyWith(fontSize: 12, height: 16 / 12);
+    final style = _slotText(t, f.label).copyWith(fontSize: 12, height: 16 / 12);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -238,8 +258,8 @@ class _RaftRecipeInputState extends State<RaftRecipeInput> {
         cursorColor: text.color ?? t.strong,
         onChanged: widget.onChanged,
         onSubmitted: widget.onSubmitted,
-        decoration: InputDecoration.collapsed(
-          hintText: widget.placeholder,
+        decoration: _bare(
+          hint: widget.placeholder,
           hintStyle: text.copyWith(color: t.colors['foreground-placeholder']),
         ),
       ),
@@ -326,10 +346,7 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput> {
       color: widget.rootColor ?? root.color,
       border: widget.rootBorderColor == null || border == null
           ? border
-          : Border.all(
-              color: widget.rootBorderColor!,
-              width: border.top.width,
-            ),
+          : Border.all(color: widget.rootBorderColor!, width: border.top.width),
       boxShadow: widget.flat ? const [] : root.boxShadow,
     );
     final addonDecoration = g.text.decoration(tokens);
@@ -372,8 +389,8 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput> {
                   onChanged: widget.onChanged,
                   style: text,
                   cursorColor: t.strong,
-                  decoration: InputDecoration.collapsed(
-                    hintText: widget.placeholder,
+                  decoration: _bare(
+                    hint: widget.placeholder,
                     hintStyle: text.copyWith(
                       color: t.colors['foreground-placeholder'],
                     ),
@@ -398,7 +415,7 @@ class RaftConfirmDialog extends StatelessWidget {
     this.confirmLabel = 'Confirm',
     this.cancelLabel = 'Cancel',
     this.confirmVariant = RaftButtonRecipeVariant.danger,
-    this.confirmEnabled = true,
+    this.confirmEnabled,
     this.confirmKey,
     this.maxWidth = 384,
   });
@@ -411,7 +428,9 @@ class RaftConfirmDialog extends StatelessWidget {
   final Widget? content;
   final String confirmLabel, cancelLabel;
   final RaftButtonRecipeVariant confirmVariant;
-  final bool confirmEnabled;
+
+  /// `confirmDisabled` inverse; null keeps the confirm action enabled.
+  final ValueListenable<bool>? confirmEnabled;
   final Key? confirmKey;
   final double maxWidth;
 
@@ -424,12 +443,8 @@ class RaftConfirmDialog extends StatelessWidget {
       );
 
   /// `text-sm leading-relaxed text-foreground-muted` (font-normal body).
-  static TextStyle messageStyle(RaftTokens t) => RaftTypography.body(
-    t,
-    size: 14,
-    line: 14 * 1.625,
-    color: t.muted,
-  );
+  static TextStyle messageStyle(RaftTokens t) =>
+      RaftTypography.body(t, size: 14, line: 14 * 1.625, color: t.muted);
 
   @override
   Widget build(BuildContext context) {
@@ -502,15 +517,19 @@ class RaftConfirmDialog extends StatelessWidget {
                     disabledOpacity: .3,
                     onPressed: () => Navigator.of(context).pop(false),
                   ),
-                  RaftRecipeButton(
-                    key: confirmKey,
-                    label: confirmLabel,
-                    variant: confirmVariant,
-                    size: RaftButtonRecipeSize.sm,
-                    disabledOpacity: .8,
-                    onPressed: confirmEnabled
-                        ? () => Navigator.of(context).pop(true)
-                        : null,
+                  ValueListenableBuilder<bool>(
+                    valueListenable:
+                        confirmEnabled ?? const AlwaysStoppedAnimation(true),
+                    builder: (context, enabled, _) => RaftRecipeButton(
+                      key: confirmKey,
+                      label: confirmLabel,
+                      variant: confirmVariant,
+                      size: RaftButtonRecipeSize.sm,
+                      disabledOpacity: .8,
+                      onPressed: enabled
+                          ? () => Navigator.of(context).pop(true)
+                          : null,
+                    ),
                   ),
                 ],
               ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart'
-    show RaftButtonRecipeSize, RaftButtonRecipeVariant;
+import 'package:raft_ui/recipes.dart' show RaftButtonRecipeVariant;
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
@@ -513,7 +512,10 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const RaftSettingsSectionHeader(label: 'Account', glyph: RaftGlyph.user),
+        const RaftSettingsSectionHeader(
+          label: 'Account',
+          glyph: RaftGlyph.user,
+        ),
         card,
         const SizedBox(height: 24),
         const RaftSettingsSectionHeader(

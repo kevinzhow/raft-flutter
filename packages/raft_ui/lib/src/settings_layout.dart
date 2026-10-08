@@ -58,15 +58,16 @@ class RaftSettingsSidebarList extends StatelessWidget {
     // `mb-1 px-2 text-[10px] font-bold uppercase tracking-widest
     // text-foreground-muted theme-brutal:text-black/40`; line-height is the
     // inherited preflight 1.5 under Sidebar's `font-display`.
-    final label = RaftTypography.heading(
-      t,
-      size: 10,
-      line: 15,
-      weight: FontWeight.w700,
-    ).copyWith(
-      letterSpacing: 1,
-      color: t.brutal ? Colors.black.withValues(alpha: .4) : t.muted,
-    );
+    final label =
+        RaftTypography.heading(
+          t,
+          size: 10,
+          line: 15,
+          weight: FontWeight.w700,
+        ).copyWith(
+          letterSpacing: 1,
+          color: t.brutal ? Colors.black.withValues(alpha: .4) : t.muted,
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -330,23 +331,24 @@ class RaftSettingsPanelFrame extends StatelessWidget {
     final t = RaftTokens.of(context);
     return Material(
       color: t.brutal ? Colors.white : t.panel,
-      child: DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
+      // Container insets the child by the border width, as CSS does.
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            left: BorderSide(
+              color: t.brutal ? Colors.black : t.colors['line-muted']!,
+              width: t.brutal ? 2 : 1,
+            ),
           ),
         ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header,
+            Expanded(child: child),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          header,
-          Expanded(child: child),
-        ],
-      ),
-    ),
     );
   }
 }
@@ -368,14 +370,13 @@ class RaftSettingsSectionHeader extends StatelessWidget {
 
   /// Callsite margin (`mb-3` on every SettingsPanel section).
   final double bottom;
-  static TextStyle eyebrow(RaftTokens t) =>
-      RaftTypography.body(
-        t,
-        size: 12,
-        line: 16,
-        weight: FontWeight.w700,
-        color: t.muted,
-      ).copyWith(letterSpacing: 1.2);
+  static TextStyle eyebrow(RaftTokens t) => RaftTypography.body(
+    t,
+    size: 12,
+    line: 16,
+    weight: FontWeight.w700,
+    color: t.muted,
+  ).copyWith(letterSpacing: 1.2);
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);

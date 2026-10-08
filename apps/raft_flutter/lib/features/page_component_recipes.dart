@@ -108,15 +108,25 @@ class RaftSettingsProfileRecipe {
   final RaftTokens t;
   static const double avatarSize = 64, gap = 16, fieldGap = 12;
   static const inset = EdgeInsets.all(16);
-  BoxDecoration get surface => BoxDecoration(
-    color: t.panel,
-    border: Border.all(color: t.line, width: t.border),
-    boxShadow: t.shadows,
+  // SettingsProfileCard.tsx: the shared settings card surface.
+  BoxDecoration get surface => RaftSettingsCard.decoration(t);
+  // `text-lg font-bold leading-tight text-foreground-strong theme-brutal:text-black`
+  TextStyle get title => RaftTypography.body(
+    t,
+    size: 18,
+    line: 22.5,
+    weight: FontWeight.w700,
+    color: t.brutal ? Colors.black : t.strong,
   );
-  TextStyle get title =>
-      RaftTypography.body(t, size: 18, line: 22.5, weight: FontWeight.w700);
-  TextStyle get subtitle =>
-      RaftTypography.mono(t, size: 14, line: 20, color: t.muted);
+  // `font-mono text-sm text-foreground-muted theme-brutal:text-black/50`
+  TextStyle get subtitle => RaftTypography.mono(
+    t,
+    size: 14,
+    line: 20,
+    color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
+  );
+  // `border-t border-line-muted`
+  Color get divider => t.colors['line-muted']!;
   TextStyle get label => RaftTypography.body(
     t,
     size: 12,
@@ -138,13 +148,12 @@ class RaftSettingsProfileCard extends StatelessWidget {
   final String title, subtitle;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context),
-        recipe = RaftSettingsProfileRecipe(RaftTokens.of(context));
+    final recipe = RaftSettingsProfileRecipe(RaftTokens.of(context));
     return Container(
       padding: RaftSettingsProfileRecipe.inset,
       decoration: recipe.surface,
       child: Material(
-        color: t.panel,
+        type: MaterialType.transparency,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -187,7 +196,7 @@ class RaftSettingsProfileCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: RaftSettingsProfileRecipe.gap),
-            Divider(height: 1, color: t.line),
+            Divider(height: 1, thickness: 1, color: recipe.divider),
             const SizedBox(height: RaftSettingsProfileRecipe.gap),
             child,
           ],

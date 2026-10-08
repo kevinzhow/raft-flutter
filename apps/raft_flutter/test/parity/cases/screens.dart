@@ -38,7 +38,6 @@ import 'package:raft_flutter/features/agent_apps_view.dart';
 import 'package:raft_flutter/features/auth_view.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
-import 'package:raft_flutter/features/server_views.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -261,14 +260,12 @@ final ParityCase _serverDangerModal = ParityCase(
     'raft_flutter:WorkspaceView',
     'raft_flutter:RaftSettingsPage',
     'raft_flutter:ServerSettingsView',
-    'raft_ui:RaftFormDialog',
+    'raft_ui:RaftConfirmDialog',
   ],
   notes:
-      'Real mobile route: WorkspaceView → Settings tab → "Server profile" '
-      '(ServerSettingsView) → "Delete workspace", which opens the '
-      'WorkspaceActions.leave(delete: true) RaftFormDialog. Flutter has no '
-      'React-style "/slug" confirm prefix input; its dialog asks for the '
-      'workspace name.',
+      'Real mobile route: WorkspaceView → Settings tab → "Server Profile" '
+      '(ServerSettingsView) → "Delete Server" (server-danger-delete-button), '
+      'which opens the DangerZoneSection RaftConfirmDialog.',
   build: (ctx) => ScreenWorkspaceHost(
     create: () => _workspace(ctx, bootstrap: true),
     builder: (context, w) => _workspaceView(ctx, w),
@@ -279,24 +276,10 @@ final ParityCase _serverDangerModal = ParityCase(
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.byKey(const Key('workspace-settings-nav-server')));
     await t.pump(const Duration(milliseconds: 300));
-    // ServerSettingsView resolves its four GETs over several frames.
-    for (var i = 0; i < 5; i++) {
-      await t.pump(const Duration(milliseconds: 100));
-    }
-    final delete = find.text('Delete workspace');
-    await t.scrollUntilVisible(
-      delete,
-      200,
-      scrollable: find
-          .descendant(
-            of: find.byType(ServerSettingsView),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    await t.pump(const Duration(milliseconds: 100));
-    await t.tap(delete);
-    await t.pump(const Duration(milliseconds: 400));
+    await t.tap(find.byKey(const Key('server-danger-delete-button')));
+    // React waits 120ms after the click.
+    await t.pump(const Duration(milliseconds: 120));
+    await t.pump(const Duration(milliseconds: 300));
   },
 );
 
