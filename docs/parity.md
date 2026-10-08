@@ -29,7 +29,7 @@ Published report: <http://100.109.192.23:18931/raft_flutter_parity/latest/>
 
 | Step | What runs | Output (`build/parity/`, gitignored) |
 | --- | --- | --- |
-| React baseline | official `cli.mjs capture --providers react --manifest shared` (Playwright + `packages/web/visual-testing` Vite host, 390x844 @3x) | `visual-testing-results/react/<case>.png` + `.metadata.json` |
+| React baseline | official React provider spec + Playwright config, run as a generated copy with production fonts (see "Baseline fonts"; `--react-fonts upstream` runs the unmodified `cli.mjs capture --providers react`) — Playwright + `packages/web/visual-testing` Vite host, 390x844 @3x | `visual-testing-results/react/<case>.png` + `.metadata.json` |
 | Flutter provider | `flutter test apps/raft_flutter/test/parity/parity_capture_test.dart`, sharded | `visual-testing-results/android/<case>.png` + `.metadata.json`, `android-case-map.json` |
 | Diff | official `cli.mjs diff --pairs react__android --manifest shared` | `visual-testing-results/diff/react__android*` |
 | Site | official `cli.mjs site --pairs react__android --skip-analysis --site-dir build/parity/site` | `site/` (storybook-style home, `latest/`, `runs/<id>/`) |
@@ -40,7 +40,8 @@ The CLI runs with `SLOCK_VISUAL_REPO_ROOT=build/parity` and
 raft-source tree (Playwright's scratch `packages/web/test-results/` is the only
 write there; it is untracked).
 
-Exact React baseline command used for the current cache (run from
+Exact command of the FIRST (upstream-font) React baseline, kept for
+reference; the current baseline uses production fonts, see below (run from
 `raft-source/packages/visual-testing`, Node 24.21.0 first on `PATH`, all
 `npm_config_*` variables unset):
 
@@ -109,6 +110,59 @@ from `shared/fixtureData.json` etc.). They never patch product visuals; when
 Flutter lacks a variant, the nearest product widget is rendered and the diff
 shows the gap.
 
+## Baseline fonts: production Google Fonts instead of the upstream Space Grotesk stub
+
+**Deviation from the official spec, decided by the owner:** the target is the
+production Web, so the React baseline must render the real raft-ui fonts.
+
+Why: the upstream provider spec (`tests/react-provider.spec.ts`, `quietApi`)
+fulfils raft-ui's font URL
+(`css2?family=Geist…&family=Geist+Mono…&family=Hanken+Grotesk…&family=Inter…`)
+with `packages/web/src/assets/fonts/fonts.css`, which only declares Space
+Grotesk and Space Mono, and answers every other Google Fonts request with 502.
+raft-ui's stacks (`Hanken Grotesk, system-ui, sans-serif`, Geist, Inter, Geist
+Mono) therefore fell back to Chromium's system-ui (Noto Sans) — not what
+production Web shows. (Production `index.css` imports only raft-ui's URL plus
+the `Raft Quote Glyphs` woff2; the Space Grotesk URLs are not requested by the
+product.)
+
+What `tool/parity run` does now (raft-source untouched):
+
+* `tool/parity-fonts/` (committed, 492 KB, OFL): the exact CSS Google returns
+  for raft-ui's URL to the pinned Chromium 147 UA (identical to the headed
+  Chrome 147 response) and all 22 woff2 files it references, sha256-pinned in
+  `manifest.json`. `tool/parity fonts` verifies, `--refresh` refetches.
+* The official spec and Playwright config are copied into
+  `build/parity/react-provider/` and patched; every patch anchor must match
+  exactly once or the run stops. Changes: path wiring (spec runs outside its
+  package); raft-ui's URL and its gstatic files are fulfilled from the cache
+  (the legacy Space Grotesk URL mapping and the Quote Glyphs file stay as
+  upstream); the font-readiness assertions probe Hanken Grotesk, Geist, Geist
+  Mono, Inter (400/700) + Raft Quote Glyphs and require each family's files to
+  be served; every capture's metadata gains `fontFaces` (document.fonts
+  status) and `platformFonts` (the faces Chromium actually drew, via CDP
+  `CSS.getPlatformFontsForNode`). Everything else is the official spec,
+  invoked with the same env as the CLI's `runReactProvider`.
+* Verified across all 99 captures (glyphs drawn): Hanken Grotesk 45,327,
+  Geist Mono 16,262, Inter 521, Geist 45; system fonts only for glyphs outside
+  the served subsets (Noto Sans CJK 1,060 for Chinese text, plus 32 symbol
+  glyphs from Noto Sans Mongolian/DejaVu Sans Mono) — the same fallback the
+  production page gets on this host. E.g. `components.ui.card.states` →
+  Hanken Grotesk only; `components.ui.card.states.elegant` → Inter + Geist;
+  `message-row.long-inline-code` → Hanken Grotesk + Geist Mono.
+
+Flutter side: `packages/raft_ui/assets/fonts` were compared with Google's
+served files (fontTools, every Google-served codepoint, wght 300–700,
+outlines + advances + vertical metrics): Geist 1.800, Geist Mono 1.701 and
+Hanken Grotesk 3.013 are identical. Inter 4.001 had the same outlines at
+opsz 14 but carried the `opsz` axis, and raft_ui's theme varies opsz up to 32
+for elegant headings, while Google serves Web a wght-only Inter (opsz pinned
+at 14). `Inter.ttf` is now derived from the same pinned upstream file with
+opsz pinned at 14 (`tool/parity-fonts/derive_inter.py`, provenance in
+`docs/inter-font-provenance.json`); it is outline-identical to every Google
+Inter subset at all tested weights. The theme's `FontVariation('opsz')` is now
+inert, matching Web. raft_ui tests: 571 passed.
+
 ## Scoring
 
 Unit = official case x variant x theme. Every default case (non-skipped,
@@ -122,26 +176,34 @@ theme, so units = cases.
 * **not covered** = no Flutter builder (any reason).
 * **percentage = passing / total**.
 
-## Latest result (run 20261008T220459Z, flutter 1f8b34b, raft-source 26f77ef)
+## Latest result (production-font baseline)
 
-Report: <http://100.109.192.23:18931/raft_flutter_parity/latest/> (immutable copy:
-`raft_flutter_parity/20261008T220459Z/`). Machine-readable:
+Report: <http://100.109.192.23:18931/raft_flutter_parity/latest/> (every run
+is kept as `raft_flutter_parity/<UTC timestamp>/`). Machine-readable:
 `latest/flutter-parity-summary.json`, per-case table `latest/flutter-parity-summary.md`.
 
-| units (case x variant x theme) | React captured | Flutter captured | passing (official, >96%) | strict pass (>99%) | failing | not covered | percentage |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 99 | 99 | 92 | 4 | 1 | 88 | 7 | **4.04%** |
+| baseline | units | React | Flutter | passing (>96%) | strict (>99%) | failing | not covered | percentage | mean pixelPerfect of 92 captured |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| upstream font stub (run 20261008T220459Z) | 99 | 99 | 92 | 4 | 1 | 88 | 7 | 4.04% | 74.08% |
+| production fonts + opsz-pinned Inter (current) | 99 | 99 | 92 | 4 | 1 | 88 | 7 | **4.04%** | 74.36% |
+
+The pass set is unchanged (titlebar 99.32%, spinner 98.11%, composer.empty,
+agent-detail.workspace). Per-case pixelPerfect: 72 cases improved, 10 got
+worse, 10 unchanged (|delta| <= 0.05pp); largest gains button.states +1.70pp,
+message.row +1.58, message-row.deleted-human +1.42, long-inline-code +1.35,
+card.states +1.20; largest drops spinner -0.44, md-wrap-status606 -0.41,
+md-wrap-task607 -0.37. Text is a small fraction of most captures and the
+remaining gaps are layout/component differences, so correct fonts move scores
+only slightly; the gain is that text comparisons are now letterform-true.
 
 By theme: brutal-light 4/94, elegant-light 0/5, elegant-dark 0/0 (no official
 case declares dark; the React host only renders brutal and `.elegant`).
 
-Passing: `components.home.titlebar.states` (99.32%, pass),
-`components.ui.spinner.states` (98.55%), `components.thread.composer.empty`
-(96.09%), `screens.members.agent-detail.workspace` (96.05%). Caveat: the last
-one is a basic-pass only because both screens are mostly white; the Flutter
-screen (FleetInspection "Workspace files") is visibly different from React's
-tabbed agent page. The official metric counts exact pixel matches, so large
-blank areas inflate full-viewport scores — read screen-level numbers with the
+Caveat on `screens.members.agent-detail.workspace` (basic-pass): it passes
+only because both screens are mostly white; the Flutter screen
+(FleetInspection "Workspace files") is visibly different from React's tabbed
+agent page. The official metric counts exact pixel matches, so large blank
+areas inflate full-viewport scores — read screen-level numbers with the
 side-by-side images.
 
 Not covered (7):
@@ -161,6 +223,8 @@ byte-identical.
 
 ## Known harness limitations
 
+* React baseline fonts deviate from the official spec on purpose (production
+  Google Fonts, see "Baseline fonts").
 * Flutter captures are host `flutter test` rasters (software Skia, Linux), not
   Android device screenshots; Impeller/GPU antialiasing on a phone can differ
   slightly. Fonts are the app's bundled fonts; CJK/emoji come from the host's
