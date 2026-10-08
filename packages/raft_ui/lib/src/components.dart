@@ -183,14 +183,18 @@ class RaftNavItem extends StatelessWidget {
   const RaftNavItem({
     super.key,
     required this.label,
-    required this.icon,
+    this.icon,
+    this.glyph,
+    this.glyphSize,
     required this.onTap,
     this.selected = false,
     this.unread = 0,
     this.trailing,
-  });
+  }) : assert(icon != null || glyph != null);
   final String label;
-  final IconData icon;
+  final IconData? icon;
+  final RaftGlyph? glyph;
+  final double? glyphSize;
   final VoidCallback onTap;
   final bool selected;
   final int unread;
@@ -221,11 +225,18 @@ class RaftNavItem extends StatelessWidget {
             : RaftControlVariant.ghost,
         child: Row(
           children: [
-            RaftSymbol(
-              icon,
-              size: t.brutal ? 12 : 18,
-              color: t.brutal ? t.strong : t.colors['foreground-icon'],
-            ),
+            if (glyph != null)
+              RaftIcon(
+                glyph!,
+                size: glyphSize ?? (t.brutal ? 12 : 18),
+                color: t.brutal ? t.strong : t.colors['foreground-icon'],
+              )
+            else
+              RaftSymbol(
+                icon!,
+                size: t.brutal ? 12 : 18,
+                color: t.brutal ? t.strong : t.colors['foreground-icon'],
+              ),
             const SizedBox(width: 6),
             Expanded(
               child: Text(

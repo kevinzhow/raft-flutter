@@ -183,6 +183,10 @@ const brutal_light = <String, Color>{
   'primary': RaftPrimitives.rgbaffffd440,
   'accent': RaftPrimitives.pink400,
   'brutal-cream': RaftPrimitives.cream200,
+  // Input dark inset roles, original raft-ui input.recipe index.mjs6283.
+  'field-inset-line': RaftPrimitives.rgba00000000,
+  'field-inset-top': RaftPrimitives.rgba00000000,
+  'field-inset-bottom': RaftPrimitives.rgba00000000,
 };
 
 const elegant_light = <String, Color>{
@@ -374,6 +378,10 @@ const elegant_light = <String, Color>{
   'primary': RaftPrimitives.yellow400,
   'accent': RaftPrimitives.pink400,
   'brutal-cream': RaftPrimitives.cream200,
+  // Input dark inset roles, original raft-ui input.recipe index.mjs6283.
+  'field-inset-line': RaftPrimitives.rgba00000000,
+  'field-inset-top': RaftPrimitives.rgba00000000,
+  'field-inset-bottom': RaftPrimitives.rgba00000000,
 };
 
 const elegant_dark = <String, Color>{
@@ -565,4 +573,8 @@ const elegant_dark = <String, Color>{
   'primary': RaftPrimitives.yellow400,
   'accent': RaftPrimitives.pink400,
   'brutal-cream': RaftPrimitives.cream200,
+  // Input dark inset roles, original raft-ui input.recipe index.mjs6283.
+  'field-inset-line': RaftPrimitives.rgba4d000000,
+  'field-inset-top': RaftPrimitives.rgba59000000,
+  'field-inset-bottom': RaftPrimitives.rgba0affffff,
 };

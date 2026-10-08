@@ -215,7 +215,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     return Padding(padding: const EdgeInsets.only(top: 4), child: ConstrainedBox(
       constraints: BoxConstraints(maxWidth: recipe.maxWidth),
       child: Container(decoration: recipe.decoration, padding: recipe.inset, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Container(decoration: recipe.headerDecoration, padding: recipe.headerInset(viewportWidth), child: Row(children: [
+        Container(decoration: recipe.headerDecoration, padding: recipe.headerInset(viewportWidth), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Flexible(child: Row(mainAxisSize: MainAxisSize.min, children: [
             RaftIcon(RaftGlyph.forward, size: 12, color: recipe.header.color),
             const SizedBox(width: 4), Text(raftText(context, 'Forwarded'), style: recipe.header),
@@ -223,7 +223,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
           ])),
           if (first.sourceLabel != null) ...[
             const SizedBox(width: 8),
-            Expanded(child: Text(raftFormat(context, 'from {target}', {'target': first.sourceLabel!}), style: recipe.source, textAlign: TextAlign.right, overflow: TextOverflow.ellipsis)),
+            Flexible(child: Text(raftFormat(context, 'from {target}', {'target': first.sourceLabel!}), style: recipe.source, textAlign: TextAlign.right, maxLines: 1, overflow: TextOverflow.ellipsis)),
           ],
         ])),
         body,

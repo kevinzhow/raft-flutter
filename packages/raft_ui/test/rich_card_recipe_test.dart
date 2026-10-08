@@ -7,13 +7,13 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_content_tokens.dart';
 import 'package:raft_ui/src/rich_card_tokens.dart';
 
-Map<String, dynamic> publicSnapshot() => {
+Map<String, dynamic> publicSnapshot({String target = '#design'}) => {
   'kind': 'forwarded-bundle', 'version': 1,
   'forwardedItems': [
     for (var i = 0; i < 3; i++) {
       'index': i, 'contentSnapshot': i == 0 ? List.generate(12, (line) => 'Public line $line').join('\n') : 'Public message $i',
       'sourceAuthorSnapshot': {'type': 'user', 'uniqueName': 'Author$i'},
-      'sourceTargetSnapshot': {'type': 'channel', 'label': '#design', 'labelVisibility': 'public'},
+      'sourceTargetSnapshot': {'type': 'channel', 'label': target, 'labelVisibility': 'public'},
       'provenanceState': 'available', 'attachmentPolicy': 'excluded',
     },
   ],
@@ -39,9 +39,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
     testWidgets('forwarded source is right aligned; real expansion retains projected content $family/$dark', (tester) async {
-      await tester.pumpWidget(MaterialApp(theme: raftTheme(family, dark: dark), home: Scaffold(body: SingleChildScrollView(child: SizedBox(width: 640, child: RaftForwardedBundle(metadata: publicSnapshot()))))));
+      await tester.pumpWidget(MaterialApp(theme: raftTheme(family, dark: dark), home: Scaffold(body: SingleChildScrollView(child: SizedBox(width: 640, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [RaftForwardedBundle(metadata: publicSnapshot())]))))));
       await tester.pumpAndSettle();
-      expect(tester.getTopRight(find.text('from #design')).dx, greaterThan(500));
+      final bundle = find.byType(RaftForwardedBundle);
+      expect(tester.getSize(bundle).width, 544);
+      final cardContext = tester.element(find.byType(RaftForwardedBundle));
+      final headerRecipe = ForwardedSnapshotRecipe(RaftTokens.of(cardContext));
+      final headerInset = headerRecipe.headerInset(MediaQuery.sizeOf(cardContext).width).right + headerRecipe.inset.right + headerRecipe.border.width;
+      expect(tester.getTopRight(find.text('from #design')).dx, closeTo(tester.getTopRight(bundle).dx - headerInset, .1));
+      // The source label is intrinsic. An Expanded label can falsely make a
+      // tight-parent test pass while loose production layouts leave a gap.
+      expect(tester.getSize(find.text('from #design')).width, lessThan(200));
       expect(tester.getTopLeft(find.text('Forwarded')).dx, lessThan(40));
       final context = tester.element(find.byType(RaftForwardedBundle));
       final recipe = ForwardedSnapshotRecipe(RaftTokens.of(context));
@@ -55,6 +63,32 @@ void main() {
       expect(find.text('Collapse'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+    for (final width in [320.0, 640.0]) {
+      testWidgets('long forwarded target stays within loose header at $width $family/$dark', (tester) async {
+        const target = '#a-very-long-public-channel-name-that-needs-truncation';
+        await tester.pumpWidget(MaterialApp(theme: raftTheme(family, dark: dark), home: Scaffold(body: SingleChildScrollView(child: SizedBox(width: width, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [RaftForwardedBundle(metadata: publicSnapshot(target: target))]))))));
+        await tester.pumpAndSettle();
+        final bundle = tester.getRect(find.byType(RaftForwardedBundle));
+        final source = find.text('from $target');
+        final sourceRect = tester.getRect(source);
+        final labelRect = tester.getRect(find.text('Forwarded'));
+        final cardContext = tester.element(find.byType(RaftForwardedBundle));
+        final headerRecipe = ForwardedSnapshotRecipe(RaftTokens.of(cardContext));
+        final headerInset = headerRecipe.headerInset(MediaQuery.sizeOf(cardContext).width).right + headerRecipe.inset.right + headerRecipe.border.width;
+        expect(bundle.width, width < 544 ? width : 544);
+        expect(sourceRect.right, closeTo(bundle.right - headerInset, .1));
+        expect(sourceRect.left, greaterThan(labelRect.right));
+        expect(sourceRect.width, greaterThan(0));
+        final sourceText = tester.widget<Text>(source);
+        expect(sourceText.maxLines, 1);
+        expect(sourceText.overflow, TextOverflow.ellipsis);
+        expect(find.text('Public message 2', findRichText: true).hitTestable(), findsNothing);
+        await tester.tap(find.text('View all 3 messages'));
+        await tester.pumpAndSettle();
+        expect(find.text('Collapse'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
     testWidgets('footer hover and keyboard activation use source roles $family/$dark', (tester) async {
       var presses = 0;
       await tester.pumpWidget(MaterialApp(theme: raftTheme(family, dark: dark), home: Scaffold(body: RaftDensityScope(density: RaftDensity.desktop, child: RaftShowMoreToggle(label: 'Show more', onPressed: () => presses++)))));

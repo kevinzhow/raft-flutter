@@ -20,6 +20,8 @@ import 'page_layout.dart';
 import 'channel_settings.dart';
 import 'server_views.dart';
 import 'account_settings.dart';
+import 'settings_page.dart';
+import 'locale_settings_page.dart';
 import 'fleet_views.dart';
 import 'integrations_views.dart';
 import 'provider_views.dart';
@@ -73,7 +75,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   List<Map<String, dynamic>> sidebarAgents = [];
   int sidebarAgentRequest = 0;
   VoidCallback? removeShareReceiver;
-  bool sharingReady = false, reviewingIncoming = false, bridgeEnabled = false;
+  bool sharingReady = false,
+      reviewingIncoming = false,
+      bridgeEnabled = false,
+      providerEnabled = false;
   String? shareReceiverScope, bridgeScope;
   int bridgeRequest = 0;
   String tr(String source) => raftText(context, source);
@@ -142,20 +147,27 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       w.server?.id,
       w.server?.string('role'),
       w.can('manageIntegrations'),
+      w.can('manageExternalAuth'),
     ]);
     if (bridgeScope == next) return;
     bridgeScope = next;
     bridgeEnabled = false;
+    providerEnabled = false;
     final request = ++bridgeRequest;
-    if (w.server == null || !w.can('manageIntegrations')) return;
+    if (w.server == null ||
+        (!w.can('manageIntegrations') && !w.can('manageExternalAuth'))) {
+      return;
+    }
     () async {
       try {
         final result = await w.client.post(
           '/feature-flags/evaluate',
           data: {
-            'keys': ['slack_bridge_v0'],
+            'keys': ['slack_bridge_v0', 'provider_connections_v0'],
             'serverId': w.server!.id,
-            'platform': defaultTargetPlatform == TargetPlatform.android
+            'platform':
+                (defaultTargetPlatform == TargetPlatform.android ||
+                    defaultTargetPlatform == TargetPlatform.iOS)
                 ? 'mobile'
                 : 'web',
           },
@@ -165,6 +177,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ? result['evaluations'] as List? ?? []
             : const [];
         setState(() {
+          providerEnabled = rows.whereType<Map>().any(
+            (f) =>
+                f['key'] == 'provider_connections_v0' && f['enabled'] == true,
+          );
           bridgeEnabled = rows.whereType<Map>().any(
             (f) => f['key'] == 'slack_bridge_v0' && f['enabled'] == true,
           );
@@ -434,6 +450,21 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               controller: w,
               section: w.section,
               onBack: dismissPanel,
+              onSearchEntity: (entity) async {
+                if (entity.kind != 'computer' || !w.can('viewMachines')) return;
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(title: Text(entity.title)),
+                      body: FleetDetail(
+                        controller: w,
+                        computers: true,
+                        initial: entity.row,
+                      ),
+                    ),
+                  ),
+                );
+              },
               onMessage: (channelId, messageId) async {
                 scaffold.currentState?.closeDrawer();
                 await w.jumpToMessage(channelId, messageId);
@@ -1126,7 +1157,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   onTap: () => select('im-bridges'),
                   selected: w.section == 'im-bridges',
                 ),
-              if (w.can('manageExternalAuth'))
+              if (providerEnabled && w.can('manageExternalAuth'))
                 RaftNavItem(
                   key: const Key('nav-providers'),
                   label: tr('Provider connections'),
@@ -1321,68 +1352,112 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Widget settings() => ListView(
+  Widget settings() => KeyedSubtree(
     key: const Key('workspace-account-settings'),
-    padding: const EdgeInsets.all(24),
-    children: [
-      Text(tr('Appearance'), style: Theme.of(context).textTheme.headlineSmall),
-      const SizedBox(height: 20),
-      Text(tr('Mode')),
-      const SizedBox(height: 10),
-      SegmentedButton<ThemeMode>(
-        segments: [
-          ButtonSegment(
-            value: ThemeMode.light,
-            label: Text(tr('Light')),
-            icon: Icon(Icons.light_mode_outlined),
-          ),
-          ButtonSegment(
-            value: ThemeMode.dark,
-            label: Text(tr('Dark')),
-            icon: Icon(Icons.dark_mode_outlined),
-          ),
-          ButtonSegment(
-            value: ThemeMode.system,
-            label: Text(tr('System')),
-            icon: Icon(Icons.brightness_auto),
-          ),
-        ],
-        selected: {widget.appearance.mode},
-        onSelectionChanged: (s) =>
-            widget.onAppearance(widget.appearance.copyWith(mode: s.first)),
+    child: RaftSettingsPage(
+      key: ValueKey(
+        'workspace-account-settings-${w.client.generation}-${w.client.user?.id}-${w.server?.id}-${w.server?.string('role')}',
       ),
-      const SizedBox(height: 24),
-      Text(tr('Day theme')),
-      const SizedBox(height: 10),
-      SegmentedButton<RaftFamily>(
-        segments: [
-          ButtonSegment(value: RaftFamily.brutal, label: Text(tr('Brutal'))),
-          ButtonSegment(value: RaftFamily.elegant, label: Text(tr('Elegant'))),
-        ],
-        selected: {widget.appearance.light},
-        onSelectionChanged: (s) =>
-            widget.onAppearance(widget.appearance.copyWith(light: s.first)),
-      ),
-      const SizedBox(height: 16),
-      Text(tr('Night theme: Elegant')),
-      const SizedBox(height: 32),
-      AccountSettings(controller: w),
-      if (widget.notifications != null) ...[
-        const SizedBox(height: 24),
-        RaftPanel(
-          child: NotificationSettingsView(service: widget.notifications!),
+      destinations: [
+        RaftSettingsDestination(
+          'account',
+          'Account',
+          RaftGlyph.user,
+          (_) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AccountSettings(controller: w),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: RaftButton(
+                  label: tr('Sign out'),
+                  secondary: true,
+                  icon: Icons.logout,
+                  onPressed: widget.onLogout,
+                ),
+              ),
+            ],
+          ),
         ),
+        RaftSettingsDestination(
+          'language',
+          'Language & Region',
+          RaftGlyph.globe,
+          (_) => LocaleSettingsPage(controller: w),
+        ),
+        RaftSettingsDestination(
+          'appearance',
+          'Appearance',
+          RaftGlyph.palette,
+          (_) => RaftAppearancePicker(
+            appearance: widget.appearance,
+            onChanged: (appearance) => widget.onAppearance(appearance),
+          ),
+        ),
+        if (widget.notifications != null)
+          RaftSettingsDestination(
+            'notifications',
+            'Notifications',
+            RaftGlyph.info,
+            (_) => NotificationSettingsView(service: widget.notifications!),
+          ),
+        if (w.server != null) ...[
+          RaftSettingsDestination(
+            'server',
+            'Server profile',
+            RaftGlyph.settings,
+            (_) => ServerSettingsView(controller: w),
+            group: 'Workspace',
+            scroll: false,
+          ),
+          if (w.can('viewBilling'))
+            RaftSettingsDestination(
+              'billing',
+              'Plan & Billing',
+              RaftGlyph.fileText,
+              (_) => BillingView(controller: w),
+              group: 'Workspace',
+              scroll: false,
+            ),
+          if (w.can('viewServerSettings'))
+            RaftSettingsDestination(
+              'administration',
+              'Administration',
+              RaftGlyph.settings,
+              (_) => AdministrationView(controller: w),
+              group: 'Workspace',
+              scroll: false,
+            ),
+          if (w.can('manageIntegrations'))
+            RaftSettingsDestination(
+              'applications',
+              'Applications',
+              RaftGlyph.bot,
+              (_) => IntegrationsView(controller: w),
+              group: 'Workspace',
+              scroll: false,
+            ),
+          if (providerEnabled && w.can('manageExternalAuth'))
+            RaftSettingsDestination(
+              'providers',
+              'Providers',
+              RaftGlyph.lock,
+              (_) => ProviderConnectionsView(controller: w),
+              group: 'Workspace',
+              scroll: false,
+            ),
+          if (bridgeEnabled && w.can('manageIntegrations'))
+            RaftSettingsDestination(
+              'bridges',
+              'IM bridges',
+              RaftGlyph.link,
+              (_) => IMBridgesView(controller: w),
+              group: 'Workspace',
+              scroll: false,
+            ),
+        ],
       ],
-      const SizedBox(height: 24),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: RaftButton(
-          label: tr('Sign out'),
-          secondary: true,
-          icon: Icons.logout,
-          onPressed: widget.onLogout,
-        ),
-      ),
-    ],
+    ),
   );
 }

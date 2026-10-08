@@ -17,8 +17,15 @@ class TaskSelectionFilter extends StatefulWidget {
     required this.onController,
     this.aliases = const {},
     this.beforeOpen,
+    this.tooltip,
+    this.label,
+    this.glyph,
+    this.closeOnSelect = false,
   });
   final String field;
+  final String? tooltip, label;
+  final RaftGlyph? glyph;
+  final bool closeOnSelect;
   final Map<String, String> options, aliases;
   final Set<String> selection;
   final bool Function() valid;
@@ -159,7 +166,10 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                             ? RaftGlyph.user
                             : RaftGlyph.bot,
                         onPressed: () {
-                          if (acceptsInteraction) widget.onToggle(option.key);
+                          if (acceptsInteraction) {
+                            widget.onToggle(option.key);
+                            if (widget.closeOnSelect) menu.close();
+                          }
                         },
                       ),
                   ],
@@ -172,14 +182,17 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
       builder: (context, controller, child) => Tooltip(
         message: raftText(
           context,
-          'Filter tasks by ${widget.field.toLowerCase()}',
+          widget.tooltip ?? 'Filter tasks by ${widget.field.toLowerCase()}',
         ),
         child: Focus(
           focusNode: anchorFocus,
           child: RaftTextButton(
             kind: RaftControlKind.filter,
-            glyph: widget.field == 'Channel' ? RaftGlyph.hash : RaftGlyph.user,
+            glyph:
+                widget.glyph ??
+                (widget.field == 'Channel' ? RaftGlyph.hash : RaftGlyph.user),
             label:
+                widget.label ??
                 '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
             onPressed: () {
               if (!widget.valid()) return;

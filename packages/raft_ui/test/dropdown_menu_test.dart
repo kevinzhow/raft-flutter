@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -132,6 +134,58 @@ void main() {
     expect(focus.hasFocus, isTrue);
     await tester.pumpWidget(const SizedBox.shrink());
     focus.dispose();
+  });
+
+  testWidgets('keyboard menu focus projects on actionable semantics', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(
+        menuHost(
+          RaftDropdownMenu(
+            label: 'Actions',
+            entries: [
+              RaftMenuEntry(label: 'Copy', onPressed: () {}),
+              RaftMenuEntry(label: 'Delete', onPressed: () {}),
+            ],
+          ),
+        ),
+      );
+      await tester.tap(find.text('Actions'));
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(
+        tester
+            .getSemantics(find.widgetWithText(RaftMenuItem, 'Copy'))
+            .flagsCollection
+            .isFocused,
+        Tristate.isTrue,
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      expect(
+        tester
+            .getSemantics(find.widgetWithText(RaftMenuItem, 'Copy'))
+            .flagsCollection
+            .isFocused,
+        Tristate.isFalse,
+      );
+      expect(
+        tester
+            .getSemantics(find.widgetWithText(RaftMenuItem, 'Delete'))
+            .flagsCollection
+            .isFocused,
+        Tristate.isTrue,
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byType(RaftMenuItem), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+    } finally {
+      handle.dispose();
+    }
   });
 
   for (final density in RaftDensity.values) {

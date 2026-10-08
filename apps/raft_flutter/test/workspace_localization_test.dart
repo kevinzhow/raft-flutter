@@ -38,9 +38,13 @@ void main() {
       await tester.pumpWidget(application(const Locale('en')));
       await tester.pumpAndSettle();
       expect(find.text('Appearance'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('workspace-settings-nav-appearance')),
+      );
+      await tester.pumpAndSettle();
       await tester.pumpWidget(application(const Locale('zh', 'CN')));
       await tester.pumpAndSettle();
-      for (final label in ['外观', '模式', '浅色', '深色', '系统', '日间主题']) {
+      for (final label in ['模式', '浅色', '深色', '系统', '浅色外观']) {
         expect(find.text(label), findsOneWidget);
       }
       expect(find.text('Appearance'), findsNothing);

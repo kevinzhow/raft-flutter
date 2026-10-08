@@ -7,6 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/task_selection_filter.dart';
 
 class _Client extends RaftClient {
   _Client()
@@ -124,7 +125,7 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    if (['search', 'saved', 'activity'].contains(section)) {
+    if (['saved', 'activity'].contains(section)) {
       await t.tap(find.byTooltip('Filters'));
       await t.pumpAndSettle();
     }
@@ -205,7 +206,10 @@ void main() {
     await menu(t, 'Filter by sender', 'Bob · Human');
     expect(w.calls.last.query!['senderId'], 'bob');
     expect(w.calls.last.query!.containsKey('senderType'), false);
-    await t.tap(find.text('Mentions me'));
+    await t.tap(find.byTooltip('Search scope'));
+    await t.pumpAndSettle();
+    await t.tap(find.widgetWithText(RaftMenuItem, 'Mentions me'));
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
     await t.pumpAndSettle();
     expect(w.calls.last.query!['mentionTarget'], 'self');
     await menu(t, 'Search date range', 'Today');
@@ -213,7 +217,7 @@ void main() {
     await t.enterText(find.byType(TextField), 'hello');
     await t.testTextInput.receiveAction(TextInputAction.done);
     await t.pumpAndSettle();
-    await menu(t, 'Sort search results', 'Most recent');
+    await menu(t, 'Sort search results', 'Recent');
     expect(w.calls.last.query!['sort'], 'recent');
     expect(t.takeException(), isNull);
   });
@@ -221,10 +225,10 @@ void main() {
     'revoked private sender popup closes and retained selection cannot query',
     (t) async {
       await mount(t, 'search');
-      final button = t.widget<PopupMenuButton<String>>(
+      final button = t.widget<TaskSelectionFilter>(
         find.byWidgetPredicate(
           (widget) =>
-              widget is PopupMenuButton<String> &&
+              widget is TaskSelectionFilter &&
               widget.tooltip == 'Filter by sender',
         ),
       );
@@ -236,7 +240,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Bob · Human'), findsNothing);
       final requests = w.calls.length;
-      button.onSelected!('user:bob');
+      button.onToggle('user:bob');
       await t.pumpAndSettle();
       expect(w.calls.length, requests);
     },
@@ -392,8 +396,6 @@ void main() {
     w.people!.complete([
       {'userId': 'bob', 'displayName': 'Private old Bob'},
     ]);
-    await t.pumpAndSettle();
-    await t.tap(find.byTooltip('Filters'));
     await t.pumpAndSettle();
     await t.tap(find.byTooltip('Filter by sender'));
     await t.pumpAndSettle();

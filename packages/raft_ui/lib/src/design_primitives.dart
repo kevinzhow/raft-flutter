@@ -316,7 +316,15 @@ abstract final class RaftShapes {
       BorderRadius.circular(t.brutal ? 0 : 6);
 }
 
-enum RaftControlKind { button, filter, tab, segmentedButton, sidebar, textLink }
+enum RaftControlKind {
+  button,
+  filter,
+  tab,
+  segmentedButton,
+  sidebar,
+  textLink,
+  savedAction,
+}
 
 enum RaftSegmentedStyle { tabs, buttons }
 
@@ -348,7 +356,11 @@ class RaftControlRecipe {
           RaftControlVariant.primary => tokens.colors['primary-strong']!,
           RaftControlVariant.accent => tokens.colors['accent-strong']!,
         };
-  Color get background => kind == RaftControlKind.textLink
+  Color get background => kind == RaftControlKind.savedAction
+      ? tokens.colors['accent-soft']!.withValues(
+          alpha: tokens.colors['accent-soft']!.a * .3,
+        )
+      : kind == RaftControlKind.textLink
       ? Colors.transparent
       : highContrast && !tokens.brutal && variant == RaftControlVariant.danger
       ? tokens.colors['button-danger-high-contrast']!
@@ -383,7 +395,9 @@ class RaftControlRecipe {
                 ? tokens.panel
                 : tokens.colors['button-default-fill']!,
         };
-  Color get foreground => kind == RaftControlKind.textLink
+  Color get foreground => kind == RaftControlKind.savedAction
+      ? tokens.colors[tokens.brutal ? 'color-brutal-orange' : 'accent-strong']!
+      : kind == RaftControlKind.textLink
       ? tokens.brutal
             ? Colors.black.withValues(alpha: .6)
             : tokens.muted
@@ -407,6 +421,7 @@ class RaftControlRecipe {
           RaftControlVariant.outline => tokens.dark ? tokens.muted : tokens.ink,
         };
   Color backgroundFor({bool hovered = false}) {
+    if (kind == RaftControlKind.savedAction) return background;
     if (kind == RaftControlKind.textLink) return Colors.transparent;
     if (!hovered ||
         tokens.brutal ||
@@ -426,6 +441,7 @@ class RaftControlRecipe {
 
   Gradient? get overlayGradient {
     if (tokens.brutal ||
+        kind == RaftControlKind.savedAction ||
         kind == RaftControlKind.textLink ||
         kind == RaftControlKind.tab ||
         variant == RaftControlVariant.ghost)
@@ -457,7 +473,9 @@ class RaftControlRecipe {
   }
 
   double get insetHighlightAlpha =>
-      tokens.brutal || kind == RaftControlKind.textLink
+      tokens.brutal ||
+          kind == RaftControlKind.textLink ||
+          kind == RaftControlKind.savedAction
       ? 0
       : kind == RaftControlKind.tab
       ? .05
@@ -558,6 +576,11 @@ class RaftControlRecipe {
     bool pressed = false,
     bool focused = false,
   }) {
+    if (kind == RaftControlKind.savedAction && !tokens.brutal) {
+      return focused
+          ? [BoxShadow(color: tokens.colors['primary-500']!, spreadRadius: .5)]
+          : const [];
+    }
     if (kind == RaftControlKind.textLink) return const [];
     if (variant == RaftControlVariant.ghost ||
         kind == RaftControlKind.tab && tokens.brutal)
@@ -720,7 +743,8 @@ class _RaftControlState extends State<RaftControl> {
         !t.brutal &&
             pressed &&
             !reducedMotion &&
-            widget.kind != RaftControlKind.textLink
+            widget.kind != RaftControlKind.textLink &&
+            widget.kind != RaftControlKind.savedAction
         ? .985
         : 1.0;
     final recipe = RaftControlRecipe(
@@ -751,6 +775,9 @@ class _RaftControlState extends State<RaftControl> {
         RaftControlKind.segmentedButton,
       }.contains(widget.kind),
       selected: widget.kind == RaftControlKind.sidebar ? widget.selected : null,
+      toggled: widget.kind == RaftControlKind.savedAction
+          ? widget.selected
+          : null,
       enabled: enabled,
       onTap: enabled ? activateControl : null,
       child: MouseRegion(
@@ -865,7 +892,10 @@ class _RaftControlState extends State<RaftControl> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        if (focused && widget.kind == RaftControlKind.textLink)
+                        if (focused &&
+                            (widget.kind == RaftControlKind.textLink ||
+                                widget.kind == RaftControlKind.savedAction &&
+                                    t.brutal))
                           Positioned.fill(
                             child: IgnorePointer(
                               child: CustomPaint(
@@ -1017,14 +1047,20 @@ class RaftSavedActionButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final String tooltip;
   @override
-  Widget build(BuildContext context) => RaftIconButton(
-    glyph: RaftGlyph.bookmarkFilled,
-    glyphSize: 16,
-    visualSize: 32,
-    variant: RaftControlVariant.accent,
-    tooltip: tooltip,
-    onPressed: onPressed,
-  );
+  Widget build(BuildContext context) {
+    final tokens = RaftTokens.of(context);
+    final dimension = tokens.brutal ? 28.0 : 32.0;
+    return RaftControl(
+      onPressed: onPressed,
+      tooltip: raftText(context, tooltip),
+      kind: RaftControlKind.savedAction,
+      selected: true,
+      visualHeight: dimension,
+      visualWidth: dimension,
+      variant: RaftControlVariant.outline,
+      child: RaftIcon(RaftGlyph.bookmarkFilled, size: tokens.brutal ? 14 : 16),
+    );
+  }
 }
 
 class RaftTextButton extends StatelessWidget {
@@ -1841,7 +1877,7 @@ class RaftMenuItem extends StatefulWidget {
 class _RaftMenuItemState extends State<RaftMenuItem> {
   final ownedFocus = FocusNode();
   FocusNode get focus => widget.focusNode ?? ownedFocus;
-  bool hovered = false, focused = false;
+  bool hovered = false, focused = false, semanticFocused = false;
   @override
   void dispose() {
     ownedFocus.dispose();
@@ -1875,6 +1911,8 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
           : null,
       label: widget.label,
       enabled: enabled,
+      focusable: enabled,
+      focused: semanticFocused,
       onTap: enabled ? activateItem : null,
       excludeSemantics: true,
       child: FocusableActionDetector(
@@ -1885,6 +1923,7 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
             ? SystemMouseCursors.click
             : SystemMouseCursors.basic,
         onShowFocusHighlight: (value) => setState(() => focused = value),
+        onFocusChange: (value) => setState(() => semanticFocused = value),
         shortcuts: const {
           SingleActivator(LogicalKeyboardKey.arrowDown): NextFocusIntent(),
           SingleActivator(LogicalKeyboardKey.arrowUp): PreviousFocusIntent(),

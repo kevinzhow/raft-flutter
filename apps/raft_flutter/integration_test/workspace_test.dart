@@ -47,6 +47,22 @@ Future<void> until(
   throw TestFailure('Timed out waiting for the asserted native UI state.');
 }
 
+Future<void> settingsTab(WidgetTester tester, String tab) async {
+  final destination = find.byKey(ValueKey('workspace-settings-nav-$tab'));
+  if (destination.evaluate().isEmpty) {
+    await tester.tap(find.byTooltip('Settings navigation'));
+    await tester.pumpAndSettle();
+  }
+  await tester.ensureVisible(destination);
+  await tester.pumpAndSettle();
+  await tester.tap(destination);
+  await tester.pumpAndSettle();
+  await until(
+    tester,
+    () => find.byKey(ValueKey('settings-page-$tab')).evaluate().isNotEmpty,
+  );
+}
+
 const nativeReportFolder = String.fromEnvironment(
   'RAFT_TEST_REPORT',
   defaultValue: '/tmp/raft-native-e2e',
@@ -1594,6 +1610,7 @@ void main() {
       }
       await tester.tap(find.byKey(const Key('account-navigation')));
       await tester.pump(const Duration(milliseconds: 500));
+      await settingsTab(tester, 'account');
       final oldReading = {
         for (final key in [
           'preferredTimeFormat',
@@ -1652,27 +1669,18 @@ void main() {
       await tester.pumpAndSettle();
       final oldLanguage = w.client.user!.json['displayLanguage'];
       try {
-        await tester.ensureVisible(
-          find.byKey(const Key('account-display-language')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const Key('account-display-language')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.byKey(const ValueKey('field-displayLanguage')));
+        await settingsTab(tester, 'language');
+        await tester.tap(find.byKey(const ValueKey('setting-displayLanguage')));
         await tester.pumpAndSettle();
         await tester.tap(find.text('简体中文').last);
-        await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(RaftButton, 'Save'));
         await until(
           tester,
-          () =>
-              w.client.user!.string('displayLanguage') == 'zh-cn' &&
-              find.byType(RaftFormDialog).evaluate().isEmpty,
+          () => w.client.user!.string('displayLanguage') == 'zh-cn',
         );
         await tester.pumpAndSettle();
         final accountScroll = find
             .descendant(
-              of: find.byKey(const Key('workspace-account-settings')),
+              of: find.byKey(const ValueKey('settings-page-language')),
               matching: find.byType(Scrollable),
             )
             .first;
@@ -1682,7 +1690,10 @@ void main() {
         );
         tester.state<ScrollableState>(accountScroll).position.jumpTo(0);
         await tester.pumpAndSettle();
-        expect(find.text('外观'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('setting-displayLanguage')),
+          findsOneWidget,
+        );
         await screenshot(tester, 'linux-display-language');
       } finally {
         await w.client.patch(
@@ -1692,34 +1703,35 @@ void main() {
         await w.client.reloadUser();
         await tester.pumpAndSettle();
       }
-      tester
-          .state<ScrollableState>(
-            find
-                .descendant(
-                  of: find.byKey(const Key('workspace-account-settings')),
-                  matching: find.byType(Scrollable),
-                )
-                .first,
-          )
-          .position
-          .jumpTo(0);
-      await tester.pumpAndSettle();
+      await settingsTab(tester, 'appearance');
+      await tester.ensureVisible(find.text('Dark'));
       await tester.tap(find.text('Dark'));
       await tester.pump(const Duration(milliseconds: 300));
-      expect(RaftTokens.of(tester.element(find.text('Appearance'))).dark, true);
+      expect(
+        RaftTokens.of(tester.element(find.byKey(const Key('appearance-mode'))))
+            .dark,
+        true,
+      );
       await screenshot(tester, 'linux-elegant-dark');
       await tester.tap(find.text('Light'));
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(find.text('Elegant'));
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('appearance-light-theme-elegant')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('appearance-light-theme-elegant')),
+      );
       await tester.pump(const Duration(milliseconds: 300));
       expect(
-        RaftTokens.of(tester.element(find.text('Appearance'))).family,
+        RaftTokens.of(tester.element(find.byKey(const Key('appearance-mode'))))
+            .family,
         RaftFamily.elegant,
       );
       await screenshot(tester, 'linux-elegant-light');
+      await settingsTab(tester, 'account');
       final accountScroll = find
           .descendant(
-            of: find.byKey(const Key('workspace-account-settings')),
+            of: find.byKey(const ValueKey('settings-page-account')),
             matching: find.byType(Scrollable),
           )
           .first;

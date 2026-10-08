@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/previews.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'page_alignment_fixtures.dart';
 import 'resource_view.dart';
+import 'account_settings.dart';
+import 'settings_page.dart';
 
 @RaftPreviews('Page Tasks reference phone', size: Size(390, 844))
 @RaftPreviews('Page Tasks reference desktop', size: Size(957, 689))
@@ -18,6 +21,16 @@ Widget pageSavedReferencePreview() =>
 @RaftPreviews('Page Activity reference', size: Size(342, 620))
 Widget pageActivityReferencePreview() =>
     const _ResourcePagePreview(section: 'activity');
+
+@RaftPreviews('Page Search filtered results', size: Size(390, 844))
+Widget pageSearchReferencePreview() =>
+    const _ResourcePagePreview(section: 'search');
+
+@RaftPreviews('Page Account profile', size: Size(390, 844))
+Widget pageAccountReferencePreview() => const _AccountPagePreview();
+
+@RaftPreviews('Page Appearance two axes', size: Size(957, 689))
+Widget pageAppearanceReferencePreview() => const _AppearancePagePreview();
 
 /// Exercises the production resource page with the source's public JSON fixtures.
 /// Network and authentication are absent; controls retain their actual UI path.
@@ -38,9 +51,18 @@ class _ResourcePagePreviewState extends State<_ResourcePagePreview> {
       'id': 'server-visual',
       'name': 'Visual workspace',
       'role': 'owner',
+      'plan': 'free',
     })
     ..channels = [
       RaftChannel({'id': 'channel-design', 'name': 'design', 'joined': true}),
+      if (widget.section == 'search')
+        RaftChannel({
+          'id': 'channel-android',
+          'name': 'android-artifacts',
+          'description': 'Builds and screenshots',
+          'type': 'channel',
+          'joined': true,
+        }),
     ]
     ..section = widget.section;
   String? receipt;
@@ -58,6 +80,9 @@ class _ResourcePagePreviewState extends State<_ResourcePagePreview> {
         child: ResourceView(
           controller: workspace,
           section: widget.section,
+          initialQuery: widget.section == 'search' ? 'Android' : null,
+          onSearchEntity: (entity) async =>
+              setState(() => receipt = entity.key),
           onMessage: (channel, message) async =>
               setState(() => receipt = '$channel:$message'),
         ),
@@ -83,6 +108,7 @@ class _FixtureWorkspace extends WorkspaceController {
           .toList();
       return {'tasks': tasks, 'next_cursor': null};
     }
+    if (path == '/messages/search') return pageSearchFixture;
     if (path == '/channels/saved') return pageSavedFixture;
     if (path.startsWith('/channels/inbox')) return pageActivityFixture;
     if (path.endsWith('/members')) {
@@ -104,4 +130,66 @@ class _FixtureWorkspace extends WorkspaceController {
       throw const RaftApiException(
         'This public visual fixture does not execute server mutations.',
       );
+}
+
+class _AccountPagePreview extends StatefulWidget {
+  const _AccountPagePreview();
+  @override
+  State<_AccountPagePreview> createState() => _AccountPagePreviewState();
+}
+
+class _AccountPagePreviewState extends State<_AccountPagePreview> {
+  late final client =
+      RaftClient(
+          origin: 'https://public-visual-fixture.invalid',
+          sessionStore: MemorySessionStore(),
+        )
+        ..user = RaftRecord({
+          'id': 'visual-user',
+          'name': 'artin',
+          'displayName': 'artin',
+          'email': 'artin@slock.ai',
+          'emailVerified': true,
+        });
+  late final workspace = _FixtureWorkspace(client);
+  @override
+  void dispose() {
+    workspace.dispose();
+    client.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    primary: false,
+    padding: const EdgeInsets.all(16),
+    child: AccountSettings(controller: workspace),
+  );
+}
+
+class _AppearancePagePreview extends StatefulWidget {
+  const _AppearancePagePreview();
+  @override
+  State<_AppearancePagePreview> createState() => _AppearancePagePreviewState();
+}
+
+class _AppearancePagePreviewState extends State<_AppearancePagePreview> {
+  RaftAppearance? value;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return SingleChildScrollView(
+      primary: false,
+      padding: const EdgeInsets.all(16),
+      child: RaftAppearancePicker(
+        appearance:
+            value ??
+            RaftAppearance(
+              mode: t.dark ? ThemeMode.dark : ThemeMode.light,
+              light: t.family,
+            ),
+        onChanged: (next) => setState(() => value = next),
+      ),
+    );
+  }
 }

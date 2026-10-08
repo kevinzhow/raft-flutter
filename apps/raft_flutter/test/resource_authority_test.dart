@@ -154,16 +154,12 @@ void main() {
       _role(w, 'owner');
       await tester.pumpWidget(_host(w, 'activity'));
       await tester.pumpAndSettle();
-      final popup = tester.widget<PopupMenuButton<String>>(
-        find.byWidgetPredicate(
-          (widget) =>
-              widget is PopupMenuButton<String> &&
-              widget.tooltip == 'Activity actions',
-        ),
+      final action = tester.widget<RaftTextButton>(
+        find.widgetWithText(RaftTextButton, 'Mark all read'),
       );
       _role(w, 'member');
       await tester.pumpAndSettle();
-      popup.onSelected!('read-all');
+      action.onPressed!();
       await tester.pumpAndSettle();
       expect(
         a.calls.where((o) => o.path == '/channels/inbox/read-all'),
@@ -441,11 +437,11 @@ void main() {
       await tester.pumpWidget(_host(w, 'search'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'private');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump(const Duration(milliseconds: 210));
       await tester.pumpAndSettle();
       expect(find.text('Private search match'), findsOneWidget);
       await tester.enterText(find.byType(TextField), '');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump(const Duration(milliseconds: 210));
       await tester.pumpAndSettle();
       expect(find.text('Private search match'), findsNothing);
       _taskRoutes(w, a);

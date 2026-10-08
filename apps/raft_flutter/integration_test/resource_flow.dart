@@ -47,7 +47,7 @@ Future<void> verifyAdvancedResources(
     w.setSection(value);
     await tester.pump(const Duration(milliseconds: 300));
     await loaded();
-    if (['search', 'saved', 'activity'].contains(value)) {
+    if (['saved', 'activity'].contains(value)) {
       await tester.tap(find.byTooltip('Filters'));
       await tester.pump(const Duration(milliseconds: 200));
     }
@@ -80,10 +80,13 @@ Future<void> verifyAdvancedResources(
     await tester.enterText(find.byType(TextField), query);
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await loaded(message: true);
-    await menu('Sort search results', 'Most recent');
+    await menu('Sort search results', 'Recent');
     await loaded(message: true);
     await capture('native-search-advanced-filters');
-    await tester.tap(find.text('Mentions me'));
+    await tester.tap(find.byTooltip('Search scope'));
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.tap(find.widgetWithText(RaftMenuItem, 'Mentions me'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await loaded();
     expect(state().advanced.scopes.contains('mentioned'), true);
     await capture('native-search-self-mentions-filter');

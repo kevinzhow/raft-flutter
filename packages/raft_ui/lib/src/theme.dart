@@ -150,6 +150,121 @@ class RaftFieldRecipe {
       : tokens.fieldLine;
 }
 
+/// Original dark Input's three inset shadows, after semantic role resolution.
+@immutable
+class RaftFieldInsetRecipe {
+  const RaftFieldInsetRecipe(this.tokens);
+  final RaftTokens tokens;
+  Color get line => tokens.colors['field-inset-line']!;
+  Color get top => tokens.colors['field-inset-top']!;
+  Color get bottom => tokens.colors['field-inset-bottom']!;
+  double get lineWidth => 1;
+  double get topOffset => 1;
+  double get topBlurSigma => .5;
+  double get bottomOffset => -1;
+}
+
+/// CSS inset shadows stay inside the field, including during border animations.
+class RaftFieldBorder extends OutlineInputBorder {
+  const RaftFieldBorder({
+    super.borderSide,
+    super.borderRadius,
+    super.gapPadding,
+    this.insets,
+  });
+  final RaftFieldInsetRecipe? insets;
+  @override
+  RaftFieldBorder copyWith({
+    BorderSide? borderSide,
+    BorderRadius? borderRadius,
+    double? gapPadding,
+  }) => RaftFieldBorder(
+    borderSide: borderSide ?? this.borderSide,
+    borderRadius: borderRadius ?? this.borderRadius,
+    gapPadding: gapPadding ?? this.gapPadding,
+    insets: insets,
+  );
+  RaftFieldBorder _interpolate(
+    OutlineInputBorder a,
+    OutlineInputBorder b,
+    double t,
+  ) => RaftFieldBorder(
+    borderSide: BorderSide.lerp(a.borderSide, b.borderSide, t),
+    borderRadius: BorderRadius.lerp(a.borderRadius, b.borderRadius, t)!,
+    gapPadding: a.gapPadding + (b.gapPadding - a.gapPadding) * t,
+    insets: t < .5
+        ? (a is RaftFieldBorder ? a.insets : insets)
+        : (b is RaftFieldBorder ? b.insets : insets),
+  );
+  @override
+  ShapeBorder? lerpFrom(ShapeBorder? a, double t) =>
+      a is OutlineInputBorder ? _interpolate(a, this, t) : super.lerpFrom(a, t);
+  @override
+  ShapeBorder? lerpTo(ShapeBorder? b, double t) =>
+      b is OutlineInputBorder ? _interpolate(this, b, t) : super.lerpTo(b, t);
+  @override
+  void paint(
+    Canvas canvas,
+    Rect rect, {
+    double? gapStart,
+    double gapExtent = 0,
+    double gapPercentage = 0,
+    TextDirection? textDirection,
+  }) {
+    final recipe = insets;
+    if (recipe != null) {
+      final outer = borderRadius.toRRect(rect);
+      canvas.save();
+      canvas.clipRRect(outer);
+      // Keep Material floating-label gaps legible for existing API callers.
+      if (gapStart != null && gapPercentage > 0) {
+        final gap = Rect.fromLTWH(
+          rect.left + gapStart - gapPadding,
+          rect.top,
+          (gapExtent + gapPadding * 2) * gapPercentage,
+          4,
+        );
+        canvas.clipPath(
+          Path.combine(
+            PathOperation.difference,
+            Path()..addRect(rect),
+            Path()..addRect(gap),
+          ),
+        );
+      }
+      void shadow(Color color, double offset, double sigma) {
+        final path = Path()
+          ..fillType = PathFillType.evenOdd
+          ..addRect(rect.inflate(4))
+          ..addRRect(outer.shift(Offset(0, offset)));
+        final paint = Paint()..color = color;
+        if (sigma > 0) {
+          paint.maskFilter = MaskFilter.blur(BlurStyle.normal, sigma);
+        }
+        canvas.drawPath(path, paint);
+      }
+
+      // CSS shadow lists paint first-on-top: bottom, blurred top, then ring.
+      shadow(recipe.bottom, recipe.bottomOffset, 0);
+      shadow(recipe.top, recipe.topOffset, recipe.topBlurSigma);
+      final ring = Path()
+        ..fillType = PathFillType.evenOdd
+        ..addRRect(outer)
+        ..addRRect(outer.deflate(recipe.lineWidth));
+      canvas.drawPath(ring, Paint()..color = recipe.line);
+      canvas.restore();
+    }
+    super.paint(
+      canvas,
+      rect,
+      gapStart: gapStart,
+      gapExtent: gapExtent,
+      gapPercentage: gapPercentage,
+      textDirection: textDirection,
+    );
+  }
+}
+
 ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
   if (dark) family = RaftFamily.elegant;
   final t = RaftTokens(
@@ -296,7 +411,8 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
     ),
   );
   OutlineInputBorder fieldBorder(Color color, [double? width]) =>
-      OutlineInputBorder(
+      RaftFieldBorder(
+        insets: t.dark && !t.brutal ? RaftFieldInsetRecipe(t) : null,
         borderRadius: BorderRadius.circular(t.fieldRadius),
         borderSide: BorderSide(color: color, width: width ?? t.border),
       );
