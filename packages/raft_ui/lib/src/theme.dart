@@ -713,3 +713,9 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
     ),
   );
 }
+
+/// CSS line-height semantics: half-leading above and below the glyph box
+/// (Flutter's default distributes leading proportionally to ascent/descent).
+const raftCssTextHeightBehavior = TextHeightBehavior(
+  leadingDistribution: TextLeadingDistribution.even,
+);

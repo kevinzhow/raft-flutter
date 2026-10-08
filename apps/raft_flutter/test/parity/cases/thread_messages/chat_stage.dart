@@ -211,6 +211,7 @@ class ChatStage {
     this.ctx, {
     required List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> extraChannels = const [],
+    List<Map<String, dynamic>> dms = const [],
     Map<String, dynamic> threadSummaries = const {},
     List<Map<String, dynamic>> tasks = const [],
     this.channelId = 'channel-design',
@@ -249,7 +250,8 @@ class ChatStage {
     }, user: ids.user);
     w = WorkspaceController(client)
       ..server = RaftRecord(ids.server)
-      ..channels = channels.map(RaftChannel.new).toList();
+      ..channels = channels.map(RaftChannel.new).toList()
+      ..dms = dms.map(RaftChannel.new).toList();
     w.ledger.switchServer(ids.serverId);
     unawaited(
       w.selectChannel(
@@ -276,48 +278,52 @@ class ChatStage {
   final chatKey = GlobalKey(debugLabel: 'parity-chat');
 
   /// Chat width / translation / visible row window, updated by [alignRow].
-  late final geometry = ValueNotifier<(double, Offset, Size?)>(
-    (rowWidth ?? 390, Offset.zero, null),
-  );
+  late final geometry = ValueNotifier<(double, Offset, Size?)>((
+    rowWidth ?? 390,
+    Offset.zero,
+    null,
+  ));
 
   Widget build() {
     // The app hosts RaftChatView inside a Scaffold (Material ancestor for the
     // composer TextField, ScaffoldMessenger, bottom sheets).
     final chat = RaftChatView(key: chatKey, controller: w);
     if (rowWidth == null) return Scaffold(body: chat);
-    return Scaffold(body: ValueListenableBuilder(
-      valueListenable: geometry,
-      builder: (context, g, _) {
-        final (chatWidth, shift, window) = g;
-        // Tall enough that the row lays out unconstrained by the composer.
-        const chatHeight = 1800.0;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: rowOrigin.dx,
-              top: rowOrigin.dy,
-              child: (targetRow ? ctx.target : (Widget w) => w)(
-                ClipRect(
-                  child: SizedBox(
-                    width: window?.width ?? chatWidth,
-                    height: window?.height ?? 844,
-                    child: OverflowBox(
-                      alignment: Alignment.topLeft,
-                      minWidth: chatWidth,
-                      maxWidth: chatWidth,
-                      minHeight: chatHeight,
-                      maxHeight: chatHeight,
-                      child: Transform.translate(offset: shift, child: chat),
+    return Scaffold(
+      body: ValueListenableBuilder(
+        valueListenable: geometry,
+        builder: (context, g, _) {
+          final (chatWidth, shift, window) = g;
+          // Tall enough that the row lays out unconstrained by the composer.
+          const chatHeight = 1800.0;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: rowOrigin.dx,
+                top: rowOrigin.dy,
+                child: (targetRow ? ctx.target : (Widget w) => w)(
+                  ClipRect(
+                    child: SizedBox(
+                      width: window?.width ?? chatWidth,
+                      height: window?.height ?? 844,
+                      child: OverflowBox(
+                        alignment: Alignment.topLeft,
+                        minWidth: chatWidth,
+                        maxWidth: chatWidth,
+                        minHeight: chatHeight,
+                        maxHeight: chatHeight,
+                        child: Transform.translate(offset: shift, child: chat),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
-        );
-      },
-    ));
+            ],
+          );
+        },
+      ),
+    );
   }
 
   /// Pumps until the canned channel window, agent/member directory and task

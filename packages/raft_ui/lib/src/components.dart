@@ -907,10 +907,12 @@ class RaftMessageTile extends StatelessWidget {
     required this.timestamp,
     this.onThread,
     this.onActions,
+    this.onActionsAt,
     this.onLink,
     this.threadLabel,
     this.threadPreview,
     this.taskReference,
+    this.threadRepliesBadge,
     this.badge,
     this.modelLabel,
     this.subtitle,
@@ -951,7 +953,12 @@ class RaftMessageTile extends StatelessWidget {
   /// Business adapters may supply a richer body without replacing message
   /// actions, thread controls, attachments, or reactions.
   final Widget? body, threadPreview, taskReference;
+
+  /// Web MessageItem footer `ThreadRepliesBadge`, after the task badge and
+  /// before reactions (hidden when the inline reply surface replaces it).
+  final Widget? threadRepliesBadge;
   final VoidCallback? onThread, onActions, onReact;
+  final ValueChanged<Offset>? onActionsAt;
   final void Function(String href)? onLink;
   final List<Map<String, dynamic>> attachments, reactions;
   final Set<String> reactedEmojis, failedReactionEmojis;
@@ -983,6 +990,7 @@ class RaftMessageTile extends StatelessWidget {
       avatar: avatar ?? RaftAvatar(name: author, size: 36),
       onAuthor: onAuthor,
       onActions: onActions,
+      onActionsAt: onActionsAt,
       onTap: onTap,
       rowContext: rowContext,
       continuation: continuation,
@@ -1075,6 +1083,7 @@ class RaftMessageTile extends StatelessWidget {
       inlineReplies: threadPreview,
       footer:
           taskReference == null &&
+              threadRepliesBadge == null &&
               reactions.isEmpty &&
               (threadPreview != null ||
                   onThread == null ||
@@ -1083,12 +1092,17 @@ class RaftMessageTile extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (taskReference != null || reactions.isNotEmpty)
+                if (taskReference != null ||
+                    threadRepliesBadge != null ||
+                    reactions.isNotEmpty)
+                  // `mt-1.5 flex flex-wrap items-center gap-1.5`.
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       ?taskReference,
+                      ?threadRepliesBadge,
                       ...reactions
                           .where(
                             (r) =>
@@ -1137,6 +1151,7 @@ class RaftMessageTile extends StatelessWidget {
                   ),
                 if (hoverToolbar == null &&
                     threadPreview == null &&
+                    threadRepliesBadge == null &&
                     onThread != null)
                   TextButton.icon(
                     onPressed: onThread,
@@ -1636,8 +1651,14 @@ class _RaftComposerState extends State<RaftComposer> {
     );
   }
 
+  // CSS places line-height leading evenly above and below the glyphs.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => DefaultTextHeightBehavior(
+    textHeightBehavior: raftCssTextHeightBehavior,
+    child: Builder(builder: buildContent),
+  );
+
+  Widget buildContent(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftComposerRecipe(
       t,

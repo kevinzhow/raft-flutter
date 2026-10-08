@@ -16,6 +16,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'geometry_dump.dart';
+
 /// Builds the real Flutter widget tree for one official case.
 typedef ParityBuilder = Widget Function(ParityContext ctx);
 
@@ -360,6 +362,11 @@ Future<Map<String, dynamic>> captureParityCase(
     await File(
       '${outputDir.path}/$id.metadata.json',
     ).writeAsString(const JsonEncoder.withIndent('  ').convert(metadata));
+    if (parityGeometryDumpEnabled) {
+      await File('${outputDir.path}/$id.geometry.txt').writeAsString(
+        parityGeometryDump(rootBox, rect, rootBox),
+      );
+    }
   });
   return metadata;
 }

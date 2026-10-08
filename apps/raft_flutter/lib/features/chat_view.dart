@@ -17,10 +17,10 @@ import '../data/personal_presentation.dart';
 import '../platform/file_selection.dart';
 import 'attachment_view.dart';
 import 'message_presentation.dart';
+import 'pending_mention_actions.dart';
 import 'message_reference_directory.dart';
 import 'share_message_link.dart';
 import 'private_route_guard.dart';
-import '../platform/native_sharing.dart';
 import 'message_selection.dart';
 import 'message_image_export.dart';
 import 'forward_messages_dialog.dart';
@@ -73,6 +73,9 @@ class _RaftChatViewState extends State<RaftChatView> {
   final composerHandle = RaftComposerHandle();
   OverlayEntry? reactionPicker;
   String? pickerMessageId, pickerAuthority;
+
+  /// Message whose context menu is open (row shows its popup-open state).
+  String? menuMessageId;
   Timer? pickerCloseTimer;
   Size? pickerViewport;
   late MessageSelection selection;
@@ -576,110 +579,217 @@ class _RaftChatViewState extends State<RaftChatView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
 
-  Future<void> actions(RaftMessage message) async {
+  /// Web MessageItem.tsx context menu (desktop right-click and mobile
+  /// long-press share it): quick reactions; Copy Link / Copy Markdown /
+  /// Select Message; Open Thread / Save / Follow Thread; task action.
+  /// [anchor] is the global press point (`ctxMenu.anchorX/Y`).
+  Future<void> actions(
+    RaftMessage message, {
+    Offset? anchor,
+    bool parentTile = false,
+  }) async {
+    if (message.string('messageType') == 'system') return;
+    if (selection.active) return;
     final authority = workspaceAuthority(w);
-    final result = await showModalBottomSheet<String>(
+    final box = context.findRenderObject() as RenderBox?;
+    final origin =
+        anchor ??
+        (box == null
+            ? Offset.zero
+            : box.localToGlobal(box.size.center(Offset.zero)));
+    final summary = w.threadSummaries[message.id];
+    // `hideThreadActions`: thread panel rows (parent and replies).
+    final hideThreadActions = widget.thread || parentTile;
+    final threadReply = widget.thread && !parentTile;
+    final hasThreadConversation =
+        (summary is Map &&
+            (summary['threadChannelId'] != null ||
+                (int.tryParse('${summary['replyCount']}') ?? 0) > 0)) ||
+        message.json['threadChannelId'] != null;
+    Map? followed;
+    if (!hideThreadActions && hasThreadConversation) {
+      try {
+        final response = await w.query('/channels/threads/followed');
+        final rows = response is Map ? response['threads'] : null;
+        if (rows is List) {
+          followed = rows.whereType<Map>().firstWhere(
+            (row) => row['parentMessageId'] == message.id,
+            orElse: () => const {},
+          );
+          if (followed.isEmpty) followed = null;
+        }
+      } catch (_) {}
+      if (!mounted || authority != workspaceAuthority(w)) return;
+    }
+    final task = taskProjection.taskFor(message);
+    final guest = w.server?.string('role') == 'guest';
+    final supportsTasks = w.channel?.type != 'thread';
+    String? result;
+    void pick(BuildContext menuContext, String value) {
+      result = value;
+      Navigator.of(menuContext).pop();
+    }
+
+    setState(() => menuMessageId = message.id);
+    await showRaftMessageContextMenu<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
-      builder: (context) => SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const RaftIcon(RaftGlyph.checkCircle, size: 14),
-                title: Text(raftText(context, 'Select messages')),
-                onTap: () => Navigator.pop(context, 'select'),
+      anchor: origin,
+      builder: (menuContext) {
+        RaftMessageContextMenuItem item(
+          String value,
+          String label,
+          Widget icon,
+        ) => RaftMessageContextMenuItem(
+          key: ValueKey('message-menu-$value'),
+          label: raftText(menuContext, label),
+          icon: icon,
+          onPressed: () => pick(menuContext, value),
+        );
+        final follow = !hideThreadActions && hasThreadConversation;
+        final taskItems = [
+          if (!threadReply && supportsTasks)
+            task == null
+                ? item(
+                    'task',
+                    'Convert to Task',
+                    raftMessageMenuIcon(RaftGlyph.clipboardCheck),
+                  )
+                : task['status'] == 'done'
+                ? item(
+                    'task-reopen',
+                    'Reopen Task',
+                    raftMessageMenuIcon(RaftGlyph.rotateCcw),
+                  )
+                : item(
+                    'task-done',
+                    'Mark as Done',
+                    raftMessageMenuIcon(RaftGlyph.checkCircle),
+                  ),
+        ];
+        return RaftMessageContextMenu(
+          onDismiss: () => Navigator.of(menuContext).pop(),
+          reactionLabel: (emoji) =>
+              raftFormat(menuContext, 'React with {emoji}', {'emoji': emoji}),
+          onReact: canReact
+              ? (emoji) {
+                  result = 'react:$emoji';
+                  Navigator.of(menuContext).pop();
+                }
+              : null,
+          sections: [
+            [
+              item(
+                'copy-link',
+                'Copy Link',
+                raftMessageMenuIcon(RaftGlyph.link),
               ),
-              if (ordinary(message))
-                ListTile(
-                  leading: const RaftIcon(RaftGlyph.send, size: 14),
-                  title: Text(raftText(context, 'Forward')),
-                  onTap: () => Navigator.pop(context, 'forward'),
+              item(
+                'copy-markdown',
+                'Copy Markdown',
+                raftMessageMenuIcon(RaftGlyph.copy),
+              ),
+              if (!guest)
+                item(
+                  'select',
+                  'Select Message',
+                  raftMessageMenuIcon(RaftGlyph.checkCircle),
                 ),
-              ListTile(
-                leading: const Icon(Icons.forum_outlined),
-                title: Text(raftText(context, 'Reply in thread')),
-                onTap: () => Navigator.pop(context, 'thread'),
-              ),
-              if (NativeSharing().supported)
-                ListTile(
-                  leading: const Icon(Icons.share_outlined),
-                  title: Text(raftText(context, 'Share link')),
-                  onTap: () => Navigator.pop(context, 'share-link'),
-                ),
-              ListTile(
-                leading: const RaftIcon(RaftGlyph.link, size: 14),
-                title: Text(raftText(context, 'Copy link')),
-                onTap: () => Navigator.pop(context, 'copy-link'),
-              ),
-              ListTile(
-                leading: const RaftIcon(RaftGlyph.bookmark, size: 14),
-                title: Text(raftText(context, 'Save message')),
-                onTap: () => Navigator.pop(context, 'save'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.add_reaction_outlined),
-                title: Text(raftText(context, 'React 👍')),
-                onTap: () => Navigator.pop(context, 'react'),
-              ),
-              ListTile(
-                leading: const RaftIcon(RaftGlyph.clipboardCheck, size: 14),
-                title: Text(raftText(context, 'Create task from message')),
-                onTap: () => Navigator.pop(context, 'task'),
-              ),
             ],
-          ),
-        ),
-      ),
+            [
+              if (!hideThreadActions)
+                item(
+                  'thread',
+                  'Open Thread',
+                  Builder(
+                    builder: (c) => RaftMessageThreadGlyph(
+                      size: 14,
+                      color: IconTheme.of(c).color,
+                    ),
+                  ),
+                ),
+              item(
+                'save',
+                'Save Message',
+                raftMessageMenuIcon(RaftGlyph.bookmark),
+              ),
+              if (follow)
+                followed != null
+                    ? item(
+                        'unfollow',
+                        'Unfollow Thread',
+                        raftMessageMenuIcon(RaftGlyph.messageCircleOff),
+                      )
+                    : item(
+                        'follow',
+                        'Follow Thread',
+                        raftMessageMenuIcon(RaftGlyph.messageCirclePlus),
+                      ),
+              // Without the follow divider the task row joins this group.
+              if (!follow) ...taskItems,
+            ],
+            if (follow) taskItems,
+          ],
+        );
+      },
     );
-    if (!mounted || authority != workspaceAuthority(w) || result == null) {
+    if (mounted) setState(() => menuMessageId = null);
+    final choice = result;
+    if (!mounted || authority != workspaceAuthority(w) || choice == null) {
       return;
     }
     try {
-      if (result == 'share-link' || result == 'copy-link') {
-        await shareMessageLink(
-          context,
-          w,
-          message,
-          copy: result == 'copy-link',
-        );
+      if (choice == 'copy-link') {
+        await shareMessageLink(context, w, message, copy: true);
       }
-      if (result == 'forward' &&
-          mounted &&
-          authority == workspaceAuthority(w)) {
-        await forwardMessages(context, w, [message]);
+      if (choice == 'copy-markdown') {
+        await Clipboard.setData(ClipboardData(text: message.content));
       }
-      if (result == 'select') selection.enter(message.id);
-      if (result == 'thread') await w.openThread(message);
-      if (result == 'save') {
+      if (choice == 'select') selection.enter(message.id);
+      if (choice == 'thread') await w.openThread(message);
+      if (choice == 'save') await saveMessage(message);
+      if (choice == 'follow') {
         await w.command(
           'POST',
-          '/channels/saved',
-          data: {'messageId': message.id},
+          '/channels/threads/follow',
+          data: {'parentMessageId': message.id},
         );
       }
-      if (result == 'react') {
-        await w.toggleReaction(message, '👍');
+      if (choice == 'unfollow' && followed?['threadChannelId'] is String) {
+        await w.command(
+          'POST',
+          '/channels/threads/unfollow',
+          data: {'threadChannelId': followed!['threadChannelId']},
+        );
       }
-      if (result == 'task') {
+      if (choice.startsWith('react:')) {
+        await react(message, choice.substring(6));
+      }
+      if (choice == 'task') {
         await w.command(
           'POST',
           '/tasks/convert-message',
           data: {'messageId': message.id},
         );
       }
+      if ((choice == 'task-done' || choice == 'task-reopen') && task != null) {
+        await w.command(
+          'PATCH',
+          '/tasks/${task['id']}/status',
+          data: {'status': choice == 'task-done' ? 'done' : 'todo'},
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -718,8 +828,9 @@ class _RaftChatViewState extends State<RaftChatView> {
             if (current()) setState(() => reactionFailures.remove(m.id));
           },
         );
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -741,6 +852,29 @@ class _RaftChatViewState extends State<RaftChatView> {
   );
 
   String clock(DateTime stamp) => timeFormatter.messageTime(stamp);
+
+  /// Web MessageItem `shouldShowThreadRepliesBadge`: replies or a thread
+  /// draft, unless the inline reply surface already replaces the badge.
+  Widget? threadRepliesBadge(RaftMessage m, {required bool parentTile}) {
+    if (parentTile || widget.thread) return null;
+    final summary = w.threadSummaries[m.id];
+    final replies = summary is Map
+        ? int.tryParse('${summary['replyCount']}') ?? 0
+        : 0;
+    final unread = summary is Map
+        ? int.tryParse('${summary['unreadCount']}') ?? 0
+        : 0;
+    final hasDraft = (w.drafts['thread:${m.id}'] ?? '').trim().isNotEmpty;
+    if (replies <= 0 && !hasDraft) return null;
+    if (inlineThreadReplies(m, parentTile: parentTile) != null) return null;
+    return RaftThreadRepliesBadge(
+      key: ValueKey('thread-replies-badge-${m.id}'),
+      replyCount: replies,
+      unreadCount: unread,
+      hasDraft: hasDraft,
+      onPressed: () => w.openThread(m),
+    );
+  }
 
   Widget? inlineThreadReplies(RaftMessage parent, {required bool parentTile}) {
     if (parentTile ||
@@ -1103,8 +1237,9 @@ class _RaftChatViewState extends State<RaftChatView> {
       );
     } catch (e) {
       if (mounted && authority == workspaceAuthority(w)) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1252,7 +1387,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       onAuthor: senderMention(m),
       hoverToolbar: messageToolbar(m, parent: parent),
       coarsePointer: RaftDensityScope.of(context) == RaftDensity.touch,
-      popupOpen: pickerMessageId == m.id,
+      popupOpen: pickerMessageId == m.id || menuMessageId == m.id,
       highlighted: w.highlightedMessageId == m.id,
       collapseLongMessages:
           (m.json['actionMetadata'] is! Map ||
@@ -1261,10 +1396,12 @@ class _RaftChatViewState extends State<RaftChatView> {
       timestamp: m.createdAt == null ? '' : clock(m.createdAt!),
       // Source renders a badge only for deactivated/departed identities.
       // Sender type is already represented by the scoped avatar, not an Agent badge.
-      onActions: () => actions(m),
+      onActions: () => actions(m, parentTile: parent),
+      onActionsAt: (anchor) => actions(m, anchor: anchor, parentTile: parent),
       onThread: parent || widget.thread ? null : () => w.openThread(m),
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       taskReference: taskReference(m),
+      threadRepliesBadge: threadRepliesBadge(m, parentTile: parent),
       threadLabel: w.threadSummaries[m.id] is Map
           ? raftFormat(context, '{count} replies', {
               'count': w.threadSummaries[m.id]['replyCount'] ?? 0,
@@ -1453,31 +1590,34 @@ class _RaftChatViewState extends State<RaftChatView> {
             resolveUser: (id) async => chat.User(id: id),
             chatController: adapter,
             backgroundColor:
-                RaftConversationSurfaceRecipe(RaftTokens.of(context))
-                    .background(
-                      widget.thread
-                          ? RaftConversationSurfaceRole.threadTimeline
-                          : RaftConversationSurfaceRole.channelTimeline,
-                    ),
+                RaftConversationSurfaceRecipe(
+                  RaftTokens.of(context),
+                ).background(
+                  widget.thread
+                      ? RaftConversationSurfaceRole.threadTimeline
+                      : RaftConversationSurfaceRole.channelTimeline,
+                ),
             builders: chat.Builders(
               composerBuilder: (_) => const SizedBox.shrink(),
-              chatMessageBuilder: (
-                context,
-                message,
-                index,
-                animation,
-                child, {
-                isRemoved,
-                required isSentByMe,
-                groupStatus,
-              }) => child,
-              customMessageBuilder: (
-                context,
-                message,
-                index, {
-                required isSentByMe,
-                groupStatus,
-              }) => datedTile(RaftMessage(message.metadata!)),
+              chatMessageBuilder:
+                  (
+                    context,
+                    message,
+                    index,
+                    animation,
+                    child, {
+                    isRemoved,
+                    required isSentByMe,
+                    groupStatus,
+                  }) => child,
+              customMessageBuilder:
+                  (
+                    context,
+                    message,
+                    index, {
+                    required isSentByMe,
+                    groupStatus,
+                  }) => datedTile(RaftMessage(message.metadata!)),
               chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
                 controller: viewport,
                 presentationActive: presentationActive,
@@ -1644,6 +1784,9 @@ class _RaftChatViewState extends State<RaftChatView> {
           )
         else
           RaftComposer(
+            accessoryRow: w.pendingMentionsFor(thread: widget.thread).isEmpty
+                ? null
+                : PendingMentionActions(controller: w, thread: widget.thread),
             autofocus:
                 widget.thread &&
                 RaftDensityScope.of(context) == RaftDensity.desktop,
