@@ -289,20 +289,23 @@ class _PanelBackActionState extends State<_PanelBackAction> {
         cursor: SystemMouseCursors.click,
         onEnter: (_) => setState(() => hovered = true),
         onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => pressed = true),
-          onTapCancel: () => setState(() => pressed = false),
-          onTapUp: (_) => setState(() => pressed = false),
-          onTap: widget.onPressed,
-          child: Transform.translate(
-            offset: s.translate ?? Offset.zero,
-            child: Container(
-              padding: s.padding,
-              decoration: s.decoration(tokens),
-              child: RaftIcon(
-                RaftGlyph.arrowLeft,
-                size: svg?.width ?? 14,
-                color: color,
+        child: Tooltip(
+          message: raftText(context, widget.tooltip),
+          child: GestureDetector(
+            onTapDown: (_) => setState(() => pressed = true),
+            onTapCancel: () => setState(() => pressed = false),
+            onTapUp: (_) => setState(() => pressed = false),
+            onTap: widget.onPressed,
+            child: Transform.translate(
+              offset: s.translate ?? Offset.zero,
+              child: Container(
+                padding: s.padding,
+                decoration: s.decoration(tokens),
+                child: RaftIcon(
+                  RaftGlyph.arrowLeft,
+                  size: svg?.width ?? 14,
+                  color: color,
+                ),
               ),
             ),
           ),
@@ -443,7 +446,7 @@ class RaftSettingsCard extends StatelessWidget {
 /// Tailwind spacing steps (`--spacing: 0.25rem`) used by the settings pages.
 abstract final class RaftSpace {
   static const double half = 2, x1 = 4, x1_5 = 6, x2 = 8, x3 = 12, x4 = 16;
-  static const double x6 = 24;
+  static const double x5 = 20, x6 = 24;
 
   /// SocialProviderIcon `size-[18px]`.
   static const double providerIcon = 18;

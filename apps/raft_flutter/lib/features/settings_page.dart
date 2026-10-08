@@ -134,23 +134,24 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(
+                // Sidebar.tsx desktop header: `h-panel-header border-b
+                // theme-brutal:border-b-2 theme-brutal:border-black px-5`,
+                // title `text-lg font-bold`.
+                Container(
                   height: RaftLayoutMetrics.shellHeaderHeight(
                     t,
                     MediaQuery.sizeOf(context).height,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        raftText(context, 'Settings'),
-                        style: RaftTypography.heading(t),
-                      ),
-                    ),
+                  padding: RaftSettingsLayoutRecipe.navigationHeaderInset,
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: recipe.navigationHeaderLine),
+                  ),
+                  child: Text(
+                    raftText(context, 'Settings'),
+                    style: recipe.navigationTitle,
                   ),
                 ),
-                Divider(height: 1, color: recipe.navigationLine),
                 Expanded(child: list(active.id)),
               ],
             ),

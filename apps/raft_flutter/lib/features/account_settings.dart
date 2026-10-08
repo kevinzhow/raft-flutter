@@ -339,7 +339,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           RaftSettingsField(
             label: 'Display Name',
             child: RaftRecipeInput(
-              key: const Key('account-profile-display-name'),
+              fieldKey: const Key('account-profile-display-name'),
               controller: profileName,
               // `theme-brutal:p-2`
               padding: t.brutal ? const EdgeInsets.all(8) : null,

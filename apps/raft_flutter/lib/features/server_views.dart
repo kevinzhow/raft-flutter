@@ -318,7 +318,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                 label: 'Name',
                 child: canEdit
                     ? RaftRecipeInput(
-                        key: const Key('server-profile-name-input'),
+                        fieldKey: const Key('server-profile-name-input'),
                         controller: name,
                         onChanged: (_) => setState(() => saved = false),
                         onSubmitted: (_) => save(),
@@ -416,7 +416,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
 }
 
 /// DangerZoneSection delete confirmation body: `space-y-4`, warning copy
-/// with the bold server name, then "Type <slug> to confirm:" over SlugInput.
+/// with the bold server name, then "Type `slug` to confirm:" over SlugInput.
 class _DeleteServerConfirm extends StatefulWidget {
   const _DeleteServerConfirm({
     required this.name,

@@ -216,7 +216,19 @@ class RaftSettingsProfileCard extends StatelessWidget {
 class RaftSettingsLayoutRecipe {
   const RaftSettingsLayoutRecipe(this.t);
   final RaftTokens t;
-  static const navigationWidth = 220.0;
+  // Sidebar slot width (AdaptiveWorkspace sidebarWidth default 240).
+  static const navigationWidth = 240.0;
+  static const navigationHeaderInset = EdgeInsets.symmetric(
+    horizontal: RaftSpace.x5,
+  );
+  BorderSide get navigationHeaderLine =>
+      BorderSide(color: RaftSettingsText(t).edge, width: t.border);
+  TextStyle get navigationTitle => RaftTypography.heading(
+    t,
+    size: 18,
+    line: 28,
+    weight: FontWeight.w700,
+  ).copyWith(color: RaftSettingsText(t).strong);
   static const navigationGlyphSize = 15.0;
   static const navigationInset = EdgeInsets.fromLTRB(8, 12, 8, 12);
   static const contentInset = EdgeInsets.all(16);

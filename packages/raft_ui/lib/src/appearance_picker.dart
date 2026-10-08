@@ -38,12 +38,14 @@ class RaftAppearancePicker extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                raftText(
-                  context,
-                  night ? 'Dark appearance' : 'Light appearance',
+              Flexible(
+                child: Text(
+                  raftText(
+                    context,
+                    night ? 'Dark appearance' : 'Light appearance',
+                  ),
+                  style: groupTitle,
                 ),
-                style: groupTitle,
               ),
               if (dark == night) ...[
                 const SizedBox(width: 8),

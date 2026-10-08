@@ -203,6 +203,7 @@ class RaftSettingsField extends StatelessWidget {
 class RaftRecipeInput extends StatefulWidget {
   const RaftRecipeInput({
     super.key,
+    this.fieldKey,
     this.controller,
     this.placeholder,
     this.onChanged,
@@ -210,6 +211,9 @@ class RaftRecipeInput extends StatefulWidget {
     this.mono = false,
     this.padding,
   });
+
+  /// Key for the inner [TextField] (tests and focus lookups).
+  final Key? fieldKey;
   final TextEditingController? controller;
   final String? placeholder;
   final ValueChanged<String>? onChanged, onSubmitted;
@@ -252,6 +256,7 @@ class _RaftRecipeInputState extends State<RaftRecipeInput> {
       decoration: s.decoration(tokens),
       padding: widget.padding ?? s.padding,
       child: TextField(
+        key: widget.fieldKey,
         controller: widget.controller,
         focusNode: focus,
         style: text,
