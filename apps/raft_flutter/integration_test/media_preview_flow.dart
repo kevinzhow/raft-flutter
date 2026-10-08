@@ -92,8 +92,13 @@ Future<void> verifyNativeMediaPreviewFlow(
     expect(card, findsOneWidget);
     final title = find.descendant(of: card, matching: find.text(name));
     expect(title, findsOneWidget);
-    await tester.ensureVisible(card);
-    await tester.pump(const Duration(milliseconds: 100));
+    // Closing a preview and lazy timeline reflow can move the next card's
+    // title under fixed chrome. Reveal the actual pointer target, then observe
+    // hit-test readiness rather than treating a mounted card as clickable.
+    // This is an ordinary user scroll; Search separately proves autonomous focus.
+    await Scrollable.ensureVisible(tester.element(title), alignment: 0.5);
+    await until(() => title.hitTestable().evaluate().length == 1);
+    expect(title.hitTestable(), findsOneWidget);
     await tester.tap(title);
     await until(
       () => find.byType(AttachmentPreviewDialog).evaluate().isNotEmpty,

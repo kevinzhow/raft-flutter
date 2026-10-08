@@ -195,7 +195,9 @@ for platform in ['linux', 'android', 'media']:
     record = json.loads(receipt.read_text())
     artifact_name = 'raft-flutter-android.apk' if platform == 'android' else 'raft-flutter-linux-x64.tar.gz'
     expected_artifact = delivery.get('artifacts', {}).get(artifact_name, {}) if artifact_manifest.is_file() else {}
-    if record.get('artifactSha256') != expected_artifact.get('sha256') or record.get('completed') is not True:
+    if (record.get('sourceHash') != source_hash
+            or record.get('artifactSha256') != expected_artifact.get('sha256')
+            or record.get('completed') is not True):
         raise SystemExit('Report blocked: release smoke receipt does not match delivered artifact.')
     target = report / 'release-smoke' / platform
     target.mkdir(parents=True)
