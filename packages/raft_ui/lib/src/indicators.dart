@@ -7,6 +7,7 @@ import 'icons.dart';
 import 'recipe_surface.dart';
 import 'recipes/badge.g.dart';
 import 'recipes/checkbox.g.dart';
+import 'recipes/progress.g.dart';
 import 'recipes/checkbox_indicator.g.dart';
 import 'design_primitives.dart';
 import 'recipes/recipe_runtime.dart';
@@ -15,6 +16,7 @@ import 'tokens/tokens.dart';
 
 export 'recipes/badge.g.dart' show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
 export 'recipes/checkbox.g.dart' show RaftCheckboxRecipeSize;
+export 'recipes/progress.g.dart' show RaftProgressRecipeVariant, RaftProgressRecipeSize;
 
 /// Tailwind default-palette colours used by Web JSX classes (not raft-ui
 /// tokens). Values are Tailwind v4 oklch → sRGB (tool/recipes/css-of.mjs).
@@ -436,4 +438,109 @@ class _CheckMarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CheckMarkPainter old) => old.color != color;
+}
+
+/// Web `ProgressBar` (product labels over raft-ui `Progress`): optional
+/// label / percent row (`mb-1 flex justify-between text-xs font-mono
+/// text-foreground-muted theme-brutal:text-black/60`) and the recipe track +
+/// indicator. Indeterminate renders the `w-1/2` stripe; its
+/// `raft-progress-indeterminate` keyframes are not defined in raft-ui or the
+/// Web CSS, so it is static there too.
+class RaftProgressBar extends StatelessWidget {
+  const RaftProgressBar({
+    super.key,
+    this.value,
+    this.tone = RaftProgressRecipeVariant.accent,
+    this.label,
+    this.showPercent = false,
+    this.size = RaftProgressRecipeSize.md,
+  });
+
+  /// 0–100; null = indeterminate.
+  final double? value;
+
+  /// Web tones: pink → accent, cyan → information, lime → success,
+  /// orange → warning.
+  final RaftProgressRecipeVariant tone;
+  final String? label;
+  final bool showPercent;
+  final RaftProgressRecipeSize size;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final rt = t.recipeTokens;
+    final indeterminate = value == null || value!.isNaN;
+    final pct = indeterminate ? 0.0 : value!.clamp(0, 100).toDouble();
+    final s = RaftProgressRecipe.resolve(
+      theme: t.recipeTheme,
+      variant: tone,
+      size: size,
+      states: t.recipeStates(
+        extra: [
+          'group/progress:data-size=${size.css}',
+          if (pct >= 100) 'group/progress:data-complete',
+        ],
+      ),
+      tokens: rt,
+    );
+    Color? rootVar(String name) =>
+        RaftColorRef.fromCss(s.root[name])?.resolve(rt);
+    final trackFill = s.track.backgroundColor?.resolve(rt) ??
+        rootVar('--progress-track');
+    final indicatorFill = rootVar('--progress-indicator');
+    final radius = s.indicator.borderRadius;
+    final indicator = DecoratedBox(
+      decoration: BoxDecoration(color: indicatorFill, borderRadius: radius),
+    );
+    final track = RaftRecipeBox(
+      style: s.track,
+      tokens: rt,
+      width: double.infinity,
+      clip: true,
+      decorationOverride: (d) => d.copyWith(color: trackFill),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: indeterminate ? .5 : pct / 100,
+          heightFactor: 1,
+          child: indicator,
+        ),
+      ),
+    );
+    final bar = Semantics(
+      label: label,
+      value: indeterminate ? null : '${pct.round()}%',
+      child: track,
+    );
+    if (label == null && !(showPercent && !indeterminate)) return bar;
+    final header = DefaultTextStyle.merge(
+      style: TextStyle(
+        fontFamily: t.monoFont,
+        fontSize: 12,
+        height: 16 / 12,
+        color: t.brutal
+            ? RaftPrimitiveColors.black.withValues(alpha: .6)
+            : t.semantic.foregroundMuted,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label ?? '',
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (showPercent && !indeterminate) Text('${pct.round()}%'),
+        ],
+      ),
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [header, const SizedBox(height: 4), bar],
+    );
+  }
 }

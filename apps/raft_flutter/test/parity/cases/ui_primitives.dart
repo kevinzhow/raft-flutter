@@ -491,20 +491,24 @@ final ParityCase _badge = ParityCase(
 );
 
 final ParityCase _progressBar = ParityCase(
-  widgets: const ['material:LinearProgressIndicator'],
-  notes:
-      'The app only has the unthemed Material LinearProgressIndicator(value:) '
-      '(attachment_view.dart download dialog). No label / percent row and no '
-      'pink/cyan tone variants: values 0.64 and 0.28 rendered bare.',
+  widgets: const ['raft_ui:RaftProgressBar'],
   build: (ctx) => _frame(
     ctx,
     height: 124,
-    child: _reducedMotion(
-      _column(16, const [
-        LinearProgressIndicator(value: .64),
-        LinearProgressIndicator(value: .28),
-      ]),
-    ),
+    child: _column(16, const [
+      RaftProgressBar(
+        value: 64,
+        label: 'Downloading update',
+        showPercent: true,
+        tone: RaftProgressRecipeVariant.accent,
+      ),
+      RaftProgressBar(
+        value: 28,
+        label: 'Verifying package',
+        showPercent: true,
+        tone: RaftProgressRecipeVariant.information,
+      ),
+    ]),
   ),
 );
 
