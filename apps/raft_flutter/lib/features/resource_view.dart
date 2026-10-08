@@ -1389,25 +1389,13 @@ class _ResourceViewState extends State<ResourceView> {
         'activity' => RaftGlyph.activity,
         _ => RaftGlyph.search,
       }),
-      leading: mobile
+      // TasksPanel's server-mode header has no back button or actions; the
+      // Saved/Activity PanelHeaders only carry onMobileBack.
+      leading: mobile && widget.section != 'tasks'
           ? RaftBackButton(tooltip: 'Back', onPressed: widget.onBack ?? () {})
           : null,
       actions: [
-        if (widget.section == 'tasks') ...[
-          RaftIconButton(
-            glyph: RaftGlyph.refreshCw,
-            tooltip: 'Refresh',
-            onPressed: load,
-          ),
-          RaftIconButton(
-            glyph: RaftGlyph.plus,
-            tooltip: 'Create task',
-            onPressed: w.server?.string('role') == 'guest'
-                ? null
-                : () => createTask(sourceScope: scope),
-          ),
-        ],
-        if (['saved', 'activity', 'search', 'tasks'].contains(widget.section))
+        if (widget.section == 'activity')
           RaftIconButton(
             glyph: RaftGlyph.slidersHorizontal,
             tooltip: 'Filters',
@@ -1822,73 +1810,45 @@ class _ResourceViewState extends State<ResourceView> {
       );
 
   Widget groupedTasks() {
-    final t = RaftTokens.of(context),
-        recipe = RaftTaskSectionRecipe(RaftTokens.of(context)),
-        scope = authority;
+    final t = RaftTokens.of(context), scope = authority;
+    final mobile =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+    // TasksPanelViewport + `bg-layer-canvas-muted p-4 theme-brutal:bg-white`;
+    // list view is TaskVirtualLayout `space-y-6` of TaskSections.
     return ColoredBox(
-      color: t.brutal ? t.panel : t.sidebar,
+      color: t.brutal ? Colors.white : t.colors['layer-canvas-muted']!,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: t.brutal || !mobile
+            ? const EdgeInsets.all(16)
+            : const EdgeInsets.fromLTRB(20, 16, 14, 16),
         children: [
           for (final status in raftTaskStatuses.where(
             (s) => filter == 'all' || filter == s,
           )) ...[
-            Container(
-              padding: recipe.inset,
-              decoration: recipe.decoration,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      RaftTaskStatus(status: status),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${visibleRows.where((r) => r['status'] == status).length}',
-                        style: recipe.count,
-                      ),
-                      const Spacer(),
-                      RaftIconButton(
-                        key: ValueKey('task-group-$status'),
-                        glyph: collapsedTaskStatuses.contains(status)
-                            ? RaftGlyph.chevronRight
-                            : RaftGlyph.chevronDown,
-                        tooltip:
-                            '${collapsedTaskStatuses.contains(status) ? 'Show' : 'Hide'} ${raftTaskStatusLabel(status)} tasks',
-                        onPressed: () {
-                          if (accepts(scope)) {
-                            setState(() {
-                              if (!collapsedTaskStatuses.remove(status)) {
-                                collapsedTaskStatuses.add(status);
-                              }
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  if (!collapsedTaskStatuses.contains(status)) ...[
-                    SizedBox(height: recipe.itemGap),
-                    for (final row in visibleRows.where(
-                      (r) => r['status'] == status,
-                    ))
-                      item(row),
-                    if (!visibleRows.any((r) => r['status'] == status))
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 20,
-                          horizontal: 12,
-                        ),
-                        child: Text(
-                          '${raftText(context, 'No tasks')} · ${raftTaskStatusLabel(status)}',
-                          style: TextStyle(color: t.muted),
-                        ),
-                      ),
-                  ],
-                ],
-              ),
+            RaftTaskSection(
+              status: status,
+              count: visibleRows.where((r) => r['status'] == status).length,
+              collapsed: collapsedTaskStatuses.contains(status),
+              triggerKey: ValueKey('task-group-$status'),
+              emptyLabel:
+                  '${raftText(context, 'No tasks')} · ${raftTaskStatusLabel(status)}',
+              onToggle: () {
+                if (accepts(scope)) {
+                  setState(() {
+                    if (!collapsedTaskStatuses.remove(status)) {
+                      collapsedTaskStatuses.add(status);
+                    }
+                  });
+                }
+              },
+              children: [
+                for (final row in visibleRows.where(
+                  (r) => r['status'] == status,
+                ))
+                  item(row),
+              ],
             ),
-            SizedBox(height: recipe.sectionGap),
+            const SizedBox(height: 24),
           ],
           if (hasMore)
             TextButton(

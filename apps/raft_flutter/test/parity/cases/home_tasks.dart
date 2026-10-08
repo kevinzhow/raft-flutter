@@ -355,44 +355,43 @@ final ParityCase _tasksPanel = ParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Task status menu — React renders InlineBadgeEditor (status chip) open in a
-// 342x260 box with 16px padding. Flutter has no standalone status chip: the
-// status menu is RaftTaskCard's status PopupMenuButton, so the card for the
-// in_progress task (#212) renders and its status chip is tapped.
+// Task status menu — React renders InlineBadgeEditor (the status chip menu
+// TaskCard opens) with `open`, status in_progress, all five status options and
+// dropdownAlign="left", in a 342x260 box with 16px padding. Flutter mounts the
+// same product control, RaftTaskStatusEditor (RaftInlineBadgeEditor), open.
 
 final ParityCase _statusMenu = ParityCase(
-  widgets: const ['raft_ui:RaftTaskCard', 'raft_ui:RaftTaskStatus'],
+  widgets: const [
+    'raft_ui:RaftTaskStatusEditor',
+    'raft_ui:RaftInlineBadgeEditor',
+  ],
   notes:
-      'No standalone Flutter status chip exists; the menu is opened from the '
-      'RaftTaskCard (task #212, in_progress) as ResourceView builds it for an '
-      'owner (all five statuses). The card body is extra content React does '
-      'not show.',
-  build: (ctx) {
-    final task = Map<String, dynamic>.from(
-      (ctx.fixtures['tasksFixture']['tasks'] as List).cast<Map>().firstWhere(
-        (t) => t['status'] == 'in_progress',
+      'RaftTaskStatusEditor for in_progress with raftTaskStatuses, opened via '
+      'its controlled `open` like the React host; menu aligned left.',
+  build: (ctx) => ctx.frame(
+    width: 342,
+    height: 260,
+    // The host div is a block box under `<main class="font-display">`, so the
+    // badge sits in a line box of the heading font at 16px / 1.5.
+    child: Builder(
+      builder: (context) => Align(
+        alignment: Alignment.topLeft,
+        child: RaftInlineLineBox(
+          style: RaftTypography.heading(
+            RaftTokens.of(context),
+            weight: FontWeight.w400,
+          ),
+          child: RaftTaskStatusEditor(
+            status: 'in_progress',
+            options: raftTaskStatuses,
+            onSelect: (_) {},
+            open: true,
+            alignRight: false,
+          ),
+        ),
       ),
-    );
-    return ctx.frame(
-      width: 342,
-      height: 260,
-      child: RaftTaskCard(
-        title: '${task['title']}',
-        number: '${task['taskNumber']}',
-        channel: '${task['channelName'] ?? ''}',
-        status: '${task['status']}',
-        description: '${task['description'] ?? ''}',
-        assignee: task['claimedByName'] as String?,
-        onTap: () {},
-        statusOptions: raftTaskStatuses,
-        onStatus: (_) {},
-      ),
-    );
-  },
-  interact: (t, ctx) async {
-    await t.tap(find.byType(PopupMenuButton<String>));
-    await t.pump(const Duration(milliseconds: 160));
-  },
+    ),
+  ),
 );
 
 // ---------------------------------------------------------------------------
