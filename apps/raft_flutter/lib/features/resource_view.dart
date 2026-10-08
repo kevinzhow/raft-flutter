@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
 
 import '../data/workspace_controller.dart';
 import '../data/search_memory.dart';
@@ -2242,13 +2243,24 @@ class _ResourceViewState extends State<ResourceView> {
       ))
         c.id: '#${c.name}',
     };
-    return Padding(
-      padding: RaftLayoutMetrics.toolbarInset,
+    final t = RaftTokens.of(context), rt = RaftRecipeTokens(t);
+    final toolbar = RaftTasksPanelRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      states: RaftRecipeStates({
+        if (t.dark) RaftRecipeStates.dark,
+      }, MediaQuery.sizeOf(context).width),
+      tokens: rt,
+    ).toolbar;
+    // TasksPanelToolbar > `flex flex-wrap items-center gap-2`.
+    return Container(
+      padding: toolbar.padding,
+      decoration: toolbar.decoration(rt),
       child: SizedBox(
         width: double.infinity,
         child: Wrap(
           spacing: 8,
           runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             for (final field in [
               if (widget.channelId == null) 'Channel',
