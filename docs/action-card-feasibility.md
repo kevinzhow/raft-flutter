@@ -28,4 +28,4 @@ This is the mounted admission contract, rather than an unsupported external-agen
 
 The existing workspace cannot admit another agent. That result does not describe a newly owned fixture workspace. No billing configuration, subscription, entitlement, existing agent, or source gate was changed by these checks.
 
-Current acceptance revision: `a05a8dd506db705120502b656e4641e38fcf9685fa245167ab0aaa9f0752415b` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
+Current acceptance revision: `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.

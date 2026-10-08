@@ -43,6 +43,8 @@ Future<void> verifySidebarFlow(
   final marker = 'Native sidebar ${DateTime.now().microsecondsSinceEpoch}';
   final edited = '$marker edited';
   final list = find.byKey(const Key('sidebar-preferences'));
+  final mobile =
+      tester.view.physicalSize.width / tester.view.devicePixelRatio < 900;
   Future<Map<String, dynamic>> prefs() async =>
       Map<String, dynamic>.from(await w.query(path));
   Future<void> openPreferences() async {
@@ -212,6 +214,10 @@ Future<void> verifySidebarFlow(
     current = await prefs();
     expect((current['hiddenDmIds'] as List? ?? []).contains(dm.id), !hidden);
     await section('chat');
+    if (mobile) {
+      await tester.tap(find.byTooltip('Open navigation menu'));
+      await tester.pumpAndSettle();
+    }
     final sidebar = find.byKey(const Key('workspace-sidebar'));
     final sidebarDm = find.byKey(ValueKey('sidebar-channel-${dm.id}'));
     if (hidden) {
@@ -251,6 +257,13 @@ Future<void> verifySidebarFlow(
       },
     );
     await w.loadSidebar();
+    if (mobile &&
+        find.byKey(const Key('workspace-sidebar')).evaluate().isNotEmpty) {
+      await tester.tapAt(
+        Offset(tester.view.physicalSize.width / tester.view.devicePixelRatio - 8, 80),
+      );
+      await tester.pumpAndSettle();
+    }
     await section('chat');
   }
 }
