@@ -12,7 +12,6 @@ import 'dart:ui' show SemanticsRole;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/page_component_recipes.dart';
-import 'package:raft_flutter/features/task_selection_filter.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
@@ -627,58 +626,50 @@ final ParityCase _sectionHeader = ParityCase(
   ),
 );
 
-/// MenuController handed out by the mounted TaskSelectionFilter.
-MenuController? _selectionMenu;
-
 final ParityCase _selectionPopover = ParityCase(
-  widgets: const [
-    'raft_flutter:TaskSelectionFilter',
-    'raft_ui:RaftMenuPanel',
-    'raft_ui:RaftMenuItem',
-  ],
+  widgets: const ['raft_ui:RaftSelectionPopover'],
   notes:
-      'Real product SelectionPopover: TaskSelectionFilter (tasks channel '
-      'filter) opened through its MenuController and searched for "des". Its '
-      'anchor sits just above the frame so the popover lands at the fixture '
-      '16px inset. Product differences kept: title is the field name '
-      '"Channel" in mono, width min(248, viewport-24), search filters the '
-      'option list (only "design" stays), no disabled or italic options.',
-  build: (ctx) => Stack(
-    clipBehavior: Clip.none,
-    children: [
-      Positioned(
-        left: 16,
-        bottom: ctx.height - 12,
-        child: Material(
-          type: MaterialType.transparency,
-          child: TaskSelectionFilter(
-            field: 'Channel',
-            options: const {
-              'design': 'design',
-              'visual-testing': 'visual-testing',
-              'archive': 'archived channel',
-              'none': 'No channel',
-            },
-            selection: const {'design'},
-            valid: () => true,
-            onToggle: (_) {},
-            onClear: () {},
-            onController: (menu, mounted) =>
-                _selectionMenu = mounted ? menu : null,
-          ),
+      'Fixture className (w-full overflow-hidden border-2 border-black '
+      'bg-white shadow-brutal) equals the brutal default chrome at full width.',
+  build: (ctx) => _frame(
+    ctx,
+    height: 252,
+    child: RaftSelectionPopover(
+      title: 'Channels',
+      width: 310,
+      onClear: () {},
+      searchController: TextEditingController(text: 'des'),
+      searchPlaceholder: 'Search channels',
+      options: [
+        RaftSelectionOption(
+          label: 'design',
+          checked: true,
+          onTap: () {},
+          reserveLeadingSlot: true,
         ),
-      ),
-      // Painted after the anchor so the off-fixture trigger stays hidden
-      // under the white frame; the popover itself paints in the Overlay.
-      _frame(ctx, height: 252, child: const SizedBox.shrink()),
-    ],
+        RaftSelectionOption(
+          label: 'visual-testing',
+          checked: false,
+          onTap: () {},
+          reserveLeadingSlot: true,
+        ),
+        RaftSelectionOption(
+          label: 'archived channel',
+          checked: false,
+          disabled: true,
+          onTap: () {},
+          reserveLeadingSlot: true,
+        ),
+        RaftSelectionOption(
+          label: 'No channel',
+          checked: false,
+          italic: true,
+          onTap: () {},
+          reserveLeadingSlot: true,
+        ),
+      ],
+    ),
   ),
-  interact: (t, ctx) async {
-    _selectionMenu!.open();
-    await t.pump(const Duration(milliseconds: 50));
-    await t.enterText(find.byType(TextField), 'des');
-    await t.pump(const Duration(milliseconds: 50));
-  },
 );
 
 final ParityCase _menuItem = ParityCase(

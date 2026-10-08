@@ -6,6 +6,8 @@ import 'dart:ui' show SemanticsRole;
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'form_controls.dart';
+import 'icons.dart';
 import 'recipes/button_variants.g.dart';
 
 import 'recipe_surface.dart';
@@ -476,6 +478,299 @@ class RaftMenuButtonItem extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// One row of [RaftSelectionPopover].
+@immutable
+class RaftSelectionOption {
+  const RaftSelectionOption({
+    required this.label,
+    required this.checked,
+    required this.onTap,
+    this.disabled = false,
+    this.italic = false,
+    this.leading,
+    this.reserveLeadingSlot = false,
+  });
+  final String label;
+  final bool checked, disabled, italic, reserveLeadingSlot;
+  final VoidCallback onTap;
+  final Widget? leading;
+}
+
+/// Web `ui/SelectionPopover`: raft-ui `Card` with the default className
+/// (`border border-line-muted bg-layer-panel shadow-raft-sm`, brutal
+/// `border-2 border-black bg-white shadow-brutal`), a header (`px-3 py-2
+/// border-b`, `text-[10px] font-bold uppercase tracking-wide
+/// text-foreground-muted` title + Clear), an optional search `Input`
+/// (`w-full px-2 py-1 text-xs font-mono` in a `px-2 py-2 border-b` band) and
+/// `h-9` option rows (`px-3 text-xs font-bold border-b`, brutal
+/// `border-black/10`) with a 12px check.
+class RaftSelectionPopover extends StatelessWidget {
+  const RaftSelectionPopover({
+    super.key,
+    required this.title,
+    required this.options,
+    this.onClear,
+    this.showHeader = true,
+    this.clearLabel = 'Clear',
+    this.searchController,
+    this.searchPlaceholder = 'Search',
+    this.onSearchChanged,
+    this.searchFocusNode,
+    this.emptyLabel = 'No options',
+    this.width,
+  });
+
+  final String title;
+  final List<RaftSelectionOption> options;
+
+  /// Shows the Clear action when non-null (`showClear && onClear`).
+  final VoidCallback? onClear;
+  final bool showHeader;
+  final String clearLabel, searchPlaceholder, emptyLabel;
+
+  /// Searchable when non-null.
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchChanged;
+  final FocusNode? searchFocusNode;
+
+  /// Explicit width; null = `min-w-[220px]` content width.
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final s = t.semantic;
+    final black = RaftPrimitiveColors.black;
+    final divider = BorderSide(color: t.brutal ? black : s.lineMuted);
+    final eyebrow = TextStyle(
+      fontSize: 10,
+      height: 1.5,
+      fontWeight: FontWeight.w700,
+      letterSpacing: .25,
+      color: s.foregroundMuted,
+    );
+    Widget body = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showHeader)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(border: Border(bottom: divider)),
+            child: Row(
+              children: [
+                Expanded(child: Text(title.toUpperCase(), style: eyebrow)),
+                if (onClear != null)
+                  _ClearAction(label: clearLabel, style: eyebrow, onTap: onClear!),
+              ],
+            ),
+          ),
+        if (searchController != null)
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(border: Border(bottom: divider)),
+            child: RaftTextInput(
+              controller: searchController,
+              focusNode: searchFocusNode,
+              autofocus: true,
+              hintText: searchPlaceholder,
+              onChanged: onSearchChanged,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              style: TextStyle(fontFamily: t.monoFont, fontSize: 12, height: 16 / 12),
+            ),
+          ),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 256),
+          child: options.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    emptyLabel,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: t.monoFont,
+                      fontSize: 11,
+                      height: 1.5,
+                      color: s.foregroundMuted,
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < options.length; i++)
+                        _SelectionRow(
+                          option: options[i],
+                          last: i == options.length - 1,
+                        ),
+                    ],
+                  ),
+                ),
+        ),
+      ],
+    );
+    final shadows = t.brutal
+        ? RaftProductShadows.shadowBrutal.paintOrder
+        : [
+            for (final l in t.themeShadows.sm.layers.reversed)
+              if (!l.inset)
+                BoxShadow(
+                  color: l.color,
+                  offset: l.offset,
+                  blurRadius: raftCssBlurRadius(l.blur),
+                  spreadRadius: l.spread,
+                ),
+          ];
+    return CustomPaint(
+      painter: RaftOuterShadowPainter(shadows, BorderRadius.zero),
+      child: Container(
+        width: width,
+        constraints: const BoxConstraints(minWidth: 220),
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+          color: t.brutal ? RaftPrimitiveColors.white : s.layerPanel,
+          border: t.brutal
+              ? Border.all(color: black, width: 2)
+              : Border.all(color: s.lineMuted),
+        ),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(color: s.foreground),
+          child: body,
+        ),
+      ),
+    );
+  }
+}
+
+class _ClearAction extends StatefulWidget {
+  const _ClearAction({required this.label, required this.style, required this.onTap});
+  final String label;
+  final TextStyle style;
+  final VoidCallback onTap;
+  @override
+  State<_ClearAction> createState() => _ClearActionState();
+}
+
+class _ClearActionState extends State<_ClearAction> {
+  bool hovered = false;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Semantics(
+      button: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: Text(
+            widget.label,
+            style: widget.style.copyWith(
+              color: hovered ? t.semantic.foregroundStrong : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SelectionRow extends StatefulWidget {
+  const _SelectionRow({required this.option, required this.last});
+  final RaftSelectionOption option;
+  final bool last;
+  @override
+  State<_SelectionRow> createState() => _SelectionRowState();
+}
+
+class _SelectionRowState extends State<_SelectionRow> {
+  bool hovered = false;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final s = t.semantic;
+    final o = widget.option;
+    final black = RaftPrimitiveColors.black;
+    final ink = o.disabled
+        ? (t.brutal ? black.withValues(alpha: .3) : s.foregroundMuted)
+        : (t.brutal ? black : s.foregroundStrong);
+    final bg = !o.disabled && hovered
+        ? (t.brutal ? t.product.softSignal.withValues(alpha: .3) : s.fillMuted)
+        : (t.brutal ? RaftPrimitiveColors.white : s.layerPanel);
+    final leading = o.leading;
+    final label = o.italic
+        ? Text(
+            o.label,
+            softWrap: false,
+            style: TextStyle(
+              height: 2,
+              fontStyle: FontStyle.italic,
+              color: t.brutal ? black.withValues(alpha: .7) : s.foregroundMuted,
+            ),
+          )
+        : Text(
+            o.label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(height: 2),
+          );
+    return Semantics(
+      button: true,
+      enabled: !o.disabled,
+      checked: o.checked,
+      child: MouseRegion(
+        cursor: o.disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: o.disabled ? null : o.onTap,
+          child: Container(
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: bg,
+              border: widget.last
+                  ? null
+                  : Border(
+                      bottom: BorderSide(
+                        color: t.brutal ? black.withValues(alpha: .1) : s.lineMuted,
+                      ),
+                    ),
+            ),
+            child: DefaultTextStyle.merge(
+              style: TextStyle(
+                fontSize: 12,
+                height: 16 / 12,
+                fontWeight: FontWeight.w700,
+                color: ink,
+              ),
+              child: Row(
+                children: [
+                  if (o.reserveLeadingSlot || leading != null) ...[
+                    SizedBox.square(dimension: 20, child: Center(child: leading)),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Align(alignment: Alignment.centerLeft, child: label),
+                  ),
+                  if (o.checked) ...[
+                    const SizedBox(width: 8),
+                    RaftIcon(RaftGlyph.check, size: 12, color: ink),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

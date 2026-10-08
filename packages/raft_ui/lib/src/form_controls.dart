@@ -160,11 +160,18 @@ class RaftTextInput extends StatefulWidget {
     this.inputFormatters,
     this.maxLength,
     this.semanticLabel,
+    this.padding,
+    this.style,
   });
 
   final TextEditingController? controller;
   final String? initialValue, hintText, semanticLabel;
   final bool readOnly, enabled, invalid, obscureText, autofocus;
+
+  /// Callsite overrides layered on the recipe (e.g. `px-2 py-1`,
+  /// `text-xs font-mono`).
+  final EdgeInsets? padding;
+  final TextStyle? style;
   final RaftInputChrome chrome;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -217,6 +224,18 @@ class _RaftTextInputState extends State<RaftTextInput>
       (_ownedController ??= TextEditingController(text: widget.initialValue));
 
   @override
+  void initState() {
+    super.initState();
+    // Programmatic focus (autofocus) places the caret at the end without the
+    // touch selection handles, like a focused Web input.
+    if (!controller.selection.isValid) {
+      controller.selection = TextSelection.collapsed(
+        offset: controller.text.length,
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _ownedController?.dispose();
     super.dispose();
@@ -246,7 +265,7 @@ class _RaftTextInputState extends State<RaftTextInput>
         ),
         tokens: rt,
       ).root;
-      textStyle = s.text(rt, base: base);
+      textStyle = s.text(rt, base: base).merge(widget.style);
       placeholder =
           s.target('::placeholder')?.color?.resolve(rt) ??
           t.semantic.foregroundPlaceholder;
@@ -260,7 +279,8 @@ class _RaftTextInputState extends State<RaftTextInput>
             color: t.brutal
                 ? RaftPrimitiveColors.black
                 : t.semantic.foregroundStrong,
-          );
+          )
+          .merge(widget.style);
       placeholder = t.semantic.foregroundPlaceholder;
       final shadow = t.brutal
           ? (focused
@@ -319,8 +339,17 @@ class _RaftTextInputState extends State<RaftTextInput>
       ),
     );
     final box = s != null
-        ? RaftRecipeBox(style: s, tokens: rt, child: field)
-        : Container(padding: padding, decoration: decoration, child: field);
+        ? RaftRecipeBox(
+            style: s,
+            tokens: rt,
+            padding: widget.padding,
+            child: field,
+          )
+        : Container(
+            padding: widget.padding ?? padding,
+            decoration: decoration,
+            child: field,
+          );
     return Semantics(
       label: widget.semanticLabel,
       child: hoverRegion(box),
