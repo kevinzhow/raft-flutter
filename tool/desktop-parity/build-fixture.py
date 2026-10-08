@@ -94,6 +94,12 @@ routes['GET /messages/channel/channel-android'] = {'messages': [], 'historyLimit
 routes['POST /channels/channel-android/read'] = {'maxReadSeq': '0', 'readStateVersion': '1'}
 routes['GET /tasks/channel/channel-android'] = {'tasks': []}
 
+# --- channel task lanes: honour ?status= like the real API ----------------
+for ch in ('channel-design', 'channel-android', dm_id):
+    body = routes.get(f'GET /tasks/channel/{ch}', {'tasks': []})
+    for status in ('todo', 'in_progress', 'in_review', 'done', 'closed'):
+        routes[f'GET /tasks/channel/{ch}?status={status}'] = {**body, 'tasks': [t for t in body.get('tasks', []) if t.get('status') == status]}
+
 # --- tasks (server board): one lane per status ----------------------------
 all_tasks = tasks['tasks']
 routes['GET /tasks/server'] = {'tasks': all_tasks}
@@ -125,7 +131,10 @@ machines = [
      'runtimes': ['codex'], 'daemonVersion': '0.65.0', 'computerVersion': '0.0.50',
      'isComputer': True, 'lastHeartbeat': None, 'createdAt': '2026-06-18T00:00:00.000Z'},
 ]
-routes[f'GET /servers/{sid}/machines'] = machines
+# Real server shape (web machineStore.ts:280): {machines, latestComputerVersion,
+# latestComputerReleaseNotes}. A bare array is accepted by Web but not by every
+# Flutter consumer, so use the production shape.
+routes[f'GET /servers/{sid}/machines'] = {'machines': machines, 'latestComputerVersion': '0.0.50', 'latestComputerReleaseNotes': None}
 
 # --- members / agents detail ------------------------------------------------
 for a in agents:

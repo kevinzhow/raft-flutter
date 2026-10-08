@@ -123,6 +123,28 @@ for (const visualCase of manifest.cases) {
     }
     await page.addStyleTag({ content: HIDE_DEV_TOOLS_CSS + STABILIZE_CSS });
     await page.waitForTimeout(web.settleMs ?? 800);
+    // Real raft-ui faces must be in use (production Web loads them from
+    // Google Fonts). Unlike the official React provider spec, nothing here
+    // stubs the font request; verify instead of trusting it.
+    const fonts = await page.evaluate(async () => {
+      await document.fonts.ready;
+      const raft = ['Hanken Grotesk', 'Inter', 'Geist', 'Geist Mono'];
+      // Primary family of every element that renders its own text.
+      const used = new Set();
+      for (const el of document.querySelectorAll('body *')) {
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) continue;
+        used.add(getComputedStyle(el).fontFamily.split(',')[0].trim().replaceAll('"', ''));
+      }
+      const required = raft.filter((f) => used.has(f));
+      for (const f of required) await document.fonts.load(`16px "${f}"`);
+      const loaded = [...new Set([...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replaceAll('"', '')))];
+      return { used: [...used], required, loaded, missing: required.filter((f) => !loaded.includes(f)), body: getComputedStyle(document.body).fontFamily };
+    });
+    if (!fonts.required.length || fonts.missing.length) {
+      throw new Error(`raft-ui fonts not in use/loaded: required=${fonts.required} missing=${fonts.missing} used=${fonts.used}`);
+    }
     const regions = await page.evaluate((probes) => {
       const out = {};
       for (const [name, sel] of Object.entries(probes)) {
@@ -157,6 +179,7 @@ for (const visualCase of manifest.cases) {
       selector: 'viewport',
       crop: { mode: 'viewport', contract: visualCase.capture.contract, rect: { x: 0, y: 0, width, height }, targetRect: { x: 0, y: 0, width, height }, outset: null },
       regions,
+      fonts,
       fixtureSha256: fixtureSha,
       sourceCommit: '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6',
       capturedAt: new Date().toISOString(),

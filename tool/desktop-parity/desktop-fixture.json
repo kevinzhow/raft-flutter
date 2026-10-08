@@ -1286,43 +1286,47 @@
   },
   "GET /servers/visual-server/invites": [],
   "GET /servers/visual-server/join-links": [],
-  "GET /servers/visual-server/machines": [
-   {
-    "id": "computer-mbp",
-    "name": "Jiachengs-MacBook-Pro",
-    "hostname": "Jiachengs-MacBook-Pro.local",
-    "os": "darwin",
-    "status": "online",
-    "statusVersion": 7,
-    "apiKeyPrefix": "slk_vis",
-    "runtimes": [
-     "codex",
-     "claude"
-    ],
-    "daemonVersion": "0.65.0",
-    "computerVersion": "0.0.48",
-    "isComputer": true,
-    "lastHeartbeat": "2026-06-19T12:28:00.000Z",
-    "createdAt": "2026-06-18T00:00:00.000Z"
-   },
-   {
-    "id": "computer-studio",
-    "name": "Studio Test Rig",
-    "hostname": "studio-test-rig.local",
-    "os": "linux",
-    "status": "offline",
-    "statusVersion": 3,
-    "apiKeyPrefix": "slk_off",
-    "runtimes": [
-     "codex"
-    ],
-    "daemonVersion": "0.65.0",
-    "computerVersion": "0.0.50",
-    "isComputer": true,
-    "lastHeartbeat": null,
-    "createdAt": "2026-06-18T00:00:00.000Z"
-   }
-  ],
+  "GET /servers/visual-server/machines": {
+   "machines": [
+    {
+     "id": "computer-mbp",
+     "name": "Jiachengs-MacBook-Pro",
+     "hostname": "Jiachengs-MacBook-Pro.local",
+     "os": "darwin",
+     "status": "online",
+     "statusVersion": 7,
+     "apiKeyPrefix": "slk_vis",
+     "runtimes": [
+      "codex",
+      "claude"
+     ],
+     "daemonVersion": "0.65.0",
+     "computerVersion": "0.0.48",
+     "isComputer": true,
+     "lastHeartbeat": "2026-06-19T12:28:00.000Z",
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    },
+    {
+     "id": "computer-studio",
+     "name": "Studio Test Rig",
+     "hostname": "studio-test-rig.local",
+     "os": "linux",
+     "status": "offline",
+     "statusVersion": 3,
+     "apiKeyPrefix": "slk_off",
+     "runtimes": [
+      "codex"
+     ],
+     "daemonVersion": "0.65.0",
+     "computerVersion": "0.0.50",
+     "isComputer": true,
+     "lastHeartbeat": null,
+     "createdAt": "2026-06-18T00:00:00.000Z"
+    }
+   ],
+   "latestComputerVersion": "0.0.50",
+   "latestComputerReleaseNotes": null
+  },
   "GET /servers/visual-server/members": [
    {
     "userId": "visual-user",
@@ -1421,6 +1425,21 @@
   "GET /tasks/channel/channel-android": {
    "tasks": []
   },
+  "GET /tasks/channel/channel-android?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=done": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=in_progress": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=in_review": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-android?status=todo": {
+   "tasks": []
+  },
   "GET /tasks/channel/channel-design": {
    "tasks": [
     {
@@ -1440,7 +1459,53 @@
     }
    ]
   },
+  "GET /tasks/channel/channel-design?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design?status=done": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design?status=in_progress": {
+   "tasks": [
+    {
+     "id": "msg-agent-reply",
+     "messageId": "msg-agent-reply",
+     "channelId": "channel-design",
+     "channelName": "design",
+     "channelType": "channel",
+     "taskNumber": 10,
+     "title": "Captured the Android visual artifact for #product:f8e569cb and queued React parity.",
+     "status": "in_progress",
+     "claimedByType": "agent",
+     "claimedById": "agent-cindy",
+     "claimedByName": "Cindy",
+     "createdById": "visual-user",
+     "createdAt": "2026-06-22T02:30:00.000Z"
+    }
+   ]
+  },
+  "GET /tasks/channel/channel-design?status=in_review": {
+   "tasks": []
+  },
+  "GET /tasks/channel/channel-design?status=todo": {
+   "tasks": []
+  },
   "GET /tasks/channel/dm-agent-cindy-artin": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=closed": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=done": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=in_progress": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=in_review": {
+   "tasks": []
+  },
+  "GET /tasks/channel/dm-agent-cindy-artin?status=todo": {
    "tasks": []
   },
   "GET /tasks/channel/thread-msg-agent-reply": {
