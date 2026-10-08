@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -256,13 +257,47 @@ Future<void> verifyManagementFlow(
       );
     }
     await capture('linux-billing');
-    await section('providers');
-    await _until(
-      tester,
-      () => find.byType(ProviderConnectionsView).evaluate().isNotEmpty,
+    // Match the same current server/platform gate that controls the sidebar.
+    // Unknown evaluations are failures rather than evidence of an OFF gate.
+    final gateResult = await w.client.post(
+      '/feature-flags/evaluate',
+      data: {
+        'keys': ['provider_connections_v0'],
+        'serverId': w.server!.id,
+        'platform':
+            (defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS)
+            ? 'mobile'
+            : 'web',
+      },
     );
-    await tester.pumpAndSettle();
-    await capture('linux-provider-connections');
+    expect(gateResult, isA<Map>());
+    final evaluations = (gateResult as Map)['evaluations'];
+    expect(evaluations, isA<List>());
+    final providerGate = (evaluations as List).whereType<Map>().where(
+      (row) => row['key'] == 'provider_connections_v0',
+    );
+    expect(providerGate, hasLength(1));
+    expect(providerGate.single['enabled'], isA<bool>());
+    expect(w.can('manageExternalAuth'), isTrue);
+    if (providerGate.single['enabled'] == true) {
+      await _until(
+        tester,
+        () => find.byKey(const Key('nav-providers')).evaluate().isNotEmpty,
+      );
+      await section('providers');
+      await _until(
+        tester,
+        () => find.byType(ProviderConnectionsView).evaluate().isNotEmpty,
+      );
+      await tester.pumpAndSettle();
+      await capture('linux-provider-connections');
+    } else {
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('nav-providers')), findsNothing);
+      expect(find.byType(ProviderConnectionsView), findsNothing);
+      await capture('linux-provider-connections-gate-disabled');
+    }
   } finally {
     if (w.client.serverId != serverId && serverId != null) {
       w.client.selectServer(serverId);
