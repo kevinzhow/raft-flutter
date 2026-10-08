@@ -897,15 +897,7 @@ void main() {
           .first;
       await tester.ensureVisible(reviewHeader);
       await tester.pumpAndSettle();
-      final reviewLane = find
-          .ancestor(
-            of: reviewHeader,
-            matching: find.byWidgetPredicate(
-              (widget) =>
-                  widget is Container && widget.constraints?.maxWidth == 320,
-            ),
-          )
-          .first;
+      final reviewLane = find.byKey(const ValueKey('task-drop-in_review'));
       final reviewScroll = find
           .descendant(of: reviewLane, matching: find.byType(Scrollable))
           .first;
@@ -918,7 +910,7 @@ void main() {
             board().laneCursors['in_review'] != null;
         page++
       ) {
-        final more = find.widgetWithText(TextButton, 'Load more In Review');
+        final more = find.widgetWithText(RaftTextButton, 'Load more In Review');
         await tester.ensureVisible(more);
         await tester.pumpAndSettle();
         await tester.tap(more);
