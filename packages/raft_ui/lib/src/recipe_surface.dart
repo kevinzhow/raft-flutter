@@ -286,30 +286,32 @@ Gradient? _sheenGradient(CssValue v) {
   );
   final stops = stop.allMatches(text).toList();
   if (stops.length < 2) return null;
-  var colors = [
-    for (final m in stops)
-      Color.fromRGBO(
-        // achromatic oklab L -> sRGB channel (L^3 linear, then gamma).
-        _oklabLToSrgb(double.parse(m.group(1)!) / 100),
-        _oklabLToSrgb(double.parse(m.group(1)!) / 100),
-        _oklabLToSrgb(double.parse(m.group(1)!) / 100),
-        double.parse(m.group(2)!) / 100,
-      ),
-  ];
-  // CSS interpolates premultiplied: a fully transparent stop contributes no
-  // colour, so it takes its neighbour's channels (Skia interpolates
-  // unpremultiplied and would otherwise darken white fades to grey).
-  colors = [
-    for (var i = 0; i < colors.length; i++)
-      colors[i].a == 0
-          ? colors[i == 0 ? 1 : i - 1].withValues(alpha: 0)
-          : colors[i],
-  ];
+  // CSS interpolates in oklab with premultiplied alpha; Skia interpolates
+  // unpremultiplied sRGB. Sample the CSS ramp densely so the Flutter ramp
+  // carries the same colours (achromatic: only L and alpha vary).
+  final ls = [for (final m in stops) double.parse(m.group(1)!) / 100];
+  final as = [for (final m in stops) double.parse(m.group(2)!) / 100];
+  final ps = [for (final m in stops) double.parse(m.group(3)!) / 100];
+  const n = 16;
+  final colors = <Color>[];
+  final positions = <double>[];
+  for (var i = 0; i < stops.length - 1; i++) {
+    for (var k = 0; k <= n; k++) {
+      if (i > 0 && k == 0) continue;
+      final f = k / n;
+      final alpha = as[i] + (as[i + 1] - as[i]) * f;
+      final premult = ls[i] * as[i] + (ls[i + 1] * as[i + 1] - ls[i] * as[i]) * f;
+      final l = alpha == 0 ? (as[i] == 0 ? ls[i + 1] : ls[i]) : premult / alpha;
+      final c = _oklabLToSrgb(l);
+      colors.add(Color.fromRGBO(c, c, c, alpha));
+      positions.add(ps[i] + (ps[i + 1] - ps[i]) * f);
+    }
+  }
   return LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: colors,
-    stops: [for (final m in stops) double.parse(m.group(3)!) / 100],
+    stops: positions,
   );
 }
 
