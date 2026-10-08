@@ -4,7 +4,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:raft_client/raft_client.dart';
 
 class SecureSessionStore implements SessionStore {
-  final storage = const FlutterSecureStorage();
+  final storage = const FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.first_unlock_this_device,
+    ),
+  );
   String key(String origin) =>
       'raft.session.${base64Url.encode(utf8.encode(origin))}';
   @override

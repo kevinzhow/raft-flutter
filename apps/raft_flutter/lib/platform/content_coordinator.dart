@@ -11,6 +11,8 @@ import '../data/workspace_controller.dart';
 import 'content_target.dart';
 import 'content_links.dart';
 import 'native_notifications.dart';
+import 'background_inbox.dart';
+import 'background_notifications.dart';
 
 /// Binds platform links and notification clicks to the currently signed-in
 /// principal. Every navigation rechecks server membership and visible context.
@@ -21,12 +23,14 @@ class NativeContentCoordinator {
   }) : notifications = notifications ?? NativeNotificationService();
   final NativeNotificationService notifications;
   final Stream<Uri>? links;
+  final background = BackgroundNotificationScheduler();
   WorkspaceController? _workspace;
   StreamSubscription<Uri>? _linkSubscription;
   StreamSubscription<RaftEvent>? _events;
   String? _scope;
   int _epoch = 0, _navigation = 0;
   bool _closed = false;
+  bool _workspaceBindingResolved = false;
   Uri? _pendingLink;
   String? _pendingTap;
   final Set<String> _delivered = {};
@@ -34,6 +38,8 @@ class NativeContentCoordinator {
 
   Future<void> init({List<String> initialArguments = const []}) async {
     notifications.onTap = _tap;
+    notifications.addListener(_notificationSettingsChanged);
+    unawaited(background.initialize().catchError((Object _) {}));
     _linkSubscription = (links ?? AppLinks().uriLinkStream).listen(
       receiveLink,
       onError: (_) {},
@@ -46,6 +52,7 @@ class NativeContentCoordinator {
   }
 
   void bindWorkspace(WorkspaceController? workspace) {
+    _workspaceBindingResolved = true;
     if (identical(workspace, _workspace)) {
       _changed();
       return;
@@ -79,7 +86,59 @@ class NativeContentCoordinator {
     _navigation++;
     _delivered.clear();
     _inFlight.clear();
+    unawaited(background.bind(null, false).catchError((Object _) {}));
     unawaited(notifications.bind(scope));
+  }
+
+  void _notificationSettingsChanged() {
+    if (!_workspaceBindingResolved || _closed) return;
+    unawaited(
+      background
+          .bind(currentScope, notifications.enabled)
+          .then((_) {
+            if (!_closed) notifications.setBackgroundError(null);
+          })
+          .catchError((Object _) {
+            if (!_closed) {
+              notifications.setBackgroundError(
+                'Background inbox checks could not be scheduled. Open Raft to retry.',
+              );
+            }
+          }),
+    );
+  }
+
+  Future<bool> pollBackground() async {
+    final w = _workspace, scope = _scope, epoch = _epoch;
+    if (w == null || scope == null || !notifications.enabled) return true;
+    bool valid() =>
+        !_closed && _workspace == w && _scope == scope && _epoch == epoch;
+    return BackgroundInboxPoller(
+      client: w.client,
+      store: background.store,
+      authorize: (target, _) async {
+        final server = await authorize(w, target, valid);
+        if (server.flag('serverPushMuted')) {
+          throw const RaftApiException('Notifications are muted.');
+        }
+      },
+      suppress: (target) =>
+          w.foreground &&
+          w.section == 'chat' &&
+          (w.channel?.id == target.channelId ||
+              w.threadChannelId == target.threadId),
+      deliver: (alert, selected) async {
+        if (!valid() || selected != scope || !notifications.enabled) {
+          return false;
+        }
+        await notifications.show(
+          title: alert.title,
+          body: alert.body,
+          payload: notificationPayload(w.client, alert.target),
+        );
+        return valid() && notifications.enabled && notifications.error == null;
+      },
+    ).run();
   }
 
   void receiveLink(Uri uri) {
@@ -162,6 +221,17 @@ class NativeContentCoordinator {
     }
     final key = '${target.serverId}:${target.messageId}';
     if (_delivered.contains(key) || _inFlight.contains(key)) return;
+    try {
+      if (mobileBackgroundSupported &&
+          await background.store.seen(scope, target.messageId!)) {
+        return;
+      }
+    } catch (_) {
+      return;
+    }
+    if (_closed || _workspace != w || _scope != scope || epoch != _epoch) {
+      return;
+    }
     _inFlight.add(key);
     try {
       // Socket room delivery is an eligibility decision, not lasting authority.
@@ -198,6 +268,15 @@ class NativeContentCoordinator {
           'uri': target.nativeUri(target.serverId!).toString(),
         }),
       );
+      if (mobileBackgroundSupported &&
+          !_closed &&
+          _workspace == w &&
+          _scope == scope &&
+          epoch == _epoch &&
+          notifications.enabled &&
+          notifications.error == null) {
+        await background.store.mark(scope, target.messageId!);
+      }
     } catch (_) {
       /* Revocation, stale requests or offline context suppress alerts. */
     } finally {
@@ -249,8 +328,14 @@ class NativeContentCoordinator {
     WorkspaceController w,
     ContentTarget target,
     bool Function() valid,
+  ) => authorizeClient(w.client, target, valid);
+
+  static Future<RaftRecord> authorizeClient(
+    RaftClient client,
+    ContentTarget target,
+    bool Function() valid,
   ) async {
-    final rows = await w.client.servers();
+    final rows = await client.servers();
     if (!valid()) throw const RaftApiException('Stale content link.');
     final server = rows
         .where(
@@ -259,10 +344,10 @@ class NativeContentCoordinator {
               : s.string('slug') == target.serverSlug,
         )
         .firstOrNull;
-    if (server == null || server.id != w.client.serverId) {
+    if (server == null || server.id != client.serverId) {
       throw const RaftApiException('Unavailable workspace.');
     }
-    final channel = await w.client.get('/channels/${target.channelId}');
+    final channel = await client.get('/channels/${target.channelId}');
     if (!valid() ||
         channel is! Map ||
         channel['id'] != target.channelId ||
@@ -270,7 +355,7 @@ class NativeContentCoordinator {
       throw const RaftApiException('Unavailable channel.');
     }
     if (target.messageId != null) {
-      final context = await w.client.get(
+      final context = await client.get(
         '/messages/context/${target.messageId}',
         query: {'channelId': target.channelId},
       );
@@ -305,6 +390,8 @@ class NativeContentCoordinator {
     _workspace?.removeListener(_changed);
     await _events?.cancel();
     await _linkSubscription?.cancel();
+    notifications.removeListener(_notificationSettingsChanged);
+    await background.bind(null, false);
     notifications.onTap = null;
     await notifications.bind(null);
   }
