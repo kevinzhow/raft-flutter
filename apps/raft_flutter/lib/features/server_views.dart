@@ -465,6 +465,8 @@ class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
         ),
         const SizedBox(height: RaftSpace.x4),
         Text.rich(
+          // CSS gives the inline mono span the paragraph's 20px line box.
+          strutStyle: StrutStyle.fromTextStyle(prompt, forceStrutHeight: true),
           TextSpan(
             style: prompt,
             children: [
@@ -480,6 +482,8 @@ class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
           prefix: '/',
           placeholder: widget.slug,
           mono: true,
+          // Inherits the confirm copy's `text-foreground-muted`.
+          textColor: RaftConfirmDialog.messageStyle(t).color,
           onChanged: (v) => widget.matches.value = v == widget.slug,
         ),
       ],

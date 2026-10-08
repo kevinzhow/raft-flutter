@@ -32,7 +32,13 @@ RaftRecipeStates _states(
 TextStyle _slotText(RaftTokens t, RaftSlotStyle s, {TextStyle? base}) {
   final tokens = RaftRecipeTokens(t);
   final style = s.textStyle(tokens);
-  return (base ?? RaftTypography.heading(t, size: 14, line: 20))
+  return (base ??
+          RaftTypography.heading(
+            t,
+            size: 14,
+            line: 20,
+            weight: FontWeight.w400,
+          ))
       .merge(style)
       .copyWith(
         fontVariations: const [],
@@ -43,6 +49,10 @@ TextStyle _slotText(RaftTokens t, RaftSlotStyle s, {TextStyle? base}) {
         ],
       );
 }
+
+/// Tailwind preflight `::placeholder { color: color-mix(in oklab,
+/// currentcolor 50%, transparent) }`.
+Color _placeholder(Color current) => current.withValues(alpha: current.a * .5);
 
 /// A borderless, padding-free field decoration: the recipe container owns
 /// border, fill and padding (the app theme's input decoration must not apply).
@@ -265,7 +275,7 @@ class _RaftRecipeInputState extends State<RaftRecipeInput> {
         onSubmitted: widget.onSubmitted,
         decoration: _bare(
           hint: widget.placeholder,
-          hintStyle: text.copyWith(color: t.colors['foreground-placeholder']),
+          hintStyle: text.copyWith(color: _placeholder(text.color ?? t.strong)),
         ),
       ),
     );
@@ -397,7 +407,7 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput> {
                   decoration: _bare(
                     hint: widget.placeholder,
                     hintStyle: text.copyWith(
-                      color: t.colors['foreground-placeholder'],
+                      color: _placeholder(text.color ?? t.strong),
                     ),
                   ),
                 ),
