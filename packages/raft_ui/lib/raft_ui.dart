@@ -76,3 +76,4 @@ export 'src/conversation_surface.dart';
 export 'src/timeline_composition.dart';
 export 'src/panel_layout.dart';
 export 'src/agent_create_form.dart';
+export 'src/agent_profile.dart';

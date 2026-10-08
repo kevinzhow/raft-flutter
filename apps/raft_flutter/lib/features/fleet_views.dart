@@ -841,9 +841,11 @@ class _FleetDetailState extends State<FleetDetail> {
       onEditRuntime: !external && row['machineId'] is String
           ? () async {
               if (!allowed('editAgents')) return;
-              await showDialog(
-                context: context,
-                builder: (_) => RuntimeFormDialog(
+              await _fleetDialog<void>(
+                context,
+                w,
+                () => allowed('editAgents'),
+                (_) => RuntimeFormDialog(
                   controller: w,
                   machineId: row['machineId'],
                   runtimeId: row['runtime'],

@@ -17,6 +17,7 @@ import 'recipes/panel_header.g.dart';
 import 'recipes/tabs.g.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
+import 'tooltip.dart';
 
 RaftRecipeTheme raftRecipeTheme(RaftTokens t) =>
     t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
@@ -215,7 +216,10 @@ class _RaftInlineIconButtonState extends State<RaftInlineIconButton> {
     final color = hovered
         ? (t.brutal ? Colors.black : t.strong)
         : raftPanelInk(t, .4, t.colors['foreground-placeholder']!);
-    return Semantics(
+    return RaftTooltip(
+      message: widget.tooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
       button: true,
       label: widget.tooltip,
       child: MouseRegion(
@@ -228,6 +232,7 @@ class _RaftInlineIconButtonState extends State<RaftInlineIconButton> {
           child: RaftIcon(widget.glyph, size: widget.size, color: color),
         ),
       ),
+    ),
     );
   }
 }
@@ -268,7 +273,10 @@ class _RaftPanelActionState extends State<RaftPanelAction> {
     final iconSize = svg?.width ?? 14;
     final color = s.color?.resolve(rt) ?? t.strong;
     final translate = s.translate ?? Offset.zero;
-    return Semantics(
+    return RaftTooltip(
+      message: widget.tooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
       button: true,
       label: widget.tooltip,
       child: MouseRegion(
@@ -293,6 +301,7 @@ class _RaftPanelActionState extends State<RaftPanelAction> {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -606,7 +615,10 @@ class _RaftPanelIconButtonState extends State<RaftPanelIconButton> {
       tokens: rt,
     ).root;
     final color = s.color?.resolve(rt) ?? t.strong;
-    return Semantics(
+    return RaftTooltip(
+      message: widget.tooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
       button: true,
       label: widget.tooltip,
       child: MouseRegion(
@@ -637,6 +649,7 @@ class _RaftPanelIconButtonState extends State<RaftPanelIconButton> {
           ),
         ),
       ),
+    ),
     );
   }
 }

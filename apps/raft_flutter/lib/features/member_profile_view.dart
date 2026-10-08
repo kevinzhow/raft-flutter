@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart';
+import 'package:raft_ui/recipes.dart'
+    show RaftBadgeRecipeAppearance, RaftButtonRecipeVariant;
 
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
@@ -137,107 +138,79 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
     final name = '${profile['displayName'] ?? profile['name'] ?? ''}';
     final handle = '${profile['name'] ?? ''}';
-    final self = profile['userId'] == w.client.user?.id ||
+    final self =
+        profile['userId'] == w.client.user?.id ||
         widget.userId == w.client.user?.id;
     final avatarUrl = raftPublicAvatarUrl(
       w.client.origin,
       profile['avatarUrl'] as String?,
     );
-    Widget avatar(double size) => AgentAvatarSlot(
-      name: name,
-      agent: false,
-      avatarUrl: avatarUrl,
-      size: size,
-      border: 2,
-    );
-    return DefaultTextStyle(
-      style: raftCssText(RaftTypography.body(t, color: t.ink)),
-      child: ColoredBox(
-        color: t.brutal ? Colors.white : t.colors['layer-panel']!,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            RaftPanelHeaderBar(
-              title: name,
-              subtitle: handle.isEmpty ? null : '@$handle',
-              iconSlot: avatar(36),
-              onBack: widget.onBack,
-              backTooltip: raftText(context, 'Back'),
-              actions: [
-                if (!self && widget.onMessage != null)
-                  RaftPanelIconButton(
-                    glyph: RaftGlyph.messageSquareMore,
-                    tooltip: raftText(context, 'Message'),
-                    onPressed: busy
-                        ? null
-                        : () => run(widget.onMessage!, refresh: false),
-                  ),
-                if (widget.onBack == null)
-                  RaftPanelIconButton(
-                    glyph: RaftGlyph.x,
-                    tooltip: raftText(context, 'Close profile'),
-                    onPressed: widget.onClose,
-                  ),
-              ],
+    return RaftPanelTextScope(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RaftPanelHeaderBar(
+            title: name,
+            subtitle: handle.isEmpty ? null : '@$handle',
+            iconSlot: RaftAvatarSlot(
+              name: name,
+              agent: false,
+              avatarUrl: avatarUrl,
+              slot: RaftAvatarSlotContext.panelHeader,
             ),
-            Expanded(
-              child: loading
-                  ? Center(
-                      child: Text(
-                        raftText(context, 'Loading...'),
-                        style: RaftTypography.mono(t, size: 14, line: 20),
-                      ),
-                    )
-                  : error != null
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(raftText(context, 'Profile could not be loaded.')),
-                          RaftButton(label: 'Retry', onPressed: reload),
-                        ],
-                      ),
-                    )
-                  : profile.isEmpty
-                  ? RaftEmptyState(
-                      title: raftText(context, 'Profile unavailable'),
-                      detail: '',
-                    )
-                  : ListView(
-                      padding: EdgeInsets.zero,
-                      children: _sections(context, t, name, handle, self, avatar),
-                    ),
-            ),
-          ],
-        ),
+            onBack: widget.onBack,
+            backTooltip: raftText(context, 'Back'),
+            actions: [
+              if (!self && widget.onMessage != null)
+                RaftPanelIconButton(
+                  glyph: RaftGlyph.messageSquareMore,
+                  tooltip: raftText(context, 'Message'),
+                  onPressed: busy
+                      ? null
+                      : () => run(widget.onMessage!, refresh: false),
+                ),
+              if (widget.onBack == null)
+                RaftPanelIconButton(
+                  glyph: RaftGlyph.x,
+                  tooltip: raftText(context, 'Close profile'),
+                  onPressed: widget.onClose,
+                ),
+            ],
+          ),
+          Expanded(
+            child: loading
+                ? RaftPanelMessage(raftText(context, 'Loading...'))
+                : error != null
+                ? RaftPanelMessage(
+                    raftText(context, 'Profile could not be loaded.'),
+                    action: RaftButton(label: 'Retry', onPressed: reload),
+                  )
+                : profile.isEmpty
+                ? RaftEmptyState(
+                    title: raftText(context, 'Profile unavailable'),
+                    detail: '',
+                  )
+                : ListView(
+                    padding: EdgeInsets.zero,
+                    children: _sections(context, name, handle, self, avatarUrl),
+                  ),
+          ),
+        ],
       ),
     );
   }
 
   List<Widget> _sections(
     BuildContext context,
-    RaftTokens t,
     String name,
     String handle,
     bool self,
-    Widget Function(double) avatar,
+    String? avatarUrl,
   ) {
-    final muted50 = raftPanelInk(t, .5, t.colors['foreground-muted']!);
-    final strong = t.brutal ? Colors.black : t.strong;
-    final section = BoxDecoration(
-      border: Border(
-        top: BorderSide(color: raftPanelInk(t, .1, t.colors['line-muted']!)),
-      ),
-    );
-    final value = RaftInfoRow.valueStyle(t);
-    final label = raftCssText(
-      RaftTypography.body(t, size: 12, line: 16, color: muted50),
-    );
+    final t = RaftTokens.of(context);
     final role = '${profile['role'] ?? ''}';
-    final description = '${profile['description'] ?? ''}';
     final created = (profile['createdAgents'] as List? ?? const [])
         .whereType<Map>()
         .toList();
@@ -249,251 +222,92 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         : null;
     final canRole = !self && w.can('changeMemberRoles');
     final canRemove = !self && w.can('removeMembers');
-    Widget keyValue(String key, String text, {bool mono = false}) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(key, style: label),
-        const SizedBox(height: 4),
-        Text(
-          mono ? text.characters.join('​') : text,
-          style: mono ? value.copyWith(fontFamily: t.monoFont) : value,
-        ),
-      ],
-    );
-    Widget block(List<Widget> children) => Container(
-      decoration: section,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
     return [
-      // `flex items-start gap-4 px-5 py-5`.
-      Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            avatar(64),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssText(
-                      RaftTypography.body(
-                        t,
-                        size: 18,
-                        line: 22.5,
-                        weight: FontWeight.w700,
-                        color: strong,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '@$handle',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssText(
-                      RaftTypography.mono(t, size: 14, line: 20, color: muted50),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      RaftProfileIdentity(
+        name: name,
+        handle: handle,
+        agent: false,
+        avatarUrl: avatarUrl,
       ),
-      block([
-        RaftSectionEyebrow(raftText(context, 'Description')),
-        const SizedBox(height: 4),
-        description.isEmpty
-            ? Text(
-                raftText(context, 'No description'),
-                style: value.copyWith(
-                  fontStyle: FontStyle.italic,
-                  color: raftPanelInk(t, .4, t.colors['foreground-muted']!),
-                ),
-              )
-            : SelectableText(description, style: value),
-      ]),
-      block([
-        RaftSectionEyebrow(raftText(context, 'Info')),
-        const SizedBox(height: 12),
-        if (role.isNotEmpty) ...[
-          Row(
-            children: [
-              Text(raftText(context, 'Role'), style: label),
-              const SizedBox(width: 8),
-              RaftInlineIconButton(
-                glyph: RaftGlyph.circleHelp,
-                tooltip: raftText(context, 'Role permissions'),
-              ),
-              if (canRole) ...[
-                const SizedBox(width: 8),
-                RaftInlineIconButton(
-                  glyph: RaftGlyph.pencil,
-                  tooltip: raftText(context, 'Edit role'),
-                  onPressed: () => run(() => roleOrRemove('role'), refresh: false),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 4),
-          // The Badge is inline in a body-text (16/24) line.
-          RaftInlineBox(
-            lineText: raftCssText(RaftTypography.body(t)),
-            childText: RaftTypography.body(
-              t,
-              size: 10,
-              line: 10,
-              weight: FontWeight.w700,
-            ),
-            height: 20,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: AgentBadge(
+      RaftPanelSection(
+        children: [
+          RaftDescriptionBlock(text: '${profile['description'] ?? ''}'),
+        ],
+      ),
+      RaftPanelSection(
+        children: [
+          RaftSectionEyebrow(raftText(context, 'Info')),
+          if (role.isNotEmpty)
+            RaftRoleField(
+              label: raftText(context, 'Role'),
+              badge: RaftRecipeBadge(
                 raftText(context, '${role[0].toUpperCase()}${role.substring(1)}'),
                 appearance: RaftBadgeRecipeAppearance.solid,
                 background: roleColor(t, role),
               ),
+              onEdit: canRole
+                  ? () => run(() => roleOrRemove('role'), refresh: false)
+                  : null,
             ),
-          ),
-          const SizedBox(height: 12),
+          if (profile['email'] is String)
+            RaftKeyValueRow(
+              label: raftText(context, 'Email'),
+              value: '${profile['email']}',
+              mono: true,
+              breakAll: true,
+            ),
+          if (joined != null)
+            RaftKeyValueRow(
+              label: raftText(context, 'Joined'),
+              value: joined,
+              mono: true,
+            ),
         ],
-        if (profile['email'] is String) ...[
-          keyValue(raftText(context, 'Email'), '${profile['email']}', mono: true),
-          const SizedBox(height: 12),
-        ],
-        if (joined != null) keyValue(raftText(context, 'Joined'), joined, mono: true),
-      ]),
-      block([
-        RaftSectionHeader(
-          label: raftText(context, 'Created Agents'),
-          count: created.length,
-        ),
-        const SizedBox(height: 12),
-        if (created.isEmpty)
-          Text(
-            raftText(context, 'No created agents'),
-            style: value.copyWith(
-              fontStyle: FontStyle.italic,
-              color: raftPanelInk(t, .4, t.colors['foreground-muted']!),
-            ),
-          )
-        else
-          for (final a in created) ...[
-            AgentListRow(
-              name: '${a['displayName'] ?? a['name']}',
-              avatarUrl: a['avatarUrl'] as String?,
-              subtitle: sourceRuntimeDisplayNames['${a['runtime']}'],
-            ),
-            const SizedBox(height: 8),
-          ],
-      ]),
-      if (canRemove)
-        block([
-          RaftSectionEyebrow(raftText(context, 'Actions')),
-          const SizedBox(height: 12),
-          RaftRecipeActionButton(
-            label: raftText(context, 'Remove Member'),
-            glyph: RaftGlyph.trash2,
-            onPressed: busy
-                ? null
-                : () => run(() => roleOrRemove('remove'), refresh: false),
-          ),
-        ]),
-    ];
-  }
-}
-
-/// `<Button size="sm" variant="danger" className="flex w-full items-center
-/// justify-center gap-2 px-4 py-2 text-sm font-bold">` from the generated
-/// buttonVariants recipe.
-class RaftRecipeActionButton extends StatefulWidget {
-  const RaftRecipeActionButton({
-    super.key,
-    required this.label,
-    this.glyph,
-    this.onPressed,
-  });
-  final String label;
-  final RaftGlyph? glyph;
-  final VoidCallback? onPressed;
-  @override
-  State<RaftRecipeActionButton> createState() => _RaftRecipeActionButtonState();
-}
-
-class _RaftRecipeActionButtonState extends State<RaftRecipeActionButton> {
-  bool hovered = false, pressed = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    final s = RaftButtonRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      variant: RaftButtonRecipeVariant.danger,
-      size: RaftButtonRecipeSize.sm,
-      states: RaftRecipeStates({
-        if (hovered) RaftRecipeStates.hover,
-        if (pressed) RaftRecipeStates.active,
-        if (widget.onPressed == null) RaftRecipeStates.disabled,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).root;
-    final text = raftCssText(
-      RaftTypography.body(t, size: 14, line: 20, weight: FontWeight.w700)
-          .merge(s.textStyle(rt).copyWith(fontSize: 14, height: 20 / 14)),
-    );
-    return Semantics(
-      button: true,
-      label: widget.label,
-      excludeSemantics: true,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => pressed = true),
-          onTapUp: (_) => setState(() => pressed = false),
-          onTapCancel: () => setState(() => pressed = false),
-          onTap: widget.onPressed,
-          child: Opacity(
-            opacity: s.opacity ?? 1,
-            child: Transform.translate(
-              offset: s.translate ?? Offset.zero,
-              child: Container(
-                height: s.height,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: s.decoration(rt),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (widget.glyph != null) ...[
-                      RaftIcon(widget.glyph!, size: 14, color: text.color),
-                      const SizedBox(width: 8),
-                    ],
-                    Flexible(
-                      child: Text(
-                        widget.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
-    );
+      RaftPanelSection(
+        children: [
+          RaftSectionHeader(
+            label: raftText(context, 'Created Agents'),
+            count: created.length,
+          ),
+          if (created.isEmpty)
+            Text(
+              raftText(context, 'No created agents'),
+              style: RaftPanelText.placeholder(t),
+            )
+          else
+            RaftGapColumn(
+              children: [
+                for (final a in created)
+                  RaftAvatarListRow(
+                    name: '${a['displayName'] ?? a['name']}',
+                    avatarUrl: a['avatarUrl'] as String?,
+                    subtitle: sourceRuntimeDisplayNames['${a['runtime']}'],
+                  ),
+              ],
+            ),
+        ],
+      ),
+      if (canRemove)
+        RaftPanelSection(
+          children: [
+            RaftSectionEyebrow(raftText(context, 'Actions')),
+            // `<Button size="sm" variant="danger" className="flex w-full
+            // items-center justify-center gap-2 px-4 py-2 text-sm font-bold">`.
+            RaftRecipeTextButton(
+              label: raftText(context, 'Remove Member'),
+              glyph: RaftGlyph.trash2,
+              variant: RaftButtonRecipeVariant.danger,
+              text: RaftButtonText.sm,
+              bold: true,
+              expand: true,
+              horizontalPadding: 16,
+              onPressed: busy
+                  ? null
+                  : () => run(() => roleOrRemove('remove'), refresh: false),
+            ),
+          ],
+        ),
+    ];
   }
 }

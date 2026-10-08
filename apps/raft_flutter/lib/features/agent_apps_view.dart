@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart';
+import 'package:raft_ui/recipes.dart'
+    show RaftBadgeRecipeVariant, RaftButtonRecipeVariant;
 
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
 import 'integrations_views.dart';
-import 'agent_detail_view.dart' show AgentSurfaceItem, AgentBadge;
 
 class AgentAppAccessView extends StatefulWidget {
   const AgentAppAccessView({
@@ -180,328 +180,157 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     );
   }
 
+  Widget _small(String label, VoidCallback? onPressed, {bool selected = false}) =>
+      RaftRecipeTextButton(
+        label: label,
+        // `<Button size="sm" variant="outline"|"default" className="text-[11px]">`.
+        variant: selected ? null : RaftButtonRecipeVariant.outline,
+        text: RaftButtonText.px11,
+        onPressed: onPressed,
+      );
+
   /// AgentAppAccessTab.tsx: `flex-1 overflow-y-auto bg-layer-panel px-5
   /// py-4 space-y-6 theme-brutal:bg-white` with Applications and App events
-  /// sections (SectionHeader + `mt-1 text-xs text-foreground-muted` copy).
+  /// sections.
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final muted = t.colors['foreground-muted']!;
-    final description = raftCssText(
-      RaftTypography.body(t, size: 12, line: 16, color: muted),
-    );
-    final empty = raftCssText(
-      RaftTypography.body(
-        t,
-        size: 14,
-        line: 20,
-        color: raftPanelInk(t, .5, muted),
-      ),
-    );
     final pending = access.where((i) => i['type'] == 'pending').toList();
     final active = access.where((i) => i['type'] != 'pending').toList();
-    Widget group(List<Widget> children) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < children.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          children[i],
+    final empty = RaftPanelText.muted(t);
+    return RaftPanelGroups(
+      groups: [
+        if (error != null) [RaftPanelError(error!)],
+        if (pending.isNotEmpty)
+          [
+            RaftSectionHeader(
+              label: raftText(context, 'Pending requests'),
+              count: pending.length,
+            ),
+            for (final item in pending) _accessCard(context, item),
+          ],
+        [
+          RaftDescribedSectionHeader(
+            label: raftText(context, 'Applications'),
+            description: raftText(context, 'Connected apps this agent can use.'),
+            action: loading
+                ? Text(
+                    raftText(context, 'Loading…'),
+                    style: RaftPanelText.caption(t),
+                  )
+                : manager
+                ? _small(
+                    raftText(context, 'Grant access'),
+                    busy ? null : () => run(grant),
+                  )
+                : null,
+          ),
+          if (active.isEmpty)
+            Text(raftText(context, 'No connected apps'), style: empty)
+          else
+            for (final item in active) _accessCard(context, item),
         ],
-      ],
-    );
-    Widget header(String label, Widget? action, String copy) => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RaftSectionHeader(label: label, action: action),
-        const SizedBox(height: 4),
-        Text(copy, style: description),
-      ],
-    );
-    final groups = <Widget>[
-      if (error != null)
-        Text(error!, style: description.copyWith(fontWeight: FontWeight.w700)),
-      if (pending.isNotEmpty)
-        group([
-          RaftSectionHeader(
-            label: raftText(context, 'Pending requests'),
-            count: pending.length,
-          ),
-          for (final item in pending) _accessCard(context, t, item),
-        ]),
-      group([
-        header(
-          raftText(context, 'Applications'),
-          loading
-              ? Text(
-                  raftText(context, 'Loading…'),
-                  style: description.copyWith(fontWeight: FontWeight.w700),
-                )
-              : manager
-              ? _SmallButton(
-                  label: raftText(context, 'Grant access'),
-                  onPressed: busy ? null : () => run(grant),
-                )
-              : null,
-          raftText(context, 'Connected apps this agent can use.'),
-        ),
-        if (active.isEmpty)
-          Text(raftText(context, 'No connected apps'), style: empty)
-        else
-          for (final item in active) _accessCard(context, t, item),
-      ]),
-      if (manager)
-        group([
-          header(
-            raftText(context, 'App events'),
-            _SmallButton(
-              label: raftText(context, loading ? 'Loading…' : 'Refresh'),
-              onPressed: busy || loading ? null : reload,
+        if (manager)
+          [
+            RaftDescribedSectionHeader(
+              label: raftText(context, 'App events'),
+              description: raftText(
+                context,
+                "Events apps sent to this agent. They're kept for 30 days after they expire.",
+              ),
+              action: _small(
+                raftText(context, loading ? 'Loading…' : 'Refresh'),
+                busy || loading ? null : reload,
+              ),
             ),
-            raftText(
-              context,
-              "Events apps sent to this agent. They're kept for 30 days after they expire.",
-            ),
-          ),
-          if (apps.length > 1)
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _SmallButton(
-                  label: raftText(context, 'All apps'),
-                  selected: filter == null,
-                  onPressed: () {
+            if (apps.length > 1)
+              RaftButtonWrap(
+                children: [
+                  _small(raftText(context, 'All apps'), () {
                     setState(() => filter = null);
                     reload();
-                  },
-                ),
-                for (final app in apps)
-                  _SmallButton(
-                    label: '${app['name']}',
-                    selected: filter == app['clientId'],
-                    onPressed: () {
+                  }, selected: filter == null),
+                  for (final app in apps)
+                    _small('${app['name']}', () {
                       setState(() => filter = '${app['clientId']}');
                       reload();
-                    },
-                  ),
-              ],
-            ),
-          if (events.isEmpty && !loading)
-            Text(raftText(context, 'No app events yet'), style: empty)
-          else
-            for (final event in events)
-              GestureDetector(
-                onTap: () => run(() => eventDetail(event), refresh: false),
-                child: AgentSurfaceItem(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${event['summary']}',
-                        style: RaftTypography.body(
-                          t,
-                          size: 14,
-                          line: 20,
-                          weight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        '${managementMap(event['app'])['name']} · ${event['kind']} · ${event['status']}',
-                        style: description,
-                      ),
-                    ],
-                  ),
+                    }, selected: filter == app['clientId']),
+                ],
+              ),
+            if (events.isEmpty && !loading)
+              Text(raftText(context, 'No app events yet'), style: empty)
+            else
+              for (final event in events)
+                RaftAccessCard(
+                  title: '${event['summary']}',
+                  subtitle:
+                      '${managementMap(event['app'])['name']} · ${event['kind']} · ${event['status']}',
+                  onTap: () => run(() => eventDetail(event), refresh: false),
+                ),
+            if (nextCursor != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: _small(
+                  raftText(context, 'Load more'),
+                  () => run(moreEvents, refresh: false),
                 ),
               ),
-          if (nextCursor != null)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _SmallButton(
-                label: raftText(context, 'Load more'),
-                onPressed: () => run(moreEvents, refresh: false),
-              ),
-            ),
-        ]),
-    ];
-    return ColoredBox(
-      color: t.brutal ? Colors.white : t.colors['layer-panel']!,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        children: [
-          for (var i = 0; i < groups.length; i++) ...[
-            if (i > 0) const SizedBox(height: 24),
-            groups[i],
           ],
-        ],
-      ),
+      ],
     );
   }
 
-  Widget _accessCard(
-    BuildContext context,
-    RaftTokens t,
-    Map<String, dynamic> item,
-  ) {
+  Widget _accessCard(BuildContext context, Map<String, dynamic> item) {
     final pending = item['type'] == 'pending';
-    return AgentSurfaceItem(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${item['clientName']}',
-                  style: RaftTypography.body(
-                    t,
-                    size: 16,
-                    line: 24,
-                    weight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              AgentBadge(
-                raftText(context, pending ? 'Pending' : 'Active'),
-                variant: pending
-                    ? RaftBadgeRecipeVariant.warning
-                    : RaftBadgeRecipeVariant.success,
-                uppercase: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: [
-              for (final scope in managementStrings(item['scopes']))
-                AgentBadge(
-                  integrationScopeLabels[scope] ?? scope,
-                  appearance: RaftBadgeRecipeAppearance.outline,
-                ),
-            ],
-          ),
-          if (manager) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                if (pending) ...[
-                  _SmallButton(
-                    label: raftText(context, 'Approve'),
-                    selected: true,
-                    onPressed: () => run(() async {
-                      await w.client.post(
-                        '/integrations/requests/${item['id']}/approve',
-                        data: {'remember': true},
-                      );
-                    }),
-                  ),
-                  _SmallButton(
-                    label: raftText(context, 'Deny'),
-                    onPressed: () => run(() async {
-                      await w.client.post(
-                        '/integrations/requests/${item['id']}/deny',
-                      );
-                    }),
-                  ),
-                ] else
-                  _SmallButton(
-                    label: raftText(context, 'Revoke'),
-                    onPressed: () => run(() async {
-                      await confirm(
-                        'Revoke app access?',
-                        'Disconnect ${item['clientName']} from this agent.',
-                        () async {
-                          await w.client.post(
-                            '/integrations/grants/${item['id']}/revoke',
-                          );
-                        },
-                        submit: 'Revoke',
-                        destructive: true,
-                      );
-                    }),
-                  ),
-              ],
-            ),
-          ],
-        ],
+    return RaftAccessCard(
+      title: '${item['clientName']}',
+      badge: RaftRecipeBadge(
+        raftText(context, pending ? 'Pending' : 'Active'),
+        variant: pending
+            ? RaftBadgeRecipeVariant.warning
+            : RaftBadgeRecipeVariant.success,
+        uppercase: true,
       ),
-    );
-  }
-}
-
-/// `<Button variant="outline"|"default" size="sm" className="text-[11px]">`
-/// resolved from the generated buttonVariants recipe.
-class _SmallButton extends StatefulWidget {
-  const _SmallButton({
-    required this.label,
-    this.onPressed,
-    this.selected = false,
-  });
-  final String label;
-  final VoidCallback? onPressed;
-  final bool selected;
-  @override
-  State<_SmallButton> createState() => _SmallButtonState();
-}
-
-class _SmallButtonState extends State<_SmallButton> {
-  bool hovered = false, pressed = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    final s = RaftButtonRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      variant: widget.selected ? null : RaftButtonRecipeVariant.outline,
-      size: RaftButtonRecipeSize.sm,
-      states: RaftRecipeStates({
-        if (hovered) RaftRecipeStates.hover,
-        if (pressed) RaftRecipeStates.active,
-        if (widget.onPressed == null) RaftRecipeStates.disabled,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).root;
-    return Semantics(
-      button: true,
-      label: widget.label,
-      excludeSemantics: true,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          onTapDown: (_) => setState(() => pressed = true),
-          onTapUp: (_) => setState(() => pressed = false),
-          onTapCancel: () => setState(() => pressed = false),
-          onTap: widget.onPressed,
-          child: Opacity(
-            opacity: s.opacity ?? 1,
-            child: Transform.translate(
-              offset: s.translate ?? Offset.zero,
-              child: Container(
-                height: s.height,
-                padding: EdgeInsets.only(
-                  left: s.padding.left,
-                  right: s.padding.right,
-                ),
-                alignment: Alignment.center,
-                decoration: s.decoration(rt),
-                child: Text(
-                  widget.label,
-                  style: raftCssText(
-                    RaftTypography.body(t, size: 11, line: 16).merge(
-                      s.textStyle(rt).copyWith(fontSize: 11),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+      chips: [
+        for (final scope in managementStrings(item['scopes']))
+          integrationScopeLabels[scope] ?? scope,
+      ],
+      actions: [
+        if (manager && pending) ...[
+          _small(
+            raftText(context, 'Approve'),
+            () => run(() async {
+              await w.client.post(
+                '/integrations/requests/${item['id']}/approve',
+                data: {'remember': true},
+              );
+            }),
+            selected: true,
           ),
-        ),
-      ),
+          _small(
+            raftText(context, 'Deny'),
+            () => run(() async {
+              await w.client.post('/integrations/requests/${item['id']}/deny');
+            }),
+          ),
+        ] else if (manager)
+          _small(
+            raftText(context, 'Revoke'),
+            () => run(() async {
+              await confirm(
+                'Revoke app access?',
+                'Disconnect ${item['clientName']} from this agent.',
+                () async {
+                  await w.client.post(
+                    '/integrations/grants/${item['id']}/revoke',
+                  );
+                },
+                submit: 'Revoke',
+                destructive: true,
+              );
+            }),
+          ),
+      ],
     );
   }
 }
