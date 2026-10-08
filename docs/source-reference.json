@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/botiverse/raft-source",
+  "commit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "webVersion": "1.17.5",
+  "raftUiNpmVersion": "0.5.27",
+  "flutterChatUiCandidate": "2.12.0",
+  "verifiedOn": "2026-10-08",
+  "status": "implemented client; extended Linux and Android native validation in progress; see feature-parity.csv for verified boundaries",
+  "localReferencePatches": [
+    {
+      "file": "packages/server/scripts/verify-risingwave-inbox-parity.ts",
+      "patch": "tool/reference-patches/verify-inbox-parity.patch",
+      "scope": "Verifier seam names only; strict direct-query counter and complete PG/RW comparisons retained; no product code edits."
+    },
+    {
+      "file": "packages/server/scripts/seed.ts",
+      "patch": "tool/reference-patches/seed-history.patch",
+      "scope": "Test fixtures only: member joins precede backdated history; primary all greeting. No server read/permission code changes."
+    }
+  ],
+  "flutterVersion": "3.47.6",
+  "dartVersion": "3.13.5"
+}

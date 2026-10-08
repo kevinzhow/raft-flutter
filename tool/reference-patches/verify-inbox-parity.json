@@ -1,0 +1,6 @@
+{
+  "path": "packages/server/scripts/verify-risingwave-inbox-parity.ts",
+  "beforeSHA256": "e5ad46962320c6b9e5ba0b74922099eb107fc6e0f4f69e9b8a00d56847d64c12",
+  "afterSHA256": "c74942ebc686a47beeea785b9a29a7d9137c8e08e1b30be68bb9e939226893d5",
+  "reason": "Mirror verifier references removed fail-soft seam; use current __testRisingWaveInbox.set. Strict direct-query count and full PG/RW comparison remain."
+}

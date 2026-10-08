@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Build local acceptance artifacts from the currently verified native source."""
+import hashlib
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import tarfile
+
+root = pathlib.Path(__file__).resolve().parent.parent
+app = root / 'apps/raft_flutter'
+output = root / 'build/deliverables'
+output.mkdir(parents=True, exist_ok=True)
+source_hash = subprocess.check_output([str(root / 'tool/source-hash')], text=True).strip()
+engineering = json.loads((root / '.local/engineering-run.json').read_text())
+if engineering.get('completed') is not True or engineering.get('sourceHash') != source_hash:
+    raise SystemExit('Build stopped: current source needs a passing engineering run.')
+for platform in ['linux', 'android']:
+    manifest = json.loads((root / f'.local/native-e2e/native-{platform}-run.json').read_text())
+    log = (root / ('.local/native-linux-fleet.txt' if platform == 'linux' else '.local/native-android-test.txt')).read_text()
+    if (manifest.get('completed') is not True or manifest.get('sourceHash') != source_hash
+            or f"Native evidence run: {platform} {manifest['runId']}" not in log
+            or 'All tests passed!' not in log):
+        raise SystemExit(f'Build stopped: {platform} needs a passing native run of current source.')
+for name, marker in [('all-project-tests.txt', 'All tests passed!'), ('analyze-all.txt', 'No issues found!')]:
+    if marker not in (root / '.local' / name).read_text():
+        raise SystemExit('Build stopped: engineering check incomplete.')
+# Do not pass verification fixture paths, secrets, or test feature defines.
+for target in ['linux', 'apk']:
+    with (root / f'.local/release-{target}.txt').open('w') as log:
+        subprocess.run([str(root / 'tool/flutter'), 'build', target, '--release', '--no-pub'],
+                       cwd=app, stdout=log, stderr=subprocess.STDOUT, check=True)
+    if subprocess.check_output([str(root / 'tool/source-hash')], text=True).strip() != source_hash:
+        raise SystemExit('Build stopped: source changed while compiling.')
+bundle = app / 'build/linux/x64/release/bundle'
+for path in bundle.rglob('*'):
+    if path.is_symlink():
+        try:
+            path.resolve(strict=True).relative_to(bundle.resolve())
+        except (ValueError, FileNotFoundError):
+            raise SystemExit('Build stopped: Linux bundle contains an external or missing symlink.')
+staging = root / 'build/raft-flutter-linux-x64'
+if staging.exists():
+    shutil.rmtree(staging)
+shutil.copytree(bundle, staging, symlinks=True)
+for path in ['README.md', 'THIRD_PARTY_NOTICES.md', 'docs/linux-media-runtime.md', 'docs/source-reference.json']:
+    dest = staging / path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(root / path, dest)
+shutil.copytree(root / 'docs/licenses', staging / 'docs/licenses')
+(staging / 'RUN.txt').write_text('Run ./raft_flutter from this directory. Linux x86_64; built on Ubuntu Resolute. Requires compatible glibc, GTK and graphics drivers. PDF preview uses installed poppler-utils (pdfinfo and pdftoppm); missing tools retain file download fallback. Bundled media libraries are in lib/; their notices and provenance are in data/notices/raft-media/. Login API origin is editable; this is a local acceptance build, not a deployment.\n')
+with tarfile.open(output / 'raft-flutter-linux-x64.tar.gz', 'w:gz') as archive:
+    archive.add(staging, arcname=staging.name)
+shutil.copy2(app / 'build/app/outputs/flutter-apk/app-release.apk', output / 'raft-flutter-android.apk')
+metadata = {'sourceHash': source_hash, 'flutter': '3.47.6', 'dart': '3.13.5',
+            'reference': '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6',
+            'androidSigning': 'local debug keystore; acceptance only',
+            'artifacts': {}}
+for path in sorted(output.glob('*')):
+    if path.suffix in ['.apk', '.gz']:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        metadata['artifacts'][path.name] = {'sha256': digest, 'bytes': path.stat().st_size}
+(output / 'build-manifest.json').write_text(json.dumps(metadata, indent=2) + '\n')
+(output / 'CHECKSUMS.txt').write_text(''.join(f"{row['sha256']}  {name}\n" for name, row in metadata['artifacts'].items()))
+print(json.dumps(metadata, indent=2))

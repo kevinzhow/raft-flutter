@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Raft
+Comment=Raft collaboration client
+Exec="@RAFT_DESKTOP_EXEC@" %u
+Icon=application-x-executable
+Terminal=false
+Categories=Network;InstantMessaging;
+MimeType=x-scheme-handler/raft;
+StartupNotify=true
+StartupWMClass=app.raft.raft_flutter

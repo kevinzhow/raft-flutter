@@ -1,0 +1,14 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "codex",
+  "schemaVersion": "codex.create.v1",
+  "sourceId": "model",
+  "kind": "select",
+  "pointer": "/model",
+  "options": [],
+  "defaultValue": "",
+  "customValueAllowed": true,
+  "status": "unavailable",
+  "reason": "machine_offline",
+  "retryable": true
+}

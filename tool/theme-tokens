@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+"""Generate Flutter colors from browser-computed reference JSON snapshots."""
+import json
+from pathlib import Path
+root = Path(__file__).resolve().parent.parent
+out = ['// Generated from computed Raft Web 1.17.5 / raft-ui 0.5.27 tokens.', "import 'package:flutter/material.dart';", '']
+for name in ('brutal-light', 'elegant-light', 'elegant-dark'):
+    data = json.loads((root / 'docs/theme-tokens' / f'{name}.json').read_text())
+    out.append(f"const {name.replace('-', '_')} = <String, Color>{{")
+    for key, value in data['tokens'].items():
+        r, g, b, a = value['rgba']
+        out.append(f"  '{key}': Color(0x{a:02x}{r:02x}{g:02x}{b:02x}),")
+    out.append('};')
+(root / 'packages/raft_ui/lib/src/generated_tokens.dart').write_text('\n'.join(out) + '\n')

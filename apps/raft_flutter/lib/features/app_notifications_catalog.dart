@@ -1,0 +1,32 @@
+/// Pinned mounted App Notifications permission catalog.
+const appNotificationGroups = [
+  "server",
+  "agent",
+  "channel",
+  "computer",
+  "agent_reminder_write",
+];
+const appNotificationEventGroups = <String, List<String>>{
+  "server.member_added": ["server"],
+  "server.member_removed": ["server"],
+  "server.member_role_changed": ["server"],
+  "server.config_updated": ["server"],
+  "server.public_channel_created": ["server", "channel"],
+  "server.public_channel_archived": ["server", "channel"],
+  "server.plan_changed": ["server"],
+  "agent.status_changed": ["agent"],
+  "agent.profile_updated": ["agent"],
+  "agent.runtime_changed": ["agent"],
+  "agent.model_changed": ["agent"],
+  "channel.member_added": ["channel"],
+  "channel.member_removed": ["channel"],
+  "channel.config_updated": ["channel"],
+  "channel.archived": ["channel"],
+  "thread.created": ["channel"],
+  "thread.resolved": ["channel"],
+  "computer.online": ["computer"],
+  "computer.offline": ["computer"],
+  "computer.version_changed": ["computer"],
+  "computer.agent_started": ["computer", "agent"],
+  "computer.agent_stopped": ["computer", "agent"],
+};

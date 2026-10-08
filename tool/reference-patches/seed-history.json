@@ -1,0 +1,6 @@
+{
+  "path": "packages/server/scripts/seed.ts",
+  "beforeSHA256": "c4ae87384cff4f09efef8514fc94670796fbf5a484e6a9f3bf904d3b2312ce8b",
+  "afterSHA256": "63ec7b2e95d6304ce5bdc406b06cc1339e2e268db38a843a6bc2a587144cd23d",
+  "reason": "Isolated fixtures: member joins precede backdated normal/joint history; latest seq timestamp follows fixture history; legacy task rows mirror message task badges; primary all greeting. No product read semantics changes."
+}

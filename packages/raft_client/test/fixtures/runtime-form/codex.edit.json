@@ -1,0 +1,128 @@
+{
+  "protocolVersion": 2,
+  "runtimeId": "codex",
+  "schemaVersion": "codex.create.v1",
+  "requiredClientCapabilities": [
+    "select.custom_value",
+    "choice.labels",
+    "option_source.status"
+  ],
+  "dataSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "model"
+    ],
+    "properties": {
+      "model": {
+        "type": "string",
+        "title": "Model",
+        "minLength": 1,
+        "x-optionSource": "model"
+      },
+      "reasoningEffort": {
+        "type": "string",
+        "title": "Reasoning",
+        "x-optionsFrom": {
+          "field": "model",
+          "attribute": "supportedReasoningEfforts",
+          "defaultAttribute": "defaultReasoningEffort"
+        }
+      },
+      "fastMode": {
+        "type": "boolean",
+        "title": "Fast mode"
+      },
+      "envVars": {
+        "type": "object",
+        "title": "Environment Variables",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "order": [
+      "model",
+      "reasoningEffort",
+      "fastMode",
+      "envVars"
+    ],
+    "layout": {
+      "advanced": [
+        "/envVars"
+      ]
+    },
+    "visibility": [],
+    "localization": {
+      "model": {
+        "label": "Model",
+        "hint": "Models available from this computer's Codex CLI. You can also type a model ID."
+      },
+      "reasoningEffort": {
+        "label": "Reasoning",
+        "hint": "Available values depend on the selected model.",
+        "choices": {
+          "low": {
+            "label": "Low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          "medium": {
+            "label": "Medium",
+            "description": "Balances speed and reasoning depth for everyday tasks"
+          },
+          "high": {
+            "label": "High",
+            "description": "Greater reasoning depth for complex problems"
+          },
+          "xhigh": {
+            "label": "Extra High",
+            "description": "Extra high reasoning depth for complex problems"
+          },
+          "max": {
+            "label": "Max",
+            "description": "Maximum reasoning depth for the hardest problems"
+          },
+          "ultra": {
+            "label": "Ultra",
+            "description": "Maximum reasoning with automatic task delegation"
+          }
+        }
+      },
+      "fastMode": {
+        "label": "Fast mode",
+        "hint": "Launch this runtime with higher speed at a higher cost per token."
+      },
+      "envVars": {
+        "label": "Environment Variables",
+        "hint": "These will be injected into the runtime command environment."
+      }
+    }
+  },
+  "capabilities": {
+    "providerKinds": [],
+    "writeOnlyPointers": [],
+    "forbiddenPointers": [
+      "/hostUserState"
+    ]
+  },
+  "optionSources": {
+    "model": {
+      "protocolVersion": 1,
+      "runtimeId": "codex",
+      "schemaVersion": "codex.create.v1",
+      "sourceId": "model",
+      "kind": "select",
+      "pointer": "/model"
+    }
+  },
+  "values": {
+    "model": "my-org/codex-custom",
+    "reasoningEffort": "high",
+    "fastMode": true,
+    "envVars": {
+      "EXAMPLE_FLAG": "1"
+    }
+  }
+}

@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+"""Use exactly the repository's pinned Flutter; never change a global SDK."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path(__file__).resolve().parent.parent
+version = json.loads((root / '.fvmrc').read_text())['flutter']
+candidates = [Path(os.environ['RAFT_FLUTTER_BIN'])] if os.environ.get('RAFT_FLUTTER_BIN') else [
+    root / '.fvm/flutter_sdk/bin/flutter',
+    Path.home() / 'flutter-sdks/versions' / version / 'bin/flutter',
+]
+executable = next((p for p in candidates if p.is_file()), None)
+if executable is None:
+    sys.exit(f'Install Flutter {version} with FVM, or set RAFT_FLUTTER_BIN to its flutter executable.')
+result = subprocess.run([str(executable), '--version', '--machine'], capture_output=True, text=True)
+try:
+    actual = json.loads(result.stdout)['frameworkVersion']
+except (ValueError, KeyError):
+    sys.exit('Cannot verify the selected Flutter SDK.')
+if actual != version:
+    sys.exit(f'This repository requires Flutter {version}; selected SDK is {actual}.')
+os.execv(str(executable), [str(executable), *sys.argv[1:]])

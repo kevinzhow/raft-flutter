@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""Prepare a host-matched media runtime locally; never install host packages."""
+import hashlib, json, os, pathlib, re, shutil, subprocess
+R = pathlib.Path(__file__).resolve().parent.parent
+work = R / '.local/media-linux'
+downloads, extracted, bundle = work / 'downloads', work / 'root', work / 'bundle'
+pins = {'libmpv2': '0.41.0-2ubuntu4', 'libmpv-dev': '0.41.0-2ubuntu4', 'libmujs3': '1.3.8-2', 'liblua5.2-0': '5.2.4-4', 'libsndio7.0': '1.10.0-0.2', 'libsixel1': '1.10.5-1build1', 'libxpresent1': '1.0.1-1build1'}
+hashes = {
+ 'libmpv-dev':'366c01526e737eab9bd053795ebec8729178ca08ca8f519346a59858e5278b86',
+ 'libmpv2':'7ab4e586007e65956669fc3a5bd3a870b6f46dd671de20a0572ce7f4ff0fd3d5',
+ 'libmujs3':'84a4eac3add5f1ba35f50e8dca8180368a5123b1e732212d1a11c9607336c564',
+ 'liblua5.2-0':'1d667717e43ddf79c3d3761a0a4e5c2f92a9970d8b0aeb396ba71835821f095f',
+ 'libsndio7.0':'64a89ce28e11f55c02cdae8e959e9bf84c97128d2c04a2881675b76058d6dddb',
+ 'libsixel1':'4062a008194d5a336e9bdd11bfb454db0c3d5670a481c4922bc5bcefaa3b4cf2',
+ 'libxpresent1':'ae77a5987dfacb8ab2a0230cfccfc8d43f0927f9c23fb8796cba370075a42a59',
+}
+def run(args, **kwargs):
+    return subprocess.check_output(args, text=True, **kwargs).strip()
+if run(['dpkg', '--print-architecture']) != 'amd64':
+    raise SystemExit('This pinned runtime currently supports Ubuntu amd64 only.')
+for folder in (downloads, extracted, bundle / 'libs', bundle / 'notices'):
+    folder.mkdir(parents=True, exist_ok=True)
+packages = []
+for name, version in pins.items():
+    debs = list(downloads.glob(f'{name}_*.deb'))
+    if not any(run(['dpkg-deb', '-f', str(d), 'Version']) == version for d in debs):
+        subprocess.check_call(['apt-get', 'download', f'{name}={version}'], cwd=downloads)
+    deb = next(d for d in downloads.glob(f'{name}_*.deb') if run(['dpkg-deb', '-f', str(d), 'Version']) == version)
+    if hashlib.sha256(deb.read_bytes()).hexdigest() != hashes[name]:
+        raise SystemExit(f'Pinned package SHA-256 does not match: {name}')
+    subprocess.check_call(['dpkg-deb', '-x', str(deb), str(extracted)])
+    source = run(['dpkg-deb', '-f', str(deb), 'Source']).split(' ')[0] or name
+    packages.append({'package': name, 'version': version, 'sha256': hashlib.sha256(deb.read_bytes()).hexdigest(), 'source': source, 'sourceUrl': f'https://launchpad.net/ubuntu/+source/{source}/{version}'})
+local = extracted / 'usr/lib/x86_64-linux-gnu'
+pc = local / 'pkgconfig/mpv.pc'
+pc_text = pc.read_text().replace('prefix=/usr', 'prefix='+str(extracted/'usr'))
+# The Flutter plugin links the public dynamic client ABI only. Private
+# codec headers/static linker requirements are not consumed by that plugin.
+pc.write_text('\n'.join(line for line in pc_text.splitlines() if not line.startswith(('Requires.private:', 'Libs.private:'))) + '\n')
+env = dict(os.environ, LD_LIBRARY_PATH=str(local))
+listing = run(['ldd', str(local / 'libmpv.so.2')], env=env)
+if 'not found' in listing: raise SystemExit('A media dependency is missing; no incomplete bundle was accepted.')
+# The OS owns glibc, its loader and device drivers. All codec/media dependencies
+# resolved by this libmpv are copied, including their distribution copyright files.
+base = {'libc.so.6', 'libm.so.6', 'libmvec.so.1', 'libdl.so.2', 'libpthread.so.0', 'librt.so.1', 'libresolv.so.2'}
+libs = {'libmpv.so.2': local / 'libmpv.so.2'}
+for name, path in re.findall(r'^\s*(\S+) => (\S+)', listing, re.M):
+    if name not in base: libs[name] = pathlib.Path(path)
+records = []
+for name, path in sorted(libs.items()):
+    shutil.copyfile(path.resolve(), bundle / 'libs' / name)
+    try:
+        if extracted in path.parents:
+            provider = next(p for p in packages if (extracted / 'usr/share/doc' / p['package']).exists() and run(['dpkg-deb','-c',str(next(downloads.glob(p['package']+'_*')))]).find(name) >= 0)['package']
+            doc = extracted / 'usr/share/doc' / provider / 'copyright'
+            version = next(p['version'] for p in packages if p['package'] == provider)
+        else:
+            answer = run(['dpkg-query', '-S', str(path.resolve())]).splitlines()[0]
+            provider = answer.split(': ')[0]
+            version = run(['dpkg-query', '-W', '-f=${Version}', provider])
+            doc = pathlib.Path('/usr/share/doc') / provider.split(':')[0] / 'copyright'
+        if not doc.is_file(): raise RuntimeError('missing notice')
+        shutil.copyfile(doc, bundle / 'notices' / (provider.replace(':','_') + '.copyright'))
+    except Exception as exc:
+        raise SystemExit(f'Could not preserve distribution notice for {name}: {exc}')
+    if extracted in path.parents:
+        source = next(p['source'] for p in packages if p['package'] == provider)
+        source_version = version
+    else:
+        source = run(['dpkg-query','-W','-f=${source:Package}',provider])
+        source_version = run(['dpkg-query','-W','-f=${source:Version}',provider])
+    records.append({'library':name,'package':provider,'version':version,'sourcePackage':source,'sourceVersion':source_version,'sourceUrl':f'https://launchpad.net/ubuntu/+source/{source}/{source_version}','sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
+manifest = {'platform':'Ubuntu resolute amd64; host glibc/device drivers required', 'packages':packages,'libraries':records,'sourcePackages':'Distribution copyright files include upstream source locations. Ubuntu source package versions can be fetched from https://launchpad.net/ubuntu/+source/<source>/<version> or apt-get source <source>=<version>; binary package version and notices are retained for every library.'}
+(bundle / 'notices/manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
+checked = run(['ldd', str(bundle/'libs/libmpv.so.2')], env=dict(os.environ, LD_LIBRARY_PATH=str(bundle/'libs')))
+if 'not found' in checked: raise SystemExit('Prepared media runtime has missing dependencies.')
+(work/'ldd-bundle.txt').write_text(checked+'\n')
+print(f'Prepared {len(records)} media libraries with distribution notices in {bundle.relative_to(R)}.')

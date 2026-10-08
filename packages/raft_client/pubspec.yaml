@@ -1,0 +1,13 @@
+name: raft_client
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: ^3.13.5
+resolution: workspace
+dependencies:
+  dio: ^5.9.0
+  socket_io_client: ^3.1.6
+  uuid: ^4.5.2
+  crypto: ^3.0.7
+dev_dependencies:
+  test: ^1.26.3

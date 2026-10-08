@@ -1,0 +1,75 @@
+{
+  "protocolVersion": 2,
+  "runtimeId": "example-runtime",
+  "schemaVersion": "example-runtime.choices-sample",
+  "requiredClientCapabilities": [
+    "choice.labels"
+  ],
+  "dataSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "tier"
+    ],
+    "properties": {
+      "tier": {
+        "type": "string",
+        "title": "Tier",
+        "minLength": 1,
+        "x-optionSource": "tier"
+      },
+      "effort": {
+        "type": "string",
+        "title": "Effort",
+        "x-optionsFrom": {
+          "field": "tier",
+          "attribute": "supportedReasoningEfforts",
+          "defaultAttribute": "defaultReasoningEffort"
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "order": [
+      "tier",
+      "effort"
+    ],
+    "layout": {
+      "advanced": []
+    },
+    "visibility": [],
+    "localization": {
+      "tier": {
+        "label": "Tier",
+        "choices": {
+          "fast": {
+            "label": "Fast tier",
+            "description": "Lower latency"
+          },
+          "retired": {
+            "label": "A key that matches no option is ignored"
+          }
+        }
+      },
+      "effort": {
+        "label": "Effort",
+        "choices": {
+          "low": {
+            "label": "Low",
+            "description": "Fast responses with lighter reasoning"
+          },
+          "high": {
+            "label": "High"
+          }
+        }
+      }
+    }
+  },
+  "optionSources": {
+    "tier": {
+      "sourceId": "tier",
+      "kind": "select",
+      "pointer": "/tier"
+    }
+  }
+}

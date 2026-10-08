@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+"""Run the actual Linux client with ignored runtime-injected verification data."""
+import os,pathlib,subprocess,sys
+root=pathlib.Path(__file__).resolve().parent.parent
+source_hash=subprocess.check_output([str(root/'tool/source-hash')],text=True).strip()
+env=dict(os.environ,GDK_BACKEND='x11',DISPLAY=os.environ.get('DISPLAY',':0'))
+args=[str(root/'tool/flutter'),'test','integration_test/workspace_test.dart','-d','linux','--no-pub',
+ '--dart-define=RAFT_TEST_CONFIG='+str(root/'.local/test-user.json'),
+ '--dart-define=RAFT_TEST_REPORT='+str(root/'.local/native-e2e'),
+ '--dart-define=RAFT_TEST_PLATFORM=linux','--dart-define=RAFT_TEST_SOURCE_HASH='+source_hash]
+with (root/'.local/native-linux-fleet.txt').open('w') as log:
+ result=subprocess.run(args,cwd=root/'apps/raft_flutter',env=env,stdout=log,stderr=subprocess.STDOUT)
+sys.exit(result.returncode)

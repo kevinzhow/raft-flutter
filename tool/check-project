@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+"""Run the workspace checks against an identified, unchanged source snapshot."""
+import json
+import pathlib
+import subprocess
+import sys
+root = pathlib.Path(__file__).resolve().parent.parent
+stamp = lambda: subprocess.check_output([str(root / 'tool/source-hash')], text=True).strip()
+source_hash = stamp()
+results = {}
+checks = [('all-project-tests.txt', ['test', 'test', '../../packages/raft_client/test', '../../packages/raft_sync/test', '../../packages/raft_ui/test', '--no-pub', '--reporter', 'expanded'], root / 'apps/raft_flutter'),
+          ('analyze-all.txt', ['analyze', '--no-pub'], root)]
+for filename, args, cwd in checks:
+    with (root / '.local' / filename).open('w') as log:
+        results[filename] = subprocess.run([str(root / 'tool/flutter'), *args], cwd=cwd, stdout=log, stderr=subprocess.STDOUT).returncode == 0
+changed = stamp() != source_hash
+(root / '.local/engineering-run.json').write_text(json.dumps({'sourceHash': source_hash, 'completed': all(results.values()) and not changed, 'checks': results}, indent=2))
+print(json.dumps({'passed': all(results.values()) and not changed, 'sourceChanged': changed, 'checks': results}))
+sys.exit(0 if all(results.values()) and not changed else 1)

@@ -1,0 +1,137 @@
+#!/usr/bin/env python3
+"""Publish assertion-bound Raft evidence through the existing report hub."""
+import argparse
+import csv
+import datetime as dt
+import html
+import json
+import pathlib
+import re
+import shutil
+import subprocess
+
+root = pathlib.Path(__file__).resolve().parent.parent
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--hub-root', type=pathlib.Path, help='Existing report hub reports root')
+args = parser.parse_args()
+source_hash = subprocess.check_output([str(root / 'tool/source-hash')], text=True).strip()
+stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%d_%H%M%S')
+name = 'raft_flutter_' + stamp
+report = root / 'build/e2e_reports' / name
+report.mkdir(parents=True)
+images = report / 'screenshots'
+images.mkdir()
+logs = []
+for filename in ['native-linux-fleet.txt', 'native-android-test.txt', 'all-project-tests.txt', 'analyze-all.txt']:
+    source = root / '.local' / filename
+    if source.is_file():
+        log = source.read_text()
+        # Abort rather than export authentication-bearing log content.
+        if re.search(r'Bearer\s+[A-Za-z0-9_.-]{12,}|eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}|[?&](?:token|access_token|previewToken)=[^\s&]{8,}', log, re.I):
+            raise SystemExit('Report blocked: log requires credential redaction.')
+        (report / filename).write_text(log)
+        logs.append((filename, 'No issues found!' in log if filename == 'analyze-all.txt' else 'All tests passed!' in log))
+completed_platforms = set()
+checkpoint_rows = []
+for platform_name in ['linux', 'android']:
+    evidence = root / '.local/native-e2e'
+    checkpoints = evidence / f'native-{platform_name}-checkpoints.tsv'
+    manifest = evidence / f'native-{platform_name}-run.json'
+    if not checkpoints.is_file() or not manifest.is_file():
+        continue
+    metadata = json.loads(manifest.read_text())
+    filename = 'native-linux-fleet.txt' if platform_name == 'linux' else 'native-android-test.txt'
+    log_path = report / filename
+    if (metadata.get('completed') is True and metadata.get('platform') == platform_name
+            and metadata.get('sourceHash') == source_hash
+            and log_path.is_file() and 'All tests passed!' in log_path.read_text()
+            and f"Native evidence run: {platform_name} {metadata['runId']}" in log_path.read_text()):
+        completed_platforms.add(platform_name)
+    shutil.copy2(manifest, report / manifest.name)
+    for line in checkpoints.read_text().splitlines():
+        fields = line.split('\t')
+        if len(fields) != 3 or fields[2] != metadata['runId'] or not re.fullmatch(r'(linux|android)-[a-z-]+', fields[0]) or 'failure' in fields[0]:
+            continue
+        source = evidence / (fields[0] + '.png')
+        if source.is_file():
+            shutil.copy2(source, images / source.name)
+            checkpoint_rows.append((source.stem, source.name))
+# Independent platform probes are explicitly labelled, separate from app flows.
+for kind, label in [('attachment-platform', 'OS attachment probe'),
+                    ('notification-platform', 'OS notification/URI probe'),
+                    ('sharing-platform', 'OS sharing probe')]:
+    platform = root / '.local/evidence' / kind
+    for source in sorted(platform.glob('*.png')):
+        target = kind + '-' + source.name
+        shutil.copy2(source, images / target)
+        checkpoint_rows.append((label + ' ' + source.stem, target))
+    if (platform / 'results.json').is_file():
+        shutil.copy2(platform / 'results.json', report / (kind + '-results.json'))
+# SDK fixtures exercise real browser semantic actions/keyboard callbacks.
+# They are separate evidence from OS and authenticated native application flows.
+sdk_records = []
+sdk_root = root / '.local/evidence/sdk-preview'
+for result_file in sorted(sdk_root.rglob('*interactions*.json')):
+    records = json.loads(result_file.read_text())
+    for record in records:
+        row = dict(record)
+        row['source'] = str(result_file.relative_to(sdk_root))
+        screenshot = record.get('screenshot')
+        if record.get('result') == 'pass' and isinstance(screenshot, str):
+            source = (result_file.parent / screenshot).resolve()
+            try:
+                relative = source.relative_to(sdk_root.resolve())
+            except ValueError:
+                raise SystemExit('SDK screenshot reference escapes evidence root.')
+            if source.is_file() and source.suffix == '.png':
+                target = 'sdk-' + '-'.join(relative.parts)
+                shutil.copy2(source, images / target)
+                row['publishedScreenshot'] = target
+                checkpoint_rows.append(('SDK browser callbacks ' + record.get('component', '') + ' ' + record.get('theme', ''), target))
+        sdk_records.append(row)
+(report / 'sdk-preview-results.json').write_text(json.dumps(sdk_records, ensure_ascii=False, indent=2))
+sdk_passed = bool(sdk_records) and all(r.get('result') == 'pass' and r.get('publishedScreenshot') for r in sdk_records)
+artifacts = []
+artifact_manifest = root / 'build/deliverables/build-manifest.json'
+if artifact_manifest.is_file() and json.loads(artifact_manifest.read_text()).get('sourceHash') != source_hash:
+    raise SystemExit('Report blocked: artifacts were built from another source snapshot.')
+for source in sorted((root / 'build/deliverables').glob('*')):
+    if source.is_file() and source.suffix in {'.apk', '.gz', '.txt', '.json'}:
+        target = report / 'downloads' / source.name
+        target.parent.mkdir(exist_ok=True)
+        shutil.copy2(source, target)
+        artifacts.append(source.name)
+for document_name in ['source-reference.json', 'message-sync-evidence.md', 'management-auth-coverage.md', 'widget-acceptance.md', 'action-card-feasibility.md', 'html-preview-evidence.md', 'desktop-window-evidence.md', 'linux-media-runtime.md']:
+    source = root / 'docs' / document_name
+    if source.is_file():
+        shutil.copy2(source, report / document_name)
+with (report / 'checkpoints.tsv').open('w') as out:
+    for label, filename in checkpoint_rows:
+        out.write(label + '\t' + filename + '\n')
+with (root / 'docs/feature-parity.csv').open() as source:
+    rows = list(csv.DictReader(source))
+shutil.copy2(root / 'docs/feature-parity.csv', report / 'feature-parity.csv')
+native_passed = completed_platforms == {'linux', 'android'}
+engineering_passed = all(dict(logs).get(filename) is True for filename in ['all-project-tests.txt', 'analyze-all.txt'])
+engineering_manifest = root / '.local/engineering-run.json'
+if engineering_manifest.is_file():
+    engineering = json.loads(engineering_manifest.read_text())
+    engineering_passed = engineering_passed and engineering.get('completed') is True and engineering.get('sourceHash') == source_hash
+    shutil.copy2(engineering_manifest, report / engineering_manifest.name)
+else:
+    engineering_passed = False
+all_passed = native_passed and engineering_passed
+(report / 'test_output.txt').write_text('All tests passed!\n' if all_passed else 'Extended native validation is still in progress. See per-platform logs.\n')
+status = '两平台扩展原生流程与工程检查通过' if all_passed else '扩展验收进行中'
+escape = html.escape
+checks = ''.join(f'<tr><td>{escape(r["module"])}</td><td>{escape(r["linux"])}</td><td>{escape(r["android"])}</td><td>{escape(r["status"])}</td></tr>' for r in rows)
+captures = ''.join(f'<figure><a href="screenshots/{escape(filename)}"><img loading="lazy" src="screenshots/{escape(filename)}" alt="{escape(label)}"></a><figcaption>{escape(label)}</figcaption></figure>' for label, filename in checkpoint_rows)
+artifactlinks = ''.join(f'<li><a href="downloads/{escape(filename)}">{escape(filename)}</a></li>' for filename in artifacts)
+loglinks = ''.join(f'<li><a href="{filename}">{filename}</a>：{"通过" if passed else "待完成"}</li>' for filename, passed in logs)
+(report / 'environment.txt').write_text('Raft source 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6\nFlutter 3.47.6 / Dart 3.13.5\nK8-Plus Linux GTK/X11 (GDK_BACKEND=x11 for native test) / isolated API37 Android emulator\nScreenshots follow assertions. Operating-system attachment, notification/URI and sharing probes are independently labelled.\n')
+(report / 'index.html').write_text(f'''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Raft Flutter 验收</title><style>body{{font:16px system-ui;margin:24px;color:#17202a}}h1{{font-size:26px}}p{{max-width:80ch;line-height:1.6}}table{{border-collapse:collapse;width:100%;font-size:14px}}th,td{{padding:10px;border:1px solid #dde3ea;text-align:left}}.shots{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}}figure{{margin:0}}img{{max-width:100%;max-height:600px;object-fit:contain;background:#eef2f5}}figcaption{{padding:8px;overflow-wrap:anywhere}}a{{color:#276548}}</style><h1>Raft Flutter：{status}</h1><p>报告 {stamp} UTC。原生截图在对应断言后采集；同一轮尚未全部通过时，报告保留“验收进行中”。文件选择、保存、通知、链接与分享的操作系统探针独立验证，不替代主应用全流程。</p><ul>{loglinks}<li><a href="environment.txt">环境</a> · <a href="feature-parity.csv">功能覆盖</a></li><li><a href="sdk-preview-results.json">SDK Preview browser evidence</a>: {len(sdk_records)} theme runs ({'passed' if sdk_passed else 'pending'}), using rendered DOM semantics and browser keyboard; this does not establish native pointer or OS behavior.</li></ul><ul>{artifactlinks}</ul><table><tr><th>模块</th><th>Linux</th><th>Android</th><th>状态</th></tr>{checks}</table><h2>断言对应的截图</h2><div class="shots">{captures}</div></html>''')
+# Reuse the already running hub, preserving all existing reports and its root.
+if args.hub_root is not None:
+    shared = args.hub_root.resolve() / name
+    shutil.copytree(report, shared)
+print(json.dumps({'report': str(report), 'sharedName': name, 'allPassed': all_passed, 'screenshots': len(checkpoint_rows), 'sdkPassed': sdk_passed, 'artifacts': artifacts}))

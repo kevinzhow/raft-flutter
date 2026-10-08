@@ -1,0 +1,14 @@
+.dart_tool/
+.flutter-plugins-dependencies
+build/
+.env
+.env.*
+!.env.example
+.local/
+node_modules/
+**/.slockdev/
+.gstack/
+**/.widget_preview/
+
+__pycache__/
+*.pyc

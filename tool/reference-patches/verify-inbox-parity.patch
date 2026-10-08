@@ -1,0 +1,33 @@
+diff --git a/packages/server/scripts/verify-risingwave-inbox-parity.ts b/packages/server/scripts/verify-risingwave-inbox-parity.ts
+index 100fbde..f3cd699 100644
+--- a/packages/server/scripts/verify-risingwave-inbox-parity.ts
++++ b/packages/server/scripts/verify-risingwave-inbox-parity.ts
+@@ -6,7 +6,7 @@ import {
+   RISINGWAVE_UNREAD_INBOX_CONTRACT_VERSION,
+ } from "../src/db/risingwave";
+ import {
+-  __testRisingWaveInboxFailSoft,
++  __testRisingWaveInbox,
+   getInboxItems,
+   type InboxFilter,
+   type InboxItem,
+@@ -135,8 +135,8 @@ async function main() {
+   // completed direct RW queries and require each "RW" comparison leg to have
+   // actually reached RisingWave.
+   let successfulRisingWaveQueries = 0;
+-  __testRisingWaveInboxFailSoft.reset();
+-  __testRisingWaveInboxFailSoft.setDeps({
++  __testRisingWaveInbox.reset();
++  __testRisingWaveInbox.set({
+     query: async (pool, queryText, values) => {
+       const result = await queryRisingWave(pool, queryText, values);
+       successfulRisingWaveQueries += 1;
+@@ -208,7 +208,7 @@ async function main() {
+       strictRisingWaveQueries: successfulRisingWaveQueries,
+     }, null, 2));
+   } finally {
+-    __testRisingWaveInboxFailSoft.reset();
++    __testRisingWaveInbox.reset();
+     await closeDatabase();
+   }
+ }

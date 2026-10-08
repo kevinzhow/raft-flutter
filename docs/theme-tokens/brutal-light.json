@@ -1,0 +1,241 @@
+{
+  "theme": "brutal",
+  "classes": "notranslate",
+  "font": "\"Hanken Grotesk\", system-ui, sans-serif",
+  "tokens": {
+    "foreground": {
+      "css": "oklch(0.18 0.006 25)",
+      "rgba": [
+        20,
+        17,
+        16,
+        255
+      ]
+    },
+    "foreground-strong": {
+      "css": "oklch(0.18 0.006 25)",
+      "rgba": [
+        20,
+        17,
+        16,
+        255
+      ]
+    },
+    "foreground-muted": {
+      "css": "oklch(0.18 0.006 25 / 0.6)",
+      "rgba": [
+        20,
+        17,
+        17,
+        153
+      ]
+    },
+    "layer-canvas": {
+      "css": "oklch(1 0 0)",
+      "rgba": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    "layer-canvas-muted": {
+      "css": "oklch(1 0 0)",
+      "rgba": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    "layer-panel": {
+      "css": "oklch(1 0 0)",
+      "rgba": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    "line-muted": {
+      "css": "oklch(0.18 0.006 25 / 0.3)",
+      "rgba": [
+        20,
+        17,
+        17,
+        77
+      ]
+    },
+    "line-strong": {
+      "css": "oklch(0.18 0.006 25)",
+      "rgba": [
+        20,
+        17,
+        16,
+        255
+      ]
+    },
+    "primary-strong": {
+      "css": "oklch(0.44 0.09 91.39)",
+      "rgba": [
+        101,
+        80,
+        0,
+        255
+      ]
+    },
+    "primary-soft": {
+      "css": "oklch(0.955 0.067 93.62)",
+      "rgba": [
+        255,
+        240,
+        189,
+        255
+      ]
+    },
+    "accent-strong": {
+      "css": "oklch(0.52 0.215 359.77)",
+      "rgba": [
+        192,
+        0,
+        100,
+        255
+      ]
+    },
+    "accent-soft": {
+      "css": "oklch(0.914 0.048 358.59)",
+      "rgba": [
+        255,
+        214,
+        226,
+        255
+      ]
+    },
+    "warning-strong": {
+      "css": "oklch(0.366 0.106 44.441)",
+      "rgba": [
+        106,
+        39,
+        0,
+        255
+      ]
+    },
+    "warning-soft": {
+      "css": "oklch(0.949 0.027 44.441)",
+      "rgba": [
+        255,
+        233,
+        224,
+        255
+      ]
+    },
+    "info-strong": {
+      "css": "oklch(0.348 0.06 219.02)",
+      "rgba": [
+        6,
+        65,
+        79,
+        255
+      ]
+    },
+    "info-soft": {
+      "css": "oklch(0.945 0.033 226.27)",
+      "rgba": [
+        215,
+        242,
+        254,
+        255
+      ]
+    },
+    "success-strong": {
+      "css": "oklch(0.366 0.09 153.079)",
+      "rgba": [
+        7,
+        76,
+        39,
+        255
+      ]
+    },
+    "success-soft": {
+      "css": "oklch(0.949 0.079 153.079)",
+      "rgba": [
+        198,
+        254,
+        213,
+        255
+      ]
+    },
+    "danger-strong": {
+      "css": "oklch(0.331 0.11 33.1)",
+      "rgba": [
+        98,
+        23,
+        8,
+        255
+      ]
+    },
+    "danger-soft": {
+      "css": "oklch(0.926 0.034 20.05)",
+      "rgba": [
+        253,
+        222,
+        221,
+        255
+      ]
+    },
+    "fill-muted": {
+      "css": "oklch(0.9645 0.0002 25)",
+      "rgba": [
+        243,
+        243,
+        243,
+        255
+      ]
+    },
+    "color-brutal-orange": {
+      "css": "#F8A16F",
+      "rgba": [
+        248,
+        161,
+        111,
+        255
+      ]
+    },
+    "color-brutal-cyan": {
+      "css": "#27CCF3",
+      "rgba": [
+        39,
+        204,
+        243,
+        255
+      ]
+    },
+    "color-brutal-lavender": {
+      "css": "#BBAFE6",
+      "rgba": [
+        187,
+        175,
+        230,
+        255
+      ]
+    },
+    "color-brutal-lime": {
+      "css": "#A9D877",
+      "rgba": [
+        169,
+        216,
+        119,
+        255
+      ]
+    },
+    "color-brutal-stone": {
+      "css": "#C0B9B1",
+      "rgba": [
+        192,
+        185,
+        177,
+        255
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+name: raft_ui
+publish_to: none
+version: 0.1.0
+environment:
+  sdk: ^3.13.5
+resolution: workspace
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_markdown_plus: ^1.0.12
+  mermaid_flutter: ^0.3.0
+  flutter_widget_from_html_core: ^0.17.4
+  html: ^0.15.6
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+flutter:
+  fonts:
+    - family: HankenGrotesk
+      fonts:
+        - asset: assets/fonts/HankenGrotesk.ttf
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist.ttf
+    - family: GeistMono
+      fonts:
+        - asset: assets/fonts/GeistMono.ttf

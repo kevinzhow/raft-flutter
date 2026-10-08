@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+"""Run the isolated local comparison stack without changing global tools."""
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path(__file__).resolve().parents[1]
+local = root / '.local'
+local.mkdir(mode=0o700, exist_ok=True)
+if len(sys.argv) != 2 or sys.argv[1] not in {'start', 'stop', 'status', 'ports'}:
+    raise SystemExit('Usage: tool/raft-stack start|stop|status|ports')
+config_path = local / 'stack.json'
+if not config_path.exists():
+    raise SystemExit('Create .local/stack.json using docs/local-test-stack.md first.')
+config = json.loads(config_path.read_text())
+source = Path(config['sourceDir'])
+actual = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
+if actual != config['sourceCommit']:
+    raise SystemExit('Source revision differs from the recorded Web reference.')
+paths_file = local / 'toolchain-paths.txt'
+if not paths_file.exists():
+    paths_file.write_text(subprocess.check_output([
+        'npx', '--yes', '--package=node@24.21.0', '--package=pnpm@10.29.3',
+        '-c', 'command -v node; command -v pnpm',
+    ], text=True))
+paths = paths_file.read_text().splitlines()
+env = {k: v for k, v in os.environ.items() if not k.lower().startswith('npm_config_')}
+env['PATH'] = str(Path(paths[0]).parent) + os.pathsep + env.get('PATH', '')
+env.update(SLOCKDEV_TUNNEL='0', SLOCKDEV_IDLE_TTL_SECONDS='0', SLOCKDEV_TRACE_OBSERVE='0', RAFTDEV_RISINGWAVE_IMAGE='mirror.gcr.io/risingwavelabs/risingwave@sha256:ba5915a5e85c938a3ec62d76c63c6e4cb37d4f4e3c5c30886f0d2eff61b70073')
+action = sys.argv[1]
+if action == 'start':
+    import hashlib
+    repair_dir = root / 'tool/reference-patches'
+    for name in ('verify-inbox-parity', 'seed-history'):
+        repair = json.loads((repair_dir / (name + '.json')).read_text())
+        target = source / repair['path']
+        digest = hashlib.sha256(target.read_bytes()).hexdigest()
+        if digest == repair['beforeSHA256']:
+            subprocess.run(['git', 'apply', '--check', str(repair_dir / (name + '.patch'))], cwd=source, check=True)
+            subprocess.run(['git', 'apply', str(repair_dir / (name + '.patch'))], cwd=source, check=True)
+        elif digest != repair['afterSHA256']:
+            raise SystemExit('Reference setup file differs from the reviewed compatibility patch: ' + name)
+args = ['./raftdev', action]
+if action != 'status':
+    args.append(config['environment'])
+if action == 'start':
+    args += ['--description', 'Raft Flutter Web comparison fixtures', '--risingwave=full']
+log = local / f'stack-{action}.log'
+with log.open('w') as output:
+    log.chmod(0o600)
+    result = subprocess.run(args, cwd=source, env=env, stdout=output, stderr=subprocess.STDOUT)
+print(f'raftdev {action}: exit {result.returncode}; private local log: {log}')
+if result.returncode == 0 and action in {'start', 'status', 'ports'}:
+    print('Web: ' + config['webUrl'])
+    print('API: ' + config['apiUrl'])
+raise SystemExit(result.returncode)
