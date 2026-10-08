@@ -7,8 +7,14 @@
     {
       "asset": "packages/raft_ui/assets/fonts/Inter.ttf",
       "source": "https://raw.githubusercontent.com/google/fonts/0b58fb370093f9a9f4ff785d94405710b79de67c/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
-      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
-      "bytes": 876576
+      "sha256": "9f0352309e41950e28aaae7d21d67241008aedc0c3a1fb83648a04cdb9434bf8",
+      "bytes": 634520,
+      "derivedFrom": {
+        "source": "https://raw.githubusercontent.com/google/fonts/0b58fb370093f9a9f4ff785d94405710b79de67c/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
+        "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+        "bytes": 876576
+      },
+      "derivation": "tool/parity-fonts/derive_inter.py: opsz axis pinned at its default 14, wght axis kept (fontTools 4.66.1 varLib.instancer). This is the axis set Google Fonts serves to the Web for raft-ui's `Inter:wght@400;500;600;700` request; outlines/advances verified identical to every Google-served Inter v20 woff2 subset (1690 codepoints) at wght 300/400/500/600/700. Without this, Flutter applied opsz up to 32 to elegant headings while Web always renders opsz 14."
     },
     {
       "asset": "packages/raft_ui/assets/fonts/Inter-OFL.txt",
