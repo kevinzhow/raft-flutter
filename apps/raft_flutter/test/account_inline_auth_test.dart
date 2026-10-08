@@ -191,7 +191,7 @@ void main() {
       await mount(t, AccountConnectionsView(controller: w, inline: true));
       await t.pumpAndSettle();
       final oldAction = t
-          .widgetList<RaftRecipeButton>(find.byType(RaftRecipeButton))
+          .widgetList<RaftSettingsRecipeButton>(find.byType(RaftSettingsRecipeButton))
           .singleWhere((button) => button.label == 'Set password by email')
           .onPressed!;
       client.user = RaftRecord({'id': 'next', 'email': 'next@example.invalid'});
