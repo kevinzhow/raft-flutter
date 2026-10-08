@@ -215,10 +215,9 @@ final ParityCase _button = ParityCase(
 final ParityCase _card = ParityCase(
   widgets: const ['raft_ui:RaftPanel', 'raft_ui:RaftButton'],
   notes:
-      'Fixture flex-col stretches the button to the card width, but '
-      'RaftButton exposes no width/expand option (RaftControl centers its '
-      'visual box), so it stays content-sized. Title and description are '
-      'plain fixture markup.',
+      'The fixture card is the Web .card-brutal class (RaftPanelStyle.'
+      'legacyCard); title/description are fixture markup (text-neutral-500 '
+      'has no rule for card-register-muted).',
   build: (ctx) => _frame(
     ctx,
     height: 190,
@@ -226,40 +225,36 @@ final ParityCase _card = ParityCase(
       alignment: Alignment.topLeft,
       child: SizedBox(
         width: 310,
-        child: RaftPanel(
-          padding: const EdgeInsets.all(14),
-          shadow: true,
-          child: Builder(
-            builder: (context) {
-              final t = RaftTokens.of(context);
-              return _column(8, [
-                Text(
-                  'Channel settings',
-                  style: TextStyle(
-                    fontFamily: t.bodyFont,
-                    fontSize: 16,
-                    height: 20 / 16,
-                    fontWeight: FontWeight.w600,
-                    color: t.ink,
-                  ),
+        child: DefaultTextStyle.merge(
+          style: const TextStyle(color: Colors.black),
+          child: RaftPanel(
+            padding: const EdgeInsets.all(14),
+            style: RaftPanelStyle.legacyCard,
+            child: _column(8, [
+              const Text(
+                'Channel settings',
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 20 / 16,
+                  fontWeight: FontWeight.w600,
                 ),
-                Text(
-                  'Control who can post and how the channel appears to members.',
-                  style: TextStyle(
-                    fontFamily: t.bodyFont,
-                    fontSize: 12,
-                    height: 16 / 12,
-                    color: t.muted,
-                  ),
+              ),
+              const Text(
+                'Control who can post and how the channel appears to members.',
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  color: RaftWebPalette.neutral500,
                 ),
-                RaftButton(
-                  label: 'Save changes',
-                  onPressed: () {},
-                  variant: RaftControlVariant.primary,
-                  visualHeight: RaftMetrics.buttonSm,
-                ),
-              ]);
-            },
+              ),
+              RaftButton(
+                label: 'Save changes',
+                onPressed: () {},
+                tone: RaftButtonRecipeVariant.primary,
+                size: RaftButtonRecipeSize.sm,
+                expand: true,
+              ),
+            ]),
           ),
         ),
       ),
@@ -268,36 +263,44 @@ final ParityCase _card = ParityCase(
 );
 
 final ParityCase _formField = ParityCase(
-  widgets: const ['material:TextFormField', 'raft_ui:raftTheme.inputDecoration'],
+  widgets: const ['raft_ui:RaftField', 'raft_ui:RaftTextInput'],
   notes:
-      'Flutter has no public FormField primitive (RaftFormDialog._field is '
-      'private); rendered with the app form idiom (runtime_form_dialog.dart / '
-      'auth_view.dart): TextFormField + InputDecoration(labelText, helperText, '
-      'errorText) themed by raftTheme. No required asterisk, "(optional)" '
-      'suffix, plain-vs-uppercase label style or compact size exist.',
+      'Fixture inputs are the Web legacy .input-brutal class '
+      '(RaftInputChrome.legacy); the error input adds the callsite '
+      '!border-brutal-red ring-2 ring-brutal-red/60 (invalid).',
   build: (ctx) => _frame(
     ctx,
     height: 296,
     child: _column(12, [
-      TextFormField(
-        initialValue: 'cindy@slock.ai',
-        readOnly: true,
-        decoration: const InputDecoration(labelText: 'Email'),
-      ),
-      TextFormField(
-        initialValue: 'Visual parity fixture',
-        readOnly: true,
-        decoration: const InputDecoration(
-          labelText: 'Description',
-          helperText: 'Shown in channel discovery.',
+      const RaftField(
+        label: 'Email',
+        uppercase: false,
+        required: true,
+        child: RaftTextInput(
+          initialValue: 'cindy@slock.ai',
+          readOnly: true,
+          chrome: RaftInputChrome.legacy,
         ),
       ),
-      TextFormField(
-        initialValue: '',
-        readOnly: true,
-        decoration: const InputDecoration(
-          labelText: 'Server Name',
-          errorText: 'Name is required',
+      const RaftField(
+        label: 'Description',
+        optional: true,
+        hint: 'Shown in channel discovery.',
+        child: RaftTextInput(
+          initialValue: 'Visual parity fixture',
+          readOnly: true,
+          chrome: RaftInputChrome.legacy,
+        ),
+      ),
+      const RaftField(
+        label: 'Server Name',
+        compact: true,
+        error: 'Name is required',
+        child: RaftTextInput(
+          initialValue: '',
+          readOnly: true,
+          invalid: true,
+          chrome: RaftInputChrome.legacy,
         ),
       ),
     ]),
@@ -307,24 +310,36 @@ final ParityCase _formField = ParityCase(
 const _agreement = 'This agreement copy is too long for the configured limit.';
 
 final ParityCase _textarea = ParityCase(
-  widgets: const ['material:TextFormField', 'raft_ui:raftTheme.inputDecoration'],
+  widgets: const ['raft_ui:RaftTextarea', 'raft_ui:RaftTextareaCounter'],
   notes:
-      'Rendered with the app multi-line note idiom (forward_messages_dialog.dart: '
-      'TextField maxLines 2 + maxLength); the Material counter shows 57/40 and '
-      'errorText carries the fixture alert. No resize handle in Flutter.',
+      'The alert line is fixture markup (text-xs text-danger '
+      'theme-brutal:text-brutal-red). No resize handle in Flutter.',
   build: (ctx) => _frame(
     ctx,
     height: 252,
     child: _column(16, [
-      TextFormField(
-        initialValue: _agreement,
-        readOnly: true,
-        minLines: 2,
-        maxLines: 2,
-        maxLength: 40,
-        decoration: const InputDecoration(
-          errorText: 'Agreement body must be shorter.',
-        ),
+      const RaftTextarea(initialValue: _agreement, readOnly: true, rows: 2),
+      Builder(
+        builder: (context) {
+          final t = RaftTokens.of(context);
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  'Agreement body must be shorter.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    height: 16 / 12,
+                    color: t.brutal ? t.product.brutalRed : t.semantic.danger,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              RaftTextareaCounter(length: _agreement.length, limit: 40),
+            ],
+          );
+        },
       ),
     ]),
   ),
@@ -541,28 +556,16 @@ final ParityCase _spinner = ParityCase(
 );
 
 final ParityCase _slugInput = ParityCase(
-  widgets: const ['material:TextFormField', 'raft_ui:raftTheme.inputDecoration'],
-  notes:
-      'Flutter has no InputGroup/SlugInput; prefixed inputs use the app idiom '
-      'InputDecoration(prefixText:) (account_settings.dart "@" username). The '
-      "'/' prefix is inline text, not a bordered addon. Second row keeps the "
-      'fixture opacity-60.',
+  widgets: const ['raft_ui:RaftSlugInput'],
+  notes: 'Second row keeps the fixture opacity-60 className.',
   build: (ctx) => _frame(
     ctx,
     height: 122,
-    child: _column(16, [
-      TextFormField(
-        initialValue: 'design-lab',
-        readOnly: true,
-        decoration: const InputDecoration(prefixText: '/'),
-      ),
+    child: _column(16, const [
+      RaftSlugInput(initialValue: 'design-lab', readOnly: true),
       Opacity(
         opacity: .6,
-        child: TextFormField(
-          initialValue: 'partner-workspace',
-          readOnly: true,
-          decoration: const InputDecoration(prefixText: '/'),
-        ),
+        child: RaftSlugInput(initialValue: 'partner-workspace', readOnly: true),
       ),
     ]),
   ),

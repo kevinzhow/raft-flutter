@@ -19,7 +19,23 @@ import 'icons.dart';
 import 'tokens/tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
+import 'recipes/card.g.dart';
 import 'recipes/recipe_runtime.dart';
+
+/// Surface styles of [RaftPanel].
+enum RaftPanelStyle {
+  /// Flat bordered panel (no shadow).
+  panel,
+
+  /// raft-ui `Card` root (`card` recipe, variant default).
+  card,
+
+  /// The Web client's `.card-brutal` composition class
+  /// (packages/web/src/index.css): elegant `border border-line-muted
+  /// bg-layer-panel shadow-raft-md`; brutal `border-2 border-black bg-white
+  /// shadow-brutal`.
+  legacyCard,
+}
 
 class RaftPanel extends StatelessWidget {
   const RaftPanel({
@@ -27,23 +43,70 @@ class RaftPanel extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.shadow = false,
+    this.style,
   });
   final Widget child;
   final EdgeInsetsGeometry padding;
+
+  /// Shorthand for [RaftPanelStyle.legacyCard] when [style] is null.
   final bool shadow;
+  final RaftPanelStyle? style;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.line, width: t.border),
-        borderRadius: BorderRadius.circular(t.radius),
-        boxShadow: shadow ? t.shadows : null,
-      ),
-      child: Material(color: t.panel, child: child),
-    );
+    final resolved =
+        style ?? (shadow ? RaftPanelStyle.legacyCard : RaftPanelStyle.panel);
+    final body = Material(type: MaterialType.transparency, child: child);
+    switch (resolved) {
+      case RaftPanelStyle.card:
+        final rt = t.recipeTokens;
+        final s = RaftCardRecipe.resolve(
+          theme: t.recipeTheme,
+          states: t.recipeStates(),
+          tokens: rt,
+        ).root;
+        return RaftRecipeBox(
+          style: s,
+          tokens: rt,
+          padding: padding.resolve(Directionality.of(context)),
+          clip: true,
+          child: body,
+        );
+      case RaftPanelStyle.legacyCard:
+        return Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: t.brutal ? RaftPrimitiveColors.white : t.semantic.layerPanel,
+            border: t.brutal
+                ? Border.all(color: RaftPrimitiveColors.black, width: 2)
+                : Border.all(color: t.semantic.lineMuted),
+            boxShadow: t.brutal
+                ? RaftProductShadows.shadowBrutal.paintOrder
+                : [
+                    for (final l in t.themeShadows.md.layers.reversed)
+                      if (!l.inset)
+                        BoxShadow(
+                          color: l.color,
+                          offset: l.offset,
+                          blurRadius: raftCssBlurRadius(l.blur),
+                          spreadRadius: l.spread,
+                        ),
+                  ],
+          ),
+          child: body,
+        );
+      case RaftPanelStyle.panel:
+        return Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: t.panel,
+            border: Border.all(color: t.line, width: t.border),
+            borderRadius: BorderRadius.circular(t.radius),
+          ),
+          child: body,
+        );
+    }
   }
 }
 
