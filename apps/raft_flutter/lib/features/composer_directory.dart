@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'private_route_guard.dart';
+import 'sender_avatar_projection.dart';
 
 /// Lazy, transient autocomplete authority. Private/joint surfaces use only
 /// their current membership projection; resource references require the real
@@ -59,13 +61,30 @@ class ComposerDirectory extends ChangeNotifier {
         }
         final key = '$type:$id';
         if (roster) memberIds.add(key);
+        final previous = entries[key];
+        final source = projectSenderAvatar(
+          origin: w.client.origin,
+          senderId: id,
+          senderType: type,
+          agents: type == 'agent'
+              ? [Map<String, dynamic>.from(value)]
+              : const [],
+          members: type == 'user'
+              ? [
+                  {...Map<String, dynamic>.from(value), 'userId': id},
+                ]
+              : const [],
+          currentUser: w.client.user?.json,
+        );
         entries[key] = RaftComposerSuggestion(
           type: type,
           id: id,
           name: name,
-          title: value['displayName'] as String?,
-          detail: value['description'] as String?,
+          title: value['displayName'] as String? ?? previous?.title,
+          detail: value['description'] as String? ?? previous?.detail,
           inChannel: roster || memberIds.contains(key),
+          avatar: _avatar(name, type, source),
+          mutedAvatar: _avatar(name, type, source, muted: true),
         );
       }
     }
@@ -180,4 +199,36 @@ class ComposerDirectory extends ChangeNotifier {
     w.removeListener(changed);
     super.dispose();
   }
+}
+
+/// Web MentionCandidateAvatar: `AvatarSlot context="compact-list"`; muted
+/// (not in channel) is `!border-black/40 opacity-60`.
+Widget _avatar(
+  String name,
+  String type,
+  SenderAvatarProjection source, {
+  bool muted = false,
+}) {
+  final agent = type == 'agent';
+  final avatar = RaftAvatar(
+    name: name,
+    size: 20,
+    kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
+    mountedContext: RaftMountedAvatarContext.compactList,
+    content: RaftAvatarContent(
+      name: name,
+      kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
+      uploadedUrl: source.uploadedUrl,
+      gravatarUrl: source.gravatarUrl,
+      pixelKey: source.pixelKey,
+      fallback: RaftMountedAvatarFallback(
+        avatarContext: RaftMountedAvatarContext.compactList,
+        gravatar: source.gravatarUrl != null,
+        identity: agent
+            ? RaftMountedAvatarIdentity.agent
+            : RaftMountedAvatarIdentity.human,
+      ),
+    ),
+  );
+  return muted ? Opacity(opacity: .6, child: avatar) : avatar;
 }

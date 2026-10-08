@@ -13,6 +13,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import 'theme.dart';
+import 'recipes/badge.g.dart';
+import 'recipes/recipe_runtime.dart';
+import 'recipes/token_binding.dart';
 import 'mounted_avatar_recipe.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
@@ -1575,7 +1578,13 @@ class _RaftComposerState extends State<RaftComposer> {
         showWhenUnlinked: false,
         targetAnchor: Alignment.topLeft,
         followerAnchor: Alignment.bottomLeft,
-        offset: Offset(0, -recipe.suggestionBottomGap),
+        // `bottom-full mb-2` resolves against the form's padding box, i.e.
+        // inside its top border.
+        offset: Offset(
+          0,
+          -recipe.suggestionBottomGap +
+              ((recipe.hostDecoration.border as Border?)?.top.width ?? 0),
+        ),
         child: Align(
           alignment: Alignment.topLeft,
           widthFactor: 1,
@@ -1632,6 +1641,20 @@ class _RaftComposerState extends State<RaftComposer> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              // `ComposerSuggestionGroup separated`:
+                              // `mt-1 pt-1`, brutal `border-t-2 border-black`.
+                              if (startGroup && index > 0)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  height: 4 + (recipe.tokens.brutal ? 2 : 1),
+                                  alignment: Alignment.topCenter,
+                                  child: Container(
+                                    height: recipe.tokens.brutal ? 2 : 1,
+                                    color: recipe.tokens.brutal
+                                        ? Colors.black
+                                        : recipe.tokens.colors['line-hairline'],
+                                  ),
+                                ),
                               if (startGroup && label != null)
                                 Padding(
                                   padding: recipe.suggestionGroupInset,
@@ -1939,11 +1962,8 @@ class _RaftComposerSuggestionRowState
           excludeFromSemantics: true,
           onTap: widget.onPressed,
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: RaftDensityScope.of(context) == RaftDensity.touch
-                  ? 48
-                  : 0,
-            ),
+            // Web options are `py-2` rows on touch as well (no 48px floor).
+            constraints: const BoxConstraints(),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -1954,48 +1974,74 @@ class _RaftComposerSuggestionRowState
                 borderRadius: BorderRadius.circular(t.brutal ? 0 : 2),
               ),
               child: Opacity(
+                // Not-in-channel options carry `opacity-60`.
                 opacity: !s.inChannel && s.isMention ? .6 : 1,
                 child: Row(
                   children: [
-                    RaftIcon(
-                      switch (s.type) {
-                        'channel' => RaftGlyph.hash,
-                        'computer' => RaftGlyph.monitor,
-                        'app' => RaftGlyph.globe,
-                        'agent' => RaftGlyph.bot,
-                        _ => RaftGlyph.user,
-                      },
-                      size: 14,
-                      color: title.color,
-                    ),
+                    if (s.isMention && s.avatar != null) ...[
+                      SizedBox.square(
+                        dimension: 20,
+                        child: s.inChannel
+                            ? s.avatar
+                            : (s.mutedAvatar ?? s.avatar),
+                      ),
+                      if (!s.inChannel) ...[
+                        // `ComposerSuggestionIcon variant="auxiliary"`:
+                        // UserX 12, `-ml-1 text-black/40`.
+                        const SizedBox(width: 4),
+                        RaftIcon(
+                          RaftGlyph.userX,
+                          size: 12,
+                          color: recipe.suggestionAuxiliary,
+                        ),
+                      ],
+                    ] else
+                      RaftIcon(
+                        switch (s.type) {
+                          'channel' => RaftGlyph.hash,
+                          'computer' => RaftGlyph.monitor,
+                          'app' => RaftGlyph.globe,
+                          'agent' => RaftGlyph.bot,
+                          _ => RaftGlyph.user,
+                        },
+                        size: 14,
+                        color: title.color,
+                      ),
                     SizedBox(width: t.brutal ? 8 : 10),
-                    Flexible(
-                      child: Text(
-                        '${s.type == 'channel' ? '#' : '@'}${s.name}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: title,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
                     Expanded(
-                      child: Text(
-                        [
-                          raftText(context, switch (s.type) {
-                            'agent' => 'Agent',
-                            'user' => 'Human',
-                            'channel' => 'Channel',
-                            'computer' => 'Computer',
-                            _ => 'App',
-                          }),
-                          if (s.title != null && s.title != s.name) s.title!,
-                          if (!s.inChannel && s.isMention)
-                            raftText(context, 'Not in this conversation'),
-                        ].join(' · '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: recipe.suggestionMeta,
-                      ),
+                      child: s.isMention
+                          ? _MentionSuggestionBody(
+                              suggestion: s,
+                              recipe: recipe,
+                              title: title,
+                              highlighted: widget.highlighted,
+                            )
+                          : Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    s.type == 'channel'
+                                        ? s.name
+                                        : (s.title ?? s.name),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: title,
+                                  ),
+                                ),
+                                if (s.detail != null &&
+                                    s.detail!.trim().isNotEmpty) ...[
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      s.detail!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: recipe.suggestionMeta,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                     ),
                   ],
                 ),
@@ -2003,6 +2049,119 @@ class _RaftComposerSuggestionRowState
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Web `MentionCandidateBody`: title (`max-w-[12rem] flex-[0_1_auto]`), the
+/// uppercase soft/muted actor Badge, the description meta (`flex-1 basis-0
+/// truncate`) and the `@handle` code meta in the aside (`ml-auto
+/// max-w-[33%]`, `max-w-[7rem] truncate`).
+class _MentionSuggestionBody extends StatelessWidget {
+  const _MentionSuggestionBody({
+    required this.suggestion,
+    required this.recipe,
+    required this.title,
+    required this.highlighted,
+  });
+  final RaftComposerSuggestion suggestion;
+  final RaftComposerRecipe recipe;
+  final TextStyle title;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = suggestion;
+    final description = s.detail?.trim().replaceAll(RegExp(r'\s+'), ' ');
+    final badge = RaftActorTypeBadge(
+      label: raftText(context, s.type == 'agent' ? 'Agent' : 'Human'),
+    );
+    final handle = Text(
+      '@${s.name}',
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: recipe.suggestionCode(highlighted: highlighted),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        children: [
+          // `max-w-[12rem] flex-[0_1_auto]`: natural width, shrink-only.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: constraints.maxWidth < 192 ? constraints.maxWidth : 192,
+            ),
+            child: Text(
+              s.title?.isNotEmpty == true ? s.title! : s.name,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: title,
+            ),
+          ),
+          const SizedBox(width: 6),
+          badge,
+          if (description != null && description.isNotEmpty) ...[
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                description,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: recipe.suggestionMetaFor(highlighted: highlighted),
+              ),
+            ),
+          ] else
+            const Spacer(),
+          const SizedBox(width: 6),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: constraints.maxWidth / 3 < 112
+                  ? constraints.maxWidth / 3
+                  : 112,
+            ),
+            child: handle,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// raft-ui `Badge appearance="soft" variant="muted" uppercase` with the
+/// mention option overrides `px-1 py-px text-[10px] leading-none`.
+class RaftActorTypeBadge extends StatelessWidget {
+  const RaftActorTypeBadge({super.key, required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final resolver = RaftRecipeTokens(t);
+    final s = RaftBadgeRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      appearance: RaftBadgeRecipeAppearance.soft,
+      variant: RaftBadgeRecipeVariant.muted,
+      uppercase: true,
+      tokens: resolver,
+    ).root;
+    final text = s
+        .textStyle(resolver)
+        .copyWith(
+          fontFamily: t.headingFont,
+          fontSize: 10,
+          height: 1,
+          leadingDistribution: TextLeadingDistribution.even,
+        );
+    return Container(
+      height: s.height,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: s.decoration(resolver),
+      alignment: Alignment.center,
+      child: Text(
+        s.textTransform == 'uppercase' ? label.toUpperCase() : label,
+        style: text,
       ),
     );
   }
