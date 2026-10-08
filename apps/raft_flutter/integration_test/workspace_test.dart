@@ -162,8 +162,11 @@ Future<void> section(WidgetTester tester, String name) async {
   await tester.pumpAndSettle();
 }
 
-Finder field(String label) => find.byWidgetPredicate(
-  (w) => w is TextField && w.decoration?.labelText == label,
+Finder field(String label) => find.descendant(
+  of: find.byWidgetPredicate(
+    (w) => w is Semantics && w.properties.label == label,
+  ),
+  matching: find.byType(TextField),
 );
 
 void main() {
