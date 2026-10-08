@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'generated_tokens.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 
 enum RaftFamily { brutal, elegant }
 
@@ -16,12 +15,61 @@ class RaftAppearance {
       RaftAppearance(mode: mode ?? this.mode, light: light ?? this.light);
 }
 
+/// Generated token set for a family/brightness pair (dark is always elegant).
+RaftThemeId raftThemeId(RaftFamily family, {bool dark = false}) => dark
+    ? RaftThemeId.elegantDark
+    : family == RaftFamily.brutal
+    ? RaftThemeId.brutal
+    : RaftThemeId.elegantLight;
+
+final Map<RaftThemeId, Map<String, Color>> _colorMaps = {};
+
+/// String-keyed compatibility view over the generated tokens, keyed by CSS
+/// custom-property name without `--`: primitives (`color-brutal-yellow-400`),
+/// semantic (`foreground-muted`, `ink-8`), product aliases (`color-brutal-cyan`)
+/// and component roles (`button-default-fill`). Prefer the typed tiers.
+Map<String, Color> raftColorMap(RaftTokenSet set) => _colorMaps.putIfAbsent(
+  set.id,
+  () => Map.unmodifiable({
+    for (final e in RaftPrimitiveColors.byCssName.entries)
+      e.key.substring(2): e.value,
+    ...set.colors.toCssMap(),
+    ...set.product.toCssMap(),
+    ...set.components.toCssMap(),
+  }),
+);
+
 @immutable
 class RaftTokens extends ThemeExtension<RaftTokens> {
-  const RaftTokens(this.family, this.dark, this.colors);
+  /// [colors] is the string-keyed view; [tokens] defaults to the generated
+  /// set for [family]/[dark].
+  const RaftTokens(this.family, this.dark, this.colors, {RaftTokenSet? tokens})
+    : _tokens = tokens;
+
+  /// Tokens generated from raft-ui CSS for a theme (dark forces elegant).
+  factory RaftTokens.theme(RaftFamily family, {bool dark = false}) {
+    final set = RaftTokenSet.of(raftThemeId(family, dark: dark));
+    return RaftTokens(
+      dark ? RaftFamily.elegant : family,
+      dark,
+      raftColorMap(set),
+      tokens: set,
+    );
+  }
   final RaftFamily family;
   final bool dark;
   final Map<String, Color> colors;
+  final RaftTokenSet? _tokens;
+
+  /// Every generated tier for this theme.
+  RaftTokenSet get tokenSet =>
+      _tokens ?? RaftTokenSet.of(raftThemeId(family, dark: dark));
+  RaftSemanticColors get semantic => tokenSet.colors;
+  RaftProductColors get product => tokenSet.product;
+  RaftComponentColors get components => tokenSet.components;
+  RaftThemeShadows get themeShadows => tokenSet.shadows;
+  RaftThemeMetrics get metrics => tokenSet.metrics;
+
   bool get brutal => family == RaftFamily.brutal;
   Color get ink => colors['foreground']!;
   Color get strong => colors['foreground-strong']!;
@@ -37,68 +85,36 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   Color get accentSoft => colors['accent-soft']!;
   Color get accentFill => colors['accent']!;
   Color get primaryFill => colors['primary']!;
-  String get bodyFont =>
-      brutal ? RaftPrimitives.brutalFont : RaftPrimitives.elegantBodyFont;
-  String get headingFont =>
-      brutal ? RaftPrimitives.brutalFont : RaftPrimitives.elegantHeadingFont;
-  String get monoFont => RaftPrimitives.monoFont;
+  String get bodyFont => metrics.sansFont;
+  String get headingFont => metrics.headingFont;
+  String get monoFont => metrics.monoFont;
   double get radius => brutal ? 0 : 8;
   double get fieldRadius => brutal ? 0 : 6;
   double get border => brutal ? 2 : 1;
   TextStyle get fieldStyle => TextStyle(
     fontFamily: headingFont,
     fontVariations: brutal ? null : const [FontVariation('opsz', 14)],
-    fontSize: brutal ? 16 : 14,
-    height: brutal ? 1.5 : 20 / 14,
-    fontWeight: FontWeight.w400,
+    fontSize: metrics.fieldFontSize,
+    height: metrics.fieldLineHeight / metrics.fieldFontSize,
+    fontWeight: raftFontWeight(metrics.fieldFontWeight),
     letterSpacing: 0,
     color: ink,
   );
-  // raft-ui foundation.css theme-shadow-sm. Insets are drawn separately by surfaces.
-  List<BoxShadow> get shadows => brutal
-      ? [BoxShadow(color: strong, offset: const Offset(2, 2))]
-      : dark
-      ? [
-          BoxShadow(color: Colors.black.withValues(alpha: .4), spreadRadius: 1),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: .22),
-            offset: const Offset(0, 1),
-            blurRadius: 3,
-          ),
-        ]
-      : [
-          BoxShadow(
-            color: const Color(0xff0a0a09).withValues(alpha: .071),
-            offset: const Offset(0, .5),
-          ),
-          BoxShadow(
-            color: const Color(0xff0a0a09).withValues(alpha: .012),
-            offset: const Offset(0, 5),
-            blurRadius: 4,
-            spreadRadius: -2,
-          ),
-          BoxShadow(
-            color: const Color(0xff0a0a09).withValues(alpha: .02),
-            offset: const Offset(0, 3),
-            blurRadius: 3,
-            spreadRadius: -1,
-          ),
-          BoxShadow(
-            color: const Color(0xff0a0a09).withValues(alpha: .039),
-            offset: const Offset(0, 1),
-            blurRadius: 2,
-            spreadRadius: -1,
-          ),
-        ];
-  List<BoxShadow> get focusShadows =>
-      brutal ? [BoxShadow(color: strong, offset: const Offset(4, 4))] : shadows;
+
+  /// `--theme-shadow-sm` outer layers (Brutal, Elegant light). Elegant dark
+  /// keeps the `--theme-shadow-xs` outer pair the ported surfaces were matched
+  /// against. Inset layers are drawn separately by surfaces.
+  List<BoxShadow> get shadows =>
+      !brutal && dark ? themeShadows.xs.outer : themeShadows.sm.outer;
+
+  /// Brutal focus lift is `--theme-shadow-md` (4px 4px line-strong).
+  List<BoxShadow> get focusShadows => brutal ? themeShadows.md.outer : shadows;
   static RaftTokens of(BuildContext context) {
     final theme = Theme.of(context);
     return theme.extension<RaftTokens>() ??
-        RaftTokens(
+        RaftTokens.theme(
           RaftFamily.elegant,
-          theme.brightness == Brightness.dark,
-          theme.brightness == Brightness.dark ? elegant_dark : elegant_light,
+          dark: theme.brightness == Brightness.dark,
         );
   }
 
@@ -107,11 +123,23 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     RaftFamily? family,
     bool? dark,
     Map<String, Color>? colors,
-  }) => RaftTokens(
-    family ?? this.family,
-    dark ?? this.dark,
-    colors ?? this.colors,
-  );
+  }) => family == null && dark == null
+      ? RaftTokens(
+          this.family,
+          this.dark,
+          colors ?? this.colors,
+          tokens: _tokens,
+        )
+      : RaftTokens(
+          family ?? this.family,
+          dark ?? this.dark,
+          colors ??
+              raftColorMap(
+                RaftTokenSet.of(
+                  raftThemeId(family ?? this.family, dark: dark ?? this.dark),
+                ),
+              ),
+        );
   @override
   RaftTokens lerp(covariant RaftTokens? other, double t) =>
       other == null || t < .5 ? this : other;
@@ -287,17 +315,13 @@ class RaftFieldBorder extends OutlineInputBorder {
   }
 }
 
+/// CSS numeric font-weight → Flutter [FontWeight].
+FontWeight raftFontWeight(double weight) =>
+    FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)];
+
 ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
   if (dark) family = RaftFamily.elegant;
-  final t = RaftTokens(
-    family,
-    dark,
-    dark
-        ? elegant_dark
-        : family == RaftFamily.brutal
-        ? brutal_light
-        : elegant_light,
-  );
+  final t = RaftTokens.theme(family, dark: dark);
   RoundedRectangleBorder shape(
     double radius, {
     BorderSide side = BorderSide.none,

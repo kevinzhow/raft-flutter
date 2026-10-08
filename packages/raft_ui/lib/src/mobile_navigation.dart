@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 import 'theme.dart';
 
 @immutable
@@ -183,24 +183,24 @@ class _MobileItemRecipe extends RaftControlRecipe {
     ],
     if (selected && !tokens.brutal && !tokens.dark) ...[
       BoxShadow(
-        color: RaftPrimitives.rgbaff000000.withValues(alpha: .071),
+        color: RaftPrimitiveColors.black.withValues(alpha: .071),
         offset: const Offset(0, .5),
       ),
       BoxShadow(color: tokens.ink.withValues(alpha: .08), spreadRadius: 1),
       BoxShadow(
-        color: RaftPrimitives.rgbaff000000.withValues(alpha: .031),
+        color: RaftPrimitiveColors.black.withValues(alpha: .031),
         offset: const Offset(0, 18),
         blurRadius: 24,
         spreadRadius: -12,
       ),
       BoxShadow(
-        color: RaftPrimitives.rgbaff000000.withValues(alpha: .039),
+        color: RaftPrimitiveColors.black.withValues(alpha: .039),
         offset: const Offset(0, 12),
         blurRadius: 12,
         spreadRadius: -6,
       ),
       BoxShadow(
-        color: RaftPrimitives.rgbaff000000.withValues(alpha: .039),
+        color: RaftPrimitiveColors.black.withValues(alpha: .039),
         offset: const Offset(0, 4),
         blurRadius: 6,
         spreadRadius: -3,
@@ -551,7 +551,10 @@ class _SelectorPainter extends CustomPainter {
       return Path()..addPolygon(points, true);
     }
 
-    canvas.drawPath(path(2), Paint()..color = RaftPrimitives.rgbaff141111);
+    canvas.drawPath(
+      path(2),
+      Paint()..color = RaftProductColors.brutal.brutalBlack,
+    );
     canvas.drawPath(path(0), Paint()..color = Colors.black);
     canvas.restore();
   }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
 import 'design_primitives.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 import 'theme.dart';
 
 /// ThreadPanelContent applies its own descendant padding below lg.
@@ -89,7 +89,7 @@ class RaftMessageRowRecipe {
       ? (tokens.brutal ? tokens.panel : tokens.colors['ink-2']!)
       : Colors.transparent;
   Color get border => tokens.brutal && attention
-      ? (popupOpen ? RaftPrimitives.rgbaff000000 : tokens.strong)
+      ? (popupOpen ? RaftPrimitiveColors.black : tokens.strong)
       : Colors.transparent;
   TextStyle get body => TextStyle(
     // Mounted host uses font-display, not Elegant's generic font-sans (Geist).
@@ -97,7 +97,7 @@ class RaftMessageRowRecipe {
     fontSize: 14,
     height: 20 / 14,
     letterSpacing: tokens.brutal ? 0 : -.14,
-    color: tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.muted,
+    color: tokens.brutal ? RaftPrimitiveColors.black : tokens.muted,
   );
   TextStyle get author => body.copyWith(
     height: tokens.brutal ? 20 / 14 : 1,
@@ -109,7 +109,7 @@ class RaftMessageRowRecipe {
     height: tokens.brutal ? 16 / 12 : 1,
     letterSpacing: tokens.brutal ? 0 : -.14,
     color: tokens.brutal
-        ? RaftPrimitives.rgbaff000000.withValues(alpha: .4)
+        ? RaftPrimitiveColors.black.withValues(alpha: .4)
         : tokens.muted.withValues(alpha: tokens.muted.a * .7),
   );
   TextStyle get continuationTime => TextStyle(
@@ -118,7 +118,7 @@ class RaftMessageRowRecipe {
     height: 1,
     color: hovered
         ? (tokens.brutal
-              ? RaftPrimitives.rgbaff000000.withValues(alpha: .4)
+              ? RaftPrimitiveColors.black.withValues(alpha: .4)
               : tokens.colors['foreground-placeholder']!)
         : Colors.transparent,
   );
@@ -126,13 +126,11 @@ class RaftMessageRowRecipe {
     color: background,
     border: Border.all(color: border, width: borderWidth),
     boxShadow: tokens.brutal && (highlighted || popupOpen)
-        ? [
-            // Mounted index.css91–92 overrides the generic RUI elevation.
-            BoxShadow(
-              color: RaftPrimitives.rgbaff141111,
-              offset: Offset(highlighted ? 4 : 2, highlighted ? 4 : 2),
-            ),
-          ]
+        // Mounted index.css91–92 overrides the generic RUI elevation.
+        ? (highlighted
+                  ? RaftProductShadows.shadowBrutal
+                  : RaftProductShadows.shadowBrutalSm)
+              .outer
         : null,
   );
   BoxDecoration? get highlightRing => highlighted
@@ -593,7 +591,7 @@ class _MessageActionRecipe extends RaftControlRecipe {
   Color foregroundFor({bool hovered = false}) => active
       ? tokens.colors[tokens.brutal ? 'color-brutal-orange' : 'accent-strong']!
       : tokens.brutal
-      ? RaftPrimitives.rgbaff000000.withValues(
+      ? RaftPrimitiveColors.black.withValues(
           alpha: hovered || popupOpen ? 1 : .5,
         )
       : hovered || popupOpen

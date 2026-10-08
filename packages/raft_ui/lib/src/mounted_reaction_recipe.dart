@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 import 'theme.dart';
 import 'icons.dart';
 
@@ -29,7 +29,7 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   EdgeInsets get padding => const EdgeInsets.symmetric(horizontal: 6);
   @override
   Color get foreground =>
-      tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong;
+      tokens.brutal ? RaftPrimitiveColors.black : tokens.strong;
   @override
   Color foregroundFor({bool hovered = false}) => foreground;
   @override

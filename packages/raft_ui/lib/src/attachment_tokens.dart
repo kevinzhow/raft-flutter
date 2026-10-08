@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 import 'design_primitives.dart';
 
 /// raft-ui 0.5.27 FilePreviewBadge and message-image-gallery primitives.
@@ -105,13 +105,13 @@ class AttachmentComponentRecipe {
   ).copyWith(fontWeight: tokens.brutal ? FontWeight.w700 : FontWeight.w600);
   BorderRadius get badgeRadius => BorderRadius.circular(tokens.brutal ? 0 : 4);
   Border? get badgeBorder => tokens.brutal
-      ? Border.all(color: RaftPrimitives.rgbaff000000, width: 2)
+      ? Border.all(color: RaftPrimitiveColors.black, width: 2)
       : null;
   TextStyle get metadata => RaftTypography.body(tokens, size: 10, line: 20,
-      color: tokens.brutal ? RaftPrimitives.rgbaff000000.withValues(alpha: .45)
+      color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .45)
           : tokens.colors['foreground-placeholder']);
   Color get actionForeground => tokens.brutal
-      ? RaftPrimitives.rgbaff000000.withValues(alpha: .6)
+      ? RaftPrimitiveColors.black.withValues(alpha: .6)
       : tokens.colors['foreground-icon']!;
   Size imageSize({
     required double viewportWidth,

@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'primitive_tokens.dart';
 import 'theme.dart';
 
 /// Pure status roles from raft-ui 0.5.27; the mounted app emits the first three.
@@ -189,49 +188,10 @@ class RaftNotificationRecipe {
     line: 20,
     color: tokens.brutal ? tokens.ink : tokens.muted,
   );
-  List<BoxShadow> get shadows => tokens.brutal
-      ? [
-          BoxShadow(
-            color: RaftPrimitives.rgbaff000000,
-            offset: const Offset(4, 4),
-          ),
-        ]
-      : tokens.dark
-      ? [
-          BoxShadow(
-            color: RaftPrimitives.rgbaff000000.withValues(alpha: .55),
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: RaftPrimitives.rgbaff000000.withValues(alpha: .45),
-            offset: const Offset(0, 10),
-            blurRadius: 20,
-            spreadRadius: -6,
-          ),
-          BoxShadow(
-            color: RaftPrimitives.rgbaff000000.withValues(alpha: .35),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
-            spreadRadius: -3,
-          ),
-        ]
-      : [
-          BoxShadow(
-            color: RaftPrimitives.rgbaff191815.withValues(alpha: .1),
-            offset: const Offset(0, 1),
-            blurRadius: 1,
-          ),
-          BoxShadow(
-            color: RaftPrimitives.rgbaff191815.withValues(alpha: .04),
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: RaftPrimitives.rgbaff191815.withValues(alpha: .16),
-            offset: const Offset(0, 2),
-            blurRadius: 12,
-            spreadRadius: -4,
-          ),
-        ];
+
+  /// `--theme-shadow-lg` outer layers (Brutal 4px 4px black; Elegant drops).
+  /// Elegant dark's inset highlight layers are not painted here.
+  List<BoxShadow> get shadows => tokens.themeShadows.lg.outer;
 }
 
 /// Controlled, noninteractive attention mark. The bell owns its count semantics.

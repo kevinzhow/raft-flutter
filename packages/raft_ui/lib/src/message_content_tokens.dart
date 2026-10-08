@@ -4,7 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'design_primitives.dart';
 import 'message_table_border.dart';
 import 'theme.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 
 /// Pinned BASE/DOCUMENT_MARKDOWN_COMPONENTS and ShowMoreToggle primitives.
 /// Source: Web 26f77ef, MarkdownContent.tsx and ui/ShowMoreToggle.tsx.
@@ -25,17 +25,17 @@ class MessageContentSemantic {
       ? MessageContentPrimitive.linkDark
       : MessageContentPrimitive.linkLight;
   Color get quote => tokens.brutal
-      ? RaftPrimitives.rgbaff000000.withValues(alpha: .7)
+      ? RaftPrimitiveColors.black.withValues(alpha: .7)
       : tokens.muted;
   Color get quoteEdge => tokens.brutal
-      ? RaftPrimitives.rgbaff000000.withValues(alpha: .4)
+      ? RaftPrimitiveColors.black.withValues(alpha: .4)
       : tokens.colors['line-muted']!;
   Color get collapseFade =>
-      tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.panel;
+      tokens.brutal ? RaftPrimitiveColors.white : tokens.panel;
   Color get toggleHover =>
-      tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong;
+      tokens.brutal ? RaftPrimitiveColors.black : tokens.strong;
   Color get toggle => tokens.brutal
-      ? RaftPrimitives.rgbaff000000.withValues(alpha: .6)
+      ? RaftPrimitiveColors.black.withValues(alpha: .6)
       : tokens.muted;
 }
 
@@ -200,7 +200,7 @@ class MessageContentRecipe {
         ),
         tableHead: body.copyWith(
           fontWeight: FontWeight.w700,
-          color: tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong,
+          color: tokens.brutal ? RaftPrimitiveColors.black : tokens.strong,
         ),
         tableHeadAlign: TextAlign.left,
         tableBody: body,
@@ -215,7 +215,7 @@ class MessageContentRecipe {
         tableHeadCellsPadding: tableCellInset,
         tableBorder: tokens.brutal
             ? TableBorder.all(
-                color: RaftPrimitives.rgbaff000000,
+                color: RaftPrimitiveColors.black,
                 width: tokens.border,
               )
             : MessageCollapsedTableBorder(
@@ -253,7 +253,7 @@ class DocumentAttachmentRecipe {
   );
   EdgeInsets get textInset => const EdgeInsets.all(16);
   Color get background => tokens.brutal
-      ? RaftPrimitives.cream200.withValues(alpha: .45)
+      ? tokens.product.brutalCream.withValues(alpha: .45)
       : tokens.colors['layer-canvas-muted']!;
   Color get paper => tokens.panel;
   double get maxColumnWidth => 220;
@@ -269,12 +269,12 @@ class DocumentAttachmentRecipe {
     color: tokens.brutal ? tokens.strong.withValues(alpha: .55) : tokens.muted,
   );
   Color get tableHeader => tokens.brutal
-      ? RaftPrimitives.cream200
+      ? tokens.product.brutalCream
       : tokens.colors['layer-canvas-muted']!;
-  Color get rowStripe => RaftPrimitives.rgbaff000000.withValues(alpha: .03);
+  Color get rowStripe => RaftPrimitiveColors.black.withValues(alpha: .03);
   BorderSide get border => BorderSide(
     color: tokens.brutal
-        ? RaftPrimitives.rgbaff000000
+        ? RaftPrimitiveColors.black
         : tokens.colors['line-muted']!,
     width: tokens.border,
   );

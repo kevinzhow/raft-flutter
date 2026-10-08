@@ -27,6 +27,7 @@ export 'src/design_primitives.dart';
 export 'src/icons.dart';
 
 export 'src/primitive_tokens.dart';
+export 'src/tokens/tokens.dart';
 
 export 'src/attachment_gallery.dart';
 export 'src/attachment_lightbox.dart';

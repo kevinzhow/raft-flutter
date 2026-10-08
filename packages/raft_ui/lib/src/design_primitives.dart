@@ -11,6 +11,7 @@ import 'icons.dart';
 import 'localization.dart';
 import 'theme.dart';
 import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 
 enum RaftDensity { desktop, touch }
 
@@ -733,11 +734,11 @@ class RaftControlRecipe {
     return [
       if (tokens.dark) ...[
         BoxShadow(
-          color: RaftPrimitives.rgbaff000000.withValues(alpha: .4),
+          color: RaftPrimitiveColors.black.withValues(alpha: .4),
           spreadRadius: 1,
         ),
         BoxShadow(
-          color: RaftPrimitives.rgbaff000000.withValues(alpha: .22),
+          color: RaftPrimitiveColors.black.withValues(alpha: .22),
           offset: const Offset(0, 1),
           blurRadius: 3,
         ),
@@ -2596,7 +2597,7 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
   Color get foreground => selected
       ? tokens.strong
       : tokens.brutal
-      ? RaftPrimitives.rgbaff000000.withValues(alpha: .7)
+      ? RaftPrimitiveColors.black.withValues(alpha: .7)
       : tokens.colors['foreground-placeholder']!;
   @override
   Color get focusRing => tokens.colors['primary-400']!;
@@ -2606,8 +2607,8 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
   BorderSide side({bool hovered = false}) => tokens.brutal
       ? BorderSide(
           color: selected || hovered
-              ? RaftPrimitives.rgbaff000000
-              : RaftPrimitives.rgbaff000000.withValues(alpha: .3),
+              ? RaftPrimitiveColors.black
+              : RaftPrimitiveColors.black.withValues(alpha: .3),
           width: 2,
         )
       : BorderSide.none;

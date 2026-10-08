@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 import 'theme.dart';
 
 /// Exact pinned raft-ui 0.5.27 messageEmbed/messageForwardedBundle and solid
@@ -24,10 +24,10 @@ class RichCardSemantic {
   Color get successText => tokens.brutal ? tokens.strong : tokens.colors[tokens.dark ? 'foreground-inverse' : 'success-foreground']!;
   // messageEmbed extends messageBlock's bg-layer-card. Header/footer are
   // transparent over that card; layer-canvas-muted belongs to the sidebar.
-  Color get embedCanvas => tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.card;
-  Color get content => tokens.brutal ? RaftPrimitives.rgbaffffffff : tokens.panel;
-  Color get prose => tokens.brutal ? RaftPrimitives.rgbaff000000 : tokens.strong;
-  Color get divider => RaftPrimitives.rgbaff000000.withValues(alpha: .1);
+  Color get embedCanvas => tokens.brutal ? RaftPrimitiveColors.white : tokens.card;
+  Color get content => tokens.brutal ? RaftPrimitiveColors.white : tokens.panel;
+  Color get prose => tokens.brutal ? RaftPrimitiveColors.black : tokens.strong;
+  Color get divider => RaftPrimitiveColors.black.withValues(alpha: .1);
 }
 
 class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
@@ -36,7 +36,7 @@ class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
   @override
   BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : RichCardPrimitive.embedRadius);
   @override
-  BorderSide get border => BorderSide(color: tokens.brutal ? RaftPrimitives.rgbaff000000.withValues(alpha: .2) : tokens.dark ? Colors.transparent : tokens.colors['line-muted']!, width: tokens.brutal ? 1 : RichCardPrimitive.fineBorder);
+  BorderSide get border => BorderSide(color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .2) : tokens.dark ? Colors.transparent : tokens.colors['line-muted']!, width: tokens.brutal ? 1 : RichCardPrimitive.fineBorder);
   @override
   EdgeInsets get inset => EdgeInsets.all(tokens.brutal ? 0 : RichCardPrimitive.embedInset);
   @override
@@ -45,17 +45,17 @@ class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
   EdgeInsets footerInset(double width) => EdgeInsets.symmetric(horizontal: tokens.brutal ? 12 : width >= 640 ? 14 : 12, vertical: RichCardPrimitive.footerVerticalInset);
   BoxDecoration get headerDecoration => tokens.brutal ? BoxDecoration(color: semantic.content, border: Border(bottom: BorderSide(color: semantic.divider))) : const BoxDecoration();
   BoxDecoration get footerDecoration => tokens.brutal ? BoxDecoration(color: semantic.content, border: Border(top: BorderSide(color: semantic.divider))) : const BoxDecoration();
-  BoxDecoration get contentDecoration => BoxDecoration(color: semantic.content, borderRadius: tokens.brutal ? null : BorderRadius.circular(RichCardPrimitive.contentRadius), border: tokens.brutal ? null : Border.all(color: tokens.dark ? RaftPrimitives.rgbaff000000.withValues(alpha: .35) : tokens.colors['line-muted']!, width: RichCardPrimitive.fineBorder));
+  BoxDecoration get contentDecoration => BoxDecoration(color: semantic.content, borderRadius: tokens.brutal ? null : BorderRadius.circular(RichCardPrimitive.contentRadius), border: tokens.brutal ? null : Border.all(color: tokens.dark ? RaftPrimitiveColors.black.withValues(alpha: .35) : tokens.colors['line-muted']!, width: RichCardPrimitive.fineBorder));
   @override
-  TextStyle get header => super.header.copyWith(height: 1, fontWeight: tokens.brutal ? FontWeight.w900 : FontWeight.w500, color: tokens.brutal ? RaftPrimitives.rgbaff000000.withValues(alpha: .7) : tokens.muted);
+  TextStyle get header => super.header.copyWith(height: 1, fontWeight: tokens.brutal ? FontWeight.w900 : FontWeight.w500, color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .7) : tokens.muted);
   @override
-  TextStyle get metadata => (tokens.brutal ? RaftTypography.mono(tokens, size: 11, line: 110 / 7) : RaftTypography.body(tokens, size: 11, line: 20)).copyWith(color: tokens.brutal ? RaftPrimitives.rgbaff000000.withValues(alpha: .55) : tokens.colors['foreground-placeholder']);
+  TextStyle get metadata => (tokens.brutal ? RaftTypography.mono(tokens, size: 11, line: 110 / 7) : RaftTypography.body(tokens, size: 11, line: 20)).copyWith(color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .55) : tokens.colors['foreground-placeholder']);
   @override
   TextStyle get count => super.count.copyWith(height: 20 / 11);
   @override
   TextStyle get source => super.source.copyWith(height: 20 / 11);
   @override
-  TextStyle get showMore => super.header.copyWith(height: 20 / 11, fontWeight: tokens.brutal ? FontWeight.w900 : FontWeight.w500, color: tokens.brutal ? RaftPrimitives.rgbaff000000.withValues(alpha: .6) : tokens.colors['foreground-placeholder'], decoration: tokens.brutal ? TextDecoration.underline : TextDecoration.none);
+  TextStyle get showMore => super.header.copyWith(height: 20 / 11, fontWeight: tokens.brutal ? FontWeight.w900 : FontWeight.w500, color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .6) : tokens.colors['foreground-placeholder'], decoration: tokens.brutal ? TextDecoration.underline : TextDecoration.none);
 }
 
 class ActionSnapshotRecipe extends RaftActionCardRecipe {

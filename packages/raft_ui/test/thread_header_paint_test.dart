@@ -64,8 +64,10 @@ void main() {
                 ? [0, 0, 0]
                 : !dark
                 ? [229, 229, 226]
+                // Dark rule: --ink-10 oklch(0.985 0.004 106.42 / 0.1) =
+                // rgb(250 250 247 / .1) over layer-canvas-muted (13 13 11).
                 : width < 768
-                ? [36, 36, 34]
+                ? [37, 37, 35]
                 : [49, 49, 47];
             expect(rgb(height - 1), expected);
             if (family == RaftFamily.brutal) expect(rgb(height - 2), expected);

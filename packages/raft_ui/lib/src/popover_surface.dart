@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 import 'theme.dart';
 
 /// CSS shadow atom. Blur is a CSS blur diameter, not Flutter blurRadius.
@@ -13,17 +13,23 @@ class RaftPopoverShadow {
   double get sigma => blur / 2;
 }
 
-/// Tier 2: original foundation.css shadow ink, separate from foreground ink.
-/// Tier 1 values reuse the generated original OKLCH → sRGB primitive atoms.
+/// Shadow inks of the generated `--theme-shadow-xl` layers (foundation.css):
+/// light drop oklch(0.145 0.002 106.42), light ring oklch(0.21 0.006 106.42),
+/// dark drop black, dark inset oklch(0.985 0.004 106.42).
 abstract final class RaftPopoverShadowRoles {
   static Color lightDrop(double alpha) =>
-      RaftPrimitives.rgbaff0a0a09.withValues(alpha: alpha);
+      RaftThemeShadows.elegantLight.xl.layers[0].color.withValues(alpha: alpha);
   static Color lightRing(double alpha) =>
-      RaftPrimitives.rgbaff141411.withValues(alpha: alpha);
+      RaftThemeShadows.elegantLight.xl.layers[1].color.withValues(alpha: alpha);
   static Color darkDrop(double alpha) =>
-      RaftPrimitives.rgbaff000000.withValues(alpha: alpha);
-  static Color darkInset(double alpha) =>
-      RaftPrimitives.rgbafffafaf7.withValues(alpha: alpha);
+      RaftPrimitiveColors.black.withValues(alpha: alpha);
+  static Color darkInset(double alpha) => RaftThemeShadows
+      .elegantDark
+      .xl
+      .inset
+      .first
+      .color
+      .withValues(alpha: alpha);
 }
 
 /// Tier 3: actual RUI0.5.27 PopoverPopup, NOT the DropdownMenu recipe.
@@ -37,75 +43,21 @@ class RaftPopoverSurfaceRecipe {
   double get radius => tokens.brutal ? 0 : 6;
   Color get background => tokens.popover;
   Color get borderColor => tokens.colors['line-strong']!;
-  Color? get topInset => !tokens.brutal && tokens.dark
-      ? RaftPopoverShadowRoles.darkInset(.06)
-      : null;
-  Color? get innerRing => !tokens.brutal && tokens.dark
-      ? RaftPopoverShadowRoles.darkInset(.04)
-      : null;
+  RaftShadow get _shadow =>
+      tokens.brutal ? tokens.themeShadows.lg : tokens.themeShadows.xl;
 
-  /// Order is CSS front-to-back; the painter draws it back-to-front.
-  List<RaftPopoverShadow> get cssShadows => tokens.brutal
-      ? const [RaftPopoverShadow(Colors.black, Offset(4, 4), 0, 0)]
-      : tokens.dark
-      ? [
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.darkDrop(.6),
-            Offset.zero,
-            0,
-            1,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.darkDrop(.5),
-            const Offset(0, 24),
-            44,
-            -12,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.darkDrop(.45),
-            const Offset(0, 10),
-            16,
-            -6,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.darkDrop(.4),
-            const Offset(0, 4),
-            6,
-            -3,
-          ),
-        ]
-      : [
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.lightDrop(.071),
-            const Offset(0, .5),
-            0,
-            0,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.lightRing(.08),
-            Offset.zero,
-            0,
-            1,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.lightDrop(.031),
-            const Offset(0, 18),
-            24,
-            -12,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.lightDrop(.039),
-            const Offset(0, 12),
-            12,
-            -6,
-          ),
-          RaftPopoverShadow(
-            RaftPopoverShadowRoles.lightDrop(.039),
-            const Offset(0, 4),
-            6,
-            -3,
-          ),
-        ];
+  /// Elegant dark `--theme-shadow-xl` inset layers: top-edge light, hairline.
+  Color? get topInset =>
+      !tokens.brutal && tokens.dark ? _shadow.inset[0].color : null;
+  Color? get innerRing =>
+      !tokens.brutal && tokens.dark ? _shadow.inset[1].color : null;
+
+  /// Outer `--theme-shadow-lg` (Brutal) / `--theme-shadow-xl` (Elegant)
+  /// layers. Order is CSS front-to-back; the painter draws it back-to-front.
+  List<RaftPopoverShadow> get cssShadows => [
+    for (final l in _shadow.layers)
+      if (!l.inset) RaftPopoverShadow(l.color, l.offset, l.blur, l.spread),
+  ];
 }
 
 /// Paint-only reusable popover. Shadows and Elegant inset rings never reserve

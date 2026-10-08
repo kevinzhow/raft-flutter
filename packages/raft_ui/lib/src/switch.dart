@@ -45,17 +45,13 @@ class RaftSwitchSemanticTokens {
       return tokens.colors[disabled ? 'line' : 'line-strong']!;
     }
     if (disabled) {
-      return tokens.dark
-          ? value
-                ? RaftPrimitives.switchDarkCheckedDisabledThumb
-                : RaftPrimitives.switchDarkDisabledThumb
-          : RaftPrimitives.rgbaffd8d8d5;
+      return value
+          ? tokens.components.switchThumbCheckedDisabled
+          : tokens.components.switchThumbDisabled;
     }
-    return tokens.dark
-        ? value
-              ? RaftPrimitives.switchDarkCheckedThumb
-              : RaftPrimitives.switchDarkThumb
-        : tokens.popover;
+    return value
+        ? tokens.components.switchThumbChecked
+        : tokens.components.switchThumb;
   }
 }
 
@@ -265,7 +261,7 @@ class _SwitchPainter extends CustomPainter {
 
     if (!t.brutal && !disabled) {
       if (t.dark && !value) {
-        outerShadow(RaftPrimitives.rgba0afafaf7, 1, 0, 0);
+        outerShadow(t.components.switchShadowBottom, 1, 0, 0);
       } else {
         outerShadow(
           Colors.black.withValues(

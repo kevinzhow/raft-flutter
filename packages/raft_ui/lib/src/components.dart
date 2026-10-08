@@ -16,7 +16,7 @@ import 'theme.dart';
 import 'mounted_avatar_recipe.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
-import 'primitive_tokens.dart';
+import 'tokens/tokens.dart';
 
 class RaftPanel extends StatelessWidget {
   const RaftPanel({
@@ -364,9 +364,8 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
       return const [];
     }
     if (tokens.brutal && (role != RaftNavItemRole.saved || active)) {
-      return const [
-        BoxShadow(color: RaftPrimitives.rgbaff141111, offset: Offset(2, 2)),
-      ];
+      // Product index.css `--shadow-brutal-sm: 2px 2px 0px #141111`.
+      return RaftProductShadows.shadowBrutalSm.outer;
     }
     return tokens.shadows;
   }
@@ -460,7 +459,7 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
     bool focused = false,
   }) => [
     if (tokens.brutal && (selected || hovered || pressed || pointerPressed))
-      const BoxShadow(color: RaftPrimitives.rgbaff141111, offset: Offset(2, 2)),
+      ...RaftProductShadows.shadowBrutalSm.outer,
   ];
 }
 
