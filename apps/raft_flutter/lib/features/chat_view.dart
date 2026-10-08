@@ -742,6 +742,29 @@ class _RaftChatViewState extends State<RaftChatView> {
 
   String clock(DateTime stamp) => timeFormatter.messageTime(stamp);
 
+  /// Web MessageItem `shouldShowThreadRepliesBadge`: replies or a thread
+  /// draft, unless the inline reply surface already replaces the badge.
+  Widget? threadRepliesBadge(RaftMessage m, {required bool parentTile}) {
+    if (parentTile || widget.thread) return null;
+    final summary = w.threadSummaries[m.id];
+    final replies = summary is Map
+        ? int.tryParse('${summary['replyCount']}') ?? 0
+        : 0;
+    final unread = summary is Map
+        ? int.tryParse('${summary['unreadCount']}') ?? 0
+        : 0;
+    final hasDraft = (w.drafts['thread:${m.id}'] ?? '').trim().isNotEmpty;
+    if (replies <= 0 && !hasDraft) return null;
+    if (inlineThreadReplies(m, parentTile: parentTile) != null) return null;
+    return RaftThreadRepliesBadge(
+      key: ValueKey('thread-replies-badge-${m.id}'),
+      replyCount: replies,
+      unreadCount: unread,
+      hasDraft: hasDraft,
+      onPressed: () => w.openThread(m),
+    );
+  }
+
   Widget? inlineThreadReplies(RaftMessage parent, {required bool parentTile}) {
     if (parentTile ||
         widget.thread ||
@@ -1265,6 +1288,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       onThread: parent || widget.thread ? null : () => w.openThread(m),
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       taskReference: taskReference(m),
+      threadRepliesBadge: threadRepliesBadge(m, parentTile: parent),
       threadLabel: w.threadSummaries[m.id] is Map
           ? raftFormat(context, '{count} replies', {
               'count': w.threadSummaries[m.id]['replyCount'] ?? 0,
