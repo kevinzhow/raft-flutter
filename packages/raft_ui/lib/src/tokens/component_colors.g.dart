@@ -130,7 +130,8 @@ class RaftComponentColors {
     // var(--accent-hover)
     buttonAccentHover: Color(0xfff578a2),
     // color-mix(in srgb-linear, var(--accent-strong) 28%, transparent)
-    buttonAccentEdge: Color.fromRGBO(192, 0, 100, 0.28),
+    // Chrome-composite fit, CSS alpha 0.28 (see docs/design-tokens.md)
+    buttonAccentEdge: Color.from(alpha: 0.280000, red: 0.757003, green: 0.001751, blue: 0.393585),
     // var(--danger)
     buttonDangerFill: Color(0xfff70720),
     // var(--danger-hover)
@@ -179,7 +180,8 @@ class RaftComponentColors {
     // var(--accent-hover)
     buttonAccentHover: Color(0xfff8cad8),
     // color-mix(in srgb-linear, var(--accent-strong) 28%, transparent)
-    buttonAccentEdge: Color.fromRGBO(192, 0, 100, 0.28),
+    // Chrome-composite fit, CSS alpha 0.28 (see docs/design-tokens.md)
+    buttonAccentEdge: Color.from(alpha: 0.280000, red: 0.757423, green: 0.001751, blue: 0.393585),
     // var(--danger)
     buttonDangerFill: Color(0xfff70720),
     // var(--danger-hover)
@@ -191,7 +193,8 @@ class RaftComponentColors {
     // var(--color-white)
     buttonDangerHighContrastForeground: Color(0xffffffff),
     // color-mix(in oklch, var(--ink-4), var(--layer-panel))
-    taskSectionFill: Color.fromRGBO(245, 245, 245, 0.52),
+    // Chrome-composite fit, CSS alpha 0.52 (see docs/design-tokens.md)
+    taskSectionFill: Color.from(alpha: 0.520000, red: 0.962519, green: 0.962670, blue: 0.962368),
     // var(--line)
     codeBorder: Color(0xffcbcbc6),
     // transparent
@@ -224,11 +227,14 @@ class RaftComponentColors {
     // var(--foreground-strong)
     buttonDefaultHover: Color(0xffe5e5e2),
     // var(--primary-hover)
-    buttonPrimaryHover: Color.fromRGBO(215, 184, 89, 0.3448),
+    // Chrome-composite fit, CSS alpha 0.3448 (see docs/design-tokens.md)
+    buttonPrimaryHover: Color.from(alpha: 0.345106, red: 0.836486, green: 0.711489, blue: 0.348307),
     // var(--accent-hover)
-    buttonAccentHover: Color.fromRGBO(244, 146, 177, 0.3448),
+    // Chrome-composite fit, CSS alpha 0.3448 (see docs/design-tokens.md)
+    buttonAccentHover: Color.from(alpha: 0.345106, red: 0.950120, green: 0.563765, blue: 0.691403),
     // color-mix(in srgb-linear, var(--accent-strong) 28%, transparent)
-    buttonAccentEdge: Color.fromRGBO(255, 172, 199, 0.28),
+    // Chrome-composite fit, CSS alpha 0.28 (see docs/design-tokens.md)
+    buttonAccentEdge: Color.from(alpha: 0.280000, red: 0.998249, green: 0.675490, blue: 0.781793),
     // oklch(0.58 0.21 27)
     buttonDangerFill: Color(0xffdb2c2b),
     // oklch(0.61 0.21 27)
@@ -244,11 +250,14 @@ class RaftComponentColors {
     // var(--line)
     codeBorder: Color(0xff757571),
     // oklch(0 0 0 / 0.35)
-    fieldInsetLine: Color.fromRGBO(0, 0, 0, 0.35),
+    // Chrome-composite fit, CSS alpha 0.35 (see docs/design-tokens.md)
+    fieldInsetLine: Color.from(alpha: 0.350980, red: 0.000175, green: 0.000175, blue: 0.000526),
     // oklch(0 0 0 / 0.3)
-    fieldInsetTop: Color.fromRGBO(0, 0, 0, 0.3),
+    // Chrome-composite fit, CSS alpha 0.3 (see docs/design-tokens.md)
+    fieldInsetTop: Color.from(alpha: 0.303922, red: 0.001423, green: 0.001423, blue: 0.000316),
     // oklch(0.985 0.004 106.42 / 0.04)
-    fieldInsetBottom: Color.fromRGBO(250, 250, 247, 0.04),
+    // Chrome-composite fit, CSS alpha 0.04 (see docs/design-tokens.md)
+    fieldInsetBottom: Color.from(alpha: 0.039203, red: 0.954685, green: 0.954685, blue: 0.969524),
     // oklch(0.45 0.006 106.42)
     switchThumb: Color(0xff555552),
     // oklch(0.205 0.004 106.42)
@@ -258,6 +267,7 @@ class RaftComponentColors {
     // oklch(0.28 0.002 106.42)
     switchThumbCheckedDisabled: Color(0xff292928),
     // oklch(0.985 0.004 106.42 / 0.04)
-    switchShadowBottom: Color.fromRGBO(250, 250, 247, 0.04),
+    // Chrome-composite fit, CSS alpha 0.04 (see docs/design-tokens.md)
+    switchShadowBottom: Color.from(alpha: 0.039203, red: 0.954685, green: 0.954685, blue: 0.969524),
   );
 }

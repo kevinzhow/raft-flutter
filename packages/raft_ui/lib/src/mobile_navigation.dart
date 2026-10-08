@@ -153,7 +153,8 @@ class _MobileItemRecipe extends RaftControlRecipe {
     line: 15,
     weight: FontWeight.w400,
     color: foreground,
-  ).copyWith(letterSpacing: .5);
+    // `tracking-wider`; CSS line boxes split leading evenly.
+  ).copyWith(letterSpacing: .5, leadingDistribution: TextLeadingDistribution.even);
   @override
   List<BoxShadow> shadows({
     bool hovered = false,
@@ -298,8 +299,12 @@ class RaftMobileNav extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: index == items.length - 1
                           ? null
-                          : const Border(
-                              right: BorderSide(color: Colors.black, width: 2),
+                          // `border-r-2 border-line-strong` (MobileNavItem).
+                          : Border(
+                              right: BorderSide(
+                                color: t.semantic.lineStrong,
+                                width: 2,
+                              ),
                             ),
                     ),
                     child: control,
