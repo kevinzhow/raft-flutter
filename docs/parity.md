@@ -163,6 +163,44 @@ opsz pinned at 14 (`tool/parity-fonts/derive_inter.py`, provenance in
 Inter subset at all tested weights. The theme's `FontVariation('opsz')` is now
 inert, matching Web. raft_ui tests: 571 passed.
 
+## Text rendering: React captures emulate Android Chrome
+
+**Owner decision:** the official cases are mobile (390x844 @3x) and their
+production target is Android, where Chrome rasterises text with grayscale
+anti-aliasing and subpixel glyph positioning (fractional advances). Desktop
+Linux Chromium — what the pinned Playwright headless shell is — defaults to
+LCD subpixel AA (coloured fringes) and hinted, whole-pixel glyph advances.
+Flutter draws grayscale AA with fractional advances, so the desktop default
+added rasteriser noise to every text pixel and shifted text runs by whole
+pixels.
+
+Flags (added to the generated Playwright config as `launchOptions.args`,
+`tool/parity run --react-text-render android`, the default; `desktop` restores
+the Chromium default): `--disable-lcd-text --font-render-hinting=none`.
+`--disable-lcd-text` forces grayscale AA; `--font-render-hinting=none`
+disables FreeType hinting, which on Linux is what enables subpixel
+positioning and unrounded advances. No other flag was needed.
+
+Evidence (`tool/parity render-evidence` → `build/parity/render-evidence/`:
+neutral ink on white in the production fonts, same Chromium, 3x; plus the
+refreshed captures' metadata):
+
+| check | desktop default | `--disable-lcd-text --font-render-hinting=none` |
+| --- | --- | --- |
+| (a) LCD pixels (per-channel coverage spread > 0.08) in the synthetic text page | 25,321 | **0** (0 chromatic pixels at all) |
+| (a) pixels that are not a single-coverage blend of two flat colours, `components.settings.notifications.page` | 41,297 | **0** |
+| (a) same, `components.ui.badge.states` | 3,359 | 752 (dark-pink text on pink badge: a text colour below the flat-colour threshold, grayscale on inspection) |
+| (b) badge text run widths (Shared / Installed / Update / Built In / task #273 / Install) | 46 / 54 / 47 / 47 / 62 / 43 | 46 / 52.84 / 46.5 / 45.48 / 59.80 / 41.69 |
+| (b) synthetic runs: Hanken 400 14px, Hanken 700 16px, Geist 400 14px, Inter 600 18px, Geist Mono 400 13px | 378 / 431 / 309 / 408 / 424 | 367.31 / 427.03 / 304.64 / 406.39 / 413.41 |
+| (b) Flutter `TextPainter`, same strings and fonts | | 367.30 / 427.02 / 304.64 / 406.39 / 413.40 |
+| (c) faces loaded (document.fonts) | Geist, Geist Mono, Hanken Grotesk, Inter | same; all 99 captures have every Geist / Geist Mono / Hanken Grotesk / Inter / Raft Quote Glyphs face `loaded` |
+
+With the flags Chromium's text advances match Flutter's to within 0.01 px.
+Across the 99 refreshed captures, 942 of 1,969 probed text runs have
+fractional widths (`textRendering.textRunWidths` in each React metadata JSON;
+the rest are elements whose box width comes from layout, e.g. block
+elements sized by their container, not from their text).
+
 ## Scoring
 
 Unit = official case x variant x theme. Every default case (non-skipped,
@@ -185,9 +223,21 @@ is kept as `raft_flutter_parity/<UTC timestamp>/`). Machine-readable:
 | baseline | units | React | Flutter | passing (>96%) | strict (>99%) | failing | not covered | percentage | mean pixelPerfect of 92 captured |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | upstream font stub (run 20261008T220459Z) | 99 | 99 | 92 | 4 | 1 | 88 | 7 | 4.04% | 74.08% |
-| production fonts + opsz-pinned Inter (current) | 99 | 99 | 92 | 4 | 1 | 88 | 7 | **4.04%** | 74.36% |
+| production fonts + opsz-pinned Inter | 99 | 99 | 92 | 4 | 1 | 88 | 7 | 4.04% | 74.36% |
+| + Android text rendering (current) | 99 | 99 | 92 | 5 | 1 | 87 | 7 | **5.05%** | 74.81% |
 
-The pass set is unchanged (titlebar 99.32%, spinner 98.11%, composer.empty,
+Android text rendering (current vs the previous row): passes are now
+titlebar 99.48% (pass), spinner 98.11%, composer.empty 97.13%,
+section-eyebrow 96.49% (new) and agent-detail.workspace 96.25%. 69 cases
+improved, 1 got worse, 22 unchanged (|delta| <= 0.05pp). Top movers:
+message.row +4.11pp, message-row.deleted-human +3.25, long-inline-code +2.65,
+md-wrap-task607 +2.22, composer.states +2.20, composer.as-task-selected +2.18,
+files.list +1.76; only drop message-row.rich-content -4.70 (82.00%): the React row
+reflowed with the new advances (now 386 px tall vs Flutter's 380), which
+shifts every line below the change.
+
+Production fonts vs upstream stub (previous row vs first row): the pass set
+was unchanged (titlebar 99.32%, spinner 98.11%, composer.empty,
 agent-detail.workspace). Per-case pixelPerfect: 72 cases improved, 10 got
 worse, 10 unchanged (|delta| <= 0.05pp); largest gains button.states +1.70pp,
 message.row +1.58, message-row.deleted-human +1.42, long-inline-code +1.35,
