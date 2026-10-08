@@ -381,3 +381,24 @@ class _StripButtonState extends State<_StripButton> {
     );
   }
 }
+
+/// MessageInput slot above the composer: the mention-action notice, then the
+/// strip with its `mb-2` (inside the composer's `flex-col gap-2`).
+class RaftPendingMentionSlot extends StatelessWidget {
+  const RaftPendingMentionSlot({super.key, required this.strip, this.notice});
+  final Widget strip;
+  final String? notice;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (notice != null)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Semantics(liveRegion: true, child: Text(notice!)),
+        ),
+      Padding(padding: const EdgeInsets.only(bottom: 8), child: strip),
+    ],
+  );
+}

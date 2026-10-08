@@ -153,30 +153,18 @@ class _PendingMentionActionsState extends State<PendingMentionActions> {
             avatar: avatar(row),
           ),
       ];
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (notice != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Semantics(liveRegion: true, child: Text(notice!)),
-            ),
-          // `mb-2` inside MessageInput's `flex-col gap-2`.
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: RaftPendingMentionActionStrip(
-              actions: actions,
-              channelName: w.channel?.name ?? '',
-              state: state,
-              executing: executing,
-              removing: removing,
-              onMark: (id, outcome) => mark([id], outcome),
-              onAddAll: (ids) => mark(ids, RaftPendingMentionState.added),
-              onDismiss: (id) => setState(() => remove(id)),
-            ),
-          ),
-        ],
+      return RaftPendingMentionSlot(
+        notice: notice,
+        strip: RaftPendingMentionActionStrip(
+          actions: actions,
+          channelName: w.channel?.name ?? '',
+          state: state,
+          executing: executing,
+          removing: removing,
+          onMark: (id, outcome) => mark([id], outcome),
+          onAddAll: (ids) => mark(ids, RaftPendingMentionState.added),
+          onDismiss: (id) => setState(() => remove(id)),
+        ),
       );
     },
   );
