@@ -235,6 +235,14 @@ def prepare_react_provider():
     spec = (VT / 'tests/react-provider.spec.ts').read_text()
     for old, new in SPEC_PATCHES:
         spec = patch_exactly_once(spec, old, new, 'react-provider.spec.ts')
+    # Deterministic CSS animations/transitions: every capture call gets
+    # Playwright's animations: "disabled" (finite animations/transitions jump
+    # to their end state, infinite ones reset to their initial at-rest frame;
+    # e.g. Skeleton's animate-pulse is captured at opacity 1, not mid-pulse).
+    shot = '.screenshot({ path: imagePath'
+    if spec.count(shot) != 4:
+        sys.exit(f'upstream react-provider.spec.ts changed: expected 4 screenshot calls, found {spec.count(shot)}')
+    spec = spec.replace(shot, shot + ', animations: "disabled"')
     (REACT_GEN / 'react-provider.spec.ts').write_text(spec + SPEC_APPENDIX)
     # Same module type as the upstream package (packages/visual-testing is ESM).
     (REACT_GEN / 'package.json').write_text(json.dumps({'type': json.loads((VT / 'package.json').read_text())['type']}) + '\n')
