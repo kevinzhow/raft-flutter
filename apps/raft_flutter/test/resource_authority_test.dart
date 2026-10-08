@@ -118,8 +118,12 @@ final task = <String, dynamic>{
 void _taskRoutes(_Workspace w, _Adapter a) {
   a.routes['GET /servers/s1/members'] = (_) => <dynamic>[];
   a.routes['GET /agents'] = (_) => <dynamic>[];
-  a.routes['GET /tasks/server'] = (_) => {
-    'tasks': w.server?.string('role') == 'guest' || w.channels.isEmpty
+  a.routes['GET /tasks/server'] = (request) => {
+    'tasks':
+        w.server?.string('role') == 'guest' ||
+            w.channels.isEmpty ||
+            request.queryParameters['status'] != null &&
+                request.queryParameters['status'] != task['status']
         ? <dynamic>[]
         : [task],
     'next_cursor': null,
@@ -139,10 +143,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Filter tasks by creator'));
       await tester.pumpAndSettle();
-      expect(find.text('Alice'), findsOneWidget);
+      expect(find.text('Created by me'), findsOneWidget);
       _role(w, 'guest');
       await tester.pumpAndSettle();
-      expect(find.text('Alice'), findsNothing);
+      expect(find.text('Created by me'), findsNothing);
       a.routes['GET /channels/inbox'] = (_) => {
         'items': <dynamic>[],
         'hasMore': false,

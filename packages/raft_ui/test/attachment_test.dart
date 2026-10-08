@@ -29,8 +29,8 @@ void main() {
               ),
             ),
           );
-          expect(find.text('2.0 KB'), findsOneWidget);
-          await tester.tap(find.widgetWithText(TextButton, '日本語.png'));
+          expect(find.byTooltip('Preview 日本語.png'), findsOneWidget);
+          await tester.tap(find.byTooltip('Preview 日本語.png'));
           await tester.tap(find.byTooltip('Download 日本語.png'));
           expect(opened, 1);
           expect(downloaded, 1);
@@ -67,8 +67,8 @@ void main() {
         ),
       ),
     );
-    expect(find.text('export.png'), findsOneWidget);
-    expect(find.text('2.0 KB'), findsOneWidget);
+    expect(find.byTooltip('Preview export.png'), findsOneWidget);
+    expect(find.text('2.0 KB'), findsNothing);
     expect(find.byType(TextButton), findsNothing);
     expect(find.byType(IconButton), findsNothing);
     expect(find.byType(LinearProgressIndicator), findsNothing);

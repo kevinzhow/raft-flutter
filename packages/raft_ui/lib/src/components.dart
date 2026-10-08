@@ -9,6 +9,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import 'theme.dart';
+import 'design_primitives.dart';
+import 'icons.dart';
 
 class RaftPanel extends StatelessWidget {
   const RaftPanel({
@@ -45,26 +47,24 @@ class RaftButton extends StatelessWidget {
     this.busy = false,
     this.secondary = false,
     this.destructive = false,
+    this.variant,
+    this.visualHeight = RaftMetrics.buttonMd,
   });
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
-  final bool busy;
-  final bool secondary, destructive;
+  final bool busy, secondary, destructive;
+  final RaftControlVariant? variant;
+  final double visualHeight;
   @override
   Widget build(BuildContext context) {
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (busy)
-          const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        else if (icon != null)
-          Icon(icon, size: 18),
-        if (busy || icon != null) const SizedBox(width: 8),
+        if (icon != null) ...[
+          RaftSymbol(icon!, size: visualHeight <= 28 ? 14 : 16),
+          const SizedBox(width: 5.5),
+        ],
         Flexible(
           child: Text(raftText(context, label), textAlign: TextAlign.center),
         ),
@@ -72,70 +72,108 @@ class RaftButton extends StatelessWidget {
     );
     return MergeSemantics(
       child: Semantics(
-        label: busy ? ', loading' : null,
-        child: secondary
-            ? OutlinedButton(onPressed: busy ? null : onPressed, child: content)
-            : FilledButton(
-                style: destructive
-                    ? FilledButton.styleFrom(
-                        backgroundColor: RaftTokens.of(context)
-                            .colors['danger-strong'],
-                        foregroundColor: RaftTokens.of(context).dark
-                            ? Colors.black
-                            : Colors.white,
-                      )
-                    : null,
-                onPressed: busy ? null : onPressed,
-                child: content,
-              ),
+        label: null,
+        child: RaftControl(
+          onPressed: onPressed,
+          busy: busy,
+          semanticLabel: busy ? raftText(context, label) : null,
+          variant:
+              variant ??
+              (destructive
+                  ? RaftControlVariant.danger
+                  : secondary
+                  ? RaftControlVariant.outline
+                  : RaftControlVariant.accent),
+          visualHeight: visualHeight,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Opacity(opacity: busy ? 0 : 1, child: content),
+              if (busy) const RaftSpinner(),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
+enum RaftAvatarKind { human, agent, server, app }
+
 class RaftAvatar extends StatelessWidget {
   const RaftAvatar({
     super.key,
     required this.name,
-    this.size = 34,
+    this.size = 36,
+    this.kind = RaftAvatarKind.human,
     this.imageUrl,
   });
   final String name;
   final double size;
+  final RaftAvatarKind kind;
   final String? imageUrl;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final fallback = Center(
-      child: Text(
-        name.isEmpty ? '?' : name.characters.first.toUpperCase(),
-        style: TextStyle(
-          color: t.ink,
-          fontWeight: FontWeight.w800,
-          fontSize: size * .4,
+      child: switch (kind) {
+        RaftAvatarKind.human => RaftIcon(
+          RaftGlyph.user,
+          size: size >= 32 ? 18 : 12,
+          color: t.brutal
+              ? Colors.black
+              : t.colors['foreground-placeholder']!.withValues(alpha: .7),
         ),
-      ),
+        RaftAvatarKind.agent => RaftIcon(
+          RaftGlyph.bot,
+          size: size >= 32 ? 18 : 12,
+          color: t.brutal ? Colors.black : t.muted,
+        ),
+        _ => Text(
+          name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+          style: RaftTypography.body(
+            t,
+            size: size * .4,
+            line: size * .5,
+            weight: FontWeight.w700,
+          ),
+        ),
+      },
     );
     return Semantics(
       label: name,
       image: true,
       excludeSemantics: true,
-      child: Container(
-        width: size,
-        height: size,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: t.accentSoft,
-          border: Border.all(color: t.line, width: t.brutal ? 2 : 0.5),
-          borderRadius: BorderRadius.circular(t.brutal ? 0 : 8),
+      child: SizedBox.square(
+        dimension: size,
+        child: Padding(
+          padding: EdgeInsets.all(t.brutal ? 0 : 2),
+          child: Container(
+            width: size,
+            height: size,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: t.brutal
+                  ? t.colors[kind == RaftAvatarKind.agent
+                        ? 'color-brutal-cyan'
+                        : kind == RaftAvatarKind.human
+                        ? 'color-brutal-lavender'
+                        : 'brutal-cream']
+                  : t.colors['fill-muted'],
+              border: t.brutal
+                  ? Border.all(color: Colors.black, width: size >= 28 ? 2 : 1)
+                  : null,
+              borderRadius: BorderRadius.circular(t.brutal ? 0 : size / 2),
+            ),
+            child: imageUrl == null
+                ? fallback
+                : Image.network(
+                    imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => fallback,
+                  ),
+          ),
         ),
-        child: imageUrl == null
-            ? fallback
-            : Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => fallback,
-              ),
       ),
     );
   }
@@ -158,44 +196,84 @@ class RaftNavItem extends StatelessWidget {
   final int unread;
   final Widget? trailing;
   @override
-  Widget build(BuildContext context) => Semantics(
-    selected: selected,
-    onTap: onTap,
-    button: true,
-    label: unread > 0
-        ? raftFormat(context, '{label}, {count} unread', {
-            'label': label,
-            'count': unread,
-          })
-        : label,
-    excludeSemantics: true,
-    child: Material(
-      color: RaftTokens.of(context).sidebar,
-      child: ListTile(
-        tileColor: RaftTokens.of(context).sidebar,
-        dense: true,
-        minVerticalPadding: 10,
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Semantics(
+      selected: selected,
+      onTap: onTap,
+      button: true,
+      label: unread > 0
+          ? raftFormat(context, '{label}, {count} unread', {
+              'label': label,
+              'count': unread,
+            })
+          : label,
+      excludeSemantics: true,
+      child: RaftControl(
+        onPressed: onTap,
         selected: selected,
-        leading: Icon(icon, size: 19),
-        title: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontWeight: selected || unread > 0
-                ? FontWeight.w700
-                : FontWeight.w500,
-          ),
+        kind: RaftControlKind.sidebar,
+        visualHeight: 32,
+        variant: selected
+            ? t.brutal
+                  ? RaftControlVariant.accent
+                  : RaftControlVariant.surface
+            : RaftControlVariant.ghost,
+        child: Row(
+          children: [
+            RaftSymbol(
+              icon,
+              size: t.brutal ? 12 : 18,
+              color: t.brutal ? t.strong : t.colors['foreground-icon'],
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: RaftTypography.body(
+                  t,
+                  size: t.brutal ? 14 : 13,
+                  line: 20,
+                  weight: selected || unread > 0
+                      ? FontWeight.w700
+                      : t.brutal
+                      ? FontWeight.w400
+                      : FontWeight.w500,
+                ),
+              ),
+            ),
+            if (trailing != null)
+              trailing!
+            else if (unread > 0)
+              Container(
+                height: 16,
+                constraints: const BoxConstraints(minWidth: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: t.accentFill,
+                  border: Border.all(
+                    color: t.brutal ? t.strong : Colors.transparent,
+                  ),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  unread > 99 ? '99+' : '$unread',
+                  style: RaftTypography.body(
+                    t,
+                    size: 10,
+                    line: 14,
+                    weight: FontWeight.w700,
+                    color: t.brutal ? t.strong : t.colors['accent-950'],
+                  ),
+                ),
+              ),
+          ],
         ),
-        onTap: onTap,
-        trailing:
-            trailing ??
-            (unread > 0
-                ? Badge(label: Text(unread > 99 ? '99+' : '$unread'))
-                : null),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class RaftMessageTile extends StatelessWidget {
@@ -213,6 +291,7 @@ class RaftMessageTile extends StatelessWidget {
     this.attachments = const [],
     this.onAttachment,
     this.attachmentBuilder,
+    this.attachmentGallery,
     this.reactions = const [],
     this.reactedEmojis = const {},
     this.onReaction,
@@ -235,6 +314,7 @@ class RaftMessageTile extends StatelessWidget {
   final Set<String> reactedEmojis;
   final void Function(Map<String, dynamic>)? onAttachment;
   final Widget Function(Map<String, dynamic>)? attachmentBuilder;
+  final Widget? attachmentGallery;
   final void Function(String)? onReaction;
   @override
   Widget build(BuildContext context) {
@@ -319,26 +399,28 @@ class RaftMessageTile extends StatelessWidget {
                   if (attachments.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: attachments
-                            .map(
-                              (a) =>
-                                  attachmentBuilder?.call(a) ??
-                                  OutlinedButton.icon(
-                                    onPressed: () => onAttachment?.call(a),
-                                    icon: const Icon(
-                                      Icons.attach_file,
-                                      size: 16,
-                                    ),
-                                    label: Text(
-                                      '${a['filename'] ?? a['name'] ?? 'Attachment'}',
-                                    ),
-                                  ),
-                            )
-                            .toList(),
-                      ),
+                      child:
+                          attachmentGallery ??
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: attachments
+                                .map(
+                                  (a) =>
+                                      attachmentBuilder?.call(a) ??
+                                      OutlinedButton.icon(
+                                        onPressed: () => onAttachment?.call(a),
+                                        icon: const Icon(
+                                          Icons.attach_file,
+                                          size: 16,
+                                        ),
+                                        label: Text(
+                                          '${a['filename'] ?? a['name'] ?? 'Attachment'}',
+                                        ),
+                                      ),
+                                )
+                                .toList(),
+                          ),
                     ),
                   if (reactions.isNotEmpty)
                     Wrap(
@@ -417,6 +499,7 @@ class _RaftComposerState extends State<RaftComposer> {
   final focus = FocusNode();
   final suggestionScroll = ScrollController();
   bool sending = false;
+  bool composerFocused = false;
   bool restoringDraft = false;
   RaftComposerTrigger? trigger;
   int suggestionIndex = 0;
@@ -591,147 +674,226 @@ class _RaftComposerState extends State<RaftComposer> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final options = matches;
+    final desktop =
+        MediaQuery.sizeOf(context).width >= RaftLayoutMetrics.desktopBreakpoint;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
-      child: RaftPanel(
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (options.isNotEmpty)
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 200),
-                child: ListView.builder(
-                  controller: suggestionScroll,
-                  shrinkWrap: true,
-                  itemCount: options.length,
-                  itemBuilder: (context, index) {
-                    final s = options[index];
-                    return Semantics(
-                      selected: index == suggestionIndex,
-                      child: ListTile(
-                        key: ValueKey('composer-suggestion-${s.type}-${s.id}'),
-                        selected: index == suggestionIndex,
-                        tileColor: t.panel,
-                        dense: true,
-                        minTileHeight: 48,
-                        leading: Icon(
-                          s.type == 'channel'
-                              ? Icons.tag
-                              : s.type == 'agent'
-                              ? Icons.smart_toy_outlined
-                              : s.type == 'computer'
-                              ? Icons.computer
-                              : s.type == 'app'
-                              ? Icons.extension_outlined
-                              : Icons.person_outline,
-                        ),
-                        title: Text(
-                          '${s.type == 'channel' ? '#' : '@'}${s.name}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          [
-                            raftText(context, switch (s.type) {
-                              'agent' => 'Agent',
-                              'user' => 'Human',
-                              'channel' => 'Channel',
-                              'computer' => 'Computer',
-                              _ => 'App',
-                            }),
-                            if (s.title != null && s.title != s.name) s.title!,
-                            if (!s.inChannel && s.isMention)
-                              raftText(context, 'Not in this conversation'),
-                          ].join(' · '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () => insert(s),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            if (widget.pendingLabel != null)
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: Text(
-                  widget.pendingLabel!,
-                  style: TextStyle(color: t.accent),
-                ),
-              ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Focus(
+        onFocusChange: (value) => setState(() => composerFocused = value),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: t.panel,
+            borderRadius: RaftShapes.panel(t),
+            border: Border.all(
+              color: t.brutal
+                  ? Colors.black
+                  : t.dark
+                  ? composerFocused
+                        ? t.accentFill.withValues(alpha: .7)
+                        : Colors.transparent
+                  : Colors.black.withValues(alpha: .06),
+              width: t.brutal
+                  ? 2
+                  : t.dark
+                  ? .5
+                  : 1,
+            ),
+            boxShadow: t.brutal
+                ? composerFocused
+                      ? t.focusShadows
+                      : t.shadows
+                : t.dark
+                ? null
+                : t.shadows,
+          ),
+          child: Padding(
+            padding: t.brutal ? const EdgeInsets.all(8) : EdgeInsets.zero,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (widget.onAttach != null)
-                  IconButton(
-                    tooltip: raftText(context, 'Attach file'),
-                    onPressed: sending || !widget.enabled
-                        ? null
-                        : widget.onAttach,
-                    icon: const Icon(Icons.add),
-                  ),
-                Expanded(
-                  child: Focus(
-                    onKeyEvent: suggestionKey,
-                    child: Shortcuts(
-                      shortcuts: const {
-                        SingleActivator(
-                          LogicalKeyboardKey.enter,
-                          control: true,
-                        ): ActivateIntent(),
-                        SingleActivator(LogicalKeyboardKey.enter, meta: true):
-                            ActivateIntent(),
+                if (options.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 200),
+                    child: ListView.builder(
+                      controller: suggestionScroll,
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final s = options[index];
+                        return Semantics(
+                          selected: index == suggestionIndex,
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: ListTile(
+                              key: ValueKey(
+                                'composer-suggestion-${s.type}-${s.id}',
+                              ),
+                              selected: index == suggestionIndex,
+                              tileColor: t.panel,
+                              dense: true,
+                              minTileHeight: 48,
+                              leading: RaftSymbol(
+                                s.type == 'channel'
+                                    ? Icons.tag
+                                    : s.type == 'agent'
+                                    ? Icons.smart_toy_outlined
+                                    : s.type == 'computer'
+                                    ? Icons.computer
+                                    : s.type == 'app'
+                                    ? Icons.extension_outlined
+                                    : Icons.person_outline,
+                              ),
+                              title: Text(
+                                '${s.type == 'channel' ? '#' : '@'}${s.name}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                [
+                                  raftText(context, switch (s.type) {
+                                    'agent' => 'Agent',
+                                    'user' => 'Human',
+                                    'channel' => 'Channel',
+                                    'computer' => 'Computer',
+                                    _ => 'App',
+                                  }),
+                                  if (s.title != null && s.title != s.name)
+                                    s.title!,
+                                  if (!s.inChannel && s.isMention)
+                                    raftText(
+                                      context,
+                                      'Not in this conversation',
+                                    ),
+                                ].join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              onTap: () => insert(s),
+                            ),
+                          ),
+                        );
                       },
-                      child: Actions(
-                        actions: {
-                          ActivateIntent: CallbackAction<ActivateIntent>(
-                            onInvoke: (_) {
-                              if (controller.value.composing.isValid &&
-                                  !controller.value.composing.isCollapsed)
-                                return null;
-                              send();
-                              return null;
-                            },
-                          ),
+                    ),
+                  ),
+                if (widget.pendingLabel != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(
+                      widget.pendingLabel!,
+                      style: TextStyle(color: t.accent),
+                    ),
+                  ),
+
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: desktop ? 40 : 20,
+                    maxHeight: RaftMetrics.composerInputMax,
+                  ),
+                  child: Padding(
+                    padding: t.brutal
+                        ? EdgeInsets.zero
+                        : const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                    child: Focus(
+                      onKeyEvent: suggestionKey,
+                      child: Shortcuts(
+                        shortcuts: const {
+                          SingleActivator(
+                            LogicalKeyboardKey.enter,
+                            control: true,
+                          ): ActivateIntent(),
+                          SingleActivator(LogicalKeyboardKey.enter, meta: true):
+                              ActivateIntent(),
                         },
-                        child: TextField(
-                          controller: controller,
-                          focusNode: focus,
-                          enabled: widget.enabled,
-                          minLines: 1,
-                          maxLines: 6,
-                          decoration: InputDecoration(
-                            hintText: widget.hint,
-                            filled: false,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
+                        child: Actions(
+                          actions: {
+                            ActivateIntent: CallbackAction<ActivateIntent>(
+                              onInvoke: (_) {
+                                if (controller.value.composing.isValid &&
+                                    !controller.value.composing.isCollapsed)
+                                  return null;
+                                send();
+                                return null;
+                              },
+                            ),
+                          },
+                          child: TextField(
+                            controller: controller,
+                            focusNode: focus,
+                            enabled: widget.enabled,
+                            minLines: 1,
+                            maxLines: 6,
+                            style: RaftTypography.heading(
+                              t,
+                              size: desktop ? 14 : 16,
+                              line: 20,
+                              weight: FontWeight.w400,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: widget.hint,
+                              hintStyle: TextStyle(
+                                color: t.brutal
+                                    ? Colors.black.withValues(alpha: .35)
+                                    : t.colors['foreground-placeholder'],
+                              ),
+                              filled: false,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                            ),
+                            textCapitalization: TextCapitalization.sentences,
                           ),
-                          textCapitalization: TextCapitalization.sentences,
                         ),
                       ),
                     ),
                   ),
                 ),
-                IconButton.filled(
-                  tooltip: raftText(context, 'Send message (Ctrl+Enter)'),
-                  onPressed: widget.enabled && widget.canSend && !sending
-                      ? send
-                      : null,
-                  icon: sending
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                const SizedBox(height: RaftMetrics.composerGap),
+                Padding(
+                  padding: t.brutal
+                      ? EdgeInsets.zero
+                      : const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (widget.onAttach != null)
+                        RaftIconButton(
+                          glyph: RaftGlyph.paperclip,
+                          visualSize: t.brutal ? 26 : 28,
+                          glyphSize: 14,
+                          variant: t.brutal
+                              ? RaftControlVariant.outline
+                              : RaftControlVariant.ghost,
+                          tooltip: 'Attach file',
+                          onPressed: sending || !widget.enabled
+                              ? null
+                              : widget.onAttach,
                         )
-                      : const Icon(Icons.arrow_upward),
+                      else
+                        const SizedBox.shrink(),
+                      RaftIconButton(
+                        glyph: RaftGlyph.send,
+                        visualSize: 28,
+                        glyphSize: 14,
+                        variant: RaftControlVariant.accent,
+                        tooltip: 'Send message (Ctrl+Enter)',
+                        busy: sending,
+                        onPressed: widget.enabled && widget.canSend && !sending
+                            ? () {
+                                send();
+                                focus.requestFocus();
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

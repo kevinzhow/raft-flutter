@@ -72,7 +72,13 @@ UI、纯Dart协议/同步、平台适配在 P0 合同后可并行，feature任�
 
 - raft_ui 提供独立 tokens、主题、导航、表单、消息、附件与原生 Mermaid 组件，SDK Widget Preview 覆盖三种实际主题。API 与原生系统服务位于 app/platform 或 feature 层。
 - raft_client 提供人类认证、刷新去重、Socket.IO、账户/工作区 generation fence、上传重试与安全错误。main 对跨客户端登录尝试的安全存储提交另加串行栅栏。
-- raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；当前消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。source-enabled thread-replies 的最新三条、epoch rebaseline 与 accepted unread refresh 已接入；notification-prefs 使用真实条件开关，保留 legacy 路径。19 项新增 reply/preferences/controller 回归均已通过；最终工程检查 353 Dart、29 host 与全仓 analyze 通过，较早 b20 源码 Linux 整轮通过；新增 mobile thread/main 状态复用修复后的当前源码整轮，Linux 正在验证、Android 随后串行重跑。Activity TypeSpec experimental cutover 不由纯 reducer 证明替代。
+- raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；当前消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。source-enabled thread-replies 的最新三条、epoch rebaseline 与 accepted unread refresh 已接入；notification-prefs 使用真实条件开关，保留 legacy 路径。19 项新增 reply/preferences/controller 回归均已通过；最终工程检查 353 Dart、29 host 与全仓 analyze 通过，较早 b20 源码 Linux 整轮通过；新增 mobile thread/main 状态复用修复后的当前源码整轮，Android完整主运行已通过、同哈希Linux正在验证。Activity TypeSpec experimental cutover 不由纯 reducer 证明替代。
 - Drift 缓存按账户与工作区隔离，保存真实离线消息、草稿与 read frontier；撤权立即清 UI 并串行清缓存。签名附件地址及凭据不进入缓存。
 - 管理页面使用现网挂载路径与能力校验：providers、MCP、Apps、Slack、analytics、billing、setup、agents 和 Computers。未配置的第三方 OAuth、计费和 Slack provisioning 不产生模拟成功状态。
 - go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。后台 FCM、Linux 服务端消息推送及桌面多窗口不属于当前已验证能力。
+
+## 视觉实现与验收缺口
+
+设计tokens及75项SDK主题交互已有具体证据，逐组件像素级一致性尚未完成。原生默认Material控件与Web产品组件的呈现需审查和修正，并建立同版本/数据/主题/尺寸的截图和差异验收。功能测试、主题可切换与原生整轮通过不能替代该项；架构中的golden与同源视觉比对是待完成目标，不是当前完成声明。当前6ab源码Android整轮已完成，Linux同源码仍在运行。
+
+功能基线6ab现已通过两平台完整主应用验收：Android `2026-10-08T03:02:43.361866Z` /54检查点、Linux `2026-10-08T03:11:25.507223Z` /53检查点，归档于 `.local/functional-baseline-6ab`。用户已授权新的页面/组件像素级对齐；该视觉修正工作正在进行，新版源码需重新工程/原生验收，最终安装包暂未发行。这些功能基线记录不证明像素等价。

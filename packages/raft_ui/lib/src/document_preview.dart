@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'localization.dart';
 import 'message_body.dart';
+import 'design_primitives.dart';
+import 'message_content_tokens.dart';
+import 'theme.dart';
 
 /// Structured, server-bounded attachment content. Never executes document HTML.
 class RaftDocumentPreview extends StatefulWidget {
@@ -21,6 +24,7 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
+    final recipe = DocumentAttachmentRecipe(RaftTokens.of(context));
     final sheets = (data['sheets'] as List? ?? []).whereType<Map>().toList();
     final selected = sheets.isEmpty
         ? data
@@ -41,70 +45,77 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
           Wrap(
             children: [
               for (var i = 0; i < sheets.length; i++)
-                ChoiceChip(
-                  label: Text('${sheets[i]['name'] ?? ''}'),
-                  selected: sheet == i,
-                  onSelected: (_) => setState(() => sheet = i),
-                ),
+                Padding(padding: const EdgeInsets.only(right: 4), child: RaftControl(
+                  kind: RaftControlKind.tab, selected: sheet == i, shadow: false,
+                  semanticLabel: '${sheets[i]['name'] ?? ''}',
+                  onPressed: () => setState(() => sheet = i),
+                  child: Text('${sheets[i]['name'] ?? ''}'),
+                )),
             ],
           ),
         if (tabular)
           Text(
             '${selected['rowCount'] ?? rows.length} × ${selected['columnCount'] ?? headers.length}',
+            style: recipe.heading,
           ),
         Expanded(
-          child: SingleChildScrollView(
+          child: ColoredBox(color: data['kind'] == 'markdown' ? recipe.paper : recipe.background, child: Padding(padding: data['kind'] == 'markdown' ? recipe.markdownInset(MediaQuery.sizeOf(context).width) : recipe.inset, child: LayoutBuilder(builder: (context, bounds) => SingleChildScrollView(
             child: data['kind'] == 'markdown'
-                ? RaftMessageBody(content: '${data['markdown'] ?? ''}')
+                ? RaftMessageBody(
+                    content: '${data['markdown'] ?? ''}',
+                    fontSize: 16,
+                    documentMode: true,
+                  )
                 : tabular
                 ? SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Table(
+                    child: ConstrainedBox(constraints: BoxConstraints(minWidth: bounds.maxWidth), child: Table(
                       defaultColumnWidth: const IntrinsicColumnWidth(),
-                      border: TableBorder.all(
-                        color: Theme.of(context).dividerColor,
-                      ),
+                      border: TableBorder.all(color: recipe.border.color, width: recipe.border.width),
                       children: [
                         if (headers.isNotEmpty)
                           TableRow(
+                            decoration: BoxDecoration(color: recipe.tableHeader),
                             children: [
                               for (final h in headers)
                                 Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Text(
+                                  padding: recipe.cellInset,
+                                  child: ConstrainedBox(constraints: BoxConstraints(maxWidth: recipe.maxColumnWidth), child: Text(
                                     h,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                    style: recipe.tableText.copyWith(fontWeight: FontWeight.w700),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis,
+                                  )),
                                 ),
                             ],
                           ),
-                        for (final row in rows)
+                        for (var rowIndex = 0; rowIndex < rows.length; rowIndex++)
                           if (headers.isNotEmpty)
                             TableRow(
+                              decoration: BoxDecoration(color: rowIndex.isEven ? recipe.rowStripe : recipe.paper),
                               children: [
                                 for (var i = 0; i < headers.length; i++)
                                   Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Semantics(
-                                      label: i < row.length ? '${row[i]}' : '',
+                                    padding: recipe.cellInset,
+                                    child: ConstrainedBox(constraints: BoxConstraints(maxWidth: recipe.maxColumnWidth), child: Semantics(
+                                      label: i < rows[rowIndex].length ? '${rows[rowIndex][i]}' : '',
                                       excludeSemantics: true,
                                       child: SelectableText(
-                                        i < row.length ? '${row[i]}' : '',
+                                        i < rows[rowIndex].length ? '${rows[rowIndex][i]}' : '',
+                                        style: recipe.tableText,
+                                        maxLines: 1,
                                       ),
-                                    ),
+                                    )),
                                   ),
                               ],
                             ),
                       ],
-                    ),
+                    )),
                   )
-                : SelectableText(
+                : DecoratedBox(decoration: BoxDecoration(color: recipe.paper, border: Border.fromBorderSide(recipe.border)), child: Padding(padding: recipe.textInset, child: SelectableText(
                     '${data['text'] ?? ''}',
-                    style: const TextStyle(fontFamily: 'monospace'),
-                  ),
-          ),
+                    style: recipe.text,
+                  ))),
+          )))),
         ),
       ],
     );

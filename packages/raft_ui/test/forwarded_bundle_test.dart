@@ -17,7 +17,7 @@ Map<String, dynamic> bundle() => {
           'labelVisibility': i == 0 ? 'restricted' : 'public',
         },
         'sourceAuthorSnapshot': {'type': 'user', 'uniqueName': 'author$i'},
-        'contentSnapshot': 'Copied **message $i**',
+        'contentSnapshot': i == 0 ? List.generate(12, (line) => 'Copied **message $i** line $line').join('\n') : 'Copied **message $i**',
         'sourceCreatedAt': '2026-10-07T09:0${2 - i}:00Z',
         'sourceMessageSeq': 3 - i,
         'attachmentPolicy': i == 0 ? 'excluded' : 'projected',
@@ -82,17 +82,20 @@ void main() {
             ),
           ),
         );
+        await tester.pumpAndSettle();
         expect(find.textContaining('private-secret-label'), findsNothing);
         expect(find.text('report0.txt'), findsNothing);
-        expect(find.text('report1.txt'), findsNothing);
+        expect(find.text('report1.txt').hitTestable(), findsNothing);
         await tester.ensureVisible(find.text('View all 3 messages'));
         await tester.tap(find.text('View all 3 messages'));
         await tester.pump();
-        expect(find.text('report1.txt'), findsOneWidget);
-        expect(find.text('Collapse forwarded messages'), findsOneWidget);
-        await tester.tap(find.text('Collapse forwarded messages'));
+        await tester.ensureVisible(find.text('report1.txt'));
+        expect(find.text('report1.txt').hitTestable(), findsOneWidget);
+        expect(find.text('Collapse'), findsOneWidget);
+        await tester.ensureVisible(find.text('Collapse'));
+        await tester.tap(find.text('Collapse'));
         await tester.pump();
-        expect(find.text('report1.txt'), findsNothing);
+        expect(find.text('report1.txt').hitTestable(), findsNothing);
         expect(tester.takeException(), isNull);
       },
     );

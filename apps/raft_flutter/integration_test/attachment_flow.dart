@@ -54,7 +54,9 @@ Future<void> verifyAttachmentFlow(
     }
     if (find.byTooltip('Retry upload').evaluate().isEmpty) {
       await capture('linux-attachment-retry-failure');
-      debugPrint('Attachment retry checkpoint: section=${w.section} loading=${w.loading} channelLoading=${w.channelLoading} uploadCount=${w.uploads().length} composerCount=${find.byType(RaftComposer).evaluate().length} chipCount=${find.byType(RaftUploadChip).evaluate().length} language=${w.client.user?.json['displayLanguage']} retryIconCount=${find.byIcon(Icons.refresh).evaluate().length} scaffoldCount=${find.byType(Scaffold).evaluate().length} setupText=${find.text('Set up your workspace').evaluate().length} chatWidgets=${find.byType(Chat).evaluate().length}');
+      debugPrint(
+        'Attachment retry checkpoint: section=${w.section} loading=${w.loading} channelLoading=${w.channelLoading} uploadCount=${w.uploads().length} composerCount=${find.byType(RaftComposer).evaluate().length} chipCount=${find.byType(RaftUploadChip).evaluate().length} language=${w.client.user?.json['displayLanguage']} retryIconCount=${find.byIcon(Icons.refresh).evaluate().length} scaffoldCount=${find.byType(Scaffold).evaluate().length} setupText=${find.text('Set up your workspace').evaluate().length} chatWidgets=${find.byType(Chat).evaluate().length}',
+      );
     }
     expect(find.byTooltip('Retry upload'), findsOneWidget);
     await tester.tap(find.byTooltip('Retry upload'));
@@ -78,11 +80,18 @@ Future<void> verifyAttachmentFlow(
     expect(w.uploads(), isEmpty);
     for (var i = 0; i < 150; i++) {
       await tester.pump(const Duration(milliseconds: 200));
-      if (find.text(imageName).evaluate().isNotEmpty) break;
+      if (find
+          .byWidgetPredicate(
+            (widget) =>
+                widget is RaftAttachmentCard && widget.filename == imageName,
+          )
+          .evaluate()
+          .isNotEmpty) {
+        break;
+      }
     }
-    final card = find.ancestor(
-      of: find.text(imageName),
-      matching: find.byType(RaftAttachmentCard),
+    final card = find.byWidgetPredicate(
+      (widget) => widget is RaftAttachmentCard && widget.filename == imageName,
     );
     expect(card, findsOneWidget);
     await tester.ensureVisible(card);
@@ -93,7 +102,12 @@ Future<void> verifyAttachmentFlow(
       await tester.pump(const Duration(milliseconds: 200));
     }
     expect(tester.widget<RaftAttachmentCard>(card).preview, isNotNull);
-    await tester.tap(find.widgetWithText(TextButton, imageName));
+    final previewAction = find.descendant(
+      of: card,
+      matching: find.byTooltip('Preview $imageName'),
+    );
+    expect(previewAction, findsOneWidget);
+    await tester.tap(previewAction);
     await tester.pumpAndSettle();
     final decoded = find.byKey(
       ValueKey(

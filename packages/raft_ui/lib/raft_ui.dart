@@ -21,3 +21,12 @@ export 'src/composer_suggestions.dart';
 export 'src/document_preview.dart';
 export 'src/html_preview.dart';
 export 'src/thread_replies.dart';
+
+export 'src/design_primitives.dart';
+
+export 'src/icons.dart';
+
+export 'src/primitive_tokens.dart';
+
+export 'src/attachment_gallery.dart';
+export 'src/attachment_lightbox.dart';

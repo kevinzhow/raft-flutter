@@ -341,80 +341,37 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
   }();
 
   @override
-  Widget build(BuildContext context) => Dialog(
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 900, maxHeight: 700),
-      child: Column(
-        children: [
-          ListTile(
-            title: Text('${widget.metadata['filename'] ?? ''}'),
-            trailing: IconButton(
-              tooltip: raftText(context, 'Close preview'),
-              onPressed: widget.onClose,
-              icon: const Icon(Icons.close),
-            ),
-          ),
-          Expanded(
-            child: !current
-                ? const SizedBox.shrink()
-                : loading
-                ? const Center(child: CircularProgressIndicator())
-                : error != null
-                ? Center(child: Text(raftText(context, error!)))
-                : document != null
-                ? Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: RaftDocumentPreview(
-                      data: document!,
-                      truncated: truncated,
-                    ),
-                  )
-                : kind == 'pdf' && pageBytes != null
-                ? InteractiveViewer(
-                    child: Image.memory(pageBytes!, fit: BoxFit.contain),
-                  )
-                : kind == 'video' && player != null
-                ? player!.video()
-                : const Center(child: Icon(Icons.music_note, size: 72)),
-          ),
-          if (current && player != null && !loading && error == null)
-            RaftMediaControls(
-              playing: playback.playing,
-              position: playback.position,
-              duration: playback.duration,
-              volume: playback.volume,
-              onPlayPause: () => action((p) => p.toggle()),
-              onSeek: (v) => action((p) => p.seek(v)),
-              onVolume: (v) => action((p) => p.volume(v)),
-            ),
-          if (current && kind == 'pdf' && pageCount > 0)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  tooltip: raftText(context, 'Previous page'),
-                  onPressed: !loading && page > 0
-                      ? () => loadPage(page - 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_left),
-                ),
-                Text('${page + 1} / $pageCount'),
-                IconButton(
-                  tooltip: raftText(context, 'Next page'),
-                  onPressed: !loading && page + 1 < pageCount
-                      ? () => loadPage(page + 1)
-                      : null,
-                  icon: const Icon(Icons.chevron_right),
-                ),
-              ],
-            ),
-          TextButton.icon(
-            onPressed: current ? widget.onDownload : null,
-            icon: const Icon(Icons.download),
-            label: Text(raftText(context, 'Download original')),
-          ),
-        ],
-      ),
-    ),
+  Widget build(BuildContext context) => RaftAttachmentLightbox(
+    title: '${widget.metadata['filename'] ?? ''}',
+    onClose: widget.onClose,
+    footer: Column(mainAxisSize: MainAxisSize.min, children: [
+      if (current && kind == 'pdf' && pageCount > 0)
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          RaftIconButton(glyph: RaftGlyph.chevronLeft, tooltip: 'Previous page', visualSize: 28,
+            minimumTargetSize: 48, variant: RaftControlVariant.ghost,
+            onPressed: !loading && page > 0 ? () => loadPage(page - 1) : null),
+          Text('${page + 1} / $pageCount'),
+          RaftIconButton(glyph: RaftGlyph.chevronRight, tooltip: 'Next page', visualSize: 28,
+            minimumTargetSize: 48, variant: RaftControlVariant.ghost,
+            onPressed: !loading && page + 1 < pageCount ? () => loadPage(page + 1) : null),
+        ]),
+      RaftTextButton(label: 'Download original', glyph: RaftGlyph.download,
+        onPressed: current ? widget.onDownload : null, variant: RaftControlVariant.ghost),
+    ]),
+    child: Column(children: [
+      Expanded(child: !current ? const SizedBox.shrink()
+          : loading ? const Center(child: RaftSpinner())
+          : error != null ? Center(child: Text(raftText(context, error!)))
+          : document != null ? RaftDocumentPreview(data: document!, truncated: truncated)
+          : kind == 'pdf' && pageBytes != null
+              ? InteractiveViewer(child: Image.memory(pageBytes!, fit: BoxFit.contain))
+          : kind == 'video' && player != null ? player!.video()
+          : const Center(child: Icon(Icons.music_note, size: 72))),
+      if (current && player != null && !loading && error == null)
+        RaftMediaControls(playing: playback.playing, position: playback.position,
+          duration: playback.duration, volume: playback.volume,
+          onPlayPause: () => action((p) => p.toggle()),
+          onSeek: (v) => action((p) => p.seek(v)), onVolume: (v) => action((p) => p.volume(v))),
+    ]),
   );
 }

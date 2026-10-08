@@ -1,8 +1,51 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:mermaid_flutter/mermaid_flutter.dart';
+import 'package:mermaid_core/mermaid_core.dart' as core;
 
+import 'package:re_highlight/re_highlight.dart';
+import 'package:re_highlight/styles/github.dart';
+import 'package:re_highlight/styles/github-dark.dart';
+import 'package:re_highlight/languages/bash.dart';
+import 'package:re_highlight/languages/c.dart';
+import 'package:re_highlight/languages/clojure.dart';
+import 'package:re_highlight/languages/cpp.dart';
+import 'package:re_highlight/languages/csharp.dart';
+import 'package:re_highlight/languages/css.dart';
+import 'package:re_highlight/languages/dart.dart';
+import 'package:re_highlight/languages/diff.dart';
+import 'package:re_highlight/languages/dockerfile.dart';
+import 'package:re_highlight/languages/elixir.dart';
+import 'package:re_highlight/languages/go.dart';
+import 'package:re_highlight/languages/graphql.dart';
+import 'package:re_highlight/languages/haskell.dart';
+import 'package:re_highlight/languages/java.dart';
+import 'package:re_highlight/languages/javascript.dart';
+import 'package:re_highlight/languages/json.dart';
+import 'package:re_highlight/languages/kotlin.dart';
+import 'package:re_highlight/languages/lua.dart';
+import 'package:re_highlight/languages/markdown.dart';
+import 'package:re_highlight/languages/perl.dart';
+import 'package:re_highlight/languages/php.dart';
+import 'package:re_highlight/languages/python.dart';
+import 'package:re_highlight/languages/ruby.dart';
+import 'package:re_highlight/languages/rust.dart';
+import 'package:re_highlight/languages/scala.dart';
+import 'package:re_highlight/languages/sql.dart';
+import 'package:re_highlight/languages/swift.dart';
+import 'package:re_highlight/languages/typescript.dart';
+import 'package:re_highlight/languages/xml.dart';
+import 'package:re_highlight/languages/yaml.dart';
+
+import 'icons.dart';
+import 'message_content_tokens.dart';
+import 'attachment_lightbox.dart';
+import 'diagram_theme.dart';
+import 'design_primitives.dart';
 import 'localization.dart';
 import 'theme.dart';
 
@@ -123,12 +166,16 @@ class RaftMessageBody extends StatelessWidget {
     this.references = const [],
     this.taskHref,
     this.fontSize = 14,
+    this.documentMode = false,
     this.onCopyCode,
+    this.onExportDiagram,
     this.exportMode = false,
   });
   final String content;
   final Future<void> Function(String)? onCopyCode;
+  final Future<void> Function(String, Uint8List)? onExportDiagram;
   final double fontSize;
+  final bool documentMode;
   final bool exportMode;
   final List<RaftTextReference> references;
   final String Function(int)? taskHref;
@@ -156,24 +203,15 @@ class RaftMessageBody extends StatelessWidget {
             onTapLink: (_, href, _) {
               if (href != null) onLink?.call(href);
             },
-            styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
-                .copyWith(
-                  p: TextStyle(fontSize: fontSize, height: 1.5, color: t.ink),
-                  a: TextStyle(
-                    color: t.accent,
-                    decoration: TextDecoration.underline,
-                  ),
-                  code: TextStyle(
-                    fontFamily: 'packages/raft_ui/GeistMono',
-                    fontSize: 12,
-                    color: t.ink,
-                    backgroundColor: t.sidebar,
-                  ),
-                  codeblockDecoration: BoxDecoration(
-                    color: t.sidebar,
-                    borderRadius: BorderRadius.circular(t.radius),
-                  ),
-                ),
+            bulletBuilder: (parameters) => Text(
+              parameters.style == BulletStyle.orderedList
+                  ? '${parameters.index + 1}.'
+                  : '•',
+              style: MessageContentRecipe(t, fontSize: fontSize).body,
+            ),
+            styleSheet: MessageContentRecipe(
+              t, fontSize: fontSize, document: documentMode,
+            ).stylesheet(context),
           ),
         ),
       );
@@ -181,25 +219,10 @@ class RaftMessageBody extends StatelessWidget {
     }
 
     for (var i = 0; i < lines.length; i++) {
-      final start = RegExp(
-        r'^ {0,3}(`{3,}|~{3,})\s*mermaid\s*$',
-        caseSensitive: false,
-      ).firstMatch(lines[i]);
+      final start = RegExp(r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$')
+          .firstMatch(lines[i]);
       if (start == null) {
-        // A Mermaid-looking fence inside another code block is literal code.
-        final other = RegExp(r'^ {0,3}(`{3,}|~{3,})').firstMatch(lines[i]);
         markdown.writeln(lines[i]);
-        if (other != null) {
-          final fence = other[1]!;
-          while (++i < lines.length) {
-            markdown.writeln(lines[i]);
-            if (RegExp(
-              '^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$',
-            ).hasMatch(lines[i])) {
-              break;
-            }
-          }
-        }
         continue;
       }
       final fence = start[1]!;
@@ -214,12 +237,22 @@ class RaftMessageBody extends StatelessWidget {
         continue;
       }
       flush();
+      final code = lines.sublist(i + 1, end).join('\n');
       blocks.add(
-        RaftMermaidBlock(
-          source: lines.sublist(i + 1, end).join('\n'),
-          onCopy: onCopyCode,
-          exportMode: exportMode,
-        ),
+        start[2]!.toLowerCase() == 'mermaid'
+            ? RaftMermaidBlock(
+                source: code,
+                onCopy: onCopyCode,
+                onExport: onExportDiagram,
+                exportMode: exportMode,
+              )
+            : RaftCodeBlock(
+                code: code,
+                language: start[2],
+                onCopy: onCopyCode,
+                exportMode: exportMode,
+                fontSize: fontSize,
+              ),
       );
       i = end;
     }
@@ -227,9 +260,7 @@ class RaftMessageBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: blocks
-          .map(
-            (b) => Padding(padding: const EdgeInsets.only(bottom: 8), child: b),
-          )
+          .map((b) => Padding(padding: EdgeInsets.zero, child: b))
           .toList(),
     );
   }
@@ -240,11 +271,13 @@ class RaftMermaidBlock extends StatefulWidget {
     super.key,
     required this.source,
     this.onCopy,
+    this.onExport,
     this.exportMode = false,
   });
   final bool exportMode;
   final String source;
   final Future<void> Function(String)? onCopy;
+  final Future<void> Function(String, Uint8List)? onExport;
   @override
   State<RaftMermaidBlock> createState() => _RaftMermaidBlockState();
 }
@@ -252,154 +285,464 @@ class RaftMermaidBlock extends StatefulWidget {
 class _RaftMermaidBlockState extends State<RaftMermaidBlock> {
   bool showSource = false, copied = false;
   String? copyError;
-  Widget sourceText() => Semantics(
-    label: widget.source,
-    child: ExcludeSemantics(
-      child: SelectableText(
-        widget.source,
-        style: const TextStyle(fontFamily: 'packages/raft_ui/GeistMono'),
-      ),
-    ),
-  );
-  Widget diagram() => MermaidDiagram(
-    source: widget.source,
-    theme: MaterialMermaidTheme.fromTheme(Theme.of(context)),
-    semanticNodes: true,
-    keepLastGoodSceneOnError: false,
-    errorBuilder: (context, error) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          raftText(
-            context,
-            'Unable to render this diagram. The source is shown below.',
-          ),
-          style: TextStyle(color: RaftTokens.of(context).muted),
-        ),
-        const SizedBox(height: 8),
-        sourceText(),
-      ],
-    ),
-  );
-  Future<void> copy() async {
-    try {
-      if (widget.onCopy != null) {
-        await widget.onCopy!(widget.source);
-      } else {
-        await Clipboard.setData(ClipboardData(text: widget.source));
-      }
-      if (mounted) {
-        setState(() {
-          copied = true;
-          copyError = null;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => copyError = 'Could not copy code.');
+  double zoom = 1;
+  Offset pan = Offset.zero;
+  core.RenderScene? scene;
+  int revision = 0;
+  bool? renderedDark;
+  Timer? copiedTimer;
+  DialogRoute<void>? expandedRoute;
+  NavigatorState? expandedNavigator;
+  void closeExpanded() {
+    final route = expandedRoute, navigator = expandedNavigator;
+    expandedRoute = null;
+    expandedNavigator = null;
+    if (route != null && navigator != null) {
+      scheduleMicrotask(() {
+        if (navigator.mounted && route.isActive) navigator.removeRoute(route);
+      });
     }
   }
 
-  void expand() => showDialog<void>(
-    context: context,
-    builder: (context) => Dialog(
-      child: SizedBox(
-        width: 1000,
-        height: 700,
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const SizedBox(width: 16),
-                const Expanded(child: Text('Mermaid')),
-                IconButton(
-                  tooltip: raftText(context, 'Close'),
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            Expanded(
-              child: InteractiveViewer(
-                minScale: .1,
-                maxScale: 8,
-                constrained: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: diagram(),
-                ),
-              ),
-            ),
-          ],
-        ),
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dark = RaftTokens.of(context).dark;
+    if (renderedDark != dark) {
+      closeExpanded();
+      revision++;
+      scene = null;
+      renderedDark = dark;
+    }
+  }
+
+  @override
+  void didUpdateWidget(RaftMermaidBlock old) {
+    super.didUpdateWidget(old);
+    if (old.source != widget.source) {
+      closeExpanded();
+      copiedTimer?.cancel();
+      revision++;
+      scene = null;
+      copied = false;
+      copyError = null;
+      zoom = 1;
+      pan = Offset.zero;
+    }
+  }
+
+  @override
+  void dispose() {
+    revision++;
+    copiedTimer?.cancel();
+    closeExpanded();
+    super.dispose();
+  }
+
+  Widget sourceText() => Semantics(
+    label: widget.source,
+    excludeSemantics: true,
+    child: SelectableText(
+      widget.source,
+      style: TextStyle(
+        fontFamily: 'packages/raft_ui/GeistMono',
+        fontSize: 14,
+        height: 20 / 14,
+        color: RaftCodeRecipe(RaftTokens.of(context)).foreground,
       ),
     ),
   );
+  Widget diagram() {
+    final current = revision;
+    final content = widget.source;
+    final dark = RaftTokens.of(context).dark;
+    return MermaidDiagram(
+      source: widget.source,
+      theme: raftMermaidTheme(dark: RaftTokens.of(context).dark),
+      semanticNodes: true,
+      keepLastGoodSceneOnError: false,
+      onSceneChanged: (value) {
+        if (mounted &&
+            current == revision &&
+            content == widget.source &&
+            renderedDark == dark)
+          setState(() => scene = value);
+      },
+      errorBuilder: (context, error) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftIcon(
+            RaftGlyph.image,
+            size: 32,
+            color: RaftTokens.of(context).muted,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            raftText(context, "Couldn't render this diagram"),
+            style: TextStyle(fontSize: 14, color: RaftTokens.of(context).muted),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> copy() async {
+    final current = revision, source = widget.source;
+    try {
+      if (widget.onCopy != null) {
+        await widget.onCopy!(source);
+      } else {
+        await Clipboard.setData(ClipboardData(text: source));
+      }
+      if (!mounted || current != revision || source != widget.source) return;
+      setState(() {
+        copied = true;
+        copyError = null;
+      });
+      copiedTimer?.cancel();
+      copiedTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted && current == revision) setState(() => copied = false);
+      });
+    } catch (_) {
+      if (mounted && current == revision)
+        setState(() => copyError = 'Could not copy code.');
+    }
+  }
+
+  Future<void> export(String extension) async {
+    if (widget.onExport == null) return;
+    final current = revision;
+    final content = widget.source;
+    final dark = RaftTokens.of(context).dark;
+    try {
+      final Uint8List bytes;
+      if (extension == 'mmd') {
+        bytes = Uint8List.fromList(utf8.encode(content));
+      } else {
+        final rendered = scene;
+        if (rendered == null) return;
+        bytes = extension == 'png'
+            ? await renderSceneToPng(rendered)
+            : Uint8List.fromList(
+                utf8.encode(
+                  core
+                      .renderSceneToSvg(rendered)
+                      .replaceAll(RegExp(r'<a\s[^>]*>|</a>'), ''),
+                ),
+              );
+      }
+      try {
+        if (!mounted ||
+            current != revision ||
+            content != widget.source ||
+            dark != RaftTokens.of(context).dark)
+          return;
+        await widget.onExport!(extension, bytes);
+      } finally {
+        bytes.fillRange(0, bytes.length, 0);
+      }
+    } catch (_) {
+      if (mounted && current == revision)
+        setState(() => copyError = 'Could not export diagram.');
+    }
+  }
+
+  void expand() {
+    if (expandedRoute?.isActive ?? false) return;
+    final navigator = Navigator.of(context, rootNavigator: true);
+    final route = DialogRoute<void>(
+      context: context,
+      builder: (dialogContext) => RaftAttachmentLightbox(
+        title: raftText(dialogContext, 'Diagram'), closeLabel: 'Close',
+        onClose: closeExpanded,
+        child: ClipRect(child: Center(child: InteractiveViewer(
+          minScale: .05, maxScale: 8, constrained: false,
+          child: Padding(padding: const EdgeInsets.all(24), child: diagram()),
+        ))),
+      ),
+    );
+    expandedRoute = route;
+    expandedNavigator = navigator;
+    navigator.push(route).whenComplete(() {
+      if (identical(expandedRoute, route)) {
+        expandedRoute = null;
+        expandedNavigator = null;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border.all(color: t.line),
-        borderRadius: BorderRadius.circular(t.radius),
-      ),
-      child: Material(
-        color: t.panel,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (!widget.exportMode)
-              Row(
-                children: [
-                  const SizedBox(width: 12),
-                  const Expanded(child: Text('Mermaid')),
-                  IconButton(
-                    tooltip: raftText(
-                      context,
-                      showSource ? 'Show diagram' : 'Show source',
-                    ),
-                    onPressed: () => setState(() => showSource = !showSource),
-                    icon: Icon(
-                      showSource ? Icons.account_tree_outlined : Icons.code,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: raftText(context, copied ? 'Copied' : 'Copy code'),
-                    onPressed: copy,
-                    icon: Icon(copied ? Icons.check : Icons.copy),
-                  ),
-                  IconButton(
-                    tooltip: raftText(context, 'Expand diagram'),
-                    onPressed: expand,
-                    icon: const Icon(Icons.open_in_full),
-                  ),
-                ],
-              ),
-            if (copyError != null)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Semantics(
-                  liveRegion: true,
-                  child: Text(raftText(context, copyError!)),
+    final recipe = RaftCodeRecipe(t);
+    final surface = recipe.background;
+    final border = t.brutal ? Colors.black : t.colors['line'] ?? t.line;
+    final height = (MediaQuery.sizeOf(context).height * .5).clamp(320.0, 560.0);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Container(
+        key: const ValueKey('mermaid-container'),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: surface,
+          border: Border.all(color: border, width: t.border),
+          borderRadius: recipe.radius,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: surface,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!widget.exportMode)
+                _MermaidToolbar(
+                  showSource: showSource,
+                  copied: copied,
+                  valid: scene != null,
+                  onSource: (value) => setState(() => showSource = value),
+                  onCopy: copy,
+                  onExpand: expand,
+                  onZoom: (factor) =>
+                      setState(() => zoom = (zoom * factor).clamp(.05, 8)),
+                  onExport: widget.onExport == null ? null : export,
                 ),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: showSource
-                  ? sourceText()
-                  : ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 300),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.topLeft,
-                        child: diagram(),
+              if (copyError != null)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(raftText(context, copyError!)),
+                  ),
+                ),
+              if (showSource)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
+                  child: sourceText(),
+                )
+              else
+                SizedBox(
+                  key: const ValueKey('mermaid-viewport'),
+                  height: height,
+                  width: double.infinity,
+                  child: ClipRect(
+                    child: GestureDetector(
+                      onPanUpdate: (details) =>
+                          setState(() => pan += details.delta),
+                      child: Center(
+                        child: Transform.translate(
+                          offset: pan,
+                          child: Transform.scale(
+                            scale: zoom,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: diagram(),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-            ),
-          ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _MermaidToolbar extends StatelessWidget {
+  const _MermaidToolbar({
+    required this.showSource,
+    required this.copied,
+    required this.valid,
+    required this.onSource,
+    required this.onCopy,
+    required this.onExpand,
+    required this.onZoom,
+    this.onExport,
+  });
+  final bool showSource, copied, valid;
+  final ValueChanged<bool> onSource;
+  final VoidCallback onCopy, onExpand;
+  final ValueChanged<double> onZoom;
+  final ValueChanged<String>? onExport;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tabRecipe = RaftControlRecipe(
+          t,
+          kind: RaftControlKind.tab,
+          visualHeight: RaftMetrics.buttonXs,
+        );
+        double tabWidth(String label) {
+          final painter = TextPainter(
+            text: TextSpan(
+              text: raftText(context, label),
+              style: tabRecipe.textStyle,
+            ),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          final width =
+              painter.width +
+              tabRecipe.padding.horizontal +
+              tabRecipe.iconSize +
+              4 +
+              2 * tabRecipe.side().width;
+          painter.dispose();
+          return width;
+        }
+
+        // Fit actual labels, font scale and controls before choosing the desktop
+        // recipe. A narrow message bubble can live in a wide window.
+        const iconCount = 5;
+        final desktopWidth =
+            16 +
+            tabWidth('Diagram') +
+            tabWidth('Code') +
+            iconCount * (RaftMetrics.buttonSm + 4);
+        final desktop =
+            MediaQuery.sizeOf(context).width >= 640 &&
+            constraints.maxWidth >= desktopWidth;
+        final line = t.brutal ? Colors.black : t.colors['line'] ?? t.line;
+        Widget control(
+          RaftGlyph icon,
+          String tooltip,
+          VoidCallback? action, {
+          String? label,
+          bool selected = false,
+        }) {
+          if (label == null)
+            return RaftIconButton(
+              glyph: icon,
+              tooltip: tooltip,
+              onPressed: action,
+              visualSize: RaftMetrics.buttonSm,
+              minimumTargetSize: desktop
+                  ? RaftMetrics.buttonSm
+                  : RaftMetrics.touchTarget,
+              glyphSize: RaftMetrics.iconSm,
+              variant: RaftControlVariant.outline,
+            );
+          return RaftControl(
+            key: ValueKey((icon, desktop)),
+            kind: RaftControlKind.tab,
+            selected: selected,
+            shadow: !t.brutal,
+            onPressed: action,
+            tooltip: raftText(context, tooltip),
+            visualHeight: desktop ? RaftMetrics.buttonXs : RaftMetrics.buttonSm,
+            visualWidth: desktop ? null : RaftMetrics.buttonSm,
+            padding: desktop ? null : EdgeInsets.zero,
+            minimumTargetSize: desktop
+                ? RaftMetrics.buttonXs
+                : RaftMetrics.touchTarget,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RaftIcon(icon, size: 13),
+                if (desktop) ...[
+                  const SizedBox(width: 4),
+                  Text(raftText(context, label)),
+                ],
+              ],
+            ),
+          );
+        }
+
+        return Container(
+          key: const ValueKey('mermaid-toolbar'),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: line, width: t.border),
+            ),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: Row(
+            children: [
+              control(
+                RaftGlyph.image,
+                'Show diagram',
+                () => onSource(false),
+                label: 'Diagram',
+                selected: !showSource,
+              ),
+              const SizedBox(width: 4),
+              control(
+                RaftGlyph.code2,
+                'Show source',
+                () => onSource(true),
+                label: 'Code',
+                selected: showSource,
+              ),
+              const Spacer(),
+              if (!showSource && desktop) ...[
+                control(
+                  RaftGlyph.zoomOut,
+                  'Zoom Mermaid diagram out',
+                  valid ? () => onZoom(1 / 1.2) : null,
+                ),
+                const SizedBox(width: 4),
+                control(
+                  RaftGlyph.zoomIn,
+                  'Zoom Mermaid diagram in',
+                  valid ? () => onZoom(1.2) : null,
+                ),
+                const SizedBox(width: 4),
+              ],
+              control(
+                copied ? RaftGlyph.check : RaftGlyph.copy,
+                copied ? 'Copied' : 'Copy code',
+                onCopy,
+              ),
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                tooltip: raftText(context, 'Download Mermaid diagram'),
+                enabled: onExport != null,
+                onSelected: onExport,
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'mmd',
+                    child: Text('Download source'),
+                  ),
+                  PopupMenuItem(
+                    value: 'png',
+                    enabled: valid,
+                    child: const Text('Download PNG'),
+                  ),
+                  PopupMenuItem(
+                    value: 'svg',
+                    enabled: valid,
+                    child: const Text('Download SVG'),
+                  ),
+                ],
+                padding: EdgeInsets.zero,
+                child: IgnorePointer(
+                  child: control(
+                    RaftGlyph.download,
+                    'Download Mermaid diagram',
+                    onExport == null ? null : () {},
+                  ),
+                ),
+              ),
+              if (!showSource) ...[
+                const SizedBox(width: 4),
+                control(
+                  RaftGlyph.maximize2,
+                  'Expand diagram',
+                  valid ? onExpand : null,
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -478,4 +821,309 @@ class _MessageLinkState extends State<_MessageLink> {
       ),
     ),
   );
+}
+
+final _codeHighlighter = Highlight();
+final _nativeCodeLanguages = <String, Mode>{
+  'bash': langBash,
+  'c': langC,
+  'clojure': langClojure,
+  'cpp': langCpp,
+  'csharp': langCsharp,
+  'css': langCss,
+  'dart': langDart,
+  'diff': langDiff,
+  'dockerfile': langDockerfile,
+  'elixir': langElixir,
+  'go': langGo,
+  'graphql': langGraphql,
+  'haskell': langHaskell,
+  'java': langJava,
+  'javascript': langJavascript,
+  'json': langJson,
+  'kotlin': langKotlin,
+  'lua': langLua,
+  'markdown': langMarkdown,
+  'perl': langPerl,
+  'php': langPhp,
+  'python': langPython,
+  'ruby': langRuby,
+  'rust': langRust,
+  'scala': langScala,
+  'sql': langSql,
+  'swift': langSwift,
+  'typescript': langTypescript,
+  'xml': langXml,
+  'yaml': langYaml,
+};
+final _codeLanguageAliases = <String, String>{
+  'c++': 'cpp',
+  'cc': 'cpp',
+  'cjs': 'javascript',
+  'clj': 'clojure',
+  'cljs': 'clojure',
+  'cs': 'csharp',
+  'cxx': 'cpp',
+  'docker': 'dockerfile',
+  'ex': 'elixir',
+  'exs': 'elixir',
+  'gql': 'graphql',
+  'hs': 'haskell',
+  'js': 'javascript',
+  'kt': 'kotlin',
+  'kts': 'kotlin',
+  'lhs': 'haskell',
+  'md': 'markdown',
+  'mjs': 'javascript',
+  'pl': 'perl',
+  'perl5': 'perl',
+  'py': 'python',
+  'rb': 'ruby',
+  'sh': 'bash',
+  'shell': 'bash',
+  'ts': 'typescript',
+  'yml': 'yaml',
+  'zsh': 'bash',
+  'html': 'xml',
+  'jsonc': 'json',
+  'jsx': 'javascript',
+  'tsx': 'typescript',
+  'shellscript': 'bash',
+};
+
+TextSpan raftCodeSpan(
+  String code,
+  String? language,
+  TextStyle style, {
+  required bool dark,
+}) {
+  var name = (language ?? '').trim().toLowerCase().replaceFirst(
+    RegExp(r'^language-'),
+    '',
+  );
+  name = _codeLanguageAliases[name] ?? name;
+  if (code.length > 50 * 1024 ||
+      code.split('\n').length > 500 ||
+      !_nativeCodeLanguages.containsKey(name)) {
+    return TextSpan(text: code, style: style);
+  }
+  try {
+    _codeHighlighter.registerLanguage(name, _nativeCodeLanguages[name]!);
+    final renderer = _ScopedCodeRenderer(style, raftCodeTokenTheme(dark: dark));
+    _codeHighlighter.highlight(code: code, language: name).render(renderer);
+    return renderer.span;
+  } catch (_) {
+    return TextSpan(text: code, style: style);
+  }
+}
+
+/// highlight.js node scopes use dotted semantic names. Its generated CSS themes
+/// use underscore-suffixed class selectors; normalize those separately and
+/// inherit a containing scope through unscoped token-tree nodes.
+class _ScopedCodeRenderer implements HighlightRenderer {
+  _ScopedCodeRenderer(this.base, this.theme);
+  final TextStyle base;
+  final Map<String, TextStyle> theme;
+  final stack = <({TextStyle style, List<InlineSpan> children})>[];
+  final roots = <InlineSpan>[];
+  TextSpan get span => TextSpan(style: base, children: roots);
+  @override
+  void addText(String text) {
+    final span = TextSpan(text: text, style: stack.isEmpty ? base : stack.last.style);
+    (stack.isEmpty ? roots : stack.last.children).add(span);
+  }
+  @override
+  void openNode(DataNode node) {
+    var scope = node.scope;
+    TextStyle? style;
+    while (scope != null) {
+      style = theme[scope];
+      if (style != null || !scope.contains('.')) break;
+      scope = scope.substring(0, scope.lastIndexOf('.'));
+    }
+    stack.add((style: (stack.isEmpty ? base : stack.last.style).merge(style), children: <InlineSpan>[]));
+  }
+  @override
+  void closeNode(DataNode node) {
+    final completed = stack.removeLast();
+    (stack.isEmpty ? roots : stack.last.children).add(TextSpan(style: completed.style, children: completed.children));
+  }
+}
+
+/// Native tokenization uses the same supported language names as Web. The
+/// tokenizer is highlight.js, so TextMate/Shiki token equivalence is audited
+/// separately from typography, surfaces and copy behavior.
+class RaftCodeBlock extends StatefulWidget {
+  const RaftCodeBlock({
+    super.key,
+    required this.code,
+    this.language,
+    this.onCopy,
+    this.exportMode = false,
+    this.fontSize = 14,
+  });
+  final String code;
+  final String? language;
+  final Future<void> Function(String)? onCopy;
+  final bool exportMode;
+  final double fontSize;
+  @override
+  State<RaftCodeBlock> createState() => _RaftCodeBlockState();
+}
+
+class _RaftCodeBlockState extends State<RaftCodeBlock> {
+  bool hovered = false, focused = false, copied = false;
+  String? error;
+  int revision = 0;
+  Timer? copiedTimer;
+  Future<void> copy() async {
+    final current = revision, source = widget.code;
+    try {
+      if (widget.onCopy != null) {
+        await widget.onCopy!(source);
+      } else {
+        await Clipboard.setData(ClipboardData(text: source));
+      }
+      if (!mounted || current != revision || source != widget.code) return;
+      setState(() {
+        copied = true;
+        error = null;
+      });
+      copiedTimer?.cancel();
+      copiedTimer = Timer(const Duration(seconds: 2), () {
+        if (mounted && current == revision) setState(() => copied = false);
+      });
+    } catch (_) {
+      if (mounted && current == revision)
+        setState(() => error = 'Could not copy code.');
+    }
+  }
+
+  @override
+  void didUpdateWidget(RaftCodeBlock old) {
+    super.didUpdateWidget(old);
+    if (old.code != widget.code) {
+      revision++;
+      copiedTimer?.cancel();
+      copied = false;
+      error = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    revision++;
+    copiedTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final recipe = RaftCodeRecipe(t);
+    final textStyle = recipe.textStyle.copyWith(
+      fontSize: widget.fontSize,
+      color: recipe.foreground,
+    );
+    final span = raftCodeSpan(
+      widget.code,
+      widget.language,
+      textStyle,
+      dark: t.dark,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => hovered = true),
+        onExit: (_) => setState(() => hovered = false),
+        child: Focus(
+          onFocusChange: (value) => setState(() => focused = value),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Container(
+                    key: const ValueKey('code-container'),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: recipe.background,
+                      border: Border.all(color: recipe.border, width: t.border),
+                      borderRadius: recipe.radius,
+                    ),
+                    padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Semantics(
+                        label: widget.code,
+                        excludeSemantics: true,
+                        child: SelectableText.rich(
+                          span,
+                          style: textStyle,
+                          textAlign: TextAlign.left,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (!widget.exportMode)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Opacity(
+                        opacity: hovered || focused || copied ? 1 : 0,
+                        child: RaftIconButton(
+                          glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
+                          tooltip: copied ? 'Copied' : 'Copy code',
+                          onPressed: widget.code.isEmpty ? null : copy,
+                          visualSize: RaftMetrics.buttonXs,
+                          minimumTargetSize: MediaQuery.sizeOf(context).width < 768
+                              ? RaftMetrics.touchTarget
+                              : RaftMetrics.buttonXs,
+                          glyphSize: RaftMetrics.iconSm,
+                          variant: RaftControlVariant.ghost,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (error != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(raftText(context, error!)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The source Shiki Github high contrast primitives mapped to the native
+/// tokenizer's semantic scopes. Scope boundaries are independently compared.
+Map<String, TextStyle> raftCodeTokenTheme({required bool dark}) {
+  if (!dark)
+    return {for (final entry in githubTheme.entries) entry.key.split('.').map((scope) => scope.replaceFirst(RegExp(r'_+$'), '')).join('.'): entry.value, 'root': const TextStyle(color: Color(0xff24292e))};
+  const colors = <int, int>{
+    0xffc9d1d9: 0xfff0f3f6,
+    0xffff7b72: 0xffff9492,
+    0xffd2a8ff: 0xffdbb7ff,
+    0xff79c0ff: 0xff91cbff,
+    0xffa5d6ff: 0xffaddcff,
+    0xffffa657: 0xffffb757,
+    0xff8b949e: 0xffbdc4cc,
+    0xff7ee787: 0xff72f088,
+  };
+  return {
+    for (final entry in githubDarkTheme.entries)
+      entry.key.split('.').map((scope) => scope.replaceFirst(RegExp(r'_+$'), '')).join('.'): entry.key == 'root'
+          ? const TextStyle(color: Color(0xfff0f3f6))
+          : entry.value.copyWith(
+              color: Color(
+                colors[entry.value.color?.toARGB32()] ??
+                    entry.value.color?.toARGB32() ??
+                    0xfff0f3f6,
+              ),
+            ),
+  };
 }

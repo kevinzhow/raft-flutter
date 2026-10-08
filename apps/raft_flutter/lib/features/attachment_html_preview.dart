@@ -162,76 +162,21 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => Dialog(
-    insetPadding: const EdgeInsets.all(16),
-    child: SizedBox(
-      width: 1000,
-      height: MediaQuery.sizeOf(context).height * .88,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${widget.metadata['filename'] ?? 'HTML'}',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                IconButton(
-                  tooltip: raftText(context, 'Download'),
-                  onPressed: current ? widget.onDownload : null,
-                  icon: const Icon(Icons.download),
-                ),
-                IconButton(
-                  tooltip: raftText(context, 'Close preview'),
-                  onPressed: widget.onClose,
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            if (error != null)
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  raftText(context, error!),
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : html == null
-                  ? Center(
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          RaftButton(
-                            label: 'Retry preview',
-                            onPressed: current ? load : null,
-                          ),
-                          RaftButton(
-                            label: 'Open interactive preview in browser',
-                            busy: opening,
-                            onPressed: current && !opening ? interactive : null,
-                          ),
-                        ],
-                      ),
-                    )
-                  : RaftHtmlPreview(
-                      html: html!,
-                      onLink: link,
-                      onInteractive: interactive,
-                      busy: opening,
-                    ),
-            ),
-          ],
-        ),
-      ),
-    ),
+  Widget build(BuildContext context) => RaftAttachmentLightbox(
+    title: '${widget.metadata['filename'] ?? 'HTML'}',
+    onClose: widget.onClose,
+    actions: [RaftIconButton(glyph: RaftGlyph.download, tooltip: 'Download', visualSize: 28,
+      minimumTargetSize: 48, variant: RaftControlVariant.ghost,
+      onPressed: current ? widget.onDownload : null)],
+    child: Column(children: [
+      if (error != null) Semantics(liveRegion: true, child: Text(raftText(context, error!), style: TextStyle(color: Theme.of(context).colorScheme.error))),
+      Expanded(child: loading ? const Center(child: RaftSpinner())
+          : html == null ? Center(child: Wrap(spacing: 8, runSpacing: 8, children: [
+              RaftButton(label: 'Retry preview', onPressed: current ? load : null),
+              RaftButton(label: 'Open interactive preview in browser', busy: opening,
+                onPressed: current && !opening ? interactive : null),
+            ]))
+          : RaftHtmlPreview(html: html!, onLink: link, onInteractive: interactive, busy: opening)),
+    ]),
   );
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -63,7 +64,17 @@ class _Workspace extends WorkspaceController {
       };
     }
     if (path == '/channels/saved') return {'saved': [], 'hasMore': false};
-    if (path == '/tasks/server') return {'tasks': tasks, 'next_cursor': null};
+    if (path == '/tasks/server') {
+      return {
+        'tasks': tasks
+            .where(
+              (row) =>
+                  query?['status'] == null || row['status'] == query?['status'],
+            )
+            .toList(),
+        'next_cursor': null,
+      };
+    }
     if (path.startsWith('/tasks/channel/')) {
       if (missingTaskSurface) {
         throw const RaftApiException('Channel not found', status: 404);
@@ -100,16 +111,23 @@ void main() {
     await t.pumpWidget(
       MaterialApp(
         theme: raftTheme(RaftFamily.brutal),
-        home: Scaffold(
-          body: ResourceView(
-            controller: w,
-            section: section,
-            onMessage: (_, _) async {},
+        home: RaftDensityScope(
+          density: RaftDensity.touch,
+          child: Scaffold(
+            body: ResourceView(
+              controller: w,
+              section: section,
+              onMessage: (_, _) async {},
+            ),
           ),
         ),
       ),
     );
     await t.pumpAndSettle();
+    if (['search', 'saved', 'activity'].contains(section)) {
+      await t.tap(find.byTooltip('Filters'));
+      await t.pumpAndSettle();
+    }
   }
 
   testWidgets(
@@ -118,24 +136,21 @@ void main() {
       await mount(t, 'tasks');
       await t.tap(find.byTooltip('Filter tasks by assignee'));
       await t.pumpAndSettle();
-      final dialog = find.byType(AlertDialog);
+      final dialog = find.byType(RaftMenuPanel);
       final search = find.descendant(
         of: dialog,
         matching: find.byType(TextField),
       );
       await t.enterText(search, 'Assigned to me');
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(CheckboxListTile, 'Assigned to me'));
+      await t.tap(find.widgetWithText(RaftMenuItem, 'Assigned to me'));
       await t.pumpAndSettle();
       await t.enterText(search, 'Unassigned');
       await t.pumpAndSettle();
-      expect(
-        find.widgetWithText(CheckboxListTile, 'Unassigned'),
-        findsOneWidget,
-      );
-      await t.tap(find.widgetWithText(CheckboxListTile, 'Unassigned'));
+      expect(find.widgetWithText(RaftMenuItem, 'Unassigned'), findsOneWidget);
+      await t.tap(find.widgetWithText(RaftMenuItem, 'Unassigned'));
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(TextButton, 'Apply'));
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       final dynamic state = t.state(find.byType(ResourceView));
       expect(state.taskAdvanced.assignees, {'user:alice', 'unassigned'});
@@ -163,10 +178,10 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byTooltip('Filter tasks by assignee'));
     await t.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(RaftMenuPanel), findsOneWidget);
     view.value = false;
     await t.pumpAndSettle();
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(RaftMenuPanel), findsNothing);
     expect(find.text('Home'), findsOneWidget);
     view.dispose();
   });
@@ -294,7 +309,7 @@ void main() {
       expect(w.calls.last.path, special.$2);
       await t.tap(
         find.descendant(
-          of: find.byType(SegmentedButton<String>),
+          of: find.byType(RaftSegmentedControl<String>),
           matching: find.text('All'),
         ),
       );
@@ -305,7 +320,7 @@ void main() {
       // Empty-selection support must not let the current All selection crash.
       await t.tap(
         find.descendant(
-          of: find.byType(SegmentedButton<String>),
+          of: find.byType(RaftSegmentedControl<String>),
           matching: find.text('All'),
         ),
       );
@@ -314,11 +329,11 @@ void main() {
       expect(w.calls.length, count);
       expect(
         t
-            .widget<SegmentedButton<String>>(
-              find.byType(SegmentedButton<String>),
+            .widget<RaftSegmentedControl<String>>(
+              find.byType(RaftSegmentedControl<String>),
             )
-            .selected,
-        {'all'},
+            .value,
+        'all',
       );
     });
   }
@@ -377,6 +392,8 @@ void main() {
     w.people!.complete([
       {'userId': 'bob', 'displayName': 'Private old Bob'},
     ]);
+    await t.pumpAndSettle();
+    await t.tap(find.byTooltip('Filters'));
     await t.pumpAndSettle();
     await t.tap(find.byTooltip('Filter by sender'));
     await t.pumpAndSettle();
@@ -451,17 +468,17 @@ void main() {
       await t.pumpAndSettle();
       await t.enterText(find.byType(TextField), 'bob');
       await t.pumpAndSettle();
-      expect(find.widgetWithText(CheckboxListTile, 'Writer'), findsNothing);
-      await t.tap(find.widgetWithText(CheckboxListTile, 'Bob'));
-      await t.tap(find.widgetWithText(CheckboxListTile, 'Robot Bob'));
-      await t.tap(find.text('Apply'));
+      expect(find.widgetWithText(RaftMenuItem, 'Writer'), findsNothing);
+      await t.tap(find.widgetWithText(RaftMenuItem, 'Bob'));
+      await t.tap(find.widgetWithText(RaftMenuItem, 'Robot Bob'));
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.text('Human unassigned'), findsOneWidget);
       expect(find.text('Agent same ID'), findsOneWidget);
       await t.tap(find.byTooltip('Filter tasks by assignee'));
       await t.pumpAndSettle();
-      await t.tap(find.widgetWithText(CheckboxListTile, 'Unassigned'));
-      await t.tap(find.text('Apply'));
+      await t.tap(find.widgetWithText(RaftMenuItem, 'Unassigned'));
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.text('Human unassigned'), findsOneWidget);
       expect(find.text('Agent same ID'), findsNothing);
@@ -506,24 +523,22 @@ void main() {
     },
   );
   testWidgets(
-    'retired task filter apply cannot pop the current workspace route',
+    'retired anchored task selections cannot affect the current workspace',
     (t) async {
       await mount(t, 'tasks');
       await t.tap(find.byTooltip('Filter tasks by creator'));
       await t.pumpAndSettle();
-      final apply = t
-          .widget<TextButton>(find.widgetWithText(TextButton, 'Apply'))
+      final select = t
+          .widget<RaftMenuItem>(find.widgetWithText(RaftMenuItem, 'Bob'))
           .onPressed!;
-      final clear = t
-          .widget<TextButton>(find.widgetWithText(TextButton, 'Clear filters'))
-          .onPressed!;
-      await t.tap(find.text('Cancel'));
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
-      apply();
-      clear();
+      select();
       await t.pumpAndSettle();
+      final dynamic state = t.state(find.byType(ResourceView));
+      expect(state.taskAdvanced.creators, isEmpty);
       expect(find.byType(ResourceView), findsOneWidget);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(RaftMenuPanel), findsNothing);
       expect(t.takeException(), isNull);
     },
   );

@@ -2,11 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'resource_filters.dart';
+import 'page_layout.dart';
+import 'resource_cards.dart';
+import 'task_selection_filter.dart';
+import 'public_avatar_url.dart';
+import '../platform/content_links.dart';
 
 class ResourceView extends StatefulWidget {
   const ResourceView({
@@ -14,10 +20,14 @@ class ResourceView extends StatefulWidget {
     required this.controller,
     required this.section,
     required this.onMessage,
+    this.onBack,
+    this.clock,
   });
   final WorkspaceController controller;
   final String section;
   final Future<void> Function(String, String?) onMessage;
+  final VoidCallback? onBack;
+  final DateTime Function()? clock;
   @override
   State<ResourceView> createState() => _ResourceViewState();
 }
@@ -34,6 +44,11 @@ class _ResourceViewState extends State<ResourceView> {
   String? catalogScope;
   int catalogRequest = 0;
   String taskLayout = 'list';
+  bool initializedTaskLayout = false;
+  bool extraFilters = false;
+  int? totalCount;
+  int? totalUnreadCount;
+  final collapsedTaskStatuses = <String>{'done', 'closed'};
   final taskAdvanced = TaskResourceFilters();
   final Map<String, List<Map<String, dynamic>>> lanes = {};
   final Map<String, String?> laneCursors = {};
@@ -47,6 +62,8 @@ class _ResourceViewState extends State<ResourceView> {
   String? acceptedAuthority;
   int authorityRevision = 0;
   final Set<ModalRoute<dynamic>> dialogs = {};
+  final Set<MenuController> filterMenus = {};
+  final dragFeedbackRevision = ValueNotifier<int>(0);
   String get authority {
     final channels = [...w.channels, ...w.dms]
       ..sort((a, b) => a.id.compareTo(b.id));
@@ -89,6 +106,7 @@ class _ResourceViewState extends State<ResourceView> {
       scope == acceptedAuthority &&
       (request == null || request == requestGeneration);
   void clearRows() {
+    dragFeedbackRevision.value++;
     rows = [];
     lanes.clear();
     laneCursors.clear();
@@ -96,6 +114,8 @@ class _ResourceViewState extends State<ResourceView> {
     cursor = null;
     hasMore = false;
     activityGroups = [];
+    totalCount = null;
+    totalUnreadCount = null;
     taskAdvanced.clear();
   }
 
@@ -107,6 +127,9 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   void closeDialogs() {
+    for (final menu in filterMenus.toList()) {
+      if (menu.isOpen) menu.close();
+    }
     for (final route in dialogs.toList()) {
       if (route.isActive) route.navigator?.removeRoute(route);
     }
@@ -232,6 +255,23 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!initializedTaskLayout && widget.section == 'tasks') {
+      initializedTaskLayout = true;
+      final next =
+          MediaQuery.sizeOf(context).width >=
+              RaftLayoutMetrics.desktopBreakpoint
+          ? 'board'
+          : 'list';
+      if (taskLayout != next) {
+        taskLayout = next;
+        load();
+      }
+    }
+  }
+
+  @override
   void didUpdateWidget(covariant ResourceView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, w)) {
@@ -245,6 +285,10 @@ class _ResourceViewState extends State<ResourceView> {
 
   @override
   void dispose() {
+    dragFeedbackRevision.value++;
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => dragFeedbackRevision.dispose(),
+    );
     final owned = dialogs.toList();
     dialogs.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -263,7 +307,7 @@ class _ResourceViewState extends State<ResourceView> {
 
   Future<void> load({bool append = false}) async {
     final request = ++requestGeneration, scope = authority;
-    if (['search', 'tasks'].contains(widget.section)) {
+    if (['search', 'tasks', 'activity'].contains(widget.section)) {
       unawaited(loadSenders(scope));
     }
     if (w.server == null ||
@@ -305,6 +349,7 @@ class _ResourceViewState extends State<ResourceView> {
             laneCursors[status] = page['next_cursor'];
           }
           rows = lanes.values.expand((r) => r).toList();
+          dragFeedbackRevision.value++;
         });
         return;
       }
@@ -364,6 +409,11 @@ class _ResourceViewState extends State<ResourceView> {
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
           rows = append ? [...rows, ...fetched] : fetched;
+          dragFeedbackRevision.value++;
+          if (value is Map) {
+            totalCount = (value['total'] ?? value['totalCount']) as int?;
+            totalUnreadCount = value['totalUnreadCount'] as int?;
+          }
           if (widget.section == 'activity' &&
               value is Map &&
               value['groups'] is List) {
@@ -410,161 +460,166 @@ class _ResourceViewState extends State<ResourceView> {
     final scope = authority;
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              if (['search', 'saved'].contains(widget.section))
-                Expanded(
-                  child: TextField(
-                    controller: query,
-                    decoration: InputDecoration(
-                      hintText: raftText(
-                        context,
-                        widget.section == 'search'
-                            ? 'Search messages'
-                            : 'Filter saved messages',
+        resourceHeader(scope),
+        if ((widget.section != 'tasks' || extraFilters) &&
+            (widget.section != 'saved' || extraFilters))
+          Padding(
+            padding: RaftLayoutMetrics.toolbarInset,
+            child: Row(
+              children: [
+                if (['search', 'saved'].contains(widget.section))
+                  Expanded(
+                    child: TextField(
+                      controller: query,
+                      decoration: InputDecoration(
+                        hintText: raftText(
+                          context,
+                          widget.section == 'search'
+                              ? 'Search messages'
+                              : 'Filter saved messages',
+                        ),
+                        prefixIcon: const RaftIcon(RaftGlyph.search),
                       ),
-                      prefixIcon: const Icon(Icons.search),
+                      onSubmitted: (_) => load(),
                     ),
-                    onSubmitted: (_) => load(),
-                  ),
-                )
-              else if (widget.section == 'activity')
-                Expanded(
-                  child: SegmentedButton<String>(
-                    segments: [
-                      ButtonSegment(
-                        value: 'all',
-                        label: Text(raftText(context, 'All')),
+                  )
+                else if (widget.section == 'activity')
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: RaftSegmentedControl<String>(
+                        value: ['all', 'unread', 'mentions'].contains(filter)
+                            ? filter
+                            : '',
+                        label: raftText(context, 'Activity filters'),
+                        items: [
+                          for (final value in ['all', 'unread', 'mentions'])
+                            RaftSegmentedOption(
+                              value: value,
+                              label: raftText(context, switch (value) {
+                                'all' => 'All',
+                                'unread' => 'Unread',
+                                _ => 'Mentions',
+                              }),
+                            ),
+                        ],
+                        onChanged: (value) {
+                          if (accepts(scope) && filter != value) {
+                            filter = value;
+                            load();
+                          }
+                        },
                       ),
-                      ButtonSegment(
-                        value: 'unread',
-                        label: Text(raftText(context, 'Unread')),
-                      ),
-                      ButtonSegment(
-                        value: 'mentions',
-                        label: Text(raftText(context, 'Mentions')),
-                      ),
-                    ],
-                    emptySelectionAllowed: true,
-                    selected: ['all', 'unread', 'mentions'].contains(filter)
-                        ? {filter}
-                        : <String>{},
-                    onSelectionChanged: (s) {
-                      if (s.isEmpty || !accepts(scope)) return;
-                      filter = s.first;
-                      load();
-                    },
-                  ),
-                )
-              else if (widget.section == 'tasks')
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: filter,
-                    decoration: InputDecoration(
-                      labelText: raftText(context, 'Task status'),
                     ),
-                    items:
-                        [
-                              'all',
-                              'todo',
-                              'in_progress',
-                              'in_review',
-                              'done',
-                              'closed',
-                            ]
-                            .map(
-                              (s) => DropdownMenuItem(
-                                value: s,
-                                child: Text(
-                                  raftText(
-                                    context,
-                                    s == 'all' ? 'All' : raftTaskStatusLabel(s),
+                  )
+                else if (widget.section == 'tasks')
+                  Expanded(
+                    child: RaftSelectField<String>(
+                      value: filter,
+                      label: 'Task status',
+                      items:
+                          [
+                                'all',
+                                'todo',
+                                'in_progress',
+                                'in_review',
+                                'done',
+                                'closed',
+                              ]
+                              .map(
+                                (s) => DropdownMenuItem(
+                                  value: s,
+                                  child: Text(
+                                    raftText(
+                                      context,
+                                      s == 'all'
+                                          ? 'All'
+                                          : raftTaskStatusLabel(s),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (s) {
-                      filter = s!;
+                              )
+                              .toList(),
+                      onChanged: (s) {
+                        filter = s!;
+                        load();
+                      },
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: Text(
+                      '${rows.length} ${widget.section}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                if (widget.section == 'tasks')
+                  IconButton(
+                    tooltip: raftText(
+                      context,
+                      taskLayout == 'board'
+                          ? 'Show task list'
+                          : 'Show task board',
+                    ),
+                    icon: Icon(
+                      taskLayout == 'board'
+                          ? Icons.view_list_outlined
+                          : Icons.view_kanban_outlined,
+                    ),
+                    onPressed: () {
+                      taskLayout = taskLayout == 'board' ? 'list' : 'board';
                       load();
                     },
                   ),
-                )
-              else
-                Expanded(
-                  child: Text(
-                    '${rows.length} ${widget.section}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              if (widget.section == 'tasks')
                 IconButton(
-                  tooltip: raftText(
-                    context,
-                    taskLayout == 'board'
-                        ? 'Show task list'
-                        : 'Show task board',
+                  tooltip: raftText(context, 'Refresh'),
+                  onPressed: load,
+                  icon: const Icon(Icons.refresh),
+                ),
+                if (widget.section == 'tasks')
+                  IconButton(
+                    tooltip: raftText(context, 'Create task'),
+                    onPressed: w.server?.string('role') == 'guest'
+                        ? null
+                        : () => createTask(sourceScope: scope),
+                    icon: const Icon(Icons.add),
                   ),
-                  icon: Icon(
-                    taskLayout == 'board'
-                        ? Icons.view_list_outlined
-                        : Icons.view_kanban_outlined,
+                if (widget.section == 'activity')
+                  PopupMenuButton<String>(
+                    tooltip: raftText(context, 'Activity actions'),
+                    onSelected: (action) {
+                      if (!accepts(scope)) return;
+                      if (action == 'read-all') {
+                        command(
+                          'POST',
+                          '/channels/inbox/read-all',
+                          sourceScope: scope,
+                        );
+                      } else {
+                        filter = action;
+                        load();
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'read-all',
+                        child: Text(raftText(context, 'Mark all read')),
+                      ),
+                      PopupMenuItem(
+                        value: 'done',
+                        child: Text(raftText(context, 'Done conversations')),
+                      ),
+                      PopupMenuItem(
+                        value: 'unfollowed',
+                        child: Text(raftText(context, 'Unfollowed threads')),
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    taskLayout = taskLayout == 'board' ? 'list' : 'board';
-                    load();
-                  },
-                ),
-              IconButton(
-                tooltip: raftText(context, 'Refresh'),
-                onPressed: load,
-                icon: const Icon(Icons.refresh),
-              ),
-              if (widget.section == 'tasks')
-                IconButton(
-                  tooltip: raftText(context, 'Create task'),
-                  onPressed: w.server?.string('role') == 'guest'
-                      ? null
-                      : () => createTask(sourceScope: scope),
-                  icon: const Icon(Icons.add),
-                ),
-              if (widget.section == 'activity')
-                PopupMenuButton<String>(
-                  tooltip: raftText(context, 'Activity actions'),
-                  onSelected: (action) {
-                    if (!accepts(scope)) return;
-                    if (action == 'read-all') {
-                      command(
-                        'POST',
-                        '/channels/inbox/read-all',
-                        sourceScope: scope,
-                      );
-                    } else {
-                      filter = action;
-                      load();
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem(
-                      value: 'read-all',
-                      child: Text(raftText(context, 'Mark all read')),
-                    ),
-                    PopupMenuItem(
-                      value: 'done',
-                      child: Text(raftText(context, 'Done conversations')),
-                    ),
-                    PopupMenuItem(
-                      value: 'unfollowed',
-                      child: Text(raftText(context, 'Unfollowed threads')),
-                    ),
-                  ],
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-        if (['search', 'saved', 'activity'].contains(widget.section))
+        if (['search', 'saved', 'activity'].contains(widget.section) &&
+            extraFilters)
           advancedFilters(),
         if (widget.section == 'tasks') taskFilters(),
         if (error != null)
@@ -580,30 +635,581 @@ class _ResourceViewState extends State<ResourceView> {
               ? Center(child: CircularProgressIndicator())
               : widget.section == 'tasks' && taskLayout == 'board'
               ? taskBoard()
+              : widget.section == 'tasks' && rows.isNotEmpty
+              ? groupedTasks()
               : rows.isEmpty
-              ? RaftEmptyState(
-                  title: widget.section == 'search'
-                      ? 'Search your workspace'
-                      : 'No ${widget.section}',
-                  detail: widget.section == 'search'
-                      ? 'Enter words to find messages.'
-                      : 'There are no items in this view.',
+              ? LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
+                    primary: false,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: RaftEmptyState(
+                        title: widget.section == 'search'
+                            ? 'Search your workspace'
+                            : 'No ${widget.section}',
+                        detail: widget.section == 'search'
+                            ? 'Enter words to find messages.'
+                            : 'There are no items in this view.',
+                      ),
+                    ),
+                  ),
                 )
               : widget.section == 'activity' && advanced.groupByChannel
               ? groupedActivity()
-              : ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: visibleRows.length + (hasMore ? 1 : 0),
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) => index == visibleRows.length
-                      ? TextButton(
-                          onPressed: () => load(append: true),
-                          child: Text(raftText(context, 'Load more')),
-                        )
-                      : item(visibleRows[index]),
+              : Material(
+                  color: RaftTokens.of(context).brutal
+                      ? RaftTokens.of(context).panel
+                      : RaftTokens.of(context).sidebar,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: visibleRows.length + (hasMore ? 1 : 0),
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: RaftConversationCardRecipe.gap),
+                    itemBuilder: (context, index) => index == visibleRows.length
+                        ? TextButton(
+                            onPressed: () => load(append: true),
+                            child: Text(raftText(context, 'Load more')),
+                          )
+                        : item(visibleRows[index]),
+                  ),
                 ),
         ),
       ],
+    );
+  }
+
+  Widget resourceHeader(String scope) {
+    final mobile =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+    final count = totalCount ?? rows.length;
+    return RaftPageHeader(
+      title: raftText(context, switch (widget.section) {
+        'tasks' => 'Tasks',
+        'saved' => 'Saved',
+        'activity' => 'Activity',
+        'search' => 'Search',
+        _ => widget.section,
+      }),
+      subtitle: switch (widget.section) {
+        'tasks' => '$count ${raftText(context, 'channel tasks')}',
+        'saved' =>
+          '$count ${raftText(context, count == 1 ? 'saved item' : 'saved items')}',
+        'activity' =>
+          '$count ${raftText(context, 'active')}${(totalUnreadCount ?? 0) > 0 ? ' · $totalUnreadCount ${raftText(context, 'unread')}' : ''}',
+        _ => null,
+      },
+      height: raftPageHeaderHeight(context),
+      mobile: mobile,
+      variant: widget.section == 'tasks'
+          ? RaftPanelHeaderVariant.tasks
+          : RaftPanelHeaderVariant.canonical,
+      icon: RaftIcon(switch (widget.section) {
+        'tasks' => RaftGlyph.checkSquare,
+        'saved' => RaftGlyph.bookmark,
+        'activity' => RaftGlyph.activity,
+        _ => RaftGlyph.search,
+      }),
+      leading: mobile
+          ? RaftIconButton(
+              glyph: RaftGlyph.arrowLeft,
+              glyphSize: 14,
+              visualSize: RaftTokens.of(context).brutal ? 26 : 28,
+              tooltip: 'Back',
+              onPressed: widget.onBack ?? () {},
+            )
+          : null,
+      actions: [
+        if (widget.section == 'tasks') ...[
+          RaftIconButton(
+            glyph: RaftGlyph.refreshCw,
+            tooltip: 'Refresh',
+            onPressed: load,
+          ),
+          RaftIconButton(
+            glyph: RaftGlyph.plus,
+            tooltip: 'Create task',
+            onPressed: w.server?.string('role') == 'guest'
+                ? null
+                : () => createTask(sourceScope: scope),
+          ),
+        ],
+        if (['saved', 'activity', 'search', 'tasks'].contains(widget.section))
+          RaftIconButton(
+            glyph: RaftGlyph.slidersHorizontal,
+            tooltip: 'Filters',
+            onPressed: () {
+              if (accepts(scope)) setState(() => extraFilters = !extraFilters);
+            },
+          ),
+      ],
+    );
+  }
+
+  Future<void> openConversation(Map<String, dynamic> row, String scope) async {
+    if (!accepts(scope)) return;
+    final id = row['parentChannelId'] ?? row['channelId'];
+    if (id is! String) return;
+    final unread = (row['unreadCount'] as num? ?? 0) > 0;
+    final message = widget.section == 'saved'
+        ? row['messageId']
+        : row['firstMentionMessageId'] ??
+              (unread ? row['firstUnreadMessageId'] : null) ??
+              row['latestActivityMessageId'] ??
+              row['lastMessageId'];
+    await widget.onMessage(id, message as String?);
+  }
+
+  String relativeTime(dynamic value) => resourceRelativeTime(
+    value is String ? value : null,
+    now: widget.clock?.call(),
+    chinese: Localizations.localeOf(context).languageCode == 'zh',
+  );
+
+  Widget savedCard(Map<String, dynamic> row, String scope) {
+    final t = RaftTokens.of(context),
+        recipe = RaftConversationCardRecipe(
+          RaftTokens.of(context),
+          saved: true,
+        );
+    final thread = row['channelType'] == 'thread';
+    final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
+    final sender = '${row['senderName'] ?? ''}';
+    final label = dm
+        ? '@$sender'
+        : '#${thread ? row['parentChannelName'] : row['channelName']}';
+    return RaftConversationCard(
+      key: ValueKey('saved-${row['messageId']}'),
+      saved: true,
+      onOpen: () => openConversation(row, scope),
+      onContextMenu: () => savedMenu(row, scope),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(label, style: recipe.metadata),
+                    if (thread)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RaftIcon(
+                            RaftGlyph.messageSquare,
+                            size: 10,
+                            color: t.muted,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            raftText(context, 'Thread'),
+                            style: recipe.metadata,
+                          ),
+                        ],
+                      ),
+                    if (sender.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RaftAvatar(
+                            name: sender,
+                            size: 16,
+                            kind: row['senderType'] == 'agent'
+                                ? RaftAvatarKind.agent
+                                : row['senderType'] == 'external_projection'
+                                ? RaftAvatarKind.app
+                                : RaftAvatarKind.human,
+                            imageUrl: raftPublicAvatarUrl(
+                              w.client.origin,
+                              row['senderAvatarUrl'] as String?,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              sender,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: recipe.metadata.copyWith(color: t.strong),
+                            ),
+                          ),
+                        ],
+                      ),
+                    Text(
+                      relativeTime(row['createdAt']),
+                      style: recipe.timestamp,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${row['content'] ?? ''}',
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: recipe.body,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          RaftIconButton(
+            glyph: RaftGlyph.bookmark,
+            tooltip: 'Remove saved message',
+            visualSize: 28,
+            onPressed: () => command(
+              'DELETE',
+              '/channels/saved/${row['messageId']}',
+              sourceScope: scope,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> savedMenu(Map<String, dynamic> row, String scope) async {
+    await scopedDialog<void>(
+      scope,
+      (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: RaftMenuPanel(
+          width: 240,
+          onDismiss: () => closeOwnedDialog(context, scope),
+          children: [
+            RaftMenuItem(
+              label: raftText(context, 'Copy link'),
+              glyph: RaftGlyph.link,
+              onPressed: w.server?.string('slug').isEmpty != false
+                  ? null
+                  : () async {
+                      if (!accepts(scope)) return;
+                      final thread = row['channelType'] == 'thread';
+                      final text = ContentLinks.messageUrl(
+                        origin: ContentLinks.originFor(w.client.origin),
+                        slug: w.server!.string('slug'),
+                        channelId:
+                            '${row['parentChannelId'] ?? row['channelId']}',
+                        messageId: '${row['messageId']}',
+                        kind:
+                            '${thread ? row['parentChannelType'] : row['channelType']}',
+                        parentMessageId: thread
+                            ? row['parentMessageId'] as String?
+                            : null,
+                      ).toString();
+                      closeOwnedDialog(context, scope);
+                      if (accepts(scope)) {
+                        await Clipboard.setData(ClipboardData(text: text));
+                      }
+                    },
+            ),
+            RaftMenuItem(
+              label: raftText(context, 'Copy Markdown'),
+              glyph: RaftGlyph.copy,
+              onPressed: () async {
+                if (!accepts(scope)) return;
+                closeOwnedDialog(context, scope);
+                if (accepts(scope)) {
+                  await Clipboard.setData(
+                    ClipboardData(text: '${row['content'] ?? ''}'),
+                  );
+                }
+              },
+            ),
+            RaftMenuItem(
+              label: raftText(context, 'Remove saved message'),
+              glyph: RaftGlyph.bookmark,
+              onPressed: () {
+                if (!accepts(scope)) return;
+                closeOwnedDialog(context, scope);
+                command(
+                  'DELETE',
+                  '/channels/saved/${row['messageId']}',
+                  sourceScope: scope,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget activityCard(Map<String, dynamic> row, String scope) {
+    final t = RaftTokens.of(context),
+        recipe = RaftConversationCardRecipe(RaftTokens.of(context));
+    final thread = row['kind'] == 'thread';
+    final dm = row['kind'] == 'dm' || row['channelType'] == 'dm';
+    final unread = (row['unreadCount'] as num? ?? 0).toInt();
+    final title = thread
+        ? '${row['parentMessagePreview'] ?? ''}'
+        : '${row['channelName'] ?? row['peerDisplayName'] ?? row['peerName'] ?? row['messagePreview'] ?? 'Conversation'}';
+    final senderType =
+        row[thread ? 'latestActivitySenderType' : 'lastMessageSenderType'];
+    final senderId =
+        row[thread ? 'latestActivitySenderId' : 'lastMessageSenderId'];
+    final sender = senderType == 'system' || senderId == 'system'
+        ? raftText(context, 'System')
+        : '${row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'] ?? senders.where((s) => s.id == senderId && s.type == senderType).firstOrNull?.label ?? ''}';
+    final preview =
+        '${thread ? row['latestActivityPreview'] ?? '' : row['lastMessagePreview'] ?? row['messagePreview'] ?? ''}';
+    return RaftConversationCard(
+      key: thread
+          ? ValueKey('activity-thread-${row['threadChannelId']}')
+          : ValueKey(
+              'activity-${row['kind']}-${row['channelId'] ?? row['messageId']}',
+            ),
+      onOpen: () => openConversation(row, scope),
+      actions: row['kind'] == 'mention_action'
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RaftIconButton(
+                  glyph: RaftGlyph.circleCheck,
+                  visualSize: 28,
+                  tooltip: filter == 'done'
+                      ? 'Restore conversation'
+                      : 'Mark conversation done',
+                  onPressed: () => activityAction(
+                    row,
+                    filter == 'done' ? 'undone' : 'done',
+                    scope,
+                  ),
+                ),
+                if (thread)
+                  RaftIconButton(
+                    glyph: row['isFollowing'] == false
+                        ? RaftGlyph.plus
+                        : RaftGlyph.x,
+                    visualSize: 28,
+                    tooltip: row['isFollowing'] == false
+                        ? 'Follow thread'
+                        : 'Unfollow thread',
+                    onPressed: () => activityAction(
+                      row,
+                      row['isFollowing'] == false ? 'follow' : 'unfollow',
+                      scope,
+                    ),
+                  ),
+              ],
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (thread)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Text(
+                '#${row['parentChannelName'] ?? ''}',
+                style: recipe.metadata.copyWith(
+                  fontSize: 11,
+                  height: 12 / 11,
+                  color: t.colors['foreground-placeholder'],
+                ),
+              ),
+            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 3, right: 6),
+                child: RaftIcon(
+                  thread
+                      ? RaftGlyph.messageSquare
+                      : dm
+                      ? RaftGlyph.atSign
+                      : RaftGlyph.hash,
+                  size: 13,
+                  color: t.colors['foreground-placeholder'],
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      RaftTypography.body(
+                        t,
+                        size: 14,
+                        line: 20,
+                        color: unread > 0 ? t.strong : t.muted,
+                      ).copyWith(
+                        fontWeight: unread > 0
+                            ? FontWeight.w700
+                            : FontWeight.w600,
+                      ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                relativeTime(row['lastActivityAt'] ?? row['lastMessageAt']),
+                style: recipe.timestamp,
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text.rich(
+            TextSpan(
+              children: [
+                if (sender.isNotEmpty)
+                  TextSpan(
+                    text: '$sender: ',
+                    style: recipe.body.copyWith(
+                      color: t.muted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                TextSpan(text: preview),
+              ],
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: recipe.body.copyWith(color: unread > 0 ? t.strong : t.muted),
+          ),
+          const SizedBox(height: 4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 20),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: [
+                if (row['taskNumber'] != null && row['taskStatus'] is String)
+                  RaftTaskStatus(status: row['taskStatus']),
+                if (thread)
+                  activityBadge(
+                    '${row['replyCount'] ?? 0} ${raftText(context, 'replies')}',
+                    t.muted,
+                    t.panel,
+                  ),
+                if (thread && row['isFollowing'] == false)
+                  activityBadge(
+                    raftText(context, 'Unfollowed'),
+                    t.muted,
+                    t.panel,
+                  ),
+                if (row['hasMention'] == true)
+                  activityBadge(
+                    '@${raftText(context, 'You')}',
+                    t.strong,
+                    t.primaryFill,
+                  ),
+                if (unread > 0)
+                  activityBadge(
+                    '$unread ${raftText(context, 'new')}',
+                    t.accent,
+                    t.accentSoft,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget activityBadge(String label, Color foreground, Color background) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: background,
+          border: Border.all(color: foreground.withValues(alpha: .3)),
+          borderRadius: BorderRadius.circular(
+            RaftTokens.of(context).brutal ? 0 : 4,
+          ),
+        ),
+        child: Text(
+          label,
+          style: RaftTypography.body(
+            RaftTokens.of(context),
+            size: 10,
+            line: 14,
+            color: foreground,
+          ).copyWith(fontWeight: FontWeight.w700),
+        ),
+      );
+
+  Widget groupedTasks() {
+    final t = RaftTokens.of(context),
+        recipe = RaftTaskSectionRecipe(RaftTokens.of(context)),
+        scope = authority;
+    return ColoredBox(
+      color: t.brutal ? t.panel : t.sidebar,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          for (final status in raftTaskStatuses.where(
+            (s) => filter == 'all' || filter == s,
+          )) ...[
+            Container(
+              padding: recipe.inset,
+              decoration: recipe.decoration,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      RaftTaskStatus(status: status),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${visibleRows.where((r) => r['status'] == status).length}',
+                        style: recipe.count,
+                      ),
+                      const Spacer(),
+                      RaftIconButton(
+                        key: ValueKey('task-group-$status'),
+                        glyph: collapsedTaskStatuses.contains(status)
+                            ? RaftGlyph.chevronRight
+                            : RaftGlyph.chevronDown,
+                        tooltip:
+                            '${collapsedTaskStatuses.contains(status) ? 'Show' : 'Hide'} ${raftTaskStatusLabel(status)} tasks',
+                        onPressed: () {
+                          if (accepts(scope)) {
+                            setState(() {
+                              if (!collapsedTaskStatuses.remove(status)) {
+                                collapsedTaskStatuses.add(status);
+                              }
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  if (!collapsedTaskStatuses.contains(status)) ...[
+                    SizedBox(height: recipe.itemGap),
+                    for (final row in visibleRows.where(
+                      (r) => r['status'] == status,
+                    ))
+                      item(row),
+                    if (!visibleRows.any((r) => r['status'] == status))
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 12,
+                        ),
+                        child: Text(
+                          '${raftText(context, 'No tasks')} · ${raftTaskStatusLabel(status)}',
+                          style: TextStyle(color: t.muted),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+            SizedBox(height: recipe.sectionGap),
+          ],
+          if (hasMore)
+            TextButton(
+              onPressed: () => load(append: true),
+              child: Text(raftText(context, 'Load more')),
+            ),
+        ],
+      ),
     );
   }
 
@@ -742,7 +1348,7 @@ class _ResourceViewState extends State<ResourceView> {
                 controller: query,
                 decoration: InputDecoration(
                   hintText: raftText(context, 'Filter Activity'),
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const RaftIcon(RaftGlyph.search),
                 ),
                 onSubmitted: (_) {
                   if (accepts(scope)) load();
@@ -910,8 +1516,20 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
-  List<Map<String, dynamic>> get visibleRows =>
-      widget.section == 'tasks' ? rows.where(matchesTask).toList() : rows;
+  List<Map<String, dynamic>> get visibleRows {
+    if (widget.section != 'tasks') return rows;
+    return rows.where(matchesTask).toList()..sort((a, b) {
+      final order = raftTaskStatuses
+          .indexOf('${a['status']}')
+          .compareTo(raftTaskStatuses.indexOf('${b['status']}'));
+      return order != 0
+          ? order
+          : (b['taskNumber'] as num? ?? 0).compareTo(
+              a['taskNumber'] as num? ?? 0,
+            );
+    });
+  }
+
   bool matchesTask(Map<String, dynamic> row) => taskAdvanced.matches(row);
   Widget privateMenuLabel(String scope, String value) => Builder(
     builder: (context) {
@@ -921,133 +1539,6 @@ class _ResourceViewState extends State<ResourceView> {
       return accepts(scope) ? Text(value) : const SizedBox.shrink();
     },
   );
-  Future<void> taskFilterPicker(
-    String field,
-    Map<String, String> options,
-    Set<String> selection, {
-    String? selfName,
-    Map<String, String> aliases = const {},
-  }) async {
-    final scope = authority;
-    final selected = selection.toSet();
-    var needle = '';
-    final accepted = await scopedDialog<bool>(
-      scope,
-      (context) => StatefulBuilder(
-        builder: (context, update) => AlertDialog(
-          title: Text(
-            raftText(context, 'Filter tasks by ${field.toLowerCase()}'),
-          ),
-          content: SizedBox(
-            width: 400,
-            height:
-                (MediaQuery.sizeOf(context).height -
-                    MediaQuery.viewInsetsOf(context).bottom) *
-                .45,
-            child: Column(
-              children: [
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: raftText(context, 'Search'),
-                  ),
-                  onChanged: (value) {
-                    if (context.mounted &&
-                        accepts(scope) &&
-                        ModalRoute.of(context)?.isCurrent == true) {
-                      update(() => needle = value.trim().toLowerCase());
-                    }
-                  },
-                ),
-                Expanded(
-                  child: ListView(
-                    children: [
-                      for (final option in options.entries)
-                        if (option.value.toLowerCase().contains(needle) ||
-                            aliases[option.key]?.toLowerCase().contains(
-                                  needle,
-                                ) ==
-                                true ||
-                            option.key == 'user:${w.client.user?.id}' &&
-                                selfName?.toLowerCase().contains(needle) ==
-                                    true)
-                          CheckboxListTile(
-                            title: Text(option.value),
-                            secondary:
-                                option.key == 'unassigned' || field == 'Channel'
-                                ? null
-                                : Icon(
-                                    option.key.startsWith('user:')
-                                        ? Icons.person_outline
-                                        : Icons.smart_toy_outlined,
-                                    semanticLabel: raftText(
-                                      context,
-                                      option.key.startsWith('user:')
-                                          ? 'Human'
-                                          : 'Agent',
-                                    ),
-                                  ),
-                            subtitle:
-                                option.key == 'user:${w.client.user?.id}' &&
-                                    selfName?.isNotEmpty == true
-                                ? Text(selfName!)
-                                : null,
-                            value: selected.contains(option.key),
-                            onChanged: (value) {
-                              if (!context.mounted ||
-                                  !accepts(scope) ||
-                                  ModalRoute.of(context)?.isCurrent != true) {
-                                return;
-                              }
-                              update(() {
-                                if (value == true) {
-                                  selected.add(option.key);
-                                } else {
-                                  selected.remove(option.key);
-                                }
-                              });
-                            },
-                          ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                if (context.mounted &&
-                    accepts(scope) &&
-                    ModalRoute.of(context)?.isCurrent == true) {
-                  update(selected.clear);
-                }
-              },
-              child: Text(raftText(context, 'Clear filters')),
-            ),
-            TextButton(
-              onPressed: () {
-                if (accepts(scope)) closeOwnedDialog(context, scope, false);
-              },
-              child: Text(raftText(context, 'Cancel')),
-            ),
-            TextButton(
-              onPressed: () {
-                if (accepts(scope)) closeOwnedDialog(context, scope, true);
-              },
-              child: Text(raftText(context, 'Apply')),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (accepted != true || !accepts(scope)) return;
-    setState(() {
-      selection
-        ..clear()
-        ..addAll(selected);
-    });
-  }
-
   Widget taskFilters() {
     final scope = authority;
     final names = <String, String>{
@@ -1074,7 +1565,7 @@ class _ResourceViewState extends State<ResourceView> {
         c.id: '#${c.name}',
     };
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: RaftLayoutMetrics.toolbarInset,
       child: Wrap(
         spacing: 8,
         runSpacing: 4,
@@ -1104,42 +1595,66 @@ class _ResourceViewState extends State<ResourceView> {
                           if (entry.key != 'user:${self?.id}')
                             entry.key: entry.value,
                       };
-                return Tooltip(
-                  message: raftText(
-                    context,
-                    'Filter tasks by ${field.toLowerCase()}',
-                  ),
-                  child: TextButton.icon(
-                    icon: Icon(
-                      field == 'Channel' ? Icons.tag : Icons.person_outline,
-                      size: 16,
-                    ),
-                    label: Text(
-                      '${raftText(context, field)}${selection.isEmpty ? '' : ' (${selection.length})'}',
-                    ),
-                    onPressed: () {
-                      if (accepts(scope)) {
-                        taskFilterPicker(
-                          field,
-                          options,
-                          selection,
-                          selfName: field == 'Channel'
-                              ? null
-                              : names['user:${self?.id}'],
-                          aliases: {
-                            for (final person in senders)
-                              person.key: person.handle,
-                          },
-                        );
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      minimumSize: const Size(48, 48),
-                    ),
-                  ),
+                return TaskSelectionFilter(
+                  key: ValueKey('$scope:$field'),
+                  field: field,
+                  options: options,
+                  selection: selection,
+                  beforeOpen: (active) {
+                    for (final menu in filterMenus) {
+                      if (!identical(menu, active) && menu.isOpen) menu.close();
+                    }
+                  },
+                  valid: () => accepts(scope),
+                  aliases: {
+                    for (final person in senders)
+                      person.key: '${person.handle} ${person.label}',
+                  },
+                  onController: (menu, add) {
+                    if (add) {
+                      filterMenus.add(menu);
+                    } else {
+                      filterMenus.remove(menu);
+                    }
+                  },
+                  onToggle: (key) {
+                    if (accepts(scope)) {
+                      setState(() {
+                        if (!selection.remove(key)) selection.add(key);
+                      });
+                    }
+                  },
+                  onClear: () {
+                    if (accepts(scope)) setState(selection.clear);
+                  },
                 );
               },
             ),
+          RaftSegmentedControl<String>(
+            value: taskLayout,
+            visualHeight: 32,
+            label: raftText(context, 'Task view'),
+            items: const [
+              RaftSegmentedOption(
+                value: 'board',
+                label: 'Board',
+                tooltip: 'Show task board',
+                glyph: RaftGlyph.columns,
+              ),
+              RaftSegmentedOption(
+                value: 'list',
+                label: 'List',
+                tooltip: 'Show task list',
+                glyph: RaftGlyph.list,
+              ),
+            ],
+            onChanged: (layout) {
+              if (accepts(scope) && taskLayout != layout) {
+                taskLayout = layout;
+                load();
+              }
+            },
+          ),
           if (!taskAdvanced.isEmpty)
             TextButton(
               onPressed: () {
@@ -1186,66 +1701,184 @@ class _ResourceViewState extends State<ResourceView> {
     }
   }
 
-  Widget taskBoard() => SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final status in raftTaskStatuses.where(
-          (s) => filter == 'all' || filter == s,
-        ))
-          Container(
-            width: 320,
-            margin: const EdgeInsets.fromLTRB(16, 8, 0, 16),
-            decoration: BoxDecoration(
-              color: RaftTokens.of(context).sidebar,
-              border: Border.all(color: RaftTokens.of(context).line),
-              borderRadius: BorderRadius.circular(
-                RaftTokens.of(context).radius,
-              ),
-            ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      RaftTaskStatus(status: status),
-                      const Spacer(),
-                      Text(
-                        '${(lanes[status] ?? []).where(matchesTask).length}${laneCursors[status] != null ? '+' : ''}',
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    children: [
-                      for (final row in (lanes[status] ?? []).where(
-                        matchesTask,
-                      ))
-                        item(row),
-                      if (laneCursors[status] != null)
-                        TextButton(
-                          onPressed: laneBusy.contains(status)
-                              ? null
-                              : () => moreLane(status),
-                          child: Text(
-                            laneBusy.contains(status)
-                                ? 'Loading…'
-                                : 'Load more ${raftTaskStatusLabel(status)}',
-                          ),
+  bool canMoveTask(Map<String, dynamic> row, String scope, String next) {
+    if (!accepts(scope) ||
+        !rows.any((current) => identical(current, row)) ||
+        row['status'] == next ||
+        !raftTaskStatuses.contains(next) ||
+        row['readOnlyReason'] != null ||
+        w.server?.string('role') == 'guest' ||
+        !w.channels.any(
+          (c) => c.id == row['channelId'] && c.joined && !c.archived,
+        )) {
+      return false;
+    }
+    final role = w.server?.string('role');
+    return ['owner', 'admin'].contains(role) ||
+        (raftTaskTransitions[row['status']] ?? []).contains(next);
+  }
+
+  Widget draggableTask(Map<String, dynamic> row, String scope) {
+    final card = item(row);
+    if (!raftTaskStatuses.any((s) => canMoveTask(row, scope, s))) return card;
+    final payload = _TaskDrag(row, scope);
+    final feedback = AnimatedBuilder(
+      animation: dragFeedbackRevision,
+      builder: (context, _) =>
+          accepts(scope) && rows.any((current) => identical(current, row))
+          ? Material(
+              color: Colors.transparent,
+              child: SizedBox(width: 292, child: item(row)),
+            )
+          : const SizedBox.shrink(),
+    );
+    return RaftDensityScope.of(context) == RaftDensity.touch
+        ? LongPressDraggable<_TaskDrag>(
+            data: payload,
+            delay: const Duration(milliseconds: 200),
+            feedback: feedback,
+            childWhenDragging: Opacity(opacity: .4, child: card),
+            child: card,
+          )
+        : Draggable<_TaskDrag>(
+            data: payload,
+            feedback: feedback,
+            childWhenDragging: Opacity(opacity: .4, child: card),
+            child: card,
+          );
+  }
+
+  Widget taskBoard() {
+    final t = RaftTokens.of(context), scope = authority;
+    return ColoredBox(
+      color: t.brutal ? t.panel : t.sidebar,
+      child: SingleChildScrollView(
+        primary: false,
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final status in raftTaskStatuses.where(
+              (s) => filter == 'all' || filter == s,
+            ))
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: DragTarget<_TaskDrag>(
+                  key: ValueKey('task-drop-$status'),
+                  onWillAcceptWithDetails: (details) =>
+                      canMoveTask(details.data.row, details.data.scope, status),
+                  onAcceptWithDetails: (details) {
+                    final payload = details.data;
+                    if (canMoveTask(payload.row, payload.scope, status)) {
+                      command(
+                        'PATCH',
+                        '/tasks/${payload.row['id']}/status',
+                        data: {'status': status},
+                        sourceScope: payload.scope,
+                      );
+                    }
+                  },
+                  builder: (context, candidates, rejected) => SizedBox(
+                    width: 320,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: candidates.isNotEmpty
+                            ? t.colors['primary-soft']
+                            : t.brutal
+                            ? t.panel.withValues(alpha: .3)
+                            : t.colors['fill-muted']!.withValues(alpha: .3),
+                        border: Border.all(
+                          color: candidates.isNotEmpty
+                              ? t.strong
+                              : t.brutal
+                              ? t.strong.withValues(alpha: .2)
+                              : t.colors['line-muted']!,
+                          width: t.border,
                         ),
-                    ],
+                        borderRadius: BorderRadius.circular(t.brutal ? 0 : 8),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              RaftTaskStatus(status: status),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${(lanes[status] ?? []).where(matchesTask).length}${laneCursors[status] != null ? '+' : ''}',
+                                style: RaftTypography.mono(t),
+                              ),
+                              const Spacer(),
+                              RaftIconButton(
+                                glyph: collapsedTaskStatuses.contains(status)
+                                    ? RaftGlyph.chevronRight
+                                    : RaftGlyph.chevronDown,
+                                key: ValueKey('task-group-$status'),
+                                tooltip:
+                                    '${collapsedTaskStatuses.contains(status) ? 'Show' : 'Hide'} ${raftTaskStatusLabel(status)} tasks',
+                                onPressed: () {
+                                  if (accepts(scope)) {
+                                    setState(() {
+                                      if (!collapsedTaskStatuses.remove(
+                                        status,
+                                      )) {
+                                        collapsedTaskStatuses.add(status);
+                                      }
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                          if (!collapsedTaskStatuses.contains(status)) ...[
+                            const SizedBox(height: 12),
+                            Flexible(
+                              child: SingleChildScrollView(
+                                primary: false,
+                                child: Column(
+                                  children: [
+                                    for (final row
+                                        in (lanes[status] ?? []).where(
+                                          matchesTask,
+                                        ))
+                                      draggableTask(row, scope),
+                                    if (!(lanes[status] ?? []).any(matchesTask))
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 20,
+                                        ),
+                                        child: Text(
+                                          '${raftText(context, 'No tasks')} · ${raftTaskStatusLabel(status)}',
+                                          style: TextStyle(color: t.muted),
+                                        ),
+                                      ),
+                                    if (laneCursors[status] != null)
+                                      RaftTextButton(
+                                        label: laneBusy.contains(status)
+                                            ? 'Loading…'
+                                            : 'Load more ${raftTaskStatusLabel(status)}',
+                                        onPressed: laneBusy.contains(status)
+                                            ? null
+                                            : () => moreLane(status),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ),
-          ),
-      ],
-    ),
-  );
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget item(Map<String, dynamic> row) {
     final section = widget.section, scope = authority;
@@ -1278,7 +1911,7 @@ class _ResourceViewState extends State<ResourceView> {
           ? raftTaskStatuses
           : [status, ...?raftTaskTransitions[status]];
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.only(bottom: 10),
         child: RaftTaskCard(
           key: ValueKey('task-${row['id']}'),
           title: name,
@@ -1306,6 +1939,8 @@ class _ResourceViewState extends State<ResourceView> {
         ),
       );
     }
+    if (section == 'saved') return savedCard(row, scope);
+    if (section == 'activity') return activityCard(row, scope);
     return ListTile(
       key: section == 'activity' && row['kind'] == 'thread'
           ? ValueKey('activity-thread-${row['threadChannelId']}')
@@ -1726,4 +2361,10 @@ class _ResourceViewState extends State<ResourceView> {
       }
     }
   }
+}
+
+class _TaskDrag {
+  const _TaskDrag(this.row, this.scope);
+  final Map<String, dynamic> row;
+  final String scope;
 }

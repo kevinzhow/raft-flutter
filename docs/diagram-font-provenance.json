@@ -1,0 +1,30 @@
+{
+  "purpose": "Diagram-only font matching observed Chromium SVG platform font; general UI font unchanged",
+  "sourcePackage": "fonts-liberation 1:2.1.5-3build1",
+  "family": "packages/raft_ui/RaftDiagramSans",
+  "license": "SIL-OFL-1.1",
+  "notice": "packages/raft_ui/assets/fonts/LiberationSans-OFL.txt",
+  "observedPlatformFont": "Liberation Sans / LiberationSans",
+  "files": [
+    {
+      "asset": "packages/raft_ui/assets/fonts/LiberationSans-Regular.ttf",
+      "source": "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+      "sha256": "075e71be4c58beda172ecb574a799308f04c3d054c6a5b7434954d3b0f1b28d8"
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/LiberationSans-Bold.ttf",
+      "source": "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+      "sha256": "b72c65e551d653b54217ffad0d1454ce0657e4e8d4a28bcc79e0acd2598f4bf3"
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/LiberationSans-Italic.ttf",
+      "source": "/usr/share/fonts/truetype/liberation/LiberationSans-Italic.ttf",
+      "sha256": "4ccb79043bd3a6d131b5a53901abb21261b1417f6052b38a9fa9716a4e5a3d81"
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/LiberationSans-BoldItalic.ttf",
+      "source": "/usr/share/fonts/truetype/liberation/LiberationSans-BoldItalic.ttf",
+      "sha256": "64263238517af60213cdb469165fc7e9acd0c09c35f4155f924a379f97125a57"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ import 'message_selection.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'resource_view.dart';
+import 'page_layout.dart';
 import 'channel_settings.dart';
 import 'server_views.dart';
 import 'account_settings.dart';
@@ -432,6 +433,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               key: ValueKey('${w.server?.id}:${w.section}'),
               controller: w,
               section: w.section,
+              onBack: dismissPanel,
               onMessage: (channelId, messageId) async {
                 scaffold.currentState?.closeDrawer();
                 await w.jumpToMessage(channelId, messageId);
@@ -461,7 +463,16 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           child: Scaffold(
             key: scaffold,
             drawer: wide ? null : Drawer(child: sidebar()),
-            appBar: wide
+            appBar:
+                wide ||
+                    [
+                          'tasks',
+                          'saved',
+                          'activity',
+                          'search',
+                          'members',
+                        ].contains(w.section) &&
+                        !thread
                 ? null
                 : AppBar(
                     title: Text(thread ? tr('Thread') : title),
@@ -522,59 +533,48 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       mobileNavigation: thread ? null : mobileNavigation(),
                       content: Column(
                         children: [
-                          if (wide)
-                            Container(
-                              height: 58,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(color: t.line),
+                          if (wide &&
+                              ![
+                                'tasks',
+                                'saved',
+                                'activity',
+                                'search',
+                                'members',
+                              ].contains(w.section))
+                            RaftPageHeader(
+                              title: title,
+                              height: raftPageHeaderHeight(context),
+                              icon: RaftIcon(sectionGlyph(w.section)),
+                              subtitle: w.section == 'chat'
+                                  ? w.channel?.string('description')
+                                  : null,
+                              actions: [
+                                Tooltip(
+                                  message: w.connected
+                                      ? tr('Connected')
+                                      : tr('Reconnecting'),
+                                  child: Icon(
+                                    Icons.circle,
+                                    size: 8,
+                                    color: w.connected
+                                        ? t.colors['success']
+                                        : t.muted,
+                                  ),
                                 ),
-                              ),
-                              child: Row(
-                                children: [
-                                  if (w.section == 'chat')
-                                    const Icon(Icons.tag, size: 20),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      title,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
+                                if (w.section == 'chat' && w.channel != null)
+                                  RaftIconButton(
+                                    tooltip: 'Channel settings',
+                                    onPressed: () => channelSettings(),
+                                    glyph: RaftGlyph.slidersHorizontal,
                                   ),
-                                  Tooltip(
-                                    message: w.connected
-                                        ? tr('Connected')
-                                        : tr('Reconnecting'),
-                                    child: Icon(
-                                      Icons.circle,
-                                      size: 8,
-                                      color: w.connected
-                                          ? Colors.green
-                                          : t.muted,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  if (w.section == 'chat' && w.channel != null)
-                                    IconButton(
-                                      tooltip: tr('Channel settings'),
-                                      onPressed: () => channelSettings(),
-                                      icon: const Icon(Icons.tune, size: 19),
-                                    ),
-                                  IconButton(
-                                    tooltip: tr('Refresh'),
-                                    onPressed: () => w.channel == null
-                                        ? w.bootstrap()
-                                        : w.selectChannel(w.channel!),
-                                    icon: const Icon(Icons.refresh, size: 19),
-                                  ),
-                                ],
-                              ),
+                                RaftIconButton(
+                                  tooltip: 'Refresh',
+                                  onPressed: () => w.channel == null
+                                      ? w.bootstrap()
+                                      : w.selectChannel(w.channel!),
+                                  glyph: RaftGlyph.refreshCw,
+                                ),
+                              ],
                             ),
                           if (w.section == 'chat' &&
                               w.channel != null &&
@@ -604,26 +604,16 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                           ? Column(
                               children: [
                                 if (wide)
-                                  SizedBox(
-                                    height: 58,
-                                    child: Row(
-                                      children: [
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Text(
-                                            tr('Thread'),
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          tooltip: tr('Close thread'),
-                                          onPressed: w.closeThread,
-                                          icon: const Icon(Icons.close),
-                                        ),
-                                      ],
-                                    ),
+                                  RaftPageHeader(
+                                    title: tr('Thread'),
+                                    height: raftPageHeaderHeight(context),
+                                    actions: [
+                                      RaftIconButton(
+                                        tooltip: 'Close thread',
+                                        onPressed: w.closeThread,
+                                        glyph: RaftGlyph.x,
+                                      ),
+                                    ],
                                   ),
                                 Expanded(
                                   child: ServerSetupGate(
@@ -648,46 +638,70 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       );
     },
   );
+  RaftGlyph sectionGlyph(String section) => switch (section) {
+    'chat' => RaftGlyph.hash,
+    'activity' => RaftGlyph.activity,
+    'search' => RaftGlyph.search,
+    'tasks' => RaftGlyph.checkSquare,
+    'saved' => RaftGlyph.bookmark,
+    'members' => RaftGlyph.users,
+    'agents' => RaftGlyph.bot,
+    'computers' => RaftGlyph.monitor,
+    _ => RaftGlyph.settings,
+  };
+
   List<RaftRailDestination> get railDestinations => [
     RaftRailDestination(
       id: 'chat',
       label: tr('Chat'),
       icon: Icons.chat_bubble_outline,
+      iconWidget: const RaftIcon(RaftGlyph.messageSquare),
     ),
     RaftRailDestination(
       id: 'activity',
       label: tr('Activity'),
       icon: Icons.inbox_outlined,
+      iconWidget: const RaftIcon(RaftGlyph.activity),
       unread: w.unread.values.fold(0, (a, b) => a + b),
     ),
-    RaftRailDestination(id: 'search', label: tr('Search'), icon: Icons.search),
+    RaftRailDestination(
+      id: 'search',
+      label: tr('Search'),
+      icon: Icons.search,
+      iconWidget: const RaftIcon(RaftGlyph.search),
+    ),
     RaftRailDestination(
       id: 'tasks',
       label: tr('Tasks'),
       icon: Icons.check_box_outlined,
+      iconWidget: const RaftIcon(RaftGlyph.checkSquare),
     ),
     RaftRailDestination(
       id: 'saved',
       label: tr('Saved'),
       icon: Icons.bookmark_border,
+      iconWidget: const RaftIcon(RaftGlyph.bookmark),
     ),
     if (w.can('viewAgents'))
       RaftRailDestination(
         id: 'agents',
         label: tr('Agents'),
         icon: Icons.smart_toy_outlined,
+        iconWidget: const RaftIcon(RaftGlyph.bot),
       ),
     if (w.can('viewMachines'))
       RaftRailDestination(
         id: 'computers',
         label: tr('Computers'),
         icon: Icons.computer_outlined,
+        iconWidget: const RaftIcon(RaftGlyph.monitor),
       ),
     if (w.can('viewMembers'))
       RaftRailDestination(
         id: 'members',
         label: tr('Members'),
         icon: Icons.people_outline,
+        iconWidget: const RaftIcon(RaftGlyph.users),
       ),
   ];
 
@@ -698,11 +712,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     workspaceName: w.server?.name ?? 'Raft',
     workspaceTooltip: tr('Switch workspace'),
     onWorkspace: () => showWorkspaceSwitcher(),
-    footer: IconButton(
+    footer: RaftIconButton(
       key: const Key('rail-settings'),
-      tooltip: tr('Settings'),
+      tooltip: 'Settings',
       onPressed: () => select('settings'),
-      icon: const Icon(Icons.settings_outlined),
+      glyph: RaftGlyph.settings,
+      visualSize: RaftMetrics.railItem,
     ),
   );
 
@@ -912,105 +927,120 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   Widget sidebar() => SafeArea(
     child: Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 12),
-          child: Row(
-            children: [
-              const Text(
-                'Raft',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
-              ),
-              const Spacer(),
-              PopupMenuButton<String>(
-                tooltip: tr('Switch workspace'),
-                onSelected: (value) async {
-                  scaffold.currentState?.closeDrawer();
-                  if (value == 'create') {
-                    await WorkspaceActions.create(context, w);
-                  } else if (value == 'join') {
-                    await WorkspaceActions.join(context, w);
-                  } else if (value == 'settings') {
-                    select('workspace-settings');
-                  } else {
-                    await w.selectServer(
-                      w.servers.firstWhere((s) => s.id == value),
-                    );
-                  }
-                },
-                itemBuilder: (_) => [
-                  for (final s in w.servers)
-                    PopupMenuItem(
-                      value: s.id,
-                      child: Listener(
-                        onPointerDown:
-                            defaultTargetPlatform == TargetPlatform.linux &&
-                                workspaceBrowserOrigin(w.client.origin) != null
-                            ? (event) {
-                                if (event.buttons == kMiddleMouseButton) {
-                                  Navigator.of(context).pop();
-                                  unawaited(
-                                    openWorkspaceInBrowser(context, w, s),
-                                  );
+        SizedBox(
+          height: raftPageHeaderHeight(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: RaftLayoutMetrics.panelInset,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  tr('Chat'),
+                  style: RaftTypography.heading(
+                    RaftTokens.of(context),
+                    size: 18,
+                    line: 28,
+                  ),
+                ),
+                const Spacer(),
+                PopupMenuButton<String>(
+                  tooltip: tr('Switch workspace'),
+                  onSelected: (value) async {
+                    scaffold.currentState?.closeDrawer();
+                    if (value == 'create') {
+                      await WorkspaceActions.create(context, w);
+                    } else if (value == 'join') {
+                      await WorkspaceActions.join(context, w);
+                    } else if (value == 'settings') {
+                      select('workspace-settings');
+                    } else {
+                      await w.selectServer(
+                        w.servers.firstWhere((s) => s.id == value),
+                      );
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    for (final s in w.servers)
+                      PopupMenuItem(
+                        value: s.id,
+                        child: Listener(
+                          onPointerDown:
+                              defaultTargetPlatform == TargetPlatform.linux &&
+                                  workspaceBrowserOrigin(w.client.origin) !=
+                                      null
+                              ? (event) {
+                                  if (event.buttons == kMiddleMouseButton) {
+                                    Navigator.of(context).pop();
+                                    unawaited(
+                                      openWorkspaceInBrowser(context, w, s),
+                                    );
+                                  }
                                 }
-                              }
-                            : null,
-                        child: Row(
-                          children: [
-                            Expanded(child: Text(s.name)),
-                            if (defaultTargetPlatform == TargetPlatform.linux &&
-                                workspaceBrowserOrigin(w.client.origin) != null)
-                              IconButton(
-                                key: ValueKey('workspace-browser-${s.id}'),
-                                tooltip: tr('Open workspace in browser'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                  unawaited(
-                                    openWorkspaceInBrowser(context, w, s),
-                                  );
-                                },
-                                constraints: const BoxConstraints(
-                                  minWidth: 48,
-                                  minHeight: 48,
+                              : null,
+                          child: Row(
+                            children: [
+                              Expanded(child: Text(s.name)),
+                              if (defaultTargetPlatform ==
+                                      TargetPlatform.linux &&
+                                  workspaceBrowserOrigin(w.client.origin) !=
+                                      null)
+                                IconButton(
+                                  key: ValueKey('workspace-browser-${s.id}'),
+                                  tooltip: tr('Open workspace in browser'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    unawaited(
+                                      openWorkspaceInBrowser(context, w, s),
+                                    );
+                                  },
+                                  constraints: const BoxConstraints(
+                                    minWidth: 48,
+                                    minHeight: 48,
+                                  ),
+                                  icon: const Icon(Icons.open_in_new),
                                 ),
-                                icon: const Icon(Icons.open_in_new),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  const PopupMenuDivider(),
-                  if (w.server != null)
-                    PopupMenuItem(
-                      value: 'settings',
-                      child: Text(tr('Workspace settings')),
-                    ),
-                  PopupMenuItem(
-                    value: 'create',
-                    child: Text(tr('Create workspace')),
-                  ),
-                  PopupMenuItem(
-                    value: 'join',
-                    child: Text(tr('Join workspace')),
-                  ),
-                ],
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 115),
-                      child: Text(
-                        w.server?.name ?? tr('Workspace'),
-                        overflow: TextOverflow.ellipsis,
+                    const PopupMenuDivider(),
+                    if (w.server != null)
+                      PopupMenuItem(
+                        value: 'settings',
+                        child: Text(tr('Workspace settings')),
                       ),
+                    PopupMenuItem(
+                      value: 'create',
+                      child: Text(tr('Create workspace')),
                     ),
-                    const Icon(Icons.expand_more, size: 16),
+                    PopupMenuItem(
+                      value: 'join',
+                      child: Text(tr('Join workspace')),
+                    ),
                   ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 115),
+                        child: Text(
+                          w.server?.name ?? tr('Workspace'),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.expand_more, size: 16),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        const Divider(height: 1),
+        Divider(
+          height: RaftTokens.of(context).border,
+          thickness: RaftTokens.of(context).border,
+        ),
         Expanded(
           child: ListView(
             key: const Key('workspace-sidebar'),

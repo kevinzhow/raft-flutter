@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
+import 'icons.dart';
+import 'design_primitives.dart';
+import 'attachment_tokens.dart';
 import 'localization.dart';
 
 class RaftAttachmentCard extends StatelessWidget {
@@ -12,6 +15,9 @@ class RaftAttachmentCard extends StatelessWidget {
     this.onShare,
     this.onCancel,
     this.preview,
+    this.imageWidth,
+    this.imageHeight,
+    this.imageExtent,
     this.sizeBytes,
     this.mimeType = '',
     this.busy = false,
@@ -21,6 +27,8 @@ class RaftAttachmentCard extends StatelessWidget {
   });
   final String filename, mimeType;
   final int? sizeBytes;
+  final double? imageWidth, imageHeight;
+  final Size? imageExtent;
   final Widget? preview;
   final VoidCallback? onOpen, onDownload, onRetry, onShare, onCancel;
   final bool busy, exportMode;
@@ -34,137 +42,241 @@ class RaftAttachmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = RaftTokens.of(context);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 320),
-      child: Material(
-        color: tokens.sidebar,
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(color: tokens.line, width: tokens.border),
-          borderRadius: BorderRadius.circular(tokens.radius),
+    final t = RaftTokens.of(context);
+    final recipe = RaftAttachmentRecipe(t);
+    final component = AttachmentComponentRecipe(t);
+    final imageCard = mimeType.toLowerCase().split(';').first.trim().startsWith('image/') && mimeType.toLowerCase().split(';').first.trim() != 'image/svg+xml';
+    final extension = filename.split('.').last.toUpperCase();
+    final badge = component.semantics.badgeBackground(extension);
+    Widget title() => Row(
+      children: [
+        if (badge != null) ...[
+          Container(
+            width: AttachmentPrimitive.badgeSize.width,
+            height: AttachmentPrimitive.badgeSize.height,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: badge,
+              border: component.badgeBorder,
+              borderRadius: component.badgeRadius,
+            ),
+            child: Text(
+              extension,
+              maxLines: 1,
+              style: component.badgeLabel(extension),
+            ),
+          ),
+          const SizedBox(width: AttachmentPrimitive.badgeGap),
+        ],
+        Expanded(
+          child: Text(
+            filename,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: recipe.title.copyWith(fontWeight: FontWeight.w700),
+          ),
         ),
+      ],
+    );
+    final content = SizedBox(
+      width: recipe.size.width,
+      height: recipe.size.height,
+      child: Padding(
+        padding: component.contentInset,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            if (preview != null)
-              Semantics(
-                label: '${raftText(context, 'Preview')} $filename',
-                button: !exportMode,
-                child: InkWell(
-                  onTap: exportMode ? null : onOpen,
-                  child: SizedBox(
-                    height: 180,
-                    width: double.infinity,
-                    child: preview,
-                  ),
-                ),
-              ),
+            title(),
             Row(
               children: [
                 Expanded(
-                  child: exportMode
-                      ? Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              Icon(
-                                mimeType.startsWith('image/')
-                                    ? Icons.image_outlined
-                                    : Icons.description_outlined,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      filename,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    if (sizeBytes != null)
-                                      Text(
-                                        formatSize(sizeBytes!),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: tokens.muted,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : TextButton.icon(
-                          style: TextButton.styleFrom(
-                            minimumSize: const Size(48, 48),
-                          ),
-                          onPressed: onOpen,
-                          icon: Icon(
-                            mimeType.startsWith('image/')
-                                ? Icons.image_outlined
-                                : Icons.description_outlined,
-                          ),
-                          label: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                filename,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (sizeBytes != null)
-                                Text(
-                                  formatSize(sizeBytes!),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: tokens.muted,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                ),
-                if (!exportMode && onShare != null)
-                  IconButton(
-                    constraints: const BoxConstraints(
-                      minWidth: 48,
-                      minHeight: 48,
-                    ),
-                    tooltip: '${raftText(context, 'Share')} $filename',
-                    onPressed: busy ? null : onShare,
-                    icon: const Icon(Icons.share_outlined),
+                  child: Text(
+                    sizeBytes == null ? '' : formatSize(sizeBytes!),
+                    style: component.metadata,
+                    maxLines: 1,
                   ),
-                if (!exportMode && onDownload != null)
-                  IconButton(
-                    constraints: const BoxConstraints(
-                      minWidth: 48,
-                      minHeight: 48,
+                ),
+                if (onDownload == null && onShare == null)
+                  RaftIcon(RaftGlyph.eye, size: 12, color: component.actionForeground),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+    if (imageCard)
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final size = imageExtent ?? component.imageSize(
+            viewportWidth: MediaQuery.sizeOf(context).width,
+            availableWidth: constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : MediaQuery.sizeOf(context).width,
+            width: imageWidth,
+            height: imageHeight,
+          );
+          return SizedBox(
+            width: size.width,
+            height: size.height,
+            child: Tooltip(
+              message: '${raftText(context, 'Preview')} $filename',
+              child: Material(
+                color: t.panel,
+                clipBehavior: Clip.antiAlias,
+                shape: RoundedRectangleBorder(
+                  side: BorderSide(
+                    color: t.strong,
+                    width: t.brutal ? t.border : 0,
+                  ),
+                  borderRadius: recipe.radius,
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Semantics(
+                      label: '${raftText(context, 'Preview')} $filename',
+                      button: !exportMode,
+                      child: InkWell(
+                        onTap: exportMode ? null : onOpen,
+                        child:
+                            preview ??
+                            Center(
+                              child: busy
+                                  ? const CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    )
+                                  : Text(
+                                      error ?? filename,
+                                      style: recipe.title,
+                                    ),
+                            ),
+                      ),
                     ),
-                    tooltip: '${raftText(context, 'Download')} $filename',
-                    onPressed: busy ? null : onDownload,
-                    icon: const Icon(Icons.download_outlined),
+                    if (!exportMode)
+                      Positioned(
+                        right: 4,
+                        bottom: 4,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (onShare != null)
+                              RaftIconButton(
+                                glyph: RaftGlyph.share2,
+                                tooltip:
+                                    '${raftText(context, 'Share')} $filename',
+                                onPressed: busy ? null : onShare,
+                                visualSize: 24,
+                                minimumTargetSize: 48,
+                                glyphSize: 12,
+                              ),
+                            if (onDownload != null)
+                              RaftIconButton(
+                                glyph: RaftGlyph.download,
+                                tooltip:
+                                    '${raftText(context, 'Download')} $filename',
+                                onPressed: busy ? null : onDownload,
+                                visualSize: 24,
+                                minimumTargetSize: 48,
+                                glyphSize: 12,
+                              ),
+                          ],
+                        ),
+                      ),
+                    if (error != null && !exportMode && onRetry != null)
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: RaftTextButton(
+                          label: 'Retry preview',
+                          onPressed: onRetry,
+                          variant: RaftControlVariant.ghost,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    return SizedBox(
+      width: recipe.size.width,
+      child: _AttachmentSurface(
+        recipe: recipe,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Stack(
+              children: [
+                if (exportMode)
+                  content
+                else
+                  TextButton(
+                    onPressed: busy ? null : onOpen,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      foregroundColor: t.strong,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: const RoundedRectangleBorder(),
+                    ),
+                    child: content,
+                  ),
+                if (!exportMode)
+                  Positioned(
+                    right: 0,
+                    bottom: 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (onShare != null)
+                          RaftIconButton(
+                            glyph: RaftGlyph.share2,
+                            tooltip: '${raftText(context, 'Share')} $filename',
+                            onPressed: busy ? null : onShare,
+                            visualSize: 24,
+                            minimumTargetSize: 48,
+                            glyphSize: 12,
+                          ),
+                        if (onDownload != null)
+                          RaftIconButton(
+                            glyph: RaftGlyph.download,
+                            tooltip:
+                                '${raftText(context, 'Download')} $filename',
+                            onPressed: busy ? null : onDownload,
+                            visualSize: 24,
+                            minimumTargetSize: 48,
+                            glyphSize: 12,
+                          ),
+                      ],
+                    ),
                   ),
               ],
             ),
             if (busy && !exportMode) const LinearProgressIndicator(),
             if (!exportMode && busy && onCancel != null)
-              TextButton(
+              RaftTextButton(
+                label: 'Cancel',
                 onPressed: onCancel,
-                child: Text(raftText(context, 'Cancel')),
+                variant: RaftControlVariant.ghost,
               ),
             if (error != null)
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: Column(
                   children: [
-                    Text(error!),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        error!,
+                        style: RaftTypography.body(t, size: 12, line: 16),
+                      ),
+                    ),
                     if (!exportMode && onRetry != null)
-                      TextButton(
+                      RaftTextButton(
+                        label: 'Retry preview',
                         onPressed: onRetry,
-                        child: Text(raftText(context, 'Retry preview')),
+                        variant: RaftControlVariant.ghost,
                       ),
                   ],
                 ),
@@ -174,4 +286,35 @@ class RaftAttachmentCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// One shared surface state controls the source file border. Descendant open,
+/// download, share and retry controls retain their independent focus/actions.
+class _AttachmentSurface extends StatefulWidget {
+  const _AttachmentSurface({required this.recipe, required this.child});
+  final RaftAttachmentRecipe recipe;
+  final Widget child;
+  @override
+  State<_AttachmentSurface> createState() => _AttachmentSurfaceState();
+}
+
+class _AttachmentSurfaceState extends State<_AttachmentSurface> {
+  bool hovered = false, focused = false;
+  @override
+  Widget build(BuildContext context) => MouseRegion(
+    onEnter: (_) => setState(() => hovered = true),
+    onExit: (_) => setState(() => hovered = false),
+    child: Focus(
+      onFocusChange: (value) => setState(() => focused = value),
+      child: Material(
+        color: widget.recipe.background,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          side: widget.recipe.border(hovered: hovered, focused: focused),
+          borderRadius: widget.recipe.radius,
+        ),
+        child: widget.child,
+      ),
+    ),
+  );
 }

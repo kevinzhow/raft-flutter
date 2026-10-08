@@ -1,4 +1,8 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
@@ -43,6 +47,10 @@ Future<void> verifyAdvancedResources(
     w.setSection(value);
     await tester.pump(const Duration(milliseconds: 300));
     await loaded();
+    if (['search', 'saved', 'activity'].contains(value)) {
+      await tester.tap(find.byTooltip('Filters'));
+      await tester.pump(const Duration(milliseconds: 200));
+    }
   }
 
   Future<void> menu(String title, String value) async {
@@ -149,7 +157,7 @@ Future<void> verifyAdvancedTaskFilters(
     await tester.tap(trigger);
     await tester.pumpAndSettle();
     for (final label in labels) {
-      final dialog = find.byType(AlertDialog);
+      final dialog = find.byType(RaftMenuPanel);
       if (dialog.evaluate().isEmpty) {
         throw StateError('Task filter authority changed during review.');
       }
@@ -161,7 +169,7 @@ Future<void> verifyAdvancedTaskFilters(
       await tester.pump(const Duration(milliseconds: 300));
       await tester.enterText(search, label);
       await tester.pumpAndSettle();
-      final option = find.widgetWithText(CheckboxListTile, label);
+      final option = find.widgetWithText(RaftMenuItem, label);
       if (option.evaluate().isEmpty) {
         final editable = find.descendant(
           of: dialog,
@@ -183,11 +191,11 @@ Future<void> verifyAdvancedTaskFilters(
       await tester.tap(option);
       await tester.pumpAndSettle();
     }
-    final dialog = find.byType(AlertDialog);
+    final dialog = find.byType(RaftMenuPanel);
     if (dialog.evaluate().isEmpty) {
       throw StateError('Task filter authority changed during review.');
     }
-    await tester.tap(find.widgetWithText(TextButton, 'Apply'));
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     await loaded();
   }
@@ -221,16 +229,8 @@ Future<void> verifyAdvancedTaskFilters(
       } on StateError {
         // A late source revocation closes private reviews. Start a fresh
         // review only after its current-authority reload; never retain callbacks.
-        final cancel = find
-            .descendant(
-              of: find.byType(AlertDialog),
-              matching: find.widgetWithText(TextButton, 'Cancel'),
-            )
-            .hitTestable();
-        if (cancel.evaluate().isNotEmpty) {
-          await tester.tap(cancel);
-          await tester.pumpAndSettle();
-        }
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
         await loaded();
       }
     }
@@ -334,6 +334,13 @@ Future<void> verifyActivityThreadLifecycle(
 
   Future<void> rowAction(String tooltip) async {
     await locate();
+    if (RaftDensityScope.of(tester.element(tile)) == RaftDensity.desktop) {
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: tester.getCenter(tile));
+      await mouse.moveTo(tester.getCenter(tile));
+      await tester.pump(const Duration(milliseconds: 200));
+      addTearDown(mouse.removePointer);
+    }
     final button = find.descendant(of: tile, matching: find.byTooltip(tooltip));
     expect(button, findsOneWidget);
     await tester.ensureVisible(button);
@@ -351,7 +358,7 @@ Future<void> verifyActivityThreadLifecycle(
 
   Future<void> reset() async {
     final all = find.descendant(
-      of: find.byType(SegmentedButton<String>),
+      of: find.byType(RaftSegmentedControl<String>),
       matching: find.text('All'),
     );
     expect(all, findsOneWidget);

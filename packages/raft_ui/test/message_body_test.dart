@@ -83,7 +83,10 @@ void main() {
         await tester.tap(find.byTooltip('Copy code'));
         await tester.pumpAndSettle();
         expect(clipboard, contains('flowchart LR'));
+        await tester.tap(find.byTooltip('Show diagram'));
+        await tester.pumpAndSettle();
         await tester.tap(find.byTooltip('Expand diagram'));
+
         await tester.pumpAndSettle();
         expect(find.byType(InteractiveViewer), findsOneWidget);
         await tester.tap(find.byTooltip('Close'));
@@ -94,7 +97,7 @@ void main() {
     );
   }
   testWidgets(
-    'invalid Mermaid is visible source, never stale successful scene',
+    'invalid Mermaid is an error with explicit source tab, never a stale scene',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -106,10 +109,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(
-        find.text('Unable to render this diagram. The source is shown below.'),
-        findsOneWidget,
-      );
+      expect(find.text("Couldn't render this diagram"), findsOneWidget);
+      expect(find.text('invalid family hello'), findsNothing);
+      await tester.tap(find.byTooltip('Show source'));
+      await tester.pump();
       expect(find.text('invalid family hello'), findsOneWidget);
     },
   );

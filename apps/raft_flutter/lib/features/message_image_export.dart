@@ -399,8 +399,9 @@ class _MessageImageReviewState extends State<MessageImageReview> {
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !busy,
-    child: Dialog(
-      child: SizedBox(
+    child: Dialog.fullscreen(
+      backgroundColor: RaftLightboxRecipe(RaftTokens.of(context)).backdrop,
+      child: SafeArea(child: Center(child: SizedBox(
         width: 768,
         height: MediaQuery.sizeOf(context).height * .85,
         child: RaftImageReview(
@@ -416,7 +417,7 @@ class _MessageImageReviewState extends State<MessageImageReview> {
           busy: busy,
           error: error,
         ),
-      ),
+      ))),
     ),
   );
 }

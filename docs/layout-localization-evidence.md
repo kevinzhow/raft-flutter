@@ -53,8 +53,10 @@ HTML 原生静态预览、明确浏览器交互入口和三主题 SDK 证据记�
 
 ## 最终原生检查点边界
 
-2026-10-08 UTC 01:49:11.360590 启动的较早 b20 源码 Linux 整轮已完成并通过。53个唯一截图检查点具有一致 runId 和当时的 b20 源码哈希，包括真实侧栏指针拖动、阅读偏好、中文 Locale、实际 Dark/Light 切换及滚动到退出按钮后安全会话清空。修复 mobile thread/main 状态复用后的当前源码，Android 整轮正在运行、Linux 待重跑，独立原生工作空间窗口与操作系统辅助技术仍未由这些证据证明。
+2026-10-08 UTC 01:49:11.360590 启动的较早 b20 源码 Linux 整轮已完成并通过。53个唯一截图检查点具有一致 runId 和当时的 b20 源码哈希，包括真实侧栏指针拖动、阅读偏好、中文 Locale、实际 Dark/Light 切换及滚动到退出按钮后安全会话清空。修复 mobile thread/main 状态复用后的当前源码，Android完整主运行已通过、Linux同源码整轮已通过（6ab功能基线），独立原生工作空间窗口与操作系统辅助技术仍未由这些证据证明。
 
 ## 当前源码的原生显示语言回归
 
-WorkspaceView 的 Appearance/Account 标题现在通过实际 locale 目录翻译。父运行的 Linux 窄测试 45261 已验证：显示语言真实保存为 `zh-cn`、主应用使用中文 Locale、Appearance/Account 呈现中文，验证外观/深色/浅色控件的翻译文本后恢复原偏好；该窄测试没有点击深浅色控件。该窄测试已通过；它不替代完整链路。当前源码哈希为 `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701`，353 项 Dart、29 项 Python host 与全仓 analyze 已通过。较早 b20 源码 Linux 整轮66484于2026-10-08 UTC 01:49:11.360590启动并完成通过，真实 Dark/Light 切换属于该整轮证据。`workspace_localization_test`另以模拟 mounted UI 真实点击深色并断言 ThemeMode.dark 回调。较早 Android54877因移动线程关闭后的状态复用失败，现已修复；较早 Android49113通过视频/media及通知点击后，因异步加载前的测试断言失败；等待和后续sidebar懒加载测试修复后的当前4baf源码，正在跑 Android19417，随后串行重跑 Linux。
+WorkspaceView 的 Appearance/Account 标题现在通过实际 locale 目录翻译。父运行的 Linux 窄测试 45261 已验证：显示语言真实保存为 `zh-cn`、主应用使用中文 Locale、Appearance/Account 呈现中文，验证外观/深色/浅色控件的翻译文本后恢复原偏好；该窄测试没有点击深浅色控件。该窄测试已通过；它不替代完整链路。当前源码哈希为 `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701`，353 项 Dart、29 项 Python host 与全仓 analyze 已通过。较早 b20 源码 Linux 整轮66484于2026-10-08 UTC 01:49:11.360590启动并完成通过，真实 Dark/Light 切换属于该整轮证据。`workspace_localization_test`另以模拟 mounted UI 真实点击深色并断言 ThemeMode.dark 回调。较早 Android54877因移动线程关闭后的状态复用失败，现已修复；较早 Android49113通过视频/media及通知点击后，因异步加载前的测试断言失败；等待和后续sidebar懒加载测试修复后的当前6ab源码，Android38055已完成03:02:43整轮，Linux74636正在跑03:11:25同源码整轮。
+
+功能基线6ab现已通过两平台完整主应用验收：Android `2026-10-08T03:02:43.361866Z` /54检查点、Linux `2026-10-08T03:11:25.507223Z` /53检查点，归档于 `.local/functional-baseline-6ab`。用户已授权新的页面/组件像素级对齐；该视觉修正工作正在进行，新版源码需重新工程/原生验收，最终安装包暂未发行。这些功能基线记录不证明像素等价。

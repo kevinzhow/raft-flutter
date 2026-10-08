@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'localization.dart';
 
 import 'components.dart';
+import 'theme.dart';
+import 'design_primitives.dart';
+import 'icons.dart';
 
 class RaftFormField {
   const RaftFormField(
@@ -96,11 +99,97 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
     }
   }
 
+  Widget _field(RaftFormField field) {
+    final t = RaftTokens.of(context);
+    final label = raftText(context, field.label);
+    final decoration = InputDecoration(
+      helperText: field.help == null ? null : raftText(context, field.help!),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Semantics(
+            label: label,
+            child: ExcludeSemantics(
+              child: Text(
+                label.toUpperCase(),
+                style: RaftTypography.heading(
+                  t,
+                  size: 14,
+                  line: 20,
+                  weight: t.brutal ? FontWeight.w700 : FontWeight.w500,
+                ).copyWith(letterSpacing: .35),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Semantics(
+            label: label,
+            child: RaftFieldSurface(
+              child: field.choices != null
+                  ? DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      key: ValueKey('field-${field.id}'),
+                      initialValue: choices[field.id],
+                      decoration: decoration,
+                      style: t.fieldStyle,
+                      icon: const RaftIcon(RaftGlyph.chevronDown, size: 14),
+                      dropdownColor: t.popover,
+                      borderRadius: RaftShapes.field(t),
+                      items: [
+                        for (final entry in field.choices!.entries)
+                          DropdownMenuItem(
+                            value: entry.key,
+                            child: Text(
+                              field.localizeChoices
+                                  ? raftText(context, entry.value)
+                                  : entry.value,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: busy ? null : (v) => choices[field.id] = v!,
+                    )
+                  : TextFormField(
+                      key: ValueKey('field-${field.id}'),
+                      controller: editors[field.id],
+                      enabled: !busy,
+                      obscureText: field.obscure,
+                      autofocus: field == widget.fields.first,
+                      minLines: field.multiline ? 3 : 1,
+                      maxLines: field.multiline ? 8 : 1,
+                      style: t.fieldStyle,
+                      decoration: decoration,
+                      validator: (value) {
+                        final text = field.trim
+                            ? value?.trim() ?? ''
+                            : value ?? '';
+                        if (field.required && text.isEmpty)
+                          return Localizations.localeOf(context).languageCode ==
+                                  'zh'
+                              ? '${label}为必填项。'
+                              : '${field.label} is required.';
+                        return field.validator?.call(text);
+                      },
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
     canPop: !busy,
     child: AlertDialog(
       title: Text(raftText(context, widget.title)),
+      titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      actionsPadding: const EdgeInsets.all(16),
       content: SizedBox(
         width: 480,
         child: Form(
@@ -115,64 +204,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                     padding: const EdgeInsets.only(bottom: 16),
                     child: Text(widget.description!),
                   ),
-                for (final field in widget.fields)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: field.choices != null
-                        ? DropdownButtonFormField<String>(
-                            isExpanded: true,
-                            key: ValueKey('field-${field.id}'),
-                            initialValue: choices[field.id],
-                            decoration: InputDecoration(
-                              labelText: raftText(context, field.label),
-                              helperText: field.help == null
-                                  ? null
-                                  : raftText(context, field.help!),
-                            ),
-                            items: [
-                              for (final entry in field.choices!.entries)
-                                DropdownMenuItem(
-                                  value: entry.key,
-                                  child: Text(
-                                    field.localizeChoices
-                                        ? raftText(context, entry.value)
-                                        : entry.value,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                            ],
-                            onChanged: busy
-                                ? null
-                                : (v) => choices[field.id] = v!,
-                          )
-                        : TextFormField(
-                            key: ValueKey('field-${field.id}'),
-                            controller: editors[field.id],
-                            enabled: !busy,
-                            obscureText: field.obscure,
-                            autofocus: field == widget.fields.first,
-                            minLines: field.multiline ? 3 : 1,
-                            maxLines: field.multiline ? 8 : 1,
-                            decoration: InputDecoration(
-                              labelText: raftText(context, field.label),
-                              helperText: field.help == null
-                                  ? null
-                                  : raftText(context, field.help!),
-                            ),
-                            validator: (value) {
-                              final text = field.trim
-                                  ? value?.trim() ?? ''
-                                  : value ?? '';
-                              if (field.required && text.isEmpty)
-                                return Localizations.localeOf(context)
-                                            .languageCode ==
-                                        'zh'
-                                    ? '${raftText(context, field.label)}为必填项。'
-                                    : '${field.label} is required.';
-                              return field.validator?.call(text);
-                            },
-                          ),
-                  ),
+                for (final field in widget.fields) _field(field),
                 if (widget.extra != null)
                   ExcludeFocus(
                     excluding: busy,
@@ -194,9 +226,10 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        RaftTextButton(
+          label: 'Cancel',
+          variant: RaftControlVariant.outline,
           onPressed: busy ? null : () => Navigator.pop(context, false),
-          child: Text(raftText(context, 'Cancel')),
         ),
         RaftButton(
           label: widget.submitLabel,

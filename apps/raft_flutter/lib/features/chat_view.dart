@@ -627,6 +627,63 @@ class _RaftChatViewState extends State<RaftChatView> {
     );
   }
 
+  Widget? attachmentGallery(RaftMessage message) {
+    final all = message.attachments;
+    bool raster(Map<String, dynamic> metadata) {
+      final type = '${metadata['mimeType']}'
+          .toLowerCase()
+          .split(';')
+          .first
+          .trim();
+      return type.startsWith('image/') && type != 'image/svg+xml';
+    }
+
+    final images = all.where(raster).toList();
+    if (images.isEmpty) return null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RaftAttachmentGallery(
+          dimensions: [
+            for (final a in images)
+              (
+                width: a['width'] is num
+                    ? (a['width'] as num).toDouble()
+                    : null,
+                height: a['height'] is num
+                    ? (a['height'] as num).toDouble()
+                    : null,
+              ),
+          ],
+          itemBuilder: (index, extent, fit) => AttachmentView(
+            key: ValueKey('attachment-${images[index]['id']}'),
+            controller: w,
+            metadata: images[index],
+            messageId: message.id,
+            imageExtent: extent,
+            imageFit: fit,
+          ),
+        ),
+        if (all.any((a) => !raster(a))) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final a in all.where((a) => !raster(a)))
+                AttachmentView(
+                  key: ValueKey('attachment-${a['id']}'),
+                  controller: w,
+                  metadata: a,
+                  messageId: message.id,
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget messageTile(RaftMessage m, {bool parent = false}) => RaftMessageTile(
     key: ValueKey('message-${m.id}'),
     author: m.author,
@@ -671,6 +728,7 @@ class _RaftChatViewState extends State<RaftChatView> {
             m.json['actionMetadata']['kind'] == 'forwarded-bundle'
         ? []
         : m.attachments,
+    attachmentGallery: attachmentGallery(m),
     attachmentBuilder: (metadata) => AttachmentView(
       key: ValueKey('attachment-${metadata['id']}'),
       controller: w,

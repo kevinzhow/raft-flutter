@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'localization.dart';
 
 import 'theme.dart';
+import 'icons.dart';
+import 'design_primitives.dart';
 
 const raftTaskStatuses = ['todo', 'in_progress', 'in_review', 'done', 'closed'];
 const raftTaskTransitions = <String, List<String>>{
@@ -46,7 +48,7 @@ class RaftTaskStatus extends StatelessWidget {
               ? 'foreground-strong'
               : '$semantic-strong']!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
@@ -56,11 +58,12 @@ class RaftTaskStatus extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 5,
         children: [
-          ExcludeSemantics(child: Icon(icon, size: 14, color: fg)),
+          ExcludeSemantics(child: RaftSymbol(icon, size: 10, color: fg)),
           Text(
             raftText(context, raftTaskStatusLabel(status)),
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 10,
+              height: 1.2,
               fontWeight: FontWeight.w600,
               color: fg,
             ),
@@ -93,90 +96,127 @@ class RaftTaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Semantics(
-      button: true,
+      button: onTap != null,
       label: 'Open task #$number: $title',
       onTap: onTap,
       explicitChildNodes: true,
-      child: Material(
-        color: t.panel,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(t.radius),
-          side: BorderSide(color: t.line, width: t.border),
+      child: Container(
+        decoration: BoxDecoration(
+          color: t.panel,
+          borderRadius: RaftShapes.panel(t),
+          border: Border.all(
+            color: t.dark ? Colors.transparent : t.line,
+            width: t.brutal ? 2 : .5,
+          ),
+          boxShadow: t.brutal ? t.shadows : null,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${channel.isEmpty ? '' : '#$channel · '}task #$number',
-                        style: TextStyle(fontSize: 12, color: t.muted),
-                      ),
-                    ),
-                    if (onStatus != null && statusOptions.isNotEmpty)
-                      PopupMenuButton<String>(
-                        tooltip: raftText(context, 'Task status'),
-                        onSelected: onStatus,
-                        itemBuilder: (_) => [
-                          for (final s in statusOptions)
-                            PopupMenuItem(
-                              value: s,
-                              child: RaftTaskStatus(status: s),
-                            ),
-                        ],
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: RaftTaskStatus(status: status),
-                        ),
-                      )
-                    else
-                      RaftTaskStatus(status: status),
-                  ],
-                ),
-                Text(
-                  title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-                if (description.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      description,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: t.muted, height: 1.4),
-                    ),
-                  ),
-                if (assignee != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Row(
-                      spacing: 6,
-                      children: [
-                        Icon(Icons.person_outline, size: 16, color: t.muted),
-                        Expanded(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: RaftShapes.panel(t),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      if (channel.isNotEmpty) ...[
+                        Flexible(
                           child: Text(
-                            assignee!,
+                            '#$channel',
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: t.muted),
+                            style: RaftTypography.body(
+                              t,
+                              size: 12,
+                              line: 16,
+                              weight: t.brutal
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: t.muted,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 8),
                       ],
+                      Text(
+                        '#$number',
+                        style: t.brutal
+                            ? RaftTypography.mono(
+                                t,
+                                size: 11,
+                                line: 16,
+                                color: t.strong.withValues(alpha: .35),
+                              )
+                            : RaftTypography.body(
+                                t,
+                                size: 11,
+                                line: 14,
+                                weight: FontWeight.w500,
+                                color: t.colors['foreground-placeholder'],
+                              ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: RaftTypography.body(
+                      t,
+                      size: 14,
+                      line: 20,
+                      weight: t.brutal ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
-              ],
+                  if (description.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: RaftTypography.body(
+                          t,
+                          size: t.brutal ? 12 : 13,
+                          line: t.brutal ? 16 : 18,
+                          color: t.muted,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: onStatus != null && statusOptions.isNotEmpty
+                        ? PopupMenuButton<String>(
+                            tooltip: raftText(context, 'Task status'),
+                            onSelected: onStatus,
+                            itemBuilder: (_) => [
+                              for (final s in statusOptions)
+                                PopupMenuItem(
+                                  value: s,
+                                  child: RaftTaskStatus(status: s),
+                                ),
+                            ],
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              child: Align(
+                                widthFactor: 1,
+                                heightFactor: 1,
+                                child: RaftTaskStatus(status: status),
+                              ),
+                            ),
+                          )
+                        : RaftTaskStatus(status: status),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'attachment_card.dart';
-import 'components.dart';
+import 'design_primitives.dart';
+import 'collapsible.dart';
+import 'icons.dart';
+import 'theme.dart';
 import 'localization.dart';
 import 'message_body.dart';
 
@@ -152,125 +155,77 @@ class RaftForwardedBundle extends StatefulWidget {
 }
 
 class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
-  bool expanded = false;
+  bool expanded = false, touched = false;
+  final bodyHeights = <int, double>{};
+  @override
+  void didUpdateWidget(RaftForwardedBundle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.metadata != widget.metadata) {
+      bodyHeights.clear(); expanded = false; touched = false;
+    }
+  }
   @override
   Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), recipe = RaftMessageEmbedRecipe(RaftTokens.of(context));
     final items = raftForwardedItems(widget.metadata);
-    if (items.isEmpty)
-      return Text(raftText(context, 'Forwarded messages unavailable.'));
+    if (items.isEmpty) return Text(raftText(context, 'Forwarded messages unavailable.'));
+    final foldable = bodyHeights.length == items.length && bodyHeights.values.fold<double>(0, (a, b) => a + b) > recipe.collapsedHeight + 1;
+    final collapsed = bodyHeights.length == items.length && !expanded && !widget.exportMode;
     final first = items.first;
-    final rows = (expanded || widget.exportMode ? items : items.take(2))
-        .toList();
-    final contents = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final item in rows)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  [
-                    item.author.isEmpty
-                        ? raftText(context, 'Unknown author')
-                        : item.author,
-                    if (item.createdAt != null)
-                      widget.formatTimestamp?.call(item.createdAt!) ??
-                          TimeOfDay.fromDateTime(item.createdAt!.toLocal())
-                              .format(context),
-                  ].join(' · '),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                RaftMessageBody(
-                  content: item.content,
-                  exportMode: widget.exportMode,
-                ),
-                for (final attachment in item.attachments)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child:
-                        widget.attachmentBuilder != null &&
-                            attachment['id'] is String
-                        ? widget.attachmentBuilder!(attachment)
-                        : RaftAttachmentCard(
-                            onOpen: null,
-                            filename: attachment['filename'] as String,
-                            mimeType: attachment['mimeType'] as String,
-                            sizeBytes: (attachment['sizeBytes'] as num?)
-                                ?.toInt(),
-                            exportMode: true,
-                          ),
-                  ),
+    final contents = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      for (var index = 0; index < items.length; index++)
+        Padding(padding: recipe.itemInset, child: Builder(builder: (context) {
+          final item = items[index];
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Wrap(spacing: 6, runSpacing: 2, children: [
+              Text(item.author.isEmpty ? raftText(context, 'Unknown author') : item.author,
+                style: recipe.author),
+              if (item.createdAt != null) ...[
+                Text('·', style: recipe.metadata),
+                Text(widget.formatTimestamp?.call(item.createdAt!) ?? TimeOfDay.fromDateTime(item.createdAt!.toLocal()).format(context), style: recipe.metadata),
               ],
-            ),
-          ),
-      ],
-    );
-    return RaftPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.forward, size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  raftFormat(
-                    context,
-                    items.length == 1
-                        ? 'Forwarded · {count} message'
-                        : 'Forwarded · {count} messages',
-                    {'count': items.length},
-                  ),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-          if (first.sourceLabel != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Text(
-                raftFormat(context, 'From {target}', {
-                  'target': first.sourceLabel!,
-                }),
-              ),
-            ),
-          if (expanded || widget.exportMode)
-            contents
-          else
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 240),
-              child: SingleChildScrollView(
-                primary: false,
-                physics: const NeverScrollableScrollPhysics(),
-                child: contents,
-              ),
-            ),
-          if (!widget.exportMode)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: TextButton.icon(
-                onPressed: () => setState(() => expanded = !expanded),
-                icon: Icon(expanded ? Icons.expand_less : Icons.expand_more),
-                label: Text(
-                  expanded
-                      ? raftText(context, 'Collapse forwarded messages')
-                      : raftFormat(
-                          context,
-                          items.length == 1
-                              ? 'View all {count} message'
-                              : 'View all {count} messages',
-                          {'count': items.length},
-                        ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
+            ]),
+            const SizedBox(height: 4),
+            RaftContentMeasure(onSize: (size) {
+              if (mounted && (bodyHeights[index] ?? -1) != size.height) {
+                setState(() {
+                  bodyHeights[index] = size.height;
+                  if (!touched && bodyHeights.length == items.length) {
+                    expanded = bodyHeights.values.fold<double>(0, (a, b) => a + b) <= recipe.collapsedHeight + 1;
+                  }
+                });
+              }
+            }, child: RaftMessageBody(content: item.content, exportMode: widget.exportMode)),
+            if (item.attachments.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Wrap(spacing: 6, runSpacing: 6, children: [
+              for (final attachment in item.attachments)
+                widget.attachmentBuilder != null && attachment['id'] is String
+                    ? widget.attachmentBuilder!(attachment)
+                    : RaftAttachmentCard(onOpen: null, filename: attachment['filename'] as String, mimeType: attachment['mimeType'] as String, sizeBytes: (attachment['sizeBytes'] as num?)?.toInt(), exportMode: true),
+            ])),
+          ]);
+        })),
+    ]);
+    return Padding(padding: const EdgeInsets.only(top: 4), child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: recipe.maxWidth),
+      child: DecoratedBox(decoration: recipe.decoration, child: Padding(padding: recipe.inset, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        Padding(padding: recipe.headerPadding, child: Wrap(spacing: 8, runSpacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            RaftIcon(RaftGlyph.forward, size: 12, color: recipe.header.color),
+            const SizedBox(width: 4), Text(raftText(context, 'Forwarded'), style: recipe.header),
+            const SizedBox(width: 8), Text(raftFormat(context, items.length == 1 ? '{count} message' : '{count} messages', {'count': items.length}), style: recipe.count),
+          ]),
+          if (first.sourceLabel != null) Text(raftFormat(context, 'From {target}', {'target': first.sourceLabel!}), style: recipe.source),
+        ])),
+        if (collapsed) ClipRect(child: Stack(children: [
+          ConstrainedBox(constraints: BoxConstraints(maxHeight: recipe.collapsedHeight), child: SingleChildScrollView(primary: false, physics: const NeverScrollableScrollPhysics(), child: contents)),
+          Positioned(left: 0, right: 0, bottom: 0, height: 40, child: IgnorePointer(child: DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: [t.panel, t.panel.withValues(alpha: .8), t.panel.withValues(alpha: 0)]))))),
+        ])) else contents,
+        if (!widget.exportMode && foldable) Padding(padding: recipe.footerPadding, child: Align(alignment: Alignment.centerLeft, child: RaftShowMoreToggle(
+          label: expanded ? raftText(context, 'Collapse') : raftFormat(context, items.length == 1 ? 'View all {count} message' : 'View all {count} messages', {'count': items.length}),
+          onPressed: () => setState(() { touched = true; expanded = !expanded; }),
+          icon: RaftIcon(expanded ? RaftGlyph.chevronUp : RaftGlyph.chevronRight, size: 12, color: recipe.showMore.color),
+        ))),
+      ]))),
+    ));
   }
 }

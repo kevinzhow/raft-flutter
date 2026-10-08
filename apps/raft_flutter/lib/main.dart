@@ -19,6 +19,7 @@ import 'platform/session_persistence.dart';
 import 'platform/native_sharing.dart';
 import 'platform/content_coordinator.dart';
 import 'platform/workspace_cache.dart';
+import 'platform/system_bars.dart';
 import 'platform/background_notifications.dart';
 
 final raftScreenshotKey = GlobalKey();
@@ -361,8 +362,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       locale: displayLocale(client?.user?.string('displayLanguage')),
       supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      builder: (context, child) =>
-          RepaintBoundary(key: raftScreenshotKey, child: child!),
+      builder: (context, child) => RepaintBoundary(
+        key: raftScreenshotKey,
+        child: RaftSystemBars(child: child!),
+      ),
       debugShowCheckedModeBanner: false,
       theme: raftTheme(appearance.light),
       darkTheme: raftTheme(RaftFamily.elegant, dark: true),

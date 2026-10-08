@@ -1,8 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../platform/attachment_files.dart';
 import 'message_action_card.dart';
 import 'attachment_view.dart';
 import 'fleet_views.dart';
@@ -336,6 +339,47 @@ class MessagePresentation extends StatelessWidget {
     }
   }
 
+  Future<void> saveDiagram(
+    BuildContext context,
+    String extension,
+    Uint8List bytes,
+  ) async {
+    final w = controller;
+    final authority = workspaceAuthority(w);
+    final originalContent = message.content;
+    bool current() {
+      if (!context.mounted ||
+          workspaceAuthority(w) != authority ||
+          w.server?.id != w.client.serverId) {
+        return false;
+      }
+      final visible = <RaftMessage>[
+        ...w.messages,
+        ...w.replies,
+        if (w.threadParent != null) w.threadParent!,
+      ];
+      return visible.any(
+        (m) => m.id == message.id && m.content == originalContent,
+      );
+    }
+
+    if (!current() || !['mmd', 'png', 'svg'].contains(extension)) return;
+    try {
+      await AttachmentFiles().saveBytes(
+        bytes: bytes,
+        filename: 'diagram.$extension',
+        mimeType: switch (extension) {
+          'png' => 'image/png',
+          'svg' => 'image/svg+xml',
+          _ => 'text/plain',
+        },
+        authorized: current,
+      );
+    } catch (_) {
+      if (current()) w.setError('Could not export diagram.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (message.json['actionMetadata'] is Map &&
@@ -369,6 +413,9 @@ class MessagePresentation extends StatelessWidget {
       content: message.content,
       exportMode: exportMode,
       fontSize: fontSize,
+      onExportDiagram: exportMode
+          ? null
+          : (extension, bytes) => saveDiagram(context, extension, bytes),
       references: references,
       taskHref: localAuthority
           ? (n) => Uri(

@@ -147,7 +147,7 @@ class RaftImageReview extends StatelessWidget {
   final bool busy;
   final String? error;
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => Material(color: RaftTokens.of(context).panel, child: Column(
     children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
@@ -212,5 +212,5 @@ class RaftImageReview extends StatelessWidget {
         ),
       ),
     ],
-  );
+  ));
 }

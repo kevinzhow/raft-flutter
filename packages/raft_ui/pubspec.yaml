@@ -9,6 +9,8 @@ dependencies:
     sdk: flutter
   flutter_markdown_plus: ^1.0.12
   mermaid_flutter: ^0.3.0
+  mermaid_core: ^0.3.0
+  re_highlight: ^0.0.3
   flutter_widget_from_html_core: ^0.17.4
   html: ^0.15.6
 dev_dependencies:
@@ -25,3 +27,16 @@ flutter:
     - family: GeistMono
       fonts:
         - asset: assets/fonts/GeistMono.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: RaftDiagramSans
+      fonts:
+        - asset: assets/fonts/LiberationSans-Regular.ttf
+        - asset: assets/fonts/LiberationSans-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/LiberationSans-Italic.ttf
+          style: italic
+        - asset: assets/fonts/LiberationSans-BoldItalic.ttf
+          weight: 700
+          style: italic

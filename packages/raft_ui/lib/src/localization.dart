@@ -22,10 +22,10 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
-  "Messages arrive while connected. Background inbox checks provide a fallback when the system allows them; delivery may be delayed.":
-      "保持连接时可接收消息。系统允许时，后台收件箱检查会补充接收消息，但通知可能延迟。",
   "Background inbox checks could not be scheduled. Open Raft to retry.":
       "无法安排后台检查。请打开 Raft 重试。",
+  "Messages arrive while connected. Background inbox checks provide a fallback when the system allows them; delivery may be delayed.":
+      "保持连接时可接收消息。系统允许时，后台收件箱检查会补充接收消息，但通知可能延迟。",
   "{count} reply": "{count} 条回复",
   "{count} replies": "{count} 条回复",
   "{count} new": "{count} 条新回复",

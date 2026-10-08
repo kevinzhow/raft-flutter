@@ -63,7 +63,9 @@ class AttachmentPreviewFiles {
           }
         },
       );
-      if (!authorized() || cancel.isCancelled || await file.length() > maxBytes) {
+      if (!authorized() ||
+          cancel.isCancelled ||
+          await file.length() > maxBytes) {
         return null;
       }
       leased = true;

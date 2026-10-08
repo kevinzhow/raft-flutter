@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 
 import 'theme.dart';
+import 'design_primitives.dart';
 
 /// A window-sized workspace layout. Panel sizes follow the Web panel contract.
 /// The host owns navigation, persistence, and the mobile application bar.
@@ -27,8 +28,9 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   onPanelWidthsChanged;
   final String sidebarResizeLabel, threadResizeLabel;
 
-  static const desktopMinWidth = 900.0;
-  static const threadMinWidth = 1100.0;
+  // MainLayout and the overlay ThreadPanel use the pinned Web md/lg cuts.
+  static const desktopMinWidth = RaftLayoutMetrics.desktopBreakpoint;
+  static const threadMinWidth = RaftLayoutMetrics.threadOverlayBreakpoint;
 
   @override
   State<RaftAdaptiveWorkspace> createState() => _RaftAdaptiveWorkspaceState();
@@ -72,22 +74,29 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
         );
       }
       final t = RaftTokens.of(context);
+      final railWidth = RaftLayoutMetrics.railWidth(
+        t,
+        MediaQuery.sizeOf(context).height,
+      );
       final hasThread = widget.thread != null;
       final sideThread =
           hasThread && width >= RaftAdaptiveWorkspace.threadMinWidth;
       // Keep the main conversation usable while resizing a narrow window.
-      final threadMax = (width - 64 - sidebarWidth - 16 - 320).clamp(
+      final threadMax = (width - railWidth - sidebarWidth - 16 - 320).clamp(
         360.0,
         width * .6,
       );
       final actualThread = threadWidth.clamp(360.0, threadMax);
       return Row(
         children: [
-          SizedBox(width: 64, child: widget.rail),
+          SizedBox(width: railWidth, child: widget.rail),
           Container(
             key: const Key('workspace-sidebar-panel'),
             width: sidebarWidth,
-            child: Material(color: t.sidebar, child: widget.sidebar),
+            child: Material(
+              color: t.brutal ? t.colors['brutal-cream'] : t.sidebar,
+              child: widget.sidebar,
+            ),
           ),
           _ResizeHandle(
             key: const Key('sidebar-resize-handle'),
@@ -183,6 +192,8 @@ class _ResizeHandleState extends State<_ResizeHandle> {
               width: 8,
               color: focused || hovering
                   ? t.accent.withValues(alpha: .2)
+                  : t.brutal
+                  ? t.colors['brutal-cream']
                   : t.sidebar,
               child: Center(
                 child: Container(
@@ -204,10 +215,12 @@ class RaftRailDestination {
     required this.id,
     required this.label,
     required this.icon,
+    this.iconWidget,
     this.unread = 0,
   });
   final String id, label;
   final IconData icon;
+  final Widget? iconWidget;
   final int unread;
 }
 
@@ -231,30 +244,48 @@ class RaftWorkspaceRail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final recipe = RaftRailRecipe(
+      t,
+      viewportHeight: MediaQuery.sizeOf(context).height,
+    );
+    final bounds = RaftControlBounds(
+      visualHeight: recipe.itemSize,
+      density: RaftDensityScope.of(context),
+    );
+    final headerHeight = RaftLayoutMetrics.shellHeaderHeight(
+      t,
+      MediaQuery.sizeOf(context).height,
+    );
+    final visualSize = recipe.itemSize;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: t.sidebar,
-        border: Border(right: BorderSide(color: t.line)),
+        color: recipe.background,
+        border: t.brutal ? Border(right: recipe.border) : null,
       ),
       child: SafeArea(
         child: Column(
           children: [
-            const SizedBox(height: 8),
-            Tooltip(
-              message: workspaceTooltip,
-              child: IconButton.filledTonal(
-                key: const Key('rail-workspace'),
-                style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-                onPressed: onWorkspace,
-                icon: Text(
-                  workspaceName.isEmpty
-                      ? 'R'
-                      : String.fromCharCodes(workspaceName.runes.take(1))
-                            .toUpperCase(),
+            SizedBox(
+              height: headerHeight,
+              child: Tooltip(
+                message: workspaceTooltip,
+                child: IconButton(
+                  key: const Key('rail-workspace'),
+                  constraints: BoxConstraints.tightFor(
+                    width: bounds.layoutHeight,
+                    height: bounds.layoutHeight,
+                  ),
+                  style: IconButton.styleFrom(
+                    minimumSize: Size.square(bounds.layoutHeight),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: const RoundedRectangleBorder(),
+                  ),
+                  onPressed: onWorkspace,
+                  icon: _RailAvatar(name: workspaceName, size: visualSize - 4),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: t.brutal ? 8 : 16),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -268,21 +299,53 @@ class RaftWorkspaceRail extends StatelessWidget {
                             key: ValueKey('rail-${d.id}'),
                             tooltip: d.label,
                             isSelected: selected == d.id,
-                            style: IconButton.styleFrom(
-                              minimumSize: const Size(48, 48),
-                              foregroundColor: selected == d.id
-                                  ? t.accent
-                                  : t.muted,
-                              backgroundColor: selected == d.id
-                                  ? t.accent.withValues(alpha: .12)
-                                  : Colors.transparent,
+                            constraints: BoxConstraints.tightFor(
+                              width: bounds.layoutHeight,
+                              height: bounds.layoutHeight,
                             ),
-                            icon: Badge(
-                              isLabelVisible: d.unread > 0,
-                              label: Text(
-                                d.unread > 99 ? '99+' : '${d.unread}',
+                            style: IconButton.styleFrom(
+                              minimumSize: Size.square(bounds.layoutHeight),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: recipe.radius,
                               ),
-                              child: Icon(d.icon, size: 22),
+                              foregroundColor: t.brutal ? t.strong : t.muted,
+                              backgroundColor: Colors.transparent,
+                            ),
+                            icon: Container(
+                              width: visualSize,
+                              height: visualSize,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: selected == d.id
+                                    ? recipe.selectedBackground
+                                    : Colors.transparent,
+                                borderRadius: recipe.radius,
+                                border: Border.all(
+                                  color: selected == d.id && t.brutal
+                                      ? t.strong
+                                      : Colors.transparent,
+                                  width: t.brutal ? 2 : 1,
+                                ),
+                                boxShadow: selected == d.id && t.brutal
+                                    ? [
+                                        BoxShadow(
+                                          color: t.strong,
+                                          offset: const Offset(2, 2),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Badge(
+                                isLabelVisible: d.unread > 0,
+                                label: Text(
+                                  d.unread > 99 ? '99+' : '${d.unread}',
+                                ),
+                                child:
+                                    d.iconWidget ??
+                                    Icon(d.icon, size: RaftMetrics.railGlyph),
+                              ),
                             ),
                             onPressed: () => onSelected(d.id),
                           ),
@@ -295,6 +358,41 @@ class RaftWorkspaceRail extends StatelessWidget {
             if (footer != null) footer!,
             const SizedBox(height: 8),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// The workspace marker is an identity avatar, not a Material tonal circle.
+class _RailAvatar extends StatelessWidget {
+  const _RailAvatar({required this.name, required this.size});
+  final String name;
+  final double size;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final recipe = RaftRailRecipe(
+      t,
+      viewportHeight: MediaQuery.sizeOf(context).height,
+    );
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: recipe.identityBackground,
+        border: Border.fromBorderSide(recipe.border),
+        borderRadius: recipe.avatarRadius,
+      ),
+      child: Text(
+        name.isEmpty
+            ? 'R'
+            : String.fromCharCodes(name.runes.take(1)).toUpperCase(),
+        style: TextStyle(
+          color: t.ink,
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

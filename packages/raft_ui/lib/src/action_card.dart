@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'components.dart';
 import 'localization.dart';
 import 'theme.dart';
+import 'design_primitives.dart';
+import 'icons.dart';
 
 /// A safe presentation of server-owned action metadata. Execution and current
 /// permissions belong to the application adapter, never this component.
@@ -30,8 +32,10 @@ class RaftActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final done = state == 'executed', frozen = state == 'frozen';
-    return RaftPanel(
-      child: Column(
+    final recipe = RaftActionCardRecipe(t);
+    return Padding(padding: EdgeInsets.only(top: recipe.topGap), child: DecoratedBox(
+      decoration: BoxDecoration(color: recipe.background, border: Border.fromBorderSide(recipe.border)),
+      child: Padding(padding: recipe.inset, child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Wrap(
@@ -41,12 +45,12 @@ class RaftActionCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: TextStyle(fontWeight: FontWeight.w700, color: t.ink),
+                style: recipe.title,
               ),
               if (done)
                 Semantics(
                   label: raftText(context, 'Done'),
-                  child: const Icon(Icons.check_circle_outline),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [RaftIcon(RaftGlyph.check, size: 10, color: recipe.done.color), const SizedBox(width: 4), Text(raftText(context, 'Done').toUpperCase(), style: recipe.done)]),
                 ),
             ],
           ),
@@ -55,12 +59,12 @@ class RaftActionCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 '${raftText(context, d.label)}: ${d.value}',
-                style: TextStyle(color: t.muted),
+                style: recipe.summary,
               ),
             ),
           if (targetServer != null)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
+              padding: const EdgeInsets.only(top: 4),
               child: Text(
                 raftFormat(context, 'Acts on {server}', {
                   'server': targetServer!,
@@ -69,17 +73,17 @@ class RaftActionCard extends StatelessWidget {
             ),
           if (hint != null && hint!.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                hint!,
-                style: TextStyle(color: t.muted, fontStyle: FontStyle.italic),
+              padding: const EdgeInsets.only(top: 4),
+              child: DecoratedBox(
+                decoration: BoxDecoration(border: Border(left: recipe.hintBorder)),
+                child: Padding(padding: EdgeInsets.only(left: recipe.hintInset), child: Text(hint!, style: recipe.hint)),
               ),
             ),
           if (done && completedBy != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 4),
               child: Text(
-                raftFormat(context, 'Completed by {name}', {
+                raftFormat(context, 'Committed by {name}', {
                   'name': completedBy!,
                 }),
               ),
@@ -110,11 +114,11 @@ class RaftActionCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 raftText(context, blockedReason!),
-                style: TextStyle(color: t.muted),
+                style: recipe.summary,
               ),
             ),
         ],
-      ),
-    );
+      )),
+    ));
   }
 }

@@ -1,0 +1,20 @@
+{
+  "family": "Inter",
+  "upstream": "google/fonts",
+  "revision": "0b58fb370093f9a9f4ff785d94405710b79de67c",
+  "reference": "raft-ui@0.5.27/fonts.css Elegant heading-font=Inter; Web uses Google Fonts CSS",
+  "records": [
+    {
+      "asset": "packages/raft_ui/assets/fonts/Inter.ttf",
+      "source": "https://raw.githubusercontent.com/google/fonts/0b58fb370093f9a9f4ff785d94405710b79de67c/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+      "bytes": 876576
+    },
+    {
+      "asset": "packages/raft_ui/assets/fonts/Inter-OFL.txt",
+      "source": "https://raw.githubusercontent.com/google/fonts/0b58fb370093f9a9f4ff785d94405710b79de67c/ofl/inter/OFL.txt",
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+      "bytes": 4377
+    }
+  ]
+}

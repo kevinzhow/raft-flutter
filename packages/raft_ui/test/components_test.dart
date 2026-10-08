@@ -106,8 +106,8 @@ void main() {
       ),
     );
     final handle = tester.ensureSemantics();
-    expect(tester, meetsGuideline(androidTapTargetGuideline));
-    expect(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
     handle.dispose();
   });
   testWidgets('Ctrl+Enter does not submit an active IME composition', (
@@ -186,8 +186,8 @@ void main() {
             ),
           ),
         );
-        expect(tester, meetsGuideline(labeledTapTargetGuideline));
-        expect(tester, meetsGuideline(androidTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         handle.dispose();
       },
     );
@@ -198,25 +198,31 @@ void main() {
     raftTheme(RaftFamily.elegant, dark: true),
   ]) {
     testWidgets(
-      'destructive button target and contrast ${theme.brightness} ${theme.extension<RaftTokens>()!.family}',
+      'destructive high-contrast button target and contrast ${theme.brightness} ${theme.extension<RaftTokens>()!.family}',
       (tester) async {
         final handle = tester.ensureSemantics();
         await tester.pumpWidget(
           MaterialApp(
             theme: theme,
-            home: Scaffold(
-              body: RaftButton(
-                label: 'Delete',
-                destructive: true,
-                onPressed: () {},
+            home: MediaQuery(
+              data: const MediaQueryData(highContrast: true),
+              child: Scaffold(
+                body: RaftButton(
+                  label: 'Delete',
+                  destructive: true,
+                  onPressed: () {},
+                ),
               ),
             ),
           ),
         );
-        expect(tester, meetsGuideline(androidTapTargetGuideline));
-        expect(tester, meetsGuideline(labeledTapTargetGuideline));
-        expect(tester, meetsGuideline(textContrastGuideline));
-        handle.dispose();
+        try {
+          await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+          await expectLater(tester, meetsGuideline(textContrastGuideline));
+        } finally {
+          handle.dispose();
+        }
       },
     );
   }

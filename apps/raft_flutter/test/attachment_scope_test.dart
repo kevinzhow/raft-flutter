@@ -110,7 +110,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'private.png'));
+    await tester.tap(find.byTooltip('Preview private.png'));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Close preview'), findsOneWidget);
     w.revokeServer('server');
@@ -165,7 +165,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'private.png'));
+      await tester.tap(find.byTooltip('Preview private.png'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Close preview'), findsOneWidget);
       w.visibleIds['channel'] = {};
@@ -271,7 +271,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'private.png'));
+    await tester.tap(find.byTooltip('Preview private.png'));
     await tester.pumpAndSettle();
     expect(find.byTooltip('Close preview'), findsOneWidget);
     show.value = false;

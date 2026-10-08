@@ -206,7 +206,7 @@ void main() {
         'slackChannelId': 's3',
         'bindingEpoch': 9,
       });
-      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Save'));
       await tester.pumpAndSettle();
       expect(a.calls.where((c) => c.path.endsWith('/enable')), hasLength(1));
     },
@@ -265,7 +265,7 @@ void main() {
         a.calls.where((c) => c.path.endsWith('/forgot-password')),
         isEmpty,
       );
-      await tester.tap(find.widgetWithText(FilledButton, 'Send email'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Send email'));
       await tester.pumpAndSettle();
       expect(
         a.calls.where((c) => c.path.endsWith('/forgot-password')),
@@ -384,12 +384,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Remove'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Remove'));
       await tester.pumpAndSettle();
       expect(a.calls.where((c) => c.method == 'DELETE'), hasLength(1));
       await tester.tap(find.text('Disconnect Slack'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilledButton, 'Disconnect'));
+      await tester.tap(find.widgetWithText(RaftButton, 'Disconnect'));
       await tester.pumpAndSettle();
       expect(
         a.calls.where((c) => c.path.endsWith('/disconnect')),

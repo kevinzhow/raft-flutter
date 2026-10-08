@@ -106,8 +106,24 @@ void main() {
     final thread = tester
         .getSize(find.byKey(const Key('workspace-thread-panel')))
         .width;
-    expect(thread, 560);
-    expect(1200 - 64 - 240 - 16 - thread, greaterThanOrEqualTo(320));
+    // Elegant's source rail is 56 px; Brutal's is 64 px. Measure the
+    // rendered regions so the conversation bound is independent of that recipe.
+    final rail = tester.getSize(find.text('Rail')).width;
+    final sidebar = tester
+        .getSize(find.byKey(const Key('workspace-sidebar-panel')))
+        .width;
+    final sidebarHandle = tester
+        .getSize(find.byKey(const Key('sidebar-resize-handle')))
+        .width;
+    final threadHandle = tester
+        .getSize(find.byKey(const Key('thread-resize-handle')))
+        .width;
+    expect(rail, 56);
+    expect(thread, 1200 - rail - sidebar - sidebarHandle - threadHandle - 320);
+    expect(
+      tester.getSize(find.widgetWithText(Center, 'Conversation')).width,
+      greaterThanOrEqualTo(320),
+    );
     expect(tester.takeException(), isNull);
   });
 

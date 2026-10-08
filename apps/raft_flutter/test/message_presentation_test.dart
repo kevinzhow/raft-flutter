@@ -184,7 +184,7 @@ void main() {
         'expectedState': 'prepared',
         'expectedConfirmationVersion': 7,
       });
-      expect(find.text('Completed by Alice'), findsOneWidget);
+      expect(find.text('Committed by Alice'), findsOneWidget);
       expect(find.text('Approve agent login'), findsOneWidget);
     },
   );

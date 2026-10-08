@@ -6,6 +6,7 @@ import '../data/workspace_controller.dart';
 import 'account_onboarding.dart';
 import 'account_connections_view.dart';
 import 'management_support.dart';
+import 'public_avatar_url.dart';
 
 class AccountSettings extends StatefulWidget {
   const AccountSettings({super.key, required this.controller});
@@ -266,9 +267,10 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         RaftAvatar(
           name: user?.name ?? '',
           size: 64,
-          imageUrl: user?.string('avatarUrl').isEmpty != false
-              ? null
-              : user!.string('avatarUrl'),
+          imageUrl: raftPublicAvatarUrl(
+            controller.client.origin,
+            user?.string('avatarUrl'),
+          ),
         ),
         const SizedBox(height: 12),
         Text(user?.name ?? '', style: Theme.of(context).textTheme.titleLarge),

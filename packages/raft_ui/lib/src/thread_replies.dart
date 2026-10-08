@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'components.dart';
 import 'localization.dart';
 import 'theme.dart';
+import 'icons.dart';
+import 'design_primitives.dart';
 
 @immutable
 class RaftThreadReplyPreview {
@@ -67,7 +69,10 @@ class RaftThreadReplies extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border(left: BorderSide(color: tokens.line)),
+          color: tokens.brutal
+              ? Colors.black.withValues(alpha: .03)
+              : tokens.card,
+          borderRadius: RaftShapes.field(tokens),
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -88,7 +93,7 @@ class RaftThreadReplies extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(Icons.chevron_right, size: 16),
+                    const RaftIcon(RaftGlyph.chevronRight, size: 10),
                   ],
                 ),
               ),
@@ -111,7 +116,7 @@ class RaftThreadReplies extends StatelessWidget {
                         if (reply.senderType == 'user')
                           RaftAvatar(name: reply.author, size: 20)
                         else
-                          Icon(
+                          RaftSymbol(
                             reply.senderType == 'agent'
                                 ? Icons.smart_toy_outlined
                                 : Icons.apps,

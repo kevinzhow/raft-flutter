@@ -6,8 +6,10 @@
 
 第一次提交后固定整个请求，网络错误与部分失败都重试同一请求。每个目标单独显示实际 success/failed/unknown；缺少、不匹配、重复或没有 message.id 的回执不算成功。已确认的成功不会因后续缺席回执变成失败，也不会在重试时更换请求 ID。账户、工作区、角色与频道权限变化会清除选择并移除所属弹窗，保留的按钮回调也不能提交到新权限范围。
 
-验证：forward_messages_test.dart 的 5 个测试通过，覆盖部分成功、精确重试、未知回执、已确认成功以及同 generation 角色撤权。原生 helper forward_flow.dart 使用本轮新建频道，实际转发至两个目标后读取服务端消息，断言每个目标只有一个 forwarded-bundle，原文保持中日文内容，再清理自己创建的频道。2026-10-08 UTC 01:49:11.360590 启动的较早 b20 源码版本绑定 Linux 原生整轮已完成通过，包括实际双目标流程及服务端读取断言。Android 同源码整轮仍待主报告。
+验证：forward_messages_test.dart 的 5 个测试通过，覆盖部分成功、精确重试、未知回执、已确认成功以及同 generation 角色撤权。原生 helper forward_flow.dart 使用本轮新建频道，实际转发至两个目标后读取服务端消息，断言每个目标只有一个 forwarded-bundle，原文保持中日文内容，再清理自己创建的频道。2026-10-08 UTC 01:49:11.360590 启动的较早 b20 源码版本绑定 Linux 原生整轮已完成通过，包括实际双目标流程及服务端读取断言。Android当前6ab源码整轮已通过；Linux同源码整轮已通过（6ab功能基线）。
 
 服务器投影决定转发内容与来源是否可见；客户端不以原始附件签名地址或私有来源 ID 构造可点击链接。转发块展示与 SDK Preview 的结果由独立消息展示证据记录。
 
-Current acceptance revision: `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701` includes the mobile main/thread ChatView rebind repair. Engineering 353 Dart/29 host/analyze passes; Current-source Android full is running first, then Linux will rerun serially. The 01:49:11 Linux proof above belongs to the earlier b20 hash, not this revision.
+Current acceptance revision: `6ab79f33a7f39f98523dadd38dfc1430fd2d7f8e75d10736d0c80050bd1c5701`. Engineering353 Dart/29 host/analyze passes. Android full `2026-10-08T03:02:43.361866Z` completed with54 checked PNG checkpoints; Linux same-source `2026-10-08T03:11:25.507223Z` completed with53 checked PNG checkpoints. Earlier b20/042 evidence remains historical or auxiliary.
+
+功能基线6ab现已通过两平台完整主应用验收：Android `2026-10-08T03:02:43.361866Z` /54检查点、Linux `2026-10-08T03:11:25.507223Z` /53检查点，归档于 `.local/functional-baseline-6ab`。用户已授权新的页面/组件像素级对齐；该视觉修正工作正在进行，新版源码需重新工程/原生验收，最终安装包暂未发行。这些功能基线记录不证明像素等价。

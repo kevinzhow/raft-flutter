@@ -85,13 +85,16 @@ Future<void> verifyNativeMediaPreviewFlow(
   await w.jumpToMessage(channelId!, message.id);
   await tester.pump(const Duration(milliseconds: 300));
   for (final name in samples.keys) {
-    await until(
-      () => find.widgetWithText(TextButton, name).evaluate().isNotEmpty,
+    final card = find.byWidgetPredicate(
+      (widget) => widget is RaftAttachmentCard && widget.filename == name,
     );
-    final button = find.widgetWithText(TextButton, name);
-    await tester.ensureVisible(button);
+    await until(() => card.evaluate().isNotEmpty);
+    expect(card, findsOneWidget);
+    final title = find.descendant(of: card, matching: find.text(name));
+    expect(title, findsOneWidget);
+    await tester.ensureVisible(card);
     await tester.pump(const Duration(milliseconds: 100));
-    await tester.tap(button);
+    await tester.tap(title);
     await until(
       () => find.byType(AttachmentPreviewDialog).evaluate().isNotEmpty,
     );

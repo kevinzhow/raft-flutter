@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'localization.dart';
+import 'icons.dart';
+import 'design_primitives.dart';
 
 /// Displays a one-time credential only after an explicit reveal action.
 /// Clipboard access belongs to the host application.
@@ -53,21 +55,16 @@ class _RaftSecretViewState extends State<RaftSecretView> {
       Wrap(
         spacing: 12,
         children: [
-          TextButton.icon(
-            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-            icon: Icon(visible ? Icons.visibility_off : Icons.visibility),
-            label: Text(
-              raftText(
-                context,
-                visible ? 'Hide credential' : 'Reveal credential',
-              ),
-            ),
+          RaftTextButton(
+            variant: RaftControlVariant.ghost,
+            glyph: visible ? RaftGlyph.eyeOff : RaftGlyph.eye,
+            label: visible ? 'Hide credential' : 'Reveal credential',
             onPressed: () => setState(() => visible = !visible),
           ),
-          TextButton.icon(
-            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-            icon: const Icon(Icons.copy),
-            label: Text(raftText(context, 'Copy credential')),
+          RaftTextButton(
+            variant: RaftControlVariant.ghost,
+            glyph: RaftGlyph.copy,
+            label: 'Copy credential',
             onPressed: copying
                 ? null
                 : () async {

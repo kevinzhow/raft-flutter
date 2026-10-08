@@ -22,6 +22,8 @@ class AttachmentView extends StatefulWidget {
     this.messageId,
     this.exportMode = false,
     this.onExportReady,
+    this.imageExtent,
+    this.imageFit = BoxFit.contain,
   });
   final WorkspaceController controller;
   final Map<String, dynamic> metadata;
@@ -29,6 +31,8 @@ class AttachmentView extends StatefulWidget {
   final String? messageId;
   final bool exportMode;
   final VoidCallback? onExportReady;
+  final Size? imageExtent;
+  final BoxFit imageFit;
   @override
   State<AttachmentView> createState() => _AttachmentViewState();
 }
@@ -50,7 +54,12 @@ class _AttachmentViewState extends State<AttachmentView> {
   String get name => '${widget.metadata['filename'] ?? 'Attachment'}';
   String get mime =>
       '${widget.metadata['mimeType'] ?? 'application/octet-stream'}';
-  bool get isImage => mime.startsWith('image/');
+  bool get isImage {
+    final type = mime.toLowerCase().split(';').first.trim();
+    // Original Web only presents SVG inline when a raster projection exists.
+    // Native never feeds authored SVG bytes to the raster decoder.
+    return type.startsWith('image/') && type != 'image/svg+xml';
+  }
   bool get visibleExportDescendant =>
       widget.exportMode &&
       w.messages.any((parent) {
@@ -382,40 +391,18 @@ class _AttachmentViewState extends State<AttachmentView> {
     if (!mounted || !authorized || image == null) return;
     previewRoute = DialogRoute<void>(
       context: context,
-      builder: (dialogContext) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 700),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text(name),
-                trailing: IconButton(
-                  tooltip: 'Close preview',
-                  onPressed: () => Navigator.pop(dialogContext),
-                  icon: const Icon(Icons.close),
-                ),
-              ),
-              Flexible(
-                child: InteractiveViewer(
-                  child: Image.memory(
-                    image!,
-                    key: ValueKey('attachment-image-${widget.metadata['id']}'),
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) => const Text(
-                      'Preview unavailable. Download the original file.',
-                    ),
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: download,
-                icon: const Icon(Icons.download),
-                label: const Text('Download original'),
-              ),
-            ],
-          ),
-        ),
+      builder: (dialogContext) => RaftAttachmentLightbox(
+        title: name, titleBold: true,
+        onClose: () {
+          final route = previewRoute;
+          if (route?.isActive == true) route!.navigator?.removeRoute(route);
+        },
+        footer: RaftTextButton(label: 'Download original', glyph: RaftGlyph.download,
+          onPressed: authorized ? download : null, variant: RaftControlVariant.ghost),
+        child: Center(child: InteractiveViewer(
+          child: Image.memory(image!, key: ValueKey('attachment-image-${widget.metadata['id']}'),
+            fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('Preview unavailable. Download the original file.')),
+        )),
       ),
     );
     await Navigator.of(context, rootNavigator: true).push(previewRoute!);
@@ -427,6 +414,9 @@ class _AttachmentViewState extends State<AttachmentView> {
     exportMode: widget.exportMode,
     filename: name,
     mimeType: mime,
+    imageExtent: widget.imageExtent,
+    imageWidth: (widget.metadata['width'] as num?)?.toDouble(),
+    imageHeight: (widget.metadata['height'] as num?)?.toDouble(),
     sizeBytes: (widget.metadata['sizeBytes'] as num?)?.toInt(),
     busy: loading || saving,
     error: error,
@@ -439,7 +429,7 @@ class _AttachmentViewState extends State<AttachmentView> {
         ? null
         : Image.memory(
             image!,
-            fit: BoxFit.contain,
+            fit: widget.imageFit,
             errorBuilder: (_, _, _) => const Padding(
               padding: EdgeInsets.all(16),
               child: Text('Preview unavailable. Download the original file.'),

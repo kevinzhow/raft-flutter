@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:raft_client/raft_client.dart';
@@ -13,6 +14,7 @@ import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/platform/session_store.dart';
+import 'package:raft_flutter/platform/system_bars.dart';
 
 import 'attachment_flow.dart';
 import 'management_flow.dart';
@@ -184,6 +186,37 @@ void main() {
         tester,
         () => find.byKey(const Key('login-email')).evaluate().isNotEmpty,
       );
+      if (Platform.isAndroid) {
+        final view = tester.view;
+        final logical = view.physicalSize / view.devicePixelRatio;
+        expect(
+          tester.getRect(find.byKey(raftScreenshotKey)),
+          Rect.fromLTWH(0, 0, logical.width, logical.height),
+          reason:
+              'The actual Android canvas must extend underneath system bars.',
+        );
+        expect(view.viewPadding.top, greaterThan(0));
+        final field = tester.getRect(find.byKey(const Key('login-email')));
+        expect(
+          field.top,
+          greaterThanOrEqualTo(view.viewPadding.top / view.devicePixelRatio),
+        );
+        expect(
+          field.bottom,
+          lessThanOrEqualTo(
+            logical.height - view.viewPadding.bottom / view.devicePixelRatio,
+          ),
+        );
+        final overlay = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find.descendant(
+            of: find.byType(RaftSystemBars),
+            matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+          ),
+        );
+        expect(overlay.value.statusBarColor, Colors.transparent);
+        expect(overlay.value.systemNavigationBarColor, Colors.transparent);
+        await screenshot(tester, 'linux-edge-to-edge-login');
+      }
       await tester.enterText(
         find.byKey(const Key('login-origin')),
         fixture['origin'],

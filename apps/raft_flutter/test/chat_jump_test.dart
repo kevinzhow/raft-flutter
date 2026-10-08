@@ -62,10 +62,10 @@ void main() {
           .widget<EditableText>(find.byType(EditableText))
           .controller;
       final before = w.channelGeneration;
-      final button = tester.widget<IconButton>(
+      final button = tester.widget<RaftIconButton>(
         find.byWidgetPredicate(
           (widget) =>
-              widget is IconButton &&
+              widget is RaftIconButton &&
               widget.tooltip == 'Send message (Ctrl+Enter)',
         ),
       );
@@ -112,9 +112,10 @@ void main() {
         isTrue,
       );
       expect(oldController.text, 'Old pending draft');
-      final button = tester.widget<IconButton>(
+      final button = tester.widget<RaftIconButton>(
         find.byWidgetPredicate(
-          (w) => w is IconButton && w.tooltip == 'Send message (Ctrl+Enter)',
+          (w) =>
+              w is RaftIconButton && w.tooltip == 'Send message (Ctrl+Enter)',
         ),
       );
       await tester.runAsync(() async {
