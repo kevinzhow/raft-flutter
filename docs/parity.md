@@ -237,10 +237,10 @@ byte-identical.
   product composite (message rows in `RaftChatView`) are captured through a
   clipped window aligned to React's element rect, so style probes there
   include neighbouring paragraphs.
-* Some app compositions live in private `WorkspaceView` methods (mobile nav,
-  mobile home header, create-channel, settings destination list); those
-  builders copy that code and say so in `notes` — if the app changes, the
-  copy must follow.
+* The mobile nav, mobile home header, create-channel dialog and settings
+  destination list are public product widgets (`WorkspaceMobileTabBar`,
+  `WorkspaceMobileHomeHeader`, `CreateChannelDialog`, `WorkspaceSettings`)
+  that both `WorkspaceView` and the builders mount; no builder copies app code.
 * State substitutions are documented per case in `notes` and in metadata
   (`flutter.notes`), e.g. create-agent dialogs (React never selects a runtime
   because its host lacks the runtime-options mock), composer image preview
