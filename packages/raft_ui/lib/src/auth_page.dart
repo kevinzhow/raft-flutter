@@ -785,9 +785,8 @@ class RaftAuthAvatarField extends StatelessWidget {
                 children: [
                   RaftTextButton(
                     label: tr('Upload'),
-                    // Web: Camera 15; RaftGlyph.camera arrives with the regenerated
-                    // Lucide set (icons.dart is owned by the glyph track).
-                    glyph: RaftGlyph.imagePlus,
+                    // AccountIdentitySetupPage: <Camera size={15} />.
+                    glyph: RaftGlyph.camera,
                     visualHeight: RaftMetrics.buttonSm,
                     minimumTargetSize: RaftMetrics.buttonSm,
                     onPressed: onUpload,

@@ -1889,7 +1889,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         RaftSidebarSectionAction(
           key: anchor,
           label: tr('Sort'),
-          glyph: RaftGlyph.arrowDownUp,
+          glyph: RaftGlyph.arrowUpDown, // Sidebar.tsx ArrowUpDown 14
           onPressed: sortingGroups.contains(id)
               ? null
               : () => sortSidebarGroup(group),
