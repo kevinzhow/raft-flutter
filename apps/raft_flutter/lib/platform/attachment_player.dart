@@ -41,9 +41,14 @@ class NativeAttachmentPlayer implements AttachmentPlayer {
     controller = video
         ? VideoController(
             player,
-            configuration: const VideoControllerConfiguration(
-              enableHardwareAcceleration: false,
-            ),
+            configuration: Platform.isAndroid
+                ? const VideoControllerConfiguration(
+                    vo: 'mediacodec_embed',
+                    hwdec: 'mediacodec',
+                  )
+                : const VideoControllerConfiguration(
+                    enableHardwareAcceleration: false,
+                  ),
           )
         : null;
     for (final stream in <Stream<dynamic>>[
@@ -55,21 +60,33 @@ class NativeAttachmentPlayer implements AttachmentPlayer {
       subscriptions.add(stream.listen((_) => publish()));
     }
     subscriptions.add(player.stream.error.listen((_) => publish(error: true)));
+    // media_kit's error stream omits fatal and video-output log events.
+    // Preserve their failure without exposing decoder paths or file contents.
+    subscriptions.add(
+      player.stream.log.listen((event) {
+        if (event.level == 'fatal' ||
+            (event.level == 'error' &&
+                (event.prefix == 'vo' || event.prefix.startsWith('vo/')))) {
+          publish(error: true);
+        }
+      }),
+    );
   }
   late final Player player;
   late final VideoController? controller;
   final output = StreamController<AttachmentPlayback>.broadcast();
   final subscriptions = <StreamSubscription<dynamic>>[];
-  bool closed = false;
+  bool closed = false, failed = false;
   void publish({bool error = false}) {
     if (closed) return;
+    failed = failed || error;
     output.add(
       AttachmentPlayback(
         playing: player.state.playing,
         position: player.state.position,
         duration: player.state.duration,
         volume: player.state.volume,
-        error: error,
+        error: failed,
       ),
     );
   }
@@ -95,9 +112,15 @@ class NativeAttachmentPlayer implements AttachmentPlayer {
         'ytdl',
         'sub-auto',
         'audio-file-auto',
+        'autoload-files',
       ]) {
         await native.setProperty(property, 'no');
       }
+      // media_kit.open uses an intermediate playlist. Keep external references
+      // disabled and load the already-authorized local input directly instead.
+      await native.setProperty('pause', 'yes');
+      await native.command(['loadfile', file.path, 'replace']);
+      return;
     }
     await player.open(Media(file.uri.toString()), play: false);
   }

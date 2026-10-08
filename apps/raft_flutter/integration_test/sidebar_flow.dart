@@ -144,24 +144,47 @@ Future<void> verifySidebarFlow(
     final first = find.byKey(ValueKey('sidebar-item-${ordered[0].id}'));
     final second = find.byKey(ValueKey('sidebar-item-${ordered[1].id}'));
     await _reveal(tester, first, list);
-    await tester.ensureVisible(second);
+    // Desktop handles are siblings of the keyed tile in Flutter's Stack;
+    // Android's long-press listener wraps it. Scope to this actual list so
+    // neither layout relies on an incorrect descendant relationship.
+    final channelList = find.ancestor(
+      of: first,
+      matching: find.byType(ReorderableListView),
+    );
+    // Reveal the whole nested list, then its initial rows. Revealing the second
+    // tile alone can scroll the first one out of this virtualized viewport.
+    await tester.ensureVisible(channelList);
+    final channelScroll = find
+        .descendant(of: channelList, matching: find.byType(Scrollable))
+        .first;
+    tester.state<ScrollableState>(channelScroll).position.jumpTo(0);
     await tester.pumpAndSettle();
-    final handle = find.descendant(
-      of: second,
-      matching: find.byType(ReorderableDragStartListener),
+    expect(first, findsOneWidget);
+    expect(second, findsOneWidget);
+    final gestureTarget = find.descendant(
+      of: channelList,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is ReorderableDragStartListener && widget.index == 1,
+      ),
     );
-    final delayed = find.descendant(
-      of: second,
-      matching: find.byType(ReorderableDelayedDragStartListener),
-    );
-    final gestureTarget = handle.evaluate().isNotEmpty
-        ? handle.first
-        : delayed.first;
+    expect(gestureTarget, findsOneWidget);
     final start = tester.getCenter(gestureTarget),
         destination = tester.getCenter(first);
     final gesture = await tester.startGesture(start);
     await tester.pump(const Duration(milliseconds: 700));
-    await gesture.moveTo(Offset(start.dx, destination.dy - 10));
+    // Cross touch slop first, then move the already-recognized drag. A single
+    // move can start the desktop recognizer without updating its drop index.
+    await gesture.moveBy(const Offset(0, -15));
+    await tester.pump(const Duration(milliseconds: 100));
+    for (var step = 1; step <= 10; step++) {
+      await gesture.moveTo(
+        Offset(
+          start.dx,
+          start.dy + (destination.dy - 20 - start.dy) * step / 10,
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     await tester.pump(const Duration(milliseconds: 700));
     await gesture.up();
     await tester.pumpAndSettle();

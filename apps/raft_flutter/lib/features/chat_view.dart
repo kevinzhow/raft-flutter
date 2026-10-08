@@ -38,9 +38,9 @@ class RaftChatView extends StatefulWidget {
 }
 
 class _RaftChatViewState extends State<RaftChatView> {
-  late final MessageReferenceDirectory referenceDirectory;
-  late final ComposerDirectory composerDirectory;
-  late final MessageSelection selection;
+  late MessageReferenceDirectory referenceDirectory;
+  late ComposerDirectory composerDirectory;
+  late MessageSelection selection;
   bool capturingSelection = false;
   String? selectionError;
   final adapter = chat.InMemoryChatController();
@@ -48,6 +48,8 @@ class _RaftChatViewState extends State<RaftChatView> {
   String? scope;
   String? scrolledHighlight;
   int? scrolledWindow, adapterWindow;
+  int bindingRevision = 0;
+  final focusAnchors = <String, GlobalKey>{};
   Future<void> updates = Future.value();
   WorkspaceController get w => widget.controller;
   List<RaftMessage> get rows => widget.thread ? w.replies : w.messages;
@@ -61,6 +63,44 @@ class _RaftChatViewState extends State<RaftChatView> {
       ..addListener(selectionChanged);
     w.addListener(sync);
     sync();
+  }
+
+  @override
+  void didUpdateWidget(covariant RaftChatView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final controllerChanged = oldWidget.controller != w;
+    final scopeChanged = controllerChanged || oldWidget.thread != widget.thread;
+    if (scopeChanged) {
+      bindingRevision++;
+      // The mobile shell reuses this State when replacing its full-screen
+      // thread with the channel. Every controller/role-bound model must follow
+      // the new widget, even when no controller event follows that layout.
+      oldWidget.selectionHandle?.update(false, null);
+      selection.dispose();
+      if (controllerChanged) {
+        oldWidget.controller.removeListener(sync);
+        referenceDirectory.dispose();
+        composerDirectory.dispose();
+        referenceDirectory = MessageReferenceDirectory(w)
+          ..addListener(referencesChanged);
+        composerDirectory = ComposerDirectory(w)
+          ..addListener(referencesChanged);
+        w.addListener(sync);
+      }
+      selection = MessageSelection(w, thread: widget.thread)
+        ..addListener(selectionChanged);
+      selectionError = null;
+      capturingSelection = false;
+      scope = null;
+      adapterWindow = null;
+      scrolledHighlight = null;
+      scrolledWindow = null;
+      focusAnchors.clear();
+      sync();
+    } else if (oldWidget.selectionHandle != widget.selectionHandle) {
+      oldWidget.selectionHandle?.update(false, null);
+      widget.selectionHandle?.update(selection.active, selection.exit);
+    }
   }
 
   void selectionChanged() {
@@ -167,8 +207,14 @@ class _RaftChatViewState extends State<RaftChatView> {
     // adapter's message diff. Rebuild them on this view's own listener even
     // when an adaptive/setup parent retains the same child instance.
     if (mounted) setState(() {});
+    final revision = bindingRevision, controller = w, thread = widget.thread;
+    bool currentBinding() =>
+        mounted &&
+        revision == bindingRevision &&
+        identical(controller, w) &&
+        thread == widget.thread;
     updates = updates.then((_) async {
-      if (!mounted) return;
+      if (!currentBinding()) return;
       final id = widget.thread ? w.threadChannelId : w.channel?.id;
       for (final row in rows) {
         if ((row.json['reactions'] as List? ?? []).isNotEmpty) {
@@ -188,6 +234,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       final window = widget.thread ? w.threadGeneration : w.channelGeneration;
       final loading = widget.thread ? w.threadLoading : w.channelLoading;
       final target = w.highlightedMessageId;
+      focusAnchors.removeWhere((id, _) => id != target);
       if (scope != id ||
           (!loading && target != null && adapterWindow != window)) {
         scope = id;
@@ -197,6 +244,7 @@ class _RaftChatViewState extends State<RaftChatView> {
         // Ordinary diffs and history prepend do not enter this branch.
         if (viewport.hasClients) viewport.jumpTo(0);
         await adapter.setMessages(projected, animated: false);
+        if (!currentBinding()) return;
         scrolledHighlight = null;
         adapterWindow = window;
       }
@@ -204,6 +252,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       for (final old in List<chat.Message>.of(adapter.messages)) {
         if (!wanted.contains(old.id)) {
           await adapter.removeMessage(old, animated: false);
+          if (!currentBinding()) return;
         }
       }
       for (var i = 0; i < projected.length; i++) {
@@ -216,13 +265,14 @@ class _RaftChatViewState extends State<RaftChatView> {
         } else if (jsonEncode(existing.metadata) != jsonEncode(next.metadata)) {
           await adapter.updateMessage(existing, next);
         }
+        if (!currentBinding()) return;
       }
       if (!loading &&
           target != null &&
           (target != scrolledHighlight || window != scrolledWindow) &&
           adapter.messages.any((m) => m.id == target)) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
-          if (!mounted ||
+          if (!currentBinding() ||
               target != w.highlightedMessageId ||
               window !=
                   (widget.thread ? w.threadGeneration : w.channelGeneration)) {
@@ -231,7 +281,7 @@ class _RaftChatViewState extends State<RaftChatView> {
           // ChatAnimatedList consumes controller operations asynchronously.
           // Allow its next layout to attach the message observer before jumping.
           await WidgetsBinding.instance.endOfFrame;
-          if (!mounted ||
+          if (!currentBinding() ||
               target != w.highlightedMessageId ||
               window !=
                   (widget.thread ? w.threadGeneration : w.channelGeneration)) {
@@ -248,22 +298,65 @@ class _RaftChatViewState extends State<RaftChatView> {
             );
             await WidgetsBinding.instance.endOfFrame;
           }
-          if (!mounted ||
+          if (!currentBinding() ||
               target != w.highlightedMessageId ||
               window !=
                   (widget.thread ? w.threadGeneration : w.channelGeneration)) {
             return;
           }
-          await adapter.scrollToMessage(
-            target,
-            duration: Duration.zero,
-            alignment: .3,
-          );
-          scrolledHighlight = target;
-          scrolledWindow = window;
+          // The package's void focus receipt also covers an unattached list
+          // or a target not yet consumed by its operation listener. Confirm
+          // the actual lazy row, and retry only this authorized context.
+          for (var attempt = 0; attempt < 8; attempt++) {
+            if (!currentBinding() ||
+                target != w.highlightedMessageId ||
+                window !=
+                    (widget.thread
+                        ? w.threadGeneration
+                        : w.channelGeneration)) {
+              return;
+            }
+            await adapter.scrollToMessage(
+              target,
+              duration: Duration.zero,
+              alignment: .3,
+            );
+            WidgetsBinding.instance.scheduleFrame();
+            await WidgetsBinding.instance.endOfFrame;
+            if (!currentBinding() ||
+                target != w.highlightedMessageId ||
+                window !=
+                    (widget.thread
+                        ? w.threadGeneration
+                        : w.channelGeneration)) {
+              return;
+            }
+            if (focusReceiptVisible(target)) {
+              scrolledHighlight = target;
+              scrolledWindow = window;
+              return;
+            }
+          }
         });
       }
     });
+  }
+
+  bool focusReceiptVisible(String target) {
+    if (!viewport.hasClients) return false;
+    final row = focusAnchors[target]?.currentContext?.findRenderObject();
+    final view = viewport.position.context.storageContext.findRenderObject();
+    if (row is! RenderBox ||
+        view is! RenderBox ||
+        !row.attached ||
+        !view.attached ||
+        !row.hasSize ||
+        !view.hasSize) {
+      return false;
+    }
+    return (row.localToGlobal(Offset.zero) & row.size).overlaps(
+      view.localToGlobal(Offset.zero) & view.size,
+    );
   }
 
   Future<void> link(String url) async {
@@ -428,6 +521,81 @@ class _RaftChatViewState extends State<RaftChatView> {
     return time.format(context);
   }
 
+  Widget? inlineThreadReplies(RaftMessage parent, {required bool parentTile}) {
+    if (parentTile ||
+        widget.thread ||
+        w.channel == null ||
+        !w.can('viewChannel', resource: w.channel)) {
+      return null;
+    }
+    final summary = w.threadSummaries[parent.id];
+    if (summary is! Map || summary['latestReplies'] is! List) return null;
+    final count = int.tryParse('${summary['replyCount']}') ?? 0;
+    final projected = <RaftThreadReplyPreview>[];
+    for (final value in summary['latestReplies'] as List) {
+      if (value is! Map ||
+          value['messageId'] is! String ||
+          value['preview'] is! String ||
+          !{
+            'user',
+            'agent',
+            'external_projection',
+          }.contains(value['senderType'])) {
+        continue;
+      }
+      final display = value['senderDisplayName'], name = value['senderName'];
+      final author = display is String && display.isNotEmpty
+          ? display
+          : name is String
+          ? name
+          : '';
+      final time = DateTime.tryParse('${value['createdAt']}');
+      projected.add(
+        RaftThreadReplyPreview(
+          id: value['messageId'] as String,
+          author: author,
+          preview: value['preview'] as String,
+          senderType: value['senderType'] as String,
+          timestamp: time == null ? '' : clock(time),
+        ),
+      );
+    }
+    if (count <= 0 || projected.isEmpty) return null;
+    final authority = workspaceAuthority(w);
+    void open(String? replyId, {bool preview = false}) {
+      if (!mounted ||
+          authority != workspaceAuthority(w) ||
+          !w.messages.any((m) => m.id == parent.id) ||
+          !w.can('viewChannel', resource: w.channel)) {
+        return;
+      }
+      if (preview && replyId != null) {
+        final live = w.threadSummaries[parent.id];
+        if (live is! Map ||
+            live['latestReplies'] is! List ||
+            !(live['latestReplies'] as List).whereType<Map>().any(
+              (r) => r['messageId'] == replyId && r['senderType'] != 'system',
+            )) {
+          return;
+        }
+      }
+      w.openThread(parent, focusedMessageId: replyId);
+    }
+
+    return RaftThreadReplies(
+      replies: projected,
+      replyCount: count,
+      unreadCount: int.tryParse('${summary['unreadCount']}') ?? 0,
+      hasDraft: w.drafts['thread:${parent.id}']?.trim().isNotEmpty == true,
+      onOpen: () => open(
+        summary['firstUnreadMessageId'] is String
+            ? summary['firstUnreadMessageId'] as String
+            : null,
+      ),
+      onOpenReply: (id) => open(id, preview: true),
+    );
+  }
+
   Widget messageTile(RaftMessage m, {bool parent = false}) => RaftMessageTile(
     key: ValueKey('message-${m.id}'),
     author: m.author,
@@ -460,8 +628,11 @@ class _RaftChatViewState extends State<RaftChatView> {
         : null,
     onActions: () => actions(m),
     onThread: parent || widget.thread ? null : () => w.openThread(m),
+    threadPreview: inlineThreadReplies(m, parentTile: parent),
     threadLabel: w.threadSummaries[m.id] is Map
-        ? '${w.threadSummaries[m.id]['replyCount'] ?? 0} replies'
+        ? raftFormat(context, '{count} replies', {
+            'count': w.threadSummaries[m.id]['replyCount'] ?? 0,
+          })
         : null,
     onLink: link,
     attachments:
@@ -483,7 +654,13 @@ class _RaftChatViewState extends State<RaftChatView> {
     onReaction: (emoji) => react(m, emoji),
   );
   Widget tile(RaftMessage m, {bool parent = false}) {
-    final child = messageTile(m, parent: parent);
+    final body = messageTile(m, parent: parent);
+    final child = !parent && m.id == w.highlightedMessageId
+        ? KeyedSubtree(
+            key: focusAnchors.putIfAbsent(m.id, GlobalKey.new),
+            child: body,
+          )
+        : body;
     if (!selection.active) return child;
     final checked = selection.ids.contains(m.id);
     return Semantics(

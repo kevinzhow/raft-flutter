@@ -8,7 +8,7 @@ Downloaded packages are pinned to `libmpv2 0.41.0-2ubuntu4`, `libmpv-dev 0.41.0-
 
 PDF page rendering uses Android's `PdfRenderer` and Linux's installed Poppler `pdfinfo`/`pdftoppm` utilities. Linux requires `poppler-utils` from its distribution; it is a separate OS dependency, not silently downloaded during a preview.
 
-Media is downloaded once into a private, bounded local lease; the decoder receives a `file:` URI. The player permits only the file protocol, disables network references, automatic extra audio/subtitle files, scripts, yt-dlp, and disk media caching, and does not autoplay. Closing, logout, authority loss and backgrounding stop playback; closing/revocation releases the private input. No signed URL enters the persistent application cache.
+Media is downloaded once into a private, bounded local lease; the decoder receives its local file path through `loadfile`. The player permits only the file protocol, disables network references, automatic extra audio/subtitle files, scripts, yt-dlp, and disk media caching, and does not autoplay. Closing, logout, authority loss and backgrounding stop playback; closing/revocation releases the private input. No signed URL enters the persistent application cache.
 
 Pinned download SHA-256 records (no binary artifacts are committed):
 
@@ -23,3 +23,15 @@ Pinned download SHA-256 records (no binary artifacts are committed):
 | libxpresent1 | `ae77a5987dfacb8ab2a0230cfccfc8d43f0927f9c23fb8796cba370075a42a59` |
 
 The local development package supplies mpv headers. A generated, relocated pkg-config file describes only the public dynamic client ABI used by media_kit_video; it does not require the unused codec/static-link development headers. Host pkg-config configuration and the Dart package cache remain unchanged.
+
+## Delivery staging checks
+
+`tool/build-deliverables` builds the release entry point `lib/main.dart` after engineering, Linux and Android runs have passed against the same source hash. It does not pass authentication fixtures or test defines. The Linux generated Dart defines are checked before packaging; unexpected non-Flutter defines stop delivery. Android artifacts use the local debug signing key for acceptance, and are not store releases.
+
+The staging copy normalizes every shipped ELF to relative DT_RPATH (`$ORIGIN/lib` for the executable, `$ORIGIN` for libraries), using a locally extracted Ubuntu `patchelf 0.18.0-1.4build1` package with SHA-256 `dd6cde91e0a77a73335a93a4ce41801f21dac36d2158539093c241e46e11b9fc`. It does not modify the build output or install a system package. The JNI native asset pulled in through `path_provider_android` is excluded only after checking that no shipped ELF needs `libdartjni.so`; Linux uses `path_provider_linux` and its native media controller. This avoids shipping an unused binary whose lookup path points at the build machine's Java installation.
+
+Staging verifies the prepared media hashes and copyright notices, then records both the prepared hash and the delivered hash after RPATH edits. The executable, libmpv and video plugin must resolve without missing dependencies or libraries from the development tree. The archive includes these dependency checks and the media source/version notices. These checks establish binary dependency lookup on the build host; they do not prove another distribution's ABI or a release login/playback flow. A relocated debug copy passed the staging checks for 217 ELF files; final release build and actual release execution remain separately reported.
+
+The supplied desktop entry uses `Exec=raft_flutter %u` rather than embedding the build directory. For optional desktop and `raft:` URI registration, put the installed executable on PATH or set this entry to its installed absolute path before placing it in the XDG applications directory. Normal launching from the extracted directory uses `./raft_flutter`.
+
+The delivery manifest binds the source hash to engineering logs, native run IDs, original checkpoint inventories, PNG hashes and artifact checksums. Android's real notification shade/click receipt must belong to that same run and source hash. The report publisher checks the artifact bytes against these checksums and preserves the original per-platform TSV files; missing, corrupt or stale native evidence cannot produce a passing summary.

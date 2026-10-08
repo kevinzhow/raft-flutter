@@ -208,6 +208,7 @@ class RaftMessageTile extends StatelessWidget {
     this.onActions,
     this.onLink,
     this.threadLabel,
+    this.threadPreview,
     this.badge,
     this.attachments = const [],
     this.onAttachment,
@@ -227,7 +228,7 @@ class RaftMessageTile extends StatelessWidget {
 
   /// Business adapters may supply a richer body without replacing message
   /// actions, thread controls, attachments, or reactions.
-  final Widget? body;
+  final Widget? body, threadPreview;
   final VoidCallback? onThread, onActions, onReact;
   final void Function(String href)? onLink;
   final List<Map<String, dynamic>> attachments, reactions;
@@ -355,7 +356,9 @@ class RaftMessageTile extends StatelessWidget {
                           )
                           .toList(),
                     ),
-                  if (onThread != null)
+                  if (threadPreview != null)
+                    threadPreview!
+                  else if (onThread != null)
                     TextButton.icon(
                       onPressed: onThread,
                       icon: const Icon(Icons.forum_outlined, size: 15),

@@ -25,7 +25,14 @@ args.append('--dart-define=RAFT_TEST_SOURCE_HASH=' + source_hash)
 clicked_notifications = set()
 notification_run_started = time.time()
 
-def click_own_notification(reports):
+def click_own_notification(reports, run_id):
+    try:
+        metadata = json.loads(device_read('native-android-run.json'))
+    except (ValueError, subprocess.TimeoutExpired):
+        return
+    if (not isinstance(metadata, dict) or metadata.get('runId') != run_id
+            or metadata.get('sourceHash') != source_hash or metadata.get('platform') != 'android'):
+        return
     result = subprocess.run(['adb', '-s', serial, 'exec-out', 'run-as',
         'app.raft.raft_flutter', 'cat', 'files/e2e/raft-notification-click.json'],
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -55,12 +62,18 @@ def click_own_notification(reports):
         return
     screenshot = subprocess.run(['adb', '-s', serial, 'exec-out', 'screencap', '-p'],
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    if screenshot.stdout.startswith(bytes([137, 80, 78, 71, 13, 10, 26, 10])):
-        (reports / 'android-os-notification-shade.png').write_bytes(screenshot.stdout)
-    subprocess.run(['adb', '-s', serial, 'shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2)],
+    if not png_complete(screenshot.stdout):
+        return
+    atomic_copy(reports / 'android-os-notification-shade.png', screenshot.stdout)
+    tapped = subprocess.run(['adb', '-s', serial, 'shell', 'input', 'tap', str((x1+x2)//2), str((y1+y2)//2)],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if tapped.returncode != 0:
+        return
     clicked_notifications.add(body)
-    (reports / 'android-os-notification-click.json').write_text(json.dumps({'source':'real NotificationManager + UIAutomator shade', 'clicked':True}))
+    atomic_copy(reports / 'android-os-notification-click.json', json.dumps({
+        'source': 'real NotificationManager + UIAutomator shade', 'clicked': True,
+        'runId': run_id, 'sourceHash': source_hash,
+    }).encode())
 
 def device_read(filename):
     result = subprocess.run(['adb', '-s', serial, 'exec-out', 'run-as',
@@ -154,11 +167,11 @@ with log.open('w') as output:
         subprocess.run(['adb', '-s', serial, 'shell', 'pm', 'grant',
             'app.raft.raft_flutter', 'android.permission.POST_NOTIFICATIONS'],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        click_own_notification(reports)
         # The launch log was truncated before Popen. Pin the run reported by
         # this process, never a previous device manifest with matching inputs.
         runs = re.findall(r'^(?:I/flutter\s*\([0-9 ]+\):\s*)?Native evidence run: android ([0-9TZ:+.-]+)\s*$', log.read_text(errors='replace'), re.MULTILINE)
         if runs and len(set(runs)) == 1:
+            click_own_notification(reports, runs[0])
             collect_current_evidence(reports, runs[0], source_hash, device_read, write_collection_ack)
         time.sleep(.25)
 # Remove runtime-injected credentials after evidence extraction, even on failure.

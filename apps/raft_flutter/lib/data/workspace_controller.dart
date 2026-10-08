@@ -28,19 +28,199 @@ class WorkspaceController extends ChangeNotifier {
   final RaftClient client;
   final WorkspaceCache? cache;
   final messageSync = MessageSync();
+  final threadRepliesSync = ThreadRepliesSync();
+  final notificationPrefsSync = NotificationPrefsSync();
+  bool syncCoreNotificationPrefsEnabled = false;
+  String? _replyIdentity;
+  int _replyAuthorityEpoch = 0;
+
+  String _syncIdentity() => jsonEncode([
+    client.origin,
+    client.generation,
+    client.serverId,
+    client.user?.id,
+    server?.string('role'),
+  ]);
+  String _replyToken() => jsonEncode([_syncIdentity(), _replyAuthorityEpoch]);
+  void _ensureSyncIdentity() {
+    final next = _syncIdentity();
+    if (_replyIdentity == next) return;
+    final hadIdentity = _replyIdentity != null;
+    _messageFlagRequest++;
+    _replyIdentity = next;
+    threadRepliesSync.reset();
+    notificationPrefsSync.reset();
+    syncCoreNotificationPrefsEnabled = false;
+    if (hadIdentity) threadSummaries = {};
+  }
+
+  Map<String, dynamic> _hydrateThreadSummaries(
+    dynamic raw,
+    String parentChannelId, {
+    String? expectedToken,
+  }) {
+    _ensureSyncIdentity();
+    if (expectedToken != null && expectedToken != _replyToken()) return {};
+    if (raw is! Map) return {};
+    final id = client.serverId, principal = client.user?.id;
+    return {
+      for (final entry in raw.entries)
+        if (entry.key is String && entry.value is Map)
+          entry.key as String: id == null || principal == null
+              ? Map<String, dynamic>.from(entry.value)
+              : threadRepliesSync.hydrateSummary(
+                  id,
+                  principal,
+                  parentChannelId,
+                  entry.key as String,
+                  Map<String, dynamic>.from(entry.value),
+                ),
+    };
+  }
+
+  bool _replyCurrent(String token, ThreadRebaselineRequest request) =>
+      !_disposed &&
+      token == _replyToken() &&
+      !_revokedChannels.contains(request.parentChannelId) &&
+      !_revokedChannels.contains(request.threadChannelId);
+
+  Future<void> _rebaselineThread(ThreadRebaselineRequest request) async {
+    final token = _replyToken();
+    try {
+      // Exact mounted compatibility snapshot used by threadRepliesSyncDomain.
+      final values = await Future.wait([
+        client.get(
+          '/messages/channel/${request.threadChannelId}',
+          query: {'limit': inlineReplyCap},
+        ),
+        client.get(
+          '/channels/${request.parentChannelId}/threads/${request.parentMessageId}',
+        ),
+      ]);
+      if (!_replyCurrent(token, request)) return;
+      final page = values[0], summary = values[1];
+      if (page is! Map ||
+          page['messages'] is! List ||
+          summary is! Map ||
+          summary['threadChannelId'] != request.threadChannelId ||
+          summary['replyCount'] is! int ||
+          summary['replyCount'] < 0) {
+        return;
+      }
+      final previews = (page['messages'] as List)
+          .map((m) => projectThreadReply(m, snapshot: true))
+          .whereType<Map<String, dynamic>>();
+      final result = threadRepliesSync.completeRebaseline(
+        request,
+        replies: previews,
+        replyCount: summary['replyCount'],
+        historyLimited: page['historyLimited'] == true,
+      );
+      if (result.kind != 'applied' || result.summary == null) return;
+      threadSummaries[request.parentMessageId] = result.summary;
+      unawaited(refreshUnread());
+      if (channel?.id == request.parentChannelId) _saveWindow(channel!.id);
+      notifyListeners();
+    } catch (_) {
+      // No guessed transport or fabricated completion. The next eligible
+      // producer frame can retry its authorized compatibility snapshot.
+    } finally {
+      threadRepliesSync.release(request);
+    }
+  }
+
+  void _consumeThreadUpdate(Map<String, dynamic> payload) {
+    _ensureSyncIdentity();
+    final id = client.serverId, principal = client.user?.id;
+    if (id == null || principal == null) return;
+    if (payload['serverId'] != null && payload['serverId'] != id) return;
+    final parentId = payload['parentMessageId'];
+    final latest = payload['latestReply'];
+    final anchor = latest is Map ? latest['conversationContext'] : null;
+    final parentChannel = anchor is Map ? anchor['parentChannelId'] : null;
+    if (_revokedChannels.contains(payload['threadChannelId']) ||
+        _revokedChannels.contains(parentChannel)) {
+      return;
+    }
+    if (parentId is String &&
+        channel != null &&
+        _revokedChannels.contains(channel!.id)) {
+      return;
+    }
+    final result = threadRepliesSync.consume(
+      payload,
+      serverId: id,
+      principalId: principal,
+    );
+    if (result.summary != null && parentId is String) {
+      threadSummaries[parentId] = result.summary;
+      unawaited(refreshUnread());
+    }
+    if (result.request != null) unawaited(_rebaselineThread(result.request!));
+  }
+
+  void _consumeNotificationPrefs(dynamic payload) {
+    _ensureSyncIdentity();
+    var update = readNotificationPrefsUpdate(payload);
+    if (update == null ||
+        update['serverId'] != client.serverId ||
+        client.user == null) {
+      return;
+    }
+    if (syncCoreNotificationPrefsEnabled) {
+      update = notificationPrefsSync.consume(update);
+      if (update == null) return;
+    }
+    final accepted = update;
+    if (accepted['type'] == 'server') {
+      final version = accepted['prefsVersion'];
+      RaftRecord patch(RaftRecord value) {
+        if (value.id != accepted['serverId']) return value;
+        final prior = value.json['notificationPrefsVersion'];
+        if (prior is int && version is int && version < prior) return value;
+        return RaftRecord({
+          ...value.json,
+          'serverPushMuted': accepted['serverPushMuted'],
+          'notificationPrefsVersion': ?version,
+        });
+      }
+
+      servers = servers.map(patch).toList();
+      if (server != null) server = patch(server!);
+    } else {
+      final state = accepted['state'] as Map;
+      final id = accepted['channelId'];
+      if (_revokedChannels.contains(id)) return;
+      RaftChannel patch(RaftChannel value) {
+        if (value.id != id) return value;
+        final old = value.json['prefsVersion'],
+            incoming = state['prefsVersion'];
+        if (old is int && incoming is int && incoming < old) return value;
+        return RaftChannel({...value.json, ...state});
+      }
+
+      channels = channels.map(patch).toList();
+      dms = dms.map(patch).toList();
+      if (channel != null) channel = patch(channel!);
+    }
+    refreshUnread();
+  }
+
   bool syncCoreMessagesEnabled = false;
   int _messageFlagRequest = 0;
 
   Future<void> refreshMessageSyncFlag() async {
+    _ensureSyncIdentity();
     final request = ++_messageFlagRequest;
     final generation = client.generation, principal = client.user?.id;
+    final identity = _syncIdentity();
     final id = client.serverId;
     if (id == null || principal == null) return;
     try {
       final result = await client.post(
         '/feature-flags/evaluate',
         data: {
-          'keys': ['sync_core_messages_v0'],
+          'keys': ['sync_core_messages_v0', notificationPrefsFlag],
           'serverId': id,
           'platform': defaultTargetPlatform == TargetPlatform.android
               ? 'mobile'
@@ -51,7 +231,8 @@ class WorkspaceController extends ChangeNotifier {
           request != _messageFlagRequest ||
           generation != client.generation ||
           principal != client.user?.id ||
-          id != client.serverId) {
+          id != client.serverId ||
+          identity != _syncIdentity()) {
         return;
       }
       final enabled =
@@ -61,8 +242,23 @@ class WorkspaceController extends ChangeNotifier {
           );
       if (enabled != syncCoreMessagesEnabled) messageSync.reset();
       syncCoreMessagesEnabled = enabled;
+      final prefsEnabled =
+          result is Map &&
+          (result['evaluations'] as List? ?? []).whereType<Map>().any(
+            (f) => f['key'] == notificationPrefsFlag && f['enabled'] == true,
+          );
+      if (prefsEnabled != syncCoreNotificationPrefsEnabled) {
+        notificationPrefsSync.reset();
+      }
+      syncCoreNotificationPrefsEnabled = prefsEnabled;
     } catch (_) {
-      // Unknown capability never authorizes the gated path.
+      if (!_disposed &&
+          request == _messageFlagRequest &&
+          identity == _syncIdentity()) {
+        syncCoreNotificationPrefsEnabled = false;
+        notificationPrefsSync.reset();
+      }
+      // Unknown capability never authorizes the gated preference path.
     }
   }
 
@@ -235,7 +431,10 @@ class WorkspaceController extends ChangeNotifier {
   int? _creatingThreadWindow;
   @override
   void notifyListeners() {
-    if (!_disposed) super.notifyListeners();
+    if (!_disposed) {
+      _ensureSyncIdentity();
+      super.notifyListeners();
+    }
   }
 
   String? draftScope({bool thread = false}) => thread
@@ -457,6 +656,7 @@ class WorkspaceController extends ChangeNotifier {
         threadAtStart = threadGeneration;
     notifyListeners();
     final generation = client.generation;
+    final replyAuthority = _replyToken();
     final cached = await _cached('channels', '');
     if (generation != client.generation) return;
     if (cached is Map) {
@@ -484,8 +684,10 @@ class WorkspaceController extends ChangeNotifier {
               .toSet();
           hasMore = page['hasMore'] == true;
           hasNewer = page['hasNewer'] == true;
-          threadSummaries = Map<String, dynamic>.from(
-            page['threadSummaries'] ?? {},
+          threadSummaries = _hydrateThreadSummaries(
+            page['threadSummaries'],
+            initial.id,
+            expectedToken: replyAuthority,
           );
           await _restoreDraft(initial.id);
         }
@@ -629,7 +831,10 @@ class WorkspaceController extends ChangeNotifier {
     final origin = client.origin,
         principal = client.user?.id,
         serverId = client.serverId;
-    final messageIds = ledger.messages(id).map((m) => m['id']).toSet();
+    final messageIds = <dynamic>{
+      ...ledger.messages(id).map((m) => m['id']),
+      ...threadRepliesSync.parentMessageIdsForChannel(id),
+    };
     final threadIds = <String>{
       for (final message in ledger.messages(id))
         if (message['threadChannelId'] is String) message['threadChannelId'],
@@ -645,6 +850,8 @@ class WorkspaceController extends ChangeNotifier {
       _revokedChannels.add(scope);
       ledger.revokeChannel(scope);
       messageSync.revokeChannel(scope);
+      threadRepliesSync.revokeChannel(scope);
+      notificationPrefsSync.revokeChannel(scope);
       visibleIds.remove(scope);
       unread.remove(scope);
       if (serverId != null && principal != null) {
@@ -798,6 +1005,8 @@ class WorkspaceController extends ChangeNotifier {
     ];
     if (server?.id == id) {
       server = RaftRecord({...server!.json, 'role': role});
+      _ensureSyncIdentity();
+      refreshMessageSyncFlag();
       if (!canVisitSection(section)) section = 'chat';
     }
     _save('servers', '', servers.map((s) => s.json).toList(), server: '');
@@ -853,6 +1062,7 @@ class WorkspaceController extends ChangeNotifier {
     error = null;
     final window = ++channelGeneration;
     final generation = ledger.generation;
+    final replyAuthority = _replyToken();
     notifyListeners();
     await _restoreDraft(next.id);
     if (window != channelGeneration || generation != ledger.generation) return;
@@ -869,8 +1079,10 @@ class WorkspaceController extends ChangeNotifier {
       visibleIds[next.id] = (page['messages'] as List)
           .map((e) => e['id'] as String)
           .toSet();
-      threadSummaries = Map<String, dynamic>.from(
-        page['threadSummariesByParentMessageId'] ?? {},
+      threadSummaries = _hydrateThreadSummaries(
+        page['threadSummariesByParentMessageId'],
+        next.id,
+        expectedToken: replyAuthority,
       );
       hasMore =
           (page['messages'] as List).length >= 50 &&
@@ -899,6 +1111,7 @@ class WorkspaceController extends ChangeNotifier {
     final id = thread ? threadChannelId! : channel!.id;
     final window = thread ? threadGeneration : channelGeneration;
     final generation = ledger.generation;
+    final replyAuthority = _replyToken();
     notifyListeners();
     try {
       final page = await client.messagePage(id, before: current.first.seq);
@@ -920,8 +1133,10 @@ class WorkspaceController extends ChangeNotifier {
         hasMore = rows.length >= 50;
       }
       threadSummaries.addAll(
-        Map<String, dynamic>.from(
-          page['threadSummariesByParentMessageId'] ?? {},
+        _hydrateThreadSummaries(
+          page['threadSummariesByParentMessageId'],
+          id,
+          expectedToken: replyAuthority,
         ),
       );
     } catch (e) {
@@ -1181,6 +1396,7 @@ class WorkspaceController extends ChangeNotifier {
     threadGeneration++;
     channelLoading = true;
     highlightedMessageId = messageId;
+    final replyAuthority = _replyToken();
     final generation = ledger.generation, window = ++channelGeneration;
     notifyListeners();
     try {
@@ -1211,8 +1427,10 @@ class WorkspaceController extends ChangeNotifier {
             .toSet();
         hasMore = parentContext['hasOlder'] == true;
         hasNewer = parentContext['hasNewer'] == true;
-        threadSummaries = Map<String, dynamic>.from(
-          parentContext['threadSummariesByParentMessageId'] ?? {},
+        threadSummaries = _hydrateThreadSummaries(
+          parentContext['threadSummariesByParentMessageId'],
+          channelId,
+          expectedToken: replyAuthority,
         );
         final parent = RaftMessage(
           Map<String, dynamic>.from(
@@ -1229,8 +1447,10 @@ class WorkspaceController extends ChangeNotifier {
         visibleIds[channelId] = rows.map((e) => e['id'] as String).toSet();
         hasMore = context['hasOlder'] == true;
         hasNewer = context['hasNewer'] == true;
-        threadSummaries = Map<String, dynamic>.from(
-          context['threadSummariesByParentMessageId'] ?? {},
+        threadSummaries = _hydrateThreadSummaries(
+          context['threadSummariesByParentMessageId'],
+          channelId,
+          expectedToken: replyAuthority,
         );
         await markRead(channelId);
       }
@@ -1353,6 +1573,7 @@ class WorkspaceController extends ChangeNotifier {
 
   void _event(RaftEvent event) {
     if (_disposed) return;
+    _ensureSyncIdentity();
     if (event.name == 'connected') {
       connected = true;
       recoverMembership();
@@ -1383,6 +1604,12 @@ class WorkspaceController extends ChangeNotifier {
       recoverMembership();
       refreshChannels();
     }
+    if (event.name == 'channel:members-updated' ||
+        event.name == 'channel:authority-updated' ||
+        event.name == 'channel:removed') {
+      _replyAuthorityEpoch++;
+      if (event.name != 'channel:removed') threadRepliesSync.reset();
+    }
     if (event.name == 'channel:updated' ||
         event.name == 'channel:members-updated' ||
         event.name == 'dm:new' ||
@@ -1391,10 +1618,10 @@ class WorkspaceController extends ChangeNotifier {
     }
     if (event.name == 'pinned:updated') loadSidebar();
     if (event.name == 'thread:updated' && event.payload is Map) {
-      final p = Map<String, dynamic>.from(event.payload);
-      if (p['parentMessageId'] is String) {
-        threadSummaries[p['parentMessageId']] = p;
-      }
+      _consumeThreadUpdate(Map<String, dynamic>.from(event.payload));
+    }
+    if (event.name == 'notification_prefs:updated') {
+      _consumeNotificationPrefs(event.payload);
     }
     if ((event.name == 'message:new' || event.name == 'message:updated') &&
         event.payload is Map) {

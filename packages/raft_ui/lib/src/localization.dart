@@ -22,6 +22,10 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
+  "{count} reply": "{count} 条回复",
+  "{count} replies": "{count} 条回复",
+  "{count} new": "{count} 条新回复",
+  "Open reply by {name}: {preview}": "打开 {name} 的回复：{preview}",
   "Open workspace in browser": "在浏览器中打开工作空间",
   "The workspace could not be opened in the browser.": "无法在浏览器中打开工作空间。",
   "Static HTML preview": "静态 HTML 预览",

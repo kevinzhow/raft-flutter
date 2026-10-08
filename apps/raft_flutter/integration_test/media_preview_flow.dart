@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:raft_flutter/platform/attachment_player.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_preview_dialog.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -20,6 +22,33 @@ Future<void> verifyNativeMediaPreviewFlow(
   Future<void> until(bool Function() ready) async {
     for (var i = 0; i < 160 && !ready(); i++) {
       await tester.pump(const Duration(milliseconds: 100));
+    }
+    if (!ready()) {
+      final dialogs = find.byType(AttachmentPreviewDialog);
+      if (dialogs.evaluate().isNotEmpty) {
+        final dynamic state = tester.state(dialogs);
+        final player = state.player;
+        debugPrint(
+          'Native preview diagnostic: loading=${state.loading} error=${state.error != null} controls=${find.byType(RaftMediaControls).evaluate().length}',
+        );
+        if (player is NativeAttachmentPlayer) {
+          debugPrint(
+            'Native decoder diagnostic: durationMs=${player.player.state.duration.inMilliseconds} positionMs=${player.player.state.position.inMilliseconds} playing=${player.player.state.playing} playlistSize=${player.player.state.playlist.medias.length}',
+          );
+          final native = player.player.platform;
+          if (native is NativePlayer) {
+            for (final property in ['idle-active', 'pause', 'duration']) {
+              try {
+                debugPrint(
+                  'Native decoder property $property=${await native.getProperty(property).timeout(const Duration(seconds: 2))}',
+                );
+              } catch (_) {
+                debugPrint('Native decoder property $property unavailable');
+              }
+            }
+          }
+        }
+      }
     }
     expect(ready(), true);
   }

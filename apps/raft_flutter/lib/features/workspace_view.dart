@@ -1142,7 +1142,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         const Divider(height: 1),
         RaftNavItem(
           key: const Key('account-navigation'),
-          label: w.client.user?.name ?? 'Account',
+          label: w.client.user?.name ?? tr('Account'),
           icon: Icons.account_circle_outlined,
           onTap: () => select('settings'),
           selected: w.section == 'settings',
@@ -1295,7 +1295,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     key: const Key('workspace-account-settings'),
     padding: const EdgeInsets.all(24),
     children: [
-      Text('Appearance', style: Theme.of(context).textTheme.headlineSmall),
+      Text(tr('Appearance'), style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 20),
       Text(tr('Mode')),
       const SizedBox(height: 10),

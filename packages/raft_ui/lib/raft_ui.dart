@@ -20,3 +20,4 @@ export 'src/composer_suggestions.dart';
 
 export 'src/document_preview.dart';
 export 'src/html_preview.dart';
+export 'src/thread_replies.dart';

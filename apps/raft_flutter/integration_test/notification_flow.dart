@@ -98,7 +98,10 @@ Future<void> verifyNativeNotificationFlow(
     for (
       var i = 0;
       i < 600 &&
-          (w.channel?.id != channel.id || w.highlightedMessageId != message.id);
+          (w.channel?.id != channel.id ||
+              w.highlightedMessageId != message.id ||
+              w.channelLoading ||
+              !w.messages.any((m) => m.id == message.id));
       i++
     ) {
       await tester.pump(const Duration(milliseconds: 100));

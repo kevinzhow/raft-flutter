@@ -50,3 +50,11 @@
 Linux 工作空间菜单在明确配置 `RAFT_FRONTEND_ORIGIN` 并绑定当前 `RAFT_ORIGIN` 时，提供浏览器入口与鼠标中键操作。它先重新读取成员工作空间，再打开公开页面，不把登录凭据传递给浏览器。没有配置时隐藏该入口，不猜测 API 地址是否托管 Web。独立原生多窗口仍未实现；参照来源、测试和浏览器生命周期边界记录于 `desktop-window-evidence.md`。
 
 HTML 原生静态预览、明确浏览器交互入口和三主题 SDK 证据记录于 `html-preview-evidence.md`。静态 HTML 不执行上传脚本，不加载其图片引用。
+
+## 最终原生检查点边界
+
+2026-10-08 UTC 01:49:11.360590 启动的较早 b20 源码 Linux 整轮已完成并通过。53个唯一截图检查点具有一致 runId 和当时的 b20 源码哈希，包括真实侧栏指针拖动、阅读偏好、中文 Locale、实际 Dark/Light 切换及滚动到退出按钮后安全会话清空。修复 mobile thread/main 状态复用后的当前源码，Android 整轮正在运行、Linux 待重跑，独立原生工作空间窗口与操作系统辅助技术仍未由这些证据证明。
+
+## 当前源码的原生显示语言回归
+
+WorkspaceView 的 Appearance/Account 标题现在通过实际 locale 目录翻译。父运行的 Linux 窄测试 45261 已验证：显示语言真实保存为 `zh-cn`、主应用使用中文 Locale、Appearance/Account 呈现中文，验证外观/深色/浅色控件的翻译文本后恢复原偏好；该窄测试没有点击深浅色控件。该窄测试已通过；它不替代完整链路。当前源码哈希为 `8e61f8adae7c81e62ff201d83fe57eb01ed9b8d472b21e10e485a954f65562b0`，353 项 Dart、29 项 Python host 与全仓 analyze 已通过。较早 b20 源码 Linux 整轮66484于2026-10-08 UTC 01:49:11.360590启动并完成通过，真实 Dark/Light 切换属于该整轮证据。`workspace_localization_test`另以模拟 mounted UI 真实点击深色并断言 ThemeMode.dark 回调。较早 Android54877因移动线程关闭后的状态复用失败，现已修复；当前 较早 Android49113通过视频/media及通知点击后，因异步加载前的测试断言失败；等待修复后的当前8e61源码正在跑 Linux80500，随后串行重跑 Android。

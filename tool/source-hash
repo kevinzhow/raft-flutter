@@ -5,7 +5,7 @@ root=pathlib.Path(__file__).resolve().parent.parent
 paths=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z'],cwd=root).decode().split('\0')
 h=hashlib.sha256()
 for name in sorted(set(paths)):
-    if not name or not (name.startswith(('apps/','packages/')) or name in {'.fvmrc','pubspec.yaml','pubspec.lock','tool/flutter','tool/prepare-media-linux','tool/source-hash','tool/native-linux','tool/native-test','tool/check-project'}):
+    if not name or not (name.startswith(('apps/','packages/','tool/tests/')) or name in {'.fvmrc','pubspec.yaml','pubspec.lock','tool/flutter','tool/prepare-media-linux','tool/source-hash','tool/native-linux','tool/native-test','tool/check-project'}):
         continue
     if PathName := pathlib.Path(name).name:
         if PathName.startswith('generated_plugin_registrant.') or PathName == 'generated_plugins.cmake':

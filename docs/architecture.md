@@ -72,7 +72,7 @@ UI、纯Dart协议/同步、平台适配在 P0 合同后可并行，feature任�
 
 - raft_ui 提供独立 tokens、主题、导航、表单、消息、附件与原生 Mermaid 组件，SDK Widget Preview 覆盖三种实际主题。API 与原生系统服务位于 app/platform 或 feature 层。
 - raft_client 提供人类认证、刷新去重、Socket.IO、账户/工作区 generation fence、上传重试与安全错误。main 对跨客户端登录尝试的安全存储提交另加串行栅栏。
-- raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；当前消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。扩展 domain adapter 的全量接入仍单独标记，不因 reducer 单测通过而宣称所有 domain 都已完成。
+- raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；当前消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。source-enabled thread-replies 的最新三条、epoch rebaseline 与 accepted unread refresh 已接入；notification-prefs 使用真实条件开关，保留 legacy 路径。19 项新增 reply/preferences/controller 回归均已通过；最终工程检查 353 Dart、29 host 与全仓 analyze 通过，较早 b20 源码 Linux 整轮通过；新增 mobile thread/main 状态复用修复后的当前源码整轮，Linux 正在验证、Android 随后串行重跑。Activity TypeSpec experimental cutover 不由纯 reducer 证明替代。
 - Drift 缓存按账户与工作区隔离，保存真实离线消息、草稿与 read frontier；撤权立即清 UI 并串行清缓存。签名附件地址及凭据不进入缓存。
 - 管理页面使用现网挂载路径与能力校验：providers、MCP、Apps、Slack、analytics、billing、setup、agents 和 Computers。未配置的第三方 OAuth、计费和 Slack provisioning 不产生模拟成功状态。
 - go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。后台 FCM、Linux 服务端消息推送及桌面多窗口不属于当前已验证能力。

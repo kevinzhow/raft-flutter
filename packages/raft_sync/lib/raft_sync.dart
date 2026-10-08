@@ -6,6 +6,8 @@ export 'src/core.dart';
 export 'src/read_state.dart';
 export 'src/reaction_viewer.dart';
 export 'src/messages.dart';
+export 'src/thread_replies.dart';
+export 'src/notification_prefs.dart';
 
 import 'src/messages.dart';
 

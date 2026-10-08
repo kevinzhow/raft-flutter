@@ -4,11 +4,42 @@ import argparse
 import csv
 import datetime as dt
 import html
+import hashlib
 import json
 import pathlib
 import re
 import shutil
+import struct
 import subprocess
+import zlib
+
+
+def complete_png(data):
+    """Require a whole current PNG, including chunk checksums, before publishing."""
+    if not data.startswith(b'\x89PNG\r\n\x1a\n') or len(data) > 25 * 1024 * 1024:
+        return False
+    offset, header, pixels = 8, False, False
+    while offset + 12 <= len(data):
+        size = struct.unpack('>I', data[offset:offset + 4])[0]
+        end = offset + 12 + size
+        if end > len(data):
+            return False
+        kind, body = data[offset + 4:offset + 8], data[offset + 8:end - 4]
+        if zlib.crc32(kind + body) & 0xffffffff != struct.unpack('>I', data[end - 4:end])[0]:
+            return False
+        if not header:
+            if kind != b'IHDR' or size != 13:
+                return False
+            width, height = struct.unpack('>II', body[:8])
+            if not (0 < width <= 8192 and 0 < height <= 8192):
+                return False
+            header = True
+        if kind == b'IDAT':
+            pixels = True
+        if kind == b'IEND':
+            return size == 0 and pixels and end == len(data)
+        offset = end
+    return False
 
 root = pathlib.Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser(description=__doc__)
@@ -22,15 +53,16 @@ report.mkdir(parents=True)
 images = report / 'screenshots'
 images.mkdir()
 logs = []
-for filename in ['native-linux-fleet.txt', 'native-android-test.txt', 'all-project-tests.txt', 'analyze-all.txt']:
+for filename in ['native-linux-fleet.txt', 'native-android-test.txt', 'all-project-tests.txt', 'analyze-all.txt', 'host-collector-tests.txt']:
     source = root / '.local' / filename
     if source.is_file():
         log = source.read_text()
         # Abort rather than export authentication-bearing log content.
-        if re.search(r'Bearer\s+[A-Za-z0-9_.-]{12,}|eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}|[?&](?:token|access_token|previewToken)=[^\s&]{8,}', log, re.I):
+        if re.search(r'Bearer\s+[A-Za-z0-9_.-]{12,}|eyJ[A-Za-z0-9_-]{15,}\.[A-Za-z0-9_-]{15,}|[?&](?:token|access_token|previewToken|X-Amz-Signature|X-Amz-Credential)=[^\s&]{8,}', log, re.I):
             raise SystemExit('Report blocked: log requires credential redaction.')
         (report / filename).write_text(log)
-        logs.append((filename, 'No issues found!' in log if filename == 'analyze-all.txt' else 'All tests passed!' in log))
+        marker = 'No issues found!' if filename == 'analyze-all.txt' else '\nOK\n' if filename == 'host-collector-tests.txt' else 'All tests passed!'
+        logs.append((filename, marker in log))
 completed_platforms = set()
 checkpoint_rows = []
 for platform_name in ['linux', 'android']:
@@ -42,21 +74,48 @@ for platform_name in ['linux', 'android']:
     metadata = json.loads(manifest.read_text())
     filename = 'native-linux-fleet.txt' if platform_name == 'linux' else 'native-android-test.txt'
     log_path = report / filename
-    if (metadata.get('completed') is True and metadata.get('platform') == platform_name
+    run_complete = (metadata.get('completed') is True and metadata.get('platform') == platform_name
             and metadata.get('sourceHash') == source_hash
             and log_path.is_file() and 'All tests passed!' in log_path.read_text()
-            and f"Native evidence run: {platform_name} {metadata['runId']}" in log_path.read_text()):
-        completed_platforms.add(platform_name)
+            and f"Native evidence run: {platform_name} {metadata['runId']}" in log_path.read_text())
     shutil.copy2(manifest, report / manifest.name)
+    shutil.copy2(checkpoints, report / checkpoints.name)
+    checkpoint_count = 0
     for line in checkpoints.read_text().splitlines():
         fields = line.split('\t')
-        if len(fields) != 3 or fields[2] != metadata['runId'] or not re.fullmatch(r'(linux|android)-[a-z-]+', fields[0]) or 'failure' in fields[0]:
+        if (len(fields) != 3 or fields[2] != metadata['runId']
+                or not re.fullmatch(platform_name + r'-[a-z-]+', fields[0])
+                or not re.fullmatch(r'[0-9TZ:+.-]+', fields[1])
+                or 'failure' in fields[0]):
+            run_complete = False
             continue
         source = evidence / (fields[0] + '.png')
-        if source.is_file():
-            shutil.copy2(source, images / source.name)
+        png = source.read_bytes() if source.is_file() else b''
+        if complete_png(png):
+            (images / source.name).write_bytes(png)
             checkpoint_rows.append((source.stem, source.name))
+            checkpoint_count += 1
+        else:
+            run_complete = False
+    if run_complete and checkpoint_count:
+        completed_platforms.add(platform_name)
 # Independent platform probes are explicitly labelled, separate from app flows.
+shade_receipt = root / '.local/native-e2e/android-os-notification-click.json'
+android_manifest = root / '.local/native-e2e/native-android-run.json'
+shade_image = root / '.local/native-e2e/android-os-notification-shade.png'
+if shade_receipt.is_file() and android_manifest.is_file() and shade_image.is_file():
+    receipt = json.loads(shade_receipt.read_text())
+    android = json.loads(android_manifest.read_text())
+    if (receipt.get('clicked') is True and receipt.get('runId') == android.get('runId')
+            and receipt.get('sourceHash') == android.get('sourceHash') == source_hash
+            and complete_png(shade_image.read_bytes())):
+        shutil.copy2(shade_receipt, report / shade_receipt.name)
+        shutil.copy2(shade_image, images / shade_image.name)
+        checkpoint_rows.append(('Android app: actual notification shade and click', shade_image.name))
+    else:
+        completed_platforms.discard('android')
+else:
+    completed_platforms.discard('android')
 for kind, label in [('attachment-platform', 'OS attachment probe'),
                     ('notification-platform', 'OS notification/URI probe'),
                     ('sharing-platform', 'OS sharing probe')]:
@@ -92,19 +151,58 @@ for result_file in sorted(sdk_root.rglob('*interactions*.json')):
 (report / 'sdk-preview-results.json').write_text(json.dumps(sdk_records, ensure_ascii=False, indent=2))
 sdk_passed = bool(sdk_records) and all(r.get('result') == 'pass' and r.get('publishedScreenshot') for r in sdk_records)
 artifacts = []
-artifact_manifest = root / 'build/deliverables/build-manifest.json'
-if artifact_manifest.is_file() and json.loads(artifact_manifest.read_text()).get('sourceHash') != source_hash:
-    raise SystemExit('Report blocked: artifacts were built from another source snapshot.')
-for source in sorted((root / 'build/deliverables').glob('*')):
-    if source.is_file() and source.suffix in {'.apk', '.gz', '.txt', '.json'}:
+artifact_root = root / 'build/deliverables'
+artifact_manifest = artifact_root / 'build-manifest.json'
+if artifact_manifest.is_file():
+    delivery = json.loads(artifact_manifest.read_text())
+    if delivery.get('sourceHash') != source_hash:
+        raise SystemExit('Report blocked: artifacts were built from another source snapshot.')
+    names = delivery.get('artifacts', {})
+    if set(names) != {'raft-flutter-android.apk', 'raft-flutter-linux-x64.tar.gz'}:
+        raise SystemExit('Report blocked: artifact manifest is incomplete.')
+    for filename, expected in names.items():
+        source = artifact_root / filename
+        if (not source.is_file() or source.stat().st_size != expected['bytes']
+                or hashlib.sha256(source.read_bytes()).hexdigest() != expected['sha256']):
+            raise SystemExit('Report blocked: artifact bytes do not match the build manifest.')
+    checksums = ''.join(f"{row['sha256']}  {name}\n" for name, row in names.items())
+    if (artifact_root / 'CHECKSUMS.txt').read_text() != checksums:
+        raise SystemExit('Report blocked: checksum inventory does not match the build manifest.')
+    for filename in [*names, 'build-manifest.json', 'CHECKSUMS.txt']:
+        source = artifact_root / filename
         target = report / 'downloads' / source.name
         target.parent.mkdir(exist_ok=True)
         shutil.copy2(source, target)
         artifacts.append(source.name)
-for document_name in ['source-reference.json', 'message-sync-evidence.md', 'management-auth-coverage.md', 'widget-acceptance.md', 'action-card-feasibility.md', 'html-preview-evidence.md', 'desktop-window-evidence.md', 'linux-media-runtime.md']:
+elif any(artifact_root.glob('*.apk')) or any(artifact_root.glob('*.gz')):
+    raise SystemExit('Report blocked: artifacts have no source-bound build manifest.')
+for document_name in ['source-reference.json', 'parity-review.md', 'release-evidence.md', 'attachment-evidence.md', 'notification-content-evidence.md', 'sharing-evidence.md', 'message-sync-evidence.md', 'management-auth-coverage.md', 'widget-acceptance.md', 'action-card-feasibility.md', 'html-preview-evidence.md', 'desktop-window-evidence.md', 'linux-media-runtime.md']:
     source = root / 'docs' / document_name
     if source.is_file():
         shutil.copy2(source, report / document_name)
+# Optional released-artifact probes are explicit supplemental evidence. Copy
+# only public receipts/screenshots, never runtime fixtures or process logs.
+release_probes = []
+for platform in ['linux', 'android', 'media']:
+    source = root / '.local/release-smoke' / platform
+    receipt = source / 'result.json'
+    if not receipt.is_file():
+        continue
+    record = json.loads(receipt.read_text())
+    artifact_name = 'raft-flutter-android.apk' if platform == 'android' else 'raft-flutter-linux-x64.tar.gz'
+    expected_artifact = delivery.get('artifacts', {}).get(artifact_name, {}) if artifact_manifest.is_file() else {}
+    if record.get('artifactSha256') != expected_artifact.get('sha256') or record.get('completed') is not True:
+        raise SystemExit('Report blocked: release smoke receipt does not match delivered artifact.')
+    target = report / 'release-smoke' / platform
+    target.mkdir(parents=True)
+    shutil.copy2(receipt, target / 'result.json')
+    release_probes.append(platform)
+    for picture in sorted(source.glob('*.png')):
+        if not complete_png(picture.read_bytes()):
+            raise SystemExit('Report blocked: release smoke screenshot is incomplete.')
+        published = 'release-' + platform + '-' + picture.name
+        shutil.copy2(picture, images / published)
+        checkpoint_rows.append(('Released artifact smoke ' + platform, published))
 with (report / 'checkpoints.tsv').open('w') as out:
     for label, filename in checkpoint_rows:
         out.write(label + '\t' + filename + '\n')
@@ -112,11 +210,14 @@ with (root / 'docs/feature-parity.csv').open() as source:
     rows = list(csv.DictReader(source))
 shutil.copy2(root / 'docs/feature-parity.csv', report / 'feature-parity.csv')
 native_passed = completed_platforms == {'linux', 'android'}
-engineering_passed = all(dict(logs).get(filename) is True for filename in ['all-project-tests.txt', 'analyze-all.txt'])
+engineering_names = ['all-project-tests.txt', 'analyze-all.txt', 'host-collector-tests.txt']
+engineering_passed = all(dict(logs).get(filename) is True for filename in engineering_names)
 engineering_manifest = root / '.local/engineering-run.json'
 if engineering_manifest.is_file():
     engineering = json.loads(engineering_manifest.read_text())
-    engineering_passed = engineering_passed and engineering.get('completed') is True and engineering.get('sourceHash') == source_hash
+    engineering_passed = (engineering_passed and engineering.get('completed') is True
+        and engineering.get('sourceHash') == source_hash
+        and all(engineering.get('checks', {}).get(name) is True for name in engineering_names))
     shutil.copy2(engineering_manifest, report / engineering_manifest.name)
 else:
     engineering_passed = False
@@ -129,7 +230,7 @@ captures = ''.join(f'<figure><a href="screenshots/{escape(filename)}"><img loadi
 artifactlinks = ''.join(f'<li><a href="downloads/{escape(filename)}">{escape(filename)}</a></li>' for filename in artifacts)
 loglinks = ''.join(f'<li><a href="{filename}">{filename}</a>：{"通过" if passed else "待完成"}</li>' for filename, passed in logs)
 (report / 'environment.txt').write_text('Raft source 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6\nFlutter 3.47.6 / Dart 3.13.5\nK8-Plus Linux GTK/X11 (GDK_BACKEND=x11 for native test) / isolated API37 Android emulator\nScreenshots follow assertions. Operating-system attachment, notification/URI and sharing probes are independently labelled.\n')
-(report / 'index.html').write_text(f'''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Raft Flutter 验收</title><style>body{{font:16px system-ui;margin:24px;color:#17202a}}h1{{font-size:26px}}p{{max-width:80ch;line-height:1.6}}table{{border-collapse:collapse;width:100%;font-size:14px}}th,td{{padding:10px;border:1px solid #dde3ea;text-align:left}}.shots{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}}figure{{margin:0}}img{{max-width:100%;max-height:600px;object-fit:contain;background:#eef2f5}}figcaption{{padding:8px;overflow-wrap:anywhere}}a{{color:#276548}}</style><h1>Raft Flutter：{status}</h1><p>报告 {stamp} UTC。原生截图在对应断言后采集；同一轮尚未全部通过时，报告保留“验收进行中”。文件选择、保存、通知、链接与分享的操作系统探针独立验证，不替代主应用全流程。</p><ul>{loglinks}<li><a href="environment.txt">环境</a> · <a href="feature-parity.csv">功能覆盖</a></li><li><a href="sdk-preview-results.json">SDK Preview browser evidence</a>: {len(sdk_records)} theme runs ({'passed' if sdk_passed else 'pending'}), using rendered DOM semantics and browser keyboard; this does not establish native pointer or OS behavior.</li></ul><ul>{artifactlinks}</ul><table><tr><th>模块</th><th>Linux</th><th>Android</th><th>状态</th></tr>{checks}</table><h2>断言对应的截图</h2><div class="shots">{captures}</div></html>''')
+(report / 'index.html').write_text(f'''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Raft Flutter 验收</title><style>body{{font:16px system-ui;margin:24px;color:#17202a}}h1{{font-size:26px}}p{{max-width:80ch;line-height:1.6}}table{{border-collapse:collapse;width:100%;font-size:14px}}th,td{{padding:10px;border:1px solid #dde3ea;text-align:left}}.shots{{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}}figure{{margin:0}}img{{max-width:100%;max-height:600px;object-fit:contain;background:#eef2f5}}figcaption{{padding:8px;overflow-wrap:anywhere}}a{{color:#276548}}</style><h1>Raft Flutter：{status}</h1><p>报告 {stamp} UTC。原生截图在对应断言后采集；同一轮尚未全部通过时，报告保留“验收进行中”。文件选择、保存、通知、链接与分享的操作系统探针独立验证，不替代主应用全流程。</p><ul>{loglinks}<li><a href="environment.txt">环境</a> · <a href="feature-parity.csv">功能覆盖</a> · <a href="parity-review.md">能力边界和验收条件</a> · <a href="release-evidence.md">发布构建安装验证</a></li><li><a href="sdk-preview-results.json">SDK Preview browser evidence</a>: {len(sdk_records)} theme runs ({'passed' if sdk_passed else 'pending'}), using rendered DOM semantics and browser keyboard; this does not establish native pointer or OS behavior.</li></ul><ul>{artifactlinks}</ul><table><tr><th>模块</th><th>Linux</th><th>Android</th><th>状态</th></tr>{checks}</table><h2>断言对应的截图</h2><div class="shots">{captures}</div></html>''')
 # Reuse the already running hub, preserving all existing reports and its root.
 if args.hub_root is not None:
     shared = args.hub_root.resolve() / name

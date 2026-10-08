@@ -109,6 +109,19 @@ Future<void> screenshot(WidgetTester tester, String name) async {
 }
 
 Future<void> section(WidgetTester tester, String name) async {
+  if (name == 'chat') {
+    final rail = find.byKey(const ValueKey('rail-chat'));
+    final target = rail.evaluate().isNotEmpty
+        ? rail
+        : find.descendant(
+            of: find.byKey(const Key('workspace-mobile-navigation')),
+            matching: find.byIcon(Icons.chat_bubble_outline),
+          );
+    expect(target, findsOneWidget);
+    await tester.tap(target);
+    await tester.pumpAndSettle();
+    return;
+  }
   if (tester.view.physicalSize.width / tester.view.devicePixelRatio < 900) {
     await tester.tap(find.byTooltip('Open navigation menu'));
     await tester.pumpAndSettle();
@@ -479,7 +492,7 @@ void main() {
       );
       expect(w.threadParent?.id, sent.id);
       final replyText =
-          'Thread from Flutter ${DateTime.now().millisecondsSinceEpoch}';
+          'Thread from Flutter 中文 日本語 ${DateTime.now().millisecondsSinceEpoch}';
       final threadComposer = find.byType(RaftComposer).last;
       await tester.enterText(
         find.descendant(of: threadComposer, matching: find.byType(TextField)),
@@ -559,6 +572,33 @@ void main() {
             'Acknowledged follow must reach the actual Activity projection.',
       );
       await screenshot(tester, 'linux-thread');
+      final nativeReply = w.replies.singleWhere((m) => m.content == replyText);
+      await tester.tap(find.byTooltip('Close thread'));
+      await until(tester, () => w.threadParent == null);
+      final inlineReply = find.byKey(
+        ValueKey('thread-preview-${nativeReply.id}'),
+      );
+      await until(tester, () => inlineReply.evaluate().isNotEmpty);
+      await tester.ensureVisible(inlineReply);
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: inlineReply, matching: find.text(replyText)),
+        findsOneWidget,
+      );
+      await screenshot(tester, 'linux-thread-inline-preview');
+      await tester.tap(inlineReply);
+      await until(
+        tester,
+        () =>
+            w.threadParent?.id == sent.id &&
+            !w.threadLoading &&
+            w.highlightedMessageId == nativeReply.id &&
+            find
+                .byKey(ValueKey('message-${nativeReply.id}'))
+                .evaluate()
+                .isNotEmpty,
+      );
+      await screenshot(tester, 'linux-thread-inline-reply-navigation');
       await w.toggleReaction(sent, '👍');
       await tester.pump(const Duration(milliseconds: 300));
       expect(w.reactionViewer.reacted(sent.id), contains('👍'));
@@ -1506,7 +1546,7 @@ void main() {
         tester,
         w,
         section: (name) => section(tester, name),
-        capture: (name) => screenshot(tester, name),
+        capture: (name) => screenshot(tester, 'linux-$name'),
       );
       await w.selectChannel(general);
       await tester.pumpAndSettle();
@@ -1597,6 +1637,18 @@ void main() {
               find.byType(RaftFormDialog).evaluate().isEmpty,
         );
         await tester.pumpAndSettle();
+        final accountScroll = find
+            .descendant(
+              of: find.byKey(const Key('workspace-account-settings')),
+              matching: find.byType(Scrollable),
+            )
+            .first;
+        expect(
+          Localizations.localeOf(tester.element(accountScroll)).languageCode,
+          'zh',
+        );
+        tester.state<ScrollableState>(accountScroll).position.jumpTo(0);
+        await tester.pumpAndSettle();
         expect(find.text('外观'), findsOneWidget);
         await screenshot(tester, 'linux-display-language');
       } finally {
@@ -1632,6 +1684,22 @@ void main() {
         RaftFamily.elegant,
       );
       await screenshot(tester, 'linux-elegant-light');
+      final accountScroll = find
+          .descendant(
+            of: find.byKey(const Key('workspace-account-settings')),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(
+        find.text('Sign out'),
+        250,
+        scrollable: accountScroll,
+        maxScrolls: 30,
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      await screenshot(tester, 'linux-session-sign-out');
       await tester.tap(find.text('Sign out'));
       await until(
         tester,

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/message_image_export.dart';
+import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 /// Captures the actual selected-message PNG before cancellation; no fixture
@@ -25,6 +26,19 @@ Future<void> verifyMessageSelection(
   for (var i = 0; i < 50 && tile.evaluate().isEmpty; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
+  if (tile.evaluate().isEmpty) {
+    for (final view in find.byType(RaftChatView).evaluate()) {
+      final dynamic state = (view as StatefulElement).state;
+      debugPrint(
+        'Selection viewport diagnostic: role=${(view.widget as RaftChatView).thread} adapter=${state.adapter.messages.length} target=${state.adapter.messages.any((dynamic m) => m.id == message.id)} scope=${state.scope == w.channel?.id} locale=${Localizations.localeOf(view).languageCode} attached=${state.viewport.hasClients} offset=${state.viewport.hasClients ? state.viewport.offset : null} max=${state.viewport.hasClients ? state.viewport.position.maxScrollExtent : null}',
+      );
+    }
+    debugPrint(
+      'Selection context diagnostic: loaded=${w.messages.any((m) => m.id == message.id)} loading=${w.channelLoading} highlighted=${w.highlightedMessageId == message.id} rows=${w.messages.length}',
+    );
+    await capture('linux-failure-selection-context');
+  }
+  expect(tile, findsOneWidget, reason: 'The context target must be rendered.');
   final actions = find.descendant(
     of: tile,
     matching: find.byTooltip('Message actions'),

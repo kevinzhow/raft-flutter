@@ -8,6 +8,10 @@ root = pathlib.Path(__file__).resolve().parent.parent
 stamp = lambda: subprocess.check_output([str(root / 'tool/source-hash')], text=True).strip()
 source_hash = stamp()
 results = {}
+with (root / '.local/host-collector-tests.txt').open('w') as log:
+    results['host-collector-tests.txt'] = subprocess.run(
+        [sys.executable, '-m', 'unittest', 'discover', '-s', str(root / 'tool/tests'), '-p', 'test_*.py', '-v'],
+        cwd=root, stdout=log, stderr=subprocess.STDOUT).returncode == 0
 checks = [('all-project-tests.txt', ['test', 'test', '../../packages/raft_client/test', '../../packages/raft_sync/test', '../../packages/raft_ui/test', '--no-pub', '--reporter', 'expanded'], root / 'apps/raft_flutter'),
           ('analyze-all.txt', ['analyze', '--no-pub'], root)]
 for filename, args, cwd in checks:
