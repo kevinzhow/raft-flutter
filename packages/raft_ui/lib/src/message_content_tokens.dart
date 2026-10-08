@@ -68,10 +68,11 @@ class MessageContentRecipe {
                 _ => fontSize * 20 / 14,
               }
             : fontSize * 20 / 14,
+        // raft-ui messageItem `body`: brutal `text-sm text-black`.
         color:
             foreground ??
-            (mountedMessage && !document && !tokens.brutal
-                ? tokens.muted
+            (mountedMessage && !document
+                ? (tokens.brutal ? RaftPrimitiveColors.black : tokens.muted)
                 : tokens.strong),
       ).copyWith(
         fontFamily: document ? tokens.headingFont : tokens.bodyFont,

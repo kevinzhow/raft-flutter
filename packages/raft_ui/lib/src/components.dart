@@ -1013,7 +1013,13 @@ class RaftMessageTile extends StatelessWidget {
                         modelLabel!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: recipe.time.copyWith(fontSize: 11),
+                        // `text-[11px]` replaces the meta slot's `text-xs`
+                        // (tailwind-merge), so brutal inherits the body's
+                        // 20/14 line height; elegant keeps `leading-none`.
+                        style: recipe.time.copyWith(
+                          fontSize: 11,
+                          height: t.brutal ? 20 / 14 : 1,
+                        ),
                       ),
                     ),
                   ),
