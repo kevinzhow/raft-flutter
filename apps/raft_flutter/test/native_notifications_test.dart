@@ -2,10 +2,21 @@ import 'dart:async';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/foundation.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Plugin implements FlutterLocalNotificationsPlugin {
+  MacOSFlutterLocalNotificationsPlugin? mac;
+  InitializationSettings? settings;
+  @override
+  T? resolvePlatformSpecificImplementation<
+    T extends FlutterLocalNotificationsPlatform
+  >() => mac as T?;
+  @override
+  Future<NotificationAppLaunchDetails?>
+  getNotificationAppLaunchDetails() async =>
+      const NotificationAppLaunchDetails(false);
   int cancellations = 0;
   final sent = <String?>[];
   final initialized = Completer<bool?>();
@@ -15,7 +26,11 @@ class _Plugin implements FlutterLocalNotificationsPlugin {
     DidReceiveNotificationResponseCallback? onDidReceiveNotificationResponse,
     DidReceiveBackgroundNotificationResponseCallback?
     onDidReceiveBackgroundNotificationResponse,
-  }) => initialized.future;
+  }) {
+    this.settings = settings;
+    return initialized.future;
+  }
+
   @override
   Future<void> cancelAll() async {
     cancellations++;
@@ -37,11 +52,142 @@ class _Plugin implements FlutterLocalNotificationsPlugin {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _Mac extends MacOSFlutterLocalNotificationsPlugin {
+  bool allowed = false;
+  int requests = 0;
+  Completer<bool?>? prompt;
+  @override
+  Future<bool?> requestPermissions({
+    bool sound = false,
+    bool alert = false,
+    bool badge = false,
+    bool provisional = false,
+    bool critical = false,
+    bool providesAppNotificationSettings = false,
+  }) async {
+    requests++;
+    allowed = await (prompt?.future ?? Future.value(true)) ?? false;
+    return allowed;
+  }
+
+  @override
+  Future<NotificationsEnabledOptions?> checkPermissions() async =>
+      NotificationsEnabledOptions(
+        isEnabled: allowed,
+        isSoundEnabled: allowed,
+        isAlertEnabled: allowed,
+        isBadgeEnabled: false,
+        isProvisionalEnabled: false,
+        isCriticalEnabled: false,
+        isProvidesAppNotificationSettingsEnabled: false,
+      );
+}
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+  test(
+    'macOS asks only on opt-in and stops delivery after OS revocation',
+    () async {
+      final mac = _Mac();
+      final plugin = _Plugin()..mac = mac;
+      plugin.initialized.complete(true);
+      final service = NativeNotificationService(
+        plugin: plugin,
+        platform: TargetPlatform.macOS,
+      );
+      await service.bind('alice');
+      expect(mac.requests, 0);
+      expect(plugin.settings!.macOS!.requestAlertPermission, false);
+      expect(plugin.settings!.macOS!.requestSoundPermission, false);
+      expect(plugin.settings!.macOS!.requestBadgePermission, false);
+      expect(service.enabled, false);
+      await service.requestEnable(true);
+      expect(mac.requests, 1);
+      expect(service.enabled, true);
+      await service.show(title: 'Raft', body: 'test', payload: 'target');
+      expect(plugin.sent, ['target']);
+      mac.allowed = false;
+      await service.show(title: 'Raft', body: 'blocked', payload: 'revoked');
+      expect(service.enabled, false);
+      expect(plugin.sent, ['target']);
+      mac.allowed = true;
+      await service.refreshPermission();
+      expect(service.enabled, true);
+      expect(mac.requests, 1);
+    },
+  );
+  test(
+    'macOS denied permission stays disabled after a later OS grant',
+    () async {
+      final mac = _Mac()..prompt = (Completer<bool?>()..complete(false));
+      final plugin = _Plugin()..mac = mac;
+      final store = _Store();
+      plugin.initialized.complete(true);
+      final service = NativeNotificationService(
+        plugin: plugin,
+        platform: TargetPlatform.macOS,
+        preferences: store,
+      );
+      await service.bind('alice');
+      await service.requestEnable(true);
+      expect(service.enabled, false);
+      expect(service.permitted, false);
+      expect(service.error, contains('system settings'));
+      expect(store.values.values.single, false);
+      mac.allowed = true;
+      await service.show(title: 'Raft', body: 'blocked', payload: 'denied');
+      expect(service.permitted, true);
+      expect(service.enabled, false);
+      expect(plugin.sent, isEmpty);
+    },
+  );
+  test('macOS late permission grant cannot undo a newer disable', () async {
+    final mac = _Mac()..prompt = Completer<bool?>();
+    final plugin = _Plugin()..mac = mac;
+    plugin.initialized.complete(true);
+    final service = NativeNotificationService(
+      plugin: plugin,
+      platform: TargetPlatform.macOS,
+    );
+    await service.bind('alice');
+    final enabling = service.requestEnable(true);
+    await Future<void>.delayed(Duration.zero);
+    await service.requestEnable(false);
+    mac.prompt!.complete(true);
+    await enabling;
+    expect(service.enabled, false);
+    await service.refreshPermission();
+    expect(service.enabled, false);
+  });
+  test('macOS late permission grant cannot enable a newer account', () async {
+    final mac = _Mac()..prompt = Completer<bool?>();
+    final plugin = _Plugin()..mac = mac;
+    final store = _Store();
+    plugin.initialized.complete(true);
+    final service = NativeNotificationService(
+      plugin: plugin,
+      platform: TargetPlatform.macOS,
+      preferences: store,
+    );
+    await service.bind('alice');
+    final enabling = service.requestEnable(true);
+    await Future<void>.delayed(Duration.zero);
+    await service.bind('bob');
+    mac.prompt!.complete(true);
+    await enabling;
+    await service.show(title: 'Raft', body: 'blocked', payload: 'old-account');
+    expect(service.enabled, false);
+    expect(plugin.sent, isEmpty);
+    expect(store.values, isEmpty);
+    await service.bind('alice');
+    expect(service.enabled, false);
+  });
   test('opt-in defaults off; preferences are isolated and contain no raw coordinator/principal', () async {
     final plugin = _Plugin()..initialized.complete(true);
-    final service = NativeNotificationService(plugin: plugin);
+    final service = NativeNotificationService(
+      plugin: plugin,
+      platform: TargetPlatform.linux,
+    );
     await service.bind('https://example.test\nalice\nserver-a');
     expect(service.enabled, false);
     await service.requestEnable(true);
@@ -71,7 +217,10 @@ void main() {
     'queued alert after scope changes cannot survive initialization',
     () async {
       final plugin = _Plugin();
-      final service = NativeNotificationService(plugin: plugin);
+      final service = NativeNotificationService(
+        plugin: plugin,
+        platform: TargetPlatform.linux,
+      );
       final first = service.bind('alice');
       service.enabled = true;
       service.permitted = true;
@@ -93,6 +242,7 @@ void main() {
     () async {
       final store = _Store();
       NativeNotificationService make() => NativeNotificationService(
+        platform: TargetPlatform.linux,
         plugin: _Plugin()..initialized.complete(true),
         preferences: store,
       );
@@ -119,6 +269,7 @@ void main() {
     () async {
       final store = _Store();
       final service = NativeNotificationService(
+        platform: TargetPlatform.linux,
         plugin: _Plugin()..initialized.complete(true),
         preferences: store,
       );
@@ -138,6 +289,7 @@ void main() {
   test('stale cached read cannot replace a newer user preference', () async {
     final store = _Store()..delayedRead = Completer<bool?>();
     final service = NativeNotificationService(
+      platform: TargetPlatform.linux,
       plugin: _Plugin()..initialized.complete(true),
       preferences: store,
     );

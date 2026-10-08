@@ -503,7 +503,10 @@ class _AuthState extends State<AuthView> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Linux · Android', style: TextStyle(fontSize: 12)),
+                const Text(
+                  'Linux · Android · macOS',
+                  style: TextStyle(fontSize: 12),
+                ),
               ],
             ),
           ),

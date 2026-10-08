@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -20,8 +19,11 @@ class NativeNotificationService extends ChangeNotifier {
   NativeNotificationService({
     FlutterLocalNotificationsPlugin? plugin,
     NotificationPreferenceStore? preferences,
+    TargetPlatform? platform,
   }) : _plugin = plugin ?? FlutterLocalNotificationsPlugin(),
+       _platform = platform ?? defaultTargetPlatform,
        _preferences = preferences ?? NotificationPreferenceStore();
+  final TargetPlatform _platform;
   final FlutterLocalNotificationsPlugin _plugin;
   final NotificationPreferenceStore _preferences;
   Future<void> _preferenceTail = Future.value();
@@ -34,7 +36,30 @@ class NativeNotificationService extends ChangeNotifier {
   bool _wanted = false;
   String? error;
   void Function(String)? onTap;
-  bool get receivesMessages => Platform.isAndroid;
+  bool get receivesMessages => _platform == TargetPlatform.android;
+  bool get canOpenSettings =>
+      _platform == TargetPlatform.android || _platform == TargetPlatform.macOS;
+
+  Future<bool> _permission({bool request = false}) async {
+    if (_platform == TargetPlatform.macOS) {
+      final mac = _plugin
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
+          >();
+      if (request) {
+        return await mac?.requestPermissions(alert: true, sound: true) ?? false;
+      }
+      return (await mac?.checkPermissions())?.isEnabled ?? false;
+    }
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+    return (request
+            ? await android?.requestNotificationsPermission()
+            : await android?.areNotificationsEnabled()) ??
+        false;
+  }
 
   Future<void> initialize() => _initializing ??= _initialize();
   Future<void> _initialize() async {
@@ -43,6 +68,12 @@ class NativeNotificationService extends ChangeNotifier {
           await _plugin.initialize(
             settings: const InitializationSettings(
               android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+              macOS: DarwinInitializationSettings(
+                requestAlertPermission: false,
+                requestBadgePermission: false,
+                requestSoundPermission: false,
+                defaultPresentBadge: false,
+              ),
               linux: LinuxInitializationSettings(
                 defaultActionName: 'Open Raft',
               ),
@@ -52,14 +83,8 @@ class NativeNotificationService extends ChangeNotifier {
             },
           ) ??
           false;
-      if (Platform.isAndroid) {
-        permitted =
-            await _plugin
-                .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin
-                >()
-                ?.areNotificationsEnabled() ??
-            false;
+      if (canOpenSettings) {
+        permitted = await _permission();
         final launch = await _plugin.getNotificationAppLaunchDetails();
         final payload = launch?.notificationResponse?.payload;
         if (launch?.didNotificationLaunchApp == true && payload != null) {
@@ -131,15 +156,9 @@ class NativeNotificationService extends ChangeNotifier {
       notifyListeners();
     }
     await initialize();
-    if (value && available && Platform.isAndroid) {
+    if (value && available && canOpenSettings) {
       try {
-        final permission =
-            await _plugin
-                .resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin
-                >()
-                ?.requestNotificationsPermission() ??
-            false;
+        final permission = await _permission(request: true);
         if (!current()) return;
         permitted = permission;
       } catch (_) {
@@ -196,16 +215,10 @@ class NativeNotificationService extends ChangeNotifier {
 
   Future<void> refreshPermission() async {
     await initialize();
-    if (!Platform.isAndroid || !available) return;
+    if (!canOpenSettings || !available) return;
     final epoch = _epoch, revision = _preferenceRevision;
     try {
-      final permission =
-          await _plugin
-              .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin
-              >()
-              ?.areNotificationsEnabled() ??
-          false;
+      final permission = await _permission();
       if (epoch != _epoch || revision != _preferenceRevision) return;
       permitted = permission;
       enabled = _wanted && permitted;
@@ -249,6 +262,7 @@ class NativeNotificationService extends ChangeNotifier {
               visibility: NotificationVisibility.private,
             ),
             linux: LinuxNotificationDetails(),
+            macOS: DarwinNotificationDetails(),
           ),
         );
       } catch (_) {
@@ -265,10 +279,16 @@ class NativeNotificationService extends ChangeNotifier {
     payload: 'raft-notification-test',
   );
   Future<void> openSettings() async {
-    if (Platform.isAndroid) {
+    if (_platform == TargetPlatform.android) {
       await _plugin
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
+          >()
+          ?.openAppNotificationSettings();
+    } else if (_platform == TargetPlatform.macOS) {
+      await _plugin
+          .resolvePlatformSpecificImplementation<
+            MacOSFlutterLocalNotificationsPlugin
           >()
           ?.openAppNotificationSettings();
     }

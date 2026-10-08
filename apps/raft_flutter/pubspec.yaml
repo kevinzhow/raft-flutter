@@ -1,6 +1,6 @@
 name: raft_flutter
 publish_to: none
-description: Raft collaboration client for Linux and Android.
+description: Raft collaboration client for Linux, Android and macOS.
 version: 0.1.0+1
 environment:
   sdk: ^3.13.5
@@ -33,6 +33,7 @@ dependencies:
   media_kit_video: ^2.0.1
   media_kit_libs_android_video: ^1.3.8
   media_kit_libs_linux: ^1.2.1
+  media_kit_libs_macos_video: ^1.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

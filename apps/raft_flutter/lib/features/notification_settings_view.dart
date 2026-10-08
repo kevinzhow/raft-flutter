@@ -38,7 +38,7 @@ class NotificationSettingsView extends StatelessWidget {
               onPressed: service.enabled ? service.test : null,
               child: Text(raftText(context, 'Send test notification')),
             ),
-            if (service.receivesMessages)
+            if (service.canOpenSettings)
               TextButton(
                 onPressed: service.openSettings,
                 child: Text(raftText(context, 'Open system settings')),
