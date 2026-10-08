@@ -1,0 +1,33 @@
+{
+  "sourceCommit": "c598e2c18247e217a4798f6cc65fc785c11cbc3b",
+  "device": "emulator-5580",
+  "startedAt": "2026-10-08T06:45:34.987634+00:00",
+  "messageId": "9804b440-fdc0-4dd7-a983-655da8b47fb0",
+  "originalRecord": {
+    "id": "1730713793",
+    "mCreationTimeMs": "1791440944438",
+    "mUpdateTimeMs": "1791440944438"
+  },
+  "completed": true,
+  "forcedAt": "2026-10-08T06:45:35.017667+00:00",
+  "jobId": 4,
+  "secondWake": {
+    "mode": "headless",
+    "startedAt": "2026-10-08T06:44:05.373919Z",
+    "finishedAt": "2026-10-08T06:44:05.604704Z",
+    "success": true
+  },
+  "secondWakeTrigger": "system-periodic-before-force-command",
+  "secondWakePeriodVerified": true,
+  "dedupePassed": true,
+  "afterRecord": {
+    "id": "1730713793",
+    "mCreationTimeMs": "1791440944438",
+    "mUpdateTimeMs": "1791440944438"
+  },
+  "actualShadeClickedAt": "2026-10-08T06:45:37.638722+00:00",
+  "targetMessageRendered": true,
+  "finishedAt": "2026-10-08T06:46:29.113763+00:00",
+  "activityComponent": "app.raft.raft_flutter/.MainActivity",
+  "validationCorrection": "Accept canonical Android abbreviated ComponentName after fresh target UI and actual top activity verification"
+}

@@ -18,6 +18,6 @@ This is source integration, not an iOS release. Xcode compilation, iOS schedulin
 
 ## Verification boundary
 
-Focused tests cover unread selection, old/read suppression, persistent deduplication, server/account/workspace boundaries, opt-out and Done races, denied context, retryable delivery, thread identity and cross-engine session ownership. Actual Android scheduled/headless delivery and iOS native runtime evidence are still pending. Refer to the latest run receipts rather than treating this document as native proof.
+Focused tests cover unread selection, old/read suppression, persistent deduplication, server/account/workspace boundaries, opt-out and Done races, denied context, retryable delivery, thread identity and cross-engine session ownership. Actual Android cold-process delivery, a subsequent system-periodic deduplication check, OS notification click, opt-out and logout passed against commit c598e2c on 2026-10-08. See [source-bound native evidence](android-background-evidence.md). iOS native runtime and subsequent UI-source acceptance remain pending.
 
 Sources: [Workmanager setup](https://docs.page/fluttercommunity/flutter_workmanager/quickstart), [Android periodic work](https://developer.android.com/develop/background-work/background-tasks/persistent/getting-started/define-work), and the pinned [Raft server routes](https://github.com/botiverse/raft-source/tree/26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6/packages/server/src/routes).
