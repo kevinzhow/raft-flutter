@@ -107,6 +107,8 @@ class RaftSettingsProfileRecipe {
   const RaftSettingsProfileRecipe(this.t);
   final RaftTokens t;
   static const double avatarSize = 64, gap = 16, fieldGap = 12;
+  // `border-t border-line-muted`
+  static const double dividerWidth = 1;
   static const inset = EdgeInsets.all(16);
   // SettingsProfileCard.tsx: the shared settings card surface.
   BoxDecoration get surface => RaftSettingsCard.decoration(t);
@@ -116,14 +118,14 @@ class RaftSettingsProfileRecipe {
     size: 18,
     line: 22.5,
     weight: FontWeight.w700,
-    color: t.brutal ? Colors.black : t.strong,
+    color: RaftSettingsText(t).strong,
   );
   // `font-mono text-sm text-foreground-muted theme-brutal:text-black/50`
   TextStyle get subtitle => RaftTypography.mono(
     t,
     size: 14,
     line: 20,
-    color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
+    color: RaftSettingsText(t).faint,
   );
   // `border-t border-line-muted`
   Color get divider => t.colors['line-muted']!;
@@ -196,7 +198,11 @@ class RaftSettingsProfileCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: RaftSettingsProfileRecipe.gap),
-            Divider(height: 1, thickness: 1, color: recipe.divider),
+            Divider(
+              height: RaftSettingsProfileRecipe.dividerWidth,
+              thickness: RaftSettingsProfileRecipe.dividerWidth,
+              color: recipe.divider,
+            ),
             const SizedBox(height: RaftSettingsProfileRecipe.gap),
             child,
           ],

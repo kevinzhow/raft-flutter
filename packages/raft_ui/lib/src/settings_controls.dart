@@ -660,3 +660,55 @@ class RaftRecipeBadge extends StatelessWidget {
     );
   }
 }
+
+/// ProfileSection read-only name: `w-full border border-line-muted
+/// bg-layer-inset p-2 text-sm font-mono text-foreground-muted
+/// theme-brutal:border-2 theme-brutal:border-black/30 theme-brutal:bg-gray-50
+/// theme-brutal:text-black/60`.
+class RaftSettingsReadonlyValue extends StatelessWidget {
+  const RaftSettingsReadonlyValue({super.key, required this.value});
+  final String value;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), text = RaftSettingsText(t);
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: text.insetFill,
+        border: Border.all(color: text.softEdge, width: t.brutal ? 2 : 1),
+      ),
+      child: Text(value, style: text.mono.copyWith(color: text.muted)),
+    );
+  }
+}
+
+/// AvatarSlot `profile-tile` for a server: `!size-16 !border-2`, `text-2xl
+/// font-display font-bold theme-brutal:bg-soft-signal theme-brutal:text-black`.
+class RaftServerProfileTile extends StatelessWidget {
+  const RaftServerProfileTile({super.key, required this.initial});
+  final String initial;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Container(
+      width: 64,
+      height: 64,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: t.brutal
+            ? t.colors['color-soft-signal']
+            : t.colors['fill-muted'],
+        border: Border.all(color: RaftSettingsText(t).edge, width: 2),
+      ),
+      child: Text(
+        initial,
+        style: RaftTypography.heading(
+          t,
+          size: 24,
+          line: 32,
+          weight: FontWeight.w700,
+        ).copyWith(color: RaftSettingsText(t).strong),
+      ),
+    );
+  }
+}

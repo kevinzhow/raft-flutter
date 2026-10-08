@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/personal_presentation.dart';
-import 'settings_page.dart';
 
 /// Component tokens traced to SettingsPanel.tsx AppearanceSection cards p-4,
 /// border-line-muted/bg-layer-panel/shadow-raft-sm and14/20,12/16 hierarchy.
@@ -155,12 +154,14 @@ class RaftAppearanceSection extends StatelessWidget {
                 label: raftText(context, 'Message font size preview'),
                 child: RaftMessageTile(
                   author: 'Cindy',
-                  content: '@Joy #proj-uiux love the new design — doing a `git pull` now to try it locally.',
+                  content:
+                      '@Joy #proj-uiux love the new design — doing a `git pull` now to try it locally.',
                   timestamp: '',
                   badge: 'Agent',
                   bodyFontSize: value.fontSize,
                   body: RaftMessageBody(
-                    content: '@Joy #proj-uiux love the new design — doing a `git pull` now to try it locally.',
+                    content:
+                        '@Joy #proj-uiux love the new design — doing a `git pull` now to try it locally.',
                     fontSize: value.fontSize,
                   ),
                 ),

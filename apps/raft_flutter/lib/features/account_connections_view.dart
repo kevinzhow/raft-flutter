@@ -198,7 +198,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
       if (visible.isNotEmpty) ...[
         // `mb-2 text-sm font-bold`
         Text(raftText(context, 'Connected accounts'), style: recipe.heading),
-        const SizedBox(height: 8),
+        const SizedBox(height: RaftSpace.x2),
         for (final provider in visible) ...[
           Builder(
             builder: (context) {
@@ -224,15 +224,17 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
                             // SocialProviderIcon `size-[18px]` + label.
                             Row(
                               children: [
-                                const SizedBox.square(dimension: 18),
-                                const SizedBox(width: 8),
+                                const SizedBox.square(
+                                  dimension: RaftSpace.providerIcon,
+                                ),
+                                const SizedBox(width: RaftSpace.x2),
                                 Text(
                                   '${provider['label'] ?? id}',
                                   style: recipe.providerTitle,
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: RaftSpace.x1),
                             Text(
                               identity == null
                                   ? raftText(context, 'Not connected')
@@ -251,7 +253,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: RaftSpace.x3),
                       RaftRecipeButton(
                         label: identity == null ? 'Connect' : 'Disconnect',
                         size: RaftButtonRecipeSize.sm,
@@ -270,9 +272,9 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
             },
           ),
           // `space-y-2`
-          const SizedBox(height: 8),
+          const SizedBox(height: RaftSpace.x2),
         ],
-        const SizedBox(height: 4),
+        const SizedBox(height: RaftSpace.x1),
         Container(height: recipe.dividerWidth, color: recipe.dividerColor),
         const SizedBox(height: RaftAccountSignInRecipe.gap),
       ],
@@ -285,7 +287,7 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
           )
         else ...[
           Text(raftText(context, 'Set a password'), style: recipe.heading),
-          const SizedBox(height: 4),
+          const SizedBox(height: RaftSpace.x1),
           Text(
             raftText(
               context,

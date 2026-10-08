@@ -220,21 +220,21 @@ class WorkspaceAboutSection extends StatelessWidget {
       size: 14,
       line: 20,
       weight: FontWeight.w700,
-      color: t.brutal ? Colors.black : t.strong,
+      color: RaftSettingsText(t).strong,
     );
     final muted = RaftTypography.body(
       t,
       size: 12,
       line: 16,
-      color: t.brutal ? Colors.black.withValues(alpha: .6) : t.muted,
+      color: RaftSettingsText(t).muted,
     );
     Widget card(String title, String detail) => RaftSettingsCard(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: RaftSettingsCard.listItemInset,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: strong),
-          const SizedBox(height: 4),
+          const SizedBox(height: RaftSpace.x1),
           Text(detail, style: muted),
         ],
       ),
@@ -249,7 +249,7 @@ class WorkspaceAboutSection extends StatelessWidget {
         ),
         card('Raft', raftText(context, 'Flutter client')),
         if (server != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: RaftSpace.x4),
           const RaftSettingsSectionHeader(
             label: 'Current workspace',
             glyph: RaftGlyph.building2,
@@ -304,14 +304,14 @@ class _ReleaseNotesViewState extends State<ReleaseNotesView> {
       return Text(error!, style: RaftTypography.body(t, size: 14, line: 20));
     }
     if (releases == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: RaftSpinner());
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final release in releases!)
           Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: RaftSpace.x3),
             child: RaftSettingsCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,14 +329,14 @@ class _ReleaseNotesViewState extends State<ReleaseNotesView> {
                     '${release['date'] ?? ''}',
                     style: RaftTypography.mono(t),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: RaftSpace.x2),
                   for (final entry
                       in release['entries'] is List
                           ? release['entries'] as List
                           : const [])
                     if (entry is Map)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.only(top: RaftSpace.x1),
                         child: Text(
                           '${entry['text'] ?? ''}',
                           style: RaftTypography.body(t, size: 14, line: 20),

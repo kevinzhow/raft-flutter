@@ -3,37 +3,37 @@
  "scope": "apps/raft_flutter/lib",
  "about": "Ratchet for tool/ds-audit. Counts may only go down. Regenerate with `tool/ds-audit --update-baseline` after removing violations.",
  "totals": {
-  "style.border_radius": 21,
+  "style.border_radius": 15,
   "style.color_literal": 1,
-  "style.dimension": 98,
+  "style.dimension": 75,
   "style.duration": 3,
-  "style.edge_insets": 123,
+  "style.edge_insets": 108,
   "style.font_size": 2,
   "style.font_weight": 15,
   "style.material_colors": 33,
-  "style.material_icons": 113,
-  "style.material_theme": 52,
-  "style.sized_box": 134,
+  "style.material_icons": 110,
+  "style.material_theme": 47,
+  "style.sized_box": 110,
   "style.text_metrics": 5,
-  "style.text_style": 26,
-  "widget.app_bar": 8,
+  "style.text_style": 24,
+  "widget.app_bar": 7,
   "widget.bottom_sheet": 1,
-  "widget.button": 73,
+  "widget.button": 69,
   "widget.chip": 8,
-  "widget.dialog": 73,
-  "widget.divider": 12,
+  "widget.dialog": 72,
+  "widget.divider": 8,
   "widget.icon_button": 20,
-  "widget.ink": 4,
-  "widget.list_tile": 91,
+  "widget.ink": 3,
+  "widget.list_tile": 90,
   "widget.menu": 25,
   "widget.navigation": 1,
   "widget.other": 22,
   "widget.progress": 19,
-  "widget.scaffold": 13,
+  "widget.scaffold": 12,
   "widget.select": 14,
   "widget.snackbar": 38,
-  "widget.surface": 18,
-  "widget.text_field": 45,
+  "widget.surface": 17,
+  "widget.text_field": 41,
   "widget.toggle": 1,
   "widget.tooltip": 6
  },
@@ -42,9 +42,6 @@
    "style.edge_insets": 1
   },
   "apps/raft_flutter/lib/features/account_connections_view.dart": {
-   "style.dimension": 1,
-   "style.sized_box": 3,
-   "widget.divider": 1,
    "widget.list_tile": 1
   },
   "apps/raft_flutter/lib/features/account_onboarding.dart": {
@@ -64,20 +61,12 @@
    "widget.text_field": 2
   },
   "apps/raft_flutter/lib/features/account_settings.dart": {
-   "style.border_radius": 1,
-   "style.dimension": 6,
-   "style.edge_insets": 6,
-   "style.material_theme": 2,
-   "style.sized_box": 5,
-   "style.text_style": 2,
-   "widget.app_bar": 1,
+   "style.dimension": 1,
+   "style.edge_insets": 1,
    "widget.button": 1,
    "widget.dialog": 1,
-   "widget.divider": 2,
    "widget.ink": 1,
    "widget.other": 2,
-   "widget.scaffold": 1,
-   "widget.text_field": 4,
    "widget.tooltip": 1
   },
   "apps/raft_flutter/lib/features/account_sign_in_recipe.dart": {
@@ -127,9 +116,8 @@
    "widget.snackbar": 2
   },
   "apps/raft_flutter/lib/features/appearance_section.dart": {
-   "style.dimension": 1,
    "style.edge_insets": 1,
-   "style.sized_box": 9
+   "style.sized_box": 8
   },
   "apps/raft_flutter/lib/features/attachment_html_preview.dart": {
    "style.dimension": 2,
@@ -343,17 +331,11 @@
    "widget.button": 1,
    "widget.dialog": 3
   },
-  "apps/raft_flutter/lib/features/notification_settings_view.dart": {
-   "style.dimension": 1,
-   "style.edge_insets": 1,
-   "widget.button": 2,
-   "widget.list_tile": 1
-  },
   "apps/raft_flutter/lib/features/page_alignment_previews.dart": {
    "style.edge_insets": 2
   },
   "apps/raft_flutter/lib/features/page_component_recipes.dart": {
-   "style.dimension": 3,
+   "style.dimension": 2,
    "style.edge_insets": 16,
    "style.font_weight": 2,
    "style.material_colors": 1,
@@ -454,14 +436,13 @@
    "widget.other": 1
   },
   "apps/raft_flutter/lib/features/server_views.dart": {
-   "style.dimension": 1,
-   "style.edge_insets": 2,
-   "style.material_icons": 5,
-   "style.material_theme": 6,
-   "style.sized_box": 5,
+   "style.edge_insets": 1,
+   "style.material_icons": 3,
+   "style.material_theme": 4,
+   "style.sized_box": 1,
    "style.text_style": 1,
-   "widget.button": 5,
-   "widget.dialog": 12,
+   "widget.button": 3,
+   "widget.dialog": 11,
    "widget.icon_button": 3,
    "widget.list_tile": 3,
    "widget.menu": 3,
@@ -471,14 +452,10 @@
    "widget.text_field": 1
   },
   "apps/raft_flutter/lib/features/settings_page.dart": {
-   "style.border_radius": 5,
-   "style.dimension": 14,
-   "style.edge_insets": 9,
-   "style.material_theme": 1,
-   "style.sized_box": 10,
-   "widget.divider": 2,
-   "widget.ink": 1,
-   "widget.surface": 2
+   "style.dimension": 1,
+   "style.edge_insets": 1,
+   "widget.divider": 1,
+   "widget.surface": 1
   },
   "apps/raft_flutter/lib/features/share_message_link.dart": {
    "widget.snackbar": 2
@@ -552,8 +529,8 @@
   "apps/raft_flutter/lib/features/workspace_view.dart": {
    "style.dimension": 8,
    "style.edge_insets": 3,
-   "style.material_icons": 20,
-   "style.sized_box": 2,
+   "style.material_icons": 19,
+   "style.sized_box": 1,
    "widget.button": 1,
    "widget.dialog": 10,
    "widget.divider": 2,

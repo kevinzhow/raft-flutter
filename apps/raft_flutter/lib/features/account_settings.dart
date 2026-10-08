@@ -289,14 +289,10 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   @override
   Widget build(BuildContext context) {
     hydrateProfile();
-    final user = controller.client.user,
-        t = RaftTokens.of(context);
-    final muted = t.brutal ? Colors.black.withValues(alpha: .6) : t.muted;
+    final user = controller.client.user, t = RaftTokens.of(context);
+    final muted = RaftSettingsText(t).muted;
     // `border-t-2 border-line-muted theme-brutal:border-black`
-    final divider = Container(
-      height: 2,
-      color: t.brutal ? Colors.black : t.colors['line-muted'],
-    );
+    final divider = Container(height: 2, color: RaftSettingsText(t).edge);
     final card = RaftSettingsProfileCard(
       avatar: Tooltip(
         message: raftText(context, 'Change profile image'),
@@ -338,7 +334,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
           ],
           RaftSettingsField(
             label: 'Display Name',
@@ -351,7 +347,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
               onSubmitted: (_) => saveProfile(),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           RaftSettingsField(
             label: 'Username',
             // PrefixedInput "@": `border-line-muted bg-fill-muted
@@ -369,7 +365,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
               textColor: t.muted,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           RaftSettingsField(
             label: 'Email',
             child: Row(
@@ -382,11 +378,11 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                       t,
                       size: 14,
                       line: 20,
-                      color: t.brutal ? Colors.black : t.strong,
+                      color: RaftSettingsText(t).strong,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: RaftSpace.x2),
                 user?.json['emailVerified'] == true
                     ? const RaftRecipeBadge(
                         label: 'Verified',
@@ -405,7 +401,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
             ),
           ),
           if (profileError != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
             Semantics(
               liveRegion: true,
               child: Text(
@@ -420,7 +416,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           Align(
             alignment: Alignment.centerLeft,
             // `size="sm" variant="outline"` + `disabled:opacity-50`.
@@ -443,25 +439,25 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                   : saveProfile,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           divider,
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           AccountConnectionsView(
             key: ValueKey('account-sign-in-$authority'),
             controller: controller,
             inline: true,
           ),
           if (user?.string('description').isNotEmpty == true) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
             SelectableText(
               user!.string('description'),
               style: RaftTypography.body(t, size: 14, line: 20, color: muted),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: RaftSpace.x3,
+            runSpacing: RaftSpace.x3,
             children: [
               if (user?.string('avatarUrl').isNotEmpty == true)
                 RaftButton(
@@ -500,7 +496,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
           glyph: RaftGlyph.user,
         ),
         card,
-        const SizedBox(height: 24),
+        const SizedBox(height: RaftSpace.x6),
         const RaftSettingsSectionHeader(
           label: 'Session',
           glyph: RaftGlyph.logOut,
@@ -519,7 +515,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                 : () => confirmLogout(context),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: RaftSpace.x6),
       ],
     );
   }

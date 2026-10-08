@@ -416,6 +416,12 @@ class RaftSettingsCard extends StatelessWidget {
   });
   final Widget child;
   final EdgeInsets padding;
+
+  /// SurfaceListItem `px-4 py-3`.
+  static const listItemInset = EdgeInsets.symmetric(
+    horizontal: 16,
+    vertical: 12,
+  );
   static BoxDecoration decoration(RaftTokens t) => BoxDecoration(
     color: t.brutal ? Colors.white : t.panel,
     border: Border.all(
@@ -431,5 +437,79 @@ class RaftSettingsCard extends StatelessWidget {
     padding: padding,
     decoration: decoration(RaftTokens.of(context)),
     child: child,
+  );
+}
+
+/// Tailwind spacing steps (`--spacing: 0.25rem`) used by the settings pages.
+abstract final class RaftSpace {
+  static const double half = 2, x1 = 4, x1_5 = 6, x2 = 8, x3 = 12, x4 = 16;
+  static const double x6 = 24;
+
+  /// SocialProviderIcon `size-[18px]`.
+  static const double providerIcon = 18;
+}
+
+/// Text colours/styles repeated across SettingsPanel.tsx sections, each the
+/// resolved `text-foreground-* theme-brutal:text-black[/NN]` pair.
+@immutable
+class RaftSettingsText {
+  const RaftSettingsText(this.t);
+  final RaftTokens t;
+
+  /// `text-foreground-strong theme-brutal:text-black`
+  Color get strong => t.brutal ? Colors.black : t.strong;
+
+  /// `text-foreground-muted theme-brutal:text-black/60`
+  Color get muted => t.brutal ? Colors.black.withValues(alpha: .6) : t.muted;
+
+  /// `text-foreground-muted theme-brutal:text-black/50`
+  Color get faint => t.brutal ? Colors.black.withValues(alpha: .5) : t.muted;
+
+  /// `border-black/30` (brutal) / `border-line-muted`.
+  Color get softEdge =>
+      t.brutal ? Colors.black.withValues(alpha: .3) : t.colors['line-muted']!;
+
+  /// `theme-brutal:border-black` / `border-line-muted`.
+  Color get edge => t.brutal ? Colors.black : t.colors['line-muted']!;
+
+  /// `bg-layer-inset theme-brutal:bg-gray-50` (gray-50 = oklch(98.5% 0.002
+  /// 247.839) = #F9FAFB).
+  Color get insetFill =>
+      t.brutal ? const Color(0xFFF9FAFB) : t.colors['layer-inset']!;
+
+  /// `bg-layer-panel theme-brutal:bg-white`
+  Color get panel => t.brutal ? Colors.white : t.panel;
+
+  /// `text-sm font-bold`
+  TextStyle get title => RaftTypography.body(
+    t,
+    size: 14,
+    line: 20,
+    weight: FontWeight.w700,
+    color: strong,
+  );
+
+  /// `text-xs` muted description.
+  TextStyle get description =>
+      RaftTypography.body(t, size: 12, line: 16, color: muted);
+
+  /// `text-sm` muted copy.
+  TextStyle get bodyMuted =>
+      RaftTypography.body(t, size: 14, line: 20, color: muted);
+
+  /// `font-mono text-sm`
+  TextStyle get mono =>
+      RaftTypography.mono(t, size: 14, line: 20, color: strong);
+
+  /// `font-mono text-sm font-bold`
+  TextStyle get monoBold => mono.copyWith(fontWeight: FontWeight.w700);
+
+  /// `text-xs font-bold` alert copy (`text-brutal-red` / danger).
+  TextStyle get alert => RaftTypography.body(
+    t,
+    size: 12,
+    line: 16,
+    weight: FontWeight.w700,
+    color: t.colors['color-brutal-red'] ?? t.colors['danger'],
   );
 }

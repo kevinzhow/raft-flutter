@@ -18,8 +18,8 @@ class NotificationSettingsView extends StatelessWidget {
     animation: service,
     builder: (context, _) {
       final t = RaftTokens.of(context);
-      final strong = t.brutal ? Colors.black : t.strong;
-      final muted = t.brutal ? Colors.black.withValues(alpha: .6) : t.muted;
+      final strong = RaftSettingsText(t).strong;
+      final muted = RaftSettingsText(t).muted;
       final hint = RaftTypography.body(t, size: 12, line: 16, color: muted);
       final problem = service.backgroundError ?? service.error;
       return Column(
@@ -49,7 +49,7 @@ class NotificationSettingsView extends StatelessWidget {
                               color: strong,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: RaftSpace.half),
                           Text(
                             raftText(
                               context,
@@ -62,7 +62,7 @@ class NotificationSettingsView extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: RaftSpace.x3),
                     RaftRecipeBadge(
                       label: service.enabled ? 'Enabled' : 'Disabled',
                       variant: RaftBadgeRecipeVariant.muted,
@@ -71,13 +71,13 @@ class NotificationSettingsView extends StatelessWidget {
                   ],
                 ),
                 if (problem != null) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: RaftSpace.x3),
                   Text(raftText(context, problem), style: hint),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: RaftSpace.x3),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: RaftSpace.x2,
+                  runSpacing: RaftSpace.x2,
                   children: [
                     if (service.enabled) ...[
                       RaftRecipeButton(

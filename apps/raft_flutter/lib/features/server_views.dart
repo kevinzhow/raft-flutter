@@ -308,11 +308,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
           glyph: RaftGlyph.building2,
         ),
         RaftSettingsProfileCard(
-          avatar: _ServerProfileTile(
-            initial: initial,
-            avatarUrl: server.string('avatarUrl'),
-            origin: w.client.origin,
-          ),
+          avatar: RaftServerProfileTile(initial: initial),
           title: server.name,
           subtitle: '/$slug',
           child: Column(
@@ -327,34 +323,12 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                         onChanged: (_) => setState(() => saved = false),
                         onSubmitted: (_) => save(),
                       )
-                    : Container(
+                    : RaftSettingsReadonlyValue(
                         key: const Key('server-profile-name-readonly'),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: t.brutal
-                              ? const Color(0xFFF9FAFB)
-                              : t.colors['layer-inset'],
-                          border: Border.all(
-                            color: t.brutal
-                                ? Colors.black.withValues(alpha: .3)
-                                : t.colors['line-muted']!,
-                            width: t.brutal ? 2 : 1,
-                          ),
-                        ),
-                        child: Text(
-                          server.name,
-                          style: RaftTypography.mono(
-                            t,
-                            size: 14,
-                            line: 20,
-                            color: t.brutal
-                                ? Colors.black.withValues(alpha: .6)
-                                : t.muted,
-                          ),
-                        ),
+                        value: server.name,
                       ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: RaftSpace.x3),
               RaftSettingsField(
                 label: 'Slug',
                 // SlugInput readOnly: `border-line-strong bg-layer-inset
@@ -366,32 +340,19 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                   value: slug,
                   readOnly: true,
                   flat: true,
-                  rootColor: t.brutal
-                      ? const Color(0xFFF9FAFB)
-                      : t.colors['layer-inset'],
+                  rootColor: RaftSettingsText(t).insetFill,
                   rootBorderColor: t.brutal
-                      ? Colors.black.withValues(alpha: .3)
+                      ? RaftSettingsText(t).softEdge
                       : t.colors['line-strong'],
-                  textColor: t.brutal
-                      ? Colors.black.withValues(alpha: .6)
-                      : t.muted,
+                  textColor: RaftSettingsText(t).muted,
                 ),
               ),
               if (error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  error!,
-                  style: RaftTypography.body(
-                    t,
-                    size: 12,
-                    line: 16,
-                    weight: FontWeight.w700,
-                    color: t.colors['danger'],
-                  ),
-                ),
+                const SizedBox(height: RaftSpace.x3),
+                Text(error!, style: RaftSettingsText(t).alert),
               ],
               if (canEdit) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: RaftSpace.x3),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: RaftRecipeButton(
@@ -412,7 +373,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: RaftSpace.x6),
         const RaftSettingsSectionHeader(
           label: 'Danger Zone',
           glyph: RaftGlyph.triangleAlert,
@@ -429,7 +390,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
               onPressed: confirmLeave,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
         ],
         if (role == 'owner')
           RaftSettingsActionCard(
@@ -448,46 +409,8 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
               onPressed: confirmDelete,
             ),
           ),
-        const SizedBox(height: 24),
+        const SizedBox(height: RaftSpace.x6),
       ],
-    );
-  }
-}
-
-/// AvatarSlot `profile-tile` for a server: `!size-16 !border-2`, `text-2xl
-/// font-display font-bold theme-brutal:bg-soft-signal theme-brutal:text-black`.
-class _ServerProfileTile extends StatelessWidget {
-  const _ServerProfileTile({
-    required this.initial,
-    required this.avatarUrl,
-    required this.origin,
-  });
-  final String initial, avatarUrl, origin;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Container(
-      width: 64,
-      height: 64,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: t.brutal
-            ? t.colors['color-soft-signal']
-            : t.colors['fill-muted'],
-        border: Border.all(
-          color: t.brutal ? Colors.black : t.colors['line-muted']!,
-          width: 2,
-        ),
-      ),
-      child: Text(
-        initial,
-        style: RaftTypography.heading(
-          t,
-          size: 24,
-          line: 32,
-          weight: FontWeight.w700,
-        ).copyWith(color: t.brutal ? Colors.black : t.strong),
-      ),
     );
   }
 }
@@ -510,15 +433,17 @@ class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final base = DefaultTextStyle.of(context).style;
-    final bold = base.copyWith(fontWeight: FontWeight.w700);
+    final text = RaftSettingsText(t);
+    // `<span className="font-bold">` inside the dialog copy.
+    final bold = RaftConfirmDialog.messageStyle(t)
+        .merge(text.title)
+        .copyWith(
+          fontSize: RaftConfirmDialog.messageStyle(t).fontSize,
+          height: RaftConfirmDialog.messageStyle(t).height,
+          color: RaftConfirmDialog.messageStyle(t).color,
+        );
     // `text-sm text-foreground-muted theme-brutal:text-black/60 mb-2`
-    final prompt = RaftTypography.body(
-      t,
-      size: 14,
-      line: 20,
-      color: t.brutal ? Colors.black.withValues(alpha: .6) : t.muted,
-    );
+    final prompt = text.bodyMuted;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -538,26 +463,18 @@ class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: RaftSpace.x4),
         Text.rich(
           TextSpan(
             style: prompt,
             children: [
               TextSpan(text: raftText(context, 'Type ')),
-              TextSpan(
-                text: widget.slug,
-                style: RaftTypography.mono(
-                  t,
-                  size: 14,
-                  line: 20,
-                  color: t.brutal ? Colors.black : t.strong,
-                ).copyWith(fontWeight: FontWeight.w700),
-              ),
+              TextSpan(text: widget.slug, style: text.monoBold),
               TextSpan(text: raftText(context, ' to confirm:')),
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: RaftSpace.x2),
         RaftPrefixedInput(
           key: const Key('server-delete-slug-input'),
           prefix: '/',
@@ -767,7 +684,7 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
               raftText(context, 'Notifications'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
             DropdownButtonFormField<String>(
               initialValue: '${prefs['serverPushMode'] ?? 'all'}',
               decoration: InputDecoration(
@@ -803,9 +720,9 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
                 raftText(context, 'Invitations'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: RaftSpace.x3),
               Wrap(
-                spacing: 12,
+                spacing: RaftSpace.x3,
                 children: [
                   RaftButton(
                     label: 'Invite member',
