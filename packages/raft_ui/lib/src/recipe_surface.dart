@@ -145,7 +145,12 @@ class RaftRecipeBox extends StatelessWidget {
     this.applyOpacity = true,
     this.applyTransform = true,
     this.decorationOverride,
+    this.overflowCenter = false,
   });
+
+  /// Inline-flex controls with a fixed height (Button): content taller than
+  /// the content box overflows centred instead of being squeezed.
+  final bool overflowCenter;
 
   final RaftSlotStyle style;
   final RaftTokenResolver tokens;
@@ -208,7 +213,9 @@ class RaftRecipeBox extends StatelessWidget {
     final h = height ?? style.height;
     // A fixed CSS height smaller than padding + content lets the content
     // overflow, centred (flex `align-items: center`), instead of clipping.
-    if (content != null && h != null) content = RaftCssOverflowY(child: content);
+    if (content != null && h != null && overflowCenter) {
+      content = RaftCssOverflowY(child: content);
+    }
     Widget box = Container(
       width: w,
       height: h,

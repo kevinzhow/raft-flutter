@@ -266,6 +266,7 @@ class RaftButton extends StatelessWidget {
         return RaftRecipeBox(
           style: s,
           tokens: rt,
+          overflowCenter: true,
           width: expand ? double.infinity : null,
           decorationOverride: highContrastDanger
               ? (d) => d.copyWith(color: t.components.buttonDangerHighContrast)

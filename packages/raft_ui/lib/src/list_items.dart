@@ -426,7 +426,8 @@ class RaftMenuButtonItem extends StatelessWidget {
           return RaftRecipeBox(
             style: s,
             tokens: rt,
-            width: double.infinity,
+            overflowCenter: true,
+          width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decorationOverride: (d) {
               final color = topDivider ? dividerColor : Colors.transparent;
