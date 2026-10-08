@@ -19,6 +19,7 @@ import 'platform/session_persistence.dart';
 import 'platform/native_sharing.dart';
 import 'platform/content_coordinator.dart';
 import 'platform/workspace_cache.dart';
+import 'platform/background_notifications.dart';
 
 final raftScreenshotKey = GlobalKey();
 
@@ -59,6 +60,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   final content = NativeContentCoordinator();
   final sharing = NativeSharing();
   late final SessionPersistence sessionPersistence;
+  late final sessionOwner = NativeSessionOwner(poll: content.pollBackground);
   int authAttempt = 0;
   final privateRoutes = PrivateRouteGuard();
   RaftClient? client;
@@ -86,6 +88,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
 
   Future<void> restore() async {
     try {
+      await sessionOwner.acquire();
+      if (!mounted) {
+        sessionOwner.release();
+        return;
+      }
       final p = await SharedPreferences.getInstance();
       origin = p.getString('raft.origin') ?? origin;
       appearance = RaftAppearance(
@@ -148,6 +155,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     String base,
     Future<void> Function(RaftClient) action,
   ) async {
+    await sessionOwner.acquire();
+    if (!mounted) return;
     final attempt = ++authAttempt;
     final c = authClient(base, attempt);
     bool current() => mounted && attempt == authAttempt;
@@ -333,7 +342,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     } else {
       client?.dispose();
     }
-    flushed.whenComplete(() => cache?.close());
+    flushed.whenComplete(() async {
+      await cache?.close();
+      sessionOwner.release();
+    });
     super.dispose();
   }
 

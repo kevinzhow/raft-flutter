@@ -19,17 +19,19 @@ class NotificationSettingsView extends StatelessWidget {
             raftText(
               context,
               service.receivesMessages
-                  ? 'Messages arrive while Raft is running and connected. Background push is not configured.'
+                  ? 'Messages arrive while connected. Background inbox checks provide a fallback when the system allows them; delivery may be delayed.'
                   : 'This server does not send desktop message notifications. You can test system delivery.',
             ),
           ),
           value: service.enabled,
           onChanged: service.requestEnable,
         ),
-        if (service.error != null)
+        if (service.backgroundError != null || service.error != null)
           Padding(
             padding: const EdgeInsets.all(12),
-            child: Text(raftText(context, service.error!)),
+            child: Text(
+              raftText(context, service.backgroundError ?? service.error!),
+            ),
           ),
         Wrap(
           spacing: 8,

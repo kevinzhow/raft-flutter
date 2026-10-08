@@ -96,7 +96,14 @@ void main() {
     await w.flushCache();
     expect(w.readState.state('s1', 'alice', 'c1')?['readStateVersion'], 7);
     w.dispose();
-    final restored = WorkspaceController(client, cache: db);
+    final restoredClient = RaftClient(
+      origin: client.origin,
+      sessionStore: client.sessionStore,
+      transport: Dio()..httpClientAdapter = _Transport(),
+    );
+    expect(await restoredClient.restore(), true);
+    expect(restoredClient.restoredOffline, true);
+    final restored = WorkspaceController(restoredClient, cache: db);
     await restored.selectServer(server);
     expect(restored.channel?.id, 'c1');
     expect(restored.readState.state('s1', 'alice', 'c1')?['maxReadSeq'], 5);

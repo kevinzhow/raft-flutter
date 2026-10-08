@@ -1,20 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'background_inbox.dart';
+import 'background_notifications.dart'
+    show notificationInitialization, notificationDetails;
 
 class NotificationPreferenceStore {
-  Future<bool?> read(String key) async =>
-      (await SharedPreferences.getInstance()).getBool(key);
+  Future<bool?> read(String key) async {
+    final p = await SharedPreferences.getInstance();
+    await p.reload();
+    return p.getBool(key);
+  }
+
   Future<bool> write(String key, bool value) async =>
       (await SharedPreferences.getInstance()).setBool(key, value);
 }
 
-/// Local OS delivery while the app's authenticated Socket connection is alive.
-/// Android remote/background push is intentionally not registered here.
+/// Local OS delivery for authenticated Socket events and scheduled inbox fetch.
 class NativeNotificationService extends ChangeNotifier {
   NativeNotificationService({
     FlutterLocalNotificationsPlugin? plugin,
@@ -34,13 +41,37 @@ class NativeNotificationService extends ChangeNotifier {
   int _epoch = 0, _id = 0;
   bool enabled = false, permitted = false, available = false;
   bool _wanted = false;
-  String? error;
+  String? error, backgroundError;
+  void setBackgroundError(String? value) {
+    if (backgroundError == value) return;
+    backgroundError = value;
+    notifyListeners();
+  }
+
   void Function(String)? onTap;
-  bool get receivesMessages => _platform == TargetPlatform.android;
+  bool get receivesMessages =>
+      _platform == TargetPlatform.android || _platform == TargetPlatform.iOS;
   bool get canOpenSettings =>
-      _platform == TargetPlatform.android || _platform == TargetPlatform.macOS;
+      _platform == TargetPlatform.android ||
+      _platform == TargetPlatform.iOS ||
+      _platform == TargetPlatform.macOS;
 
   Future<bool> _permission({bool request = false}) async {
+    if (_platform == TargetPlatform.iOS) {
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      if (request) {
+        return await ios?.requestPermissions(
+              alert: true,
+              badge: true,
+              sound: true,
+            ) ??
+            false;
+      }
+      return (await ios?.checkPermissions())?.isEnabled ?? false;
+    }
     if (_platform == TargetPlatform.macOS) {
       final mac = _plugin
           .resolvePlatformSpecificImplementation<
@@ -66,18 +97,7 @@ class NativeNotificationService extends ChangeNotifier {
     try {
       available =
           await _plugin.initialize(
-            settings: const InitializationSettings(
-              android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-              macOS: DarwinInitializationSettings(
-                requestAlertPermission: false,
-                requestBadgePermission: false,
-                requestSoundPermission: false,
-                defaultPresentBadge: false,
-              ),
-              linux: LinuxInitializationSettings(
-                defaultActionName: 'Open Raft',
-              ),
-            ),
+            settings: notificationInitialization,
             onDidReceiveNotificationResponse: (response) {
               if (response.payload != null) onTap?.call(response.payload!);
             },
@@ -141,8 +161,7 @@ class NativeNotificationService extends ChangeNotifier {
     notifyListeners();
   }
 
-  String _key(String scope) =>
-      'raft.notifications.${sha256.convert(utf8.encode(scope))}';
+  String _key(String scope) => notificationPreferenceKey(scope);
 
   Future<void> requestEnable(bool value) async {
     final scope = _scope, epoch = _epoch, revision = ++_preferenceRevision;
@@ -247,23 +266,13 @@ class NativeNotificationService extends ChangeNotifier {
       await refreshPermission();
       if (epoch != _epoch || !enabled || !permitted || !available) return;
       try {
+        error = null;
         await _plugin.show(
-          id: ++_id,
+          id: _notificationId(payload),
           title: title,
           body: body,
           payload: payload,
-          notificationDetails: const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'raft_messages_v1',
-              'Raft messages',
-              channelDescription: 'Direct messages, mentions and followed threads while Raft is connected.',
-              importance: Importance.high,
-              priority: Priority.high,
-              visibility: NotificationVisibility.private,
-            ),
-            linux: LinuxNotificationDetails(),
-            macOS: DarwinNotificationDetails(),
-          ),
+          notificationDetails: notificationDetails,
         );
       } catch (_) {
         error = 'The system notification could not be delivered.';
@@ -273,12 +282,27 @@ class NativeNotificationService extends ChangeNotifier {
     await _tail;
   }
 
+  int _notificationId(String payload) {
+    try {
+      final p = jsonDecode(payload);
+      final uri = Uri.parse(p['uri'] as String);
+      final message = uri.queryParameters['messageId'] ?? uri.pathSegments.last;
+      return messageNotificationId(_scope!, message);
+    } catch (_) {
+      return ++_id;
+    }
+  }
+
   Future<void> test() => show(
     title: 'Raft',
     body: 'System notifications are enabled. Click to return to Raft.',
     payload: 'raft-notification-test',
   );
   Future<void> openSettings() async {
+    if (_platform == TargetPlatform.iOS) {
+      await launchUrl(Uri.parse('app-settings:'));
+      return;
+    }
     if (_platform == TargetPlatform.android) {
       await _plugin
           .resolvePlatformSpecificImplementation<

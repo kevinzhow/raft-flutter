@@ -113,6 +113,18 @@ void main() {
     await refresh;
     expect(client.signedIn, false);
   });
+  test('disposing a UI or background owner during rotation cannot persist a late session', () async {
+    adapter.gate = Completer<void>();
+    final rotation = client.refresh();
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    await client.dispose();
+    adapter.gate!.complete();
+    await rotation;
+    expect(client.signedIn, false);
+    expect(client.user, isNull);
+    final saved = await client.sessionStore.read(client.origin);
+    expect(saved?.refreshToken, isNot('rotated'));
+  });
   test(
     'server exit acknowledgement survives its own membership revocation',
     () async {

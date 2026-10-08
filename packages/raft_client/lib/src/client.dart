@@ -679,6 +679,10 @@ class RaftClient {
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;
+    _generation++;
+    _authenticationGeneration++;
+    _session = null;
+    user = null;
     _authRetry?.cancel();
     _socket?.dispose();
     await _events.close();
