@@ -5,34 +5,34 @@
  "totals": {
   "style.border_radius": 21,
   "style.color_literal": 1,
-  "style.dimension": 94,
+  "style.dimension": 93,
   "style.duration": 3,
-  "style.edge_insets": 123,
+  "style.edge_insets": 117,
   "style.font_size": 2,
   "style.font_weight": 15,
   "style.material_colors": 33,
-  "style.material_icons": 42,
-  "style.material_theme": 52,
-  "style.sized_box": 134,
+  "style.material_icons": 41,
+  "style.material_theme": 50,
+  "style.sized_box": 130,
   "style.text_metrics": 5,
   "style.text_style": 26,
   "widget.app_bar": 8,
-  "widget.button": 73,
-  "widget.chip": 8,
-  "widget.dialog": 73,
+  "widget.button": 70,
+  "widget.chip": 7,
+  "widget.dialog": 65,
   "widget.divider": 12,
   "widget.icon_button": 20,
   "widget.ink": 4,
-  "widget.list_tile": 83,
+  "widget.list_tile": 81,
   "widget.menu": 25,
   "widget.navigation": 1,
-  "widget.other": 22,
-  "widget.progress": 19,
+  "widget.other": 20,
+  "widget.progress": 18,
   "widget.scaffold": 13,
-  "widget.select": 14,
+  "widget.select": 8,
   "widget.snackbar": 38,
-  "widget.surface": 18,
-  "widget.text_field": 45,
+  "widget.surface": 17,
+  "widget.text_field": 38,
   "widget.toggle": 1,
   "widget.tooltip": 6
  },
@@ -87,17 +87,10 @@
    "widget.list_tile": 9
   },
   "apps/raft_flutter/lib/features/agent_apps_view.dart": {
-   "style.edge_insets": 1,
-   "style.material_icons": 1,
-   "style.material_theme": 1,
    "style.sized_box": 1,
    "widget.button": 1,
    "widget.dialog": 1,
-   "widget.list_tile": 1,
-   "widget.other": 1,
-   "widget.select": 3,
-   "widget.surface": 1,
-   "widget.text_field": 1
+   "widget.other": 1
   },
   "apps/raft_flutter/lib/features/agent_migration_view.dart": {
    "style.edge_insets": 1,
@@ -284,9 +277,6 @@
    "widget.progress": 1,
    "widget.select": 1
   },
-  "apps/raft_flutter/lib/features/managed_agent_launcher.dart": {
-   "widget.dialog": 7
-  },
   "apps/raft_flutter/lib/features/management_support.dart": {
    "style.dimension": 2,
    "style.edge_insets": 4,
@@ -310,11 +300,6 @@
    "widget.list_tile": 3,
    "widget.other": 1,
    "widget.surface": 1
-  },
-  "apps/raft_flutter/lib/features/member_profile_view.dart": {
-   "style.edge_insets": 4,
-   "style.sized_box": 1,
-   "widget.other": 2
   },
   "apps/raft_flutter/lib/features/message_action_card.dart": {
    "widget.dialog": 1,
@@ -409,19 +394,6 @@
    "widget.progress": 1,
    "widget.select": 1,
    "widget.surface": 2,
-   "widget.text_field": 6
-  },
-  "apps/raft_flutter/lib/features/runtime_form_dialog.dart": {
-   "style.dimension": 1,
-   "style.edge_insets": 1,
-   "style.material_theme": 1,
-   "style.sized_box": 3,
-   "widget.button": 3,
-   "widget.chip": 1,
-   "widget.dialog": 1,
-   "widget.list_tile": 1,
-   "widget.progress": 1,
-   "widget.select": 3,
    "widget.text_field": 6
   },
   "apps/raft_flutter/lib/features/search_home.dart": {
