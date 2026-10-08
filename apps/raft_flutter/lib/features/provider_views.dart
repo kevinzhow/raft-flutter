@@ -216,7 +216,7 @@ class _ProviderConnectionsState
                     trailing: a['deleted'] == true
                         ? IconButton(
                             tooltip: 'Detach deleted agent',
-                            icon: const Icon(Icons.link_off),
+                            icon: const RaftIcon(RaftGlyph.link2Off, size: 15),
                             onPressed: () {
                               detachId = a['id'];
                               Navigator.pop(context);
@@ -507,7 +507,12 @@ class _ProviderConnectionsState
     ],
     actions: [
       if (enabled && w.can('manageExternalAuth'))
-        action('Add provider', () => run(create), icon: Icons.add),
+        action(
+          'Add provider',
+          () => run(create),
+          glyph: RaftGlyph.plus,
+          glyphSize: 16,
+        ),
     ],
   );
 }

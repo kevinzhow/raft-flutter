@@ -399,7 +399,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
                 )
               : kind == 'video' && player != null
               ? player!.video()
-              : const Center(child: Icon(Icons.music_note, size: 72)),
+              : const Center(child: RaftIcon(RaftGlyph.music, size: 72)),
         ),
         if (current && player != null && !loading && error == null)
           RaftMediaControls(

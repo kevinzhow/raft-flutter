@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import 'theme.dart';
 import 'design_primitives.dart';
+import 'icons.dart';
 
 /// A window-sized workspace layout. Panel sizes follow the Web panel contract.
 /// The host owns navigation, persistence, and the mobile application bar.
@@ -303,12 +304,14 @@ class RaftRailDestination {
   const RaftRailDestination({
     required this.id,
     required this.label,
-    required this.icon,
+    this.icon,
+    this.glyph,
     this.iconWidget,
     this.unread = 0,
-  });
+  }) : assert(icon != null || glyph != null || iconWidget != null);
   final String id, label;
-  final IconData icon;
+  final IconData? icon;
+  final RaftGlyph? glyph;
   final Widget? iconWidget;
   final int unread;
 }
@@ -433,7 +436,12 @@ class RaftWorkspaceRail extends StatelessWidget {
                                 ),
                                 child:
                                     d.iconWidget ??
-                                    Icon(d.icon, size: recipe.glyphSize),
+                                    (d.glyph != null
+                                        ? RaftIcon(
+                                            d.glyph!,
+                                            size: recipe.glyphSize,
+                                          )
+                                        : Icon(d.icon, size: recipe.glyphSize)),
                               ),
                             ),
                             onPressed: () => onSelected(d.id),

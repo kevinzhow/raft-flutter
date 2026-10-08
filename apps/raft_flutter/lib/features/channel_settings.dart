@@ -298,7 +298,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                 IconButton(
                   tooltip: raftText(context, 'Close channel settings'),
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close),
+                  icon: const RaftIcon(RaftGlyph.x, size: 20),
                 ),
               ],
             ),
@@ -415,7 +415,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                               !channel.archived)
                             TextButton.icon(
                               onPressed: busy ? null : addMembers,
-                              icon: const Icon(Icons.person_add_outlined),
+                              icon: const RaftIcon(RaftGlyph.plus, size: 16),
                               label: Text(raftText(context, 'Add members')),
                             ),
                         ],
@@ -570,7 +570,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                                     : 'Archive channel',
                               ),
                             ),
-                            leading: const Icon(Icons.archive_outlined),
+                            leading: RaftIcon(
+                              channel.archived
+                                  ? RaftGlyph.archiveRestore
+                                  : RaftGlyph.archive,
+                              size: 14,
+                            ),
                             onTap: () => confirm(
                               channel.archived
                                   ? 'Unarchive channel?'
@@ -584,7 +589,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(raftText(context, 'Leave channel')),
-                            leading: const Icon(Icons.logout),
+                            leading: const RaftIcon(RaftGlyph.logOut, size: 14),
                             onTap: () => confirm(
                               'Leave channel?',
                               'You can rejoin a public channel later.',
@@ -596,7 +601,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             title: Text(raftText(context, 'Delete channel')),
-                            leading: const Icon(Icons.delete_outline),
+                            leading: const RaftIcon(RaftGlyph.trash2, size: 14),
                             onTap: () async {
                               final accepted = await showDialog<bool>(
                                 context: context,

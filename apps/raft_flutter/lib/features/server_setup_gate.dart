@@ -424,7 +424,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
         IconButton(
           tooltip: raftText(context, 'Copy command'),
           onPressed: () => Clipboard.setData(ClipboardData(text: command)),
-          icon: const Icon(Icons.copy),
+          // raft-ui CopyableCodeAction: lucide Copy, size-3, strokeWidth 1.75.
+          icon: const RaftIcon(RaftGlyph.copy, size: 12, strokeWidth: 1.75),
         ),
       ],
     ),

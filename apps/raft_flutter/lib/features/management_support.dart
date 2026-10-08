@@ -357,12 +357,22 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
       style: Theme.of(context).textTheme.titleMedium,
     ),
   );
-  Widget action(String label, VoidCallback? callback, {IconData? icon}) =>
-      TextButton.icon(
-        onPressed: busy ? null : callback,
-        icon: Icon(icon ?? Icons.chevron_right),
-        label: Text(raftText(context, label)),
-      );
+
+  /// [glyph] (with the Web's icon size) wins over [icon]; see
+  /// docs/glyph-mapping.md for the Web element each call site mirrors.
+  Widget action(
+    String label,
+    VoidCallback? callback, {
+    IconData? icon,
+    RaftGlyph? glyph,
+    double glyphSize = 14,
+  }) => TextButton.icon(
+    onPressed: busy ? null : callback,
+    icon: glyph != null
+        ? RaftIcon(glyph, size: glyphSize)
+        : Icon(icon ?? Icons.chevron_right),
+    label: Text(raftText(context, label)),
+  );
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);

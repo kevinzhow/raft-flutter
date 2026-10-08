@@ -416,7 +416,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
                 onTap: busy ? null : () => run(() => editSection(section)),
                 trailing: IconButton(
                   tooltip: raftText(context, 'Remove section'),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const RaftIcon(RaftGlyph.trash2, size: 14),
                   onPressed: busy
                       ? null
                       : () => run(() => deleteSection(section)),
