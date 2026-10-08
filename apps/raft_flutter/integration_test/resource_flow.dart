@@ -294,16 +294,18 @@ Future<void> verifyActivityThreadLifecycle(
     }
     for (var retry = 0; retry < 30 && !hasOwnRow(); retry++) {
       // The source's RisingWave list projection converges after its durable
-      // acknowledgement. Use the real refresh action; do not bypass it with
+      // acknowledgement. Use the mounted filter controls to reload; do not bypass them with
       // a canonical-only query or manufacture a row from the write receipt.
       await tester.pump(const Duration(milliseconds: 300));
-      await tester.tap(
-        find.descendant(
-          of: find.byType(ResourceView),
-          matching: find.byTooltip('Refresh'),
-        ),
-      );
-      await loaded();
+      for (final filter in ['Unread', 'All']) {
+        final tab = find.descendant(
+          of: find.byType(RaftSegmentedControl<String>),
+          matching: find.text(filter),
+        );
+        await tester.ensureVisible(tab);
+        await tester.tap(tab);
+        await loaded();
+      }
     }
     expect(
       hasOwnRow(),
