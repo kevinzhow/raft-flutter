@@ -319,23 +319,6 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (mediaError != null) ...[
-            // `text-xs font-bold text-brutal-red` alert above the form.
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                mediaError!,
-                style: RaftTypography.body(
-                  t,
-                  size: 12,
-                  line: 16,
-                  weight: FontWeight.w700,
-                  color: t.colors['color-brutal-red'] ?? t.colors['danger'],
-                ),
-              ),
-            ),
-            const SizedBox(height: RaftSpace.x3),
-          ],
           RaftSettingsField(
             label: 'Display Name',
             child: RaftRecipeInput(
@@ -400,20 +383,13 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
               ],
             ),
           ),
-          if (profileError != null) ...[
+          if (profileError != null || mediaError != null) ...[
             const SizedBox(height: RaftSpace.x3),
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                profileError!,
-                style: RaftTypography.body(
-                  t,
-                  size: 12,
-                  line: 16,
-                  weight: FontWeight.w700,
-                  color: t.colors['danger'],
-                ),
-              ),
+            // AccountSection puts both profile and avatar failures in the
+            // same warning Banner after Email, before the save control.
+            RaftBanner(
+              description: profileError ?? mediaError!,
+              size: RaftBannerRecipeSize.sm,
             ),
           ],
           const SizedBox(height: RaftSpace.x3),

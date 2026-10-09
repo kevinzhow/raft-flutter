@@ -12,6 +12,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_mode_store.dart';
 import 'workspace_grid_view.dart';
+import 'workspace_mode_settings_card.dart';
 import '../data/personal_presentation.dart';
 import '../data/sidebar_disclosure.dart';
 import 'message_reference_directory.dart';
@@ -2124,18 +2125,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     onCreated: (channel) => chooseChannel(channel),
   );
 
-  Widget? modeCard() {
-    if (!workspaceMode.showCard) return null;
-    final capturedAuthority = workspaceMode.authority;
-    return RaftWorkspaceModeCard(
-      enabled: workspaceMode.enabled,
-      onChanged: (value) {
-        if (!mounted || capturedAuthority != workspaceMode.authority) return;
-        gridKey.currentState?.flushDrafts();
-        workspaceMode.setEnabled(value, capturedAuthority: capturedAuthority);
-      },
-    );
-  }
+  Widget modeCard() => WorkspaceModeSettingsCard(
+    controller: w,
+    store: workspaceMode,
+    onBeforeChange: () => gridKey.currentState?.flushDrafts(),
+  );
 
   Widget settings() {
     final scope = mobileAuthority;

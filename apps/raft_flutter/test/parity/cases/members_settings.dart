@@ -43,6 +43,7 @@ import 'package:raft_flutter/features/managed_agent_launcher.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
 import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
+import 'package:raft_flutter/features/workspace_mode_settings_card.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -562,13 +563,23 @@ ParityCase _settings(
       ? (t, ctx) async {
           await t.pump(const Duration(milliseconds: 100));
           final trigger = find.byKey(const Key('account-profile-image'));
-          await t.ensureVisible(trigger);
-          await t.pump(const Duration(milliseconds: 50));
+          // The avatar is already within the mounted viewport. Source's
+          // initial-error fixture keeps its initial scroll position; a real
+          // upload failure must likewise leave this visible page in place.
+          expect(
+            t
+                .getRect(trigger)
+                .overlaps(
+                  Offset.zero & t.view.physicalSize / t.view.devicePixelRatio,
+                ),
+            true,
+          );
           await t.tap(trigger);
           await t.pump(const Duration(milliseconds: 100));
           await t.pump(const Duration(milliseconds: 100));
-          await t.ensureVisible(
+          expect(
             find.text('Avatar upload failed: upload_failed'),
+            findsOneWidget,
           );
           await t.pump(const Duration(milliseconds: 50));
         }
@@ -589,4 +600,5 @@ Widget _settingsPage(
   onLogout: () async {},
   initialTab: tab,
   mobileRoot: root,
+  workspaceModeCard: WorkspaceModeSettingsCard(controller: w),
 );
