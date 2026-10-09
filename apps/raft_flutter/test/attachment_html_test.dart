@@ -35,13 +35,18 @@ class HtmlAdapter implements HttpClientAdapter {
 
 class PendingHtmlLoader extends AttachmentHtmlLoader {
   final pending = Completer<String?>();
+  final loadStarted = Completer<void>();
   int verified = 0;
   @override
   Future<String?> load(
     Uri uri, {
     required CancelToken cancel,
     required bool Function() authorized,
-  }) => pending.future;
+  }) {
+    loadStarted.complete();
+    return pending.future;
+  }
+
   @override
   Future<bool> verify(
     Uri uri, {
@@ -51,6 +56,25 @@ class PendingHtmlLoader extends AttachmentHtmlLoader {
     verified++;
     return authorized();
   }
+}
+
+// Dio's interceptor queue spans the real async zone and the widget fake zone.
+// Drain both until the observed callback completes; a fixed sleep only runs
+// one zone and does not prove that the capability request reached the loader.
+Future<void> waitForHtmlCompletion(
+  WidgetTester tester,
+  bool Function() completed,
+) async {
+  final deadline = Stopwatch()..start();
+  while (!completed() && deadline.elapsed < const Duration(seconds: 5)) {
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await tester.pump(const Duration(milliseconds: 1));
+  }
+  expect(
+    completed(),
+    isTrue,
+    reason: 'The actual HTML callback must complete.',
+  );
 }
 
 void main() {
@@ -182,9 +206,7 @@ void main() {
           ),
         ),
       );
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 30)),
-      );
+      await waitForHtmlCompletion(tester, () => loader.loadStarted.isCompleted);
       authorized = false;
       w.setError(null);
       loader.pending.complete('<h1>Private late document</h1>');
@@ -204,6 +226,7 @@ void main() {
       };
       final loader = PendingHtmlLoader();
       Uri? opened;
+      final externalOpened = Completer<void>();
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),
@@ -217,15 +240,14 @@ void main() {
               loader: loader,
               openExternal: (uri) async {
                 opened = uri;
+                externalOpened.complete();
                 return true;
               },
             ),
           ),
         ),
       );
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 30)),
-      );
+      await waitForHtmlCompletion(tester, () => loader.loadStarted.isCompleted);
       loader.pending.complete('<h1>Native document</h1>');
       await tester.pumpAndSettle();
       expect(opened, isNull);
@@ -237,10 +259,11 @@ void main() {
               widget.label == 'Open interactive preview in browser',
         ),
       );
-      await tester.runAsync(() async {
-        button.onPressed!();
-        await Future<void>.delayed(const Duration(milliseconds: 30));
-      });
+      expect(button.onPressed, isNotNull);
+      await tester.tap(
+        find.byWidgetPredicate((widget) => identical(widget, button)),
+      );
+      await waitForHtmlCompletion(tester, () => externalOpened.isCompleted);
       expect(loader.verified, 1);
       expect(opened?.path, '/api/attachments/a/html-preview');
       expect(
