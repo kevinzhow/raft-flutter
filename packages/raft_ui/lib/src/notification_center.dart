@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
+import 'recipes/notification_center.g.dart';
 import 'theme.dart';
 
 /// Pure status roles from raft-ui 0.5.27; the mounted app emits the first three.
@@ -61,7 +63,6 @@ abstract final class _NotificationPrimitives {
   static const warningMuted = Color(0xffac571d);
   static const infoMuted = Color(0xff007592);
   static const successMuted = Color(0xff0c7d43);
-  static const insetLight = Color(0xfffafaf7);
   static const badgeHighlight = Color(0x8cffffff);
   static const double badgeInsetOffset = .5, badgeInsetBlurSigma = .5;
   static const emptyOuterInset = EdgeInsets.symmetric(
@@ -188,10 +189,6 @@ class RaftNotificationRecipe {
     line: 20,
     color: tokens.brutal ? tokens.ink : tokens.muted,
   );
-
-  /// `--theme-shadow-lg` outer layers (Brutal 4px 4px black; Elegant drops).
-  /// Elegant dark's inset highlight layers are not painted here.
-  List<BoxShadow> get shadows => tokens.themeShadows.lg.outer;
 }
 
 /// Controlled, noninteractive attention mark. The bell owns its count semantics.
@@ -299,6 +296,11 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final r = RaftNotificationRecipe(t);
+    final popup = RaftNotificationCenterRecipe.resolve(
+      theme: t.recipeTheme,
+      states: t.recipeStates(),
+      tokens: t.recipeTokens,
+    ).popup;
     final count =
         widget.countLabel ??
         (widget.entries.isEmpty
@@ -320,122 +322,114 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
             explicitChildNodes: true,
             role: SemanticsRole.dialog,
             label: raftText(context, widget.semanticLabel),
-            child: Container(
+            child: RaftRecipeBox(
               key: const Key('notification-center-surface'),
+              style: popup,
+              tokens: t.recipeTokens,
+              applyText: false,
               width: widget.width,
               height: widget.height,
-              decoration: BoxDecoration(
-                color: r.background,
-                borderRadius: r.radius,
-                border: t.brutal ? Border.fromBorderSide(r.divider) : null,
-                boxShadow: r.shadows,
-              ),
               child: ClipRRect(
                 borderRadius: r.radius,
-                child: CustomPaint(
-                  foregroundPainter: t.dark && !t.brutal
-                      ? _NotificationInsetPainter(r.radius)
-                      : null,
-                  child: Column(
-                    children: [
-                      Container(
-                        key: const Key('notification-center-header'),
-                        padding: r.headerInset,
-                        decoration: BoxDecoration(
-                          color: r.headerBackground,
-                          border: Border(bottom: r.divider),
-                        ),
-                        child: LayoutBuilder(
-                          builder: (context, bounds) => Row(
-                            children: [
-                              Expanded(
-                                child: Semantics(
-                                  header: true,
-                                  child: Text(
-                                    t.brutal
-                                        ? raftText(
-                                            context,
-                                            widget.title,
-                                          ).toUpperCase()
-                                        : raftText(context, widget.title),
-                                    style: r.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(
-                                width: _NotificationPrimitives.headerGap,
-                              ),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: bounds.maxWidth / 2,
-                                ),
+                child: Column(
+                  children: [
+                    Container(
+                      key: const Key('notification-center-header'),
+                      padding: r.headerInset,
+                      decoration: BoxDecoration(
+                        color: r.headerBackground,
+                        border: Border(bottom: r.divider),
+                      ),
+                      child: LayoutBuilder(
+                        builder: (context, bounds) => Row(
+                          children: [
+                            Expanded(
+                              child: Semantics(
+                                header: true,
                                 child: Text(
-                                  count,
-                                  style: r.count,
+                                  t.brutal
+                                      ? raftText(
+                                          context,
+                                          widget.title,
+                                        ).toUpperCase()
+                                      : raftText(context, widget.title),
+                                  style: r.title,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(
+                              width: _NotificationPrimitives.headerGap,
+                            ),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(
+                                maxWidth: bounds.maxWidth / 2,
+                              ),
+                              child: Text(
+                                count,
+                                style: r.count,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          key: const Key('notification-center-scroller'),
-                          child: widget.entries.isEmpty
-                              ? _empty(context, r)
-                              : Semantics(
-                                  // Scrollable contributes its own semantics
-                                  // node. The actual list belongs inside it so
-                                  // every list item has a list parent.
-                                  container: true,
-                                  explicitChildNodes: true,
-                                  role: SemanticsRole.list,
-                                  label: raftText(context, widget.listLabel),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      for (
-                                        var i = 0;
-                                        i < widget.entries.length;
-                                        i++
-                                      ) ...[
-                                        if (i > 0)
-                                          SizedBox(
-                                            height: r.divider.width,
-                                            child: ColoredBox(
-                                              color: r.divider.color,
-                                            ),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        key: const Key('notification-center-scroller'),
+                        child: widget.entries.isEmpty
+                            ? _empty(context, r)
+                            : Semantics(
+                                // Scrollable contributes its own semantics
+                                // node. The actual list belongs inside it so
+                                // every list item has a list parent.
+                                container: true,
+                                explicitChildNodes: true,
+                                role: SemanticsRole.list,
+                                label: raftText(context, widget.listLabel),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    for (
+                                      var i = 0;
+                                      i < widget.entries.length;
+                                      i++
+                                    ) ...[
+                                      if (i > 0)
+                                        SizedBox(
+                                          height: r.divider.width,
+                                          child: ColoredBox(
+                                            color: r.divider.color,
                                           ),
-                                        _NotificationRow(
-                                          key: ValueKey(
-                                            'notification-entry-${widget.entries[i].id}',
-                                          ),
-                                          entry: widget.entries[i],
-                                          recipe: r,
-                                          openingActionFocus:
-                                              openingAction?.$1 ==
-                                                  widget.entries[i].id
-                                              ? openingActionFocus
-                                              : null,
-                                          openingActionLabel:
-                                              openingAction?.$1 ==
-                                                  widget.entries[i].id
-                                              ? openingAction?.$2
-                                              : null,
                                         ),
-                                      ],
+                                      _NotificationRow(
+                                        key: ValueKey(
+                                          'notification-entry-${widget.entries[i].id}',
+                                        ),
+                                        entry: widget.entries[i],
+                                        recipe: r,
+                                        openingActionFocus:
+                                            openingAction?.$1 ==
+                                                widget.entries[i].id
+                                            ? openingActionFocus
+                                            : null,
+                                        openingActionLabel:
+                                            openingAction?.$1 ==
+                                                widget.entries[i].id
+                                            ? openingAction?.$2
+                                            : null,
+                                      ),
                                     ],
-                                  ),
+                                  ],
                                 ),
-                        ),
+                              ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -649,34 +643,6 @@ class _NotificationActionRecipe extends RaftControlRecipe {
   Color backgroundFor({bool hovered = false}) => tokens.brutal && primary
       ? background
       : super.backgroundFor(hovered: hovered);
-}
-
-class _NotificationInsetPainter extends CustomPainter {
-  const _NotificationInsetPainter(this.radius);
-  final BorderRadius radius;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.save();
-    canvas.clipRRect(radius.toRRect(rect));
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    canvas.drawRRect(
-      radius.toRRect(rect.deflate(.5)),
-      paint..color = _NotificationPrimitives.insetLight.withValues(alpha: .04),
-    );
-    canvas.drawLine(
-      const Offset(0, .5),
-      Offset(size.width, .5),
-      paint..color = _NotificationPrimitives.insetLight.withValues(alpha: .06),
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_NotificationInsetPainter oldDelegate) =>
-      oldDelegate.radius != radius;
 }
 
 // Native drawing of Status's inset 0 .5px 1px white/55% shadow.

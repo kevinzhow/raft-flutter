@@ -1705,6 +1705,12 @@ class _RaftComposerState extends State<RaftComposer> {
       if (succeeded && mounted && controller.text == draft) {
         mentions.clear();
         controller.clear();
+        // Programmatic clearing does not invoke TextField.onChanged. Release
+        // the old draft's insertion handle so its overlay cannot cover the
+        // toolbar while the empty editor stays focused for the next draft.
+        focus.context
+            ?.findAncestorStateOfType<EditableTextState>()
+            ?.hideToolbar();
       }
     } finally {
       if (mounted) {
@@ -2002,7 +2008,9 @@ class _RaftComposerState extends State<RaftComposer> {
                                         // above the Source composer toolbar.
                                         if (controller.selection.isCollapsed) {
                                           focus.context
-                                              ?.findAncestorStateOfType<EditableTextState>()
+                                              ?.findAncestorStateOfType<
+                                                EditableTextState
+                                              >()
                                               ?.hideToolbar();
                                         }
                                       },

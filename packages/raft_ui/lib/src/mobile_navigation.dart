@@ -6,6 +6,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'primitive_tokens.dart';
+import 'recipe_surface.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
 
@@ -687,27 +688,36 @@ class RaftMobileNotificationButton extends StatelessWidget {
       onPressed: onPressed,
       semanticLabel: raftText(context, semanticLabel),
       tooltip: raftText(context, semanticLabel),
-      builder: (context, state) => AnimatedContainer(
-        duration: MediaQuery.disableAnimationsOf(context)
-            ? Duration.zero
-            : RaftPrimitives.controlDuration,
-        width: visualSize,
-        height: visualSize,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: recipe.backgroundFor(hovered: state.hovered),
-          border: Border.fromBorderSide(recipe.side(hovered: state.hovered)),
-          borderRadius: recipe.radius,
-          boxShadow: recipe.shadows(
-            hovered: state.hovered,
-            pressed: state.pressed,
-            focused: state.focusVisible,
-          ),
+      builder: (context, state) => CustomPaint(
+        painter: RaftOuterShadowPainter(
+          recipe.shadows(focused: state.focusVisible),
+          recipe.radius,
         ),
-        child: RaftIcon(
-          RaftGlyph.bell,
-          size: glyphSize,
-          color: recipe.foreground,
+        child: AnimatedContainer(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : RaftPrimitives.controlDuration,
+          width: visualSize,
+          height: visualSize,
+          alignment: Alignment.center,
+          decoration: RaftLayeredDecoration(
+            BoxDecoration(
+              color: recipe.backgroundFor(hovered: state.hovered),
+              border: Border.fromBorderSide(
+                recipe.side(hovered: state.hovered),
+              ),
+              borderRadius: recipe.radius,
+            ),
+            open ? t.themeShadows.sm.inset : const [],
+            recipe.radius,
+            null,
+            EdgeInsets.all(t.brutal ? 2 : 1),
+          ),
+          child: RaftIcon(
+            RaftGlyph.bell,
+            size: glyphSize,
+            color: recipe.foreground,
+          ),
         ),
       ),
     );
@@ -751,7 +761,17 @@ class _MobileNotificationRecipe extends RaftControlRecipe {
     bool pressed = false,
     bool focused = false,
   }) => [
-    if (selected) ...tokens.shadows,
+    // NotificationTrigger.tsx explicitly uses shadow-raft-sm in every mode.
+    // Keep CSS order and blur conversion, including Elegant dark's sm layers.
+    if (selected)
+      for (final layer in tokens.themeShadows.sm.layers.reversed)
+        if (!layer.inset)
+          BoxShadow(
+            color: layer.color,
+            offset: layer.offset,
+            spreadRadius: layer.spread,
+            blurRadius: raftCssBlurRadius(layer.blur),
+          ),
     if (focused)
       BoxShadow(color: tokens.colors['line-strong']!, spreadRadius: 2),
   ];

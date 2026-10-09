@@ -35,6 +35,7 @@ class _Client extends RaftClient {
 
 class _Workspace extends WorkspaceController {
   _Workspace(super.client);
+  List<Map<String, dynamic>> directoryAgents = [];
   @override
   Future<void> refreshUnread() async {}
   @override
@@ -62,7 +63,7 @@ class _Workspace extends WorkspaceController {
         {'userId': 'visual-user', 'displayName': 'artin'},
       ];
     }
-    if (path == '/agents') return [];
+    if (path == '/agents') return directoryAgents;
     return {};
   }
 }
@@ -139,6 +140,44 @@ void main() {
         find.text('Align the tabbar capture crops between React and Android'),
         findsOneWidget,
       );
+      expect(t.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'Saved resolves current directory names and pixel avatars inside source mini frames',
+    (t) async {
+      final savedAgent = (pageSavedFixture['saved'] as List)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((row) => row['senderType'] == 'agent');
+      w.directoryAgents = [
+        {
+          'id': savedAgent['senderId'],
+          'name': 'current-agent',
+          'displayName': 'Current Agent',
+          'avatarUrl': 'pixel:robot',
+        },
+      ];
+      await mount(t, 'saved', const Size(390, 844));
+      final card = find.byKey(ValueKey('saved-${savedAgent['messageId']}'));
+      expect(
+        find.descendant(of: card, matching: find.text('Current Agent')),
+        findsOneWidget,
+      );
+      final avatar = find.descendant(
+        of: card,
+        matching: find.byType(RaftAvatarSlot),
+      );
+      expect(t.getSize(avatar), const Size(14, 14));
+      final pixels = find.descendant(
+        of: avatar,
+        matching: find.byType(RaftPixelAvatar),
+      );
+      expect(t.widget<RaftPixelAvatar>(pixels).avatarKey, 'robot');
+      w.server = RaftRecord({'id': 's', 'role': 'guest'});
+      w.notifyListeners();
+      await t.pumpAndSettle();
+      expect(card, findsNothing);
+      expect(find.byType(RaftPixelAvatar), findsNothing);
       expect(t.takeException(), isNull);
     },
   );

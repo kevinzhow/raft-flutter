@@ -208,7 +208,9 @@ class _LoadingRowsState extends State<RaftChatSidebarLoadingRows>
                         widthFactor: .6,
                         child: Container(
                           height: 12,
-                          color: Colors.black.withValues(alpha: .1),
+                          // Match the source CSS black/10 alpha byte, as the
+                          // shared Skeleton primitive does (26/255).
+                          color: Colors.black.withAlpha(26),
                         ),
                       ),
                     ),

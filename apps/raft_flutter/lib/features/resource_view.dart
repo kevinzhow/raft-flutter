@@ -15,7 +15,7 @@ import 'resource_filters.dart';
 import 'page_layout.dart';
 import 'resource_cards.dart';
 import 'task_selection_filter.dart';
-import 'public_avatar_url.dart';
+import 'sender_avatar_projection.dart';
 import 'resource_search.dart';
 import '../platform/content_links.dart';
 
@@ -413,7 +413,7 @@ class _ResourceViewState extends State<ResourceView> {
         authorityChanged();
         return;
       }
-      if (widget.section == 'search' &&
+      if (['search', 'saved'].contains(widget.section) &&
           (event.name.startsWith('agent:') ||
               event.name.startsWith('machine:') ||
               event.name.startsWith('server:member'))) {
@@ -562,7 +562,7 @@ class _ResourceViewState extends State<ResourceView> {
       });
       return;
     }
-    if (['search', 'tasks', 'activity'].contains(widget.section)) {
+    if (['search', 'tasks', 'activity', 'saved'].contains(widget.section)) {
       unawaited(loadSenders(scope));
     }
     if (w.server == null ||
@@ -1528,7 +1528,31 @@ class _ResourceViewState extends State<ResourceView> {
     );
     final thread = row['channelType'] == 'thread';
     final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
-    final sender = '${row['senderName'] ?? ''}';
+    final senderId = '${row['senderId'] ?? ''}';
+    final agent = row['senderType'] == 'agent'
+        ? searchAgents.where((a) => a['id'] == senderId).firstOrNull
+        : null;
+    final person = row['senderType'] == 'user'
+        ? searchPeople
+              .where((m) => (m['userId'] ?? m['id']) == senderId)
+              .firstOrNull
+        : null;
+    final sender =
+        '${agent?['displayName'] ?? agent?['name'] ?? person?['displayName'] ?? person?['name'] ?? row['senderName'] ?? ''}';
+    final projection = projectSenderAvatar(
+      origin: w.client.origin,
+      senderId: senderId,
+      senderType: row['senderType'] == 'external_projection'
+          ? 'external_projection'
+          : agent != null
+          ? 'agent'
+          : 'user',
+      agents: searchAgents,
+      members: searchPeople,
+      currentUser: w.client.user?.json,
+      externalAuthor: {'avatarUrl': row['senderAvatarUrl']},
+      requestSize: 14,
+    );
     final label = dm
         ? '@$sender'
         : '#${thread ? row['parentChannelName'] : row['channelName']}';
@@ -1551,17 +1575,32 @@ class _ResourceViewState extends State<ResourceView> {
                   thread: thread,
                   sender: sender,
                   time: relativeTime(row['createdAt']),
-                  avatar: RaftAvatar(
+                  avatar: RaftAvatarSlot(
                     name: sender,
-                    size: 16,
-                    kind: row['senderType'] == 'agent'
-                        ? RaftAvatarKind.agent
-                        : row['senderType'] == 'external_projection'
-                        ? RaftAvatarKind.app
-                        : RaftAvatarKind.human,
-                    imageUrl: raftPublicAvatarUrl(
-                      w.client.origin,
-                      row['senderAvatarUrl'] as String?,
+                    slot: RaftAvatarSlotContext.previewMini,
+                    agent: projection.kind == 'agent',
+                    avatarUrl: projection.uploadedUrl,
+                    content: RaftAvatarContent(
+                      name: sender,
+                      kind: switch (projection.kind) {
+                        'agent' => RaftAvatarContentKind.agent,
+                        'app' => RaftAvatarContentKind.app,
+                        _ => RaftAvatarContentKind.human,
+                      },
+                      pixelKey: projection.pixelKey,
+                      uploadedUrl: projection.uploadedUrl,
+                      gravatarUrl: projection.gravatarUrl,
+                      fallback: projection.kind == 'human'
+                          ? Center(
+                              child: RaftIcon(
+                                RaftGlyph.user,
+                                size: 10,
+                                color: RaftTokens.of(context).brutal
+                                    ? RaftTokens.of(context).ink
+                                    : RaftTokens.of(context).muted,
+                              ),
+                            )
+                          : null,
                     ),
                   ),
                 ),
@@ -1986,6 +2025,18 @@ class _ResourceViewState extends State<ResourceView> {
     } catch (e) {
       if (!accepts(scope) || ticket != catalogRequest) return;
       catalogScope = null;
+      if (widget.section == 'saved') {
+        // Saved entries are authorized by their own endpoint. The optional
+        // identity directory can fail independently (Source falls back to the
+        // entry name); it must not finish a pending saved-page request or
+        // restart its infinite-scroll sentinel.
+        setState(() {
+          searchPeople = [];
+          searchAgents = [];
+          senders = [];
+        });
+        return;
+      }
       fail(e, scope);
     }
   }

@@ -160,7 +160,8 @@ enum RaftAvatarSlotContext {
   profileTile(64, 2),
   panelHeader(36, 2),
   surfaceList(32, 2),
-  creatorLink(22, 1);
+  creatorLink(22, 1),
+  previewMini(14, 1);
 
   const RaftAvatarSlotContext(this.size, this.border);
   final double size, border;
@@ -199,7 +200,9 @@ class RaftAvatarSlot extends StatelessWidget {
       tokens: rt,
     );
     // Avatar fallback `& > svg`: 24 at xl/lg, 18 at md, 12 at xs.
-    final icon = slot.size >= 48
+    final icon = slot == RaftAvatarSlotContext.previewMini
+        ? 10.0
+        : slot.size >= 48
         ? 24.0
         : slot.size >= 36
         ? 18.0
@@ -523,7 +526,11 @@ class RaftProfileIdentity extends StatelessWidget {
       );
     }
     if (onAvatar != null) {
-      avatar = _ProfileAvatarAction(key: const ValueKey('agent-profile-avatar-trigger'), onPressed: onAvatar!, child: avatar);
+      avatar = _ProfileAvatarAction(
+        key: const ValueKey('agent-profile-avatar-trigger'),
+        onPressed: onAvatar!,
+        child: avatar,
+      );
     }
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: minHeight),
@@ -1709,7 +1716,11 @@ class _RaftOverflowMenuButtonState extends State<RaftOverflowMenuButton> {
 }
 
 class _ProfileAvatarAction extends StatefulWidget {
-  const _ProfileAvatarAction({super.key, required this.onPressed, required this.child});
+  const _ProfileAvatarAction({
+    super.key,
+    required this.onPressed,
+    required this.child,
+  });
   final VoidCallback onPressed;
   final Widget child;
   @override

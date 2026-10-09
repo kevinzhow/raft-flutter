@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -153,13 +154,11 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
     onOpenSource: openSource,
     thumbnailBuilder:
         widget.thumbnailBuilder ??
-        (widget.acquireImage == null
-            ? null
-            : (file, authorized) => SourceChannelFileThumbnail(
-                file: file,
-                authorized: authorized,
-                acquireImage: widget.acquireImage!,
-              )),
+        (file, authorized) => SourceChannelFileThumbnail(
+          file: file,
+          authorized: authorized,
+          acquireImage: widget.acquireImage,
+        ),
   );
 }
 
@@ -412,16 +411,24 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
               itemBuilder: (context, index) {
                 if (index == store.files.length) {
                   return Padding(
-                    padding: const EdgeInsets.all(16),
+                    // Source closes the p-3 FilesList before its p-4 footer.
+                    // Our single scrollable has already inserted listGap.
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      16 + recipe.listInset.bottom - recipe.listGap,
+                      16,
+                      16,
+                    ),
                     child: Center(
                       child: store.loadingMore
                           ? Text(
                               raftText(context, 'Loading more files…'),
                               style: RaftTypography.mono(t),
                             )
-                          : RaftTextButton(
+                          : RaftButton(
                               label: raftText(context, 'Load more'),
                               variant: RaftControlVariant.outline,
+                              size: RaftButtonRecipeSize.sm,
                               onPressed: () => store.load(more: true),
                             ),
                     ),
@@ -835,17 +842,18 @@ class SourceChannelFileThumbnail extends StatefulWidget {
     super.key,
     required this.file,
     required this.authorized,
-    required this.acquireImage,
+    this.acquireImage,
   });
   final SourceChannelFileEntry file;
   final bool Function() authorized;
-  final SourceChannelImageAcquire acquireImage;
+  final SourceChannelImageAcquire? acquireImage;
   @override
   State<SourceChannelFileThumbnail> createState() => _FileThumbnailState();
 }
 
 class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   SourceChannelImageLease? lease;
+  Uint8List? inlineSvg;
   var ticket = 0;
   bool get current => mounted && widget.authorized();
   @override
@@ -862,6 +870,7 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
       ticket++;
       final old = lease;
       lease = null;
+      inlineSvg = null;
       if (old != null) unawaited(old.release());
       unawaited(load());
     }
@@ -876,7 +885,30 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
     }
     final attempt = ++ticket;
     try {
-      final next = await widget.acquireImage(
+      // Source's <img> accepts inline SVG thumbnails as well as raster URLs.
+      // Render the same authorized metadata; it never enters the HTTP loader
+      // or the controller's shared raster leases.
+      final thumbnail = widget.file.metadata['thumbnailUrl'];
+      // Browsers also accept the common `;utf8` SVG data-URL shorthand.
+      // Uri.data requires the formal charset parameter; only normalize this
+      // encoding spelling for decoding, without changing stored metadata.
+      final uri = thumbnail is String
+          ? Uri.tryParse(
+              thumbnail.replaceFirst(
+                RegExp(r'^data:image/svg\+xml;utf8,', caseSensitive: false),
+                'data:image/svg+xml;charset=utf-8,',
+              ),
+            )
+          : null;
+      if (current &&
+          uri?.scheme == 'data' &&
+          uri!.data?.mimeType == 'image/svg+xml') {
+        inlineSvg = uri.data!.contentAsBytes();
+        return;
+      }
+      final acquire = widget.acquireImage;
+      if (acquire == null) return;
+      final next = await acquire(
         widget.file,
         () => current && ticket == attempt,
         SourceChannelImageRendition.thumbnail,
@@ -903,7 +935,7 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   @override
   Widget build(BuildContext context) {
     final currentLease = lease;
-    if (!current || currentLease == null) {
+    if (!current || (currentLease == null && inlineSvg == null)) {
       return Center(child: ChannelFileGlyph(channelFileType(widget.file)));
     }
     final width = widget.file.metadata['width'],
@@ -911,11 +943,21 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
     final ratio = width is num && height is num && width > 0 && height > 0
         ? width / height
         : null;
+    final fit = ratio != null && (ratio >= 2.2 || ratio <= .55)
+        ? BoxFit.contain
+        : BoxFit.cover;
+    if (inlineSvg != null) {
+      return SvgPicture.memory(
+        inlineSvg!,
+        fit: fit,
+        excludeFromSemantics: true,
+        errorBuilder: (_, _, _) =>
+            Center(child: ChannelFileGlyph(channelFileType(widget.file))),
+      );
+    }
     return Image(
-      image: currentLease.provider,
-      fit: ratio != null && (ratio >= 2.2 || ratio <= .55)
-          ? BoxFit.contain
-          : BoxFit.cover,
+      image: currentLease!.provider,
+      fit: fit,
       errorBuilder: (_, _, _) =>
           Center(child: ChannelFileGlyph(channelFileType(widget.file))),
     );
