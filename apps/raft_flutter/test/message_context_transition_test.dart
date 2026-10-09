@@ -128,7 +128,7 @@ void main() {
     'server-revoked',
     'principal',
   ]) {
-    test('late context cannot accept after $invalidate', () async {
+    test('[L04] late context cannot accept after $invalidate', () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
       w.ledger.switchServer('s1');
@@ -422,7 +422,7 @@ void main() {
     'principal',
     'capability',
   ]) {
-    test('late parent never accepts after $invalidation', () async {
+    test('[N09] late parent never accepts after $invalidation', () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
       w.ledger.switchServer('s1');
@@ -479,7 +479,7 @@ void main() {
   }
 
   test(
-    'close removes only its thread query and retires pending identity',
+    '[N07a] close removes only its thread query and retires pending identity',
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);

@@ -4,7 +4,7 @@ import 'package:raft_flutter/data/raft_navigation_history.dart';
 
 void main() {
   test(
-    'mounted entity routes round-trip escaped identifiers and query slots',
+    '[N01] entity routes round-trip escaped identifiers and query slots',
     () {
       final value = RaftLocation.at(
         serverSlug: 'team space',

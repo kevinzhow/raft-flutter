@@ -398,7 +398,7 @@ void main() {
       expect(closed.hasOverlay, isFalse);
     });
 
-    test('search thread slot and parent anchor remain independent', () {
+    test('[N02a] search thread slot and parent anchor remain independent', () {
       final location = RaftLocation.parse(
         '/s/acme/search?q=reply&open=thread:thread-1&msg=reply-1&'
         'thread=channel-1:parent-1',
@@ -412,7 +412,7 @@ void main() {
       expect(location.threadFocusedMessageId, 'reply-1');
     });
 
-    test('parent message does not become a focused thread reply', () {
+    test('[N02b] parent message does not become a focused thread reply', () {
       final parentFocus = RaftLocation.parse(
         '/s/acme/channel/channel-1?thread=channel-1:parent-1&msg=parent-1',
       );
@@ -604,7 +604,7 @@ void main() {
         });
       }
 
-      test('invalid content kind or missing identity cannot create a slot', () {
+      test('[N03] invalid content kind or missing identity cannot create a slot', () {
         for (final value in ['', 'channel:', ':id', 'unknown:id', 'channel']) {
           expect(RaftContentLocation.parse(value), isNull, reason: value);
         }

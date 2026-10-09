@@ -33,7 +33,7 @@ Map<String, dynamic> value(bool enabled) => {
 Future<void> flush() => Future<void>.delayed(Duration.zero);
 void main() {
   test(
-    'unknown keeps legacy threshold; only actual evaluated receipt enables md',
+    '[N22a] unknown keeps legacy threshold; only actual evaluated receipt enables md',
     () async {
       final client = _Client();
       final w = WorkspaceController(client)

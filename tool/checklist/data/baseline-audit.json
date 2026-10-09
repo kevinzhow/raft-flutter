@@ -1,0 +1,361 @@
+{
+  "kind": "historical human-reviewed audit; not current test proof",
+  "auditor": "Cindy",
+  "message": "9437acca",
+  "flutterCommit": "3220102ddd33d9e7d3b013dc1fa208d390f8506c",
+  "reviewedAt": "2026-10-09T14:00:00Z",
+  "items": [
+    {
+      "id": "N01",
+      "title_zh": "频道和私信即使编号相同也被当成两种不同的地方，链接里的服务器、编号、消息定位都原样保留。",
+      "web_source": "useAppNavigate:446–464 [S11]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/raft_location_test.dart:6 与 test/source_navigation_contract_test.dart:724 用生产 RaftLocation 往返解析 channel/dm 链接，断言服务器、编号、msg、thread 不丢失（双重编码会让 thread 解析失败）；没有专门比较同一编号的 channel 与 dm。"
+    },
+    {
+      "id": "N02",
+      "title_zh": "从搜索或动态打开一条讨论串时，能分清讨论串本身、它的父消息和要定位的回复，父消息不会被误当成回复去高亮。",
+      "web_source": "rightPanel tests:1013–1055 [T2]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/source_navigation_contract_test.dart:401、:415 对生产 RaftLocation 断言 open=thread 槽、thread 锚点、回复定位和 msg=父消息时不作回复定位；注意 threadFocusedMessageId 在 lib 中尚无调用方。"
+    },
+    {
+      "id": "N03",
+      "title_zh": "链接里内容参数写错或缺失时，不会凭空打开某个频道或人。",
+      "web_source": "searchContentStore:63–79 [S8]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/source_navigation_contract_test.dart:607 与 test/raft_location_test.dart:55 断言 wrong:x、:x、channel:、空值都解析为 null；desktop_workspace_routes_test.dart:300 断言关闭后无内容槽。"
+    },
+    {
+      "id": "N04",
+      "title_zh": "已开着讨论串时再打开任务卡片，讨论串保留，任务单独叠加，并且只新增一条历史记录。",
+      "web_source": "rightPanel tests:385–448 [T3]",
+      "status": "partial",
+      "evidence": "位置模型已实现并测试（test/raft_location_test.dart:88 断言 PUSH 且 thread 保留），但生产中任务是弹窗，不写入 task 参数：lib/features/resource_view.dart:2953、lib/features/message_presentation.dart:296。"
+    },
+    {
+      "id": "N05",
+      "title_zh": "关掉任务卡片只关任务，下层讨论串原样保留，不新增历史记录，讨论串也不重新加载或跳动。",
+      "web_source": "rightPanel tests:492–511 [T4]",
+      "status": "partial",
+      "evidence": "模型层 test/raft_location_test.dart:94 断言 REPLACE、test/workspace_navigation_test.dart:70 断言 Back 只关任务；但生产任务是弹窗不进位置（lib/features/resource_view.dart:2953），也没有界面测试证明讨论串挂载和滚动不变。"
+    },
+    {
+      "id": "N06",
+      "title_zh": "同一个讨论串里切换要定位的回复时，只改定位，不重新打开或重新拉取这个讨论串。",
+      "web_source": "rightPanel tests:1058–1077 [T5]",
+      "status": "partial",
+      "evidence": "msg=父消息不作回复定位已测（test/source_navigation_contract_test.dart:415）；但 lib/data/workspace_controller.dart:2121–2124 每次 openThread 都清空 threadChannelId 并重新请求，同一讨论串也会重载。"
+    },
+    {
+      "id": "N07",
+      "title_zh": "讨论串换到另一条或关闭时，替换当前历史记录而不是新增，其他页面参数保持不变。",
+      "web_source": "rightPanel tests:134–211及560–585 [T6]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/message_context_transition_test.dart:481 用真实控制器关闭讨论串，断言历史条数不变且 profile/task/msg 保留；换讨论串的 REPLACE 由生产 panelNavigationKindTo 决定，测试见 test/source_navigation_contract_test.dart:452。"
+    },
+    {
+      "id": "N08",
+      "title_zh": "外部作者资料还在加载时按了返回，加载完成后不会把已关掉的资料再弹出来，前进时仍能按原作者恢复。",
+      "web_source": "rightPanel tests:248–333 [T7]",
+      "status": "not_started",
+      "evidence": "资料不是位置里的 profile 槽：lib/features/message_presentation.dart:296 请求完成后直接 showDialog 弹出，lib 中没有任何地方写入 profile 参数，也没有前进恢复。"
+    },
+    {
+      "id": "N09",
+      "title_zh": "打开又关掉讨论串后，迟到的旧加载结果被丢弃，不会把讨论串重新打开。",
+      "web_source": "rightPanel tests:656–752 [T8]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/message_context_transition_test.dart:425（Back/new-route 等失效情形）断言返回后迟到的父消息不被接受、threadIdentity 为空；版本号由 WorkspaceNavigation.revision 驱动。"
+    },
+    {
+      "id": "N10",
+      "title_zh": "旧格式链接（如旧电脑路径、旧侧栏参数）会被替换成新的标准地址，其它参数保留。",
+      "web_source": "useRailLegacyRedirect:29–64 [S5]",
+      "status": "not_started",
+      "evidence": "lib/data/raft_location.dart:138 只把 machine 当作 computer 解析但保留旧路径，test/raft_location_test.dart:124 甚至断言 toString 仍是 /machine/id；lib 中没有 sidebarTab/tab=machines 处理。"
+    },
+    {
+      "id": "N11",
+      "title_zh": "冷启动直接打开带讨论串的频道链接，连按返回先回到频道，再回到服务器首页，不会跳出应用。",
+      "web_source": "mobileBackNavigation.test:110–124 [T9]",
+      "status": "partial",
+      "evidence": "lib/data/workspace_navigation.dart:64–92 已实现（无前一条时先关 thread 再回 tab 根，均 REPLACE）；test/workspace_navigation_test.dart:61 只断言 thread→频道且条数为 1，频道→/s/dev 这一步未断言。"
+    },
+    {
+      "id": "N12",
+      "title_zh": "从首页进搜索、输入关键词、点进频道后连按两次返回，先回到带原关键词的搜索页，再回首页，不打转。",
+      "web_source": "mobileBackNavigation.test:126–145 [T10]",
+      "status": "partial",
+      "evidence": "历史栈在 WorkspaceNavigation 中可前后退，但搜索关键词不写入位置（存于 lib/data/search_memory.dart:43）；test/source_navigation_contract_test.dart:123 只测了未被生产调用的纯函数。"
+    },
+    {
+      "id": "N13",
+      "title_zh": "上一条历史属于别的服务器时，返回不会跳到那个服务器，而是回到当前服务器内的上一级。",
+      "web_source": "mobileBack behavior:544–618 [T11]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/workspace_navigation_test.dart:109 断言换服务器后历史清空、跨服务器导航被拒绝、Back 仍留在新服务器；实现见 lib/data/workspace_navigation.dart:22–31、43–45、64–70。"
+    },
+    {
+      "id": "N14",
+      "title_zh": "返回时如果指定了某个服务器作为退路，就按那个服务器判断能否后退，而不是按当前页面猜。",
+      "web_source": "mobileBack behavior:804–842 [T12]",
+      "status": "partial",
+      "evidence": "只有未被调用的纯函数 resolveRaftMobileBack(scope:) 及其测试（test/source_navigation_contract_test.dart:73）；生产 lib/data/workspace_navigation.dart:64 的 back() 不接受显式退路或 scope。"
+    },
+    {
+      "id": "N15",
+      "title_zh": "一次后退或前进多步后，返回键仍指向真实的上一页，前进记录不会被丢掉。",
+      "web_source": "mobileBack behavior:904起 [T13]",
+      "status": "partial",
+      "evidence": "单步后退/前进及新跳转丢弃前进分支已测（test/workspace_navigation_test.dart:42）；WorkspaceNavigation 没有多步 go(n)，多步用例只测了未接入的纯函数（test/source_navigation_contract_test.dart:181）。"
+    },
+    {
+      "id": "N16",
+      "title_zh": "刷新或冷启动后不知道之前的历史时，返回不会贸然后退；同一次跳转不会被记两次。",
+      "web_source": "mobileBack pure:163–182 [T14]、behavior:438–478,711–802 [T15]",
+      "status": "partial",
+      "evidence": "冷启动 bind 只建一条记录（lib/data/workspace_navigation.dart:22–31），Back 走语义上级（test/workspace_navigation_test.dart:61）；未知索引空隙、同步写入与提交去重、同 key 不同 idx 只存在于未接入的纯函数（test/source_navigation_contract_test.dart:225、243、285）。"
+    },
+    {
+      "id": "N17",
+      "title_zh": "在讨论串上打开任务后按返回，先关任务，再精确回到原来的讨论串和历史位置。",
+      "web_source": "mobileBack behavior:389–428 [T16]",
+      "status": "partial",
+      "evidence": "模型 Back 先关任务、保留 thread（test/workspace_navigation_test.dart:70，冷启动 REPLACE 路径）；但生产任务是弹窗不进位置（lib/features/resource_view.dart:2953），没有“PUSH 任务再 Back 回原 idx”的测试。"
+    },
+    {
+      "id": "N18",
+      "title_zh": "讨论串里点“在频道中查看”：桌面新增一条历史，手机替换当前记录；讨论串同时关闭，不会被旧结果重新打开。",
+      "web_source": "rightPanel tests:754–873 [T17]",
+      "status": "partial",
+      "evidence": "lib/features/workspace_view.dart:1186–1189 先 closeThread(navigate:false) 再 jumpToMessage，后者在 lib/data/workspace_controller.dart:2294 通过 section='chat' 一律 PUSH，手机端没有改为 REPLACE；无生产测试。"
+    },
+    {
+      "id": "N19",
+      "title_zh": "手机底部标签无论点当前还是别的，都回到该标签首页并新增一条历史，不恢复之前的子页面。",
+      "web_source": "mobile tab E2E:155–204 [T18]",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/test/mobile_workspace_navigation_test.dart:433–441 断言点当前 Settings 回根且 index+1；切到别的标签时的 PUSH 和清子页未断言（代码 lib/features/workspace_view.dart:139–157 无标签记忆，应能满足）。"
+    },
+    {
+      "id": "N20",
+      "title_zh": "桌面在聊天、搜索、动态之间切换：搜索不改动聊天的记忆，进搜索和动态总是新页面，回聊天恢复聊天自己的位置。",
+      "web_source": "useSidebarTab:61–83 [S3]、useTabRouteMemory:12–36,101–112 [S17]",
+      "status": "partial",
+      "evidence": "搜索每次进入是新页面（lib/features/workspace_view.dart:514）；但没有按服务器和模式保存的 rail 记忆，回聊天只按 w.channel 重建，而搜索/动态预览会在 lib/data/workspace_controller.dart:2292 改写 w.channel。"
+    },
+    {
+      "id": "N21",
+      "title_zh": "手机只在四个标签首页显示底部标签栏，详情页、讨论串或内容打开时隐藏；访客看不到成员标签。",
+      "web_source": "MainLayout:227–330 [S34]",
+      "status": "partial",
+      "evidence": "lib/data/workspace_navigation.dart:188–201 实现；test/workspace_navigation_test.dart:124 覆盖部分路径，test/mobile_workspace_navigation_test.dart:283 覆盖访客隐藏成员；搜索、收藏、电脑、成员关系图等路径未逐一测试，没有嵌入模式。"
+    },
+    {
+      "id": "N22",
+      "title_zh": "宽度达到 768 才显示桌面侧栏；旧版动态需 1024 才能左右分栏，新版 768；工作区网格低于 1024 不启用。",
+      "web_source": "ThreadsInbox:572–574 [S29]、MainLayout:1691–1715 [S26]",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/desktop_activity_flag_test.dart:35（1024/768/767）、test/workspace_mode_test.dart:60（1023/1024）、test/desktop_workspace_routes_test.dart:182–203（768 与 767 的桌面/手机头部）。"
+    },
+    {
+      "id": "N23",
+      "title_zh": "只有屏幕够宽（竖屏≥1280 或横屏）且内容区≥680 时，讨论串才和频道并排；调整窗口大小不丢失当前位置和消息定位。",
+      "web_source": "index.css:857–979 [S31]",
+      "status": "partial",
+      "evidence": "规则在 packages/raft_ui/lib/src/adaptive_workspace.dart:153–157 实现，但没有测试 1279/1280、横屏或 679.98/680 的并排判断；改变尺寸时位置不变已测（test/desktop_workspace_routes_test.dart:213、142），消息定位未断言。"
+    },
+    {
+      "id": "N24",
+      "title_zh": "桌面动态列表单击后约 0.22 秒在右侧预览（点讨论串直接打开讨论串），双击则直接跳到完整聊天页且只记一次历史。",
+      "web_source": "inbox行为:255–562 [T1]",
+      "status": "not_started",
+      "evidence": "lib/features/workspace_view.dart:1255–1306 的 openDesktopActivity 没有 220ms 计时和双击分支，点讨论串时先 openDesktopConversation 打开父频道再 openThread；消息优先级也与 Source 不同。"
+    },
+    {
+      "id": "N25",
+      "title_zh": "手机点动态条目立即跳转并只记一次历史；频道/私信优先定位到提到我的消息，讨论串按未读或最新定位。",
+      "web_source": "inbox行为:322–401,583–634 [T1]",
+      "status": "partial",
+      "evidence": "频道/私信已按 firstMention→未读→最新 定位并一次 PUSH（lib/features/resource_view.dart:1516–1524 → jumpToMessage）；讨论串条目只跳父频道，不带 thread 锚点，且错误地用了 firstMention 优先；无测试。"
+    },
+    {
+      "id": "N26",
+      "title_zh": "桌面应用的搜索浮层只能盖在同一服务器的普通页面上，只有明确标记才显示完整搜索页。",
+      "web_source": "searchOverlayLocation:47–175 [S13]",
+      "status": "not_started",
+      "evidence": "没有搜索浮层或背景位置概念：lib/features/workspace_view.dart:813–822 始终把搜索当完整页面渲染，lib/data/raft_location.dart 不处理 backgroundLocation 或 presentation=page。"
+    },
+    {
+      "id": "N27",
+      "title_zh": "在动态或搜索中预览某频道时，标题、侧栏、主列表、详情和返回都跟随同一个位置，隐藏的频道不会被误标已读。",
+      "web_source": "Flutter现有保留测试 + 单location迁移新用例",
+      "status": "partial",
+      "evidence": "test/desktop_workspace_routes_test.dart:213、308 断言标题、主列表、详情、标签保持；test/message_context_transition_test.dart:193、379 和 test/mobile_workspace_navigation_test.dart:180 断言位置不被改写、不误发已读；rail 高亮未断言。"
+    },
+    {
+      "id": "N28",
+      "title_zh": "点系统通知：不合法的通知不跳转；合法的按原链接打开且只记一次历史，冷启动后返回规则同 N11。",
+      "web_source": "ServiceWorkerNavigationBridge:6–29 [S38]",
+      "status": "partial",
+      "evidence": "非法来源被拒绝（lib/platform/content_coordinator.dart:178–186，测试 test/content_target_test.dart:32）；合法讨论串通知在 content_coordinator.dart:308–314 先 jumpToMessage（PUSH）再 openThread（再 PUSH），没有保留原 URI 和单次 PUSH。"
+    },
+    {
+      "id": "L01",
+      "group": "加载",
+      "title_zh": "点到当前频道里已经加载过的消息时，直接定位并居中，不再重新请求。",
+      "web_source": "packages/web/src/store/messageStore.ts:2374-2392",
+      "status": "implemented_unverified",
+      "evidence": "apps/raft_flutter/lib/data/workspace_controller.dart:2307 已缓存目标直接高亮且不发 context 请求；apps/raft_flutter/test/message_context_transition_test.dart:106 只断言了不发请求/loading=false，没有断言行居中和摘要/分页不变。"
+    },
+    {
+      "id": "L02",
+      "group": "加载",
+      "title_zh": "同频道跳到较远的消息时，旧消息先保持不动，新窗口一次性带着回复和高亮出现，目标居中。",
+      "web_source": "packages/web/src/store/messageStore.ts:2393-2460; packages/web/src/components/message/ChatPanel.tsx:1484-1512",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/chat_focus_receipt_test.dart:53 三套主题逐帧断言等待期间旧行不动、目标首帧即居中且不再跳；apps/raft_flutter/test/message_context_transition_test.dart:22 断言回复摘要与规范化 targetMessageId 同一次发布。（等待期间头部/标签/输入框可交互未单独断言）"
+    },
+    {
+      "id": "L03",
+      "group": "加载",
+      "title_zh": "跳转后的消息高亮约 2 秒后自动消失，切换频道或目标会取消旧计时。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:581-597",
+      "status": "implemented_unverified",
+      "evidence": "apps/raft_flutter/lib/features/chat_view.dart:714 有 2 秒计时并校验作用域/窗口；apps/raft_flutter/test/chat_focus_receipt_test.dart:148-150 只测了 1700ms 仍高亮、2100ms 消失，切换频道取消计时和不阻塞跟随模式未测。"
+    },
+    {
+      "id": "L04",
+      "group": "加载",
+      "title_zh": "连续点两条消息时，只有最后一次点击生效，先前的慢响应或失败都不会干扰。",
+      "web_source": "packages/web/src/store/messageStore.ts:643-655",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/message_context_transition_test.dart:131 断言 A 慢于 B 及频道撤销/服务器撤销/换账号后 A 都不落地；:220 断言 A 的失败不会覆盖 B。"
+    },
+    {
+      "id": "L05",
+      "group": "加载",
+      "title_zh": "目标消息加载失败时，保留已显示内容并回到最新，同时区分“找不到”和“套餐历史限制”。",
+      "web_source": "packages/web/src/store/messageStore.ts:2461-2486",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/lib/data/workspace_controller.dart:2425-2448 失败后回落到最新并有过期保护（test/message_context_transition_test.dart:173,:220 已测）；缺：只写通用 error，未区分“找不到”与“历史限制”，回落等待期间保留旧行未测。"
+    },
+    {
+      "id": "L06",
+      "group": "加载",
+      "title_zh": "在历史窗口点“回到底部”，重新加载最新消息并滚到底，等待时旧内容不消失。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:654-683; packages/web/src/store/messageStore.ts:2001-2024",
+      "status": "implemented_unverified",
+      "evidence": "apps/raft_flutter/lib/data/workspace_controller.dart:2237 returnToLatest 在 hasNewer 时重载最新；apps/raft_flutter/test/chat_focus_receipt_test.dart:169-188 测了真实点击、等待期旧窗口保留、到底；请求期间/之后新消息到达及无重复请求未测。"
+    },
+    {
+      "id": "L07",
+      "group": "加载",
+      "title_zh": "不在底部时新消息只更新计数不跳动；自己发消息才跟随到底；上下翻页保持阅读位置。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:599-640; packages/web/src/store/messageStore.ts:2043-2108",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/lib/features/chat_view.dart:581 有离底计数，apps/raft_flutter/lib/data/workspace_controller.dart:1776 有向上翻页；缺：没有向下(after=)翻页，:2663 只要 hasNewer 就丢弃新到消息（含紧邻的下一条），也没有对应测试。"
+    },
+    {
+      "id": "L08",
+      "group": "加载",
+      "title_zh": "冷启动打开频道时，标题、标签和输入框先出现，只有消息区显示加载中；失败时显示明确状态。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:1345-1409,1484-1534; packages/web/src/components/layout/MainLayout.tsx:425-490",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/test/desktop_workspace_routes_test.dart:142 已验证已知频道首帧有头部/标签/输入框；缺：未解析频道身份没有“加载频道”状态，空窗口加载失败显示“Start the conversation”(lib/features/chat_view.dart:1968) 而非失败态。"
+    },
+    {
+      "id": "L09",
+      "group": "加载",
+      "title_zh": "打开 Agent/电脑详情时不先显示编造的默认数据，有真实缓存就立刻显示。",
+      "web_source": "packages/web/src/components/profile/ProfilePanel.tsx:67-172; packages/web/src/components/layout/MainLayout.tsx:547-580",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/test/entity_detail_hydration_test.dart:102,115 已验证有缓存首帧显示真实数据、只有 ID 时不出现 Default/offline/Unassigned/null；缺：切换目标同步隐藏旧数据未测，叠层与独立页面未按 Web 区分（独立页 Web 显示 Unavailable 面板）。"
+    },
+    {
+      "id": "L10",
+      "group": "加载",
+      "title_zh": "成员资料先显示已知成员信息，详情返回后补全；角色/服务器切换丢弃旧请求，刷新失败不清空。",
+      "web_source": "packages/web/src/components/member/resolveHumanProfile.ts:4-17; packages/web/src/store/serverStore.ts:375-395",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/entity_detail_hydration_test.dart:148 实时成员名/角色优先，:172 刷新失败保留，:207 角色变更丢弃迟到详情，:304 拒绝目录不残留私有信息。（服务器切换只经角色变更间接覆盖）"
+    },
+    {
+      "id": "K01",
+      "group": "Kevin 反馈",
+      "title_zh": "鼠标移开、切换标签或开关菜单时，控件不再闪黑。",
+      "web_source": "",
+      "status": "verified",
+      "evidence": "packages/raft_ui/test/control_transition_paint_test.dart:114,163,223 三套主题逐帧断言悬停退出、移动端标签切换、菜单开关时像素不超出起止颜色；覆盖范围仅限这三类控件。"
+    },
+    {
+      "id": "K02",
+      "group": "Kevin 反馈",
+      "title_zh": "桌面端点 Activity 条目时，不再在 Activity 页顶部多出一条整宽频道标题。",
+      "web_source": "packages/web/src/components/thread/ThreadsInbox.tsx:1104-1175",
+      "status": "implemented_unverified",
+      "evidence": "apps/raft_flutter/lib/features/workspace_view.dart:1210-1226 Activity 下用 navigate:false 打开，:968-984 activity 路由不放频道头；apps/raft_flutter/test/desktop_workspace_routes_test.dart:258 只用 URI 直接构造状态断言无频道头，没有模拟点击条目。"
+    },
+    {
+      "id": "K03",
+      "group": "Kevin 反馈",
+      "title_zh": "跳到目标消息前，消息列表不再经历好几种状态来回跳动。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:581-597",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/test/chat_focus_receipt_test.dart:53 已验证同频道跳转无中间帧；缺：桌面 Activity/搜索详情跨频道时先显示纯 Loading 文字(lib/features/workspace_view.dart:1470)，线程条目先开频道再开线程，均无测试。"
+    },
+    {
+      "id": "K04",
+      "group": "Kevin 反馈",
+      "title_zh": "“回到底部 / N 条新消息”按钮居中浮在输入框上方，在历史窗口点它会重新加载最新消息，与 Web 一致。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:1514-1525; packages/web/src/components/message/ThreadPanel.tsx:2610-2620",
+      "status": "partial",
+      "evidence": "packages/raft_ui/test/timeline_bottom_button_test.dart:13 断言居中、距底 12px；apps/raft_flutter/test/chat_focus_receipt_test.dart:169 断言点击重载最新；缺：线程面板没有该按钮(apps/raft_flutter/lib/features/chat_view.dart:2085 限定 !widget.thread)。"
+    },
+    {
+      "id": "K05",
+      "group": "Kevin 反馈",
+      "title_zh": "打开 Agent 页不再先显示假数据（离线/Start Agent/无电脑/默认模型），电脑详情不再显示 null。",
+      "web_source": "packages/web/src/components/agent/agentDetailAvailability.ts:3-42; packages/web/src/components/layout/MainLayout.tsx:569-580",
+      "status": "verified",
+      "evidence": "apps/raft_flutter/test/entity_detail_hydration_test.dart:115-124 三主题断言只有 ID 时显示加载壳、无 Default/offline/Unassigned/null；守卫在 apps/raft_flutter/lib/features/fleet_views.dart:988。"
+    },
+    {
+      "id": "K06",
+      "group": "Kevin 反馈",
+      "title_zh": "页面从一开始就有标签、标题和输入框，不再先占位再长出来或高度变化。",
+      "web_source": "packages/web/src/components/message/ChatPanel.tsx:1345-1409",
+      "status": "partial",
+      "evidence": "apps/raft_flutter/test/desktop_workspace_routes_test.dart:142 已验证已知频道首帧完整；缺：冷启动服务器未就绪时整页转圈(apps/raft_flutter/lib/features/workspace_view.dart:682)，电脑详情加载后换成 Material AppBar 页面导致头部高度变化（测试 test/entity_detail_hydration_test.dart:140 特意跳过电脑）。"
+    },
+    {
+      "id": "K07",
+      "group": "Kevin 反馈",
+      "title_zh": "桌面 Activity 点线程条目直接打开线程，点频道条目才打开频道，不再闪两次。",
+      "web_source": "packages/web/src/components/thread/ThreadsInbox.tsx:1119-1137",
+      "status": "not_started",
+      "evidence": "apps/raft_flutter/lib/features/workspace_view.dart:1272 线程条目先 openDesktopConversation 打开频道，等频道加载完再 :1293 openThread，仍是两段切换。"
+    },
+    {
+      "id": "K08",
+      "group": "Kevin 反馈",
+      "title_zh": "桌面框架与 Web 一致：左栏底部 4 个按钮，侧栏显示空的“置顶/联合频道”分组，无多余切换器和底部用户行，私信行有头像和简介。",
+      "web_source": "packages/web/src/components/layout/LeftRail.tsx:699-761; packages/web/src/components/layout/Sidebar.tsx:3539-3615; packages/web/src/components/layout/sidebarEmptySectionVisibility.ts:22-24",
+      "status": "not_started",
+      "evidence": "apps/raft_flutter/lib/features/workspace_view.dart:1570-1583 底部只有铃铛+设置两个；:1896 侧栏头部仍有工作区切换器，:2055 仍有底部用户行，:1838 私信行只有图标；apps/raft_flutter/lib/data/personal_presentation.dart:42 桌面默认隐藏空分组（Web 浏览器默认显示）。"
+    },
+    {
+      "id": "K09",
+      "group": "Kevin 反馈",
+      "title_zh": "Elegant 主题下徽标和头像是圆角/圆形，标签栏高度和下划线与 Web 一致。",
+      "web_source": "packages/web/src/components/layout/LeftRail.tsx:465-472",
+      "status": "partial",
+      "evidence": "已主题化：会话标签栏(packages/raft_ui/test/conversation_tabs_date_geometry_test.dart:94 断言各主题高度)、通用头像与 Badge 配方；缺：左栏工作区头像 Elegant 下是 8px 圆角方块(packages/raft_ui/lib/src/design_primitives.dart:242，Web 为圆形)，左栏未读用 Material Badge 而非 app-rail 配方(packages/raft_ui/lib/src/adaptive_workspace.dart:432)，侧栏通用未读徽标两主题都是 3px 圆角(packages/raft_ui/lib/src/components.dart:940)。"
+    }
+  ],
+  "inputs": {
+    "nav": "d174806ef385662fb7196c9130690a8488196a54e2b79abf4ef4414b9a4a90a0",
+    "loading": "bb1882bf4bdcc41926f6312fbe598b698613e525441a1aa9d4daee24fbee9fd1"
+  }
+}

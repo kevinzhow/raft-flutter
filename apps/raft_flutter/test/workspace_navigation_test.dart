@@ -107,7 +107,7 @@ void main() {
   });
 
   test(
-    'principal and server rebinding invalidate async tickets and history',
+    '[N13] principal and server rebinding invalidate async tickets and history',
     () {
       final n = navigation('/s/demo/activity?open=channel:private');
       final ticket = n.reserve();

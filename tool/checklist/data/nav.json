@@ -1,0 +1,443 @@
+[
+  {
+    "id": "N01",
+    "title_zh": "频道和私信即使编号相同也被当成两种不同的地方，链接里的服务器、编号、消息定位都原样保留。",
+    "web_source": "useAppNavigate:446–464 [S11]",
+    "audit_note": "apps/raft_flutter/test/raft_location_test.dart:6 与 test/source_navigation_contract_test.dart:724 用生产 RaftLocation 往返解析 channel/dm 链接，断言服务器、编号、msg、thread 不丢失（双重编码会让 thread 解析失败）；没有专门比较同一编号的 channel 与 dm。",
+    "checks": [
+      {
+        "id": "N01",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N02",
+    "title_zh": "从搜索或动态打开一条讨论串时，能分清讨论串本身、它的父消息和要定位的回复，父消息不会被误当成回复去高亮。",
+    "web_source": "rightPanel tests:1013–1055 [T2]",
+    "audit_note": "apps/raft_flutter/test/source_navigation_contract_test.dart:401、:415 对生产 RaftLocation 断言 open=thread 槽、thread 锚点、回复定位和 msg=父消息时不作回复定位；注意 threadFocusedMessageId 在 lib 中尚无调用方。",
+    "checks": [
+      {
+        "id": "N02a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "线程身份和定位回复独立"
+      },
+      {
+        "id": "N02b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "父消息不会被高亮成回复"
+      }
+    ]
+  },
+  {
+    "id": "N03",
+    "title_zh": "链接里内容参数写错或缺失时，不会凭空打开某个频道或人。",
+    "web_source": "searchContentStore:63–79 [S8]",
+    "audit_note": "apps/raft_flutter/test/source_navigation_contract_test.dart:607 与 test/raft_location_test.dart:55 断言 wrong:x、:x、channel:、空值都解析为 null；desktop_workspace_routes_test.dart:300 断言关闭后无内容槽。",
+    "checks": [
+      {
+        "id": "N03",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N04",
+    "title_zh": "已开着讨论串时再打开任务卡片，讨论串保留，任务单独叠加，并且只新增一条历史记录。",
+    "web_source": "rightPanel tests:385–448 [T3]",
+    "audit_note": "位置模型已实现并测试（test/raft_location_test.dart:88 断言 PUSH 且 thread 保留），但生产中任务是弹窗，不写入 task 参数：lib/features/resource_view.dart:2953、lib/features/message_presentation.dart:296。",
+    "checks": [
+      {
+        "id": "N04",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N05",
+    "title_zh": "关掉任务卡片只关任务，下层讨论串原样保留，不新增历史记录，讨论串也不重新加载或跳动。",
+    "web_source": "rightPanel tests:492–511 [T4]",
+    "audit_note": "模型层 test/raft_location_test.dart:94 断言 REPLACE、test/workspace_navigation_test.dart:70 断言 Back 只关任务；但生产任务是弹窗不进位置（lib/features/resource_view.dart:2953），也没有界面测试证明讨论串挂载和滚动不变。",
+    "checks": [
+      {
+        "id": "N05",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N06",
+    "title_zh": "同一个讨论串里切换要定位的回复时，只改定位，不重新打开或重新拉取这个讨论串。",
+    "web_source": "rightPanel tests:1058–1077 [T5]",
+    "audit_note": "msg=父消息不作回复定位已测（test/source_navigation_contract_test.dart:415）；但 lib/data/workspace_controller.dart:2121–2124 每次 openThread 都清空 threadChannelId 并重新请求，同一讨论串也会重载。",
+    "checks": [
+      {
+        "id": "N06",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N07",
+    "title_zh": "讨论串换到另一条或关闭时，替换当前历史记录而不是新增，其他页面参数保持不变。",
+    "web_source": "rightPanel tests:134–211及560–585 [T6]",
+    "audit_note": "apps/raft_flutter/test/message_context_transition_test.dart:481 用真实控制器关闭讨论串，断言历史条数不变且 profile/task/msg 保留；换讨论串的 REPLACE 由生产 panelNavigationKindTo 决定，测试见 test/source_navigation_contract_test.dart:452。",
+    "checks": [
+      {
+        "id": "N07a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "关闭线程保留其他查询参数"
+      },
+      {
+        "id": "N07b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "切换线程替换历史而不新增"
+      }
+    ]
+  },
+  {
+    "id": "N08",
+    "title_zh": "外部作者资料还在加载时按了返回，加载完成后不会把已关掉的资料再弹出来，前进时仍能按原作者恢复。",
+    "web_source": "rightPanel tests:248–333 [T7]",
+    "audit_note": "资料不是位置里的 profile 槽：lib/features/message_presentation.dart:296 请求完成后直接 showDialog 弹出，lib 中没有任何地方写入 profile 参数，也没有前进恢复。",
+    "checks": [
+      {
+        "id": "N08",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N09",
+    "title_zh": "打开又关掉讨论串后，迟到的旧加载结果被丢弃，不会把讨论串重新打开。",
+    "web_source": "rightPanel tests:656–752 [T8]",
+    "audit_note": "apps/raft_flutter/test/message_context_transition_test.dart:425（Back/new-route 等失效情形）断言返回后迟到的父消息不被接受、threadIdentity 为空；版本号由 WorkspaceNavigation.revision 驱动。",
+    "checks": [
+      {
+        "id": "N09",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N10",
+    "title_zh": "旧格式链接（如旧电脑路径、旧侧栏参数）会被替换成新的标准地址，其它参数保留。",
+    "web_source": "useRailLegacyRedirect:29–64 [S5]",
+    "audit_note": "lib/data/raft_location.dart:138 只把 machine 当作 computer 解析但保留旧路径，test/raft_location_test.dart:124 甚至断言 toString 仍是 /machine/id；lib 中没有 sidebarTab/tab=machines 处理。",
+    "checks": [
+      {
+        "id": "N10",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N11",
+    "title_zh": "冷启动直接打开带讨论串的频道链接，连按返回先回到频道，再回到服务器首页，不会跳出应用。",
+    "web_source": "mobileBackNavigation.test:110–124 [T9]",
+    "audit_note": "lib/data/workspace_navigation.dart:64–92 已实现（无前一条时先关 thread 再回 tab 根，均 REPLACE）；test/workspace_navigation_test.dart:61 只断言 thread→频道且条数为 1，频道→/s/dev 这一步未断言。",
+    "checks": [
+      {
+        "id": "N11",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N12",
+    "title_zh": "从首页进搜索、输入关键词、点进频道后连按两次返回，先回到带原关键词的搜索页，再回首页，不打转。",
+    "web_source": "mobileBackNavigation.test:126–145 [T10]",
+    "audit_note": "历史栈在 WorkspaceNavigation 中可前后退，但搜索关键词不写入位置（存于 lib/data/search_memory.dart:43）；test/source_navigation_contract_test.dart:123 只测了未被生产调用的纯函数。",
+    "checks": [
+      {
+        "id": "N12",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N13",
+    "title_zh": "上一条历史属于别的服务器时，返回不会跳到那个服务器，而是回到当前服务器内的上一级。",
+    "web_source": "mobileBack behavior:544–618 [T11]",
+    "audit_note": "apps/raft_flutter/test/workspace_navigation_test.dart:109 断言换服务器后历史清空、跨服务器导航被拒绝、Back 仍留在新服务器；实现见 lib/data/workspace_navigation.dart:22–31、43–45、64–70。",
+    "checks": [
+      {
+        "id": "N13",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N14",
+    "title_zh": "返回时如果指定了某个服务器作为退路，就按那个服务器判断能否后退，而不是按当前页面猜。",
+    "web_source": "mobileBack behavior:804–842 [T12]",
+    "audit_note": "只有未被调用的纯函数 resolveRaftMobileBack(scope:) 及其测试（test/source_navigation_contract_test.dart:73）；生产 lib/data/workspace_navigation.dart:64 的 back() 不接受显式退路或 scope。",
+    "checks": [
+      {
+        "id": "N14",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N15",
+    "title_zh": "一次后退或前进多步后，返回键仍指向真实的上一页，前进记录不会被丢掉。",
+    "web_source": "mobileBack behavior:904起 [T13]",
+    "audit_note": "单步后退/前进及新跳转丢弃前进分支已测（test/workspace_navigation_test.dart:42）；WorkspaceNavigation 没有多步 go(n)，多步用例只测了未接入的纯函数（test/source_navigation_contract_test.dart:181）。",
+    "checks": [
+      {
+        "id": "N15",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N16",
+    "title_zh": "刷新或冷启动后不知道之前的历史时，返回不会贸然后退；同一次跳转不会被记两次。",
+    "web_source": "mobileBack pure:163–182 [T14]、behavior:438–478,711–802 [T15]",
+    "audit_note": "冷启动 bind 只建一条记录（lib/data/workspace_navigation.dart:22–31），Back 走语义上级（test/workspace_navigation_test.dart:61）；未知索引空隙、同步写入与提交去重、同 key 不同 idx 只存在于未接入的纯函数（test/source_navigation_contract_test.dart:225、243、285）。",
+    "checks": [
+      {
+        "id": "N16",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N17",
+    "title_zh": "在讨论串上打开任务后按返回，先关任务，再精确回到原来的讨论串和历史位置。",
+    "web_source": "mobileBack behavior:389–428 [T16]",
+    "audit_note": "模型 Back 先关任务、保留 thread（test/workspace_navigation_test.dart:70，冷启动 REPLACE 路径）；但生产任务是弹窗不进位置（lib/features/resource_view.dart:2953），没有“PUSH 任务再 Back 回原 idx”的测试。",
+    "checks": [
+      {
+        "id": "N17",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N18",
+    "title_zh": "讨论串里点“在频道中查看”：桌面新增一条历史，手机替换当前记录；讨论串同时关闭，不会被旧结果重新打开。",
+    "web_source": "rightPanel tests:754–873 [T17]",
+    "audit_note": "lib/features/workspace_view.dart:1186–1189 先 closeThread(navigate:false) 再 jumpToMessage，后者在 lib/data/workspace_controller.dart:2294 通过 section='chat' 一律 PUSH，手机端没有改为 REPLACE；无生产测试。",
+    "checks": [
+      {
+        "id": "N18",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N19",
+    "title_zh": "手机底部标签无论点当前还是别的，都回到该标签首页并新增一条历史，不恢复之前的子页面。",
+    "web_source": "mobile tab E2E:155–204 [T18]",
+    "audit_note": "apps/raft_flutter/test/mobile_workspace_navigation_test.dart:433–441 断言点当前 Settings 回根且 index+1；切到别的标签时的 PUSH 和清子页未断言（代码 lib/features/workspace_view.dart:139–157 无标签记忆，应能满足）。",
+    "checks": [
+      {
+        "id": "N19",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N20",
+    "title_zh": "桌面在聊天、搜索、动态之间切换：搜索不改动聊天的记忆，进搜索和动态总是新页面，回聊天恢复聊天自己的位置。",
+    "web_source": "useSidebarTab:61–83 [S3]、useTabRouteMemory:12–36,101–112 [S17]",
+    "audit_note": "搜索每次进入是新页面（lib/features/workspace_view.dart:514）；但没有按服务器和模式保存的 rail 记忆，回聊天只按 w.channel 重建，而搜索/动态预览会在 lib/data/workspace_controller.dart:2292 改写 w.channel。",
+    "checks": [
+      {
+        "id": "N20",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N21",
+    "title_zh": "手机只在四个标签首页显示底部标签栏，详情页、讨论串或内容打开时隐藏；访客看不到成员标签。",
+    "web_source": "MainLayout:227–330 [S34]",
+    "audit_note": "lib/data/workspace_navigation.dart:188–201 实现；test/workspace_navigation_test.dart:124 覆盖部分路径，test/mobile_workspace_navigation_test.dart:283 覆盖访客隐藏成员；搜索、收藏、电脑、成员关系图等路径未逐一测试，没有嵌入模式。",
+    "checks": [
+      {
+        "id": "N21",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N22",
+    "title_zh": "宽度达到 768 才显示桌面侧栏；旧版动态需 1024 才能左右分栏，新版 768；工作区网格低于 1024 不启用。",
+    "web_source": "ThreadsInbox:572–574 [S29]、MainLayout:1691–1715 [S26]",
+    "audit_note": "apps/raft_flutter/test/desktop_activity_flag_test.dart:35（1024/768/767）、test/workspace_mode_test.dart:60（1023/1024）、test/desktop_workspace_routes_test.dart:182–203（768 与 767 的桌面/手机头部）。",
+    "checks": [
+      {
+        "id": "N22a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "动态新旧布局768/1024边界"
+      },
+      {
+        "id": "N22b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "真实侧栏767/768边界"
+      },
+      {
+        "id": "N22c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "工作区1023/1024边界"
+      }
+    ]
+  },
+  {
+    "id": "N23",
+    "title_zh": "只有屏幕够宽（竖屏≥1280 或横屏）且内容区≥680 时，讨论串才和频道并排；调整窗口大小不丢失当前位置和消息定位。",
+    "web_source": "index.css:857–979 [S31]",
+    "audit_note": "规则在 packages/raft_ui/lib/src/adaptive_workspace.dart:153–157 实现，但没有测试 1279/1280、横屏或 679.98/680 的并排判断；改变尺寸时位置不变已测（test/desktop_workspace_routes_test.dart:213、142），消息定位未断言。",
+    "checks": [
+      {
+        "id": "N23",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N24",
+    "title_zh": "桌面动态列表单击后约 0.22 秒在右侧预览（点讨论串直接打开讨论串），双击则直接跳到完整聊天页且只记一次历史。",
+    "web_source": "inbox行为:255–562 [T1]",
+    "audit_note": "lib/features/workspace_view.dart:1255–1306 的 openDesktopActivity 没有 220ms 计时和双击分支，点讨论串时先 openDesktopConversation 打开父频道再 openThread；消息优先级也与 Source 不同。",
+    "checks": [
+      {
+        "id": "N24a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "线程单击直接预览线程",
+        "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "N24b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "频道单击关闭旧线程",
+        "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "N24c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "私信单击直接预览私信",
+        "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "N24d",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "双击取消单击并只跳转一次完整聊天",
+        "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "N24e",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "父频道不在缓存时双击仍完整打开线程",
+        "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart"
+      }
+    ]
+  },
+  {
+    "id": "N25",
+    "title_zh": "手机点动态条目立即跳转并只记一次历史；频道/私信优先定位到提到我的消息，讨论串按未读或最新定位。",
+    "web_source": "inbox行为:322–401,583–634 [T1]",
+    "audit_note": "频道/私信已按 firstMention→未读→最新 定位并一次 PUSH（lib/features/resource_view.dart:1516–1524 → jumpToMessage）；讨论串条目只跳父频道，不带 thread 锚点，且错误地用了 firstMention 优先；无测试。",
+    "checks": [
+      {
+        "id": "N25",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N26",
+    "title_zh": "桌面应用的搜索浮层只能盖在同一服务器的普通页面上，只有明确标记才显示完整搜索页。",
+    "web_source": "searchOverlayLocation:47–175 [S13]",
+    "audit_note": "没有搜索浮层或背景位置概念：lib/features/workspace_view.dart:813–822 始终把搜索当完整页面渲染，lib/data/raft_location.dart 不处理 backgroundLocation 或 presentation=page。",
+    "checks": [
+      {
+        "id": "N26",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N27",
+    "title_zh": "在动态或搜索中预览某频道时，标题、侧栏、主列表、详情和返回都跟随同一个位置，隐藏的频道不会被误标已读。",
+    "web_source": "Flutter现有保留测试 + 单location迁移新用例",
+    "audit_note": "test/desktop_workspace_routes_test.dart:213、308 断言标题、主列表、详情、标签保持；test/message_context_transition_test.dart:193、379 和 test/mobile_workspace_navigation_test.dart:180 断言位置不被改写、不误发已读；rail 高亮未断言。",
+    "checks": [
+      {
+        "id": "N27",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "N28",
+    "title_zh": "点系统通知：不合法的通知不跳转；合法的按原链接打开且只记一次历史，冷启动后返回规则同 N11。",
+    "web_source": "ServiceWorkerNavigationBridge:6–29 [S38]",
+    "audit_note": "非法来源被拒绝（lib/platform/content_coordinator.dart:178–186，测试 test/content_target_test.dart:32）；合法讨论串通知在 content_coordinator.dart:308–314 先 jumpToMessage（PUSH）再 openThread（再 PUSH），没有保留原 URI 和单次 PUSH。",
+    "checks": [
+      {
+        "id": "N28",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  }
+]

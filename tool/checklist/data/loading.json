@@ -1,0 +1,343 @@
+[
+  {
+    "id": "L01",
+    "group": "加载",
+    "title_zh": "点到当前频道里已经加载过的消息时，直接定位并居中，不再重新请求。",
+    "web_source": "packages/web/src/store/messageStore.ts:2374-2392",
+    "audit_note": "apps/raft_flutter/lib/data/workspace_controller.dart:2307 已缓存目标直接高亮且不发 context 请求；apps/raft_flutter/test/message_context_transition_test.dart:106 只断言了不发请求/loading=false，没有断言行居中和摘要/分页不变。",
+    "checks": [
+      {
+        "id": "L01",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L02",
+    "group": "加载",
+    "title_zh": "同频道跳到较远的消息时，旧消息先保持不动，新窗口一次性带着回复和高亮出现，目标居中。",
+    "web_source": "packages/web/src/store/messageStore.ts:2393-2460; packages/web/src/components/message/ChatPanel.tsx:1484-1512",
+    "audit_note": "apps/raft_flutter/test/chat_focus_receipt_test.dart:53 三套主题逐帧断言等待期间旧行不动、目标首帧即居中且不再跳；apps/raft_flutter/test/message_context_transition_test.dart:22 断言回复摘要与规范化 targetMessageId 同一次发布。（等待期间头部/标签/输入框可交互未单独断言）",
+    "checks": [
+      {
+        "id": "L02",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3
+      }
+    ]
+  },
+  {
+    "id": "L03",
+    "group": "加载",
+    "title_zh": "跳转后的消息高亮约 2 秒后自动消失，切换频道或目标会取消旧计时。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:581-597",
+    "audit_note": "apps/raft_flutter/lib/features/chat_view.dart:714 有 2 秒计时并校验作用域/窗口；apps/raft_flutter/test/chat_focus_receipt_test.dart:148-150 只测了 1700ms 仍高亮、2100ms 消失，切换频道取消计时和不阻塞跟随模式未测。",
+    "checks": [
+      {
+        "id": "L03",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L04",
+    "group": "加载",
+    "title_zh": "连续点两条消息时，只有最后一次点击生效，先前的慢响应或失败都不会干扰。",
+    "web_source": "packages/web/src/store/messageStore.ts:643-655",
+    "audit_note": "apps/raft_flutter/test/message_context_transition_test.dart:131 断言 A 慢于 B 及频道撤销/服务器撤销/换账号后 A 都不落地；:220 断言 A 的失败不会覆盖 B。",
+    "checks": [
+      {
+        "id": "L04",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L05",
+    "group": "加载",
+    "title_zh": "目标消息加载失败时，保留已显示内容并回到最新，同时区分“找不到”和“套餐历史限制”。",
+    "web_source": "packages/web/src/store/messageStore.ts:2461-2486",
+    "audit_note": "apps/raft_flutter/lib/data/workspace_controller.dart:2425-2448 失败后回落到最新并有过期保护（test/message_context_transition_test.dart:173,:220 已测）；缺：只写通用 error，未区分“找不到”与“历史限制”，回落等待期间保留旧行未测。",
+    "checks": [
+      {
+        "id": "L05",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L06",
+    "group": "加载",
+    "title_zh": "在历史窗口点“回到底部”，重新加载最新消息并滚到底，等待时旧内容不消失。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:654-683; packages/web/src/store/messageStore.ts:2001-2024",
+    "audit_note": "apps/raft_flutter/lib/data/workspace_controller.dart:2237 returnToLatest 在 hasNewer 时重载最新；apps/raft_flutter/test/chat_focus_receipt_test.dart:169-188 测了真实点击、等待期旧窗口保留、到底；请求期间/之后新消息到达及无重复请求未测。",
+    "checks": [
+      {
+        "id": "L06",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L07",
+    "group": "加载",
+    "title_zh": "不在底部时新消息只更新计数不跳动；自己发消息才跟随到底；上下翻页保持阅读位置。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:599-640; packages/web/src/store/messageStore.ts:2043-2108",
+    "audit_note": "apps/raft_flutter/lib/features/chat_view.dart:581 有离底计数，apps/raft_flutter/lib/data/workspace_controller.dart:1776 有向上翻页；缺：没有向下(after=)翻页，:2663 只要 hasNewer 就丢弃新到消息（含紧邻的下一条），也没有对应测试。",
+    "checks": [
+      {
+        "id": "L07",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L08",
+    "group": "加载",
+    "title_zh": "冷启动打开频道时，标题、标签和输入框先出现，只有消息区显示加载中；失败时显示明确状态。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:1345-1409,1484-1534; packages/web/src/components/layout/MainLayout.tsx:425-490",
+    "audit_note": "apps/raft_flutter/test/desktop_workspace_routes_test.dart:142 已验证已知频道首帧有头部/标签/输入框；缺：未解析频道身份没有“加载频道”状态，空窗口加载失败显示“Start the conversation”(lib/features/chat_view.dart:1968) 而非失败态。",
+    "checks": [
+      {
+        "id": "L08a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "已知频道首帧结构完整",
+        "proof_file": "apps/raft_flutter/test/desktop_workspace_routes_test.dart"
+      },
+      {
+        "id": "L08b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "身份尚未解析或失败时的明确状态"
+      }
+    ]
+  },
+  {
+    "id": "L09",
+    "group": "加载",
+    "title_zh": "打开 Agent/电脑详情时不先显示编造的默认数据，有真实缓存就立刻显示。",
+    "web_source": "packages/web/src/components/profile/ProfilePanel.tsx:67-172; packages/web/src/components/layout/MainLayout.tsx:547-580",
+    "audit_note": "apps/raft_flutter/test/entity_detail_hydration_test.dart:102,115 已验证有缓存首帧显示真实数据、只有 ID 时不出现 Default/offline/Unassigned/null；缺：切换目标同步隐藏旧数据未测，叠层与独立页面未按 Web 区分（独立页 Web 显示 Unavailable 面板）。",
+    "checks": [
+      {
+        "id": "L09",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "L10",
+    "group": "加载",
+    "title_zh": "成员资料先显示已知成员信息，详情返回后补全；角色/服务器切换丢弃旧请求，刷新失败不清空。",
+    "web_source": "packages/web/src/components/member/resolveHumanProfile.ts:4-17; packages/web/src/store/serverStore.ts:375-395",
+    "audit_note": "apps/raft_flutter/test/entity_detail_hydration_test.dart:148 实时成员名/角色优先，:172 刷新失败保留，:207 角色变更丢弃迟到详情，:304 拒绝目录不残留私有信息。（服务器切换只经角色变更间接覆盖）",
+    "checks": [
+      {
+        "id": "L10a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "实时成员信息优先"
+      },
+      {
+        "id": "L10b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "刷新失败保留已接受资料"
+      },
+      {
+        "id": "L10c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "角色变化丢弃旧请求"
+      },
+      {
+        "id": "L10d",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "服务器变化丢弃旧请求"
+      }
+    ]
+  },
+  {
+    "id": "K01",
+    "group": "Kevin 反馈",
+    "title_zh": "鼠标移开、切换标签或开关菜单时，控件不再闪黑。",
+    "web_source": "",
+    "audit_note": "packages/raft_ui/test/control_transition_paint_test.dart:114,163,223 三套主题逐帧断言悬停退出、移动端标签切换、菜单开关时像素不超出起止颜色；覆盖范围仅限这三类控件。",
+    "checks": [
+      {
+        "id": "K01a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "悬停退出"
+      },
+      {
+        "id": "K01b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "手机标签切换"
+      },
+      {
+        "id": "K01c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "菜单开关"
+      }
+    ]
+  },
+  {
+    "id": "K02",
+    "group": "Kevin 反馈",
+    "title_zh": "桌面端点 Activity 条目时，不再在 Activity 页顶部多出一条整宽频道标题。",
+    "web_source": "packages/web/src/components/thread/ThreadsInbox.tsx:1104-1175",
+    "audit_note": "apps/raft_flutter/lib/features/workspace_view.dart:1210-1226 Activity 下用 navigate:false 打开，:968-984 activity 路由不放频道头；apps/raft_flutter/test/desktop_workspace_routes_test.dart:258 只用 URI 直接构造状态断言无频道头，没有模拟点击条目。",
+    "checks": [
+      {
+        "id": "K02",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "K03",
+    "group": "Kevin 反馈",
+    "title_zh": "跳到目标消息前，消息列表不再经历好几种状态来回跳动。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:581-597",
+    "audit_note": "apps/raft_flutter/test/chat_focus_receipt_test.dart:53 已验证同频道跳转无中间帧；缺：桌面 Activity/搜索详情跨频道时先显示纯 Loading 文字(lib/features/workspace_view.dart:1470)，线程条目先开频道再开线程，均无测试。",
+    "checks": [
+      {
+        "id": "K03",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "K04",
+    "group": "Kevin 反馈",
+    "title_zh": "“回到底部 / N 条新消息”按钮居中浮在输入框上方，在历史窗口点它会重新加载最新消息，与 Web 一致。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:1514-1525; packages/web/src/components/message/ThreadPanel.tsx:2610-2620",
+    "audit_note": "packages/raft_ui/test/timeline_bottom_button_test.dart:13 断言居中、距底 12px；apps/raft_flutter/test/chat_focus_receipt_test.dart:169 断言点击重载最新；缺：线程面板没有该按钮(apps/raft_flutter/lib/features/chat_view.dart:2085 限定 !widget.thread)。",
+    "checks": [
+      {
+        "id": "K04",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "K05",
+    "group": "Kevin 反馈",
+    "title_zh": "打开 Agent 页不再先显示假数据（离线/Start Agent/无电脑/默认模型），电脑详情不再显示 null。",
+    "web_source": "packages/web/src/components/agent/agentDetailAvailability.ts:3-42; packages/web/src/components/layout/MainLayout.tsx:569-580",
+    "audit_note": "apps/raft_flutter/test/entity_detail_hydration_test.dart:115-124 三主题断言只有 ID 时显示加载壳、无 Default/offline/Unassigned/null；守卫在 apps/raft_flutter/lib/features/fleet_views.dart:988。",
+    "checks": [
+      {
+        "id": "K05",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "required_name_fragments": [
+          "RaftFamily.brutal/false cold agent",
+          "RaftFamily.brutal/false cold computer",
+          "RaftFamily.elegant/false cold agent",
+          "RaftFamily.elegant/false cold computer",
+          "RaftFamily.elegant/true cold agent",
+          "RaftFamily.elegant/true cold computer"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "K06",
+    "group": "Kevin 反馈",
+    "title_zh": "页面从一开始就有标签、标题和输入框，不再先占位再长出来或高度变化。",
+    "web_source": "packages/web/src/components/message/ChatPanel.tsx:1345-1409",
+    "audit_note": "apps/raft_flutter/test/desktop_workspace_routes_test.dart:142 已验证已知频道首帧完整；缺：冷启动服务器未就绪时整页转圈(apps/raft_flutter/lib/features/workspace_view.dart:682)，电脑详情加载后换成 Material AppBar 页面导致头部高度变化（测试 test/entity_detail_hydration_test.dart:140 特意跳过电脑）。",
+    "checks": [
+      {
+        "id": "K06a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "已知频道首帧结构完整",
+        "proof_file": "apps/raft_flutter/test/desktop_workspace_routes_test.dart"
+      },
+      {
+        "id": "K06b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1,
+        "title_zh": "身份尚未解析或失败时的明确状态"
+      }
+    ]
+  },
+  {
+    "id": "K07",
+    "group": "Kevin 反馈",
+    "title_zh": "桌面 Activity 点线程条目直接打开线程，点频道条目才打开频道，不再闪两次。",
+    "web_source": "packages/web/src/components/thread/ThreadsInbox.tsx:1119-1137",
+    "audit_note": "apps/raft_flutter/lib/features/workspace_view.dart:1272 线程条目先 openDesktopConversation 打开频道，等频道加载完再 :1293 openThread，仍是两段切换。",
+    "checks": [
+      {
+        "id": "K07",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "K08",
+    "group": "Kevin 反馈",
+    "title_zh": "桌面框架与 Web 一致：左栏底部 4 个按钮，侧栏显示空的“置顶/联合频道”分组，无多余切换器和底部用户行，私信行有头像和简介。",
+    "web_source": "packages/web/src/components/layout/LeftRail.tsx:699-761; packages/web/src/components/layout/Sidebar.tsx:3539-3615; packages/web/src/components/layout/sidebarEmptySectionVisibility.ts:22-24",
+    "audit_note": "apps/raft_flutter/lib/features/workspace_view.dart:1570-1583 底部只有铃铛+设置两个；:1896 侧栏头部仍有工作区切换器，:2055 仍有底部用户行，:1838 私信行只有图标；apps/raft_flutter/lib/data/personal_presentation.dart:42 桌面默认隐藏空分组（Web 浏览器默认显示）。",
+    "checks": [
+      {
+        "id": "K08",
+        "minimum_layer": "mounted",
+        "minimum_passes": 1
+      }
+    ]
+  },
+  {
+    "id": "K09",
+    "group": "Kevin 反馈",
+    "title_zh": "Elegant 主题下徽标和头像是圆角/圆形，标签栏高度和下划线与 Web 一致。",
+    "web_source": "packages/web/src/components/layout/LeftRail.tsx:465-472",
+    "audit_note": "已主题化：会话标签栏(packages/raft_ui/test/conversation_tabs_date_geometry_test.dart:94 断言各主题高度)、通用头像与 Badge 配方；缺：左栏工作区头像 Elegant 下是 8px 圆角方块(packages/raft_ui/lib/src/design_primitives.dart:242，Web 为圆形)，左栏未读用 Material Badge 而非 app-rail 配方(packages/raft_ui/lib/src/adaptive_workspace.dart:432)，侧栏通用未读徽标两主题都是 3px 圆角(packages/raft_ui/lib/src/components.dart:940)。",
+    "checks": [
+      {
+        "id": "K09a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "title_zh": "通用配方超大圆角不溢出"
+      },
+      {
+        "id": "K09b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "左栏头像形状"
+      },
+      {
+        "id": "K09c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "未读徽标使用对应配方"
+      },
+      {
+        "id": "K09d",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "标签栏高度和下划线"
+      }
+    ]
+  }
+]

@@ -111,7 +111,7 @@ void main() {
     (RaftFamily.elegant, false),
     (RaftFamily.elegant, true),
   ]) {
-    testWidgets('$family/$dark hover exit has no dark interior frame', (
+    testWidgets('[K01a] $family/$dark hover exit has no dark interior frame', (
       tester,
     ) async {
       final theme = raftTheme(family, dark: dark);
@@ -160,7 +160,7 @@ void main() {
       await mouse.removePointer();
     });
 
-    testWidgets('$family/$dark switching mobile tabs has no black frame', (
+    testWidgets('[K01b] $family/$dark switching mobile tabs has no black frame', (
       tester,
     ) async {
       final theme = raftTheme(family, dark: dark);
@@ -221,7 +221,7 @@ void main() {
     });
 
     testWidgets(
-      '$family/$dark menu open close leaves selected sidebar paint stable',
+      '[K01c] $family/$dark menu open close leaves selected sidebar paint stable',
       (tester) async {
         final theme = raftTheme(family, dark: dark);
         final controller = RaftMenuController();

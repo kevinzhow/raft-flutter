@@ -113,7 +113,7 @@ void main() {
         },
       );
       testWidgets(
-        '$family/$dark cold $kind uses Source loading shell with working back and no invented facts',
+        '[K05] $family/$dark cold $kind uses Source loading shell with working back and no invented facts',
         (t) async {
           w.hold = true;
           var back = 0;
@@ -146,7 +146,7 @@ void main() {
     }
   }
   testWidgets(
-    'Source live member name and role override fallback while detail-only fields hydrate',
+    '[L10a] Source live member name and role override fallback while detail-only fields hydrate',
     (t) async {
       await w.entityDirectory.preload();
       w.hold = true;
@@ -170,7 +170,7 @@ void main() {
     },
   );
   testWidgets(
-    'cold failure shows explicit error shell; refresh failure preserves accepted identity',
+    '[L10b] cold failure shows explicit error shell; refresh failure preserves accepted identity',
     (t) async {
       w.hold = true;
       await host(
@@ -205,7 +205,7 @@ void main() {
     },
   );
   testWidgets(
-    'same-generation revoked membership removes cached identity and rejects late detail response',
+    '[L10c] same-generation revoked membership removes cached identity and rejects late detail response',
     (t) async {
       await w.entityDirectory.preload();
       w.hold = true;
@@ -229,6 +229,40 @@ void main() {
       expect(w.entityDirectory.member('u'), isNull);
     },
   );
+  testWidgets('[L10d] changing server cannot repaint an old held member profile', (
+    t,
+  ) async {
+    // Source serverStore membership and ProfilePanel scope are authoritative,
+    // even while a real old-server detail request is still outstanding.
+    await w.entityDirectory.preload();
+    w.hold = true;
+    await host(
+      t,
+      MemberProfileView(controller: w, userId: 'u', onClose: () {}),
+      RaftFamily.brutal,
+      false,
+    );
+    expect(find.text('Source Human'), findsWidgets);
+    final old = w.pending['/servers/s/members/u/profile']!.single;
+    final generation = client.generation;
+    client.selectServer('other');
+    w.server = RaftRecord({'id': 'other', 'role': 'owner'});
+    w.notifyListeners();
+    await t.pump();
+    expect(client.generation, greaterThan(generation));
+    expect(find.text('Source Human'), findsNothing);
+    expect(w.entityDirectory.member('u'), isNull);
+    expect(w.pending['/servers/other/members/u/profile'], isNotEmpty);
+    old.complete({...member, 'description': 'Old server secret description'});
+    for (var frame = 0; frame < 4; frame++) {
+      await t.pump(const Duration(milliseconds: 16));
+      expect(find.text('Source Human'), findsNothing);
+      expect(find.text('Old server secret description'), findsNothing);
+      expect(w.entityDirectory.member('u'), isNull);
+    }
+    expect(t.takeException(), isNull);
+  });
+
   testWidgets('directory row delegates an accepted record to URI navigation', (
     t,
   ) async {

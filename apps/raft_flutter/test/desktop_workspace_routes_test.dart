@@ -140,7 +140,7 @@ void main() {
     (name: 'Elegant dark', family: RaftFamily.elegant, dark: true),
   ]) {
     testWidgets(
-      '${theme.name} known cold channel keeps header/tabs/composer in first frame and across resize',
+      '[N22b][L08a][K06a] ${theme.name} known cold channel keeps header/tabs/composer in first frame and across resize',
       (t) async {
         SharedPreferences.setMockInitialValues({});
         t.view.physicalSize = const Size(1280, 900);
