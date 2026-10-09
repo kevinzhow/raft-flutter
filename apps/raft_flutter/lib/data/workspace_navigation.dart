@@ -59,6 +59,36 @@ class WorkspaceNavigation {
     ++_revision;
   }
 
+  /// Consume the focus of the currently mounted Activity/Search thread slot.
+  /// Source ThreadPanel's 2s visual focus consumption replaces only `msg` via
+  /// searchContentStore. It is not a new navigation intent: independently held
+  /// metadata requests retain their revision, while Back/new-route still retire
+  /// them. Canonical side-thread URLs have no content-slot consumption callback.
+  bool consumeThreadFocus({
+    required String threadChannelId,
+    required String parentChannelId,
+    required String parentMessageId,
+    required String expectedMessageId,
+    required int expectedRevision,
+  }) {
+    final content = location.content;
+    final thread = location.thread;
+    if (expectedRevision != revision ||
+        expectedMessageId.isEmpty ||
+        !{RaftRoute.activity, RaftRoute.search}.contains(location.route) ||
+        content?.kind != RaftContentKind.thread ||
+        content?.id != threadChannelId ||
+        thread?.channelId != parentChannelId ||
+        thread?.itemId != parentMessageId ||
+        location.messageId != expectedMessageId) {
+      return false;
+    }
+    final next = location.withQuery({'msg': null});
+    _location = next;
+    if (_index >= 0) _entries[_index] = next;
+    return true;
+  }
+
   /// Cold details have no observed predecessor. Close their URL-owned slot or
   /// replace with the route's semantic tab root instead of leaving the server.
   RaftLocation back() {

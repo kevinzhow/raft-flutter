@@ -47,3 +47,18 @@ The full root integration checks and C's native process recordings are separate 
 - `.local/n24e-n25-mounted-third.log` and `.local/n25a-read-stage.log` retain the genuine hidden parent-channel read leak before the first pending mobile frame. The URI-aware folded-thread guard corrects it without suppressing the visible desktop outer-channel receipt.
 
 No private native run, source fixture changes, Source PNG changes, calibration changes, live account changes or remote push were performed.
+
+## Owned thread-focus seam and desktop Close
+
+Source `components/message/ThreadPanel.tsx:700–703,1540–1559` consumes visual focus after the accepted reply is centered. Only the Activity/Search thread content slot supplies `onFocusedMessageConsumed` (`components/layout/MainLayout.tsx:908`); `store/searchContentStore.ts:48–57` clears that slot's message focus, then `MainLayout.tsx:1594–1618` replaces its `msg` query. Canonical side threads have no content-slot callback, and `components/layout/rightPanelUrlSync.ts:438–503` preserves unrelated query state.
+
+`WorkspaceNavigation.consumeThreadFocus` is an exact owned presentation operation: Activity/Search route, thread content ID, parent channel/message anchor, expected focused message and captured navigation revision must all match. It replaces only `msg` in the current location/history entry and preserves the request revision so independent pending parent metadata remains eligible. Ordinary Back, Forward, navigation and principal/server binding still advance revision; stale ownership, including same-identity reentry, fails. This commit exposes the seam only: E owns the actual timer/controller connection and mounted held-parent expiry proof. C's `pair-thread-v4` native failure remains a failure until the connected code is rerun.
+
+The desktop side-thread header Close now calls `controller.closeThread` to replace its URL slot instead of invoking observed Back. Mobile Back keeps its history behavior, and Activity/Search content-slot headers retain their explicit close handler. `workspace_thread_close_location_test.dart` covers the actual pending header across all three themes, preserving independent task/profile/msg/unknown query parameters, history index/count and rejection of late parent/resolution results. This verifies query preservation, not unimplemented mounting of independent task/profile overlays. E's separate mounted N07 test covers loaded reply-close and retarget behavior.
+
+- `.local/thread-focus-model-final.log`: 74 pure model and existing navigation/Source contracts PASS; 10 new focus-ownership cases.
+- `.local/thread-focus-close-corrected.log`: 113 PASS including three actual pending desktop Close cases and existing actual N24/N25/header checks.
+- `.local/thread-focus-analyze-final.log`: app analysis clean.
+- `.local/thread-focus-close-final.log`: retained interrupted first attempt; its test harness awaited a FakeAsync future inside `runAsync`. Completing the held transport, pumping the widget clock, then awaiting the completed operation corrects the harness without dropping the late-arrival assertions.
+
+No native execution or whole-N24 expiry claim is made by this seam delivery.

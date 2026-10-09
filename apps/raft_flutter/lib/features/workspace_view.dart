@@ -1193,8 +1193,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ? null
           : '${sourceChannel.type == 'dm' ? '@' : '#'}${sourceChannel.name}',
       interactiveTitle: !unresolved,
-      onBack: onClose ?? dismissPanel,
-      onClose: onClose ?? dismissPanel,
+      onBack: onClose ?? (mobile ? dismissPanel : closeThreadPanel),
+      onClose: onClose ?? (mobile ? dismissPanel : closeThreadPanel),
       onJumpToStart: unresolved ? null : threadViewport.jumpToBeginning,
       actions: [
         if (!unresolved && parent != null)
@@ -1211,6 +1211,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
       ],
     );
+  }
+
+  void closeThreadPanel() {
+    if (threadSelection.dismiss()) return;
+    // Source side-thread Close replaces its slot; it does not consume Back.
+    // Activity/Search content slots supply their own explicit close callback.
+    w.closeThread();
+    pendingDesktopSelection = false;
+    setState(() {});
   }
 
   void closeDesktopDetail() {
