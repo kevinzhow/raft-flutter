@@ -2102,7 +2102,9 @@ void main() {
             tester,
             () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
           );
-          expect(find.text('Activity Diagnostics'), findsOneWidget);
+          // Native pointer diagnosis confirms Source's eyebrow is uppercase.
+          expect(find.text('ACTIVITY DIAGNOSTICS'), findsOneWidget);
+          expect(find.byType(RaftActivityLogView), findsOneWidget);
           await screenshot(tester, 'linux-agent-activity-tab');
           await tester.tap(find.bySemanticsLabel('Profile'));
           await tester.pumpAndSettle();

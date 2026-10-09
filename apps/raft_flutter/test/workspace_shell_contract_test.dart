@@ -293,7 +293,15 @@ void main() {
           find.descendant(of: row, matching: find.byType(RaftAvatarContent)),
         );
         expect(content.pixelKey, 'robot');
-        expect(t.getSize(row).height, family == RaftFamily.brutal ? 32 : 34);
+        final control = find.descendant(
+          of: row,
+          matching: find.byType(RaftControl),
+        );
+        final controlHeight = family == RaftFamily.brutal ? 32.0 : 34.0;
+        final trailingMargin = family == RaftFamily.brutal ? 4.0 : 2.0;
+        expect(t.getSize(control).height, controlHeight);
+        expect(t.getSize(row).height, controlHeight + trailingMargin);
+        expect(t.getRect(control).top, t.getRect(row).top);
         final title = t.widget<Text>(
           find.descendant(of: row, matching: find.text('Cindy')),
         );
