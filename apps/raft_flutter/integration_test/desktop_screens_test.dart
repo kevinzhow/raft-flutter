@@ -271,7 +271,13 @@ void main() {
 
         Future<void> settings(String tab) async {
           await tap(find.byKey(const Key('rail-settings')));
-          await tap(find.byKey(ValueKey('workspace-settings-nav-$tab')));
+          // Source route labels differ from the native destination IDs.
+          final destination = switch (tab) {
+            'language' => 'language-region',
+            'applications' => 'integrations',
+            _ => tab,
+          };
+          await tap(find.byKey(ValueKey('workspace-settings-nav-$destination')));
           await frames(30);
         }
 

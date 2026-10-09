@@ -47,7 +47,7 @@ Future<void> verifyAdvancedResources(
     w.setSection(value);
     await tester.pump(const Duration(milliseconds: 300));
     await loaded();
-    if (['saved', 'activity'].contains(value)) {
+    if (value == 'activity') {
       await tester.tap(find.byTooltip('Filters'));
       await tester.pump(const Duration(milliseconds: 200));
     }
@@ -92,13 +92,20 @@ Future<void> verifyAdvancedResources(
     await capture('native-search-self-mentions-filter');
 
     await section('saved');
-    await menu('Filter by channel', '#$channelName');
-    await menu('Sort conversations', 'Oldest first');
-    await tester.enterText(find.byType(TextField), query);
-    await tester.testTextInput.receiveAction(TextInputAction.done);
+    // Source SavedPanel loads the descending saved list directly. It has no
+    // Filters toggle, query box, or sort menu (SavedPanel.tsx:223,252-285).
+    // Verify the authoritative saved row and its real navigation instead.
     await loaded(message: true);
-    expect(state().advanced.direction, 'asc');
-    await capture('native-saved-channel-query-sort');
+    expect(state().advanced.direction, 'desc');
+    expect(find.byTooltip('Filters'), findsNothing);
+    final savedRow = find.byKey(ValueKey('saved-$messageId'));
+    await tester.ensureVisible(savedRow);
+    await tester.pumpAndSettle();
+    await capture('native-saved-authoritative-row');
+    await tester.tap(savedRow);
+    await wait(() => w.section == 'chat' &&
+        w.channel?.id == channelId && w.highlightedMessageId == messageId);
+    await capture('native-saved-open-message');
 
     await section('activity');
     // Activity facets may append authoritative counts to the channel label.
