@@ -124,3 +124,5 @@ export 'src/css_opacity.dart';
 export 'src/resource_cards.dart';
 export 'src/timeline_bottom_button.dart';
 export 'src/thread_resolution_body.dart';
+
+export 'src/channel_resolution_body.dart';

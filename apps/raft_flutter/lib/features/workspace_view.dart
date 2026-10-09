@@ -653,6 +653,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       final route = location.route == RaftRoute.settings
           ? 'settings'
           : w.section;
+      final unresolvedChannelRoute =
+          {RaftRoute.channel, RaftRoute.dm}.contains(location.route) &&
+          w.channel?.id != location.entityId;
       if (route == 'search' &&
           channelSearchSeed == null &&
           !channelSearchRevoked &&
@@ -803,6 +806,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ).bodyBackground,
               child: sidebar(mobileHome: true),
             )
+          : route == 'chat' && unresolvedChannelRoute
+          ? w.missingConversationChannelId == location.entityId
+                ? RaftChannelResolutionBody(
+                    label: tr('Select a channel'),
+                    backLabel: tr('Back'),
+                    onBack: dismissPanel,
+                  )
+                : RaftChannelResolutionBody(label: tr('Loading channel'))
           : route == 'chat' || route == 'home'
           ? ServerSetupGate(
               controller: w,
@@ -836,13 +847,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       )
                   ? (row) => openCanonicalActivity(row)
                   : null,
-              onActivityItem:
+              onActivityItem: (row) =>
                   wide &&
                       activityFlag.masterDetail(
                         MediaQuery.sizeOf(context).width,
                       )
-                  ? openDesktopActivity
-                  : null,
+                  ? openDesktopActivity(row)
+                  : openCanonicalActivity(row, single: true),
               onMessage: (channelId, messageId) async {
                 scaffold.currentState?.closeDrawer();
                 if (wide &&
@@ -920,7 +931,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                             'members',
                             'settings',
                           ].contains(route)))
-                    mobilePageHeader(title, thread),
+                    if (thread || !unresolvedChannelRoute)
+                      mobilePageHeader(title, thread),
                   if (w.error != null)
                     MaterialBanner(
                       content: Text(w.error!),
@@ -973,6 +985,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                 child: Column(
                                   children: [
                                     if (wide &&
+                                        !unresolvedChannelRoute &&
                                         ![
                                           'home',
                                           'tasks',
@@ -1306,8 +1319,15 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
-  Future<void> openCanonicalActivity(Map<String, dynamic> row) async {
-    final target = ActivityDestination.fromRow(row, canonical: true);
+  Future<void> openCanonicalActivity(
+    Map<String, dynamic> row, {
+    bool single = false,
+  }) async {
+    final target = ActivityDestination.fromRow(
+      row,
+      canonical: !single,
+      mobile: single,
+    );
     if (target == null) return;
     // Source ThreadsInbox1036–1075 gives the destination URI the complete
     // identity. One PUSH leaves Activity; no intermediate content-slot write.
@@ -1316,22 +1336,18 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.closeThread(navigate: false);
     setState(() {});
     if (target.thread) {
-      final parentChannel = [
-        ...w.channels,
-        ...w.dms,
-      ].where((channel) => channel.id == target.channelId).firstOrNull;
-      if (parentChannel != null) {
-        // The outer tail and the thread are independent Source projections.
-        // selectChannel's synchronous retirement precedes the new identity.
-        unawaited(w.selectChannel(parentChannel, navigate: false));
-        await w.openThreadIdentity(
-          parentChannelId: target.channelId,
-          parentMessageId: target.parentMessageId!,
-          focusedMessageId: target.messageId,
-          navigate: false,
-        );
-        return;
-      }
+      // ChannelById's real metadata/tail hydrate is independent of the URL's
+      // thread identity. Never pass a reply ID into the parent's context GET.
+      unawaited(
+        w.resolveConversationChannel(target.channelId, preserveThread: true),
+      );
+      await w.openThreadIdentity(
+        parentChannelId: target.channelId,
+        parentMessageId: target.parentMessageId!,
+        focusedMessageId: target.messageId,
+        navigate: false,
+      );
+      return;
     }
     await w.jumpToMessage(target.channelId, target.messageId, navigate: false);
   }

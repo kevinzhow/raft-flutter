@@ -1658,15 +1658,82 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
+  String? _resolvingConversationChannelId, _missingConversationChannelId;
+  int _conversationResolutionRequest = 0;
+  String? get missingConversationChannelId => _missingConversationChannelId;
+
+  /// MainLayout ChannelById/ensureChannel: hydrate a real channel without
+  /// treating the thread's focused reply as a message in its parent channel.
+  /// URI, principal/server epoch and request ownership fence late arrival.
+  Future<void> resolveConversationChannel(
+    String id, {
+    bool preserveThread = false,
+  }) async {
+    final request = ++_conversationResolutionRequest,
+        revision = navigationRevision,
+        scope = navigationAuthority,
+        reply = _replyToken(),
+        generation = ledger.generation;
+    bool current() =>
+        !_disposed &&
+        request == _conversationResolutionRequest &&
+        revision == navigationRevision &&
+        scope == navigationAuthority &&
+        reply == _replyToken() &&
+        generation == ledger.generation &&
+        !_revokedChannels.contains(id);
+    if (id.isEmpty || !can('viewChannel')) return;
+    _resolvingConversationChannelId = id;
+    _missingConversationChannelId = null;
+    notifyListeners();
+    try {
+      var real = [...channels, ...dms].where((c) => c.id == id).firstOrNull;
+      if (real == null) {
+        final data = await client.get('/channels/$id');
+        if (!current()) return;
+        if (data is! Map ||
+            data['id'] != id ||
+            data['serverId'] != null && data['serverId'] != server?.id) {
+          throw const RaftApiException('This channel is not available.');
+        }
+        real = RaftChannel(Map<String, dynamic>.from(data));
+        if (!can('viewChannel', resource: real)) return;
+        if (real.type == 'dm') {
+          dms = [...dms.where((c) => c.id != id), real];
+        } else {
+          channels = [...channels.where((c) => c.id != id), real];
+        }
+      }
+      if (!current() || !can('viewChannel', resource: real)) return;
+      await selectChannel(
+        real,
+        navigate: false,
+        preserveThread: preserveThread,
+      );
+    } catch (_) {
+      if (current()) _missingConversationChannelId = id;
+    } finally {
+      if (current() && _resolvingConversationChannelId == id) {
+        _resolvingConversationChannelId = null;
+        notifyListeners();
+      }
+    }
+  }
+
   Future<void> selectChannel(
     RaftChannel next, {
     bool autoRead = true,
     bool navigate = true,
     bool retainContextUntilAccepted = false,
+    bool preserveThread = false,
   }) async {
+    final retainThread =
+        preserveThread &&
+        threadIdentity?.parentChannelId == next.id &&
+        location.thread?.channelId == next.id;
     channel = next;
     hasNewer = false;
-    highlightedMessageId = null;
+    if (!retainThread) highlightedMessageId = null;
     final priorWindow = _windowState[next.id];
     if (priorWindow != null && priorWindow.$1 != _windowAuthority()) {
       visibleIds.remove(next.id);
@@ -1684,9 +1751,11 @@ class WorkspaceController extends ChangeNotifier {
       visibleIds.remove(next.id);
     }
     if (navigate) section = 'chat';
-    threadParent = null;
-    threadChannelId = null;
-    threadGeneration++;
+    if (!retainThread) {
+      threadParent = null;
+      threadChannelId = null;
+      threadGeneration++;
+    }
     loadingOlder = false;
     channelLoading = true;
     error = null;
@@ -1853,6 +1922,11 @@ class WorkspaceController extends ChangeNotifier {
       return false;
     }
     final current = location;
+    // Source mobile thread folds the parent channel immediately from the URI.
+    // A prior Activity layout callback cannot admit its concurrently loaded tail.
+    if (id == channel?.id && mobileNavigation && current.thread != null) {
+      return false;
+    }
     final content = current.content;
     final mainRoute =
         (current.route == RaftRoute.channel || current.route == RaftRoute.dm) &&

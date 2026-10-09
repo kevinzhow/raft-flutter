@@ -64,6 +64,7 @@ class _Workspace extends WorkspaceController {
     bool autoRead = true,
     bool navigate = true,
     bool retainContextUntilAccepted = false,
+    bool preserveThread = false,
   }) async {
     selected = next.id;
   }
