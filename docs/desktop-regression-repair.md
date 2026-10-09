@@ -120,3 +120,46 @@ report with18 unmeasured cases from absent metadata is retained. The original
 | settings.administration.elegant-dark | 74.08828% | 70.45977% | 75.47236% |
 | settings.applications.elegant-light | 90.70742% | 87.93496% | 92.98115% |
 | settings.applications.elegant-dark | 81.86299% | 78.26289% | 83.29033% |
+
+## Complete current desktop comparison
+
+Product39448e9 captures all105 actual Linux cases against the byte-identical
+Source baseline. Official acceptance remains2/105. Mean exact similarity is
+82.04139%, compared withAA's81.18503%;19 improve,84 are unchanged and two
+regress. Both new regressions contain only a2×20-pixel blinking thread-composer
+caret: Brutal x902–903/y698–717 loses30 matches, Elegant light
+x904–905/y706–725 loses29. All other pixels in both frames are byte-identical
+toAA. This is a capture inconsistency: Source's existing capture hides carets,
+as does the99-case Flutter harness, but the native desktop capture does not.
+The original official failures are retained; no masking, score normalization,
+Source capture change or recalibrated acceptance is applied. This explains
+the two tiny losses without claiming a new layout or page regression.
+
+The current105-region report admits every case with the same actual Source
+geometry, compares withAA and retains unassigned pixels and overlays. Its
+regional diagnostic counts are separate from the402 whole-frame decision.
+
+## Current full native results after integration
+
+Both actual runs bind to39448e9 / the current product SourceHash. Linux
+collected34 checkpoints and passed the real directory/profile role mutation,
+including backend role readback. It then fails in the older `section("agents")`
+helper, which tries to scroll a conversation sidebar that is absent while the
+real Members directory is open. Its peak RisingWave charge was1,564,319,744
+bytes; OOM remained zero. The original failure and all34 collected frames are
+retained; no full-flow PASS is claimed. The desktop directory's create-agent
+entry requires a separate actual-pointer check before deciding between a
+navigation-helper repair and a missing product action.
+
+Android emulator5580 collected18 fresh checkpoints, then failed while
+opening task history: the unscoped `task-properties-history` finder matched
+more than one element before `ensureVisible`. Its run never reached the
+previous Search Back wait, so the Back helper repair remains unproved on this
+device. Eighteen is the collected evidence count, not a claim that every later
+device screenshot was retrieved before the integration runner removed the APK.
+The original failure remains; the next check must identify the actual painted,
+hit-ready history control before changing either the test or the product.
+
+Current engineering verification passes2676 project tests with3 existing
+skips,75 host checks and full analysis. These checks are separate from the two
+failed native flows and the official138/402 whole-frame result.
