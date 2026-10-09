@@ -839,7 +839,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.enterText(composer, retryText);
       await tester.pump(const Duration(milliseconds: 200));
-      await tester.tap(find.byTooltip('Send message (Ctrl+Enter)').first);
+      await tester.tap(
+        find
+            .byWidgetPredicate(
+              (widget) => widget is RaftComposerAction && widget.submit,
+            )
+            .first,
+      );
       await until(tester, () => lost && w.error != null);
       expect(tester.widget<TextField>(composer).controller!.text, retryText);
       final beforeRetry = await w.client.messagePage(general.id);
@@ -849,7 +855,13 @@ void main() {
         ),
         hasLength(1),
       );
-      await tester.tap(find.byTooltip('Send message (Ctrl+Enter)').first);
+      await tester.tap(
+        find
+            .byWidgetPredicate(
+              (widget) => widget is RaftComposerAction && widget.submit,
+            )
+            .first,
+      );
       await until(
         tester,
         () => tester.widget<TextField>(composer).controller!.text.isEmpty,
@@ -879,7 +891,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       expect(tester.state(find.byType(RaftComposer).first), same(composeState));
       expect(tester.widget<TextField>(composer).controller!.text, text);
-      await tester.tap(find.byTooltip('Send message (Ctrl+Enter)').first);
+      await tester.tap(
+        find
+            .byWidgetPredicate(
+              (widget) => widget is RaftComposerAction && widget.submit,
+            )
+            .first,
+      );
       await until(
         tester,
         () => w.messages.any((m) => m.content == text) || w.error != null,
@@ -907,7 +925,9 @@ void main() {
       await tester.tap(
         find.descendant(
           of: threadComposer,
-          matching: find.byTooltip('Send message (Ctrl+Enter)'),
+          matching: find.byWidgetPredicate(
+            (widget) => widget is RaftComposerAction && widget.submit,
+          ),
         ),
       );
       await until(tester, () => w.replies.any((m) => m.content == replyText));
@@ -973,7 +993,7 @@ void main() {
       await tester.tap(find.byTooltip('Close thread'));
       await until(tester, () => w.threadParent == null);
       final inlineReply = find.byKey(
-        ValueKey('thread-preview-${nativeReply.id}'),
+        ValueKey('inline-reply-${nativeReply.id}'),
       );
       await until(tester, () => inlineReply.evaluate().isNotEmpty);
       await tester.ensureVisible(inlineReply);
@@ -983,13 +1003,19 @@ void main() {
         findsOneWidget,
       );
       await screenshot(tester, 'linux-thread-inline-preview');
+      // Source InlineThreadReplies is one parent-thread button. Its unread
+      // projection selects the target; an individual preview is not a route.
+      final liveSummary = w.threadSummaries[sent.id];
+      final expectedUnread = liveSummary is Map
+          ? liveSummary['firstUnreadMessageId'] as String?
+          : null;
       await tester.tap(inlineReply);
       await until(
         tester,
         () =>
             w.threadParent?.id == sent.id &&
             !w.threadLoading &&
-            w.highlightedMessageId == nativeReply.id &&
+            w.highlightedMessageId == expectedUnread &&
             find
                 .byKey(ValueKey('message-${nativeReply.id}'))
                 .evaluate()
