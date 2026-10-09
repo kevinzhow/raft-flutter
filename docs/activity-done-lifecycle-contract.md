@@ -64,6 +64,8 @@ background-owner or pixel equivalence.
 Private full DS check passes at 696 with unchanged baseline and allowlist:
 `.local/activity-done-ds-check.log`.
 
-`threadStore.ts:853–883` additionally persists a coalesced read-all when Source
-thread Done succeeds. This row-lifecycle repair does not introduce that
-additional backend write or claim that separate side effect is fully ported.
+The original row-lifecycle repair did not introduce Source's additional
+coalesced read-all (`threadStore.ts:853–883`). The separate follow-up now adds
+that real write and its owned refresh suppression; see
+[Thread Done persisted read-all](activity-thread-done-persisted-read-contract.md)
+for its independent before/after evidence and platform limits.

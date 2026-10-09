@@ -7,6 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart' show canonicalUint64;
 
 import 'workspace_controller.dart';
+import 'source_read_all_transport.dart';
 
 /// Current-server Activity attention, owned independently of the Activity page.
 ///
@@ -34,6 +35,7 @@ class SourceActivityUnreadStore extends ChangeNotifier {
         final request = response.requestOptions;
         final requestScope = _readScopes[request];
         if (_isReadWrite(request) &&
+            request.extra[sourceDoneOwnsReadRefresh] != true &&
             requestScope != null &&
             requestScope.scope == scope &&
             requestScope.authority == _authorityEpoch &&

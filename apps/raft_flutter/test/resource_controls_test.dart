@@ -384,12 +384,22 @@ void main() {
       expect(c.mutations.last.data, {'parentMessageId': 'p'});
       await t.tap(find.byTooltip('Mark conversation done'));
       await t.pumpAndSettle();
-      expect(c.mutations.last.path, '/channels/threads/done');
-      expect(c.mutations.last.data, {
+      // Source inboxStore1427–1441 performs Done, starts a human-self read-all,
+      // and owns one awaited refresh. Preserve the exact storage-domain write.
+      expect(c.mutations.map((m) => m.path), [
+        '/channels/threads/follow',
+        '/channels/threads/done',
+        '/channels/t/read-all',
+      ]);
+      final done = c.mutations[c.mutations.length - 2];
+      expect(done.path, '/channels/threads/done');
+      expect(done.data, {
         'threadChannelId': 't',
         'throughActivitySeq': '12',
         'frontierSpace': 'storage',
       });
+      expect(c.mutations.last.path, '/channels/t/read-all');
+      expect(c.mutations.last.data, isNull);
     },
   );
   testWidgets('late people lookup cannot repopulate a revoked sender menu', (

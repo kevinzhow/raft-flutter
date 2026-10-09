@@ -12,6 +12,7 @@ import '../data/workspace_controller.dart';
 import '../data/search_memory.dart';
 import '../data/activity_follow_state.dart';
 import '../data/activity_done_state.dart';
+import '../data/source_read_all_transport.dart';
 import 'search_home.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -2932,6 +2933,19 @@ class _ResourceViewState extends State<ResourceView> {
       try {
         await w.client.request('POST', mutation.path, data: mutation.data);
         if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) return;
+        if (row['kind'] == 'thread') {
+          // Source threadStore853–883 always persists the human-self read-all
+          // after this fenced Done ACK. It neither waits for this write nor
+          // publishes another refresh: Done owns the awaited refresh below.
+          unawaited(
+            SourceReadAllTransport.of(w.client)
+                .threadDone(
+                  channelId,
+                  identity: SourceReadAllIdentity.capture(w.client),
+                )
+                .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+          );
+        }
         // Refresh first while suppression remains armed, then retire it.
         // A genuinely newer authority marker is exempt during this refresh.
         await load();
