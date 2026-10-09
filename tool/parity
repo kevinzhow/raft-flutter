@@ -248,8 +248,47 @@ test.beforeEach(async ({ page }) => {
     if (text.includes("TaskStatusIconRoot") || text.includes("[MarkdownContent] render failed")) errors.push(text);
   });
 });
+async function parityPrepareRepairedNotification(page: Page, caseId: string) {
+  const repair = (PARITY_BASELINE_REPAIR.additionalRepairs ?? [])
+    .find((entry: { cases: string[] }) => entry.cases.includes(caseId));
+  if (!repair) return;
+  const trigger = page.getByTestId("notification-trigger-mobile");
+  await expect(trigger).toHaveAttribute("data-state", "closed");
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("data-state", "open");
+  await expect(page.getByTestId("notification-center")).toBeVisible();
+}
 async function parityVerifyRepairedMarkdown(page: Page, caseId: string, selector: string) {
   if (!PARITY_BASELINE_REPAIR.cases.includes(caseId)) return null;
+  const notificationRepair = (PARITY_BASELINE_REPAIR.additionalRepairs ?? [])
+    .find((repair: { cases: string[] }) => repair.cases.includes(caseId));
+  if (notificationRepair) {
+    const trigger = page.getByTestId("notification-trigger-mobile");
+    const center = page.getByTestId("notification-center");
+    await expect(center).toBeVisible();
+    await expect(trigger).toHaveAttribute("data-state", "open");
+    for (const entry of notificationRepair.entries) {
+      await expect(center.getByText(entry.title, { exact: true })).toBeVisible();
+      await expect(center.getByText(entry.body, { exact: true })).toBeVisible();
+    }
+    const rendered = await center.evaluate(root => ({
+      titles: [...root.querySelectorAll('[data-slot="notification-center-item-title"]')]
+        .map(node => node.textContent),
+      kinds: [...root.querySelectorAll('[data-slot="notification-center-item-icon"]')]
+        .map(node => node.getAttribute("data-status")),
+      text: root.textContent,
+      bounds: (() => { const r = root.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height }; })(),
+    }));
+    expect(rendered.titles).toEqual(notificationRepair.entries.map((entry: { title: string }) => entry.title));
+    expect(rendered.kinds).toEqual(notificationRepair.entries.map((entry: { kind: string }) => entry.kind));
+    expect(rendered.text).toContain("2 items");
+    expect(parityRenderErrors.get(page) ?? [], "Notification fixture must render without errors").toEqual([]);
+    return { repairId: notificationRepair.repairId,
+      fixtureSha256: notificationRepair.fixtureSha256,
+      sourceCommit: notificationRepair.sourceCommit,
+      renderVerified: true, captureVerified: true, triggerClickedBeforeCapture: true, ...rendered };
+  }
   expect(parityRenderErrors.get(page) ?? [], "Repaired baseline must render without fallback/errors").toEqual([]);
   const rendered = await page.locator(selector).evaluate(root => ({
     rawTaskMarkup: (root.textContent ?? "").includes("<a data-task-ref="),
@@ -283,6 +322,9 @@ def prepare_react_provider():
     if spec.count(shot) != 4:
         sys.exit(f'upstream react-provider.spec.ts changed: expected 4 screenshot calls, found {spec.count(shot)}')
     spec = spec.replace(shot, shot + ', animations: "disabled"')
+    spec = patch_exactly_once(spec, '    await expect(target).toBeVisible();',
+        '    await expect(target).toBeVisible();\n'
+        '    await parityPrepareRepairedNotification(page, visualCase.id);', 'notification interaction before screenshot')
     spec = patch_exactly_once(spec,
         '    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);',
         '    const baselineRepair = await parityVerifyRepairedMarkdown(page, visualCase.id, selector);\n'

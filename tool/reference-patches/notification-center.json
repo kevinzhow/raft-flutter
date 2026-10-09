@@ -1,0 +1,12 @@
+{
+  "repairId": "notification-center-missing-component-v1",
+  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "scope": "Public component fixture only. The original warning-info case declared two notifications but mounted an empty frame. Mount the production mobile NotificationTrigger with these two explicit test entries and click it before capture. The original frame, manifest and thresholds stay unchanged. This verifies component rendering, not authenticated notification delivery.",
+  "cases": ["components.home.notification-center.states"],
+  "frame": {"width": 390, "height": 844, "topInset": 48, "sideInset": 16},
+  "trigger": {"size": 32, "popupGap": 8},
+  "entries": [
+    {"id": "visual-warning", "kind": "warning", "title": "Needs attention", "body": "Review this notification."},
+    {"id": "visual-info", "kind": "info", "title": "All systems connected", "body": "No action is required."}
+  ]
+}

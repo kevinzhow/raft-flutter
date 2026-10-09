@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'primitive_tokens.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
 
@@ -147,14 +148,18 @@ class _MobileItemRecipe extends RaftControlRecipe {
         )
       : null;
   @override
-  TextStyle get textStyle => RaftTypography.body(
-    tokens,
-    size: 10,
-    line: 15,
-    weight: FontWeight.w400,
-    color: foreground,
-    // `tracking-wider`; CSS line boxes split leading evenly.
-  ).copyWith(letterSpacing: .5, leadingDistribution: TextLeadingDistribution.even);
+  TextStyle get textStyle =>
+      RaftTypography.body(
+        tokens,
+        size: 10,
+        line: 15,
+        weight: FontWeight.w400,
+        color: foreground,
+        // `tracking-wider`; CSS line boxes split leading evenly.
+      ).copyWith(
+        letterSpacing: .5,
+        leadingDistribution: TextLeadingDistribution.even,
+      );
   @override
   List<BoxShadow> shadows({
     bool hovered = false,
@@ -677,14 +682,34 @@ class RaftMobileNotificationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return RaftControl(
+    final recipe = _MobileNotificationRecipe(t, selected: open);
+    return RaftInteractive(
       onPressed: onPressed,
       semanticLabel: raftText(context, semanticLabel),
       tooltip: raftText(context, semanticLabel),
-      visualHeight: visualSize,
-      visualWidth: visualSize,
-      recipe: _MobileNotificationRecipe(t, selected: open),
-      child: RaftIcon(RaftGlyph.bell, size: glyphSize),
+      builder: (context, state) => AnimatedContainer(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : RaftPrimitives.controlDuration,
+        width: visualSize,
+        height: visualSize,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: recipe.backgroundFor(hovered: state.hovered),
+          border: Border.fromBorderSide(recipe.side(hovered: state.hovered)),
+          borderRadius: recipe.radius,
+          boxShadow: recipe.shadows(
+            hovered: state.hovered,
+            pressed: state.pressed,
+            focused: state.focusVisible,
+          ),
+        ),
+        child: RaftIcon(
+          RaftGlyph.bell,
+          size: glyphSize,
+          color: recipe.foreground,
+        ),
+      ),
     );
   }
 }

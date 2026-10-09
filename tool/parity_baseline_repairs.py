@@ -25,6 +25,12 @@ TASKS_ANCHOR = '''    tasks: [
       { taskNumber: 606 },
     ] as never,'''
 
+NOTIFICATION_ANCHOR = '''            padding: "48px 16px 0",
+          }}
+        >
+        </div>'''
+NOTIFICATION_IMPORT = 'import Sidebar from "../src/components/layout/Sidebar";'
+
 
 def repair_definition(root):
     path = Path(root) / 'tool/reference-patches/markdown-tasks.json'
@@ -37,6 +43,22 @@ def repair_definition(root):
     for task in tasks:
         if not required <= task.keys() or task['status'] not in {'todo', 'in_progress', 'in_review', 'done', 'closed'}:
             raise ValueError('markdown task fixture requires a complete, valid task')
+    notification_path = Path(root) / 'tool/reference-patches/notification-center.json'
+    notification = json.loads(notification_path.read_text())
+    notification['fixtureSha256'] = hashlib.sha256(notification_path.read_bytes()).hexdigest()
+    if (notification['sourceCommit'] != repair['sourceCommit']
+            or notification['cases'] != ['components.home.notification-center.states']
+            or [entry['kind'] for entry in notification['entries']] != ['warning', 'info']
+            or notification['frame'] != {'width': 390, 'height': 844, 'topInset': 48, 'sideInset': 16}
+            or notification['trigger'] != {'size': 32, 'popupGap': 8}
+            or len({entry['id'] for entry in notification['entries']}) != 2
+            or any(not entry.get('title') or not entry.get('body') for entry in notification['entries'])):
+        raise ValueError('notification repair must retain the declared two-entry warning/info state')
+    # Keep the original five task fixture hashes valid. Each added repair has
+    # its own cache identity and render receipt.
+    repair['additionalRepairs'] = [notification]
+    repair['markdownCases'] = list(repair['cases'])
+    repair['cases'] = repair['cases'] + notification['cases']
     return repair
 
 
@@ -46,14 +68,38 @@ def repair_cases(code, repair, source_commit):
     if code.count(TASKS_ANCHOR) != 1:
         raise ValueError('reference task fixture anchor changed; review the repair')
     rows = json.dumps(repair['tasks'], ensure_ascii=False, indent=2)
-    return code.replace(TASKS_ANCHOR, '    // Owner-authorized fixture repair: complete shared task states.\n'
+    code = code.replace(TASKS_ANCHOR, '    // Owner-authorized fixture repair: complete shared task states.\n'
                         '    tasks: ' + rows + ' as never,')
+    for notification in repair.get('additionalRepairs', []):
+        if code.count(NOTIFICATION_ANCHOR) != 1 or code.count(NOTIFICATION_IMPORT) != 1:
+            raise ValueError('reference empty notification fixture anchor changed; review the repair')
+        code = code.replace(NOTIFICATION_IMPORT, NOTIFICATION_IMPORT + '\n'
+                            'import NotificationTrigger from "../src/components/layout/NotificationTrigger";')
+        entries = json.dumps(notification['entries'], ensure_ascii=False)
+        code = code.replace(NOTIFICATION_ANCHOR, '''            padding: "48px 16px 0",
+          }}
+        >
+          {/* Owner-authorized repair: mount the actual product trigger/center. */}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <NotificationTrigger flavor="mobile-navbar" notifications={''' + entries + ''' as never} />
+          </div>
+        </div>''')
+    return code
+
+
+def repair_for_case(repair, case_id):
+    return next((entry for entry in repair.get('additionalRepairs', [])
+                 if case_id in entry['cases']), repair)
 
 
 def capture_is_current(metadata, repair):
     if not metadata.is_file():
         return False
     recorded = json.loads(metadata.read_text()).get('baselineRepair', {})
+    case_id = metadata.name.removesuffix('.metadata.json')
+    repair = repair_for_case(repair, case_id)
+    if repair.get('repairId') == 'notification-center-missing-component-v1' and not recorded.get('captureVerified'):
+        return False
     return recorded.get('fixtureSha256') == repair['fixtureSha256'] and recorded.get('renderVerified') is True
 
 
@@ -80,6 +126,7 @@ def repair_annotations(out, site, repair):
     evidence.mkdir(parents=True, exist_ok=True)
     (evidence / 'fixture.json').write_text(json.dumps(repair, ensure_ascii=False, indent=2) + '\n')
     for case_id in repair['cases']:
+        case_repair = repair_for_case(repair, case_id)
         metadata = out / 'visual-testing-results/react' / f'{case_id}.metadata.json'
         if not capture_is_current(metadata, repair):
             continue
@@ -106,7 +153,9 @@ def repair_annotations(out, site, repair):
             links.append({'title': title, 'href': str(relative / original.name)})
         notes[case_id] = {
             'kind': 'repair', 'title': 'React 测试基准已修复',
-            'description': '原测试漏了任务状态，导致 Markdown 进入原文回退。现两端使用同一份完整任务数据，浏览器已验证任务标签正常渲染、无回退错误。旧截图保留；当前差异按原阈值重新计算，不自动判 Flutter 通过。',
+            'description': ('原测试声明两条通知却只渲染空白框。现挂载 Web 实际通知按钮并点击打开，两端使用同一份 warning/info 测试数据。浏览器已验证两条内容、数量及打开状态。这是组件测试，不代表实际通知送达。旧空白图保留，仍按原阈值计算差异。'
+                            if case_repair.get('repairId') == 'notification-center-missing-component-v1'
+                            else '原测试漏了任务状态，导致 Markdown 进入原文回退。现两端使用同一份完整任务数据，浏览器已验证任务标签正常渲染、无回退错误。旧截图保留；当前差异按原阈值重新计算，不自动判 Flutter 通过。'),
             'baselineSha256': hashlib.sha256(image.read_bytes()).hexdigest(),
             'links': links,
         }

@@ -29,6 +29,38 @@ void main() {
     (RaftFamily.elegant, true),
   ]) {
     testWidgets(
+      '$family dark=$dark Bell keeps 32px layout with a 48px touch target',
+      (tester) async {
+        var opened = 0;
+        final semantics = tester.ensureSemantics();
+        await tester.pumpWidget(
+          host(
+            RaftDensityScope(
+              density: RaftDensity.touch,
+              child: Center(
+                child: RaftMobileNotificationButton(onPressed: () => opened++),
+              ),
+            ),
+            family,
+            dark: dark,
+          ),
+        );
+        final bell = find.byType(RaftMobileNotificationButton);
+        expect(tester.getSize(bell), const Size.square(32));
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        // This point lies outside the 32px visual, inside the 48px target.
+        await tester.tapAt(tester.getCenter(bell) + const Offset(0, 20));
+        await tester.pump();
+        expect(opened, 1);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(opened, 2);
+        expect(tester.takeException(), isNull);
+        semantics.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+    testWidgets(
       '$family dark=$dark nav selects actual tab even when already active',
       (tester) async {
         final ids = <String>[];

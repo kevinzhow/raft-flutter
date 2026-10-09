@@ -403,12 +403,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   double attentionInset(BuildContext context) {
     final visualSize = widget.mobile ? 32.0 : 40.0;
     final glyphSize = widget.mobile ? 16.0 : 18.0;
-    final bounds = RaftControlBounds(
-      visualHeight: visualSize,
-      density: RaftDensityScope.of(context),
-    );
-    // Original dot is -4 relative to the glyph, not the accessible hit slot.
-    return (bounds.layoutHeight - glyphSize) / 2 - 4;
+    // Source positions the dot relative to the glyph inside the visual box.
+    // RaftInteractive extends touch semantics without inflating that box.
+    return (visualSize - glyphSize) / 2 - 4;
   }
 
   @override

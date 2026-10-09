@@ -150,6 +150,23 @@ void main() {
           lessThan(tester.getTopLeft(find.text('Computer offline')).dy),
         );
         expect(find.text('2 items'), findsOneWidget);
+        // The separator must paint across the list. A center-aligned Column
+        // previously let its empty ColoredBox shrink to zero width.
+        final separator = find.byWidgetPredicate(
+          (widget) =>
+              widget is SizedBox &&
+              widget.height == (family == RaftFamily.brutal ? 2 : 1) &&
+              widget.child is ColoredBox,
+        );
+        expect(separator, findsOneWidget);
+        expect(
+          tester.getSize(separator).width,
+          tester
+              .getSize(
+                find.byKey(const ValueKey('notification-entry-information')),
+              )
+              .width,
+        );
         final rowNode = tester.getSemantics(
           find.byKey(const ValueKey('notification-entry-information')),
         );

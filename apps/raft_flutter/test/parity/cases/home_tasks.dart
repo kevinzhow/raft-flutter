@@ -30,6 +30,7 @@ final Map<String, ParityCase> homeTaskCases = {
   'components.auth.register.inputs': _register,
   'components.navigation.tabbar.states': _tabbar,
   'components.home.titlebar.states': _titlebar,
+  'components.home.notification-center.states': _notificationCenter,
   'components.home.search.results': _searchResults,
   'components.home.search.channel-dropdown': _searchChannelDropdown,
   'components.home.saved.results': _saved,
@@ -39,16 +40,108 @@ final Map<String, ParityCase> homeTaskCases = {
   'components.home.create-channel.dialog': _createChannel,
 };
 
-final Map<String, ParityUncovered> homeTaskUncovered = {
-  'components.home.notification-center.states': ParityUncovered(
-    ParityGap.invalidBaseline,
-    'The React render host branch (VisualTestingCases.tsx kind '
-    '"notification-center") mounts no component: the baseline is an empty '
-    '390x844 white box. An empty-vs-empty match would be a hollow 100%, so it '
-    'is not counted. Flutter has SystemNotificationBell/RaftNotificationCenter '
-    'ready to map once the React fixture renders something.',
-  ),
-};
+final Map<String, ParityUncovered> homeTaskUncovered = {};
+
+// Owner-authorized repair of the empty reference fixture. Both hosts use the
+// same explicit warning/info entries. The actual raft_ui button is tapped to
+// open the actual center; this tests presentation, not authenticated delivery
+// or SystemNotificationBell's store/permission/lifecycle adapter.
+final ParityCase _notificationCenter = ParityCase(
+  widgets: const [
+    'raft_ui:RaftMobileNotificationButton',
+    'raft_ui:RaftNotificationAttention',
+    'raft_ui:RaftNotificationCenter',
+  ],
+  notes:
+      'Repaired public component fixture: original 390x844 frame, '
+      'production raft_ui controls, shared notification-center.json entries. '
+      'Popup placement follows mobile trigger end/bottom plus 8px. '
+      'Not a SystemNotificationBell authorization/API/delivery test.',
+  build: (ctx) => _NotificationReferenceCase(ctx),
+  interact: (t, ctx) async {
+    expect(find.byType(RaftNotificationCenter), findsNothing);
+    await t.tap(find.byType(RaftMobileNotificationButton));
+    await t.pump();
+    expect(find.byType(RaftNotificationCenter), findsOneWidget);
+    final fixture = ctx.fixtures['notificationCenterFixture'] as Map;
+    for (final entry in fixture['entries'] as List) {
+      expect(find.text(entry['title'] as String), findsOneWidget);
+      expect(find.text(entry['body'] as String), findsOneWidget);
+    }
+    expect(find.text('2 items'), findsOneWidget);
+  },
+);
+
+class _NotificationReferenceCase extends StatefulWidget {
+  const _NotificationReferenceCase(this.ctx);
+  final ParityContext ctx;
+  @override
+  State<_NotificationReferenceCase> createState() =>
+      _NotificationReferenceState();
+}
+
+class _NotificationReferenceState extends State<_NotificationReferenceCase> {
+  bool open = false;
+  @override
+  Widget build(BuildContext context) {
+    final fixture = widget.ctx.fixtures['notificationCenterFixture'] as Map;
+    final frame = fixture['frame'] as Map, trigger = fixture['trigger'] as Map;
+    final entries = [
+      for (final row in fixture['entries'] as List)
+        RaftNotificationEntry(
+          id: row['id'] as String,
+          kind: RaftNotificationKind.values.byName(row['kind'] as String),
+          title: row['title'] as String,
+          body: row['body'] as String,
+        ),
+    ];
+    return Scaffold(
+      body: widget.ctx.target(
+        SizedBox(
+          width: (frame['width'] as num).toDouble(),
+          height: (frame['height'] as num).toDouble(),
+          child: ColoredBox(
+            color: Colors.white,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: (frame['topInset'] as num).toDouble(),
+                  right: (frame['sideInset'] as num).toDouble(),
+                  child: Stack(
+                    children: [
+                      RaftMobileNotificationButton(
+                        open: open,
+                        semanticLabel: 'Notification center, 2 notifications',
+                        onPressed: () => setState(() => open = !open),
+                      ),
+                      const Positioned(
+                        top: 4,
+                        right: 4,
+                        child: IgnorePointer(
+                          child: RaftNotificationAttention(count: 2),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (open)
+                  Positioned(
+                    right: (frame['sideInset'] as num).toDouble(),
+                    top:
+                        ((frame['topInset'] as num) +
+                                (trigger['size'] as num) +
+                                (trigger['popupGap'] as num))
+                            .toDouble(),
+                    child: RaftNotificationCenter(entries: entries),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Auth register — React's AuthVisualCaseView mounts RegisterPage in a plain

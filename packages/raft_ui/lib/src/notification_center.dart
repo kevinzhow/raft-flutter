@@ -396,6 +396,8 @@ class _RaftNotificationCenterState extends State<RaftNotificationCenter> {
                                   role: SemanticsRole.list,
                                   label: raftText(context, widget.listLabel),
                                   child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
                                     children: [
                                       for (
                                         var i = 0;

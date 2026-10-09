@@ -29,12 +29,16 @@ void main() {
   final sharedDir = env['PARITY_SHARED_DIR'];
   final resultRoot = env['PARITY_RESULT_ROOT'];
   if (sharedDir == null || resultRoot == null) {
-    test('parity capture (set PARITY_SHARED_DIR/PARITY_RESULT_ROOT)', () {}, skip: true);
+    test(
+      'parity capture (set PARITY_SHARED_DIR/PARITY_RESULT_ROOT)',
+      () {},
+      skip: true,
+    );
     return;
   }
-  final manifest =
-      json.decode(File('$sharedDir/sharedCases.json').readAsStringSync())
-          as Map<String, dynamic>;
+  final manifest = json.decode(
+    File('$sharedDir/sharedCases.json').readAsStringSync(),
+  ) as Map<String, dynamic>;
   final fixtures = <String, dynamic>{};
   for (final file in Directory(sharedDir).listSync().whereType<File>()) {
     final name = file.uri.pathSegments.last;
@@ -47,6 +51,10 @@ void main() {
   // React fixture host. Message content and official manifest stay pinned.
   fixtures['markdownTasksFixture'] = json.decode(
     File('../../tool/reference-patches/markdown-tasks.json').readAsStringSync(),
+  );
+  fixtures['notificationCenterFixture'] = json.decode(
+    File('../../tool/reference-patches/notification-center.json')
+        .readAsStringSync(),
   );
   final patterns = (env['PARITY_CASES'] ?? '')
       .split(',')
@@ -104,19 +112,18 @@ void main() {
         }),
       );
     }
-    File(
-      '${outputDir.path}/../android-coverage.shard$shardIndex.json',
-    ).writeAsStringSync(
-      const JsonEncoder.withIndent('  ').convert({
-        'generatedAt': DateTime.now().toUtc().toIso8601String(),
-        'shard': '$shardIndex/$shardTotal',
-        'selected': [
-          for (final (i, c) in selected.indexed)
-            if (i % shardTotal == shardIndex) c['id'],
-        ],
-        'captured': captured.keys.toList(),
-      }),
-    );
+    File('${outputDir.path}/../android-coverage.shard$shardIndex.json')
+        .writeAsStringSync(
+          const JsonEncoder.withIndent('  ').convert({
+            'generatedAt': DateTime.now().toUtc().toIso8601String(),
+            'shard': '$shardIndex/$shardTotal',
+            'selected': [
+              for (final (i, c) in selected.indexed)
+                if (i % shardTotal == shardIndex) c['id'],
+            ],
+            'captured': captured.keys.toList(),
+          }),
+        );
   });
 
   for (final (i, visualCase) in selected.indexed) {

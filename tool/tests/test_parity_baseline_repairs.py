@@ -6,7 +6,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from parity_baseline_repairs import (TASKS_ANCHOR, repair_definition, repair_cases,
+from parity_baseline_repairs import (TASKS_ANCHOR, NOTIFICATION_ANCHOR, NOTIFICATION_IMPORT,
+                                    repair_definition, repair_cases,
                                     capture_is_current, preserve_capture, repair_annotations)
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -15,15 +16,41 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 class BaselineRepairsTest(unittest.TestCase):
     def test_fixture_repair_changes_only_the_broken_task_projection(self):
         repair = repair_definition(ROOT)
-        original = 'product-before\n' + TASKS_ANCHOR + '\nproduct-after'
+        original = ('product-before\n' + TASKS_ANCHOR + '\n' + NOTIFICATION_IMPORT
+                    + '\n' + NOTIFICATION_ANCHOR + '\nproduct-after')
         patched = repair_cases(original, repair, repair['sourceCommit'])
         self.assertTrue(patched.startswith('product-before\n'))
         self.assertTrue(patched.endswith('\nproduct-after'))
         self.assertEqual(patched.count('"status": "in_progress"'), 5)
+        self.assertIn('NotificationTrigger flavor="mobile-navbar"', patched)
+        self.assertIn('"kind": "warning"', patched)
+        self.assertIn('"kind": "info"', patched)
         with self.assertRaises(ValueError):
             repair_cases(original, repair, 'different-source')
         with self.assertRaises(ValueError):
             repair_cases(original + TASKS_ANCHOR, repair, repair['sourceCommit'])
+        with self.assertRaises(ValueError):
+            repair_cases(original + NOTIFICATION_ANCHOR, repair, repair['sourceCommit'])
+
+    def test_notification_and_markdown_cache_identities_are_independent(self):
+        repair = repair_definition(ROOT)
+        notification = repair['additionalRepairs'][0]
+        with tempfile.TemporaryDirectory() as temp:
+            root = pathlib.Path(temp)
+            task_meta = root / f"{repair['markdownCases'][0]}.metadata.json"
+            task_meta.write_text(json.dumps({'baselineRepair': {
+                'fixtureSha256': repair['fixtureSha256'], 'renderVerified': True}}))
+            notification_meta = root / f"{notification['cases'][0]}.metadata.json"
+            notification_meta.write_text(task_meta.read_text())
+            self.assertTrue(capture_is_current(task_meta, repair))
+            self.assertFalse(capture_is_current(notification_meta, repair))
+            notification_meta.write_text(json.dumps({'baselineRepair': {
+                'fixtureSha256': notification['fixtureSha256'], 'renderVerified': True}}))
+            self.assertFalse(capture_is_current(notification_meta, repair))
+            notification_meta.write_text(json.dumps({'baselineRepair': {
+                'fixtureSha256': notification['fixtureSha256'], 'renderVerified': True,
+                'captureVerified': True}}))
+            self.assertTrue(capture_is_current(notification_meta, repair))
 
     def test_changed_fixture_or_unverified_render_invalidates_cached_reference(self):
         with tempfile.TemporaryDirectory() as temp:

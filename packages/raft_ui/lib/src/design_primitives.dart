@@ -2927,15 +2927,17 @@ class _RaftInteractiveState extends State<RaftInteractive> {
         ),
       ),
     );
-    if (RaftDensityScope.of(context) == RaftDensity.touch) {
-      result = RaftTouchTarget(child: result);
-    }
     if (widget.tooltip != null) {
       result = RaftTooltip(
         message: widget.tooltip!,
         keyboardFocused: tooltipKeyboardFocused,
         child: result,
       );
+    }
+    // The expander must surround the tooltip's render boxes too; otherwise
+    // those 32px boxes reject pointers before the expanded target sees them.
+    if (RaftDensityScope.of(context) == RaftDensity.touch) {
+      result = RaftTouchTarget(child: result);
     }
     return result;
   }

@@ -210,8 +210,9 @@ void main() {
           .toList();
       expect(controls[0].visualHeight, 32);
       expect(controls[0].recipe, isNull);
-      expect(controls[1].visualHeight, 32);
-      expect(controls[2].visualHeight, 40);
+      final notificationButtons = find.byType(RaftMobileNotificationButton);
+      expect(tester.getSize(notificationButtons.at(0)), const Size.square(32));
+      expect(tester.getSize(notificationButtons.at(1)), const Size.square(40));
       final bells = tester
           .widgetList<RaftIcon>(find.byType(RaftIcon))
           .where((w) => w.glyph == RaftGlyph.bell)
