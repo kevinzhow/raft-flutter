@@ -2168,14 +2168,15 @@ class WorkspaceController extends ChangeNotifier {
       final target = context['canonicalTarget'];
       if (target is Map && target['kind'] == 'thread') {
         final parentId = target['threadParentMessageId'] as String;
+        final parentChannelId = target['channelId'] as String? ?? channelId;
         final parentContext = await client.get(
           '/messages/context/$parentId',
-          query: {'channelId': channelId},
+          query: {'channelId': parentChannelId},
         );
         if (!current()) return;
         final parentRows = acceptedWindowRows(
           parentContext['messages'],
-          channelId,
+          parentChannelId,
         );
         final acceptedParent = parentRows
             .where((e) => e['id'] == parentId)
@@ -2183,26 +2184,64 @@ class WorkspaceController extends ChangeNotifier {
         if (acceptedParent == null) {
           throw const RaftApiException('Thread parent is unavailable');
         }
-        ledger.ingest(parentRows, expectedGeneration: generation);
-        visibleIds[channelId] = parentRows
-            .map((e) => e['id'] as String)
-            .toSet();
-        hasMore = parentContext['hasOlder'] == true;
-        hasNewer = parentContext['hasNewer'] == true;
-        threadSummaries = _hydrateThreadSummaries(
-          parentContext['threadSummariesByParentMessageId'],
-          channelId,
-          expectedToken: replyAuthority,
-        );
-        _pendingMessageContextChannelId = null;
-        _pendingMessageContextWindow = null;
+        // ThreadPanel keeps a separately fetched parent. Its context must not
+        // replace or expand the outer channel's accepted message bucket.
         final parent = RaftMessage(Map<String, dynamic>.from(acceptedParent));
-        await openThread(
+        final opening = openThread(
           parent,
           focusedMessageId: target['messageId'] as String? ?? messageId,
           navigate: navigate,
         );
         if (navigate) navigationWindow = navigationRevision;
+        await opening;
+        if (!current()) return;
+        // Source loadMessageContext opens the canonical thread, then loads the
+        // outer channel tail. Keep both accepted rows and reply focus while it
+        // is pending; do not pass through selectChannel's thread reset/cache.
+        try {
+          final tail = await client.messagePage(channelId);
+          if (!current()) return;
+          final accepted = acceptedWindowRows(tail['messages'], channelId);
+          ledger.ingest(accepted, expectedGeneration: generation);
+          visibleIds[channelId] = accepted
+              .map((row) => row['id'] as String)
+              .toSet();
+          _contextWindows.remove(channelId);
+          _contextWindowHasNewer.remove(channelId);
+          historyLimited = tail['historyLimited'] == true;
+          hasMore = !historyLimited && accepted.length >= 50;
+          hasNewer = false;
+          _windowState[channelId] = (authority, hasMore);
+          _windowHistoryLimited[channelId] = historyLimited;
+          threadSummaries = _hydrateThreadSummaries(
+            tail['threadSummariesByParentMessageId'],
+            channelId,
+            expectedToken: replyAuthority,
+          );
+          final refreshedParent = accepted
+              .where((row) => row['id'] == parent.id)
+              .firstOrNull;
+          if (parent.channelId == channelId && refreshedParent != null) {
+            threadParent = RaftMessage(refreshedParent);
+          }
+          _pendingMessageContextChannelId = null;
+          _pendingMessageContextWindow = null;
+          channelLoading = false;
+          notifyListeners();
+          await markRead(channelId);
+          if (current()) await _saveWindow(channelId);
+        } catch (e) {
+          if (!current()) return;
+          if (e is RaftApiException && e.status == 403) {
+            _revokeChannel(channelId);
+          } else {
+            error = '$e';
+            _pendingMessageContextChannelId = null;
+            _pendingMessageContextWindow = null;
+            channelLoading = false;
+            notifyListeners();
+          }
+        }
       } else {
         final accepted = acceptedWindowRows(context['messages'], channelId);
         final targetId = context['targetMessageId'] as String? ?? messageId;

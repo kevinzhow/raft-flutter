@@ -246,37 +246,96 @@ void main() {
     },
   );
 
-  test('canonical thread resolves parent and actual reply context', () async {
-    final (w, api) = await fixture('member');
-    addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    api.routes['GET /messages/context/requested'] = (_) => {
-      'canonicalTarget': {
-        'kind': 'thread',
-        'threadParentMessageId': 'parent',
-        'messageId': 'reply',
+  for (final outcome in ['accept', 'late', 'failure']) {
+    test(
+      'canonical thread outer tail $outcome retains old rows and reply focus',
+      () async {
+        final (w, api) = await fixture('member');
+        addTearDown(w.dispose);
+        w.ledger.switchServer('s1');
+        w.ledger.ingest([
+          row('old', 'c1', 1),
+        ], expectedGeneration: w.ledger.generation);
+        w.visibleIds['c1'] = {'old'};
+        api.routes['GET /messages/context/requested'] = (_) => {
+          'canonicalTarget': {
+            'kind': 'thread',
+            'channelId': 'c1',
+            'threadParentMessageId': 'parent',
+            'messageId': 'reply',
+          },
+        };
+        api.routes['GET /messages/context/parent'] = (_) => {
+          'messages': [row('parent', 'c1', 10)],
+          'hasNewer': true,
+        };
+        api.routes['GET /channels/c1/threads/parent'] = (_) => {
+          'threadChannelId': 'thread-1',
+        };
+        api.routes['GET /messages/context/reply'] = (_) => {
+          'messages': [row('reply', 'thread-1', 2)],
+        };
+        api.routes['POST /channels/thread-1/read'] = (_) => {};
+        api.routes['POST /channels/c1/read'] = (_) => {};
+        final started = Completer<void>(),
+            response = Completer<Map<String, dynamic>>();
+        api.routes['GET /messages/channel/c1'] = (_) {
+          started.complete();
+          return response.future;
+        };
+        final jump = w.jumpToMessage('c1', 'requested');
+        await started.future;
+        expect(w.threadParent?.id, 'parent');
+        expect(w.threadChannelId, 'thread-1');
+        expect(w.replies.map((r) => r.id), ['reply']);
+        expect(w.messages.map((r) => r.id), ['old']);
+        expect(
+          w.ledger.messages('c1').where((r) => r['id'] == 'parent'),
+          isEmpty,
+        );
+        expect(w.highlightedMessageId, 'reply');
+        expect(w.channelLoading, true);
+        expect(w.threadLoading, false);
+        expect(w.location.thread?.itemId, 'parent');
+        expect(w.location.threadFocusedMessageId, 'reply');
+        if (outcome == 'late') {
+          api.routes['GET /messages/context/newer'] = (_) => {
+            'messages': [row('newer', 'c1', 60)],
+            'hasNewer': true,
+          };
+          await w.jumpToMessage('c1', 'newer');
+        }
+        if (outcome == 'failure') {
+          response.completeError(
+            const RaftApiException('tail unavailable', status: 503),
+          );
+        } else {
+          response.complete({
+            'messages': [row('tail', 'c1', 50)],
+          });
+        }
+        await jump;
+        if (outcome == 'late') {
+          expect(w.messages.map((r) => r.id), ['newer']);
+          expect(w.highlightedMessageId, 'newer');
+          expect(
+            w.ledger.messages('c1').where((r) => r['id'] == 'tail'),
+            isEmpty,
+          );
+          expect(w.threadParent, isNull);
+        } else {
+          expect(w.messages.map((r) => r.id), [
+            outcome == 'accept' ? 'tail' : 'old',
+          ]);
+          expect(w.highlightedMessageId, 'reply');
+          expect(w.threadParent?.id, 'parent');
+          expect(w.threadChannelId, 'thread-1');
+          expect(w.channelLoading, false);
+          expect(w.error, outcome == 'failure' ? isNotNull : isNull);
+        }
       },
-    };
-    api.routes['GET /messages/context/parent'] = (_) => {
-      'messages': [row('parent', 'c1', 1)],
-      'hasNewer': true,
-    };
-    api.routes['GET /channels/c1/threads/parent'] = (_) => {
-      'threadChannelId': 'thread-1',
-    };
-    api.routes['GET /messages/context/reply'] = (_) => {
-      'messages': [row('reply', 'thread-1', 2)],
-    };
-    api.routes['POST /channels/thread-1/read'] = (_) => {};
-    await w.jumpToMessage('c1', 'requested');
-    expect(w.threadParent?.id, 'parent');
-    expect(w.threadChannelId, 'thread-1');
-    expect(w.replies.map((r) => r.id), ['reply']);
-    expect(w.highlightedMessageId, 'reply');
-    expect(w.threadLoading, false);
-    expect(w.location.thread?.itemId, 'parent');
-    expect(w.location.threadFocusedMessageId, 'reply');
-  });
+    );
+  }
 
   test(
     'missing canonical parent does not publish its partial context',
