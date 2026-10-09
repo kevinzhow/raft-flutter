@@ -18,13 +18,14 @@ spec = importlib.util.spec_from_loader(loader.name, loader)
 visual = importlib.util.module_from_spec(spec)
 loader.exec_module(visual)
 esc = lambda value: html.escape(str(value or ''))
+STATUS = {**visual.STATUS, 'missing_evidence': ('缺测试证明', '#78716c', 0.0)}
 
 
 def render_item(item):
-    label, color, _ = visual.STATUS[item['status']]
+    label, color, _ = STATUS[item['status']]
     details = []
     for check in item['checks']:
-        c_label, c_color, _ = visual.STATUS[check['status']]
+        c_label, c_color, _ = STATUS['missing_evidence' if check['status'] == 'not_started' else check['status']]
         proofs = ''.join(f'<li>{esc(p["name"])} · {esc(p["layer"])} · '
                          f'{esc(p["result"])}{" / skipped" if p["skipped"] else ""}'
                          f' · <a href="{esc(p["receipt"])}">运行证明</a></li>'
@@ -57,10 +58,12 @@ def main():
         shutil.copy2(source, target / 'receipt.json')
         shutil.copy2(source.parent / run['machineLog'], target / run['machineLog'])
         run['path'] = str((target / 'receipt.json').relative_to(args.out))
+    baseline = json.loads((HERE / 'data' / 'baseline-audit.json').read_text())
+    audited = {item['id']: item for item in baseline['items']}
     groups = []
     for name in ('nav', 'loading'):
         for item in json.loads((HERE / 'data' / f'{name}.json').read_text()):
-            groups.append(evaluate_item(item, runs))
+            groups.append(evaluate_item(item, runs, audited.get(item['id'])))
     counts = Counter(item['status'] for item in groups)
     sections = []
     for title in ('导航', '加载', 'Kevin 反馈'):
@@ -80,11 +83,15 @@ def main():
                        f'<p>截图代码 {esc(manifest["flutterCommit"])} · '
                        f'输入 {esc(manifest["sourceHash"])}。这是独立冻结的视觉结果。</p>'
                        + visual.visual_table(cases))
-    baseline = json.loads((HERE / 'data' / 'baseline-audit.json').read_text())
     old_verified = sum(row['status'] == 'verified' for row in baseline['items'])
+    verifier_inputs = {str(path.relative_to(HERE)): hashlib.sha256(path.read_bytes()).hexdigest()
+                       for path in sorted(HERE.rglob('*'))
+                       if path.is_file() and path.suffix in ('.py', '.json')}
+    verifier_sha = hashlib.sha256(json.dumps(verifier_inputs, sort_keys=True).encode()).hexdigest()
     receipt = {'flutterCommit': args.commit, 'sourceHash': args.source_hash,
                'generatedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
                'counts': dict(counts), 'total': len(groups), 'items': groups,
+               'checklistVerifierSha': verifier_sha, 'checklistVerifierInputs': verifier_inputs,
                'testReceipts': [run['path'] for run in runs],
                'historicalAudit': {'flutterCommit': baseline['flutterCommit'],
                                    'verified': old_verified, 'total': len(baseline['items'])}}
@@ -96,13 +103,14 @@ def main():
 table{{border-collapse:collapse;width:100%}}td,th{{border-bottom:1px solid #e7e5e4;padding:8px;text-align:left;vertical-align:top}}
 h2{{margin-top:28px}}.pill{{color:white;border-radius:99px;padding:1px 8px;font-size:12px;white-space:nowrap}}
 .src,details{{font-size:12px;color:#57534e}}.note{{background:#fef9c3;padding:12px}}.bar{{display:inline-block;width:90px;height:8px;background:#eee}}.bar div{{height:8px;background:#15803d}}</style>
-<h1>Raft Flutter 对齐清单</h1><p>当前测试代码 {esc(args.commit)} · 输入 {esc(args.source_hash)}</p>
+<h1>Raft Flutter 对齐清单</h1>
 <h2>当前自动验证：{counts.get('verified', 0)}/{len(groups)} 项</h2>
-<div class="note">只计算与当前输入哈希一致、完整通过的带编号测试。纯模型或控制器测试最多记“部分完成”；
-每个子项都需要页面或原生证明，失败、跳过、缺少子项都不会自动变成已验证。
-“未开始”在自动表中表示尚未接入当前带编号证明，不代表历史代码从未改过。</div>
-<details><summary>历史人工审计和验证规则</summary><p>初次人工审计（历史代码 {esc(baseline['flutterCommit'][:7])}）：{old_verified}/{len(baseline['items'])}。
-旧审计状态保留在历史记录中，不充当当前测试证明。当前尚未接入的测试会逐项补上编号。</p></details>
+<div class="note">已验证 = 在真实页面或真机上有测试证明。</div>
+<p>{' · '.join(f'{STATUS[state][0]} {counts.get(state, 0)} 项' for state in ('verified', 'partial', 'missing_evidence', 'not_started'))}</p>
+<details><summary>版本、历史人工审计和验证规则</summary><p>当前测试代码 {esc(args.commit)} · 输入哈希 {esc(args.source_hash)} · 清单验证规则 {esc(verifier_sha)}。</p>
+<p>只计算与当前输入哈希一致、完整通过的带编号测试。纯模型或控制器测试最多记“部分完成”；每个子项都需要页面或原生证明，失败、跳过、缺少子项都不会自动变成已验证。</p>
+<p>没有当前证明的项目，沿用首版审计的实现进度：明确未实现的标“未开始”，实现了一部分的标“部分完成”，其余标“缺测试证明”。这些历史结论不能使任何项目成为“已验证”。</p>
+<p>初次人工审计（历史代码 {esc(baseline['flutterCommit'][:7])}）：{old_verified}/{len(baseline['items'])}。旧审计状态保留在历史记录中，不充当当前测试证明。当前尚未接入的测试会逐项补上编号。</p></details>
 {''.join(sections)}{''.join(visuals)}
 <p><a href="progress.json">查看全部测试结果和输入版本</a></p></html>'''
     (args.out / 'index.html').write_text(page)

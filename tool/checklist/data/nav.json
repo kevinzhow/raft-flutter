@@ -370,21 +370,46 @@
       {
         "id": "N24d",
         "minimum_layer": "mounted",
-        "minimum_passes": 3,
+        "minimum_passes": 6,
         "title_zh": "双击取消单击并只跳转一次完整聊天",
         "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart",
         "required_name_fragments": [
           "RaftFamily.brutal/false",
           "RaftFamily.elegant/false",
-          "RaftFamily.elegant/true"
+          "RaftFamily.elegant/true",
+          "double-thread",
+          "double-channel"
         ]
       },
       {
         "id": "N24e",
         "minimum_layer": "mounted",
-        "minimum_passes": 3,
+        "minimum_passes": 9,
         "title_zh": "父频道不在缓存时双击仍完整打开线程",
-        "proof_file": "apps/raft_flutter/test/workspace_activity_activation_test.dart"
+        "proof_file": "apps/raft_flutter/test/workspace_activity_canonical_cold_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "Back fences metadata",
+          "rejects unavailable metadata",
+          "loads independent thread"
+        ]
+      },
+      {
+        "id": "N24f",
+        "minimum_layer": "mounted",
+        "minimum_passes": 9,
+        "title_zh": "动态预览定位结束清理链接，完整线程链接保留定位",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "Activity",
+          "Search",
+          "canonical"
+        ],
+        "proof_file": "apps/raft_flutter/test/mounted_thread_focus_expiry_test.dart"
       }
     ]
   },
@@ -395,9 +420,37 @@
     "audit_note": "频道/私信已按 firstMention→未读→最新 定位并一次 PUSH（lib/features/resource_view.dart:1516–1524 → jumpToMessage）；讨论串条目只跳父频道，不带 thread 锚点，且错误地用了 firstMention 优先；无测试。",
     "checks": [
       {
-        "id": "N25",
+        "id": "N25a",
         "minimum_layer": "mounted",
-        "minimum_passes": 1
+        "minimum_passes": 3,
+        "title_zh": "手机直接打开讨论串，优先未读或最新",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "N25b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "手机直接打开频道，优先提到我的消息",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "N25c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "手机直接打开私信，优先提到我的消息",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   },

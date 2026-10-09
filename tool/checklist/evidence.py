@@ -113,7 +113,7 @@ def evaluate_check(check, runs):
             'passed': len(unique_passes), 'failures': len(failures), 'proofs': rows}
 
 
-def evaluate_item(item, runs):
+def evaluate_item(item, runs, audit=None):
     if 'status' in item:
         raise ValueError('Canonical item data must not contain a completion status')
     checks = [evaluate_check(check, runs) for check in item['checks']]
@@ -121,6 +121,12 @@ def evaluate_item(item, runs):
         status = 'verified'
     elif any(check['proofs'] for check in checks):
         status = 'partial'
-    else:
+    elif audit and audit.get('status') == 'not_started':
         status = 'not_started'
-    return {**item, 'status': status, 'checks': checks}
+    elif audit and audit.get('status') == 'partial':
+        status = 'partial'
+    else:
+        status = 'missing_evidence'
+    # Historical review describes implementation progress, never current proof.
+    return {**item, 'status': status, 'checks': checks,
+            'implementationAuditStatus': audit.get('status') if audit else None}

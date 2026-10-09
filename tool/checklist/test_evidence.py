@@ -51,6 +51,14 @@ class ChecklistEvidenceTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate_item({**item(), 'status': 'verified'}, [])
 
+    def test_historical_implementation_progress_never_becomes_current_proof(self):
+        for old in ('verified', 'implemented_unverified'):
+            self.assertEqual(evaluate_item(item(), [], {'status': old})['status'], 'missing_evidence')
+        self.assertEqual(evaluate_item(item(), [], {'status': 'partial'})['status'], 'partial')
+        self.assertEqual(evaluate_item(item(), [], {'status': 'not_started'})['status'], 'not_started')
+        self.assertEqual(evaluate_item(item(), [])['status'], 'missing_evidence')
+        self.assertEqual(evaluate_item(item(), [run()], {'status': 'not_started'})['status'], 'verified')
+
     def test_machine_incomplete_test_is_retained_and_failure_preserved(self):
         raw = '\n'.join(json.dumps(e) for e in [
             {'type': 'testStart', 'test': {'id': 1, 'suiteID': 1, 'name': '[N24a] slow response'}},

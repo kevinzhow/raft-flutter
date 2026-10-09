@@ -11,7 +11,9 @@ layer. Declare `mounted` only for labeled tests that actually mount the page or
 component; controller/model tests stay at those layers. For mixed suites, use
 the weaker layer unless every labeled check is a mounted test. N24's accepted
 identity API tests are collected as `controller`; its actual Activity handler
-proof must come from `workspace_activity_activation_test.dart`.
+proof comes from `workspace_activity_activation_test.dart`, the independently held
+uncached-parent cases in `workspace_activity_canonical_cold_test.dart`, and real
+focus expiry in `mounted_thread_focus_expiry_test.dart`.
 
 ```sh
 python3 tool/checklist/run.py --root . --out .local/checklist-<new-attempt> \
@@ -32,10 +34,13 @@ copies of one passing test cannot satisfy missing theme coverage.
 
 The generated page has one current progress number; historical audit counts are
 collapsed. Only the 47 parent items contribute to the denominator. Child checks
-provide coverage detail without inflating progress. An item with no labeled
-current proof is explicitly unconnected, even if historical implementation work
-exists. Connect the old tests progressively instead of importing handwritten
-"verified" states.
+provide coverage detail without inflating progress. The four user-facing states distinguish verified, partial, missing test evidence
+and not started. Without current proof, historical partial/not-started review
+can describe implementation progress; historical verified or implemented items
+become missing evidence. Historical review cannot verify the current snapshot.
+Connect old tests progressively instead of importing handwritten completion.
+The page records a separate checksum of the checklist rules, collector and data;
+these tool files are outside the product `source-hash` input set.
 
 Visual results are separate frozen evidence. To display them, pass a JSON
 `--visual-receipt` containing `title`, `flutterCommit`, `sourceHash`, `casesPath`
