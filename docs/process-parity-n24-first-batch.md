@@ -38,7 +38,12 @@ thread identity, accepted parent, reply IDs, actual separate thread/channel
 lists, visible controls and read requests. It rejects a channel-slot detour or
 old thread surviving channel selection. Cold/race/revocation/entity flows remain
 outside this batch. Transport, fixture checks and compilation do not substitute
-for actual native execution.
+for actual native execution. A desktop double-click uses the canonical parent
+channel route with its thread; that legitimate parent pane is allowed. Only
+single-click master/detail and narrow thread surfaces forbid the parent channel
+pane (ThreadsInbox.tsx:1036–1107,1118–1151). Every branch still rejects the
+unrelated previously accepted Android channel rows and an intermediate
+`open=channel:<parent>` detour.
 
 ## Source receipts retained
 

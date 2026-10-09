@@ -536,10 +536,17 @@ void main() {
           await waitHeld(flow['repliesHold'] as String);
           await snapshot('thread-pending-parent-and-replies');
           final pendingThread = stages.last['frame'] as Map;
+          if (flow['activation'] != 'double' || form == 'mobile') {
+            check(
+              pendingThread['channelScroller'],
+              false,
+              'single thread has no parent-channel pane',
+            );
+          }
           check(
-            pendingThread['channelScroller'],
+            (pendingThread['accepted'] as Map?)?['inView'] == true,
             false,
-            'thread does not expose parent-channel pane',
+            'canonical thread never exposes unrelated old channel rows',
           );
           check(
             pendingThread['threadTarget'],
@@ -621,7 +628,8 @@ void main() {
           final detours = frames.where(
             (row) =>
                 row['stage'] == 'thread-activation' &&
-                (row['channelScroller'] == true ||
+                (((flow['activation'] != 'double' || form == 'mobile') &&
+                        row['channelScroller'] == true) ||
                     Uri.parse(row['url'] as String).queryParameters['open'] ==
                         'channel:${flow['parentChannelId']}'),
           );
