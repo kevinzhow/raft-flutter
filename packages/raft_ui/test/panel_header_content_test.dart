@@ -5,7 +5,12 @@ import 'package:raft_ui/raft_ui.dart';
 
 Future<void> fonts(WidgetTester t) => t.runAsync(() async {
   for (final family in ['HankenGrotesk', 'Inter', 'Geist', 'GeistMono']) {
-    final bytes = await rootBundle.load('assets/fonts/$family.ttf');
+    ByteData bytes;
+    try {
+      bytes = await rootBundle.load('packages/raft_ui/assets/fonts/$family.ttf');
+    } on FlutterError {
+      bytes = await rootBundle.load('assets/fonts/$family.ttf');
+    }
     await (FontLoader(
       'packages/raft_ui/$family',
     )..addFont(Future.value(bytes))).load();
