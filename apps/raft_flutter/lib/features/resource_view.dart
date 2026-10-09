@@ -11,6 +11,7 @@ import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
 import '../data/workspace_controller.dart';
 import '../data/search_memory.dart';
 import '../data/activity_follow_state.dart';
+import '../data/activity_done_state.dart';
 import 'search_home.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -252,6 +253,7 @@ class _ResourceViewState extends State<ResourceView> {
 
   List<Map<String, dynamic>> rows = [];
   final activityFollowState = ActivityFollowState();
+  final activityDoneState = ActivityDoneState();
   bool loading = true;
   String? error;
   String filter = 'all';
@@ -345,6 +347,7 @@ class _ResourceViewState extends State<ResourceView> {
       (request == null || request == requestGeneration);
   void clearRows() {
     activityFollowState.clear();
+    activityDoneState.clear();
     activityActivation?.cancel();
     dragFeedbackRevision.value++;
     rows = [];
@@ -769,6 +772,13 @@ class _ResourceViewState extends State<ResourceView> {
       if (!accepts(scope, request)) return;
       if (widget.section == 'activity' && filter != 'saved' && value is Map) {
         value = activityFollowState.window(value);
+        if (!['done', 'unfollowed'].contains(filter)) {
+          value = activityDoneState.window(
+            value,
+            widget.clock?.call() ?? DateTime.now(),
+            selectedChannelId: advanced.channelId,
+          );
+        }
       }
       final list = value is List
           ? value
@@ -1657,6 +1667,11 @@ class _ResourceViewState extends State<ResourceView> {
         return;
       }
       value = activityFollowState.window(value);
+      value = activityDoneState.window(
+        value,
+        widget.clock?.call() ?? DateTime.now(),
+        selectedChannelId: advanced.channelId,
+      );
       final items = (value['items'] as List? ?? const [])
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
@@ -2865,6 +2880,76 @@ class _ResourceViewState extends State<ResourceView> {
                 'Refresh Activity before marking this conversation done.',
           );
         }
+      }
+      return;
+    }
+    if (action == 'done') {
+      final key = ActivityDoneState.key(row)!;
+      final ticket = activityDoneState.begin(
+        row,
+        widget.clock?.call() ?? DateTime.now(),
+      );
+      final acceptWindow = widget.onActivityWindowAccepted;
+      final acceptUnread = widget.onActivityUnreadAccepted;
+      final unread = (row['unreadCount'] as num? ?? 0).toInt();
+      // Source intent removes the exact accepted row synchronously. Retire
+      // earlier requests before they can compare or clear the pending marker.
+      requestGeneration++;
+      activityFacetRequest++;
+      setState(() {
+        rows = rows
+            .where((item) => ActivityDoneState.key(item) != key)
+            .toList();
+        acceptedActivityItems = acceptedActivityItems
+            .where((item) => ActivityDoneState.key(item) != key)
+            .toList();
+        activityGroups = ActivityDoneState.groups(activityGroups, [
+          row,
+        ], advanced.channelId);
+        if (totalCount != null) {
+          totalCount = (totalCount! - 1).clamp(0, 1 << 53);
+        }
+        if (activityAllCount != null) {
+          activityAllCount = (activityAllCount! - 1).clamp(0, 1 << 53);
+        }
+        if (totalUnreadCount != null) {
+          totalUnreadCount = (totalUnreadCount! - unread).clamp(0, 1 << 53);
+        }
+        loading = false;
+      });
+      final channelId =
+          row[row['kind'] == 'thread' ? 'threadChannelId' : 'channelId']
+              as String;
+      w.unread[channelId] = 0;
+      w.notifyListeners();
+      if (totalUnreadCount != null) {
+        acceptUnread?.call(totalUnreadCount);
+        acceptWindow?.call({
+          'items': acceptedActivityItems.isEmpty ? rows : acceptedActivityItems,
+          'totalUnreadCount': totalUnreadCount,
+        });
+      }
+      try {
+        await w.client.request('POST', mutation.path, data: mutation.data);
+        if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) return;
+        // Refresh first while suppression remains armed, then retire it.
+        // A genuinely newer authority marker is exempt during this refresh.
+        await load();
+        if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) return;
+        activityDoneState.finish(key, ticket);
+      } catch (e) {
+        if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) return;
+        activityDoneState.disarm(key, ticket);
+        if (e is RaftApiException && [401, 403].contains(e.status)) {
+          fail(e, scope);
+        } else {
+          await load();
+          if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) {
+            return;
+          }
+          await w.refreshUnread();
+        }
+        activityDoneState.finish(key, ticket);
       }
       return;
     }
