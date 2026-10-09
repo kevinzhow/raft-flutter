@@ -85,3 +85,32 @@ runtime hash, gesture, theme and viewport, and labels the actual Flutter
 platform/device. The original sparse channel pair still passes these stronger
 input guards in the newly written `pair-v11-strict-input-comparison.json`;
 its old artifacts are unchanged.
+
+## First native N24 thread receipts
+
+Private product SHA
+`d85b04c39387d607aa493726f8c64b12e6d1b488810884666d5c99eb44d9586e`
+includes the accepted E975d041/F83892e5 dependencies. This is not a receipt for a
+different integrated product hash.
+
+| Gesture | Native Linux checks | Strict Source pair |
+| --- | --- | --- |
+| N24/thread-single,Brutal desktop | PASS,126 layout frames/12 rasters | FAIL at `thread-highlight-expired`: Source removes `msg`, Flutter retains it |
+| N24/channel-after-thread-single,Brutal desktop | PASS,277 layout frames/16 rasters; prior thread is retired before held channel context accepts | Same retained URI failure |
+
+Paths are `{source,flutter}-thread-v4-brutal-desktop`,
+`{source,flutter}-after-thread-v4-brutal-desktop` and
+`pair-{thread,after-thread}-v4-brutal-desktop.json`. Fixture SHAs are respectively
+`01afd535960ad4c1402176b953e3d5d31ee228614b81c1c0bda3fe0bdf999aba`
+and `b0d41563350472ddfb7f0dd6e02240280bedbf9a40d75dc75699e62fdaee2c66`.
+Both providers share each fixture's actual Source-input/runtime hashes.
+
+The focused reply keeps center error0 before/after independent parent acceptance
+on both sides, with matching y=62,h=712 viewports. Its wrapper is 36px in Source
+and62px in this native tree. This retained geometry difference and sampled-frame
+limits prevent any pixel-parity claim. The Source/Flutter URI mismatch has been
+handed to the message-controller owner; it is not normalized away in comparison.
+Additional themes, mobile-native and double gestures remain separate pending
+receipts. A follow-up detector labels the actual test name with its N24 gesture
+and checks all activation frames for an exposed channel list, in addition to the
+checkpoint and intermediate-URI checks.

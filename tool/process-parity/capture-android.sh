@@ -45,11 +45,17 @@ if not receipt.get('registered') or receipt.get('run')!=run:
     raise SystemExit('Current Android run registration failed')
 PYREG
 adb -s "$device" reverse "tcp:$port" "tcp:$port"
+requirement="$(python3 - "$fixture" <<'PYREQ'
+import json,sys
+print(json.load(open(sys.argv[1]))['process'].get('requirement','N24/channel-single'))
+PYREQ
+)"
 cd "$root/apps/raft_flutter"
 set +e
 "$root/tool/flutter" test integration_test/process_activity_target_test.dart -d "$device" --no-pub \
   --dart-define=RAFT_PROCESS_OUT="$cache_name" \
   --dart-define=RAFT_PROCESS_BASE="$base" \
+  --dart-define=RAFT_PROCESS_REQUIREMENT="$requirement" \
   --dart-define=RAFT_PROCESS_THEME="$theme" \
   --dart-define=RAFT_PROCESS_FORM="$form" \
   --dart-define=RAFT_PROCESS_DEVICE="$device" \

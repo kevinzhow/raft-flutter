@@ -39,8 +39,12 @@ class ProcessFixtureClient extends RaftClient {
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   binding.framePolicy = LiveTestWidgetsFlutterBindingFramePolicy.fullyLive;
+  const requirement = String.fromEnvironment(
+    'RAFT_PROCESS_REQUIREMENT',
+    defaultValue: 'N24/channel-single',
+  );
   testWidgets(
-    'actual Activity target keeps accepted rows while gated context waits',
+    '$requirement actual WorkspaceView held context and independent thread hydration process',
     (t) async {
       const fixturePath = String.fromEnvironment('RAFT_PROCESS_FIXTURE');
       const configuredOut = String.fromEnvironment('RAFT_PROCESS_OUT');
@@ -617,8 +621,9 @@ void main() {
           final detours = frames.where(
             (row) =>
                 row['stage'] == 'thread-activation' &&
-                Uri.parse(row['url'] as String).queryParameters['open'] ==
-                    'channel:${flow['parentChannelId']}',
+                (row['channelScroller'] == true ||
+                    Uri.parse(row['url'] as String).queryParameters['open'] ==
+                        'channel:${flow['parentChannelId']}'),
           );
           check(
             detours,
