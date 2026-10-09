@@ -10,6 +10,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/source_activity_unread_store.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
@@ -182,33 +183,20 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  String? acceptedActivityAttentionScope;
-  int? acceptedActivityUnread;
-  String get railAttentionScope => jsonEncode([
-    identityHashCode(w),
-    w.client.origin,
-    w.client.generation,
-    w.client.user?.id,
-    w.client.serverId,
-    w.server?.id,
-    w.server?.string('role'),
-  ]);
-
-  void acceptActivityUnread(int? total, String scope) {
-    if (!mounted || scope != railAttentionScope) return;
-    if (acceptedActivityAttentionScope == scope &&
-        acceptedActivityUnread == total) {
-      return;
+  late SourceActivityUnreadStore activityUnread;
+  void activityUnreadChanged() {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
     }
-    setState(() {
-      acceptedActivityAttentionScope = scope;
-      acceptedActivityUnread = total;
-    });
   }
 
-  bool get hasActivityAttention =>
-      acceptedActivityAttentionScope == railAttentionScope &&
-      (acceptedActivityUnread ?? 0) > 0;
+  bool get hasActivityAttention => activityUnread.hasAttention;
   bool get hasChatAttention => [
     ...w.channels.where((c) => c.type != 'channel' || c.joined),
     ...w.dms,
@@ -256,6 +244,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   @override
   void initState() {
     super.initState();
+    activityUnread = SourceActivityUnreadStore(w)
+      ..addListener(activityUnreadChanged);
     workspaceMode = WorkspaceModeStore(w);
     activityFlag = DesktopActivityFlag(w)..addListener(activityFlagChanged);
     activityDirectory = MessageReferenceDirectory(w);
@@ -383,6 +373,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void didUpdateWidget(covariant WorkspaceView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, w)) {
+      activityUnread.removeListener(activityUnreadChanged);
+      activityUnread.dispose();
+      activityUnread = SourceActivityUnreadStore(w)
+        ..addListener(activityUnreadChanged);
       _desktopNavigation = null;
       mobileRouteAuthority = null;
       w.mobileNavigation = !wide;
@@ -483,6 +477,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   @override
   void dispose() {
+    activityUnread.removeListener(activityUnreadChanged);
+    activityUnread.dispose();
     workspaceMode.dispose();
     persistPanels?.cancel();
     w.releaseConversationPresentation(this);
@@ -604,7 +600,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       workspaceMode,
     ]),
     builder: (context, _) {
-      final attentionScope = railAttentionScope;
+      final attentionOwner = activityUnread;
+      final attentionScope = attentionOwner.scope;
+      final attentionEpoch = attentionOwner.authorityEpoch;
       if (!lastGridActive && gridActive) {
         classicDraftScope = w.draftScope();
         classicDraftAtEntry = w.drafts[classicDraftScope] ?? '';
@@ -864,8 +862,22 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
               controller: w,
               section: route,
-              onActivityUnreadAccepted: route == 'activity'
-                  ? (total) => acceptActivityUnread(total, attentionScope)
+              onActivityWindowAccepted: route == 'activity'
+                  ? (window) {
+                      if (!identical(attentionOwner, activityUnread)) return;
+                      if (window == null) {
+                        attentionOwner.deny(
+                          scope: attentionScope,
+                          authorityEpoch: attentionEpoch,
+                        );
+                      } else {
+                        attentionOwner.acceptWindow(
+                          window,
+                          scope: attentionScope,
+                          authorityEpoch: attentionEpoch,
+                        );
+                      }
+                    }
                   : null,
               initialQuery: route == 'search' ? location.query('q') : null,
               restoreSearchState: searchEntryRevision == 0,

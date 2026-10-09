@@ -36,6 +36,7 @@ class ResourceView extends StatefulWidget {
     this.onActivityItem,
     this.onActivityCanonical,
     this.onActivityUnreadAccepted,
+    this.onActivityWindowAccepted,
     this.searchMemory,
     this.restoreSearchState = true,
     this.channelId,
@@ -77,6 +78,10 @@ class ResourceView extends StatefulWidget {
   /// Server-wide Activity total from an accepted window, independent of filter.
   /// Null retires the projection after an explicit authority denial.
   final ValueChanged<int?>? onActivityUnreadAccepted;
+
+  /// Accepted Activity response for an independent scoped unread data owner.
+  /// Includes real row frontiers; null retires it after an authority denial.
+  final ValueChanged<Map?>? onActivityWindowAccepted;
   @override
   State<ResourceView> createState() => _ResourceViewState();
 }
@@ -372,6 +377,7 @@ class _ResourceViewState extends State<ResourceView> {
       resetAdvanced();
       if (widget.section == 'activity') {
         widget.onActivityUnreadAccepted?.call(null);
+        widget.onActivityWindowAccepted?.call(null);
       }
     }
     setState(() {
@@ -591,6 +597,7 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   Future<void> load({bool append = false}) async {
+    final acceptActivityWindow = widget.onActivityWindowAccepted;
     saveSearchState();
     final request = ++requestGeneration, scope = authority;
     if (widget.section == 'tasks' && !acceptsTaskChannel) {
@@ -747,6 +754,9 @@ class _ResourceViewState extends State<ResourceView> {
           widget.onActivityUnreadAccepted?.call(
             (value['totalUnreadCount'] as num).toInt(),
           );
+        }
+        if (widget.section == 'activity' && value is Map) {
+          acceptActivityWindow?.call(value);
         }
       }
     } catch (e) {

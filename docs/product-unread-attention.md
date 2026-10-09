@@ -64,9 +64,69 @@ Application and SDK analysis are clean; the design-system audit has no growth.
 This is bounded mounted-product evidence, not native Linux/Android acceptance
 or a 297-case visual rerun. The earlier selected9 visual receipt remains the
 frozen current evidence, with its existing Elegant Avatar List Row and Mobile
-Tabbar differences. Cross-server/preload Activity summaries and background inbox
-count reconciliation are still data-parity gaps; the implementation invents
-neither a hint nor a count when the required authority is unavailable. Computer,
-server-switcher and feedback attention signals are outside this batch. K09 as
-a whole remains partial until those product/data and broader visual limits are
-resolved.
+Tabbar differences. K09f below adds current-server preload/background count
+ownership. Cross-server Activity summaries, Computer, server-switcher and
+feedback attention signals remain outside this batch. K09 as a whole remains
+partial until those product/data and broader visual limits are resolved.
+
+## K09f current-server preload and reconciliation
+
+The production Source owner is socketBridge.ts:317–345,951–997,1169–1176.
+It loads the inbox after `rooms:joined`, once room admission has completed.
+The two-second boot fallback covers a socket that never joins. A connect does
+not issue another inbox fetch. Sidebar.tsx:1578–1589 separately resets on an
+actual server switch, skipping the initial boot already owned by that bridge.
+
+Live ingress is debounced for 150 ms. The precise Source wake paths are
+`message:new`, `thread:updated` and `dm:new` (socketBridge.ts:470–493,921–933;
+channelRealtimeSync.ts:16–62,70–77). Muted channel activity does not wake the
+inbox unless it predates the mute frontier, mentions the current user or carries
+thread conversation context. Message edits, channel metadata patches, raw
+scope-read receipts, read-state projection and resume responses are separate
+paths; the new owner does not turn those names into broad prefix fetches.
+
+SourceActivityUnreadStore now owns that current-server projection outside the
+Activity page. Its real `/channels/inbox` request uses `filter=all`, `sort=desc`,
+`limit=30`, `offset=0` (inboxStore.ts:987–1005). The accepted server total is
+independent of the selected page/filter and never derived from Chat unread or
+an unknown summary. An accepted Activity page DTO supersedes an older count
+request. Source's shared trailing background-reset rule (inboxStore.ts:919–944,
+1205–1216) accepts a ready hydration before starting one coalesced reconciliation.
+It avoids invalidating that ready response on every live event.
+
+Transient failures retain the accepted total. Explicit HTTP401/403 or current
+membership denial retires it; server, principal, generation and server-role
+changes synchronously drop the old authority. Late requests and old-principal
+read acknowledgements have no new-scope effects. An authority epoch also rejects
+page/read receipts from before a denial after the same server scope recovers.
+The page captures its acceptance callback when dispatching the request.
+Successful, scope-matched read
+POSTs trigger canonical reconciliation when a window is accepted or loading,
+matching the persisted-read listener at inboxStore.ts:1721–1737. Read-state
+socket updates can clear an accepted row only when its own present authority
+frontier proves it fully read. A thread's parent/display sequence cannot grant
+that proof. A changed accepted read revision rejects stale background totals
+(inboxStore.ts:1007–1018).
+
+The new `[K09f]` tests are in `source_activity_unread_store_test.dart`. Three
+actual WorkspaceView themes hold preload and background HTTP independently,
+assert every held painted frame, and show Activity attention while Chat remains
+open. They verify accepted zero, retained HTTP500 and retired HTTP403. Ten
+additional data-owner checks exercise exact requests, boot ownership, debounce,
+mute exceptions, trailing coalescing, page supersession, denial and scope fences,
+read authority and stale acknowledgements. The same three page assertions fail
+on fadacd8 in `.local/k09f-original-page-fail.log`; its Activity state had no
+data owner until the Activity page loaded. Focused application regression checks
+pass52 (13 new and the existing39); application analysis is clean and the
+design-system audit remains727 with no growth. Final receipts are
+`.local/k09f-app-final-v2.log`, `.local/k09f-final-owner.log`,
+`.local/k09f-app-analysis-final-v3.log` and `.local/k09f-ds-final.log`.
+Earlier interrupted/failed checks are retained.
+
+This is host mounted-page/request evidence. Native background/lifecycle
+acceptance and a full visual rerun are not claimed. Complete partial-read
+projections remain bounded: when the accepted authority cannot prove the full
+unread count, this owner retains its accepted count until canonical
+reconciliation instead of guessing from a partial message window. Cross-server
+summary hints and optimistic Activity mutation parity are not implemented here.
+The one-byte Elegant-light indicator difference documented above is unchanged.
