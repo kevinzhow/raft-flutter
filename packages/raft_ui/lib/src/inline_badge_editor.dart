@@ -1,3 +1,5 @@
+import 'anchored_popup.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -65,6 +67,7 @@ class RaftInlineBadgeEditor extends StatefulWidget {
 class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
   final portal = OverlayPortalController();
   final link = LayerLink();
+  final anchorKey = GlobalKey();
   bool ownedOpen = false;
   final triggerFocus = FocusNode();
   final menuKey = GlobalKey<_RaftInlineBadgeMenuState>();
@@ -204,6 +207,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
         ),
       ),
     );
+    final movement = Scrollable.maybeOf(context)?.position;
     return OverlayPortal(
       controller: portal,
       overlayChildBuilder: (context) => !isOpen
@@ -216,20 +220,13 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
                     onTap: () => _setOpen(false, restoreFocus: false),
                   ),
                 ),
-                CompositedTransformFollower(
-                  link: link,
-                  showWhenUnlinked: false,
-                  targetAnchor: widget.alignRight
-                      ? Alignment.bottomRight
-                      : Alignment.bottomLeft,
-                  followerAnchor: widget.alignRight
-                      ? Alignment.topRight
-                      : Alignment.topLeft,
-                  offset: const Offset(0, 4), // triggerRect.bottom + 4
-                  child: Align(
-                    alignment: widget.alignRight
-                        ? Alignment.topRight
-                        : Alignment.topLeft,
+                Positioned.fill(
+                  child: RaftAnchoredPopup(
+                    anchorKey: anchorKey,
+                    movement: movement,
+                    alignRight: widget.alignRight,
+                    gap: 4,
+                    collisionPadding: 8,
                     child: CallbackShortcuts(
                       bindings: {
                         const SingleActivator(LogicalKeyboardKey.escape): () =>
@@ -261,6 +258,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
               ],
             ),
       child: CompositedTransformTarget(
+        key: anchorKey,
         link: link,
         child: Focus(
           canRequestFocus: false,
