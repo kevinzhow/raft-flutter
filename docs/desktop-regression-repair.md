@@ -83,3 +83,40 @@ return also admits the actual resource-owned PanelAction. Backend role readback,
 timeouts and real pointer readiness remain required. These are harness route
 repairs; they do not certify Source's inline role editor pixels or a complete
 native run before a fresh replay finishes.
+
+## Actual Linux repair replay
+
+The separate18-case replay used product443c7d6 / SourceHash
+`72f6992511f2452f6ca757130772cf9e19b7803b5bc86f4519104eea546202c5`.
+All18 real Linux captures finished. All18 frozen Source PNG hashes, the product
+commit and SourceHash stayed unchanged. The unchanged official comparator
+reports1/18, with17 differences; this partial diagnostic does not replace
+105 desktop or402 full-matrix acceptance.
+
+All nine regressed Elegant Settings cases improved4.97–5.05 percentage points
+againstAA, and all nine are now above theirdb50083 score. Brutal Activity
+improved0.00605 points againstAA, but remains0.02852 points belowdb50083;
+its original failure remains. The actual mounted route proves the1px Source
+divider and31.5px control center, rather than the old2px/31px combination.
+Remaining rail pixels and the incorrect Activity body are not certified.
+Whole-frame changes include incidental gains/losses from previously incorrect
+positions; correcting the Source border does not guarantee an old score.
+
+Each new frame is independently bound to original Source DOM regions in
+`.local/cody-desktop-regression-repair-preflight/region-report-v2`. All18
+admissions succeed after copying the exact existing Source metadata; the first
+report with18 unmeasured cases from absent metadata is retained. The original
+10 causes are audited and the two new shell defects are repaired.
+
+| Original regression | db50083 | aa0e44b | repaired |
+|---|---:|---:|---:|
+| activity.inbox.brutal | 91.77285% | 91.73828% | 91.74434% |
+| settings.language.elegant-light | 86.32686% | 83.48564% | 88.47695% |
+| settings.language.elegant-dark | 79.15137% | 76.61113% | 81.58350% |
+| settings.notifications.elegant-light | 90.67412% | 90.35664% | 95.39844% |
+| settings.billing.elegant-light | 81.14346% | 78.30625% | 83.35029% |
+| settings.billing.elegant-dark | 78.14561% | 75.37812% | 80.40273% |
+| settings.administration.elegant-light | 83.48389% | 80.14209% | 85.17324% |
+| settings.administration.elegant-dark | 74.08828% | 70.45977% | 75.47236% |
+| settings.applications.elegant-light | 90.70742% | 87.93496% | 92.98115% |
+| settings.applications.elegant-dark | 81.86299% | 78.26289% | 83.29033% |
