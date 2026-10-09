@@ -1974,30 +1974,13 @@ class _RaftChatViewState extends State<RaftChatView> {
               if (!widget.thread &&
                   !focusStaging &&
                   (w.hasNewer || !atBottom || newMessageCount > 0))
-                Positioned(
-                  bottom: 12,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: RaftRecipeButton(
-                      label: bottomCount > 0
-                          ? raftFormat(context, '{count} new messages', {
-                              'count': bottomCount,
-                            })
-                          : raftText(context, 'Back to bottom'),
-                      glyph: RaftGlyph.arrowDown,
-                      glyphSize: 12,
-                      variant: RaftButtonRecipeVariant.outline,
-                      size: RaftButtonRecipeSize.sm,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      textStep: (12, 16),
-                      gap: 6,
-                      onPressed: returnToBottom,
-                    ),
-                  ),
+                RaftTimelineBottomButton(
+                  label: bottomCount > 0
+                      ? raftFormat(context, '{count} new messages', {
+                          'count': bottomCount,
+                        })
+                      : raftText(context, 'Back to bottom'),
+                  onPressed: returnToBottom,
                 ),
             ],
           ),

@@ -819,3 +819,12 @@ class _ComposerSuggestionsPreviewState
     ],
   );
 }
+
+@RaftPreviews('Timeline return to latest', size: Size(390, 360))
+Widget timelineBottomButtonPreview() => Stack(
+  fit: StackFit.expand,
+  children: [
+    const Center(child: Text('History window')),
+    RaftTimelineBottomButton(label: '3 new messages', onPressed: () {}),
+  ],
+);
