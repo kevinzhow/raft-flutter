@@ -364,7 +364,7 @@ class _FilesHostState extends State<_FilesHost> {
 final ParityCase _header = ParityCase(
   widgets: const [
     'raft_flutter:WorkspaceView',
-    'raft_flutter:RaftPageHeader',
+    'raft_ui:RaftChannelHeader',
     'raft_flutter:ConversationPanel',
     'raft_ui:RaftConversationTabs',
     'raft_ui:RaftBackButton',
@@ -373,8 +373,8 @@ final ParityCase _header = ParityCase(
   notes:
       'Real WorkspaceView (mobile; channel 首页专修 opened by tapping its Home '
       'row; fake client with no messages). '
-      'Flutter mobile channel header shows no channel icon or description and '
-      'adds a channel-settings action; that is the product difference.',
+      'Mounted channel header keeps the original channel identity/description '
+      'and source Search / Settings panel actions.',
   build: (ctx) {
     SharedPreferences.setMockInitialValues({});
     final fx = ParityThreadFixture(ctx.fixtureData);

@@ -2196,33 +2196,15 @@ class _RaftComposerSuggestionRowState
                               title: title,
                               highlighted: widget.highlighted,
                             )
-                          : Row(
-                              children: [
-                                Flexible(
-                                  child: Text(
-                                    s.type == 'channel'
-                                        ? s.name
-                                        : (s.title ?? s.name),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: title,
-                                  ),
-                                ),
-                                if (s.detail != null &&
-                                    s.detail!.trim().isNotEmpty) ...[
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      s.detail!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: recipe.suggestionMetaFor(
-                                        highlighted: widget.highlighted,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
+                          : _ChannelSuggestionBody(
+                              name: s.type == 'channel'
+                                  ? s.name
+                                  : (s.title ?? s.name),
+                              detail: s.detail,
+                              title: title,
+                              meta: recipe.suggestionMetaFor(
+                                highlighted: widget.highlighted,
+                              ),
                             ),
                     ),
                   ],
@@ -2234,6 +2216,64 @@ class _RaftComposerSuggestionRowState
       ),
     );
   }
+}
+
+/// Source ComposerSuggestionTitle has flex-basis:auto, while Meta is
+/// flex:1 1 0. Reserve only the title's natural width (not half the row).
+class _ChannelSuggestionBody extends StatelessWidget {
+  const _ChannelSuggestionBody({
+    required this.name,
+    required this.detail,
+    required this.title,
+    required this.meta,
+  });
+  final String name;
+  final String? detail;
+  final TextStyle title, meta;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, bounds) {
+      final hasMeta = detail?.trim().isNotEmpty == true;
+      final painter = TextPainter(
+        text: TextSpan(text: name, style: title),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final available = (bounds.maxWidth - (hasMeta ? 6 : 0)).clamp(
+        0.0,
+        double.infinity,
+      );
+      final width = painter.width.clamp(0.0, available);
+      painter.dispose();
+      return Row(
+        children: [
+          SizedBox(
+            width: width,
+            child: Text(
+              name,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: title,
+            ),
+          ),
+          if (hasMeta) ...[
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                detail!,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: meta,
+              ),
+            ),
+          ],
+        ],
+      );
+    },
+  );
 }
 
 /// `ComposerSuggestionIcon variant="framed"` (channel rows), from the
@@ -2251,17 +2291,28 @@ class _FramedSuggestionIcon extends StatelessWidget {
       iconVariant: RaftComposerSuggestionListRecipeIconVariant.framed,
       tokens: resolver,
     ).icon;
-    return Padding(
-      padding: EdgeInsets.only(right: s.margin.right),
-      child: Container(
-        width: s.width,
-        height: s.height,
-        alignment: Alignment.center,
-        decoration: s.decoration(resolver),
-        child: RaftIcon(
-          glyph,
-          size: t.brutal ? 12 : (s.width ?? 14),
-          color: s.color?.resolve(resolver),
+    // CSS negative right margin reduces the flow width while the icon
+    // retains its own painted bounds; Flutter Padding cannot be negative.
+    final width = s.width ?? 14, height = s.height ?? 14;
+    return SizedBox(
+      width: (width + s.margin.right).clamp(0.0, double.infinity),
+      height: height,
+      child: OverflowBox(
+        alignment: Alignment.centerLeft,
+        minWidth: width,
+        maxWidth: width,
+        minHeight: height,
+        maxHeight: height,
+        child: Container(
+          width: width,
+          height: height,
+          alignment: Alignment.center,
+          decoration: s.decoration(resolver),
+          child: RaftIcon(
+            glyph,
+            size: t.brutal ? 12 : width,
+            color: s.color?.resolve(resolver),
+          ),
         ),
       ),
     );

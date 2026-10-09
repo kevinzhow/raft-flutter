@@ -9,3 +9,28 @@ The new pure comments panel now uses the shared source-derived spinner and has a
 The source `MarkdownContent.tsx` contains an ErrorBoundary that renders raw Markdown in a monospace `<pre data-markdown-dom-fallback>`. Several cached `md-*` baseline images visibly show that raw content while Flutter renders rich content. This is a failed comparison and a source-runtime investigation boundary, not evidence that the product should render raw HTML or Markdown. The exact baseline runtime error has not been recovered.
 
 Remaining visible differences include the actual mobile channel header composition, suggestions' agent presence and outside-channel avatar projection, selection/share framing, and rich row typography. None is declared fixed by the new safety regressions. The new comments route also has no native OS end-to-end proof; preview heading jump and source optimistic comment synchronization remain separate completion work.
+
+## Channel identity and suggestion follow-up
+
+The mounted ordinary/private/joint channel header now consumes the generated
+`panelHeader` slots and `RaftPanelAction` for the same desktop/mobile identity,
+description and Search/Settings composition. The previous mobile title omitted
+the icon/description; the desktop header exposed unrelated refresh/status chrome.
+The CSS primary-face line box is explicit for title/metadata (including CJK
+fallback). A residual approximately 1 logical pixel CJK ink baseline difference
+remains in the official header comparison; no per-string offset is applied.
+
+Channel suggestions reserve the title's natural width, leaving all remaining
+space to the metadata, as Source flex-basis:auto versus flex:1 1 0 specifies.
+Elegant framed-icon negative right margin now reduces flow width instead of
+constructing illegal negative Flutter Padding. Public three-theme preview and
+a real channel-name/description plus keyboard insertion regression cover it.
+
+The independent Source diagnostic lives at
+`build/thread-source-diagnostic-20261009/receipt.json`. It mounts untouched Source
+components, records real DOM/font metrics, and preserves the original runtime
+error: `TaskStatusIconRoot` receives an undefined component in the Markdown case,
+causing `MarkdownContentErrorBoundary` to fall back to raw Markdown. Matching
+that failed reference by degrading Flutter's working Markdown is not a fix.
+Search-this-channel seed wiring is coordinated with the Search owner and will be
+validated separately before this behavior is called complete.
