@@ -333,4 +333,17 @@ void main() {
       expect(api.calls.where((c) => c.path == '/channels/c1/read').length, 1);
     },
   );
+
+  test(
+    'first section bind has one entry; repeated active taps still push',
+    () async {
+      final (w, _) = await fixture('member');
+      addTearDown(w.dispose);
+      w.setSection('activity');
+      expect(w.navigation.entries.length, 1);
+      expect(w.location.route, RaftRoute.activity);
+      w.setSection('activity');
+      expect(w.navigation.entries.length, 2);
+    },
+  );
 }

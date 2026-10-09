@@ -136,11 +136,27 @@ void main() {
         }
         expect(published, true);
         expect(w.highlightedMessageId, 'target-40');
+        expect(
+          tester
+              .widget<RaftMessageTile>(
+                find.byKey(const ValueKey('message-target-40')),
+              )
+              .highlighted,
+          true,
+        );
         expect(find.text('3 new messages'), findsOneWidget);
         await tester.pump(const Duration(milliseconds: 1700));
         expect(w.highlightedMessageId, 'target-40');
         await tester.pump(const Duration(milliseconds: 400));
         expect(w.highlightedMessageId, isNull);
+        expect(
+          tester
+              .widget<RaftMessageTile>(
+                find.byKey(const ValueKey('message-target-40')),
+              )
+              .highlighted,
+          false,
+        );
         expect(paintedMessage(tester, 'target-40'), firstTarget);
 
         final latestRequested = Completer<void>.sync();

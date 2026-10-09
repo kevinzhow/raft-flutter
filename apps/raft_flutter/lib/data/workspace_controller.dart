@@ -1035,8 +1035,9 @@ class WorkspaceController extends ChangeNotifier {
 
   set section(String value) {
     _unboundSection = value;
+    final firstBind = _navigationAuthority == null && server != null;
     bindNavigation();
-    if (server != null) {
+    if (server != null && !firstBind) {
       navigation.selectSection(
         value,
         channelId: channel?.id,
