@@ -59,6 +59,19 @@ class WorkspaceNavigation {
     ++_revision;
   }
 
+  /// Replace Source Search's committed q without changing its content intent.
+  /// Typing preserves pending content metadata, open slots and the same history
+  /// entry (MessageSearchPage1069–1078); actual Back/retarget still retires them.
+  bool replaceSearchQuery(String committed) {
+    if (location.route != RaftRoute.search) return false;
+    final value = committed.trim();
+    final next = location.withQuery({'q': value.isEmpty ? null : value});
+    if (next.uri == location.uri) return false;
+    _location = next;
+    if (_index >= 0) _entries[_index] = next;
+    return true;
+  }
+
   /// Consume only the mounted Activity thread slot's URI focus.
   /// Source MainLayout899–910 supplies Activity's consumption callback, while
   /// Search756–784 and canonical side threads clear only the visual highlight.
