@@ -187,9 +187,19 @@ ParityCase agentDetailParityCase(
       create: () {
         SharedPreferences.setMockInitialValues({});
         final wire = ScreenWire(ctx.fixtureData);
+        // VisualTestingCases.primeAgentDetailStores supplies this created
+        // agent to EVERY detail variant, independently of the /agents mock.
+        // Match that public seed rather than silently using the variant's
+        // empty wire createdAgents list in the real-screen detail host.
+        final seededAgent = {
+          ...wire.agent(agentKey),
+          'createdAgents': wire.agent('productUx')['createdAgents'],
+        };
         final c = ScreenFixtureClient(
           (m, p, q) => machinesLoading && p == '/servers/$_serverId/machines'
               ? ScreenFixtureClient.pending
+              : p == '/agents/${seededAgent['id']}'
+              ? seededAgent
               : wire.common(m, p, q),
           user: wire.me(),
           server: _serverId,
@@ -307,8 +317,9 @@ final ParityCase _homeLoading = ParityCase(
       return _workspace(
         ctx,
         bootstrap: true,
-        route: (m, p, q) =>
-            held.contains(p) ? ScreenFixtureClient.pending : wire.common(m, p, q),
+        route: (m, p, q) => held.contains(p)
+            ? ScreenFixtureClient.pending
+            : wire.common(m, p, q),
       );
     },
     builder: (context, w) => _workspaceView(ctx, w),
