@@ -28,6 +28,7 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     this.onPanelWidthsChanged,
     this.sidebarResizeLabel = 'Resize sidebar',
     this.threadResizeLabel = 'Resize thread',
+    this.trailingExtent = 0,
   });
   final Widget content, sidebar, rail;
 
@@ -44,6 +45,10 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   final void Function(double sidebarWidth, double threadWidth)?
   onPanelWidthsChanged;
   final String sidebarResizeLabel, threadResizeLabel;
+
+  /// A separately owned docked panel reserves content width without changing
+  /// the viewport breakpoint or remounting the rail, sidebar and editor.
+  final double trailingExtent;
 
   // MainLayout and the overlay ThreadPanel use the pinned Web md/lg cuts.
   static const desktopMinWidth = RaftLayoutMetrics.desktopBreakpoint;
@@ -153,7 +158,10 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       );
       final hasThread = widget.thread != null;
       final conversationWidth =
-          width - railWidth - (widget.sidebarVisible ? sidebarWidth : 0);
+          width -
+          railWidth -
+          (widget.sidebarVisible ? sidebarWidth : 0) -
+          widget.trailingExtent;
       // index.css thread-layout: real container680 + landscape or viewport xl.
       final sideThread =
           hasThread &&
@@ -188,6 +196,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                   threadSize: actualThread,
                 ),
               ),
+              SizedBox(width: widget.trailingExtent),
             ],
           ),
           if (widget.sidebarVisible)
@@ -224,6 +233,8 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
 }
 
 class RaftPanelResizeHandle extends StatefulWidget {
+  /// MainLayout's overlaid w-2 hit strip consumes no panel layout width.
+  static const double hitExtent = 8;
   const RaftPanelResizeHandle({
     super.key,
     required this.label,
@@ -235,6 +246,7 @@ class RaftPanelResizeHandle extends StatefulWidget {
   final double value;
   final ValueChanged<double> onChanged;
   final bool reversed;
+
   @override
   State<RaftPanelResizeHandle> createState() => _ResizeHandleState();
 }
@@ -243,6 +255,7 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
   bool focused = false, hovering = false;
   double? dragValue;
   void change(double delta) => widget.onChanged(widget.value + delta);
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);

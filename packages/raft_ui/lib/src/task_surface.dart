@@ -16,6 +16,10 @@ import 'task.dart';
 import 'theme.dart';
 import 'thread_composition.dart';
 
+/// LegacyTaskPanel's container is selected by MainLayout, independently of
+/// the modern task modal and of the task's accepted metadata.
+enum RaftLegacyTaskPresentation { side, modal, mobileModal }
+
 /// Mounted Source TaskModalBar/TaskModalHead/TaskProperties and the separate
 /// LegacyTaskPanel. API and discussion ownership belong to the scoped model.
 class RaftTaskSurface extends StatefulWidget {
@@ -43,6 +47,7 @@ class RaftTaskSurface extends StatefulWidget {
     this.onCleanupDelete,
     this.onBack,
     this.unresolvedBody,
+    this.legacyPresentation = RaftLegacyTaskPresentation.modal,
   });
   final Map<String, dynamic> task;
   final List<Map<String, dynamic>> history, assignees;
@@ -53,6 +58,7 @@ class RaftTaskSurface extends StatefulWidget {
   final VoidCallback onClose;
   final VoidCallback? onBack;
   final Widget? unresolvedBody;
+  final RaftLegacyTaskPresentation legacyPresentation;
   final Future<void> Function() onRetry, onLoadAssignees;
   final Future<void> Function(String, dynamic) onUpdate;
   final String Function(dynamic) formatTime;
@@ -87,17 +93,27 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     final t = RaftTokens.of(context), size = MediaQuery.sizeOf(context);
     final mobile = size.width < 768;
     final legacy = widget.legacy;
+    final side =
+        legacy && widget.legacyPresentation == RaftLegacyTaskPresentation.side;
+    final fullscreen =
+        legacy &&
+        widget.legacyPresentation == RaftLegacyTaskPresentation.mobileModal;
+    final overlay = side || fullscreen;
     final body =
         widget.unresolvedBody ??
         (legacy ? legacyBody(context) : modernBody(context));
     final panel = Material(
       key: ValueKey(legacy ? 'legacy-task-panel' : 'task-thread-modal'),
-      color: t.panel,
+      color: legacy ? t.canvas : t.panel,
       child: SizedBox(
-        width: mobile
+        width: overlay
+            ? double.infinity
+            : mobile
             ? size.width
             : math.min(legacy ? 760 : 960, size.width - 32),
-        height: mobile
+        height: overlay
+            ? double.infinity
+            : mobile
             ? size.height
             : math.min(legacy ? 720 : 900, size.height * (legacy ? .78 : .86)),
         child: Column(
@@ -108,8 +124,21 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         ),
       ),
     );
-    final framed = mobile
-        ? panel
+    final framed = overlay || mobile
+        ? DecoratedBox(
+            position: DecorationPosition.foreground,
+            decoration: BoxDecoration(
+              border: side && size.width >= 1024
+                  ? Border(
+                      left: BorderSide(
+                        color: t.brutal ? t.ink : t.colors['line-hairline']!,
+                        width: t.brutal ? 2 : 1,
+                      ),
+                    )
+                  : null,
+            ),
+            child: panel,
+          )
         : RaftModalBackdrop(
             child: GestureDetector(
               onTap: () {},
@@ -151,7 +180,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         },
         child: Focus(
           autofocus: true,
-          child: mobile
+          child: overlay || mobile
               ? framed
               : GestureDetector(
                   onTap: widget.onClose,
@@ -166,6 +195,15 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   Widget header(BuildContext context, bool mobile) {
     final t = RaftTokens.of(context);
     final task = widget.task;
+    final side =
+        widget.legacy &&
+        widget.legacyPresentation == RaftLegacyTaskPresentation.side;
+    final showBack = side ? MediaQuery.sizeOf(context).width < 1024 : mobile;
+    final showClose = widget.legacy
+        ? widget.legacyPresentation == RaftLegacyTaskPresentation.modal &&
+                  !mobile ||
+              side && MediaQuery.sizeOf(context).width >= 1024
+        : !mobile;
     if (widget.unresolvedBody != null) {
       return RaftThreadHeader(
         presentation: mobile
@@ -200,11 +238,14 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       child: Row(
         spacing: 12,
         children: [
-          if (mobile)
+          if (showBack)
             RaftIconButton(
+              key: const ValueKey('task-back'),
               glyph: RaftGlyph.arrowLeft,
               tooltip: raftText(context, 'Close task'),
-              onPressed: widget.onBack ?? widget.onClose,
+              onPressed: widget.legacy
+                  ? widget.onClose
+                  : widget.onBack ?? widget.onClose,
               visualSize: 28,
               glyphSize: 14,
             ),
@@ -235,8 +276,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               ],
             ),
           ),
-          if (!mobile)
+          if (showClose)
             RaftIconButton(
+              key: const ValueKey('task-close'),
               glyph: RaftGlyph.x,
               tooltip: raftText(context, 'Close task'),
               onPressed: widget.onClose,
