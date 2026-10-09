@@ -10,6 +10,9 @@ Future<void> openNativeMessageMenu(
   Finder row, {
   required Finder entry,
 }) async {
+  for (var i = 0; i < 100 && row.evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
   expect(row, findsOneWidget);
   await tester.ensureVisible(row);
   await tester.pumpAndSettle();

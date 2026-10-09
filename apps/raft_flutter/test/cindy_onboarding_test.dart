@@ -147,6 +147,27 @@ void main() {
     of: find.text('Create Cindy'),
     matching: find.byType(RaftButton),
   );
+  testWidgets('setup admits array machine catalog and real workspace switch', (t) async {
+    final original = c.getFn;
+    c.getFn = (path) => path == '/servers/s/machines'
+        ? Future.value([_machine])
+        : original(path);
+    var switches = 0;
+    await host(t, ServerSetupGate(
+      controller: w,
+      onSwitchServer: () => switches++,
+      child: const Text('Conversation'),
+    ));
+    final form = t.widget<CreateAgentDialog>(find.byType(CreateAgentDialog));
+    expect(form.machines.single['id'], 'm');
+    await t.ensureVisible(find.text('Switch server'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Switch server'));
+    await t.pump();
+    expect(switches, 1);
+    expect(w.commands, isEmpty);
+  });
+
   testWidgets(
     'authoritative setup directly mounts Cindy without picker or route pop',
     (t) async {

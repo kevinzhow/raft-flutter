@@ -745,6 +745,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           : route == 'chat' || route == 'home'
           ? ServerSetupGate(
               controller: w,
+              onSwitchServer: showWorkspaceSwitcher,
               child: ConversationPanel(
                 controller: w,
                 selectionHandle: mainSelection,
@@ -982,6 +983,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                   Expanded(
                                     child: ServerSetupGate(
                                       controller: w,
+                                      onSwitchServer: showWorkspaceSwitcher,
                                       child: RaftChatView(
                                         controller: w,
                                         thread: true,
@@ -1285,6 +1287,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ? Center(child: Text(tr('Loading...')))
               : ServerSetupGate(
                   controller: w,
+                  onSwitchServer: showWorkspaceSwitcher,
                   child: RaftChatView(
                     controller: w,
                     thread: thread,

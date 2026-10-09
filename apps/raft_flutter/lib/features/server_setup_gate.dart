@@ -134,9 +134,11 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     projection = managementMap(result);
     if (projection?['surface'] == 'create_agent' && createdAgentId == null) {
       try {
-        final catalog = managementMap(await w.client.get('$base/machines'));
+        final catalog = await w.client.get('$base/machines');
         if (!accepts(generation, request)) return;
-        setupMachines = managementRows(catalog['machines']);
+        setupMachines = managementRows(
+          catalog is List ? catalog : managementMap(catalog)['machines'],
+        );
         setupMachinesError = null;
       } catch (e) {
         if (!accepts(generation, request)) return;
