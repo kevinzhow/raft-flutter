@@ -189,6 +189,7 @@ class RaftMountedAvatarFrame extends StatelessWidget {
     this.presence,
     this.deactivated = false,
     this.muted = false,
+    this.extent,
   });
   final String name;
   final RaftMountedAvatarContext avatarContext;
@@ -199,6 +200,10 @@ class RaftMountedAvatarFrame extends StatelessWidget {
 
   /// Source MentionCandidateAvatar: !border-black/40 opacity-60, no badge.
   final bool muted;
+
+  /// Explicit product size override, such as LeftRail's short-desktop size-8.
+  /// The identity's text/icon size and border recipe remain unchanged.
+  final double? extent;
   @override
   Widget build(BuildContext context) {
     final r = RaftMountedAvatarRecipe(
@@ -210,8 +215,10 @@ class RaftMountedAvatarFrame extends StatelessWidget {
         identity == RaftMountedAvatarIdentity.agent && !deactivated && !muted
         ? presence
         : null;
+    final dimension = extent ?? r.extent;
+    final radius = BorderRadius.circular(r.tokens.brutal ? 0 : dimension / 2);
     Widget frame = SizedBox.square(
-      dimension: r.extent,
+      dimension: dimension,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -223,7 +230,7 @@ class RaftMountedAvatarFrame extends StatelessWidget {
                   color: muted ? Colors.black.withValues(alpha: .4) : r.border,
                   width: r.borderWidth,
                 ),
-                borderRadius: BorderRadius.circular(r.radius),
+                borderRadius: radius,
               ),
               child: Padding(
                 padding: EdgeInsets.all(r.borderWidth),
@@ -231,11 +238,11 @@ class RaftMountedAvatarFrame extends StatelessWidget {
                   key: const ValueKey('mounted-avatar-fallback-fill'),
                   decoration: BoxDecoration(
                     color: r.fallbackFill,
-                    borderRadius: BorderRadius.circular(r.radius),
+                    borderRadius: radius,
                   ),
                   child: ClipRRect(
                     key: const ValueKey('mounted-avatar-image-clip'),
-                    borderRadius: BorderRadius.circular(r.radius),
+                    borderRadius: radius,
                     child: SizedBox.expand(
                       child:
                           child ??

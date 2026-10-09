@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'theme.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'mounted_avatar_recipe.dart';
+import 'recipe_surface.dart';
+import 'recipes/app_rail.g.dart';
 
 /// A window-sized workspace layout. Panel sizes follow the Web panel contract.
 /// The host owns navigation, persistence, and the mobile application bar.
@@ -429,19 +432,30 @@ class RaftWorkspaceRail extends StatelessWidget {
                                       ]
                                     : null,
                               ),
-                              child: Badge(
-                                isLabelVisible: d.unread > 0,
-                                label: Text(
-                                  d.unread > 99 ? '99+' : '${d.unread}',
-                                ),
-                                child:
-                                    d.iconWidget ??
-                                    (d.glyph != null
-                                        ? RaftIcon(
-                                            d.glyph!,
-                                            size: recipe.glyphSize,
-                                          )
-                                        : Icon(d.icon, size: recipe.glyphSize)),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                fit: StackFit.expand,
+                                clipBehavior: Clip.none,
+                                children: [
+                                  d.iconWidget ??
+                                      (d.glyph != null
+                                          ? RaftIcon(
+                                              d.glyph!,
+                                              size: recipe.glyphSize,
+                                            )
+                                          : Icon(
+                                              d.icon,
+                                              size: recipe.glyphSize,
+                                            )),
+                                  if (d.unread > 0)
+                                    Positioned(
+                                      right: -4,
+                                      top: -4,
+                                      child: RaftRailUnreadCount(
+                                        count: d.unread,
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                             onPressed: () => onSelected(d.id),
@@ -468,30 +482,32 @@ class _RailAvatar extends StatelessWidget {
   final double size;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = RaftRailRecipe(
-      t,
-      viewportHeight: MediaQuery.sizeOf(context).height,
+    return RaftMountedAvatarFrame(
+      name: name,
+      identity: RaftMountedAvatarIdentity.server,
+      extent: MediaQuery.sizeOf(context).height <= 600 ? 32 : size,
     );
-    return Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: recipe.identityBackground,
-        border: Border.fromBorderSide(recipe.border),
-        borderRadius: recipe.avatarRadius,
-      ),
-      child: Text(
-        name.isEmpty
-            ? 'R'
-            : String.fromCharCodes(name.runes.take(1)).toUpperCase(),
-        style: TextStyle(
-          color: t.ink,
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+  }
+}
+
+/// Numeric AppRailItemBadge slot. Product attention indicators are separate;
+/// this component represents only an explicitly supplied positive count.
+class RaftRailUnreadCount extends StatelessWidget {
+  const RaftRailUnreadCount({super.key, required this.count});
+  final int count;
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return const SizedBox.shrink();
+    final tokens = RaftTokens.of(context);
+    final recipe = RaftAppRailRecipe.resolve(
+      theme: tokens.recipeTheme,
+      states: tokens.recipeStates(),
+      tokens: tokens.recipeTokens,
+    );
+    return RaftRecipeBox(
+      style: recipe.itemBadge,
+      tokens: tokens.recipeTokens,
+      child: Text(count > 99 ? '99+' : '$count'),
     );
   }
 }
