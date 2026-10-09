@@ -218,7 +218,9 @@ void main() {
       await c.stream.close();
     });
     await w.bootstrap();
+    w.threadParent = RaftMessage(c.message('m'));
     w.threadChannelId = 'thread';
+    w.navigation.navigate(w.location.withQuery({'thread': 'c:m'}));
     w.ledger.ingest([
       {...c.message('reply'), 'channelId': 'thread'},
     ], expectedGeneration: w.ledger.generation);
@@ -373,12 +375,16 @@ void main() {
       );
       expect(tester.widget<RaftSidebarSectionHeader>(section).count, 1);
       expect(
-        tester.getRect(find.byKey(const ValueKey('sidebar-group-system:pinned'))).top,
+        tester
+            .getRect(find.byKey(const ValueKey('sidebar-group-system:pinned')))
+            .top,
         tester.getRect(find.byKey(const Key('nav-saved'))).bottom,
       );
       expect(
         tester.getRect(section).top,
-        tester.getRect(find.byKey(const ValueKey('sidebar-group-system:joint'))).bottom,
+        tester
+            .getRect(find.byKey(const ValueKey('sidebar-group-system:joint')))
+            .bottom,
       );
       expect(tester.getRect(disclosure).top - tester.getRect(section).top, 12);
       await tester.tap(disclosure);
@@ -392,6 +398,8 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('sidebar-channel-c')));
       await tester.pumpAndSettle();
       expect(w.section, 'chat');
+      expect(w.location.route.name, 'channel');
+      expect(w.location.entityId, 'c');
       expect(
         find.byKey(const Key('workspace-mobile-navigation')),
         findsNothing,
@@ -399,6 +407,7 @@ void main() {
       await tester.tap(find.byKey(const Key('mobile-detail-back')));
       await tester.pumpAndSettle();
       expect(w.section, 'home');
+      expect(w.location.toString(), '/s/s');
       await tester.tap(find.byKey(const Key('mobile-tab-settings')));
       await tester.pumpAndSettle();
       expect(
@@ -413,12 +422,15 @@ void main() {
         find.byKey(const Key('workspace-mobile-navigation')),
         findsNothing,
       );
+      expect(w.location.settingsPath, ['appearance']);
       await tester.tap(find.byKey(const Key('mobile-settings-back')));
       await tester.pumpAndSettle();
       expect(
         find.byKey(const Key('workspace-mobile-navigation')),
         findsOneWidget,
       );
+      expect(w.location.settingsPath, isEmpty);
+      final rootIndex = w.navigation.index;
       // Tapping active Settings repeats the source reset-to-root contract.
       await tester.tap(find.byKey(const Key('mobile-tab-settings')));
       await tester.pumpAndSettle();
@@ -426,6 +438,7 @@ void main() {
         find.byKey(const ValueKey('workspace-settings-nav-appearance')),
         findsOneWidget,
       );
+      expect(w.navigation.index, rootIndex + 1);
       final retained = tester
           .widget<RaftMobileNav>(
             find.byKey(const Key('workspace-mobile-navigation')),

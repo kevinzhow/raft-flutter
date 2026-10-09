@@ -379,8 +379,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
         if (canLeave) ...[
           RaftSettingsActionCard(
             title: 'Leave Server',
-            description:
-                "You will lose access to this server's channels and DMs. You can rejoin if invited again.",
+            description: "You will lose access to this server's channels and DMs. You can rejoin if invited again.",
             action: RaftSettingsRecipeButton(
               key: const Key('server-danger-leave-button'),
               label: 'Leave Server',
@@ -395,8 +394,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
             key: const Key('server-danger-delete-card'),
             stacked: true,
             title: 'Delete Server',
-            description:
-                'Permanently remove this server and all its data. This cannot be undone.',
+            description: 'Permanently remove this server and all its data. This cannot be undone.',
             action: RaftSettingsRecipeButton(
               key: const Key('server-danger-delete-button'),
               label: 'Delete Server',
@@ -633,9 +631,9 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
               if (values['maxUses']!.isNotEmpty)
                 'maxUses': int.parse(values['maxUses']!),
               if (values['expiresAt']!.isNotEmpty)
-                'expiresAt': DateTime.parse(
-                  values['expiresAt']!,
-                ).toUtc().toIso8601String(),
+                'expiresAt': DateTime.parse(values['expiresAt']!)
+                    .toUtc()
+                    .toIso8601String(),
             },
           );
           token = result['token'];
@@ -797,9 +795,11 @@ class MembersView extends StatefulWidget {
     super.key,
     required this.controller,
     this.mobileRoot = false,
+    this.onOpenProfile,
   });
   final WorkspaceController controller;
   final bool mobileRoot;
+  final ValueChanged<String>? onOpenProfile;
   @override
   State<MembersView> createState() => _MembersViewState();
 }
@@ -843,6 +843,11 @@ class _MembersViewState extends State<MembersView> {
   }
 
   Future<void> profile(Map<String, dynamic> member) async {
+    if (widget.onOpenProfile != null) {
+      final id = member['userId'] ?? member['id'];
+      if (id is String && w.can('viewMembers')) widget.onOpenProfile!(id);
+      return;
+    }
     try {
       final value = await w.query(
         '/servers/${w.server!.id}/members/${member['userId'] ?? member['id']}/profile',

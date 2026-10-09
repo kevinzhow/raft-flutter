@@ -10,6 +10,9 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/raft_location.dart';
+import '../data/raft_navigation_history.dart';
+import '../data/workspace_navigation.dart';
 import '../data/workspace_mode_store.dart';
 import 'workspace_grid_view.dart';
 import 'workspace_mode_settings_card.dart';
@@ -110,11 +113,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     select('search', searchChannelId: channel.id);
   }
 
-  final desktopNavigation = DesktopNavigationState();
+  DesktopNavigationState? _desktopNavigation;
+  DesktopNavigationState get desktopNavigation =>
+      _desktopNavigation ??= DesktopNavigationState(navigation: w.navigation);
   bool pendingDesktopSelection = false;
   String get desktopAuthority => '$mobileAuthority|$channelAuthorityRevision';
   int mobileSettingsRevision = 0;
-  bool mobileSettingsDetail = false;
   String get mobileAuthority => jsonEncode([
     identityHashCode(w),
     w.client.generation,
@@ -123,29 +127,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.server?.string('role'),
   ]);
   String? mobileRouteAuthority;
-  bool mobileRouteInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final wasMobile = w.mobileNavigation;
+    // Width changes only the projection. They never rewrite route/history.
     w.mobileNavigation = !wide;
-    if (wasMobile && wide && w.section == 'home') {
-      w.section = 'chat';
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && wide && w.section == 'chat') {
-          w.setForeground(w.foreground);
-        }
-      });
-    }
-    if (!mobileRouteInitialized) {
-      mobileRouteInitialized = true;
-      if (!wide && w.section == 'chat' && w.threadParent == null) {
-        // The production controller starts Home before bootstrap. This also
-        // normalizes manually supplied controllers without rendering Chat.
-        w.section = 'home';
-      }
-    }
+    w.bindNavigation();
   }
 
   void selectMobileTab(String tab, String scope) {
@@ -163,7 +151,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     threadSelection.dismiss();
     w.closeThread();
     setState(() {
-      mobileSettingsDetail = false;
       mobileSettingsRevision++;
     });
     select(tab == 'chat' ? 'home' : tab);
@@ -363,7 +350,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void didUpdateWidget(covariant WorkspaceView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, w)) {
-      mobileRouteInitialized = false;
+      _desktopNavigation = null;
       mobileRouteAuthority = null;
       w.mobileNavigation = !wide;
       oldWidget.controller.releaseConversationPresentation(this);
@@ -490,29 +477,37 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     if (threadSelection.dismiss() || mainSelection.dismiss()) return;
     if (scaffold.currentState?.isDrawerOpen == true) {
       scaffold.currentState?.closeDrawer();
-    } else if (wide &&
-        desktopNavigation.target?.kind == DesktopContentKind.thread) {
-      closeDesktopDetail();
-    } else if (w.threadParent != null && w.section == 'chat') {
-      w.closeThread();
-    } else if (wide && desktopNavigation.target != null) {
-      closeDesktopDetail();
-    } else if (!wide && w.section == 'settings' && mobileSettingsDetail) {
-      setState(() {
-        mobileSettingsDetail = false;
-        mobileSettingsRevision++;
-      });
-    } else if (!wide && w.section != 'home') {
-      select(mobileWorkspaceBackSection(w.section));
-    } else if (w.section != 'chat' && w.section != 'home') {
-      select('chat');
+      return;
     }
+    if (wide && desktopNavigation.target != null) {
+      closeDesktopDetail();
+      return;
+    }
+    if (w.threadParent != null &&
+        w.location.thread == null &&
+        w.section == 'chat') {
+      w.closeThread();
+      return;
+    }
+    final previous = w.location;
+    final next = w.navigation.back();
+    pendingDesktopSelection = false;
+    if (next.thread == null) w.closeThread();
+    mobileSettingsRevision++;
+    w.notifyListeners();
+    if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route) &&
+        (w.channel?.id != next.entityId ||
+            next.messageId != null && next.messageId != previous.messageId)) {
+      unawaited(
+        w.jumpToMessage(next.entityId!, next.messageId, navigate: false),
+      );
+    }
+    setState(() {});
   }
 
   void select(String section, {String? searchChannelId}) {
     if (!w.canVisitSection(section)) return;
     desktopNavigation.bind(desktopAuthority);
-    desktopNavigation.selectRoute(section);
     pendingDesktopSelection = false;
     if (section == 'search') {
       setState(() {
@@ -532,6 +527,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       syncBridgeFlag();
     }
     w.setSection(section);
+    if (section == 'search' && searchChannelId != null) {
+      w.navigation.navigate(
+        w.location.withQuery({'channelId': searchChannelId, 'defer': '1'}),
+        kind: RaftNavigationKind.replace,
+      );
+      w.notifyListeners();
+    }
     scaffold.currentState?.closeDrawer();
   }
 
@@ -637,7 +639,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       }
       if (mobileRouteAuthority != mobileAuthority) {
         mobileRouteAuthority = mobileAuthority;
-        mobileSettingsDetail = false;
         mobileSettingsRevision++;
       }
       desktopNavigation.bind(desktopAuthority);
@@ -646,13 +647,22 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ['search', 'activity'].contains(w.section)) {
         desktopNavigation.selectRoute(w.section);
       }
-      final route = wide
-          ? desktopNavigation.visibleRoute(w.section)
+      final navigationScope = mobileAuthority;
+      final location = w.location;
+      final route = location.route == RaftRoute.settings
+          ? 'settings'
           : w.section;
+      if (route == 'search' &&
+          channelSearchSeed == null &&
+          !channelSearchRevoked &&
+          location.query('channelId') != null) {
+        channelSearchSeed = location.query('channelId');
+        channelSearchAuthority = workspaceAuthority(w);
+      }
       final t = RaftTokens.of(context);
       final thread =
-          w.section == 'chat' &&
-          w.threadParent != null &&
+          route == 'chat' &&
+          location.thread != null &&
           !(wide &&
               desktopNavigation.target?.kind == DesktopContentKind.thread);
       final title = route == 'chat' || route == 'home'
@@ -669,8 +679,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             });
       // Mobile home keeps the sidebar mounted while the lists load and shows
       // SidebarRowsSkeleton rows (Sidebar.tsx channelsLoading), not a spinner.
-      final homeSkeleton = route == 'home' && !wide && w.server != null;
-      Widget content = w.loading && !homeSkeleton
+      Widget content = w.loading && w.server == null
           ? const Center(child: CircularProgressIndicator())
           : route == 'settings'
           ? settings()
@@ -729,6 +738,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                     key: ValueKey('members-${w.server!.id}'),
                     controller: w,
                     mobileRoot: !wide,
+                    onOpenProfile: (id) => openDirectoryLocation(
+                      RaftRoute.human,
+                      id,
+                      expectedScope: navigationScope,
+                    ),
                   )
           : route == 'providers'
           ? ProviderConnectionsView(
@@ -770,6 +784,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                     key: ValueKey('fleet-${w.server!.id}:$route'),
                     controller: w,
                     computers: route == 'computers',
+                    onOpenDetail: (row) => openDirectoryLocation(
+                      route == 'computers'
+                          ? RaftRoute.computer
+                          : RaftRoute.agent,
+                      row['id'] as String,
+                    ),
                   )
           : route == 'home' && !wide
           ? Material(
@@ -799,6 +819,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
               controller: w,
               section: route,
+              initialQuery: route == 'search' ? location.query('q') : null,
               restoreSearchState: searchEntryRevision == 0,
               initialSearchDeferUntilQuery:
                   route == 'search' && channelSearchSeed != null,
@@ -829,7 +850,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 }
               },
             );
-      if (wide && ['members', 'agents', 'computers'].contains(route)) {
+      if (['members', 'agents', 'computers'].contains(route)) {
         content = DesktopMasterDetail(
           master: content,
           directoryWidth: sidebarWidth,
@@ -837,11 +858,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             setState(() => sidebarWidth = value);
             savePanels(value, threadWidth);
           },
-          detail: desktopContentDetail() ?? const SizedBox.expand(),
+          detail:
+              desktopContentDetail() ?? (wide ? const SizedBox.expand() : null),
         );
       }
-      if (wide &&
-          DesktopNavigationPolicy.forSection(route).contentMasterDetail) {
+      if (DesktopNavigationPolicy.forSection(route).contentMasterDetail) {
         content = DesktopMasterDetail(
           master: content,
           detail: desktopContentDetail(),
@@ -868,7 +889,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               !mainSelection.active &&
               !threadSelection.active &&
               !thread &&
-              (wide || w.section == 'home'),
+              (wide ||
+                  w.location.route == RaftRoute.home &&
+                      w.navigation.index <= 0),
           onPopInvokedWithResult: (didPop, _) {
             if (!didPop) dismissPanel();
           },
@@ -923,12 +946,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       rail: workspaceRail(),
                       mobileNavigationFloating: !t.brutal,
                       mobileNavigation:
-                          mobileWorkspaceRootTab(
-                                    w.section,
-                                    threadOpen: thread,
-                                    settingsDetail: mobileSettingsDetail,
-                                  ) ==
-                                  null ||
+                          mobileWorkspaceRootTabForLocation(location) == null ||
                               w.server == null
                           ? null
                           : Column(
@@ -954,8 +972,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                           'activity',
                                           'search',
                                           'members',
-                                        ].contains(w.section))
-                                      w.section == 'chat' &&
+                                          'computers',
+                                        ].contains(route))
+                                      route == 'chat' &&
                                               w.channel != null &&
                                               [
                                                 'channel',
@@ -964,16 +983,16 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                               ].contains(w.channel!.type)
                                           ? channelHeader()
                                           : RaftPageHeader(
-                                              title: w.section == 'home'
+                                              title: route == 'home'
                                                   ? (w.channel?.name ?? title)
                                                   : title,
                                               height: raftPageHeaderHeight(
                                                 context,
                                               ),
                                               icon: RaftIcon(
-                                                sectionGlyph(w.section),
+                                                sectionGlyph(route),
                                               ),
-                                              subtitle: w.section == 'chat'
+                                              subtitle: route == 'chat'
                                                   ? w.channel?.string(
                                                       'description',
                                                     )
@@ -991,7 +1010,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                                         : t.muted,
                                                   ),
                                                 ),
-                                                if (w.section == 'chat' &&
+                                                if (route == 'chat' &&
                                                     w.channel != null)
                                                   RaftIconButton(
                                                     tooltip: 'Channel settings',
@@ -1012,7 +1031,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                                 ),
                                               ],
                                             ),
-                                    if (w.section == 'chat' &&
+                                    if (route == 'chat' &&
                                         w.channel != null &&
                                         !w.channel!.joined &&
                                         !w.channel!.archived)
@@ -1023,7 +1042,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                           onPressed: () => joinChannel(),
                                         ),
                                       ),
-                                    if (w.section == 'chat' &&
+                                    if (route == 'chat' &&
                                         w.channel?.archived == true)
                                       Padding(
                                         padding: EdgeInsets.all(12),
@@ -1172,7 +1191,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     desktopNavigation.closeTarget();
     pendingDesktopSelection = false;
     w.closeThread();
-    w.setSection(route);
+    setState(() {});
   }
 
   Future<bool> openDesktopConversation(
@@ -1191,12 +1210,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         channelId,
         channelId: channelId,
         messageId: messageId,
+        dm: w.dms.any((channel) => channel.id == channelId),
       ),
     );
     pendingDesktopSelection = true;
     setState(() {});
     try {
-      await w.jumpToMessage(channelId, messageId);
+      await w.jumpToMessage(channelId, messageId, navigate: false);
       if (!mounted ||
           !desktopNavigation.accepts(desktopAuthority, ticket) ||
           scope != desktopAuthority) {
@@ -1209,6 +1229,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             w.threadChannelId ?? w.threadParent!.id,
             channelId: channelId,
             messageId: messageId,
+            parentMessageId: w.threadParent!.id,
           ),
         );
       }
@@ -1250,23 +1271,51 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
     final parent = w.messages.where((m) => m.id == parentId).firstOrNull;
     if (parent == null) return;
+    final focused = (row['unreadCount'] as num? ?? 0) > 0
+        ? row['firstUnreadMessageId'] ?? row['latestActivityMessageId']
+        : row['latestActivityMessageId'];
     final ticket = desktopNavigation.selectTarget(
       DesktopContentTarget(
         DesktopContentKind.thread,
         row['threadChannelId'] as String? ?? parentId,
         channelId: channelId,
+        parentMessageId: parentId,
+        messageId: focused is String ? focused : null,
       ),
     );
-    final focused = (row['unreadCount'] as num? ?? 0) > 0
-        ? row['firstUnreadMessageId'] ?? row['latestActivityMessageId']
-        : row['latestActivityMessageId'];
     await w.openThread(
       parent,
       focusedMessageId: focused is String ? focused : null,
+      navigate: false,
     );
     if (mounted && desktopNavigation.accepts(desktopAuthority, ticket)) {
       setState(() {});
     }
+  }
+
+  void openDirectoryLocation(
+    RaftRoute route,
+    String id, {
+    String? expectedScope,
+  }) {
+    if (!mounted || expectedScope != null && expectedScope != mobileAuthority) {
+      return;
+    }
+    final capability = switch (route) {
+      RaftRoute.agent => 'viewAgents',
+      RaftRoute.computer => 'viewMachines',
+      _ => 'viewMembers',
+    };
+    if (!w.can(capability)) return;
+    w.navigation.navigate(
+      RaftLocation.at(
+        serverSlug: w.location.serverSlug,
+        route: route,
+        entityId: id,
+      ),
+    );
+    w.closeThread();
+    w.notifyListeners();
   }
 
   void selectDesktopDirectoryTarget(DesktopContentTarget target) {
@@ -1277,7 +1326,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     desktopNavigation.selectTarget(target);
     pendingDesktopSelection = false;
     w.closeThread();
-    w.setSection(desktopNavigation.masterRoute ?? 'members');
+    w.notifyListeners();
     setState(() {});
   }
 
@@ -1342,11 +1391,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       ),
     );
     w.closeThread();
-    w.setSection(desktopNavigation.masterRoute ?? 'search');
+    w.notifyListeners();
   }
 
   Future<void> messageDesktopProfile(DesktopContentTarget target) async {
     final scope = desktopAuthority;
+    final revision = w.navigationRevision;
     final value = await w.client.post(
       '/channels/dm',
       data: {
@@ -1356,7 +1406,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
     if (!mounted ||
         scope != desktopAuthority ||
-        !identical(desktopNavigation.target, target)) {
+        revision != w.navigationRevision) {
       return;
     }
     if (value is Map && value['id'] is String) {
@@ -1386,7 +1436,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         key: key,
         controller: w,
         computers: target.kind == DesktopContentKind.computer,
-        initial: {'id': target.id},
+        initial:
+            (target.kind == DesktopContentKind.computer
+                ? w.entityDirectory.computer(target.id)
+                : w.entityDirectory.agent(target.id)) ??
+            {'id': target.id},
         onClose: closeDesktopDetail,
       );
     }
@@ -1411,11 +1465,16 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               : ServerSetupGate(
                   controller: w,
                   onSwitchServer: showWorkspaceSwitcher,
-                  child: RaftChatView(
-                    controller: w,
-                    thread: thread,
-                    selectionHandle: thread ? threadSelection : mainSelection,
-                  ),
+                  child: thread
+                      ? RaftChatView(
+                          controller: w,
+                          thread: true,
+                          selectionHandle: threadSelection,
+                        )
+                      : ConversationPanel(
+                          controller: w,
+                          selectionHandle: mainSelection,
+                        ),
                 ),
         ),
       ],
@@ -1494,7 +1553,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     destinations: railDestinations,
     selected: wide
         ? DesktopNavigationPolicy.forSection(
-            desktopNavigation.visibleRoute(w.section),
+            w.location.route == RaftRoute.settings ? 'settings' : w.section,
           ).railMode
         : w.section,
     onSelected: select,
@@ -1563,13 +1622,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final scope = mobileAuthority;
     return WorkspaceMobileTabBar(
       controller: w,
-      selectedId:
-          mobileWorkspaceRootTab(
-            w.section,
-            threadOpen: w.threadParent != null,
-            settingsDetail: mobileSettingsDetail,
-          ) ??
-          'chat',
+      selectedId: mobileWorkspaceRootTabForLocation(w.location) ?? 'chat',
       // The enclosing SafeArea consumed this inset exactly once.
       bottomInset: 0,
       onSelected: (tab) => selectMobileTab(tab, scope),
@@ -2141,17 +2194,33 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           'workspace-account-settings-${w.client.generation}-${w.client.user?.id}-${w.server?.id}-${w.server?.string('role')}',
         ),
         controller: w,
+        initialTab: WorkspaceNavigation.settingsTab(
+          w.location.settingsPath.firstOrNull ?? 'account',
+        ),
         workspaceModeCard: modeCard(),
         appearance: widget.appearance,
         onAppearance: (appearance) => widget.onAppearance(appearance),
         presentation: presentation,
         notifications: widget.notifications,
         onLogout: widget.onLogout,
-        mobileRoot: true,
+        mobileRoot: w.location.settingsPath.isEmpty,
         mobileResetRevision: mobileSettingsRevision,
-        onMobileDetailChanged: (detail) {
+        onMobileLocationChanged: (tab) {
           if (!mounted || scope != mobileAuthority) return;
-          setState(() => mobileSettingsDetail = detail);
+          if (tab == null) {
+            dismissPanel();
+            return;
+          }
+          final current = w.location;
+          w.navigation.navigate(
+            RaftLocation.at(
+              serverSlug: current.serverSlug,
+              route: RaftRoute.settings,
+              settingsPath: [WorkspaceNavigation.settingsRouteSlug(tab)],
+            ),
+            kind: RaftNavigationKind.push,
+          );
+          w.notifyListeners();
         },
         providerEnabled: providerEnabled,
         bridgeEnabled: bridgeEnabled,

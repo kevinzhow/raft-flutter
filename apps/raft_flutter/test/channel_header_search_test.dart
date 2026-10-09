@@ -105,6 +105,8 @@ void main() {
         await t.tap(find.bySemanticsLabel('Search this channel'));
         await t.pumpAndSettle();
         final entry = t.widget<ResourceView>(find.byType(ResourceView));
+        expect(w.location.query('channelId'), 'c');
+        expect(w.location.searchDeferred, isTrue);
         expect(entry.initialSearchChannelId, 'c');
         expect(entry.restoreSearchState, isFalse);
         expect(entry.initialSearchDeferUntilQuery, isTrue);

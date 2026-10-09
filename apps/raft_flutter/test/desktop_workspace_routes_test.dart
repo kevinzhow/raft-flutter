@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/chat_view.dart';
@@ -133,6 +134,177 @@ class _Client extends RaftClient {
 }
 
 void main() {
+  for (final theme in [
+    (name: 'Brutal', family: RaftFamily.brutal, dark: false),
+    (name: 'Elegant', family: RaftFamily.elegant, dark: false),
+    (name: 'Elegant dark', family: RaftFamily.elegant, dark: true),
+  ]) {
+    testWidgets(
+      '${theme.name} known cold channel keeps header/tabs/composer in first frame and across resize',
+      (t) async {
+        SharedPreferences.setMockInitialValues({});
+        t.view.physicalSize = const Size(1280, 900);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
+        final client = _Client()..selectServer('s');
+        final w = WorkspaceController(client)
+          ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
+          ..channels = client.channelRows
+          ..channel = client.channelRows.single
+          ..section = 'chat'
+          ..channelLoading = true
+          ..loading = true;
+        w.ledger.switchServer('s');
+        final uri = w.location;
+        addTearDown(() async {
+          w.dispose();
+          await client.stream.close();
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(theme.family, dark: theme.dark),
+            home: WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
+          ),
+        );
+        expect(
+          find.byKey(const Key('workspace-channel-header')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('conversation-tabs')), findsOneWidget);
+        expect(find.byType(RaftComposer), findsOneWidget);
+        final composer = t.state(find.byType(RaftComposer));
+        for (final size in [
+          const Size(768, 900),
+          const Size(767, 900),
+          const Size(390, 900),
+          const Size(1280, 900),
+        ]) {
+          t.view.physicalSize = size;
+          await t.pump(const Duration(milliseconds: 100));
+          await t.pump();
+          expect(w.location, uri);
+          expect(find.byKey(const Key('conversation-tabs')), findsOneWidget);
+          expect(t.state(find.byType(RaftComposer)), same(composer));
+          expect(
+            find.byKey(
+              Key(
+                size.width < 768
+                    ? 'workspace-mobile-detail-header'
+                    : 'workspace-channel-header',
+              ),
+            ),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('workspace-mobile-navigation')),
+            findsNothing,
+          );
+          expect(t.takeException(), isNull);
+        }
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+    testWidgets(
+      '${theme.name} actual Activity location retains master/header/tabs/composer across 768/1024/1280 folds',
+      (t) async {
+        SharedPreferences.setMockInitialValues({});
+        t.view.physicalSize = const Size(1280, 900);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
+        final client = _Client()..selectServer('s');
+        final w = WorkspaceController(client)
+          ..server = RaftRecord({
+            'id': 's',
+            'slug': 'fixture',
+            'name': 'Fixture',
+            'role': 'owner',
+          })
+          ..channels = client.channelRows
+          ..channel = client.channelRows.single
+          ..section = 'activity'
+          ..channelLoading = true
+          ..loading = true;
+        w.ledger.switchServer('s');
+        w.navigation.navigate(
+          w.location.withQuery({'open': 'channel:c', 'msg': 'm'}),
+          kind: RaftNavigationKind.replace,
+        );
+        final uri = w.location;
+        addTearDown(() async {
+          w.dispose();
+          await client.stream.close();
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(theme.family, dark: theme.dark),
+            home: WorkspaceView(
+              controller: w,
+              appearance: const RaftAppearance(),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
+          ),
+        );
+        // The first frame keeps the known channel chrome while only its body loads.
+        expect(find.byKey(const Key('conversation-tabs')), findsOneWidget);
+        expect(find.byType(RaftComposer), findsOneWidget);
+        expect(find.byKey(const Key('workspace-channel-header')), findsNothing);
+        expect(find.byType(ResourceView), findsOneWidget);
+        await t.pumpAndSettle();
+        final master = t.state(find.byType(ResourceView));
+        final composer = t.state(find.byType(RaftComposer));
+        for (final size in [
+          const Size(1279, 900),
+          const Size(1024, 900),
+          const Size(1023, 900),
+          const Size(768, 900),
+          const Size(767, 900),
+          const Size(900, 390),
+          const Size(390, 900),
+          const Size(1280, 900),
+        ]) {
+          t.view.physicalSize = size;
+          await t.pumpAndSettle();
+          expect(w.location, uri, reason: '$size must preserve URI');
+          expect(w.section, 'activity');
+          expect(
+            find.byKey(const Key('workspace-channel-header')),
+            findsNothing,
+          );
+          expect(find.byKey(const Key('conversation-tabs')), findsOneWidget);
+          expect(
+            t.state(find.byType(ResourceView, skipOffstage: false)),
+            same(master),
+          );
+          expect(t.state(find.byType(RaftComposer)), same(composer));
+          expect(
+            find.byKey(const Key('workspace-mobile-navigation')),
+            findsNothing,
+          );
+          expect(
+            find.byKey(const Key('desktop-master-resize-handle')),
+            size.width < 768 ? findsNothing : findsOneWidget,
+          );
+          expect(t.takeException(), isNull);
+        }
+        // A real close action removes only the content slot and retains the master.
+        await t.tap(find.byTooltip('Close detail'));
+        await t.pumpAndSettle();
+        expect(w.location.content, isNull);
+        expect(w.location.route.name, 'activity');
+        expect(t.state(find.byType(ResourceView)), same(master));
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+  }
+
   testWidgets(
     'mounted desktop search retains query/master when result opens and closes',
     (t) async {

@@ -69,6 +69,7 @@ void main() {
           transport.calls.where((r) => r.path == '/tasks/server'),
           isEmpty,
         );
+        expect(w.location.chatTab, 'tasks');
         expect(editor, findsNothing);
         final before = transport.calls.length;
         await t.runAsync(() => w.markRead('c1'));
@@ -83,9 +84,11 @@ void main() {
           transport.calls.where((r) => r.path == '/channels/c1/files'),
           hasLength(1),
         );
+        expect(w.location.chatTab, 'files');
         expect(find.text('No files yet'), findsOneWidget);
         await t.tap(find.descendant(of: tabs, matching: find.text('Chat')));
         await t.pumpAndSettle();
+        expect(w.location.chatTab, isNull);
         expect(t.state(find.byType(RaftComposer)), same(original));
         expect(t.widget<TextField>(editor).controller, same(field.controller));
         expect(field.controller!.text, 'Retained 中文 draft');

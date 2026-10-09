@@ -70,13 +70,23 @@ class WorkspaceNavigation {
       _location = _entries[--_index];
       ++_revision;
     } else {
-      final fallback = location.hasOverlay
-          ? location.withoutMobileOverlays().withQuery({
-              'task': null,
-              'legacyTask': null,
-            })
+      // A task modal, profile and thread own independent slots. Closing one
+      // must not erase the others (rightPanelUrlSyncContract 385–511).
+      final fallback = location.task != null
+          ? location.withQuery({'task': null})
+          : location.legacyTask != null
+          ? location.withQuery({'legacyTask': null})
+          : location.profile != null
+          ? location.withQuery({'profile': null})
           : location.content != null
-          ? location.withQuery({'open': null, 'msg': null})
+          ? location.withQuery({
+              'open': null,
+              'msg': null,
+              if (location.content!.kind == RaftContentKind.thread)
+                'thread': null,
+            })
+          : location.thread != null
+          ? location.withQuery({'thread': null})
           : location.tabHome();
       navigate(fallback, kind: RaftNavigationKind.replace);
     }
@@ -128,8 +138,23 @@ class WorkspaceNavigation {
     entityId: section == 'chat' ? channelId : null,
     settingsPath: section == 'settings' || !settingsSections.contains(section)
         ? const []
-        : [section],
+        : [settingsRouteSlug(section)],
   );
+
+  /// Mounted settingsNavigation.ts aliases; path identity is canonical.
+  static String settingsRouteSlug(String tab) => switch (tab) {
+    'workspace-settings' => 'server',
+    'integrations' => 'applications',
+    'mcp' => 'mcp-servers',
+    _ => tab,
+  };
+  static String settingsTab(String slug) => switch (slug) {
+    'applications' => 'integrations',
+    'mcp-servers' => 'mcp',
+    'browser' => 'notifications',
+    'moderation' => 'administration',
+    _ => slug,
+  };
 
   static const settingsSections = {
     'workspace-settings',
@@ -161,7 +186,11 @@ class WorkspaceNavigation {
 
   String get section => sectionFor(location);
   String? get mobileRootTab {
-    if (location.hasOverlay || location.content != null) return null;
+    if (location.hasOverlay ||
+        {RaftRoute.search, RaftRoute.activity}.contains(location.route) &&
+            location.content != null) {
+      return null;
+    }
     return switch (location.route) {
       RaftRoute.home => 'chat',
       RaftRoute.tasks => 'tasks',

@@ -66,6 +66,9 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, size) {
       final split = widget.detail != null;
+      final folded =
+          MediaQuery.sizeOf(context).width <
+          RaftAdaptiveWorkspace.desktopMinWidth;
       final compact = widget.compact || MediaQuery.sizeOf(context).width < 1024;
       final width = split && directoryWidth != null
           ? directoryWidth!
@@ -102,10 +105,19 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
         children: [
           Row(
             children: [
-              SizedBox(
-                key: const Key('desktop-master-panel'),
-                width: width.toDouble(),
-                child: widget.master,
+              Offstage(
+                offstage: folded && split,
+                child: ExcludeFocus(
+                  excluding: folded && split,
+                  child: TickerMode(
+                    enabled: !folded || !split,
+                    child: SizedBox(
+                      key: const Key('desktop-master-panel'),
+                      width: folded ? size.maxWidth : width.toDouble(),
+                      child: widget.master,
+                    ),
+                  ),
+                ),
               ),
               if (split) ...[
                 Expanded(
@@ -117,7 +129,7 @@ class _DesktopMasterDetailState extends State<DesktopMasterDetail> {
               ],
             ],
           ),
-          if (split)
+          if (split && !folded)
             Positioned(
               left: width - 4,
               top: 0,

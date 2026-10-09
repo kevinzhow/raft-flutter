@@ -35,6 +35,7 @@ class WorkspaceSettings extends StatelessWidget {
     this.mobileRoot = true,
     this.mobileResetRevision = 0,
     this.onMobileDetailChanged,
+    this.onMobileLocationChanged,
     this.providerEnabled = false,
     this.bridgeEnabled = false,
     this.workspaceModeCard,
@@ -50,6 +51,7 @@ class WorkspaceSettings extends StatelessWidget {
   final bool mobileRoot;
   final int mobileResetRevision;
   final ValueChanged<bool>? onMobileDetailChanged;
+  final ValueChanged<String?>? onMobileLocationChanged;
 
   /// Server feature flags (provider connections / Slack bridge).
   final bool providerEnabled, bridgeEnabled;
@@ -68,6 +70,7 @@ class WorkspaceSettings extends StatelessWidget {
       mobileRoot: mobileRoot,
       mobileResetRevision: mobileResetRevision,
       onMobileDetailChanged: onMobileDetailChanged,
+      onMobileLocationChanged: onMobileLocationChanged,
       destinations: [
         RaftSettingsDestination(
           'account',

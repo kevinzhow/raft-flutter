@@ -65,7 +65,10 @@ void main() {
       'role': 'guest',
     });
     expect(w.server!.string('role'), 'guest');
-    expect(w.section, 'chat');
+    // Source SettingsPanel.tsx:7882–7894 keeps the requested URL and
+    // projects an unavailable tab to Account; capability loss still fences it.
+    expect(w.section, 'settings');
+    expect(w.location.toString(), '/s/s1/settings/providers');
     expect(w.canVisitSection('providers'), false);
     transport.oldSnapshot.complete(
       ResponseBody.fromString(
@@ -80,7 +83,8 @@ void main() {
     expect(w.server!.string('role'), 'guest');
     expect(w.servers.single.string('role'), 'guest');
     w.setSection('providers');
-    expect(w.section, 'chat');
+    expect(w.section, 'settings');
+    expect(w.location.toString(), '/s/s1/settings/providers');
     w.applyMembershipRole({
       'serverId': 's1',
       'userId': 'someone-else',

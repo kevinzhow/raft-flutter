@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/raft_location.dart';
+import '../data/workspace_navigation.dart';
 import 'system_notification_center.dart';
 
 /// Route-level mobile navigation, following MainLayout.tsx's root/detail cuts.
@@ -20,6 +22,10 @@ String? mobileWorkspaceRootTab(
     _ => null,
   };
 }
+
+/// Root visibility comes from the accepted URL, never a retained data window.
+String? mobileWorkspaceRootTabForLocation(RaftLocation location) =>
+    WorkspaceNavigation(initial: location).mobileRootTab;
 
 String mobileWorkspaceBackSection(String section) => switch (section) {
   'computers' ||

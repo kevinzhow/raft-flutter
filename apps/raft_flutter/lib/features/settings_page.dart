@@ -48,6 +48,7 @@ class RaftSettingsPage extends StatefulWidget {
     this.mobileRoot = false,
     this.mobileResetRevision = 0,
     this.onMobileDetailChanged,
+    this.onMobileLocationChanged,
   });
   final List<RaftSettingsDestination> destinations;
   final String initialTab;
@@ -55,6 +56,7 @@ class RaftSettingsPage extends StatefulWidget {
   final bool mobileRoot;
   final int mobileResetRevision;
   final ValueChanged<bool>? onMobileDetailChanged;
+  final ValueChanged<String?>? onMobileLocationChanged;
   @override
   State<RaftSettingsPage> createState() => _RaftSettingsPageState();
 }
@@ -65,7 +67,13 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
   @override
   void didUpdateWidget(covariant RaftSettingsPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.mobileResetRevision != widget.mobileResetRevision) {
+    if (oldWidget.initialTab != widget.initialTab) selected = widget.initialTab;
+    if (widget.onMobileLocationChanged != null ||
+        oldWidget.mobileRoot != widget.mobileRoot) {
+      mobileNavigation = widget.mobileRoot;
+    }
+    if (oldWidget.mobileResetRevision != widget.mobileResetRevision &&
+        widget.mobileRoot) {
       mobileNavigation = true;
     }
   }
@@ -74,6 +82,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     if (!mounted) return;
     setState(() => mobileNavigation = true);
     widget.onMobileDetailChanged?.call(false);
+    widget.onMobileLocationChanged?.call(null);
   }
 
   @override
@@ -97,6 +106,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
         mobileNavigation = false;
       });
       if (mobile) widget.onMobileDetailChanged?.call(true);
+      widget.onMobileLocationChanged?.call(destination.id);
     }
 
     final groups = [

@@ -3,6 +3,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
+import '../data/raft_navigation_history.dart';
 import '../data/attachment_image_repository.dart';
 import '../data/source_channel_files_store.dart';
 import '../platform/attachment_files.dart';
@@ -123,6 +124,12 @@ class _ConversationPanelState extends State<ConversationPanel> {
       scope = currentScope;
       tab = RaftConversationTabId.chat;
     }
+    if (w.server != null) {
+      final requested = w.location.chatTab ?? 'chat';
+      tab = RaftConversationTabId.values.firstWhere(
+        (id) => id.name == requested,
+      );
+    }
     final channel = w.channel;
     final hasTabs = channel != null && channel.type != 'thread';
     if (!hasTabs) tab = RaftConversationTabId.chat;
@@ -153,7 +160,20 @@ class _ConversationPanelState extends State<ConversationPanel> {
                 ),
             ],
             value: tab,
-            onChanged: (value) => setState(() => tab = value),
+            onChanged: (value) {
+              setState(() => tab = value);
+              if (w.server != null) {
+                w.navigation.navigate(
+                  w.location.withQuery({
+                    'chatTab': value == RaftConversationTabId.chat
+                        ? null
+                        : value.name,
+                  }),
+                  kind: RaftNavigationKind.replace,
+                );
+                w.notifyListeners();
+              }
+            },
           ),
         Expanded(
           child: Stack(

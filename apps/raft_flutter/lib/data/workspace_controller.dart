@@ -1008,7 +1008,7 @@ class WorkspaceController extends ChangeNotifier {
             dm: channel?.type == 'dm',
           )
         : navigation.location.serverSlug == slug
-        ? navigation.location.tabHome()
+        ? navigation.location
         : WorkspaceNavigation.locationForSection(
             slug,
             mobileNavigation ? 'home' : _unboundSection,
@@ -1030,7 +1030,14 @@ class WorkspaceController extends ChangeNotifier {
 
   String get section {
     bindNavigation();
-    return server == null ? _unboundSection : navigation.section;
+    if (server == null) return _unboundSection;
+    final projected = navigation.section;
+    // SettingsPanel.tsx:7882–7894 retains the requested URL while a denied
+    // tab resolves to Account. It does not redirect the entire workspace.
+    return navigation.location.route == RaftRoute.settings &&
+            !canVisitSection(projected)
+        ? 'settings'
+        : projected;
   }
 
   set section(String value) {

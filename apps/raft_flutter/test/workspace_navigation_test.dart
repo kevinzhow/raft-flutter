@@ -60,11 +60,52 @@ void main() {
   );
   test('cold overlay Back replaces with underlying route; entity Back reaches semantic tab', () {
     final n = navigation('/s/demo/channel/c?thread=c:p&profile=human:h');
+    expect(n.back().thread?.itemId, 'p');
+    expect(n.location.profile, isNull);
     expect(n.back().toString(), '/s/demo/channel/c');
     expect(n.entries.length, 1);
     final entity = navigation('/s/demo/agent/a');
     expect(entity.back().toString(), '/s/demo/members');
   });
+  test('wired model cold Back closes independent task, profile and thread separately', () {
+    final n = navigation(
+      '/s/demo/channel/c?task=c:t&thread=c:p&profile=human:h&msg=r',
+    );
+    n.back();
+    expect(n.location.task, isNull);
+    expect(n.location.thread?.itemId, 'p');
+    expect(n.location.profile?.id, 'h');
+    expect(n.location.messageId, 'r');
+    n.back();
+    expect(n.location.profile, isNull);
+    expect(n.location.thread?.itemId, 'p');
+    n.back();
+    expect(n.location.thread, isNull);
+    expect(n.location.entityId, 'c');
+  });
+
+  test('legacy task=1 is the top task modal over its thread and profile', () {
+    // Source rightPanelUrlSync.ts 272, 313–321 resolves task=1 against the
+    // thread anchor; MainLayout.tsx 1360–1376 mounts that task modal last.
+    final n = navigation(
+      '/s/demo/channel/c?task=1&thread=c:p&profile=human:h&msg=r',
+    );
+    expect(n.location.task?.channelId, n.location.thread?.channelId);
+    expect(n.location.task?.itemId, n.location.thread?.itemId);
+    n.back();
+    expect(n.location.query('task'), isNull);
+    expect(n.location.thread?.itemId, 'p');
+    expect(n.location.profile?.id, 'h');
+    expect(n.location.messageId, 'r');
+    n.back();
+    expect(n.location.profile, isNull);
+    expect(n.location.thread?.itemId, 'p');
+    n.back();
+    expect(n.location.thread, isNull);
+    expect(n.location.toString(), '/s/demo/channel/c?msg=r');
+    expect(n.index, 0);
+  });
+
   test(
     'principal and server rebinding invalidate async tickets and history',
     () {
