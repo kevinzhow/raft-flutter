@@ -421,8 +421,13 @@ final ParityCase _activity = ParityCase(
   ],
   notes:
       'ResourceView(section activity) in the React 342x620 box; /channels/inbox '
-      'answers activityResultsFixture.json. Relative times use the fixture clock.',
-  build: (ctx) => _resource(ctx, 'activity', width: 342, height: 620),
+      'answers activityResultsFixture.json. Relative times use the fixture clock. '
+      'Desktop pointer density matches the real Chromium host (hover:none is '
+      'false); the Android provider names the Widget capture, not a device.',
+  build: (ctx) => RaftDensityScope(
+    density: RaftDensity.desktop,
+    child: _resource(ctx, 'activity', width: 342, height: 620),
+  ),
   settle: const Duration(milliseconds: 850),
 );
 

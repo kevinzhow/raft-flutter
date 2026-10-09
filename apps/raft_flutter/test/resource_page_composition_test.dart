@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -215,6 +216,49 @@ void main() {
       await t.pumpAndSettle();
       expect(client.mutations, ['DELETE /channels/saved/msg-saved-visual-1']);
       expect(navigated, false);
+      expect(t.takeException(), isNull);
+    },
+  );
+  testWidgets(
+    'Activity wraps title after an inline source icon without indenting continuation',
+    (t) async {
+      await mount(t, 'activity', const Size(342, 620));
+      final card = find.byKey(
+        const ValueKey('activity-thread-thread-msg-agent-reply'),
+      );
+      final icon = find.descendant(
+        of: card,
+        matching: find.byType(RaftThreadIcon),
+      );
+      expect(t.getSize(icon), const Size(13, 13));
+      expect(find.byType(RaftDirectMessageIcon), findsOneWidget);
+      final title = find.descendant(
+        of: card,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              (widget.textSpan?.toPlainText().contains(
+                    'Captured the Android visual artifact',
+                  ) ??
+                  false),
+        ),
+      );
+      final rich = find.descendant(of: title, matching: find.byType(RichText));
+      final paragraph = t.renderObject<RenderParagraph>(rich);
+      final boxes = paragraph.getBoxesForSelection(
+        TextSelection(
+          baseOffset: 1,
+          extentOffset: paragraph.text.toPlainText().length,
+        ),
+      );
+      final lineTops = boxes.map((box) => box.top).toSet().toList()..sort();
+      expect(lineTops, hasLength(2));
+      expect(boxes.first.left, 19);
+      expect(
+        boxes.firstWhere((box) => box.top == lineTops.last).left,
+        0,
+        reason: 'The second line uses the whole title column.',
+      );
       expect(t.takeException(), isNull);
     },
   );

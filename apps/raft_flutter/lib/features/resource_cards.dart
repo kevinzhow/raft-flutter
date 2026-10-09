@@ -39,6 +39,8 @@ class RaftConversationCardRecipe {
   final bool saved;
   static const inset = EdgeInsets.all(12);
   static const gap = 8.0;
+  // ThreadsInbox timestamp and overlaid action both use transition-opacity.
+  static const actionFade = Duration(milliseconds: 150);
   Color get background => saved || tokens.brutal ? tokens.panel : tokens.card;
   Color get hoverBackground => tokens.colors['fill-muted']!;
   BorderSide get border => BorderSide(
@@ -48,7 +50,7 @@ class RaftConversationCardRecipe {
         : saved && tokens.dark
         ? Colors.transparent
         : tokens.brutal && !saved
-        ? tokens.strong.withValues(alpha: .3)
+        ? tokens.colors['color-black']!.withValues(alpha: .3)
         : tokens.colors[saved && tokens.brutal ? 'line-strong' : 'line-muted']!,
     width: saved && !tokens.brutal ? .5 : tokens.border,
   );
@@ -75,8 +77,23 @@ class RaftConversationCardRecipe {
     tokens,
     size: 12,
     line: saved ? 16 : 20,
-    color: saved ? tokens.muted : tokens.colors['foreground-placeholder'],
+    color: saved
+        ? tokens.muted
+        : tokens.brutal
+        ? tokens.colors['color-black']!.withValues(alpha: .4)
+        : tokens.colors['foreground-placeholder'],
   );
+  Color get titleIconColor => tokens.brutal
+      ? tokens.colors['color-black']!.withValues(alpha: .45)
+      : tokens.colors['foreground-placeholder']!;
+  Color titleColor(bool unread) => tokens.brutal
+      ? tokens.colors['color-black']!.withValues(alpha: unread ? 1 : .55)
+      : unread
+      ? tokens.strong
+      : tokens.muted;
+  Color get senderColor => tokens.brutal
+      ? tokens.colors['color-black']!.withValues(alpha: .7)
+      : tokens.muted;
 }
 
 /// Explicit semantic paint keeps Ink surfaces from borrowing a distant Material
@@ -97,6 +114,12 @@ class RaftConversationCard extends StatefulWidget {
   final VoidCallback? onContextMenu;
   final String? semanticLabel;
   final Widget? actions;
+
+  static bool actionsVisibleOf(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<_ConversationActionScope>()
+          ?.visible ??
+      false;
   @override
   State<RaftConversationCard> createState() => _RaftConversationCardState();
 }
@@ -119,72 +142,110 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
             states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
             tokens: rt,
           ).root.boxShadow.toBoxShadows(rt);
-    return MouseRegion(
-      onEnter: (_) => setState(() => hovered = true),
-      onExit: (_) => setState(() => hovered = false),
-      child: Semantics(
-        button: true,
-        label: widget.semanticLabel,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: recipe.radius,
-            boxShadow: shadows,
-          ),
-          child: Material(
-            color: hovered || focused
-                ? recipe.hoverBackground
-                : recipe.background,
-            shape: RoundedRectangleBorder(
-              borderRadius: recipe.radius,
-              side: recipe.border,
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              splashFactory: NoSplash.splashFactory,
-              highlightColor: Colors.transparent,
-              hoverColor: Colors.transparent,
-              focusColor: Colors.transparent,
-              onTap: widget.onOpen,
-              onLongPress: widget.onContextMenu,
-              onSecondaryTap: widget.onContextMenu,
-              onFocusChange: (value) => setState(() => focused = value),
-              borderRadius: recipe.radius,
-              child: Padding(
-                // CSS content box = border + padding; Material paints the side
-                // inside its shape without insetting the child.
-                padding: RaftConversationCardRecipe.inset.add(
-                  EdgeInsets.all(recipe.border.width),
+    return _ConversationActionScope(
+      visible: widget.actions != null && showActions,
+      child: Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        // Source group-focus-within includes the row's nested action button.
+        onFocusChange: (value) => setState(() => focused = value),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => hovered = true),
+          onExit: (_) => setState(() => hovered = false),
+          child: Semantics(
+            button: true,
+            label: widget.semanticLabel,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: recipe.radius,
+                boxShadow: shadows,
+              ),
+              child: Material(
+                color: hovered || focused
+                    ? recipe.hoverBackground
+                    : recipe.background,
+                shape: RoundedRectangleBorder(
+                  borderRadius: recipe.radius,
+                  side: recipe.border,
                 ),
-                child: Stack(
-                  children: [
-                    widget.child,
-                    if (widget.actions != null)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: ExcludeSemantics(
-                          excluding: !showActions,
-                          child: IgnorePointer(
-                            ignoring: !showActions,
-                            child: AnimatedOpacity(
-                              opacity: showActions ? 1 : 0,
-                              duration: MediaQuery.disableAnimationsOf(context)
-                                  ? Duration.zero
-                                  : const Duration(milliseconds: 150),
-                              child: Material(
-                                color: recipe.background,
-                                child: widget.actions!,
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  splashFactory: NoSplash.splashFactory,
+                  highlightColor: Colors.transparent,
+                  hoverColor: Colors.transparent,
+                  focusColor: Colors.transparent,
+                  onTap: widget.onOpen,
+                  onLongPress: widget.onContextMenu,
+                  onSecondaryTap: widget.onContextMenu,
+                  borderRadius: recipe.radius,
+                  child: Padding(
+                    // CSS content box = border + padding; Material paints the side
+                    // inside its shape without insetting the child.
+                    padding: RaftConversationCardRecipe.inset.add(
+                      EdgeInsets.all(recipe.border.width),
+                    ),
+                    child: Stack(
+                      children: [
+                        widget.child,
+                        if (widget.actions != null)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: ExcludeSemantics(
+                              excluding: !showActions,
+                              child: IgnorePointer(
+                                ignoring: !showActions,
+                                child: AnimatedOpacity(
+                                  opacity: showActions ? 1 : 0,
+                                  duration:
+                                      MediaQuery.disableAnimationsOf(context)
+                                      ? Duration.zero
+                                      : RaftConversationCardRecipe.actionFade,
+                                  child: Material(
+                                    color: recipe.background,
+                                    child: widget.actions!,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ConversationActionScope extends InheritedWidget {
+  const _ConversationActionScope({required this.visible, required super.child});
+  final bool visible;
+  @override
+  bool updateShouldNotify(_ConversationActionScope oldWidget) =>
+      visible != oldWidget.visible;
+}
+
+/// InboxRow hides its timestamp when the overlaid action is available, while
+/// keeping the timestamp's layout width so hover never changes title wrapping.
+class RaftConversationTimestamp extends StatelessWidget {
+  const RaftConversationTimestamp({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final hidden = RaftConversationCard.actionsVisibleOf(context);
+    return ExcludeSemantics(
+      excluding: hidden,
+      child: AnimatedOpacity(
+        opacity: hidden ? 0 : 1,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : RaftConversationCardRecipe.actionFade,
+        child: child,
       ),
     );
   }

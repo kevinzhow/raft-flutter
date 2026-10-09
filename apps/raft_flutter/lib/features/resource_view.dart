@@ -1381,7 +1381,9 @@ class _ResourceViewState extends State<ResourceView> {
               primary: false,
               scrollDirection: Axis.horizontal,
               child: RaftSegmentedControl<String>(
-                style: RaftSegmentedStyle.tabs,
+                // ThreadsInbox uses the raft-ui SegmentedControl recipe,
+                // rather than the older 11px tab-button presentation.
+                style: RaftSegmentedStyle.buttons,
                 value: ['all', 'unread', 'mentions'].contains(filter)
                     ? filter
                     : '',
@@ -1774,8 +1776,9 @@ class _ResourceViewState extends State<ResourceView> {
           // ThreadsInbox row action: ghost icon-sm Check 14 (RotateCcw 14 to
           // restore). Follow/unfollow is only in the context menu.
           : RaftIconButton(
-              glyph: filter == 'done' ? RaftGlyph.rotateCw : RaftGlyph.check,
+              glyph: filter == 'done' ? RaftGlyph.rotateCcw : RaftGlyph.check,
               visualSize: 28,
+              minimumTargetSize: 28,
               tooltip: filter == 'done'
                   ? 'Restore conversation'
                   : 'Mark conversation done',
@@ -1791,33 +1794,52 @@ class _ResourceViewState extends State<ResourceView> {
           if (thread)
             Padding(
               padding: const EdgeInsets.only(bottom: 2),
-              child: Text(
+              child: RaftCssText(
                 '#${row['parentChannelName'] ?? ''}',
                 style: recipe.metadata.copyWith(
                   fontSize: 11,
                   height: 12 / 11,
-                  color: t.colors['foreground-placeholder'],
+                  color: recipe.titleIconColor,
                 ),
               ),
             ),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 3, right: 6),
-                child: RaftIcon(
-                  thread
-                      ? RaftGlyph.messageSquare
-                      : dm
-                      ? RaftGlyph.atSign
-                      : RaftGlyph.hash,
-                  size: 13,
-                  color: t.colors['foreground-placeholder'],
-                ),
-              ),
               Expanded(
-                child: Text(
-                  title,
+                child: RaftCssText.rich(
+                  TextSpan(
+                    children: [
+                      // ThreadsInbox's icon is inline, not a separate flex
+                      // column: wrapped title lines return to the row's edge.
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: Transform.translate(
+                          offset: const Offset(0, 2),
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: thread
+                                ? RaftThreadIcon(
+                                    size: 13,
+                                    color: recipe.titleIconColor,
+                                  )
+                                : dm
+                                ? RaftDirectMessageIcon(
+                                    size: 13,
+                                    color: recipe.titleIconColor,
+                                  )
+                                : RaftIcon(
+                                    RaftGlyph.hash,
+                                    size: 13,
+                                    color: recipe.titleIconColor,
+                                  ),
+                          ),
+                        ),
+                      ),
+                      TextSpan(text: title),
+                    ],
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style:
@@ -1825,7 +1847,7 @@ class _ResourceViewState extends State<ResourceView> {
                         t,
                         size: 14,
                         line: 20,
-                        color: unread > 0 ? t.strong : t.muted,
+                        color: recipe.titleColor(unread > 0),
                       ).copyWith(
                         fontWeight: unread > 0
                             ? FontWeight.w700
@@ -1834,21 +1856,23 @@ class _ResourceViewState extends State<ResourceView> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                relativeTime(row['lastActivityAt'] ?? row['lastMessageAt']),
-                style: recipe.timestamp,
+              RaftConversationTimestamp(
+                child: RaftCssText(
+                  relativeTime(row['lastActivityAt'] ?? row['lastMessageAt']),
+                  style: recipe.timestamp,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 2),
-          Text.rich(
+          RaftCssText.rich(
             TextSpan(
               children: [
                 if (sender.isNotEmpty)
                   TextSpan(
                     text: '$sender: ',
                     style: recipe.body.copyWith(
-                      color: t.muted,
+                      color: recipe.senderColor,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1857,7 +1881,7 @@ class _ResourceViewState extends State<ResourceView> {
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: recipe.body.copyWith(color: unread > 0 ? t.strong : t.muted),
+            style: recipe.body.copyWith(color: recipe.titleColor(unread > 0)),
           ),
           const SizedBox(height: 4),
           ConstrainedBox(
