@@ -1,0 +1,72 @@
+# Controlled message process comparison
+
+The runner renders the pinned, actual Source `index.html → main.tsx → App` and
+actual Flutter `WorkspaceView`, using the same immutable public DTO fixture over
+real local HTTP. Only fixture responses are gated. Unknown requests fail with
+404; Source stores and product files are unchanged. Request/response/gate order,
+wall timestamps, status and input hashes are preserved.
+
+The implemented flow is **Activity → uncached target in an already accepted
+channel**, in three actual themes and 390×844/1440×900. The five additional cold
+loading, cached-target, canonical-thread, race/revocation and entity-hydration
+flows are **not implemented or proven by this batch**.
+
+## Run
+
+Use pinned Flutter 3.47.6 and installed pinned Source dependencies. Prepare the
+private Linux media bundle with `./tool/prepare-media-linux` before its first
+build. Coordinate Linux integration ownership with other workers. This runner
+uses private Xvfb; no Android5580, real account/backend or shared native fixture.
+
+```sh
+python3 tool/process-parity/run.py --out .local/process-<new-attempt> --only brutal-desktop
+python3 tool/process-parity/run.py --out .local/process-<new-matrix> --only all
+python3 tool/process-parity/run.py --out .local/source-<new-attempt> --only all --source-only
+node --test tool/process-parity/runtime.test.mjs
+```
+
+Every output path must be new. Failed attempts remain failures. The manifest
+labels Source-only runs separately. No fixed delay substitutes for a held
+response. The runner terminates its own runtime at completion.
+
+Both sides accept a genuine canonical channel DTO, seq200 tail, then a seq300
+context target with 21 rows so centering is observable. Source enters through
+its real channel URI; Flutter bootstraps normally and selects the same channel
+through the real sidebar. The assertion pre-state is the accepted visible tail.
+
+## Evidence and assertions
+
+Five checkpoints preserve PNGs, raw observations and actual HTTP chronology:
+accepted tail, Activity, held context, accepted context, expired highlight.
+Assertions require old accepted row, header, tabs and composer while held,
+then the centered highlighted canonical target and two-second expiry. Before
+release, a read POST cannot advance beyond accepted seq200. Flutter records
+checkpoint failures and continues independent checks.
+
+Source records every DOM rAF observation plus Chromium CDP screencast renderer
+PNGs, ACKs and metadata timestamps. Flutter records post-frame layout state and
+rasterizes changed actual RenderRepaintBoundary display-list layers, including
+the first exposed target. These surfaces are labeled separately. Neither is
+physical screen scanout. Sampling gaps remain observable; missing frames are
+not invented. There is no pixel score or acceptance threshold change.
+
+```sh
+python3 tool/process-parity/compare-pair.py <source-dir> <flutter-dir> --out <new-pair.json>
+```
+
+Pair comparison checks input identity, completed receipts, renderer manifest
+integrity and semantic checkpoint URIs. Success is `BEHAVIOR_PASS_WITH_LIMITS`.
+It retains transient missing controls/offsets; final checkpoints do not erase
+intermediate observations or exclude unobserved paints.
+
+Source authority at `26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6`:
+`packages/web/src/store/messageStore.ts:2374–2460`,
+`components/message/ChatPanel.tsx:581–597,1484–1534`,
+`components/message/MessageTimeline.tsx:1028–1036`, `hooks/useMobileNav.ts:89–109`
+and the mounted Activity handler. Consult the
+[source loading contract](../../docs/source-message-loading-contract.md) and
+[navigation contract](../../docs/source-navigation-contract.md).
+
+Authentication, Socket.IO, backend read-back, Android, real permission changes
+and final visual parity remain separate evidence. These read POSTs prove client
+presentation gating against the controlled endpoint.
