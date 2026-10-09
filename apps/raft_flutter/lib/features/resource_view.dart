@@ -32,6 +32,7 @@ class ResourceView extends StatefulWidget {
     this.initialSearchDeferUntilQuery = false,
     this.onSearchEntity,
     this.onSearchMessage,
+    this.onSearchQueryCommitted,
     this.onActivityItem,
     this.onActivityCanonical,
     this.onActivityUnreadAccepted,
@@ -62,6 +63,10 @@ class ResourceView extends StatefulWidget {
   /// Typed Source search hits retain thread and parent identities for the
   /// owning route. Embedded consumers may keep the ordinary message callback.
   final Future<void> Function(Map<String, dynamic>)? onSearchMessage;
+
+  /// Source's committed query URL writer. IME composition stays in the input;
+  /// embedded search consumers may omit URL ownership.
+  final ValueChanged<String>? onSearchQueryCommitted;
   final Future<void> Function(Map<String, dynamic>)? onActivityItem;
 
   /// Mounted Source master/detail arbitration: a second activation navigates
@@ -78,6 +83,9 @@ class ResourceView extends StatefulWidget {
 
 class _ResourceViewState extends State<ResourceView> {
   final query = TextEditingController();
+  String? lastPublishedQuery;
+  TextEditingValue lastSearchEditingValue = TextEditingValue.empty;
+  bool adoptingSearchQuery = false;
   Timer? searchDebounce, activityActivation;
   String? selectedSearchKey;
   List<Map<String, dynamic>> searchPeople = [],
@@ -138,6 +146,13 @@ class _ResourceViewState extends State<ResourceView> {
       }
     });
     saveSearchState();
+    if (restore &&
+        untouched &&
+        widget.initialQuery == null &&
+        widget.initialSearchChannelId == null) {
+      lastPublishedQuery = query.text.trim();
+      widget.onSearchQueryCommitted?.call(lastPublishedQuery!);
+    }
     if (restore && untouched) await load();
   }
 
@@ -480,6 +495,9 @@ class _ResourceViewState extends State<ResourceView> {
     super.initState();
     acceptedAuthority = authority;
     query.text = widget.initialQuery ?? '';
+    lastPublishedQuery = widget.initialQuery ?? '';
+    lastSearchEditingValue = query.value;
+    query.addListener(searchCompositionCommitted);
     if (widget.section == 'search' && widget.initialSearchChannelId != null) {
       final channel = [
         ...w.channels,
@@ -525,6 +543,26 @@ class _ResourceViewState extends State<ResourceView> {
       subscribeEvents();
     }
     authorityChanged();
+    if (widget.section == 'search' &&
+        oldWidget.initialQuery != widget.initialQuery &&
+        (widget.initialQuery ?? '') != lastPublishedQuery) {
+      searchDebounce?.cancel();
+      requestGeneration++;
+      final next = widget.initialQuery ?? '';
+      adoptingSearchQuery = true;
+      query.value = TextEditingValue(
+        text: next,
+        selection: TextSelection.collapsed(offset: next.length),
+      );
+      adoptingSearchQuery = false;
+      lastPublishedQuery = next;
+      rows = [];
+      selectedSearchKey = null;
+      error = null;
+      hasMore = false;
+      saveSearchState();
+      unawaited(load());
+    }
   }
 
   @override
@@ -1082,6 +1120,20 @@ class _ResourceViewState extends State<ResourceView> {
     }
   }
 
+  // TextField.onChanged omits an IME commit whose text is unchanged. Source's
+  // composition-end effect still writes the committed query in that case.
+  void searchCompositionCommitted() {
+    final previous = lastSearchEditingValue, next = query.value;
+    lastSearchEditingValue = next;
+    if (!adoptingSearchQuery &&
+        previous.text == next.text &&
+        previous.composing.isValid &&
+        !previous.composing.isCollapsed &&
+        (!next.composing.isValid || next.composing.isCollapsed)) {
+      searchChanged(next.text);
+    }
+  }
+
   void searchChanged(String text) {
     searchDebounce?.cancel();
     requestGeneration++;
@@ -1094,6 +1146,8 @@ class _ResourceViewState extends State<ResourceView> {
       return;
     }
     saveSearchState();
+    lastPublishedQuery = text.trim();
+    widget.onSearchQueryCommitted?.call(lastPublishedQuery!);
     final scope = authority;
     searchDebounce = Timer(const Duration(milliseconds: 200), () {
       if (accepts(scope)) load();

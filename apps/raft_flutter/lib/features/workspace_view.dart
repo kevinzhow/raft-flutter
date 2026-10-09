@@ -877,6 +877,18 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               onBack: dismissPanel,
               onSearchEntity: wide ? openDesktopEntity : null,
               onSearchMessage: openSearchMessage,
+              onSearchQueryCommitted: route == 'search'
+                  ? (query) {
+                      if (!mounted ||
+                          navigationScope != mobileAuthority ||
+                          !w.canVisitSection('search')) {
+                        return;
+                      }
+                      if (w.navigation.replaceSearchQuery(query)) {
+                        w.notifyListeners();
+                      }
+                    }
+                  : null,
               onActivityCanonical:
                   wide &&
                       activityFlag.masterDetail(

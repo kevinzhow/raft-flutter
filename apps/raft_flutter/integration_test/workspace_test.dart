@@ -15,6 +15,7 @@ import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/resource_search.dart';
 import 'package:raft_flutter/platform/session_store.dart';
@@ -1404,10 +1405,17 @@ void main() {
       await until(
         tester,
         () =>
-            w.section == 'chat' &&
+            w.section == (mobileViewport(tester) ? 'chat' : 'search') &&
             w.highlightedMessageId == sent.id &&
             !w.channelLoading,
       );
+      if (!mobileViewport(tester)) {
+        expect(w.location.route, RaftRoute.search);
+        expect(w.location.content?.kind, RaftContentKind.channel);
+        expect(w.location.content?.id, general.id);
+        expect(w.location.messageId, sent.id);
+        expect(w.location.query('q'), text);
+      }
       debugPrint(
         'Native Search: accepted context; awaiting actual viewport receipt',
       );
@@ -1449,7 +1457,7 @@ void main() {
       await until(
         tester,
         () =>
-            w.section == 'chat' &&
+            w.section == (mobileViewport(tester) ? 'chat' : 'search') &&
             w.channel?.id == general.id &&
             w.highlightedMessageId == sent.id &&
             mainChat.evaluate().length == 1 &&
