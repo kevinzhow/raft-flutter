@@ -444,6 +444,20 @@
           "RaftFamily.elegant/false",
           "RaftFamily.elegant/true"
         ]
+      },
+      {
+        "id": "N24h",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "title_zh": "按当前服务器真实功能开关显示经典或新版动态页，并验证两种状态",
+        "proof_file": "apps/raft_flutter/test/workspace_activity_server_flag_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "flag-enabled",
+          "flag-disabled"
+        ]
       }
     ]
   },
