@@ -2,10 +2,7 @@
 // It consumes the generated raft-ui Button sizes/variants and shared roles.
 import 'package:flutter/material.dart';
 
-import 'recipes/button_variants.g.dart';
-import 'recipes/recipe_runtime.dart';
 import 'theme.dart';
-import 'recipe_surface.dart';
 
 class RaftSelectionToolbarRecipe {
   const RaftSelectionToolbarRecipe(this.tokens, {required this.viewportWidth});
@@ -27,45 +24,4 @@ class RaftSelectionToolbarRecipe {
         .withValues(alpha: .7),
     leadingDistribution: TextLeadingDistribution.even,
   );
-
-  /// Native intrinsic label measurement follows the actual generated Button
-  /// border/padding/icon/gap recipe. No width is pinned to a screenshot case.
-  double buttonWidth(
-    BuildContext context,
-    String label, {
-    bool compact = false,
-    bool accent = false,
-  }) {
-    final rt = tokens.recipeTokens;
-    final s = RaftButtonRecipe.resolve(
-      theme: tokens.recipeTheme,
-      variant: accent
-          ? RaftButtonRecipeVariant.accent
-          : RaftButtonRecipeVariant.outline,
-      size: compact ? RaftButtonRecipeSize.iconSm : RaftButtonRecipeSize.sm,
-      states: tokens.recipeStates(extra: [RaftRecipeStates.iconInlineStart]),
-      tokens: rt,
-    ).root;
-    if (s.width != null) return s.width!;
-    final p = TextPainter(
-      text: TextSpan(text: label, style: s.text(rt)),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    final icon = s.target("& svg:not([class*='size-'])")?.width ?? 16;
-    final width =
-        p.width +
-        icon +
-        (s.columnGap ?? 0) +
-        s.padding.horizontal +
-        (s
-                .border(rt)
-                ?.dimensions
-                .resolve(Directionality.of(context))
-                .horizontal ??
-            0);
-    p.dispose();
-    return width;
-  }
 }

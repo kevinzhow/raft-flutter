@@ -78,7 +78,9 @@ void main() {
         );
         update(() => width = 320);
         await t.pumpAndSettle();
-        expect(t.widget<RaftButton>(button('Copy link')).label, isEmpty);
+        if (family == RaftFamily.brutal) {
+          expect(t.widget<RaftButton>(button('Copy link')).label, isEmpty);
+        }
         expect(t.takeException(), isNull);
         final trigger = t.getRect(button('More'));
         await t.tap(button('More'));
@@ -215,4 +217,72 @@ void main() {
       }
     },
   );
+  for (final (family, dark) in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    testWidgets(
+      'production inherited face compacts Copy link into one authored row $family/$dark',
+      (t) async {
+        t.view.physicalSize = const Size(390, 844);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.resetPhysicalSize);
+        addTearDown(t.view.resetDevicePixelRatio);
+        final theme = raftTheme(family, dark: dark);
+        final tokens = theme.extension<RaftTokens>()!;
+        await t.runAsync(() async {
+          for (final (name, file) in [
+            (
+              tokens.bodyFont,
+              family == RaftFamily.brutal ? 'HankenGrotesk.ttf' : 'Geist.ttf',
+            ),
+            (tokens.monoFont, 'GeistMono.ttf'),
+          ]) {
+            ByteData data;
+            try {
+              data = await rootBundle.load(
+                'packages/raft_ui/assets/fonts/$file',
+              );
+            } on FlutterError {
+              data = await rootBundle.load('assets/fonts/$file');
+            }
+            await (FontLoader(name)..addFont(Future.value(data))).load();
+          }
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.bottomCenter,
+                child: RaftSelectionToolbar(
+                  selected: 2,
+                  total: 2,
+                  onExit: () {},
+                  onForward: () {},
+                  onCopyLinks: () {},
+                  onPreview: () {},
+                  onCopyMarkdown: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+        await t.pumpAndSettle();
+        final top = t.getRect(button('Cancel')).top;
+        for (final label in ['Forward', 'Copy link', 'More']) {
+          expect(t.getRect(button(label)).top, closeTo(top, .01));
+        }
+        if (family == RaftFamily.brutal) {
+          expect(t.widget<RaftButton>(button('Copy link')).label, isEmpty);
+        }
+        expect(
+          t.getRect(find.byType(RaftSelectionToolbar)).height,
+          family == RaftFamily.brutal ? 46 : 45,
+        );
+        expect(t.takeException(), isNull);
+      },
+    );
+  }
 }
