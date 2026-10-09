@@ -16,11 +16,32 @@ class TaskSurfaceController extends ChangeNotifier {
     this.onFailure,
     this.onMutationAccepted,
     this.resolveTask,
+    this.hydrateParent = false,
   }) : task = {...row} {
     events = parent.client.events.listen((event) {
       final data = event.payload;
+      if (hydrateParent &&
+          current &&
+          data is Map &&
+          (data['serverId'] == null || data['serverId'] == parent.server?.id) &&
+          data['channelId'] == task['channelId']) {
+        if (event.name == 'channel:removed') {
+          retireResolvedParent(
+            const RaftApiException(
+              'This channel is not available.',
+              status: 403,
+            ),
+          );
+          parentRemoved = true;
+        } else if (event.name == 'channel:authority-updated' ||
+            event.name == 'channel:members-updated') {
+          retireResolvedParent(null);
+          unawaited(start());
+        }
+      }
       if (!legacy &&
           hydrated &&
+          parentReady &&
           event.name == 'task:updated' &&
           data is Map &&
           (data['id'] == task['id'] ||
@@ -34,7 +55,26 @@ class TaskSurfaceController extends ChangeNotifier {
   final bool Function() valid;
   final void Function(Object)? onFailure;
   final Future<void> Function()? onMutationAccepted;
-  final Future<Map<String, dynamic>?> Function()? resolveTask;
+  final Future<Map<String, dynamic>?> Function(RaftChannel?)? resolveTask;
+
+  /// Cold task URLs may name an authorized channel absent from the directory.
+  /// A private accepted metadata projection must precede borrowed discussion.
+  final bool hydrateParent;
+  RaftChannel? resolvedParent;
+  Object? parentError;
+  int parentRevision = 0, startRevision = 0;
+  bool parentRemoved = false;
+  RaftChannel? get parentChannel =>
+      [
+        ...parent.channels,
+        ...parent.dms,
+      ].where((c) => c.id == task['channelId']).firstOrNull ??
+      resolvedParent;
+  bool get parentReady =>
+      !hydrateParent ||
+      parentChannel != null &&
+          parent.can('viewChannel', resource: parentChannel) &&
+          !parentRemoved;
   Map<String, dynamic> task;
   List<Map<String, dynamic>> history = [], assignees = [];
   Object? error, historyError;
@@ -46,20 +86,18 @@ class TaskSurfaceController extends ChangeNotifier {
   bool get current => !closed && valid();
   bool get legacy => task['isLegacy'] == true;
   bool get hydrated => task['id'] is String;
-  bool get joined => [...parent.channels, ...parent.dms].any(
-    (c) =>
-        c.id == task['channelId'] &&
-        c.joined &&
-        !c.archived &&
-        parent.can('viewChannel', resource: c),
-  );
-  bool get canViewParent => [...parent.channels, ...parent.dms].any(
-    (c) =>
-        c.id == task['channelId'] &&
-        !c.archived &&
-        parent.can('viewChannel', resource: c),
-  );
+  bool get joined =>
+      parentChannel != null &&
+      parentChannel!.joined &&
+      !parentChannel!.archived &&
+      parent.can('viewChannel', resource: parentChannel);
+  bool get canViewParent =>
+      parentReady &&
+      parentChannel != null &&
+      !parentChannel!.archived &&
+      parent.can('viewChannel', resource: parentChannel);
   bool get cleanup =>
+      !hydrateParent &&
       !legacy &&
       ![
         ...parent.channels,
@@ -69,6 +107,7 @@ class TaskSurfaceController extends ChangeNotifier {
       parent.server?.string('role') != 'guest';
   bool get canStatus =>
       current &&
+      parentReady &&
       !loading &&
       !legacy &&
       error == null &&
@@ -101,14 +140,71 @@ class TaskSurfaceController extends ChangeNotifier {
     if (current) notifyListeners();
   }
 
+  void retireResolvedParent(Object? failure) {
+    ++parentRevision;
+    ++startRevision;
+    ++revision;
+    ++historyRevision;
+    resolvedParent = null;
+    parentError = failure;
+    loading = historyLoading = true;
+    final child = discussion;
+    discussion = null;
+    child?.dispose();
+    changed();
+  }
+
+  Future<bool> loadParent() async {
+    if (!hydrateParent || parentReady) return true;
+    if (!current || parentRemoved || !parent.can('viewChannel')) return false;
+    final request = ++parentRevision;
+    parentError = null;
+    changed();
+    try {
+      final id = task['channelId'] as String;
+      final data = await parent.query('/channels/${Uri.encodeComponent(id)}');
+      if (!current || request != parentRevision) return false;
+      if (data is! Map ||
+          data['id'] != id ||
+          data['name'] is! String ||
+          data['serverId'] != parent.server?.id ||
+          data['type'] is! String ||
+          !const {'channel', 'private', 'joint', 'dm'}.contains(data['type'])) {
+        throw const RaftApiException('This channel is not available.');
+      }
+      final real = RaftChannel(Map<String, dynamic>.from(data));
+      if (!parent.can('viewChannel', resource: real)) {
+        throw const RaftApiException(
+          'This channel is not available.',
+          status: 403,
+        );
+      }
+      resolvedParent = real;
+      changed();
+      return true;
+    } catch (e) {
+      if (!current || request != parentRevision) return false;
+      parentError = e;
+      loading = historyLoading = false;
+      onFailure?.call(e);
+      changed();
+      return false;
+    }
+  }
+
   Future<void> start() async {
+    final request = ++startRevision;
+    bool accepts() => current && request == startRevision;
+    if (hydrateParent && !parentReady) {
+      if (!await loadParent() || !accepts()) return;
+    }
     if (resolveTask != null && !hydrated) {
       // URL anchors are identity only. Do not invent a task number, title,
       // status or author while the real parent-channel task bucket resolves.
       openDiscussion();
       try {
-        final accepted = await resolveTask!();
-        if (!current) return;
+        final accepted = await resolveTask!(parentChannel);
+        if (!accepts()) return;
         if (accepted == null) {
           loading = historyLoading = false;
           changed();
@@ -116,7 +212,7 @@ class TaskSurfaceController extends ChangeNotifier {
         }
         task = {...accepted};
       } catch (e) {
-        if (!current) return;
+        if (!accepts()) return;
         error = e;
         loading = historyLoading = false;
         onFailure?.call(e);
@@ -153,6 +249,14 @@ class TaskSurfaceController extends ChangeNotifier {
     c.servers = [...parent.servers];
     c.channels = [...parent.channels];
     c.dms = [...parent.dms];
+    final real = parentChannel!;
+    if (![...c.channels, ...c.dms].any((row) => row.id == real.id)) {
+      if (real.type == 'dm') {
+        c.dms.add(real);
+      } else {
+        c.channels.add(real);
+      }
+    }
     c.channel = [
       ...c.channels,
       ...c.dms,
@@ -177,6 +281,7 @@ class TaskSurfaceController extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
+    if (!parentReady) return;
     final request = ++revision;
     bool accepts() => current && request == revision;
     loading = true;
@@ -301,6 +406,8 @@ class TaskSurfaceController extends ChangeNotifier {
     closed = true;
     revision++;
     historyRevision++;
+    parentRevision++;
+    startRevision++;
     unawaited(events.cancel());
     discussion?.dispose();
     super.dispose();

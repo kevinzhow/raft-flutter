@@ -97,6 +97,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       ...w.channels,
       ...w.dms,
     ].where((c) => c.id == anchor.channelId).firstOrNull;
+    if (!w.can('viewChannel')) return;
     if (knownChannel != null && !w.can('viewChannel', resource: knownChannel)) {
       return;
     }
@@ -111,6 +112,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     final accepted = seeded ? seed!.row : null;
     owner = TaskSurfaceController(
       parent: w,
+      hydrateParent: !legacy && knownChannel == null,
       row:
           accepted ??
           {
@@ -121,10 +123,14 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
       onMutationAccepted: seeded ? seed?.onMutationAccepted : null,
       resolveTask: accepted != null
           ? null
-          : () async {
+          : (realParent) async {
               // Source loadTasks is the actual channel bucket, including DM
               // and legacy tasks. A URL gives no honest task-number lookup.
-              final response = await readSourceTaskBucket(w, anchor.channelId);
+              final response = await readSourceTaskBucket(
+                w,
+                anchor.channelId,
+                parentMetadata: realParent,
+              );
               final rows = response['tasks'] as List;
               for (final row in rows.whereType<Map>()) {
                 if (row['channelId'] != anchor.channelId ||

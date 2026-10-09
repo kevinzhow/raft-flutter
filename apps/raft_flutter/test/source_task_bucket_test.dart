@@ -8,6 +8,46 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'message_presentation_test.dart' show fixture;
 
 void main() {
+  test('Cold private metadata shares the borrowed discussion bucket without mutating the directory', () async {
+    final (w, api) = await fixture('owner');
+    addTearDown(w.dispose);
+    final real = RaftChannel({
+      'id': 'remote',
+      'serverId': 's1',
+      'name': 'Actual accepted private parent',
+      'type': 'private',
+      'joined': true,
+    });
+    final child = WorkspaceController(w.client, ownsClient: false)
+      ..server = w.server
+      ..channels = [...w.channels, real]
+      ..channel = real;
+    addTearDown(child.dispose);
+    final held = Completer<Map>();
+    api.routes['GET /tasks/channel/remote'] = (_) => held.future;
+    final host = readSourceTaskBucket(w, 'remote', parentMetadata: real);
+    final discussion = readSourceTaskBucket(child, 'remote');
+    expect(identical(host, discussion), isTrue);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(
+      api.calls.where((r) => r.path == '/tasks/channel/remote'),
+      hasLength(1),
+    );
+    expect(w.channels.any((c) => c.id == 'remote'), isFalse);
+    expect(
+      () => readSourceTaskBucket(w, 'other', parentMetadata: real),
+      throwsArgumentError,
+    );
+    held.complete({'tasks': []});
+    expect(await host, {'tasks': []});
+    expect(await discussion, {'tasks': []});
+    api.routes['GET /tasks/channel/remote'] = (_) => {'tasks': []};
+    await readSourceTaskBucket(w, 'remote', parentMetadata: real);
+    expect(
+      api.calls.where((r) => r.path == '/tasks/channel/remote'),
+      hasLength(2),
+    );
+  });
   test('Source mounted channel task consumers share only the same in-flight authority read', () async {
     final (w, api) = await fixture('owner');
     addTearDown(w.dispose);

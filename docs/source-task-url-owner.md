@@ -112,3 +112,8 @@ preview tests and model vectors do not replace platform-renderer evidence.
 The later [task-entrypoint follow-up](source-task-entrypoints.md) closes the
 classic channel Tasks and message footer-chip entry gaps with actual mounted
 input tests. This URI-owner report's receipts and other limits remain unchanged.
+
+The subsequent [cold-parent metadata follow-up](source-task-parent-hydration.md)
+admits an actual authorized parent absent from the directory before mounting its
+borrowed discussion. Its delayed-HTTP, denial and retirement evidence is
+separate from this report's original known-parent boundary.

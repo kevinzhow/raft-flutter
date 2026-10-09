@@ -65,7 +65,8 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: o,
     builder: (context, _) {
-      if (o.hydrated &&
+      if (o.parentReady &&
+          o.hydrated &&
           o.error is RaftApiException &&
           (o.error as RaftApiException).status == 404) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -103,21 +104,25 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         historyError: o.historyError,
         onClose: widget.onClose,
         onBack: widget.onBack,
-        onRetry: o.refresh,
+        onRetry: o.parentReady ? o.refresh : o.start,
         onLoadAssignees: o.loadAssignees,
         onUpdate: o.update,
         onCleanupDelete: widget.onCleanupDelete,
         formatTime: (value) => value == null
             ? raftText(context, 'Unknown')
             : formatter.shortDateTime(value),
-        unresolvedBody: o.hydrated || o.legacy
+        unresolvedBody: o.parentReady && o.hydrated || o.legacy
             ? null
             : o.discussion == null
             ? RaftThreadResolutionBody(
                 loadingLabel: raftText(context, 'Loading...'),
-                errorTitle: o.error == null ? null : '${o.error}',
+                errorTitle: o.parentError != null
+                    ? '${o.parentError}'
+                    : o.error == null
+                    ? null
+                    : '${o.error}',
                 retryLabel: raftText(context, 'Retry'),
-                onRetry: o.start,
+                onRetry: o.parentRemoved ? null : o.start,
               )
             : RaftChatView(controller: o.discussion!, thread: true),
         discussionBuilder: o.discussion == null

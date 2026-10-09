@@ -9,11 +9,17 @@ final _pendingTaskBuckets = Expando<Map<String, Future<dynamic>>>();
 /// Source taskStore.loadTasks440–467 coalesces mounted consumers of the same
 /// parent-channel bucket. This shares only a currently pending HTTP request;
 /// each consumer still owns its acceptance and authority checks.
-Future<dynamic> readSourceTaskBucket(WorkspaceController w, String channelId) {
-  final channel = [
-    ...w.channels,
-    ...w.dms,
-  ].where((c) => c.id == channelId).firstOrNull;
+Future<dynamic> readSourceTaskBucket(
+  WorkspaceController w,
+  String channelId, {
+  RaftChannel? parentMetadata,
+}) {
+  if (parentMetadata != null && parentMetadata.id != channelId) {
+    throw ArgumentError('Task bucket metadata must match the parent channel');
+  }
+  final channel =
+      parentMetadata ??
+      [...w.channels, ...w.dms].where((c) => c.id == channelId).firstOrNull;
   final key = jsonEncode([
     w.client.origin,
     w.client.generation,
