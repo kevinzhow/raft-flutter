@@ -222,9 +222,27 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
                             // SocialProviderIcon `size-[18px]` + label.
                             Row(
                               children: [
-                                const SizedBox.square(
-                                  dimension: RaftSpace.providerIcon,
-                                ),
+                                // SettingsProfileCard SocialProviderIcon:
+                                // actual provider SVG, size-[18px].
+                                switch (id) {
+                                  'google' => const RaftBrandMark(
+                                    RaftBrandMarkKind.google,
+                                    height: RaftSpace.providerIcon,
+                                  ),
+                                  'github' => RaftBrandMark(
+                                    RaftBrandMarkKind.github,
+                                    height: RaftSpace.providerIcon,
+                                    invert: RaftTokens.of(context).dark,
+                                  ),
+                                  'apple' => RaftBrandMark(
+                                    RaftBrandMarkKind.apple,
+                                    height: RaftSpace.providerIcon,
+                                    invert: RaftTokens.of(context).dark,
+                                  ),
+                                  _ => const SizedBox.square(
+                                    dimension: RaftSpace.providerIcon,
+                                  ),
+                                },
                                 const SizedBox(width: RaftSpace.x2),
                                 Text(
                                   '${provider['label'] ?? id}',

@@ -29,6 +29,7 @@ import 'runtime_review_flow.dart';
 import 'sidebar_flow.dart';
 import 'forward_flow.dart';
 import 'message_selection_flow.dart';
+import 'native_message_menu.dart';
 import 'resource_flow.dart';
 import 'joint_channel_flow.dart';
 import 'composer_suggestions_flow.dart';
@@ -605,10 +606,11 @@ void main() {
         expect(overlay.value.systemNavigationBarColor, Colors.transparent);
         await screenshot(tester, 'linux-edge-to-edge-login');
       }
-      await tester.enterText(
-        find.byKey(const Key('login-origin')),
-        fixture['origin'],
-      );
+      await tester.tap(find.byKey(const Key('login-server')));
+      await tester.pumpAndSettle();
+      await tester.enterText(field('Server URL'), fixture['origin']);
+      await tester.tap(find.widgetWithText(RaftButton, 'Save'));
+      await until(tester, () => find.byType(RaftFormDialog).evaluate().isEmpty);
       await tester.enterText(
         find.byKey(const Key('login-email')),
         fixture['email'],
@@ -886,13 +888,8 @@ void main() {
       expect(w.messages.where((m) => m.content == text), hasLength(1));
       final sent = w.messages.firstWhere((m) => m.content == text);
       final messageRow = find.byKey(ValueKey('message-${sent.id}'));
-      final replyButton = find.descendant(
-        of: messageRow,
-        matching: find.text('Reply in thread'),
-      );
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(replyButton);
-      await tester.pumpAndSettle();
+      final replyButton = find.byKey(const ValueKey('message-menu-thread'));
+      await openNativeMessageMenu(tester, messageRow, entry: replyButton);
       await tester.tap(replyButton);
       await until(
         tester,
@@ -921,48 +918,40 @@ void main() {
         (page['messages'] as List).where((m) => m['content'] == replyText),
         hasLength(1),
       );
-      await until(
-        tester,
-        () =>
-            find
-                .byKey(const Key('thread-follow-toggle'))
-                .evaluate()
-                .isNotEmpty &&
-            tester
-                    .widget<TextButton>(
-                      find.byKey(const Key('thread-follow-toggle')),
-                    )
-                    .onPressed !=
-                null,
-      );
-      final initiallyFollowing = find
-          .text('Unfollow thread')
-          .evaluate()
-          .isNotEmpty;
-      await tester.tap(find.byKey(const Key('thread-follow-toggle')));
-      await until(
-        tester,
-        () => find
-            .text(initiallyFollowing ? 'Follow thread' : 'Unfollow thread')
-            .evaluate()
-            .isNotEmpty,
-      );
-      await tester.tap(find.byKey(const Key('thread-follow-toggle')));
-      await until(
-        tester,
-        () => find
-            .text(initiallyFollowing ? 'Unfollow thread' : 'Follow thread')
-            .evaluate()
-            .isNotEmpty,
-      );
-      // Keep this test-created parent followed for the actual followed-list check.
-      if (!initiallyFollowing) {
-        await tester.tap(find.byKey(const Key('thread-follow-toggle')));
-        await until(
-          tester,
-          () => find.text('Unfollow thread').evaluate().isNotEmpty,
-        );
+      final followEntry = find.byKey(const Key('thread-follow-menu-item'));
+      Future<void> openFollowEntry({String? expected}) async {
+        await tester.tap(find.byKey(const Key('thread-options')));
+        await until(tester, () {
+          if (followEntry.evaluate().isEmpty) return false;
+          final item = tester.widget<RaftMenuItem>(followEntry);
+          return item.onPressed != null &&
+              (expected == null || item.label == expected);
+        });
       }
+
+      Future<void> toggleFollow() async {
+        await tester.tap(followEntry);
+        await until(tester, () => followEntry.evaluate().isEmpty);
+      }
+
+      await openFollowEntry();
+      final initiallyFollowing =
+          tester.widget<RaftMenuItem>(followEntry).label == 'Unfollow thread';
+      await toggleFollow();
+      await openFollowEntry(
+        expected: initiallyFollowing ? 'Follow thread' : 'Unfollow thread',
+      );
+      await toggleFollow();
+      await openFollowEntry(
+        expected: initiallyFollowing ? 'Unfollow thread' : 'Follow thread',
+      );
+      // Keep this test-created parent followed for actual projection readback.
+      if (!initiallyFollowing) {
+        await toggleFollow();
+        await openFollowEntry(expected: 'Unfollow thread');
+      }
+      await tester.tap(find.byKey(const Key('thread-options')));
+      await until(tester, () => followEntry.evaluate().isEmpty);
       bool projectedFollow = false;
       for (var attempt = 0; attempt < 50 && !projectedFollow; attempt++) {
         final followedRows = await w.query('/channels/threads/followed');
@@ -1390,18 +1379,10 @@ void main() {
                 true,
       );
       expect(jumped, findsOneWidget);
-      await tester.tap(
-        find.descendant(
-          of: jumped,
-          matching: find.byTooltip('Message actions'),
-        ),
-      );
-      await until(
-        tester,
-        () => find.text('Save message').evaluate().isNotEmpty,
-      );
-      await tester.tap(find.text('Save message'));
-      await until(tester, () => find.text('Save message').evaluate().isEmpty);
+      final saveEntry = find.byKey(const ValueKey('message-menu-save'));
+      await openNativeMessageMenu(tester, jumped, entry: saveEntry);
+      await tester.tap(saveEntry);
+      await until(tester, () => saveEntry.evaluate().isEmpty);
       await section(tester, 'saved');
       await until(tester, () => find.text(text).evaluate().isNotEmpty);
       await screenshot(tester, 'linux-saved');
