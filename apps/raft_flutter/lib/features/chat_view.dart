@@ -96,7 +96,8 @@ class _RaftChatViewState extends State<RaftChatView> {
   final retiredViewports = <ScrollController>{};
   int listRevision = 0;
   bool initialEndPending = true;
-  String? scope;
+  String? scope, adapterParent, preservedContextTarget;
+  double? preservedContextTop;
   String? scrolledHighlight;
   int? scrolledWindow, adapterWindow;
   int bindingRevision = 0;
@@ -475,7 +476,11 @@ class _RaftChatViewState extends State<RaftChatView> {
     super.dispose();
   }
 
-  void replaceContext(List<chat.Message> messages) {
+  void replaceContext(
+    List<chat.Message> messages, {
+    String? preserveTarget,
+    double? preserveTop,
+  }) {
     for (final timer in reactionFailureTimers.values) {
       timer.cancel();
     }
@@ -494,6 +499,8 @@ class _RaftChatViewState extends State<RaftChatView> {
     measuredContext = focusStaging;
     measuredWindowKey = GlobalKey();
     measuredWindowExtent = null;
+    preservedContextTarget = preserveTarget;
+    preservedContextTop = preserveTop;
     setState(() {});
     // A keyed Chat owns a new observer and controller. The retired list's
     // dispose can only detach its own focus methods, never the new observer.
@@ -564,7 +571,36 @@ class _RaftChatViewState extends State<RaftChatView> {
           newMessageCount += appended;
         }
       }
-      if (scope != id || (!loading && adapterWindow != window)) {
+      final parentProjection = widget.thread
+          ? jsonEncode(w.presentedThreadParent?.json)
+          : null;
+      if (widget.thread &&
+          !loading &&
+          scope == id &&
+          adapterWindow == window &&
+          adapterParent != null &&
+          adapterParent != parentProjection &&
+          adapter.messages.isNotEmpty) {
+        final focus = scrolledHighlight ?? target;
+        final row = focusAnchors[focus]?.currentContext?.findRenderObject();
+        final Object? clip = row == null
+            ? null
+            : RenderAbstractViewport.maybeOf(row);
+        if (row is RenderBox &&
+            clip is RenderBox &&
+            row.hasSize &&
+            clip.hasSize) {
+          final top =
+              row.localToGlobal(Offset.zero).dy -
+              clip.localToGlobal(Offset.zero).dy;
+          replaceContext(projected, preserveTarget: focus, preserveTop: top);
+        }
+      }
+      adapterParent = parentProjection;
+      if (scope != id ||
+          (!loading &&
+              (adapterWindow != window ||
+                  adapter.messages.isEmpty && projected.isNotEmpty))) {
         if (scope != id) {
           alsoCreateTask = false;
           selectionToast.clear();
@@ -611,7 +647,11 @@ class _RaftChatViewState extends State<RaftChatView> {
           ownedAdapter,
           ownedViewport,
           window,
-          adapter.messages.any((m) => m.id == target) ? target : null,
+          adapter.messages.any(
+                (m) => m.id == (preservedContextTarget ?? target),
+              )
+              ? preservedContextTarget ?? target
+              : null,
         );
       }
     });
@@ -628,6 +668,7 @@ class _RaftChatViewState extends State<RaftChatView> {
     if (positionQueued) return;
     positionQueued = true;
     final revision = presentationRevision;
+    final preservingAnchor = preservedContextTop != null;
     bool current() =>
         mounted &&
         presentationActive &&
@@ -646,14 +687,30 @@ class _RaftChatViewState extends State<RaftChatView> {
           scrolledHighlight = target;
           scrolledWindow = window;
           initialEndPending = false;
+          preservedContextTarget = null;
+          preservedContextTop = null;
           atBottom = scroll.position.maxScrollExtent - scroll.offset <= 100;
         });
         retirePreviousTimelines();
-        highlightTimer?.cancel();
-        if (target != null) {
-          highlightTimer = Timer(const Duration(seconds: 2), () {
-            if (current()) w.clearHighlightedMessage(target);
-          });
+        if (!preservingAnchor) {
+          highlightTimer?.cancel();
+          if (target != null && w.highlightedMessageId == target) {
+            final binding = bindingRevision,
+                ownedScope = scope,
+                authority = workspaceAuthority(w);
+            highlightTimer = Timer(const Duration(seconds: 2), () {
+              if (mounted &&
+                  binding == bindingRevision &&
+                  scope == ownedScope &&
+                  authority == workspaceAuthority(w) &&
+                  window ==
+                      (widget.thread
+                          ? w.threadGeneration
+                          : w.channelGeneration)) {
+                w.clearHighlightedMessage(target);
+              }
+            });
+          }
         }
       });
       WidgetsBinding.instance.ensureVisualUpdate();
@@ -676,7 +733,9 @@ class _RaftChatViewState extends State<RaftChatView> {
           return;
         }
         // Source scrollIntoView({block: "center"}); actual laid-out geometry.
-        offset = view.getOffsetToReveal(row, .5).offset;
+        offset = preservedContextTop == null
+            ? view.getOffsetToReveal(row, .5).offset
+            : view.getOffsetToReveal(row, 0).offset - preservedContextTop!;
       }
       scroll.jumpTo(
         offset.clamp(position.minScrollExtent, position.maxScrollExtent),
@@ -1637,7 +1696,9 @@ class _RaftChatViewState extends State<RaftChatView> {
   }
 
   Widget threadTopSliver({bool loading = false}) => RaftThreadTimelineTopSliver(
-    parent: w.threadParent == null ? null : tile(w.threadParent!, parent: true),
+    parent: w.presentedThreadParent == null
+        ? null
+        : tile(w.presentedThreadParent!, parent: true),
     hasMore: loading || w.threadHasMore,
     historyLimited: w.threadHistoryLimited,
     loadingOlder: loading || w.loadingOlder,
@@ -1734,6 +1795,9 @@ class _RaftChatViewState extends State<RaftChatView> {
     final anchorRevision = revision, anchorViewport = timelineViewport;
     final loading = widget.thread ? w.threadLoading : w.channelLoading;
     final empty = rows.isEmpty;
+    final threadHeader = widget.thread
+        ? threadTopSliver(loading: loading)
+        : null;
     final hasOlder = w.hasMore,
         limited = w.historyLimited,
         fetchingOlder = w.loadingOlder;
@@ -1828,7 +1892,7 @@ class _RaftChatViewState extends State<RaftChatView> {
             topSliver: widget.thread
                 ? SliverMainAxisGroup(
                     slivers: [
-                      threadTopSliver(loading: loading),
+                      threadHeader!,
                       if (!loading && w.replies.isEmpty)
                         SliverFillRemaining(
                           hasScrollBody: false,
@@ -1897,7 +1961,40 @@ class _RaftChatViewState extends State<RaftChatView> {
 
   @override
   Widget build(BuildContext context) {
-    final currentTimeline = buildTimeline(adapter, viewport, listRevision);
+    if (widget.thread &&
+        w.threadChannelId == null &&
+        (w.threadResolutionLoading || w.threadResolutionError != null)) {
+      return RaftThreadResolutionBody(
+        loadingLabel: raftText(context, 'Loading...'),
+        errorTitle: w.threadResolutionError == null
+            ? null
+            : raftText(context, "Couldn't load this thread"),
+        errorBody: raftText(
+          context,
+          "The thread couldn't be opened. If this channel just became public, retrying usually fixes it.",
+        ),
+        retryLabel: raftText(context, 'Retry'),
+        onRetry: () {
+          final identity = w.threadIdentity;
+          if (identity != null && presentationActive) {
+            w.openThreadIdentity(
+              parentChannelId: identity.parentChannelId,
+              parentMessageId: identity.parentMessageId,
+              focusedMessageId: identity.focusedMessageId,
+              navigate: false,
+            );
+          }
+        },
+      );
+    }
+    final currentTimeline = widget.thread && w.threadLoading
+        ? RaftThreadRepliesLoadingBody(
+            loadingLabel: raftText(context, 'Loading...'),
+            parent: w.presentedThreadParent == null
+                ? null
+                : tile(w.presentedThreadParent!, parent: true),
+          )
+        : buildTimeline(adapter, viewport, listRevision);
     if (!focusStaging) displayedTimeline = currentTimeline;
     final bottomCount = w.hasNewer
         ? (w.unread[w.channel?.id] ?? 0)
@@ -2037,7 +2134,7 @@ class _RaftChatViewState extends State<RaftChatView> {
               if (currentComposer()) w.saveDraft(text, thread: widget.thread);
             },
             key: ValueKey(
-              'compose-${widget.thread ? w.threadParent?.id : w.channel?.id}',
+              'compose-${widget.thread ? w.threadParentMessageId : w.channel?.id}',
             ),
             taskAction: !widget.thread && w.channel?.type != 'thread'
                 ? RaftComposerTaskToggle(
@@ -2077,7 +2174,9 @@ class _RaftChatViewState extends State<RaftChatView> {
             enabled:
                 !w.conversationPaused &&
                 (widget.thread
-                    ? w.threadParent != null && w.channel?.archived != true
+                    ? w.threadParentMessageId != null &&
+                          w.threadSourceChannel?.archived != true &&
+                          w.threadSourceChannel?.joined == true
                     : w.channel?.archived != true),
             canSend: w.uploadsReady(thread: widget.thread),
             suggestions: composerDirectory.suggestions,

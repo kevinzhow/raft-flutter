@@ -828,3 +828,21 @@ Widget timelineBottomButtonPreview() => Stack(
     RaftTimelineBottomButton(label: '3 new messages', onPressed: () {}),
   ],
 );
+
+@RaftPreviews('Thread resolution loading', size: Size(390, 360))
+Widget threadResolutionPreview() =>
+    const RaftThreadResolutionBody(loadingLabel: 'Loading...');
+
+@RaftPreviews('Thread resolution retry', size: Size(390, 360))
+Widget threadResolutionRetryPreview() => RaftThreadResolutionBody(
+  loadingLabel: 'Loading...',
+  errorTitle: "Couldn't load this thread",
+  errorBody: "The thread couldn't be opened. If this channel just became public, retrying usually fixes it.",
+  onRetry: () {},
+);
+
+@RaftPreviews('Thread replies loading', size: Size(390, 360))
+Widget threadRepliesLoadingPreview() => const RaftThreadRepliesLoadingBody(
+  loadingLabel: 'Loading...',
+  parent: Text('Actual parent record'),
+);

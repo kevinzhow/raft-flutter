@@ -347,7 +347,14 @@ void main() {
         'canonicalTarget': {
           'kind': 'thread',
           'threadParentMessageId': 'missing',
+          'messageId': 'reply',
         },
+      };
+      api.routes['GET /channels/c1/threads/missing'] = (_) => {
+        'threadChannelId': 'thread-1',
+      };
+      api.routes['GET /messages/context/reply'] = (_) => {
+        'messages': [row('reply', 'thread-1', 1)],
       };
       api.routes['GET /messages/context/missing'] = (_) => {
         'messages': [row('unrelated', 'c1', 1)],
@@ -363,7 +370,9 @@ void main() {
         isEmpty,
       );
       expect(w.threadParent, isNull);
-      expect(w.highlightedMessageId, isNull);
+      expect(w.highlightedMessageId, 'reply');
+      expect(w.threadIdentity?.parentMessageId, 'missing');
+      expect(w.replies.map((r) => r.id), ['reply']);
     },
   );
 
@@ -403,6 +412,125 @@ void main() {
       expect(w.location.route, RaftRoute.activity);
       w.setSection('activity');
       expect(w.navigation.entries.length, 2);
+    },
+  );
+  for (final invalidation in [
+    'Back',
+    'new-route',
+    'parent-revoked',
+    'server-revoked',
+    'principal',
+    'capability',
+  ]) {
+    test('late parent never accepts after $invalidation', () async {
+      final (w, api) = await fixture('member');
+      addTearDown(w.dispose);
+      w.ledger.switchServer('s1');
+      final started = Completer<void>(),
+          response = Completer<Map<String, dynamic>>();
+      api.routes['GET /channels/c1/threads/parent'] = (_) => {
+        'threadChannelId': 'thread-1',
+      };
+      api.routes['GET /messages/channel/thread-1'] = (_) => {
+        'messages': [row('reply', 'thread-1', 2)],
+      };
+      api.routes['GET /messages/context/parent'] = (_) {
+        started.complete();
+        return response.future;
+      };
+      await w.openThreadIdentity(
+        parentChannelId: 'c1',
+        parentMessageId: 'parent',
+      );
+      await started.future;
+      expect(w.threadIdentity?.parentMessageId, 'parent');
+      expect(w.threadParentLoading, true);
+      expect(w.presentedThreadParent, isNull);
+      switch (invalidation) {
+        case 'Back':
+          w.navigation.back();
+        case 'new-route':
+          w.setSection('activity');
+        case 'parent-revoked':
+          api.routes['GET /channels'] = (_) => [];
+          api.routes['GET /channels/dm'] = (_) => [];
+          await w.refreshChannels();
+        case 'server-revoked':
+          w.revokeServer('s1');
+        case 'principal':
+          w.client.user = RaftRecord({'id': 'another-user'});
+        case 'capability':
+          w.channel = RaftChannel({
+            ...w.channel!.json,
+            'channelCapabilities': {'viewChannel': false},
+          });
+      }
+      response.complete({
+        'messages': [row('parent', 'c1', 1)],
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(w.presentedThreadParent, isNull);
+      expect(w.threadIdentity, isNull);
+      expect(
+        w.ledger.messages('c1').where((r) => r['id'] == 'parent'),
+        isEmpty,
+      );
+    });
+  }
+
+  test(
+    'close removes only its thread query and retires pending identity',
+    () async {
+      final (w, api) = await fixture('member');
+      addTearDown(w.dispose);
+      api.routes['GET /channels/c1/threads/parent'] = (_) => {
+        'threadChannelId': 'thread-1',
+      };
+      api.routes['GET /messages/channel/thread-1'] = (_) => {'messages': []};
+      api.routes['GET /messages/context/parent'] = (_) => {
+        'messages': [row('parent', 'c1', 1)],
+      };
+      w.navigation.navigate(
+        w.location.withQuery({
+          'profile': 'human:alice',
+          'task': 'c1:task',
+          'msg': 'outer',
+        }),
+      );
+      await w.openThreadIdentity(
+        parentChannelId: 'c1',
+        parentMessageId: 'parent',
+        focusedMessageId: 'reply',
+      );
+      final count = w.navigation.entries.length;
+      w.closeThread();
+      expect(w.location.thread, isNull);
+      expect(w.location.uri.queryParameters['profile'], 'human:alice');
+      expect(w.location.uri.queryParameters['task'], 'c1:task');
+      expect(w.location.uri.queryParameters['msg'], 'reply');
+      expect(w.navigation.entries.length, count);
+      expect(w.threadIdentity, isNull);
+      expect(w.threadParent, isNull);
+    },
+  );
+
+  test(
+    'syntactic open outside Search and Activity cannot ACK cached main',
+    () async {
+      final (w, api) = await fixture('member');
+      addTearDown(w.dispose);
+      w.ledger.switchServer('s1');
+      w.ledger.ingest([
+        row('cached', 'c1', 1),
+      ], expectedGeneration: w.ledger.generation);
+      w.visibleIds['c1'] = {'cached'};
+      api.routes['POST /channels/c1/read'] = (_) => {};
+      for (final section in ['tasks', 'settings', 'members']) {
+        w.setSection(section);
+        w.navigation.navigate(w.location.withQuery({'open': 'channel:c1'}));
+        await w.markRead('c1');
+      }
+      expect(api.calls.where((c) => c.path == '/channels/c1/read'), isEmpty);
     },
   );
 }

@@ -26,6 +26,18 @@ class WorkspaceAttachmentImageLease {
   }
 }
 
+/// Real URI identity, independent of the asynchronously accepted parent record.
+@immutable
+class WorkspaceThreadIdentity {
+  const WorkspaceThreadIdentity({
+    required this.parentChannelId,
+    required this.parentMessageId,
+    this.focusedMessageId,
+  });
+  final String parentChannelId, parentMessageId;
+  final String? focusedMessageId;
+}
+
 class UploadDraft {
   UploadDraft(this.filename, this.bytes);
   final String filename;
@@ -644,7 +656,7 @@ class WorkspaceController extends ChangeNotifier {
           )
           .map((m) => m.json)
           .toList(),
-      'parentChannelId': thread ? threadParent?.channelId : id,
+      'parentChannelId': thread ? threadParentChannelId : id,
       'hasMore': thread ? threadHasMore : hasMore,
       'historyLimited': thread ? threadHistoryLimited : historyLimited,
       'hasNewer': false,
@@ -723,7 +735,7 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   String? draftScope({bool thread = false}) => thread
-      ? (threadParent == null ? null : 'thread:${threadParent!.id}')
+      ? (threadParentMessageId == null ? null : 'thread:$threadParentMessageId')
       : channel?.id;
   bool get conversationPaused =>
       channel != null && channelConversionBlocksSending(channel!.json);
@@ -969,6 +981,48 @@ class WorkspaceController extends ChangeNotifier {
         : null,
   );
   RaftChannel? channel;
+  WorkspaceThreadIdentity? _threadIdentity;
+  int _threadIdentityWindow = -1, _threadIdentityNavigation = -1;
+  String? _threadIdentityToken, _threadIdentityAuthority;
+  bool _threadResolutionLoading = false, _threadParentLoading = false;
+  String? _threadResolutionError;
+
+  WorkspaceThreadIdentity? get threadIdentity =>
+      !_disposed &&
+          _threadIdentityWindow == threadGeneration &&
+          _threadIdentityNavigation == navigationRevision &&
+          _threadIdentityToken == _replyToken() &&
+          _threadIdentityAuthority == _windowAuthority() &&
+          !_revokedChannels.contains(_threadIdentity?.parentChannelId) &&
+          can('viewChannel', resource: channel)
+      ? _threadIdentity
+      : null;
+  bool get threadResolutionLoading =>
+      threadIdentity != null && _threadResolutionLoading;
+  bool get threadParentLoading =>
+      threadIdentity != null && _threadParentLoading;
+  String? get threadResolutionError =>
+      threadIdentity == null ? null : _threadResolutionError;
+  RaftMessage? get presentedThreadParent => _threadIdentity == null
+      ? threadParent
+      : threadIdentity != null &&
+            threadParent?.id == threadIdentity!.parentMessageId &&
+            threadParent?.channelId == threadIdentity!.parentChannelId
+      ? threadParent
+      : null;
+  String? get threadParentMessageId =>
+      threadIdentity?.parentMessageId ??
+      (_threadIdentity == null ? threadParent?.id : null);
+  String? get threadParentChannelId =>
+      threadIdentity?.parentChannelId ??
+      (_threadIdentity == null ? threadParent?.channelId : null);
+
+  RaftChannel? get threadSourceChannel => [
+    ...channels,
+    ...dms,
+    ?channel,
+  ].where((value) => value.id == threadParentChannelId).firstOrNull;
+
   RaftMessage? threadParent;
   String? threadChannelId;
   bool loading = false,
@@ -1389,7 +1443,9 @@ class WorkspaceController extends ChangeNotifier {
       channel = null;
       channelGeneration++;
     }
-    if (threadParent?.channelId == id || threadIds.contains(threadChannelId)) {
+    if (threadParent?.channelId == id ||
+        _threadIdentity?.parentChannelId == id ||
+        threadIds.contains(threadChannelId)) {
       closeThread();
     }
     _persistReadState();
@@ -1770,15 +1826,20 @@ class WorkspaceController extends ChangeNotifier {
     final mainRoute =
         (current.route == RaftRoute.channel || current.route == RaftRoute.dm) &&
         current.entityId == channel?.id;
+    final previewMounted =
+        current.route == RaftRoute.search ||
+        current.route == RaftRoute.activity;
     final mainPreview =
+        previewMounted &&
         (content?.kind == RaftContentKind.channel ||
             content?.kind == RaftContentKind.dm) &&
         content?.id == channel?.id;
     final threadRoute =
-        current.thread?.channelId == threadParent?.channelId &&
-        current.thread?.itemId == threadParent?.id &&
+        current.thread?.channelId == threadParentChannelId &&
+        current.thread?.itemId == threadParentMessageId &&
         current.thread != null;
     final threadPreview =
+        previewMounted &&
         content?.kind == RaftContentKind.thread &&
         content?.id == threadChannelId;
     return id == channel?.id
@@ -1855,7 +1916,7 @@ class WorkspaceController extends ChangeNotifier {
     final principal = client.user?.id, serverId = client.serverId;
     final origin = client.origin, clientGeneration = client.generation;
     final intendedScope = draftScope(thread: thread);
-    final intendedChannel = channel?.id, intendedParent = threadParent?.id;
+    final intendedChannel = channel?.id, intendedParent = threadParentMessageId;
     final role = server?.string('role');
     var window = thread ? threadGeneration : channelGeneration;
     final selectedAttachments = attachments == null
@@ -1870,7 +1931,7 @@ class WorkspaceController extends ChangeNotifier {
         clientGeneration == client.generation &&
         intendedScope == draftScope(thread: thread) &&
         intendedChannel == channel?.id &&
-        (!thread || intendedParent == threadParent?.id) &&
+        (!thread || intendedParent == threadParentMessageId) &&
         window == (thread ? threadGeneration : channelGeneration) &&
         role == server?.string('role') &&
         !conversationPaused;
@@ -1970,14 +2031,24 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   Future<String?> _createThread() async {
-    final parent = threadParent;
-    if (parent == null) return null;
+    final parentId = threadParentMessageId,
+        parentChannelId = threadParentChannelId;
+    if (parentId == null || parentChannelId == null) return null;
     final generation = ledger.generation, window = threadGeneration;
+    final navigationWindow = navigationRevision,
+        token = _replyToken(),
+        authority = _windowAuthority();
     final value = await client.post(
-      '/channels/${parent.channelId}/threads',
-      data: {'parentMessageId': parent.id},
+      '/channels/$parentChannelId/threads',
+      data: {'parentMessageId': parentId},
     );
-    if (generation != ledger.generation || window != threadGeneration) {
+    if (generation != ledger.generation ||
+        window != threadGeneration ||
+        navigationWindow != navigationRevision ||
+        token != _replyToken() ||
+        authority != _windowAuthority() ||
+        parentId != threadParentMessageId ||
+        parentChannelId != threadParentChannelId) {
       throw const RaftApiException('The thread changed. Please retry.');
     }
     threadChannelId = value['threadChannelId'];
@@ -1991,78 +2062,168 @@ class WorkspaceController extends ChangeNotifier {
     RaftMessage parent, {
     String? focusedMessageId,
     bool navigate = true,
+  }) => _openThreadIdentity(
+    parent.channelId,
+    parent.id,
+    focusedMessageId: focusedMessageId,
+    navigate: navigate,
+    acceptedParent: parent,
+  );
+
+  Future<void> openThreadIdentity({
+    required String parentChannelId,
+    required String parentMessageId,
+    String? focusedMessageId,
+    bool navigate = true,
+  }) => _openThreadIdentity(
+    parentChannelId,
+    parentMessageId,
+    focusedMessageId: focusedMessageId,
+    navigate: navigate,
+  );
+
+  Future<void> _openThreadIdentity(
+    String parentChannelId,
+    String parentMessageId, {
+    String? focusedMessageId,
+    bool navigate = true,
+    RaftMessage? acceptedParent,
   }) async {
     if (navigate) {
       final next = location.withQuery({
-        'thread': '${parent.channelId}:${parent.id}',
+        'thread': '$parentChannelId:$parentMessageId',
         'msg': focusedMessageId,
       });
       navigation.navigate(next, kind: location.panelNavigationKindTo(next));
     }
-    final navigationWindow = navigationRevision;
-    final requestAuthority = _replyToken();
+    final navigationWindow = navigationRevision,
+        requestAuthority = _replyToken(),
+        messageAuthority = _windowAuthority(),
+        generation = ledger.generation;
+    final window = ++threadGeneration;
     bool current() =>
         !_disposed &&
         navigationWindow == navigationRevision &&
         requestAuthority == _replyToken() &&
+        messageAuthority == _windowAuthority() &&
+        window == threadGeneration &&
+        generation == ledger.generation &&
+        !_revokedChannels.contains(parentChannelId) &&
         can('viewChannel', resource: channel);
-    threadParent = parent;
+    _threadIdentity = WorkspaceThreadIdentity(
+      parentChannelId: parentChannelId,
+      parentMessageId: parentMessageId,
+      focusedMessageId: focusedMessageId,
+    );
+    _threadIdentityWindow = window;
+    _threadIdentityNavigation = navigationWindow;
+    _threadIdentityToken = requestAuthority;
+    _threadIdentityAuthority = messageAuthority;
+    threadParent = acceptedParent;
     threadChannelId = null;
-    threadLoading = true;
+    threadLoading = _threadResolutionLoading = true;
+    _threadParentLoading = acceptedParent == null;
+    _threadResolutionError = null;
     threadHasMore = false;
     threadHistoryLimited = false;
     highlightedMessageId = focusedMessageId;
-    final window = ++threadGeneration, generation = ledger.generation;
     notifyListeners();
-    try {
-      await _restoreDraft('thread:${parent.id}');
-      dynamic info;
-      try {
-        info = await client.get(
-          '/channels/${parent.channelId}/threads/${parent.id}',
-        );
-      } on RaftApiException catch (e) {
-        if (e.status != 404) rethrow;
-      }
-      if (!current() ||
-          window != threadGeneration ||
-          generation != ledger.generation) {
-        return;
-      }
-      if (info == null) return;
-      threadChannelId = info['threadChannelId'];
-      final page = focusedMessageId == null
-          ? await client.messagePage(threadChannelId!)
-          : await client.get(
-              '/messages/context/$focusedMessageId',
-              query: {'channelId': threadChannelId},
-            );
-      if (!current() ||
-          window != threadGeneration ||
-          generation != ledger.generation) {
-        return;
-      }
-      final rows = page['messages'] as List;
-      ledger.ingest(
-        rows.map((e) => Map<String, dynamic>.from(e)),
-        expectedGeneration: generation,
-      );
-      visibleIds[threadChannelId!] = rows.map((e) => e['id'] as String).toSet();
-      threadHistoryLimited = page['historyLimited'] == true;
-      threadHasMore = focusedMessageId == null
-          ? !threadHistoryLimited && rows.length >= 50
-          : page['hasOlder'] == true;
-      client.joinChannel(threadChannelId!);
-      await markRead(threadChannelId!);
-      _saveWindow(threadChannelId!, thread: true);
-    } catch (e) {
-      if (current() && window == threadGeneration) error = '$e';
-    } finally {
-      if (current() && window == threadGeneration) {
-        threadLoading = false;
+    Future<void> restoreCurrentDraft() async {
+      final scope = 'thread:$parentMessageId';
+      final value = await _cached('draft', scope);
+      if (!current() || drafts.containsKey(scope)) return;
+      if (value is Map && value['text'] is String) {
+        drafts[scope] = value['text'];
         notifyListeners();
       }
     }
+
+    unawaited(restoreCurrentDraft());
+
+    Future<void> resolveParent() async {
+      if (acceptedParent != null) return;
+      try {
+        final page = await client.get(
+          '/messages/context/$parentMessageId',
+          query: {'channelId': parentChannelId},
+        );
+        if (!current()) return;
+        final rows = acceptedWindowRows(page['messages'], parentChannelId);
+        final parent = rows
+            .where((row) => row['id'] == parentMessageId)
+            .firstOrNull;
+        // Independently fetched parent metadata is not an accepted outer window.
+        final liveParent = channel?.id == parentChannelId
+            ? messages.where((row) => row.id == parentMessageId).firstOrNull
+            : null;
+        threadParent =
+            liveParent ?? (parent == null ? null : RaftMessage(parent));
+      } catch (_) {
+        if (!current()) return;
+        threadParent = null;
+      } finally {
+        if (current()) {
+          _threadParentLoading = false;
+          notifyListeners();
+        }
+      }
+    }
+
+    Future<void> resolveReplies() async {
+      try {
+        dynamic info;
+        try {
+          info = await client.get(
+            '/channels/$parentChannelId/threads/$parentMessageId',
+          );
+        } on RaftApiException catch (e) {
+          if (e.status != 404) rethrow;
+        }
+        if (!current()) return;
+        _threadResolutionLoading = false;
+        if (info == null) return;
+        threadChannelId = info['threadChannelId'];
+        notifyListeners();
+        final page = focusedMessageId == null
+            ? await client.messagePage(threadChannelId!)
+            : await client.get(
+                '/messages/context/$focusedMessageId',
+                query: {'channelId': threadChannelId},
+              );
+        if (!current()) return;
+        final rows = acceptedWindowRows(page['messages'], threadChannelId!);
+        ledger.ingest(rows, expectedGeneration: generation);
+        visibleIds[threadChannelId!] = rows
+            .map((row) => row['id'] as String)
+            .toSet();
+        threadHistoryLimited = page['historyLimited'] == true;
+        threadHasMore = focusedMessageId == null
+            ? !threadHistoryLimited && rows.length >= 50
+            : page['hasOlder'] == true;
+        client.joinChannel(threadChannelId!);
+        threadLoading = false;
+        notifyListeners();
+        await markRead(threadChannelId!);
+        if (current()) _saveWindow(threadChannelId!, thread: true);
+      } catch (e) {
+        if (current()) {
+          _threadResolutionError = '$e';
+          error = '$e';
+        }
+      } finally {
+        if (current()) {
+          _threadResolutionLoading = false;
+          threadLoading = false;
+          notifyListeners();
+        }
+      }
+    }
+
+    // Source threadStore opens identity before lookup; ThreadPanel's parent
+    // effect is independent of resolution and focused replies.
+    final replies = resolveReplies();
+    unawaited(resolveParent());
+    await replies;
   }
 
   /// Clears only the focus owned by the mounted timeline's highlight timer.
@@ -2176,26 +2337,9 @@ class WorkspaceController extends ChangeNotifier {
       if (target is Map && target['kind'] == 'thread') {
         final parentId = target['threadParentMessageId'] as String;
         final parentChannelId = target['channelId'] as String? ?? channelId;
-        final parentContext = await client.get(
-          '/messages/context/$parentId',
-          query: {'channelId': parentChannelId},
-        );
-        if (!current()) return;
-        final parentRows = acceptedWindowRows(
-          parentContext['messages'],
-          parentChannelId,
-        );
-        final acceptedParent = parentRows
-            .where((e) => e['id'] == parentId)
-            .firstOrNull;
-        if (acceptedParent == null) {
-          throw const RaftApiException('Thread parent is unavailable');
-        }
-        // ThreadPanel keeps a separately fetched parent. Its context must not
-        // replace or expand the outer channel's accepted message bucket.
-        final parent = RaftMessage(Map<String, dynamic>.from(acceptedParent));
-        final opening = openThread(
-          parent,
+        final opening = openThreadIdentity(
+          parentChannelId: parentChannelId,
+          parentMessageId: parentId,
           focusedMessageId: target['messageId'] as String? ?? messageId,
           navigate: navigate,
         );
@@ -2226,9 +2370,9 @@ class WorkspaceController extends ChangeNotifier {
             expectedToken: replyAuthority,
           );
           final refreshedParent = accepted
-              .where((row) => row['id'] == parent.id)
+              .where((row) => row['id'] == parentId)
               .firstOrNull;
-          if (parent.channelId == channelId && refreshedParent != null) {
+          if (parentChannelId == channelId && refreshedParent != null) {
             threadParent = RaftMessage(refreshedParent);
           }
           _pendingMessageContextChannelId = null;
@@ -2311,8 +2455,15 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
-  void closeThread() {
+  void closeThread({bool navigate = true}) {
+    if (navigate && location.thread != null) {
+      final next = location.withQuery({'thread': null});
+      navigation.navigate(next, kind: location.panelNavigationKindTo(next));
+    }
     threadGeneration++;
+    _threadIdentity = null;
+    _threadResolutionLoading = _threadParentLoading = false;
+    _threadResolutionError = null;
     threadParent = null;
     threadChannelId = null;
     threadLoading = false;
