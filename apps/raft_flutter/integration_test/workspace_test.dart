@@ -13,6 +13,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/features/global_server_selector.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/raft_location.dart';
@@ -426,7 +427,24 @@ Future<WorkspaceController> openNativeChat(
   bool general = false,
   bool verifyRoots = false,
 }) async {
-  await until(tester, () => find.byType(WorkspaceView).evaluate().isNotEmpty);
+  await until(tester, () {
+    if (find.byType(WorkspaceView).evaluate().isNotEmpty) return true;
+    final selector = find.byType(GlobalServerSelector);
+    if (selector.evaluate().isEmpty) return false;
+    final page = tester.widget<GlobalServerSelector>(selector);
+    return page.error != null || (!page.loading && page.servers.isNotEmpty);
+  });
+  if (find.byType(WorkspaceView).evaluate().isEmpty) {
+    final page = tester.widget<GlobalServerSelector>(find.byType(GlobalServerSelector));
+    expect(page.error, isNull);
+    expect(page.servers, isNotEmpty);
+    final choice = find.byKey(ValueKey('global-server-${page.servers.first.id}'));
+    await tester.ensureVisible(choice);
+    await tester.pumpAndSettle();
+    await screenshot(tester, 'linux-global-server-selector');
+    await tester.tap(choice);
+    await until(tester, () => find.byType(WorkspaceView).evaluate().isNotEmpty);
+  }
   final w = tester
       .widget<WorkspaceView>(find.byType(WorkspaceView).first)
       .controller;
