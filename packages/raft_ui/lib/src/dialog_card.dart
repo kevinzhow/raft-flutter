@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/card.g.dart';
 import 'recipes/field.g.dart' as field_recipe;
@@ -291,11 +292,12 @@ class RaftRecipeCard extends StatelessWidget {
     ).root;
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
-      child: Container(
+      child: RaftRecipeBox(
+        style: root,
+        tokens: tokens,
         width: double.infinity,
         padding: padding,
-        clipBehavior: Clip.none,
-        decoration: root.decoration(tokens),
+        applyText: false,
         child: DefaultTextStyle.merge(
           style: root.textStyle(tokens),
           child: child,

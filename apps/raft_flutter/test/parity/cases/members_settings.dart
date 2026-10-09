@@ -256,6 +256,8 @@ ParityCase _createAgent(
     final props = ctx.props;
     if (onboarding) {
       return Scaffold(
+        // Source visual caller explicitly uses bg-white in every theme.
+        backgroundColor: Colors.white,
         body: SingleChildScrollView(
           child: CreateAgentDialog(
             controller: w,
@@ -268,7 +270,8 @@ ParityCase _createAgent(
       );
     }
     return _Host(
-      page: const Scaffold(),
+      // VisualTestingCases.tsx2493: main bg-white; modal tokens still follow theme.
+      page: const Scaffold(backgroundColor: Colors.white),
       open: (context) => onboarding
           ? showDialog(
               context: context,
@@ -348,7 +351,8 @@ final ParityCase _noComputer = ParityCase(
       'GET /servers/visual-server/machines': (_) => {'machines': []},
     });
     return _Host(
-      page: const Scaffold(),
+      // VisualTestingCases.tsx2493: main bg-white; modal tokens still follow theme.
+      page: const Scaffold(backgroundColor: Colors.white),
       open: (context) => showManagedAgentForm(context, w),
     );
   },

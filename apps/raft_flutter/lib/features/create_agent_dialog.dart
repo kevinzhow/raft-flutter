@@ -535,6 +535,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       return PopScope(canPop: !busy, child: needsComputer(context));
     }
     final capacity = capacityReached;
+    final tokens = RaftTokens.of(context);
     final nameError = validationAttempted
         ? createAgentNameError(context, name.text)
         : null;
@@ -543,6 +544,11 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       if (capacity != null)
         RaftAgentBanner(
           status: RaftAgentBannerStatus.warning,
+          // Actual capacity caller: dark:bg-warning-soft, dark:!text-warning-strong
+          // on both BannerDescription and its inline Upgrade button.
+          backgroundColor: tokens.dark ? tokens.colors['warning-soft'] : null,
+          foregroundColor: tokens.dark ? tokens.colors['warning-strong'] : null,
+          actionForeground: tokens.dark ? tokens.colors['warning-strong'] : null,
           description: raftFormat(
             context,
             '{limitLabel} reached ({usage}/{limit} on {planName} plan).',
@@ -751,6 +757,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
                 RaftAgentDialogButton(
                   label: 'Create Agent',
                   primary: true,
+                  // CreateAgentDialog.tsx2103 caller; other primary buttons keep defaults.
+                  foreground: tokens.dark ? tokens.colors['foreground-inverse'] : null,
                   busy: busy,
                   onPressed: createDisabled ? null : submit,
                 ),

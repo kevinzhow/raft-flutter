@@ -219,6 +219,7 @@ class ChatStage {
     this.rowOrigin = Offset.zero,
     this.rowIndex = 0,
     this.targetRow = true,
+    this.backgroundColor,
   }) : ids = ParityIdentities(ctx) {
     var seq = 0;
     final rows = [
@@ -273,6 +274,9 @@ class ChatStage {
 
   /// False for `body` captures that still frame one row like React (menus).
   final bool targetRow;
+
+  /// Explicit caller paint; null retains the mounted app canvas.
+  final Color? backgroundColor;
   late final ParityRaftClient client;
   late final WorkspaceController w;
   final chatKey = GlobalKey(debugLabel: 'parity-chat');
@@ -288,8 +292,9 @@ class ChatStage {
     // The app hosts RaftChatView inside a Scaffold (Material ancestor for the
     // composer TextField, ScaffoldMessenger, bottom sheets).
     final chat = RaftChatView(key: chatKey, controller: w);
-    if (rowWidth == null) return Scaffold(body: chat);
+    if (rowWidth == null) return Scaffold(backgroundColor: backgroundColor, body: chat);
     return Scaffold(
+      backgroundColor: backgroundColor,
       body: ValueListenableBuilder(
         valueListenable: geometry,
         builder: (context, g, _) {

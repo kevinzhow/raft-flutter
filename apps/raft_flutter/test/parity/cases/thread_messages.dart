@@ -185,11 +185,13 @@ ChatStage _agentReplyStage(
   required Map<String, dynamic> summary,
   Map<String, dynamic>? task,
   bool targetRow = true,
+  Color? backgroundColor,
 }) => ChatStage(
   ctx,
   rowWidth: 390,
   rowOrigin: const Offset(16, 16),
   targetRow: targetRow,
+  backgroundColor: backgroundColor,
   messages: [
     _cindyMessage(
       ctx,
@@ -212,6 +214,8 @@ ChatStage _menuStage(ParityContext ctx) {
     ctx,
     id: id,
     targetRow: false,
+    // Source VisualTestingCases.tsx3500: fixed white caller, including dark.
+    backgroundColor: Colors.white,
     content: task
         ? 'Task conversion follow-up for #design: capture the grouped menu '
               'before publish.'

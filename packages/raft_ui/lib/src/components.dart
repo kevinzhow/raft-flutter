@@ -150,9 +150,13 @@ class RaftButton extends StatelessWidget {
     this.focusNode,
     this.tooltip,
     this.semanticLabel,
+    this.foreground,
     this.opacityCompositing = RaftOpacityCompositing.layer,
   });
   final String label;
+
+  /// Explicit caller text/icon color; null retains the resolved button recipe.
+  final Color? foreground;
   final VoidCallback? onPressed;
   final IconData? icon;
 
@@ -285,14 +289,14 @@ class RaftButton extends StatelessWidget {
             ),
           ],
         );
-        if (highContrastDanger) {
+        if (highContrastDanger || foreground != null) {
           content2 = DefaultTextStyle.merge(
             style: TextStyle(
-              color: t.components.buttonDangerHighContrastForeground,
+              color: foreground ?? t.components.buttonDangerHighContrastForeground,
             ),
             child: IconTheme.merge(
               data: IconThemeData(
-                color: t.components.buttonDangerHighContrastForeground,
+                color: foreground ?? t.components.buttonDangerHighContrastForeground,
               ),
               child: content2,
             ),

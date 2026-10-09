@@ -22,6 +22,7 @@ import 'components.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
@@ -93,12 +94,21 @@ class RaftAgentDialogCard extends StatelessWidget {
       states: _states(t),
       tokens: tokens,
     );
-    final base = card.root.textStyle(tokens).copyWith(
-      fontFamily: t.headingFont, // React host `font-display`
-      decoration: TextDecoration.none,
-      // CSS line boxes: half the leading above, half below.
-      leadingDistribution: TextLeadingDistribution.even,
-    );
+    final base = card.root
+        .text(
+          tokens,
+          base: TextStyle(
+            // Modal portals inherit document.body font-sans, outside main font-display.
+            fontFamily: t.bodyFont,
+            fontSize: 16,
+            height: 1.5,
+          ),
+        )
+        .copyWith(
+          decoration: TextDecoration.none,
+          // CSS line boxes: half the leading above, half below.
+          leadingDistribution: TextLeadingDistribution.even,
+        );
     final titleStyle = card.title.textStyle(tokens).copyWith(
       fontSize: 18, // text-lg: 1.125rem / 1.75rem
       height: 28 / 18,
@@ -116,9 +126,11 @@ class RaftAgentDialogCard extends StatelessWidget {
               constraints: BoxConstraints(maxWidth: maxWidth),
               child: Material(
                 type: MaterialType.transparency,
-                child: Container(
+                child: RaftRecipeBox(
+                  style: card.root,
+                  tokens: tokens,
+                  applyText: false,
                   width: double.infinity,
-                  decoration: card.root.decoration(tokens),
                   padding: const EdgeInsets.all(6 * _tw), // p-6
                   child: DefaultTextStyle(
                     style: base,
@@ -219,11 +231,16 @@ class RaftStableField extends StatelessWidget {
     );
     final gap = field.root.rowGap ?? 0;
     // LABEL_CLS = "text-sm font-bold text-foreground-strong uppercase tracking-wide"
-    final labelStyle = field.label.textStyle(tokens).copyWith(
-      fontWeight: FontWeight.w700,
-      color: t.strong,
-      letterSpacing: 14 * .025,
-    );
+    final labelStyle = field.label
+        .textStyle(tokens)
+        .copyWith(
+          fontWeight: FontWeight.w700,
+          // FieldLabel dark:text-foreground-hint outranks the caller's base color.
+          color: t.dark
+              ? field.label.color?.resolve(tokens) ?? t.strong
+              : t.strong,
+          letterSpacing: 14 * .025,
+        );
     final message = error ?? hint;
     final messageStyle = TextStyle(
       fontSize: 12, // text-xs
@@ -433,14 +450,12 @@ class _RaftAgentTextInputState extends State<RaftAgentTextInput> {
     return Semantics(
       label: widget.semanticLabel,
       textField: true,
-      child: RaftCssOuterShadow(
-        decoration: root.decoration(tokens),
-        child: Container(
-          height: minHeight,
-          decoration: root.decoration(tokens).copyWith(boxShadow: const []),
-          padding: pad,
-          child: editor,
-        ),
+      child: RaftRecipeBox(
+        style: root,
+        tokens: tokens,
+        height: minHeight,
+        applyText: false,
+        child: editor,
       ),
     );
   }
@@ -570,10 +585,10 @@ class _RaftAgentSelectState<T> extends State<RaftAgentSelect<T>> {
         .firstOrNull;
     final style = trigger.textStyle(tokens);
     final icon = select.icon;
-    Widget body = Container(
-      height: trigger.height,
-      decoration: trigger.decoration(tokens),
-      padding: trigger.padding,
+    Widget body = RaftRecipeBox(
+      style: trigger,
+      tokens: tokens,
+      applyTransform: false,
       child: Row(
         children: [
           Expanded(
@@ -674,8 +689,15 @@ class RaftAgentBanner extends StatelessWidget {
     this.title,
     this.action,
     this.onAction,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.actionForeground,
   });
   final RaftAgentBannerStatus status;
+
+  /// Explicit product caller classes (for example the capacity warning’s
+  /// dark:bg-warning-soft and dark:!text-warning-strong). Null keeps the recipe.
+  final Color? backgroundColor, foregroundColor, actionForeground;
   final String? title, action;
   final String description;
   final VoidCallback? onAction;
@@ -692,15 +714,25 @@ class RaftAgentBanner extends StatelessWidget {
         RaftAgentBannerStatus.success => RaftBannerRecipeStatus.success,
       },
       states: _states(t, {
-        if (title != null) 'has:>data-slot=banner-description+has:>data-slot=banner-title',
+        'group/banner:data-status=${status.name}',
+        if (title != null)
+          'has:>data-slot=banner-description+has:>data-slot=banner-title',
       }),
       tokens: tokens,
     );
+    final descriptionText = b.description.text(
+      tokens,
+      base: b.root.text(tokens),
+    );
+    final descriptionColor = foregroundColor ?? descriptionText.color;
     return Semantics(
       container: true,
-      child: Container(
-        decoration: b.root.decoration(tokens),
-        padding: b.root.padding,
+      child: RaftRecipeBox(
+        style: b.root,
+        tokens: tokens,
+        decorationOverride: backgroundColor == null
+            ? null
+            : (d) => d.copyWith(color: backgroundColor),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
@@ -710,14 +742,22 @@ class RaftAgentBanner extends StatelessWidget {
                 padding: b.title.margin,
                 child: Text(
                   raftText(context, title!),
-                  style: b.title.textStyle(tokens),
+                  style: b.title
+                      .text(tokens, base: b.root.text(tokens))
+                      .copyWith(color: foregroundColor),
                 ),
               ),
             RaftAgentInlineText(
               description,
               action: action,
               onAction: onAction,
-              style: b.description.textStyle(tokens),
+              style: descriptionText.copyWith(color: descriptionColor),
+              actionForeground:
+                  actionForeground ??
+                  b.description
+                      .target('& button')
+                      ?.color
+                      ?.resolve(tokens, currentColor: descriptionColor),
             ),
           ],
         ),
@@ -736,11 +776,13 @@ class RaftAgentInlineText extends StatefulWidget {
     this.action,
     this.onAction,
     this.style,
+    this.actionForeground,
   });
   final String text;
   final String? action;
   final VoidCallback? onAction;
   final TextStyle? style;
+  final Color? actionForeground;
   @override
   State<RaftAgentInlineText> createState() => _RaftAgentInlineTextState();
 }
@@ -767,7 +809,7 @@ class _RaftAgentInlineTextState extends State<RaftAgentInlineText> {
       tokens: tokens,
     ).root;
     tap.onTap = widget.onAction;
-    final color = link.color?.resolve(tokens);
+    final color = widget.actionForeground ?? link.color?.resolve(tokens);
     return RaftCssText.rich(
       TextSpan(
         text: raftText(context, widget.text),
@@ -782,9 +824,7 @@ class _RaftAgentInlineTextState extends State<RaftAgentInlineText> {
                   : SystemMouseCursors.click,
               style: TextStyle(
                 fontWeight: link.fontWeight,
-                color: color?.withValues(
-                  alpha: color.a * (link.opacity ?? 1),
-                ),
+                color: color?.withValues(alpha: color.a * (link.opacity ?? 1)),
               ),
             ),
           ],
@@ -954,8 +994,12 @@ class RaftAgentDialogButton extends StatelessWidget {
     this.primary = false,
     this.busy = false,
     this.expand = false,
+    this.foreground,
   });
   final String label;
+
+  /// Explicit caller color; null keeps the shared button default.
+  final Color? foreground;
   final VoidCallback? onPressed;
   final bool primary, busy, expand;
   @override
@@ -964,6 +1008,7 @@ class RaftAgentDialogButton extends StatelessWidget {
     // an overlay, not layout).
     return RaftButton(
       label: label,
+      foreground: foreground,
       busy: busy,
       tone: primary
           ? RaftButtonRecipeVariant.accent

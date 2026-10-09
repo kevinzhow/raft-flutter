@@ -1,15 +1,17 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
 import 'dart:ui' show SemanticsRole;
+
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
 import 'list_items.dart';
 import 'icons.dart';
 import 'quick_reaction_picker.dart';
+import 'recipe_surface.dart';
 import 'recipes/context_menu.g.dart';
-import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
 
@@ -54,7 +56,8 @@ class RaftMessageContextMenu extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftContextMenuRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      theme: t.recipeTheme,
+      states: t.recipeStates(),
       tokens: resolver,
     );
     final content = s.content;
@@ -111,10 +114,10 @@ class RaftMessageContextMenu extends StatelessWidget {
             // `min-w-48`; the width is otherwise the intrinsic content width.
             constraints: BoxConstraints(minWidth: content.minWidth ?? 192),
             child: IntrinsicWidth(
-              child: Container(
-                padding: content.padding,
-                decoration: content.decoration(resolver),
-                clipBehavior: Clip.hardEdge,
+              child: RaftRecipeBox(
+                style: content,
+                tokens: resolver,
+                clip: true,
                 // `maxHeight: calc(100dvh - 16px); overflowY: auto`.
                 child: SingleChildScrollView(
                   child: Column(
