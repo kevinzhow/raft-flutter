@@ -1,3 +1,4 @@
+import 'anchored_popup.dart';
 import 'tooltip.dart';
 import 'search_result_surface.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
@@ -1736,6 +1737,7 @@ class RaftDropdownMenu extends StatefulWidget {
 class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
   final portal = OverlayPortalController();
   final anchor = LayerLink();
+  final anchorKey = GlobalKey();
   final trigger = FocusNode();
   final menuFocus = FocusNode(skipTraversal: true);
   final popup = FocusScopeNode(
@@ -1927,6 +1929,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
     final right = end == (Directionality.of(context) == TextDirection.ltr);
     final top = widget.side == RaftDropdownSide.top;
     final gap = widget.sideOffset ?? recipe.popupGap;
+    final movement = Scrollable.maybeOf(context)?.position;
     return OverlayPortal(
       controller: portal,
       overlayChildBuilder: (context) => !widget.enabled
@@ -1940,60 +1943,67 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                     child: const SizedBox.expand(),
                   ),
                 ),
-                CompositedTransformFollower(
-                  link: anchor,
-                  showWhenUnlinked: false,
-                  targetAnchor: Alignment(right ? 1 : -1, top ? -1 : 1),
-                  followerAnchor: Alignment(right ? 1 : -1, top ? 1 : -1),
-                  offset: Offset(0, top ? -gap : gap),
-                  child: FocusScope(
-                    node: popup,
-                    child: CallbackShortcuts(
-                      bindings: {
-                        const SingleActivator(LogicalKeyboardKey.escape): () =>
-                            close(),
-                        const SingleActivator(
-                          LogicalKeyboardKey.arrowDown,
-                        ): () =>
-                            move(1),
-                        const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
-                            move(-1),
-                        const SingleActivator(LogicalKeyboardKey.home): () =>
-                            _edge(1),
-                        const SingleActivator(LogicalKeyboardKey.end): () =>
-                            _edge(-1),
-                      },
-                      child: Focus(
-                        focusNode: menuFocus,
-                        child: RaftMenuPanel(
-                          width: widget.width,
-                          onDismiss: () => close(),
-                          children: [
-                            for (var i = 0; i < widget.entries.length; i++)
-                              if (widget.entries[i].label == null)
-                                SizedBox(
-                                  height: t.brutal ? 2 : 9,
-                                  child: Center(
-                                    child: Container(
-                                      height: t.brutal ? 2 : .5,
-                                      color: t.brutal
-                                          ? Colors.black
-                                          : t.colors['line-hairline'],
+                Positioned.fill(
+                  child: RaftAnchoredPopup(
+                    anchorKey: anchorKey,
+                    movement: movement,
+                    above: top,
+                    alignRight: right,
+                    gap: gap,
+                    child: FocusScope(
+                      node: popup,
+                      child: CallbackShortcuts(
+                        bindings: {
+                          const SingleActivator(
+                            LogicalKeyboardKey.escape,
+                          ): () =>
+                              close(),
+                          const SingleActivator(
+                            LogicalKeyboardKey.arrowDown,
+                          ): () =>
+                              move(1),
+                          const SingleActivator(
+                            LogicalKeyboardKey.arrowUp,
+                          ): () =>
+                              move(-1),
+                          const SingleActivator(LogicalKeyboardKey.home): () =>
+                              _edge(1),
+                          const SingleActivator(LogicalKeyboardKey.end): () =>
+                              _edge(-1),
+                        },
+                        child: Focus(
+                          focusNode: menuFocus,
+                          child: RaftMenuPanel(
+                            width: widget.width,
+                            onDismiss: () => close(),
+                            children: [
+                              for (var i = 0; i < widget.entries.length; i++)
+                                if (widget.entries[i].label == null)
+                                  SizedBox(
+                                    height: t.brutal ? 2 : 9,
+                                    child: Center(
+                                      child: Container(
+                                        height: t.brutal ? 2 : .5,
+                                        color: t.brutal
+                                            ? Colors.black
+                                            : t.colors['line-hairline'],
+                                      ),
                                     ),
+                                  )
+                                else
+                                  RaftMenuItem(
+                                    label: widget.entries[i].label!,
+                                    glyph: widget.entries[i].glyph,
+                                    leading: widget.entries[i].leading,
+                                    focusNode: nodes[i],
+                                    onMove: move,
+                                    onPressed:
+                                        widget.entries[i].onPressed == null
+                                        ? null
+                                        : () => activateEntry(i),
                                   ),
-                                )
-                              else
-                                RaftMenuItem(
-                                  label: widget.entries[i].label!,
-                                  glyph: widget.entries[i].glyph,
-                                  leading: widget.entries[i].leading,
-                                  focusNode: nodes[i],
-                                  onMove: move,
-                                  onPressed: widget.entries[i].onPressed == null
-                                      ? null
-                                      : () => activateEntry(i),
-                                ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -2002,6 +2012,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
               ],
             ),
       child: CompositedTransformTarget(
+        key: anchorKey,
         link: anchor,
         child: CallbackShortcuts(
           bindings: {
