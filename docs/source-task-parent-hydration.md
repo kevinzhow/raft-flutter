@@ -63,7 +63,8 @@ result.
 | Back/new real card followed by late metadata success or error | 6 passed | Same test |
 | Principal/server/role/removal and accepted-parent authority refresh denial | 15 passed | Same test |
 | Pending-only bucket scope, real private metadata sharing and mismatch rejection | 4 passed | `source_task_bucket_test.dart` |
-| New parent, grid-channel opener and bucket cases together | 46 passed | `.local/task-parent-grid-v8.log` |
+| Committed cold-parent and bucket cases | 43 passed | `.local/task-parent-grid-v8.log` (39 parent + 4 bucket cases) |
+| Private, uncommitted grid callback experiment | 3 passed, Flutter-only | Same combined receipt; this does not establish Source visibility or an accepted grid task owner. |
 | Existing task URL/surface/authority/controls, classic entrypoints, projection and grid tests | 92 passed | `.local/task-parent-regressions-v2.log` |
 | Selected app analysis | Clean | `.local/task-parent-analysis-v3.log` |
 | Design-system ratchet and scanner checks | 6 passed; no growth | `.local/task-parent-ds-v1.log` |
@@ -73,6 +74,13 @@ late old response cannot admit facts to the new owner; the new owner's explicit
 403 is observed independently. Retired late replies issue no hidden task read
 acknowledgement. The Back/retarget sequence also holds a real main request and
 verifies its later acceptance without publishing old remote task facts.
+
+The combined receipt's three grid experiment cases exercise an uncommitted
+Flutter callback, so they are outside this cold-parent delivery. Source's active
+workspace suppresses the global right-panel container and URL synchronization
+(`components/layout/MainLayout.tsx:1394,1444,1459,1514`). Caller intent alone does
+not prove that a global task surface should be visible there. The experiment's
+visible-modal behavior remains unaccepted pending actual Source mounted proof.
 
 Historical private attempts remain immutable:
 
