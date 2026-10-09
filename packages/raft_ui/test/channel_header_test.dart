@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -36,9 +37,16 @@ void main() {
           ),
         );
         expect(find.text('首页专修'), findsOneWidget);
+        final titleBox = find.ancestor(
+          of: find.text('首页专修'),
+          matching: find.byType(RaftCssText),
+        );
         if (family == RaftFamily.brutal) {
-          expect(t.getSize(find.text('首页专修')).height, 20);
-          expect(t.getTopLeft(find.text('首页专修')).dy, 12);
+          expect(t.getSize(titleBox).height, 20);
+          expect(t.getTopLeft(titleBox).dy, 12);
+        }
+        for (final label in ['Search this channel', 'Channel settings']) {
+          expect(t.getSize(find.bySemanticsLabel(label)), const Size(28, 28));
         }
         expect(
           t.widget<Text>(find.textContaining('Public description')).maxLines,
@@ -54,6 +62,49 @@ void main() {
         await t.tap(find.bySemanticsLabel('Search this channel'));
         await t.tap(find.bySemanticsLabel('Channel settings'));
         expect([backs, searches, settings], [1, 1, 1]);
+        expect(t.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      '$family dark=$dark header icon preserves touch and keyboard access',
+      (t) async {
+        var searches = 0;
+        Future<void> mount({required bool enabled}) => t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: Scaffold(
+              body: Center(
+                child: RaftDensityScope(
+                  density: RaftDensity.touch,
+                  child: RaftPanelIconButton(
+                    glyph: RaftGlyph.search,
+                    tooltip: 'Search this channel',
+                    onPressed: enabled ? () => ++searches : null,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await mount(enabled: true);
+        final button = find.byType(RaftPanelIconButton);
+        final rect = t.getRect(button);
+        expect(rect.size, const Size(28, 28));
+        await t.tapAt(Offset(rect.center.dx, rect.bottom + 6));
+        await t.pump();
+        expect(searches, 1);
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        await t.pump();
+        expect(searches, 2);
+        final semantics = t.ensureSemantics();
+        expect(t, meetsGuideline(androidTapTargetGuideline));
+        expect(t, meetsGuideline(labeledTapTargetGuideline));
+        semantics.dispose();
+        await mount(enabled: false);
+        await t.tapAt(rect.center);
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        expect(searches, 2);
         expect(t.takeException(), isNull);
       },
     );

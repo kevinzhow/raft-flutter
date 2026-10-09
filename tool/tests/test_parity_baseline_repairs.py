@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from parity_baseline_repairs import (TASKS_ANCHOR, NOTIFICATION_ANCHOR, NOTIFICATION_IMPORT,
+from parity_baseline_repairs import (TASKS_ANCHOR, NOTIFICATION_ANCHOR, NOTIFICATION_IMPORT, HEADER_ANCHOR,
                                     repair_definition, repair_cases,
                                     capture_is_current, preserve_capture, repair_annotations)
 
@@ -17,7 +17,7 @@ class BaselineRepairsTest(unittest.TestCase):
     def test_fixture_repair_changes_only_the_broken_task_projection(self):
         repair = repair_definition(ROOT)
         original = ('product-before\n' + TASKS_ANCHOR + '\n' + NOTIFICATION_IMPORT
-                    + '\n' + NOTIFICATION_ANCHOR + '\nproduct-after')
+                    + '\n' + NOTIFICATION_ANCHOR + '\n' + HEADER_ANCHOR + '\nproduct-after')
         patched = repair_cases(original, repair, repair['sourceCommit'])
         self.assertTrue(patched.startswith('product-before\n'))
         self.assertTrue(patched.endswith('\nproduct-after'))
@@ -25,12 +25,32 @@ class BaselineRepairsTest(unittest.TestCase):
         self.assertIn('NotificationTrigger flavor="mobile-navbar"', patched)
         self.assertIn('"kind": "warning"', patched)
         self.assertIn('"kind": "info"', patched)
+        self.assertIn('data-header-panel-viewport', patched)
+        self.assertIn('height: 844', patched)
+        self.assertIn(HEADER_ANCHOR, patched)
         with self.assertRaises(ValueError):
             repair_cases(original, repair, 'different-source')
         with self.assertRaises(ValueError):
             repair_cases(original + TASKS_ANCHOR, repair, repair['sourceCommit'])
         with self.assertRaises(ValueError):
             repair_cases(original + NOTIFICATION_ANCHOR, repair, repair['sourceCommit'])
+        with self.assertRaises(ValueError):
+            repair_cases(original + HEADER_ANCHOR, repair, repair['sourceCommit'])
+
+    def test_header_reference_requires_verified_unchanged_crop_and_real_viewport(self):
+        repair = repair_definition(ROOT)
+        header = repair['additionalRepairs'][1]
+        with tempfile.TemporaryDirectory() as temp:
+            metadata = pathlib.Path(temp) / f"{header['cases'][0]}.metadata.json"
+            valid = {'fixtureSha256': header['fixtureSha256'], 'renderVerified': True,
+                     'captureVerified': True, 'frame': header['frame'],
+                     'panelViewport': header['panelViewport'], 'footerInCrop': False}
+            metadata.write_text(json.dumps({'baselineRepair': valid}))
+            self.assertTrue(capture_is_current(metadata, repair))
+            for changed in [{'captureVerified': False}, {'frame': {'width': 390, 'height': 92}},
+                            {'panelViewport': {'width': 390, 'height': 120}}, {'footerInCrop': True}]:
+                metadata.write_text(json.dumps({'baselineRepair': {**valid, **changed}}))
+                self.assertFalse(capture_is_current(metadata, repair))
 
     def test_notification_and_markdown_cache_identities_are_independent(self):
         repair = repair_definition(ROOT)

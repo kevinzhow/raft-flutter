@@ -101,6 +101,18 @@ void main() {
                   : const EdgeInsets.symmetric(horizontal: 12),
             );
             if (family == RaftFamily.brutal) {
+              final selectedControl = find
+                  .descendant(
+                    of: chat,
+                    matching: find.byType(AnimatedContainer),
+                  )
+                  .first;
+              expect(
+                (tester.widget<AnimatedContainer>(selectedControl).decoration!
+                        as BoxDecoration)
+                    .color,
+                RaftTokens.of(tester.element(chat)).semantic.primary400,
+              );
               final tasks = find.byKey(const ValueKey('panel-tab-tasks'));
               for (final (id, target) in [('tasks', tasks), ('files', files)]) {
                 final separator = find.byKey(

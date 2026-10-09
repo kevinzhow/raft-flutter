@@ -250,7 +250,7 @@ test.beforeEach(async ({ page }) => {
 });
 async function parityPrepareRepairedNotification(page: Page, caseId: string) {
   const repair = (PARITY_BASELINE_REPAIR.additionalRepairs ?? [])
-    .find((entry: { cases: string[] }) => entry.cases.includes(caseId));
+    .find((entry: { repairId: string; cases: string[] }) => entry.repairId === "notification-center-missing-component-v1" && entry.cases.includes(caseId));
   if (!repair) return;
   const trigger = page.getByTestId("notification-trigger-mobile");
   await expect(trigger).toHaveAttribute("data-state", "closed");
@@ -260,8 +260,39 @@ async function parityPrepareRepairedNotification(page: Page, caseId: string) {
 }
 async function parityVerifyRepairedMarkdown(page: Page, caseId: string, selector: string) {
   if (!PARITY_BASELINE_REPAIR.cases.includes(caseId)) return null;
+  const headerRepair = (PARITY_BASELINE_REPAIR.additionalRepairs ?? [])
+    .find((repair: { repairId: string; cases: string[] }) => repair.repairId === "thread-header-viewport-frame-v1" && repair.cases.includes(caseId));
+  if (headerRepair) {
+    const rendered = await page.locator(selector).evaluate(root => {
+      const frame = root.getBoundingClientRect();
+      const box = (selector: string) => {
+        const node = root.querySelector(selector);
+        if (!node) throw Error("Header fixture missing " + selector);
+        const r = node.getBoundingClientRect();
+        return {x:r.x-frame.x,y:r.y-frame.y,width:r.width,height:r.height};
+      };
+      const panel=box('[data-slot="conversation-panel-root"]');
+      const header=box('[data-slot="panel-header"]');
+      const tabs=box('[data-slot="conversation-panel-tabs"]');
+      const footer=box('[data-slot="conversation-panel-footer"]');
+      return {frame:{width:frame.width,height:frame.height},panelViewport:{width:panel.width,height:panel.height},header,tabs,footer,footerInCrop:footer.y < frame.height, title:root.querySelector('[data-slot="panel-title"]')?.textContent};
+    });
+    expect(rendered.frame).toEqual(headerRepair.frame);
+    expect(rendered.panelViewport).toEqual(headerRepair.panelViewport);
+    // The original fixture is Brutal. Supplemental Elegant mounts the same
+    // product with its real 56px shell header and 40px tabs + 1px border.
+    const geometry = headerRepair.themeGeometry[process.env.PARITY_THEME_OVERRIDE ?? "brutal-light"];
+    expect(rendered.header.y).toBe(0);
+    expect(rendered.header.height).toBe(geometry.headerHeight);
+    expect(rendered.tabs.y).toBe(geometry.headerHeight);
+    expect(rendered.tabs.height).toBe(geometry.tabsHeight);
+    expect(rendered.footerInCrop).toBe(false);
+    expect(rendered.title).toBe("首页专修");
+    expect(parityRenderErrors.get(page) ?? [], "Header fixture must render without errors").toEqual([]);
+    return {repairId:headerRepair.repairId,fixtureSha256:headerRepair.fixtureSha256,sourceCommit:headerRepair.sourceCommit,renderVerified:true,captureVerified:true,...rendered};
+  }
   const notificationRepair = (PARITY_BASELINE_REPAIR.additionalRepairs ?? [])
-    .find((repair: { cases: string[] }) => repair.cases.includes(caseId));
+    .find((repair: { repairId: string; cases: string[] }) => repair.repairId === "notification-center-missing-component-v1" && repair.cases.includes(caseId));
   if (notificationRepair) {
     const trigger = page.getByTestId("notification-trigger-mobile");
     const center = page.getByTestId("notification-center");

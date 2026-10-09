@@ -67,14 +67,10 @@ class RaftChannelHeader extends StatelessWidget {
             style: recipe.headerIcon,
             tokens: rt,
             alignment: Alignment.center,
-            decorationOverride: (decoration) => decoration.copyWith(
-              color: t.brutal ? t.colors['primary'] : t.colors['fill-muted'],
-              border: t.brutal ? decoration.border : const Border(),
-            ),
             child: RaftIcon(
               glyph,
               size: 14,
-              color: t.brutal ? Colors.black : t.strong,
+              color: recipe.headerIcon.color?.resolve(rt) ?? t.strong,
             ),
           ),
           SizedBox(width: gap),
@@ -83,7 +79,7 @@ class RaftChannelHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                RaftCssText(
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -121,7 +117,9 @@ class RaftChannelHeader extends StatelessWidget {
             ),
           ),
           SizedBox(width: gap),
-          RaftPanelAction(
+          // ChannelOverflowMenu → OverflowMenuTrigger uses Button icon-sm;
+          // PanelAction is the separate, narrower mobile back control.
+          RaftPanelIconButton(
             glyph: RaftGlyph.search,
             tooltip: searchLabel,
             onPressed: onSearch,
@@ -130,7 +128,7 @@ class RaftChannelHeader extends StatelessWidget {
             width:
                 recipe.actions.columnGap ?? recipe.actions.length('gap') ?? 6,
           ),
-          RaftPanelAction(
+          RaftPanelIconButton(
             glyph: RaftGlyph.settings,
             tooltip: settingsLabel,
             onPressed: onSettings,

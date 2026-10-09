@@ -1,0 +1,32 @@
+{
+  "repairId": "thread-header-viewport-frame-v1",
+  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "scope": "Header-strip fixture only. Keep the original 390x120 capture frame, channel, description, tabs, readOnly state and thresholds. Lay out the actual ChatPanel in the declared 390x844 viewport inside that clip, like the Flutter host. The old 120px panel collapsed its message body to zero and leaked the readOnly footer into the header strip. Preserve the original image and verify actual DOM bounds before accepting a new baseline.",
+  "cases": [
+    "components.thread.header.states"
+  ],
+  "frame": {
+    "width": 390,
+    "height": 120
+  },
+  "panelViewport": {
+    "width": 390,
+    "height": 844
+  },
+  "headerHeight": 62,
+  "tabsHeight": 30,
+  "themeGeometry": {
+    "brutal-light": {
+      "headerHeight": 62,
+      "tabsHeight": 30
+    },
+    "elegant-light": {
+      "headerHeight": 56,
+      "tabsHeight": 41
+    },
+    "elegant-dark": {
+      "headerHeight": 56,
+      "tabsHeight": 41
+    }
+  }
+}

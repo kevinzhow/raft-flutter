@@ -30,6 +30,10 @@ NOTIFICATION_ANCHOR = '''            padding: "48px 16px 0",
         >
         </div>'''
 NOTIFICATION_IMPORT = 'import Sidebar from "../src/components/layout/Sidebar";'
+HEADER_ANCHOR = '''        <ChatPanel
+          channel={channel}
+          readOnly
+        />'''
 
 
 def repair_definition(root):
@@ -56,9 +60,22 @@ def repair_definition(root):
         raise ValueError('notification repair must retain the declared two-entry warning/info state')
     # Keep the original five task fixture hashes valid. Each added repair has
     # its own cache identity and render receipt.
-    repair['additionalRepairs'] = [notification]
+    header_path = Path(root) / 'tool/reference-patches/thread-header-frame.json'
+    header = json.loads(header_path.read_text())
+    header['fixtureSha256'] = hashlib.sha256(header_path.read_bytes()).hexdigest()
+    if (header['sourceCommit'] != repair['sourceCommit']
+            or header['cases'] != ['components.thread.header.states']
+            or header['frame'] != {'width': 390, 'height': 120}
+            or header['panelViewport'] != {'width': 390, 'height': 844}
+            or header['headerHeight'] != 62 or header['tabsHeight'] != 30
+            or header['themeGeometry'] != {
+                'brutal-light': {'headerHeight': 62, 'tabsHeight': 30},
+                'elegant-light': {'headerHeight': 56, 'tabsHeight': 41},
+                'elegant-dark': {'headerHeight': 56, 'tabsHeight': 41}}):
+        raise ValueError('header repair must retain the original strip and declared viewport')
+    repair['additionalRepairs'] = [notification, header]
     repair['markdownCases'] = list(repair['cases'])
-    repair['cases'] = repair['cases'] + notification['cases']
+    repair['cases'] = repair['cases'] + notification['cases'] + header['cases']
     return repair
 
 
@@ -71,6 +88,8 @@ def repair_cases(code, repair, source_commit):
     code = code.replace(TASKS_ANCHOR, '    // Owner-authorized fixture repair: complete shared task states.\n'
                         '    tasks: ' + rows + ' as never,')
     for notification in repair.get('additionalRepairs', []):
+        if notification['repairId'] != 'notification-center-missing-component-v1':
+            continue
         if code.count(NOTIFICATION_ANCHOR) != 1 or code.count(NOTIFICATION_IMPORT) != 1:
             raise ValueError('reference empty notification fixture anchor changed; review the repair')
         code = code.replace(NOTIFICATION_IMPORT, NOTIFICATION_IMPORT + '\n'
@@ -83,6 +102,14 @@ def repair_cases(code, repair, source_commit):
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <NotificationTrigger flavor="mobile-navbar" notifications={''' + entries + ''' as never} />
           </div>
+        </div>''')
+    if any(entry['repairId'] == 'thread-header-viewport-frame-v1'
+           for entry in repair.get('additionalRepairs', [])):
+        if code.count(HEADER_ANCHOR) != 1:
+            raise ValueError('reference header frame anchor changed; review the repair')
+        code = code.replace(HEADER_ANCHOR, '''        {/* Keep the real panel's viewport inside the original header-strip clip. */}
+        <div data-header-panel-viewport style={{ width: 390, height: 844, display: "flex", flexDirection: "column" }}>
+''' + HEADER_ANCHOR + '''
         </div>''')
     return code
 
@@ -100,6 +127,12 @@ def capture_is_current(metadata, repair):
     repair = repair_for_case(repair, case_id)
     if repair.get('repairId') == 'notification-center-missing-component-v1' and not recorded.get('captureVerified'):
         return False
+    if repair.get('repairId') == 'thread-header-viewport-frame-v1':
+        if (not recorded.get('captureVerified')
+                or recorded.get('frame') != repair['frame']
+                or recorded.get('panelViewport') != repair['panelViewport']
+                or recorded.get('footerInCrop') is not False):
+            return False
     return recorded.get('fixtureSha256') == repair['fixtureSha256'] and recorded.get('renderVerified') is True
 
 
@@ -153,7 +186,9 @@ def repair_annotations(out, site, repair):
             links.append({'title': title, 'href': str(relative / original.name)})
         notes[case_id] = {
             'kind': 'repair', 'title': 'React 测试基准已修复',
-            'description': ('原测试声明两条通知却只渲染空白框。现挂载 Web 实际通知按钮并点击打开，两端使用同一份 warning/info 测试数据。浏览器已验证两条内容、数量及打开状态。这是组件测试，不代表实际通知送达。旧空白图保留，仍按原阈值计算差异。'
+            'description': ('原标题测试把整页挤进 120px，消息区高度变成零，底部只读提示露进了标题截图。现实际页面按原声明的 390×844 视口布局，仍截原来的顶部 390×120。浏览器已验证标题、分页和底部区域的实际位置；旧图保留，按原阈值计算，不自动判 Flutter 通过。'
+                            if case_repair.get('repairId') == 'thread-header-viewport-frame-v1'
+                            else '原测试声明两条通知却只渲染空白框。现挂载 Web 实际通知按钮并点击打开，两端使用同一份 warning/info 测试数据。浏览器已验证两条内容、数量及打开状态。这是组件测试，不代表实际通知送达。旧空白图保留，仍按原阈值计算差异。'
                             if case_repair.get('repairId') == 'notification-center-missing-component-v1'
                             else '原测试漏了任务状态，导致 Markdown 进入原文回退。现两端使用同一份完整任务数据，浏览器已验证任务标签正常渲染、无回退错误。旧截图保留；当前差异按原阈值重新计算，不自动判 Flutter 通过。'),
             'baselineSha256': hashlib.sha256(image.read_bytes()).hexdigest(),

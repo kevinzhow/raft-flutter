@@ -518,7 +518,7 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
 /// for header/section icon actions (AgentProfileOverflowMenu trigger,
 /// CopyableCodeAction, HumanDetailPanel message action). Resolved from the
 /// generated `buttonVariants` recipe.
-class RaftPanelIconButton extends StatefulWidget {
+class RaftPanelIconButton extends StatelessWidget {
   const RaftPanelIconButton({
     super.key,
     required this.glyph,
@@ -531,63 +531,45 @@ class RaftPanelIconButton extends StatefulWidget {
   final VoidCallback? onPressed;
   final double iconSize;
   @override
-  State<RaftPanelIconButton> createState() => _RaftPanelIconButtonState();
-}
-
-class _RaftPanelIconButtonState extends State<RaftPanelIconButton> {
-  bool hovered = false, pressed = false;
-  @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final s = RaftButtonRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      variant: RaftButtonRecipeVariant.outline,
-      size: RaftButtonRecipeSize.iconSm,
-      states: RaftRecipeStates({
-        if (hovered) RaftRecipeStates.hover,
-        if (pressed) RaftRecipeStates.active,
-        if (widget.onPressed == null) RaftRecipeStates.disabled,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).root;
-    final color = s.color?.resolve(rt) ?? t.strong;
-    return RaftTooltip(
-      message: widget.tooltip,
-      excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        label: widget.tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => hovered = true),
-          onExit: (_) => setState(() => hovered = false),
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => pressed = true),
-            onTapUp: (_) => setState(() => pressed = false),
-            onTapCancel: () => setState(() => pressed = false),
-            onTap: widget.onPressed,
-            child: Opacity(
-              opacity: s.opacity ?? 1,
-              child: Transform.translate(
-                offset: s.translate ?? Offset.zero,
-                child: Container(
-                  width: s.width,
-                  height: s.height,
-                  alignment: Alignment.center,
-                  decoration: s.decoration(rt),
-                  child: RaftIcon(
-                    widget.glyph,
-                    size: widget.iconSize,
-                    color: color,
-                  ),
-                ),
+    return RaftInteractive(
+      onPressed: onPressed,
+      semanticLabel: tooltip,
+      tooltip: tooltip,
+      builder: (context, state) {
+        final s = RaftButtonRecipe.resolve(
+          theme: raftRecipeTheme(t),
+          variant: RaftButtonRecipeVariant.outline,
+          size: RaftButtonRecipeSize.iconSm,
+          states: RaftRecipeStates({
+            if (state.hovered) RaftRecipeStates.hover,
+            if (state.pressed) RaftRecipeStates.active,
+            if (state.focusVisible) RaftRecipeStates.focusVisible,
+            if (onPressed == null) RaftRecipeStates.disabled,
+            if (t.dark) RaftRecipeStates.dark,
+          }),
+          tokens: rt,
+        ).root;
+        return Opacity(
+          opacity: s.opacity ?? 1,
+          child: Transform.translate(
+            offset: s.translate ?? Offset.zero,
+            child: Container(
+              width: s.width,
+              height: s.height,
+              alignment: Alignment.center,
+              decoration: s.decoration(rt),
+              child: RaftIcon(
+                glyph,
+                size: iconSize,
+                color: s.color?.resolve(rt) ?? t.strong,
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -672,6 +654,7 @@ class RaftCssText extends StatelessWidget {
     this.overflow,
     this.textAlign,
     this.softWrap,
+    this.strutStyle,
   }) : span = null;
 
   const RaftCssText.rich(
@@ -682,6 +665,7 @@ class RaftCssText extends StatelessWidget {
     this.overflow,
     this.textAlign,
     this.softWrap,
+    this.strutStyle,
   }) : data = null;
 
   final String? data;
@@ -691,6 +675,7 @@ class RaftCssText extends StatelessWidget {
   final TextOverflow? overflow;
   final TextAlign? textAlign;
   final bool? softWrap;
+  final StrutStyle? strutStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -703,6 +688,7 @@ class RaftCssText extends StatelessWidget {
             overflow: overflow,
             textAlign: textAlign,
             softWrap: softWrap,
+            strutStyle: strutStyle,
           )
         : Text.rich(
             span!,
@@ -711,6 +697,7 @@ class RaftCssText extends StatelessWidget {
             overflow: overflow,
             textAlign: textAlign,
             softWrap: softWrap,
+            strutStyle: strutStyle,
           );
     return _CssLineBox(
       style: effective,

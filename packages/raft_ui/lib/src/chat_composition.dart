@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
 import 'theme.dart';
 
@@ -303,7 +304,9 @@ class _ConversationTabControlRecipe extends RaftControlRecipe {
   @override
   Color get background => tokens.brutal
       ? selected
-            ? tokens.primaryFill
+            // raft-ui styles.css: --color-primary aliases --primary-400,
+            // separately from the legacy component role --primary.
+            ? tokens.semantic.primary400
             : Colors.white
       : Colors.transparent;
   // Product direct-child bg-white selector overrides the lower-specificity
@@ -544,7 +547,7 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
                           strokeWidth: recipe.glyphStroke,
                         ),
                       const SizedBox(width: 6),
-                      Text(tab.label),
+                      RaftCssText(tab.label),
                     ],
                   ),
                 ),
