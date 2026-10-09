@@ -1913,12 +1913,21 @@ class _RaftChatViewState extends State<RaftChatView> {
                         ? RaftTimelineHost.threadPanel
                         : RaftTimelineHost.chatPanel,
                   ),
-                  // The hidden staging layout measures the bounded accepted
-                  // window. The visible timeline always retains Flyer's own
-                  // animated sliver and uses that finite measured cache extent.
-                  messagesSliver:
-                      identical(timelineAdapter, adapter) && measuredContext
-                      ? SliverToBoxAdapter(
+                  // Keep Flyer's subscribed animated sliver mounted while the
+                  // hidden bounded window is measured. Real arrivals can insert
+                  // between measurement and reveal; removing the sliver leaves
+                  // its operation subscriber with no animated-list state.
+                  messagesSliver: SliverMainAxisGroup(
+                    slivers: [
+                      SliverOffstage(
+                        offstage:
+                            identical(timelineAdapter, adapter) &&
+                            measuredContext,
+                        sliver: messageSliver,
+                      ),
+                      if (identical(timelineAdapter, adapter) &&
+                          measuredContext)
+                        SliverToBoxAdapter(
                           child: Column(
                             key: measuredWindowKey,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1926,15 +1935,15 @@ class _RaftChatViewState extends State<RaftChatView> {
                               for (final message in timelineAdapter.messages)
                                 datedTile(
                                   RaftMessage(message.metadata!),
-                                  captureFocus: identical(
-                                    timelineAdapter,
-                                    adapter,
-                                  ),
+                                  // Only the persistent animated list owns
+                                  // focus anchors; measurement needs height.
+                                  captureFocus: false,
                                 ),
                             ],
                           ),
-                        )
-                      : messageSliver,
+                        ),
+                    ],
+                  ),
                   footer: const RaftTimelineFooter(),
                 ),
             topSliver: widget.thread
@@ -1984,6 +1993,11 @@ class _RaftChatViewState extends State<RaftChatView> {
                 ? null
                 : () => w.older(thread: widget.thread),
             initialScrollToEndMode: InitialScrollToEndMode.none,
+            // The app positions and publishes a replacement window atomically.
+            // An arrival in its hidden preparation cannot race that positioning
+            // with Flyer's independent scroll-to-end callback.
+            shouldScrollToEndWhenSendingMessage: !focusStaging,
+            shouldScrollToEndWhenAtBottom: !focusStaging && atBottom,
           ),
         ),
         emptyChatListBuilder: (_) => widget.thread

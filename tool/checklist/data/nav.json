@@ -306,8 +306,20 @@
       {
         "id": "N22a",
         "minimum_layer": "mounted",
-        "minimum_passes": 1,
-        "title_zh": "动态新旧布局768/1024边界"
+        "minimum_passes": 24,
+        "title_zh": "动态新旧布局768/1024边界",
+        "proof_file": "apps/raft_flutter/test/mounted_activity_boundaries_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "evaluated=false",
+          "evaluated=true",
+          "width=767 ",
+          "width=768 ",
+          "width=1023 ",
+          "width=1024 "
+        ]
       },
       {
         "id": "N22b",
@@ -411,7 +423,7 @@
         "id": "N24f",
         "minimum_layer": "mounted",
         "minimum_passes": 9,
-        "title_zh": "动态预览定位结束清理链接，完整线程链接保留定位",
+        "title_zh": "动态定位结束清理链接，搜索和完整线程链接保留定位",
         "required_name_fragments": [
           "RaftFamily.brutal/false",
           "RaftFamily.elegant/false",
@@ -466,13 +478,17 @@
       {
         "id": "N25c",
         "minimum_layer": "mounted",
-        "minimum_passes": 3,
+        "minimum_passes": 9,
         "title_zh": "手机直接打开私信，优先提到我的消息",
         "required_name_fragments": [
           "RaftFamily.brutal/false",
           "RaftFamily.elegant/false",
-          "RaftFamily.elegant/true"
-        ]
+          "RaftFamily.elegant/true",
+          "DM mention",
+          "DM unread",
+          "DM latest"
+        ],
+        "proof_file": "apps/raft_flutter/test/mounted_activity_boundaries_test.dart"
       }
     ]
   },

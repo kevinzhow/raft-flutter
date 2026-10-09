@@ -348,6 +348,17 @@
           "RaftFamily.elegant/false",
           "RaftFamily.elegant/true"
         ]
+      },
+      {
+        "id": "K09f",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "未进入动态时也读取真实未读总数，后台变化和权限更新保持正确",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   }
