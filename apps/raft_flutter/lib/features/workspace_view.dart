@@ -149,7 +149,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
     mainSelection.dismiss();
     threadSelection.dismiss();
-    w.closeThread();
+    w.closeThread(navigate: false);
     setState(() {
       mobileSettingsRevision++;
     });
@@ -492,7 +492,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final previous = w.location;
     final next = w.navigation.back();
     pendingDesktopSelection = false;
-    if (next.thread == null) w.closeThread();
+    if (next.thread == null) w.closeThread(navigate: false);
     mobileSettingsRevision++;
     w.notifyListeners();
     if ({RaftRoute.channel, RaftRoute.dm}.contains(next.route) &&
@@ -1149,48 +1149,55 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     },
   );
   final threadViewport = ChatViewportHandle();
-  Widget sourceThreadHeader({bool mobile = false}) => RaftThreadHeader(
-    key: Key(
-      mobile ? 'workspace-mobile-detail-header' : 'workspace-thread-header',
-    ),
-    presentation: RaftThreadPresentation.side,
-    threadLabel: tr('Thread'),
-    jumpLabel: tr('Jump to beginning'),
-    backLabel: threadSelection.active ? 'Exit selection' : 'Close thread',
-    closeLabel: threadSelection.active ? 'Exit selection' : 'Close thread',
-    backKey: mobile
-        ? const Key('mobile-detail-back')
-        : const Key('thread-back'),
-    closeKey: const Key('thread-close'),
-    parentLabel: w.channel == null
-        ? null
-        : '${w.channel!.type == 'dm' ? '@' : '#'}${w.channel!.name}',
-    onBack: dismissPanel,
-    onClose: dismissPanel,
-    onJumpToStart: threadViewport.jumpToBeginning,
-    actions: [
-      if (w.threadParent != null)
-        ThreadActions(
-          key: ValueKey('thread-menu-${w.threadParent!.id}'),
-          controller: w,
-          parent: w.threadParent!,
-          menuMode: true,
-          onSearch: () => select('search'),
-          onViewChannel: () {
-            final parent = w.threadParent!;
-            w.closeThread();
-            w.jumpToMessage(parent.channelId, parent.id);
-          },
-        ),
-    ],
-  );
+  Widget sourceThreadHeader({bool mobile = false}) {
+    final unresolved =
+        w.threadChannelId == null &&
+        (w.threadResolutionLoading || w.threadResolutionError != null);
+    final parent = w.presentedThreadParent;
+    final sourceChannel = w.threadSourceChannel;
+    return RaftThreadHeader(
+      key: Key(
+        mobile ? 'workspace-mobile-detail-header' : 'workspace-thread-header',
+      ),
+      presentation: RaftThreadPresentation.side,
+      threadLabel: tr('Thread'),
+      jumpLabel: tr('Jump to beginning'),
+      backLabel: threadSelection.active ? 'Exit selection' : 'Close thread',
+      closeLabel: threadSelection.active ? 'Exit selection' : 'Close thread',
+      backKey: mobile
+          ? const Key('mobile-detail-back')
+          : const Key('thread-back'),
+      closeKey: const Key('thread-close'),
+      parentLabel: unresolved || sourceChannel == null
+          ? null
+          : '${sourceChannel.type == 'dm' ? '@' : '#'}${sourceChannel.name}',
+      interactiveTitle: !unresolved,
+      onBack: dismissPanel,
+      onClose: dismissPanel,
+      onJumpToStart: unresolved ? null : threadViewport.jumpToBeginning,
+      actions: [
+        if (!unresolved && parent != null)
+          ThreadActions(
+            key: ValueKey('thread-menu-${parent.id}'),
+            controller: w,
+            parent: parent,
+            menuMode: true,
+            onSearch: () => select('search'),
+            onViewChannel: () {
+              w.closeThread(navigate: false);
+              w.jumpToMessage(parent.channelId, parent.id);
+            },
+          ),
+      ],
+    );
+  }
 
   void closeDesktopDetail() {
     final route = desktopNavigation.masterRoute;
     if (route == null) return;
     desktopNavigation.closeTarget();
     pendingDesktopSelection = false;
-    w.closeThread();
+    w.closeThread(navigate: false);
     setState(() {});
   }
 
@@ -1314,7 +1321,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         entityId: id,
       ),
     );
-    w.closeThread();
+    w.closeThread(navigate: false);
     w.notifyListeners();
   }
 
@@ -1325,7 +1332,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
     desktopNavigation.selectTarget(target);
     pendingDesktopSelection = false;
-    w.closeThread();
+    w.closeThread(navigate: false);
     w.notifyListeners();
     setState(() {});
   }
@@ -1390,7 +1397,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         entity.id,
       ),
     );
-    w.closeThread();
+    w.closeThread(navigate: false);
     w.notifyListeners();
   }
 

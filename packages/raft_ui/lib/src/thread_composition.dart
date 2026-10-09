@@ -124,6 +124,7 @@ class RaftThreadHeader extends StatelessWidget {
     this.backKey,
     this.closeKey,
     this.jumpKey,
+    this.interactiveTitle = true,
   });
   final RaftThreadPresentation presentation;
   final String threadLabel, jumpLabel, backLabel, closeLabel;
@@ -134,6 +135,9 @@ class RaftThreadHeader extends StatelessWidget {
   final double? viewportWidth, viewportHeight;
   final Key? backKey, closeKey, jumpKey;
 
+  /// Source pending channel resolution has a plain PanelHeader title.
+  final bool interactiveTitle;
+
   @override
   Widget build(BuildContext context) {
     final tokens = RaftTokens.of(context);
@@ -143,6 +147,18 @@ class RaftThreadHeader extends StatelessWidget {
       viewportWidth: viewportWidth ?? viewport.width,
       viewportHeight: viewportHeight ?? viewport.height,
       presentation: presentation,
+    );
+    Widget title() => Text.rich(
+      TextSpan(
+        text: threadLabel,
+        style: recipe.title,
+        children: [
+          if (parentLabel != null)
+            TextSpan(text: ' — $parentLabel', style: recipe.titleSuffix),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -173,38 +189,30 @@ class RaftThreadHeader extends StatelessWidget {
                 SizedBox(width: recipe.headerGap),
               ],
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) => RaftControl(
-                    key: jumpKey,
-                    recipe: _ThreadTitleRecipe(tokens),
-                    onPressed: onJumpToStart,
-                    tooltip: jumpLabel,
-                    semanticLabel: jumpLabel,
-                    visualHeight: 40,
-                    visualWidth: constraints.maxWidth,
-                    padding: EdgeInsets.zero,
-                    child: Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: ExcludeSemantics(
-                        child: Text.rich(
-                          TextSpan(
-                            text: threadLabel,
-                            style: recipe.title,
-                            children: [
-                              if (parentLabel != null)
-                                TextSpan(
-                                  text: ' — $parentLabel',
-                                  style: recipe.titleSuffix,
-                                ),
-                            ],
+                child: !interactiveTitle
+                    ? Semantics(
+                        header: true,
+                        child: Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: title(),
+                        ),
+                      )
+                    : LayoutBuilder(
+                        builder: (context, constraints) => RaftControl(
+                          key: jumpKey,
+                          recipe: _ThreadTitleRecipe(tokens),
+                          onPressed: onJumpToStart,
+                          tooltip: jumpLabel,
+                          semanticLabel: jumpLabel,
+                          visualHeight: 40,
+                          visualWidth: constraints.maxWidth,
+                          padding: EdgeInsets.zero,
+                          child: Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: ExcludeSemantics(child: title()),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    ),
-                  ),
-                ),
               ),
               if (followers != null ||
                   actions.isNotEmpty ||

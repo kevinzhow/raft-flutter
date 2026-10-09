@@ -105,11 +105,37 @@ Remaining work is explicit:
   identities and model Back cases are not mounted-surface acceptance.
 - Live typed Search query/filter writeback and Agent-tab URI synchronization
   still need their page adapters. Initial query projection is implemented.
-- Canonical pending thread parent/channel loading needs the adjacent chat
-  identity change and Source-specific pending header/body rules. This batch
-  retains the URI shell without fabricating a parent record.
+- Canonical pending thread identity is handled by the adjacent chat change
+  and the bounded header follow-up described below. Its native process parity
+  still requires the paired runner; widget evidence does not replace that run.
 - The Source feature-gated Activity sidebar/switcher and Done/unfollow entry
   remain absent. The existing native flow failure at the obsolete Filters entry
   remains a failure; protocol-only controls tests do not replace that UI flow.
 - Desktop rail/group/DM visual differences and full visual/native acceptance
   are separate follow-up work. This batch produces no new pixel or native claim.
+
+## Pending thread header follow-up
+
+After chat dependency `86c46f9`, the actual workspace shell follows pinned
+`components/message/ThreadPanel.tsx:2236–2290`: unresolved channel identity has
+a plain Thread header with Back/Close and no parent suffix, jump-title control,
+menu, tabs or composer. Once the real thread channel resolves, the source
+channel suffix and permitted composer return independently of parent metadata.
+The menu appears only after an accepted real parent arrives. The SDK header's
+existing interactive title remains the default for resolved threads.
+
+Calls that already published their owning URI retire thread data using
+`closeThread(navigate: false)`. User thread closure retains the controller's
+Source replace behavior and sibling query identities; no second navigation
+write is introduced by data retirement.
+
+`.local/navigation-pending-header-final.log` records **45 PASS**, including
+the six actual workspace transitions (three themes, widths 390/1280) and existing
+desktop/mobile navigation and SDK header geometry/paint contracts. Analysis is
+clean in `.local/navigation-pending-analyze-corrected.log`. The first failed
+receipt `.local/navigation-pending-header.log` remains: narrow headers live
+above their timeline surface, and mounting the genuine late-parent menu issues
+its followed-state request, which the corrected fixture answers and drains.
+That original run also contains three obsolete Flyer Chat loading expectations
+handled separately by the integration owner against Source's loading body.
+No native execution or new visual parity is claimed by this header follow-up.
