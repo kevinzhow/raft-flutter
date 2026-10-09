@@ -138,6 +138,30 @@ class _RaftChatViewState extends State<RaftChatView> {
   void initState() {
     super.initState();
     viewport.addListener(timelineScrolled);
+    if (!widget.thread &&
+        w.channelLoading &&
+        w.pendingMessageContextChannelId == w.channel?.id &&
+        rows.isNotEmpty) {
+      // The accepted bucket is available before the first preview layout.
+      // Seed its real Flyer adapter synchronously: there is no earlier view
+      // to retain underneath a hidden replacement at this first mount.
+      adapter.dispose();
+      adapter = chat.InMemoryChatController(
+        messages: [
+          for (final m in rows)
+            chat.Message.custom(
+              id: m.id,
+              authorId: m.senderId.isEmpty ? 'system' : m.senderId,
+              createdAt: m.createdAt,
+              metadata: m.json,
+            ),
+        ],
+      );
+      scope = w.channel?.id;
+      // A later accepted response must use its own staging adapter.
+      adapterWindow = null;
+      initialEndPending = false;
+    }
     widget.viewportHandle?.bind(this, jumpToBeginning);
     referenceDirectory = MessageReferenceDirectory(w)
       ..addListener(referencesChanged);
@@ -1848,8 +1872,11 @@ class _RaftChatViewState extends State<RaftChatView> {
         chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
           controller: timelineViewport,
           presentationActive: presentationActive,
-          enabled: !widget.thread && w.highlightedMessageId == null,
-          contentReady: !loading,
+          enabled:
+              !widget.thread &&
+              (w.highlightedMessageId == null ||
+                  loading && timelineAdapter.messages.isNotEmpty),
+          contentReady: !loading || timelineAdapter.messages.isNotEmpty,
           onInitialReady: () {
             if (mounted &&
                 listRevision == anchorRevision &&
