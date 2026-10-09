@@ -11,6 +11,7 @@ import 'recipes/progress.g.dart';
 import 'recipes/checkbox_indicator.g.dart';
 import 'design_primitives.dart';
 import 'recipes/recipe_runtime.dart';
+import 'recipes/recipe_utilities.g.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -447,8 +448,8 @@ class _CheckMarkPainter extends CustomPainter {
 /// label / percent row (`mb-1 flex justify-between text-xs font-mono
 /// text-foreground-muted theme-brutal:text-black/60`) and the recipe track +
 /// indicator. Indeterminate renders the `w-1/2` stripe; its
-/// `raft-progress-indeterminate` keyframes are not defined in raft-ui or the
-/// Web CSS, so it is static there too.
+/// Indeterminate motion remains a Flutter gap: Source defines 1.4s brutal
+/// and 1.6s elegant keyframes; this widget currently renders a static stripe.
 class RaftProgressBar extends StatelessWidget {
   const RaftProgressBar({
     super.key,
@@ -487,21 +488,32 @@ class RaftProgressBar extends StatelessWidget {
       ),
       tokens: rt,
     );
-    Color? rootVar(String name) =>
-        RaftColorRef.fromCss(s.root[name])?.resolve(rt);
-    final trackFill = s.track.backgroundColor?.resolve(rt) ??
-        rootVar('--progress-track');
-    final indicatorFill = rootVar('--progress-indicator');
-    final radius = s.indicator.borderRadius;
-    final indicator = DecoratedBox(
-      decoration: BoxDecoration(color: indicatorFill, borderRadius: radius),
-    );
+    // The indicator and track inherit Progress's local CSS variables. Resolve
+    // their classes together with the root declarations before painting;
+    // resolving an isolated slot loses --progress-color in the dark glow.
+    RaftSlotStyle inheritRoot(RaftSlotStyle slot) =>
+        raftRecipeEngine.resolveSlot(
+          [
+            for (final name in {...s.root.classes, ...slot.classes})
+              raftRecipeUtilities.indexWhere((utility) => utility.name == name),
+          ],
+          t.recipeStates(
+            extra: [
+              'group/progress:data-size=${size.css}',
+              if (pct >= 100) 'group/progress:data-complete',
+            ],
+          ),
+          rt,
+        );
+    final trackStyle = inheritRoot(s.track);
+    final indicatorStyle = inheritRoot(s.indicator);
+    final indicator = RaftRecipeBox(style: indicatorStyle, tokens: rt);
     final track = RaftRecipeBox(
-      style: s.track,
+      style: trackStyle,
       tokens: rt,
       width: double.infinity,
-      clip: true,
-      decorationOverride: (d) => d.copyWith(color: trackFill),
+      // Source dark determinate tracks allow the indicator's outer glow.
+      clip: !(t.dark && !indeterminate),
       child: Align(
         alignment: Alignment.centerLeft,
         child: FractionallySizedBox(

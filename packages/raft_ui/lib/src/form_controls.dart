@@ -260,6 +260,9 @@ class _RaftTextInputState extends State<RaftTextInput>
           disabled: !widget.enabled,
           extra: [
             if (focused) RaftRecipeStates.focus,
+            // Editable text inputs match :focus-visible even after pointer
+            // focus; Source's autofocus Input also exposes its focus ring.
+            if (focused) RaftRecipeStates.focusVisible,
             if (widget.invalid) 'data-invalid',
           ],
         ),

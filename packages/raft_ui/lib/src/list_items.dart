@@ -12,6 +12,7 @@ import 'recipes/button_variants.g.dart';
 
 import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
+import 'recipes/recipe_utilities.g.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -73,11 +74,42 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
     final rt = t.recipeTokens;
     final interactive = widget.interactive ?? widget.onTap != null;
     final hover = interactive && hovered;
-    final card = RaftCardRecipe.resolve(
+    var card = RaftCardRecipe.resolve(
       theme: t.recipeTheme,
       states: t.recipeStates(),
       tokens: rt,
     ).root;
+    if (!t.brutal) {
+      // Source Card + SurfaceListItem caller classes. The mounted Web uses a
+      // 1px border; dark:border-transparent remains more specific than the
+      // caller's unprefixed border color. Re-resolve the complete shadow so a
+      // selected/hovered surface does not retain the default Card inset.
+      final classes = [
+        ...card.classes.where(
+          (name) =>
+              name != 'border-[0.5px]' &&
+              name != 'border-line-muted' &&
+              name != 'bg-layer-panel' &&
+              (!(widget.selected || hover) || name != 'shadow-raft-xs'),
+        ),
+        'border',
+        widget.selected ? 'border-info' : 'border-line-muted',
+        widget.selected ? 'bg-info-muted' : 'bg-layer-card',
+        if (widget.selected) 'shadow-raft-sm',
+        if (interactive && !widget.selected) ...[
+          'hover:border-line-strong',
+          'hover:shadow-raft-sm',
+        ],
+      ];
+      card = raftRecipeEngine.resolveSlot(
+        [
+          for (final name in classes)
+            raftRecipeUtilities.indexWhere((utility) => utility.name == name),
+        ],
+        t.recipeStates(hovered: hover),
+        rt,
+      );
+    }
     List<BoxShadow> shadow(RaftShadow s) => [
       for (final l in s.layers.reversed)
         if (!l.inset)
@@ -88,33 +120,15 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
             spreadRadius: l.spread,
           ),
     ];
-    BoxDecoration override(BoxDecoration d) {
-      final s = t.semantic;
-      if (t.brutal) {
-        return d.copyWith(
-          color: widget.selected
-              ? t.product.brutalCyan.withValues(alpha: .15)
-              : RaftPrimitiveColors.white,
-          border: Border.all(color: RaftPrimitiveColors.black, width: 2),
-          boxShadow: widget.selected || hover
-              ? shadow(RaftProductShadows.shadowBrutalSm)
-              : null,
-        );
-      }
-      final width = (d.border as Border?)?.top.width ?? 1;
-      return d.copyWith(
-        color: widget.selected ? s.infoMuted : s.layerCard,
-        border: Border.all(
-          width: width,
-          color: widget.selected
-              ? s.info
-              : hover
-              ? s.lineStrong
-              : s.lineMuted,
-        ),
-        boxShadow: widget.selected || hover ? shadow(t.themeShadows.sm) : null,
-      );
-    }
+    BoxDecoration brutalDecoration(BoxDecoration decoration) => decoration.copyWith(
+      color: widget.selected
+          ? t.product.brutalCyan.withValues(alpha: .15)
+          : RaftPrimitiveColors.white,
+      border: Border.all(color: RaftPrimitiveColors.black, width: 2),
+      boxShadow: widget.selected || hover
+          ? shadow(RaftProductShadows.shadowBrutalSm)
+          : null,
+    );
 
     Widget item = RaftRecipeBox(
       style: card,
@@ -122,7 +136,7 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
       width: double.infinity,
       padding: widget.padding,
       clip: true,
-      decorationOverride: override,
+      decorationOverride: t.brutal ? brutalDecoration : null,
       child: widget.child,
     );
     if (interactive) {

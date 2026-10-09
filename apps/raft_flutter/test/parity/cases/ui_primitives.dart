@@ -762,7 +762,7 @@ Widget _surfaceItemBody(String title, String detail) => Builder(
             fontSize: 14,
             height: 20 / 14,
             fontWeight: FontWeight.w700,
-            color: t.ink,
+            color: Colors.black,
           ),
         ),
         const SizedBox(height: 4),
@@ -772,7 +772,7 @@ Widget _surfaceItemBody(String title, String detail) => Builder(
             t,
             size: 12,
             line: 16,
-            color: t.ink.withValues(alpha: .5),
+            color: Colors.black.withValues(alpha: .5),
           ),
         ),
       ],
@@ -782,7 +782,7 @@ Widget _surfaceItemBody(String title, String detail) => Builder(
 
 final ParityCase _surfaceListItem = ParityCase(
   widgets: const ['raft_ui:RaftSurfaceListItem'],
-  notes: 'Row text is the fixture child markup.',
+  notes: 'Row text is the Source fixture child markup: text-black and text-black/50 in every theme.',
   build: (ctx) => _frame(
     ctx,
     height: 182,
