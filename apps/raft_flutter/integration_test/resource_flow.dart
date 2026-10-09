@@ -1,6 +1,8 @@
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -198,6 +200,14 @@ Future<void> verifyAdvancedTaskFilters(
       }
       await tester.ensureVisible(option);
       await tester.pumpAndSettle();
+      // A catalog revocation can arrive while scrolling this private review.
+      // Reopen against fresh authority; never tap a disposed/previous choice.
+      if (!reviewedState.mounted ||
+          !identical(reviewedState, state()) ||
+          reviewedState.acceptedAuthority != reviewedState.authority ||
+          option.evaluate().isEmpty) {
+        throw StateError('Task filter authority changed before the actual tap.');
+      }
       await tester.tap(option);
       await tester.pumpAndSettle();
     }
@@ -353,6 +363,25 @@ Future<void> verifyActivityThreadLifecycle(
         await mouse.addPointer(location: tester.getCenter(tile));
         await mouse.moveTo(tester.getCenter(tile));
         await tester.pump(const Duration(milliseconds: 200));
+      }
+      // Source ThreadsInbox exposes follow/unfollow in the row context menu;
+      // the hover action is exclusively done/restore.
+      if (tooltip == 'Unfollow thread' || tooltip == 'Follow thread') {
+        final point = tester.getTopLeft(tile) + const Offset(16, 16);
+        if (defaultTargetPlatform == TargetPlatform.linux) {
+          final press = await tester.startGesture(point,
+              kind: PointerDeviceKind.mouse, buttons: kSecondaryMouseButton);
+          await press.up();
+        } else {
+          await tester.longPressAt(point);
+        }
+        await tester.pumpAndSettle();
+        final action = find.widgetWithText(RaftMenuItem,
+            tooltip == 'Unfollow thread' ? 'Unfollow' : 'Follow');
+        expect(action, findsOneWidget);
+        await tester.tap(action);
+        await loaded();
+        return;
       }
       final button = find.descendant(
         of: tile,
