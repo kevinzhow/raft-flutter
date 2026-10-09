@@ -1,5 +1,10 @@
 # N24 Activity gesture process evidence
 
+N24g controlled Linux behavior passes in all three themes against the integrated
+root baseline c17f149. These are native-engine layout/layer receipts with the
+physical-window and geometry limits below. They do not describe later Root
+product commits; old failures remain unchanged.
+
 This report separates `N24/channel-single`, `N24/thread-single`,
 `N24/channel-after-thread-single` and double-click gestures. The earlier desktop
 channel pair covers one gesture on one platform. It does not complete N24.
@@ -202,10 +207,68 @@ The private Linux thread pane remains x624/w816 versus Source x626/w814, and
 its focused reply wrapper remains62px versus36px. Its vertical center and
 independent parent acceptance are correct, but geometry/pixel parity is not
 claimed. Native Android and the root-integrated product require their own bound
-receipts. The cached-window failure after canonical Back remains open separately.
+receipts. This section predates the accepted-window correction below; its failed receipt
+remains unchanged.
 
 Pair admission also rejects identical missing/malformed Source or runtime
 fingerprints and missing native device/platform; it never infers Android from
 390px width or fills absent native identity with Linux defaults. Five receipt
 admission tests cover these failure boundaries. They are host unit checks,
 not renderer execution.
+
+
+## Root-baseline accepted-window correction: N24g
+
+After E f237e34 was integrated as rootc17f149, the exact previously failed
+subsequent-channel double fixture passes behavior admission in all three desktop
+themes. The tested private tree is identical to rootc17f149's full Git tree,
+`fc538e6b3eb0e603372c06ed8cedb686660de31b`; every native receipt records product
+SHA `2da7940f898e71ecbbc669ed9ebd9c92700c1c3cdd17c6b3fe68395e35b5fa9c`.
+This evidence belongs to that integrated baseline, rather than the earlier private
+a5edf345 tree or a later Root product. Root advanced to5e155f4 during capture;
+its typed Search callback changes alter the product hash and are outside these
+receipts. The verification owner accepted the completed c17 baseline and assigned
+full-app window verification separately.
+
+N24g maps to the unchanged fixture's `N24/channel-after-thread-double`
+requirement. Its exact input SHA remains
+`85bfcae038858f916e479734017c0d559523b23ef800749017125fe1b7e7a056`.
+Both providers bind Source input799c42a7… and runtimeba8f7cb5… as recorded above.
+
+| New pair under `.local/process-parity-c/` | Source layout/PNG | Native Linux layout/PNG | Outcome |
+| --- | --- | --- | --- |
+| `pair-n24g-root-v7-brutal-desktop.json` | 582/117 | 260/18 | BEHAVIOR_PASS_WITH_LIMITS |
+| `pair-n24g-root-v7-elegant-light-desktop.json` | 506/106 | 257/19 | BEHAVIOR_PASS_WITH_LIMITS |
+| `pair-n24g-root-v7-elegant-dark-desktop.json` | 482/101 | 237/19 | BEHAVIOR_PASS_WITH_LIMITS |
+
+Source receipts are `n24g-root-source-v7/source-<theme>-desktop`; native receipts
+are `n24g-root-flutter-v7-<theme>-desktop`. `n24g-root-v7-batch.json` binds the
+pair, result, renderer-manifest and raw-layout hashes, counts and retained failed
+receipts for all three cases. Native test exits and every individual Source/native
+receipt pass; renderer inventories match their manifests.
+
+While the context request is held, both sides restore the earlier accepted
+Android tail, close the preceding thread, and preserve the channel shell and
+composer. The restored tail keeps its initial checkpoint position on each side.
+The context response then accepts the target and centers it with highlight;
+canonical URI/expiry checkpoints match. The thread's independent parent/reply
+hydration checkpoints remain admitted. The cache ownership boundaries are
+specified in [the accepted bucket contract](accepted-context-bucket.md).
+
+The old v5 pair is still FAIL with byte SHA
+`eeca9008d546308d42bbc0fe1858430e002758eff7ea99501eeaa9771fb334d3`.
+Its native failed result retains byte SHA
+`7c8118e518a6d47f480d8a6eda1d7bc57b4122184ad3d3c5384e0cb2eddd7355`.
+The new passing attempts do not rewrite those failures.
+
+The configured layer viewport is1440×900, but these receipts report an actual
+Linux window957×689 at DPR1. They prove native Linux-engine layout and rasterized
+layers for the configured viewport; they do not prove the whole layout was
+visible in that physical window or provide physical-pointer input evidence.
+The greatest renderer timestamp gap is2.58 seconds. Unobserved paints remain
+unproven. In Brutal, the restored tail focus wrapper is93px in Source and62px
+in Flutter; both retain their own initial position. The canonical thread pane
+starts at x1042/width398 in Source and x1040/width400 in Flutter, with focused
+reply wrappers56/82px. These retained differences prevent any pixel-parity claim.
+Android, live authentication/socket, backend read-back and the remaining process
+matrix require separate evidence.
