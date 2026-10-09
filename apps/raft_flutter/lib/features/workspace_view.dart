@@ -840,6 +840,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   : null,
               onBack: dismissPanel,
               onSearchEntity: wide ? openDesktopEntity : null,
+              onSearchMessage: wide ? openDesktopSearchMessage : null,
               onActivityCanonical:
                   wide &&
                       activityFlag.masterDetail(
@@ -1281,6 +1282,52 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         pendingDesktopSelection = false;
         setState(() {});
       }
+    }
+  }
+
+  Future<void> openDesktopSearchMessage(Map<String, dynamic> row) async {
+    final channelId = row['channelId'], messageId = row['id'];
+    if (channelId is! String || messageId is! String) return;
+    if (row['channelType'] != 'thread') {
+      await openDesktopConversation(channelId, messageId);
+      return;
+    }
+    final parentChannelId = row['parentChannelId'],
+        parentMessageId = row['parentMessageId'];
+    if (parentChannelId is! String ||
+        parentMessageId is! String ||
+        channelId.isEmpty ||
+        parentChannelId.isEmpty ||
+        parentMessageId.isEmpty) {
+      return;
+    }
+    final scope = desktopAuthority;
+    desktopNavigation.bind(scope);
+    if (desktopNavigation.masterRoute != 'search') return;
+    // Source MessageSearchPage1281–1315 opens the typed hit directly. Its
+    // channelId is the thread itself, never the selected main conversation.
+    final ticket = desktopNavigation.selectTarget(
+      DesktopContentTarget(
+        DesktopContentKind.thread,
+        channelId,
+        channelId: parentChannelId,
+        parentMessageId: parentMessageId,
+        messageId: messageId,
+      ),
+    );
+    pendingDesktopSelection = false;
+    setState(() {});
+    await w.openThreadIdentity(
+      parentChannelId: parentChannelId,
+      parentMessageId: parentMessageId,
+      focusedMessageId: messageId,
+      initialThreadChannelId: channelId,
+      navigate: false,
+    );
+    if (mounted &&
+        scope == desktopAuthority &&
+        desktopNavigation.accepts(desktopAuthority, ticket)) {
+      setState(() {});
     }
   }
 

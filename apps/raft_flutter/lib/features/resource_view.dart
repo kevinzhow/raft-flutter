@@ -31,6 +31,7 @@ class ResourceView extends StatefulWidget {
     this.initialSearchChannelId,
     this.initialSearchDeferUntilQuery = false,
     this.onSearchEntity,
+    this.onSearchMessage,
     this.onActivityItem,
     this.onActivityCanonical,
     this.searchMemory,
@@ -56,6 +57,10 @@ class ResourceView extends StatefulWidget {
   final SearchMemoryStore? searchMemory;
   final bool restoreSearchState;
   final Future<void> Function(SearchEntity)? onSearchEntity;
+
+  /// Typed Source search hits retain thread and parent identities for the
+  /// owning route. Embedded consumers may keep the ordinary message callback.
+  final Future<void> Function(Map<String, dynamic>)? onSearchMessage;
   final Future<void> Function(Map<String, dynamic>)? onActivityItem;
 
   /// Mounted Source master/detail arbitration: a second activation navigates
@@ -1017,7 +1022,11 @@ class _ResourceViewState extends State<ResourceView> {
     setState(() => selectedSearchKey = 'message:$message');
     final committed = query.text;
     rememberSearchOpen(scope, queryText: committed);
-    await widget.onMessage(channel, message);
+    if (widget.onSearchMessage case final open?) {
+      await open(row);
+    } else {
+      await widget.onMessage(channel, message);
+    }
   }
 
   Future<void> openSearchEntity(SearchEntity entity, String scope) async {
