@@ -70,3 +70,28 @@ and the mounted Activity handler. Consult the
 Authentication, Socket.IO, backend read-back, Android, real permission changes
 and final visual parity remain separate evidence. These read POSTs prove client
 presentation gating against the controlled endpoint.
+
+## Android transport (caller-owned device)
+
+Android fetches the exact raw fixture bytes from `/__process/fixture`, checks
+fixture SHA against host declaration and runtime state, and writes only a new
+named subdirectory of its own `getTemporaryDirectory()` cache. Host product/test
+hashes are required because Android does not have the Git checkout. Receipts
+record actual OS/device, physical size/DPR and configured390/1440 viewport;
+Linux390 is still Linux. The fixture client uses MemorySessionStore, mock
+preferences, no persistent WorkspaceCache and no socket; main/auth/secure-store
+entrypoints never execute. Existing account/keyring data is not cleared.
+
+After starting the isolated runtime, the device owner runs:
+
+```sh
+tool/process-parity/capture-android.sh <exact-fixture.json> <new-host-output> brutal mobile emulator-5580
+```
+
+This wrapper verifies served bytes before installation, binds host input hashes,
+sets `adb reverse tcp:15413 tcp:15413`, runs the actual integration entrypoint,
+then reads only its named cache directory with `run-as app.raft.raft_flutter`.
+Use `RAFT_PROCESS_PORT` for an independently owned fixture port. It preserves
+native failure exit/log and attempts artifact readback even on a failed test.
+It does not clear app data or remove retained device artifacts. Device execution
+is **NOT RUN** by this tool author; the device owner must provide actual proof.

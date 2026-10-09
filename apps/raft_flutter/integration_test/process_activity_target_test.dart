@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
@@ -40,7 +41,18 @@ void main() {
     'actual Activity target keeps accepted rows while gated context waits',
     (t) async {
       const fixturePath = String.fromEnvironment('RAFT_PROCESS_FIXTURE');
-      const outPath = String.fromEnvironment('RAFT_PROCESS_OUT');
+      const configuredOut = String.fromEnvironment('RAFT_PROCESS_OUT');
+      const hostProductSha = String.fromEnvironment('RAFT_PROCESS_PRODUCT_SHA');
+      const hostTestSha = String.fromEnvironment('RAFT_PROCESS_TEST_SHA');
+      const expectedFixtureSha = String.fromEnvironment(
+        'RAFT_PROCESS_FIXTURE_SHA',
+      );
+      const device = String.fromEnvironment(
+        'RAFT_PROCESS_DEVICE',
+        defaultValue: 'linux-xvfb',
+      );
+      final provider =
+          'Flutter real WorkspaceView / ${Platform.operatingSystem} / $device';
       const base = String.fromEnvironment(
         'RAFT_PROCESS_BASE',
         defaultValue: 'http://127.0.0.1:15413',
@@ -53,18 +65,66 @@ void main() {
         'RAFT_PROCESS_FORM',
         defaultValue: 'desktop',
       );
-      if (fixturePath.isEmpty || outPath.isEmpty) {
+      if (configuredOut.isEmpty ||
+          (!Platform.isAndroid && fixturePath.isEmpty)) {
         throw StateError('Process fixture and output required.');
+      }
+      String outPath;
+      if (Platform.isAndroid) {
+        if (device == 'linux-xvfb') {
+          throw StateError(
+            'Android requires an explicit device receipt label.',
+          );
+        }
+        if (!RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]*$').hasMatch(configuredOut)) {
+          throw StateError(
+            'Android output must be a private-cache directory name.',
+          );
+        }
+        for (final value in [hostProductSha, hostTestSha, expectedFixtureSha]) {
+          if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(value)) {
+            throw StateError(
+              'Android requires exact fixture/product/test input hashes.',
+            );
+          }
+        }
+        outPath = '${(await getTemporaryDirectory()).path}/$configuredOut';
+      } else {
+        outPath = configuredOut;
       }
       final out = Directory(outPath);
       if (out.existsSync()) {
         throw StateError('Refusing to overwrite process evidence: $outPath');
       }
       out.createSync(recursive: true);
-      final bytes = File(fixturePath).readAsBytesSync();
+      debugPrint('Process evidence: $outPath ($provider)');
+      List<int> bytes;
+      if (Platform.isAndroid) {
+        final io = HttpClient();
+        try {
+          final response = await (await io.getUrl(
+            Uri.parse('$base/__process/fixture'),
+          )).close();
+          if (response.statusCode != 200) {
+            throw StateError('Controlled fixture unavailable');
+          }
+          final buffer = BytesBuilder(copy: false);
+          await for (final chunk in response) {
+            buffer.add(chunk);
+          }
+          bytes = buffer.takeBytes();
+        } finally {
+          io.close(force: true);
+        }
+      } else {
+        bytes = File(fixturePath).readAsBytesSync();
+      }
       final fixture = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
       final flow = Map<String, dynamic>.from(fixture['process']);
       final fixtureSha = sha256.convert(bytes).toString();
+      if (expectedFixtureSha.isNotEmpty && fixtureSha != expectedFixtureSha) {
+        throw StateError('Fixture bytes differ from declared immutable input.');
+      }
       final size = form == 'mobile'
           ? const Size(390, 844)
           : const Size(1440, 900);
@@ -75,27 +135,39 @@ void main() {
       final renderJobs = <Future<void>>[];
       final renderDir = Directory('$outPath/renderer-frames')..createSync();
       var lastRenderedState = '';
-      final inputFiles =
-          Process.runSync('git', [
-                'ls-files',
-                '-z',
-                '--',
-                'apps/raft_flutter/lib',
-                'packages',
-                'pubspec.yaml',
-                'pubspec.lock',
-              ], workingDirectory: '../..').stdout
-              .toString()
-              .split('\x00')
-              .where((path) => path.isNotEmpty)
-              .toList()
-            ..sort();
-      final productBytes = BytesBuilder(copy: false);
-      for (final path in inputFiles) {
-        productBytes.add(utf8.encode('$path\x00'));
-        productBytes.add(File('../../$path').readAsBytesSync());
+      String productSha, testSha;
+      if (Platform.isAndroid) {
+        productSha = hostProductSha;
+        testSha = hostTestSha;
+      } else {
+        final inputFiles =
+            Process.runSync('git', [
+                  'ls-files',
+                  '-z',
+                  '--',
+                  'apps/raft_flutter/lib',
+                  'packages',
+                  'pubspec.yaml',
+                  'pubspec.lock',
+                ], workingDirectory: '../..').stdout
+                .toString()
+                .split('\x00')
+                .where((path) => path.isNotEmpty)
+                .toList()
+              ..sort();
+        final productBytes = BytesBuilder(copy: false);
+        for (final path in inputFiles) {
+          productBytes.add(utf8.encode('$path\x00'));
+          productBytes.add(File('../../$path').readAsBytesSync());
+        }
+        productSha = sha256.convert(productBytes.takeBytes()).toString();
+        testSha = sha256
+            .convert(
+              File('integration_test/process_activity_target_test.dart')
+                  .readAsBytesSync(),
+            )
+            .toString();
       }
-      final productSha = sha256.convert(productBytes.takeBytes()).toString();
       final stages = <Map<String, dynamic>>[];
       final failures = <String>[];
       void check(dynamic actual, dynamic matcher, String label) {
@@ -278,7 +350,10 @@ void main() {
         stages.add({'name': name, 'frame': frame});
         File('$outPath/progress.json').writeAsStringSync(
           jsonEncode({
-            'provider': 'Flutter real WorkspaceView / Linux',
+            'provider': provider,
+            'device': device,
+            'platform': Platform.operatingSystem,
+            'testSha': testSha,
             'fixtureSha': fixtureSha,
             'productSha': productSha,
             'sourceHead': initial['sourceHead'],
@@ -287,6 +362,11 @@ void main() {
             'theme': theme,
             'form': form,
             'viewport': {'width': size.width, 'height': size.height},
+            'actualPhysicalSize': {
+              'width': t.view.physicalSize.width,
+              'height': t.view.physicalSize.height,
+            },
+            'actualDevicePixelRatio': t.view.devicePixelRatio,
             'stages': stages,
             'failures': failures,
             'rendererFrameCount': renderFrames.length,
@@ -458,7 +538,10 @@ void main() {
             .toList();
         File('$outPath/result.json').writeAsStringSync(
           jsonEncode({
-            'provider': 'Flutter real WorkspaceView / Linux',
+            'provider': provider,
+            'device': device,
+            'platform': Platform.operatingSystem,
+            'testSha': testSha,
             'fixtureSha': fixtureSha,
             'productSha': productSha,
             'sourceHead': initial['sourceHead'],
@@ -468,6 +551,11 @@ void main() {
             'theme': theme,
             'form': form,
             'viewport': {'width': size.width, 'height': size.height},
+            'actualPhysicalSize': {
+              'width': t.view.physicalSize.width,
+              'height': t.view.physicalSize.height,
+            },
+            'actualDevicePixelRatio': t.view.devicePixelRatio,
             'stages': stages,
             'requests': requests,
             'failures': failures,

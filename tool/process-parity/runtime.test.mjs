@@ -1,7 +1,7 @@
 // The fixture must fail missing routes and hold real responses; no empty success.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { lookup, startRuntime } from './fixture-runtime.mjs';
@@ -18,10 +18,12 @@ test('held success and explicit denial retain request chronology and do not leak
   const fixturePath = join(dir, 'fixture.json');
   writeFileSync(fixturePath, JSON.stringify({ routes: { 'GET /test-target': { id: 'target' }, 'GET /test-denial': { __status: 403, body: { error: 'FORBIDDEN' } } } }));
   const source = process.env.RAFT_SOURCE ?? '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source';
-  const runtime = await startRuntime({ source, fixturePath, out: join(dir, 'run'), port: 15414 });
+  const runtime = await startRuntime({ source, fixturePath, out: join(dir, 'run'), port: Number(process.env.RAFT_PROCESS_TEST_PORT ?? 15414) });
   const getState = async () => (await fetch(`${runtime.base}/__process/state`)).json();
   const waitFor = async check => { for (let i = 0; i < 100; i++) { const state = await getState(); if (check(state)) return state; await new Promise(r => setTimeout(r, 10)); } throw new Error('Runtime gate timeout'); };
   try {
+    const served = await (await fetch(`${runtime.base}/__process/fixture`)).text();
+    assert.equal(served, readFileSync(fixturePath, 'utf8'));
     const missing = await fetch(`${runtime.base}/api/never-seeded`);
     assert.equal(missing.status, 404); assert.equal((await missing.json()).error, 'FIXTURE_MISSING');
     await fetch(`${runtime.base}/__process/arm?key=GET%20%2Ftest-target`);

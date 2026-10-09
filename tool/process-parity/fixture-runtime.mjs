@@ -53,6 +53,11 @@ export async function startRuntime({ source, fixturePath, out, port }) {
   const plugin = { name: 'source-process-fixture', configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
       const url = new URL(req.url ?? '/', 'http://fixture.invalid');
+      if (url.pathname === '/__process/fixture') {
+        record({ kind: 'fixture-bytes', fixtureSha });
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(fixtureBytes);
+      }
       if (url.pathname === '/__process/state') return json(res, { fixtureSha, sourceHead, sourceInputSha, runtimeSha, requests, armed: [...armed], held: [...held].map(([key, list]) => ({ key, count: list.length })) });
       if (url.pathname === '/__process/arm') {
         const key = url.searchParams.get('key');

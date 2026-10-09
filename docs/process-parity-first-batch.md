@@ -2,8 +2,8 @@
 
 This is a working detector and first paired execution, **not completed process
 parity**. It implements Activity → uncached target in a previously accepted
-channel. The current real Linux pair is **FAIL**: model retains old accepted
-seq200 row, but the first mounted pending preview does not paint it. Release,
+channel. The initial real Linux pair is **FAIL**: model retains old accepted
+seq200 row, but the first mounted pending preview did not paint it. After Source-derived sparse first-layout repair36124a7, exact detector32a591f executes **PASS with limits**; earlier failures stay intact. Release,
 canonical target centering, highlight and expiry now complete without the
 previous animation-list crash. The repair remains owned by the message view.
 
@@ -45,6 +45,7 @@ Artifacts are under `/home/kevinzhow/github/raft-flutter-wt/cody-parallel-member
 | flutter-v9-brutal-desktop | Actual complete FAIL receipt: first pending old row absent; no animation-list crash. Center/highlight/expiry and read-frontier check pass.120 raw/layout observations; all raw states retained. |
 | flutter-v10-brutal-desktop | Final changed-state raster instrumentation executes: same pending-row FAIL, complete center/highlight/expiry checks;11 changed display-list PNGs. |
 | pair-v10-brutal-desktop.json | FAIL, preserving the final native receipt failure and Source/Flutter observations. |
+| flutter-v11-brutal-desktop / pair-v11-brutal-desktop.json | Exact committed detector after36124a7 PASS:85 layout observations/12 changed rasters, no pending old-row loss, first exposed target centered0px, highlight/expiry/read-frontier pass. Pair is BEHAVIOR_PASS_WITH_LIMITS. |
 | orchestrator-source-only | Actual standalone orchestration Source PASS, fixture hash identical; manifest labeled SOURCE_ONLY, owned runtime closed. |
 
 The earliest Source desktop DOM target observation differed by24px from final
@@ -65,8 +66,8 @@ independently. It never waits the first blank states away.
 The fixture runtime's two tests pass (specific query-window selection, exact
 404/403 behavior, held success/release chronology, aborted gate cleanup).
 The Source-only orchestrator executes successfully. New integration test
-analyzes clean and detects actual product behavior; its native flow remains
-FAIL. Python syntax, Node syntax, shell syntax and git whitespace are checked.
+analyzes clean and detects actual product behavior; its original native failure is retained; sparse one-row follow-up is
+PASS with limits. Python syntax, Node syntax, shell syntax and git whitespace are checked.
 
 Only one native paired variant has executed. Source renderer variants beyond
 brutal desktop, the other five process flows, Android, production authentication
@@ -77,4 +78,5 @@ bootstraps differ before their identical accepted Android-channel pre-state.
 
 Use [the runner](../tool/process-parity/README.md) to reproduce with a fresh
 output directory. Preserve each failure before retry; the owner of the message
-view repairs pending initial publication, then this pair must rerun.
+view repaired sparse pending initial publication and the exact pair was rerun.
+The separate long-window first-tail gap is retained as unproven.
