@@ -277,7 +277,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         controller: w,
         agentId: agentId,
       ),
-      AgentDetailTab.apps => AgentAppAccessView(controller: w, agentId: agentId),
+      AgentDetailTab.apps => AgentAppAccessView(
+        controller: w,
+        agentId: agentId,
+      ),
       AgentDetailTab.mcp => AgentMcpView(controller: w, agentId: agentId),
     };
   }
@@ -304,16 +307,16 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     final raw = a['createdAt'];
     final date = raw is String ? DateTime.tryParse(raw) : null;
     if (date == null) return '';
-    return DateFormat.yMMMd(
-      Localizations.localeOf(context).toLanguageTag(),
-    ).format(agentTimeFormatter(context, widget.controller).wallTime(date));
+    return DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
+        .format(agentTimeFormatter(context, widget.controller).wallTime(date));
   }
 
   Widget _profile(BuildContext context) {
     final t = RaftTokens.of(context);
     final canEdit = widget.canManage && a['deletedAt'] == null;
     final detail = widget.liveActivity?['detail'] ?? a['activityDetail'];
-    final status = widget.canViewPrivate && detail is String && detail.isNotEmpty
+    final status =
+        widget.canViewPrivate && detail is String && detail.isNotEmpty
         ? detail
         : raftText(context, _activityLabels[activity] ?? activity);
     final role = a['serverRole'];
@@ -427,20 +430,20 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             RaftInfoRow(
               label: raftText(context, 'Computer'),
               child: external
-                  ? Text(
+                  ? RaftCssText(
                       raftText(context, 'External runtime'),
                       style: RaftPanelText.muted(t),
                     )
                   : pending
                   ? const SizedBox.shrink()
                   : m != null
-                  ? Text(
+                  ? RaftCssText(
                       '${m['name']}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: RaftPanelText.monoSemibold(t),
                     )
-                  : Text(
+                  : RaftCssText(
                       raftText(context, 'No computer assigned'),
                       style: RaftPanelText.muted(t),
                     ),
@@ -452,12 +455,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
               ),
               RaftInfoRow(
                 label: raftText(context, 'Computer Version'),
-                child: Text(runLabel(m), style: RaftPanelText.mono(t)),
+                child: RaftCssText(runLabel(m), style: RaftPanelText.mono(t)),
               ),
             ],
             RaftInfoRow(
               label: raftText(context, 'Created'),
-              child: Text(createdDate(context)),
+              child: RaftCssText(createdDate(context)),
             ),
             RaftInfoRow(
               label: raftText(context, 'Creator'),
@@ -468,7 +471,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                       human: creator['type'] == 'human',
                       avatarUrl: creator['avatarUrl'] as String?,
                     )
-                  : Text(
+                  : RaftCssText(
                       raftText(context, 'No creator assigned'),
                       style: RaftPanelText.muted(t),
                     ),
@@ -723,9 +726,8 @@ class _AgentActivityTabState extends State<AgentActivityTab>
       emptyLabel: loading ? raftText(context, 'Loading…') : loadError,
       onCopy: () => Clipboard.setData(
         ClipboardData(
-          text: [
-            for (final e in entries) '${e['timestamp']} ${e['entry']}',
-          ].join('\n'),
+          text: [for (final e in entries) '${e['timestamp']} ${e['entry']}']
+              .join('\n'),
         ),
       ),
     );
@@ -757,7 +759,12 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
   }
 
   List<Map<String, dynamic>> _rows(dynamic v, String key) => [
-    for (final r in (v is Map ? v[key] ?? const [] : v is List ? v : const []))
+    for (final r
+        in (v is Map
+            ? v[key] ?? const []
+            : v is List
+            ? v
+            : const []))
       if (r is Map) Map<String, dynamic>.from(r),
   ];
 
