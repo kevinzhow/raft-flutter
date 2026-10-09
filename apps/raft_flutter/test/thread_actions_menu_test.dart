@@ -65,6 +65,9 @@ void main() {
           t.widget<RaftMenuItem>(entry).glyph,
           RaftGlyph.messageCirclePlus,
         );
+        await t.tap(find.byKey(const Key('thread-options')));
+        await t.pumpAndSettle();
+        expect(entry, findsNothing);
       }
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());

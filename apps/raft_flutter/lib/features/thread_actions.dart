@@ -35,6 +35,7 @@ class _ThreadActionsState extends State<ThreadActions> {
   String? error;
   late final String authority;
   OverlayEntry? menu;
+  final menuGroup = Object();
 
   @override
   void initState() {
@@ -156,6 +157,7 @@ class _ThreadActionsState extends State<ThreadActions> {
         ),
         top: rect.bottom + 4,
         child: TapRegion(
+          groupId: menuGroup,
           onTapOutside: (_) => closeMenu(),
           child: RaftMenuPanel(
             onDismiss: closeMenu,
@@ -215,10 +217,13 @@ class _ThreadActionsState extends State<ThreadActions> {
   @override
   Widget build(BuildContext context) => widget.menuMode
       ? Builder(
-          builder: (anchor) => RaftThreadOverflowAction(
-            key: const Key('thread-options'),
-            label: raftText(context, 'Thread options'),
-            onPressed: current ? () => openMenu(anchor) : null,
+          builder: (anchor) => TapRegion(
+            groupId: menuGroup,
+            child: RaftThreadOverflowAction(
+              key: const Key('thread-options'),
+              label: raftText(context, 'Thread options'),
+              onPressed: current ? () => openMenu(anchor) : null,
+            ),
           ),
         )
       : Padding(
