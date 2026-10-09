@@ -118,6 +118,62 @@ void main() {
       [row(1, 'valid')],
     );
   });
+  test('source lifecycle causes do not turn disconnect into stopped', () {
+    expect(
+      agentTrajectoryStatusDisplay(
+        'offline',
+        'network lost',
+        'machine_disconnected',
+      ),
+      (primary: 'Disconnected', secondary: ''),
+    );
+    expect(
+      agentTrajectoryStatusDisplay('offline', 'Stopped by Computer', 'stopped'),
+      (primary: 'Stopped', secondary: ' - Stopped by Computer'),
+    );
+    expect(agentTrajectoryStatusDisplay('offline', 'Stopped', 'stopped'), (
+      primary: 'Stopped',
+      secondary: '',
+    ));
+    expect(
+      agentTrajectoryStatusDisplay('offline', 'exit 1', 'runtime_crashed'),
+      (primary: 'Crashed', secondary: 'exit 1'),
+    );
+    expect(agentTrajectoryStatusDisplay('offline', 'duplicate reason', null), (
+      primary: 'Offline',
+      secondary: '',
+    ));
+    expect(agentTrajectoryStatusDisplay('working', 'launch argv', 'starting'), (
+      primary: 'Starting',
+      secondary: '',
+    ));
+    for (final (kind, label) in [
+      ('computer_started', 'Started'),
+      ('computer_restarted', 'Restarted'),
+      ('computer_upgraded', 'Upgraded'),
+    ]) {
+      expect(agentTrajectoryStatusDisplay('online', 'duplicate detail', kind), (
+        primary: label,
+        secondary: '',
+      ));
+    }
+    expect(
+      agentTrajectoryStatusDisplay(
+        'error',
+        'bad config',
+        'computer_operation_failed',
+      ),
+      (primary: 'Computer operation failed', secondary: 'bad config'),
+    );
+    expect(agentTrajectoryStatusDisplay('online', 'waiting', null), (
+      primary: 'Idle',
+      secondary: 'waiting',
+    ));
+    expect(agentTrajectoryStatusDisplay('unknown', 'verbatim', 'other'), (
+      primary: 'unknown',
+      secondary: 'verbatim',
+    ));
+  });
   for (final (family, mode) in [
     (RaftFamily.brutal, ThemeMode.light),
     (RaftFamily.elegant, ThemeMode.light),

@@ -789,15 +789,17 @@ class _AgentActivityTabState extends State<AgentActivityTab>
     final time = f.clock(item['timestamp'], seconds: true).toUpperCase();
     final kind = entry['kind'];
     final text = '${entry['text'] ?? ''}';
+    final status = agentTrajectoryStatusDisplay(
+      '${entry['activity']}',
+      '${entry['detail'] ?? ''}',
+      entry['detailKind'] as String?,
+    );
     return switch (kind) {
       'status' => RaftActivityLogEntry(
         time: time,
         dot: raftActivityDotColor(t, '${entry['activity']}'),
-        title: raftText(
-          context,
-          _activityLabels['${entry['activity']}'] ?? '${entry['activity']}',
-        ),
-        inlineDetail: '${entry['detail'] ?? ''}',
+        title: raftText(context, status.primary),
+        inlineDetail: status.secondary,
         compact: true,
       ),
       'tool_start' => RaftActivityLogEntry(

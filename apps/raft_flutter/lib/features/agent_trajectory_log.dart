@@ -82,3 +82,52 @@ List<Map<String, dynamic>> admittedAgentTrajectoryRows(dynamic value) => [
           ].every((key) => row[key] == null || row[key] is String))
         Map<String, dynamic>.from(row),
 ];
+
+/// AgentActivityLog.tsx resolveStatusDisplay: a machine disconnect is not a
+/// terminal stop. Secondary details are Source-owned display content, not status.
+({String primary, String secondary}) agentTrajectoryStatusDisplay(
+  String activity,
+  String detail,
+  String? detailKind,
+) {
+  if (activity == 'working' && detailKind == 'starting') {
+    return (primary: 'Starting', secondary: '');
+  }
+  if (activity == 'online') {
+    final lifecycle = switch (detailKind) {
+      'computer_started' => 'Started',
+      'computer_restarted' => 'Restarted',
+      'computer_upgraded' => 'Upgraded',
+      _ => null,
+    };
+    if (lifecycle != null) return (primary: lifecycle, secondary: '');
+  }
+  if (activity == 'error' && detailKind == 'computer_operation_failed') {
+    return (primary: 'Computer operation failed', secondary: detail);
+  }
+  if (activity == 'offline') {
+    final primary = switch (detailKind) {
+      'stopped' => 'Stopped',
+      'machine_disconnected' => 'Disconnected',
+      'runtime_crashed' => 'Crashed',
+      _ => 'Offline',
+    };
+    return (
+      primary: primary,
+      secondary: detailKind == 'runtime_crashed'
+          ? detail
+          : detailKind == 'stopped' && detail.isNotEmpty && detail != primary
+          ? ' - $detail'
+          : '',
+    );
+  }
+  return (
+    primary: switch (activity) {
+      'online' => 'Idle',
+      'thinking' => 'Thinking',
+      'working' => 'Working',
+      _ => activity,
+    },
+    secondary: detail,
+  );
+}
