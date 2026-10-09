@@ -283,7 +283,8 @@ void main() {
   }
   for (final (width, density, expectedHeight) in [
     (320.0, RaftDensity.desktop, 16.0),
-    (1200.0, RaftDensity.touch, 48.0),
+    // Original ui/ShowMoreToggle has no touch min-height/padding.
+    (1200.0, RaftDensity.touch, 16.0),
   ]) {
     testWidgets(
       'toggle density follows input contract at width $width/$density',
@@ -316,4 +317,44 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'generic touch target keeps 48px and receives a real touch outside its 16px visual content',
+    (tester) async {
+      var presses = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.elegant),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topLeft,
+              child: RaftDensityScope(
+                density: RaftDensity.touch,
+                child: RaftControl(
+                  visualHeight: 16,
+                  onPressed: () => presses++,
+                  child: const Text(
+                    'Touch target',
+                    style: TextStyle(fontSize: 11, height: 16 / 11),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final bounds = tester.getRect(find.byType(RaftControl));
+      final text = tester.getRect(find.text('Touch target'));
+      expect(bounds.height, 48);
+      final point = Offset(bounds.center.dx, bounds.bottom - 2);
+      expect(text.contains(point), isFalse);
+      final touch = await tester.startGesture(
+        point,
+        kind: PointerDeviceKind.touch,
+      );
+      await touch.up();
+      await tester.pump();
+      expect(presses, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
