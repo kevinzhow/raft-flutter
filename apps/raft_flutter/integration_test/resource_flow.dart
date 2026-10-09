@@ -19,6 +19,7 @@ Future<void> verifyAdvancedResources(
   required String messageId,
   required String query,
   required Future<void> Function(String) capture,
+  required Future<void> Function(String) navigate,
 }) async {
   Future<void> wait(bool Function() ready) async {
     for (var i = 0; i < 150; i++) {
@@ -46,7 +47,7 @@ Future<void> verifyAdvancedResources(
   }
 
   Future<void> section(String value) async {
-    w.setSection(value);
+    await navigate(value);
     await tester.pump(const Duration(milliseconds: 300));
     await loaded();
     if (value == 'activity') {
@@ -130,7 +131,7 @@ Future<void> verifyAdvancedResources(
     await loaded();
     await capture('native-activity-channel-query-grouping');
   } finally {
-    w.setSection('chat');
+    await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
   }
 }
@@ -142,6 +143,7 @@ Future<void> verifyAdvancedTaskFilters(
   required String taskId,
   required String channelName,
   required Future<void> Function(String) capture,
+  required Future<void> Function(String) navigate,
 }) async {
   dynamic state() => tester.state(find.byType(ResourceView));
   Future<void> loaded() async {
@@ -221,7 +223,7 @@ Future<void> verifyAdvancedTaskFilters(
   }
 
   try {
-    w.setSection('tasks');
+    await navigate('tasks');
     await loaded();
     for (
       var page = 0;
@@ -269,7 +271,7 @@ Future<void> verifyAdvancedTaskFilters(
     await tester.pump(const Duration(milliseconds: 200));
     expect(state().taskAdvanced.isEmpty, true);
   } finally {
-    w.setSection('chat');
+    await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
   }
 }
@@ -282,6 +284,7 @@ Future<void> verifyActivityThreadLifecycle(
   required String threadId,
   required String parentId,
   required Future<void> Function(String) capture,
+  required Future<void> Function(String) navigate,
 }) async {
   dynamic state() => tester.state(find.byType(ResourceView));
   final tile = find.byKey(ValueKey('activity-thread-$threadId'));
@@ -422,7 +425,7 @@ Future<void> verifyActivityThreadLifecycle(
   }
 
   try {
-    w.setSection('activity');
+    await navigate('activity');
     await locate();
     await rowAction('Mark conversation done');
     await view('Done conversations');
@@ -458,7 +461,7 @@ Future<void> verifyActivityThreadLifecycle(
       '/channels/threads/follow',
       data: {'parentMessageId': parentId},
     );
-    w.setSection('chat');
+    await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
   }
 }

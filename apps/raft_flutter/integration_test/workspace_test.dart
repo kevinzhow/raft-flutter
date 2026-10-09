@@ -53,7 +53,8 @@ Future<void> until(
 }
 
 Future<void> settingsTab(WidgetTester tester, String tab) async {
-  final destination = find.byKey(ValueKey('workspace-settings-nav-$tab'));
+  final destinationId = tab == 'language' ? 'language-region' : tab;
+  final destination = find.byKey(ValueKey('workspace-settings-nav-$destinationId'));
   if (destination.evaluate().isEmpty) {
     final mobileBack = find.byKey(const Key('mobile-settings-back'));
     await tester.tap(
@@ -69,7 +70,7 @@ Future<void> settingsTab(WidgetTester tester, String tab) async {
   await tester.pumpAndSettle();
   await until(
     tester,
-    () => find.byKey(ValueKey('settings-page-$tab')).evaluate().isNotEmpty,
+    () => find.byKey(ValueKey('settings-page-$destinationId')).evaluate().isNotEmpty,
   );
 }
 
@@ -542,7 +543,7 @@ Future<void> openAccountSettings(WidgetTester tester) async {
   if (mobileViewport(tester)) {
     await section(tester, 'settings');
   } else {
-    await tester.tap(find.byKey(const Key('account-navigation')));
+    await tester.tap(find.byKey(const Key('rail-settings')));
     await tester.pumpAndSettle();
   }
   await settingsTab(tester, 'account');
@@ -1284,6 +1285,7 @@ void main() {
       await verifyAdvancedTaskFilters(
         tester,
         w,
+        navigate: (name) => section(tester, name),
         taskId: createdTaskId,
         channelName: general.name,
         capture: (name) =>
@@ -1457,6 +1459,7 @@ void main() {
       await verifyAdvancedResources(
         tester,
         w,
+        navigate: (name) => section(tester, name),
         channelId: general.id,
         channelName: general.name,
         messageId: sent.id,
@@ -1467,6 +1470,7 @@ void main() {
       await verifyActivityThreadLifecycle(
         tester,
         w,
+        navigate: (name) => section(tester, name),
         threadId: verifiedThreadId,
         parentId: sent.id,
         capture: (name) => screenshot(tester, 'linux-$name'),
