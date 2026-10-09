@@ -223,8 +223,10 @@ void main() {
     );
   }
 
+  // The owner-only timer/transport checks below do not mount a product page.
+  // Only the three actual Chat cases above supply mounted K09f evidence.
   testWidgets(
-    '[K09f] boot owner cancels offline fallback at rooms and excludes connect/update/read-state wake fetches',
+    'boot owner cancels offline fallback at rooms and excludes connect/update/read-state wake fetches',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -257,7 +259,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] offline boot fallback performs one real inbox request without requiring Activity navigation',
+    'offline boot fallback performs one real inbox request without requiring Activity navigation',
     (tester) async {
       final (w, api, _) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -276,7 +278,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] one trailing reconcile accepts ready hydration and shares a completion without request storms',
+    'one trailing reconcile accepts ready hydration and shares a completion without request storms',
     (tester) async {
       final (w, api, _) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -310,7 +312,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] accepted page total supersedes old background response and denial fences pending acceptance',
+    'accepted page total supersedes old background response and denial fences pending acceptance',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -359,7 +361,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] HTTP denial recovery rejects pre-denial page and read receipts in the same server scope',
+    'HTTP denial recovery rejects pre-denial page and read receipts in the same server scope',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -408,7 +410,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] scope retirement rejects old server/principal/role snapshots and starts only current server load',
+    'scope retirement rejects old server/principal/role snapshots and starts only current server load',
     (tester) async {
       final (w, api, _) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -450,7 +452,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] Source mute policy ignores muted ingress but refreshes mentions, pre-mute history and thread context',
+    'Source mute policy ignores muted ingress but refreshes mentions, pre-mute history and thread context',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -514,7 +516,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] accepted read authority clears fully-read row without GET and persisted acknowledgement reconciles',
+    'accepted read authority clears fully-read row without GET and persisted acknowledgement reconciles',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -569,7 +571,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] a late old-scope persisted read cannot reconcile the new principal',
+    'a late old-scope persisted read cannot reconcile the new principal',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -606,7 +608,7 @@ void main() {
   );
 
   testWidgets(
-    '[K09f] accepted read revision rejects stale background count without display-sequence suppression',
+    'accepted read revision rejects stale background count without display-sequence suppression',
     (tester) async {
       final (w, api, client) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
