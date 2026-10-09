@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:flutter/gestures.dart' show kSecondaryMouseButton, kPrimaryMouseButton;
+import 'package:flutter/gestures.dart'
+    show kSecondaryMouseButton, kPrimaryMouseButton;
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,10 +51,6 @@ Future<void> verifyAdvancedResources(
     await navigate(value);
     await tester.pump(const Duration(milliseconds: 300));
     await loaded();
-    if (value == 'activity') {
-      await tester.tap(find.byTooltip('Filters'));
-      await tester.pump(const Duration(milliseconds: 200));
-    }
   }
 
   Future<void> menu(String title, String value) async {
@@ -106,30 +103,92 @@ Future<void> verifyAdvancedResources(
     await tester.pumpAndSettle();
     await capture('native-saved-authoritative-row');
     await tester.tap(savedRow);
-    await wait(() => w.section == 'chat' &&
-        w.channel?.id == channelId && w.highlightedMessageId == messageId);
+    await wait(
+      () =>
+          w.section == 'chat' &&
+          w.channel?.id == channelId &&
+          w.highlightedMessageId == messageId,
+    );
     await capture('native-saved-open-message');
 
     await section('activity');
-    // Activity facets may append authoritative counts to the channel label.
-    await tester.tap(find.byTooltip('Filter by channel'));
-    await tester.pump(const Duration(milliseconds: 300));
-    final option = find
-        .descendant(
-          of: find.byType(PopupMenuItem<String>),
-          matching: find.textContaining('#$channelName'),
-        )
-        .last;
-    await tester.tap(option);
-    await loaded();
-    await menu('Sort conversations', 'Oldest first');
-    await tester.tap(find.text('Group by channel'));
-    await tester.pump(const Duration(milliseconds: 200));
-    expect(state().advanced.groupByChannel, true);
-    await tester.enterText(find.byType(TextField), query);
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await loaded();
-    await capture('native-activity-channel-query-grouping');
+    // Pinned Source ThreadsInbox:1588–1604 mounts All/Unread/Mentions when
+    // activity_sidebar_inbox_v0 is off. Channel/query/sort facets at1620–1669
+    // belong to the separate enabled branch. This verifies the actual classic
+    // controls and independent backend readback, not an absent Filters toggle.
+    final flagPacket = await w.client.post(
+      '/feature-flags/evaluate',
+      data: {
+        'keys': ['activity_sidebar_inbox_v0'],
+        'serverId': w.server!.id,
+        'platform': switch (defaultTargetPlatform) {
+          TargetPlatform.android || TargetPlatform.iOS => 'mobile',
+          _ => 'web',
+        },
+      },
+    );
+    expect(flagPacket, isA<Map>());
+    expect(flagPacket['evaluations'], isA<List>());
+    expect(
+      (flagPacket['evaluations'] as List).whereType<Map>().any(
+        (entry) =>
+            entry['key'] == 'activity_sidebar_inbox_v0' &&
+            entry['enabled'] == true,
+      ),
+      isFalse,
+      reason: 'Classic Activity proof requires the actual experimental flag to be off',
+    );
+    final resource = find.byType(ResourceView);
+    expect(find.byTooltip('Filters'), findsNothing);
+    expect(
+      find.descendant(of: resource, matching: find.byType(TextField)),
+      findsNothing,
+    );
+    final control = find.descendant(
+      of: resource,
+      matching: find.byWidgetPredicate(
+        (widget) => widget is RaftSegmentedControl<String>,
+      ),
+    );
+    expect(control, findsOneWidget);
+    expect(
+      tester
+          .widget<RaftSegmentedControl<String>>(control)
+          .items
+          .map((item) => item.value),
+      ['all', 'unread', 'mentions'],
+    );
+    String rowKey(Map row) =>
+        '${row['kind']}:${row['threadChannelId'] ?? row['channelId'] ?? row['id']}:${row['parentMessageId'] ?? ''}';
+    for (final entry in const {
+      'all': 'All',
+      'unread': 'Unread',
+      'mentions': 'Mentions',
+    }.entries) {
+      await tester.tap(
+        find.descendant(of: control, matching: find.text(entry.value)),
+      );
+      await loaded();
+      expect(state().filter, entry.key);
+      expect(
+        tester.widget<RaftSegmentedControl<String>>(control).value,
+        entry.key,
+      );
+      final backend = await w.client.get(
+        '/channels/inbox',
+        query: {'filter': entry.key, 'limit': 30, 'offset': 0, 'sort': 'desc'},
+      );
+      final expected = backend is List ? backend : backend['items'];
+      expect(expected, isA<List>());
+      expect(
+        (state().rows as List).cast<Map>().map(rowKey).toList(),
+        (expected as List).cast<Map>().map(rowKey).toList(),
+        reason:
+            'Painted Activity data must match the independent $entry backend response',
+      );
+      expect(state().error, isNull);
+      await capture('native-activity-classic-${entry.key}');
+    }
   } finally {
     await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
@@ -208,7 +267,9 @@ Future<void> verifyAdvancedTaskFilters(
           !identical(reviewedState, state()) ||
           reviewedState.acceptedAuthority != reviewedState.authority ||
           option.evaluate().isEmpty) {
-        throw StateError('Task filter authority changed before the actual tap.');
+        throw StateError(
+          'Task filter authority changed before the actual tap.',
+        );
       }
       await tester.tap(option);
       await tester.pumpAndSettle();
@@ -362,9 +423,12 @@ Future<void> verifyActivityThreadLifecycle(
     TestGesture? mouse;
     try {
       if (RaftDensityScope.of(tester.element(tile)) == RaftDensity.desktop) {
-        mouse = createNativeMouse(tester, buttons:
-            tooltip == 'Unfollow thread' || tooltip == 'Follow thread'
-              ? kSecondaryMouseButton : kPrimaryMouseButton);
+        mouse = createNativeMouse(
+          tester,
+          buttons: tooltip == 'Unfollow thread' || tooltip == 'Follow thread'
+              ? kSecondaryMouseButton
+              : kPrimaryMouseButton,
+        );
         await mouse.addPointer(location: tester.getCenter(tile));
         await mouse.moveTo(tester.getCenter(tile));
         await tester.pump(const Duration(milliseconds: 200));
@@ -381,8 +445,10 @@ Future<void> verifyActivityThreadLifecycle(
           await tester.longPressAt(point);
         }
         await tester.pumpAndSettle();
-        final action = find.widgetWithText(RaftMenuItem,
-            tooltip == 'Unfollow thread' ? 'Unfollow' : 'Follow');
+        final action = find.widgetWithText(
+          RaftMenuItem,
+          tooltip == 'Unfollow thread' ? 'Unfollow' : 'Follow',
+        );
         expect(action, findsOneWidget);
         await tester.tap(action);
         await loaded();

@@ -29,6 +29,17 @@
         "minimum_layer": "mounted",
         "minimum_passes": 1,
         "title_zh": "父消息不会被高亮成回复"
+      },
+      {
+        "id": "N02c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "手机搜索打开讨论串保留身份和定位规则",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   },

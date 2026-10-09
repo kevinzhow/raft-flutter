@@ -330,13 +330,24 @@
         "id": "K09c",
         "minimum_layer": "mounted",
         "minimum_passes": 3,
-        "title_zh": "未读徽标使用对应配方"
+        "title_zh": "显式计数徽标组件使用对应配方"
       },
       {
         "id": "K09d",
         "minimum_layer": "mounted",
         "minimum_passes": 3,
         "title_zh": "标签栏高度和下划线"
+      },
+      {
+        "id": "K09e",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "真实左栏提醒点及侧栏未读计数采用各自配方",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   }

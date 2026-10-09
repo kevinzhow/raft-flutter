@@ -23,7 +23,7 @@ Future<void> drain(WidgetTester t) async {
 
 void main() {
   testWidgets(
-    'actual mode switch opens independent editor tabs and returns the classic window/draft',
+    '[N22c] actual mode switch keeps retained editors at the Source1023/1024 boundary',
     (t) async {
       final proofDir = Platform.environment['WORKSPACE_PROOF_DIR'];
       if (proofDir != null) await t.runAsync(loadParityFonts);
@@ -146,6 +146,20 @@ void main() {
       final editorState = t.state(edit);
       final editorController = t.widget<TextField>(edit).controller!;
       editorController.selection = const TextSelection.collapsed(offset: 3);
+      t.view.physicalSize = const Size(1023, 900);
+      await drain(t);
+      expect(find.byType(WorkspaceGridView), findsNothing);
+      expect(host.sessions.controllers['c2']!.foreground, false);
+      expect(find.byType(RaftComposer), findsOneWidget);
+      expect(t.takeException(), isNull);
+      t.view.physicalSize = const Size(1024, 900);
+      await drain(t);
+      expect(find.byType(WorkspaceGridView), findsOneWidget);
+      expect(t.state(edit), same(editorState));
+      expect(editorController.text, '新独立草稿');
+      expect(editorController.selection.baseOffset, 3);
+      expect(host.sessions.controllers['c2']!.foreground, true);
+      expect(t.takeException(), isNull);
       // Source lg breakpoint suspends grid ownership without destroying
       // retained desktop editors or laying out two groups at phone width.
       t.view.physicalSize = const Size(390, 900);
