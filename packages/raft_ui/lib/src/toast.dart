@@ -90,6 +90,7 @@ class RaftToastController extends ChangeNotifier {
     _timer?.cancel();
     if (_title == null) return;
     _title = null;
+    _paused = false;
     notifyListeners();
   }
 
@@ -130,6 +131,7 @@ class _RaftToastPortalState extends State<RaftToastPortal> {
 
   void changed() {
     if (widget.controller.title == null) {
+      hovered = focused = false;
       portal.hide();
     } else {
       portal.show();

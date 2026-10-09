@@ -103,6 +103,18 @@ void main() {
       expect(find.text('Latest'), findsOneWidget);
       await t.pump(const Duration(seconds: 1));
       expect(find.byType(RaftToast), findsNothing);
+      controller.show('Clear hovered notice');
+      await t.pump();
+      await mouse.moveTo(t.getCenter(find.byType(RaftToast)));
+      await t.pump();
+      controller.clear();
+      await t.pump();
+      await mouse.moveTo(Offset.zero);
+      await t.pump();
+      controller.show('New scope notice');
+      await t.pump();
+      await t.pump(const Duration(seconds: 5));
+      expect(find.byType(RaftToast), findsNothing);
       controller.show('Scope feedback');
       await t.pump();
       await t.pumpWidget(const MaterialApp(home: SizedBox()));
