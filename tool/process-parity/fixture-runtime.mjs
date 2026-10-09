@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, appendFileSync, mkdirSync } from 'node:fs'
 import { resolve, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { createArtifactHandoff } from './artifact-handoff.mjs';
 
 export function lookup(routes, method, path, params) {
   let found, specificity = -1;
@@ -30,7 +31,7 @@ export async function startRuntime({ source, fixturePath, out, port }) {
   const productHash = createHash('sha256');
   for (const file of tracked) productHash.update(file + '\0').update(readFileSync(resolve(source, file)));
   const sourceInputSha = productHash.digest('hex');
-  const runtimeSha = createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).digest('hex');
+  const runtimeSha = createHash('sha256').update(readFileSync(fileURLToPath(import.meta.url))).update('artifact-handoff.mjs\0').update(readFileSync(new URL('./artifact-handoff.mjs', import.meta.url))).digest('hex');
   writeFileSync(resolve(out, 'fixture.json'), fixtureBytes);
   const web = `${source}/packages/web`;
   const require = createRequire(`${web}/package.json`);
@@ -50,9 +51,11 @@ export async function startRuntime({ source, fixturePath, out, port }) {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(value));
   };
+  const artifacts = createArtifactHandoff({ out, fixtureSha, sourceInputSha, runtimeSha, record });
   const plugin = { name: 'source-process-fixture', configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
       const url = new URL(req.url ?? '/', 'http://fixture.invalid');
+      if (await artifacts(req, res, url)) return;
       if (url.pathname === '/__process/fixture') {
         record({ kind: 'fixture-bytes', fixtureSha });
         res.setHeader('Content-Type', 'application/json');

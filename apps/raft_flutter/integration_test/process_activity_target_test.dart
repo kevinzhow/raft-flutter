@@ -20,6 +20,8 @@ import 'package:raft_flutter/features/page_layout.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/process_artifact_handoff.dart';
+
 class ProcessFixtureClient extends RaftClient {
   ProcessFixtureClient(String base, Map<String, dynamic> fixture)
     : super(origin: base, sessionStore: MemorySessionStore()) {
@@ -161,12 +163,15 @@ void main() {
           productBytes.add(File('../../$path').readAsBytesSync());
         }
         productSha = sha256.convert(productBytes.takeBytes()).toString();
-        testSha = sha256
-            .convert(
-              File('integration_test/process_activity_target_test.dart')
-                  .readAsBytesSync(),
-            )
-            .toString();
+        final testBytes = BytesBuilder(copy: false);
+        for (final path in [
+          'integration_test/process_activity_target_test.dart',
+          'integration_test/support/process_artifact_handoff.dart',
+        ]) {
+          testBytes.add(utf8.encode('$path\x00'));
+          testBytes.add(File(path).readAsBytesSync());
+        }
+        testSha = sha256.convert(testBytes.takeBytes()).toString();
       }
       final stages = <Map<String, dynamic>>[];
       final failures = <String>[];
@@ -562,6 +567,13 @@ void main() {
             'result': failures.isEmpty ? 'PASS' : 'FAIL',
           }),
         );
+        if (Platform.isAndroid) {
+          await handoffAndroidProcessArtifacts(
+            base: base,
+            directory: out,
+            fixtureSha: fixtureSha,
+          );
+        }
         await t.pumpWidget(const SizedBox.shrink());
         w.dispose();
         await client.stream.close();

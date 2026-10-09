@@ -90,8 +90,25 @@ tool/process-parity/capture-android.sh <exact-fixture.json> <new-host-output> br
 
 This wrapper verifies served bytes before installation, binds host input hashes,
 sets `adb reverse tcp:15413 tcp:15413`, runs the actual integration entrypoint,
-then reads only its named cache directory with `run-as app.raft.raft_flutter`.
+then collects only its freshly registered host-side receipt. The test uploads its
+private files before returning; host acknowledgment follows input/hash/PNG
+validation and fsync. Collection therefore survives Flutter uninstalling its test
+app during driver teardown. Unknown/reused run IDs and incomplete uploads fail;
+partial payload/error files remain under the runtime output.
 Use `RAFT_PROCESS_PORT` for an independently owned fixture port. It preserves
 native failure exit/log and attempts artifact readback even on a failed test.
 It does not clear app data or remove retained device artifacts. Device execution
 is **NOT RUN** by this tool author; the device owner must provide actual proof.
+
+Android transport host checks:
+
+```sh
+node --test tool/process-parity/artifact-handoff.test.mjs
+```
+
+The host validates a complete result, layout observations, renderer manifest and
+PNG inventory before acknowledgment. Every PNG chunk CRC and decompressed pixel
+length is checked. Host readback also checks every byte hash and declared device,
+fixture/product/test hashes. It rejects old run IDs and never falls back to
+previous output. This transport check does not prove Android rendering; the
+device owner must rerun in a fresh output directory.
