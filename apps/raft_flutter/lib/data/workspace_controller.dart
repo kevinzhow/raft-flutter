@@ -641,7 +641,11 @@ class WorkspaceController extends ChangeNotifier {
       return;
     }
     final rows = (thread ? replies : messages);
-    _windowState[id] = (_windowAuthority(), thread ? threadHasMore : hasMore);
+    _windowState[id] = (
+      _windowAuthority(),
+      thread ? threadHasMore : hasMore,
+      _replyToken(),
+    );
     _windowHistoryLimited[id] = thread ? threadHistoryLimited : historyLimited;
     _contextWindows.remove(id);
     await _save('window', id, {
@@ -952,7 +956,7 @@ class WorkspaceController extends ChangeNotifier {
 
   final readState = ReadStateLedger();
   final Map<String, Set<String>> visibleIds = {};
-  final Map<String, (String, bool)> _windowState = {};
+  final Map<String, (String, bool, String)> _windowState = {};
   final Set<String> _contextWindows = {};
   bool hasNewer = false, threadHasMore = false;
   bool threadHistoryLimited = false, historyLimited = false;
@@ -1735,7 +1739,9 @@ class WorkspaceController extends ChangeNotifier {
     hasNewer = false;
     if (!retainThread) highlightedMessageId = null;
     final priorWindow = _windowState[next.id];
-    if (priorWindow != null && priorWindow.$1 != _windowAuthority()) {
+    if (priorWindow != null &&
+        (priorWindow.$1 != _windowAuthority() ||
+            priorWindow.$3 != _replyToken())) {
       visibleIds.remove(next.id);
       _windowState.remove(next.id);
       _windowHistoryLimited.remove(next.id);
@@ -1743,8 +1749,12 @@ class WorkspaceController extends ChangeNotifier {
     hasMore =
         priorWindow != null &&
         priorWindow.$1 == _windowAuthority() &&
+        priorWindow.$3 == _replyToken() &&
         priorWindow.$2;
-    historyLimited = priorWindow != null && priorWindow.$1 == _windowAuthority()
+    historyLimited =
+        priorWindow != null &&
+            priorWindow.$1 == _windowAuthority() &&
+            priorWindow.$3 == _replyToken()
         ? _windowHistoryLimited[next.id] == true
         : false;
     if (_contextWindows.remove(next.id) && !retainContextUntilAccepted) {
@@ -2432,8 +2442,10 @@ class WorkspaceController extends ChangeNotifier {
     final sameChannel = channel?.id == channelId;
     authority = messageWindowAuthority(server?.string('role'), next.json);
     final knownWindow = _windowState[channelId];
+    final compatibleWindow =
+        knownWindow?.$1 == authority && knownWindow?.$3 == replyAuthority;
     final cachedTarget =
-        knownWindow?.$1 == authority &&
+        compatibleWindow &&
         ledger
             .messages(channelId)
             .any(
@@ -2472,8 +2484,20 @@ class WorkspaceController extends ChangeNotifier {
     channelLoading = true;
     _pendingMessageContextChannelId = channelId;
     _pendingMessageContextWindow = window;
-    _pendingMessageContextRetainsRows = sameChannel;
-    if (!sameChannel) threadSummaries = {};
+    // Source preserves the destination's already accepted memory bucket while
+    // its context GET waits. A disk/unaccepted bucket or an earlier principal,
+    // server or capability epoch cannot grant this cross-channel projection.
+    _pendingMessageContextRetainsRows = sameChannel || compatibleWindow;
+    if (!sameChannel) {
+      threadSummaries = {};
+      if (compatibleWindow) {
+        hasMore = knownWindow!.$2;
+        hasNewer =
+            _contextWindows.contains(channelId) &&
+            _contextWindowHasNewer[channelId] == true;
+        historyLimited = _windowHistoryLimited[channelId] == true;
+      }
+    }
     bool current() =>
         owned() &&
         channel?.id == channelId &&
@@ -2514,7 +2538,7 @@ class WorkspaceController extends ChangeNotifier {
           historyLimited = tail['historyLimited'] == true;
           hasMore = !historyLimited && accepted.length >= 50;
           hasNewer = false;
-          _windowState[channelId] = (authority, hasMore);
+          _windowState[channelId] = (authority, hasMore, replyAuthority);
           _windowHistoryLimited[channelId] = historyLimited;
           threadSummaries = _hydrateThreadSummaries(
             tail['threadSummariesByParentMessageId'],
@@ -2554,7 +2578,7 @@ class WorkspaceController extends ChangeNotifier {
         hasMore = context['hasOlder'] == true;
         hasNewer = context['hasNewer'] == true;
         historyLimited = false;
-        _windowState[channelId] = (authority, hasMore);
+        _windowState[channelId] = (authority, hasMore, replyAuthority);
         _windowHistoryLimited[channelId] = false;
         _contextWindowHasNewer[channelId] = hasNewer;
         threadSummaries = _hydrateThreadSummaries(
