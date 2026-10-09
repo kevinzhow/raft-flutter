@@ -468,55 +468,82 @@ Future<void> verifyActivityThreadLifecycle(
     }
   }
 
-  Future<void> view(String label) async {
-    if (find.byTooltip('Activity actions').evaluate().isEmpty) {
-      await tester.tap(find.byTooltip('Filters'));
+  Future<void> follows(bool expected) async {
+    for (var retry = 0; retry < 50; retry++) {
+      final followed = await w.query('/channels/threads/followed');
+      if ((followed['threads'] as List).any(
+            (row) => row['parentMessageId'] == parentId,
+          ) ==
+          expected) {
+        return;
+      }
       await tester.pump(const Duration(milliseconds: 200));
     }
-    await tester.tap(find.byTooltip('Activity actions'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(label));
-    await loaded();
-  }
-
-  Future<void> reset() async {
-    final all = find.descendant(
-      of: find.byType(RaftSegmentedControl<String>),
-      matching: find.text('All'),
-    );
-    expect(all, findsOneWidget);
-    await tester.ensureVisible(all);
-    await tester.pumpAndSettle();
-    await tester.tap(all);
-    await loaded();
-    expect(state().filter, 'all');
+    throw TestFailure('Owned thread follow projection did not converge.');
   }
 
   try {
     await navigate('activity');
     await locate();
-    await rowAction('Mark conversation done');
-    await view('Done conversations');
-    await locate();
-    await capture('activity-thread-done');
-    await rowAction('Restore conversation');
-    await reset();
-    await locate();
-    await rowAction('Unfollow thread');
-    await view('Unfollowed threads');
-    await locate();
-    await capture('activity-thread-unfollowed');
-    await rowAction('Follow thread');
-    await reset();
-    await locate();
-    final followed = await w.query('/channels/threads/followed');
-    expect(
-      (followed['threads'] as List).any(
-        (row) => row['parentMessageId'] == parentId,
-      ),
-      true,
+    // Source's classic branch retains an unfollowed row in All and changes
+    // its context action to Follow. It has no Unfollowed view or Done menu.
+    // Evaluate the actual selected-server service gate, not a test override.
+    final evaluated = await w.client.post(
+      '/feature-flags/evaluate',
+      data: {
+        'keys': ['activity_sidebar_inbox_v0'],
+        'serverId': w.server!.id,
+        'platform':
+            defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS
+            ? 'mobile'
+            : 'web',
+      },
     );
-    await capture('activity-thread-restored');
+    final evaluations = evaluated['evaluations'] as List;
+    expect(
+      evaluations.any(
+        (row) =>
+            row['key'] == 'activity_sidebar_inbox_v0' && row['enabled'] == true,
+      ),
+      false,
+      reason: 'Enabled Source Activity needs its separate sidebar/Done flow.',
+    );
+    await rowAction('Unfollow thread');
+    await follows(false);
+    await locate();
+    final unfollowed = (state().rows as List).singleWhere(
+      (row) => row['kind'] == 'thread' && row['threadChannelId'] == threadId,
+    );
+    expect(unfollowed['isFollowing'], false);
+    await capture('activity-classic-thread-unfollowed-all');
+    await rowAction('Follow thread');
+    await follows(true);
+    await locate();
+    await capture('activity-classic-thread-refollowed-all');
+    await rowAction('Mark conversation done');
+    // Done removes the row from classic All. The authoritative Done endpoint
+    // proves the acknowledged write; it is not a screenshot of a Done page.
+    var projectedDone = false;
+    for (var retry = 0; retry < 50 && !projectedDone; retry++) {
+      final done = await w.query('/channels/inbox/done', query: {'limit': 100});
+      projectedDone = (done['items'] as List).any(
+        (row) => row['kind'] == 'thread' && row['threadChannelId'] == threadId,
+      );
+      if (!projectedDone) await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(
+      projectedDone,
+      true,
+      reason: 'Owned thread Done must reach the actual backend projection.',
+    );
+    expect(
+      (state().rows as List).any(
+        (row) => row['kind'] == 'thread' && row['threadChannelId'] == threadId,
+      ),
+      false,
+    );
+    await capture('activity-classic-thread-done-removed');
   } finally {
     // A failed UI assertion still restores only this run's own thread.
     await w.command(
