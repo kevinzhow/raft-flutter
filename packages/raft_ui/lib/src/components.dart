@@ -313,6 +313,7 @@ class RaftAvatar extends StatelessWidget {
     this.mountedContext,
     this.presence,
     this.deactivated = false,
+    this.muted = false,
   });
   final String name;
   final double size;
@@ -327,6 +328,9 @@ class RaftAvatar extends StatelessWidget {
   final RaftMountedAvatarContext? mountedContext;
   final RaftAvatarPresence? presence;
   final bool deactivated;
+
+  /// MentionCandidateAvatar's muted mounted frame, for an absent channel member.
+  final bool muted;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -349,6 +353,7 @@ class RaftAvatar extends StatelessWidget {
         identity: identity,
         presence: presence,
         deactivated: deactivated,
+        muted: muted,
         child:
             content ??
             (imageUrl == null
@@ -2367,47 +2372,62 @@ class _MentionSuggestionBody extends StatelessWidget {
       style: recipe.suggestionCode(highlighted: highlighted),
     );
     return LayoutBuilder(
-      builder: (context, constraints) => Row(
-        children: [
-          // `max-w-[12rem] flex-[0_1_auto]`: natural width, shrink-only.
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: constraints.maxWidth < 192 ? constraints.maxWidth : 192,
-            ),
-            child: Text(
-              s.title?.isNotEmpty == true ? s.title! : s.name,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: title,
-            ),
+      builder: (context, constraints) {
+        final handlePainter = TextPainter(
+          text: TextSpan(
+            text: '@${s.name}',
+            style: recipe.suggestionCode(highlighted: highlighted),
           ),
-          const SizedBox(width: 6),
-          badge,
-          if (description != null && description.isNotEmpty) ...[
-            const SizedBox(width: 6),
-            Expanded(
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+          maxLines: 1,
+        )..layout();
+        // Source aside is shrink-0 with max-w-[33%], rather than one third.
+        final handleWidth = handlePainter.width.clamp(
+          0.0,
+          (constraints.maxWidth * .33).clamp(0.0, 112.0),
+        );
+        handlePainter.dispose();
+        final hasDescription = description != null && description.isNotEmpty;
+        final titleMaximum =
+            (constraints.maxWidth -
+                    badge.naturalWidth(context) -
+                    handleWidth -
+                    (hasDescription ? 18 : 12))
+                .clamp(0.0, 192.0);
+        return Row(
+          children: [
+            // `max-w-[12rem] flex-[0_1_auto]`: natural width, shrink-only.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: titleMaximum),
               child: Text(
-                description,
+                s.title?.isNotEmpty == true ? s.title! : s.name,
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
-                style: recipe.suggestionMetaFor(highlighted: highlighted),
+                style: title,
               ),
             ),
-          ] else
-            const Spacer(),
-          const SizedBox(width: 6),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: constraints.maxWidth / 3 < 112
-                  ? constraints.maxWidth / 3
-                  : 112,
-            ),
-            child: handle,
-          ),
-        ],
-      ),
+            const SizedBox(width: 6),
+            badge,
+            if (hasDescription) ...[
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  description,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: recipe.suggestionMetaFor(highlighted: highlighted),
+                ),
+              ),
+            ] else
+              const Spacer(),
+            const SizedBox(width: 6),
+            SizedBox(width: handleWidth, child: handle),
+          ],
+        );
+      },
     );
   }
 }
@@ -2417,8 +2437,8 @@ class _MentionSuggestionBody extends StatelessWidget {
 class RaftActorTypeBadge extends StatelessWidget {
   const RaftActorTypeBadge({super.key, required this.label});
   final String label;
-  @override
-  Widget build(BuildContext context) {
+  ({BoxDecoration decoration, TextStyle text, double? height, String label})
+  _resolved(BuildContext context) {
     final t = RaftTokens.of(context);
     final resolver = RaftRecipeTokens(t);
     final s = RaftBadgeRecipe.resolve(
@@ -2436,15 +2456,36 @@ class RaftActorTypeBadge extends StatelessWidget {
           height: 1,
           leadingDistribution: TextLeadingDistribution.even,
         );
-    return Container(
-      height: s.height,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+    return (
       decoration: s.decoration(resolver),
+      text: text,
+      height: s.height,
+      label: s.textTransform == 'uppercase' ? label.toUpperCase() : label,
+    );
+  }
+
+  double naturalWidth(BuildContext context) {
+    final style = _resolved(context);
+    final painter = TextPainter(
+      text: TextSpan(text: style.label, style: style.text),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width + 8 + style.decoration.padding.horizontal;
+    painter.dispose();
+    return width;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = _resolved(context);
+    return Container(
+      height: style.height,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: style.decoration,
       alignment: Alignment.center,
-      child: Text(
-        s.textTransform == 'uppercase' ? label.toUpperCase() : label,
-        style: text,
-      ),
+      child: Text(style.label, style: style.text),
     );
   }
 }

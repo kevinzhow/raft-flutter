@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
+import 'recipes/composer_suggestion_list.g.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -133,17 +135,16 @@ class RaftComposerRecipe {
   Color suggestionBackground({
     required bool highlighted,
     bool hovered = false,
-  }) => tokens.brutal
-      ? highlighted
-            ? tokens.primaryFill
-            : hovered
-            ? tokens.primaryFill.withValues(alpha: .5)
-            : Colors.transparent
-      : highlighted
-      ? tokens.colors['ink-4']!
-      : hovered
-      ? tokens.colors['ink-2']!
-      : Colors.transparent;
+  }) =>
+      RaftComposerSuggestionListRecipe.resolve(
+        theme: tokens.recipeTheme,
+        states: tokens.recipeStates(
+          hovered: hovered,
+          extra: [if (highlighted) 'data-highlighted=true'],
+        ),
+        tokens: tokens.recipeTokens,
+      ).item.backgroundColor?.resolve(tokens.recipeTokens) ??
+      Colors.transparent;
   TextStyle suggestionTitle({
     required bool highlighted,
     bool hovered = false,

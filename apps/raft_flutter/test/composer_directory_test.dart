@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/composer_directory.dart';
+import 'package:raft_flutter/features/message_agent_presentation.dart';
+import 'package:raft_flutter/features/message_reference_directory.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'message_presentation_test.dart' show fixture;
 
@@ -13,6 +17,101 @@ Future<void> settled() async {
 }
 
 void main() {
+  for (final (family, dark) in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    testWidgets(
+      'mention avatar follows borrowed activity and revocation $family/$dark',
+      (tester) async {
+        final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
+        const agent = {
+          'id': 'agent',
+          'name': 'Cindy',
+          'status': 'active',
+          'activity': 'working',
+          'runtime': 'codex',
+        };
+        a.routes['GET /agents'] = (_) => [agent];
+        a.routes['GET /servers/s1/members'] = (_) => [];
+        a.routes['GET /channels/c1/members'] = (_) => {
+          'humans': [],
+          'agents': [agent],
+        };
+        a.routes['POST /feature-flags/evaluate'] = (_) => {'evaluations': []};
+        final references = MessageReferenceDirectory(w);
+        final activity = MessageAgentPresentation(w, references);
+        final directory = ComposerDirectory(w, agentPresentation: activity);
+        addTearDown(() {
+          directory.dispose();
+          activity.dispose();
+          references.dispose();
+          w.dispose();
+        });
+        directory.request('@');
+        for (var i = 0; i < 40 && directory.people.isEmpty; i++) {
+          await tester.pump(const Duration(milliseconds: 5));
+        }
+        final candidate = directory.people.single;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: Scaffold(body: candidate.avatar),
+          ),
+        );
+        expect(
+          tester.widget<RaftAvatar>(find.byType(RaftAvatar)).presence?.activity,
+          RaftAvatarActivity.working,
+        );
+        final reads = a.calls.length;
+        activity.event(
+          RaftEvent('agent:activity', {
+            'agentId': 'agent',
+            'serverId': 's1',
+            'serverSeq': 2,
+            'activity': 'offline',
+          }),
+        );
+        await tester.pump();
+        expect(
+          tester.widget<RaftAvatar>(find.byType(RaftAvatar)).presence?.activity,
+          RaftAvatarActivity.offline,
+        );
+        expect(a.calls.length, reads);
+        activity.event(
+          RaftEvent('agent:activity', {
+            'agentId': 'agent',
+            'serverId': 's1',
+            'serverSeq': 1,
+            'activity': 'working',
+          }),
+        );
+        await tester.pump();
+        expect(
+          tester.widget<RaftAvatar>(find.byType(RaftAvatar)).presence?.activity,
+          RaftAvatarActivity.offline,
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: Scaffold(body: candidate.mutedAvatar),
+          ),
+        );
+        final muted = tester.widget<RaftAvatar>(find.byType(RaftAvatar));
+        expect(muted.presence, null);
+        expect(muted.muted, true);
+        w.server = RaftRecord({'id': 's1', 'role': 'guest'});
+        w.notifyListeners();
+        await tester.pump();
+        expect(find.byType(RaftAvatar), findsNothing);
+        expect(directory.people, isEmpty);
+        await tester.pumpWidget(const SizedBox());
+        expect(activity.ended, false);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   test('private roster is lazy, member-scoped, and false flag never requests resource directories', () async {
     final (w, a) = await fixture('owner');
     addTearDown(w.dispose);

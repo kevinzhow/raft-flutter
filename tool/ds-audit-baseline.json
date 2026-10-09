@@ -19,7 +19,7 @@
   "widget.app_bar": 7,
   "widget.button": 50,
   "widget.chip": 6,
-  "widget.dialog": 55,
+  "widget.dialog": 51,
   "widget.divider": 4,
   "widget.icon_button": 14,
   "widget.ink": 2,
@@ -30,7 +30,7 @@
   "widget.progress": 17,
   "widget.scaffold": 10,
   "widget.select": 8,
-  "widget.snackbar": 38,
+  "widget.snackbar": 36,
   "widget.surface": 15,
   "widget.text_field": 26,
   "widget.toggle": 1,
@@ -145,7 +145,7 @@
    "style.dimension": 4,
    "style.edge_insets": 3,
    "style.sized_box": 2,
-   "widget.snackbar": 10,
+   "widget.snackbar": 8,
    "widget.toggle": 1
   },
   "apps/raft_flutter/lib/features/desktop_directory_view.dart": {
@@ -353,7 +353,6 @@
    "style.material_theme": 1,
    "style.sized_box": 3,
    "widget.chip": 2,
-   "widget.dialog": 4,
    "widget.icon_button": 1,
    "widget.other": 1
   },

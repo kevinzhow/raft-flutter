@@ -16,6 +16,14 @@ enum RaftMountedAvatarIdentity { human, agent, server, app }
 
 enum RaftAvatarActivity { online, thinking, working, error, offline }
 
+/// Reserves a compact mounted avatar slot without an identity or semantics.
+class RaftAvatarSpace extends StatelessWidget {
+  const RaftAvatarSpace({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.square(dimension: 20);
+}
+
 /// Already-authorized display state. The adapter owns membership, identity,
 /// external-agent liveness and translation; this value never fetches data.
 @immutable
@@ -180,6 +188,7 @@ class RaftMountedAvatarFrame extends StatelessWidget {
     this.child,
     this.presence,
     this.deactivated = false,
+    this.muted = false,
   });
   final String name;
   final RaftMountedAvatarContext avatarContext;
@@ -187,6 +196,9 @@ class RaftMountedAvatarFrame extends StatelessWidget {
   final Widget? child;
   final RaftAvatarPresence? presence;
   final bool deactivated;
+
+  /// Source MentionCandidateAvatar: !border-black/40 opacity-60, no badge.
+  final bool muted;
   @override
   Widget build(BuildContext context) {
     final r = RaftMountedAvatarRecipe(
@@ -194,7 +206,8 @@ class RaftMountedAvatarFrame extends StatelessWidget {
       avatarContext,
       identity,
     );
-    final admitted = identity == RaftMountedAvatarIdentity.agent && !deactivated
+    final admitted =
+        identity == RaftMountedAvatarIdentity.agent && !deactivated && !muted
         ? presence
         : null;
     Widget frame = SizedBox.square(
@@ -206,7 +219,10 @@ class RaftMountedAvatarFrame extends StatelessWidget {
             child: DecoratedBox(
               key: const ValueKey('mounted-avatar-frame'),
               decoration: BoxDecoration(
-                border: Border.all(color: r.border, width: r.borderWidth),
+                border: Border.all(
+                  color: muted ? Colors.black.withValues(alpha: .4) : r.border,
+                  width: r.borderWidth,
+                ),
                 borderRadius: BorderRadius.circular(r.radius),
               ),
               child: Padding(
@@ -243,6 +259,7 @@ class RaftMountedAvatarFrame extends StatelessWidget {
         ],
       ),
     );
+    if (muted) frame = Opacity(opacity: .6, child: frame);
     if (deactivated && identity == RaftMountedAvatarIdentity.agent) {
       frame = Opacity(
         opacity: .6,

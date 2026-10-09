@@ -162,34 +162,19 @@ class ParityThreadFixture {
     'humans': [_ownerMember()],
   };
 
-  /// `/servers/visual-server/members` mock: owner member + designer.
-  List<dynamic> get serverMembers {
-    final d = human('designer');
-    return [
-      _ownerMember(),
-      {
-        'userId': d['id'],
-        'serverId': server['id'],
-        'name': d['name'],
-        'displayName': d['displayName'],
-        'description': d['description'],
-        'avatarUrl': null,
-      },
-    ];
-  }
+  /// MessageInput consumes primeVisualStores' owner-only member catalog,
+  /// not the unrelated agent-detail HTTP stub's owner + designer list.
+  List<dynamic> get serverMembers => [_ownerMember()];
 
-  /// `/api/agents` mock: fxAgentDetailAgents.
+  /// primeVisualStores' exact composer catalog. The general /agents stub is
+  /// for agent-detail cases and supplies a different set of test agents.
   List<dynamic> get serverAgents => [
-    for (final key in const [
-      'productUx',
-      'computerOffline',
-      'computerMissing',
-      'noComputer',
-      'longMachine',
-      'daemonOnly',
-      'noMembership',
-    ])
-      if (_agents[key] is Map) _agentWire(agent(key)),
+    for (final key in const ['cindy', 'productUx', 'androidDev4'])
+      if (_agents[key] is Map)
+        {
+          ..._agentWire(agent(key)),
+          if (key == 'androidDev4') 'avatarUrl': agent('cindy')['avatar'],
+        },
   ];
 
   /// useChannelStore.channels seeded by primeVisualStores.

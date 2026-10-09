@@ -280,6 +280,56 @@ void main() {
         await tester.pump();
       },
     );
+    testWidgets(
+      'long mention label shrinks beside badge and handle without changing keyboard insertion: $family/$dark',
+      (tester) async {
+        const name = 'Android-Developer-4-with-a-long-handle';
+        await tester.pumpWidget(
+          host(
+            SizedBox(
+              width: 342,
+              child: RaftComposer(
+                onSend: (_) async => false,
+                suggestions: const [
+                  RaftComposerSuggestion(
+                    type: 'agent',
+                    id: 'long-agent',
+                    name: name,
+                    title: 'Android Developer with a long display name',
+                    detail: 'Implements shared Android and desktop fixes.',
+                  ),
+                ],
+              ),
+            ),
+            family,
+            dark,
+          ),
+        );
+        await tester.enterText(find.byType(TextField), '@');
+        await tester.pump();
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('composer-suggestion-agent-long-agent')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pump();
+        expect(
+          tester
+              .widget<EditableText>(find.byType(EditableText))
+              .controller
+              .text,
+          '@$name ',
+        );
+        expect(
+          find.byKey(const ValueKey('composer-suggestions-slot')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox());
+      },
+    );
   }
 
   testWidgets(

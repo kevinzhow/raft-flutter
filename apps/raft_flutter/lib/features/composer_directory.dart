@@ -3,6 +3,9 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'agent_avatar_projection.dart';
+import 'agent_metadata_projection.dart';
+import 'message_agent_presentation.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
 
@@ -10,11 +13,14 @@ import 'sender_avatar_projection.dart';
 /// their current membership projection; resource references require the real
 /// server flag before either computers or installed apps are requested.
 class ComposerDirectory extends ChangeNotifier {
-  ComposerDirectory(this.w) {
+  ComposerDirectory(this.w, {this.agentPresentation}) {
     w.addListener(changed);
     changed();
   }
   final WorkspaceController w;
+
+  /// Borrow the chat's existing authorized activity adapter; never owns it.
+  final MessageAgentPresentation? agentPresentation;
   String? scope;
   bool ended = false, requested = false;
   List<RaftComposerSuggestion> people = [];
@@ -88,8 +94,23 @@ class ComposerDirectory extends ChangeNotifier {
           title: value['displayName'] as String? ?? previous?.title,
           detail: value['description'] as String? ?? previous?.detail,
           inChannel: roster || memberIds.contains(key),
-          avatar: _avatar(name, type, source),
-          mutedAvatar: _avatar(name, type, source, muted: true),
+          avatar: _ComposerCandidateAvatar(
+            directory: this,
+            authority: authority,
+            name: name,
+            type: type,
+            source: source,
+            row: Map<String, dynamic>.from(value),
+          ),
+          mutedAvatar: _ComposerCandidateAvatar(
+            directory: this,
+            authority: authority,
+            name: name,
+            type: type,
+            source: source,
+            row: Map<String, dynamic>.from(value),
+            muted: true,
+          ),
         );
       }
     }
@@ -208,11 +229,78 @@ class ComposerDirectory extends ChangeNotifier {
 
 /// Web MentionCandidateAvatar: `AvatarSlot context="compact-list"`; muted
 /// (not in channel) is `!border-black/40 opacity-60`.
+class _ComposerCandidateAvatar extends StatelessWidget {
+  const _ComposerCandidateAvatar({
+    required this.directory,
+    required this.authority,
+    required this.name,
+    required this.type,
+    required this.source,
+    required this.row,
+    this.muted = false,
+  });
+  final ComposerDirectory directory;
+  final String authority, name, type;
+  final SenderAvatarProjection source;
+  final Map<String, dynamic> row;
+  final bool muted;
+
+  AgentAmbientDisplay? get display {
+    final presentation = directory.agentPresentation;
+    if (presentation != null) return presentation.display(row['id'] as String);
+    final status = row['status'] is String
+        ? row['status'] as String
+        : 'offline';
+    return resolveAgentAmbientDisplay(
+      identity: AgentPresentationIdentity(
+        id: row['id'] as String,
+        status: status,
+        runtime: row['runtime'] as String?,
+        external: row['runtime'] == 'external',
+        deleted: row['deletedAt'] != null,
+        lastSeenAt: DateTime.tryParse('${row['lastSeenAt']}'),
+      ),
+      now: DateTime.now(),
+      current: normalizeAgentSnapshotActivity(
+        status: status,
+        activity: row['activity'] as String?,
+        activityKind: row['activityKind'] as String?,
+        detailKind: row['detailKind'] as String?,
+        detail: row['activityDetail'] is String
+            ? row['activityDetail'] as String
+            : '',
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: directory.agentPresentation ?? directory,
+    builder: (context, _) {
+      if (directory.ended ||
+          directory.scope != authority ||
+          workspaceAuthority(directory.w) != authority) {
+        return const RaftAvatarSpace();
+      }
+      return _avatar(
+        name,
+        type,
+        source,
+        muted: muted,
+        presence: type == 'agent' && !muted
+            ? agentAvatarPresence(display)
+            : null,
+      );
+    },
+  );
+}
+
 Widget _avatar(
   String name,
   String type,
   SenderAvatarProjection source, {
   bool muted = false,
+  RaftAvatarPresence? presence,
 }) {
   final agent = type == 'agent';
   final avatar = RaftAvatar(
@@ -220,20 +308,25 @@ Widget _avatar(
     size: 20,
     kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
     mountedContext: RaftMountedAvatarContext.compactList,
+    presence: presence,
+    muted: muted,
     content: RaftAvatarContent(
       name: name,
       kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
       uploadedUrl: source.uploadedUrl,
       gravatarUrl: source.gravatarUrl,
       pixelKey: source.pixelKey,
-      fallback: RaftMountedAvatarFallback(
-        avatarContext: RaftMountedAvatarContext.compactList,
-        gravatar: source.gravatarUrl != null,
-        identity: agent
-            ? RaftMountedAvatarIdentity.agent
-            : RaftMountedAvatarIdentity.human,
+      fallback: Opacity(
+        opacity: muted && !agent ? .5 : 1,
+        child: RaftMountedAvatarFallback(
+          avatarContext: RaftMountedAvatarContext.compactList,
+          gravatar: source.gravatarUrl != null,
+          identity: agent
+              ? RaftMountedAvatarIdentity.agent
+              : RaftMountedAvatarIdentity.human,
+        ),
       ),
     ),
   );
-  return muted ? Opacity(opacity: .6, child: avatar) : avatar;
+  return avatar;
 }

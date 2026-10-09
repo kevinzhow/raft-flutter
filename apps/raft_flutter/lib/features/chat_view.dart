@@ -30,6 +30,7 @@ import 'sender_avatar_projection.dart';
 import 'message_reaction_projection.dart';
 import 'message_agent_presentation.dart';
 import 'agent_metadata_projection.dart';
+import 'agent_avatar_projection.dart';
 import 'message_task_projection.dart';
 
 /// Controlled mounted-viewport action; no route, controller or data ownership.
@@ -131,9 +132,12 @@ class _RaftChatViewState extends State<RaftChatView> {
     widget.viewportHandle?.bind(this, jumpToBeginning);
     referenceDirectory = MessageReferenceDirectory(w)
       ..addListener(referencesChanged);
-    composerDirectory = ComposerDirectory(w)..addListener(referencesChanged);
     agentPresentation = MessageAgentPresentation(w, referenceDirectory)
       ..addListener(referencesChanged);
+    composerDirectory = ComposerDirectory(
+      w,
+      agentPresentation: agentPresentation,
+    )..addListener(referencesChanged);
     taskProjection = MessageTaskProjection(w)..addListener(referencesChanged);
     selection = MessageSelection(w, thread: widget.thread)
       ..addListener(selectionChanged);
@@ -162,15 +166,17 @@ class _RaftChatViewState extends State<RaftChatView> {
       if (controllerChanged) {
         oldWidget.controller.removeListener(sync);
         taskProjection.dispose();
+        composerDirectory.dispose();
         agentPresentation.dispose();
         referenceDirectory.dispose();
-        composerDirectory.dispose();
         referenceDirectory = MessageReferenceDirectory(w)
-          ..addListener(referencesChanged);
-        composerDirectory = ComposerDirectory(w)
           ..addListener(referencesChanged);
         agentPresentation = MessageAgentPresentation(w, referenceDirectory)
           ..addListener(referencesChanged);
+        composerDirectory = ComposerDirectory(
+          w,
+          agentPresentation: agentPresentation,
+        )..addListener(referencesChanged);
         taskProjection = MessageTaskProjection(w)
           ..addListener(referencesChanged);
         w.addListener(sync);
@@ -413,9 +419,9 @@ class _RaftChatViewState extends State<RaftChatView> {
     selection.removeListener(selectionChanged);
     selection.dispose();
     taskProjection.dispose();
+    composerDirectory.dispose();
     agentPresentation.dispose();
     referenceDirectory.dispose();
-    composerDirectory.dispose();
     w.removeListener(sync);
     adapter.dispose();
     viewport.dispose();
@@ -1433,22 +1439,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       deactivated: senderAgent(message)?.deleted ?? false,
       presence: compact || senderAgent(message) == null
           ? null
-          : (() {
-              final display = agentPresentation.display(message.senderId);
-              if (display == null || !display.showPresence) return null;
-              return RaftAvatarPresence(
-                activity: switch (display.activity) {
-                  'working' => RaftAvatarActivity.working,
-                  'thinking' => RaftAvatarActivity.thinking,
-                  'error' => RaftAvatarActivity.error,
-                  'offline' => RaftAvatarActivity.offline,
-                  _ => RaftAvatarActivity.online,
-                },
-                online: display.online,
-                external: display.external,
-                label: display.detail.isEmpty ? null : display.detail,
-              );
-            })(),
+          : agentAvatarPresence(agentPresentation.display(message.senderId)),
     );
   }
 

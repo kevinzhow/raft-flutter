@@ -84,6 +84,41 @@ void main() {
       );
     }
     testWidgets(
+      'muted mention frame hides status without changing layout $family/$dark',
+      (tester) async {
+        await tester.pumpWidget(
+          host(
+            const RaftAvatar(
+              name: 'Cindy',
+              kind: RaftAvatarKind.agent,
+              mountedContext: RaftMountedAvatarContext.compactList,
+              presence: busy,
+              muted: true,
+            ),
+            family,
+            dark,
+          ),
+        );
+        expect(
+          tester.getSize(find.byType(RaftMountedAvatarFrame)),
+          const Size.square(20),
+        );
+        final frame = tester.widget<DecoratedBox>(
+          find.byKey(const ValueKey('mounted-avatar-frame')),
+        );
+        expect(
+          (frame.decoration as BoxDecoration).border!.top.color,
+          Colors.black.withValues(alpha: .4),
+        );
+        expect(tester.widget<Opacity>(find.byType(Opacity)).opacity, .6);
+        expect(
+          find.byKey(const ValueKey('mounted-avatar-presence')),
+          findsNothing,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
       'agent panel badge matches mounted DOM and remains outside image clip $family/$dark',
       (tester) async {
         await tester.pumpWidget(
