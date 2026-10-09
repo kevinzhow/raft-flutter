@@ -154,12 +154,20 @@ Future<void> mobileHome(WidgetTester tester) async {
       of: find.byType(RaftChannelResolutionBody),
       matching: find.byTooltip('Back'),
     );
+    // Search/Saved/Activity own Source PanelAction back controls. Returning
+    // from a search hit first reveals that real resource header, not the
+    // older generic RaftBackButton used by other detail routes.
+    final resourceBack = find.descendant(
+      of: find.byType(ResourceView),
+      matching: find.byType(RaftPanelBackAction),
+    );
     // Actual metadata resolution can still be pending after settled frames.
     // Wait for its real unavailable Back action, rather than clicking a
     // retained conversation header that Source deliberately does not show.
     await until(tester, () => home.evaluate().isNotEmpty ||
         homeTab.evaluate().isNotEmpty || settingsBack.evaluate().isNotEmpty ||
         detailBack.evaluate().isNotEmpty || resolutionBack.evaluate().isNotEmpty ||
+        resourceBack.evaluate().isNotEmpty ||
         find.byType(RaftBackButton).evaluate().isNotEmpty);
     if (home.evaluate().isNotEmpty) break;
     final back = homeTab.evaluate().isNotEmpty
@@ -170,6 +178,8 @@ Future<void> mobileHome(WidgetTester tester) async {
         ? detailBack
         : resolutionBack.evaluate().isNotEmpty
         ? resolutionBack
+        : resourceBack.evaluate().isNotEmpty
+        ? resourceBack.first
         : find.byType(RaftBackButton).first;
     expect(
       back,
@@ -183,6 +193,12 @@ Future<void> mobileHome(WidgetTester tester) async {
       await screenshot(tester,
           'linux-mobile-unavailable-back-${DateTime.now().millisecondsSinceEpoch}');
       await until(tester, () => resolutionBack.hitTestable().evaluate().isNotEmpty);
+    }
+    if (resourceBack.evaluate().isNotEmpty &&
+        back.evaluate().first.widget is RaftPanelBackAction) {
+      await until(tester, () => back.hitTestable().evaluate().isNotEmpty);
+      await screenshot(tester,
+          'linux-mobile-resource-back-${DateTime.now().millisecondsSinceEpoch}');
     }
     await tester.tap(back);
     await tester.pumpAndSettle();
@@ -1850,21 +1866,39 @@ void main() {
       await tester.pumpAndSettle();
       await screenshot(tester, 'linux-workspace-settings');
       await section(tester, 'members');
-      await until(
-        tester,
-        () => find.widgetWithText(ListTile, otherName).evaluate().isNotEmpty,
-      );
-      final memberTile = find.widgetWithText(ListTile, otherName);
-      await tester.ensureVisible(memberTile);
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.descendant(
+      if (mobileViewport(tester)) {
+        final memberTile = find.widgetWithText(ListTile, otherName);
+        await until(tester, () => memberTile.evaluate().isNotEmpty);
+        await tester.ensureVisible(memberTile);
+        await tester.pumpAndSettle();
+        await tester.tap(find.descendant(
           of: memberTile,
           matching: find.byTooltip('Member actions'),
-        ),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Make Admin'));
+        ));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Make Admin'));
+      } else {
+        // The desktop Members rail is Source's directory; role management
+        // lives on the selected human profile, not an old ListTile menu.
+        final memberRow = find.byKey(
+          ValueKey('desktop-directory-human-$otherId'),
+        );
+        await until(tester, () => memberRow.evaluate().isNotEmpty);
+        expect(find.descendant(of: memberRow, matching: find.text(otherName)),
+            findsOneWidget);
+        await tester.ensureVisible(memberRow);
+        await tester.pumpAndSettle();
+        await until(tester, () => memberRow.hitTestable().evaluate().isNotEmpty);
+        await tester.tap(memberRow);
+        final editRole = find.byTooltip('Edit role');
+        await until(tester, () => editRole.hitTestable().evaluate().isNotEmpty);
+        await screenshot(tester, 'linux-workspace-member-profile');
+        await tester.tap(editRole);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('field-role')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Admin').last);
+      }
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(RaftButton, 'Confirm'));
       await until(tester, () => find.byType(RaftFormDialog).evaluate().isEmpty);
