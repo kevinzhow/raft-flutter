@@ -1758,20 +1758,34 @@ void main() {
       await mobileHome(tester);
       final switcher = mobileViewport(tester)
           ? find.byKey(const Key('mobile-server-selector'))
-          : find.byTooltip('Switch workspace').last;
+          : find.byKey(const Key('rail-workspace'));
       await tester.tap(switcher);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Create workspace'));
+      await tester.tap(find.text('Switch or Create Server'));
+      await until(
+        tester,
+        () => find.byKey(const Key('global-server-selector')).evaluate().isNotEmpty,
+      );
+      await tester.tap(find.widgetWithText(RaftAuthSubmit, '+ Create New Server'));
       await tester.pumpAndSettle();
       final workspaceName =
           'native-workspace-${DateTime.now().millisecondsSinceEpoch}';
-      await tester.enterText(field('Workspace name'), workspaceName);
-      await tester.enterText(field('Workspace address'), workspaceName);
-      await tester.tap(find.widgetWithText(RaftButton, 'Create'));
+      // Use the Source server menu and root selector, not the retired local
+      // workspace dialog. These fields submit the real /servers request.
+      Finder selectorField(String key) => find.descendant(
+        of: find.byKey(ValueKey(key)),
+        matching: find.byType(EditableText),
+      );
+      await tester.enterText(selectorField('global-server-name'), workspaceName);
+      await tester.enterText(selectorField('global-server-slug'), workspaceName);
+      final createServer = find.widgetWithText(RaftAuthSubmit, 'Create server');
+      await tester.ensureVisible(createServer);
+      await tester.pumpAndSettle();
+      await tester.tap(createServer);
       await until(
         tester,
         () =>
-            find.byType(RaftFormDialog).evaluate().isEmpty &&
+            find.byKey(const Key('global-server-selector')).evaluate().isEmpty &&
             w.server?.name == workspaceName,
       );
       await tester.pumpAndSettle();
