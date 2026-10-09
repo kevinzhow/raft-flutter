@@ -82,6 +82,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   late MessageSelection selection;
   bool capturingSelection = false;
   bool copiedSelectionMarkdown = false;
+  final selectionToast = RaftToastController();
   Timer? copiedSelectionTimer;
   bool alsoCreateTask = false;
   int taskChoiceRevision = 0;
@@ -262,8 +263,7 @@ class _RaftChatViewState extends State<RaftChatView> {
           mounted &&
           authority == workspaceAuthority(w) &&
           revision == selection.revision) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(raftText(context, 'Copied'))));
+        selectionToast.show(raftText(context, 'Copied'));
       }
     } catch (_) {
       if (mounted &&
@@ -304,9 +304,7 @@ class _RaftChatViewState extends State<RaftChatView> {
             setState(() => copiedSelectionMarkdown = false);
           }
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(raftText(context, 'Copied Markdown'))),
-        );
+        selectionToast.show(raftText(context, 'Copied Markdown'));
       }
     } catch (_) {
       if (current()) {
@@ -409,6 +407,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   void dispose() {
     widget.viewportHandle?.release(this);
     copiedSelectionTimer?.cancel();
+    selectionToast.dispose();
     widget.selectionHandle?.update(false, null);
     closeReactionPicker(rebuild: false);
     selection.removeListener(selectionChanged);
@@ -496,7 +495,10 @@ class _RaftChatViewState extends State<RaftChatView> {
       focusAnchors.removeWhere((id, _) => id != target);
       if (scope != id ||
           (!loading && target != null && adapterWindow != window)) {
-        if (scope != id) alsoCreateTask = false;
+        if (scope != id) {
+          alsoCreateTask = false;
+          selectionToast.clear();
+        }
         scope = id;
         // A context replacement has different scroll bounds. Carrying the old
         // history offset into its first layout can leave the sliver entirely
@@ -1719,6 +1721,7 @@ class _RaftChatViewState extends State<RaftChatView> {
     }
     return Column(
       children: [
+        RaftToastPortal(controller: selectionToast),
         Expanded(
           child: Chat(
             key: ValueKey('chat-context-$listRevision'),

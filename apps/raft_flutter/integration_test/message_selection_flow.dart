@@ -57,6 +57,7 @@ Future<void> verifyMessageSelection(
   // the actual overlay to leave before using the bottom toolbar target.
   for (var i = 0; i < 100; i++) {
     if (find.byType(SnackBar).evaluate().isEmpty &&
+        find.byType(RaftToast).evaluate().isEmpty &&
         more.hitTestable().evaluate().isNotEmpty) {
       break;
     }
@@ -70,6 +71,7 @@ Future<void> verifyMessageSelection(
     await tester.pump(const Duration(milliseconds: 300));
   }
   expect(find.byType(SnackBar), findsNothing);
+  expect(find.byType(RaftToast), findsNothing);
   expect(more.hitTestable(), findsOneWidget);
   await tester.tap(more);
   await tester.pump(const Duration(milliseconds: 300));
