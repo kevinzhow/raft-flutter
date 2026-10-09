@@ -107,6 +107,14 @@ Future<void> verifyAttachmentFlow(
       matching: find.byTooltip('Preview $imageName'),
     );
     expect(previewAction, findsOneWidget);
+    // Decoded bytes can arrive before the live frame paints the preview.
+    // Keep the real pointer assertion and wait for that control to receive it.
+    for (var i = 0;
+        i < 150 && previewAction.hitTestable().evaluate().isEmpty;
+        i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(previewAction.hitTestable(), findsOneWidget);
     await tester.tap(previewAction);
     await tester.pumpAndSettle();
     final decoded = find.byKey(
