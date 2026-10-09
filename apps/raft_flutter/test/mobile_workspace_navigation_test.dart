@@ -359,10 +359,18 @@ void main() {
         find.descendant(of: dmRow, matching: find.byType(RaftIcon)),
       );
       expect(dmGlyph.glyph, RaftGlyph.user);
+      // Source AvatarSlot.tsx90–95/126/229–230: the sidebar-list avatar
+      // occupies 18px, contains a 16px face, and its placeholder User is 10px.
+      final dmAvatar = find.descendant(
+        of: dmRow,
+        matching: find.byType(RaftAvatar),
+      );
+      expect(tester.getSize(dmAvatar), const Size(18, 18));
       expect(
-        dmGlyph.size,
-        18,
-      ); // count-only adoption preserves the existing DM leading slot.
+        tester.widget<RaftAvatar>(dmAvatar).mountedContext,
+        RaftMountedAvatarContext.sidebarList,
+      );
+      expect(dmGlyph.size, 10);
 
       expect(find.byKey(const Key('nav-tasks')), findsNothing);
       expect(find.byKey(const Key('account-navigation')), findsNothing);

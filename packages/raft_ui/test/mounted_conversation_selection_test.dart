@@ -102,7 +102,12 @@ void main() {
         );
         expect(
           t.widget<Text>(find.text('Owned conversation')).style!.color,
-          tokens.colors['foreground-strong'],
+          // Source Sidebar.tsx3754 supplies inherited Brutalist black;
+          // DmRow's title at 1001 adds no text-color override.
+          // Ordinary channel rendering remains independently asserted here.
+          tokens.brutal && kind == RaftConversationNavKind.directMessage
+              ? Colors.black
+              : tokens.colors['foreground-strong'],
         );
         final overlays = t.widgetList<DecoratedBox>(
           find.descendant(

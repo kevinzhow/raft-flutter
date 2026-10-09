@@ -260,7 +260,7 @@ void main() {
                       onTap: () {},
                     ),
                     RaftNavItem(
-                      label: 'Count-only DM',
+                      label: 'Mounted Source DM',
                       glyph: RaftGlyph.user,
                       conversationKind: RaftConversationNavKind.directMessage,
                       unread: 1,
@@ -280,10 +280,12 @@ void main() {
           tester.widget<Text>(find.text('Generic selected')).style!.fontWeight,
           FontWeight.w700,
         );
-        expect(
-          tester.widget<Text>(find.text('Count-only DM')).style!.fontSize,
-          family == RaftFamily.brutal ? 14 : 13,
-        );
+        // Source Sidebar.tsx1001 uses text-sm; the actual three-theme
+        // browser capture reads 14px/20px. Only actual unread makes it bold.
+        final dm = tester.widget<Text>(find.text('Mounted Source DM'));
+        expect(dm.style!.fontSize, 14);
+        expect(dm.style!.height, 20 / 14);
+        expect(dm.style!.fontWeight, FontWeight.w700);
         expect(find.byType(RaftConversationUnreadCount), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
