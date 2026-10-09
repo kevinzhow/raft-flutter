@@ -656,10 +656,10 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
                   ...leading,
                   ...preAdmissionFields(context),
                 ].indexed) ...[
-                  if (i > 0) const SizedBox(height: 12),
+                  if (i > 0) const SizedBox(height: raftCindyFieldGap),
                   i == 0 && capacity != null
                       ? Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: raftCindyCapacityFieldInset,
                           child: row,
                         )
                       : row,
@@ -673,13 +673,13 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
                 for (final (i, row) in leading.indexed)
                   i == 0 && capacity != null
                       ? Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
+                          padding: raftCindyCapacityFieldInset,
                           child: row,
                         )
                       : row,
               ],
               hideAdvanced: true,
-              rowGap: 12,
+              rowGap: raftCindyFieldGap,
             );
       return PopScope(
         canPop: !busy,

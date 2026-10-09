@@ -6,6 +6,11 @@ import 'package:flutter/material.dart';
 
 import '../raft_ui.dart';
 
+/// CreateAgentDialog onboarding form uses `space-y-3` (12px). The capacity
+/// banner uses `mb-4` (16px), so it adds 4px to that regular field spacing.
+const double raftCindyFieldGap = 12;
+const EdgeInsets raftCindyCapacityFieldInset = EdgeInsets.only(bottom: 4);
+
 class RaftCindySetupScreen extends StatelessWidget {
   const RaftCindySetupScreen({
     super.key,
