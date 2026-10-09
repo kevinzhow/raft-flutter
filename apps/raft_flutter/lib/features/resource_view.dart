@@ -10,6 +10,7 @@ import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
 
 import '../data/workspace_controller.dart';
 import '../data/search_memory.dart';
+import '../data/activity_follow_state.dart';
 import 'search_home.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -245,6 +246,7 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   List<Map<String, dynamic>> rows = [];
+  final activityFollowState = ActivityFollowState();
   bool loading = true;
   String? error;
   String filter = 'all';
@@ -328,6 +330,7 @@ class _ResourceViewState extends State<ResourceView> {
       scope == acceptedAuthority &&
       (request == null || request == requestGeneration);
   void clearRows() {
+    activityFollowState.clear();
     activityActivation?.cancel();
     dragFeedbackRevision.value++;
     rows = [];
@@ -646,7 +649,9 @@ class _ResourceViewState extends State<ResourceView> {
       loading = true;
       error = null;
       laneBusy.clear();
-      if (!append && ['search', 'saved', 'activity'].contains(widget.section)) {
+      if (!append &&
+          ['search', 'saved', 'activity'].contains(widget.section) &&
+          !(widget.section == 'activity' && activityFollowState.busy)) {
         rows = [];
         cursor = null;
         hasMore = false;
@@ -690,7 +695,7 @@ class _ResourceViewState extends State<ResourceView> {
         'members' => '/servers/${w.server!.id}/members',
         _ => throw const RaftApiException('This page is not available.'),
       };
-      final value = await w.query(
+      var value = await w.query(
         path,
         query: widget.section == 'search'
             ? advanced.search(query.text, offset: append ? rows.length : 0)
@@ -718,6 +723,10 @@ class _ResourceViewState extends State<ResourceView> {
                   'offset': append ? rows.length : 0,
               },
       );
+      if (!accepts(scope, request)) return;
+      if (widget.section == 'activity' && value is Map) {
+        value = activityFollowState.window(value);
+      }
       final list = value is List
           ? value
           : value['items'] ??
@@ -2427,6 +2436,60 @@ class _ResourceViewState extends State<ResourceView> {
                 'Refresh Activity before marking this conversation done.',
           );
         }
+      }
+      return;
+    }
+    if (action == 'follow' || action == 'unfollow') {
+      final acceptWindow = widget.onActivityWindowAccepted;
+      final acceptUnread = widget.onActivityUnreadAccepted;
+      final id = row['threadChannelId'] as String;
+      final ticket = activityFollowState.begin(id);
+      try {
+        await w.client.request('POST', mutation.path, data: mutation.data);
+        if (!accepts(scope) || !activityFollowState.accepts(id, ticket)) return;
+        final current = rows
+            .where(
+              (item) =>
+                  item['kind'] == 'thread' && item['threadChannelId'] == id,
+            )
+            .firstOrNull;
+        final cleared = action == 'unfollow'
+            ? (current?['unreadCount'] as num? ??
+                      row['unreadCount'] as num? ??
+                      0)
+                  .toInt()
+            : 0;
+        // ThreadsInbox success keeps this row; it does not immediately reload
+        // an eventually consistent inbox and undo the accepted POST.
+        setState(() {
+          activityFollowState.acknowledge(
+            current ?? row,
+            following: action == 'follow',
+          );
+          rows = rows.map(activityFollowState.project).toList();
+          if (totalUnreadCount != null) {
+            totalUnreadCount = (totalUnreadCount! - cleared).clamp(0, 1 << 53);
+          }
+          loading = false;
+        });
+        if (totalUnreadCount != null) {
+          acceptUnread?.call(totalUnreadCount);
+          acceptWindow?.call({
+            'items': rows,
+            'totalUnreadCount': totalUnreadCount,
+          });
+        }
+      } catch (e) {
+        if (!accepts(scope) || !activityFollowState.accepts(id, ticket)) return;
+        activityFollowState.finish(id, ticket);
+        if (e is RaftApiException && [401, 403].contains(e.status)) {
+          fail(e, scope);
+        } else {
+          // Source preserves the previous follow state and reconciles failure.
+          await load();
+        }
+      } finally {
+        activityFollowState.finish(id, ticket);
       }
       return;
     }
