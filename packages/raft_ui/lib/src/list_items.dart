@@ -616,18 +616,19 @@ class RaftSelectionPopover extends StatelessWidget {
         ),
       ],
     );
-    final shadows = t.brutal
-        ? RaftProductShadows.shadowBrutal.paintOrder
-        : [
-            for (final l in t.themeShadows.sm.layers.reversed)
-              if (!l.inset)
-                BoxShadow(
-                  color: l.color,
-                  offset: l.offset,
-                  blurRadius: raftCssBlurRadius(l.blur),
-                  spreadRadius: l.spread,
-                ),
-          ];
+    // SelectionPopover mounts Card. Its shadow-raft-md utility survives
+    // the caller's shadow-brutal/sm class and wins the compiled CSS order.
+    // The generic Card theme shadow therefore supplies both tone and layers.
+    final shadows = [
+      for (final l in t.themeShadows.md.layers.reversed)
+        if (!l.inset)
+          BoxShadow(
+            color: l.color,
+            offset: l.offset,
+            blurRadius: raftCssBlurRadius(l.blur),
+            spreadRadius: l.spread,
+          ),
+    ];
     return CustomPaint(
       painter: RaftOuterShadowPainter(shadows, BorderRadius.zero),
       child: Container(
@@ -649,38 +650,46 @@ class RaftSelectionPopover extends StatelessWidget {
   }
 }
 
-class _ClearAction extends StatefulWidget {
+class _ClearAction extends StatelessWidget {
   const _ClearAction({required this.label, required this.style, required this.onTap});
   final String label;
   final TextStyle style;
   final VoidCallback onTap;
   @override
-  State<_ClearAction> createState() => _ClearActionState();
-}
-
-class _ClearActionState extends State<_ClearAction> {
-  bool hovered = false;
-  @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Semantics(
-      button: true,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          onTap: widget.onTap,
-          child: Text(
-            widget.label,
-            style: widget.style.copyWith(
-              color: hovered ? t.semantic.foregroundStrong : null,
-            ),
+    return RaftInteractive(
+      onPressed: onTap,
+      builder: (context, state) => CustomPaint(
+        foregroundPainter: state.focusVisible
+            ? _SelectionFocusOutline(t.semantic.lineStrong)
+            : null,
+        child: Text(
+          label,
+          style: style.copyWith(
+            color: state.hovered ? t.semantic.foregroundStrong : null,
           ),
         ),
       ),
     );
   }
+}
+
+// The product's unstyled buttons inherit index.css *:focus-visible:
+// outline 2px line-strong, offset 2px. It affects paint, never row layout.
+class _SelectionFocusOutline extends CustomPainter {
+  const _SelectionFocusOutline(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRect(
+    (Offset.zero & size).inflate(3),
+    Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2,
+  );
+  @override
+  bool shouldRepaint(_SelectionFocusOutline old) => old.color != color;
 }
 
 class _SelectionRow extends StatefulWidget {
@@ -692,9 +701,14 @@ class _SelectionRow extends StatefulWidget {
 }
 
 class _SelectionRowState extends State<_SelectionRow> {
-  bool hovered = false;
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => RaftInteractive(
+    onPressed: widget.option.disabled ? null : widget.option.onTap,
+    checked: widget.option.checked,
+    builder: (context, state) => buildRow(context, state),
+  );
+
+  Widget buildRow(BuildContext context, RaftInteractionState state) {
     final t = RaftTokens.of(context);
     final s = t.semantic;
     final o = widget.option;
@@ -702,7 +716,7 @@ class _SelectionRowState extends State<_SelectionRow> {
     final ink = o.disabled
         ? (t.brutal ? black.withValues(alpha: .3) : s.foregroundMuted)
         : (t.brutal ? black : s.foregroundStrong);
-    final bg = !o.disabled && hovered
+    final bg = !o.disabled && state.hovered
         ? (t.brutal ? t.product.softSignal.withValues(alpha: .3) : s.fillMuted)
         : (t.brutal ? RaftPrimitiveColors.white : s.layerPanel);
     final leading = o.leading;
@@ -723,55 +737,46 @@ class _SelectionRowState extends State<_SelectionRow> {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(height: 2),
           );
-    return Semantics(
-      button: true,
-      enabled: !o.disabled,
-      checked: o.checked,
-      child: MouseRegion(
-        cursor: o.disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: o.disabled ? null : o.onTap,
-          child: Container(
-            height: 36,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: bg,
-              border: widget.last
-                  ? null
-                  : Border(
-                      bottom: BorderSide(
-                        color: t.brutal ? black.withValues(alpha: .1) : s.lineMuted,
-                      ),
-                    ),
-            ),
-            child: DefaultTextStyle.merge(
-              style: TextStyle(
-                fontSize: 12,
-                height: 16 / 12,
-                fontWeight: FontWeight.w700,
-                color: ink,
+    return CustomPaint(
+      foregroundPainter: state.focusVisible
+          ? _SelectionFocusOutline(s.lineStrong)
+          : null,
+      child: Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: bg,
+        border: widget.last
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: t.brutal ? black.withAlpha(26) : s.lineMuted,
+                ),
               ),
-              child: Row(
-                children: [
-                  if (o.reserveLeadingSlot || leading != null) ...[
-                    SizedBox.square(dimension: 20, child: Center(child: leading)),
-                    const SizedBox(width: 8),
-                  ],
-                  Expanded(
-                    child: Align(alignment: Alignment.centerLeft, child: label),
-                  ),
-                  if (o.checked) ...[
-                    const SizedBox(width: 8),
-                    RaftIcon(RaftGlyph.check, size: 12, color: ink),
-                  ],
-                ],
-              ),
-            ),
-          ),
+      ),
+      child: DefaultTextStyle.merge(
+        style: TextStyle(
+          fontSize: 12,
+          height: 16 / 12,
+          fontWeight: FontWeight.w700,
+          color: ink,
         ),
+        child: Row(
+          children: [
+            if (o.reserveLeadingSlot || leading != null) ...[
+              SizedBox.square(dimension: 20, child: Center(child: leading)),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Align(alignment: Alignment.centerLeft, child: label),
+            ),
+            if (o.checked) ...[
+              const SizedBox(width: 8),
+              RaftIcon(RaftGlyph.check, size: 12, color: ink),
+            ],
+          ],
+        ),
+      ),
       ),
     );
   }
