@@ -135,8 +135,8 @@ void main() {
           final toolbar = tester.widget<RaftSelectionToolbar>(
             find.byType(RaftSelectionToolbar),
           );
-          expect(toolbar.selected, 2);
-          expect(toolbar.total, 2);
+          expect(toolbar.selected, 1);
+          expect(toolbar.total, 1);
           expect(handle.active, isTrue);
           handle.dismiss();
           await tester.pumpAndSettle();

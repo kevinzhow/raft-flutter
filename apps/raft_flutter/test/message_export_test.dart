@@ -58,7 +58,7 @@ class PendingSaveFiles extends AttachmentFiles {
 }
 
 void main() {
-  test('channel selection includes loaded replies after their parent; metadata has no capability URLs', () async {
+  test('channel selection excludes loaded unmounted replies and toggles only the clicked root', () async {
     final (w, _) = await fixture('owner');
     addTearDown(w.dispose);
     w.ledger.switchServer('s1');
@@ -67,12 +67,79 @@ void main() {
     final selection = MessageSelection(w, thread: false);
     addTearDown(selection.dispose);
     selection.enter('parent');
-    expect(selection.selected.map((r) => r.message.id), ['parent', 'reply']);
-    expect(selection.selected.last.isThreadChild, isTrue);
+    expect(selection.selected.map((r) => r.message.id), ['parent']);
+    expect(selection.available.map((r) => r.message.id), ['parent', 'later']);
+    expect(selection.selected.single.isThreadChild, isFalse);
     final text = selectedMessagesMarkdown(selection.selected);
     expect(text, contains('中文 export **body**'));
-    expect(text, contains('> 日本語 reply'));
+    expect(text, isNot(contains('日本語 reply')));
     selection.toggle('parent');
+    expect(selection.ids, isEmpty);
+  });
+  test('thread row selection is explicit and Select All includes the visible parent and replies', () async {
+    final (w, _) = await fixture('owner');
+    addTearDown(w.dispose);
+    w.ledger.switchServer('s1');
+    w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
+    w.visibleIds['c1'] = {'parent', 'later'};
+    w.threadParent = w.messages.first;
+    w.threadChannelId = 't1';
+    w.visibleIds['t1'] = {'reply'};
+    final selection = MessageSelection(w, thread: true);
+    addTearDown(selection.dispose);
+    selection.enter('reply');
+    expect(selection.selected.map((r) => r.message.id), ['reply']);
+    selection.selectAll();
+    expect(selection.selected.map((r) => r.message.id), ['parent', 'reply']);
+    expect(
+      selectedMessagesMarkdown(selection.selected),
+      contains('> 日本語 reply'),
+    );
+    selection.toggle('parent');
+    expect(selection.selected.map((r) => r.message.id), ['reply']);
+  });
+  test('thread Select All excludes system/action/forward snapshots while explicit action selection stays possible', () async {
+    final (w, _) = await fixture('owner');
+    addTearDown(w.dispose);
+    w.ledger.switchServer('s1');
+    w.ledger.ingest([
+      ...messages(),
+      {
+        'id': 'system',
+        'channelId': 't1',
+        'seq': 4,
+        'messageType': 'system',
+        'content': 'Public system',
+      },
+      {
+        'id': 'action',
+        'channelId': 't1',
+        'seq': 5,
+        'messageType': 'chat',
+        'actionMetadata': {'kind': 'action-card'},
+      },
+      {
+        'id': 'forward',
+        'channelId': 't1',
+        'seq': 6,
+        'messageType': 'chat',
+        'actionMetadata': {'kind': 'forwarded-bundle'},
+      },
+    ], expectedGeneration: w.ledger.generation);
+    w.visibleIds['c1'] = {'parent', 'later'};
+    w.visibleIds['t1'] = {'reply', 'system', 'action', 'forward'};
+    w.threadParent = w.messages.first;
+    w.threadChannelId = 't1';
+    final selection = MessageSelection(w, thread: true);
+    addTearDown(selection.dispose);
+    selection.enter('system');
+    expect(selection.active, isFalse);
+    selection.enter('action');
+    expect(selection.ids, {'action'});
+    selection.selectAll();
+    expect(selection.ids, {'parent', 'reply'});
+    selection.exit();
+    selection.selectAll();
     expect(selection.ids, isEmpty);
   });
   test('bounded selection retains prior choices and clears on visibility/role loss', () async {
@@ -171,6 +238,75 @@ void main() {
       expect(find.text('Export'), findsOneWidget);
     },
   );
+  for (final revoke in ['exit', 'dispose']) {
+    testWidgets(
+      'selection $revoke immediately revokes a real rendered PNG and zeroes its retained bytes',
+      (tester) async {
+        final (w, _) = (await tester.runAsync(() => fixture('owner')))!;
+        addTearDown(w.dispose);
+        w.ledger.switchServer('s1');
+        w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
+        w.visibleIds['c1'] = {'parent', 'later'};
+        final selection = MessageSelection(w, thread: false)..enter('parent');
+        var disposed = false;
+        addTearDown(() {
+          if (!disposed) selection.dispose();
+        });
+        final revision = selection.revision;
+        bool authorized() => selection.active && selection.revision == revision;
+        Future<bool?>? result;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.elegant),
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () {
+                    result = previewMessageImage(
+                      context,
+                      w,
+                      messages: selection.selected,
+                      width: 500,
+                      authorized: authorized,
+                      authorityChanges: selection,
+                    );
+                  },
+                  child: const Text('Export selected'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Export selected'));
+        for (
+          var i = 0;
+          i < 80 && find.byType(MessageImageReview).evaluate().isEmpty;
+          i++
+        ) {
+          await tester.pump();
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 20)),
+          );
+        }
+        expect(find.byType(MessageImageReview), findsOneWidget);
+        final retained = tester
+            .widget<MessageImageReview>(find.byType(MessageImageReview))
+            .bytes;
+        expect(retained.take(8), [137, 80, 78, 71, 13, 10, 26, 10]);
+        if (revoke == 'dispose') {
+          selection.dispose();
+          disposed = true;
+        } else {
+          selection.exit();
+        }
+        await tester.pumpAndSettle();
+        expect(find.byType(MessageImageReview), findsNothing);
+        expect(await result, isNot(true));
+        expect(retained.every((v) => v == 0), isTrue);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
   testWidgets(
     'revocation closes reviewed private PNG while a save picker is pending',
     (tester) async {

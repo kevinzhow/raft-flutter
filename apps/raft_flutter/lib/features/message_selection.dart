@@ -14,7 +14,8 @@ class SelectedMessageRow {
 }
 
 /// Only retained messages from the selected channel/thread are selectable.
-/// Channel-mode parent selection includes its already-loaded descendants.
+/// Channel mode selects only mounted timeline roots. Thread mode exposes the
+/// parent and replies, with explicit Select All; a row toggle selects one row.
 class MessageSelection extends ChangeNotifier {
   MessageSelection(this.w, {required this.thread}) {
     w.addListener(changed);
@@ -25,6 +26,7 @@ class MessageSelection extends ChangeNotifier {
   final bool thread;
   final Set<String> ids = {};
   bool active = false;
+  int revision = 0;
   String? _scope, error;
   Map<String, dynamic>? _channelAuthority;
   String get scope => jsonEncode([
@@ -42,19 +44,13 @@ class MessageSelection extends ChangeNotifier {
         : w.messages;
     final result = <SelectedMessageRow>[];
     for (final root in roots) {
+      if (root.string('messageType') == 'system') continue;
       result.add(SelectedMessageRow(root));
-      final replies = thread
-          ? w.replies
-          : root.threadId == null
-          ? <RaftMessage>[]
-          : [
-              for (final row in w.ledger.messages(root.threadId!))
-                RaftMessage(row),
-              if (w.threadParent?.id == root.id) ...w.replies,
-            ];
+      final replies = thread ? w.replies : <RaftMessage>[];
       final unique = {for (final m in replies) m.id: m}.values.toList()
         ..sort((a, b) => a.seq.compareTo(b.seq));
       for (final m in unique) {
+        if (m.string('messageType') == 'system') continue;
         result.add(SelectedMessageRow(m, parentId: root.id));
       }
     }
@@ -64,6 +60,7 @@ class MessageSelection extends ChangeNotifier {
   List<SelectedMessageRow> get selected =>
       available.where((r) => ids.contains(r.message.id)).toList();
   void changed() {
+    final previousIds = ids.toSet(), previousActive = active;
     final next = scope;
     final authority = w.channel == null
         ? null
@@ -83,16 +80,20 @@ class MessageSelection extends ChangeNotifier {
     final visible = available.map((r) => r.message.id).toSet();
     ids.removeWhere((id) => !visible.contains(id));
     if (active && ids.isEmpty) active = false;
+    if (previousActive != active || !setEquals(previousIds, ids)) revision++;
     notifyListeners();
   }
 
   void enter(String id) {
+    if (!available.any((r) => r.message.id == id)) return;
+    revision++;
     active = true;
     ids.clear();
     toggle(id);
   }
 
   void exit() {
+    revision++;
     active = false;
     ids.clear();
     error = null;
@@ -101,12 +102,9 @@ class MessageSelection extends ChangeNotifier {
 
   void toggle(String id) {
     if (!active) return;
-    final group = thread
-        ? [id]
-        : [
-            for (final r in available)
-              if (r.message.id == id || r.parentId == id) r.message.id,
-          ];
+    revision++;
+    if (!available.any((r) => r.message.id == id)) return;
+    final group = [id];
     if (ids.contains(id)) {
       ids.removeAll(group);
     } else if (ids.length + group.where((v) => !ids.contains(v)).length >
@@ -120,7 +118,16 @@ class MessageSelection extends ChangeNotifier {
   }
 
   void selectAll() {
-    final all = available.map((r) => r.message.id).toSet();
+    if (!active) return;
+    revision++;
+    final all = available
+        .where((r) {
+          // Mounted ThreadPanel.handleSelectAllInThread uses getForwardableMessages.
+          final metadata = r.message.json['actionMetadata'];
+          return !thread || metadata is! Map || metadata['kind'] == null;
+        })
+        .map((r) => r.message.id)
+        .toSet();
     if (all.length > limit) {
       error = 'Select up to 30 messages.';
       notifyListeners();
@@ -136,7 +143,11 @@ class MessageSelection extends ChangeNotifier {
   @override
   void dispose() {
     w.removeListener(changed);
+    active = false;
+    revision++;
     ids.clear();
+    // Retained export observers must revoke before their selection owner dies.
+    notifyListeners();
     super.dispose();
   }
 }

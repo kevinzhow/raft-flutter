@@ -16,24 +16,27 @@ void main() {
           MaterialApp(
             theme: raftTheme(family, dark: dark),
             home: Scaffold(
-              body: SizedBox(
-                width: 320,
-                child: StatefulBuilder(
-                  builder: (context, update) => RaftSelectionToolbar(
-                    selected: selected,
-                    total: 3,
-                    onExit: () => update(() => selected = 0),
-                    onSelectAll: () => update(() => selected = 3),
-                    onCopyMarkdown: () => copied++,
-                    onPreview: () => showDialog(
-                      context: context,
-                      builder: (_) => Dialog(
-                        child: SizedBox(
-                          height: 480,
-                          child: RaftImageReview(
-                            preview: const Text('Actual content'),
-                            onClose: () => Navigator.pop(context),
-                            onSave: () => saved++,
+              body: Align(
+                alignment: Alignment.bottomLeft,
+                child: SizedBox(
+                  width: 320,
+                  child: StatefulBuilder(
+                    builder: (context, update) => RaftSelectionToolbar(
+                      selected: selected,
+                      total: 3,
+                      onExit: () => update(() => selected = 0),
+                      onSelectAll: () => update(() => selected = 3),
+                      onCopyMarkdown: () => copied++,
+                      onPreview: () => showDialog(
+                        context: context,
+                        builder: (_) => Dialog(
+                          child: SizedBox(
+                            height: 480,
+                            child: RaftImageReview(
+                              preview: const Text('Actual content'),
+                              onClose: () => Navigator.pop(context),
+                              onSave: () => saved++,
+                            ),
                           ),
                         ),
                       ),
@@ -44,12 +47,17 @@ void main() {
             ),
           ),
         );
-        await tester.tap(find.byTooltip('Select all loaded messages'));
+        await tester.tap(find.byTooltip('Select All'));
         await tester.pump();
         expect(find.text('3 selected'), findsOneWidget);
-        await tester.tap(find.text('Copy Markdown'));
+        await tester.tap(find.byTooltip('More'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Copy MD'));
+        await tester.pumpAndSettle();
         expect(copied, 1);
-        await tester.tap(find.text('Preview image'));
+        await tester.tap(find.byTooltip('More'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Generate image'));
         await tester.pumpAndSettle();
         expect(find.text('Actual content'), findsOneWidget);
         await tester.tap(find.text('Save image'));
@@ -57,7 +65,7 @@ void main() {
         await tester.tap(find.byTooltip('Close preview'));
         await tester.pumpAndSettle();
         expect(selected, 3);
-        await tester.tap(find.byTooltip('Exit selection'));
+        await tester.tap(find.byTooltip('Cancel'));
         await tester.pump();
         expect(find.text('0 selected'), findsOneWidget);
         expect(tester.takeException(), isNull);

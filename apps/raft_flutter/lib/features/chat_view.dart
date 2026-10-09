@@ -22,6 +22,7 @@ import 'message_reference_directory.dart';
 import 'share_message_link.dart';
 import 'private_route_guard.dart';
 import 'message_selection.dart';
+import 'copy_selection_links.dart';
 import 'message_image_export.dart';
 import 'forward_messages_dialog.dart';
 import 'composer_directory.dart';
@@ -80,6 +81,8 @@ class _RaftChatViewState extends State<RaftChatView> {
   Size? pickerViewport;
   late MessageSelection selection;
   bool capturingSelection = false;
+  bool copiedSelectionMarkdown = false;
+  Timer? copiedSelectionTimer;
   bool alsoCreateTask = false;
   int taskChoiceRevision = 0;
   final Map<String, String> reactionFailures = {};
@@ -95,6 +98,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   String? scrolledHighlight;
   int? scrolledWindow, adapterWindow;
   int bindingRevision = 0;
+  int selectionCaptureTicket = 0;
   bool presentationActive = true;
   int presentationRevision = 0;
 
@@ -152,6 +156,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       // thread with the channel. Every controller/role-bound model must follow
       // the new widget, even when no controller event follows that layout.
       oldWidget.selectionHandle?.update(false, null);
+      selection.removeListener(selectionChanged);
       selection.dispose();
       if (controllerChanged) {
         oldWidget.controller.removeListener(sync);
@@ -172,6 +177,8 @@ class _RaftChatViewState extends State<RaftChatView> {
       selection = MessageSelection(w, thread: widget.thread)
         ..addListener(selectionChanged);
       selectionError = null;
+      copiedSelectionTimer?.cancel();
+      copiedSelectionMarkdown = false;
       capturingSelection = false;
       alsoCreateTask = false;
       scope = null;
@@ -187,24 +194,122 @@ class _RaftChatViewState extends State<RaftChatView> {
   }
 
   void selectionChanged() {
+    if (!selection.active) {
+      copiedSelectionTimer?.cancel();
+      copiedSelectionMarkdown = false;
+    }
     widget.selectionHandle?.update(selection.active, selection.exit);
     if (mounted) setState(() {});
+  }
+
+  Widget selectionToolbar() {
+    final owner = selection,
+        authority = workspaceAuthority(w),
+        revision = selection.revision;
+    bool current() =>
+        mounted &&
+        identical(owner, selection) &&
+        owner.active &&
+        revision == owner.revision &&
+        authority == workspaceAuthority(w) &&
+        w.can('viewChannel', resource: w.channel);
+    VoidCallback guard(VoidCallback callback) => () {
+      if (current()) callback();
+    };
+    final canForward =
+        owner.selected.length <= 20 &&
+        owner.selected.every((r) => ordinary(r.message));
+    return RaftSelectionToolbar(
+      selected: owner.ids.length,
+      total: owner.available.length,
+      onExit: guard(owner.exit),
+      onSelectAll: widget.thread ? guard(owner.selectAll) : null,
+      onCopyMarkdown: guard(() {
+        copySelection();
+      }),
+      onCopyLinks: guard(() {
+        copySelectionLinks();
+      }),
+      onPreview: guard(() {
+        previewSelection();
+      }),
+      onForward: guard(() {
+        forwardSelection();
+      }),
+      forwardDisabledReason: canForward
+          ? null
+          : raftText(
+              context,
+              "One or more selected items can't be forwarded. Select regular messages instead.",
+            ),
+      busy: capturingSelection,
+      copied: copiedSelectionMarkdown,
+      error:
+          selectionError ??
+          (owner.error == null ? null : raftText(context, owner.error!)),
+    );
+  }
+
+  Future<void> copySelectionLinks() async {
+    final authority = workspaceAuthority(w), revision = selection.revision;
+    try {
+      final copied = await copySelectedMessageLinks(
+        w,
+        selection,
+        () => mounted,
+      );
+      if (copied &&
+          mounted &&
+          authority == workspaceAuthority(w) &&
+          revision == selection.revision) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(raftText(context, 'Copied'))));
+      }
+    } catch (_) {
+      if (mounted &&
+          authority == workspaceAuthority(w) &&
+          revision == selection.revision &&
+          selection.active) {
+        setState(
+          () => selectionError = raftText(
+            context,
+            'The message link could not be shared.',
+          ),
+        );
+      }
+    }
   }
 
   Future<void> copySelection() async {
     if (!selection.active || selection.selected.isEmpty) return;
     final authority = workspaceAuthority(w), snapshot = selection.selected;
+    final owner = selection, revision = selection.revision;
+    bool current() =>
+        mounted &&
+        identical(owner, selection) &&
+        owner.active &&
+        revision == owner.revision &&
+        authority == workspaceAuthority(w);
     try {
       await Clipboard.setData(
         ClipboardData(text: selectedMessagesMarkdown(snapshot)),
       );
-      if (mounted && authority == workspaceAuthority(w)) {
+      if (mounted && current()) {
+        copiedSelectionTimer?.cancel();
+        setState(() => copiedSelectionMarkdown = true);
+        copiedSelectionTimer = Timer(const Duration(milliseconds: 1500), () {
+          if (mounted &&
+              identical(owner, selection) &&
+              authority == workspaceAuthority(w)) {
+            setState(() => copiedSelectionMarkdown = false);
+          }
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(raftText(context, 'Copied Markdown'))),
         );
       }
     } catch (_) {
-      if (mounted) {
+      if (current()) {
         setState(
           () => selectionError = raftText(
             context,
@@ -226,13 +331,16 @@ class _RaftChatViewState extends State<RaftChatView> {
       return;
     }
     final authority = workspaceAuthority(w);
+    final owner = selection, revision = selection.revision;
+    bool current() => mounted && identical(owner, selection) && owner.active &&
+        owner.revision == revision && authority == workspaceAuthority(w);
     try {
       final done = await forwardMessages(context, w, messages);
-      if (mounted && authority == workspaceAuthority(w) && done) {
+      if (current() && done) {
         selection.exit();
       }
     } catch (e) {
-      if (mounted && authority == workspaceAuthority(w)) {
+      if (current()) {
         setState(() => selectionError = '$e');
       }
     }
@@ -242,7 +350,19 @@ class _RaftChatViewState extends State<RaftChatView> {
     if (capturingSelection || !selection.active || selection.selected.isEmpty) {
       return;
     }
-    final scope = selection.scope;
+    final scope = selection.scope, revision = selection.revision;
+    final ticket = ++selectionCaptureTicket, binding = bindingRevision;
+    final owner = selection;
+    final authority = workspaceAuthority(w);
+    bool current() =>
+        mounted &&
+        binding == bindingRevision &&
+        ticket == selectionCaptureTicket &&
+        identical(owner, selection) &&
+        selection.active &&
+        revision == selection.revision &&
+        scope == selection.scope &&
+        authority == workspaceAuthority(w);
     setState(() {
       capturingSelection = true;
       selectionError = null;
@@ -256,16 +376,22 @@ class _RaftChatViewState extends State<RaftChatView> {
         width: (context.size?.width ?? MediaQuery.sizeOf(context).width) - 48,
         references: referenceDirectory.references,
         clock: clock,
+        authorized: current,
+        authorityChanges: selection,
       );
-      if (saved == true && mounted && scope == selection.scope) {
+      if (saved == true && current()) {
         selection.exit();
       }
     } catch (e) {
-      if (mounted && scope == selection.scope) {
+      if (current()) {
         setState(() => selectionError = raftText(context, '$e'));
       }
     } finally {
-      if (mounted) setState(() => capturingSelection = false);
+      if (mounted &&
+          ticket == selectionCaptureTicket &&
+          binding == bindingRevision) {
+        setState(() => capturingSelection = false);
+      }
     }
   }
 
@@ -282,8 +408,10 @@ class _RaftChatViewState extends State<RaftChatView> {
   @override
   void dispose() {
     widget.viewportHandle?.release(this);
+    copiedSelectionTimer?.cancel();
     widget.selectionHandle?.update(false, null);
     closeReactionPicker(rebuild: false);
+    selection.removeListener(selectionChanged);
     selection.dispose();
     taskProjection.dispose();
     agentPresentation.dispose();
@@ -1762,28 +1890,7 @@ class _RaftChatViewState extends State<RaftChatView> {
             bindings: {
               const SingleActivator(LogicalKeyboardKey.escape): selection.exit,
             },
-            child: Focus(
-              autofocus: true,
-              child: RaftSelectionToolbar(
-                selected: selection.ids.length,
-                total: selection.available.length,
-                onExit: selection.exit,
-                onSelectAll: selection.selectAll,
-                onCopyMarkdown: copySelection,
-                onPreview: previewSelection,
-                onForward:
-                    selection.selected.length <= 20 &&
-                        selection.selected.every((r) => ordinary(r.message))
-                    ? forwardSelection
-                    : null,
-                busy: capturingSelection,
-                error:
-                    selectionError ??
-                    (selection.error == null
-                        ? null
-                        : raftText(context, selection.error!)),
-              ),
-            ),
+            child: Focus(autofocus: true, child: selectionToolbar()),
           )
         else if (w.conversationPaused)
           Padding(

@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'components.dart';
+import 'design_primitives.dart';
+import 'icons.dart';
 import 'localization.dart';
+import 'recipes/button_variants.g.dart';
+import 'selection_toolbar_recipe.dart';
 import 'theme.dart';
 
-/// Selection replaces the composer on one conversation surface.
-class RaftSelectionToolbar extends StatelessWidget {
+/// Source SelectModeToolbar: measured compact row; less frequent actions in
+/// a top/end More menu. Callbacks and selection authority belong to the app.
+class RaftSelectionToolbar extends StatefulWidget {
   const RaftSelectionToolbar({
     super.key,
     required this.selected,
@@ -13,97 +18,269 @@ class RaftSelectionToolbar extends StatelessWidget {
     required this.onExit,
     this.onSelectAll,
     this.onCopyMarkdown,
+    this.onCopyLinks,
     this.onPreview,
     this.onForward,
+    this.forwardDisabledReason,
     this.busy = false,
+    this.copied = false,
     this.error,
     this.limit = 30,
   });
   final int selected, total, limit;
   final VoidCallback onExit;
-  final VoidCallback? onSelectAll, onCopyMarkdown, onPreview, onForward;
-  final bool busy;
-  final String? error;
+  final VoidCallback? onSelectAll,
+      onCopyMarkdown,
+      onCopyLinks,
+      onPreview,
+      onForward;
+  final bool busy, copied;
+  final String? error, forwardDisabledReason;
   @override
-  Widget build(BuildContext context) => Material(
-    color: RaftTokens.of(context).panel,
-    child: Padding(
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                tooltip: raftText(context, 'Exit selection'),
-                onPressed: busy ? null : onExit,
-                icon: const Icon(Icons.close),
-              ),
-              Expanded(
-                child: Text(
-                  raftFormat(context, '{count} selected', {'count': selected}),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              IconButton(
-                tooltip: raftText(context, 'Select all loaded messages'),
-                onPressed: busy || total > limit ? null : onSelectAll,
-                icon: const Icon(Icons.select_all),
-              ),
-            ],
+  State<RaftSelectionToolbar> createState() => _RaftSelectionToolbarState();
+}
+
+class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
+  int compactLevel = 0;
+  double lastActionsWidth = 0;
+  Widget action(
+    BuildContext context,
+    String label,
+    RaftGlyph glyph,
+    VoidCallback? pressed, {
+    bool compact = false,
+    bool accent = false,
+    FocusNode? focusNode,
+    String? tooltip,
+    String? semanticLabel,
+  }) => RaftButton(
+    label: compact ? '' : label,
+    glyph: glyph,
+    tooltip: tooltip ?? raftText(context, label),
+    onPressed: pressed,
+    focusNode: focusNode,
+    semanticLabel: semanticLabel ?? raftText(context, label),
+    tone: accent
+        ? RaftButtonRecipeVariant.accent
+        : RaftButtonRecipeVariant.outline,
+    size: compact ? RaftButtonRecipeSize.iconSm : RaftButtonRecipeSize.sm,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final recipe = RaftSelectionToolbarRecipe(
+      t,
+      viewportWidth: MediaQuery.sizeOf(context).width,
+    );
+    final count = raftFormat(context, '{count} selected', {
+      'count': widget.selected,
+    });
+    final canAct = widget.selected > 0 && !widget.busy;
+    final copyLabel = widget.copied ? 'Copied' : 'Copy link';
+    final forward = widget.onForward != null;
+    final copy = widget.onCopyLinks != null;
+    final all = widget.onSelectAll != null;
+    return Material(
+      color: recipe.background,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: recipe.border, width: recipe.borderWidth),
           ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+        ),
+        padding: recipe.inset,
+        // These are source-sized sm/icon-sm controls, including coarse input.
+        // Platform touch expansion must not replace this authored row's boxes.
+        child: RaftDensityScope(
+          density: RaftDensity.desktop,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              RaftButton(
-                label: 'Copy Markdown',
-                icon: Icons.copy,
-                secondary: true,
-                onPressed: busy || selected == 0 ? null : onCopyMarkdown,
+              Row(
+                children: [
+                  Text(count, style: recipe.count),
+                  SizedBox(width: recipe.gap),
+                  Expanded(
+                    child: LayoutBuilder(
+                      builder: (context, bounds) {
+                        final maxLevel =
+                            1 +
+                            (copy ? 1 : 0) +
+                            (forward ? 1 : 0) +
+                            (all ? 1 : 0);
+                        if (bounds.maxWidth > lastActionsWidth + 8)
+                          compactLevel = 0;
+                        lastActionsWidth = bounds.maxWidth;
+                        compactLevel = compactLevel.clamp(0, maxLevel);
+                        bool isCopy(int n) => n >= 1;
+                        bool isForward(int n) => n >= 1 + (copy ? 1 : 0);
+                        bool isCancel(int n) =>
+                            n >= 1 + (copy ? 1 : 0) + (forward ? 1 : 0);
+                        bool isAll(int n) => n >= maxLevel;
+                        double width(int n) {
+                          final items = [
+                            if (all)
+                              recipe.buttonWidth(
+                                context,
+                                raftText(context, 'Select All'),
+                                compact: isAll(n),
+                              ),
+                            recipe.buttonWidth(
+                              context,
+                              raftText(context, 'Cancel'),
+                              compact: isCancel(n),
+                            ),
+                            if (forward)
+                              recipe.buttonWidth(
+                                context,
+                                raftText(context, 'Forward'),
+                                compact: isForward(n),
+                                accent: true,
+                              ),
+                            if (copy)
+                              recipe.buttonWidth(
+                                context,
+                                raftText(context, copyLabel),
+                                compact: isCopy(n),
+                              ),
+                            recipe.buttonWidth(context, '', compact: true),
+                          ];
+                          return items.fold<double>(0, (a, b) => a + b) +
+                              (items.length - 1) * recipe.gap;
+                        }
+
+                        while (compactLevel < maxLevel &&
+                            width(compactLevel) > bounds.maxWidth + 1) {
+                          compactLevel++;
+                        }
+                        return Wrap(
+                          alignment: WrapAlignment.end,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: recipe.gap,
+                          runSpacing: recipe.gap,
+                          children: [
+                            if (all)
+                              action(
+                                context,
+                                'Select All',
+                                RaftGlyph.listChecks,
+                                widget.busy ? null : widget.onSelectAll,
+                                compact: isAll(compactLevel),
+                              ),
+                            action(
+                              context,
+                              'Cancel',
+                              RaftGlyph.x,
+                              widget.onExit,
+                              compact: isCancel(compactLevel),
+                            ),
+                            if (forward)
+                              action(
+                                context,
+                                'Forward',
+                                RaftGlyph.send,
+                                canAct && widget.forwardDisabledReason == null
+                                    ? widget.onForward
+                                    : null,
+                                compact: isForward(compactLevel),
+                                accent: true,
+                                tooltip: widget.forwardDisabledReason,
+                              ),
+                            if (copy)
+                              action(
+                                context,
+                                copyLabel,
+                                widget.copied
+                                    ? RaftGlyph.check
+                                    : RaftGlyph.copy,
+                                widget.selected == 0
+                                    ? null
+                                    : widget.onCopyLinks,
+                                compact: isCopy(compactLevel),
+                                tooltip: raftText(context, 'Copy link'),
+                                semanticLabel: raftText(context, 'Copy link'),
+                              ),
+                            RaftDropdownMenu(
+                              label: raftText(
+                                context,
+                                'More selected message actions',
+                              ),
+                              enabled: widget.selected > 0,
+                              side: RaftDropdownSide.top,
+                              align: RaftDropdownAlign.end,
+                              sideOffset: 8,
+                              triggerBuilder: (context, node, pressed) =>
+                                  action(
+                                    context,
+                                    'More selected message actions',
+                                    RaftGlyph.ellipsis,
+                                    pressed,
+                                    compact: true,
+                                    focusNode: node,
+                                    tooltip: raftText(context, 'More'),
+                                  ),
+                              entries: [
+                                RaftMenuEntry(
+                                  label: raftText(
+                                    context,
+                                    widget.busy
+                                        ? 'Rendering...'
+                                        : 'Generate image',
+                                  ),
+                                  leading: widget.busy
+                                      ? Semantics(
+                                          label: raftText(context, 'Loading'),
+                                          child: const RaftSpinner(),
+                                        )
+                                      : const RaftIcon(
+                                          RaftGlyph.image,
+                                          size: 14,
+                                        ),
+                                  onPressed: canAct ? widget.onPreview : null,
+                                ),
+                                RaftMenuEntry(
+                                  label: raftText(
+                                    context,
+                                    widget.copied ? 'Copied MD' : 'Copy MD',
+                                  ),
+                                  leading: RaftIcon(
+                                    widget.copied
+                                        ? RaftGlyph.check
+                                        : RaftGlyph.copy,
+                                    size: 14,
+                                  ),
+                                  onPressed: widget.selected == 0
+                                      ? null
+                                      : widget.onCopyMarkdown,
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-              if (onForward != null)
-                RaftButton(
-                  label: 'Forward',
-                  icon: Icons.forward,
-                  secondary: true,
-                  onPressed: busy || selected == 0 ? null : onForward,
-                ),
-              RaftButton(
-                label: 'Preview image',
-                icon: Icons.image_outlined,
-                busy: busy,
-                onPressed: selected == 0 ? null : onPreview,
-              ),
-            ],
-          ),
-          if (total > limit)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                raftFormat(context, 'Select up to {count} messages.', {
-                  'count': limit,
-                }),
-              ),
-            ),
-          if (error != null)
-            Semantics(
-              liveRegion: true,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  error!,
-                  style: TextStyle(
-                    color: RaftTokens.of(context).colors['danger-strong'],
+              if (widget.error != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      widget.error!,
+                      style: TextStyle(color: t.colors['danger-strong']),
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// A full-content clone uses the conversation's current theme and layout width.
