@@ -22,6 +22,8 @@ class _Client extends RaftClient {
   }
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
   final calls = <String>[];
+  final removedMetadata = <String>{};
+  final pendingMetadata = <String, Completer<dynamic>>{};
   Completer<Map<String, dynamic>>? pendingMessages;
   final channelRows = [
     RaftChannel({'id': 'c', 'name': 'design', 'joined': true}),
@@ -67,6 +69,10 @@ class _Client extends RaftClient {
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     calls.add('GET:$path');
+    if (pendingMetadata[path] case final pending?) return pending.future;
+    if (removedMetadata.contains(path)) {
+      throw const RaftApiException('Channel not found', status: 404);
+    }
     if (path == '/channels/c') {
       return {'id': 'c', 'serverId': 's', 'name': 'design', 'joined': true};
     }
@@ -279,6 +285,130 @@ void main() {
     );
     await Future<void>.delayed(Duration.zero);
     expect(n.sent, hasLength(1));
+  });
+  for (final (family, dark) in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    for (final knownRevoked in [true, false]) {
+      testWidgets(
+        'actual mobile Back rejects a deleted channel $family/$dark known=$knownRevoked',
+        (tester) async {
+          SharedPreferences.setMockInitialValues({});
+          tester.view.physicalSize = const Size(390, 844);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final c = _Client()..selectServer('s');
+          final gone = RaftChannel({
+            'id': 'gone',
+            'name': 'Removed channel',
+            'joined': true,
+          });
+          c.channelRows.add(gone);
+          final w = WorkspaceController(c, mobileNavigation: true)
+            ..server = RaftRecord({
+              'id': 's',
+              'name': 'Fixture',
+              'role': 'owner',
+            })
+            ..channels = [...c.channelRows]
+            ..channel = c.channelRows.first;
+          addTearDown(() async {
+            w.dispose();
+            await c.stream.close();
+          });
+          // Accepted product selections, then authoritative directory removal.
+          await w.selectChannel(gone);
+          await w.selectChannel(c.channelRows.first);
+          c.channelRows.remove(gone);
+          c.removedMetadata.add('/channels/gone');
+          if (knownRevoked) {
+            await w.refreshChannels();
+          } else {
+            // No deletion event/directory ACK has arrived yet. Back must handle
+            // the actual metadata 404 without throwing from its async callback.
+            w.channels = w.channels.where((row) => row.id != gone.id).toList();
+          }
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(family, dark: dark),
+              home: WorkspaceView(
+                controller: w,
+                appearance: RaftAppearance(
+                  mode: dark ? ThemeMode.dark : ThemeMode.light,
+                  light: family,
+                ),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          c.calls.clear();
+          await tester.tap(find.byKey(const Key('mobile-detail-back')));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(c.calls.contains('GET:/channels/gone'), !knownRevoked);
+          expect(w.missingConversationChannelId, 'gone');
+          expect(find.text('LOADING CHANNEL'), findsNothing);
+          expect(find.text('SELECT A CHANNEL'), findsWidgets);
+        },
+      );
+    }
+  }
+  testWidgets('a late Back metadata failure cannot replace the new channel', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final c = _Client()..selectServer('s');
+    final gone = RaftChannel({
+      'id': 'gone',
+      'name': 'Removed channel',
+      'joined': true,
+    });
+    final w = WorkspaceController(c, mobileNavigation: true)
+      ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
+      ..channels = [...c.channelRows, gone]
+      ..channel = c.channelRows.first;
+    addTearDown(() async {
+      w.dispose();
+      await c.stream.close();
+    });
+    await w.selectChannel(gone);
+    await w.selectChannel(c.channelRows.first);
+    w.channels = [...c.channelRows];
+    final held = Completer<dynamic>();
+    c.pendingMetadata['/channels/gone'] = held;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(RaftFamily.elegant),
+        home: WorkspaceView(
+          controller: w,
+          appearance: const RaftAppearance(),
+          onAppearance: (_) async {},
+          onLogout: () async {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('mobile-detail-back')));
+    await tester.pump();
+    expect(c.calls, contains('GET:/channels/gone'));
+    await w.selectChannel(c.channelRows.first);
+    held.completeError(
+      const RaftApiException('Channel not found', status: 404),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(w.channel?.id, 'c');
+    expect(w.location.entityId, 'c');
+    expect(w.missingConversationChannelId, isNot('gone'));
+    expect(w.error, isNull);
+    expect(find.text('SELECT A CHANNEL'), findsNothing);
   });
   testWidgets(
     'actual mobile Home channel drill-in/back and settings reset hide detail tabs',

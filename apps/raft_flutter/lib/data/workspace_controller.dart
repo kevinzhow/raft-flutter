@@ -1708,6 +1708,16 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
+  bool _rejectRevokedConversation(String id) {
+    if (_disposed || !_revokedChannels.contains(id)) return false;
+    if (location.entityId == id) {
+      _missingConversationChannelId = id;
+      _resolvingConversationChannelId = null;
+      notifyListeners();
+    }
+    return true;
+  }
+
   String? _resolvingConversationChannelId, _missingConversationChannelId;
   int _conversationResolutionRequest = 0;
   String? get missingConversationChannelId => _missingConversationChannelId;
@@ -1732,7 +1742,12 @@ class WorkspaceController extends ChangeNotifier {
         reply == _replyToken() &&
         generation == ledger.generation &&
         !_revokedChannels.contains(id);
-    if (id.isEmpty || !can('viewChannel')) return;
+    if (_disposed ||
+        _rejectRevokedConversation(id) ||
+        id.isEmpty ||
+        !can('viewChannel')) {
+      return;
+    }
     _resolvingConversationChannelId = id;
     _missingConversationChannelId = null;
     notifyListeners();
@@ -2473,13 +2488,24 @@ class WorkspaceController extends ChangeNotifier {
         authority == _windowAuthority() &&
         replyAuthority == _replyToken() &&
         !_revokedChannels.contains(channelId);
+    if (_rejectRevokedConversation(channelId) || !owned()) return;
     var next = [
       ...channels,
       ...dms,
     ].where((c) => c.id == channelId).firstOrNull;
-    next ??= RaftChannel(
-      Map<String, dynamic>.from(await client.get('/channels/$channelId')),
-    );
+    try {
+      next ??= RaftChannel(
+        Map<String, dynamic>.from(await client.get('/channels/$channelId')),
+      );
+    } catch (e) {
+      // UI callbacks may not await navigation. A missing/denied metadata
+      // response belongs to this route, never to the global async error zone.
+      if (owned()) {
+        _missingConversationChannelId = channelId;
+        setError('$e');
+      }
+      return;
+    }
     if (!owned() || !can('viewChannel', resource: next)) return;
     if (messageId == null) {
       await selectChannel(next, navigate: navigate);
