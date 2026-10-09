@@ -389,7 +389,7 @@ void main() {
         await t.pump();
         expect(
           t
-              .widget<TextFormField>(
+              .widget<RaftSlugInput>(
                 find.byKey(const ValueKey('global-server-slug')),
               )
               .controller!
@@ -685,6 +685,52 @@ void main() {
         );
         expect(find.text('Cancel'), findsNothing);
         expect(f.adapter.calls.where((c) => c.path == '/channels'), isEmpty);
+        await f.close(t);
+      },
+    );
+    testWidgets(
+      'actual RaftApp $theme shared form required fields, slug prefix and touched value',
+      (t) async {
+        final f = RootFixture();
+        await f.mount(t, theme, 390);
+        await t.tap(find.text('+ Create New Server'));
+        await t.pump();
+        final name = find.byKey(const ValueKey('global-server-name'));
+        final slug = find.byKey(const ValueKey('global-server-slug'));
+        expect(
+          t
+              .widget<EditableText>(
+                find.descendant(of: name, matching: find.byType(EditableText)),
+              )
+              .focusNode
+              .hasFocus,
+          isTrue,
+        );
+        expect(
+          find.descendant(of: slug, matching: find.text('/')),
+          findsOneWidget,
+        );
+        await t.tap(
+          find.descendant(
+            of: find.byType(RaftAuthSubmit),
+            matching: find.text('Create server'),
+          ),
+        );
+        await t.pump();
+        expect(find.text('Required'), findsNWidgets(2));
+        expect(
+          f.adapter.calls.where(
+            (c) => c.method == 'POST' && c.path == '/servers',
+          ),
+          isEmpty,
+        );
+        await t.enterText(name, 'First Team');
+        await t.enterText(slug, 'My Custom URL');
+        await t.enterText(name, 'Second Team');
+        expect(t.widget<RaftSlugInput>(slug).controller!.text, 'my-custom-url');
+        await t.tap(find.text('Cancel'));
+        await t.pump();
+        expect(find.byKey(const ValueKey('global-server-a')), findsOneWidget);
         await f.close(t);
       },
     );

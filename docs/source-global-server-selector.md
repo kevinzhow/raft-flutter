@@ -56,3 +56,25 @@ The required WorkspaceView callback constructor seam is F's commit `5096315` (pr
 No Linux or Android native run, compositor capture, browser history replay or visual acceptance is claimed for this batch. Parent owns both native lanes and will select the fixture server explicitly in the full native startup after integration. All previous native and Source failures remain unchanged.
 
 The chooser reuses the shared auth shell, option-card recipe, fields and keyboard/semantics controls. The first-server form is functional, but the Source wide OnboardingCreateShell demonstration pane, first-server explanatory presentation and SlugInput prefix are not yet reproduced; this batch does not claim first-server visual parity or the hosted/Electron server-switch handshake.
+
+## Shared input follow-up
+
+The selector uses `RaftTextInput` and `RaftSlugInput` inside Flutter form-state
+adapters. Required validation remains live, including automatically generated
+slugs and manually touched values. The slash prefix is the mounted Source
+`SlugInput` (`ServerSelector.tsx:210–226`); Enter submission passes through the
+shared prefixed input. Gaps/insets now refer to the public spacing scale.
+The loading/error shell uses the shared auth composition.
+
+The original 35 actual `RaftApp` scenarios pass, as do three additional theme
+cases for initial input focus, required validation without a POST, the slash
+prefix, normalization, touched slug preservation and Cancel. The targeted
+analyzer is clean. The resolved-AST audit reports zero findings for the selector,
+without a baseline or allowlist change. Private receipts are
+`.local/global-selector-ds-{before,after-v1}.json`,
+`.local/global-selector-ds-tests-v1.log`,
+`.local/global-selector-ds-validation-v4.log` and
+`.local/global-selector-ds-analysis-v2.log`. The earlier new-test ambiguous
+Create-server finder failures in validation-v2/v3 are retained.
+
+This does not add first-server desktop preview or native selector evidence.

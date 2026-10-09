@@ -32,6 +32,7 @@ class GlobalServerSelector extends StatefulWidget {
 class _GlobalServerSelectorState extends State<GlobalServerSelector> {
   final name = TextEditingController(), slug = TextEditingController();
   final form = GlobalKey<FormState>();
+  final slugField = GlobalKey<FormFieldState<String>>();
   bool creating = false, slugTouched = false;
   @override
   void dispose() {
@@ -49,14 +50,11 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
     if (widget.loading && widget.servers.isEmpty) {
       // App.tsx ServerRedirect/ServerSelectionPage owns this undecided state;
       // ServerSelector's first-server form is not mounted while it is loading.
-      return Material(
-        color: t.canvas,
-        child: SafeArea(
-          child: Center(
-            child: Text(
-              tr('Loading servers…'),
-              style: RaftTypography.heading(t, size: 20, line: 28),
-            ),
+      return RaftAuthShell(
+        child: Center(
+          child: Text(
+            tr('Loading servers…'),
+            style: RaftTypography.heading(t, size: 20, line: 28),
           ),
         ),
       );
@@ -66,7 +64,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
         child: Column(
           children: [
             RaftAuthBanner(text: widget.error!),
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
             RaftAuthSubmit(
               label: tr('Retry'),
               onPressed: widget.loading ? null : widget.onRetry,
@@ -94,7 +92,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
           ),
           if (widget.error != null) ...[
             RaftAuthBanner(text: widget.error!),
-            const SizedBox(height: 12),
+            const SizedBox(height: RaftSpace.x3),
           ],
           if (create)
             Form(
@@ -102,59 +100,72 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  RaftAuthField(
-                    label: tr('Server name'),
-                    child: TextFormField(
-                      key: const ValueKey('global-server-name'),
-                      controller: name,
-                      autofocus: true,
-                      enabled: !widget.loading,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
+                  FormField<String>(
+                    initialValue: name.text,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? tr('Required') : null,
+                    builder: (field) => RaftAuthField(
+                      label: tr('Server name'),
+                      surface: false,
+                      error: field.errorText,
+                      child: RaftTextInput(
+                        key: const ValueKey('global-server-name'),
+                        controller: name,
+                        autofocus: true,
+                        enabled: !widget.loading,
+                        invalid: field.hasError,
                         hintText: 'My team',
+                        semanticLabel: tr('Server name'),
+                        onChanged: (value) {
+                          field.didChange(value);
+                          if (!slugTouched) {
+                            slug.text = toSlug(value);
+                            slugField.currentState?.didChange(slug.text);
+                          }
+                        },
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? tr('Required')
-                          : null,
-                      onChanged: (value) {
-                        if (!slugTouched) slug.text = toSlug(value);
-                      },
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  RaftAuthField(
-                    label: tr('URL slug'),
-                    child: TextFormField(
-                      key: const ValueKey('global-server-slug'),
-                      controller: slug,
-                      enabled: !widget.loading,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
+                  const SizedBox(height: RaftSpace.x3),
+                  FormField<String>(
+                    key: slugField,
+                    initialValue: slug.text,
+                    validator: (value) =>
+                        value == null || value.isEmpty ? tr('Required') : null,
+                    builder: (field) => RaftAuthField(
+                      label: tr('URL slug'),
+                      surface: false,
+                      error: field.errorText,
+                      child: RaftSlugInput(
+                        key: const ValueKey('global-server-slug'),
+                        controller: slug,
+                        enabled: !widget.loading,
+                        invalid: field.hasError,
                         hintText: 'my-team',
+                        semanticLabel: tr('URL slug'),
+                        onChanged: (value) {
+                          slugTouched = true;
+                          final normalized = toSlug(value);
+                          field.didChange(normalized);
+                          if (normalized != value) {
+                            slug.value = TextEditingValue(
+                              text: normalized,
+                              selection: TextSelection.collapsed(
+                                offset: normalized.length,
+                              ),
+                            );
+                          }
+                        },
+                        onSubmitted: (_) {
+                          if (!widget.loading &&
+                              form.currentState!.validate()) {
+                            widget.onCreate(name.text, slug.text);
+                          }
+                        },
                       ),
-                      validator: (value) => value == null || value.isEmpty
-                          ? tr('Required')
-                          : null,
-                      onChanged: (value) {
-                        slugTouched = true;
-                        final normalized = toSlug(value);
-                        if (normalized != value) {
-                          slug.value = TextEditingValue(
-                            text: normalized,
-                            selection: TextSelection.collapsed(
-                              offset: normalized.length,
-                            ),
-                          );
-                        }
-                      },
-                      onFieldSubmitted: (_) {
-                        if (!widget.loading && form.currentState!.validate()) {
-                          widget.onCreate(name.text, slug.text);
-                        }
-                      },
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: RaftSpace.x4),
                   Row(
                     children: [
                       if (!first) ...[
@@ -172,7 +183,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                             child: Text(tr('Cancel')),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: RaftSpace.x2),
                       ],
                       Expanded(
                         child: RaftAuthSubmit(
@@ -194,7 +205,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
           else ...[
             for (final server in widget.servers)
               Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: RaftSpace.x2),
                 child: RaftInteractive(
                   key: ValueKey('global-server-${server.id}'),
                   onPressed: widget.loading
@@ -214,7 +225,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                       tokens: t.recipeTokens,
                     ).root,
                     tokens: t.recipeTokens,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(RaftSpace.x3),
                     child: SizedBox(
                       width: double.infinity,
                       child: Column(
@@ -243,7 +254,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
+            const SizedBox(height: RaftSpace.x4),
             RaftAuthSubmit(
               label: tr('+ Create New Server'),
               onPressed: widget.loading
@@ -251,7 +262,7 @@ class _GlobalServerSelectorState extends State<GlobalServerSelector> {
                   : () => setState(() => creating = true),
             ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: RaftSpace.x3),
           Center(
             child: RaftAuthTextLink(
               label: tr('Log out'),

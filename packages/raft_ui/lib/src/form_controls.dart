@@ -515,6 +515,7 @@ class RaftPrefixedInput extends StatefulWidget {
     this.enabled = true,
     this.invalid = false,
     this.onChanged,
+    this.onSubmitted,
     this.focusNode,
     this.inputFormatters,
     this.semanticLabel,
@@ -524,7 +525,7 @@ class RaftPrefixedInput extends StatefulWidget {
   final TextEditingController? controller;
   final String? initialValue, hintText, semanticLabel;
   final bool readOnly, enabled, invalid;
-  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onChanged, onSubmitted;
   final FocusNode? focusNode;
   final List<TextInputFormatter>? inputFormatters;
 
@@ -599,6 +600,7 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
                       readOnly: widget.readOnly,
                       enabled: widget.enabled,
                       onChanged: widget.onChanged,
+                      onSubmitted: widget.onSubmitted,
                       inputFormatters: widget.inputFormatters,
                       style: control,
                       strutStyle: StrutStyle.fromTextStyle(
@@ -637,12 +639,14 @@ class RaftSlugInput extends StatelessWidget {
     this.enabled = true,
     this.invalid = false,
     this.onChanged,
+    this.onSubmitted,
     this.hintText,
+    this.semanticLabel,
   });
   final TextEditingController? controller;
-  final String? initialValue, hintText;
+  final String? initialValue, hintText, semanticLabel;
   final bool readOnly, enabled, invalid;
-  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onChanged, onSubmitted;
 
   @override
   Widget build(BuildContext context) => RaftPrefixedInput(
@@ -654,6 +658,8 @@ class RaftSlugInput extends StatelessWidget {
     enabled: enabled,
     invalid: invalid,
     onChanged: onChanged,
+    onSubmitted: onSubmitted,
+    semanticLabel: semanticLabel,
   );
 }
 
