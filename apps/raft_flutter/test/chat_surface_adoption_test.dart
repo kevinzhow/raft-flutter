@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -32,6 +33,12 @@ void main() {
           'content': 'Public parent',
         });
         w.threadChannelId = 'thread-c1';
+        // The mounted workspace derives its thread surface from the location.
+        // Retain the accepted parent facts while supplying its real URL anchor.
+        w.navigation.navigate(
+          w.location.withQuery({'thread': 'c1:parent'}),
+          kind: RaftNavigationKind.replace,
+        );
         await t.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),
