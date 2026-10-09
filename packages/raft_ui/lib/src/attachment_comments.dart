@@ -86,15 +86,20 @@ class RaftCommentAnchorChip extends StatelessWidget {
           ),
           if (onRemove != null) ...[
             const SizedBox(width: 4),
-            Semantics(
-              button: true,
-              label: removeLabel,
-              child: GestureDetector(
-                onTap: onRemove,
-                child: RaftIcon(
+            RaftDensityScope(
+              // Source pending-anchor remove is the bare 9px X button.
+              density: RaftDensity.desktop,
+              child: RaftInteractive(
+                onPressed: onRemove,
+                semanticLabel:
+                    removeLabel ?? raftText(context, 'Remove anchor'),
+                tooltip: removeLabel ?? raftText(context, 'Remove anchor'),
+                builder: (_, state) => RaftIcon(
                   RaftGlyph.x,
                   size: 9,
-                  color: t.brutal
+                  color: state.hovered || state.focusVisible
+                      ? ink
+                      : t.brutal
                       ? RaftPrimitiveColors.black.withValues(alpha: .5)
                       : t.colors['foreground-muted'],
                 ),
@@ -250,13 +255,17 @@ class _CommentCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final strong = t.brutal ? RaftPrimitiveColors.black : t.strong;
     final c = comment;
-    final card = Container(
+    Widget card({bool hovered = false}) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: t.brutal ? Colors.white : t.colors['layer-panel'],
+        color: hovered
+            ? t.product.brutalStone.withValues(alpha: .1)
+            : t.brutal
+            ? Colors.white
+            : t.colors['layer-panel'],
         border: Border.all(
           color: t.brutal
-              ? RaftPrimitiveColors.black.withValues(alpha: .15)
+              ? RaftPrimitiveColors.black.withValues(alpha: hovered ? .4 : .15)
               : t.colors['line-muted']!,
         ),
         borderRadius: BorderRadius.circular(4),
@@ -338,6 +347,8 @@ class _CommentCard extends StatelessWidget {
           // `text-black/80`, MarkdownContent density compact.
           RaftMessageBody(
             content: c.content,
+            // Source index.css disables selection inside its whole-card button.
+            enableProseSelection: c.onJump == null,
             fontSize: 12,
             lineHeight: 19.5,
             foregroundColor: t.brutal
@@ -347,9 +358,13 @@ class _CommentCard extends StatelessWidget {
         ],
       ),
     );
-    if (c.onJump == null) return card;
-    return MouseRegion(
-      child: GestureDetector(onTap: c.onJump, child: card),
+    if (c.onJump == null) return card();
+    return RaftInteractive(
+      onPressed: c.onJump,
+      tooltip: c.quote?.isNotEmpty == true
+          ? c.quote
+          : raftText(context, 'Jump to location'),
+      builder: (_, state) => card(hovered: state.hovered),
     );
   }
 }

@@ -759,6 +759,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               controller: w,
               section: route,
               restoreSearchState: searchEntryRevision == 0,
+              initialSearchDeferUntilQuery:
+                  route == 'search' && channelSearchSeed != null,
               initialSearchChannelId: route == 'search'
                   ? channelSearchSeed
                   : null,

@@ -1,0 +1,30 @@
+{
+  "recordedAt": "2026-10-09T03:38:26.566675+00:00",
+  "productCommit": "6f12a0d",
+  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "scope": "one official comment-anchor fixture; cached actual Source from selected-a760 run, newly captured Flutter host raster",
+  "officialStatus": "basic-pass",
+  "pixelPerfectSimilarity": 0.9700334859102632,
+  "selectedCaptured": 1,
+  "otherCasesUnrun": 98,
+  "personalReview": "Same 390x844 @3x frame; header/composer rule positions and pending-anchor inset retained. Official basic-pass is below strict pass; not whole-panel acceptance.",
+  "tests": {
+    "sharedBodyAndComments": 15,
+    "commentDragFollowup": 4,
+    "appCommentsAndAttachmentAuthority": 13,
+    "searchEntryAndAuthority": 8
+  },
+  "limits": [
+    "No native OS/comments-backend integration.",
+    "No new Source hover/focus capture; Source behavior backed by authored button/index.css contract and real widget activation.",
+    "Fenced code/diagram controls inside a whole-card button remain separate interactive coverage.",
+    "Official capture is Brutal-light only; three themes covered by interaction tests and existing previews."
+  ],
+  "fileShas": {
+    "build/parity-thread-comments-20261009/summary.json": "3fab94a0d795463b142ce7acdf267e962775c01f8680ec4c012e0f7d86f19bd6",
+    "build/parity-thread-comments-20261009/visual-testing-results/react/components.thread.comment-anchor.png": "15837baa8bc84facbf7d61d83bc8b45166951e80c16f592e04d0ff239bdb128b",
+    "build/parity-thread-comments-20261009/visual-testing-results/react/components.thread.comment-anchor.metadata.json": "13278d4338adc4c619d9b95c59288904d57398f3605e276d962e35f04357a82c",
+    "build/parity-thread-comments-20261009/visual-testing-results/android/components.thread.comment-anchor.png": "e4a793325be41440caee2f2eddc59e7adb5da1155be2c458a235954a2fdbe369",
+    "build/parity-thread-comments-20261009/visual-testing-results/android/components.thread.comment-anchor.metadata.json": "3329044d528ead69dd545730c1ca68a952e803d01f23b4017981b9f566d190b8"
+  }
+}

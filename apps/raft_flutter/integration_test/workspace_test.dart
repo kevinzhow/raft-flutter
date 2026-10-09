@@ -1361,6 +1361,35 @@ void main() {
       );
       expect(jumped, findsOneWidget);
       debugPrint('Native Search: target attached and intersects real viewport');
+      // Open the real channel header entry after a previous global query.
+      // This exercises production routing and excludes restored global state.
+      await tester.tap(find.bySemanticsLabel('Search this channel'));
+      await tester.pumpAndSettle();
+      final channelSearch = tester.widget<ResourceView>(
+        find.byType(ResourceView),
+      );
+      expect(channelSearch.initialSearchChannelId, general.id);
+      expect(channelSearch.initialSearchDeferUntilQuery, isTrue);
+      expect(channelSearch.restoreSearchState, isFalse);
+      expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
+      expect(find.byType(ResourceSearchResults), findsNothing);
+      await screenshot(tester, 'linux-channel-search-empty');
+      await tester.enterText(searchInput, text);
+      await tester.pump(const Duration(milliseconds: 210));
+      await until(tester, () => searchResult.evaluate().isNotEmpty);
+      await screenshot(tester, 'linux-channel-search-results');
+      await tester.tap(searchResult.first);
+      await until(
+        tester,
+        () =>
+            w.section == 'chat' &&
+            w.channel?.id == general.id &&
+            w.highlightedMessageId == sent.id &&
+            mainChat.evaluate().length == 1 &&
+            (tester.state(mainChat) as dynamic).focusReceiptVisible(sent.id) ==
+                true,
+      );
+      expect(jumped, findsOneWidget);
       await tester.tap(
         find.descendant(
           of: jumped,

@@ -635,7 +635,9 @@ class RaftInlineLineBox extends StatelessWidget {
         ),
       ],
     ),
-    style: style,
+    // CSS leading belongs to the font strut, not the inline widget box.
+    // Applying height to both inflates a tall inline-block twice in Flutter.
+    style: style.copyWith(height: 1),
     strutStyle: StrutStyle.fromTextStyle(style),
     textScaler: TextScaler.noScaling,
   );

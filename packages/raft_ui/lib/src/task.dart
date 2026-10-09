@@ -6,6 +6,7 @@ import 'theme.dart';
 import 'icons.dart';
 import 'design_primitives.dart';
 import 'inline_badge_editor.dart';
+import 'recipe_surface.dart';
 import 'mounted_task_chip.dart';
 import '../recipes.dart';
 
@@ -198,7 +199,9 @@ class RaftTaskCard extends StatelessWidget {
       tokens: rt,
     );
     TextStyle text(RaftSlotStyle slot, {double? line}) {
-      final base = slot.textStyle(rt);
+      final base = raftCssText
+          .merge(DefaultTextStyle.of(context).style)
+          .merge(slot.textStyle(rt));
       final size = base.fontSize ?? 16;
       return base.copyWith(
         fontFamily: base.fontFamily ?? t.bodyFont,
@@ -210,6 +213,9 @@ class RaftTaskCard extends StatelessWidget {
       );
     }
 
+    final document = raftCssText
+        .merge(DefaultTextStyle.of(context).style)
+        .copyWith(fontSize: 16, height: 1.5);
     final editable = onStatus != null && statusOptions.isNotEmpty;
     return Semantics(
       button: onTap != null,
@@ -224,50 +230,53 @@ class RaftTaskCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: [
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              // The card-level Semantics above exposes the open action.
-              excludeFromSemantics: true,
-              onTap: onTap,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: r.meta.margin,
-                    child: Row(
-                      spacing: r.meta.columnGap ?? 8,
-                      children: [
-                        if (channel.isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              '#$channel',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: text(r.channel),
-                            ),
-                          ),
-                        Text('#$number', style: text(r.number)),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: text(r.title),
-                  ),
-                  if (description.isNotEmpty)
+            RaftInlineLineBox(
+              style: document,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                // The card-level Semantics above exposes the open action.
+                excludeFromSemantics: true,
+                onTap: onTap,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Padding(
-                      padding: r.description.margin,
-                      child: Text(
-                        description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: text(r.description),
+                      padding: r.meta.margin,
+                      child: Row(
+                        spacing: r.meta.columnGap ?? 8,
+                        children: [
+                          if (channel.isNotEmpty)
+                            Flexible(
+                              child: Text(
+                                '#$channel',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: text(r.channel),
+                              ),
+                            ),
+                          Text('#$number', style: text(r.number)),
+                        ],
                       ),
                     ),
-                ],
+                    Text(
+                      title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: text(r.title),
+                    ),
+                    if (description.isNotEmpty)
+                      Padding(
+                        padding: r.description.margin,
+                        child: Text(
+                          description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: text(r.description),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
             Padding(
@@ -277,7 +286,7 @@ class RaftTaskCard extends StatelessWidget {
                 // The badge is inline content of a block wrapper: it sits on
                 // the line box of the inherited document text (16px / 1.5).
                 child: RaftInlineLineBox(
-                  style: RaftTypography.body(t, size: 16, line: 24),
+                  style: document,
                   child: editable
                       ? RaftTaskStatusEditor(
                           status: status,
@@ -386,9 +395,13 @@ class RaftTaskSection extends StatelessWidget {
         ),
       ),
     );
-    return Container(
-      padding: r.root.padding,
-      decoration: r.root.decoration(rt),
+    // The section fill is translucent. CSS shadows paint outside its box;
+    // BoxDecoration would darken the fill by painting the shadow underneath it.
+    return RaftRecipeBox(
+      style: r.root,
+      tokens: rt,
+      decorationOverride: (decoration) =>
+          decoration.copyWith(color: t.components.taskSectionFill),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,

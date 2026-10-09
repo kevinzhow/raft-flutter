@@ -721,7 +721,12 @@ class _ResourceViewState extends State<ResourceView> {
               border: Border(left: BorderSide(color: t.colors['color-black']!)),
             )
           : null,
-      child: buildBody(context),
+      child: widget.section == 'tasks'
+          ? DefaultTextStyle.merge(
+              style: RaftTaskSectionRecipe(t).documentStyle,
+              child: buildBody(context),
+            )
+          : buildBody(context),
     );
   }
 
@@ -1864,13 +1869,7 @@ class _ResourceViewState extends State<ResourceView> {
     return ColoredBox(
       color: t.colors[t.brutal ? 'color-white' : 'layer-canvas-muted']!,
       child: ListView(
-        padding: RaftTasksPanelRecipe.resolve(
-          theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-          states: RaftRecipeStates({
-            if (t.dark) RaftRecipeStates.dark,
-          }, MediaQuery.sizeOf(context).width),
-          tokens: RaftRecipeTokens(t),
-        ).viewport.padding,
+        padding: RaftTaskSectionRecipe(t).viewportInset,
         children: [
           for (final status in raftTaskStatuses.where(
             (s) => filter == 'all' || filter == s,

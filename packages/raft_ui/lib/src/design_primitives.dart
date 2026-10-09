@@ -2370,6 +2370,18 @@ class RaftTaskSectionRecipe {
   const RaftTaskSectionRecipe(this.tokens);
   final RaftTokens tokens;
   EdgeInsets get inset => EdgeInsets.all(tokens.brutal ? 0 : 12);
+
+  /// TasksPanel.tsx1178 applies p-4 over the raft-ui dark viewport p-7.
+  EdgeInsets get viewportInset => const EdgeInsets.all(16);
+
+  /// MainLayout.tsx2255 AppShellRoot font-display, inherited by task cards.
+  TextStyle get documentStyle => TextStyle(
+    fontFamily: tokens.headingFont,
+    fontSize: 16,
+    height: 1.5,
+    leadingDistribution: TextLeadingDistribution.even,
+    color: tokens.ink,
+  );
   double get itemGap => 10;
   double get sectionGap => 24;
   BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 10);

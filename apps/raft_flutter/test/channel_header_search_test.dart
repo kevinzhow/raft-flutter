@@ -107,6 +107,15 @@ void main() {
         final entry = t.widget<ResourceView>(find.byType(ResourceView));
         expect(entry.initialSearchChannelId, 'c');
         expect(entry.restoreSearchState, isFalse);
+        expect(entry.initialSearchDeferUntilQuery, isTrue);
+        expect(w.searches, isEmpty);
+        await t.enterText(find.byType(TextField).first, 'public');
+        await t.pump(const Duration(milliseconds: 500));
+        await t.pumpAndSettle();
+        expect(w.searches, ['c']);
+        await t.enterText(find.byType(TextField).first, '');
+        await t.pump(const Duration(milliseconds: 500));
+        await t.pumpAndSettle();
         expect(w.searches, ['c']);
         if (revoke == 'channel') {
           w.channels = [];
