@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -21,6 +22,22 @@ Future<void> verifyAttachmentFlow(
   final suffix = DateTime.now().microsecondsSinceEpoch;
   final imageName = 'native-image-$suffix.png';
   final textName = 'native-日本語-$suffix.txt';
+  final imageUrlPending = Completer<void>();
+  final releaseImageUrl = Completer<void>();
+  String? imageId;
+  final imageLoadGate = InterceptorsWrapper(
+    onResponse: (response, handler) async {
+      if (imageId != null &&
+          response.requestOptions.path == '/attachments/$imageId/url' &&
+          response.requestOptions.queryParameters['disposition'] == 'inline' &&
+          !releaseImageUrl.isCompleted) {
+        if (!imageUrlPending.isCompleted) imageUrlPending.complete();
+        // Delay only the owned real signed-URL response; keep its bytes intact.
+        await releaseImageUrl.future;
+      }
+      handler.next(response);
+    },
+  );
   var fail = true;
   final failure = InterceptorsWrapper(
     onRequest: (options, handler) {
@@ -40,6 +57,7 @@ Future<void> verifyAttachmentFlow(
     },
   );
   w.client.http.interceptors.add(failure);
+  w.client.http.interceptors.add(imageLoadGate);
   try {
     await w.attachUpload(imageName, png);
     final failed = w.uploads().single;
@@ -72,6 +90,7 @@ Future<void> verifyAttachmentFlow(
     expect(w.uploads(), hasLength(2));
     expect(w.uploadsReady(), true);
     final ids = w.uploads().map((u) => u.id).toSet();
+    imageId = failed.id;
     expect(await w.send('Native attachment delivery $suffix'), true);
     final message = w.messages.singleWhere(
       (m) => m.content == 'Native attachment delivery $suffix',
@@ -96,6 +115,48 @@ Future<void> verifyAttachmentFlow(
     expect(card, findsOneWidget);
     await tester.ensureVisible(card);
     await tester.pump(const Duration(milliseconds: 200));
+    final loadingAction = find.descendant(
+      of: card,
+      matching: find.byTooltip('Preview $imageName'),
+    );
+    for (
+      var i = 0;
+      i < 150 &&
+          (!imageUrlPending.isCompleted ||
+              loadingAction.hitTestable().evaluate().isEmpty);
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(imageUrlPending.isCompleted, true);
+    expect(tester.widget<RaftAttachmentCard>(card).preview, isNull);
+    expect(loadingAction.hitTestable(), findsOneWidget);
+    await tester.tap(loadingAction);
+    await tester.pump();
+    expect(
+      find.byTooltip('Close preview'),
+      findsOneWidget,
+      reason: '[K11] Real loading-image click must open immediately.',
+    );
+    expect(tester.takeException(), isNull);
+    await capture('linux-attachment-loading-intent');
+    releaseImageUrl.complete();
+    final loadingImage = find.byKey(ValueKey('attachment-image-$imageId'));
+    for (var i = 0; i < 150 && loadingImage.evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    expect(loadingImage, findsOneWidget);
+    expect(tester.widget<Image>(loadingImage).image, isA<MemoryImage>());
+    final closeLoadingPreview = find.byTooltip('Close preview');
+    for (
+      var i = 0;
+      i < 150 && closeLoadingPreview.hitTestable().evaluate().isEmpty;
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+    await tester.tap(closeLoadingPreview);
+    await tester.pumpAndSettle();
     for (var i = 0; i < 150; i++) {
       final view = tester.widget<RaftAttachmentCard>(card);
       if (view.preview != null) break;
@@ -109,9 +170,11 @@ Future<void> verifyAttachmentFlow(
     expect(previewAction, findsOneWidget);
     // Decoded bytes can arrive before the live frame paints the preview.
     // Keep the real pointer assertion and wait for that control to receive it.
-    for (var i = 0;
-        i < 150 && previewAction.hitTestable().evaluate().isEmpty;
-        i++) {
+    for (
+      var i = 0;
+      i < 150 && previewAction.hitTestable().evaluate().isEmpty;
+      i++
+    ) {
       await tester.pump(const Duration(milliseconds: 200));
     }
     expect(previewAction.hitTestable(), findsOneWidget);
@@ -129,6 +192,8 @@ Future<void> verifyAttachmentFlow(
     await tester.tap(find.byTooltip('Close preview'));
     await tester.pumpAndSettle();
   } finally {
+    if (!releaseImageUrl.isCompleted) releaseImageUrl.complete();
+    w.client.http.interceptors.remove(imageLoadGate);
     w.client.http.interceptors.remove(failure);
   }
 }

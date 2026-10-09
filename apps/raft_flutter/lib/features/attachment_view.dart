@@ -48,6 +48,7 @@ class _AttachmentViewState extends State<AttachmentView> {
   CancelToken imageCancel = CancelToken(), downloadCancel = CancelToken();
   Uint8List? image;
   MemoryImage? imageProvider;
+  final imagePresentation = ValueNotifier<int>(0);
   WorkspaceAttachmentImageLease? imageLease;
   String? error;
   bool loading = false, saving = false, invalidated = false;
@@ -230,6 +231,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     }
     image = null;
     imageProvider = null;
+    imagePresentation.dispose();
     super.dispose();
   }
 
@@ -288,6 +290,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     } finally {
       if (mounted && revision == bindingRevision) {
         setState(() => loading = false);
+        imagePresentation.value++;
       }
       if (revision == bindingRevision && (image != null || error != null)) {
         exportReady();
@@ -516,8 +519,10 @@ class _AttachmentViewState extends State<AttachmentView> {
       await download();
       return;
     }
-    if (image == null) await loadImage();
-    if (!mounted || !current() || image == null) return;
+    if (!mounted || !current()) return;
+    // Source opens the image lightbox at intent, independently of thumbnail
+    // readiness. A pending thumbnail load must not consume the user's click.
+    if (image == null && !loading) unawaited(loadImage());
     late final DialogRoute<void> operationRoute;
     operationRoute = DialogRoute<void>(
       context: context,
@@ -536,17 +541,31 @@ class _AttachmentViewState extends State<AttachmentView> {
           onPressed: current() ? download : null,
           variant: RaftControlVariant.ghost,
         ),
-        child: Center(
-          child: InteractiveViewer(
-            child: Image(
-              image: imageProvider!,
-              key: ValueKey('attachment-image-${widget.metadata['id']}'),
-              fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Text(
-                'Preview unavailable. Download the original file.',
-              ),
-            ),
-          ),
+        child: ValueListenableBuilder<int>(
+          valueListenable: imagePresentation,
+          builder: (_, _, _) {
+            if (!current()) return const SizedBox.shrink();
+            return Center(
+              child: imageProvider == null
+                  ? error == null
+                        ? const RaftSpinner(inverse: true)
+                        : const Text(
+                            'Preview unavailable. Download the original file.',
+                          )
+                  : InteractiveViewer(
+                      child: Image(
+                        image: imageProvider!,
+                        key: ValueKey(
+                          'attachment-image-${widget.metadata['id']}',
+                        ),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Text(
+                          'Preview unavailable. Download the original file.',
+                        ),
+                      ),
+                    ),
+            );
+          },
         ),
       ),
     );

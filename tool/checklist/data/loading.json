@@ -406,5 +406,52 @@
         ]
       }
     ]
+  },
+  {
+    "id": "K11",
+    "group": "Kevin 反馈",
+    "title_zh": "点击加载中的图片，预览立即打开；关闭或撤权后，迟到的图片不能重新打开预览。",
+    "web_source": "packages/web/src/components/message/MessageItem.tsx:4683-4691,4720-4724; packages/web/src/store/imageLightboxStore.ts:61-66; packages/web/src/components/ImageLightbox.tsx:150,324-327",
+    "audit_note": "2026-10-09 新发现（Cindy c221af55）：加载中的图片卡片虽可点击，AttachmentView.openCurrent 调用已在加载的 loadImage 会立即返回，导致点击丢失。三主题实际组件点击已复现并保留失败；原生图片字节及绘制交接另行复验。",
+    "checks": [
+      {
+        "minimum_layer": "mounted",
+        "proof_file": "apps/raft_flutter/test/attachment_open_intent_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ],
+        "id": "K11a",
+        "minimum_passes": 3,
+        "title_zh": "三主题点击实际绘制且可命中的加载中卡片，第一帧立即出现图片预览与关闭操作"
+      },
+      {
+        "minimum_layer": "mounted",
+        "proof_file": "apps/raft_flutter/test/attachment_open_intent_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "close",
+          "revoke"
+        ],
+        "id": "K11b",
+        "minimum_passes": 6,
+        "title_zh": "等待中真实关闭和撤权均拒绝迟到图片重新呈现"
+      },
+      {
+        "minimum_layer": "mounted",
+        "proof_file": "apps/raft_flutter/test/attachment_open_intent_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ],
+        "id": "K11c",
+        "minimum_passes": 3,
+        "title_zh": "图片完成解码但尚未绘制新缩略图时，从已有绘制位置发出的真实指针点击不丢失"
+      }
+    ]
   }
 ]

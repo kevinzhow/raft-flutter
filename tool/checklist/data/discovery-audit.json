@@ -6,6 +6,13 @@
       "discoveredAt": "2026-10-09T17:24:49Z",
       "sourceMessage": "48a49d6e-b92a-45ef-99e7-943f2295cfcf",
       "evidence": "Before this repair, taskDetails awaited task lookup and history before scopedDialog. New discovery; historical original47 audit remains unchanged."
+    },
+    {
+      "id": "K11",
+      "status": "not_started",
+      "discoveredAt": "2026-10-09T19:43:38Z",
+      "sourceMessage": "c221af55-0a86-47b5-b975-ed861fceaecb",
+      "evidence": "Three real mounted loading-image clicks failed before repair; Source opens its lightbox at intent independent of thumbnail readiness. Original47 and prior K10 discovery remain unchanged."
     }
   ]
 }

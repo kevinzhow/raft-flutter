@@ -1,6 +1,6 @@
 # Behavior checklist
 
-Canonical `data/nav.json` and `data/loading.json` describe the 47 parent items,
+Canonical `data/nav.json` and `data/loading.json` describe the current parent items (the original 47 plus separately recorded discoveries),
 their independently required checks and Source references. They do not contain
 completion states. `data/baseline-audit.json` retains Cindy's initial human audit
 as historical evidence. It cannot verify the current code.
@@ -33,7 +33,7 @@ page contract. Missing checks, aborts, failures and skips remain visible. Multip
 copies of one passing test cannot satisfy missing theme coverage.
 
 The generated page has one current progress number; historical audit counts are
-collapsed. Only the 47 parent items contribute to the denominator. Child checks
+collapsed. Only current parent items contribute to the denominator; the frozen historical audit retains its original 47. Child checks
 provide coverage detail without inflating progress. The four user-facing states distinguish verified, partial, missing test evidence
 and not started. Without current proof, historical partial/not-started review
 can describe implementation progress; historical verified or implemented items
