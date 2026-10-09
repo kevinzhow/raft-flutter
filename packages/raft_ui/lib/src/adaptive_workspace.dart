@@ -373,7 +373,11 @@ class RaftWorkspaceRail extends StatelessWidget {
       MediaQuery.sizeOf(context).height,
     );
     final visualSize = recipe.itemSize;
-    return DecoratedBox(
+    // AppRailRoot is a CSS border box: Container reserves its border width
+    // before centering children. Explicit zero padding keeps the same padding
+    // wrapper in Elegant, preserving child state when the theme changes.
+    return Container(
+      padding: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: recipe.background,
         border: t.brutal ? Border(right: recipe.border) : null,
