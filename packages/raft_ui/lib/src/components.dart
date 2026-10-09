@@ -773,6 +773,28 @@ class RaftConversationNavigationRecipe {
 
 /// Only the loud positive unread badge. Quiet/muted/draft indicators and DM
 /// avatars are separate product contracts; this widget invents none of them.
+class RaftSidebarUnreadCount extends StatelessWidget {
+  const RaftSidebarUnreadCount({super.key, required this.count});
+  final int count;
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return const SizedBox.shrink();
+    // Source AgentRow/DMRow/ChannelRow all mount SidebarItemCount accent.
+    final recipe = RaftConversationNavigationRecipe(
+      RaftTokens.of(context),
+      kind: RaftConversationNavKind.directMessage,
+    );
+    return Container(
+      height: recipe.countHeight,
+      constraints: BoxConstraints(minWidth: recipe.countMinimumWidth),
+      padding: recipe.countPadding,
+      decoration: recipe.countDecoration,
+      alignment: Alignment.center,
+      child: Text(count > 99 ? '99+' : '$count', style: recipe.countTextStyle),
+    );
+  }
+}
+
 class RaftConversationUnreadCount extends StatelessWidget {
   const RaftConversationUnreadCount({
     super.key,
@@ -783,21 +805,7 @@ class RaftConversationUnreadCount extends StatelessWidget {
   final RaftConversationNavKind kind;
   @override
   Widget build(BuildContext context) {
-    if (count <= 0) {
-      return const SizedBox.shrink();
-    }
-    final recipe = RaftConversationNavigationRecipe(
-      RaftTokens.of(context),
-      kind: kind,
-    );
-    return Container(
-      height: recipe.countHeight,
-      constraints: BoxConstraints(minWidth: recipe.countMinimumWidth),
-      padding: recipe.countPadding,
-      decoration: recipe.countDecoration,
-      alignment: Alignment.center,
-      child: Text(count > 99 ? '99+' : '$count', style: recipe.countTextStyle),
-    );
+    return RaftSidebarUnreadCount(count: count);
   }
 }
 
@@ -928,28 +936,7 @@ class RaftNavItem extends StatelessWidget {
                 kind: conversationKind!,
               )
             else if (unread > 0)
-              Container(
-                height: 16,
-                constraints: const BoxConstraints(minWidth: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  color: t.accentFill,
-                  border: Border.all(
-                    color: t.brutal ? t.strong : Colors.transparent,
-                  ),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-                child: Text(
-                  unread > 99 ? '99+' : '$unread',
-                  style: RaftTypography.body(
-                    t,
-                    size: 10,
-                    line: 14,
-                    weight: FontWeight.w700,
-                    color: t.brutal ? t.strong : t.colors['accent-950'],
-                  ),
-                ),
-              ),
+              RaftSidebarUnreadCount(count: unread),
           ],
         ),
       ),

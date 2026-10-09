@@ -40,3 +40,41 @@ Widget railIdentityRecipePreview() => Padding(
     ],
   ),
 );
+
+@RaftPreviews('Product rail attention', size: Size(390, 260))
+Widget railAttentionPreview() {
+  var selected = 'search';
+  return StatefulBuilder(
+    builder: (context, update) => Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: RaftTokens.of(context).brutal ? 64 : 56,
+        child: RaftWorkspaceRail(
+          destinations: const [
+            RaftRailDestination(
+              id: 'search',
+              label: 'Search',
+              glyph: RaftGlyph.search,
+            ),
+            RaftRailDestination(
+              id: 'chat',
+              label: 'Chat',
+              glyph: RaftGlyph.messageSquare,
+              attention: true,
+            ),
+            RaftRailDestination(
+              id: 'activity',
+              label: 'Activity',
+              glyph: RaftGlyph.activity,
+              attention: true,
+            ),
+          ],
+          selected: selected,
+          onSelected: (id) => update(() => selected = id),
+          workspaceName: 'Visual Server',
+          onWorkspace: () {},
+        ),
+      ),
+    ),
+  );
+}

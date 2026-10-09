@@ -182,6 +182,38 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
+  String? acceptedActivityAttentionScope;
+  int? acceptedActivityUnread;
+  String get railAttentionScope => jsonEncode([
+    identityHashCode(w),
+    w.client.origin,
+    w.client.generation,
+    w.client.user?.id,
+    w.client.serverId,
+    w.server?.id,
+    w.server?.string('role'),
+  ]);
+
+  void acceptActivityUnread(int? total, String scope) {
+    if (!mounted || scope != railAttentionScope) return;
+    if (acceptedActivityAttentionScope == scope &&
+        acceptedActivityUnread == total) {
+      return;
+    }
+    setState(() {
+      acceptedActivityAttentionScope = scope;
+      acceptedActivityUnread = total;
+    });
+  }
+
+  bool get hasActivityAttention =>
+      acceptedActivityAttentionScope == railAttentionScope &&
+      (acceptedActivityUnread ?? 0) > 0;
+  bool get hasChatAttention => [
+    ...w.channels.where((c) => c.type != 'channel' || c.joined),
+    ...w.dms,
+  ].any((c) => (w.unread[c.id] ?? 0) > 0);
+
   late DesktopActivityFlag activityFlag;
   void activityFlagChanged() {
     if (mounted) setState(() {});
@@ -572,6 +604,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       workspaceMode,
     ]),
     builder: (context, _) {
+      final attentionScope = railAttentionScope;
       if (!lastGridActive && gridActive) {
         classicDraftScope = w.draftScope();
         classicDraftAtEntry = w.drafts[classicDraftScope] ?? '';
@@ -831,6 +864,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
               controller: w,
               section: route,
+              onActivityUnreadAccepted: route == 'activity'
+                  ? (total) => acceptActivityUnread(total, attentionScope)
+                  : null,
               initialQuery: route == 'search' ? location.query('q') : null,
               restoreSearchState: searchEntryRevision == 0,
               initialSearchDeferUntilQuery:
@@ -1638,13 +1674,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       label: tr('Chat'),
       glyph: RaftGlyph.messageSquare,
       iconWidget: railIcon(RaftGlyph.messageSquare),
+      attention: hasChatAttention,
     ),
     RaftRailDestination(
       id: 'activity',
       label: tr('Activity'),
       glyph: RaftGlyph.activity,
       iconWidget: railIcon(RaftGlyph.activity),
-      unread: w.unread.values.fold(0, (a, b) => a + b),
+      attention: hasActivityAttention,
     ),
     RaftRailDestination(
       id: 'tasks',

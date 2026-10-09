@@ -8,6 +8,7 @@ import 'icons.dart';
 import 'mounted_avatar_recipe.dart';
 import 'recipe_surface.dart';
 import 'recipes/app_rail.g.dart';
+import 'rail_attention.dart';
 
 /// A window-sized workspace layout. Panel sizes follow the Web panel contract.
 /// The host owns navigation, persistence, and the mobile application bar.
@@ -311,12 +312,17 @@ class RaftRailDestination {
     this.glyph,
     this.iconWidget,
     this.unread = 0,
+    this.attention = false,
+    this.attentionInactiveOnly = true,
   }) : assert(icon != null || glyph != null || iconWidget != null);
   final String id, label;
   final IconData? icon;
   final RaftGlyph? glyph;
   final Widget? iconWidget;
   final int unread;
+
+  /// Source binary attention; numeric unread remains a separate library API.
+  final bool attention, attentionInactiveOnly;
 }
 
 class RaftWorkspaceRail extends StatelessWidget {
@@ -335,6 +341,12 @@ class RaftWorkspaceRail extends StatelessWidget {
   final ValueChanged<String> onSelected;
   final VoidCallback onWorkspace;
   final Widget? footer;
+
+  Widget railGlyph(RaftRailDestination destination, double size) =>
+      destination.iconWidget ??
+      (destination.glyph != null
+          ? RaftIcon(destination.glyph!, size: size)
+          : Icon(destination.icon, size: size));
 
   @override
   Widget build(BuildContext context) {
@@ -437,16 +449,27 @@ class RaftWorkspaceRail extends StatelessWidget {
                                 fit: StackFit.expand,
                                 clipBehavior: Clip.none,
                                 children: [
-                                  d.iconWidget ??
-                                      (d.glyph != null
-                                          ? RaftIcon(
-                                              d.glyph!,
-                                              size: recipe.glyphSize,
-                                            )
-                                          : Icon(
-                                              d.icon,
-                                              size: recipe.glyphSize,
-                                            )),
+                                  Center(
+                                    child: SizedBox.square(
+                                      dimension: recipe.glyphSize,
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        fit: StackFit.expand,
+                                        children: [
+                                          railGlyph(d, recipe.glyphSize),
+                                          if (d.attention &&
+                                              (!d.attentionInactiveOnly ||
+                                                  selected != d.id))
+                                            RaftRailAttention(
+                                              child: railGlyph(
+                                                d,
+                                                recipe.glyphSize,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                   if (d.unread > 0)
                                     Positioned(
                                       right: -4,

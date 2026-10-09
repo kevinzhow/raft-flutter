@@ -34,6 +34,7 @@ class ResourceView extends StatefulWidget {
     this.onSearchMessage,
     this.onActivityItem,
     this.onActivityCanonical,
+    this.onActivityUnreadAccepted,
     this.searchMemory,
     this.restoreSearchState = true,
     this.channelId,
@@ -67,6 +68,10 @@ class ResourceView extends StatefulWidget {
   /// to the canonical route and cancels the pending 220 ms content-slot open.
   /// Custom embedded consumers without this callback keep immediate onOpen.
   final Future<void> Function(Map<String, dynamic>)? onActivityCanonical;
+
+  /// Server-wide Activity total from an accepted window, independent of filter.
+  /// Null retires the projection after an explicit authority denial.
+  final ValueChanged<int?>? onActivityUnreadAccepted;
   @override
   State<ResourceView> createState() => _ResourceViewState();
 }
@@ -350,6 +355,9 @@ class _ResourceViewState extends State<ResourceView> {
       closeDialogs();
       clearRows();
       resetAdvanced();
+      if (widget.section == 'activity') {
+        widget.onActivityUnreadAccepted?.call(null);
+      }
     }
     setState(() {
       error = '$cause';
@@ -695,6 +703,13 @@ class _ResourceViewState extends State<ResourceView> {
               ? cursor != null
               : value is Map && value['hasMore'] == true;
         });
+        if (widget.section == 'activity' &&
+            value is Map &&
+            value['totalUnreadCount'] is num) {
+          widget.onActivityUnreadAccepted?.call(
+            (value['totalUnreadCount'] as num).toInt(),
+          );
+        }
       }
     } catch (e) {
       fail(e, scope, request: request);
