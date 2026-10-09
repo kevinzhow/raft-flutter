@@ -91,6 +91,7 @@ void main() {
           await Future<void>.delayed(const Duration(milliseconds: 20));
         });
         await tester.pumpAndSettle();
+        await opening;
         expect(w.location.thread, isNull);
         expect(w.threadIdentity, isNull);
         expect(w.navigation.index, index);

@@ -738,7 +738,8 @@ class _RaftChatViewState extends State<RaftChatView> {
           if (target != null && w.highlightedMessageId == target) {
             final binding = bindingRevision,
                 ownedScope = scope,
-                authority = workspaceAuthority(w);
+                authority = workspaceAuthority(w),
+                navigationWindow = w.navigationRevision;
             highlightTimer = Timer(const Duration(seconds: 2), () {
               if (mounted &&
                   binding == bindingRevision &&
@@ -748,7 +749,10 @@ class _RaftChatViewState extends State<RaftChatView> {
                       (widget.thread
                           ? w.threadGeneration
                           : w.channelGeneration)) {
-                w.clearHighlightedMessage(target);
+                w.clearHighlightedMessage(
+                  target,
+                  expectedNavigationRevision: navigationWindow,
+                );
               }
             });
           }

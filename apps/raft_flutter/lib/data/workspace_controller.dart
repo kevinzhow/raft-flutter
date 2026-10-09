@@ -2217,7 +2217,7 @@ class WorkspaceController extends ChangeNotifier {
     if (navigate) {
       final next = location.withQuery({
         'thread': '$parentChannelId:$parentMessageId',
-        'msg': focusedMessageId,
+        'msg': ?focusedMessageId,
       });
       navigation.navigate(next, kind: location.panelNavigationKindTo(next));
     }
@@ -2358,8 +2358,29 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   /// Clears only the focus owned by the mounted timeline's highlight timer.
-  void clearHighlightedMessage(String? expectedId) {
-    if (highlightedMessageId != expectedId) return;
+  void clearHighlightedMessage(
+    String? expectedId, {
+    int? expectedNavigationRevision,
+  }) {
+    if (highlightedMessageId != expectedId ||
+        expectedNavigationRevision != null &&
+            expectedNavigationRevision != navigationRevision) {
+      return;
+    }
+    final identity = threadIdentity;
+    if (expectedId != null &&
+        expectedNavigationRevision != null &&
+        identity != null &&
+        identity.focusedMessageId == expectedId &&
+        threadChannelId != null) {
+      navigation.consumeThreadFocus(
+        threadChannelId: threadChannelId!,
+        parentChannelId: identity.parentChannelId,
+        parentMessageId: identity.parentMessageId,
+        expectedMessageId: expectedId,
+        expectedRevision: expectedNavigationRevision,
+      );
+    }
     highlightedMessageId = null;
     notifyListeners();
   }
