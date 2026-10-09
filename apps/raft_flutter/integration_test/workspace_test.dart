@@ -1222,7 +1222,13 @@ void main() {
         find.descendant(of: taskCard, matching: find.text(taskTitle)),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(TextButton, 'Claim'));
+      // taskDetails fetches the authoritative task and history before mounting
+      // the dialog. Settled frames alone do not acknowledge either HTTP read.
+      final claim = find.widgetWithText(TextButton, 'Claim');
+      await until(tester, () => claim.evaluate().isNotEmpty);
+      await tester.ensureVisible(claim);
+      await tester.pumpAndSettle();
+      await tester.tap(claim);
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text(taskTitle),
