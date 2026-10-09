@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:raft_ui/raft_ui.dart' show raftTaskStatuses;
+import 'package:flutter/services.dart';
+import 'package:raft_ui/raft_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/raft_navigation_history.dart';
+import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
 import '../data/source_task_bucket.dart';
 import 'task_surface.dart';
@@ -41,12 +44,15 @@ class WorkspaceTaskHost extends StatefulWidget {
   const WorkspaceTaskHost({
     super.key,
     required this.controller,
-    required this.child,
+    required this.childBuilder,
+    this.leadingExtent = 0,
     this.seed,
     this.presented = true,
   });
   final WorkspaceController controller;
-  final Widget child;
+  final Widget Function(double legacyDockWidth, VoidCallback? onLegacyEscape)
+  childBuilder;
+  final double leadingExtent;
   final TaskSurfaceSeed? seed;
 
   /// MainLayout1394 suppresses global task presentation in active workspace.
@@ -60,12 +66,48 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
   TaskSurfaceController? owner;
   String? identity;
   bool legacy = false;
+  double legacyWidth = 380;
+  int widthRevision = 0;
+  static const widthPreference = 'slock:legacyTaskPanelWidth';
   WorkspaceController get w => widget.controller;
 
   @override
   void initState() {
     super.initState();
     synchronize();
+    unawaited(loadWidth());
+  }
+
+  Future<void> loadWidth() async {
+    final revision = widthRevision;
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.get(widthPreference);
+    final saved = stored is num
+        ? stored.toDouble()
+        : stored is String
+        ? double.tryParse(stored)
+        : null;
+    if (!mounted ||
+        revision != widthRevision ||
+        saved == null ||
+        !saved.isFinite ||
+        saved < 320 ||
+        saved > 560) {
+      return;
+    }
+    setState(() => legacyWidth = saved);
+  }
+
+  void resizeLegacy(double value) {
+    if (identity != currentIdentity) return;
+    final accepted = value.clamp(320.0, 560.0);
+    ++widthRevision;
+    setState(() => legacyWidth = accepted);
+    unawaited(
+      SharedPreferences.getInstance().then(
+        (prefs) => prefs.setDouble(widthPreference, accepted),
+      ),
+    );
   }
 
   @override
@@ -181,27 +223,89 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
   }
 
   @override
-  Widget build(BuildContext context) => Stack(
-    fit: StackFit.expand,
-    children: [
-      widget.child,
-      if (widget.presented)
-        if (owner case final task?)
-          AnimatedBuilder(
-            animation: task,
-            builder: (context, _) => legacy && !task.hydrated
-                // Source preserves the pending legacy URL without inventing a
-                // metadata panel before an accepted legacy row exists.
-                ? const SizedBox.shrink()
-                : SafeArea(
-                    child: SourceTaskSurface(
-                      key: ValueKey(identity),
-                      owner: task,
-                      onClose: close,
-                      onBack: back,
-                    ),
-                  ),
-          ),
-    ],
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: owner ?? w,
+    builder: (context, _) => layout(context, owner),
   );
+
+  Widget layout(BuildContext context, TaskSurfaceController? task) {
+    final viewport = MediaQuery.sizeOf(context);
+    final tasksRoute = w.location.route == RaftRoute.tasks;
+    // MainLayout1377–1417 handles content routes and base thread/profile before
+    // legacy. A hidden legacy owner keeps its identity and acceptance fences.
+    final legacyVisible =
+        !legacy ||
+        (task?.hydrated == true &&
+            ![
+              RaftRoute.search,
+              RaftRoute.activity,
+            ].contains(w.location.route) &&
+            w.location.thread == null &&
+            w.location.profile == null);
+    final visible = widget.presented && task != null && legacyVisible;
+    final side = legacy && !tasksRoute;
+    final docked = visible && side && viewport.width >= 1024;
+    final presentation = side
+        ? RaftLegacyTaskPresentation.side
+        : viewport.width < 768
+        ? RaftLegacyTaskPresentation.mobileModal
+        : RaftLegacyTaskPresentation.modal;
+    final t = RaftTokens.of(context);
+    final mobileTaskFooter =
+        legacy && tasksRoute && viewport.width < 768 && t.brutal
+        ? RaftMobileNavRecipe(t, viewportHeight: viewport.height).itemHeight + 2
+        : 0.0;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: widget.childBuilder(
+            docked ? legacyWidth : 0,
+            visible && legacy ? close : null,
+          ),
+        ),
+        if (visible)
+          Positioned(
+            top: 0,
+            bottom: mobileTaskFooter,
+            right: 0,
+            left: side
+                ? docked
+                      ? viewport.width - legacyWidth
+                      : viewport.width >= 768
+                      ? widget.leadingExtent
+                      : 0
+                : 0,
+            child: SafeArea(
+              child: SourceTaskSurface(
+                key: ValueKey(identity),
+                owner: task,
+                onClose: close,
+                onBack: back,
+                legacyPresentation: presentation,
+              ),
+            ),
+          ),
+        if (docked)
+          Positioned(
+            right: legacyWidth - RaftPanelResizeHandle.hitExtent / 2,
+            top: 0,
+            bottom: 0,
+            width: RaftPanelResizeHandle.hitExtent,
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.escape): close,
+              },
+              child: RaftPanelResizeHandle(
+                key: const Key('legacy-task-resize-handle'),
+                label: 'Resize legacy task panel',
+                value: legacyWidth,
+                reversed: true,
+                onChanged: resizeLegacy,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }

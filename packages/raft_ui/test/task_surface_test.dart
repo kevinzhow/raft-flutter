@@ -50,6 +50,32 @@ void main() {
       },
     );
     testWidgets(
+      'Legacy dock preview switches desktop close to narrow back $family/$dark',
+      (t) async {
+        t.view.physicalSize = const Size(1280, 844);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        await t.pumpWidget(host(legacyDockedTaskPreview(), family, dark));
+        expect(
+          t.getRect(find.byKey(const ValueKey('legacy-task-panel'))),
+          const Rect.fromLTWH(900, 0, 380, 844),
+        );
+        expect(find.byKey(const ValueKey('task-close')), findsOneWidget);
+        expect(find.byKey(const ValueKey('task-back')), findsNothing);
+        t.view.physicalSize = const Size(390, 844);
+        await t.pump();
+        expect(
+          t.getRect(find.byKey(const ValueKey('legacy-task-panel'))),
+          const Rect.fromLTWH(0, 0, 390, 844),
+        );
+        expect(find.byKey(const ValueKey('task-close')), findsNothing);
+        await t.tap(find.byKey(const ValueKey('task-back')));
+        await t.pump();
+        expect(find.byKey(const ValueKey('legacy-task-panel')), findsNothing);
+        expect(t.takeException(), isNull);
+      },
+    );
+    testWidgets(
       'Legacy preview is bounded metadata with no property writes $family/$dark',
       (t) async {
         t.view.physicalSize = const Size(1280, 844);

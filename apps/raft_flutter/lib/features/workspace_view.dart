@@ -1065,7 +1065,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           onWidthChanged: saveMasterPanel,
         );
       }
-      final workspace = CallbackShortcuts(
+      Widget workspace(
+        double legacyDockWidth,
+        VoidCallback? onLegacyEscape,
+      ) => CallbackShortcuts(
         bindings: {
           const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
               select('search'),
@@ -1075,7 +1078,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               select('settings'),
           const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
               select('settings'),
-          const SingleActivator(LogicalKeyboardKey.escape): dismissPanel,
+          const SingleActivator(LogicalKeyboardKey.escape):
+              onLegacyEscape ?? dismissPanel,
         },
         child: PopScope(
           canPop:
@@ -1128,6 +1132,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                             thread: thread && !gridActive,
                           ),
                       sidebarWidth: sidebarWidth,
+                      trailingExtent: legacyDockWidth,
                       threadWidth: threadWidth,
                       onPanelWidthsChanged: savePanels,
                       sidebarResizeLabel: tr('Resize sidebar'),
@@ -1347,7 +1352,17 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         seed: taskSeed,
         // RightPanel handles content routes before its workspace guard.
         presented: !gridActive || route == 'search' || route == 'activity',
-        child: workspace,
+        leadingExtent: wide
+            ? RaftLayoutMetrics.railWidth(
+                    t,
+                    MediaQuery.sizeOf(context).height,
+                  ) +
+                  (DesktopNavigationPolicy.forSection(route)
+                          .usesConversationSidebar
+                      ? sidebarWidth
+                      : 0)
+            : 0,
+        childBuilder: workspace,
       );
     },
   );
