@@ -242,10 +242,11 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
       RaftGlyph.activity,
     ),
     // raft-ui ChatIcon: a speech bubble with three dots.
-    AgentDetailTab.chat => RaftPanelTab(
+    AgentDetailTab.chat => RaftPanelTab.custom(
       id,
       raftText(context, 'Chat'),
-      RaftGlyph.messageSquareMore,
+      iconBuilder: (size, color, strokeWidth) =>
+          RaftChatIcon(size: size, color: color, strokeWidth: strokeWidth),
     ),
     AgentDetailTab.reminders => RaftPanelTab(
       id,

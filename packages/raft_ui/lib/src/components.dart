@@ -26,6 +26,7 @@ import 'tokens/tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/card.g.dart';
+import 'recipes/recipe_utilities.g.dart';
 
 /// Surface styles of [RaftPanel].
 enum RaftPanelStyle {
@@ -84,26 +85,33 @@ class RaftPanel extends StatelessWidget {
           child: body,
         );
       case RaftPanelStyle.legacyCard:
-        return Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: t.brutal ? RaftPrimitiveColors.white : t.semantic.layerPanel,
-            border: t.brutal
-                ? Border.all(color: RaftPrimitiveColors.black, width: 2)
-                : Border.all(color: t.semantic.lineMuted),
-            boxShadow: t.brutal
-                ? RaftProductShadows.shadowBrutal.paintOrder
-                : [
-                    for (final l in t.themeShadows.md.layers.reversed)
-                      if (!l.inset)
-                        BoxShadow(
-                          color: l.color,
-                          offset: l.offset,
-                          blurRadius: raftCssBlurRadius(l.blur),
-                          spreadRadius: l.spread,
-                        ),
-                  ],
-          ),
+        // Web index.css `.card-brutal` is a product composition, including
+        // all dark-theme inset layers of `shadow-raft-md`. Use the shared
+        // CSS painter in every theme to retain live child state on switching.
+        final rt = t.recipeTokens;
+        final s = raftRecipeEngine.resolveSlot(
+          [
+            for (final name in [
+              t.brutal ? 'border-2' : 'border',
+              t.brutal ? 'border-black' : 'border-line-muted',
+              t.brutal ? 'bg-white' : 'bg-layer-panel',
+              'shadow-raft-md',
+            ])
+              raftRecipeUtilities.indexWhere((u) => u.name == name),
+          ],
+          t.recipeStates(),
+          rt,
+        );
+        return RaftRecipeBox(
+          style: s,
+          tokens: rt,
+          padding: padding.resolve(Directionality.of(context)),
+          applyText: false,
+          decorationOverride: t.brutal
+              ? (d) => d.copyWith(
+                  boxShadow: RaftProductShadows.shadowBrutal.paintOrder,
+                )
+              : null,
           child: body,
         );
       case RaftPanelStyle.panel:

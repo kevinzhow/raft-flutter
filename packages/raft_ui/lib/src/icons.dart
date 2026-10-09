@@ -396,6 +396,78 @@ RaftGlyph? raftGlyphForMaterialIcon(IconData icon) => {
   Icons.done_all: RaftGlyph.checkCheck,
 }[icon];
 
+/// raft-ui 0.5.27 ChatIcon (dist/index.mjs:18975), with its 18-unit artwork.
+class RaftChatIcon extends StatelessWidget {
+  const RaftChatIcon({
+    super.key,
+    this.size = 18,
+    this.color,
+    this.strokeWidth = 1,
+  });
+  final double size, strokeWidth;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _ChatIconPainter(
+          color ??
+              IconTheme.of(context).color ??
+              DefaultTextStyle.of(context).style.color ??
+              Colors.black,
+          strokeWidth,
+        ),
+      ),
+    ),
+  );
+}
+
+class _ChatIconPainter extends CustomPainter {
+  const _ChatIconPainter(this.color, this.strokeWidth);
+  final Color color;
+  final double strokeWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 18, size.height / 18);
+    final outline = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+      Path()
+        ..moveTo(14.25, 2.25)
+        ..lineTo(3.75, 2.25)
+        ..cubicTo(2.65, 2.25, 1.75, 3.15, 1.75, 4.25)
+        ..lineTo(1.75, 11.25)
+        ..cubicTo(1.75, 12.35, 2.65, 13.25, 3.75, 13.25)
+        ..lineTo(5.75, 13.25)
+        ..lineTo(5.75, 16.25)
+        ..lineTo(9.5, 13.25)
+        ..lineTo(14.25, 13.25)
+        ..cubicTo(15.35, 13.25, 16.25, 12.35, 16.25, 11.25)
+        ..lineTo(16.25, 4.25)
+        ..cubicTo(16.25, 3.15, 15.35, 2.25, 14.25, 2.25)
+        ..close(),
+      outline,
+    );
+    final dots = Paint()..color = color;
+    for (final x in const [6.5, 9.0, 11.5]) {
+      canvas.drawCircle(Offset(x, 7.75), .75, dots);
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ChatIconPainter old) =>
+      old.color != color || old.strokeWidth != strokeWidth;
+}
+
 /// raft-ui0.5.27 DirectMessageIcon (dist/index.mjs19015).
 class RaftDirectMessageIcon extends StatelessWidget {
   const RaftDirectMessageIcon({super.key, this.size = 18, this.color});

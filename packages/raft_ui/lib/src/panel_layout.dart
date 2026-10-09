@@ -332,10 +332,18 @@ class RaftPanelHeaderBar extends StatelessWidget {
 }
 
 class RaftPanelTab<T> {
-  const RaftPanelTab(this.id, this.label, this.glyph);
+  const RaftPanelTab(this.id, this.label, RaftGlyph this.glyph)
+    : iconBuilder = null;
+  const RaftPanelTab.custom(this.id, this.label, {required this.iconBuilder})
+    : glyph = null;
   final T id;
   final String label;
-  final RaftGlyph glyph;
+  final RaftGlyph? glyph;
+
+  /// Product SVG artwork (for example raft-ui ChatIcon), resolved with the
+  /// tab recipe's SVG dimensions, colour and stroke width.
+  final Widget Function(double size, Color color, double strokeWidth)?
+  iconBuilder;
 }
 
 /// The detail-panel tab strip: raft-ui Tabs `variant="underline"` inside a
@@ -447,9 +455,10 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
     final s = style(active, hovered == tab.id).tab;
     final svg = s.target('& svg:not([class*=\'size-\'])') ?? s.target('& svg');
     final iconSize = svg?.width ?? 14;
-    final stroke =
-        double.tryParse('${(s.target('& svg') ?? s)['stroke-width'] ?? ''}') ??
-        2;
+    // CSS resolves this dimension as `2.5px`; parsing its printed text as
+    // a bare number used to fall back to 2 and thin every Brutal tab icon.
+    final strokeValue = (s.target('& svg') ?? s)['stroke-width'];
+    final stroke = strokeValue is CssNum ? strokeValue.value : 2.0;
     final fg = s.color?.resolve(rt) ?? (t.brutal ? Colors.black : t.strong);
     final iconColor = s.target('& svg')?.color?.resolve(rt) ?? fg;
     final label = raftCssText.merge(
@@ -497,12 +506,13 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                RaftIcon(
-                  tab.glyph,
-                  size: iconSize,
-                  strokeWidth: stroke,
-                  color: iconColor,
-                ),
+                tab.iconBuilder?.call(iconSize, iconColor, stroke) ??
+                    RaftIcon(
+                      tab.glyph!,
+                      size: iconSize,
+                      strokeWidth: stroke,
+                      color: iconColor,
+                    ),
                 SizedBox(width: s.columnGap ?? s.length('gap') ?? 6),
                 RaftCssText(tab.label, style: label, maxLines: 1),
               ],
