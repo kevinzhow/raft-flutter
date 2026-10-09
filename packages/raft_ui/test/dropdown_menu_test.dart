@@ -207,10 +207,11 @@ void main() {
             ),
           ),
         );
-        final trigger = find.byType(PopupMenuButton<String>);
+        final trigger = find.byType(RaftInlineBadgeEditor);
+        // Touch density widens the hit/semantics target, never the badge.
         expect(
           tester.getSize(trigger).height,
-          density == RaftDensity.touch ? 48 : 20,
+          lessThan(RaftMetrics.touchTarget),
         );
         await tester.tap(trigger);
         await tester.pumpAndSettle();

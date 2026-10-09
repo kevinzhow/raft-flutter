@@ -12,6 +12,9 @@ import 'mcp_views.dart';
 import 'agent_scopes_view.dart';
 import 'agent_migration_view.dart';
 import 'agent_apps_view.dart';
+import 'agent_detail_view.dart';
+
+export 'agent_detail_view.dart' show AgentDetailTab;
 
 /// A client generation does not change for every membership/account projection.
 /// Capture both identity and authority so late HTTP and modal closures stay private.
@@ -38,6 +41,13 @@ class _FleetScope {
       projectedServer == w.server?.id &&
       role == w.server?.string('role') &&
       generation == w.client.generation;
+}
+
+/// GET /servers/:id/machines answers `{machines: [...]}` or a bare array;
+/// Web accepts both.
+List<dynamic> _machineRows(dynamic result) {
+  final rows = result is Map ? result['machines'] : result;
+  return rows is List ? rows.whereType<Map>().toList() : const [];
 }
 
 Future<T?> _fleetDialog<T>(
@@ -194,7 +204,7 @@ class _FleetViewState extends State<FleetView> {
       setState(() {
         rows = [
           for (final row
-              in (widget.computers ? result['machines'] : result) as List)
+              in (widget.computers ? _machineRows(result) : result) as List)
             if ((widget.computers || row['deletedAt'] == null) &&
                 (!widget.attentionOnly ||
                     widget.computers &&
@@ -377,11 +387,19 @@ class FleetDetail extends StatefulWidget {
     required this.computers,
     required this.initial,
     this.onClose,
+    this.initialTab = AgentDetailTab.profile,
+    this.clock,
   });
   final WorkspaceController controller;
   final bool computers;
   final Map<String, dynamic> initial;
   final VoidCallback? onClose;
+
+  /// Web `?agentTab=` deep link (agents only).
+  final AgentDetailTab initialTab;
+
+  /// Injected clock for relative labels (reminders); null = wall clock.
+  final DateTime Function()? clock;
   @override
   State<FleetDetail> createState() => _FleetDetailState();
 }
@@ -411,6 +429,11 @@ class _FleetDetailState extends State<FleetDetail> {
   Timer? timer;
   Route<dynamic>? profileRoute;
   bool closingForAuthority = false;
+
+  /// GET /servers/:id/machines for the agent's Computer rows; null while
+  /// in flight.
+  List<Map<String, dynamic>>? machines;
+  Map<String, dynamic>? liveActivity;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -453,10 +476,27 @@ class _FleetDetailState extends State<FleetDetail> {
     id = widget.initial['id'] as String;
     w.addListener(authorityChanged);
     load();
+    if (!widget.computers) loadMachines();
     subscription = w.client.events.listen((e) {
       if (!scope.current(w)) {
         closeProfile();
         return;
+      }
+      if (!widget.computers &&
+          e.name == 'agent:activity' &&
+          e.payload is Map &&
+          (e.payload as Map)['agentId'] == id) {
+        final p = e.payload as Map;
+        setState(
+          () => liveActivity = {
+            'activity': p['activity'],
+            'detail': p['detail'],
+          },
+        );
+        return;
+      }
+      if (!widget.computers && e.name.startsWith('machine:')) {
+        loadMachines();
       }
       if (e.name.startsWith(widget.computers ? 'machine:' : 'agent:') ||
           e.name.startsWith('server:member')) {
@@ -485,7 +525,7 @@ class _FleetDetailState extends State<FleetDetail> {
       );
       if (!current || ticket != request) return;
       final next = widget.computers
-          ? (result['machines'] as List).where((r) => r['id'] == id).firstOrNull
+          ? _machineRows(result).where((r) => r['id'] == id).firstOrNull
           : result;
       if (next == null ||
           next['id'] != id ||
@@ -507,6 +547,60 @@ class _FleetDetailState extends State<FleetDetail> {
     } catch (e) {
       if (current && ticket == request) setState(() => error = '$e');
     }
+  }
+
+  Future<void> loadMachines() async {
+    try {
+      final result = await w.query('/servers/$serverId/machines');
+      if (!current) return;
+      final rows = result is Map ? result['machines'] : result;
+      setState(
+        () => machines = [
+          for (final m in (rows is List ? rows : const []))
+            if (m is Map) Map<String, dynamic>.from(m),
+        ],
+      );
+    } catch (_) {
+      if (current) setState(() => machines = const []);
+    }
+  }
+
+  /// Web AgentDetailHeader onMessage: open (or create) the DM and jump to it.
+  Future<void> message() async {
+    final value = await w.client.post('/channels/dm', data: {'agentId': id});
+    if (!current || value is! Map || value['id'] is! String) return;
+    await w.jumpToMessage(value['id'], null);
+    if (mounted && widget.onClose == null) Navigator.of(context).maybePop();
+    widget.onClose?.call();
+  }
+
+  /// ResetAgentDialog: one entry point, the mode is chosen in the dialog.
+  Future<void> restartReset() async {
+    if (!allowed('controlAgentRuntime') || external) return;
+    String? mode;
+    await _fleetDialog<void>(
+      context,
+      w,
+      () => allowed('controlAgentRuntime'),
+      (_) => RaftFormDialog(
+        title: 'Restart / Reset',
+        fields: [
+          RaftFormField(
+            'mode',
+            'Mode',
+            initial: 'restart',
+            choices: {
+              'restart': 'Restart runtime',
+              'session': 'Reset session',
+              if (allowed('resetAgentWorkspace')) 'full': 'Reset workspace',
+            },
+          ),
+        ],
+        submitLabel: 'Continue',
+        onSubmit: (v) async => mode = v['mode'],
+      ),
+    );
+    if (mode != null) await resetRuntime(mode!);
   }
 
   Future<void> action(Future<void> Function() operation) async {
@@ -729,8 +823,72 @@ class _FleetDetailState extends State<FleetDetail> {
     );
   }
 
+  Widget agentPanel(BuildContext context) => AgentDetailPanel(
+    controller: w,
+    agent: row,
+    machines: machines,
+    liveActivity: liveActivity,
+    initialTab: widget.initialTab,
+    clock: widget.clock,
+    busy: busy,
+    error: error,
+    canManage: allowed('editAgents'),
+    canViewPrivate: allowed('editAgents'),
+    canControlRuntime: allowed('controlAgentRuntime'),
+    actions: AgentDetailActions(
+      onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
+      onEditProfile: busy ? null : edit,
+      onEditRuntime: !external && row['machineId'] is String
+          ? () async {
+              if (!allowed('editAgents')) return;
+              await _fleetDialog<void>(
+                context,
+                w,
+                () => allowed('editAgents'),
+                (_) => RuntimeFormDialog(
+                  controller: w,
+                  machineId: row['machineId'],
+                  runtimeId: row['runtime'],
+                  agentId: id,
+                ),
+              );
+              await load();
+            }
+          : null,
+      onStartStop: () => action(
+        () => runtimeCommand(
+          '${liveActivity?['activity'] ?? row['activity'] ?? 'offline'}' ==
+                  'offline'
+              ? 'start'
+              : 'stop',
+        ),
+      ),
+      onRestartReset: () => action(restartReset),
+      onDelete: allowed('deleteAgents') ? remove : null,
+      onMessage: row['deletedAt'] == null ? () => action(message) : null,
+      onMigrate: allowed('migrateAgents')
+          ? () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AgentMigrationView(controller: w, agentId: id),
+              ),
+            )
+          : null,
+      onPermissions: allowed('editAgents')
+          ? () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AgentScopesView(controller: w, agentId: id),
+              ),
+            )
+          : null,
+    ),
+  );
+
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context) => !widget.computers
+      ? agentPanel(context)
+      : Scaffold(
     appBar: AppBar(
       title: Text('${row['displayName'] ?? row['name'] ?? ''}'),
       automaticallyImplyLeading: widget.onClose == null,

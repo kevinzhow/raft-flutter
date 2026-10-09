@@ -11,8 +11,11 @@ import 'public_avatar_url.dart';
 import 'page_component_recipes.dart';
 
 class AccountSettings extends StatefulWidget {
-  const AccountSettings({super.key, required this.controller});
+  const AccountSettings({super.key, required this.controller, this.onLogout});
   final WorkspaceController controller;
+
+  /// AccountSignOutSection; the host owns the session teardown.
+  final Future<void> Function()? onLogout;
   @override
   State<AccountSettings> createState() => _AccountSettingsState();
 }
@@ -280,135 +283,148 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
   @override
   Widget build(BuildContext context) {
     hydrateProfile();
-    final user = controller.client.user,
-        t = RaftTokens.of(context),
-        recipe = RaftSettingsProfileRecipe(RaftTokens.of(context));
-    Widget label(String value, Widget field) => Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(raftText(context, value), style: recipe.label),
-        const SizedBox(height: 6),
-        field,
-      ],
-    );
-    return RaftSettingsProfileCard(
+    final user = controller.client.user, t = RaftTokens.of(context);
+    final muted = RaftSettingsText(t).muted;
+    // `border-t-2 border-line-muted theme-brutal:border-black`
+    final divider = Container(height: 2, color: RaftSettingsText(t).edge);
+    final card = RaftSettingsProfileCard(
       avatar: Tooltip(
         message: raftText(context, 'Change profile image'),
         child: InkWell(
-          key: const Key('account-profile-avatar'),
+          key: const Key('account-profile-image'),
           onTap: mediaBusy ? null : () => image(),
-          child: RaftAvatar(
-            name: user?.name ?? '',
-            size: RaftSettingsProfileRecipe.avatarSize,
-            imageUrl: raftPublicAvatarUrl(
-              controller.client.origin,
-              user?.string('avatarUrl'),
+          child: Opacity(
+            opacity: mediaBusy ? .7 : 1,
+            child: RaftAvatar(
+              key: const Key('account-profile-avatar'),
+              name: user?.name ?? '',
+              size: RaftSettingsProfileRecipe.avatarSize,
+              imageUrl: raftPublicAvatarUrl(
+                controller.client.origin,
+                user?.string('avatarUrl'),
+              ),
             ),
           ),
         ),
       ),
       title: user?.name ?? '',
       subtitle: '@${user?.string('name') ?? ''}',
+      // SettingsProfileCard children: `space-y-3`.
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          label(
-            'Display name',
-            TextField(
-              key: const Key('account-profile-display-name'),
-              controller: profileName,
-              style: RaftTypography.body(t, size: 14, line: 20),
-              decoration: const InputDecoration(
-                contentPadding: EdgeInsets.all(8),
+          if (mediaError != null) ...[
+            // `text-xs font-bold text-brutal-red` alert above the form.
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                mediaError!,
+                style: RaftTypography.body(
+                  t,
+                  size: 12,
+                  line: 16,
+                  weight: FontWeight.w700,
+                  color: t.colors['color-brutal-red'] ?? t.colors['danger'],
+                ),
               ),
+            ),
+            const SizedBox(height: RaftSpace.x3),
+          ],
+          RaftSettingsField(
+            label: 'Display Name',
+            child: RaftRecipeInput(
+              fieldKey: const Key('account-profile-display-name'),
+              controller: profileName,
+              // `theme-brutal:p-2`
+              padding: t.brutal ? const EdgeInsets.all(8) : null,
               onChanged: (_) => setState(() => profileSaved = false),
               onSubmitted: (_) => saveProfile(),
             ),
           ),
-          const SizedBox(height: RaftSettingsProfileRecipe.fieldGap),
-          label(
-            'Username',
-            TextFormField(
+          const SizedBox(height: RaftSpace.x3),
+          RaftSettingsField(
+            label: 'Username',
+            // PrefixedInput "@": `border-line-muted bg-fill-muted
+            // shadow-none`, input `text-sm text-foreground-muted`.
+            child: RaftSettingsPrefixedInput(
               key: ValueKey(
                 'account-username-${user?.id}-${user?.string('name')}',
               ),
-              initialValue: user?.string('name') ?? '',
+              prefix: '@',
+              value: user?.string('name') ?? '',
               readOnly: true,
-              enableInteractiveSelection: false,
-              decoration: InputDecoration(
-                prefixText: '@',
-                filled: true,
-                fillColor: t.colors['fill-muted'],
-                contentPadding: const EdgeInsets.all(8),
-              ),
-              style: RaftTypography.body(t, size: 14, line: 20, color: t.muted),
+              flat: true,
+              rootColor: t.colors['fill-muted'],
+              rootBorderColor: t.colors['line-muted'],
+              textColor: t.muted,
             ),
           ),
-          const SizedBox(height: RaftSettingsProfileRecipe.fieldGap),
-          label(
-            'Email',
-            Wrap(
-              spacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
+          const SizedBox(height: RaftSpace.x3),
+          RaftSettingsField(
+            label: 'Email',
+            child: Row(
               children: [
-                SelectableText(
-                  user?.string('email') ?? '',
-                  style: recipe.subtitle,
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        t.colors[user?.json['emailVerified'] == true
-                            ? 'success-soft'
-                            : 'warning-soft'],
-                    borderRadius: BorderRadius.circular(t.brutal ? 0 : 12),
-                  ),
-                  child: Text(
-                    raftText(
-                      context,
-                      user?.json['emailVerified'] == true
-                          ? 'Verified'
-                          : 'Unverified',
-                    ),
-                    style: RaftTypography.body(
+                Flexible(
+                  child: SelectableText(
+                    user?.string('email') ?? '',
+                    maxLines: 1,
+                    style: RaftTypography.mono(
                       t,
-                      size: 10,
-                      line: 14,
-                      weight: FontWeight.w700,
-                      color:
-                          t.colors[user?.json['emailVerified'] == true
-                              ? 'success-strong'
-                              : 'warning-strong'],
+                      size: 14,
+                      line: 20,
+                      color: RaftSettingsText(t).strong,
                     ),
                   ),
                 ),
+                const SizedBox(width: RaftSpace.x2),
+                user?.json['emailVerified'] == true
+                    ? const RaftSettingsRecipeBadge(
+                        label: 'Verified',
+                        variant: RaftBadgeRecipeVariant.success,
+                        appearance: RaftBadgeRecipeAppearance.soft,
+                        uppercase: true,
+                        glyph: RaftGlyph.shield,
+                      )
+                    : const RaftSettingsRecipeBadge(
+                        label: 'Unverified',
+                        variant: RaftBadgeRecipeVariant.warning,
+                        appearance: RaftBadgeRecipeAppearance.soft,
+                        uppercase: true,
+                      ),
               ],
             ),
           ),
-          if (profileError != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  profileError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+          if (profileError != null) ...[
+            const SizedBox(height: RaftSpace.x3),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                profileError!,
+                style: RaftTypography.body(
+                  t,
+                  size: 12,
+                  line: 16,
+                  weight: FontWeight.w700,
+                  color: t.colors['danger'],
                 ),
               ),
             ),
-          const SizedBox(height: RaftSettingsProfileRecipe.fieldGap),
+          ],
+          const SizedBox(height: RaftSpace.x3),
           Align(
             alignment: Alignment.centerLeft,
-            child: RaftButton(
+            // `size="sm" variant="outline"` + `disabled:opacity-50`.
+            child: RaftSettingsRecipeButton(
               key: const Key('account-save-profile'),
-              label: profileSaved ? 'Saved' : 'Save profile',
-              secondary: true,
-              visualHeight: 28,
-              busy: profileBusy,
+              label: profileBusy
+                  ? 'Saving...'
+                  : profileSaved
+                  ? 'Saved'
+                  : 'Save Profile',
+              glyph: profileSaved && !profileBusy ? RaftGlyph.check : null,
+              glyphSize: 14,
+              size: RaftButtonRecipeSize.sm,
+              disabledOpacity: .5,
               onPressed:
                   profileBusy ||
                       profileName.text.trim().isEmpty ||
@@ -417,36 +433,26 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                   : saveProfile,
             ),
           ),
-          if (user?.string('description').isNotEmpty == true)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: SelectableText(
-                user!.string('description'),
-                style: RaftTypography.body(t, size: 14, line: 20),
-              ),
-            ),
-          const SizedBox(height: 16),
-          Divider(height: 1, thickness: t.brutal ? 2 : 1, color: t.line),
-          const SizedBox(height: 16),
+          const SizedBox(height: RaftSpace.x3),
+          divider,
+          const SizedBox(height: RaftSpace.x3),
           AccountConnectionsView(
             key: ValueKey('account-sign-in-$authority'),
             controller: controller,
             inline: true,
           ),
-          const SizedBox(height: 16),
-          Divider(height: 1, color: t.line),
-          const SizedBox(height: 16),
+          if (user?.string('description').isNotEmpty == true) ...[
+            const SizedBox(height: RaftSpace.x3),
+            SelectableText(
+              user!.string('description'),
+              style: RaftTypography.body(t, size: 14, line: 20, color: muted),
+            ),
+          ],
+          const SizedBox(height: RaftSpace.x3),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: RaftSpace.x3,
+            runSpacing: RaftSpace.x3,
             children: [
-              RaftButton(
-                key: const Key('account-profile-image'),
-                label: raftText(context, 'Change profile image'),
-                secondary: true,
-                busy: mediaBusy,
-                onPressed: () => image(),
-              ),
               if (user?.string('avatarUrl').isNotEmpty == true)
                 RaftButton(
                   label: raftText(context, 'Remove profile image'),
@@ -469,39 +475,58 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
                 secondary: true,
                 onPressed: () => preferences(context),
               ),
-              RaftButton(
-                key: const Key('account-connections'),
-                label: raftText(context, 'Connected sign-in accounts'),
-                secondary: true,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(
-                        title: Text(
-                          raftText(context, 'Connected sign-in accounts'),
-                        ),
-                      ),
-                      body: AccountConnectionsView(controller: controller),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
-
-          if (mediaError != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  mediaError!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                ),
-              ),
-            ),
         ],
       ),
     );
+    // AccountSection: `mb-6` sections (SectionHeader mb-3 + card), then the
+    // sibling AccountSignOutSection.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const RaftSettingsSectionHeader(
+          label: 'Account',
+          glyph: RaftGlyph.user,
+        ),
+        card,
+        const SizedBox(height: RaftSpace.x6),
+        const RaftSettingsSectionHeader(
+          label: 'Session',
+          glyph: RaftGlyph.logOut,
+        ),
+        RaftSettingsActionCard(
+          title: 'Log out',
+          description:
+              'Log out of this browser. Your account and data stay; you can log back in any time.',
+          // `variant="warning" size="md"`, text only.
+          action: RaftSettingsRecipeButton(
+            key: const Key('account-logout'),
+            label: 'Log out',
+            variant: RaftButtonRecipeVariant.warning,
+            onPressed: widget.onLogout == null
+                ? null
+                : () => confirmLogout(context),
+          ),
+        ),
+        const SizedBox(height: RaftSpace.x6),
+      ],
+    );
+  }
+
+  Future<void> confirmLogout(BuildContext context) async {
+    final ok = await RaftConfirmDialog.show(
+      context,
+      const RaftConfirmDialog(
+        title: 'Log out',
+        message:
+            'Log out of this browser? Your account and data are kept; you can log back in any time.',
+        confirmLabel: 'Log out',
+        // confirmColor="bg-brutal-orange" -> warning tone.
+        confirmVariant: RaftButtonRecipeVariant.warning,
+        confirmKey: Key('account-logout-confirm-button'),
+      ),
+    );
+    if (ok == true) await widget.onLogout?.call();
   }
 }

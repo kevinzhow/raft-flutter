@@ -60,7 +60,12 @@ class RaftPanel extends StatelessWidget {
     final t = RaftTokens.of(context);
     final resolved =
         style ?? (shadow ? RaftPanelStyle.legacyCard : RaftPanelStyle.panel);
-    final body = Material(type: MaterialType.transparency, child: child);
+    // Material ancestor for ink/fields, without resetting CSS-inherited text.
+    final body = Material(
+      type: MaterialType.transparency,
+      textStyle: DefaultTextStyle.of(context).style,
+      child: child,
+    );
     switch (resolved) {
       case RaftPanelStyle.card:
         final rt = t.recipeTokens;
@@ -977,10 +982,8 @@ class RaftNavItem extends StatelessWidget {
               kind: RaftControlKind.sidebar,
               selected: selected,
               visualHeight: recipe.sourceHeight,
-              minimumTargetSize:
-                  RaftDensityScope.of(context) == RaftDensity.touch
-                  ? RaftMetrics.touchTarget
-                  : 0,
+              // Same box as the Web mobile sidebar row (no 48dp inflation).
+              minimumTargetSize: recipe.sourceHeight,
               recipe: recipe,
               onPressed: onTap,
               child: Row(

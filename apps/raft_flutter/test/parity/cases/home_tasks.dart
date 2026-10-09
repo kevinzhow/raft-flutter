@@ -18,8 +18,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/features/auth_view.dart';
+import 'package:raft_flutter/features/mobile_workspace_navigation.dart';
+import 'package:raft_flutter/features/create_channel_dialog.dart';
 import 'package:raft_flutter/features/resource_view.dart';
-import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../parity_harness.dart';
@@ -50,28 +51,50 @@ final Map<String, ParityUncovered> homeTaskUncovered = {
 };
 
 // ---------------------------------------------------------------------------
-// Auth register — React mounts RegisterPage in a 390x844 box and fills the
-// email/password inputs. Flutter's signed-out surface is AuthView (main.dart
-// sessionHome); register is its 'register' mode, reached by the
-// "Create account" switch.
+// Auth register — React's AuthVisualCaseView mounts RegisterPage in a plain
+// block 390x844 `overflow: hidden` box (not a flex column), so AuthBrandShell
+// gets an auto height and its content is top-aligned. Flutter's signed-out
+// surface is AuthView (main.dart sessionHome) in register mode, reached by the
+// "Create one" link; it is mounted with unbounded height inside the clipped
+// 390x844 box to reproduce that host context.
 
 final ParityCase _register = ParityCase(
-  widgets: const ['raft_flutter:AuthView', 'raft_ui:RaftPanel', 'raft_ui:RaftButton'],
+  widgets: const [
+    'raft_flutter:AuthView',
+    'raft_ui:RaftAuthPage',
+    'raft_ui:RaftBrandMark',
+    'raft_ui:RaftButton',
+    'raft_ui:RaftFieldSurface',
+  ],
   notes:
       'AuthView mounted like main.dart (default origin http://localhost:13041, '
       'onOAuth set); /auth/providers answered with Google+GitHub like the React '
-      'stub. Register mode reached by tapping "Create account", then the case '
-      'props are typed into the email/password fields.',
-  build: (ctx) => AuthView(
-    origin: 'http://localhost:13041',
-    onLogin: (_, _, _) async {},
-    onRegister: (_, _, _, _) async {},
-    onOAuth: (_, _, _, _) async {},
-    anonymousClientFactory: ParityAuthClient.new,
+      'stub. Register mode reached through "No account? Create one", then the '
+      'case props are typed into the email/password fields. Mounted with '
+      'unbounded height in the clipped 390x844 box like the React block host.',
+  build: (ctx) => SizedBox(
+    width: 390,
+    height: 844,
+    child: ctx.target(
+      ClipRect(
+        child: OverflowBox(
+          alignment: Alignment.topCenter,
+          minHeight: 0,
+          maxHeight: double.infinity,
+          child: AuthView(
+            origin: 'http://localhost:13041',
+            onLogin: (_, _, _) async {},
+            onRegister: (_, _, _, _) async {},
+            onOAuth: (_, _, _, _) async {},
+            anonymousClientFactory: ParityAuthClient.new,
+          ),
+        ),
+      ),
+    ),
   ),
   interact: (t, ctx) async {
     await t.pump(const Duration(milliseconds: 50));
-    await t.tap(find.text('Create account').last);
+    await t.tapOnText(find.textRange.ofSubstring('Create one'));
     await t.pump(const Duration(milliseconds: 100));
     await t.enterText(
       find.byKey(const Key('login-email')),
@@ -81,6 +104,7 @@ final ParityCase _register = ParityCase(
       find.byKey(const Key('login-password')),
       ctx.props['registerPassword'] as String,
     );
+    FocusManager.instance.primaryFocus?.unfocus();
     await t.pump(const Duration(milliseconds: 100));
   },
 );
@@ -91,47 +115,31 @@ final ParityCase _register = ParityCase(
 // builds for an owner (Home/Tasks/Members/Settings), Home selected.
 
 final ParityCase _tabbar = ParityCase(
-  widgets: const ['raft_ui:RaftMobileNav', 'raft_ui:RaftMobileNavItem'],
+  widgets: const [
+    'raft_flutter:WorkspaceMobileTabBar',
+    'raft_ui:RaftMobileNav',
+    'raft_ui:RaftMobileNavItem',
+  ],
   notes:
-      'Items/ids/glyphs copied from WorkspaceView.mobileNavigation (owner role, '
-      'so Members is present); bottomInset 0 as the app passes.',
-  build: (ctx) => Align(
-    alignment: Alignment.topLeft,
-    child: SizedBox(
-      width: 390,
-      child: ctx.target(
-        Builder(
-          builder: (context) => RaftMobileNav(
+      'WorkspaceMobileTabBar (the bar WorkspaceView.mobileNavigation mounts) '
+      'for the fixture owner, so Members is present; Home selected, '
+      'bottomInset 0 as the app passes.',
+  build: (ctx) {
+    final w = parityWorkspace(ctx);
+    return Align(
+      alignment: Alignment.topLeft,
+      child: SizedBox(
+        width: 390,
+        child: ctx.target(
+          WorkspaceMobileTabBar(
+            controller: w,
             selectedId: 'chat',
-            bottomInset: 0,
             onSelected: (_) {},
-            items: [
-              RaftMobileNavItem(
-                id: 'chat',
-                label: raftText(context, 'Home'),
-                glyph: RaftGlyph.home,
-              ),
-              RaftMobileNavItem(
-                id: 'tasks',
-                label: raftText(context, 'Tasks'),
-                glyph: RaftGlyph.checkSquare,
-              ),
-              RaftMobileNavItem(
-                id: 'members',
-                label: raftText(context, 'Members'),
-                glyph: RaftGlyph.users,
-              ),
-              RaftMobileNavItem(
-                id: 'settings',
-                label: raftText(context, 'Settings'),
-                glyph: RaftGlyph.settings,
-              ),
-            ],
           ),
         ),
       ),
-    ),
-  ),
+    );
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -143,14 +151,15 @@ final ParityCase _tabbar = ParityCase(
 
 final ParityCase _titlebar = ParityCase(
   widgets: const [
+    'raft_flutter:WorkspaceMobileHomeHeader',
     'raft_ui:RaftMobileRootHeader',
     'raft_ui:RaftMobileServerSelector',
     'raft_flutter:SystemNotificationBell',
     'raft_ui:RaftMobileNotificationButton',
   ],
   notes:
-      'Composition copied from WorkspaceView.sidebar(mobileHome: true) (private '
-      'method); server name "Raft Design" as primeNavigationVisualStores seeds. '
+      'WorkspaceMobileHomeHeader, the header WorkspaceView.sidebar(mobileHome: '
+      'true) mounts; server name "Raft Design" as primeNavigationVisualStores seeds. '
       'The app passes no server-unread attention to the selector, so none is shown.',
   build: (ctx) {
     final w = parityWorkspace(ctx, serverName: 'Raft Design');
@@ -184,17 +193,10 @@ final ParityCase _titlebar = ParityCase(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        RaftMobileRootHeader(
-                          leading: RaftMobileServerSelector(
-                            label: w.server?.name ?? 'Workspace',
-                            onPressed: () {},
-                          ),
-                          actions: [
-                            SystemNotificationBell(
-                              controller: w,
-                              onBilling: () {},
-                            ),
-                          ],
+                        WorkspaceMobileHomeHeader(
+                          controller: w,
+                          onServer: () {},
+                          onBilling: () {},
                         ),
                         // Sidebar body below the header (clipped by the
                         // React 62px slot, as in the fixture).
@@ -275,7 +277,7 @@ final ParityCase _searchResults = ParityCase(
     await _typeSearch(t);
     await t.tap(find.text('Any Time').last);
     await t.pump(const Duration(milliseconds: 300));
-    await t.tap(find.text('Last 7 days').last);
+    await t.tap(find.text('Last 7 Days').last);
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.text('Relevant').last);
     await t.pump(const Duration(milliseconds: 300));
@@ -343,7 +345,10 @@ final ParityCase _tasksPanel = ParityCase(
     await t.pump(const Duration(milliseconds: 100));
     final done = find.byKey(const ValueKey('task-group-done'));
     final list = find
-        .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+        .descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        )
         .first;
     await t.scrollUntilVisible(done, 200, scrollable: list);
     await t.tap(done);
@@ -355,110 +360,105 @@ final ParityCase _tasksPanel = ParityCase(
 );
 
 // ---------------------------------------------------------------------------
-// Task status menu — React renders InlineBadgeEditor (status chip) open in a
-// 342x260 box with 16px padding. Flutter has no standalone status chip: the
-// status menu is RaftTaskCard's status PopupMenuButton, so the card for the
-// in_progress task (#212) renders and its status chip is tapped.
+// Task status menu — React renders InlineBadgeEditor (the status chip menu
+// TaskCard opens) with `open`, status in_progress, all five status options and
+// dropdownAlign="left", in a 342x260 box with 16px padding. Flutter mounts the
+// same product control, RaftTaskStatusEditor (RaftInlineBadgeEditor), open.
 
 final ParityCase _statusMenu = ParityCase(
-  widgets: const ['raft_ui:RaftTaskCard', 'raft_ui:RaftTaskStatus'],
+  widgets: const [
+    'raft_ui:RaftTaskStatusEditor',
+    'raft_ui:RaftInlineBadgeEditor',
+  ],
   notes:
-      'No standalone Flutter status chip exists; the menu is opened from the '
-      'RaftTaskCard (task #212, in_progress) as ResourceView builds it for an '
-      'owner (all five statuses). The card body is extra content React does '
-      'not show.',
-  build: (ctx) {
-    final task = Map<String, dynamic>.from(
-      (ctx.fixtures['tasksFixture']['tasks'] as List).cast<Map>().firstWhere(
-        (t) => t['status'] == 'in_progress',
+      'RaftTaskStatusEditor for in_progress with raftTaskStatuses, opened via '
+      'its controlled `open` like the React host; menu aligned left.',
+  build: (ctx) => ctx.frame(
+    width: 342,
+    height: 260,
+    // The host div is a block box under `<main class="font-display">`, so the
+    // badge sits in a line box of the heading font at 16px / 1.5.
+    child: Builder(
+      builder: (context) => Align(
+        alignment: Alignment.topLeft,
+        child: RaftInlineLineBox(
+          style: RaftTypography.heading(
+            RaftTokens.of(context),
+            weight: FontWeight.w400,
+          ),
+          child: RaftTaskStatusEditor(
+            status: 'in_progress',
+            options: raftTaskStatuses,
+            onSelect: (_) {},
+            open: true,
+            alignRight: false,
+          ),
+        ),
       ),
-    );
-    return ctx.frame(
-      width: 342,
-      height: 260,
-      child: RaftTaskCard(
-        title: '${task['title']}',
-        number: '${task['taskNumber']}',
-        channel: '${task['channelName'] ?? ''}',
-        status: '${task['status']}',
-        description: '${task['description'] ?? ''}',
-        assignee: task['claimedByName'] as String?,
-        onTap: () {},
-        statusOptions: raftTaskStatuses,
-        onStatus: (_) {},
-      ),
-    );
-  },
-  interact: (t, ctx) async {
-    await t.tap(find.byType(PopupMenuButton<String>));
-    await t.pump(const Duration(milliseconds: 160));
-  },
+    ),
+  ),
 );
 
 // ---------------------------------------------------------------------------
-// Create channel — React: CreateChannelDialog over the 390x844 viewport,
-// prefilled name/description/public + one agent and one human selected.
-// Flutter: WorkspaceView.createChannel's RaftFormDialog (name, description,
-// visibility); the values are typed into its fields.
+// Create channel — React (VisualTestingCases.tsx CreateChannelVisualCaseView):
+// CreateChannelDialog over the 390x844 viewport, prefilled name/description/
+// public + agent-cindy and visual-human-designer selected, stores primed by
+// primeCreateChannelStores (agents Cindy + Visual QA; members owner +
+// designer). Flutter mounts the product CreateChannelDialog with the same
+// props over a workspace answering /agents and /servers/:id/members with that
+// roster.
+
+class _CreateChannelWorkspace extends ParityFixtureWorkspace {
+  _CreateChannelWorkspace(super.client, super.ctx);
+  @override
+  Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
+    final fx = ctx.fixtureData;
+    if (path == '/agents') {
+      final cindy = Map<String, dynamic>.from(fx['agents']['cindy'] as Map);
+      return [
+        {
+          'id': cindy['id'],
+          'name': cindy['name'],
+          'displayName': cindy['displayName'],
+          'avatarUrl': cindy['avatar'],
+          'description': cindy['description'],
+          'deletedAt': null,
+        },
+        // primeCreateChannelStores' inline second agent.
+        {
+          'id': 'agent-qa',
+          'name': 'Visual-QA',
+          'displayName': 'Visual QA',
+          'avatarUrl': 'pixel:eye',
+          'description': 'Checks screenshots before release.',
+          'deletedAt': null,
+        },
+      ];
+    }
+    return super.query(path, query: query);
+  }
+}
 
 final ParityCase _createChannel = ParityCase(
-  widgets: const ['raft_ui:RaftFormDialog', 'raft_ui:RaftFormField'],
+  widgets: const ['raft_flutter:CreateChannelDialog', 'raft_ui:RaftDialogCard'],
   notes:
-      'Fields copied from WorkspaceView.createChannel (private method). The '
-      'Flutter create-channel dialog has no members picker, so the React '
-      'prefilled agent/human selection has no Flutter counterpart.',
-  build: (ctx) => const Scaffold(body: _CreateChannelLauncher()),
-  interact: (t, ctx) async {
-    await t.pump(const Duration(milliseconds: 300));
-    await t.enterText(
-      find.byKey(const ValueKey('field-name')),
-      ctx.props['name'] as String,
+      'Product CreateChannelDialog mounted with the React prefill props '
+      '(name, description, public, agent-cindy + visual-human-designer).',
+  build: (ctx) {
+    final base = parityWorkspace(ctx);
+    final w = _CreateChannelWorkspace(base.client, ctx)
+      ..server = base.server
+      ..channels = base.channels
+      ..section = base.section;
+    return Scaffold(
+      body: CreateChannelDialog(
+        controller: w,
+        prefilledName: ctx.props['name'] as String,
+        prefilledDescription: ctx.props['description'] as String,
+        prefilledVisibility: 'public',
+        prefilledAgentIds: const ['agent-cindy'],
+        prefilledHumanIds: const ['visual-human-designer'],
+      ),
     );
-    await t.enterText(
-      find.byKey(const ValueKey('field-description')),
-      ctx.props['description'] as String,
-    );
-    await t.pump(const Duration(milliseconds: 100));
   },
 );
-
-class _CreateChannelLauncher extends StatefulWidget {
-  const _CreateChannelLauncher();
-  @override
-  State<_CreateChannelLauncher> createState() => _CreateChannelLauncherState();
-}
-
-class _CreateChannelLauncherState extends State<_CreateChannelLauncher> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      String tr(String s) => raftText(context, s);
-      showDialog<bool>(
-        context: context,
-        builder: (_) => RaftFormDialog(
-          title: tr('Create channel'),
-          submitLabel: tr('Create'),
-          fields: [
-            RaftFormField('name', 'Channel name', required: true),
-            RaftFormField('description', 'Description', multiline: true),
-            RaftFormField(
-              'visibility',
-              'Visibility',
-              initial: 'public',
-              choices: {
-                'public': 'Public channel',
-                'private': 'Private channel',
-              },
-            ),
-          ],
-          onSubmit: (_) async {},
-        ),
-      );
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) => const SizedBox.expand();
-}

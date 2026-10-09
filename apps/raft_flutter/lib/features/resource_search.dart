@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' as rui;
 
 import 'public_avatar_url.dart';
 import 'resource_cards.dart';
@@ -217,18 +218,46 @@ class ResourceSearchResults extends StatelessWidget {
           MediaQuery.sizeOf(context).width <
           RaftLayoutMetrics.desktopBreakpoint,
     );
+    // raft-ui search recipe: SearchResultsSummary / SearchResultsSection /
+    // SearchResultsSectionHeading / SearchResultsList (MessageSearchPage.tsx).
+    final rt = rui.RaftRecipeTokens(t);
+    final slots = rui.RaftSearchRecipe.resolve(
+      theme: t.brutal
+          ? rui.RaftRecipeTheme.brutal
+          : rui.RaftRecipeTheme.elegant,
+      states: rui.RaftRecipeStates({
+        if (t.dark) rui.RaftRecipeStates.dark,
+      }, MediaQuery.sizeOf(context).width),
+      tokens: rt,
+    );
+    Widget slotText(String text, rui.RaftSlotStyle slot) {
+      final base = slot.textStyle(rt);
+      return Text(
+        slot.textTransform == 'uppercase' ? text.toUpperCase() : text,
+        style: base.copyWith(
+          // Unset family/line-height inherit the page (font-sans, 1.5).
+          fontFamily: base.fontFamily ?? t.bodyFont,
+          height: base.height ?? RaftResourceMetrics.documentLineHeight,
+        ),
+      );
+    }
+
     Widget section(String title, List<Widget> children) => Container(
-      padding: recipe.sectionInset,
-      decoration: BoxDecoration(
-        color: recipe.sectionFill,
-        borderRadius: BorderRadius.circular(recipe.sectionRadius),
-      ),
+      margin: slots.section.margin,
+      padding: slots.section.padding,
+      decoration: slots.section.decoration(rt),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(raftText(context, title), style: recipe.sectionTitle),
-          const SizedBox(height: 8),
-          ...children,
+          Padding(
+            padding: slots.sectionHeading.padding,
+            child: slotText(raftText(context, title), slots.sectionHeading),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: slots.list.rowGap ?? RaftResourceMetrics.gap2,
+            children: children,
+          ),
         ],
       ),
     );
@@ -237,26 +266,30 @@ class ResourceSearchResults extends StatelessWidget {
       Widget child,
       VoidCallback open, {
       bool entity = false,
-    }) => Padding(
-      padding: EdgeInsets.only(bottom: recipe.gap),
-      child: Material(
+      EdgeInsets? inset,
+    }) {
+      final side = selectedKey == key
+          ? BorderSide(color: recipe.selectedLine, width: t.brutal ? 2 : 1)
+          : recipe.border;
+      return Material(
         color: t.panel,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(recipe.cardRadius),
-          side: selectedKey == key
-              ? BorderSide(color: recipe.selectedLine, width: t.brutal ? 2 : 1)
-              : recipe.border,
+          side: side,
         ),
         child: InkWell(
           onTap: open,
           borderRadius: BorderRadius.circular(recipe.cardRadius),
           child: Padding(
-            padding: entity ? recipe.entityInset : EdgeInsets.zero,
+            // CSS content box: inside the border, then the padding.
+            padding: (inset ?? (entity ? recipe.entityInset : EdgeInsets.zero))
+                .add(EdgeInsets.all(side.width)),
             child: child,
           ),
         ),
-      ),
-    );
+      );
+    }
+
     final grouped = <String, List<Map<String, dynamic>>>{};
     for (final row in rows) {
       final parent = row['channelType'] == 'thread'
@@ -271,36 +304,43 @@ class ResourceSearchResults extends StatelessWidget {
       final dm =
           (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
       final sender = '${row['senderName'] ?? ''}';
+      final m = rui.RaftSearchMessageRecipe.resolve(
+        theme: t.brutal
+            ? rui.RaftRecipeTheme.brutal
+            : rui.RaftRecipeTheme.elegant,
+        states: rui.RaftRecipeStates({if (t.dark) rui.RaftRecipeStates.dark}),
+        tokens: rt,
+      );
+      TextStyle meta(rui.RaftSlotStyle slot) {
+        final header = m.messageHeader.textStyle(rt);
+        final own = slot.textStyle(rt);
+        return header
+            .merge(own)
+            .copyWith(fontFamily: own.fontFamily ?? t.bodyFont);
+      }
+
       return surface(
         'message:${row['id']}',
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: recipe.messageHeaderInset,
+              padding: m.messageHeader.padding.add(
+                EdgeInsets.only(bottom: m.messageHeader.margin.bottom),
+              ),
               child: Wrap(
-                spacing: 8,
-                runSpacing: 4,
+                spacing: m.messageHeader.columnGap ?? RaftResourceMetrics.gap2,
+                runSpacing: m.messageHeader.rowGap ?? RaftResourceMetrics.gap2,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     '${dm ? '@' : '#'}${name ?? ''}',
-                    style: RaftTypography.body(
-                      t,
-                      size: 12,
-                      line: 16,
-                      color: t.muted,
-                    ),
+                    style: meta(m.messageMeta),
                   ),
                   if (thread)
                     Text(
                       raftText(context, 'Thread'),
-                      style: RaftTypography.body(
-                        t,
-                        size: 12,
-                        line: 16,
-                        color: t.muted,
-                      ),
+                      style: meta(m.messageThreadMeta),
                     ),
                   if ((thread
                           ? row['parentChannelArchivedAt']
@@ -336,7 +376,7 @@ class ResourceSearchResults extends StatelessWidget {
                             sender,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: recipe.sender,
+                            style: meta(m.messageSender),
                           ),
                         ),
                       ],
@@ -348,38 +388,48 @@ class ResourceSearchResults extends StatelessWidget {
                       chinese:
                           Localizations.localeOf(context).languageCode == 'zh',
                     ),
-                    style: RaftTypography.body(
-                      t,
-                      size: 12,
-                      line: 16,
-                      color: t.muted,
-                    ),
+                    style: meta(m.messageTimestamp),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: recipe.messageBodyInset,
+              padding: m.messageBody.padding,
               child: SearchHighlight(
                 text: '${row['snippet'] ?? row['content'] ?? ''}',
                 query: query,
-                style: recipe.snippet,
+                style: m.messageBody
+                    .textStyle(rt)
+                    .copyWith(fontFamily: t.bodyFont),
               ),
             ),
           ],
         ),
         () => onMessage(row),
+        inset: m.message.padding,
       );
     }
 
     return ListView(
-      padding: recipe.viewportInset,
+      // SearchViewport padding plus the results `<div class="p-4">`.
+      padding: slots.viewport.padding.add(
+        RaftResourceMetrics.searchResultsInset,
+      ),
       children: [
-        Text(
-          '${entities.length + rows.length} ${raftText(context, 'results')}',
-          style: recipe.summary,
+        // `<div class="mb-3 px-1"><SearchResultsSummary>`; the summary's own
+        // mb-3 collapses into the wrapper's.
+        Padding(
+          padding: RaftResourceMetrics.searchSummaryInset,
+          child: Padding(
+            padding: slots.summary.padding.add(
+              EdgeInsets.only(bottom: slots.summary.margin.bottom),
+            ),
+            child: slotText(
+              '${entities.length + rows.length} ${raftText(context, 'results')}',
+              slots.summary,
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
         if (entities.isNotEmpty) ...[
           section('Server entities', [
             for (final entity in entities)
@@ -391,10 +441,13 @@ class ResourceSearchResults extends StatelessWidget {
                       width: 32,
                       height: 32,
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: t.colors['fill-muted'],
-                        borderRadius: BorderRadius.circular(t.brutal ? 0 : 8),
-                      ),
+                      // SearchEntityResultIcon (searchEntity entityIcon).
+                      decoration: rui.RaftSearchEntityRecipe.resolve(
+                        theme: t.brutal
+                            ? rui.RaftRecipeTheme.brutal
+                            : rui.RaftRecipeTheme.elegant,
+                        tokens: rt,
+                      ).entityIcon.decoration(rt),
                       child: RaftIcon(
                         entity.kind == 'channel'
                             ? RaftGlyph.hash
@@ -448,7 +501,6 @@ class ResourceSearchResults extends StatelessWidget {
                 entity: true,
               ),
           ]),
-          const SizedBox(height: 12),
         ],
         if (rows.isNotEmpty)
           section('Messages', [

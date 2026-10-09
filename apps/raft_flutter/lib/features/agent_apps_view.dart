@@ -178,131 +178,157 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     );
   }
 
+  Widget _small(String label, VoidCallback? onPressed, {bool selected = false}) =>
+      RaftRecipeTextButton(
+        label: label,
+        // `<Button size="sm" variant="outline"|"default" className="text-[11px]">`.
+        variant: selected ? null : RaftButtonRecipeVariant.outline,
+        text: RaftButtonText.px11,
+        onPressed: onPressed,
+      );
+
+  /// AgentAppAccessTab.tsx: `flex-1 overflow-y-auto bg-layer-panel px-5
+  /// py-4 space-y-6 theme-brutal:bg-white` with Applications and App events
+  /// sections.
   @override
-  Widget build(BuildContext context) => page(
-    'Agent app access',
-    [
-      if (access.isEmpty && !loading)
-        const Text('No apps have access to this agent.'),
-      for (final item in access)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${item['clientName']}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  item['type'] == 'pending'
-                      ? 'Approval requested'
-                      : 'Access granted',
-                ),
-                for (final scope in managementStrings(item['scopes']))
-                  Text('• ${integrationScopeLabels[scope] ?? scope}'),
-                if (manager)
-                  Wrap(
-                    children: [
-                      if (item['type'] == 'pending') ...[
-                        action(
-                          'Approve',
-                          () => run(() async {
-                            await form(
-                              'Approve app access',
-                              [
-                                const RaftFormField(
-                                  'remember',
-                                  'Future requests',
-                                  initial: 'false',
-                                  choices: {
-                                    'false': 'Approve this request',
-                                    'true': 'Remember access',
-                                  },
-                                ),
-                              ],
-                              (v) async {
-                                await w.client.post(
-                                  '/integrations/requests/${item['id']}/approve',
-                                  data: {'remember': v['remember'] == 'true'},
-                                );
-                              },
-                              submit: 'Approve',
-                              description: 'Allow the app to access this agent with the listed permissions.',
-                            );
-                          }),
-                        ),
-                        action(
-                          'Deny',
-                          () => run(() async {
-                            await w.client.post(
-                              '/integrations/requests/${item['id']}/deny',
-                            );
-                          }),
-                        ),
-                      ] else
-                        action(
-                          'Revoke',
-                          () => run(() async {
-                            await confirm(
-                              'Revoke app access?',
-                              'Disconnect ${item['clientName']} from this agent.',
-                              () async {
-                                await w.client.post(
-                                  '/integrations/grants/${item['id']}/revoke',
-                                );
-                              },
-                              submit: 'Revoke',
-                              destructive: true,
-                            );
-                          }),
-                        ),
-                    ],
-                  ),
-              ],
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final pending = access.where((i) => i['type'] == 'pending').toList();
+    final active = access.where((i) => i['type'] != 'pending').toList();
+    final empty = RaftPanelText.muted(t);
+    return RaftPanelGroups(
+      groups: [
+        if (error != null) [RaftPanelError(error!)],
+        if (pending.isNotEmpty)
+          [
+            RaftSectionHeader(
+              label: raftText(context, 'Pending requests'),
+              count: pending.length,
             ),
+            for (final item in pending) _accessCard(context, item),
+          ],
+        [
+          RaftDescribedSectionHeader(
+            label: raftText(context, 'Applications'),
+            description: raftText(context, 'Connected apps this agent can use.'),
+            action: loading
+                ? Text(
+                    raftText(context, 'Loading…'),
+                    style: RaftPanelText.caption(t),
+                  )
+                : manager
+                ? _small(
+                    raftText(context, 'Grant access'),
+                    busy ? null : () => run(grant),
+                  )
+                : null,
           ),
-        ),
-      if (manager) ...[
-        heading('Recent app events'),
-        DropdownButtonFormField<String>(
-          initialValue: filter ?? '',
-          decoration: const InputDecoration(labelText: 'Filter by app'),
-          items: [
-            const DropdownMenuItem(value: '', child: Text('All apps')),
-            for (final app in apps)
-              DropdownMenuItem(
-                value: app['clientId'],
-                child: Text(app['name']),
+          if (active.isEmpty)
+            Text(raftText(context, 'No connected apps'), style: empty)
+          else
+            for (final item in active) _accessCard(context, item),
+        ],
+        if (manager)
+          [
+            RaftDescribedSectionHeader(
+              label: raftText(context, 'App events'),
+              description: raftText(
+                context,
+                "Events apps sent to this agent. They're kept for 30 days after they expire.",
+              ),
+              action: _small(
+                raftText(context, loading ? 'Loading…' : 'Refresh'),
+                busy || loading ? null : reload,
+              ),
+            ),
+            if (apps.length > 1)
+              RaftButtonWrap(
+                children: [
+                  _small(raftText(context, 'All apps'), () {
+                    setState(() => filter = null);
+                    reload();
+                  }, selected: filter == null),
+                  for (final app in apps)
+                    _small('${app['name']}', () {
+                      setState(() => filter = '${app['clientId']}');
+                      reload();
+                    }, selected: filter == app['clientId']),
+                ],
+              ),
+            if (events.isEmpty && !loading)
+              Text(raftText(context, 'No app events yet'), style: empty)
+            else
+              for (final event in events)
+                RaftAccessCard(
+                  title: '${event['summary']}',
+                  subtitle:
+                      '${managementMap(event['app'])['name']} · ${event['kind']} · ${event['status']}',
+                  onTap: () => run(() => eventDetail(event), refresh: false),
+                ),
+            if (nextCursor != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: _small(
+                  raftText(context, 'Load more'),
+                  () => run(moreEvents, refresh: false),
+                ),
               ),
           ],
-          onChanged: busy
-              ? null
-              : (v) {
-                  setState(() => filter = v == '' ? null : v);
-                  reload();
-                },
-        ),
-        if (events.isEmpty && !loading)
-          const Text('No app events have arrived.'),
-        for (final event in events)
-          ListTile(
-            title: Text('${event['summary']}'),
-            subtitle: Text(
-              '${managementMap(event['app'])['name']} · ${event['kind']}\n${event['createdAt']}',
-            ),
-            isThreeLine: true,
-            trailing: Text('${event['status']}'),
-            onTap: () => run(() => eventDetail(event), refresh: false),
-          ),
-        if (nextCursor != null)
-          action('Load older events', () => run(moreEvents, refresh: false)),
       ],
-    ],
-    actions: [
-      if (manager)
-        action('Grant app access', () => run(grant), icon: Icons.add),
-    ],
-  );
+    );
+  }
+
+  Widget _accessCard(BuildContext context, Map<String, dynamic> item) {
+    final pending = item['type'] == 'pending';
+    return RaftAccessCard(
+      title: '${item['clientName']}',
+      badge: RaftRecipeBadge(
+        raftText(context, pending ? 'Pending' : 'Active'),
+        variant: pending
+            ? RaftBadgeRecipeVariant.warning
+            : RaftBadgeRecipeVariant.success,
+        uppercase: true,
+      ),
+      chips: [
+        for (final scope in managementStrings(item['scopes']))
+          integrationScopeLabels[scope] ?? scope,
+      ],
+      actions: [
+        if (manager && pending) ...[
+          _small(
+            raftText(context, 'Approve'),
+            () => run(() async {
+              await w.client.post(
+                '/integrations/requests/${item['id']}/approve',
+                data: {'remember': true},
+              );
+            }),
+            selected: true,
+          ),
+          _small(
+            raftText(context, 'Deny'),
+            () => run(() async {
+              await w.client.post('/integrations/requests/${item['id']}/deny');
+            }),
+          ),
+        ] else if (manager)
+          _small(
+            raftText(context, 'Revoke'),
+            () => run(() async {
+              await confirm(
+                'Revoke app access?',
+                'Disconnect ${item['clientName']} from this agent.',
+                () async {
+                  await w.client.post(
+                    '/integrations/grants/${item['id']}/revoke',
+                  );
+                },
+                submit: 'Revoke',
+                destructive: true,
+              );
+            }),
+          ),
+      ],
+    );
+  }
 }

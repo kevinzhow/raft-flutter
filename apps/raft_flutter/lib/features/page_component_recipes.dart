@@ -107,16 +107,28 @@ class RaftSettingsProfileRecipe {
   const RaftSettingsProfileRecipe(this.t);
   final RaftTokens t;
   static const double avatarSize = 64, gap = 16, fieldGap = 12;
+  // `border-t border-line-muted`
+  static const double dividerWidth = 1;
   static const inset = EdgeInsets.all(16);
-  BoxDecoration get surface => BoxDecoration(
-    color: t.panel,
-    border: Border.all(color: t.line, width: t.border),
-    boxShadow: t.shadows,
+  // SettingsProfileCard.tsx: the shared settings card surface.
+  BoxDecoration get surface => RaftSettingsCard.decoration(t);
+  // `text-lg font-bold leading-tight text-foreground-strong theme-brutal:text-black`
+  TextStyle get title => RaftTypography.body(
+    t,
+    size: 18,
+    line: 22.5,
+    weight: FontWeight.w700,
+    color: RaftSettingsText(t).strong,
   );
-  TextStyle get title =>
-      RaftTypography.body(t, size: 18, line: 22.5, weight: FontWeight.w700);
-  TextStyle get subtitle =>
-      RaftTypography.mono(t, size: 14, line: 20, color: t.muted);
+  // `font-mono text-sm text-foreground-muted theme-brutal:text-black/50`
+  TextStyle get subtitle => RaftTypography.mono(
+    t,
+    size: 14,
+    line: 20,
+    color: RaftSettingsText(t).faint,
+  );
+  // `border-t border-line-muted`
+  Color get divider => t.colors['line-muted']!;
   TextStyle get label => RaftTypography.body(
     t,
     size: 12,
@@ -138,13 +150,12 @@ class RaftSettingsProfileCard extends StatelessWidget {
   final String title, subtitle;
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context),
-        recipe = RaftSettingsProfileRecipe(RaftTokens.of(context));
+    final recipe = RaftSettingsProfileRecipe(RaftTokens.of(context));
     return Container(
       padding: RaftSettingsProfileRecipe.inset,
       decoration: recipe.surface,
       child: Material(
-        color: t.panel,
+        type: MaterialType.transparency,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -187,7 +198,11 @@ class RaftSettingsProfileCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: RaftSettingsProfileRecipe.gap),
-            Divider(height: 1, color: t.line),
+            Divider(
+              height: RaftSettingsProfileRecipe.dividerWidth,
+              thickness: RaftSettingsProfileRecipe.dividerWidth,
+              color: recipe.divider,
+            ),
             const SizedBox(height: RaftSettingsProfileRecipe.gap),
             child,
           ],
@@ -201,7 +216,19 @@ class RaftSettingsProfileCard extends StatelessWidget {
 class RaftSettingsLayoutRecipe {
   const RaftSettingsLayoutRecipe(this.t);
   final RaftTokens t;
-  static const navigationWidth = 220.0;
+  // Sidebar slot width (AdaptiveWorkspace sidebarWidth default 240).
+  static const navigationWidth = 240.0;
+  static const navigationHeaderInset = EdgeInsets.symmetric(
+    horizontal: RaftSpace.x5,
+  );
+  BorderSide get navigationHeaderLine =>
+      BorderSide(color: RaftSettingsText(t).edge, width: t.border);
+  TextStyle get navigationTitle => RaftTypography.heading(
+    t,
+    size: 18,
+    line: 28,
+    weight: FontWeight.w700,
+  ).copyWith(color: RaftSettingsText(t).strong);
   static const navigationGlyphSize = 15.0;
   static const navigationInset = EdgeInsets.fromLTRB(8, 12, 8, 12);
   static const contentInset = EdgeInsets.all(16);

@@ -1685,7 +1685,12 @@ class RaftDropdownMenu extends StatefulWidget {
     this.enabled = true,
     this.triggerStyle = RaftDropdownTriggerStyle.button,
     this.selected = false,
+    this.minimumTargetSize,
   });
+
+  /// Passed to the trigger [RaftControl] (layout follows the Web box when
+  /// set to the visual height).
+  final double? minimumTargetSize;
   final String label;
   final List<RaftMenuEntry> entries;
   final RaftMenuController? controller;
@@ -1969,6 +1974,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
           child: RaftControl(
             focusNode: trigger,
             tooltip: widget.tooltip,
+            minimumTargetSize: widget.minimumTargetSize,
             variant: RaftControlVariant.outline,
             visualHeight: widget.triggerStyle == RaftDropdownTriggerStyle.picker
                 ? t.brutal
@@ -2410,6 +2416,7 @@ class RaftSegmentedControl<T> extends StatefulWidget {
     this.label,
     this.visualHeight = 32,
     this.style = RaftSegmentedStyle.buttons,
+    this.minimumTargetSize,
   });
   final RaftSegmentedStyle style;
   final T value;
@@ -2417,6 +2424,10 @@ class RaftSegmentedControl<T> extends StatefulWidget {
   final ValueChanged<T>? onChanged;
   final String? label;
   final double visualHeight;
+
+  /// Passed to each segment's [RaftControl] (layout follows the Web box when
+  /// set to [visualHeight]).
+  final double? minimumTargetSize;
   @override
   State<RaftSegmentedControl<T>> createState() =>
       _RaftSegmentedControlState<T>();
@@ -2492,6 +2503,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
                 selected: widget.items[i].value == widget.value,
                 tooltip: widget.items[i].tooltip,
                 visualHeight: widget.visualHeight,
+                minimumTargetSize: widget.minimumTargetSize,
                 onPressed: widget.onChanged == null
                     ? null
                     : () => widget.onChanged!(widget.items[i].value),
