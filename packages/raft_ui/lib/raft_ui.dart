@@ -98,3 +98,5 @@ export 'src/dialog_card.dart';
 export 'src/channel_settings_sheet.dart';
 export 'src/create_channel_view.dart';
 export 'src/channel_members_view.dart';
+
+export 'src/agent_avatar_picker.dart';

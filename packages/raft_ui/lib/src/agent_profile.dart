@@ -20,6 +20,7 @@ import 'recipes/token_binding.dart';
 import 'list_items.dart';
 import 'recipe_surface.dart' show raftCssText;
 import 'theme.dart';
+import 'tooltip.dart';
 
 /// Tailwind `bg-gray-400` (oklch(70.7% 0.022 261.325)), StatusDot default.
 const raftGray400 = Color(0xFF99A1AF);
@@ -174,7 +175,9 @@ class RaftAvatarSlot extends StatelessWidget {
     required this.slot,
     this.agent = true,
     this.avatarUrl,
+    this.content,
   });
+  final Widget? content;
   final String name;
   final RaftAvatarSlotContext slot;
   final bool agent;
@@ -212,19 +215,23 @@ class RaftAvatarSlot extends StatelessWidget {
               width: slot.border,
             ),
           ),
-      child: RaftAvatarContent(
-        name: name,
-        kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
-        pixelKey: key,
-        uploadedUrl: key == null ? avatarUrl : null,
-        fallback: Center(
-          child: RaftIcon(
-            agent ? RaftGlyph.bot : RaftGlyph.user,
-            size: icon,
-            color: s.fallback.color?.resolve(rt),
+      child:
+          content ??
+          RaftAvatarContent(
+            name: name,
+            kind: agent
+                ? RaftAvatarContentKind.agent
+                : RaftAvatarContentKind.human,
+            pixelKey: key,
+            uploadedUrl: key == null ? avatarUrl : null,
+            fallback: Center(
+              child: RaftIcon(
+                agent ? RaftGlyph.bot : RaftGlyph.user,
+                size: icon,
+                color: s.fallback.color?.resolve(rt),
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 }
@@ -476,6 +483,7 @@ class RaftProfileIdentity extends StatelessWidget {
     this.avatarUrl,
     this.agent = true,
     this.onEditName,
+    this.onAvatar,
     this.avatarButton = false,
     this.statusColor,
     this.statusText,
@@ -484,7 +492,7 @@ class RaftProfileIdentity extends StatelessWidget {
   final String name, handle;
   final String? avatarUrl;
   final bool agent, avatarButton;
-  final VoidCallback? onEditName;
+  final VoidCallback? onEditName, onAvatar;
   final Color? statusColor;
   final String? statusText;
   final double minHeight;
@@ -511,6 +519,9 @@ class RaftProfileIdentity extends StatelessWidget {
         decoration: BoxDecoration(boxShadow: button.boxShadow.toBoxShadows(rt)),
         child: avatar,
       );
+    }
+    if (onAvatar != null) {
+      avatar = _ProfileAvatarAction(key: const ValueKey('agent-profile-avatar-trigger'), onPressed: onAvatar!, child: avatar);
     }
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: minHeight),
@@ -1689,6 +1700,62 @@ class _RaftOverflowMenuButtonState extends State<RaftOverflowMenuButton> {
         glyph: RaftGlyph.ellipsisVertical,
         tooltip: widget.tooltip,
         onPressed: menu.toggle,
+      ),
+    ),
+  );
+}
+
+class _ProfileAvatarAction extends StatefulWidget {
+  const _ProfileAvatarAction({super.key, required this.onPressed, required this.child});
+  final VoidCallback onPressed;
+  final Widget child;
+  @override
+  State<_ProfileAvatarAction> createState() => _ProfileAvatarActionState();
+}
+
+class _ProfileAvatarActionState extends State<_ProfileAvatarAction> {
+  bool hovered = false;
+  @override
+  Widget build(BuildContext context) => RaftTooltip(
+    message: raftText(context, 'Choose Avatar'),
+    child: FocusableActionDetector(
+      mouseCursor: SystemMouseCursors.click,
+      actions: {
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            widget.onPressed();
+            return null;
+          },
+        ),
+      },
+      child: Semantics(
+        button: true,
+        label: raftText(context, 'Choose Avatar'),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => hovered = true),
+          onExit: (_) => setState(() => hovered = false),
+          child: GestureDetector(
+            onTap: widget.onPressed,
+            child: Stack(
+              children: [
+                widget.child,
+                if (hovered)
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: .4),
+                      child: const Center(
+                        child: RaftIcon(
+                          RaftGlyph.pencil,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     ),
   );

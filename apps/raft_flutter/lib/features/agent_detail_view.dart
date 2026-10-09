@@ -17,6 +17,7 @@ import '../data/workspace_controller.dart';
 import 'agent_apps_view.dart';
 import 'agent_metadata_catalog.dart';
 import 'mcp_views.dart';
+import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
 import 'resource_cards.dart' show resourceRelativeTime;
 
 enum AgentDetailTab { profile, activity, chat, reminders, workspace, apps, mcp }
@@ -26,6 +27,7 @@ class AgentDetailActions {
   const AgentDetailActions({
     this.onBack,
     this.onEditProfile,
+    this.onEditAvatar,
     this.onEditRuntime,
     this.onStartStop,
     this.onRestartReset,
@@ -36,6 +38,7 @@ class AgentDetailActions {
   });
   final VoidCallback? onBack,
       onEditProfile,
+      onEditAvatar,
       onEditRuntime,
       onStartStop,
       onRestartReset,
@@ -192,7 +195,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             backTooltip: raftText(context, 'Back'),
             iconSlot: RaftAvatarSlot(
               name: displayName,
-              avatarUrl: a['avatarUrl'] as String?,
+              avatarUrl: agentProfileAvatarUrl(
+                widget.controller.client.origin,
+                a['avatarUrl'] as String?,
+              ),
               slot: RaftAvatarSlotContext.panelHeader,
             ),
             actions: [
@@ -380,8 +386,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         RaftProfileIdentity(
           name: displayName,
           handle: '${a['name'] ?? ''}',
-          avatarUrl: a['avatarUrl'] as String?,
+          avatarUrl: agentProfileAvatarUrl(
+            widget.controller.client.origin,
+            a['avatarUrl'] as String?,
+          ),
           avatarButton: canEdit,
+          onAvatar: canEdit ? widget.actions.onEditAvatar : null,
           onEditName: canEdit ? widget.actions.onEditProfile : null,
           statusColor: raftActivityDotColor(t, activity),
           statusText: a['deletedAt'] == null ? status : null,

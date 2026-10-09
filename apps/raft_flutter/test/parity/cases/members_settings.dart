@@ -69,21 +69,29 @@ final Map<String, ParityCase> membersSettingsCases = {
     empty: true,
   ),
   'components.members.create-agent.claude-dialog': _createAgent('claude'),
-  'components.members.create-agent.claude-custom-provider-dialog':
-      _createAgent(
-        'claude',
-        customProvider: true,
-        extraNotes:
-            ' Provider set to Custom, API URL/API key filled, MORE opened and '
-            'Claude Command filled like react-provider.spec.ts, modal scrolled '
-            'back to top.',
-      ),
+  'components.members.create-agent.claude-custom-provider-dialog': _createAgent(
+    'claude',
+    customProvider: true,
+    extraNotes:
+        ' Provider set to Custom, API URL/API key filled, MORE opened and '
+        'Claude Command filled like react-provider.spec.ts, modal scrolled '
+        'back to top.',
+  ),
   'components.members.create-agent.builtin-provider-dialog': _createAgent(
     'builtin',
   ),
   'components.members.create-agent.pi-provider-dialog': _createAgent('pi'),
   'components.members.create-agent.dialog-no-computer': _noComputer,
   'components.members.agent-detail.profile': _agentDetail(lifecycle: false),
+  'components.members.avatar-management': agentDetailParityCase(
+    'productUx',
+    notes:
+        'Actual profile avatar trigger opens the scoped preset/upload editor.',
+    then: (t, ctx) async {
+      await t.tap(find.byKey(const ValueKey('agent-profile-avatar-trigger')));
+      await t.pump(const Duration(milliseconds: 500));
+    },
+  ),
   'components.members.agent-lifecycle-actions': _agentDetail(lifecycle: true),
   'components.channel.settings.panel': _channelSettings(addPanel: false),
   'components.channel.members.add-panel': _channelSettings(addPanel: true),
@@ -98,16 +106,7 @@ final Map<String, ParityCase> membersSettingsCases = {
   'components.settings.notifications.page': _settings('notifications'),
 };
 
-final Map<String, ParityUncovered> membersSettingsUncovered = {
-  'components.members.avatar-management': const ParityUncovered(
-    ParityGap.noFlutterSurface,
-    'React AgentDetailPanel "Choose avatar" picker (generated pixel avatars, '
-    'upload tile, Save/Cancel). Flutter FleetDetail (features/fleet_views.dart) '
-    'has no avatar control for agents and no avatar picker exists anywhere in '
-    'apps/raft_flutter/lib or packages/raft_ui (grep pixel:/avatar picker; the '
-    'only agent avatar write is the fixed pixel:mug in onboarding create).',
-  ),
-};
+final Map<String, ParityUncovered> membersSettingsUncovered = {};
 
 // ---------------------------------------------------------------------------
 // Hosts: plain scaffolding that opens product dialogs/routes the way the app
@@ -163,7 +162,11 @@ List<Map<String, dynamic>> _createAgentMachines(
   List<String> runtimes,
 ) => [
   {...fixture.machine('primary'), 'status': 'online', 'runtimes': runtimes},
-  {...fixture.machine('studio'), 'status': 'offline', 'runtimes': ['codex']},
+  {
+    ...fixture.machine('studio'),
+    'status': 'offline',
+    'runtimes': ['codex'],
+  },
 ];
 
 ParityCase _createAgent(
@@ -351,9 +354,7 @@ ParityCase _agentDetail({required bool lifecycle}) => agentDetailParityCase(
       : '',
   then: lifecycle
       ? (t, ctx) async {
-          await t.tap(
-            find.byKey(const Key('agent-profile-overflow-trigger')),
-          );
+          await t.tap(find.byKey(const Key('agent-profile-overflow-trigger')));
           await t.pump(const Duration(milliseconds: 200));
         }
       : null,

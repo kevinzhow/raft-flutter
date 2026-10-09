@@ -13,6 +13,8 @@ import 'agent_scopes_view.dart';
 import 'agent_migration_view.dart';
 import 'agent_apps_view.dart';
 import 'agent_detail_view.dart';
+import 'agent_avatar_dialog.dart';
+import 'package:raft_ui/recipes.dart';
 
 export 'agent_detail_view.dart' show AgentDetailTab;
 
@@ -823,6 +825,47 @@ class _FleetDetailState extends State<FleetDetail> {
     );
   }
 
+  Future<void> editAvatar() async {
+    final captured = scope;
+    bool valid() =>
+        current &&
+        identical(scope, captured) &&
+        row['deletedAt'] == null &&
+        allowed('editAgents');
+    if (!valid() || busy) return;
+    final rt = RaftRecipeTokens(RaftTokens.of(context));
+    final overlay = RaftDialogRecipe.resolve(
+      theme: raftRecipeTheme(RaftTokens.of(context)),
+      states: RaftRecipeStates({
+        if (RaftTokens.of(context).dark) RaftRecipeStates.dark,
+      }),
+      tokens: rt,
+    ).overlay;
+    final route = DialogRoute<void>(
+      context: context,
+      barrierColor: overlay.backgroundColor?.resolve(rt),
+      barrierDismissible: false,
+      builder: (_) => AgentAvatarDialog(
+        controller: w,
+        agent: row,
+        authorized: valid,
+        onSaved: (next) {
+          if (valid()) setState(() => row = next);
+        },
+      ),
+    );
+    void changed() {
+      if (!valid() && route.isActive) route.navigator?.removeRoute(route);
+    }
+
+    w.addListener(changed);
+    try {
+      await Navigator.of(context, rootNavigator: true).push(route);
+    } finally {
+      w.removeListener(changed);
+    }
+  }
+
   Widget agentPanel(BuildContext context) => AgentDetailPanel(
     controller: w,
     agent: row,
@@ -836,6 +879,7 @@ class _FleetDetailState extends State<FleetDetail> {
     canViewPrivate: allowed('editAgents'),
     canControlRuntime: allowed('controlAgentRuntime'),
     actions: AgentDetailActions(
+      onEditAvatar: busy ? null : editAvatar,
       onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
       onEditProfile: busy ? null : edit,
       onEditRuntime: !external && row['machineId'] is String
@@ -886,7 +930,9 @@ class _FleetDetailState extends State<FleetDetail> {
   );
 
   @override
-  Widget build(BuildContext context) => !widget.computers
+  Widget build(BuildContext context) => !current
+      ? const SizedBox.shrink()
+      : !widget.computers
       ? agentPanel(context)
       : Scaffold(
     appBar: AppBar(
