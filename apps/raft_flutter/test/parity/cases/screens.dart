@@ -320,8 +320,9 @@ final ParityCase _homeLoading = ParityCase(
       'Post sign-in transition: the real WorkspaceController.bootstrap() runs '
       'with /servers answered and /channels, /channels/dm, /agents, '
       '/channels/saved and machines held in flight exactly like React. '
-      'Flutter keeps w.loading true until channels arrive and shows its '
-      'loading state instead of sidebar skeleton rows.',
+      'Flutter keeps w.loading true until channels arrive and mounts the '
+      'production SidebarRowsSkeleton. Both providers freeze infinite pulses '
+      'at their initial frame.',
   build: (ctx) => ScreenWorkspaceHost(
     create: () {
       final wire = ScreenWire(ctx.fixtureData);

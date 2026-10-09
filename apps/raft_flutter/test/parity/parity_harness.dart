@@ -14,6 +14,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart' show vg;
 import 'package:raft_ui/raft_ui.dart';
 
 import 'geometry_dump.dart';
@@ -22,8 +23,10 @@ import 'geometry_dump.dart';
 typedef ParityBuilder = Widget Function(ParityContext ctx);
 
 /// Optional post-pump interaction (tap a trigger, open a menu, type text).
-typedef ParityInteraction =
-    Future<void> Function(WidgetTester t, ParityContext ctx);
+typedef ParityInteraction = Future<void> Function(
+  WidgetTester t,
+  ParityContext ctx,
+);
 
 /// One mapped case: the real widget path the Flutter app uses for the
 /// surface the React render host shows under the same case id.
@@ -150,7 +153,11 @@ class ParityContext {
       'brutal-light' => (RaftFamily.brutal, false),
       'elegant-light' => (RaftFamily.elegant, false),
       'elegant-dark' => (RaftFamily.elegant, true),
-      _ => throw ArgumentError.value(override, 'override', 'Unknown parity theme'),
+      _ => throw ArgumentError.value(
+        override,
+        'override',
+        'Unknown parity theme',
+      ),
     };
   }
   final id = visualCase['id'] as String;
@@ -214,9 +221,7 @@ Future<List<String>> loadParityFonts() async {
     if (files.isEmpty) continue;
     final loader = FontLoader(family);
     for (final file in files) {
-      loader.addFont(
-        file.readAsBytes().then((b) => ByteData.sublistView(b)),
-      );
+      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
     }
     await loader.load();
     loaded.add(family);
@@ -268,11 +273,17 @@ Future<Map<String, dynamic>> captureParityCase(
       supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: theme,
-      builder: (context, child) => RepaintBoundary(
-        key: rootKey,
-        child: RaftTooltipProvider(
-          delay: const Duration(milliseconds: 600),
-          child: ColoredBox(color: Colors.white, child: child!),
+      builder: (context, child) => MediaQuery(
+        // React uses Playwright animations:"disabled": infinite pulses are
+        // captured at their initial frame, finite transitions at rest. Use
+        // the product's reduced-motion contract for the same Flutter state.
+        data: MediaQuery.of(context).copyWith(disableAnimations: true),
+        child: RepaintBoundary(
+          key: rootKey,
+          child: RaftTooltipProvider(
+            delay: const Duration(milliseconds: 600),
+            child: ColoredBox(color: Colors.white, child: child!),
+          ),
         ),
       ),
       home: Builder(builder: (context) => mapping.build(ctx)),
@@ -282,6 +293,12 @@ Future<Map<String, dynamic>> captureParityCase(
   if (mapping.interact != null) await mapping.interact!(t, ctx);
   await t.pump(mapping.settle);
   await t.pump(const Duration(milliseconds: 16));
+  // SVG compilation uses a real isolate. Advancing the test's fake clock
+  // cannot finish it; await the renderer's actual decode before capturing.
+  await t.runAsync(
+    () => vg.waitForPendingDecodes().timeout(const Duration(seconds: 10)),
+  );
+  await t.pump();
   // Never write a capture of a build/layout error screen.
   final error = t.takeException();
   if (error != null) {
@@ -374,6 +391,10 @@ Future<Map<String, dynamic>> captureParityCase(
       'targetPlatform': 'android',
       'density': 'touch',
       'renderer': 'flutter_test host raster (not a device screenshot)',
+      'animationPolicy':
+          'reduced-motion at rest; matches React animations:disabled',
+      'vectorDecodePolicy':
+          'await actual pending vector decodes before capture',
       ...runInfo,
     },
     'typography': _typographyProbes(
@@ -386,13 +407,11 @@ Future<Map<String, dynamic>> captureParityCase(
   };
   await t.runAsync(() async {
     await imageFile.writeAsBytes(png!);
-    await File(
-      '${outputDir.path}/$id.metadata.json',
-    ).writeAsString(const JsonEncoder.withIndent('  ').convert(metadata));
+    await File('${outputDir.path}/$id.metadata.json')
+        .writeAsString(const JsonEncoder.withIndent('  ').convert(metadata));
     if (parityGeometryDumpEnabled) {
-      await File('${outputDir.path}/$id.geometry.txt').writeAsString(
-        parityGeometryDump(rootBox, rect, rootBox),
-      );
+      await File('${outputDir.path}/$id.geometry.txt')
+          .writeAsString(parityGeometryDump(rootBox, rect, rootBox));
     }
   });
   return metadata;
@@ -403,7 +422,9 @@ String _hex(Color? c) {
   final argb = c.toARGB32();
   final rgb = (argb & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase();
   final a = argb >> 24;
-  return a == 0xFF ? '#$rgb' : '#$rgb${a.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+  return a == 0xFF
+      ? '#$rgb'
+      : '#$rgb${a.toRadixString(16).padLeft(2, '0').toUpperCase()}';
 }
 
 List<Map<String, dynamic>> _typographyProbes(BuildContext? context) {

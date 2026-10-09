@@ -297,10 +297,10 @@ final ParityCase _files = ParityCase(
   ],
   notes:
       'Rows come from the real SourceChannelFilesStore over the React '
-      '/channels/visual-thread-composer/files mock. The image row thumbnail is '
-      'an SVG data: URL; ConversationPanel fetches thumbnails through '
-      'AttachmentFiles (Dio) and Flutter has no SVG decoder, so no acquireImage '
-      'is wired and the row shows the product image-glyph fallback.',
+      '/channels/visual-thread-composer/files mock. The actual product '
+      'SourceChannelFileThumbnail renders its authorized SVG data URL. '
+      'No preview/download or remote raster acquisition is claimed by this '
+      'presentation capture.',
   build: (ctx) {
     final fx = ParityThreadFixture(ctx.fixtureData);
     // ConversationPanel sits under WorkspaceView's Scaffold (Material).
