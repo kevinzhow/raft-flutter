@@ -22,7 +22,7 @@ void main() {
 
   for (final route in ['activity', 'search']) {
     test(
-      '[N24 focus-expiry] $route consumes only owned msg without retiring independent metadata',
+      '[N24 focus-expiry] ${route == 'activity' ? 'Activity consumes' : 'Search retains'} owned msg without retiring independent metadata',
       () {
         final n = fixture(
           '/s/demo/$route?open=thread:t&thread=c:p&msg=r&task=c:q&profile=human:h&keep=encoded%20value',
@@ -31,9 +31,13 @@ void main() {
             revision = n.revision,
             index = n.index,
             entries = n.entries.length;
-        expect(consume(n), isTrue);
-        expect(n.location.messageId, isNull);
-        expect(n.location.uri.queryParameters, {...before}..remove('msg'));
+        final consumes = route == 'activity';
+        expect(consume(n), consumes);
+        expect(n.location.messageId, consumes ? null : 'r');
+        expect(
+          n.location.uri.queryParameters,
+          consumes ? ({...before}..remove('msg')) : before,
+        );
         expect(n.revision, revision);
         expect(n.index, index);
         expect(n.entries.length, entries);

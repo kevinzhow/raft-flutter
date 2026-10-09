@@ -876,7 +876,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   : null,
               onBack: dismissPanel,
               onSearchEntity: wide ? openDesktopEntity : null,
-              onSearchMessage: wide ? openDesktopSearchMessage : null,
+              onSearchMessage: openSearchMessage,
               onActivityCanonical:
                   wide &&
                       activityFlag.masterDetail(
@@ -1321,11 +1321,19 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
-  Future<void> openDesktopSearchMessage(Map<String, dynamic> row) async {
+  Future<void> openSearchMessage(Map<String, dynamic> row) async {
     final channelId = row['channelId'], messageId = row['id'];
     if (channelId is! String || messageId is! String) return;
     if (row['channelType'] != 'thread') {
-      await openDesktopConversation(channelId, messageId);
+      if (wide) {
+        await openDesktopConversation(channelId, messageId);
+      } else {
+        // Keep the ordinary narrow message entry; typed thread hits below
+        // use Source's Search content slot at every viewport width.
+        scaffold.currentState?.closeDrawer();
+        desktopNavigation.clear();
+        await w.jumpToMessage(channelId, messageId);
+      }
       return;
     }
     final parentChannelId = row['parentChannelId'],
@@ -1349,6 +1357,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         channelId: parentChannelId,
         parentMessageId: parentMessageId,
         messageId: messageId,
+      ),
+      // Source first publishes the added thread anchor (PUSH), then mirrors
+      // the Search slot into that same entry (REPLACE). Retargeting replaces.
+      // MainLayout1453–1501/1594–1618; rightPanelUrlSync515–549.
+      kind: w.location.panelNavigationKindTo(
+        w.location.withQuery({'thread': '$parentChannelId:$parentMessageId'}),
       ),
     );
     pendingDesktopSelection = false;

@@ -22,9 +22,7 @@ WorkspaceView desktop adapter publishes one thread content slot, then calls
 channel/DM hits retain the previous message-opening fallback; embedded consumers
 without the new callback retain their existing callback.
 
-This bounded product correction applies to the desktop Search entry. The current
-narrow Search callback and external cold-link bootstrap are unchanged. Those
-paths require separate Source-parity work; this report does not claim them.
+This first batch corrected the desktop Search entry. The later [N02c follow-up](mobile-search-thread-contract.md) also corrects narrow typed-thread hits and the Search-specific expiry contract. Ordinary narrow channel/DM routing and external cold-link bootstrap remain outside these corrections.
 
 ## Executable coverage
 

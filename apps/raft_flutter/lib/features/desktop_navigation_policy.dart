@@ -153,7 +153,10 @@ class DesktopNavigationState {
   void selectRoute(String route) => navigation.selectSection(route);
   int beginSelection() => navigation.reserve();
 
-  int selectTarget(DesktopContentTarget value) {
+  int selectTarget(
+    DesktopContentTarget value, {
+    RaftNavigationKind kind = RaftNavigationKind.replace,
+  }) {
     final current = navigation.location;
     if (['members', 'computers'].contains(navigation.section)) {
       navigation.navigate(
@@ -184,7 +187,7 @@ class DesktopNavigationState {
             ? '${value.channelId}:${value.parentMessageId}'
             : null,
       });
-      navigation.navigate(next, kind: RaftNavigationKind.replace);
+      navigation.navigate(next, kind: kind);
     }
     return navigation.revision;
   }

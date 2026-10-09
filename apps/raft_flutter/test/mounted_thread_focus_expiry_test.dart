@@ -16,9 +16,13 @@ void main() {
     (RaftFamily.elegant, true),
   ]) {
     for (final surface in ['activity', 'search', 'canonical']) {
-      final preview = surface != 'canonical';
+      final preview = surface != 'canonical', consumes = surface == 'activity';
       testWidgets(
-        '[N24f] $family/$dark actual ${preview ? '$surface slot consumes msg' : 'canonical thread retains msg'} while parent is held',
+        '[N24f] $family/$dark actual ${surface == 'activity'
+            ? 'Activity consumes msg'
+            : surface == 'search'
+            ? 'Search retains msg'
+            : 'canonical retains msg'} while parent is held',
         (tester) async {
           final (w, api) = await pageFixture(tester);
           w.ledger.ingest([
@@ -82,7 +86,7 @@ void main() {
             expect(paintedMessage(tester, 'reply-40'), rect);
             expect(
               w.location.uri.queryParameters,
-              preview
+              consumes
                   ? (Map<String, String>.from(before)..remove('msg'))
                   : before,
             );
@@ -115,7 +119,7 @@ void main() {
               true,
             );
             expect(w.location.query('keep'), 'value:with space');
-            expect(w.location.messageId, preview ? null : 'reply-40');
+            expect(w.location.messageId, consumes ? null : 'reply-40');
           });
           expect(
             api.calls.where((c) => c.path == '/messages/context/reply-40'),

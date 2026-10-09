@@ -59,11 +59,11 @@ class WorkspaceNavigation {
     ++_revision;
   }
 
-  /// Consume the focus of the currently mounted Activity/Search thread slot.
-  /// Source ThreadPanel's 2s visual focus consumption replaces only `msg` via
-  /// searchContentStore. It is not a new navigation intent: independently held
-  /// metadata requests retain their revision, while Back/new-route still retire
-  /// them. Canonical side-thread URLs have no content-slot consumption callback.
+  /// Consume only the mounted Activity thread slot's URI focus.
+  /// Source MainLayout899–910 supplies Activity's consumption callback, while
+  /// Search756–784 and canonical side threads clear only the visual highlight.
+  /// Replacing Activity `msg` is not a new navigation intent: independently held
+  /// metadata retains its revision, while Back/new-route still retires requests.
   bool consumeThreadFocus({
     required String threadChannelId,
     required String parentChannelId,
@@ -75,7 +75,7 @@ class WorkspaceNavigation {
     final thread = location.thread;
     if (expectedRevision != revision ||
         expectedMessageId.isEmpty ||
-        !{RaftRoute.activity, RaftRoute.search}.contains(location.route) ||
+        location.route != RaftRoute.activity ||
         content?.kind != RaftContentKind.thread ||
         content?.id != threadChannelId ||
         thread?.channelId != parentChannelId ||

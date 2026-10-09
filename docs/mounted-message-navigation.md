@@ -26,14 +26,15 @@ Close correction belongs to the navigation adapter.
 `mounted_thread_focus_expiry_test.dart` adds nine actual N24f page tests. A real
 focused reply paints while parent metadata is held. Its visible highlight
 survives the pre-expiry check, expires at the normal two-second timer, and its
-geometry remains stable in every subsequent observed frame. Activity and Search thread
-content consume only `msg` from the current URI/history entry. A canonical
-side thread retains its URI `msg`, matching Source's narrower callback.
+geometry remains stable in every subsequent observed frame. Activity thread content consumes only `msg` from the current URI/history entry.
+Search content and canonical side threads retain URI `msg`. The follow-up
+[Search contract](mobile-search-thread-contract.md) corrects the earlier shared
+consumption assumption and preserves its original failures.
 
 Source `ThreadPanel.tsx:699–703` clears visual/store focus and invokes an optional
 consumption callback. `MainLayout.tsx:908` supplies that callback for the mounted
-Search/Activity content slot; `searchContentStore.ts:48–56` consumes only its
-matching message focus. The reviewed navigation seam validates route, thread
+Activity content slot. Search uses `MainLayout.tsx:756–784` without that
+callback; its shared store method alone does not establish a mounted caller. The reviewed navigation seam validates route, thread
 channel, parent anchor, expected message and captured request revision. The
 actual ChatView timer now passes its captured revision, and the controller
 requires the current real thread identity's matching focused reply. Consuming
