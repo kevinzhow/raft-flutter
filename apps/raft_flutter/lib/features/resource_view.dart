@@ -32,6 +32,7 @@ class ResourceView extends StatefulWidget {
     this.initialSearchDeferUntilQuery = false,
     this.onSearchEntity,
     this.onActivityItem,
+    this.onActivityCanonical,
     this.searchMemory,
     this.restoreSearchState = true,
     this.channelId,
@@ -56,13 +57,18 @@ class ResourceView extends StatefulWidget {
   final bool restoreSearchState;
   final Future<void> Function(SearchEntity)? onSearchEntity;
   final Future<void> Function(Map<String, dynamic>)? onActivityItem;
+
+  /// Mounted Source master/detail arbitration: a second activation navigates
+  /// to the canonical route and cancels the pending 220 ms content-slot open.
+  /// Custom embedded consumers without this callback keep immediate onOpen.
+  final Future<void> Function(Map<String, dynamic>)? onActivityCanonical;
   @override
   State<ResourceView> createState() => _ResourceViewState();
 }
 
 class _ResourceViewState extends State<ResourceView> {
   final query = TextEditingController();
-  Timer? searchDebounce;
+  Timer? searchDebounce, activityActivation;
   String? selectedSearchKey;
   List<Map<String, dynamic>> searchPeople = [],
       searchAgents = [],
@@ -290,6 +296,7 @@ class _ResourceViewState extends State<ResourceView> {
       scope == acceptedAuthority &&
       (request == null || request == requestGeneration);
   void clearRows() {
+    activityActivation?.cancel();
     dragFeedbackRevision.value++;
     rows = [];
     lanes.clear();
@@ -524,6 +531,7 @@ class _ResourceViewState extends State<ResourceView> {
     ++catalogRequest;
     w.removeListener(authorityChanged);
     searchDebounce?.cancel();
+    activityActivation?.cancel();
     queryFocus.dispose();
     query.dispose();
     events?.cancel();
@@ -1507,6 +1515,27 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
+  void activateActivity(Map<String, dynamic> row, String scope, int detail) {
+    if (!accepts(scope)) return;
+    activityActivation?.cancel();
+    final canonical = widget.onActivityCanonical;
+    if (canonical == null) {
+      unawaited(openConversation(row, scope));
+      return;
+    }
+    if (detail >= 2) {
+      unawaited(canonical(Map<String, dynamic>.from(row)));
+      return;
+    }
+    final revision = w.navigationRevision;
+    activityActivation = Timer(const Duration(milliseconds: 220), () {
+      activityActivation = null;
+      if (accepts(scope) && revision == w.navigationRevision) {
+        unawaited(openConversation(row, scope));
+      }
+    });
+  }
+
   Future<void> openConversation(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope)) return;
     if (widget.section == 'activity' && widget.onActivityItem != null) {
@@ -1775,6 +1804,9 @@ class _ResourceViewState extends State<ResourceView> {
               'activity-${row['kind']}-${row['channelId'] ?? row['messageId']}',
             ),
       onOpen: () => openConversation(row, scope),
+      onActivate: widget.onActivityCanonical == null
+          ? null
+          : (detail) => activateActivity(row, scope, detail),
       onContextMenu: row['kind'] == 'mention_action'
           ? null
           : () => activityMenu(row, scope),

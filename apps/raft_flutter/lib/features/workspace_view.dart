@@ -36,6 +36,7 @@ import 'workspace_settings.dart';
 import 'server_views.dart';
 import 'mobile_workspace_navigation.dart';
 import 'desktop_navigation_policy.dart';
+import 'activity_destination.dart';
 import 'desktop_master_detail.dart';
 import 'desktop_directory_view.dart';
 import 'desktop_activity_flag.dart';
@@ -828,6 +829,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                   : null,
               onBack: dismissPanel,
               onSearchEntity: wide ? openDesktopEntity : null,
+              onActivityCanonical:
+                  wide &&
+                      activityFlag.masterDetail(
+                        MediaQuery.sizeOf(context).width,
+                      )
+                  ? (row) => openCanonicalActivity(row)
+                  : null,
               onActivityItem:
                   wide &&
                       activityFlag.masterDetail(
@@ -1149,7 +1157,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     },
   );
   final threadViewport = ChatViewportHandle();
-  Widget sourceThreadHeader({bool mobile = false}) {
+  Widget sourceThreadHeader({bool mobile = false, VoidCallback? onClose}) {
     final unresolved =
         w.threadChannelId == null &&
         (w.threadResolutionLoading || w.threadResolutionError != null);
@@ -1172,8 +1180,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ? null
           : '${sourceChannel.type == 'dm' ? '@' : '#'}${sourceChannel.name}',
       interactiveTitle: !unresolved,
-      onBack: dismissPanel,
-      onClose: dismissPanel,
+      onBack: onClose ?? dismissPanel,
+      onClose: onClose ?? dismissPanel,
       onJumpToStart: unresolved ? null : threadViewport.jumpToBeginning,
       actions: [
         if (!unresolved && parent != null)
@@ -1203,8 +1211,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Future<bool> openDesktopConversation(
     String channelId,
-    String? messageId,
-  ) async {
+    String? messageId, {
+    bool retireThread = false,
+  }) async {
     final scope = desktopAuthority;
     desktopNavigation.bind(scope);
     if (!['search', 'activity'].contains(desktopNavigation.masterRoute)) {
@@ -1220,6 +1229,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         dm: w.dms.any((channel) => channel.id == channelId),
       ),
     );
+    if (retireThread) w.closeThread(navigate: false);
     pendingDesktopSelection = true;
     setState(() {});
     try {
@@ -1254,50 +1264,76 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Future<void> openDesktopActivity(Map<String, dynamic> row) async {
     final scope = desktopAuthority;
-    if (row['kind'] != 'thread') {
-      final id = row['parentChannelId'] ?? row['channelId'];
-      final unread = (row['unreadCount'] as num? ?? 0) > 0;
-      final message =
-          row['firstMentionMessageId'] ??
-          (unread ? row['firstUnreadMessageId'] : null) ??
-          row['latestActivityMessageId'] ??
-          row['lastMessageId'];
-      if (id is String) {
-        await openDesktopConversation(id, message is String ? message : null);
-      }
+    desktopNavigation.bind(scope);
+    if (desktopNavigation.masterRoute != 'activity') return;
+    final target = ActivityDestination.fromRow(row, canonical: false);
+    if (target == null) return;
+    if (!target.thread) {
+      // Source ThreadsInbox1150–1184 drops the old thread when switching the
+      // content slot. Retire its data without a second history transition.
+      await openDesktopConversation(
+        target.channelId,
+        target.messageId,
+        retireThread: row['kind'] != 'mention_action',
+      );
       return;
     }
-    final channelId = row['parentChannelId'], parentId = row['parentMessageId'];
-    if (channelId is! String || parentId is! String) return;
-    final opened = await openDesktopConversation(channelId, parentId);
-    if (!opened) return;
-    if (!mounted ||
-        scope != desktopAuthority ||
-        desktopNavigation.masterRoute != 'activity') {
-      return;
-    }
-    final parent = w.messages.where((m) => m.id == parentId).firstOrNull;
-    if (parent == null) return;
-    final focused = (row['unreadCount'] as num? ?? 0) > 0
-        ? row['firstUnreadMessageId'] ?? row['latestActivityMessageId']
-        : row['latestActivityMessageId'];
+    // ThreadsInbox1111–1147 opens the accepted thread directly in col 3.
+    // Parent metadata is independent: it never becomes the main channel's
+    // window, nor a temporary channel content slot.
     final ticket = desktopNavigation.selectTarget(
       DesktopContentTarget(
         DesktopContentKind.thread,
-        row['threadChannelId'] as String? ?? parentId,
-        channelId: channelId,
-        parentMessageId: parentId,
-        messageId: focused is String ? focused : null,
+        target.threadChannelId!,
+        channelId: target.channelId,
+        parentMessageId: target.parentMessageId,
+        messageId: target.messageId,
       ),
     );
-    await w.openThread(
-      parent,
-      focusedMessageId: focused is String ? focused : null,
+    pendingDesktopSelection = false;
+    setState(() {});
+    await w.openThreadIdentity(
+      parentChannelId: target.channelId,
+      parentMessageId: target.parentMessageId!,
+      focusedMessageId: target.messageId,
+      initialThreadChannelId: target.threadChannelId,
       navigate: false,
     );
-    if (mounted && desktopNavigation.accepts(desktopAuthority, ticket)) {
+    if (mounted &&
+        scope == desktopAuthority &&
+        desktopNavigation.accepts(desktopAuthority, ticket)) {
       setState(() {});
     }
+  }
+
+  Future<void> openCanonicalActivity(Map<String, dynamic> row) async {
+    final target = ActivityDestination.fromRow(row, canonical: true);
+    if (target == null) return;
+    // Source ThreadsInbox1036–1075 gives the destination URI the complete
+    // identity. One PUSH leaves Activity; no intermediate content-slot write.
+    w.navigation.navigate(target.canonicalLocation(w.location.serverSlug));
+    pendingDesktopSelection = false;
+    w.closeThread(navigate: false);
+    setState(() {});
+    if (target.thread) {
+      final parentChannel = [
+        ...w.channels,
+        ...w.dms,
+      ].where((channel) => channel.id == target.channelId).firstOrNull;
+      if (parentChannel != null) {
+        // The outer tail and the thread are independent Source projections.
+        // selectChannel's synchronous retirement precedes the new identity.
+        unawaited(w.selectChannel(parentChannel, navigate: false));
+        await w.openThreadIdentity(
+          parentChannelId: target.channelId,
+          parentMessageId: target.parentMessageId!,
+          focusedMessageId: target.messageId,
+          navigate: false,
+        );
+        return;
+      }
+    }
+    await w.jumpToMessage(target.channelId, target.messageId, navigate: false);
   }
 
   void openDirectoryLocation(
@@ -1455,17 +1491,20 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final content = Column(
       key: key,
       children: [
-        RaftPageHeader(
-          title: thread ? tr('Thread') : w.channel?.name ?? '',
-          height: raftPageHeaderHeight(context),
-          actions: [
-            RaftIconButton(
-              glyph: RaftGlyph.x,
-              tooltip: 'Close detail',
-              onPressed: closeDesktopDetail,
-            ),
-          ],
-        ),
+        if (thread)
+          sourceThreadHeader(onClose: closeDesktopDetail)
+        else
+          RaftPageHeader(
+            title: w.channel?.name ?? '',
+            height: raftPageHeaderHeight(context),
+            actions: [
+              RaftIconButton(
+                glyph: RaftGlyph.x,
+                tooltip: 'Close detail',
+                onPressed: closeDesktopDetail,
+              ),
+            ],
+          ),
         Expanded(
           child: pendingDesktopSelection && w.channel?.id != target.channelId
               ? Center(child: Text(tr('Loading...')))
@@ -1477,6 +1516,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                           controller: w,
                           thread: true,
                           selectionHandle: threadSelection,
+                          viewportHandle: threadViewport,
                         )
                       : ConversationPanel(
                           controller: w,

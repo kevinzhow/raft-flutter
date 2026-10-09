@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/rendering.dart';
 
 import '../recipes.dart' hide RaftPanelHeaderRecipe;
@@ -125,11 +127,17 @@ class RaftConversationCard extends StatefulWidget {
     required this.onOpen,
     this.saved = false,
     this.onContextMenu,
+    this.onActivate,
     this.semanticLabel,
     this.actions,
   });
   final Widget child;
   final VoidCallback onOpen;
+
+  /// Optional DOM-style activation detail. Pointer clicks report 1, 2, ...;
+  /// keyboard/semantic activation reports 1. The consumer owns any delay and
+  /// navigation policy. The first click is delivered immediately.
+  final ValueChanged<int>? onActivate;
   final bool saved;
   final VoidCallback? onContextMenu;
   final String? semanticLabel;
@@ -146,6 +154,35 @@ class RaftConversationCard extends StatefulWidget {
 
 class _RaftConversationCardState extends State<RaftConversationCard> {
   bool hovered = false, focused = false;
+  Duration? pendingTapTime, lastTapTime;
+  Offset? pendingTapPosition, lastTapPosition;
+  int clickCount = 0;
+
+  void deliverActivation() {
+    final callback = widget.onActivate;
+    if (callback == null) {
+      widget.onOpen();
+      return;
+    }
+    final time = pendingTapTime, position = pendingTapPosition;
+    final interval = time != null && lastTapTime != null
+        ? time - lastTapTime!
+        : null;
+    final repeat =
+        interval != null &&
+        interval >= Duration.zero &&
+        interval <= kDoubleTapTimeout &&
+        position != null &&
+        lastTapPosition != null &&
+        (position - lastTapPosition!).distance <= kDoubleTapSlop;
+    clickCount = repeat ? clickCount + 1 : 1;
+    lastTapTime = time;
+    lastTapPosition = position;
+    pendingTapTime = null;
+    pendingTapPosition = null;
+    callback(clickCount);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -213,7 +250,22 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
                 highlightColor: Colors.transparent,
                 hoverColor: Colors.transparent,
                 focusColor: Colors.transparent,
-                onTap: widget.onOpen,
+                // InkWell.onDoubleTap would delay the first onTap before the
+                // app's Source 220 ms arbitration. Count successful primary
+                // taps without installing a double-tap recognizer instead.
+                onTapDown: widget.onActivate == null
+                    ? null
+                    : (details) {
+                        pendingTapTime = SchedulerBinding
+                            .instance
+                            .currentSystemFrameTimeStamp;
+                        pendingTapPosition = details.globalPosition;
+                      },
+                onTapCancel: () {
+                  pendingTapTime = null;
+                  pendingTapPosition = null;
+                },
+                onTap: deliverActivation,
                 onLongPress: widget.onContextMenu,
                 onSecondaryTap: widget.onContextMenu,
                 borderRadius: recipe.radius,
