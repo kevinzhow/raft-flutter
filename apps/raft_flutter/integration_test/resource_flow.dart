@@ -1,6 +1,8 @@
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +19,7 @@ Future<void> verifyAdvancedResources(
   required String messageId,
   required String query,
   required Future<void> Function(String) capture,
+  required Future<void> Function(String) navigate,
 }) async {
   Future<void> wait(bool Function() ready) async {
     for (var i = 0; i < 150; i++) {
@@ -44,7 +47,7 @@ Future<void> verifyAdvancedResources(
   }
 
   Future<void> section(String value) async {
-    w.setSection(value);
+    await navigate(value);
     await tester.pump(const Duration(milliseconds: 300));
     await loaded();
     if (value == 'activity') {
@@ -128,7 +131,7 @@ Future<void> verifyAdvancedResources(
     await loaded();
     await capture('native-activity-channel-query-grouping');
   } finally {
-    w.setSection('chat');
+    await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
   }
 }
@@ -140,6 +143,7 @@ Future<void> verifyAdvancedTaskFilters(
   required String taskId,
   required String channelName,
   required Future<void> Function(String) capture,
+  required Future<void> Function(String) navigate,
 }) async {
   dynamic state() => tester.state(find.byType(ResourceView));
   Future<void> loaded() async {
@@ -198,6 +202,14 @@ Future<void> verifyAdvancedTaskFilters(
       }
       await tester.ensureVisible(option);
       await tester.pumpAndSettle();
+      // A catalog revocation can arrive while scrolling this private review.
+      // Reopen against fresh authority; never tap a disposed/previous choice.
+      if (!reviewedState.mounted ||
+          !identical(reviewedState, state()) ||
+          reviewedState.acceptedAuthority != reviewedState.authority ||
+          option.evaluate().isEmpty) {
+        throw StateError('Task filter authority changed before the actual tap.');
+      }
       await tester.tap(option);
       await tester.pumpAndSettle();
     }
@@ -211,7 +223,7 @@ Future<void> verifyAdvancedTaskFilters(
   }
 
   try {
-    w.setSection('tasks');
+    await navigate('tasks');
     await loaded();
     for (
       var page = 0;
@@ -259,7 +271,7 @@ Future<void> verifyAdvancedTaskFilters(
     await tester.pump(const Duration(milliseconds: 200));
     expect(state().taskAdvanced.isEmpty, true);
   } finally {
-    w.setSection('chat');
+    await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
   }
 }
@@ -272,6 +284,7 @@ Future<void> verifyActivityThreadLifecycle(
   required String threadId,
   required String parentId,
   required Future<void> Function(String) capture,
+  required Future<void> Function(String) navigate,
 }) async {
   dynamic state() => tester.state(find.byType(ResourceView));
   final tile = find.byKey(ValueKey('activity-thread-$threadId'));
@@ -354,6 +367,25 @@ Future<void> verifyActivityThreadLifecycle(
         await mouse.moveTo(tester.getCenter(tile));
         await tester.pump(const Duration(milliseconds: 200));
       }
+      // Source ThreadsInbox exposes follow/unfollow in the row context menu;
+      // the hover action is exclusively done/restore.
+      if (tooltip == 'Unfollow thread' || tooltip == 'Follow thread') {
+        final point = tester.getTopLeft(tile) + const Offset(16, 16);
+        if (defaultTargetPlatform == TargetPlatform.linux) {
+          final press = await tester.startGesture(point,
+              kind: PointerDeviceKind.mouse, buttons: kSecondaryMouseButton);
+          await press.up();
+        } else {
+          await tester.longPressAt(point);
+        }
+        await tester.pumpAndSettle();
+        final action = find.widgetWithText(RaftMenuItem,
+            tooltip == 'Unfollow thread' ? 'Unfollow' : 'Follow');
+        expect(action, findsOneWidget);
+        await tester.tap(action);
+        await loaded();
+        return;
+      }
       final button = find.descendant(
         of: tile,
         matching: find.byTooltip(tooltip),
@@ -393,7 +425,7 @@ Future<void> verifyActivityThreadLifecycle(
   }
 
   try {
-    w.setSection('activity');
+    await navigate('activity');
     await locate();
     await rowAction('Mark conversation done');
     await view('Done conversations');
@@ -429,7 +461,7 @@ Future<void> verifyActivityThreadLifecycle(
       '/channels/threads/follow',
       data: {'parentMessageId': parentId},
     );
-    w.setSection('chat');
+    await navigate('chat');
     await tester.pump(const Duration(milliseconds: 300));
   }
 }
