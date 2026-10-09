@@ -130,9 +130,6 @@ void main() {
               'keep': 'encoded value:1',
             }),
           );
-          final independent = Map<String, String>.from(
-            w.location.uri.queryParameters,
-          );
           final pending = Completer<Map<String, dynamic>>.sync();
           api.routes['GET /channels/c1/threads/p1'] = (_) => {
             'threadChannelId': 't1',
@@ -145,6 +142,23 @@ void main() {
           };
           api.routes['GET /messages/channel/t2'] = (_) => pending.future;
           await mountPage(tester, w, family, dark);
+          // Source MainLayout1330–1420 puts the independent task modal above
+          // the channel. Its backdrop covers the replies badge. Close that
+          // actual overlay before using the exposed channel controls; closing
+          // it must preserve every other slot and must not open a side thread.
+          final beforeTaskClose = Map<String, String>.from(
+            w.location.uri.queryParameters,
+          );
+          await tester.tap(find.byTooltip('Close task'));
+          await tester.pump();
+          expect(
+            w.location.uri.queryParameters,
+            {...beforeTaskClose}..remove('task'),
+          );
+          expect(w.threadIdentity, isNull);
+          final independent = Map<String, String>.from(
+            w.location.uri.queryParameters,
+          );
           await tester.tap(
             find.byKey(const ValueKey('thread-replies-badge-p1')),
           );
