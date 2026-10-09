@@ -1342,7 +1342,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
         ),
       );
-      return WorkspaceTaskHost(controller: w, seed: taskSeed, child: workspace);
+      return WorkspaceTaskHost(
+        controller: w,
+        seed: taskSeed,
+        // RightPanel handles content routes before its workspace guard.
+        presented: !gridActive || route == 'search' || route == 'activity',
+        child: workspace,
+      );
     },
   );
   final threadViewport = ChatViewportHandle();
