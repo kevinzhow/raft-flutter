@@ -177,7 +177,7 @@ Future<void> mobileHome(WidgetTester tester) async {
       reason: 'The real mobile route needs a back control.',
     );
     if (identical(back, resolutionBack)) {
-      expect(find.byType(RaftErrorBanner), findsNothing);
+      expect(find.byType(MaterialBanner), findsNothing);
       expect(find.byType(RaftComposer), findsNothing);
       expect(tester.takeException(), isNull);
       await screenshot(tester,
