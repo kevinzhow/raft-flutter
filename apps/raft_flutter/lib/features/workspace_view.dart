@@ -14,6 +14,8 @@ import '../data/source_activity_unread_store.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
+import '../data/source_server_unread.dart';
+import 'workspace_menu_invite.dart';
 import '../data/workspace_mode_store.dart';
 import 'workspace_grid_view.dart';
 import 'workspace_mode_settings_card.dart';
@@ -91,6 +93,25 @@ class WorkspaceView extends StatefulWidget {
 }
 
 class _WorkspaceViewState extends State<WorkspaceView> {
+  final serverMenu = RaftMenuController();
+  late SourceServerUnreadStore serverUnread;
+  String? serverMenuScope;
+  int serverOrderRequest = 0;
+  void syncServerMenu() {
+    serverUnread.synchronize();
+    if (serverMenuScope == mobileAuthority) return;
+    serverMenuScope = mobileAuthority;
+    serverMenu.close();
+  }
+
+  void serverUnreadChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void serverMenuChanged() {
+    if (serverMenu.isOpen) unawaited(serverUnread.refresh());
+  }
+
   final scaffold = GlobalKey<ScaffoldState>();
   final mainSelection = ChatSelectionHandle(),
       threadSelection = ChatSelectionHandle();
@@ -253,6 +274,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     super.initState();
     activityUnread = SourceActivityUnreadStore(w)
       ..addListener(activityUnreadChanged);
+    serverUnread = SourceServerUnreadStore(w)..addListener(serverUnreadChanged);
+    serverMenu.addListener(serverMenuChanged);
+    w.addListener(syncServerMenu);
+    syncServerMenu();
     workspaceMode = WorkspaceModeStore(w);
     activityFlag = DesktopActivityFlag(w)..addListener(activityFlagChanged);
     activityDirectory = MessageReferenceDirectory(w);
@@ -384,6 +409,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       activityUnread.dispose();
       activityUnread = SourceActivityUnreadStore(w)
         ..addListener(activityUnreadChanged);
+      serverMenu.close();
+      oldWidget.controller.removeListener(syncServerMenu);
+      serverUnread.dispose();
+      serverUnread = SourceServerUnreadStore(w)
+        ..addListener(serverUnreadChanged);
+      w.addListener(syncServerMenu);
+      serverMenuScope = null;
+      syncServerMenu();
       _desktopNavigation = null;
       mobileRouteAuthority = null;
       w.mobileNavigation = !wide;
@@ -486,6 +519,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void dispose() {
     activityUnread.removeListener(activityUnreadChanged);
     activityUnread.dispose();
+    w.removeListener(syncServerMenu);
+    serverMenu.removeListener(serverMenuChanged);
+    serverMenu.dispose();
+    serverUnread.dispose();
     workspaceMode.dispose();
     persistPanels?.cancel();
     w.releaseConversationPresentation(this);
@@ -1750,78 +1787,134 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       ),
   ];
 
-  Widget workspaceRail() => RaftWorkspaceRail(
-    destinations: railDestinations,
-    selected: wide
-        ? DesktopNavigationPolicy.forSection(
-            w.location.route == RaftRoute.settings ? 'settings' : w.section,
-          ).railMode
-        : w.section,
-    onSelected: select,
-    workspaceName: w.server?.name ?? 'Raft',
-    workspaceTooltip: tr('Switch workspace'),
-    onWorkspace: () => showWorkspaceSwitcher(),
-    footer: RaftWorkspaceRailFooter(
-      children: [
-        SystemNotificationBell(
-          controller: w,
-          mobile: false,
-          onBilling: () => select('billing'),
-        ),
-        RaftWorkspaceHelpMenu(
-          key: const Key('rail-help'),
-          label: tr('Help'),
-          heading: tr('Help & resources'),
-          entries: [
-            RaftMenuEntry(
-              label: tr('Raft Documentation'),
-              leading: const RaftIcon(RaftGlyph.bookOpenText, size: 14),
-              trailing: const RaftIcon(RaftGlyph.arrowUpRight, size: 14),
-              onPressed: () => unawaited(openDocumentationFromHelp()),
+  Widget workspaceRail() {
+    final scope = mobileAuthority;
+    return RaftWorkspaceRail(
+      destinations: railDestinations,
+      selected: wide
+          ? DesktopNavigationPolicy.forSection(
+              w.location.route == RaftRoute.settings ? 'settings' : w.section,
+            ).railMode
+          : w.section,
+      onSelected: select,
+      workspaceName: w.server?.name ?? 'Raft',
+      workspaceTooltip: tr('Switch workspace'),
+      workspaceHeader: RaftServerSwitcher(
+        controller: serverMenu,
+        workspaceName: w.server?.name ?? 'Raft',
+        label: tr('Switch workspace'),
+        rows: [
+          for (final server in w.servers)
+            RaftServerMenuRow(
+              id: server.id,
+              name: server.name,
+              slug: server.string('slug'),
+              avatarUrl: server.json['avatarUrl'] as String?,
+              current: server.id == w.server?.id,
+              activityUnreadCount: serverUnread[server.id]?.activityUnreadCount,
+              pushMuted: serverUnread[server.id]?.pushMuted ?? false,
+              onSelected: () => unawaited(selectMenuServer(server, scope)),
+              onAuxiliary:
+                  defaultTargetPlatform == TargetPlatform.linux &&
+                      workspaceBrowserOrigin(w.client.origin) != null
+                  ? () => unawaited(openWorkspaceInBrowser(context, w, server))
+                  : null,
             ),
+        ],
+        actions: [
+          if (!w.servers.any((server) => server.string('slug') == 'community'))
             RaftMenuEntry(
-              label: tr('Mobile App'),
-              glyph: RaftGlyph.smartphone,
-              onPressed: () => openHelpSettings('about'),
-            ),
-            RaftMenuEntry(
-              label: tr('Feedback'),
-              glyph: RaftGlyph.messageSquare,
-              onPressed: () => openHelpSettings('feedback'),
-            ),
-            RaftMenuEntry(
-              label: tr(
-                joiningCommunityFromHelp ? 'Joining...' : 'Join Community',
-              ),
-              glyph: RaftGlyph.usersRound,
+              label: tr('Join Community'),
+              glyph: RaftGlyph.plus,
               onPressed: joiningCommunityFromHelp
                   ? null
                   : () => unawaited(openCommunityFromHelp()),
             ),
-          ],
-        ),
-        if (MediaQuery.sizeOf(context).width >= 1024 && workspaceMode.showCard)
-          RaftWorkspaceRailAction(
-            key: const Key('workspace-mode-toggle'),
-            label: tr(gridActive ? 'Exit Workspace' : 'Enter Workspace'),
-            glyph: RaftGlyph.squareSplitHorizontal,
-            selected: gridActive,
-            depressed: true,
-            onPressed: () => workspaceMode.setEnabled(
-              !workspaceMode.enabled,
-              capturedAuthority: workspaceMode.authority,
-            ),
+          RaftMenuEntry(
+            label: tr('Switch or Create Server'),
+            glyph: RaftGlyph.plus,
+            onPressed: widget.onChooseServer == null
+                ? null
+                : () {
+                    if (mounted && scope == mobileAuthority) {
+                      widget.onChooseServer!();
+                    }
+                  },
           ),
-        RaftWorkspaceRailAction(
-          key: const Key('rail-settings'),
-          label: tr('Settings'),
-          selected: w.location.route == RaftRoute.settings,
-          onPressed: () => select('settings'),
-          glyph: RaftGlyph.settings,
-        ),
-      ],
-    ),
-  );
+          if (w.can('inviteMembers'))
+            RaftServerMenuAction(
+              tone: RaftServerMenuActionTone.invite,
+              label: tr('Invite human'),
+              glyph: RaftGlyph.userPlus,
+              onPressed: () => unawaited(inviteFromServerMenu(scope)),
+            ),
+        ],
+        onReorder: (from, to) => unawaited(reorderMenuServers(from, to, scope)),
+      ),
+      onWorkspace: () => showWorkspaceSwitcher(),
+      footer: RaftWorkspaceRailFooter(
+        children: [
+          SystemNotificationBell(
+            controller: w,
+            mobile: false,
+            onBilling: () => select('billing'),
+          ),
+          RaftWorkspaceHelpMenu(
+            key: const Key('rail-help'),
+            label: tr('Help'),
+            heading: tr('Help & resources'),
+            entries: [
+              RaftMenuEntry(
+                label: tr('Raft Documentation'),
+                leading: const RaftIcon(RaftGlyph.bookOpenText, size: 14),
+                trailing: const RaftIcon(RaftGlyph.arrowUpRight, size: 14),
+                onPressed: () => unawaited(openDocumentationFromHelp()),
+              ),
+              RaftMenuEntry(
+                label: tr('Mobile App'),
+                glyph: RaftGlyph.smartphone,
+                onPressed: () => openHelpSettings('about'),
+              ),
+              RaftMenuEntry(
+                label: tr('Feedback'),
+                glyph: RaftGlyph.messageSquare,
+                onPressed: () => openHelpSettings('feedback'),
+              ),
+              RaftMenuEntry(
+                label: tr(
+                  joiningCommunityFromHelp ? 'Joining...' : 'Join Community',
+                ),
+                glyph: RaftGlyph.usersRound,
+                onPressed: joiningCommunityFromHelp
+                    ? null
+                    : () => unawaited(openCommunityFromHelp()),
+              ),
+            ],
+          ),
+          if (MediaQuery.sizeOf(context).width >= 1024 &&
+              workspaceMode.showCard)
+            RaftWorkspaceRailAction(
+              key: const Key('workspace-mode-toggle'),
+              label: tr(gridActive ? 'Exit Workspace' : 'Enter Workspace'),
+              glyph: RaftGlyph.squareSplitHorizontal,
+              selected: gridActive,
+              depressed: true,
+              onPressed: () => workspaceMode.setEnabled(
+                !workspaceMode.enabled,
+                capturedAuthority: workspaceMode.authority,
+              ),
+            ),
+          RaftWorkspaceRailAction(
+            key: const Key('rail-settings'),
+            label: tr('Settings'),
+            selected: w.location.route == RaftRoute.settings,
+            onPressed: () => select('settings'),
+            glyph: RaftGlyph.settings,
+          ),
+        ],
+      ),
+    );
+  }
 
   void openHelpSettings(String tab) {
     mainSelection.dismiss();
@@ -1889,6 +1982,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Future<void> showWorkspaceSwitcher() async {
+    if (wide) {
+      serverMenu.isOpen ? serverMenu.close() : serverMenu.open();
+      return;
+    }
     final scope = mobileAuthority;
     final choice = await showDialog<String>(
       context: context,
@@ -1948,6 +2045,71 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     } else {
       final server = w.servers.where((s) => s.id == choice).firstOrNull;
       if (server != null) await w.selectServer(server);
+    }
+  }
+
+  Future<void> selectMenuServer(RaftRecord target, String scope) async {
+    if (!mounted || scope != mobileAuthority) return;
+    final accepted = w.servers.where((s) => s.id == target.id).firstOrNull;
+    if (accepted == null || accepted.id == w.server?.id) return;
+    await w.selectServer(accepted);
+  }
+
+  Future<void> inviteFromServerMenu(String scope) async {
+    if (!mounted || scope != mobileAuthority || !w.can('inviteMembers')) return;
+    final sent = await showWorkspaceMenuInvite(context, w);
+    if (sent && mounted && scope == mobileAuthority) select('administration');
+  }
+
+  Future<void> reorderMenuServers(int from, int to, String scope) async {
+    if (!mounted ||
+        scope != mobileAuthority ||
+        from == to ||
+        from < 0 ||
+        to < 0 ||
+        from >= w.servers.length ||
+        to >= w.servers.length) {
+      return;
+    }
+    final previous = List<RaftRecord>.of(w.servers),
+        ticket = ++serverOrderRequest;
+    final ordered = List<RaftRecord>.of(previous);
+    ordered.insert(to, ordered.removeAt(from));
+    w.servers = ordered;
+    w.notifyListeners();
+    try {
+      final result = await w.client.patch(
+        '/servers/order',
+        data: {'serverOrder': ordered.map((s) => s.id).toList()},
+      );
+      if (!mounted ||
+          scope != mobileAuthority ||
+          ticket != serverOrderRequest) {
+        return;
+      }
+      final saved = result is Map ? result['serverOrder'] : null;
+      if (saved is List) {
+        final byId = {for (final server in w.servers) server.id: server};
+        final seen = <String>{};
+        w.servers = [
+          for (final id in saved)
+            if (id is String && byId.containsKey(id) && seen.add(id)) byId[id]!,
+          for (final server in w.servers)
+            if (seen.add(server.id)) server,
+        ];
+        w.notifyListeners();
+      }
+    } catch (_) {
+      if (mounted && scope == mobileAuthority && ticket == serverOrderRequest) {
+        // Source restores the previous order on error. Membership must still
+        // be accepted; an old drag must never resurrect a removed server.
+        final ids = w.servers.map((s) => s.id).toSet();
+        w.servers = [
+          for (final server in previous)
+            if (ids.contains(server.id)) server,
+        ];
+        w.notifyListeners();
+      }
     }
   }
 

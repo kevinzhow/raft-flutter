@@ -334,12 +334,16 @@ class RaftWorkspaceRail extends StatelessWidget {
     required this.workspaceName,
     required this.onWorkspace,
     this.workspaceTooltip = 'Switch workspace',
+    this.workspaceHeader,
     this.footer,
   });
   final List<RaftRailDestination> destinations;
   final String selected, workspaceName, workspaceTooltip;
   final ValueChanged<String> onSelected;
   final VoidCallback onWorkspace;
+
+  /// Mounted Source server-switcher owns the complete header anchor.
+  final Widget? workspaceHeader;
   final Widget? footer;
 
   Widget railGlyph(RaftRailDestination destination, double size) =>
@@ -377,26 +381,30 @@ class RaftWorkspaceRail extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            SizedBox(
-              height: headerHeight,
-              child: Tooltip(
-                message: workspaceTooltip,
-                child: IconButton(
-                  key: const Key('rail-workspace'),
-                  constraints: BoxConstraints.tightFor(
-                    width: bounds.layoutHeight,
-                    height: bounds.layoutHeight,
+            workspaceHeader ??
+                SizedBox(
+                  height: headerHeight,
+                  child: Tooltip(
+                    message: workspaceTooltip,
+                    child: IconButton(
+                      key: const Key('rail-workspace'),
+                      constraints: BoxConstraints.tightFor(
+                        width: bounds.layoutHeight,
+                        height: bounds.layoutHeight,
+                      ),
+                      style: IconButton.styleFrom(
+                        minimumSize: Size.square(bounds.layoutHeight),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: const RoundedRectangleBorder(),
+                      ),
+                      onPressed: onWorkspace,
+                      icon: _RailAvatar(
+                        name: workspaceName,
+                        size: visualSize - 4,
+                      ),
+                    ),
                   ),
-                  style: IconButton.styleFrom(
-                    minimumSize: Size.square(bounds.layoutHeight),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: const RoundedRectangleBorder(),
-                  ),
-                  onPressed: onWorkspace,
-                  icon: _RailAvatar(name: workspaceName, size: visualSize - 4),
                 ),
-              ),
-            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: nav.padding,

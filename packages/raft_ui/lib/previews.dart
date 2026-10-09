@@ -850,6 +850,70 @@ Widget threadRepliesLoadingPreview() => const RaftThreadRepliesLoadingBody(
 @RaftPreviews('Initial accepted window at end', size: Size(390, 360))
 Widget initialAcceptedEndPreview() => const _InitialAcceptedEndPreview();
 
+@RaftPreviews('Server switcher', size: Size(390, 360))
+Widget serverSwitcherPreview() => const _ServerSwitcherPreview();
+
+class _ServerSwitcherPreview extends StatefulWidget {
+  const _ServerSwitcherPreview();
+  @override
+  State<_ServerSwitcherPreview> createState() => _ServerSwitcherPreviewState();
+}
+
+class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
+  final controller = RaftMenuController();
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topLeft,
+    child: SizedBox(
+      width: 64,
+      child: RaftServerSwitcher(
+        controller: controller,
+        workspaceName: 'Visual Server',
+        label: 'Switch server',
+        rows: [
+          RaftServerMenuRow(
+            id: 'visual',
+            name: 'Visual Server',
+            slug: 'visual',
+            current: true,
+            onSelected: () {},
+          ),
+          RaftServerMenuRow(
+            id: 'design',
+            name: 'Design',
+            slug: 'design',
+            activityUnreadCount: 5,
+            onSelected: () {},
+          ),
+        ],
+        actions: [
+          RaftMenuEntry(
+            label: 'Join Community',
+            glyph: RaftGlyph.plus,
+            onPressed: () {},
+          ),
+          RaftMenuEntry(
+            label: 'Switch or Create Server',
+            glyph: RaftGlyph.plus,
+            onPressed: () {},
+          ),
+          RaftMenuEntry(
+            label: 'Invite human',
+            glyph: RaftGlyph.userPlus,
+            onPressed: () {},
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _InitialAcceptedEndPreview extends StatefulWidget {
   const _InitialAcceptedEndPreview();
   @override
