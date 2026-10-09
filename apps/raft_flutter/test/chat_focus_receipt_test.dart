@@ -51,7 +51,7 @@ void main() {
     (RaftFamily.elegant, true),
   ]) {
     testWidgets(
-      '$family/$dark context keeps old paint then publishes centered target once',
+      '[L02] $family/$dark context keeps old paint then publishes centered target once',
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(390, 844);

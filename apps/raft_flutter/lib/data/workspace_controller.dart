@@ -992,9 +992,15 @@ class WorkspaceController extends ChangeNotifier {
           _threadIdentityWindow == threadGeneration &&
           _threadIdentityNavigation == navigationRevision &&
           _threadIdentityToken == _replyToken() &&
-          _threadIdentityAuthority == _windowAuthority() &&
+          (_threadIdentityAuthority == null ||
+              _threadIdentityAuthority ==
+                  _threadResourceAuthority(_threadIdentity?.parentChannelId)) &&
           !_revokedChannels.contains(_threadIdentity?.parentChannelId) &&
-          can('viewChannel', resource: channel)
+          !_revokedChannels.contains(threadChannelId) &&
+          can(
+            'viewChannel',
+            resource: _threadChannelResource(_threadIdentity?.parentChannelId),
+          )
       ? _threadIdentity
       : null;
   bool get threadResolutionLoading =>
@@ -1017,11 +1023,20 @@ class WorkspaceController extends ChangeNotifier {
       threadIdentity?.parentChannelId ??
       (_threadIdentity == null ? threadParent?.channelId : null);
 
-  RaftChannel? get threadSourceChannel => [
+  RaftChannel? _threadChannelResource(String? id) => [
+    ?channel,
     ...channels,
     ...dms,
-    ?channel,
-  ].where((value) => value.id == threadParentChannelId).firstOrNull;
+  ].where((value) => value.id == id).firstOrNull;
+  String? _threadResourceAuthority(String? id) {
+    final resource = _threadChannelResource(id);
+    return resource == null
+        ? null
+        : messageWindowAuthority(server?.string('role'), resource.json);
+  }
+
+  RaftChannel? get threadSourceChannel =>
+      _threadChannelResource(threadParentChannelId);
 
   RaftMessage? threadParent;
   String? threadChannelId;
@@ -2070,15 +2085,20 @@ class WorkspaceController extends ChangeNotifier {
     acceptedParent: parent,
   );
 
+  /// Opens a real thread identity independently of its parent metadata.
+  /// [initialThreadChannelId] is the accepted inbox row's existing channel;
+  /// Source opens that channel immediately without a resolution lookup.
   Future<void> openThreadIdentity({
     required String parentChannelId,
     required String parentMessageId,
     String? focusedMessageId,
+    String? initialThreadChannelId,
     bool navigate = true,
   }) => _openThreadIdentity(
     parentChannelId,
     parentMessageId,
     focusedMessageId: focusedMessageId,
+    initialThreadChannelId: initialThreadChannelId,
     navigate: navigate,
   );
 
@@ -2086,9 +2106,24 @@ class WorkspaceController extends ChangeNotifier {
     String parentChannelId,
     String parentMessageId, {
     String? focusedMessageId,
+    String? initialThreadChannelId,
     bool navigate = true,
     RaftMessage? acceptedParent,
   }) async {
+    if (parentChannelId.trim().isEmpty || parentMessageId.trim().isEmpty) {
+      return;
+    }
+    final knownThreadChannelId = initialThreadChannelId?.trim().isEmpty == false
+        ? initialThreadChannelId
+        : null;
+    if (_revokedChannels.contains(parentChannelId) ||
+        _revokedChannels.contains(knownThreadChannelId) ||
+        !can(
+          'viewChannel',
+          resource: _threadChannelResource(parentChannelId),
+        )) {
+      return;
+    }
     if (navigate) {
       final next = location.withQuery({
         'thread': '$parentChannelId:$parentMessageId',
@@ -2098,18 +2133,20 @@ class WorkspaceController extends ChangeNotifier {
     }
     final navigationWindow = navigationRevision,
         requestAuthority = _replyToken(),
-        messageAuthority = _windowAuthority(),
+        messageAuthority = _threadResourceAuthority(parentChannelId),
         generation = ledger.generation;
     final window = ++threadGeneration;
     bool current() =>
         !_disposed &&
         navigationWindow == navigationRevision &&
         requestAuthority == _replyToken() &&
-        messageAuthority == _windowAuthority() &&
+        (messageAuthority == null ||
+            messageAuthority == _threadResourceAuthority(parentChannelId)) &&
         window == threadGeneration &&
         generation == ledger.generation &&
         !_revokedChannels.contains(parentChannelId) &&
-        can('viewChannel', resource: channel);
+        !_revokedChannels.contains(threadChannelId) &&
+        can('viewChannel', resource: _threadChannelResource(parentChannelId));
     _threadIdentity = WorkspaceThreadIdentity(
       parentChannelId: parentChannelId,
       parentMessageId: parentMessageId,
@@ -2120,8 +2157,9 @@ class WorkspaceController extends ChangeNotifier {
     _threadIdentityToken = requestAuthority;
     _threadIdentityAuthority = messageAuthority;
     threadParent = acceptedParent;
-    threadChannelId = null;
-    threadLoading = _threadResolutionLoading = true;
+    threadChannelId = knownThreadChannelId;
+    threadLoading = true;
+    _threadResolutionLoading = knownThreadChannelId == null;
     _threadParentLoading = acceptedParent == null;
     _threadResolutionError = null;
     threadHasMore = false;
@@ -2171,19 +2209,22 @@ class WorkspaceController extends ChangeNotifier {
 
     Future<void> resolveReplies() async {
       try {
-        dynamic info;
-        try {
-          info = await client.get(
-            '/channels/$parentChannelId/threads/$parentMessageId',
-          );
-        } on RaftApiException catch (e) {
-          if (e.status != 404) rethrow;
+        if (knownThreadChannelId == null) {
+          dynamic info;
+          try {
+            info = await client.get(
+              '/channels/$parentChannelId/threads/$parentMessageId',
+            );
+          } on RaftApiException catch (e) {
+            if (e.status != 404) rethrow;
+          }
+          if (!current()) return;
+          _threadResolutionLoading = false;
+          if (info == null) return;
+          threadChannelId = info['threadChannelId'];
+          if (!current()) return;
+          notifyListeners();
         }
-        if (!current()) return;
-        _threadResolutionLoading = false;
-        if (info == null) return;
-        threadChannelId = info['threadChannelId'];
-        notifyListeners();
         final page = focusedMessageId == null
             ? await client.messagePage(threadChannelId!)
             : await client.get(
@@ -2219,8 +2260,8 @@ class WorkspaceController extends ChangeNotifier {
       }
     }
 
-    // Source threadStore opens identity before lookup; ThreadPanel's parent
-    // effect is independent of resolution and focused replies.
+    // Source threadStore opens an accepted inbox row's known channel directly,
+    // without a lookup. Parent metadata and focused replies load independently.
     final replies = resolveReplies();
     unawaited(resolveParent());
     await replies;
