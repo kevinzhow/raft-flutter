@@ -410,6 +410,17 @@
           "canonical"
         ],
         "proof_file": "apps/raft_flutter/test/mounted_thread_focus_expiry_test.dart"
+      },
+      {
+        "id": "N24g",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "title_zh": "双击回到已加载频道时，等待定位仍显示已接受的消息窗口",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   },
