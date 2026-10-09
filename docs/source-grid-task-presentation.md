@@ -56,7 +56,9 @@ Grid channel `ConversationPanel` now receives `hideHeader`; its invented tab
 controls disappear while the accepted editor and URI-selected bodies retain
 their existing owners. Its channel header was already absent in the inspected
 product; no additional header is removed. Independent grid thread tabs remain
-the next phase.
+outside this container commit; the subsequent bounded footer implementation
+and its distinct limits are documented in
+[the thread-tab report](source-grid-task-thread-tabs.md).
 
 `WorkspaceTaskHost.presented` separates presentation from the independent task
 owner. Active non-content grid routes omit the global task surface. The task

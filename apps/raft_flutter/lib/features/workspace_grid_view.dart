@@ -44,7 +44,9 @@ class WorkspaceGridViewState extends State<WorkspaceGridView> {
   final routeBodies = <String, Widget>{};
   String? get activeChannelId {
     final id = selected[activeGroup];
-    return id == null || id.startsWith('route:') ? null : id;
+    return id == null || id.startsWith('route:')
+        ? null
+        : sessions.parentChannelId(id);
   }
 
   @override
@@ -132,6 +134,32 @@ class WorkspaceGridViewState extends State<WorkspaceGridView> {
     selected[groupIds[index]] = id;
     activeGroup = groupIds[index];
     if (mounted) setState(() {});
+    return true;
+  }
+
+  bool openTaskThread(
+    Map<String, dynamic> task, {
+    String? initialThreadChannelId,
+  }) {
+    final channelId = task['channelId'], messageId = task['messageId'];
+    if (channelId is! String || messageId is! String) return false;
+    final ref = WorkspaceGridThreadRef(channelId, messageId);
+    if (sessions.openThread(
+          channelId,
+          messageId,
+          initialThreadChannelId: initialThreadChannelId,
+        ) ==
+        null) {
+      return false;
+    }
+    var index = groups.indexWhere((group) => group.contains(ref.id));
+    if (index < 0) {
+      index = groupIds.indexOf(activeGroup);
+      groups[index].add(ref.id);
+    }
+    selected[groupIds[index]] = ref.id;
+    activeGroup = groupIds[index];
+    setState(() {});
     return true;
   }
 
@@ -235,6 +263,8 @@ class WorkspaceGridViewState extends State<WorkspaceGridView> {
                           context,
                           id.substring(6, 7).toUpperCase() + id.substring(7),
                         )
+                      : sessions.threadRefs.containsKey(id)
+                      ? '${raftText(context, 'Thread')} ${sessions.threadRefs[id]!.messagePrefix}'
                       : sessions.controllers[id]?.channel?.name ??
                             sessions.channel(id)?.name ??
                             '',
@@ -242,11 +272,31 @@ class WorkspaceGridViewState extends State<WorkspaceGridView> {
                       ? routeBodies[id] ?? const SizedBox.shrink()
                       : sessions.controllers[id] == null
                       ? const SizedBox.shrink()
+                      : sessions.threadRefs.containsKey(id)
+                      ? _Thread(
+                          key: ValueKey('grid-thread-$id'),
+                          controller: sessions.controllers[id]!,
+                        )
                       : _Conversation(
                           key: ValueKey(
                             'grid-conversation-$id-${sessions.draftRevisions[id] ?? 0}',
                           ),
                           controller: sessions.controllers[id]!,
+                          onMessageTask: (task, _) {
+                            // threadStore370–374 resolves from accepted channel
+                            // summaries; the task DTO itself is not that cache.
+                            final summary = sessions
+                                .controllers[id]!
+                                .threadSummaries[task['messageId']];
+                            openTaskThread(
+                              task,
+                              initialThreadChannelId:
+                                  summary is Map &&
+                                      summary['threadChannelId'] is String
+                                  ? summary['threadChannelId'] as String
+                                  : null,
+                            );
+                          },
                         ),
                 ),
             ],
@@ -259,9 +309,10 @@ class WorkspaceGridViewState extends State<WorkspaceGridView> {
         });
         // Root page props and selected rail must refresh on a user tab change.
         // Initialization/layout updates never emit a navigation callback.
-        widget.onRouteSelected?.call(
-          t.startsWith('route:') ? t.substring(6) : 'chat',
-        );
+        final nextRoute = t.startsWith('route:') ? t.substring(6) : 'chat';
+        if (nextRoute != widget.route) {
+          widget.onRouteSelected?.call(nextRoute);
+        }
       },
       onClose: close,
       onMove: move,
@@ -277,8 +328,14 @@ class WorkspaceGridViewState extends State<WorkspaceGridView> {
 }
 
 class _Conversation extends StatefulWidget {
-  const _Conversation({super.key, required this.controller});
+  const _Conversation({
+    super.key,
+    required this.controller,
+    this.onMessageTask,
+  });
   final WorkspaceController controller;
+  final void Function(Map<String, dynamic>, Future<void> Function())?
+  onMessageTask;
   @override
   State<_Conversation> createState() => _ConversationState();
 }
@@ -312,7 +369,11 @@ class _ConversationState extends State<_Conversation> {
             Expanded(
               child: ServerSetupGate(
                 controller: w,
-                child: ConversationPanel(controller: w, hideHeader: true),
+                child: ConversationPanel(
+                  controller: w,
+                  hideHeader: true,
+                  onMessageTask: widget.onMessageTask,
+                ),
               ),
             ),
           ],
@@ -381,5 +442,38 @@ class _ConversationState extends State<_Conversation> {
         );
       },
     ),
+  );
+}
+
+/// Source WorkspaceGridRealPanel's ThreadPanel is embedded with hideHeader.
+/// The editor tab owns the title/close; this timeline owns only its replies.
+class _Thread extends StatefulWidget {
+  const _Thread({super.key, required this.controller});
+  final WorkspaceController controller;
+  @override
+  State<_Thread> createState() => _ThreadState();
+}
+
+class _ThreadState extends State<_Thread> {
+  @override
+  void dispose() {
+    widget.controller.releaseConversationPresentation(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: widget.controller,
+    builder: (context, _) {
+      final w = widget.controller;
+      w.setConversationPresentation(this, main: false, thread: w.foreground);
+      return RaftConversationSurface(
+        role: RaftConversationSurfaceRole.threadTimeline,
+        child: ServerSetupGate(
+          controller: w,
+          child: RaftChatView(controller: w, thread: true),
+        ),
+      );
+    },
   );
 }

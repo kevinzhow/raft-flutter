@@ -6,6 +6,17 @@ import 'package:raft_client/raft_client.dart';
 
 import 'workspace_controller.dart';
 
+/// Source workspace thread tabs deduplicate by parent channel and message.
+/// The tab owns replies independently of the retained channel editor.
+class WorkspaceGridThreadRef {
+  const WorkspaceGridThreadRef(this.channelId, this.parentMessageId);
+  final String channelId;
+  final String parentMessageId;
+  String get id => 'thread:$channelId:$parentMessageId';
+  String get messagePrefix =>
+      parentMessageId.substring(0, parentMessageId.length.clamp(0, 8));
+}
+
 /// Independent accepted windows on the existing session. The root remains
 /// the only socket/server/membership owner. No bootstrap or extra transport.
 class WorkspaceGridSessions extends ChangeNotifier {
@@ -16,6 +27,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
   }
   final WorkspaceController parent;
   final controllers = <String, WorkspaceController>{};
+  final threadRefs = <String, WorkspaceGridThreadRef>{};
   final callbacks = <String, VoidCallback>{};
   final admitted = <String>{};
   final draftBaseline = <String, Map<String, String>>{};
@@ -40,7 +52,29 @@ class WorkspaceGridSessions extends ChangeNotifier {
       .where((c) => c.id == id && parent.can('viewChannel', resource: c))
       .firstOrNull;
 
-  WorkspaceController? open(String id) {
+  String parentChannelId(String id) => threadRefs[id]?.channelId ?? id;
+
+  WorkspaceController? openThread(
+    String channelId,
+    String parentMessageId, {
+    String? initialThreadChannelId,
+  }) {
+    if (parentMessageId.trim().isEmpty) return null;
+    final ref = WorkspaceGridThreadRef(channelId, parentMessageId);
+    return _open(
+      ref.id,
+      threadRef: ref,
+      initialThreadChannelId: initialThreadChannelId,
+    );
+  }
+
+  WorkspaceController? open(String id) => _open(id);
+
+  WorkspaceController? _open(
+    String id, {
+    WorkspaceGridThreadRef? threadRef,
+    String? initialThreadChannelId,
+  }) {
     if (ended ||
         authority != scope ||
         parent.client.user == null ||
@@ -49,7 +83,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
       return null;
     }
     if (controllers.containsKey(id)) return controllers[id];
-    final row = channel(id);
+    final row = channel(threadRef?.channelId ?? id);
     if (row == null) return null;
     final child = WorkspaceController(
       parent.client,
@@ -74,6 +108,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
     );
     draftBaseline[id] = {...child.drafts};
     controllers[id] = child;
+    if (threadRef != null) threadRefs[id] = threadRef;
     void changed() {
       if (ended || controllers[id] != child || authority != scope) return;
       transferDrafts(id, child);
@@ -86,7 +121,20 @@ class WorkspaceGridSessions extends ChangeNotifier {
     // window fences every result; retirement rejects all late acknowledgments.
     scheduleMicrotask(() {
       if (!ended && controllers[id] == child && scope == authority) {
-        unawaited(child.selectChannel(row, autoRead: false));
+        if (threadRef == null) {
+          unawaited(child.selectChannel(row, autoRead: false));
+        } else {
+          // Source threadStore also admits an already accepted parent summary.
+          // Task metadata alone never manufactures a reply-channel hint.
+          unawaited(
+            child.openThreadIdentity(
+              parentChannelId: threadRef.channelId,
+              parentMessageId: threadRef.parentMessageId,
+              initialThreadChannelId: initialThreadChannelId,
+              navigate: false,
+            ),
+          );
+        }
       }
     });
     return child;
@@ -117,7 +165,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
     if (ended || scope != authority) return;
     for (final entry in controllers.entries) {
       final child = entry.value;
-      final key = child.draftScope();
+      final key = child.draftScope(thread: threadRefs.containsKey(entry.key));
       if (key == null) continue;
       final baseline = draftBaseline[entry.key]!;
       final current = child.drafts[key] ?? '';
@@ -147,6 +195,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
     if (child == null) return;
     if (transfer && scope == authority) transferDrafts(id, child);
     child.removeListener(callbacks.remove(id)!);
+    threadRefs.remove(id);
     draftBaseline.remove(id);
     draftRevisions.remove(id);
     // Retire the accepted private projection before detaching its listeners.
@@ -176,7 +225,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
       return;
     }
     for (final entry in controllers.entries.toList()) {
-      final fresh = channel(entry.key);
+      final fresh = channel(parentChannelId(entry.key));
       final old = entry.value.channel;
       if (fresh == null ||
           fresh.joined != old?.joined ||
