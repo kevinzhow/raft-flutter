@@ -43,10 +43,15 @@ class WorkspaceTaskHost extends StatefulWidget {
     required this.controller,
     required this.child,
     this.seed,
+    this.presented = true,
   });
   final WorkspaceController controller;
   final Widget child;
   final TaskSurfaceSeed? seed;
+
+  /// MainLayout1394 suppresses global task presentation in active workspace.
+  /// The separate task identity and request owner survive that layout change.
+  final bool presented;
   @override
   State<WorkspaceTaskHost> createState() => _WorkspaceTaskHostState();
 }
@@ -180,22 +185,23 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     fit: StackFit.expand,
     children: [
       widget.child,
-      if (owner case final task?)
-        AnimatedBuilder(
-          animation: task,
-          builder: (context, _) => legacy && !task.hydrated
-              // Source preserves the pending legacy URL without inventing a
-              // metadata panel before an accepted legacy row exists.
-              ? const SizedBox.shrink()
-              : SafeArea(
-                  child: SourceTaskSurface(
-                    key: ValueKey(identity),
-                    owner: task,
-                    onClose: close,
-                    onBack: back,
+      if (widget.presented)
+        if (owner case final task?)
+          AnimatedBuilder(
+            animation: task,
+            builder: (context, _) => legacy && !task.hydrated
+                // Source preserves the pending legacy URL without inventing a
+                // metadata panel before an accepted legacy row exists.
+                ? const SizedBox.shrink()
+                : SafeArea(
+                    child: SourceTaskSurface(
+                      key: ValueKey(identity),
+                      owner: task,
+                      onClose: close,
+                      onBack: back,
+                    ),
                   ),
-                ),
-        ),
+          ),
     ],
   );
 }

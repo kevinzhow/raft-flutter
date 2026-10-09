@@ -312,7 +312,7 @@ class _ConversationState extends State<_Conversation> {
             Expanded(
               child: ServerSetupGate(
                 controller: w,
-                child: ConversationPanel(controller: w),
+                child: ConversationPanel(controller: w, hideHeader: true),
               ),
             ),
           ],

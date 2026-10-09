@@ -64,6 +64,7 @@ result.
 | Principal/server/role/removal and accepted-parent authority refresh denial | 15 passed | Same test |
 | Pending-only bucket scope, real private metadata sharing and mismatch rejection | 4 passed | `source_task_bucket_test.dart` |
 | Committed cold-parent and bucket cases | 43 passed | `.local/task-parent-grid-v8.log` (39 parent + 4 bucket cases) |
+| Cold-parent/bucket repeat with the private grid experiment removed | 43 passed | `.local/task-parent-committed-v9.log` |
 | Private, uncommitted grid callback experiment | 3 passed, Flutter-only | Same combined receipt; this does not establish Source visibility or an accepted grid task owner. |
 | Existing task URL/surface/authority/controls, classic entrypoints, projection and grid tests | 92 passed | `.local/task-parent-regressions-v2.log` |
 | Selected app analysis | Clean | `.local/task-parent-analysis-v3.log` |
@@ -100,3 +101,7 @@ is pending is not proven here. Legacy docking/resizing, simultaneous modern and
 legacy composition, exact task pixels, grid footer/standalone Tasks thread-tab
 ownership and real Linux/Android task process comparison remain outside this
 batch. This change does not infer joining from an absent or denied channel.
+
+The later [actual grid-container investigation](source-grid-task-presentation.md)
+records the unreachable channel controls, suppressed global task container and
+reachable footer's independent thread-tab owner, preserving its failed attempts.

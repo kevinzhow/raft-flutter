@@ -22,8 +22,13 @@ class ConversationPanel extends StatefulWidget {
     this.selectionHandle,
     this.onTask,
     this.onMessageTask,
+    this.hideHeader = false,
   });
   final WorkspaceController controller;
+
+  /// Source workspace ChatPanel hides both its channel header and tab controls.
+  /// Its URI-selected task/files body and retained editor still belong to it.
+  final bool hideHeader;
   final ChatSelectionHandle? selectionHandle;
   final void Function(Map<String, dynamic>, Future<void> Function())? onTask;
   final void Function(Map<String, dynamic>, Future<void> Function())?
@@ -150,7 +155,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
     }
     return Column(
       children: [
-        if (hasTabs)
+        if (hasTabs && !widget.hideHeader)
           RaftConversationTabs(
             key: const Key('conversation-tabs'),
             tabs: [
