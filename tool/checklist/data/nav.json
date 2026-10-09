@@ -315,10 +315,10 @@
           "RaftFamily.elegant/true",
           "evaluated=false",
           "evaluated=true",
-          "width=767 ",
-          "width=768 ",
-          "width=1023 ",
-          "width=1024 "
+          "width=767.0 ",
+          "width=768.0 ",
+          "width=1023.0 ",
+          "width=1024.0 "
         ]
       },
       {
