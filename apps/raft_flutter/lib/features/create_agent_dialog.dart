@@ -66,7 +66,10 @@ String? createAgentNameError(BuildContext context, String name) {
   }
   // NAME_REGEX = /^[\p{L}][\p{L}\p{N}_-]*$/u
   if (!RegExp(r'^\p{L}[\p{L}\p{N}_-]*$', unicode: true).hasMatch(trimmed)) {
-    return raftText(context, 'Start with a letter, then letters, numbers, - or _');
+    return raftText(
+      context,
+      'Start with a letter, then letters, numbers, - or _',
+    );
   }
   return null;
 }
@@ -84,8 +87,16 @@ class CreateAgentDialog extends StatefulWidget {
     this.actionCardConfirmationVersion,
     this.onCreated,
     this.onConnectComputer,
+    this.onboarding = false,
+    this.onboardingModal = false,
+    this.initialRuntimeId,
+    this.onSwitchServer,
+    this.closeOnCreated = true,
   });
   final WorkspaceController controller;
+  final bool onboarding, onboardingModal, closeOnCreated;
+  final String? initialRuntimeId;
+  final VoidCallback? onSwitchServer;
 
   /// `GET /servers/:id/machines` rows the user may create on.
   final List<Map<String, dynamic>> machines;
@@ -122,6 +133,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
   List<Map<String, dynamic>>? preAdmissionModels;
   bool preAdmissionLive = false, preAdmissionLoading = false;
   bool moreOpen = false, busy = false, validationAttempted = false;
+  bool runtimesRescanning = false;
   String? error;
   int machineTicket = 0;
 
@@ -130,21 +142,28 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     super.initState();
     generation = w.client.generation;
     openingAuthority = workspaceAuthority(w);
-    name.text = widget.initialName ?? '';
-    description.text = widget.initialDescription ?? '';
+    name.text = widget.onboarding ? 'Cindy' : widget.initialName ?? '';
+    description.text = widget.onboarding
+        ? 'Onboarding Assistant'
+        : widget.initialDescription ?? '';
     // An invalid prefill reports from the first render (task #1139 E-state).
-    validationAttempted =
-        name.text.isNotEmpty && _nameReasonInvalid(name.text);
+    validationAttempted = name.text.isNotEmpty && _nameReasonInvalid(name.text);
     final ids = [for (final m in widget.machines) m['id'] as String?];
-    machineId = widget.requiredMachineId ??
+    machineId =
+        widget.requiredMachineId ??
         (ids.contains(widget.initialMachineId)
             ? widget.initialMachineId
             : widget.machines
                       .where((m) => m['status'] == 'online')
                       .firstOrNull?['id'] ??
                   ids.firstOrNull);
+    w.addListener(authorityChanged);
     loadBilling();
     if (machineId != null) selectMachine(machineId!);
+  }
+
+  void authorityChanged() {
+    if (mounted) setState(() {});
   }
 
   static bool _nameReasonInvalid(String v) {
@@ -157,6 +176,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
 
   @override
   void dispose() {
+    w.removeListener(authorityChanged);
     form?.dispose();
     name.dispose();
     description.dispose();
@@ -224,9 +244,54 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
             Map<String, dynamic>.from(o),
       ];
       setState(() => runtimeOptions = options);
-      if (options.isNotEmpty) selectRuntime(options.first['runtimeId']);
+      if (options.isNotEmpty) {
+        final initial = options
+            .where((o) => o['runtimeId'] == widget.initialRuntimeId)
+            .firstOrNull;
+        selectRuntime((initial ?? options.first)['runtimeId']);
+      }
     } catch (_) {
       // No admission catalog: the runtime stays unselected ("Select...").
+    }
+  }
+
+  Future<void> rescanRuntimes() async {
+    final id = machineId;
+    if (!currentAuthority || id == null || busy || runtimesRescanning) return;
+    final ticket = machineTicket;
+    setState(() => runtimesRescanning = true);
+    try {
+      await w.command(
+        'POST',
+        '/servers/${w.server!.id}/machines/$id/runtimes/rescan',
+      );
+      if (!currentAuthority || ticket != machineTicket) return;
+      final catalog = await w.query(
+        '/servers/${w.server!.id}/machines/$id/runtime-options',
+      );
+      if (!currentAuthority || ticket != machineTicket) return;
+      final options = [
+        for (final o in (catalog['options'] as List? ?? []).whereType<Map>())
+          if (o['canSelectInThisContext'] == true &&
+              createAgentRuntimeNames.containsKey(o['runtimeId']))
+            Map<String, dynamic>.from(o),
+      ];
+      setState(() {
+        runtimeOptions = options;
+        if (runtime != null && !options.any((o) => o['runtimeId'] == runtime)) {
+          runtime = null;
+          form?.dispose();
+          form = null;
+        }
+      });
+    } catch (e) {
+      if (currentAuthority && ticket == machineTicket) {
+        setState(() => error = '$e');
+      }
+    } finally {
+      if (currentAuthority && ticket == machineTicket) {
+        setState(() => runtimesRescanning = false);
+      }
     }
   }
 
@@ -298,7 +363,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
 
   bool get createDisabled {
     final f = form;
-    return capacityReached != null ||
+    return runtimesRescanning ||
+        capacityReached != null ||
         machine == null ||
         (widget.requiredMachineId != null &&
             machineId != widget.requiredMachineId) ||
@@ -333,6 +399,10 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
           'description': description.text.trim(),
           'machineId': machineId,
           'runtime': runtime,
+          if (widget.onboarding) ...{
+            'onboarding': true,
+            'avatarUrl': 'pixel:mug',
+          },
           if (widget.actionCardMessageId != null)
             'actionCardMessageId': widget.actionCardMessageId,
           if (widget.actionCardConfirmationVersion != null)
@@ -345,7 +415,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
         if (created is Map) {
           widget.onCreated?.call(Map<String, dynamic>.from(created));
         }
-        if (ModalRoute.of(context)?.isCurrent == true) {
+        if (widget.closeOnCreated &&
+            ModalRoute.of(context)?.isCurrent == true) {
           Navigator.pop(context, true);
         }
       }
@@ -367,8 +438,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       const RaftAgentBanner(
         status: RaftAgentBannerStatus.info,
         title: 'Connect a computer first',
-        description:
-            'Agents run on your computer. Connect one and Raft will detect the runtimes on it, then you can create agents here.',
+        description: 'Agents run on your computer. Connect one and Raft will detect the runtimes on it, then you can create agents here.',
       ),
       const SizedBox(height: raftAgentSectionGap), // mt-4
       RaftAgentDialogFooter(
@@ -390,7 +460,9 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
   List<Widget> preAdmissionFields(BuildContext context) {
     final models = preAdmissionModels;
     if (models == null && !preAdmissionLoading) return const [];
-    final selected = models?.where((m) => m['id'] == preAdmissionModel).firstOrNull;
+    final selected = models
+        ?.where((m) => m['id'] == preAdmissionModel)
+        .firstOrNull;
     return [
       RaftStableField(
         label: 'Model',
@@ -421,31 +493,44 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
                 '${m['label'] ?? m['id']}',
               ),
           ],
-          onChanged: busy
-              ? null
-              : (v) => setState(() => preAdmissionModel = v),
+          onChanged: busy ? null : (v) => setState(() => preAdmissionModel = v),
         ),
       ),
-      RaftAgentMoreDisclosure(
-        open: moreOpen,
-        onToggle: () => setState(() => moreOpen = !moreOpen),
-        children: [
-          RaftStableField(
-            label: 'Environment Variables',
-            hint: 'One KEY=value per line.',
-            child: RaftAgentTextInput(
-              controller: preAdmissionEnv,
-              multiline: true,
-              semanticLabel: raftText(context, 'Environment Variables'),
+      if (!widget.onboarding)
+        RaftAgentMoreDisclosure(
+          open: moreOpen,
+          onToggle: () => setState(() => moreOpen = !moreOpen),
+          children: [
+            RaftStableField(
+              label: 'Environment Variables',
+              hint: 'One KEY=value per line.',
+              child: RaftAgentTextInput(
+                controller: preAdmissionEnv,
+                multiline: true,
+                semanticLabel: raftText(context, 'Environment Variables'),
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!currentAuthority) return const SizedBox.shrink();
+    if (widget.machines.isEmpty && widget.onboarding) {
+      return RaftCindySetupScreen(
+        fields: RaftAgentBanner(
+          status: RaftAgentBannerStatus.info,
+          title: 'Connect a computer first',
+          description: 'Cindy runs on your computer, and there is none connected yet. Once one is online, Raft detects the runtimes on it and this step fills itself in.',
+          action: 'Connect a Computer',
+          onAction: widget.onConnectComputer,
+        ),
+        onCreate: null,
+        onClose: widget.onboardingModal ? close : null,
+      );
+    }
     if (widget.machines.isEmpty) {
       return PopScope(canPop: !busy, child: needsComputer(context));
     }
@@ -459,15 +544,15 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
         RaftAgentBanner(
           status: RaftAgentBannerStatus.warning,
           description: raftFormat(
-              context,
-              '{limitLabel} reached ({usage}/{limit} on {planName} plan).',
-              {
-                'limitLabel': raftText(context, capacity.label),
-                'usage': '${capacity.usage}',
-                'limit': '${capacity.limit}',
-                'planName': '${billing?['displayName'] ?? 'Free'}',
-              },
-            ),
+            context,
+            '{limitLabel} reached ({usage}/{limit} on {planName} plan).',
+            {
+              'limitLabel': raftText(context, capacity.label),
+              'usage': '${capacity.usage}',
+              'limit': '${capacity.limit}',
+              'planName': '${billing?['displayName'] ?? 'Free'}',
+            },
+          ),
           action: 'Upgrade for more',
           onAction: close,
         )
@@ -476,57 +561,74 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
           status: RaftAgentBannerStatus.warning,
           description: error!,
         ),
-      RaftStableField(
-        label: 'Computer',
-        required: true,
-        child: RaftAgentSelect<String>(
-          value: machineId,
-          semanticLabel: raftText(context, 'Computer'),
-          options: [
-            for (final m in widget.machines)
-              RaftAgentSelectOption(
-                m['id'] as String,
-                '${m['name'] ?? m['hostname'] ?? m['id']}',
-                enabled:
-                    widget.requiredMachineId == null ||
-                    m['id'] == widget.requiredMachineId,
-              ),
-          ],
-          onChanged: busy || widget.requiredMachineId != null
-              ? null
-              : (id) => id == machineId ? null : selectMachine(id),
+      if (!widget.onboarding)
+        RaftStableField(
+          label: 'Computer',
+          required: true,
+          child: RaftAgentSelect<String>(
+            value: machineId,
+            semanticLabel: raftText(context, 'Computer'),
+            options: [
+              for (final m in widget.machines)
+                RaftAgentSelectOption(
+                  m['id'] as String,
+                  '${m['name'] ?? m['hostname'] ?? m['id']}',
+                  enabled:
+                      widget.requiredMachineId == null ||
+                      m['id'] == widget.requiredMachineId,
+                ),
+            ],
+            onChanged: busy || widget.requiredMachineId != null
+                ? null
+                : (id) => id == machineId ? null : selectMachine(id),
+          ),
         ),
-      ),
-      RaftStableField(
-        label: 'Name',
-        required: true,
-        error: nameError,
-        child: RaftAgentTextInput(
-          controller: name,
-          placeholder: 'e.g. Alice',
-          invalid: nameError != null,
-          enabled: !busy,
-          semanticLabel: raftText(context, 'Agent name'),
-          onChanged: (_) => setState(() => error = null),
+      if (!widget.onboarding)
+        RaftStableField(
+          label: 'Name',
+          required: true,
+          error: nameError,
+          child: RaftAgentTextInput(
+            controller: name,
+            placeholder: 'e.g. Alice',
+            invalid: nameError != null,
+            enabled: !busy,
+            semanticLabel: raftText(context, 'Agent name'),
+            onChanged: (_) => setState(() => error = null),
+          ),
         ),
-      ),
-      RaftStableField(
-        label: 'Description',
-        counter: '${description.text.length}/$createAgentDescriptionLimit',
-        child: RaftAgentTextInput(
-          controller: description,
-          multiline: true,
-          maxLength: createAgentDescriptionLimit,
-          enabled: !busy,
-          placeholder:
-              'Leave blank for a general-purpose agent, or describe a role…',
-          semanticLabel: raftText(context, 'Description'),
-          onChanged: (_) => setState(() {}),
+      if (!widget.onboarding)
+        RaftStableField(
+          label: 'Description',
+          counter: '${description.text.length}/$createAgentDescriptionLimit',
+          child: RaftAgentTextInput(
+            controller: description,
+            multiline: true,
+            maxLength: createAgentDescriptionLimit,
+            enabled: !busy,
+            placeholder:
+                'Leave blank for a general-purpose agent, or describe a role…',
+            semanticLabel: raftText(context, 'Description'),
+            onChanged: (_) => setState(() {}),
+          ),
         ),
-      ),
       RaftStableField(
         label: 'Runtime',
         required: true,
+        hint: widget.onboarding
+            ? 'The AI agent runtime your agents run on.'
+            : null,
+        labelAccessory: widget.onboarding
+            ? RaftRecipeButton(
+                key: const Key('cindy-rescan-runtimes'),
+                glyph: RaftGlyph.refreshCw,
+                glyphSize: 12,
+                size: RaftButtonRecipeSize.iconXs,
+                variant: RaftButtonRecipeVariant.ghost,
+                tooltip: 'Rescan runtimes on this computer',
+                onPressed: busy || runtimesRescanning ? null : rescanRuntimes,
+              )
+            : null,
         child: RaftAgentSelect<String>(
           value: runtime,
           placeholder: 'Select…',
@@ -538,10 +640,68 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
                 createAgentRuntimeNames[o['runtimeId']]!,
               ),
           ],
-          onChanged: busy ? null : (id) => id == runtime ? null : selectRuntime(id),
+          onChanged: busy
+              ? null
+              : (id) => id == runtime ? null : selectRuntime(id),
         ),
       ),
     ];
+    if (widget.onboarding) {
+      Widget fields() => f == null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final (i, row) in [
+                  ...leading,
+                  ...preAdmissionFields(context),
+                ].indexed) ...[
+                  if (i > 0) const SizedBox(height: 12),
+                  i == 0 && capacity != null
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: row,
+                        )
+                      : row,
+                ],
+              ],
+            )
+          : RuntimeFormFields(
+              form: f,
+              busy: busy,
+              leading: [
+                for (final (i, row) in leading.indexed)
+                  i == 0 && capacity != null
+                      ? Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: row,
+                        )
+                      : row,
+              ],
+              hideAdvanced: true,
+              rowGap: 12,
+            );
+      return PopScope(
+        canPop: !busy,
+        child: ListenableBuilder(
+          listenable: f ?? const AlwaysStoppedAnimation(0),
+          builder: (context, _) => RaftCindySetupScreen(
+            fields: fields(),
+            onClose: widget.onboardingModal ? close : null,
+            onCreate: createDisabled ? null : submit,
+            busy: busy,
+            sessionActions: widget.onSwitchServer == null
+                ? null
+                : Align(
+                    alignment: Alignment.centerLeft,
+                    child: RaftCindySessionLink(
+                      onPressed: busy ? null : widget.onSwitchServer,
+                    ),
+                  ),
+          ),
+        ),
+      );
+    }
     return PopScope(
       canPop: !busy,
       child: RaftAgentDialogCard(

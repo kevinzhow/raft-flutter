@@ -4,6 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'private_route_guard.dart';
+import 'create_agent_dialog.dart';
 
 /// Protocol-v2 runtime form state for one computer + runtime (create) or one
 /// agent (edit). Shared by [RuntimeFormDialog] and the create-agent dialog.
@@ -102,7 +103,9 @@ class RuntimeFormController extends ChangeNotifier {
       values = form.initial(sources);
       for (final entry in seed.entries) {
         final f = form.fields.where((f) => f.key == entry.key).firstOrNull;
-        if (f != null) values = form.change(sources, values, f.key, entry.value);
+        if (f != null) {
+          values = form.change(sources, values, f.key, entry.value);
+        }
       }
       for (final f in form.fields) {
         if (!['boolean', 'unsupported'].contains(f.kind)) {
@@ -201,22 +204,21 @@ class RuntimeFormController extends ChangeNotifier {
   };
 }
 
-String? runtimeFieldError(BuildContext context, String? code) =>
-    switch (code) {
-      'required' => raftText(context, 'This field is required.'),
-      'invalid_map' => raftText(context, 'Enter one unique KEY=value per line.'),
-      'source_unavailable' => raftText(
-        context,
-        'Choices are unavailable. Retry after connecting the computer.',
-      ),
-      'invalid_url' => raftText(context, 'Enter an HTTP or HTTPS URL.'),
-      'not_a_choice' => raftText(context, 'Select an available choice.'),
-      'unsupported_required' => raftText(
-        context,
-        'Update the client to edit this required field.',
-      ),
-      _ => null,
-    };
+String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
+  'required' => raftText(context, 'This field is required.'),
+  'invalid_map' => raftText(context, 'Enter one unique KEY=value per line.'),
+  'source_unavailable' => raftText(
+    context,
+    'Choices are unavailable. Retry after connecting the computer.',
+  ),
+  'invalid_url' => raftText(context, 'Enter an HTTP or HTTPS URL.'),
+  'not_a_choice' => raftText(context, 'Select an available choice.'),
+  'unsupported_required' => raftText(
+    context,
+    'Update the client to edit this required field.',
+  ),
+  _ => null,
+};
 
 /// The v2 fields as StableField rows (Web RuntimeFormV2Fields); advanced
 /// layout fields sit behind the MORE disclosure.
@@ -226,9 +228,13 @@ class RuntimeFormFields extends StatefulWidget {
     required this.form,
     this.busy = false,
     this.leading = const [],
+    this.hideAdvanced = false,
+    this.rowGap = raftAgentFormGap,
   });
   final RuntimeFormController form;
   final bool busy;
+  final bool hideAdvanced;
+  final double rowGap;
 
   /// Rows rendered before the runtime fields (same rhythm).
   final List<Widget> leading;
@@ -369,7 +375,7 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
       final rows = [
         ...widget.leading,
         ...basic,
-        if (more.isNotEmpty)
+        if (more.isNotEmpty && !widget.hideAdvanced)
           RaftAgentMoreDisclosure(
             open: moreOpen,
             onToggle: () => setState(() => moreOpen = !moreOpen),
@@ -381,7 +387,7 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final (i, row) in rows.indexed) ...[
-            if (i > 0) const SizedBox(height: raftAgentFormGap),
+            if (i > 0) SizedBox(height: widget.rowGap),
             row,
           ],
         ],
@@ -390,8 +396,8 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
   );
 }
 
-/// Runtime form for an existing agent (edit) or the onboarding agent: the
-/// same DialogCard shell and v2 fields as Create Agent.
+/// Runtime form for an existing agent (edit), or the mounted Cindy onboarding
+/// screen. Both use the same authority-fenced protocol-v2 fields.
 class RuntimeFormDialog extends StatefulWidget {
   const RuntimeFormDialog({
     super.key,
@@ -400,6 +406,7 @@ class RuntimeFormDialog extends StatefulWidget {
     required this.runtimeId,
     this.agentId,
     this.onboarding = false,
+    this.onSwitchServer,
     this.onCreated,
     this.initialName,
     this.initialDescription,
@@ -410,6 +417,7 @@ class RuntimeFormDialog extends StatefulWidget {
   final String machineId, runtimeId;
   final String? agentId;
   final bool onboarding;
+  final VoidCallback? onSwitchServer;
   final String? initialName, initialDescription, actionCardMessageId;
   final int? actionCardConfirmationVersion;
   final void Function(Map<String, dynamic>)? onCreated;
@@ -434,6 +442,8 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
     valid: () => currentAuthority,
   );
   final name = TextEditingController(), description = TextEditingController();
+  List<Map<String, dynamic>>? onboardingMachines;
+  String? onboardingLoadError;
   bool busy = false, nameMissing = false;
   String? error;
   bool get editing => widget.agentId != null;
@@ -448,7 +458,28 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
       name.text = 'Cindy';
       description.text = 'Onboarding Assistant';
     }
-    form.load();
+    if (widget.onboarding) {
+      loadOnboardingMachines();
+    } else {
+      form.load();
+    }
+  }
+
+  Future<void> loadOnboardingMachines() async {
+    try {
+      final result = await w.query('/servers/${w.server!.id}/machines');
+      if (!currentAuthority) return;
+      final rows = result is Map ? result['machines'] : result;
+      setState(() {
+        onboardingLoadError = null;
+        onboardingMachines = [
+          for (final row in (rows is List ? rows : const []).whereType<Map>())
+            Map<String, dynamic>.from(row),
+        ];
+      });
+    } catch (e) {
+      if (currentAuthority) setState(() => onboardingLoadError = '$e');
+    }
   }
 
   @override
@@ -506,82 +537,117 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !busy,
-    child: ListenableBuilder(
-      listenable: form,
-      builder: (context, _) {
-        final loadError = form.error;
-        return RaftAgentDialogCard(
-          title: editing ? 'Edit runtime configuration' : 'Create Agent',
-          onClose: busy ? null : () => Navigator.pop(context),
-          children: [
-            if (form.loading)
-              const Center(child: RaftSpinner())
-            else
-              RuntimeFormFields(
-                form: form,
-                busy: busy,
-                leading: [
-                  if (error != null || loadError != null)
-                    RaftAgentBanner(
+  Widget build(BuildContext context) {
+    if (widget.onboarding) {
+      return ListenableBuilder(
+        listenable: w,
+        builder: (context, _) {
+          if (!currentAuthority) return const SizedBox.shrink();
+          final machines = onboardingMachines;
+          if (machines == null) {
+            return RaftCindySetupScreen(
+              fields: onboardingLoadError == null
+                  ? const Center(child: RaftSpinner())
+                  : RaftAgentBanner(
                       status: RaftAgentBannerStatus.warning,
-                      description: (error ?? loadError)!,
+                      description: onboardingLoadError!,
+                      action: 'Try again',
+                      onAction: loadOnboardingMachines,
                     ),
-                  if (!editing && form.definition != null) ...[
-                    RaftStableField(
-                      label: 'Name',
-                      required: true,
-                      error: nameMissing
-                          ? raftText(context, 'This field is required.')
-                          : null,
-                      hint: widget.onboarding
-                          ? 'Fixed for the onboarding agent.'
-                          : null,
-                      child: RaftAgentTextInput(
-                        controller: name,
-                        readOnly: widget.onboarding,
-                        invalid: nameMissing,
-                        semanticLabel: raftText(context, 'Agent name'),
+              onCreate: null,
+            );
+          }
+          return CreateAgentDialog(
+            controller: w,
+            machines: machines,
+            requiredMachineId: widget.machineId,
+            initialRuntimeId: widget.runtimeId,
+            onboarding: true,
+            onSwitchServer: widget.onSwitchServer,
+            onCreated: widget.onCreated,
+            actionCardMessageId: widget.actionCardMessageId,
+            actionCardConfirmationVersion: widget.actionCardConfirmationVersion,
+          );
+        },
+      );
+    }
+    return PopScope(
+      canPop: !busy,
+      child: ListenableBuilder(
+        listenable: form,
+        builder: (context, _) {
+          final loadError = form.error;
+          return RaftAgentDialogCard(
+            title: editing ? 'Edit runtime configuration' : 'Create Agent',
+            onClose: busy ? null : () => Navigator.pop(context),
+            children: [
+              if (form.loading)
+                const Center(child: RaftSpinner())
+              else
+                RuntimeFormFields(
+                  form: form,
+                  busy: busy,
+                  leading: [
+                    if (error != null || loadError != null)
+                      RaftAgentBanner(
+                        status: RaftAgentBannerStatus.warning,
+                        description: (error ?? loadError)!,
                       ),
-                    ),
-                    RaftStableField(
-                      label: 'Description',
-                      child: RaftAgentTextInput(
-                        controller: description,
-                        readOnly: widget.onboarding,
-                        multiline: true,
-                        semanticLabel: raftText(context, 'Description'),
+                    if (!editing && form.definition != null) ...[
+                      RaftStableField(
+                        label: 'Name',
+                        required: true,
+                        error: nameMissing
+                            ? raftText(context, 'This field is required.')
+                            : null,
+                        hint: widget.onboarding
+                            ? 'Fixed for the onboarding agent.'
+                            : null,
+                        child: RaftAgentTextInput(
+                          controller: name,
+                          readOnly: widget.onboarding,
+                          invalid: nameMissing,
+                          semanticLabel: raftText(context, 'Agent name'),
+                        ),
                       ),
-                    ),
+                      RaftStableField(
+                        label: 'Description',
+                        child: RaftAgentTextInput(
+                          controller: description,
+                          readOnly: widget.onboarding,
+                          multiline: true,
+                          semanticLabel: raftText(context, 'Description'),
+                        ),
+                      ),
+                    ],
                   ],
+                ),
+              const SizedBox(height: raftAgentFormGap),
+              RaftAgentDialogFooter(
+                children: [
+                  RaftAgentDialogButton(
+                    label: 'Cancel',
+                    onPressed: busy ? null : () => Navigator.pop(context),
+                  ),
+                  if (form.definition != null)
+                    RaftAgentDialogButton(
+                      label: editing ? 'Save' : 'Create Agent',
+                      primary: true,
+                      busy: busy,
+                      onPressed: submit,
+                    )
+                  else if (!form.loading)
+                    RaftAgentDialogButton(
+                      label: 'Try again',
+                      primary: true,
+                      onPressed: form.load,
+                    ),
                 ],
               ),
-            const SizedBox(height: raftAgentFormGap),
-            RaftAgentDialogFooter(
-              children: [
-                RaftAgentDialogButton(
-                  label: 'Cancel',
-                  onPressed: busy ? null : () => Navigator.pop(context),
-                ),
-                if (form.definition != null)
-                  RaftAgentDialogButton(
-                    label: editing ? 'Save' : 'Create Agent',
-                    primary: true,
-                    busy: busy,
-                    onPressed: submit,
-                  )
-                else if (!form.loading)
-                  RaftAgentDialogButton(
-                    label: 'Try again',
-                    primary: true,
-                    onPressed: form.load,
-                  ),
-              ],
-            ),
-          ],
-        );
-      },
-    ),
-  );
+            ],
+          );
+        },
+      ),
+    );
+  }
 }

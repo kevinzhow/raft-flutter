@@ -22,6 +22,7 @@ import 'components.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'recipes/banner.g.dart';
@@ -239,7 +240,7 @@ class RaftStableField extends StatelessWidget {
       theme: _theme(t),
       tokens: tokens,
     ).root;
-    final labelText = Text.rich(
+    final labelText = RaftCssText.rich(
       TextSpan(
         text: raftText(context, label).toUpperCase(),
         children: [
@@ -283,7 +284,7 @@ class RaftStableField extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(
+                  child: RaftCssText(
                     message == null ? ' ' : raftText(context, message),
                     style: messageStyle,
                   ),
@@ -576,7 +577,7 @@ class _RaftAgentSelectState<T> extends State<RaftAgentSelect<T>> {
       child: Row(
         children: [
           Expanded(
-            child: Text(
+            child: RaftCssText(
               selected?.label ?? raftText(context, widget.placeholder),
               style: style,
               maxLines: 1,
@@ -767,7 +768,7 @@ class _RaftAgentInlineTextState extends State<RaftAgentInlineText> {
     ).root;
     tap.onTap = widget.onAction;
     final color = link.color?.resolve(tokens);
-    return Text.rich(
+    return RaftCssText.rich(
       TextSpan(
         text: raftText(context, widget.text),
         children: [

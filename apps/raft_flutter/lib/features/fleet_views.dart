@@ -391,7 +391,9 @@ class FleetDetail extends StatefulWidget {
     this.onClose,
     this.initialTab = AgentDetailTab.profile,
     this.clock,
+    this.initialTrajectoryLog = const [],
   });
+  final List<Map<String, dynamic>> initialTrajectoryLog;
   final WorkspaceController controller;
   final bool computers;
   final Map<String, dynamic> initial;
@@ -873,6 +875,7 @@ class _FleetDetailState extends State<FleetDetail> {
     liveActivity: liveActivity,
     initialTab: widget.initialTab,
     clock: widget.clock,
+    initialTrajectoryLog: widget.initialTrajectoryLog,
     busy: busy,
     error: error,
     canManage: allowed('editAgents'),

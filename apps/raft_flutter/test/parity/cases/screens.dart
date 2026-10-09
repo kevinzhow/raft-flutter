@@ -138,6 +138,24 @@ Widget _agentStack(
       computers: false,
       initial: agent,
       initialTab: tab,
+      // Source primeAgentDetailStores has a session window before HTTP. Its
+      // first status has activityKind/detailKind absent from the HTTP row;
+      // Source stable-entry identity deliberately keeps both distinct inputs.
+      initialTrajectoryLog: tab != AgentDetailTab.activity
+          ? const []
+          : [
+              for (final (i, row) in ScreenWire.activityLog.indexed)
+                i == 0
+                    ? {
+                        ...row,
+                        'entry': {
+                          ...(row['entry'] as Map),
+                          'activityKind': 'working',
+                          'detailKind': 'other',
+                        },
+                      }
+                    : Map<String, dynamic>.from(row),
+            ],
       clock: () => DateTime.fromMillisecondsSinceEpoch(
         (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
         isUtc: true,

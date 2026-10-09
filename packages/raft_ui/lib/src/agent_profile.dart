@@ -176,7 +176,9 @@ class RaftAvatarSlot extends StatelessWidget {
     this.agent = true,
     this.avatarUrl,
     this.content,
+    this.sizeOverride,
   });
+  final double? sizeOverride;
   final Widget? content;
   final String name;
   final RaftAvatarSlotContext slot;
@@ -204,8 +206,8 @@ class RaftAvatarSlot extends StatelessWidget {
         : 12.0;
     final key = pixelKey(avatarUrl);
     return Container(
-      width: slot.size,
-      height: slot.size,
+      width: sizeOverride ?? slot.size,
+      height: sizeOverride ?? slot.size,
       clipBehavior: Clip.antiAlias,
       decoration: s.root
           .decoration(rt)
@@ -928,6 +930,7 @@ class RaftActivityLogView extends StatelessWidget {
                       ],
                     ],
                   ),
+                  style: primary,
                 ),
                 if (e.detail != null && e.detail!.isNotEmpty)
                   Padding(
