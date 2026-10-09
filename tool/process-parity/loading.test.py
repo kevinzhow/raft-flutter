@@ -10,18 +10,21 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class LoadingFixtureContract(unittest.TestCase):
-    def test_cold_known_and_unknown_only_differ_in_initial_discovery(self):
+    def test_cold_known_uses_real_sidebar_unknown_uses_valid_focus_anchor(self):
         known, unknown = module.build('cold-known'), module.build('cold-unknown')
         target = known['process']['channelId']
         self.assertIn(target, [r['id'] for r in known['routes']['GET /channels']])
         self.assertNotIn(target, [r['id'] for r in unknown['routes']['GET /channels']])
         self.assertNotIn(target, [r['id'] for r in unknown['context']['channels']])
-        for key in (known['process']['metadataHold'], known['process']['tailHold']):
-            self.assertEqual(known['routes'][key], unknown['routes'][key])
+        key = known['process']['metadataHold']
+        self.assertEqual(known['routes'][key], unknown['routes'][key])
+        self.assertEqual(known['process']['opener'], 'sidebar')
+        self.assertEqual(known['process']['window'], 'tail')
+        self.assertEqual(unknown['process']['window'], 'context')
         for fixture in (known, unknown):
             row = fixture['routes']['GET /channels/inbox']['items'][0]
-            self.assertIsNone(row['firstUnreadMessageId'])
-            self.assertIsNone(row['lastMessageId'])
+            self.assertIsInstance(row['lastMessageId'], str)
+            self.assertTrue(row['lastMessageId'])
             self.assertEqual(fixture['process']['hold'], fixture['process']['tailHold'])
 
     def test_stale_success_and_error_share_replacement_identity_and_bytes(self):

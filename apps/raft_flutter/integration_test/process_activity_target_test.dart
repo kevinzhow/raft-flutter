@@ -9,6 +9,7 @@ import 'dart:ui' as ui;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -464,7 +465,21 @@ void main() {
 
       Future<void> goBackToActivity() async {
         if (form == 'desktop') {
-          await t.binding.handlePopRoute();
+          // Source browser-history Back corresponds to WorkspaceView's real
+          // desktop Escape history action. Platform pop deliberately closes a
+          // wide non-thread window; its failed v1 attempts remain separate.
+          final editor = find.descendant(
+            of: find.byType(RaftComposer),
+            matching: find.byType(TextField),
+          );
+          await t.tap(editor);
+          await t.pump();
+          check(
+            t.widget<TextField>(editor).focusNode?.hasFocus,
+            true,
+            'real editor is focused before desktop Escape input',
+          );
+          await t.sendKeyEvent(LogicalKeyboardKey.escape);
         } else {
           await t.tap(find.byTooltip('Back').first);
         }
@@ -813,15 +828,32 @@ void main() {
             );
             await snapshot('accepted-tail');
           }
-          await openActivity();
-          await snapshot('activity-ready');
+          if (processFlow.startsWith('cold-') && flow['opener'] == 'sidebar') {
+            await until(
+              () => find
+                  .byKey(ValueKey('sidebar-channel-${flow['channelId']}'))
+                  .evaluate()
+                  .isNotEmpty,
+              'actual cold sidebar row',
+            );
+            await snapshot('sidebar-ready');
+          } else {
+            await openActivity();
+            await snapshot('activity-ready');
+          }
           if (processFlow.startsWith('cold-')) {
             await control('arm', flow['tailHold'] as String);
             if (processFlow == 'cold-unknown') {
               await control('arm', flow['metadataHold'] as String);
             }
             stageName = 'cold-activation';
-            await activateCanonical(flow['channelId'] as String);
+            if (flow['opener'] == 'sidebar') {
+              await t.tap(
+                find.byKey(ValueKey('sidebar-channel-${flow['channelId']}')),
+              );
+            } else {
+              await activateCanonical(flow['channelId'] as String);
+            }
             if (processFlow == 'cold-unknown') {
               await waitHeld(flow['metadataHold'] as String);
               await snapshot('pending-identity');
@@ -874,6 +906,7 @@ void main() {
             );
             await t.pump(const Duration(milliseconds: 350));
             await snapshot('tail-still-held');
+            stageName = 'tail-response-delivery';
             await control('release', flow['tailHold'] as String);
             await until(
               () =>

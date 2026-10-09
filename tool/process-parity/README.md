@@ -10,8 +10,10 @@ The original verified pair is **Activity → uncached target in an already accep
 channel**. The runner also supports separately labeled thread opening and
 channel-after-thread gestures; their native receipts and retained failures are in
 the [N24 report](../../docs/process-parity-n24-first-batch.md). Cold known/unknown
-metadata and stale context after Back/retarget now have separate actual Source
-browser receipts and a native detector; see the [cold loading batch](../../docs/process-parity-cold-loading-first-batch.md).
+metadata and stale context after Back/retarget have twelve bounded actual
+Source/Linux desktop pairs; see the [native cold loading report](../../docs/process-parity-cold-loading-native.md).
+The [historical Source-only batch](../../docs/process-parity-cold-loading-first-batch.md)
+retains its invalid-input and timestamp-boundary corrections separately.
 Cached-target, revocation and entity-hydration flows remain outside this batch.
 Three actual themes and 390×844/1440×900 are selectable inputs; a supported
 input is not a completed platform/matrix claim.

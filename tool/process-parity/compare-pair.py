@@ -85,6 +85,22 @@ def loading_failures(flow, source, flutter):
     return failures
 
 
+def replacement_cache_prelude(source_pending, native_pending):
+    """Expose observed list visibility; generic loading flags are insufficient."""
+    source_list = bool(source_pending.get('channelScroller'))
+    native_list = bool(native_pending.get('channelScroller'))
+    native_ids = native_pending.get('acceptedIds') or []
+    return {
+        'sourceMessageLoading': source_pending.get('messageLoading'),
+        'sourceSurfaceText': [row.get('text') for row in source_pending.get('surfaces', [])],
+        'sourcePendingListVisible': source_list,
+        'nativePendingListVisible': native_list,
+        'nativeAcceptedDestinationIds': native_ids,
+        'differentObservedPrestate': not source_list and native_list and bool(native_ids),
+        'pendingWindowEqualityAsserted': False,
+    }
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('source', type=Path)
@@ -106,7 +122,8 @@ def main():
         failures.append('Input mismatch: process flow or N24 gesture')
     checkpoints = ['accepted-tail', 'activity']
     if flow.startswith('cold-'):
-        checkpoints = ['activity-ready', 'pending-tail', 'tail-still-held', 'tail-accepted']
+        prelude = 'sidebar-ready' if 'sidebar-ready' in source['stages'] else 'activity-ready'
+        checkpoints = [prelude, 'pending-tail', 'tail-still-held', 'tail-accepted']
         if flow == 'cold-unknown':
             checkpoints += ['pending-identity']
     elif flow.startswith('stale-'):
@@ -132,6 +149,12 @@ def main():
             'No pixel similarity acceptance, read-back backend, real auth/socket, all N24 gestures or complete process matrix claim.',
         ],
     }
+    if flow.startswith('stale-'):
+        source_pending = source['stages'].get('replacement-pending', {})
+        native_pending = flutter['stages'].get('replacement-pending', {})
+        evidence['replacementPendingCachePrelude'] = replacement_cache_prelude(source_pending, native_pending)
+        if evidence['replacementPendingCachePrelude']['differentObservedPrestate']:
+            evidence['limits'].append('Source entered directly through Android; native bootstrap previously accepted design. Destination B pending windows have different accepted cache preludes. This pair proves stale response ownership after B acceptance, not identical B-pending lists.')
     args.out.write_text(json.dumps(evidence, indent=2) + '\n')
     print(json.dumps({'result': evidence['result'], 'failures': failures}))
     return 1 if failures else 0

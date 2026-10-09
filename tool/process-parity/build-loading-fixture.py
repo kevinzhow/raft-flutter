@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Public DTO fixtures for cold metadata/tail and stale context ownership.
 
-Both cold inputs start on real Activity, then activate a target without a msg
-anchor. The known/unknown difference is solely initial channel discovery.
+Known metadata opens a cold tail through the real sidebar. Unknown metadata
+opens through a valid Activity focus anchor and holds its context separately.
 """
 import argparse
 import copy
@@ -30,19 +30,27 @@ def build(mode):
                 contract='Source MainLayout.tsx:394–440; ChatPanel.tsx:1345–1534; messageStore.ts:643–655,2374–2486; ThreadsInbox.tsx:1020–1176')
     inbox = copy.deepcopy(routes['GET /channels/inbox']['items'][0])
     if mode.startswith('cold-'):
-        # A real no-anchor conversation opens its cold tail. An Activity click
-        # must not accidentally turn this into the context endpoint exercise.
-        for field in ('lastMessageId', 'firstUnreadMessageId', 'firstMentionMessageId'):
-            inbox[field] = None
-        inbox['unreadCount'] = 0
-        if mode == 'cold-unknown':
+        # InboxItem.lastMessageId is a required string (inboxStore.ts:133).
+        # A no-anchor cold tail therefore opens through the real sidebar, not
+        # an invalid Activity row. Unknown identity uses its valid focus anchor
+        # and independently gates metadata and context, rather than a fake row.
+        if mode == 'cold-known':
+            flow.update(opener='sidebar', sourceRoute='/s/visual/channel/channel-design',
+                        prelude='sidebar-ready', window='tail')
+        else:
+            flow.update(opener='activity-focused', prelude='activity-ready', window='context',
+                        tailHold=flow['hold'])
             fixture['context']['channels'] = [r for r in fixture['context']['channels'] if r['id'] != flow['channelId']]
             for key in ('GET /channels', 'GET /channels/public'):
                 if isinstance(routes.get(key), list):
                     routes[key] = [r for r in routes[key] if r['id'] != flow['channelId']]
         flow['hold'] = flow['tailHold']
-        flow['targetMessageId'] = flow['acceptedMessageId']
-        flow['targetSeq'] = flow['acceptedSeq']
+        if mode == 'cold-known':
+            flow['targetMessageId'] = flow['acceptedMessageId']
+            flow['targetSeq'] = flow['acceptedSeq']
+        else:
+            flow['acceptedMessageId'] = flow['targetMessageId']
+            flow['acceptedSeq'] = flow['targetSeq']
     else:
         # Two destinations really own two channel buckets and independent HTTP
         # endpoints. Releasing the superseded response cannot update new rows,

@@ -76,5 +76,18 @@ class BoundProcessReceipts(unittest.TestCase):
             self.assertEqual(pair.loading_failures(flow, delivered, delivered), [])
             self.assertTrue(pair.loading_failures(flow, delivered, canceled))
 
+    def test_visible_loading_surface_keeps_cache_difference_when_flag_is_false(self):
+        # Actual Source loading capture: the generic selector misses this
+        # surface, but the DOM has no channel scroller while native retains one.
+        source = {'messageLoading': False, 'surfaces': [{'text': 'Loading…'}], 'channelScroller': []}
+        native = {'channelScroller': True, 'acceptedIds': ['real-accepted-destination-row']}
+        evidence = pair.replacement_cache_prelude(source, native)
+        self.assertTrue(evidence['differentObservedPrestate'])
+        self.assertFalse(evidence['sourceMessageLoading'])
+        self.assertEqual(evidence['sourceSurfaceText'], ['Loading…'])
+        self.assertFalse(evidence['pendingWindowEqualityAsserted'])
+        no_accepted_list = {**native, 'acceptedIds': []}
+        self.assertFalse(pair.replacement_cache_prelude(source, no_accepted_list)['differentObservedPrestate'])
+
 if __name__ == '__main__':
     unittest.main()

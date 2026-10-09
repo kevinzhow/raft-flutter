@@ -101,12 +101,16 @@ try {
   await page.goto(base + flow.sourceRoute, { waitUntil: 'domcontentloaded' });
   await page.addStyleTag({ content: '#react-scan-root, body > div.ph-no-capture { display:none!important; }' });
   if (flow.flow.startsWith('cold-')) {
-    await row(flow.channelName).waitFor({ state: 'visible', timeout: 30000 });
-    await stage('activity-ready');
+    if (flow.opener === 'sidebar') {
+      await page.locator(`[data-sidebar-channel-id="${flow.channelId}"]`).waitFor({ state: 'visible', timeout: 30000 });
+      await page.getByTestId('composer-textarea').waitFor({ state: 'visible' });
+    } else await row(flow.channelName).waitFor({ state: 'visible', timeout: 30000 });
+    await stage(flow.prelude ?? 'activity-ready');
     await control('arm', flow.tailHold);
     if (flow.flow === 'cold-unknown') await control('arm', flow.metadataHold);
     await page.evaluate(() => { window.__loadingStage = 'cold-activation'; });
-    await activate(flow.channelName);
+    if (flow.opener === 'sidebar') await page.locator(`[data-sidebar-channel-id="${flow.channelId}"]`).click();
+    else await activate(flow.channelName);
     if (flow.flow === 'cold-unknown') {
       await waitHeld(flow.metadataHold);
       const pending = await stage('pending-identity');
@@ -126,6 +130,7 @@ try {
     check(readsAfter(await runtimeState(), tailRequest.seq, flow.channelId).every(r => (r.body?.seq ?? 0) === 0), 'Cold unaccepted tail has no positive read ACK');
     await page.waitForTimeout(350);
     await stage('tail-still-held');
+    await page.evaluate(() => { window.__loadingStage = 'tail-response-delivery'; });
     await control('release', flow.tailHold);
     await page.locator(`#message-${flow.acceptedMessageId}`).waitFor({ state: 'visible' });
     const accepted = await stage('tail-accepted');
