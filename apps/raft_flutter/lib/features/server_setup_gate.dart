@@ -7,7 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
-import 'runtime_form_dialog.dart';
+import 'create_agent_dialog.dart';
 import 'computer_setup_commands.dart';
 
 /// Settings and the setup surface share one invalidation signal, never a verdict.
@@ -42,9 +42,11 @@ class ServerSetupGate extends StatefulWidget {
     super.key,
     required this.controller,
     required this.child,
+    this.onSwitchServer,
   });
   final WorkspaceController controller;
   final Widget child;
+  final VoidCallback? onSwitchServer;
   @override
   State<ServerSetupGate> createState() => _ServerSetupGateState();
 }
@@ -54,6 +56,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   WorkspaceController get w => widget.controller;
   Map<String, dynamic>? projection;
   String? createdAgentId, notice;
+  List<Map<String, dynamic>>? setupMachines;
+  String? setupMachinesError;
   StreamSubscription<RaftEvent>? events;
   Timer? poll, debounce;
   String get base => '/servers/${w.server!.id}';
@@ -70,6 +74,13 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     super.initState();
     startManagement();
     serverSetupRevision.addListener(reload);
+    listenEvents();
+    poll = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (blocked && !busy) reload();
+    });
+  }
+
+  void listenEvents() {
     events = w.client.events.listen((e) {
       if (e.name.startsWith('machine:') ||
           e.name.startsWith('agent:') ||
@@ -79,9 +90,17 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
         debounce = Timer(const Duration(milliseconds: 200), reload);
       }
     });
-    poll = Timer.periodic(const Duration(seconds: 10), (_) {
-      if (blocked && !busy) reload();
-    });
+  }
+
+  @override
+  void didUpdateWidget(ServerSetupGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      events?.cancel();
+      debounce?.cancel();
+      rebindManagementController();
+      listenEvents();
+    }
   }
 
   @override
@@ -101,6 +120,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   @override
   void clearData() {
     projection = null;
+    setupMachines = null;
+    setupMachinesError = null;
     createdAgentId = null;
     notice = null;
   }
@@ -109,7 +130,22 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   Future<void> loadData(int request, int generation) async {
     if (w.server == null) return;
     final result = await w.client.get('$base/setup-projection');
-    if (accepts(generation, request)) projection = managementMap(result);
+    if (!accepts(generation, request)) return;
+    projection = managementMap(result);
+    if (projection?['surface'] == 'create_agent' && createdAgentId == null) {
+      try {
+        final catalog = managementMap(await w.client.get('$base/machines'));
+        if (!accepts(generation, request)) return;
+        setupMachines = managementRows(catalog['machines']);
+        setupMachinesError = null;
+      } catch (e) {
+        if (!accepts(generation, request)) return;
+        setupMachinesError = '$e';
+        if (e is RaftApiException && [401, 403].contains(e.status)) {
+          setupMachines = null;
+        }
+      }
+    }
     // A failed refetch preserves the last authoritative projection.
   }
 
@@ -135,89 +171,67 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     }, refresh: false);
   }
 
-  Future<void> createCindy() async {
-    if (!w.can('createAgents') || busy) return;
-    if (createdAgentId != null) {
-      await reload();
-      await transition('complete');
-      return;
-    }
+  // The Source gate renders CreateAgentDialog(onboardingShell="step")
+  // directly. Computer/runtime admission belongs to that shared form; no
+  // separate picker can silently choose a runtime before its catalog arrives.
+  Future<void> completeCindy() async {
+    if (createdAgentId == null || !w.can('createAgents') || busy) return;
+    await transition('complete');
+  }
+
+  Widget cindyStep() {
     final generation = w.client.generation, scope = authority;
-    await run(() async {
-      final catalog = managementMap(await w.client.get('$base/machines'));
-      if (!accepts(generation) || scope != authority) return;
-      final allowed = managementRows(projection?['runtimeOptions'])
-          .where((o) => o['canSelectInThisContext'] == true)
-          .map((o) => o['runtimeId'])
-          .toSet();
-      final computers = managementRows(catalog['machines'])
-          .where(
-            (m) =>
-                m['status'] == 'online' &&
-                m['isComputer'] == true &&
-                managementStrings(m['runtimes']).any(allowed.contains),
-          )
-          .toList();
-      if (computers.isEmpty) {
-        throw StateError(
-          'Connect a Raft Computer with an available runtime first.',
-        );
-      }
-      final computer = await scopedDialog<Map<String, dynamic>>(
-        (dialog) => SimpleDialog(
-          title: Text(raftText(context, 'Choose computer')),
+    final machines = setupMachines;
+    if (createdAgentId != null || machines == null) {
+      return RaftCindySetupScreen(
+        fields: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final m in computers)
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialog, m),
-                child: Text('${m['name']}'),
-              ),
+            if (error != null || setupMachinesError != null)
+              RaftAgentBanner(
+                status: RaftAgentBannerStatus.warning,
+                description: (error ?? setupMachinesError)!,
+                action: createdAgentId == null ? 'Try again' : null,
+                onAction: createdAgentId == null ? reload : null,
+              )
+            else if (createdAgentId == null)
+              const Center(child: RaftSpinner())
+            else
+              label('Cindy is ready to help you get started.'),
           ],
         ),
-      );
-      if (computer == null || !accepts(generation) || scope != authority) {
-        return;
-      }
-      final runtime = await scopedDialog<String>(
-        (dialog) => SimpleDialog(
-          title: Text(raftText(context, 'Choose runtime')),
-          children: [
-            for (final id in managementStrings(
-              computer['runtimes'],
-            ).where(allowed.contains))
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialog, id),
-                child: Text(id),
+        busy: busy,
+        onCreate:
+            createdAgentId == null ||
+                managementMap(projection?['sideEffectState'])['completion'] !=
+                    'enabled'
+            ? null
+            : completeCindy,
+        sessionActions: widget.onSwitchServer == null
+            ? null
+            : RaftCindySessionLink(
+                onPressed: busy ? null : widget.onSwitchServer,
               ),
-          ],
-        ),
       );
-      if (runtime == null || !accepts(generation) || scope != authority) return;
-      await scopedDialog<bool>(
-        (_) => RuntimeFormDialog(
-          controller: w,
-          machineId: computer['id'],
-          runtimeId: runtime,
-          onboarding: true,
-          onCreated: (agent) {
-            if (accepts(generation) && scope == authority) {
-              createdAgentId = agent['id'];
-            }
-          },
-        ),
-      );
-      if (createdAgentId != null && accepts(generation) && scope == authority) {
-        final result = await w.client.post(
-          '$base/setup-transition',
-          data: {'action': 'complete'},
-        );
+    }
+    return CreateAgentDialog(
+      key: ValueKey('cindy-step-$scope'),
+      controller: w,
+      machines: machines,
+      onboarding: true,
+      closeOnCreated: false,
+      onSwitchServer: widget.onSwitchServer,
+      onCreated: (agent) {
         if (!accepts(generation) || scope != authority) return;
-        projection = managementMap(result);
-        if (projection?['surface'] != 'complete') {
-          throw StateError('Setup is not complete. Retry completion.');
-        }
-      }
-    });
+        final id = agent['id'];
+        if (id is! String || id.isEmpty) return;
+        setState(() => createdAgentId = id);
+        // Remember a valid create ACK before completion. A failed completion
+        // retries only that transition; it must never create a second Cindy.
+        unawaited(completeCindy());
+      },
+    );
   }
 
   Future<void> survey() async {
@@ -288,6 +302,12 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   Widget build(BuildContext context) {
     if (!blocked) return widget.child;
     final current = projection!;
+    if (current['surface'] == 'create_agent') {
+      return PopScope(
+        canPop: false,
+        child: Center(child: SingleChildScrollView(child: cindyStep())),
+      );
+    }
     final post = managementMap(current['postSetup']);
     final completed = current['surface'] == 'complete';
     final commands = ComputerSetupCommands.build(
@@ -334,17 +354,6 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
                       }
                     }),
                   ),
-                ] else if (current['surface'] == 'create_agent') ...[
-                  label(
-                    'Create Cindy, your onboarding assistant, on a connected Computer.',
-                  ),
-                  if (w.can('createAgents'))
-                    action(
-                      createdAgentId == null
-                          ? 'Create Cindy'
-                          : 'Retry completion',
-                      createCindy,
-                    ),
                 ] else ...[
                   label(
                     current['hasConnectedComputer'] == true

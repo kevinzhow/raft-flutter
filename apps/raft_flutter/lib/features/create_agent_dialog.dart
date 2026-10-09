@@ -91,9 +91,10 @@ class CreateAgentDialog extends StatefulWidget {
     this.onboardingModal = false,
     this.initialRuntimeId,
     this.onSwitchServer,
+    this.closeOnCreated = true,
   });
   final WorkspaceController controller;
-  final bool onboarding, onboardingModal;
+  final bool onboarding, onboardingModal, closeOnCreated;
   final String? initialRuntimeId;
   final VoidCallback? onSwitchServer;
 
@@ -414,7 +415,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
         if (created is Map) {
           widget.onCreated?.call(Map<String, dynamic>.from(created));
         }
-        if (ModalRoute.of(context)?.isCurrent == true) {
+        if (widget.closeOnCreated &&
+            ModalRoute.of(context)?.isCurrent == true) {
           Navigator.pop(context, true);
         }
       }

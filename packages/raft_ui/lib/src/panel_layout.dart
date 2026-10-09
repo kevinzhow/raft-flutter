@@ -179,7 +179,7 @@ class RaftPanelAction extends StatelessWidget {
       ).base;
       final svg = s.target('& > svg');
       return CustomPaint(
-        foregroundPainter: _PanelActionFocusOutline(
+        foregroundPainter: RaftCssFocusOutline(
           enabled: state.focusVisible,
           color: t.colors['line-strong']!,
           radius: s.borderRadius ?? BorderRadius.zero,
@@ -206,11 +206,11 @@ class RaftPanelAction extends StatelessWidget {
 
 // Source global index.css focus-visible outline: 2px, offset 2px.
 // Pointer focus keeps the generated resting surface and geometry unchanged.
-class _PanelActionFocusOutline extends CustomPainter {
-  const _PanelActionFocusOutline({
+class RaftCssFocusOutline extends CustomPainter {
+  const RaftCssFocusOutline({
     required this.enabled,
     required this.color,
-    required this.radius,
+    this.radius = BorderRadius.zero,
   });
   final bool enabled;
   final Color color;
@@ -228,7 +228,7 @@ class _PanelActionFocusOutline extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_PanelActionFocusOutline old) =>
+  bool shouldRepaint(RaftCssFocusOutline old) =>
       old.enabled != enabled || old.color != color || old.radius != radius;
 }
 

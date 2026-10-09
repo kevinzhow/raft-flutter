@@ -254,17 +254,23 @@ class RaftCindySessionLink extends StatelessWidget {
     return RaftInteractive(
       semanticLabel: raftText(context, 'Switch server'),
       onPressed: onPressed,
-      builder: (context, state) => Opacity(
-        opacity: state.enabled ? 1 : .5,
-        child: RaftCssText(
-          raftText(context, 'Switch server'),
-          style: TextStyle(
-            fontFamily: t.bodyFont,
-            fontSize: 14,
-            height: 20 / 14,
-            color: state.hovered ? t.strong : t.colors['foreground-muted'],
-            fontWeight: FontWeight.w400,
-            decoration: TextDecoration.underline,
+      builder: (context, state) => CustomPaint(
+        foregroundPainter: RaftCssFocusOutline(
+          enabled: state.focusVisible,
+          color: t.colors['line-strong']!,
+        ),
+        child: Opacity(
+          opacity: state.enabled ? 1 : .5,
+          child: RaftCssText(
+            raftText(context, 'Switch server'),
+            style: TextStyle(
+              fontFamily: t.bodyFont,
+              fontSize: 14,
+              height: 20 / 14,
+              color: state.hovered ? t.strong : t.colors['foreground-muted'],
+              fontWeight: FontWeight.w400,
+              decoration: TextDecoration.underline,
+            ),
           ),
         ),
       ),

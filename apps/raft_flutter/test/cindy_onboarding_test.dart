@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
+import 'package:raft_flutter/features/server_setup_gate.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'parity/cases/members_settings/runtime_forms.dart';
@@ -14,6 +16,13 @@ class _Client extends RaftClient {
   _Client()
     : super(origin: 'https://fixture.test', sessionStore: MemorySessionStore());
   final stream = StreamController<RaftEvent>.broadcast(sync: true);
+  late Future<dynamic> Function(String path) getFn;
+  late Future<dynamic> Function(String path, dynamic data) postFn;
+  @override
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) =>
+      getFn(path);
+  @override
+  Future<dynamic> post(String path, {dynamic data}) => postFn(path, data);
   @override
   Stream<RaftEvent> get events => stream.stream;
 }
@@ -29,10 +38,17 @@ class _Workspace extends WorkspaceController {
   _Workspace(super.client);
   final requests = <String>[], commands = <Map<String, dynamic>>[];
   Completer<dynamic>? heldMachines, heldSave;
-  bool atLimit = false, admitted = true;
+  bool atLimit = false, admitted = true, failCompletion = false;
+  Map<String, dynamic> setupProjection = {
+    'phase': 'in_progress',
+    'surface': 'create_agent',
+    'blocksChat': true,
+    'sideEffectState': {'completion': 'enabled'},
+  };
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     requests.add(path);
+    if (path.endsWith('/setup-projection')) return setupProjection;
     if (path == '/servers/s/machines') {
       return heldMachines?.future ??
           {
@@ -72,6 +88,16 @@ class _Workspace extends WorkspaceController {
   Future<dynamic> command(String method, String path, {dynamic data}) async {
     commands.add({'method': method, 'path': path, 'data': data});
     if (path.endsWith('/runtimes/rescan')) return {'accepted': true};
+    if (path.endsWith('/setup-transition')) {
+      if (failCompletion) {
+        throw const RaftApiException('Completion failed', status: 503);
+      }
+      return setupProjection = {
+        'phase': 'complete',
+        'surface': 'complete',
+        'blocksChat': false,
+      };
+    }
     return heldSave?.future ?? {'id': 'cindy', 'name': 'Cindy'};
   }
 }
@@ -83,6 +109,8 @@ void main() {
     c = _Client()..user = RaftRecord({'id': 'viewer'});
     c.selectServer('s');
     w = _Workspace(c)..server = RaftRecord({'id': 's', 'role': 'owner'});
+    c.getFn = (path) => w.query(path);
+    c.postFn = (path, data) => w.command('POST', path, data: data);
   });
   tearDown(() async {
     w.dispose();
@@ -119,6 +147,146 @@ void main() {
     of: find.text('Create Cindy'),
     matching: find.byType(RaftButton),
   );
+  testWidgets(
+    'authoritative setup directly mounts Cindy without picker or route pop',
+    (t) async {
+      await host(
+        t,
+        ServerSetupGate(controller: w, child: const Text('Conversation')),
+      );
+      expect(find.byType(CreateAgentDialog), findsOneWidget);
+      expect(find.byType(SimpleDialog), findsNothing);
+      expect(find.text('Conversation'), findsNothing);
+      expect(find.text('Meet Cindy'), findsOneWidget);
+      await t.ensureVisible(find.text('Create Cindy'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Create Cindy'));
+      await t.pumpAndSettle();
+      expect(w.commands.map((c) => c['path']).toList(), [
+        '/agents',
+        '/servers/s/setup-transition',
+      ]);
+      expect(find.text('Conversation'), findsOneWidget);
+    },
+  );
+  testWidgets('setup completion retries transition without a second agent', (
+    t,
+  ) async {
+    w.failCompletion = true;
+    await host(
+      t,
+      ServerSetupGate(controller: w, child: const Text('Conversation')),
+    );
+    await t.ensureVisible(find.text('Create Cindy'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Create Cindy'));
+    await t.pumpAndSettle();
+    expect(find.text('Conversation'), findsNothing);
+    expect(find.textContaining('Completion failed'), findsOneWidget);
+    w.failCompletion = false;
+    await t.ensureVisible(find.text('Create Cindy'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Create Cindy'));
+    await t.pumpAndSettle();
+    expect(w.commands.where((c) => c['path'] == '/agents'), hasLength(1));
+    expect(
+      w.commands.where(
+        (c) => (c['path'] as String).endsWith('/setup-transition'),
+      ),
+      hasLength(2),
+    );
+    expect(find.text('Conversation'), findsOneWidget);
+  });
+  testWidgets(
+    'setup switch-server remains host owned without creating an agent',
+    (t) async {
+      var switches = 0;
+      await host(
+        t,
+        ServerSetupGate(
+          controller: w,
+          onSwitchServer: () => switches++,
+          child: const Text('Conversation'),
+        ),
+      );
+      await t.ensureVisible(find.text('Switch server'));
+      await t.pumpAndSettle();
+      await t.tap(find.text('Switch server'));
+      await t.pump();
+      expect(switches, 1);
+      expect(w.commands, isEmpty);
+    },
+  );
+  testWidgets(
+    'old setup catalog cannot publish after workspace authority changes',
+    (t) async {
+      final oldCatalog = Completer<dynamic>();
+      w.heldMachines = oldCatalog;
+      await host(
+        t,
+        ServerSetupGate(controller: w, child: const Text('Conversation')),
+      );
+      expect(find.byType(CreateAgentDialog), findsNothing);
+      expect(w.requests, contains('/servers/s/machines'));
+      w.server = RaftRecord({'id': 'new-server', 'role': 'owner'});
+      w.notifyListeners();
+      await t.pumpAndSettle();
+      oldCatalog.complete({
+        'machines': [_machine],
+      });
+      await t.pumpAndSettle();
+      expect(find.byType(CreateAgentDialog), findsNothing);
+      expect(w.commands, isEmpty);
+      await t.pumpWidget(const SizedBox.shrink());
+    },
+  );
+  for (final (family, dark) in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    testWidgets(
+      'setup session link actual Tab focus and keyboard activation $family/$dark',
+      (t) async {
+        var switches = 0;
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: Scaffold(
+              body: RaftCindySessionLink(onPressed: () => switches++),
+            ),
+          ),
+        );
+        await t.pumpAndSettle();
+        RaftCssFocusOutline outline() =>
+            t
+                    .widget<CustomPaint>(
+                      find.byWidgetPredicate(
+                        (w) =>
+                            w is CustomPaint &&
+                            w.foregroundPainter is RaftCssFocusOutline,
+                      ),
+                    )
+                    .foregroundPainter!
+                as RaftCssFocusOutline;
+        expect(outline().enabled, false);
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.pump();
+        expect(outline().enabled, true);
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        await t.pump();
+        expect(switches, 1);
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: const Scaffold(body: RaftCindySessionLink(onPressed: null)),
+          ),
+        );
+        await t.pump();
+        expect(outline().enabled, false);
+      },
+    );
+  }
   testWidgets(
     'production onboarding delegates genuine shell and v2 admission',
     (t) async {
