@@ -19,9 +19,10 @@ def summary(path):
     frames = [json.loads(row) for row in (path / 'frames.jsonl').read_text().splitlines() if row]
     renderer = json.loads((path / 'renderer-frames.json').read_text())
     target = next((frame for frame in frames if (frame.get('target') or {}).get('inView')), None)
+    thread_target = next((frame for frame in frames if (frame.get('threadTarget') or {}).get('inView')), None)
     pending = [frame for frame in frames if 'msg=' in frame['url'] and (target is None or frame['frame'] < target['frame'])]
-    def center(frame):
-        message = frame['target']; box = message['focusRect']; view = message['view']
+    def center(frame, key='target'):
+        message = frame[key]; box = message['focusRect']; view = message['view']
         return abs(box['y'] + box['height']/2 - view['y'] - view['height']/2)
     timestamps = [row['metadata']['timestamp'] * 1000 for row in renderer] if result['provider'].startswith('Source') else [row['frame']['wallTime'] for row in renderer]
     return {
@@ -30,6 +31,7 @@ def summary(path):
         'rendererPngCount': len(list((path/'renderer-frames').glob('*.png'))),
         'maxRendererTimestampGapMs': max((b-a for a,b in zip(timestamps, timestamps[1:])), default=None),
         'firstObservedTarget': None if target is None else {'frame': target['frame'], 'stage': target['stage'], 'centerError': center(target), 'highlighted': target['target']['highlighted'], 'wallTime': target.get('wallTime')},
+        'firstObservedThreadTarget': None if thread_target is None else {'frame': thread_target['frame'], 'stage': thread_target['stage'], 'centerError': center(thread_target, 'threadTarget'), 'highlighted': thread_target['threadTarget']['highlighted'], 'wallTime': thread_target.get('wallTime')},
         'pendingUriObservations': len(pending),
         'missingPendingHeaders': [r['frame'] for r in pending if not r['headers']],
         'missingPendingTabs': [r['frame'] for r in pending if not r['tabs']],
@@ -50,26 +52,35 @@ def main():
     source, flutter = summary(args.source), summary(args.flutter)
     failures = []
     a,b = source['receipt'], flutter['receipt']
-    for key in ('fixtureSha', 'sourceHead', 'theme', 'form', 'viewport'):
+    for key in ('fixtureSha', 'sourceHead', 'sourceInputSha', 'runtimeSha', 'theme', 'form', 'viewport'):
         if a[key] != b[key]: failures.append(f'Input mismatch: {key}')
     for name, summary_ in [('Source',source), ('Flutter',flutter)]:
         if summary_['receipt']['result'] != 'PASS': failures.append(f'{name} flow receipt failed')
         if not summary_['rendererManifestMatchesCount'] or summary_['rendererPngCount'] != summary_['rendererFrames']:
             failures.append(f'{name} renderer manifest/count mismatch')
-    for name in ('accepted-tail', 'activity', 'pending-context', 'accepted-context', 'highlight-expired'):
+    flow = a.get('flow', 'activity-uncached-channel-target')
+    requirement = a.get('requirement', 'N24/channel-single')
+    if flow != b.get('flow', 'activity-uncached-channel-target') or requirement != b.get('requirement', 'N24/channel-single'):
+        failures.append('Input mismatch: process flow or N24 gesture')
+    checkpoints = ['accepted-tail', 'activity']
+    if flow != 'activity-uncached-channel-target':
+        checkpoints += ['thread-pending-parent-and-replies', 'thread-replies-before-parent', 'thread-parent-accepted', 'thread-highlight-expired']
+    if flow in ('activity-uncached-channel-target', 'activity-channel-after-thread'):
+        checkpoints += ['pending-context', 'accepted-context', 'highlight-expired']
+    for name in checkpoints:
         if name not in source['stages'] or name not in flutter['stages']:
             failures.append(f'Missing paired checkpoint {name}'); continue
         if url(source['stages'][name]['url']) != url(flutter['stages'][name]['url']):
             failures.append(f'Location mismatch at {name}')
     evidence = {
-        'flow': 'activity-uncached-channel-target', 'result': 'FAIL' if failures else 'BEHAVIOR_PASS_WITH_LIMITS',
+        'flow': flow, 'requirement': requirement, 'result': 'FAIL' if failures else 'BEHAVIOR_PASS_WITH_LIMITS',
         'failures': failures, 'source': source, 'flutter': flutter,
         'limits': [
             'DOM rAF rectangles and Flutter post-frame layout observations are not compositor pixel assertions.',
             'Chromium CDP PNGs sample emitted renderer frames; timestamp gaps are retained and can conceal intermediate paints.',
-            'Flutter PNGs rasterize changed display-list layers; they do not observe physical screen scanout or Android.',
+            f"Flutter PNGs rasterize changed display-list layers on {b.get('platform', 'linux')} ({b.get('device', 'linux-xvfb')}); they do not observe physical screen scanout.",
             'Stage receipt PASS does not remove earlier transient missing controls, offsets, errors or runner failures.',
-            'No pixel similarity acceptance, read-back backend, real auth/socket, five other process flows or 36-case full claim.',
+            'No pixel similarity acceptance, read-back backend, real auth/socket, all N24 gestures or complete process matrix claim.',
         ],
     }
     args.out.write_text(json.dumps(evidence, indent=2) + '\n')

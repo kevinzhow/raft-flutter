@@ -16,7 +16,7 @@ test('query-specific read windows beat general routes without inventing missing 
 test('held success and explicit denial retain request chronology and do not leak aborted gates', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'raft-process-runtime-'));
   const fixturePath = join(dir, 'fixture.json');
-  writeFileSync(fixturePath, JSON.stringify({ routes: { 'GET /test-target': { id: 'target' }, 'GET /test-denial': { __status: 403, body: { error: 'FORBIDDEN' } } } }));
+  writeFileSync(fixturePath, JSON.stringify({ routes: { 'GET /test-target': { id: 'target' }, 'GET /test-parent': { id: 'parent' }, 'GET /test-replies': { id: 'replies' }, 'GET /test-denial': { __status: 403, body: { error: 'FORBIDDEN' } } } }));
   const source = process.env.RAFT_SOURCE ?? '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab/work/raft-source';
   const runtime = await startRuntime({ source, fixturePath, out: join(dir, 'run'), port: Number(process.env.RAFT_PROCESS_TEST_PORT ?? 15414) });
   const getState = async () => (await fetch(`${runtime.base}/__process/state`)).json();
@@ -39,6 +39,22 @@ test('held success and explicit denial retain request chronology and do not leak
     assert.ok(released.requests.find(row => row.kind === 'released').seq < released.requests.find(row => row.requestSeq === request.seq).seq);
     const denial = await fetch(`${runtime.base}/api/test-denial`);
     assert.equal(denial.status, 403); assert.deepEqual(await denial.json(), { error: 'FORBIDDEN' });
+    // N24: known thread replies can accept while parent metadata remains
+    // independently held; one release must never open the other response.
+    for (const key of ['GET /test-parent', 'GET /test-replies']) {
+      await fetch(`${runtime.base}/__process/arm?key=${encodeURIComponent(key)}`);
+    }
+    let parentResponded = false;
+    const parent = fetch(`${runtime.base}/api/test-parent`).then(r => { parentResponded = true; return r.json(); });
+    const replies = fetch(`${runtime.base}/api/test-replies`).then(r => r.json());
+    await waitFor(state => state.held.length === 2);
+    await fetch(`${runtime.base}/__process/release?key=GET%20%2Ftest-replies`);
+    assert.deepEqual(await replies, { id: 'replies' });
+    assert.equal(parentResponded, false);
+    const independent = await getState();
+    assert.deepEqual(independent.held, [{ key: 'GET /test-parent', count: 1 }]);
+    await fetch(`${runtime.base}/__process/release?key=GET%20%2Ftest-parent`);
+    assert.deepEqual(await parent, { id: 'parent' });
     await fetch(`${runtime.base}/__process/arm?key=GET%20%2Ftest-target`);
     const abort = new AbortController();
     const abandoned = fetch(`${runtime.base}/api/test-target`, { signal: abort.signal }).catch(error => error.name);

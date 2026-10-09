@@ -27,6 +27,8 @@ def main():
     p.add_argument('--out', required=True)
     p.add_argument('--only', default='brutal-desktop', help='comma separated theme-form, or all')
     p.add_argument('--source-only', action='store_true')
+    p.add_argument('--fixture', type=Path, help='Copy exact immutable bytes; do not rebuild input')
+    p.add_argument('--flow', choices=('channel-single', 'thread-single', 'thread-double', 'channel-after-thread-single', 'channel-after-thread-double'), default='channel-single')
     p.add_argument('--port', type=int, default=15413)
     args = p.parse_args()
     out = Path(args.out).resolve()
@@ -36,8 +38,18 @@ def main():
     if not cases:
         raise SystemExit('Selection matches no declared process cases')
     fixture = out / 'fixture.json'
-    subprocess.run(['python3', str(TOOLS / 'build-fixture.py'), '--out', str(fixture)], check=True, cwd=ROOT)
-    manifest = {'flow': 'activity-uncached-channel-target', 'fixtureSha': sha(fixture),
+    if args.fixture:
+        fixture.write_bytes(args.fixture.resolve().read_bytes())
+    elif args.flow == 'channel-single':
+        subprocess.run(['python3', str(TOOLS / 'build-fixture.py'), '--out', str(fixture)], check=True, cwd=ROOT)
+    else:
+        channel_fixture = out / 'channel-base.json'
+        subprocess.run(['python3', str(TOOLS / 'build-fixture.py'), '--out', str(channel_fixture)], check=True, cwd=ROOT)
+        command = ['python3', str(TOOLS / 'build-thread-fixture.py'), '--base', str(channel_fixture), '--out', str(fixture), '--activation', 'double' if args.flow.endswith('-double') else 'single']
+        if args.flow.startswith('channel-after-thread'): command.append('--after-thread')
+        subprocess.run(command, check=True, cwd=ROOT)
+    flow = json.loads(fixture.read_bytes())['process']
+    manifest = {'flow': flow['flow'], 'requirement': flow.get('requirement', 'N24/channel-single'), 'fixtureSha': sha(fixture),
                 'started': time.time(), 'sourceOnly': args.source_only,
                 'head': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                 'toolInputs': {str(path.relative_to(ROOT)): sha(path) for path in sorted(TOOLS.glob('*')) if path.is_file()},

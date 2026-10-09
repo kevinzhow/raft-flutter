@@ -6,10 +6,13 @@ real local HTTP. Only fixture responses are gated. Unknown requests fail with
 404; Source stores and product files are unchanged. Request/response/gate order,
 wall timestamps, status and input hashes are preserved.
 
-The implemented flow is **Activity → uncached target in an already accepted
-channel**, in three actual themes and 390×844/1440×900. The five additional cold
-loading, cached-target, canonical-thread, race/revocation and entity-hydration
-flows are **not implemented or proven by this batch**.
+The original verified pair is **Activity → uncached target in an already accepted
+channel**. The runner also supports separately labeled thread opening and
+channel-after-thread gestures; their new native receipts are pending in the
+[N24 report](../../docs/process-parity-n24-first-batch.md). Cold-channel,
+cached-target, race/revocation and entity-hydration flows remain outside this
+batch. Three actual themes and 390×844/1440×900 are selectable inputs; a supported
+input is not a completed platform/matrix claim.
 
 ## Run
 
@@ -112,3 +115,24 @@ length is checked. Host readback also checks every byte hash and declared device
 fixture/product/test hashes. It rejects old run IDs and never falls back to
 previous output. This transport check does not prove Android rendering; the
 device owner must rerun in a fresh output directory.
+
+## N24 thread and subsequent-channel gestures
+
+These are separate process entries, not completion of the whole N24 item:
+
+```sh
+python3 tool/process-parity/run.py --out .local/<new-thread> --flow thread-single --only brutal-desktop --source-only
+python3 tool/process-parity/run.py --out .local/<new-after-thread> --flow channel-after-thread-single --only brutal-desktop
+python3 tool/process-parity/run.py --out .local/<new-exact-input> --fixture <exact-fixture.json> --only brutal-desktop
+python3 tool/process-parity/fixture.test.py
+```
+
+Thread lookup, parent context and focused replies are independently held. Known
+Source desktop thread IDs skip lookup; canonical/mobile routes can request it.
+Both actual branches are retained. The parent is kept out of accepted outer
+channel DTOs so a background loader cannot silently satisfy the held metadata.
+A separately labeled `--short-thread` fixture measures a legal short-window
+scroll clamp. It does not pretend that one reply can center in an unscrollable
+viewport. `thread-double` and `channel-after-thread-double` retain separate
+requirements. See [N24 process evidence](../../docs/process-parity-n24-first-batch.md)
+for source receipts, failures and native execution limits.

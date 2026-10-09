@@ -200,11 +200,11 @@ void main() {
         }
       }
 
-      Future<void> control(String action) async {
+      Future<void> control(String action, [String? key]) async {
         final io = HttpClient();
         try {
           final uri = Uri.parse('$base/__process/$action')
-              .replace(queryParameters: {'key': flow['hold'] as String});
+              .replace(queryParameters: {'key': key ?? flow['hold'] as String});
           final response = await (await io.getUrl(uri)).close();
           if (response.statusCode != 200) {
             throw StateError('Fixture control failed: $action');
@@ -251,8 +251,13 @@ void main() {
         final card = visibleRect(find.byKey(ValueKey('message-$id')));
         if (card == null) return null;
         final focus = visibleRect(find.byKey(ValueKey('message-wrapper-$id')));
+        final threadMessage =
+            id == flow['threadTargetMessageId'] ||
+            id == flow['parentMessageId'];
         final view = visibleRect(
-          find.byKey(const ValueKey('chat-list-channel')),
+          find.byKey(
+            ValueKey('chat-list-${threadMessage ? 'thread' : 'channel'}'),
+          ),
         );
         return {
           'rect': rect(card),
@@ -272,6 +277,17 @@ void main() {
         'channelId': w.channel?.id,
         'loading': w.channelLoading,
         'pendingChannelId': w.pendingMessageContextChannelId,
+        'threadChannelId': w.threadChannelId,
+        'threadParentId': w.threadParentMessageId,
+        'threadParentLoading': w.threadParentLoading,
+        'threadLoading': w.threadLoading,
+        'replyIds': w.replies.map((row) => row.id).toList(),
+        'threadParentAccepted': w.presentedThreadParent?.id,
+        'channelScroller':
+            visibleRect(find.byKey(const ValueKey('chat-list-channel'))) !=
+            null,
+        'threadScroller':
+            visibleRect(find.byKey(const ValueKey('chat-list-thread'))) != null,
         'acceptedIds': w.messages.map((row) => row.id).toList(),
         'highlight': w.highlightedMessageId,
         'older': w.hasMore,
@@ -280,11 +296,18 @@ void main() {
           find.byType(RaftChannelHeader),
           find.byType(RaftPageHeader),
           find.byType(RaftPanelHeaderBar),
+          find.byType(RaftThreadHeader),
         ].where((finder) => visibleRect(finder) != null).length,
         'tabs': visibleRect(find.byType(RaftConversationTabs)) == null ? 0 : 1,
         'composer': visibleRect(find.byType(RaftComposer)) == null ? 0 : 1,
         'accepted': message(flow['acceptedMessageId'] as String),
         'target': message(flow['targetMessageId'] as String),
+        'threadTarget': flow['threadTargetMessageId'] == null
+            ? null
+            : message(flow['threadTargetMessageId'] as String),
+        'parent': flow['parentMessageId'] == null
+            ? null
+            : message(flow['parentMessageId'] as String),
       };
       void record(Duration _) {
         if (!capturing) return;
@@ -356,6 +379,8 @@ void main() {
         File('$outPath/progress.json').writeAsStringSync(
           jsonEncode({
             'provider': provider,
+            'flow': flow['flow'],
+            'requirement': flow['requirement'] ?? 'N24/channel-single',
             'device': device,
             'platform': Platform.operatingSystem,
             'testSha': testSha,
@@ -458,73 +483,246 @@ void main() {
           'actual Activity row',
         );
         await snapshot('activity');
-        await control('arm');
-        await t.tap(activity);
-        await until(
-          () =>
-              w.channelLoading &&
-              w.pendingMessageContextChannelId == flow['channelId'],
-          'owned pending context',
-        );
-        await snapshot('pending-context');
-        final pending = stages.last['frame'] as Map;
-        check(
-          (pending['accepted'] as Map?)?['inView'],
-          true,
-          'pending old accepted row retained',
-        );
-        check(pending['target'], isNull, 'pending target not exposed');
-        check(pending['headers'], greaterThan(0), 'pending header mounted');
-        check(pending['tabs'], 1, 'pending tabs mounted');
-        check(pending['composer'], 1, 'pending composer mounted');
-        final beforeRelease = await state();
-        final heldRequest = (beforeRelease['requests'] as List)
-            .cast<Map>()
-            .where(
-              (row) =>
-                  row['kind'] == 'request' &&
-                  row['key'] == flow['hold'] &&
-                  row['seq'] > requestStart,
-            )
-            .last;
-        final earlyReads = (beforeRelease['requests'] as List)
-            .cast<Map>()
-            .where(
-              (row) =>
-                  row['kind'] == 'request' &&
-                  row['key'] == 'POST /channels/${flow['channelId']}/read' &&
-                  row['seq'] > heldRequest['seq'],
+        Future<void> waitHeld(String key) async {
+          for (var i = 0; i < 150; i++) {
+            final runtime = await state();
+            if ((runtime['held'] as List).cast<Map>().any(
+              (row) => row['key'] == key && (row['count'] as num) > 0,
+            )) {
+              return;
+            }
+            await t.pump(const Duration(milliseconds: 50));
+          }
+          throw StateError('Native did not request held endpoint: $key');
+        }
+
+        if (flow['threadChannelId'] != null) {
+          for (final key in [
+            flow['parentHold'],
+            flow['resolutionHold'],
+            flow['repliesHold'],
+          ]) {
+            await control('arm', key as String);
+          }
+          final threadRow = find.byKey(
+            ValueKey('activity-thread-${flow['threadChannelId']}'),
+          );
+          stageName = 'thread-activation';
+          await t.tap(threadRow);
+          if (flow['activation'] == 'double' && form == 'desktop') {
+            await t.pump(const Duration(milliseconds: 50));
+            await t.tap(threadRow);
+          }
+          await until(
+            () => w.location.thread?.itemId == flow['parentMessageId'],
+            'direct thread URI',
+          );
+          await waitHeld(flow['parentHold'] as String);
+          for (var i = 0; i < 150; i++) {
+            final runtime = await state();
+            final held = (runtime['held'] as List).cast<Map>();
+            if (held.any((row) => row['key'] == flow['repliesHold'])) break;
+            if (held.any((row) => row['key'] == flow['resolutionHold'])) {
+              await snapshot('thread-pending-resolution');
+              await control('release', flow['resolutionHold'] as String);
+              break;
+            }
+            await t.pump(const Duration(milliseconds: 50));
+          }
+          await waitHeld(flow['repliesHold'] as String);
+          await snapshot('thread-pending-parent-and-replies');
+          final pendingThread = stages.last['frame'] as Map;
+          check(
+            pendingThread['channelScroller'],
+            false,
+            'thread does not expose parent-channel pane',
+          );
+          check(
+            pendingThread['threadTarget'],
+            isNull,
+            'reply hidden before response',
+          );
+          check(
+            pendingThread['parent'],
+            isNull,
+            'parent hidden before response',
+          );
+          check(
+            pendingThread['headers'],
+            greaterThan(0),
+            'thread owns its header',
+          );
+          check(
+            pendingThread['composer'],
+            1,
+            'resolved pending thread composer mounted',
+          );
+          final beforeReply = await state();
+          final earlyReads = (beforeReply['requests'] as List)
+              .cast<Map>()
+              .where(
+                (row) =>
+                    row['seq'] > requestStart &&
+                    row['kind'] == 'request' &&
+                    row['key'] ==
+                        'POST /channels/${flow['threadChannelId']}/read',
+              );
+          check(
+            earlyReads.every((row) => (row['body']?['seq'] ?? 0) == 0),
+            true,
+            'unaccepted replies have no read ACK',
+          );
+          await control('release', flow['repliesHold'] as String);
+          await until(
+            () =>
+                message(flow['threadTargetMessageId'] as String)?['inView'] ==
+                true,
+            'visible accepted thread reply',
+          );
+          await snapshot('thread-replies-before-parent');
+          final reply = (stages.last['frame'] as Map)['threadTarget'] as Map;
+          check(
+            (stages.last['frame'] as Map)['threadParentAccepted'],
+            isNull,
+            'reply accepted independently before parent metadata',
+          );
+          check(reply['highlighted'], true, 'accepted reply highlighted');
+          final focus = reply['focusRect'] as Map, view = reply['view'] as Map;
+          final centerError =
+              ((focus['y'] as num) +
+                      (focus['height'] as num) / 2 -
+                      (view['y'] as num) -
+                      (view['height'] as num) / 2)
+                  .abs();
+          if (flow['focusExpectation'] != 'clamped-short-window') {
+            check(
+              centerError,
+              lessThanOrEqualTo(1),
+              'accepted thread reply centered',
             );
-        check(
-          earlyReads.every(
-            (row) => (row['body']?['seq'] ?? 0) <= flow['acceptedSeq'],
-          ),
-          true,
-          'read frontier does not exceed accepted rows before response',
-        );
-        await control('release');
-        await until(
-          () => message(flow['targetMessageId'] as String)?['inView'] == true,
-          'visible accepted target',
-        );
-        await snapshot('accepted-context');
-        final target = (stages.last['frame'] as Map)['target'] as Map;
-        check(target['highlighted'], true, 'accepted target highlighted');
-        final focus = target['focusRect'] as Map, view = target['view'] as Map;
-        final centerError =
-            ((focus['y'] as num) +
-                    (focus['height'] as num) / 2 -
-                    (view['y'] as num) -
-                    (view['height'] as num) / 2)
-                .abs();
-        check(centerError, lessThanOrEqualTo(1), 'accepted target centered');
-        await t.pump(const Duration(milliseconds: 2100));
-        await snapshot('highlight-expired');
-        check(
-          w.highlightedMessageId,
-          isNull,
-          'highlight expires after two seconds',
-        );
+          }
+          await control('release', flow['parentHold'] as String);
+          await until(
+            () => w.presentedThreadParent?.id == flow['parentMessageId'],
+            'independently accepted parent metadata',
+          );
+          await snapshot('thread-parent-accepted');
+          await t.pump(const Duration(milliseconds: 2100));
+          await snapshot('thread-highlight-expired');
+          check(
+            w.highlightedMessageId,
+            isNull,
+            'thread highlight expires after two seconds',
+          );
+          final detours = frames.where(
+            (row) =>
+                row['stage'] == 'thread-activation' &&
+                Uri.parse(row['url'] as String).queryParameters['open'] ==
+                    'channel:${flow['parentChannelId']}',
+          );
+          check(
+            detours,
+            isEmpty,
+            'thread activation has no intermediate channel content slot',
+          );
+          if (flow['flow'] == 'activity-channel-after-thread') {
+            if (form == 'mobile' || flow['activation'] == 'double') {
+              await t.tap(find.byTooltip('Back').first);
+              await until(
+                () => activity.evaluate().isNotEmpty,
+                'Activity after thread Back',
+              );
+            }
+            await snapshot('activity-after-thread');
+          }
+        }
+        if (flow['threadChannelId'] == null ||
+            flow['flow'] == 'activity-channel-after-thread') {
+          await control('arm');
+          await t.tap(activity);
+          if (flow['activation'] == 'double' && form == 'desktop') {
+            await t.pump(const Duration(milliseconds: 50));
+            await t.tap(activity);
+          }
+          await until(
+            () =>
+                w.channelLoading &&
+                w.pendingMessageContextChannelId == flow['channelId'],
+            'owned pending context',
+          );
+          await snapshot('pending-context');
+          final pending = stages.last['frame'] as Map;
+          if (flow['threadChannelId'] != null) {
+            check(
+              w.threadParentMessageId,
+              isNull,
+              'channel selection closes previous thread identity',
+            );
+            check(
+              pending['threadScroller'],
+              false,
+              'channel selection hides previous thread list',
+            );
+          }
+          check(
+            (pending['accepted'] as Map?)?['inView'],
+            true,
+            'pending old accepted row retained',
+          );
+          check(pending['target'], isNull, 'pending target not exposed');
+          check(pending['headers'], greaterThan(0), 'pending header mounted');
+          check(pending['tabs'], 1, 'pending tabs mounted');
+          check(pending['composer'], 1, 'pending composer mounted');
+          final beforeRelease = await state();
+          final heldRequest = (beforeRelease['requests'] as List)
+              .cast<Map>()
+              .where(
+                (row) =>
+                    row['kind'] == 'request' &&
+                    row['key'] == flow['hold'] &&
+                    row['seq'] > requestStart,
+              )
+              .last;
+          final earlyReads = (beforeRelease['requests'] as List)
+              .cast<Map>()
+              .where(
+                (row) =>
+                    row['kind'] == 'request' &&
+                    row['key'] == 'POST /channels/${flow['channelId']}/read' &&
+                    row['seq'] > heldRequest['seq'],
+              );
+          check(
+            earlyReads.every(
+              (row) => (row['body']?['seq'] ?? 0) <= flow['acceptedSeq'],
+            ),
+            true,
+            'read frontier does not exceed accepted rows before response',
+          );
+          await control('release');
+          await until(
+            () => message(flow['targetMessageId'] as String)?['inView'] == true,
+            'visible accepted target',
+          );
+          await snapshot('accepted-context');
+          final target = (stages.last['frame'] as Map)['target'] as Map;
+          check(target['highlighted'], true, 'accepted target highlighted');
+          final focus = target['focusRect'] as Map,
+              view = target['view'] as Map;
+          final centerError =
+              ((focus['y'] as num) +
+                      (focus['height'] as num) / 2 -
+                      (view['y'] as num) -
+                      (view['height'] as num) / 2)
+                  .abs();
+          check(centerError, lessThanOrEqualTo(1), 'accepted target centered');
+          await t.pump(const Duration(milliseconds: 2100));
+          await snapshot('highlight-expired');
+          check(
+            w.highlightedMessageId,
+            isNull,
+            'highlight expires after two seconds',
+          );
+        }
       } catch (error, stack) {
         failures.add('$error\n$stack');
         if (shotKey.currentContext != null) await snapshot('failure');
@@ -544,6 +742,8 @@ void main() {
         File('$outPath/result.json').writeAsStringSync(
           jsonEncode({
             'provider': provider,
+            'flow': flow['flow'],
+            'requirement': flow['requirement'] ?? 'N24/channel-single',
             'device': device,
             'platform': Platform.operatingSystem,
             'testSha': testSha,

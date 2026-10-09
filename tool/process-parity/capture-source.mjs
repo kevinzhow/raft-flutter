@@ -50,9 +50,10 @@ await context.addInitScript(({ prefs, flow }) => {
   };
   const rects = selector => [...document.querySelectorAll(selector)].map(el => ({ text: el.textContent.trim(), rect: visible(el), selected: el.getAttribute('aria-selected') ?? el.getAttribute('data-active') })).filter(x => x.rect);
   const message = id => {
-    const el = document.getElementById(`message-${id}`), rect = visible(el);
+    const selector = id === flow.parentMessageId ? `[data-testid="thread-panel-parent"] #message-${id}` : `#message-${id}`;
+    const el = [...document.querySelectorAll(selector)].find(el => visible(el)), rect = visible(el);
     if (!rect) return null;
-    const scroller = el.closest('[data-testid="message-scroller"]');
+    const scroller = el.closest('[data-testid="message-scroller"], [data-testid="thread-message-scroller"]');
     const view = visible(scroller);
     const inView = view && rect.y < view.y + view.height && rect.y + rect.height > view.y;
     return { rect, focusRect: visible(el.closest('[data-timeline-message-id]')), view, inView: Boolean(inView), highlighted: el.getAttribute('data-highlighted') === 'true' };
@@ -62,6 +63,10 @@ await context.addInitScript(({ prefs, flow }) => {
       headers: rects('[data-slot="panel-header"]'), tabs: rects('[data-testid^="panel-tab-"]'),
       composer: rects('[data-testid="composer-textarea"]'), surfaces: rects('[data-testid="message-content-surface"]'),
       accepted: message(flow.acceptedMessageId), target: message(flow.targetMessageId),
+      threadTarget: flow.threadTargetMessageId ? message(flow.threadTargetMessageId) : null,
+      parent: flow.parentMessageId ? message(flow.parentMessageId) : null,
+      threadChrome: rects('[data-testid="thread-close"], [data-testid="thread-mobile-back"]'),
+      channelScroller: rects('[data-testid="message-scroller"]'), threadScroller: rects('[data-testid="thread-message-scroller"]'),
       loading: [...document.querySelectorAll('[data-testid="message-content-surface"]')].filter(el => visible(el)).some(el => /^Loading[.\s]*$/.test(el.textContent.trim())),
     });
     requestAnimationFrame(frame);
@@ -102,26 +107,87 @@ try {
   }
   await page.getByTestId('inbox-row').filter({ hasText: 'android-artifacts' }).waitFor({ state: 'visible' });
   await stage('activity');
-  await control('arm', flow.hold);
-  await page.getByTestId('inbox-row').filter({ hasText: 'android-artifacts' }).click();
-  const heldState = await waitHeld(flow.hold);
-  const heldRequest = heldState.requests.filter(row => row.kind === 'request' && row.key === flow.hold && row.seq > requestStart).at(-1);
-  if (!heldRequest) throw new Error('No current capture-owned held request');
-  const pending = await stage('pending-context');
-  if (!pending.accepted?.inView) throw new Error('Source pending same-channel context did not retain accepted rows');
-  if (pending.target?.inView) throw new Error('Source target visible before fixture response');
-  if (!pending.headers.length || !pending.composer.length) throw new Error('Source pending context lost header/composer');
-  const pendingReads = (await (await fetch(`${base}/__process/state`)).json()).requests.filter(row => row.kind === 'request' && row.key === `POST /channels/${flow.channelId}/read` && row.seq > heldRequest.seq);
-  if (pendingReads.some(row => row.body?.seq > flow.acceptedSeq)) throw new Error('Read frontier advanced into unaccepted context');
-  await control('release', flow.hold);
-  await page.locator(`#message-${flow.targetMessageId}`).waitFor({ state: 'visible' });
-  const accepted = await stage('accepted-context');
-  if (!accepted.target?.inView || !accepted.target.highlighted) throw new Error('Source accepted target not visible/highlighted');
-  const centerError = Math.abs(accepted.target.focusRect.y + accepted.target.focusRect.height / 2 - (accepted.target.view.y + accepted.target.view.height / 2));
-  if (centerError > 1) throw new Error(`Source target center differs by ${centerError}px`);
-  await page.waitForTimeout(2100);
-  const expired = await stage('highlight-expired');
-  if (expired.target?.highlighted) throw new Error('Source highlight did not expire after 2s');
+  if (flow.threadChannelId) {
+    for (const key of [flow.parentHold, flow.resolutionHold, flow.repliesHold]) await control('arm', key);
+    const row = page.getByTestId('inbox-row').filter({ hasText: flow.threadRowText });
+    await page.evaluate(() => { window.__processStage = 'thread-activation'; });
+    if (flow.activation === 'double' && form === 'desktop') await row.dblclick();
+    else await row.click();
+    await page.waitForFunction(({ parent }) => new URLSearchParams(location.search).get('thread')?.endsWith(`:${parent}`), { parent: flow.parentMessageId });
+    await waitHeld(flow.parentHold);
+    // Known thread desktop slots skip lookup. Canonical/mobile routes resolve
+    // identity first. Keep these actual branches in the request chronology.
+    const lookupDeadline = performance.now() + 15000;
+    while (performance.now() < lookupDeadline) {
+      const state = await (await fetch(`${base}/__process/state`)).json();
+      const reply = state.held.some(row => row.key === flow.repliesHold && row.count);
+      const lookup = state.held.some(row => row.key === flow.resolutionHold && row.count);
+      if (reply) break;
+      if (lookup) {
+        await stage('thread-pending-resolution');
+        await control('release', flow.resolutionHold);
+        break;
+      }
+      await new Promise(r => setTimeout(r, 50));
+    }
+    await waitHeld(flow.repliesHold);
+    const pending = await stage('thread-pending-parent-and-replies');
+    if (pending.target?.inView || pending.accepted?.inView) throw new Error('Thread activation exposed a parent-channel pane');
+    if (pending.threadTarget?.inView || pending.parent) throw new Error('Thread data painted before its independent response');
+    if (!pending.threadChrome.length || !pending.composer.length) throw new Error('Resolved thread loading lost its own header/composer');
+    const readRows = (await (await fetch(`${base}/__process/state`)).json()).requests.filter(row => row.seq > requestStart && row.kind === 'request' && row.key === `POST /channels/${flow.threadChannelId}/read`);
+    if (readRows.some(row => row.body?.seq > 0)) throw new Error('Read acknowledged unaccepted thread replies');
+    await control('release', flow.repliesHold);
+    await page.locator(`#message-${flow.threadTargetMessageId}`).waitFor({ state: 'visible' });
+    const replies = await stage('thread-replies-before-parent');
+    if (replies.parent) throw new Error('Independent parent painted while parent response held');
+    if (!replies.threadTarget?.inView || !replies.threadTarget.highlighted) throw new Error('Accepted reply not visible/highlighted');
+    const focus = replies.threadTarget.focusRect, view = replies.threadTarget.view;
+    const error = Math.abs(focus.y + focus.height / 2 - view.y - view.height / 2);
+    if (flow.focusExpectation !== 'clamped-short-window' && error > 1) throw new Error(`Source thread reply center differs by ${error}px`);
+    await control('release', flow.parentHold);
+    // The parent can be above the viewport; require its mounted accepted node.
+    await page.locator(`[data-testid="thread-panel-parent"] #message-${flow.parentMessageId}`).waitFor({ state: 'attached' });
+    await stage('thread-parent-accepted');
+    await page.waitForTimeout(2100);
+    const expired = await stage('thread-highlight-expired');
+    if (expired.threadTarget?.highlighted) throw new Error('Source thread highlight did not expire');
+    const opening = await page.evaluate(() => window.__processFrames.filter(row => row.stage === 'thread-activation'));
+    if (opening.some(row => new URLSearchParams(row.url.split('?')[1]).get('open') === `channel:${flow.parentChannelId}`)) throw new Error('Thread click navigated through channel content slot');
+    if (flow.flow === 'activity-channel-after-thread') {
+      if (form === 'mobile' || flow.activation === 'double') {
+        if (form === 'desktop') await page.goBack();
+        else await page.getByTestId('thread-mobile-back').click();
+        await page.getByTestId('inbox-row').filter({ hasText: 'android-artifacts' }).waitFor({ state: 'visible' });
+      }
+      await stage('activity-after-thread');
+    }
+  }
+  if (!flow.threadChannelId || flow.flow === 'activity-channel-after-thread') {
+    await control('arm', flow.hold);
+    const channelRow = page.getByTestId('inbox-row').filter({ hasText: 'android-artifacts' });
+    if (flow.activation === 'double' && form === 'desktop') await channelRow.dblclick();
+    else await channelRow.click();
+    const heldState = await waitHeld(flow.hold);
+    const heldRequest = heldState.requests.filter(row => row.kind === 'request' && row.key === flow.hold && row.seq > requestStart).at(-1);
+    if (!heldRequest) throw new Error('No current capture-owned held request');
+    const pending = await stage('pending-context');
+    if (flow.threadChannelId && (pending.threadChrome.length || pending.threadScroller.length)) throw new Error('Channel selection retained the previous thread surface');
+    if (!pending.accepted?.inView) throw new Error('Source pending same-channel context did not retain accepted rows');
+    if (pending.target?.inView) throw new Error('Source target visible before fixture response');
+    if (!pending.headers.length || !pending.composer.length) throw new Error('Source pending context lost header/composer');
+    const pendingReads = (await (await fetch(`${base}/__process/state`)).json()).requests.filter(row => row.kind === 'request' && row.key === `POST /channels/${flow.channelId}/read` && row.seq > heldRequest.seq);
+    if (pendingReads.some(row => row.body?.seq > flow.acceptedSeq)) throw new Error('Read frontier advanced into unaccepted context');
+    await control('release', flow.hold);
+    await page.locator(`#message-${flow.targetMessageId}`).waitFor({ state: 'visible' });
+    const accepted = await stage('accepted-context');
+    if (!accepted.target?.inView || !accepted.target.highlighted) throw new Error('Source accepted target not visible/highlighted');
+    const centerError = Math.abs(accepted.target.focusRect.y + accepted.target.focusRect.height / 2 - (accepted.target.view.y + accepted.target.view.height / 2));
+    if (centerError > 1) throw new Error(`Source target center differs by ${centerError}px`);
+    await page.waitForTimeout(2100);
+    const expired = await stage('highlight-expired');
+    if (expired.target?.highlighted) throw new Error('Source highlight did not expire after 2s');
+  }
 } catch (error) {
   failures.push({ at: performance.now(), kind: 'flow', message: String(error), stage: stages.at(-1)?.name ?? 'bootstrap' });
   await page.screenshot({ path: resolve(out, 'failure.png') }).catch(() => {});
@@ -134,7 +200,7 @@ try {
   const frames = await page.evaluate(() => window.__processFrames ?? []).catch(() => []);
   const state = await (await fetch(`${base}/__process/state`)).json();
   writeFileSync(resolve(out, 'frames.jsonl'), frames.map(frame => JSON.stringify(frame)).join('\n') + '\n');
-  writeFileSync(resolve(out, 'result.json'), JSON.stringify({ provider: 'Source real App', sourceHead: '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6', sourceInputSha: initialRuntime.sourceInputSha ?? null, runtimeSha: initialRuntime.runtimeSha ?? null, runnerSha: createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex'), fixtureSha: createHash('sha256').update(fixtureBytes).digest('hex'), viewport, theme, form, rendererFrameCount: renderFrames.length, stages, failures, requests: state.requests.filter(row => row.seq > requestStart), result: failures.length ? 'FAIL' : 'PASS' }, null, 2));
+  writeFileSync(resolve(out, 'result.json'), JSON.stringify({ provider: 'Source real App', flow: flow.flow, requirement: flow.requirement ?? 'N24/channel-single', sourceHead: '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6', sourceInputSha: initialRuntime.sourceInputSha ?? null, runtimeSha: initialRuntime.runtimeSha ?? null, runnerSha: createHash('sha256').update(readFileSync(new URL(import.meta.url))).digest('hex'), fixtureSha: createHash('sha256').update(fixtureBytes).digest('hex'), viewport, theme, form, rendererFrameCount: renderFrames.length, stages, failures, requests: state.requests.filter(row => row.seq > requestStart), result: failures.length ? 'FAIL' : 'PASS' }, null, 2));
   console.log(JSON.stringify({ result: failures.length ? 'FAIL' : 'PASS', out, frames: frames.length, failures }));
   await browser.close();
 }
