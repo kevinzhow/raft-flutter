@@ -509,8 +509,17 @@ Future<void> section(WidgetTester tester, String name) async {
       );
       return;
     }
-  } else if (name == 'chat' || name == 'home') {
-    final target = find.byKey(const ValueKey('rail-chat'));
+  } else if (const [
+    'chat',
+    'home',
+    'tasks',
+    'members',
+    'computers',
+    'settings',
+  ].contains(name)) {
+    final target = find.byKey(
+      ValueKey('rail-${name == 'home' ? 'chat' : name}'),
+    );
     expect(target, findsOneWidget);
     await tester.tap(target);
     await tester.pumpAndSettle();
@@ -891,6 +900,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
       expect(tester.state(find.byType(RaftComposer).first), same(composeState));
       expect(tester.widget<TextField>(composer).controller!.text, text);
+      await screenshot(tester, 'linux-composer-before-send');
       await tester.tap(
         find
             .byWidgetPredicate(
