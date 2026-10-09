@@ -67,7 +67,11 @@ void main() {
             true,
             reason: 'First mount paints its accepted bucket without a warmup',
           );
-          if (count == 1) expect(acceptedRect, isNotNull);
+          expect(
+            acceptedRect,
+            isNotNull,
+            reason: 'Actual end is laid out before the first painted frame',
+          );
           for (var i = 0; i < 12; i++) {
             await tester.pump(const Duration(milliseconds: 16));
             final rect = paintedMessage(tester, 'accepted-${count - 1}');
@@ -76,7 +80,11 @@ void main() {
               true,
               reason: 'Every pending frame paints accepted data',
             );
-            if (count == 1) expect(rect, isNotNull);
+            expect(
+              rect,
+              isNotNull,
+              reason: 'Every pending frame keeps the accepted tail visible',
+            );
             if (rect != null) {
               acceptedRect ??= rect;
               expect(rect, acceptedRect);

@@ -161,6 +161,10 @@ class _RaftChatViewState extends State<RaftChatView> {
       // A later accepted response must use its own staging adapter.
       adapterWindow = null;
       initialEndPending = false;
+      viewport.removeListener(timelineScrolled);
+      viewport.dispose();
+      viewport = RaftInitialEndScrollController()
+        ..addListener(timelineScrolled);
     }
     widget.viewportHandle?.bind(this, jumpToBeginning);
     referenceDirectory = MessageReferenceDirectory(w)

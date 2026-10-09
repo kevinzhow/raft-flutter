@@ -208,3 +208,52 @@ class _RaftInitialEndAnchorState extends State<RaftInitialEndAnchor> {
         ),
       );
 }
+
+/// Begins a freshly mounted accepted window at its actual end in layout.
+/// The viewport's normal correction loop resolves lazy geometry before paint;
+/// after the first accepted dimensions, all scrolling belongs to its host.
+class RaftInitialEndScrollController extends ScrollController {
+  RaftInitialEndScrollController({super.debugLabel})
+    : super(keepScrollOffset: false);
+
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) => _RaftInitialEndPosition(
+    physics: physics,
+    context: context,
+    initialPixels: initialScrollOffset,
+    keepScrollOffset: keepScrollOffset,
+    oldPosition: oldPosition,
+    debugLabel: debugLabel,
+  );
+}
+
+class _RaftInitialEndPosition extends ScrollPositionWithSingleContext {
+  _RaftInitialEndPosition({
+    required super.physics,
+    required super.context,
+    super.initialPixels,
+    super.keepScrollOffset,
+    super.oldPosition,
+    super.debugLabel,
+  });
+  bool initialLayout = true;
+  @override
+  bool applyContentDimensions(double minScrollExtent, double maxScrollExtent) {
+    if (initialLayout &&
+        maxScrollExtent.isFinite &&
+        pixels != maxScrollExtent) {
+      correctPixels(maxScrollExtent);
+      return false;
+    }
+    final accepted = super.applyContentDimensions(
+      minScrollExtent,
+      maxScrollExtent,
+    );
+    if (accepted) initialLayout = false;
+    return accepted;
+  }
+}
