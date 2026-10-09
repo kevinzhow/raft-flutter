@@ -1158,9 +1158,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                 enabled: !gridActive,
                                 child: Column(
                                   children: [
+                                    // Settings composes its own sidebar and
+                                    // content headers in the shared top row.
                                     if (wide &&
                                         !unresolvedChannelRoute &&
                                         ![
+                                          'settings',
                                           'home',
                                           'tasks',
                                           'saved',
