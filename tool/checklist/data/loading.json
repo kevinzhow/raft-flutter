@@ -301,9 +301,54 @@
     "audit_note": "apps/raft_flutter/lib/features/workspace_view.dart:1570-1583 底部只有铃铛+设置两个；:1896 侧栏头部仍有工作区切换器，:2055 仍有底部用户行，:1838 私信行只有图标；apps/raft_flutter/lib/data/personal_presentation.dart:42 桌面默认隐藏空分组（Web 浏览器默认显示）。",
     "checks": [
       {
-        "id": "K08",
+        "id": "K08a",
         "minimum_layer": "mounted",
-        "minimum_passes": 1
+        "minimum_passes": 3,
+        "proof_file": "workspace_shell_contract_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ],
+        "title_zh": "三主题真实框架保留Source导航和单一侧栏标题，移除多余切换器与底部用户行，访客隐藏成员入口"
+      },
+      {
+        "id": "K08b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "proof_file": "desktop_footer_sidebar_page_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "actual four footer entries"
+        ],
+        "title_zh": "三主题真实左栏四个底部入口使用Source尺寸和位置，Help实际交互与账号隔离保持正确"
+      },
+      {
+        "id": "K08d",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "browser/native empty-section defaults",
+          "actual Pinned and Joint groups"
+        ],
+        "title_zh": "三主题置顶和联合频道有真实空组拖放区域；按Source区分浏览器/桌面默认值和用户持久偏好"
+      },
+      {
+        "id": "K08e",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "proof_file": "workspace_shell_contract_test.dart",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ],
+        "title_zh": "三主题真实私信行有Source头像、简介和文字样式，点击进入真实私信路由"
       }
     ]
   },
