@@ -2178,9 +2178,20 @@ void main() {
             find.byType(RaftFormDialog).evaluate().isEmpty &&
             !w.servers.any((s) => s.id == ownServerId),
       );
-      await w.selectServer(originalServer);
+      // Deletion returns the real app root to Source's server selector.
+      // Changing only the controller leaves that selector on screen; use the
+      // visible choice to re-enter the original workspace before any chat flow.
+      await until(tester, () => find.byType(GlobalServerSelector).evaluate().isNotEmpty);
+      await screenshot(tester, 'linux-deleted-workspace-selector');
+      final returnServer = find.byKey(ValueKey('global-server-${originalServer.id}'));
+      await tester.ensureVisible(returnServer);
+      await tester.pumpAndSettle();
+      await tester.tap(returnServer);
+      await until(tester, () => find.byType(WorkspaceView).evaluate().isNotEmpty &&
+          w.server?.id == originalServer.id);
       await w.selectChannel(general);
       await tester.pumpAndSettle();
+      await screenshot(tester, 'linux-deleted-workspace-returned');
       if (fixture['runtimeProbe'] is Map) {
         await verifyRuntimeReview(
           tester,

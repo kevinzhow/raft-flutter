@@ -14,7 +14,15 @@ Future<Color> sample(WidgetTester t) async {
   return (await t.runAsync(() async {
     final image = await boundary.toImage(pixelRatio: 1);
     final bytes = (await image.toByteData(format: ui.ImageByteFormat.rawRgba))!;
-    final index = (28 * image.width + 292) * 4;
+    final face = t.getRect(find.descendant(
+      of: find.byKey(const ValueKey('conversation')),
+      matching: find.byType(AnimatedContainer),
+    ));
+    final origin = t.getTopLeft(find.byKey(const ValueKey('paint')));
+    // Sample the face's right padding, independent of text/row height. The
+    // previous fixed pixel fell into Ahem title glyphs for compact directory rows.
+    final point = Offset(face.right - 6, face.center.dy) - origin;
+    final index = (point.dy.floor() * image.width + point.dx.floor()) * 4;
     final color = Color.fromARGB(
       bytes.getUint8(index + 3),
       bytes.getUint8(index),
