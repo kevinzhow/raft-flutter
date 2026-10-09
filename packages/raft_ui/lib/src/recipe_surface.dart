@@ -207,7 +207,8 @@ class RaftCssBoxDecoration extends BoxDecoration {
       : null;
 
   @override
-  BoxDecoration? lerpTo(Decoration? b, double t) => b == null || b is BoxDecoration
+  BoxDecoration? lerpTo(Decoration? b, double t) =>
+      b == null || b is BoxDecoration
       ? interpolate(this, b as BoxDecoration?, t)
       : null;
 
@@ -340,7 +341,12 @@ class RaftRecipeBox extends StatelessWidget {
         ),
       );
     }
-    final radius = style.borderRadius ?? BorderRadius.zero;
+    // Product overrides (for example InboxRow rounded-md on a Card) change
+    // the painted border radius. Inset shadows and clip geometry must follow
+    // that same box rather than retaining the underlying recipe's radius.
+    final radius =
+        decoration.borderRadius?.resolve(Directionality.of(context)) ??
+        BorderRadius.zero;
     final w = width ?? style.width;
     final h = height ?? style.height;
     // A fixed CSS height smaller than padding + content lets the content
@@ -402,7 +408,38 @@ class RaftRecipeBox extends StatelessWidget {
     }
     final opacity = style.opacity;
     if (applyOpacity) {
-      box = Opacity(opacity: opacity ?? 1, child: box);
+      final alpha = opacity ?? 1;
+      // CSS group opacity retains the unscaled RGB bytes before compositing.
+      // A Flutter opacity layer quantizes premultiplied channels first, which
+      // shifts translucent disabled controls by one channel value.
+      box = Opacity(
+        opacity: alpha == 0 ? 0 : 1,
+        child: ColorFiltered(
+          colorFilter: ColorFilter.matrix(<double>[
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            alpha,
+            0,
+          ]),
+          child: box,
+        ),
+      );
     }
     return box;
   }
