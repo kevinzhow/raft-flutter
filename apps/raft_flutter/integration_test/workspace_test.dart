@@ -1448,6 +1448,9 @@ void main() {
       try {
         await until(tester, () => historyRow.evaluate().isNotEmpty);
         await tester.ensureVisible(historyRow);
+        // Metadata can replace the pending body in this frame. Wait for the
+        // actual laid-out control to receive input, including after scrolling.
+        await until(tester, () => historyRow.hitTestable().evaluate().isNotEmpty);
         await tester.tap(historyRow);
         await until(
           tester,
