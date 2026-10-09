@@ -1201,6 +1201,7 @@ class _ResourceViewState extends State<ResourceView> {
       valid: () => accepts(scope),
       closeOnSelect: single,
       picker: true,
+      combobox: field == 'Channel',
       onToggle: (key) {
         if (!accepts(scope)) return;
         toggle(key);

@@ -22,11 +22,15 @@ class TaskSelectionFilter extends StatefulWidget {
     this.glyph,
     this.closeOnSelect = false,
     this.picker = false,
+    this.combobox = false,
   });
 
   /// Search filters use PickerTriggerButton; task filters an sm outline
   /// Button.
   final bool picker;
+
+  /// MessageSearchPage's channel filter uses the public Combobox composition.
+  final bool combobox;
   final String field;
   final String? tooltip, label;
   final RaftGlyph? glyph;
@@ -46,6 +50,8 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
   final menu = MenuController();
   final search = TextEditingController();
   final anchorFocus = FocusNode();
+  final triggerKey = GlobalKey();
+  double horizontalOffset = 0;
   String needle = '';
   @override
   void initState() {
@@ -68,7 +74,10 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
     final pickerHeight = widget.picker && !t.brutal
         ? 28.0
         : RaftMetrics.buttonMd;
-    final width = math.min(248.0, MediaQuery.sizeOf(context).width - 24);
+    final width = math.min(
+      widget.combobox ? 220.0 : 248.0,
+      MediaQuery.sizeOf(context).width - 24,
+    );
     final entries = widget.options.entries
         .where(
           (entry) =>
@@ -80,11 +89,21 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
       controller: menu,
       childFocusNode: anchorFocus,
       consumeOutsideTap: false,
-      alignmentOffset: const Offset(0, 4),
+      clipBehavior: Clip.none,
+      alignmentOffset: Offset(horizontalOffset, 4),
       onOpen: () {
         widget.beforeOpen?.call(menu);
         search.clear();
-        setState(() => needle = '');
+        final box = triggerKey.currentContext?.findRenderObject();
+        setState(() {
+          needle = '';
+          if (widget.combobox && box is RenderBox) {
+            final left = box.localToGlobal(Offset.zero).dx;
+            horizontalOffset = left + width > MediaQuery.sizeOf(context).width
+                ? box.size.width - width
+                : 0;
+          }
+        });
       },
       style: const MenuStyle(
         padding: WidgetStatePropertyAll(EdgeInsets.zero),
@@ -92,100 +111,119 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
         elevation: WidgetStatePropertyAll(0),
       ),
       menuChildren: [
-        RaftMenuPanel(
-          width: width,
-          kind: RaftMenuKind.selectionPopover,
-          onDismiss: menu.close,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      raftText(context, widget.field),
-                      style: RaftTypography.mono(t, size: 11, line: 16),
-                    ),
-                  ),
-                  if (widget.selection.isNotEmpty)
-                    RaftTextButton(
-                      label: 'Clear',
-                      visualHeight: 24,
-                      onPressed: () {
-                        if (acceptsInteraction) widget.onClear();
-                      },
-                    ),
-                ],
-              ),
+        if (widget.combobox)
+          SizedBox(
+            width: width,
+            child: RaftComboboxPanel(
+              label: 'Channels',
+              options: widget.options,
+              glyph: RaftGlyph.hash,
+              enabled: widget.valid(),
+              onDismiss: menu.close,
+              onSelected: (id) {
+                if (!acceptsInteraction || !widget.options.containsKey(id)) {
+                  return;
+                }
+                widget.onToggle(id);
+                menu.close();
+              },
             ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: TextField(
-                controller: search,
-                autofocus: true,
-                style: RaftTypography.mono(t, size: 12, line: 16),
-                decoration: InputDecoration(
-                  hintText: raftText(context, 'Search'),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                ),
-                onChanged: (value) {
-                  if (acceptsInteraction) {
-                    setState(() => needle = value.trim().toLowerCase());
-                  }
-                },
-              ),
-            ),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: math.min(
-                  256,
-                  MediaQuery.sizeOf(context).height * .4,
-                ),
-              ),
-              child: SingleChildScrollView(
-                primary: false,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          )
+        else
+          RaftMenuPanel(
+            width: width,
+            kind: RaftMenuKind.selectionPopover,
+            onDismiss: menu.close,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
                   children: [
-                    if (entries.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          raftText(context, 'No results'),
-                          style: RaftTypography.mono(t),
-                        ),
+                    Expanded(
+                      child: Text(
+                        raftText(context, widget.field),
+                        style: RaftTypography.mono(t, size: 11, line: 16),
                       ),
-                    for (final option in entries)
-                      RaftMenuItem(
-                        key: ValueKey(
-                          'task-filter-${widget.field}-${option.key}',
-                        ),
-                        label: option.value,
-                        selected: widget.selection.contains(option.key),
-                        kind: RaftMenuKind.selectionPopover,
-                        glyph:
-                            widget.field == 'Channel' ||
-                                option.key == 'unassigned'
-                            ? null
-                            : option.key.startsWith('user:')
-                            ? RaftGlyph.user
-                            : RaftGlyph.bot,
+                    ),
+                    if (widget.selection.isNotEmpty)
+                      RaftTextButton(
+                        label: 'Clear',
+                        visualHeight: 24,
                         onPressed: () {
-                          if (acceptsInteraction) {
-                            widget.onToggle(option.key);
-                            if (widget.closeOnSelect) menu.close();
-                          }
+                          if (acceptsInteraction) widget.onClear();
                         },
                       ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: TextField(
+                  controller: search,
+                  autofocus: true,
+                  style: RaftTypography.mono(t, size: 12, line: 16),
+                  decoration: InputDecoration(
+                    hintText: raftText(context, 'Search'),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                  ),
+                  onChanged: (value) {
+                    if (acceptsInteraction) {
+                      setState(() => needle = value.trim().toLowerCase());
+                    }
+                  },
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: math.min(
+                    256,
+                    MediaQuery.sizeOf(context).height * .4,
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  primary: false,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (entries.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            raftText(context, 'No results'),
+                            style: RaftTypography.mono(t),
+                          ),
+                        ),
+                      for (final option in entries)
+                        RaftMenuItem(
+                          key: ValueKey(
+                            'task-filter-${widget.field}-${option.key}',
+                          ),
+                          label: option.value,
+                          selected: widget.selection.contains(option.key),
+                          kind: RaftMenuKind.selectionPopover,
+                          glyph:
+                              widget.field == 'Channel' ||
+                                  option.key == 'unassigned'
+                              ? null
+                              : option.key.startsWith('user:')
+                              ? RaftGlyph.user
+                              : RaftGlyph.bot,
+                          onPressed: () {
+                            if (acceptsInteraction) {
+                              widget.onToggle(option.key);
+                              if (widget.closeOnSelect) menu.close();
+                            }
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
       ],
       builder: (context, controller, child) => Tooltip(
         message: raftText(
@@ -193,6 +231,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
           widget.tooltip ?? 'Filter tasks by ${widget.field.toLowerCase()}',
         ),
         child: Focus(
+          key: triggerKey,
           focusNode: anchorFocus,
           // TasksPanel filter chip: Button sm outline `h-8 gap-2` with the
           // field icon (14), label, optional count and ChevronDown 12. Layout
@@ -210,6 +249,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
                         ? RaftPickerTriggerRecipe(
                             t,
                             selected: widget.selection.isNotEmpty,
+                            popupOpen: widget.combobox && menu.isOpen,
                           )
                         : null,
                     visualHeight: pickerHeight,

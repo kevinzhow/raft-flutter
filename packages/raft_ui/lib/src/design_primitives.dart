@@ -2638,8 +2638,12 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
 /// Original PickerTriggerButton, not the generic Button outline variant.
 /// Source: raft-ui0.5.27 index.mjs7146; Search activeFilterClass2173.
 class RaftPickerTriggerRecipe extends RaftControlRecipe {
-  const RaftPickerTriggerRecipe(super.tokens, {super.selected})
-    : super(variant: RaftControlVariant.outline);
+  const RaftPickerTriggerRecipe(
+    super.tokens, {
+    super.selected,
+    this.popupOpen = false,
+  }) : super(variant: RaftControlVariant.outline);
+  final bool popupOpen;
   @override
   bool get transformsOnInteraction => false;
   @override
@@ -2668,7 +2672,7 @@ class RaftPickerTriggerRecipe extends RaftControlRecipe {
   @override
   BorderSide side({bool hovered = false}) => tokens.brutal
       ? BorderSide(
-          color: selected || hovered
+          color: selected || hovered || popupOpen
               ? RaftPrimitiveColors.black
               : RaftPrimitiveColors.black.withValues(alpha: .3),
           width: 2,
@@ -2786,6 +2790,7 @@ class RaftInteractive extends StatefulWidget {
     this.focusNode,
     this.focusOnPointer = true,
     this.semanticLabel,
+    this.semanticRole,
     this.button = true,
     this.selected,
     this.checked,
@@ -2799,6 +2804,7 @@ class RaftInteractive extends StatefulWidget {
   final bool? selected, checked;
   final FocusNode? focusNode;
   final String? semanticLabel, tooltip;
+  final SemanticsRole? semanticRole;
 
   @override
   State<RaftInteractive> createState() => _RaftInteractiveState();
@@ -2870,6 +2876,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
       label: widget.semanticLabel,
       excludeSemantics: widget.busy,
       button: widget.button,
+      role: widget.semanticRole,
       selected: widget.selected,
       checked: widget.checked,
       enabled: enabled,
