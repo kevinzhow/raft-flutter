@@ -1413,6 +1413,8 @@ class WorkspaceController extends ChangeNotifier {
     final messageIds = <dynamic>{
       ...ledger.messages(id).map((m) => m['id']),
       ...threadRepliesSync.parentMessageIdsForChannel(id),
+      if (_threadIdentity?.parentChannelId == id)
+        _threadIdentity!.parentMessageId,
     };
     final threadIds = <String>{
       for (final message in ledger.messages(id))
@@ -1422,7 +1424,9 @@ class WorkspaceController extends ChangeNotifier {
             messageIds.contains(summary['parentMessageId']) &&
             summary['threadChannelId'] is String)
           summary['threadChannelId'],
-      if (threadParent?.channelId == id && threadChannelId != null)
+      if ((threadParent?.channelId == id ||
+              _threadIdentity?.parentChannelId == id) &&
+          threadChannelId != null)
         threadChannelId!,
     };
     for (final scope in {id, ...threadIds}) {
@@ -1467,7 +1471,19 @@ class WorkspaceController extends ChangeNotifier {
     if (principal != null && serverId != null) {
       _cacheWrites = _cacheWrites.then((_) async {
         try {
-          await cache?.revokeChannel(origin, principal, serverId, id);
+          for (final scope in {id, ...threadIds}) {
+            await cache?.revokeChannel(origin, principal, serverId, scope);
+          }
+          for (final messageId in messageIds) {
+            await cache?.write(
+              origin,
+              principal,
+              serverId,
+              'draft',
+              'thread:$messageId',
+              null,
+            );
+          }
         } catch (_) {
           if (!_disposed) {
             setError(
