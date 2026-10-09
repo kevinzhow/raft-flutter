@@ -243,7 +243,7 @@ void main() {
       };
       await tester.pumpWidget(_host(w, 'tasks'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byTooltip('Show task board'));
+      await tester.tap(find.text('Board'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Load more Todo'));
       await tester.pump();

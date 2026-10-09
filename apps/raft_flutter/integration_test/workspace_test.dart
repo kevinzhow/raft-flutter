@@ -1238,7 +1238,7 @@ void main() {
             screenshot(tester, name.replaceFirst('native-', 'linux-')),
       );
       await section(tester, 'tasks');
-      await tester.tap(find.byTooltip('Show task board'));
+      await tester.tap(find.text('Board'));
       await tester.pumpAndSettle();
       await until(
         tester,
@@ -1289,7 +1289,7 @@ void main() {
       await tester.ensureVisible(find.widgetWithText(RaftTaskCard, taskTitle));
       await tester.pumpAndSettle();
       await screenshot(tester, 'linux-task-board');
-      await tester.tap(find.byTooltip('Show task list'));
+      await tester.tap(find.text('List'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text(taskTitle),

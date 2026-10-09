@@ -3,11 +3,11 @@
  "scope": "apps/raft_flutter/lib",
  "about": "Ratchet for tool/ds-audit. Counts may only go down. Regenerate with `tool/ds-audit --update-baseline` after removing violations.",
  "totals": {
-  "style.border_radius": 13,
+  "style.border_radius": 12,
   "style.color_literal": 1,
   "style.dimension": 62,
   "style.duration": 3,
-  "style.edge_insets": 91,
+  "style.edge_insets": 90,
   "style.font_size": 1,
   "style.font_weight": 10,
   "style.material_colors": 33,
@@ -22,7 +22,7 @@
   "widget.dialog": 55,
   "widget.divider": 4,
   "widget.icon_button": 14,
-  "widget.ink": 3,
+  "widget.ink": 2,
   "widget.list_tile": 66,
   "widget.menu": 21,
   "widget.navigation": 1,
@@ -31,8 +31,8 @@
   "widget.scaffold": 10,
   "widget.select": 8,
   "widget.snackbar": 38,
-  "widget.surface": 16,
-  "widget.text_field": 28,
+  "widget.surface": 15,
+  "widget.text_field": 26,
   "widget.toggle": 1,
   "widget.tooltip": 6
  },
@@ -311,14 +311,12 @@
    "widget.surface": 2
   },
   "apps/raft_flutter/lib/features/resource_search.dart": {
-   "style.border_radius": 2,
+   "style.border_radius": 1,
    "style.dimension": 3,
-   "style.edge_insets": 3,
+   "style.edge_insets": 2,
    "style.font_weight": 3,
    "style.sized_box": 4,
-   "style.text_style": 1,
-   "widget.ink": 1,
-   "widget.surface": 1
+   "style.text_style": 1
   },
   "apps/raft_flutter/lib/features/resource_view.dart": {
    "style.border_radius": 1,
@@ -342,7 +340,7 @@
    "widget.progress": 1,
    "widget.select": 1,
    "widget.surface": 2,
-   "widget.text_field": 6
+   "widget.text_field": 4
   },
   "apps/raft_flutter/lib/features/search_home.dart": {
    "style.dimension": 1,

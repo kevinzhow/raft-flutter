@@ -609,12 +609,18 @@ class _RaftSkeletonState extends State<RaftSkeleton>
       RaftSkeletonVariant.line => Container(
         width: widget.width,
         height: widget.height ?? 12,
-        color: black.withValues(alpha: .1),
+        // CSS black/10 is stored in an 8-bit alpha channel before compositing.
+        // Preserve that quantization (26/255), rather than rounding the final
+        // floating-point white/black blend to 230 instead of source 229.
+        color: black.withAlpha(26),
       ),
       RaftSkeletonVariant.block => Container(
         width: widget.width,
         height: widget.height,
-        color: black.withValues(alpha: .1),
+        // CSS black/10 is stored in an 8-bit alpha channel before compositing.
+        // Preserve that quantization (26/255), rather than rounding the final
+        // floating-point white/black blend to 230 instead of source 229.
+        color: black.withAlpha(26),
       ),
       RaftSkeletonVariant.circle => Container(
         width: widget.width,
