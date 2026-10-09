@@ -176,6 +176,14 @@ Future<void> mobileHome(WidgetTester tester) async {
       findsOneWidget,
       reason: 'The real mobile route needs a back control.',
     );
+    if (identical(back, resolutionBack)) {
+      expect(find.byType(RaftErrorBanner), findsNothing);
+      expect(find.byType(RaftComposer), findsNothing);
+      expect(tester.takeException(), isNull);
+      await screenshot(tester,
+          'linux-mobile-unavailable-back-${DateTime.now().millisecondsSinceEpoch}');
+      await until(tester, () => resolutionBack.hitTestable().evaluate().isNotEmpty);
+    }
     await tester.tap(back);
     await tester.pumpAndSettle();
   }
