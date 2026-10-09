@@ -85,6 +85,28 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   Map<String, dynamic>? lastChannelAuthority;
   int channelAuthorityRevision = 0;
   int searchEntryRevision = 0;
+  String? channelSearchSeed, channelSearchAuthority;
+  bool channelSearchRevoked = false;
+
+  void syncChannelSearch() {
+    if (channelSearchSeed == null) return;
+    final channel = w.channels
+        .where((c) => c.id == channelSearchSeed)
+        .firstOrNull;
+    if (channelSearchAuthority != workspaceAuthority(w) ||
+        channel == null ||
+        !w.can('viewChannel', resource: channel)) {
+      channelSearchSeed = channelSearchAuthority = null;
+      channelSearchRevoked = w.section == 'search';
+    }
+  }
+
+  void searchThisChannel() {
+    final channel = w.channel;
+    if (channel == null || !w.can('viewChannel', resource: channel)) return;
+    select('search', searchChannelId: channel.id);
+  }
+
   final desktopNavigation = DesktopNavigationState();
   bool pendingDesktopSelection = false;
   String get desktopAuthority => '$mobileAuthority|$channelAuthorityRevision';
@@ -214,6 +236,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     activityFlag = DesktopActivityFlag(w)..addListener(activityFlagChanged);
     activityDirectory = MessageReferenceDirectory(w);
     liveActivities = ChatAgentPresentation(w, activityDirectory);
+    w.addListener(syncChannelSearch);
     w.addListener(syncPresentation);
     syncPresentation();
     w.addListener(syncSidebarDisclosure);
@@ -331,6 +354,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       mobileRouteAuthority = null;
       w.mobileNavigation = !wide;
       oldWidget.controller.releaseConversationPresentation(this);
+      oldWidget.controller.removeListener(syncChannelSearch);
+      channelSearchSeed = channelSearchAuthority = null;
+      channelSearchRevoked = false;
+      w.addListener(syncChannelSearch);
       oldWidget.controller.removeListener(syncPresentation);
       oldWidget.controller.removeListener(syncSidebarDisclosure);
       liveActivities.dispose();
@@ -423,6 +450,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void dispose() {
     persistPanels?.cancel();
     w.releaseConversationPresentation(this);
+    w.removeListener(syncChannelSearch);
     w.removeListener(syncPresentation);
     w.removeListener(syncSidebarDisclosure);
     sidebarDisclosure.dispose();
@@ -465,12 +493,24 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
-  void select(String section) {
+  void select(String section, {String? searchChannelId}) {
     if (!w.canVisitSection(section)) return;
     desktopNavigation.bind(desktopAuthority);
     desktopNavigation.selectRoute(section);
     pendingDesktopSelection = false;
-    if (section == 'search') setState(() => searchEntryRevision++);
+    if (section == 'search') {
+      setState(() {
+        searchEntryRevision++;
+        channelSearchSeed = searchChannelId;
+        channelSearchAuthority = searchChannelId == null
+            ? null
+            : workspaceAuthority(w);
+        channelSearchRevoked = false;
+      });
+    } else {
+      channelSearchSeed = channelSearchAuthority = null;
+      channelSearchRevoked = false;
+    }
     if (w.section == 'administration' || section == 'settings') {
       bridgeScope = null;
       syncBridgeFlag();
@@ -710,13 +750,18 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 selectionHandle: mainSelection,
               ),
             )
+          : route == 'search' && channelSearchRevoked
+          ? Center(child: Text(tr('Channel is no longer available')))
           : ResourceView(
               key: ValueKey(
-                '${w.server?.id}:$route:${route == 'search' ? searchEntryRevision : 0}',
+                '${w.server?.id}:$route:${route == 'search' ? '$searchEntryRevision:$channelSearchSeed:$channelSearchAuthority' : 0}',
               ),
               controller: w,
               section: route,
               restoreSearchState: searchEntryRevision == 0,
+              initialSearchChannelId: route == 'search'
+                  ? channelSearchSeed
+                  : null,
               onBack: dismissPanel,
               onSearchEntity: wide ? openDesktopEntity : null,
               onActivityItem:
@@ -1413,7 +1458,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     onBack: mobile ? dismissPanel : null,
     backKey: mobile ? const Key('mobile-detail-back') : null,
     backLabel: mainSelection.active ? tr('Exit selection') : tr('Back'),
-    onSearch: () => select('search'),
+    onSearch: searchThisChannel,
     onSettings: channelSettings,
     searchLabel: tr('Search this channel'),
     settingsLabel: tr('Channel settings'),
