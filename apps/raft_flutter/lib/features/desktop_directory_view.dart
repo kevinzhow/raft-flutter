@@ -184,54 +184,35 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
     final name = '${value['displayName'] ?? value['name'] ?? ''}';
     final target = DesktopContentTarget(kind, id);
     final sourceAuthority = authority;
-    final t = RaftTokens.of(context);
     final selected = widget.selected?.kind == kind && widget.selected?.id == id;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: RaftControl(
-        key: ValueKey('desktop-directory-${kind.name}-$id'),
-        semanticLabel: name,
-        selected: selected,
-        visualHeight: 36,
-        recipe: RaftMountedConversationControlRecipe(t, selected: selected),
-        onPressed: () {
-          if (sourceAuthority == authority && mounted) {
-            widget.onSelected(target);
-          }
-        },
-        child: Row(
-          children: [
-            if (kind == DesktopContentKind.computer)
-              const RaftIcon(RaftGlyph.monitor, size: 18)
-            else
-              RaftAvatar(
-                name: name,
-                size: 24,
-                kind: kind == DesktopContentKind.agent
-                    ? RaftAvatarKind.agent
-                    : RaftAvatarKind.human,
-                imageUrl: raftPublicAvatarUrl(
-                  w.client.origin,
-                  value['avatarUrl'] as String?,
-                ),
-              ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: RaftTypography.heading(
-                  t,
-                  size: 14,
-                  line: 20,
-                  weight: FontWeight.w500,
-                ),
+    // Sidebar.tsx member rows use the same SidebarItem recipe as conversations.
+    return RaftNavItem(
+      key: ValueKey('desktop-directory-${kind.name}-$id'),
+      label: name,
+      conversationKind: RaftConversationNavKind.directory,
+      selected: selected,
+      description: kind == DesktopContentKind.agent &&
+              '${value['description'] ?? ''}'.isNotEmpty
+          ? '${value['description']}'
+          : null,
+      leading: kind == DesktopContentKind.computer
+          ? const RaftIcon(RaftGlyph.monitor, size: 18)
+          : RaftAvatar(
+              name: name,
+              mountedContext: RaftMountedAvatarContext.sidebarList,
+              kind: kind == DesktopContentKind.agent
+                  ? RaftAvatarKind.agent
+                  : RaftAvatarKind.human,
+              imageUrl: raftPublicAvatarUrl(
+                w.client.origin,
+                value['avatarUrl'] as String?,
               ),
             ),
-          ],
-        ),
-      ),
+      onTap: () {
+        if (sourceAuthority == authority && mounted) {
+          widget.onSelected(target);
+        }
+      },
     );
   }
 

@@ -62,6 +62,13 @@ class CollectorTest(unittest.TestCase):
     def test_incomplete_run_copies_progress_without_ack(self):
         self.meta['completed']=False; self.files['native-android-run.json']=json.dumps(self.meta).encode()
         self.assertFalse(self.perform()); self.assertFalse(self.acks); self.assertFalse(json.loads((self.reports/'native-android-run.json').read_bytes())['completed'])
+    def test_run_bound_timestamped_mobile_route_checkpoint_is_collected(self):
+        name='android-mobile-resource-back-1791583669925'
+        self.files['native-android-checkpoints.tsv']=f'{name}\t2026-10-08T01:00:01.000000Z\t{self.run}\n'.encode()
+        self.files[name+'.png']=png
+        self.assertTrue(self.perform())
+        self.assertEqual((self.reports/(name+'.png')).read_bytes(),png)
+        self.assertEqual(self.acks,[{'runId':self.run,'sourceHash':self.sha,'collected':True}])
     def test_stale_tsv_rejected(self):
         self.files['native-android-checkpoints.tsv']=self.files['native-android-checkpoints.tsv'].replace(self.run.encode(),b'2026-10-08T00:00:00.000000Z')
         self.assertFalse(self.perform()); self.assertFalse(self.acks)

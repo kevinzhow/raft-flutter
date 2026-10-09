@@ -13,6 +13,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/main.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/global_server_selector.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -161,13 +162,18 @@ Future<void> mobileHome(WidgetTester tester) async {
       of: find.byType(ResourceView),
       matching: find.byType(RaftPanelBackAction),
     );
+    // HumanDetailPanel returns with its Source Close profile action.
+    final profileClose = find.descendant(
+      of: find.byType(MemberProfileView),
+      matching: find.byTooltip('Close profile'),
+    );
     // Actual metadata resolution can still be pending after settled frames.
     // Wait for its real unavailable Back action, rather than clicking a
     // retained conversation header that Source deliberately does not show.
     await until(tester, () => home.evaluate().isNotEmpty ||
         homeTab.evaluate().isNotEmpty || settingsBack.evaluate().isNotEmpty ||
         detailBack.evaluate().isNotEmpty || resolutionBack.evaluate().isNotEmpty ||
-        resourceBack.evaluate().isNotEmpty ||
+        resourceBack.evaluate().isNotEmpty || profileClose.evaluate().isNotEmpty ||
         find.byType(RaftBackButton).evaluate().isNotEmpty);
     if (home.evaluate().isNotEmpty) break;
     final back = homeTab.evaluate().isNotEmpty
@@ -180,6 +186,8 @@ Future<void> mobileHome(WidgetTester tester) async {
         ? resolutionBack
         : resourceBack.evaluate().isNotEmpty
         ? resourceBack.first
+        : profileClose.evaluate().isNotEmpty
+        ? profileClose
         : find.byType(RaftBackButton).first;
     expect(
       back,
@@ -630,7 +638,11 @@ Finder field(String label) => find.descendant(
 );
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+  // Navigator-generated pointer cancellation is a device event. Forward it
+  // to the native gesture router, alongside actual device input, so a menu
+  // opened during a long press releases its recognizer before the next press.
+  binding.shouldPropagateDevicePointerEvents = true;
   WidgetController.hitTestWarningShouldBeFatal = true;
   testWidgets(
     'native login, history, send, thread, appearance and secure session',

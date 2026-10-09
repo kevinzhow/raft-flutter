@@ -26,7 +26,7 @@ class _DirectoryClient extends RaftClient {
     if (pending != null) return pending!.future;
     if (path == '/agents') {
       return [
-        {'id': 'agent', 'name': 'Current agent'},
+        {'id': 'agent', 'name': 'Current agent', 'description': 'Shared Source row'},
       ];
     }
     if (path.endsWith('/members')) {
@@ -44,6 +44,49 @@ class _DirectoryClient extends RaftClient {
 }
 
 void main() {
+  for (final (family, dark) in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    for (final width in [390.0, 1280.0]) {
+      testWidgets('directory $family/$dark/$width retains Source avatar, row and pointer selection', (t) async {
+        t.view.physicalSize = Size(width, 844);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        final client = _DirectoryClient();
+        final w = WorkspaceController(client)
+          ..server = RaftRecord({'id': 's', 'role': 'owner'});
+        addTearDown(() async {
+          w.dispose();
+          await client.stream.close();
+          await client.dispose();
+        });
+        DesktopContentTarget? selected;
+        await t.pumpWidget(MaterialApp(
+          theme: raftTheme(family, dark: dark),
+          home: Scaffold(body: DesktopDirectoryView(
+            controller: w, mobileRoot: width < 768,
+            onSelected: (value) => selected = value,
+          )),
+        ));
+        await t.pumpAndSettle();
+        final row = find.byKey(const ValueKey('desktop-directory-agent-agent'));
+        final avatar = find.descendant(of: row, matching: find.byType(RaftAvatar));
+        // Sidebar.tsx AvatarSlot(sidebar-list) is 18px in every theme.
+        expect(t.getSize(avatar), const Size(18, 18));
+        expect(find.descendant(of: row, matching: find.text('Shared Source row')), findsOneWidget);
+        final control = find.descendant(of: row, matching: find.byType(RaftControl));
+        // SidebarItem has independent 4px/2px margin and md:py-1/1.5.
+        expect(t.getSize(control).height, family == RaftFamily.brutal ? (width < 768 ? 40 : 32) : 34);
+        expect(t.getSize(row).height - t.getSize(control).height, family == RaftFamily.brutal ? 4 : 2);
+        await t.tap(row);
+        expect(selected!.kind, DesktopContentKind.agent);
+        expect(selected!.id, 'agent');
+        expect(t.takeException(), isNull);
+      });
+    }
+  }
   testWidgets(
     'directory selection is controlled and revoked payload is removed immediately',
     (t) async {

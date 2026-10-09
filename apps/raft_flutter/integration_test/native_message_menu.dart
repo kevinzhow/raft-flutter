@@ -26,6 +26,13 @@ Future<void> openNativeMessageMenu(
   expect(row, findsOneWidget);
   await tester.ensureVisible(row);
   await tester.pumpAndSettle();
+  // A second search can replace the same message ID while its old focus
+  // receipt remains. Send the first press once that replacement is visible
+  // and participates in hit testing, rather than pressing its hidden frame.
+  for (var i = 0; i < 100 && row.hitTestable().evaluate().isEmpty; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  expect(row.hitTestable(), findsOneWidget);
   final rect = tester.getRect(row);
   final press = Offset(rect.left + 2, rect.center.dy);
   if (Platform.isLinux) {

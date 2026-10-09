@@ -170,7 +170,7 @@ def collect_current_evidence(reports, run_id, source_hash, read, acknowledge):
         names = []
         for line in text.splitlines():
             columns = line.split('\t')
-            if (len(columns) != 3 or not re.fullmatch(r'android-[a-z-]+', columns[0]) or
+            if (len(columns) != 3 or not re.fullmatch(r'android-[a-z0-9-]+', columns[0]) or
                     not re.fullmatch(r'[0-9TZ:+.-]+', columns[1]) or columns[2] != run_id):
                 return False
             names.append(columns[0])

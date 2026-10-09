@@ -603,7 +603,7 @@ class RaftMountedSidebarNavigationRecipe extends RaftControlRecipe {
 
 /// Mounted ChannelRow and DM unread counts are product variants, independent
 /// of the generic SidebarItemChannelIcon slot and management/navigation rows.
-enum RaftConversationNavKind { channel, directMessage }
+enum RaftConversationNavKind { channel, directMessage, directory }
 
 /// ChannelKindIcon is the mounted product default. The generic component slot
 /// is retained explicitly for SDK compositions that actually mount that slot.
@@ -850,7 +850,7 @@ class RaftNavItem extends StatelessWidget {
   /// Saved total is metadata, independent of an unread/activity badge.
   final int? count;
 
-  /// Opt in only for mounted conversation rows; existing roles/defaults stay
+  /// Opt in for mounted conversation/directory rows; existing roles/defaults stay
   /// unchanged. DM avatars must be supplied by the product, not inferred here.
   final RaftConversationNavKind? conversationKind;
   final RaftChannelGlyphVariant channelGlyphVariant;
@@ -894,6 +894,14 @@ class RaftNavItem extends StatelessWidget {
             ),
       onPressed: onTap,
       selected: selected,
+      // Mounted directory rows share Source's box; expand their touch area
+      // without inserting 48px of layout between the section's entities.
+      minimumTargetSize: conversationKind == RaftConversationNavKind.directory
+          ? conversation!.rowHeight(
+              viewportWidth: MediaQuery.sizeOf(context).width,
+              viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
+            )
+          : null,
       kind: RaftControlKind.sidebar,
       visualHeight: conversationKind != null
           ? conversation!.rowHeight(
@@ -1029,7 +1037,13 @@ class RaftNavItem extends StatelessWidget {
           ? row(false)
           : Padding(
               padding: EdgeInsets.only(bottom: t.brutal ? 4 : 2),
-              child: _MountedNavigationPointerSurface(builder: row),
+              child: _MountedNavigationPointerSurface(
+                builder: (pressed) =>
+                    conversationKind == RaftConversationNavKind.directory &&
+                        RaftDensityScope.of(context) == RaftDensity.touch
+                    ? RaftTouchTarget(child: row(pressed))
+                    : row(pressed),
+              ),
             ),
     );
   }

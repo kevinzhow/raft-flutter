@@ -7,13 +7,13 @@
   "style.color_literal": 1,
   "style.dimension": 57,
   "style.duration": 2,
-  "style.edge_insets": 88,
+  "style.edge_insets": 87,
   "style.font_size": 1,
   "style.font_weight": 7,
   "style.material_colors": 29,
   "style.material_icons": 28,
   "style.material_theme": 38,
-  "style.sized_box": 78,
+  "style.sized_box": 77,
   "style.text_metrics": 5,
   "style.text_style": 15,
   "widget.app_bar": 7,
@@ -149,8 +149,7 @@
    "widget.toggle": 1
   },
   "apps/raft_flutter/lib/features/desktop_directory_view.dart": {
-   "style.edge_insets": 2,
-   "style.sized_box": 1,
+   "style.edge_insets": 1,
    "widget.surface": 1
   },
   "apps/raft_flutter/lib/features/desktop_master_detail.dart": {
