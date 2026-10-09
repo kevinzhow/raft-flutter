@@ -58,7 +58,7 @@ RaftRecipeTheme raftRecipeThemeOf(RaftTokens t) =>
 /// [expand] are the JSX `className` overrides (`px-4 py-2`, `text-sm`,
 /// `w-full`); [brutalSurface] lets product wrappers (CloseButton) restate
 /// their `theme-brutal:` background/border/shadow classes.
-class RaftRecipeButton extends StatefulWidget {
+class RaftRecipeButton extends StatelessWidget {
   const RaftRecipeButton({
     super.key,
     this.label,
@@ -94,35 +94,35 @@ class RaftRecipeButton extends StatefulWidget {
   /// `gap-*` override of the recipe gap.
   final double? gap;
   @override
-  State<RaftRecipeButton> createState() => _RaftRecipeButtonState();
-}
+  Widget build(BuildContext context) => RaftInteractive(
+    onPressed: disabled ? null : onPressed,
+    semanticLabel: tooltip,
+    builder: (context, state) => _paint(context, state),
+  );
 
-class _RaftRecipeButtonState extends State<RaftRecipeButton> {
-  bool hovered = false, pressed = false;
-  bool get enabled => widget.onPressed != null && !widget.disabled;
-  @override
-  Widget build(BuildContext context) {
+  Widget _paint(BuildContext context, RaftInteractionState state) {
     final t = RaftTokens.of(context);
     final tokens = RaftRecipeTokens(t);
     final root = RaftButtonRecipe.resolve(
       theme: raftRecipeThemeOf(t),
-      variant: widget.variant,
-      size: widget.size,
+      variant: variant,
+      size: size,
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
-        if (hovered && enabled) RaftRecipeStates.hover,
-        if (pressed && enabled) RaftRecipeStates.active,
-        if (widget.disabled) RaftRecipeStates.disabled,
+        if (state.hovered && state.enabled) RaftRecipeStates.hover,
+        if (state.pressed && state.enabled) RaftRecipeStates.active,
+        if (state.focusVisible) RaftRecipeStates.focusVisible,
+        if (disabled) RaftRecipeStates.disabled,
       }),
       tokens: tokens,
     ).root;
     var decoration = root.decoration(tokens);
-    if (t.brutal && widget.brutalSurface != null) {
-      decoration = widget.brutalSurface!(t, hovered && enabled);
+    if (t.brutal && brutalSurface != null) {
+      decoration = brutalSurface!(t, state.hovered && state.enabled);
     }
     final base = root.textStyle(tokens);
-    final color = widget.foreground ?? base.color ?? t.ink;
-    final step = widget.textStep;
+    final color = foreground ?? base.color ?? t.ink;
+    final step = textStep;
     final text = base.copyWith(
       color: color,
       fontSize: step?.$1 ?? base.fontSize,
@@ -130,21 +130,19 @@ class _RaftRecipeButtonState extends State<RaftRecipeButton> {
       leadingDistribution: TextLeadingDistribution.even,
     );
     final svg = root.target("& svg:not([class*='size-'])");
-    final iconSize = widget.glyphSize ?? svg?.width ?? 16;
-    final gap = widget.gap ?? root.columnGap ?? 0;
+    final iconSize = glyphSize ?? svg?.width ?? 16;
+    final resolvedGap = gap ?? root.columnGap ?? 0;
     Widget content =
-        widget.child ??
+        child ??
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (widget.glyph != null)
-              RaftIcon(widget.glyph!, size: iconSize, color: color),
-            if (widget.glyph != null && widget.label != null)
-              SizedBox(width: gap),
-            if (widget.label != null)
+            if (glyph != null) RaftIcon(glyph!, size: iconSize, color: color),
+            if (glyph != null && label != null) SizedBox(width: resolvedGap),
+            if (label != null)
               Flexible(
                 child: Text(
-                  raftText(context, widget.label!),
+                  raftText(context, label!),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: text,
@@ -163,40 +161,25 @@ class _RaftRecipeButtonState extends State<RaftRecipeButton> {
     // With a fixed CSS height the flex item is centred in the content box;
     // symmetric vertical padding (even when it overflows, e.g. `h-7 py-2`)
     // therefore only matters horizontally.
-    final padding = widget.padding ?? root.padding;
+    final resolvedPadding = padding ?? root.padding;
     Widget box = Container(
       height: root.height,
-      width: widget.expand ? double.infinity : root.width,
+      width: expand ? double.infinity : root.width,
       padding: root.height == null
-          ? padding
-          : EdgeInsets.only(left: padding.left, right: padding.right),
+          ? resolvedPadding
+          : EdgeInsets.only(
+              left: resolvedPadding.left,
+              right: resolvedPadding.right,
+            ),
       decoration: decoration,
       // inline-flex: shrink-wraps its content unless `w-full`.
-      child: Center(widthFactor: widget.expand ? null : 1, child: content),
+      child: Center(widthFactor: expand ? null : 1, child: content),
     );
     box = Transform.translate(offset: translate, child: box);
     if (root.opacity != null && root.opacity! < 1) {
       box = Opacity(opacity: root.opacity!, child: box);
     }
-    Widget result = Semantics(
-      button: true,
-      enabled: enabled,
-      label: widget.tooltip,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = pressed = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: enabled ? (_) => setState(() => pressed = true) : null,
-          onTapCancel: () => setState(() => pressed = false),
-          onTapUp: (_) => setState(() => pressed = false),
-          onTap: enabled ? widget.onPressed : null,
-          child: box,
-        ),
-      ),
-    );
-    return result;
+    return box;
   }
 }
 
@@ -747,4 +730,3 @@ class RaftWarningBanner extends StatelessWidget {
     );
   }
 }
-

@@ -87,11 +87,12 @@ class RaftAgentAvatarPicker extends StatelessWidget {
                         ),
                       ),
                       RaftRecipeButton(
-                        label: raftText(context, 'Close'),
+                        tooltip: raftText(context, 'Close'),
                         glyphSize: 20,
                         glyph: RaftGlyph.x,
                         size: RaftButtonRecipeSize.iconMd,
                         variant: RaftButtonRecipeVariant.outline,
+                        disabled: busy,
                         onPressed: busy ? null : onClose,
                       ),
                     ],

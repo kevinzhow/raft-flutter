@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'raft_ui.dart';
+import 'previews.dart';
+
+@RaftPreviews('Agent avatar editor', size: Size(390, 650))
+Widget agentAvatarEditorPreview() => _AvatarPreview();
 
 /// Controlled avatar editor: public artwork, no API or credentials.
 Widget agentAvatarPickerPreview({

@@ -233,6 +233,13 @@ void main() {
       await choice(t, 'sun');
       await t.tap(find.text('Save'));
       await t.pump();
+      await t.tap(find.byType(RaftRecipeButton));
+      await t.pump();
+      expect(find.byType(AgentAvatarDialog), findsOneWidget);
+      expect(
+        t.widget<RaftRecipeButton>(find.byType(RaftRecipeButton)).disabled,
+        true,
+      );
       await t.tap(find.byType(RaftButton).last);
       await t.pump();
       expect(w.writes, hasLength(1));
@@ -282,6 +289,44 @@ void main() {
     (RaftFamily.elegant, false),
     (RaftFamily.elegant, true),
   ]) {
+    testWidgets(
+      'avatar close button supports keyboard without bypassing dirty guard $family/$dark',
+      (t) async {
+        await open(t, family: family, dark: dark);
+        expect(find.text('Close'), findsNothing);
+        final close = find.byType(RaftRecipeButton);
+        expect(t.getSize(close), const Size(32, 32));
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        await t.pumpAndSettle();
+        expect(find.byType(AgentAvatarDialog), findsNothing);
+        expect(w.writes, isEmpty);
+        await t.tap(find.text('Open'));
+        await t.pumpAndSettle();
+        await choice(t, 'star');
+        final focus = t.widget<FocusableActionDetector>(
+          find.descendant(
+            of: close,
+            matching: find.byType(FocusableActionDetector),
+          ),
+        );
+        focus.focusNode!.requestFocus();
+        await t.pump();
+        await t.sendKeyEvent(LogicalKeyboardKey.space);
+        await t.pumpAndSettle();
+        expect(find.byType(RaftAvatarDiscardConfirmation), findsOneWidget);
+        expect(w.writes, isEmpty);
+        await t.tap(find.text('Keep editing'));
+        await t.pumpAndSettle();
+        expect(
+          t
+              .widget<RaftAgentAvatarPicker>(find.byType(RaftAgentAvatarPicker))
+              .selectedKey,
+          'star',
+        );
+        expect(t.takeException(), isNull);
+      },
+    );
     testWidgets(
       'preset controls have real 40px targets and keyboard activation $family/$dark',
       (t) async {

@@ -1,4 +1,5 @@
 import 'package:raft_ui/agent_menu_previews.dart' as agent_menus;
+import 'package:raft_ui/agent_avatar_picker_previews.dart' as agent_avatars;
 import 'package:raft_ui/switch_previews.dart' as source_switches;
 import 'package:raft_ui/rich_surface_visual_previews.dart' as surface;
 import 'package:flutter/material.dart';
@@ -165,3 +166,7 @@ Widget appVisualCollapsedTableBorders() =>
 
 @RaftPreviews('Agent menu', size: Size(390, 360))
 Widget appAgentMenuPreview() => agent_menus.agentMenuPreview();
+
+@RaftPreviews('Agent avatar editor', size: Size(390, 650))
+Widget appAgentAvatarEditorPreview() =>
+    agent_avatars.agentAvatarEditorPreview();
