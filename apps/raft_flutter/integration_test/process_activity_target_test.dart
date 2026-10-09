@@ -640,7 +640,13 @@ void main() {
           );
           if (flow['flow'] == 'activity-channel-after-thread') {
             if (form == 'mobile' || flow['activation'] == 'double') {
-              await t.tap(find.byTooltip('Back').first);
+              if (form == 'desktop') {
+                // Canonical desktop routes have no mobile Back control. Deliver
+                // the platform pop event to the real mounted PopScope.
+                await t.binding.handlePopRoute();
+              } else {
+                await t.tap(find.byTooltip('Back').first);
+              }
               await until(
                 () => activity.evaluate().isNotEmpty,
                 'Activity after thread Back',

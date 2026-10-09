@@ -119,3 +119,28 @@ Additional themes, mobile-native and double gestures remain separate pending
 receipts. A follow-up detector labels the actual test name with its N24 gesture
 and checks all activation frames for an exposed channel list, in addition to the
 checkpoint and intermediate-URI checks.
+
+
+## First native canonical double-click pair
+
+`thread-double-v5/source-brutal-desktop` and
+`flutter-thread-double-v5-brutal-desktop` produce
+`pair-thread-double-v5-brutal-desktop.json`: **BEHAVIOR_PASS_WITH_LIMITS**.
+Source records 424 layout observations/79 compositor PNGs and Linux Flutter
+records 145 layout observations/14 raster PNGs. The canonical URI, independent
+parent/reply acceptance and expiry checkpoints match. The original single-click
+URI failures above remain failures.
+
+The exact derived fixture is
+`6daae115117e578c46d0f3f48bd11e1a86bbc6598483ebb3bfd623fa0ab2b7f2`;
+the original channel input remains unchanged. Native product SHA is
+`ab24c0990a3ff332445c822723e7585c011877655b5002c92c2ff9e6e16a2a6f`
+with committed canonical loading and focus-ownership dependencies. The paired
+receipt binds both providers to the same Source-input/runtime hashes. It proves
+this gesture on this Linux viewport, with the renderer and geometry limits
+already stated; it is not an Android or whole-N24 receipt.
+
+For the distinct subsequent-channel double gesture, desktop canonical routes
+have no narrow Back control. The native detector delivers a platform pop event
+to the real mounted PopScope; Source uses browser history Back. Neither receipt
+claims physical keyboard or hardware Back-button input.
