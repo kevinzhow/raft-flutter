@@ -94,7 +94,10 @@ class WorkspaceSettings extends StatelessWidget {
             'notifications',
             'Notifications',
             RaftGlyph.bell,
-            (_) => NotificationSettingsView(service: notifications!),
+            (_) => NotificationSettingsView(
+              service: notifications!,
+              controller: w,
+            ),
           ),
         if (w.server != null) ...[
           RaftSettingsDestination(

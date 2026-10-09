@@ -39,7 +39,8 @@ export 'src/form_controls.dart';
 export 'src/list_items.dart';
 export 'src/select_field.dart';
 export 'src/overlays/dialog.dart';
-export 'src/recipes/button_variants.g.dart' show RaftButtonRecipeVariant, RaftButtonRecipeSize;
+export 'src/recipes/button_variants.g.dart'
+    show RaftButtonRecipeVariant, RaftButtonRecipeSize;
 
 export 'src/icons.dart';
 export 'src/brand.dart';
@@ -106,3 +107,5 @@ export 'src/channel_members_view.dart';
 
 export 'src/channel_header.dart';
 export 'src/agent_avatar_picker.dart';
+
+export 'src/notification_settings_card.dart';
