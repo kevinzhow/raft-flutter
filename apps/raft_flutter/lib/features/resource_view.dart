@@ -43,9 +43,11 @@ class ResourceView extends StatefulWidget {
     this.searchMemory,
     this.restoreSearchState = true,
     this.channelId,
+    this.onTask,
   });
   final WorkspaceController controller;
   final String? channelId;
+  final void Function(Map<String, dynamic>, Future<void> Function())? onTask;
   final String section;
   final Future<void> Function(String, String?) onMessage;
   final VoidCallback? onBack;
@@ -3081,6 +3083,17 @@ class _ResourceViewState extends State<ResourceView> {
   }) async {
     final scope = sourceScope ?? authority;
     if (!accepts(scope)) return;
+    final knownParent = [
+      ...w.channels,
+      ...w.dms,
+    ].any((c) => c.id == row['channelId']);
+    if (widget.onTask != null && (row['isLegacy'] == true || knownParent)) {
+      final open = widget.onTask!;
+      open(row, () async {
+        if (accepts(scope)) await load();
+      });
+      return;
+    }
     final owner = TaskSurfaceController(
       parent: w,
       row: row,

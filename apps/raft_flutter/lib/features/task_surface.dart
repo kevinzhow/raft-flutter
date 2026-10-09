@@ -14,10 +14,12 @@ class SourceTaskSurface extends StatefulWidget {
     required this.owner,
     required this.onClose,
     this.onCleanupDelete,
+    this.onBack,
   });
   final TaskSurfaceController owner;
   final VoidCallback onClose;
   final VoidCallback? onCleanupDelete;
+  final VoidCallback? onBack;
   @override
   State<SourceTaskSurface> createState() => _SourceTaskSurfaceState();
 }
@@ -63,7 +65,8 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: o,
     builder: (context, _) {
-      if (o.error is RaftApiException &&
+      if (o.hydrated &&
+          o.error is RaftApiException &&
           (o.error as RaftApiException).status == 404) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && o.current) widget.onClose();
@@ -99,6 +102,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         error: o.error,
         historyError: o.historyError,
         onClose: widget.onClose,
+        onBack: widget.onBack,
         onRetry: o.refresh,
         onLoadAssignees: o.loadAssignees,
         onUpdate: o.update,
@@ -106,6 +110,16 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         formatTime: (value) => value == null
             ? raftText(context, 'Unknown')
             : formatter.shortDateTime(value),
+        unresolvedBody: o.hydrated || o.legacy
+            ? null
+            : o.discussion == null
+            ? RaftThreadResolutionBody(
+                loadingLabel: raftText(context, 'Loading...'),
+                errorTitle: o.error == null ? null : '${o.error}',
+                retryLabel: raftText(context, 'Retry'),
+                onRetry: o.start,
+              )
+            : RaftChatView(controller: o.discussion!, thread: true),
         discussionBuilder: o.discussion == null
             ? null
             : (head) => RaftChatView(

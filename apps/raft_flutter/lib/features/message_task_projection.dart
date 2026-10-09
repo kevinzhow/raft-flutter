@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/source_task_bucket.dart';
 import 'private_route_guard.dart';
 
 /// Accepted channel task references for one mounted chat authority. This is
@@ -54,9 +55,7 @@ class MessageTaskProjection extends ChangeNotifier {
 
   Future<void> load(String authority, int ticket, String channelId) async {
     try {
-      final result = await w.query(
-        '/tasks/channel/${Uri.encodeComponent(channelId)}',
-      );
+      final result = await readSourceTaskBucket(w, channelId);
       if (ended || !permitted || scope != authority || revision != ticket) {
         return;
       }

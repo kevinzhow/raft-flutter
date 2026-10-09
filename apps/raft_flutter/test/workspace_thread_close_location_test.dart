@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -69,6 +70,26 @@ void main() {
           focusedMessageId: 'unrelated-focus',
         );
         await tester.pump();
+        // Source MainLayout1330–1420 mounts the task overlay above the real
+        // side thread. Its backdrop covers that thread's Close control; first
+        // close the actual overlay and verify the underlying identity survives.
+        // The earlier one-header/covered-control FAIL is retained separately.
+        expect(
+          find.byKey(const Key('workspace-thread-header')),
+          findsOneWidget,
+        );
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+        final beforeTaskClose = Map<String, String>.from(
+          w.location.uri.queryParameters,
+        );
+        await tester.tap(find.byTooltip('Close task'));
+        await tester.pump();
+        expect(
+          w.location.uri.queryParameters,
+          {...beforeTaskClose}..remove('task'),
+        );
+        expect(w.threadIdentity?.parentMessageId, 'parent');
+        expect(find.byType(SourceTaskSurface), findsNothing);
         expect(find.byType(RaftThreadHeader), findsOneWidget);
         expect(w.threadIdentity?.parentMessageId, 'parent');
         final before = Map<String, String>.from(w.location.uri.queryParameters),

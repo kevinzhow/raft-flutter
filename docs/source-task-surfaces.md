@@ -102,3 +102,9 @@ History being mounted is not evidence that its HTTP request completed. Expand
 the toggle and wait for actual events or the explicit history error. Legacy
 mode has neither History nor a composer. Do not retain obsolete AlertDialog,
 Claim/Release/Discussion button assertions as Source requirements.
+
+Phase B's independent URI owner, known-parent cold hydration, history and scope
+fences are documented separately in
+[source-task-url-owner.md](source-task-url-owner.md). The phase-A evidence and
+historical limits above remain tied to their original implementation; the new
+report states which boundaries the later batch actually covers.

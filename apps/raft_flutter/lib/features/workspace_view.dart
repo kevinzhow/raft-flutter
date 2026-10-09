@@ -33,6 +33,7 @@ import 'message_selection.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'resource_view.dart';
+import 'workspace_task_host.dart';
 import 'page_layout.dart';
 import 'channel_settings.dart';
 import 'create_channel_dialog.dart';
@@ -122,6 +123,34 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   final mainSelection = ChatSelectionHandle(),
       threadSelection = ChatSelectionHandle();
   WorkspaceController get w => widget.controller;
+  TaskSurfaceSeed? taskSeed;
+  void openTaskSurface(
+    Map<String, dynamic> row,
+    Future<void> Function() reload,
+  ) {
+    final channelId = row['channelId'];
+    final itemId = row['isLegacy'] == true ? row['id'] : row['messageId'];
+    if (channelId is! String || itemId is! String || itemId.isEmpty) return;
+    taskSeed = TaskSurfaceSeed(
+      {...row},
+      taskSurfaceAuthority(w, channelId),
+      reload,
+    );
+    final legacy = row['isLegacy'] == true;
+    final next = w.location.withQuery({
+      'profile': null,
+      'legacyTask': legacy ? '$channelId:$itemId' : null,
+      'task': legacy ? null : '$channelId:$itemId',
+      if (legacy) 'thread': null,
+    });
+    w.navigation.navigateTask(
+      next,
+      kind: w.location.panelNavigationKindTo(next),
+    );
+    if (legacy) w.closeThread(navigate: false);
+    w.notifyListeners();
+  }
+
   String? lastAuthority, lastChannelId;
   Map<String, dynamic>? lastChannelAuthority;
   int channelAuthorityRevision = 0;
@@ -566,6 +595,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   void dismissPanel() {
+    if (w.location.task != null || w.location.legacyTask != null) {
+      w.navigation.back();
+      w.notifyListeners();
+      return;
+    }
     if (threadSelection.dismiss() || mainSelection.dismiss()) return;
     if (scaffold.currentState?.isDrawerOpen == true) {
       scaffold.currentState?.closeDrawer();
@@ -925,6 +959,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               ),
               controller: w,
               section: route,
+              onTask: openTaskSurface,
               onActivityWindowAccepted: route == 'activity'
                   ? (window) {
                       if (!identical(attentionOwner, activityUnread)) return;
@@ -1015,7 +1050,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           onWidthChanged: saveMasterPanel,
         );
       }
-      return CallbackShortcuts(
+      final workspace = CallbackShortcuts(
         bindings: {
           const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
               select('search'),
@@ -1291,6 +1326,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
         ),
       );
+      return WorkspaceTaskHost(controller: w, seed: taskSeed, child: workspace);
     },
   );
   final threadViewport = ChatViewportHandle();

@@ -14,6 +14,7 @@ import 'inline_badge_editor.dart';
 import 'localization.dart';
 import 'task.dart';
 import 'theme.dart';
+import 'thread_composition.dart';
 
 /// Mounted Source TaskModalBar/TaskModalHead/TaskProperties and the separate
 /// LegacyTaskPanel. API and discussion ownership belong to the scoped model.
@@ -40,6 +41,8 @@ class RaftTaskSurface extends StatefulWidget {
     this.historyError,
     this.discussionBuilder,
     this.onCleanupDelete,
+    this.onBack,
+    this.unresolvedBody,
   });
   final Map<String, dynamic> task;
   final List<Map<String, dynamic>> history, assignees;
@@ -48,6 +51,8 @@ class RaftTaskSurface extends StatefulWidget {
   final List<String> statusOptions;
   final Object? error, historyError;
   final VoidCallback onClose;
+  final VoidCallback? onBack;
+  final Widget? unresolvedBody;
   final Future<void> Function() onRetry, onLoadAssignees;
   final Future<void> Function(String, dynamic) onUpdate;
   final String Function(dynamic) formatTime;
@@ -82,7 +87,9 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     final t = RaftTokens.of(context), size = MediaQuery.sizeOf(context);
     final mobile = size.width < 768;
     final legacy = widget.legacy;
-    final body = legacy ? legacyBody(context) : modernBody(context);
+    final body =
+        widget.unresolvedBody ??
+        (legacy ? legacyBody(context) : modernBody(context));
     final panel = Material(
       key: ValueKey(legacy ? 'legacy-task-panel' : 'task-thread-modal'),
       color: t.panel,
@@ -159,6 +166,19 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   Widget header(BuildContext context, bool mobile) {
     final t = RaftTokens.of(context);
     final task = widget.task;
+    if (widget.unresolvedBody != null) {
+      return RaftThreadHeader(
+        presentation: mobile
+            ? RaftThreadPresentation.mobileModal
+            : RaftThreadPresentation.modal,
+        threadLabel: raftText(context, 'Thread'),
+        backLabel: raftText(context, 'Close task'),
+        closeLabel: raftText(context, 'Close task'),
+        jumpLabel: raftText(context, 'Jump to beginning'),
+        onBack: widget.onBack ?? widget.onClose,
+        onClose: widget.onClose,
+      );
+    }
     return Container(
       key: const ValueKey('task-modal-bar'),
       // TaskModalBar px-4 py-2 with 16+20 line boxes and a 1/2px border.
@@ -184,7 +204,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             RaftIconButton(
               glyph: RaftGlyph.arrowLeft,
               tooltip: raftText(context, 'Close task'),
-              onPressed: widget.onClose,
+              onPressed: widget.onBack ?? widget.onClose,
               visualSize: 28,
               glyphSize: 14,
             ),

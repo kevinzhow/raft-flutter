@@ -15,10 +15,13 @@ class TaskSurfaceController extends ChangeNotifier {
     required this.valid,
     this.onFailure,
     this.onMutationAccepted,
+    this.resolveTask,
   }) : task = {...row} {
     events = parent.client.events.listen((event) {
       final data = event.payload;
-      if (event.name == 'task:updated' &&
+      if (!legacy &&
+          hydrated &&
+          event.name == 'task:updated' &&
           data is Map &&
           (data['id'] == task['id'] ||
               data['taskId'] == task['id'] ||
@@ -31,6 +34,7 @@ class TaskSurfaceController extends ChangeNotifier {
   final bool Function() valid;
   final void Function(Object)? onFailure;
   final Future<void> Function()? onMutationAccepted;
+  final Future<Map<String, dynamic>?> Function()? resolveTask;
   Map<String, dynamic> task;
   List<Map<String, dynamic>> history = [], assignees = [];
   Object? error, historyError;
@@ -41,6 +45,7 @@ class TaskSurfaceController extends ChangeNotifier {
   final presentationOwner = Object();
   bool get current => !closed && valid();
   bool get legacy => task['isLegacy'] == true;
+  bool get hydrated => task['id'] is String;
   bool get joined => [...parent.channels, ...parent.dms].any(
     (c) =>
         c.id == task['channelId'] &&
@@ -97,6 +102,28 @@ class TaskSurfaceController extends ChangeNotifier {
   }
 
   Future<void> start() async {
+    if (resolveTask != null && !hydrated) {
+      // URL anchors are identity only. Do not invent a task number, title,
+      // status or author while the real parent-channel task bucket resolves.
+      openDiscussion();
+      try {
+        final accepted = await resolveTask!();
+        if (!current) return;
+        if (accepted == null) {
+          loading = historyLoading = false;
+          changed();
+          return;
+        }
+        task = {...accepted};
+      } catch (e) {
+        if (!current) return;
+        error = e;
+        loading = historyLoading = false;
+        onFailure?.call(e);
+        changed();
+        return;
+      }
+    }
     // LegacyTaskPanel is a read-only accepted DTO; it has no thread/history API.
     if (legacy) {
       loading = historyLoading = false;
@@ -110,7 +137,9 @@ class TaskSurfaceController extends ChangeNotifier {
   void openDiscussion() {
     if (!current ||
         discussion != null ||
+        legacy ||
         task['messageId'] is! String ||
+        '${task['messageId']}'.isEmpty ||
         !canViewParent) {
       return;
     }

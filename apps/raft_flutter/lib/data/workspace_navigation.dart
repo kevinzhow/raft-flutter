@@ -13,8 +13,10 @@ class WorkspaceNavigation {
   final List<RaftLocation> _entries = [];
   int _index = -1;
   int _revision = 0;
+  int _taskRevision = 0;
   RaftLocation get location => _location;
   int get revision => _revision;
+  int get taskRevision => _taskRevision;
   List<RaftLocation> get entries => List.unmodifiable(_entries);
   int get index => _index;
 
@@ -28,15 +30,38 @@ class WorkspaceNavigation {
       ..add(initial);
     _index = 0;
     ++_revision;
+    ++_taskRevision;
     return true;
   }
 
   int reserve() => ++_revision;
 
+  static bool taskOnlyTransition(RaftLocation from, RaftLocation to) =>
+      from.uri != to.uri &&
+      from.withQuery({'task': null, 'legacyTask': null}).uri ==
+          to.withQuery({'task': null, 'legacyTask': null}).uri;
+
+  /// Source rightPanelUrlSync331–389/475–535: task slots own history without
+  /// retiring an independently pending main window or ordinary side thread.
+  void navigateTask(
+    RaftLocation next, {
+    RaftNavigationKind kind = RaftNavigationKind.push,
+  }) {
+    final previous = location;
+    if (!taskOnlyTransition(previous, next)) {
+      navigate(next, kind: kind);
+      return;
+    }
+    final before = _revision;
+    navigate(next, kind: kind);
+    _revision = before;
+  }
+
   void navigate(
     RaftLocation next, {
     RaftNavigationKind kind = RaftNavigationKind.push,
   }) {
+    final previous = _location;
     if (next.uri.hasQuery && next.uri.query.isEmpty) {
       next = RaftLocation.parse(next.toString().replaceFirst('?', ''));
     }
@@ -57,6 +82,12 @@ class WorkspaceNavigation {
     }
     _location = next;
     ++_revision;
+    if (previous.query('task') != next.query('task') ||
+        previous.query('legacyTask') != next.query('legacyTask') ||
+        (next.query('task') == '1' &&
+            previous.query('thread') != next.query('thread'))) {
+      ++_taskRevision;
+    }
   }
 
   /// Replace Source Search's committed q without changing its content intent.
@@ -110,8 +141,10 @@ class WorkspaceNavigation {
           _entries[_index - 1].toString(),
           location.toString(),
         )) {
+      final previous = _location;
       _location = _entries[--_index];
-      ++_revision;
+      if (!taskOnlyTransition(previous, _location)) ++_revision;
+      ++_taskRevision;
     } else {
       // A task modal, profile and thread own independent slots. Closing one
       // must not erase the others (rightPanelUrlSyncContract 385–511).
@@ -131,15 +164,21 @@ class WorkspaceNavigation {
           : location.thread != null
           ? location.withQuery({'thread': null})
           : location.tabHome();
-      navigate(fallback, kind: RaftNavigationKind.replace);
+      if (location.task != null || location.legacyTask != null) {
+        navigateTask(fallback, kind: RaftNavigationKind.replace);
+      } else {
+        navigate(fallback, kind: RaftNavigationKind.replace);
+      }
     }
     return location;
   }
 
   bool forward() {
     if (_index + 1 >= _entries.length) return false;
+    final previous = _location;
     _location = _entries[++_index];
-    ++_revision;
+    if (!taskOnlyTransition(previous, _location)) ++_revision;
+    ++_taskRevision;
     return true;
   }
 
