@@ -208,10 +208,15 @@ class RaftMessageBody extends StatelessWidget {
     this.referenceAppearance,
     this.knownTaskNumber,
     this.lineHeight,
+    this.enableProseSelection = true,
   });
 
   /// Optional prose line height (px) for non-message surfaces.
   final double? lineHeight;
+
+  /// Interactive containers such as an anchored comment button own taps.
+  /// Ordinary message/document bodies retain their selection region.
+  final bool enableProseSelection;
   final String content;
 
   /// Chip/text treatment for an identity-backed reference href (Web
@@ -245,64 +250,65 @@ class RaftMessageBody extends StatelessWidget {
     final markdown = StringBuffer();
     void flush() {
       if (markdown.isEmpty) return;
-      blocks.add(
-        SelectionArea(
-          // Web: right-click / long-press on a message body opens the
-          // MessageItem context menu, never a separate text-selection menu.
-          contextMenuBuilder: (_, _) => const SizedBox.shrink(),
-          child: MarkdownBody(
-            builders: {
-              'a': _MessageLinkBuilder(onLink, referenceAppearance),
-              'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
-            },
-            inlineSyntaxes: [_ReferenceSentinelSyntax()],
-            paddingBuilders: MessageContentRecipe(
-              t,
-              fontSize: fontSize,
-              lineHeight: lineHeight,
-              document: documentMode,
-              mountedMessage: mountedMessage,
-              foreground: foregroundColor,
-            ).headingPadding(markdown.toString()),
-            data: markdown.toString(),
-            softLineBreak: true,
-            onTapLink: (_, href, _) {
-              if (href != null) onLink?.call(href);
-            },
-            bulletBuilder: (parameters) => RaftMarkdownListMarker(
-              orderedIndex: parameters.style == BulletStyle.orderedList
-                  ? parameters.index
-                  : null,
-              indent: documentMode
-                  ? MessageContentPrimitive.documentListIndent
-                  : MessageContentPrimitive.compactListIndent,
-              style: MessageContentRecipe(
-                t,
-                fontSize: fontSize,
-                lineHeight: lineHeight,
-                document: documentMode,
-                mountedMessage: mountedMessage,
-                foreground: foregroundColor,
-              ).body,
-            ),
-            styleSheet: MessageContentRecipe(
-              t,
-              fontSize: fontSize,
-              lineHeight: lineHeight,
-              document: documentMode,
-              mountedMessage: mountedMessage,
-              foreground: foregroundColor,
-            ).stylesheet(context),
-          ),
+      final body = MarkdownBody(
+        builders: {
+          'a': _MessageLinkBuilder(onLink, referenceAppearance),
+          'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
+        },
+        inlineSyntaxes: [_ReferenceSentinelSyntax()],
+        paddingBuilders: MessageContentRecipe(
+          t,
+          fontSize: fontSize,
+          lineHeight: lineHeight,
+          document: documentMode,
+          mountedMessage: mountedMessage,
+          foreground: foregroundColor,
+        ).headingPadding(markdown.toString()),
+        data: markdown.toString(),
+        softLineBreak: true,
+        onTapLink: (_, href, _) {
+          if (href != null) onLink?.call(href);
+        },
+        bulletBuilder: (parameters) => RaftMarkdownListMarker(
+          orderedIndex: parameters.style == BulletStyle.orderedList
+              ? parameters.index
+              : null,
+          indent: documentMode
+              ? MessageContentPrimitive.documentListIndent
+              : MessageContentPrimitive.compactListIndent,
+          style: MessageContentRecipe(
+            t,
+            fontSize: fontSize,
+            lineHeight: lineHeight,
+            document: documentMode,
+            mountedMessage: mountedMessage,
+            foreground: foregroundColor,
+          ).body,
         ),
+        styleSheet: MessageContentRecipe(
+          t,
+          fontSize: fontSize,
+          lineHeight: lineHeight,
+          document: documentMode,
+          mountedMessage: mountedMessage,
+          foreground: foregroundColor,
+        ).stylesheet(context),
+      );
+      blocks.add(
+        enableProseSelection
+            ? SelectionArea(
+                // Message context menus belong to the message host.
+                contextMenuBuilder: (_, _) => const SizedBox.shrink(),
+                child: body,
+              )
+            : body,
       );
       markdown.clear();
     }
 
     for (var i = 0; i < lines.length; i++) {
-      final start = RegExp(
-        r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$',
-      ).firstMatch(lines[i]);
+      final start = RegExp(r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$')
+          .firstMatch(lines[i]);
       if (start == null) {
         markdown.writeln(lines[i]);
         continue;
@@ -310,9 +316,8 @@ class RaftMessageBody extends StatelessWidget {
       final fence = start[1]!;
       var end = i + 1;
       while (end < lines.length &&
-          !RegExp(
-            '^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$',
-          ).hasMatch(lines[end])) {
+          !RegExp('^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$')
+              .hasMatch(lines[end])) {
         end++;
       }
       if (end == lines.length) {
