@@ -150,12 +150,26 @@ Future<void> mobileHome(WidgetTester tester) async {
     final homeTab = find.byKey(const Key('mobile-tab-home'));
     final settingsBack = find.byKey(const Key('mobile-settings-back'));
     final detailBack = find.byKey(const Key('mobile-detail-back'));
+    final resolutionBack = find.descendant(
+      of: find.byType(RaftChannelResolutionBody),
+      matching: find.byTooltip('Back'),
+    );
+    // Actual metadata resolution can still be pending after settled frames.
+    // Wait for its real unavailable Back action, rather than clicking a
+    // retained conversation header that Source deliberately does not show.
+    await until(tester, () => home.evaluate().isNotEmpty ||
+        homeTab.evaluate().isNotEmpty || settingsBack.evaluate().isNotEmpty ||
+        detailBack.evaluate().isNotEmpty || resolutionBack.evaluate().isNotEmpty ||
+        find.byType(RaftBackButton).evaluate().isNotEmpty);
+    if (home.evaluate().isNotEmpty) break;
     final back = homeTab.evaluate().isNotEmpty
         ? homeTab
         : settingsBack.evaluate().isNotEmpty
         ? settingsBack
         : detailBack.evaluate().isNotEmpty
         ? detailBack
+        : resolutionBack.evaluate().isNotEmpty
+        ? resolutionBack
         : find.byType(RaftBackButton).first;
     expect(
       back,

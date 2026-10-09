@@ -2497,12 +2497,13 @@ class WorkspaceController extends ChangeNotifier {
       next ??= RaftChannel(
         Map<String, dynamic>.from(await client.get('/channels/$channelId')),
       );
-    } catch (e) {
-      // UI callbacks may not await navigation. A missing/denied metadata
-      // response belongs to this route, never to the global async error zone.
+    } catch (_) {
+      // Source ChannelById/ensureChannel resolves failed metadata to its
+      // unavailable body. UI callbacks may not await this request; neither a
+      // global async exception nor a retained conversation owns the failure.
       if (owned()) {
         _missingConversationChannelId = channelId;
-        setError('$e');
+        notifyListeners();
       }
       return;
     }

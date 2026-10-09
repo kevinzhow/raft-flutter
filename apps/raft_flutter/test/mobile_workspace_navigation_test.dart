@@ -353,6 +353,21 @@ void main() {
           expect(w.missingConversationChannelId, 'gone');
           expect(find.text('LOADING CHANNEL'), findsNothing);
           expect(find.text('SELECT A CHANNEL'), findsWidgets);
+          expect(w.error, isNull);
+          // The unavailable Source body owns its real Back control; the old
+          // conversation header is intentionally absent on this route.
+          await tester.tap(
+            find.descendant(
+              of: find.byType(RaftChannelResolutionBody),
+              matching: find.byTooltip('Back'),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(
+            find.byKey(const Key('workspace-mobile-home')),
+            findsOneWidget,
+          );
+          expect(find.byType(RaftComposer), findsNothing);
         },
       );
     }
