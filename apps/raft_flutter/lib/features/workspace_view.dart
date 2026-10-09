@@ -11,6 +11,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 import '../data/source_activity_unread_store.dart';
+import '../data/source_mobile_app_badge.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
@@ -215,6 +216,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
+  late SourceMobileAppBadge mobileAppBadge;
+  void syncMobileAppBadge() =>
+      unawaited(mobileAppBadge.bind(w.client.origin, w.client.user?.id));
+
   late SourceActivityUnreadStore activityUnread;
   void activityUnreadChanged() {
     if (!mounted) return;
@@ -277,6 +282,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   @override
   void initState() {
     super.initState();
+    mobileAppBadge = SourceMobileAppBadge()..addListener(chatSelectionChanged);
+    w.addListener(syncMobileAppBadge);
+    syncMobileAppBadge();
     activityUnread = SourceActivityUnreadStore(w)
       ..addListener(activityUnreadChanged);
     serverUnread = SourceServerUnreadStore(w)..addListener(serverUnreadChanged);
@@ -410,6 +418,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void didUpdateWidget(covariant WorkspaceView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, w)) {
+      oldWidget.controller.removeListener(syncMobileAppBadge);
+      w.addListener(syncMobileAppBadge);
+      syncMobileAppBadge();
       activityUnread.removeListener(activityUnreadChanged);
       activityUnread.dispose();
       activityUnread = SourceActivityUnreadStore(w)
@@ -522,6 +533,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   @override
   void dispose() {
+    w.removeListener(syncMobileAppBadge);
+    mobileAppBadge.removeListener(chatSelectionChanged);
+    mobileAppBadge.dispose();
     activityUnread.removeListener(activityUnreadChanged);
     activityUnread.dispose();
     w.removeListener(syncServerMenu);
@@ -1793,6 +1807,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   ];
 
   Widget workspaceRail() {
+    final mobileAppScope = mobileAppBadge.key;
     return RaftWorkspaceRail(
       destinations: railDestinations,
       selected: wide
@@ -1816,6 +1831,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             key: const Key('rail-help'),
             label: tr('Help'),
             heading: tr('Help & resources'),
+            attention: mobileAppBadge.hasAttention,
             entries: [
               RaftMenuEntry(
                 label: tr('Raft Documentation'),
@@ -1826,7 +1842,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               RaftMenuEntry(
                 label: tr('Mobile App'),
                 glyph: RaftGlyph.smartphone,
-                onPressed: () => openHelpSettings('about'),
+                onPressed: () {
+                  if (mobileAppBadge.markSeen(mobileAppScope)) {
+                    openHelpSettings('about');
+                  }
+                },
               ),
               RaftMenuEntry(
                 label: tr('Feedback'),

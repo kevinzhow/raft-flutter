@@ -117,7 +117,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
             ),
             child: Padding(
               padding: recipe.descriptionInset,
-              child: Text(emptyLabel, style: recipe.description),
+              child: RaftCssText(emptyLabel, style: recipe.description),
             ),
           ),
         );
@@ -137,7 +137,15 @@ class RaftChatSidebarGroup extends StatelessWidget {
           actions: actions,
           attention: attention,
         ),
-        if (expanded) ...[...children, if (empty != null) empty],
+        if (expanded) ...[
+          ...children,
+          if (empty != null)
+            // SidebarDndContainer: an empty drop target still owns min-h-7.
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 28),
+              child: empty,
+            ),
+        ],
       ],
     );
   }

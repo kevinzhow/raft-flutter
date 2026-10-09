@@ -4,6 +4,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'list_items.dart';
 import 'recipe_surface.dart';
+import 'rail_attention.dart';
 import 'recipes/app_rail.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'theme.dart';
@@ -100,11 +101,12 @@ class RaftWorkspaceRailAction extends StatelessWidget {
     this.depressed = false,
     this.focusNode,
     this.showTooltip = true,
+    this.attention = false,
   });
   final String label;
   final RaftGlyph glyph;
   final VoidCallback? onPressed;
-  final bool selected, depressed, showTooltip;
+  final bool selected, depressed, showTooltip, attention;
   final FocusNode? focusNode;
   @override
   Widget build(BuildContext context) {
@@ -146,6 +148,12 @@ class RaftWorkspaceRailAction extends StatelessWidget {
                 slot.classes,
                 slot.tokens,
               );
+        final glyphSize = style.target('& svg')?.width ?? RaftMetrics.railGlyph;
+        Widget glyphWidget() => RaftIcon(
+          glyph,
+          size: glyphSize,
+          color: style.foreground(t.recipeTokens, inherited: t.strong),
+        );
         Widget box = RaftRecipeBox(
           style: style,
           tokens: t.recipeTokens,
@@ -153,10 +161,21 @@ class RaftWorkspaceRailAction extends StatelessWidget {
           height: size,
           padding: EdgeInsets.zero,
           child: Center(
-            child: RaftIcon(
-              glyph,
-              size: RaftMetrics.railGlyph,
-              color: style.foreground(t.recipeTokens, inherited: t.strong),
+            child: SizedBox.square(
+              dimension: glyphSize,
+              child: Stack(
+                clipBehavior: Clip.none,
+                fit: StackFit.expand,
+                children: [
+                  glyphWidget(),
+                  if (attention)
+                    RaftRailAttention(
+                      // The Source mask supplies currentColor through its
+                      // descendant; an explicit base color would defeat it.
+                      child: RaftIcon(glyph, size: glyphSize),
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -187,7 +206,9 @@ class RaftWorkspaceHelpMenu extends StatefulWidget {
     required this.heading,
     required this.entries,
     this.controller,
+    this.attention = false,
   });
+  final bool attention;
   final String label, heading;
   final List<RaftMenuEntry> entries;
   final RaftMenuController? controller;
@@ -238,6 +259,7 @@ class _RaftWorkspaceHelpMenuState extends State<RaftWorkspaceHelpMenu> {
         focusNode: focus,
         showTooltip: false,
         selected: controller.isOpen,
+        attention: widget.attention,
       ),
     );
   }
