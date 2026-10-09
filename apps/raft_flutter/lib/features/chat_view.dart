@@ -555,6 +555,11 @@ class _RaftChatViewState extends State<RaftChatView> {
     }
   }
 
+  /// Web MessageInput rows above the composer card: the error banner, then
+  /// the pending-mention strip.
+  Widget? composerAccessory() =>
+      raftComposerAccessory(w, thread: widget.thread);
+
   Future<void> attach({bool imagesOnly = false}) async {
     final scope = w.draftScope(thread: widget.thread),
         generation = w.ledger.generation;
@@ -565,18 +570,20 @@ class _RaftChatViewState extends State<RaftChatView> {
           scope != w.draftScope(thread: widget.thread)) {
         return;
       }
-      if (files.length + w.uploads(thread: widget.thread).length > 10) {
-        throw const RaftApiException('Attach up to 10 files per message.');
-      }
+      final picked = <({String name, Uint8List bytes})>[];
       for (final file in files) {
-        final bytes = await file.readAsBytes();
+        picked.add((name: file.name, bytes: await file.readAsBytes()));
         if (!mounted ||
             generation != w.ledger.generation ||
             scope != w.draftScope(thread: widget.thread)) {
           return;
         }
-        await w.attachUpload(file.name, bytes, thread: widget.thread);
       }
+      await w.attachSelection(
+        picked,
+        thread: widget.thread,
+        text: (key, args) => raftFormat(context, key, args),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -710,7 +717,7 @@ class _RaftChatViewState extends State<RaftChatView> {
                   Builder(
                     builder: (c) => RaftMessageThreadGlyph(
                       size: 14,
-                      color: IconTheme.of(c).color,
+                      color: DefaultTextStyle.of(c).style.color,
                     ),
                   ),
                 ),
@@ -1371,6 +1378,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       body: MessagePresentation(
         controller: w,
         message: m,
+        taskByNumber: taskProjection.taskByNumber,
         onExternalLink: link,
         directoryReferences: referenceDirectory.references,
         fontSize: PersonalPresentationScope.bodyFontSize(
@@ -1784,9 +1792,7 @@ class _RaftChatViewState extends State<RaftChatView> {
           )
         else
           RaftComposer(
-            accessoryRow: w.pendingMentionsFor(thread: widget.thread).isEmpty
-                ? null
-                : PendingMentionActions(controller: w, thread: widget.thread),
+            accessoryRow: composerAccessory(),
             autofocus:
                 widget.thread &&
                 RaftDensityScope.of(context) == RaftDensity.desktop,

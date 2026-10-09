@@ -4,6 +4,7 @@ import 'components.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
@@ -401,4 +402,49 @@ class RaftPendingMentionSlot extends StatelessWidget {
       Padding(padding: const EdgeInsets.only(bottom: 8), child: strip),
     ],
   );
+}
+
+/// Web MessageInput `<Banner intent="warning" density="sm">` above the
+/// composer (attachment-limit and send errors). raft-ui banner recipe; the
+/// `group-data-[size=sm]` description is `text-xs leading-4`.
+class RaftComposerNotice extends StatelessWidget {
+  const RaftComposerNotice({super.key, required this.message});
+  final String message;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final resolver = RaftRecipeTokens(t);
+    final s = RaftBannerRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      status: RaftBannerRecipeStatus.warning,
+      size: RaftBannerRecipeSize.sm,
+      tokens: resolver,
+    );
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        padding: s.root.padding,
+        decoration: s.root.decoration(resolver),
+        child: Text(
+          message,
+          style: s.description
+              .textStyle(resolver)
+              .copyWith(
+                fontFamily: t.headingFont,
+                fontSize: 12,
+                height: 16 / 12,
+                leadingDistribution: TextLeadingDistribution.even,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+/// MessageInput `flex-col gap-2` between stacked composer notices.
+class RaftComposerGap extends StatelessWidget {
+  const RaftComposerGap({super.key});
+  @override
+  Widget build(BuildContext context) => const SizedBox(height: 8);
 }

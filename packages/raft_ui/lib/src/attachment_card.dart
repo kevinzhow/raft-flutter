@@ -24,8 +24,21 @@ class RaftAttachmentCard extends StatelessWidget {
     this.exportMode = false,
     this.error,
     this.onRetry,
+    this.summary,
+    this.metaLabel,
+    this.previewAffordance = false,
   });
   final String filename, mimeType;
+
+  /// Web AttachmentChip summary line (e.g. "Document preview").
+  final String? summary;
+
+  /// Web `AttachmentMetaText` label (mime type, "HTML preview", …); when set,
+  /// the meta row reads `label · size` and ends with the decorative
+  /// affordance glyph (Eye for previews, Download otherwise) instead of the
+  /// download button.
+  final String? metaLabel;
+  final bool previewAffordance;
   final int? sizeBytes;
   final double? imageWidth, imageHeight;
   final Size? imageExtent;
@@ -45,7 +58,9 @@ class RaftAttachmentCard extends StatelessWidget {
     final t = RaftTokens.of(context);
     final recipe = RaftAttachmentRecipe(t);
     final component = AttachmentComponentRecipe(t);
-    final imageCard = mimeType.toLowerCase().split(';').first.trim().startsWith('image/') && mimeType.toLowerCase().split(';').first.trim() != 'image/svg+xml';
+    final imageCard =
+        mimeType.toLowerCase().split(';').first.trim().startsWith('image/') &&
+        mimeType.toLowerCase().split(';').first.trim() != 'image/svg+xml';
     final extension = filename.split('.').last.toUpperCase();
     final badge = component.semantics.badgeBackground(extension);
     Widget title() => Row(
@@ -88,19 +103,55 @@ class RaftAttachmentCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             title(),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    sizeBytes == null ? '' : formatSize(sizeBytes!),
-                    style: component.metadata,
-                    maxLines: 1,
+            if (metaLabel != null && summary != null)
+              // `mt-0.5 text-[10px] font-medium`, brutal `text-black/70`.
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  summary!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: component.metadata.copyWith(
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w500,
+                    color: t.brutal
+                        ? Colors.black.withValues(alpha: .7)
+                        : t.colors['foreground-muted'],
                   ),
                 ),
-                if (onDownload == null && onShare == null)
-                  RaftIcon(RaftGlyph.eye, size: 12, color: component.actionForeground),
-              ],
-            ),
+              ),
+            if (metaLabel != null) const Spacer(),
+            if (metaLabel != null)
+              _WebMeta(
+                label: metaLabel!,
+                size: sizeBytes == null || sizeBytes! <= 0
+                    ? null
+                    : formatSize(sizeBytes!),
+                style: component.metadata.copyWith(height: 20 / 14),
+                separator: t.brutal
+                    ? Colors.black.withValues(alpha: .35)
+                    : t.colors['foreground-placeholder']!,
+                glyph: previewAffordance ? RaftGlyph.eye : RaftGlyph.download,
+                glyphColor: component.actionForeground,
+              )
+            else
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      sizeBytes == null ? '' : formatSize(sizeBytes!),
+                      style: component.metadata,
+                      maxLines: 1,
+                    ),
+                  ),
+                  if (onDownload == null && onShare == null)
+                    RaftIcon(
+                      RaftGlyph.eye,
+                      size: 12,
+                      color: component.actionForeground,
+                    ),
+                ],
+              ),
           ],
         ),
       ),
@@ -108,14 +159,16 @@ class RaftAttachmentCard extends StatelessWidget {
     if (imageCard)
       return LayoutBuilder(
         builder: (context, constraints) {
-          final size = imageExtent ?? component.imageSize(
-            viewportWidth: MediaQuery.sizeOf(context).width,
-            availableWidth: constraints.maxWidth.isFinite
-                ? constraints.maxWidth
-                : MediaQuery.sizeOf(context).width,
-            width: imageWidth,
-            height: imageHeight,
-          );
+          final size =
+              imageExtent ??
+              component.imageSize(
+                viewportWidth: MediaQuery.sizeOf(context).width,
+                availableWidth: constraints.maxWidth.isFinite
+                    ? constraints.maxWidth
+                    : MediaQuery.sizeOf(context).width,
+                width: imageWidth,
+                height: imageHeight,
+              );
           return SizedBox(
             width: size.width,
             height: size.height,
@@ -238,7 +291,7 @@ class RaftAttachmentCard extends StatelessWidget {
                             minimumTargetSize: 48,
                             glyphSize: 12,
                           ),
-                        if (onDownload != null)
+                        if (onDownload != null && metaLabel == null)
                           RaftIconButton(
                             glyph: RaftGlyph.download,
                             tooltip:
@@ -316,5 +369,50 @@ class _AttachmentSurfaceState extends State<_AttachmentSurface> {
         child: widget.child,
       ),
     ),
+  );
+}
+
+/// `mt-auto flex items-center justify-between gap-1.5 text-[10px]`:
+/// `label · size` (separator `text-black/35`) and the `size-3` decorative
+/// affordance holding a 10px glyph.
+class _WebMeta extends StatelessWidget {
+  const _WebMeta({
+    required this.label,
+    required this.size,
+    required this.style,
+    required this.separator,
+    required this.glyph,
+    required this.glyphColor,
+  });
+  final String label;
+  final String? size;
+  final TextStyle style;
+  final Color separator, glyphColor;
+  final RaftGlyph glyph;
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      // The label is `flex-1 truncate`: it takes the free width, so the
+      // separator and size sit just before the affordance.
+      Expanded(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        ),
+      ),
+      if (size != null) ...[
+        const SizedBox(width: 6),
+        Text('·', style: style.copyWith(color: separator)),
+        const SizedBox(width: 6),
+        Text(size!, maxLines: 1, style: style),
+      ],
+      const SizedBox(width: 6),
+      SizedBox.square(
+        dimension: 12,
+        child: Center(child: RaftIcon(glyph, size: 10, color: glyphColor)),
+      ),
+    ],
   );
 }

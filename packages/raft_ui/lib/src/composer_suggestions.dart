@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 /// A suggestion is supplied by the application after current server/channel
 /// authority checks. The pure composer does not fetch directories.
 class RaftComposerSuggestion {
@@ -9,9 +11,16 @@ class RaftComposerSuggestion {
     this.detail,
     this.inChannel = true,
     this.referenceText,
+    this.avatar,
+    this.mutedAvatar,
   });
   final String type, id, name;
   final String? title, detail, referenceText;
+
+  /// Web MentionCandidateAvatar (`AvatarSlot context="compact-list"`),
+  /// supplied by the authority-checked adapter; [mutedAvatar] is the
+  /// not-in-channel treatment (`!border-black/40 opacity-60`).
+  final Widget? avatar, mutedAvatar;
   final bool inChannel;
   bool get isMention => type == 'user' || type == 'agent';
   String get insertion =>

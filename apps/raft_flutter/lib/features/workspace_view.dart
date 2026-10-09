@@ -856,43 +856,52 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                 'search',
                                 'members',
                               ].contains(w.section))
-                            RaftPageHeader(
-                              title: w.section == 'home'
-                                  ? (w.channel?.name ?? title)
-                                  : title,
-                              height: raftPageHeaderHeight(context),
-                              icon: RaftIcon(sectionGlyph(w.section)),
-                              subtitle: w.section == 'chat'
-                                  ? w.channel?.string('description')
-                                  : null,
-                              actions: [
-                                Tooltip(
-                                  message: w.connected
-                                      ? tr('Connected')
-                                      : tr('Reconnecting'),
-                                  child: Icon(
-                                    Icons.circle,
-                                    size: 8,
-                                    color: w.connected
-                                        ? t.colors['success']
-                                        : t.muted,
+                            w.section == 'chat' &&
+                                    w.channel != null &&
+                                    [
+                                      'channel',
+                                      'private',
+                                      'joint',
+                                    ].contains(w.channel!.type)
+                                ? channelHeader()
+                                : RaftPageHeader(
+                                    title: w.section == 'home'
+                                        ? (w.channel?.name ?? title)
+                                        : title,
+                                    height: raftPageHeaderHeight(context),
+                                    icon: RaftIcon(sectionGlyph(w.section)),
+                                    subtitle: w.section == 'chat'
+                                        ? w.channel?.string('description')
+                                        : null,
+                                    actions: [
+                                      Tooltip(
+                                        message: w.connected
+                                            ? tr('Connected')
+                                            : tr('Reconnecting'),
+                                        child: Icon(
+                                          Icons.circle,
+                                          size: 8,
+                                          color: w.connected
+                                              ? t.colors['success']
+                                              : t.muted,
+                                        ),
+                                      ),
+                                      if (w.section == 'chat' &&
+                                          w.channel != null)
+                                        RaftIconButton(
+                                          tooltip: 'Channel settings',
+                                          onPressed: () => channelSettings(),
+                                          glyph: RaftGlyph.slidersHorizontal,
+                                        ),
+                                      RaftIconButton(
+                                        tooltip: 'Refresh',
+                                        onPressed: () => w.channel == null
+                                            ? w.bootstrap()
+                                            : w.selectChannel(w.channel!),
+                                        glyph: RaftGlyph.refreshCw,
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                if (w.section == 'chat' && w.channel != null)
-                                  RaftIconButton(
-                                    tooltip: 'Channel settings',
-                                    onPressed: () => channelSettings(),
-                                    glyph: RaftGlyph.slidersHorizontal,
-                                  ),
-                                RaftIconButton(
-                                  tooltip: 'Refresh',
-                                  onPressed: () => w.channel == null
-                                      ? w.bootstrap()
-                                      : w.selectChannel(w.channel!),
-                                  glyph: RaftGlyph.refreshCw,
-                                ),
-                              ],
-                            ),
                           if (w.section == 'chat' &&
                               w.channel != null &&
                               !w.channel!.joined &&
@@ -1394,8 +1403,28 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
+  Widget channelHeader({bool mobile = false}) => RaftChannelHeader(
+    key: Key(
+      mobile ? 'workspace-mobile-detail-header' : 'workspace-channel-header',
+    ),
+    name: w.channel!.name,
+    description: w.channel!.description,
+    kind: w.channel!.type,
+    onBack: mobile ? dismissPanel : null,
+    backKey: mobile ? const Key('mobile-detail-back') : null,
+    backLabel: mainSelection.active ? tr('Exit selection') : tr('Back'),
+    onSearch: () => select('search'),
+    onSettings: channelSettings,
+    searchLabel: tr('Search this channel'),
+    settingsLabel: tr('Channel settings'),
+  );
+
   Widget mobilePageHeader(String title, bool thread) => thread
       ? sourceThreadHeader(mobile: true)
+      : w.section == 'chat' &&
+            w.channel != null &&
+            ['channel', 'private', 'joint'].contains(w.channel!.type)
+      ? channelHeader(mobile: true)
       : RaftPageHeader(
           key: const Key('workspace-mobile-detail-header'),
           title: thread ? tr('Thread') : title,

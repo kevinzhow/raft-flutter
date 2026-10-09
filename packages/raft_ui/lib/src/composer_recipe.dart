@@ -4,6 +4,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart';
 
 /// MessageInput normal/compact host, distinct from the generic RUI Composer.
 enum RaftComposerVariant { normal, compact }
@@ -103,7 +104,8 @@ class RaftComposerRecipe {
   // composer-suggestion.recipe.ts / index.mjs13809–13910.
   double get suggestionMaximum => tokens.brutal ? 192 : 204;
   double get suggestionBottomGap => tokens.brutal ? 8 : 4;
-  EdgeInsets get suggestionInset => EdgeInsets.all(tokens.brutal ? 0 : 4);
+  // Brutal `border-2` sits inside the box: content starts inside it.
+  EdgeInsets get suggestionInset => EdgeInsets.all(tokens.brutal ? 2 : 4);
   BoxDecoration get suggestionDecoration => BoxDecoration(
     color: tokens.brutal ? Colors.white : tokens.popover,
     border: tokens.brutal ? Border.all(color: Colors.black, width: 2) : null,
@@ -156,14 +158,40 @@ class RaftComposerRecipe {
         ? tokens.ink
         : tokens.muted,
   ).copyWith(letterSpacing: tokens.brutal ? 0 : -.065);
-  TextStyle get suggestionMeta => RaftTypography.body(
-    tokens,
-    size: 12,
-    line: 16,
+
+  /// `ComposerSuggestionIcon variant="auxiliary"`: brutal `text-black/40`.
+  Color get suggestionAuxiliary => tokens.brutal
+      ? RaftPrimitiveColors.black.withValues(alpha: .4)
+      : tokens.colors['foreground-placeholder']!;
+
+  /// `ComposerSuggestionMeta variant="code"`: `text-xs font-mono`
+  /// (brutal `text-black/40`), bold with the highlighted option.
+  TextStyle suggestionCode({bool highlighted = false}) => TextStyle(
+    fontFamily: tokens.monoFont,
+    fontSize: 12,
+    height: 16 / 12,
+    fontWeight: highlighted ? FontWeight.w700 : FontWeight.w500,
     color: tokens.brutal
-        ? Colors.black.withValues(alpha: .5)
+        ? RaftPrimitiveColors.black.withValues(alpha: .4)
         : tokens.colors['foreground-placeholder'],
   );
+
+  TextStyle get suggestionMeta => suggestionMetaFor();
+
+  /// Meta sets no weight: it inherits the option's `font-medium`, or
+  /// `data-[highlighted=true]:font-bold` (brutal).
+  TextStyle suggestionMetaFor({bool highlighted = false}) =>
+      RaftTypography.body(
+        tokens,
+        size: 12,
+        line: 16,
+        weight: tokens.brutal && highlighted
+            ? FontWeight.w700
+            : FontWeight.w500,
+        color: tokens.brutal
+            ? Colors.black.withValues(alpha: .5)
+            : tokens.colors['foreground-placeholder'],
+      );
 }
 
 /// ComposerIconButton uses Button's interaction machinery but its own surface.

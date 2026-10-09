@@ -102,6 +102,57 @@ void main() {
     );
   }
   testWidgets(
+    'channel name keeps intrinsic basis and description receives remaining width',
+    (t) async {
+      t.view.physicalSize = const Size(390, 844);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.resetPhysicalSize);
+      addTearDown(t.view.resetDevicePixelRatio);
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.brutal),
+          home: Scaffold(
+            body: Column(
+              children: [
+                const Spacer(),
+                RaftComposer(
+                  suggestions: const [
+                    RaftComposerSuggestion(
+                      type: 'channel',
+                      id: 'design',
+                      name: 'design',
+                      detail: 'Product and UI decisions',
+                    ),
+                  ],
+                  onSend: (_) async => true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await t.enterText(find.byType(TextField), '#');
+      await t.pump();
+      final title = find.text('design'),
+          meta = find.text('Product and UI decisions');
+      expect(t.getTopLeft(meta).dx - t.getTopRight(title).dx, closeTo(6, .01));
+      final option = find.byKey(
+        const ValueKey('composer-suggestion-channel-design'),
+      );
+      expect(
+        t.getTopRight(meta).dx,
+        greaterThan(t.getTopRight(option).dx - 20),
+      );
+      await t.sendKeyEvent(LogicalKeyboardKey.enter);
+      await t.pump();
+      expect(
+        t.widget<EditableText>(find.byType(EditableText)).controller.text,
+        '#design ',
+      );
+      expect(t.takeException(), isNull);
+    },
+  );
+  testWidgets(
     'channel Tab inserts text; Escape and IME keep draft intact; edited code does not send bound mention',
     (tester) async {
       String? sent;

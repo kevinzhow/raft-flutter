@@ -555,8 +555,57 @@ class _AttachmentViewState extends State<AttachmentView> {
     if (identical(previewRoute, operationRoute)) previewRoute = null;
   }
 
+  /// Web MessageItem AttachmentChip branches: document previews (summary
+  /// "Document preview", mime meta), HTML / video / audio previews, else a
+  /// download card with the mime type.
+  ({String? summary, String meta, bool preview}) get webChip {
+    final kind = attachmentPreviewKind(widget.metadata);
+    final type = mime.toLowerCase().split(';').first.trim();
+    final html =
+        type == 'text/html' ||
+        RegExp(r'\.html?$', caseSensitive: false).hasMatch(name);
+    final rawMime = widget.metadata['mimeType'] as String?;
+    final mimeLabel = rawMime == null || rawMime.isEmpty ? null : rawMime;
+    if (kind == 'video') {
+      return (
+        summary: null,
+        meta: raftText(context, 'Video preview'),
+        preview: true,
+      );
+    }
+    if (kind == 'audio') {
+      return (
+        summary: null,
+        meta: raftText(context, 'Audio preview'),
+        preview: true,
+      );
+    }
+    if (kind != null) {
+      return (
+        summary: raftText(context, 'Document preview'),
+        meta: mimeLabel ?? raftText(context, 'document'),
+        preview: true,
+      );
+    }
+    if (html) {
+      return (
+        summary: null,
+        meta: raftText(context, 'HTML preview'),
+        preview: true,
+      );
+    }
+    return (
+      summary: null,
+      meta: mimeLabel ?? raftText(context, 'file'),
+      preview: false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) => RaftAttachmentCard(
+    summary: webChip.summary,
+    metaLabel: webChip.meta,
+    previewAffordance: webChip.preview,
     exportMode: widget.exportMode,
     filename: name,
     mimeType: mime,

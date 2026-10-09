@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 // Official cases owned by this group (default selection):
 //   components.thread.composer.empty
 //   components.thread.composer.states
@@ -73,14 +75,16 @@ final Map<String, ParityCase> threadComposerCases = {
     draft: null,
     height: 210,
     readyImage: true,
-    widgets: const ['raft_ui:RaftUploadChip'],
+    widgets: const [
+      'raft_flutter:WorkspaceController.attachSelection',
+      'raft_ui:RaftComposerNotice',
+    ],
     notes:
-        'React picks composer-preview.png; its baseline shows the '
-        '"upload size limit could not be checked" error instead of a preview. '
-        'Flutter has no upload-size-limit check or image preview in the '
-        'composer: the same pick yields a ready RaftUploadChip above the '
-        'composer plus the "1 attachment(s)" pending label, composed exactly '
-        'as RaftChatView does.',
+        'React picks composer-preview.png (the PNG bytes react-provider.spec '
+        'uploads); Flutter feeds the same bytes to the product selection path '
+        '(WorkspaceController.attachSelection). GET '
+        '/attachments/upload-capabilities has no usable maxBytes in both mocks, '
+        'so both refuse the batch with the warning banner.',
   ),
   'components.thread.composer.pending-mention-actions': _composer(
     draft: '@Android-Developer-4 please review the visual diff',
@@ -104,6 +108,9 @@ final Map<String, ParityCase> threadComposerCases = {
 };
 
 final Map<String, ParityUncovered> threadComposerUncovered = {};
+
+const _composerPreviewPng =
+    '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';
 
 String get _seed => 'Review the Android composer crop before release.';
 
@@ -215,6 +222,21 @@ class _ComposerHostState extends State<_ComposerHost> {
         : const {},
   );
   late final ComposerDirectory directory = ComposerDirectory(w);
+
+  @override
+  void initState() {
+    super.initState();
+    final image = widget.readyImage;
+    if (image != null) {
+      // react-provider.spec.ts setInputFiles(composer-preview.png).
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => w.attachSelection([
+          (name: image, bytes: base64Decode(_composerPreviewPng)),
+        ], text: (key, args) => raftFormat(context, key, args)),
+      );
+    }
+  }
+
   bool alsoCreateTask = false;
 
   @override
@@ -230,29 +252,10 @@ class _ComposerHostState extends State<_ComposerHost> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (widget.readyImage != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                RaftUploadChip(
-                  name: widget.readyImage!,
-                  progress: 1,
-                  ready: true,
-                  onRetry: () {},
-                  onRemove: () {},
-                ),
-              ],
-            ),
-          ),
         RaftComposer(
           initialDraft: widget.draft,
           // As RaftChatView mounts it.
-          accessoryRow: w.pendingMentionsFor().isEmpty
-              ? null
-              : PendingMentionActions(controller: w),
+          accessoryRow: raftComposerAccessory(w),
           taskAction: RaftComposerTaskToggle(
             key: const Key('composer-as-task'),
             checked: alsoCreateTask,
@@ -261,9 +264,11 @@ class _ComposerHostState extends State<_ComposerHost> {
           ),
           onAttach: () {},
           onImagePick: () {},
-          pendingLabel: widget.readyImage == null
+          pendingLabel: w.uploads().isEmpty
               ? null
-              : raftFormat(context, '{count} attachment(s)', {'count': 1}),
+              : raftFormat(context, '{count} attachment(s)', {
+                  'count': w.uploads().length,
+                }),
           // ComposerVisualCaseView passes MessageInput an explicit
           // `placeholder` (fxMessages.composerPlaceholder); RaftComposer.hint
           // is the same override (the app default is "Message #name").
@@ -359,7 +364,7 @@ class _FilesHostState extends State<_FilesHost> {
 final ParityCase _header = ParityCase(
   widgets: const [
     'raft_flutter:WorkspaceView',
-    'raft_flutter:RaftPageHeader',
+    'raft_ui:RaftChannelHeader',
     'raft_flutter:ConversationPanel',
     'raft_ui:RaftConversationTabs',
     'raft_ui:RaftBackButton',
@@ -368,8 +373,8 @@ final ParityCase _header = ParityCase(
   notes:
       'Real WorkspaceView (mobile; channel 首页专修 opened by tapping its Home '
       'row; fake client with no messages). '
-      'Flutter mobile channel header shows no channel icon or description and '
-      'adds a channel-settings action; that is the product difference.',
+      'Mounted channel header keeps the original channel identity/description '
+      'and source Search / Settings panel actions.',
   build: (ctx) {
     SharedPreferences.setMockInitialValues({});
     final fx = ParityThreadFixture(ctx.fixtureData);

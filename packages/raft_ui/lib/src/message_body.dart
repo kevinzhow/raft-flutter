@@ -1,11 +1,14 @@
 import 'mermaid_toolbar_recipe.dart';
+import 'message_reference_chip.dart';
 
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:mermaid_flutter/mermaid_flutter.dart';
 import 'package:mermaid_core/mermaid_core.dart' as core;
 
@@ -70,11 +73,16 @@ String raftMessageReferences(
   String source, {
   List<RaftTextReference> references = const [],
   String Function(int number)? taskHref,
+  bool Function(int number)? knownTaskNumber,
 }) {
   final protected = RegExp(
     r'(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1|`+[^`]*`+|!?\[[^\]]*\]\([^)]*\)|https?://[^\s]+',
   );
-  String plain(String text) {
+  // Inside an authored link label a reference cannot become a nested
+  // markdown link; it is wrapped in private-use sentinels that
+  // _ReferenceSentinelSyntax turns into a `raftref` element (Web chips
+  // refs inside link labels too: MessageItem only protects code).
+  String plain(String text, {bool sentinel = false}) {
     final matches = <({int start, int end, String label, String href})>[];
     for (final ref in references) {
       if (ref.text.isEmpty) continue;
@@ -106,24 +114,37 @@ String raftMessageReferences(
             (right == '~' || text.substring(0, m.start).endsWith('dm:'))) {
           continue;
         }
+        // `#chan:shortId` / `dm:@peer:shortId` belong to the thread-ref
+        // pass (Web runs it first); a plain `#design:` is still a channel.
         if ((ref.text.startsWith('#') || ref.text.startsWith('dm:')) &&
-            (right == ':' || right == '~')) {
+            (right == '~' ||
+                (right == ':' &&
+                    RegExp(
+                      r'^:[0-9a-f]{6,8}(?![0-9a-z])',
+                      caseSensitive: false,
+                    ).hasMatch(text.substring(m.end))))) {
           continue;
         }
         matches.add((start: m.start, end: m.end, label: m[0]!, href: ref.href));
       }
     }
     if (taskHref != null) {
+      // Web createRaftBareTaskRefRegex: `task #N` always, bare `#N` only for
+      // a known task.
       for (final m in RegExp(
-        r'\btask[ \t]+#([1-9][0-9]*)\b',
+        r'(?:^|(?<=[^\w/]))(task\s+)?#([1-9][0-9]*)\b',
         caseSensitive: false,
       ).allMatches(text)) {
-        final start = m.end - m[1]!.length - 1;
+        final number = int.parse(m[2]!);
+        if (m[1] == null && !(knownTaskNumber?.call(number) ?? false)) {
+          continue;
+        }
+        final start = m.end - m[2]!.length - 1;
         matches.add((
           start: start,
           end: m.end,
-          label: '#${m[1]}',
-          href: taskHref(int.parse(m[1]!)),
+          label: '#${m[2]}',
+          href: taskHref(number),
         ));
       }
     }
@@ -137,6 +158,11 @@ String raftMessageReferences(
     for (final m in matches) {
       if (m.start < cursor) continue;
       result.write(text.substring(cursor, m.start));
+      if (sentinel) {
+        result.write('\u{E000}${m.href}\u{E001}${m.label}\u{E002}');
+        cursor = m.end;
+        continue;
+      }
       final label = m.label
           .replaceAll(r'\', r'\\')
           .replaceAll('[', r'\[')
@@ -150,9 +176,13 @@ String raftMessageReferences(
 
   final out = StringBuffer();
   var cursor = 0;
+  final authoredLink = RegExp(r'^\[([^\]]*)\](\([^)]*\))$');
   for (final m in protected.allMatches(source)) {
     out.write(plain(source.substring(cursor, m.start)));
-    out.write(m[0]);
+    final link = authoredLink.firstMatch(m[0]!);
+    out.write(
+      link == null ? m[0] : '[${plain(link[1]!, sentinel: true)}]${link[2]}',
+    );
     cursor = m.end;
   }
   out.write(plain(source.substring(cursor)));
@@ -175,8 +205,21 @@ class RaftMessageBody extends StatelessWidget {
     this.onCopyCode,
     this.onExportDiagram,
     this.exportMode = false,
+    this.referenceAppearance,
+    this.knownTaskNumber,
+    this.lineHeight,
   });
+
+  /// Optional prose line height (px) for non-message surfaces.
+  final double? lineHeight;
   final String content;
+
+  /// Chip/text treatment for an identity-backed reference href (Web
+  /// MessageItem markdown `a` renderer); null keeps a plain link.
+  final RaftReferenceAppearance? Function(String href)? referenceAppearance;
+
+  /// Web `knownTaskNumbers`: bare `#N` links only for loaded tasks.
+  final bool Function(int number)? knownTaskNumber;
   final Future<void> Function(String)? onCopyCode;
   final Future<void> Function(String, Uint8List)? onExportDiagram;
   final double fontSize;
@@ -195,6 +238,7 @@ class RaftMessageBody extends StatelessWidget {
       content,
       references: references,
       taskHref: taskHref,
+      knownTaskNumber: knownTaskNumber,
     );
     final blocks = <Widget>[];
     final lines = prepared.split('\n');
@@ -207,10 +251,15 @@ class RaftMessageBody extends StatelessWidget {
           // MessageItem context menu, never a separate text-selection menu.
           contextMenuBuilder: (_, _) => const SizedBox.shrink(),
           child: MarkdownBody(
-            builders: {'a': _MessageLinkBuilder(onLink)},
+            builders: {
+              'a': _MessageLinkBuilder(onLink, referenceAppearance),
+              'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
+            },
+            inlineSyntaxes: [_ReferenceSentinelSyntax()],
             paddingBuilders: MessageContentRecipe(
               t,
               fontSize: fontSize,
+              lineHeight: lineHeight,
               document: documentMode,
               mountedMessage: mountedMessage,
               foreground: foregroundColor,
@@ -230,6 +279,7 @@ class RaftMessageBody extends StatelessWidget {
               style: MessageContentRecipe(
                 t,
                 fontSize: fontSize,
+                lineHeight: lineHeight,
                 document: documentMode,
                 mountedMessage: mountedMessage,
                 foreground: foregroundColor,
@@ -238,6 +288,7 @@ class RaftMessageBody extends StatelessWidget {
             styleSheet: MessageContentRecipe(
               t,
               fontSize: fontSize,
+              lineHeight: lineHeight,
               document: documentMode,
               mountedMessage: mountedMessage,
               foreground: foregroundColor,
@@ -249,8 +300,9 @@ class RaftMessageBody extends StatelessWidget {
     }
 
     for (var i = 0; i < lines.length; i++) {
-      final start = RegExp(r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$')
-          .firstMatch(lines[i]);
+      final start = RegExp(
+        r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$',
+      ).firstMatch(lines[i]);
       if (start == null) {
         markdown.writeln(lines[i]);
         continue;
@@ -258,8 +310,9 @@ class RaftMessageBody extends StatelessWidget {
       final fence = start[1]!;
       var end = i + 1;
       while (end < lines.length &&
-          !RegExp('^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$')
-              .hasMatch(lines[end])) {
+          !RegExp(
+            '^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$',
+          ).hasMatch(lines[end])) {
         end++;
       }
       if (end == lines.length) {
@@ -792,9 +845,45 @@ class _MermaidToolbar extends StatelessWidget {
 
 /// Inline Markdown links need an explicit focus/action widget. The upstream
 /// recognizer alone is pointer-only and omits the link URL from Web semantics.
+/// `\uE000href\uE001label\uE002` → `raftref` element (see
+/// [raftMessageReferences]).
+class _ReferenceSentinelSyntax extends md.InlineSyntax {
+  _ReferenceSentinelSyntax()
+    : super('\u{E000}([^\u{E001}]*)\u{E001}([^\u{E002}]*)\u{E002}');
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(
+      md.Element('raftref', [md.Text(match[2]!)])
+        ..attributes['href'] = match[1]!,
+    );
+    return true;
+  }
+}
+
 class _MessageLinkBuilder extends MarkdownElementBuilder {
-  _MessageLinkBuilder(this.onLink);
+  _MessageLinkBuilder(this.onLink, this.appearanceOf);
   final ValueChanged<String>? onLink;
+  final RaftReferenceAppearance? Function(String href)? appearanceOf;
+
+  InlineSpan _reference(
+    BuildContext context,
+    String href,
+    String label,
+    TextStyle base,
+    TextStyle? linkStyle,
+  ) => raftReferenceSpan(
+    context,
+    label: label,
+    href: href,
+    base: base,
+    linkStyle: linkStyle,
+    appearance: appearanceOf?.call(href),
+    onTap: onLink == null ? null : () => onLink!(href),
+  );
+
+  /// Returns a `Text.rich` so flutter_markdown merges the link (or the inline
+  /// chip WidgetSpan) into the paragraph's single RichText; the sentence then
+  /// wraps around it like CSS inline content instead of breaking the line.
   @override
   Widget? visitElementAfterWithContext(
     BuildContext context,
@@ -804,66 +893,46 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
   ) {
     final href = element.attributes['href'] as String?;
     if (href == null) return null;
-    return _MessageLink(
-      label: element.textContent as String,
-      href: href,
-      style: parentStyle?.merge(preferredStyle),
-      onLink: onLink,
+    final label = element.textContent as String;
+    final base = parentStyle ?? DefaultTextStyle.of(context).style;
+    // Identity-backed references (`raft-ref:` hrefs, also nested inside an
+    // authored link label as `raftref` elements) are focusable inline links.
+    if (element.tag == 'raftref' || href.startsWith('raft-ref:')) {
+      return Text.rich(
+        TextSpan(
+          children: [_reference(context, href, label, base, preferredStyle)],
+        ),
+      );
+    }
+    final linkStyle = base.merge(preferredStyle);
+    final recognizer = onLink == null
+        ? null
+        : (TapGestureRecognizer()..onTap = () => onLink!(href));
+    final children = (element.children as List?) ?? const [];
+    return Text.rich(
+      TextSpan(
+        children: [
+          for (final child in children)
+            if (child is md.Element && child.tag == 'raftref')
+              _reference(
+                context,
+                child.attributes['href'] ?? '',
+                child.textContent,
+                base,
+                preferredStyle,
+              )
+            else
+              TextSpan(
+                text: (child as md.Node).textContent,
+                style: linkStyle,
+                recognizer: recognizer,
+                mouseCursor: SystemMouseCursors.click,
+                semanticsLabel: child.textContent,
+              ),
+        ],
+      ),
     );
   }
-}
-
-class _MessageLink extends StatefulWidget {
-  const _MessageLink({
-    required this.label,
-    required this.href,
-    this.style,
-    this.onLink,
-  });
-  final String label, href;
-  final TextStyle? style;
-  final ValueChanged<String>? onLink;
-  @override
-  State<_MessageLink> createState() => _MessageLinkState();
-}
-
-class _MessageLinkState extends State<_MessageLink> {
-  bool focused = false;
-  void openLink() => widget.onLink?.call(widget.href);
-  @override
-  Widget build(BuildContext context) => FocusableActionDetector(
-    onShowFocusHighlight: (value) => setState(() => focused = value),
-    actions: {
-      ActivateIntent: CallbackAction<ActivateIntent>(
-        onInvoke: (_) {
-          openLink();
-          return null;
-        },
-      ),
-    },
-    child: Semantics(
-      link: true,
-      linkUrl: Uri.tryParse(widget.href),
-      label: widget.label,
-      onTap: widget.onLink == null ? null : openLink,
-      child: ExcludeSemantics(
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTap: openLink,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: focused
-                    ? Border.all(color: RaftTokens.of(context).accent)
-                    : null,
-              ),
-              child: Text(widget.label, style: widget.style),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
 }
 
 final _codeHighlighter = Highlight();

@@ -89,6 +89,15 @@ class MessageTaskProjection extends ChangeNotifier {
     }
   }
 
+  /// Web MessageItem `taskByNumber` over the loaded channel tasks.
+  Map<String, dynamic>? taskByNumber(int number) {
+    if (!permitted) return null;
+    for (final task in byMessage.values) {
+      if (task['taskNumber'] == number) return task;
+    }
+    return null;
+  }
+
   Map<String, dynamic>? taskFor(RaftMessage message) =>
       permitted &&
           (message.channelId == w.channel!.id ||

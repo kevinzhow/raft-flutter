@@ -18,6 +18,7 @@ export 'src/attachment_card.dart';
 export 'src/adaptive_workspace.dart';
 export 'src/localization.dart';
 export 'src/message_body.dart';
+export 'src/message_reference_chip.dart';
 export 'src/action_card.dart';
 export 'src/message_export.dart';
 export 'src/forwarded_bundle.dart';
@@ -29,6 +30,7 @@ export 'src/thread_replies.dart';
 export 'src/message_context_menu.dart';
 export 'src/composer_pending_mentions.dart';
 export 'src/forward_composer.dart';
+export 'src/attachment_comments.dart';
 
 export 'src/design_primitives.dart';
 export 'src/recipe_surface.dart';
@@ -101,3 +103,5 @@ export 'src/dialog_card.dart';
 export 'src/channel_settings_sheet.dart';
 export 'src/create_channel_view.dart';
 export 'src/channel_members_view.dart';
+
+export 'src/channel_header.dart';

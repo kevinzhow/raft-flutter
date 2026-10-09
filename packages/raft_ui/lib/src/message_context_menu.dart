@@ -5,6 +5,7 @@ import 'dart:ui' show SemanticsRole;
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
+import 'list_items.dart';
 import 'icons.dart';
 import 'quick_reaction_picker.dart';
 import 'recipes/context_menu.g.dart';
@@ -88,7 +89,12 @@ class RaftMessageContextMenu extends StatelessWidget {
       for (var i = 0; i < groups.length; i++) ...[
         if (i > 0) divider(),
         for (final item in groups[i])
-          _MessageMenuRow(key: item.key, item: item),
+          RaftMenuButtonItem(
+            key: item.key,
+            label: item.label,
+            icon: SizedBox.square(dimension: 14, child: item.icon),
+            onPressed: item.onPressed,
+          ),
       ],
     ];
     final gap = content.rowGap ?? 0;
@@ -166,111 +172,6 @@ class _QuickReactionRow extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// Web `MenuItem`: raft-ui `Button size=sm variant=ghost` (h-7, ghost border)
-/// + `flex w-full items-center gap-2 px-3 py-2 text-sm text-left font-medium
-/// text-foreground-strong hover:bg-fill-muted theme-brutal:text-black
-/// theme-brutal:hover:bg-soft-signal/30`.
-class _MessageMenuRow extends StatefulWidget {
-  const _MessageMenuRow({super.key, required this.item});
-  final RaftMessageContextMenuItem item;
-  @override
-  State<_MessageMenuRow> createState() => _MessageMenuRowState();
-}
-
-class _MessageMenuRowState extends State<_MessageMenuRow> {
-  bool hovered = false, focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final enabled = widget.item.onPressed != null;
-    final foreground = !enabled
-        ? (t.brutal
-              ? Colors.black.withValues(alpha: .3)
-              : t.colors['foreground-muted']!)
-        : (t.brutal ? Colors.black : t.strong);
-    final highlight = t.brutal
-        ? t.colors['color-soft-signal']!.withValues(
-            alpha: t.colors['color-soft-signal']!.a * .3,
-          )
-        : t.colors['fill-muted']!;
-    // Ghost sm: brutal 2px transparent border / radius 0, elegant no border
-    // / radius 4. Viewports <= 600px tall drop py-2 to py-1 (still h-7).
-    final border = t.brutal ? 2.0 : 0.0;
-    return Semantics(
-      role: SemanticsRole.menuItem,
-      label: widget.item.label,
-      enabled: enabled,
-      button: true,
-      onTap: widget.item.onPressed,
-      excludeSemantics: true,
-      child: FocusableActionDetector(
-        enabled: enabled,
-        mouseCursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
-        onShowHoverHighlight: (v) => setState(() => hovered = v),
-        onShowFocusHighlight: (v) => setState(() => focused = v),
-        actions: {
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) {
-              widget.item.onPressed?.call();
-              return null;
-            },
-          ),
-        },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          excludeFromSemantics: true,
-          onTap: widget.item.onPressed,
-          child: Container(
-            height: 28,
-            padding: EdgeInsets.symmetric(horizontal: 12 - border),
-            decoration: BoxDecoration(
-              color: enabled && (hovered || focused)
-                  ? highlight
-                  : Colors.transparent,
-              border: border > 0
-                  ? Border.all(color: Colors.transparent, width: border)
-                  : null,
-              borderRadius: BorderRadius.circular(t.brutal ? 0 : 4),
-            ),
-            child: Row(
-              children: [
-                IconTheme.merge(
-                  data: IconThemeData(color: foreground, size: 14),
-                  child: DefaultTextStyle.merge(
-                    style: TextStyle(color: foreground),
-                    child: SizedBox.square(
-                      dimension: 14,
-                      child: widget.item.icon,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    widget.item.label,
-                    maxLines: 1,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontFamily: t.brutal ? t.headingFont : t.bodyFont,
-                      fontSize: 14,
-                      height: 20 / 14,
-                      fontWeight: FontWeight.w500,
-                      color: foreground,
-                      leadingDistribution: TextLeadingDistribution.even,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

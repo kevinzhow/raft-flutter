@@ -169,3 +169,20 @@ class _PendingMentionActionsState extends State<PendingMentionActions> {
     },
   );
 }
+
+/// MessageInput slots above the composer card, in Web order: the error
+/// `Banner`, then the PendingMentionActionStrip.
+Widget? raftComposerAccessory(WorkspaceController w, {bool thread = false}) {
+  final error = w.composerErrorFor(thread: thread);
+  final mentions = w.pendingMentionsFor(thread: thread).isNotEmpty;
+  if (error == null && !mentions) return null;
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (error != null) RaftComposerNotice(message: error),
+      if (error != null && mentions) const RaftComposerGap(),
+      if (mentions) PendingMentionActions(controller: w, thread: thread),
+    ],
+  );
+}

@@ -1,0 +1,20 @@
+{
+  "recordedAt": "2026-10-09T02:50:37.115167+00:00",
+  "productCommit": "8174d6db5db363cd4cdeaaa69d8025aa805eaaab",
+  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "command": "PARITY_OUT=build/parity-thread-resume-20261009 PARITY_SHARDS=1 tool/parity run --cases components.thread.* --shards 1",
+  "scope": "25 official Thread Flutter widget-test raster captures, cached read-only React baseline; no native OS proof",
+  "threadResults": {
+    "captured": 25,
+    "passing": 6,
+    "different": 19
+  },
+  "diffSha256": "071a7806a8732f1bf9d14b7447bdfda26f68b61264a69e632b8a73a2e2143b9d",
+  "limits": [
+    "Other 74 cases were not captured in this run; global missing counts are not new capture failures.",
+    "Raw Markdown source baselines resemble source ErrorBoundary fallback; rendering failure cause requires original runtime evidence. Do not downgrade rich content to match.",
+    "Dark theme is not present in these official Thread cases.",
+    "No Android or Linux native integration run."
+  ],
+  "globalSummaryBoundary": "The tool still lists all 99 manifest cases; excluded cases were not run."
+}

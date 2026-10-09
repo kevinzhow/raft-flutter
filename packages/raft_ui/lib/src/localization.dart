@@ -22,6 +22,18 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
+  "Comments · {filename}": "评论 · {filename}",
+  "Comments here are pinned to {filename}. For general discussion, reply in the thread.": "这里的评论仅关联 {filename}。如需一般性讨论，请在消息列中回复。",
+  "Comment on {filename}…": "评论 {filename}…",
+  "Row {n}": "第 {n} 行",
+  "Row {start}–{end}": "第 {start}–{end} 行",
+  "Only {max} attachments per message. {extra} extra files skipped.": "每条消息最多 {max} 个附件。已跳过 {extra} 个多余文件。",
+  "{count} empty files skipped.": "已跳过 {count} 个空文件。",
+  "Max {maxSize} per file. Current largest file is {largest}.": "每个文件最大 {maxSize}。当前最大文件为 {largest}。",
+  "{target} was added to {channel}": "{target} 已加入 {channel}",
+  "Notification queued for {target} · still not in {channel}": "已为 {target} 排队通知 · 仍不在 {channel}",
+  "{target} was not notified because they are not in {channel}": "{target} 未收到通知，因为他们不在 {channel}",
+  "{count} selected from {source}": "已从 {source} 选择 {count} 条",
   "React with {emoji}": "用 {emoji} 回应",
   "#{channel} will become read-only": "#{channel} 即将变为只读",
   "#{channel} is read-only": "#{channel} 已变为只读",

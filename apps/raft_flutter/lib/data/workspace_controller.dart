@@ -669,6 +669,112 @@ class WorkspaceController extends ChangeNotifier {
       _uploads[draftScope(thread: thread)] ?? [];
   bool uploadsReady({bool thread = false}) =>
       uploads(thread: thread).every((u) => u.id != null);
+
+  /// Web MessageInput composer error banner per draft scope.
+  final Map<String, String> composerErrors = {};
+  String? composerErrorFor({bool thread = false}) =>
+      composerErrors[draftScope(thread: thread)];
+
+  /// Web `resolveAttachmentUploadLimitBytes`: the server ceiling from
+  /// `GET /attachments/upload-capabilities`, or null when it is unusable.
+  Future<int?> uploadLimitBytes() async {
+    try {
+      final value = await query('/attachments/upload-capabilities');
+      final max = value is Map ? value['maxBytes'] : null;
+      return max is num && max.isFinite && max > 0 ? max.toInt() : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Web `decideMessageAttachmentSelection` + upload: an unknown ceiling
+  /// refuses the whole batch; empty, oversize and over-count files are
+  /// skipped with the Web messages. [text] localizes a message key.
+  Future<void> attachSelection(
+    List<({String name, Uint8List bytes})> files, {
+    bool thread = false,
+    required String Function(String key, Map<String, Object> args) text,
+  }) async {
+    final scope = draftScope(thread: thread);
+    if (scope == null || files.isEmpty) return;
+    final generation = ledger.generation;
+    final authority = jsonEncode([
+      client.generation, client.user?.id, client.serverId, server?.id,
+      server?.string('role'), channel?.joined, channel?.archived,
+      channel?.json['channelCapabilities'],
+    ]);
+    bool current() => generation == ledger.generation &&
+        scope == draftScope(thread: thread) && authority == jsonEncode([
+          client.generation, client.user?.id, client.serverId, server?.id,
+          server?.string('role'), channel?.joined, channel?.archived,
+          channel?.json['channelCapabilities'],
+        ]);
+    final limit = await uploadLimitBytes();
+    if (!current()) return;
+    final accepted = <({String name, Uint8List bytes})>[];
+    var count = 0, empty = 0;
+    final oversize = <int>[];
+    var slots = (10 - uploads(thread: thread).length).clamp(0, 10);
+    if (limit != null) {
+      for (final file in files) {
+        if (file.bytes.isEmpty) {
+          empty++;
+        } else if (file.bytes.length > limit) {
+          oversize.add(file.bytes.length);
+        } else if (slots <= 0) {
+          count++;
+        } else {
+          accepted.add(file);
+          slots--;
+        }
+      }
+    }
+    final parts = <String>[
+      if (limit == null)
+        text(
+          'The upload size limit could not be checked. Try again in a moment.',
+          const {},
+        ),
+      if (count > 0)
+        text(
+          'Only {max} attachments per message. {extra} extra files skipped.',
+          {'max': 10, 'extra': count},
+        ),
+      if (empty > 0) text('{count} empty files skipped.', {'count': empty}),
+      if (oversize.isNotEmpty)
+        text('Max {maxSize} per file. Current largest file is {largest}.', {
+          'maxSize': _limitLabel(limit!),
+          'largest': _bytesLabel(oversize.reduce((a, b) => a > b ? a : b)),
+        }),
+    ];
+    if (parts.isEmpty) {
+      composerErrors.remove(scope);
+    } else {
+      composerErrors[scope] = parts.join(' ');
+    }
+    notifyListeners();
+    for (final file in accepted) {
+      if (!current()) return;
+      await attachUpload(file.name, file.bytes, thread: thread);
+    }
+  }
+
+  static String _limitLabel(int bytes) => bytes % (1024 * 1024) == 0
+      ? '${bytes ~/ (1024 * 1024)}MB'
+      : _bytesLabel(bytes);
+
+  static String _bytesLabel(int bytes) {
+    if (bytes <= 0) return '0B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    var value = bytes.toDouble();
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    return '${unit == 0 ? value.toStringAsFixed(0) : value.toStringAsFixed(1)}${units[unit]}';
+  }
+
   Future<void> attachUpload(
     String name,
     Uint8List bytes, {
