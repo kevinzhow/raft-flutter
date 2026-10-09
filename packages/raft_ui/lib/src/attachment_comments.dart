@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 
 import 'icons.dart';
+import 'design_primitives.dart';
 import 'localization.dart';
 import 'message_body.dart';
 import 'theme.dart';
@@ -169,9 +170,9 @@ class RaftAttachmentCommentsPanel extends StatelessWidget {
                   ? Center(
                       child: error != null
                           ? Text(error!)
-                          : const SizedBox.square(
-                              dimension: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                          : Semantics(
+                              label: raftText(context, 'Loading'),
+                              child: const RaftSpinner(),
                             ),
                     )
                   : list.isEmpty

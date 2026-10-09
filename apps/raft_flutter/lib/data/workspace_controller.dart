@@ -698,11 +698,19 @@ class WorkspaceController extends ChangeNotifier {
     final scope = draftScope(thread: thread);
     if (scope == null || files.isEmpty) return;
     final generation = ledger.generation;
+    final authority = jsonEncode([
+      client.generation, client.user?.id, client.serverId, server?.id,
+      server?.string('role'), channel?.joined, channel?.archived,
+      channel?.json['channelCapabilities'],
+    ]);
+    bool current() => generation == ledger.generation &&
+        scope == draftScope(thread: thread) && authority == jsonEncode([
+          client.generation, client.user?.id, client.serverId, server?.id,
+          server?.string('role'), channel?.joined, channel?.archived,
+          channel?.json['channelCapabilities'],
+        ]);
     final limit = await uploadLimitBytes();
-    if (generation != ledger.generation ||
-        scope != draftScope(thread: thread)) {
-      return;
-    }
+    if (!current()) return;
     final accepted = <({String name, Uint8List bytes})>[];
     var count = 0, empty = 0;
     final oversize = <int>[];
@@ -746,6 +754,7 @@ class WorkspaceController extends ChangeNotifier {
     }
     notifyListeners();
     for (final file in accepted) {
+      if (!current()) return;
       await attachUpload(file.name, file.bytes, thread: thread);
     }
   }

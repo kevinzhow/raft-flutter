@@ -376,9 +376,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
             ],
           ),
         // Web suppresses attachment comments for PDF and image surfaces.
-        if (current &&
-            kind != 'pdf' &&
-            widget.metadata['id'] is String)
+        if (current && kind != 'pdf' && widget.metadata['id'] is String)
           RaftTextButton(
             label: 'Comments',
             glyph: RaftGlyph.messageSquare,
@@ -390,6 +388,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
                     controller: widget.controller,
                     attachmentId: widget.metadata['id'] as String,
                     filename: '${widget.metadata['filename'] ?? ''}',
+                    authorized: () => current,
                   ),
                 ),
               ),

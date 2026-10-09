@@ -50,9 +50,15 @@ String attachmentAnchorLabel(BuildContext context, Map anchor) {
 num? _anchorOrder(Map? anchor) {
   if (anchor == null) return null;
   final data = anchor['data'] is Map ? anchor['data'] as Map : const {};
-  return num.tryParse(
-    '${data['start'] ?? data['time'] ?? data['offset'] ?? data['index'] ?? ''}',
-  );
+  final value = switch (anchor['type']) {
+    'lines' || 'csv-rows' => data['start'],
+    'html-region' => data['y'],
+    'video-timestamp' => data['time'],
+    // Markdown order requires the live preview heading, not a persisted offset.
+    _ => null,
+  };
+  final number = num.tryParse('$value');
+  return number != null && number.isFinite ? number : null;
 }
 
 class AttachmentCommentsView extends StatefulWidget {
@@ -62,10 +68,12 @@ class AttachmentCommentsView extends StatefulWidget {
     required this.attachmentId,
     required this.filename,
     this.pendingAnchor,
+    this.authorized,
   });
   final WorkspaceController controller;
   final String attachmentId, filename;
   final Map<String, dynamic>? pendingAnchor;
+  final bool Function()? authorized;
   @override
   State<AttachmentCommentsView> createState() => _AttachmentCommentsViewState();
 }
@@ -76,22 +84,79 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   Map<String, dynamic>? viewer;
   String? error;
   bool anchorCleared = false;
-  late final String authority = workspaceAuthority(w);
+  late String authority;
+  int binding = 0, request = 0;
+  bool revoked = false;
 
   @override
   void initState() {
     super.initState();
+    bind();
+  }
+
+  void bind() {
+    authority = workspaceAuthority(w);
+    revoked = false;
+    comments = null;
+    viewer = null;
+    error = null;
+    anchorCleared = false;
+    ++binding;
+    w.addListener(scopeChanged);
     load();
   }
 
-  bool get current => mounted && authority == workspaceAuthority(w);
+  @override
+  void didUpdateWidget(covariant AttachmentCommentsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, w) ||
+        oldWidget.attachmentId != widget.attachmentId) {
+      oldWidget.controller.removeListener(scopeChanged);
+      bind();
+    } else {
+      scopeChanged();
+    }
+  }
+
+  @override
+  void dispose() {
+    ++binding;
+    ++request;
+    w.removeListener(scopeChanged);
+    super.dispose();
+  }
+
+  bool get current =>
+      mounted &&
+      !revoked &&
+      authority == workspaceAuthority(w) &&
+      (widget.authorized?.call() ?? true);
+
+  void scopeChanged() {
+    if (current || !mounted || revoked) return;
+    ++binding;
+    ++request;
+    setState(() {
+      revoked = true;
+      comments = null;
+      viewer = null;
+      error = null;
+    });
+  }
+
+  bool accepts(WorkspaceController owner, String id, int revision) =>
+      current &&
+      identical(owner, w) &&
+      id == widget.attachmentId &&
+      revision == binding;
 
   Future<void> load() async {
+    if (!current) return;
+    final owner = w, id = widget.attachmentId, revision = binding;
+    final ticket = ++request;
     try {
-      final data = await w.query(
-        '/attachments/${widget.attachmentId}/comments',
-      );
-      if (!current) return;
+      final data = await owner.query('/attachments/$id/comments');
+      if (!accepts(owner, id, revision) || ticket != request) return;
       setState(() {
         comments = [
           for (final c
@@ -104,7 +169,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
         error = null;
       });
     } catch (_) {
-      if (current) {
+      if (accepts(owner, id, revision) && ticket == request) {
         setState(() => error = raftText(context, 'Failed to load comments'));
       }
     }
@@ -113,21 +178,32 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
   Map<String, dynamic>? get activeAnchor =>
       anchorCleared ? null : widget.pendingAnchor;
 
-  Future<bool> send(String content, List<Map<String, dynamic>> mentions) async {
+  Future<bool> send(
+    WorkspaceController owner,
+    String id,
+    int revision,
+    String content,
+    List<Map<String, dynamic>> mentions,
+  ) async {
+    if (!accepts(owner, id, revision) || viewer?['canComment'] == false) {
+      return false;
+    }
     final anchor = activeAnchor;
-    await w.command(
-      'POST',
-      '/attachments/${widget.attachmentId}/comments',
+    await owner.client.post(
+      '/attachments/$id/comments',
       data: {
         'content': content,
         'anchor': ?anchor,
         if (mentions.isNotEmpty) 'mentions': mentions,
       },
     );
-    if (!current) return true;
+    // Do not refresh a newly adopted principal after an old mutation finishes.
+    if (!accepts(owner, id, revision)) return false;
+    await owner.refreshUnread();
+    if (!accepts(owner, id, revision)) return false;
     setState(() => anchorCleared = true);
     await load();
-    return true;
+    return accepts(owner, id, revision);
   }
 
   String? get blocked {
@@ -186,6 +262,8 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
 
   @override
   Widget build(BuildContext context) {
+    if (!current) return const SizedBox.shrink();
+    final owner = w, id = widget.attachmentId, revision = binding;
     final time = SourceTimeFormatter(
       locale: Localizations.localeOf(context).toLanguageTag(),
       preferredTimezone:
@@ -253,8 +331,9 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
                   onRemove: () => setState(() => anchorCleared = true),
                 ),
               ),
-        onSendWithMentions: send,
-        onSend: (text) => send(text, const []),
+        onSendWithMentions: (text, mentions) =>
+            send(owner, id, revision, text, mentions),
+        onSend: (text) => send(owner, id, revision, text, const []),
       ),
     );
   }

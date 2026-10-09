@@ -12,6 +12,11 @@ class _Client extends RaftClient {
         origin: 'https://example.invalid',
         sessionStore: MemorySessionStore(),
       );
+  @override
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) async => {
+    'maxBytes': 1024,
+  };
+  final uploadedChannels = <String>[];
   final responses = <Completer<List<Map<String, dynamic>>>>[];
   final cancellations = <UploadCancellation>[];
   @override
@@ -22,6 +27,7 @@ class _Client extends RaftClient {
     UploadCancellation? cancellation,
     void Function(int, int)? onProgress,
   }) {
+    uploadedChannels.add(channelId);
     onProgress?.call(2, 4);
     cancellations.add(cancellation!);
     final response = Completer<List<Map<String, dynamic>>>();
@@ -62,6 +68,48 @@ void main() {
     await discarded;
     expect(w.uploads(), [draft]);
     expect(removed.id, isNull);
+    w.dispose();
+    await client.dispose();
+  });
+  test(
+    'batch selection never uploads remaining files after channel adoption',
+    () async {
+      final client = _Client();
+      final w = WorkspaceController(client)
+        ..channel = RaftChannel({'id': 'first'});
+      final pending = w.attachSelection([
+        (name: 'first.txt', bytes: Uint8List.fromList([1])),
+        (name: 'second.txt', bytes: Uint8List.fromList([2])),
+      ], text: (key, args) => key);
+      await Future<void>.delayed(Duration.zero);
+      expect(client.uploadedChannels, ['first']);
+      w.channel = RaftChannel({'id': 'second'});
+      client.responses.single.complete([
+        {'id': 'first-attachment'},
+      ]);
+      await pending;
+      expect(client.uploadedChannels, ['first']);
+      expect(w.uploads(), isEmpty);
+      w.dispose();
+      await client.dispose();
+    },
+  );
+  test('same generation role change fences remaining batch files', () async {
+    final client = _Client();
+    final w = WorkspaceController(client)
+      ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+      ..channel = RaftChannel({'id': 'channel'});
+    final pending = w.attachSelection([
+      (name: 'first.txt', bytes: Uint8List.fromList([1])),
+      (name: 'second.txt', bytes: Uint8List.fromList([2])),
+    ], text: (key, args) => key);
+    await Future<void>.delayed(Duration.zero);
+    w.server = RaftRecord({'id': 'server', 'role': 'member'});
+    client.responses.single.complete([
+      {'id': 'first-attachment'},
+    ]);
+    await pending;
+    expect(client.uploadedChannels, ['channel']);
     w.dispose();
     await client.dispose();
   });
