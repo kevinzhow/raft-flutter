@@ -119,88 +119,86 @@ class _RaftEditorGroupsState extends State<RaftEditorGroups> {
           focusNode: focus,
           semanticLabel: item.label,
           button: false,
+          semanticRole: SemanticsRole.tab,
           selected: selected,
           onPressed: () => widget.onSelect(group.id, item.id),
-          builder: (context, state) => Semantics(
-            role: SemanticsRole.tab,
-            child: Container(
-              key: ValueKey('editor-tab-${item.id}'),
-              constraints: const BoxConstraints(minWidth: 88, maxWidth: 220),
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: selected
-                    ? RaftEditorGroupMetrics.paper
-                    : state.hovered
-                    ? RaftTokens.of(context).colors['brutal-cream']
-                    : Colors.transparent,
-                border: Border(
-                  right: BorderSide(
-                    color: RaftEditorGroupMetrics.ink.withValues(alpha: .24),
-                  ),
-                  bottom: BorderSide(
-                    color: selected
-                        ? RaftEditorGroupMetrics.paper
-                        : Colors.transparent,
-                    width: 2,
-                  ),
+          builder: (context, state) => Container(
+            key: ValueKey('editor-tab-${item.id}'),
+            constraints: const BoxConstraints(minWidth: 88, maxWidth: 220),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: selected
+                  ? RaftEditorGroupMetrics.paper
+                  : state.hovered
+                  ? RaftTokens.of(context).colors['brutal-cream']
+                  : Colors.transparent,
+              border: Border(
+                right: BorderSide(
+                  color: RaftEditorGroupMetrics.ink.withValues(alpha: .24),
+                ),
+                bottom: BorderSide(
+                  color: selected
+                      ? RaftEditorGroupMetrics.paper
+                      : Colors.transparent,
+                  width: 2,
                 ),
               ),
-              foregroundDecoration: state.focusVisible
-                  ? BoxDecoration(
-                      border: Border.all(color: RaftEditorGroupMetrics.ink),
-                    )
-                  : null,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      item.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: RaftTokens.of(context).headingFont,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: RaftEditorGroupMetrics.ink,
-                      ),
+            ),
+            foregroundDecoration: state.focusVisible
+                ? BoxDecoration(
+                    border: Border.all(color: RaftEditorGroupMetrics.ink),
+                  )
+                : null,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: RaftTokens.of(context).headingFont,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: RaftEditorGroupMetrics.ink,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Opacity(
-                    opacity: selected || state.hovered ? 1 : 0,
-                    child: ExcludeFocus(
-                      excluding: !selected && !state.hovered,
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: RaftInteractive(
-                          semanticLabel: 'Close ${item.label}',
-                          onPressed: () => widget.onClose(item.id),
-                          builder: (_, s) => DecoratedBox(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: s.hovered
-                                  ? RaftEditorGroupMetrics.ink.withValues(
-                                      alpha: .08,
-                                    )
-                                  : Colors.transparent,
-                            ),
-                            child: const Center(
-                              child: RaftIcon(
-                                RaftGlyph.x,
-                                size: 16,
-                                color: RaftEditorGroupMetrics.ink,
-                              ),
+                ),
+                const SizedBox(width: 8),
+                Opacity(
+                  opacity: selected || state.hovered ? 1 : 0,
+                  child: ExcludeFocus(
+                    excluding: !selected && !state.hovered,
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: RaftInteractive(
+                        semanticLabel: 'Close ${item.label}',
+                        onPressed: () => widget.onClose(item.id),
+                        builder: (_, s) => DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: s.hovered
+                                ? RaftEditorGroupMetrics.ink.withValues(
+                                    alpha: .08,
+                                  )
+                                : Colors.transparent,
+                          ),
+                          child: const Center(
+                            child: RaftIcon(
+                              RaftGlyph.x,
+                              size: 16,
+                              color: RaftEditorGroupMetrics.ink,
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

@@ -359,6 +359,11 @@ class RaftWorkspaceRail extends StatelessWidget {
       visualHeight: recipe.itemSize,
       density: RaftDensityScope.of(context),
     );
+    final nav = RaftAppRailRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: t.recipeTokens,
+      states: t.recipeStates(),
+    ).nav;
     final headerHeight = RaftLayoutMetrics.shellHeaderHeight(
       t,
       MediaQuery.sizeOf(context).height,
@@ -392,16 +397,17 @@ class RaftWorkspaceRail extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: t.brutal ? 8 : 16),
             Expanded(
               child: SingleChildScrollView(
+                padding: nav.padding,
                 child: Column(
+                  spacing: nav.rowGap ?? 0,
                   children: [
                     for (final d in destinations)
                       Semantics(
                         selected: selected == d.id,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          padding: EdgeInsets.zero,
                           child: IconButton(
                             key: ValueKey('rail-${d.id}'),
                             tooltip: d.label,

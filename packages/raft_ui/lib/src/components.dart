@@ -713,8 +713,8 @@ class RaftConversationNavigationRecipe {
   // Mounted ChannelRow title inherits Sidebar's heading face. Selection does
   // not make it bold: only the loud unread marker applies font-bold.
   TextStyle? titleStyle({required bool loudUnread}) =>
-      kind == RaftConversationNavKind.channel &&
-          channelGlyphVariant == RaftChannelGlyphVariant.mountedProduct
+      (kind == RaftConversationNavKind.directMessage ||
+          channelGlyphVariant == RaftChannelGlyphVariant.mountedProduct)
       ? RaftTypography.heading(
           tokens,
           size: 14,
@@ -820,12 +820,14 @@ class RaftNavItem extends StatelessWidget {
     this.selected = false,
     this.unread = 0,
     this.trailing,
+    this.leading,
+    this.description,
     this.role = RaftNavItemRole.generic,
     this.viewportHeight,
     this.count,
     this.conversationKind,
     this.channelGlyphVariant = RaftChannelGlyphVariant.mountedProduct,
-  }) : assert(icon != null || glyph != null),
+  }) : assert(icon != null || glyph != null || leading != null),
        assert(conversationKind == null || role == RaftNavItemRole.generic);
   final String label;
   final IconData? icon;
@@ -834,7 +836,8 @@ class RaftNavItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool selected;
   final int unread;
-  final Widget? trailing;
+  final Widget? trailing, leading;
+  final String? description;
   final RaftNavItemRole role;
   final double? viewportHeight;
 
@@ -858,18 +861,23 @@ class RaftNavItem extends StatelessWidget {
             kind: conversationKind!,
             channelGlyphVariant: channelGlyphVariant,
           );
-    final leading = glyph != null
-        ? RaftIcon(
-            glyph!,
-            size: glyphSize ?? conversation?.glyphSize ?? (t.brutal ? 12 : 18),
-            strokeWidth: conversation?.glyphStrokeWidth ?? 2,
-            color: t.brutal ? t.strong : t.colors['foreground-icon'],
-          )
-        : RaftSymbol(
-            icon!,
-            size: conversation?.glyphSize ?? (t.brutal ? 12 : 18),
-            color: t.brutal ? t.strong : t.colors['foreground-icon'],
-          );
+    final leading =
+        this.leading ??
+        (glyph != null
+            ? RaftIcon(
+                glyph!,
+                size:
+                    glyphSize ??
+                    conversation?.glyphSize ??
+                    (t.brutal ? 12 : 18),
+                strokeWidth: conversation?.glyphStrokeWidth ?? 2,
+                color: t.brutal ? t.strong : t.colors['foreground-icon'],
+              )
+            : RaftSymbol(
+                icon!,
+                size: conversation?.glyphSize ?? (t.brutal ? 12 : 18),
+                color: t.brutal ? t.strong : t.colors['foreground-icon'],
+              ));
     Widget row(bool pointerPressed) => RaftControl(
       recipe: conversationKind == null
           ? null
@@ -881,7 +889,7 @@ class RaftNavItem extends StatelessWidget {
       onPressed: onTap,
       selected: selected,
       kind: RaftControlKind.sidebar,
-      visualHeight: conversationKind == RaftConversationNavKind.channel
+      visualHeight: conversationKind != null
           ? conversation!.rowHeight(
               viewportWidth: MediaQuery.sizeOf(context).width,
               viewportHeight:
@@ -905,28 +913,86 @@ class RaftNavItem extends StatelessWidget {
               leading,
             const SizedBox(width: 6),
             Expanded(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style:
-                    (conversation?.titleStyle(loudUnread: unread > 0) ??
-                            RaftTypography.body(
-                              t,
-                              size: t.brutal ? 14 : 13,
-                              line: 20,
-                              weight: selected || unread > 0
-                                  ? FontWeight.w700
-                                  : t.brutal
-                                  ? FontWeight.w400
-                                  : FontWeight.w500,
-                            ))
-                        .copyWith(
-                          color: conversationKind == null
-                              ? t.strong
-                              : DefaultTextStyle.of(context).style.color,
-                        ),
-              ),
+              child: description == null
+                  ? Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          (conversation?.titleStyle(loudUnread: unread > 0) ??
+                                  RaftTypography.body(
+                                    t,
+                                    size: t.brutal ? 14 : 13,
+                                    line: 20,
+                                    weight: selected || unread > 0
+                                        ? FontWeight.w700
+                                        : t.brutal
+                                        ? FontWeight.w400
+                                        : FontWeight.w500,
+                                  ))
+                              .copyWith(
+                                color: conversationKind == null
+                                    ? t.strong
+                                    : conversationKind ==
+                                              RaftConversationNavKind
+                                                  .directMessage &&
+                                          t.brutal
+                                    ? Colors.black
+                                    : DefaultTextStyle.of(context).style.color,
+                              ),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, box) => Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxWidth: box.maxWidth * .7,
+                            ),
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  RaftTypography.heading(
+                                    t,
+                                    size: 14,
+                                    line: 20,
+                                    weight: unread > 0
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ).copyWith(
+                                    color: t.brutal
+                                        ? Colors.black
+                                        : DefaultTextStyle.of(context)
+                                              .style
+                                              .color,
+                                  ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              description!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  RaftTypography.heading(
+                                    t,
+                                    size: 12,
+                                    line: 16,
+                                    weight: FontWeight.w500,
+                                  ).copyWith(
+                                    color: t.brutal
+                                        ? Colors.black.withValues(alpha: .4)
+                                        : t.colors['foreground-muted'],
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
             ),
             if (trailing != null)
               trailing!
@@ -941,16 +1007,17 @@ class RaftNavItem extends StatelessWidget {
         ),
       ),
     );
+    final semanticLabel = description == null ? label : '$label $description';
     return Semantics(
       selected: selected,
       onTap: onTap,
       button: true,
       label: unread > 0
           ? raftFormat(context, '{label}, {count} unread', {
-              'label': label,
+              'label': semanticLabel,
               'count': unread,
             })
-          : label,
+          : semanticLabel,
       excludeSemantics: true,
       child: conversationKind == null
           ? row(false)

@@ -14,13 +14,14 @@ class RaftAnchoredPopup extends StatefulWidget {
     this.movement,
     this.above = false,
     this.alignRight = false,
+    this.toRight = false,
     this.gap = 4,
     this.collisionPadding = 5,
   });
   final GlobalKey anchorKey;
   final Widget child;
   final Listenable? movement;
-  final bool above, alignRight;
+  final bool above, alignRight, toRight;
   final double gap, collisionPadding;
 
   @override
@@ -90,6 +91,7 @@ class _RaftAnchoredPopupState extends State<RaftAnchoredPopup> {
         rect,
         above: widget.above,
         alignRight: widget.alignRight,
+        toRight: widget.toRight,
         gap: widget.gap,
         gutter: widget.collisionPadding,
       ),
@@ -103,11 +105,12 @@ class _PopupLayout extends SingleChildLayoutDelegate {
     this.anchor, {
     required this.above,
     required this.alignRight,
+    required this.toRight,
     required this.gap,
     required this.gutter,
   });
   final Rect anchor;
-  final bool above, alignRight;
+  final bool above, alignRight, toRight;
   final double gap;
   final double gutter;
 
@@ -120,6 +123,23 @@ class _PopupLayout extends SingleChildLayoutDelegate {
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
+    if (toRight) {
+      // LeftRail HelpMenu: PopoverContent side=right, align=end, offset8.
+      final proposedLeft = anchor.right + gap;
+      final left = proposedLeft + childSize.width <= size.width - gutter
+          ? proposedLeft
+          : anchor.left - gap - childSize.width;
+      return Offset(
+        left.clamp(
+          gutter,
+          math.max(gutter, size.width - gutter - childSize.width),
+        ),
+        (alignRight ? anchor.bottom - childSize.height : anchor.top).clamp(
+          gutter,
+          math.max(gutter, size.height - gutter - childSize.height),
+        ),
+      );
+    }
     final right = math.max(gutter, size.width - gutter - childSize.width);
     final left = (alignRight ? anchor.right - childSize.width : anchor.left)
         .clamp(gutter, right);
@@ -144,6 +164,7 @@ class _PopupLayout extends SingleChildLayoutDelegate {
       anchor != old.anchor ||
       above != old.above ||
       alignRight != old.alignRight ||
+      toRight != old.toRight ||
       gap != old.gap ||
       gutter != old.gutter;
 }

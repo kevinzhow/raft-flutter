@@ -58,6 +58,8 @@ import 'incoming_share_review.dart';
 import 'im_bridges_view.dart';
 import 'joint_channel_views.dart';
 import 'workspace_browser.dart';
+import 'management_support.dart' show managementLaunch;
+import 'sender_avatar_projection.dart';
 import '../platform/native_sharing.dart';
 import '../platform/native_notifications.dart';
 
@@ -231,6 +233,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   Timer? persistPanels;
   String? sidebarAgentScope;
   List<Map<String, dynamic>> sidebarAgents = [];
+  bool joiningCommunityFromHelp = false;
   int sidebarAgentRequest = 0;
   VoidCallback? removeShareReceiver;
   bool sharingReady = false,
@@ -1754,24 +1757,132 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     workspaceName: w.server?.name ?? 'Raft',
     workspaceTooltip: tr('Switch workspace'),
     onWorkspace: () => showWorkspaceSwitcher(),
-    footer: Column(
-      mainAxisSize: MainAxisSize.min,
+    footer: RaftWorkspaceRailFooter(
       children: [
         SystemNotificationBell(
           controller: w,
           mobile: false,
           onBilling: () => select('billing'),
         ),
-        RaftIconButton(
+        RaftWorkspaceHelpMenu(
+          key: const Key('rail-help'),
+          label: tr('Help'),
+          heading: tr('Help & resources'),
+          entries: [
+            RaftMenuEntry(
+              label: tr('Raft Documentation'),
+              leading: const RaftIcon(RaftGlyph.bookOpenText, size: 14),
+              trailing: const RaftIcon(RaftGlyph.arrowUpRight, size: 14),
+              onPressed: () => unawaited(openDocumentationFromHelp()),
+            ),
+            RaftMenuEntry(
+              label: tr('Mobile App'),
+              glyph: RaftGlyph.smartphone,
+              onPressed: () => openHelpSettings('about'),
+            ),
+            RaftMenuEntry(
+              label: tr('Feedback'),
+              glyph: RaftGlyph.messageSquare,
+              onPressed: () => openHelpSettings('feedback'),
+            ),
+            RaftMenuEntry(
+              label: tr(
+                joiningCommunityFromHelp ? 'Joining...' : 'Join Community',
+              ),
+              glyph: RaftGlyph.usersRound,
+              onPressed: joiningCommunityFromHelp
+                  ? null
+                  : () => unawaited(openCommunityFromHelp()),
+            ),
+          ],
+        ),
+        if (MediaQuery.sizeOf(context).width >= 1024 && workspaceMode.showCard)
+          RaftWorkspaceRailAction(
+            key: const Key('workspace-mode-toggle'),
+            label: tr(gridActive ? 'Exit Workspace' : 'Enter Workspace'),
+            glyph: RaftGlyph.squareSplitHorizontal,
+            selected: gridActive,
+            depressed: true,
+            onPressed: () => workspaceMode.setEnabled(
+              !workspaceMode.enabled,
+              capturedAuthority: workspaceMode.authority,
+            ),
+          ),
+        RaftWorkspaceRailAction(
           key: const Key('rail-settings'),
-          tooltip: 'Settings',
+          label: tr('Settings'),
+          selected: w.location.route == RaftRoute.settings,
           onPressed: () => select('settings'),
           glyph: RaftGlyph.settings,
-          visualSize: RaftMetrics.railItem,
         ),
       ],
     ),
   );
+
+  void openHelpSettings(String tab) {
+    mainSelection.dismiss();
+    threadSelection.dismiss();
+    w.closeThread(navigate: false);
+    w.navigation.navigate(
+      RaftLocation.at(
+        serverSlug: w.location.serverSlug,
+        route: RaftRoute.settings,
+        settingsPath: [tab],
+      ),
+    );
+    setState(() {});
+  }
+
+  Future<void> openDocumentationFromHelp() async {
+    final scope = mobileAuthority;
+    try {
+      await managementLaunch(WorkspaceSettings.documentationUrl);
+    } catch (e) {
+      if (mounted && scope == mobileAuthority) w.setError('$e');
+    }
+  }
+
+  Future<void> openCommunityFromHelp() async {
+    if (joiningCommunityFromHelp) return;
+    setState(() => joiningCommunityFromHelp = true);
+    final scope = mobileAuthority;
+    try {
+      var joined = w.servers
+          .where((s) => s.string('slug') == 'community')
+          .firstOrNull;
+      if (joined == null) {
+        await w.client.post(
+          '/servers/join-community',
+          data: {'slug': 'community'},
+        );
+        if (!mounted || scope != mobileAuthority) return;
+        await w.recoverMembership();
+        if (!mounted || scope != mobileAuthority) return;
+        joined = w.servers
+            .where((s) => s.string('slug') == 'community')
+            .firstOrNull;
+        if (joined == null) {
+          throw StateError('Community is missing after joining.');
+        }
+      }
+      if (joined.id == w.server?.id) {
+        w.setSection('home');
+      } else {
+        final selecting = w.selectServer(joined);
+        final selectedScope = mobileAuthority;
+        await selecting;
+        if (mounted &&
+            selectedScope == mobileAuthority &&
+            w.server?.id == joined.id) {
+          w.setSection('home');
+        }
+      }
+    } catch (e) {
+      if (mounted && scope == mobileAuthority) w.setError('$e');
+    } finally {
+      if (mounted) setState(() => joiningCommunityFromHelp = false);
+    }
+  }
 
   Future<void> showWorkspaceSwitcher() async {
     final scope = mobileAuthority;
@@ -1783,11 +1894,35 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           for (final server in w.servers)
             SimpleDialogOption(
               onPressed: () => Navigator.pop(context, server.id),
-              child: ListTile(
-                title: Text(server.name),
-                trailing: server.id == w.server?.id
-                    ? const RaftIcon(RaftGlyph.check, size: 14)
+              child: Listener(
+                onPointerDown:
+                    defaultTargetPlatform == TargetPlatform.linux &&
+                        workspaceBrowserOrigin(w.client.origin) != null
+                    ? (event) {
+                        if (event.buttons == kMiddleMouseButton) {
+                          Navigator.pop(context);
+                          unawaited(openWorkspaceInBrowser(context, w, server));
+                        }
+                      }
                     : null,
+                child: Row(
+                  children: [
+                    Expanded(child: Text(server.name)),
+                    if (defaultTargetPlatform == TargetPlatform.linux &&
+                        workspaceBrowserOrigin(w.client.origin) != null)
+                      RaftIconButton(
+                        key: ValueKey('workspace-browser-${server.id}'),
+                        tooltip: tr('Open workspace in browser'),
+                        glyph: RaftGlyph.arrowUpRight,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          unawaited(openWorkspaceInBrowser(context, w, server));
+                        },
+                      ),
+                    if (server.id == w.server?.id)
+                      const RaftIcon(RaftGlyph.check, size: 14),
+                  ],
+                ),
               ),
             ),
           SimpleDialogOption(
@@ -2017,11 +2152,78 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget channelItem(RaftChannel c) {
     final scope = mobileAuthority;
+    final agent = c.type == 'dm' && c.string('peerType') == 'agent';
+    final profile = agent
+        ? w.entityDirectory.agent(c.string('peerId')) ??
+              sidebarAgents
+                  .where((a) => a['id'] == c.string('peerId'))
+                  .firstOrNull
+        : null;
+    final displayName = profile == null
+        ? c.string('peerDisplayName')
+        : '${profile['displayName'] ?? ''}';
+    final peerName = profile == null
+        ? c.string('peerName')
+        : '${profile['name'] ?? ''}';
+    final name = displayName.isNotEmpty
+        ? displayName
+        : peerName.isNotEmpty
+        ? peerName
+        : c.name;
+    final description = profile == null
+        ? c.string('peerDescription')
+        : '${profile['description'] ?? ''}';
+    final source = projectSenderAvatar(
+      origin: w.client.origin,
+      senderId: c.string('peerId'),
+      senderType: agent ? 'agent' : 'user',
+      agents: [
+        if (agent)
+          {
+            ...?profile,
+            'id': c.string('peerId'),
+            'avatarUrl': profile?['avatarUrl'] ?? c.json['peerAvatarUrl'],
+          },
+      ],
+      members: [
+        if (!agent)
+          {
+            'userId': c.string('peerId'),
+            'avatarUrl': c.json['peerAvatarUrl'],
+            'gravatarHash': c.json['peerGravatarHash'],
+          },
+      ],
+      requestSize: 16,
+    );
     return RaftNavItem(
       key: ValueKey('sidebar-channel-${c.id}'),
-      label: c.type == 'dm'
-          ? c.string('peerDisplayName', c.string('peerName', c.name))
-          : c.name,
+      leading: c.type == 'dm'
+          ? RaftAvatar(
+              name: name,
+              kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
+              mountedContext: RaftMountedAvatarContext.sidebarList,
+              content: RaftAvatarContent(
+                name: name,
+                kind: agent
+                    ? RaftAvatarContentKind.agent
+                    : RaftAvatarContentKind.human,
+                uploadedUrl: source.uploadedUrl,
+                gravatarUrl: source.gravatarUrl,
+                pixelKey: source.pixelKey,
+                fallback: RaftMountedAvatarFallback(
+                  avatarContext: RaftMountedAvatarContext.sidebarList,
+                  identity: agent
+                      ? RaftMountedAvatarIdentity.agent
+                      : RaftMountedAvatarIdentity.human,
+                  gravatar: source.gravatarUrl != null,
+                ),
+              ),
+            )
+          : null,
+      description: c.type == 'dm' && description.isNotEmpty
+          ? description
+          : null,
+      label: c.type == 'dm' ? name : c.name,
       glyph: c.type == 'dm'
           ? RaftGlyph.user
           : c.type == 'private'
@@ -2064,137 +2266,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 onBilling: () => select('billing'),
               )
             else
-              SizedBox(
-                height: recipe.headerHeight,
-                child: Padding(
-                  padding: recipe.headerInset,
-                  child: Row(
-                    children: [
-                      if (!mobileHome)
-                        Text(
-                          tr('Chat'),
-                          style: RaftTypography.heading(
-                            RaftTokens.of(context),
-                            size: 18,
-                            line: 28,
-                          ),
-                        ),
-                      const Spacer(),
-                      PopupMenuButton<String>(
-                        tooltip: tr('Switch workspace'),
-                        onSelected: (value) async {
-                          scaffold.currentState?.closeDrawer();
-                          if (value == 'create') {
-                            await WorkspaceActions.create(context, w);
-                          } else if (value == 'join') {
-                            await WorkspaceActions.join(context, w);
-                          } else if (value == 'settings') {
-                            select('workspace-settings');
-                          } else {
-                            await w.selectServer(
-                              w.servers.firstWhere((s) => s.id == value),
-                            );
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          for (final s in w.servers)
-                            PopupMenuItem(
-                              value: s.id,
-                              child: Listener(
-                                onPointerDown:
-                                    defaultTargetPlatform ==
-                                            TargetPlatform.linux &&
-                                        workspaceBrowserOrigin(
-                                              w.client.origin,
-                                            ) !=
-                                            null
-                                    ? (event) {
-                                        if (event.buttons ==
-                                            kMiddleMouseButton) {
-                                          Navigator.of(context).pop();
-                                          unawaited(
-                                            openWorkspaceInBrowser(
-                                              context,
-                                              w,
-                                              s,
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    : null,
-                                child: Row(
-                                  children: [
-                                    Expanded(child: Text(s.name)),
-                                    if (defaultTargetPlatform ==
-                                            TargetPlatform.linux &&
-                                        workspaceBrowserOrigin(
-                                              w.client.origin,
-                                            ) !=
-                                            null)
-                                      IconButton(
-                                        key: ValueKey(
-                                          'workspace-browser-${s.id}',
-                                        ),
-                                        tooltip: tr(
-                                          'Open workspace in browser',
-                                        ),
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          unawaited(
-                                            openWorkspaceInBrowser(
-                                              context,
-                                              w,
-                                              s,
-                                            ),
-                                          );
-                                        },
-                                        constraints: const BoxConstraints(
-                                          minWidth: 48,
-                                          minHeight: 48,
-                                        ),
-                                        icon: const Icon(Icons.open_in_new),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          const PopupMenuDivider(),
-                          if (w.server != null)
-                            PopupMenuItem(
-                              value: 'settings',
-                              child: Text(tr('Workspace settings')),
-                            ),
-                          PopupMenuItem(
-                            value: 'create',
-                            child: Text(tr('Create workspace')),
-                          ),
-                          PopupMenuItem(
-                            value: 'join',
-                            child: Text(tr('Join workspace')),
-                          ),
-                        ],
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 115),
-                              child: Text(
-                                w.server?.name ?? tr('Workspace'),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const RaftIcon(RaftGlyph.chevronDown, size: 16),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            if (!mobileHome)
-              Divider(
-                height: RaftTokens.of(context).border,
-                thickness: RaftTokens.of(context).border,
+              RaftChatSidebarHeading(
+                label: tr('Chat'),
+                workspaceEnabled: gridActive,
               ),
             Expanded(
               child: ListView(
@@ -2235,18 +2309,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 ],
               ),
             ),
-            if (!mobileHome) ...[
-              liveActivityBar(),
-              const Divider(height: 1),
-              RaftNavItem(
-                key: const Key('account-navigation'),
-                label: w.client.user?.name ?? tr('Account'),
-                icon: Icons.account_circle_outlined,
-                glyph: RaftGlyph.circleUserRound,
-                onTap: () => select('settings'),
-                selected: w.section == 'settings',
-              ),
-            ],
+            if (!mobileHome) liveActivityBar(),
           ],
         ),
       ),

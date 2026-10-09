@@ -128,3 +128,5 @@ export 'src/thread_resolution_body.dart';
 export 'src/channel_resolution_body.dart';
 
 export 'src/rail_attention.dart';
+
+export 'src/workspace_shell.dart';

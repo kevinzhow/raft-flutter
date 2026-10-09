@@ -24,6 +24,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
@@ -179,6 +180,10 @@ void main() {
         holds: ((props['hold'] as List?) ?? const []).cast<String>(),
       );
       final w = WorkspaceController(client);
+      // Source capture-web.mjs is Chromium Web, not the Electron shell.
+      // The shared fixture has no stored hide-empty choice. Match its effective
+      // default explicitly without changing native/Electron product defaults.
+      final presentation = PersonalPresentationStore(desktop: false);
       final shotKey = GlobalKey();
       final notifications = NativeNotificationService();
       TestGesture? mouse;
@@ -250,6 +255,7 @@ void main() {
             ),
             home: WorkspaceView(
               controller: w,
+              presentation: presentation,
               appearance: RaftAppearance(
                 mode: dark ? ThemeMode.dark : ThemeMode.light,
                 light: family,
@@ -419,6 +425,10 @@ void main() {
             'renderer': 'Flutter Linux desktop engine (xvfb), RepaintBoundary.toImage at 1x',
             'regions': regions,
             'fixtureSha256': fixtureSha,
+            'effectivePresentation': {
+              'sourceShell': 'web',
+              'hideEmptySections': presentation.value.hideEmptySections,
+            },
             'fixtureMisses': client.misses.toList()..sort(),
             'capturedAt': DateTime.now().toUtc().toIso8601String(),
           }),
@@ -440,6 +450,7 @@ void main() {
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(milliseconds: 100));
       w.dispose();
+      presentation.dispose();
       await client.stream.close();
     }
     File('${outDir.path}/_capture-summary.json').writeAsStringSync(
