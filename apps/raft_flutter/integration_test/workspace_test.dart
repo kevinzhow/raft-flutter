@@ -605,10 +605,11 @@ void main() {
         expect(overlay.value.systemNavigationBarColor, Colors.transparent);
         await screenshot(tester, 'linux-edge-to-edge-login');
       }
-      await tester.enterText(
-        find.byKey(const Key('login-origin')),
-        fixture['origin'],
-      );
+      await tester.tap(find.byKey(const Key('login-server')));
+      await tester.pumpAndSettle();
+      await tester.enterText(field('Server URL'), fixture['origin']);
+      await tester.tap(find.widgetWithText(RaftButton, 'Save'));
+      await until(tester, () => find.byType(RaftFormDialog).evaluate().isEmpty);
       await tester.enterText(
         find.byKey(const Key('login-email')),
         fixture['email'],
