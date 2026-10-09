@@ -29,6 +29,7 @@ class ResourceView extends StatefulWidget {
     this.clock,
     this.initialQuery,
     this.initialSearchChannelId,
+    this.initialSearchDeferUntilQuery = false,
     this.onSearchEntity,
     this.onActivityItem,
     this.searchMemory,
@@ -46,6 +47,10 @@ class ResourceView extends StatefulWidget {
   /// Explicit channel search entry. Consumers key the view by entry identity;
   /// saved global search state is not restored over this initial filter.
   final String? initialSearchChannelId;
+
+  /// ChatPanel channel-search entry waits for a committed nonempty query.
+  /// Source MessageSearchPage defer=1; manual filter-only searches are unchanged.
+  final bool initialSearchDeferUntilQuery;
 
   final SearchMemoryStore? searchMemory;
   final bool restoreSearchState;
@@ -547,6 +552,16 @@ class _ResourceViewState extends State<ResourceView> {
       });
       return;
     }
+    if (widget.section == 'search' &&
+        widget.initialSearchDeferUntilQuery &&
+        query.text.trim().isEmpty) {
+      setState(() {
+        clearRows();
+        loading = false;
+        error = null;
+      });
+      return;
+    }
     if (['search', 'tasks', 'activity'].contains(widget.section)) {
       unawaited(loadSenders(scope));
     }
@@ -892,7 +907,8 @@ class _ResourceViewState extends State<ResourceView> {
               ? Center(child: CircularProgressIndicator())
               : widget.section == 'search' &&
                     query.text.trim().isEmpty &&
-                    !advanced.hasSearchFilter
+                    (!advanced.hasSearchFilter ||
+                        widget.initialSearchDeferUntilQuery)
               ? searchHome(scope)
               : widget.section == 'search'
               ? ResourceSearchResults(

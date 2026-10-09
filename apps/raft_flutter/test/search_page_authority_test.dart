@@ -103,6 +103,38 @@ void main() {
       expect(find.textContaining('Revoked private result'), findsNothing);
     },
   );
+  testWidgets(
+    'deferred channel entry waits for query and retains channel on commit',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.elegant),
+          home: Scaffold(
+            body: ResourceView(
+              controller: w,
+              section: 'search',
+              initialSearchChannelId: 'c',
+              initialSearchDeferUntilQuery: true,
+              restoreSearchState: false,
+              onMessage: (_, _) async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(w.requests, isEmpty);
+      await tester.enterText(find.byType(TextField), 'topic');
+      await tester.pump(const Duration(milliseconds: 210));
+      expect(w.requests.single.text, 'topic');
+      expect(w.requests.single.channelId, 'c');
+      w.requests.single.response.complete({'results': [], 'hasMore': false});
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump(const Duration(milliseconds: 210));
+      expect(w.requests, hasLength(1));
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets('unavailable explicit channel never falls back to global query', (
     tester,
   ) async {
