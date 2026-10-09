@@ -144,3 +144,68 @@ For the distinct subsequent-channel double gesture, desktop canonical routes
 have no narrow Back control. The native detector delivers a platform pop event
 to the real mounted PopScope; Source uses browser history Back. Neither receipt
 claims physical keyboard or hardware Back-button input.
+
+
+## Separate cached-window failure after canonical Back
+
+`pair-after-thread-double-v5-brutal-desktop.json` remains **FAIL**. Source's
+`after-thread-double-v5/source-brutal-desktop` completes; native
+`flutter-after-thread-double-v5-brutal-desktop` records 264 layout observations
+and18 raster PNGs and completes with one pending-state failure: the already
+accepted Android tail is absent while its uncached target context waits. The
+later target accepts and centers. Its fixture is
+`85bfcae038858f916e479734017c0d559523b23ef800749017125fe1b7e7a056`,
+with the same native product SHA as the successful thread double above.
+
+This is an accepted in-memory bucket contract. Source's fresh browser context
+starts with no persisted message fixture. Android tail requests49/59 accept
+before the first visible `accepted-tail`; design-channel tails106/118 then
+accept during the canonical thread. Android target context160 is held. At the
+`pending-context` checkpoint, the old Android tail is visible before gate
+release181; there is no new Android tail GET until185 after context acceptance.
+The exact chronology is retained in the Source receipt.
+
+Source `messageStore.ts:1246–1252` selects a per-channel bucket and
+`ChatPanel.ts:223` subscribes to that selector. `loadMessageContext` at
+`messageStore.ts:2374–2412` publishes loading/current channel without clearing
+that existing accepted bucket; response acceptance replaces it atomically at
+2440. This does not authorize displaying an unaccepted disk or other-channel
+window. The message-controller owner has this independent failure and its
+Source evidence. The detector still requires the retained window.
+
+
+## Owned-focus correction: new native receipts
+
+After the committed E67dd8e owned timer correction, all three desktop
+`N24/thread-single` pairs pass behavior admission with the original sampled-frame
+limits. A separate Brutal `N24/channel-after-thread-single` pair also passes.
+The earlier v4 URL failures are retained unchanged; these are new v6 outputs.
+
+| Pair under `.local/process-parity-c/` | Source layout/PNG | Native Linux layout/PNG | Outcome |
+| --- | --- | --- | --- |
+| `pair-thread-v6-brutal-desktop.json` | 324/84 | 144/13 | BEHAVIOR_PASS_WITH_LIMITS |
+| `pair-thread-v6-elegant-light-desktop.json` | 347/71 | 96/13 | BEHAVIOR_PASS_WITH_LIMITS |
+| `pair-thread-v6-elegant-dark-desktop.json` | 306/68 | 154/12 | BEHAVIOR_PASS_WITH_LIMITS |
+| `pair-after-thread-v6-brutal-desktop.json` | 508/123 | 234/16 | BEHAVIOR_PASS_WITH_LIMITS |
+
+Native product SHA is
+`a5edf3453cb017cb3c92f41b9c6510744e21ae166e2b086a96e3753cea7136b3`.
+The thread input retains SHA01afd535… and the subsequent-channel input retains
+SHAb0d41563… from the full hashes above. Source input remains799c42a7…;
+both providers bind runtime
+`ba8f7cb55572030b1651e1b2aace7cf98b4e6b65af3983d67852035171aefd1f`.
+The recorded maximum renderer timestamp gaps across these pairs are
+1.02–1.94 seconds, including quiet unchanged periods. They do not prove absence
+of unobserved intermediate paints.
+
+The private Linux thread pane remains x624/w816 versus Source x626/w814, and
+its focused reply wrapper remains62px versus36px. Its vertical center and
+independent parent acceptance are correct, but geometry/pixel parity is not
+claimed. Native Android and the root-integrated product require their own bound
+receipts. The cached-window failure after canonical Back remains open separately.
+
+Pair admission also rejects identical missing/malformed Source or runtime
+fingerprints and missing native device/platform; it never infers Android from
+390px width or fills absent native identity with Linux defaults. Five receipt
+admission tests cover these failure boundaries. They are host unit checks,
+not renderer execution.

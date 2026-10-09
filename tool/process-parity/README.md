@@ -8,8 +8,8 @@ wall timestamps, status and input hashes are preserved.
 
 The original verified pair is **Activity → uncached target in an already accepted
 channel**. The runner also supports separately labeled thread opening and
-channel-after-thread gestures; their new native receipts are pending in the
-[N24 report](../../docs/process-parity-n24-first-batch.md). Cold-channel,
+channel-after-thread gestures; their native receipts and retained failures are in
+the [N24 report](../../docs/process-parity-n24-first-batch.md). Cold-channel,
 cached-target, race/revocation and entity-hydration flows remain outside this
 batch. Three actual themes and 390×844/1440×900 are selectable inputs; a supported
 input is not a completed platform/matrix claim.
@@ -59,7 +59,8 @@ python3 tool/process-parity/compare-pair.py <source-dir> <flutter-dir> --out <ne
 
 Pair comparison checks input identity, completed receipts, renderer manifest
 integrity and semantic checkpoint URIs. Success is `BEHAVIOR_PASS_WITH_LIMITS`.
-It retains transient missing controls/offsets; final checkpoints do not erase
+Missing/malformed input fingerprints and missing native platform/device fail
+admission. It retains transient missing controls/offsets; final checkpoints do not erase
 intermediate observations or exclude unobserved paints.
 
 Source authority at `26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6`:
@@ -125,6 +126,7 @@ python3 tool/process-parity/run.py --out .local/<new-thread> --flow thread-singl
 python3 tool/process-parity/run.py --out .local/<new-after-thread> --flow channel-after-thread-single --only brutal-desktop
 python3 tool/process-parity/run.py --out .local/<new-exact-input> --fixture <exact-fixture.json> --only brutal-desktop
 python3 tool/process-parity/fixture.test.py
+python3 tool/process-parity/pair.test.py
 ```
 
 Thread lookup, parent context and focused replies are independently held. Known

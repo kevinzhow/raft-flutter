@@ -2,6 +2,7 @@
 """Compare raw paired process receipts; do not score pixels or hide transitions."""
 import argparse
 import json
+import re
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
@@ -41,6 +42,28 @@ def summary(path):
     }
 
 
+def input_failures(source, flutter):
+    failures = []
+    keys = ('fixtureSha', 'sourceHead', 'sourceInputSha', 'runtimeSha',
+            'theme', 'form', 'viewport')
+    for key in keys:
+        if key not in source or key not in flutter:
+            failures.append(f'Missing bound input: {key}')
+        elif source[key] != flutter[key]:
+            failures.append(f'Input mismatch: {key}')
+    for provider, receipt in [('Source', source), ('Flutter', flutter)]:
+        for key, length in [('fixtureSha', 64), ('sourceHead', 40),
+                            ('sourceInputSha', 64), ('runtimeSha', 64)]:
+            value = receipt.get(key)
+            if not isinstance(value, str) or not re.fullmatch(f'[0-9a-f]{{{length}}}', value):
+                failures.append(f'{provider} missing or malformed input fingerprint: {key}')
+    if flutter.get('platform') not in ('linux', 'android'):
+        failures.append('Flutter missing or unsupported actual platform')
+    if not isinstance(flutter.get('device'), str) or not flutter['device'].strip():
+        failures.append('Flutter missing actual device')
+    return failures
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('source', type=Path)
@@ -50,10 +73,8 @@ def main():
     if args.out.exists():
         raise SystemExit('Refusing to overwrite paired evidence')
     source, flutter = summary(args.source), summary(args.flutter)
-    failures = []
     a,b = source['receipt'], flutter['receipt']
-    for key in ('fixtureSha', 'sourceHead', 'sourceInputSha', 'runtimeSha', 'theme', 'form', 'viewport'):
-        if a[key] != b[key]: failures.append(f'Input mismatch: {key}')
+    failures = input_failures(a, b)
     for name, summary_ in [('Source',source), ('Flutter',flutter)]:
         if summary_['receipt']['result'] != 'PASS': failures.append(f'{name} flow receipt failed')
         if not summary_['rendererManifestMatchesCount'] or summary_['rendererPngCount'] != summary_['rendererFrames']:
@@ -78,7 +99,7 @@ def main():
         'limits': [
             'DOM rAF rectangles and Flutter post-frame layout observations are not compositor pixel assertions.',
             'Chromium CDP PNGs sample emitted renderer frames; timestamp gaps are retained and can conceal intermediate paints.',
-            f"Flutter PNGs rasterize changed display-list layers on {b.get('platform', 'linux')} ({b.get('device', 'linux-xvfb')}); they do not observe physical screen scanout.",
+            f"Flutter PNGs rasterize changed display-list layers on {b.get('platform', 'unreported')} ({b.get('device', 'unreported')}); they do not observe physical screen scanout.",
             'Stage receipt PASS does not remove earlier transient missing controls, offsets, errors or runner failures.',
             'No pixel similarity acceptance, read-back backend, real auth/socket, all N24 gestures or complete process matrix claim.',
         ],
