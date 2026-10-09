@@ -16,6 +16,9 @@ import 'package:flutter/animation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 
+import '../css_recipe_decoration.dart';
+export '../css_recipe_decoration.dart';
+
 // ---------------------------------------------------------------- CSS values
 
 /// Parsed CSS value (see tool/recipes/lib/css-value.mjs for the grammar).
@@ -1115,7 +1118,7 @@ class RaftSlotStyle {
     return Border(top: side('top', w.top), right: side('right', w.right), bottom: side('bottom', w.bottom), left: side('left', w.left));
   }
 
-  BoxDecoration decoration(RaftTokenResolver tokens, {Color? currentColor}) => BoxDecoration(
+  BoxDecoration decoration(RaftTokenResolver tokens, {Color? currentColor}) => RaftRecipeDecoration(
         color: backgroundColor?.resolve(tokens, currentColor: currentColor),
         border: border(tokens, currentColor: currentColor),
         borderRadius: borderRadius,

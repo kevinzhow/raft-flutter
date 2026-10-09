@@ -150,7 +150,7 @@ Color? raftCssColorLerp(Color? a, Color? b, double t) {
 /// beneath the whole box, and scales a disappearing shadow without fading
 /// its color. That exposes black inside a background fading to transparent.
 /// Keep the outer shadow outside the border box throughout the transition.
-class RaftCssBoxDecoration extends BoxDecoration {
+class RaftCssBoxDecoration extends RaftRecipeDecoration {
   const RaftCssBoxDecoration({
     super.color,
     super.border,
@@ -220,7 +220,7 @@ class RaftCssBoxDecoration extends BoxDecoration {
 
 class _CssBoxPainter extends BoxPainter {
   _CssBoxPainter(this.decoration, VoidCallback? onChanged)
-    : surface = BoxDecoration(
+    : surface = RaftRecipeDecoration(
         color: decoration.color,
         border: decoration.border,
         borderRadius: decoration.borderRadius,
@@ -302,7 +302,7 @@ class RaftRecipeBox extends StatelessWidget {
     final textStyle = style.text(tokens, base: inherited);
     final current = textStyle.color;
     final layers = style.cssShadows(tokens, currentColor: current);
-    var decoration = BoxDecoration(
+    BoxDecoration decoration = RaftRecipeDecoration(
       color: style.backgroundColor?.resolve(tokens, currentColor: current),
       border: style.border(tokens, currentColor: current),
       borderRadius: style.borderRadius,
@@ -322,7 +322,7 @@ class RaftRecipeBox extends StatelessWidget {
     // CSS outer box-shadows never paint under the border box (a translucent
     // background must not reveal them), unlike Flutter's BoxDecoration.
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
-    decoration = BoxDecoration(
+    decoration = RaftRecipeDecoration(
       color: decoration.color,
       border: decoration.border,
       borderRadius: decoration.borderRadius,
@@ -506,7 +506,7 @@ class RaftLayeredDecoration extends Decoration {
 
 class _InsetPainter extends BoxPainter {
   _InsetPainter(this.d, VoidCallback? onChanged)
-    : fill = BoxDecoration(
+    : fill = RaftRecipeDecoration(
         color: d.base.color,
         borderRadius: d.base.borderRadius,
         shape: d.base.shape,
@@ -524,7 +524,12 @@ class _InsetPainter extends BoxPainter {
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final size = configuration.size!;
     fill.paint(canvas, offset, configuration);
-    final outer = d.radius.toRRect(offset & size);
+    final radius = raftCssRadiusForBox(
+      d.radius,
+      offset & size,
+      configuration.textDirection,
+    );
+    final outer = radius.toRRect(offset & size);
     if (d.sheen != null) {
       canvas.drawRRect(
         outer,
@@ -537,10 +542,10 @@ class _InsetPainter extends BoxPainter {
     Radius shrink(Radius r) => Radius.circular(math.max(0, r.x - bw));
     final inner = RRect.fromRectAndCorners(
       paddingBox,
-      topLeft: shrink(d.radius.topLeft),
-      topRight: shrink(d.radius.topRight),
-      bottomLeft: shrink(d.radius.bottomLeft),
-      bottomRight: shrink(d.radius.bottomRight),
+      topLeft: shrink(radius.topLeft),
+      topRight: shrink(radius.topRight),
+      bottomLeft: shrink(radius.bottomLeft),
+      bottomRight: shrink(radius.bottomRight),
     );
     for (final l in d.layers.reversed) {
       canvas.save();
@@ -561,7 +566,7 @@ class _InsetPainter extends BoxPainter {
       canvas,
       offset & size,
       shape: d.base.shape,
-      borderRadius: d.base.borderRadius?.resolve(TextDirection.ltr),
+      borderRadius: d.base.borderRadius == null ? null : radius,
     );
   }
 }
@@ -583,7 +588,7 @@ class RaftOuterShadowPainter extends CustomPainter {
     final rect = Offset.zero & size;
     final box = circle
         ? RRect.fromRectAndRadius(rect, Radius.circular(size.shortestSide / 2))
-        : radius.toRRect(rect);
+        : radius.toRRect(rect).scaleRadii();
     canvas.save();
     canvas.clipPath(
       Path()
