@@ -1,3 +1,4 @@
+import 'package:raft_ui/agent_menu_previews.dart' as agent_menus;
 import 'package:raft_ui/switch_previews.dart' as source_switches;
 import 'package:raft_ui/rich_surface_visual_previews.dart' as surface;
 import 'package:flutter/material.dart';
@@ -161,3 +162,6 @@ Widget appVisualOutsideListMarkers() => surface.visualOutsideListMarkers();
 @RichVisualPreviews('visualCollapsedTableBorders')
 Widget appVisualCollapsedTableBorders() =>
     surface.visualCollapsedTableBorders();
+
+@RaftPreviews('Agent menu', size: Size(390, 360))
+Widget appAgentMenuPreview() => agent_menus.agentMenuPreview();

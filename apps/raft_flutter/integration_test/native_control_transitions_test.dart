@@ -7,11 +7,14 @@ import 'package:integration_test/integration_test.dart';
 import '../../../packages/raft_ui/test/control_transition_paint_test.dart'
     as transitions;
 
+import '../../../packages/raft_ui/test/agent_menu_anchor_test.dart' as menus;
+
 // Actual native renderer evidence for the shared product controls. These
 // controlled fixtures do not establish authentication or full-page parity.
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   transitions.main();
+  menus.main();
   tearDownAll(() async {
     if (!Platform.isAndroid || transitions.evidencePath.isEmpty) return;
     final dir = Directory(

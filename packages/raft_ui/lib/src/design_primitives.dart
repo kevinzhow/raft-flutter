@@ -2790,6 +2790,7 @@ class RaftInteractive extends StatefulWidget {
     super.key,
     required this.builder,
     this.onPressed,
+    this.onKeyboardActivate,
     this.busy = false,
     this.focusNode,
     this.focusOnPointer = true,
@@ -2804,6 +2805,10 @@ class RaftInteractive extends StatefulWidget {
   final Widget Function(BuildContext context, RaftInteractionState state)
   builder;
   final VoidCallback? onPressed;
+
+  /// Optional keyboard/semantics activation. Pointer activation continues
+  /// to call [onPressed]; without this callback all inputs call [onPressed].
+  final VoidCallback? onKeyboardActivate;
   final bool busy, focusOnPointer, button;
   final bool? selected, checked;
   final FocusNode? focusNode;
@@ -2865,7 +2870,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
   void activateControl() {
     if (!enabled) return;
     node.requestFocus();
-    widget.onPressed?.call();
+    (widget.onKeyboardActivate ?? widget.onPressed)?.call();
   }
 
   @override

@@ -525,17 +525,28 @@ class RaftPanelIconButton extends StatelessWidget {
     required this.tooltip,
     this.onPressed,
     this.iconSize = 14,
+    this.anchorLink,
+    this.focusNode,
+    this.onKeyboardActivate,
   });
   final RaftGlyph glyph;
   final String tooltip;
   final VoidCallback? onPressed;
   final double iconSize;
+
+  /// Overlay anchor at the painted button, including recipe hover/press
+  /// translation. CSS menus use the trigger's transformed border box.
+  final LayerLink? anchorLink;
+  final FocusNode? focusNode;
+  final VoidCallback? onKeyboardActivate;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
     return RaftInteractive(
       onPressed: onPressed,
+      focusNode: focusNode,
+      onKeyboardActivate: onKeyboardActivate,
       semanticLabel: tooltip,
       tooltip: tooltip,
       builder: (context, state) {
@@ -552,21 +563,25 @@ class RaftPanelIconButton extends StatelessWidget {
           }),
           tokens: rt,
         ).root;
+        Widget button = Container(
+          width: s.width,
+          height: s.height,
+          alignment: Alignment.center,
+          decoration: s.decoration(rt),
+          child: RaftIcon(
+            glyph,
+            size: iconSize,
+            color: s.color?.resolve(rt) ?? t.strong,
+          ),
+        );
+        if (anchorLink != null) {
+          button = CompositedTransformTarget(link: anchorLink!, child: button);
+        }
         return Opacity(
           opacity: s.opacity ?? 1,
           child: Transform.translate(
             offset: s.translate ?? Offset.zero,
-            child: Container(
-              width: s.width,
-              height: s.height,
-              alignment: Alignment.center,
-              decoration: s.decoration(rt),
-              child: RaftIcon(
-                glyph,
-                size: iconSize,
-                color: s.color?.resolve(rt) ?? t.strong,
-              ),
-            ),
+            child: button,
           ),
         );
       },

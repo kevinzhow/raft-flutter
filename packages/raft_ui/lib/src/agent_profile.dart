@@ -5,6 +5,7 @@
 // widgets here take plain view data and callbacks. Values cite the Tailwind
 // classes / raft-ui recipes they come from.
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'avatar_content.dart';
 import 'icons.dart';
@@ -1668,49 +1669,84 @@ class RaftOverflowMenuButton extends StatefulWidget {
 class _RaftOverflowMenuButtonState extends State<RaftOverflowMenuButton> {
   final menu = OverlayPortalController();
   final anchor = LayerLink();
+  final triggerFocus = FocusNode();
+  bool keyboardOpened = false;
+
+  void close() {
+    if (!menu.isShowing) return;
+    setState(menu.hide);
+    triggerFocus.requestFocus();
+  }
+
+  void toggle({bool keyboard = false}) {
+    if (menu.isShowing) {
+      close();
+    } else {
+      keyboardOpened = keyboard;
+      setState(menu.show);
+    }
+  }
+
   @override
-  Widget build(BuildContext context) => CompositedTransformTarget(
-    link: anchor,
-    child: OverlayPortal(
-      controller: menu,
-      overlayChildBuilder: (_) => Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: menu.hide,
-            ),
-          ),
-          CompositedTransformFollower(
-            link: anchor,
-            targetAnchor: Alignment.bottomRight,
-            followerAnchor: Alignment.topRight,
-            offset: const Offset(0, 4),
-            child: Align(
-              alignment: Alignment.topRight,
-              child: RaftMenuPanel(
-                onDismiss: menu.hide,
-                children: [
-                  for (final e in widget.entries)
-                    RaftMenuItem(
-                      label: e.label ?? '',
-                      glyph: e.glyph,
-                      leading: e.leading,
-                      onPressed: () {
-                        menu.hide();
-                        e.onPressed?.call();
-                      },
-                    ),
-                ],
+  void dispose() {
+    triggerFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => OverlayPortal(
+    controller: menu,
+    overlayChildBuilder: (_) => CompositedTransformFollower(
+      link: anchor,
+      targetAnchor: Alignment.bottomRight,
+      followerAnchor: Alignment.topRight,
+      offset: const Offset(0, 4),
+      child: Align(
+        alignment: Alignment.topRight,
+        child: TapRegion(
+          groupId: anchor,
+          child: FocusScope(
+            autofocus: true,
+            child: CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.escape): close,
+              },
+              child: Focus(
+                autofocus: !keyboardOpened,
+                child: RaftMenuPanel(
+                  onDismiss: close,
+                  children: [
+                    for (final (i, e) in widget.entries.indexed)
+                      RaftMenuItem(
+                        autofocus: keyboardOpened && i == 0,
+                        label: e.label ?? '',
+                        glyph: e.glyph,
+                        leading: e.leading,
+                        onPressed: () {
+                          close();
+                          e.onPressed?.call();
+                        },
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
-        ],
+        ),
       ),
+    ),
+    child: TapRegion(
+      groupId: anchor,
+      enabled: menu.isShowing,
+      consumeOutsideTaps: true,
+      onTapOutside: (_) => close(),
       child: RaftPanelIconButton(
+        anchorLink: anchor,
+        focusNode: triggerFocus,
         glyph: RaftGlyph.ellipsisVertical,
         tooltip: widget.tooltip,
-        onPressed: menu.toggle,
+        onPressed: () => toggle(),
+        onKeyboardActivate: () => toggle(keyboard: true),
       ),
     ),
   );

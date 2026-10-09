@@ -362,12 +362,20 @@ ParityCase _agentDetail({required bool lifecycle}) => agentDetailParityCase(
   'productUx',
   notes: lifecycle
       ? ' Lifecycle actions = the header "More actions" overflow menu '
-            '(Direct Message, Stop Agent, Restart / Reset), opened by tapping '
-            'its trigger.'
+            '(Direct Message, Stop Agent, Restart / Reset), opened by the '
+            'same mouse click as the React provider, retaining trigger hover.'
       : '',
   then: lifecycle
       ? (t, ctx) async {
-          await t.tap(find.byKey(const Key('agent-profile-overflow-trigger')));
+          final trigger = find.byKey(
+            const Key('agent-profile-overflow-trigger'),
+          );
+          final point = t.getCenter(trigger);
+          final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+          addTearDown(mouse.removePointer);
+          await mouse.addPointer(location: point);
+          await mouse.down(point);
+          await mouse.up();
           await t.pump(const Duration(milliseconds: 200));
         }
       : null,
