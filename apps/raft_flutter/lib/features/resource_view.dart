@@ -3086,39 +3086,7 @@ class _ResourceViewState extends State<ResourceView> {
       (context) => FutureBuilder<void>(
         future: detailLoad,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return AlertDialog(
-              key: const ValueKey('task-details-loading'),
-              title: const Align(
-                alignment: Alignment.centerLeft,
-                child: FractionallySizedBox(
-                  widthFactor: 2 / 3,
-                  child: RaftSkeleton(height: 24),
-                ),
-              ),
-              content: const SizedBox(
-                width: 560,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RaftSkeleton(height: 16),
-                    SizedBox(height: 12),
-                    FractionallySizedBox(
-                      widthFactor: .8,
-                      child: RaftSkeleton(height: 16),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope),
-                  child: Text(raftText(context, 'Close')),
-                ),
-              ],
-            );
-          }
+          final pending = snapshot.connectionState != ConnectionState.done;
           if (!accepts(scope)) return const SizedBox.shrink();
           if (detailError is RaftApiException &&
               (detailError as RaftApiException).status == 404) {
@@ -3127,109 +3095,129 @@ class _ResourceViewState extends State<ResourceView> {
             });
             return const SizedBox.shrink();
           }
-          if (detailError != null) {
-            return AlertDialog(
-              key: const ValueKey('task-details-error'),
-              title: Text(raftText(context, 'Unable to load task')),
-              content: Text('$detailError'),
-              actions: [
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope),
-                  child: Text(raftText(context, 'Close')),
-                ),
-              ],
-            );
-          }
           return AlertDialog(
-            title: Text('task #${task['taskNumber'] ?? ''} · ${task['title']}'),
+            key: pending
+                ? const ValueKey('task-details-loading')
+                : detailError != null
+                ? const ValueKey('task-details-error')
+                : null,
+            title: pending
+                ? const Align(
+                    alignment: Alignment.centerLeft,
+                    child: FractionallySizedBox(
+                      widthFactor: 2 / 3,
+                      child: RaftSkeleton(height: 24),
+                    ),
+                  )
+                : detailError != null
+                ? Text(raftText(context, 'Unable to load task'))
+                : Text('task #${task['taskNumber'] ?? ''} · ${task['title']}'),
             content: SizedBox(
               width: 560,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SelectableText('${task['description'] ?? ''}'),
-                    const SizedBox(height: 16),
-                    Text(
-                      raftFormat(context, 'Status: {status}', {
-                        'status': raftText(
-                          context,
-                          raftTaskStatusLabel('${task['status']}'),
+              child: pending
+                  ? const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RaftSkeleton(height: 16),
+                        SizedBox(height: RaftSpace.x3),
+                        FractionallySizedBox(
+                          widthFactor: .8,
+                          child: RaftSkeleton(height: 16),
                         ),
-                      }),
-                    ),
-                    Text(
-                      raftFormat(context, 'Assignee: {name}', {
-                        'name':
-                            task['claimedByName'] ??
-                            raftText(context, 'Unassigned'),
-                      }),
-                    ),
-                    if (task['revision'] != null)
-                      Text(
-                        raftFormat(context, 'Revision: {revision}', {
-                          'revision': task['revision'],
-                        }),
+                      ],
+                    )
+                  : detailError != null
+                  ? Text('$detailError')
+                  : SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SelectableText('${task['description'] ?? ''}'),
+                          const SizedBox(height: 16),
+                          Text(
+                            raftFormat(context, 'Status: {status}', {
+                              'status': raftText(
+                                context,
+                                raftTaskStatusLabel('${task['status']}'),
+                              ),
+                            }),
+                          ),
+                          Text(
+                            raftFormat(context, 'Assignee: {name}', {
+                              'name':
+                                  task['claimedByName'] ??
+                                  raftText(context, 'Unassigned'),
+                            }),
+                          ),
+                          if (task['revision'] != null)
+                            Text(
+                              raftFormat(context, 'Revision: {revision}', {
+                                'revision': task['revision'],
+                              }),
+                            ),
+                          const Divider(),
+                          Text(
+                            raftText(context, 'History'),
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          if (historyNotice != null) Text(historyNotice!),
+                          for (final event in history)
+                            ListTile(
+                              dense: true,
+                              title: Text(
+                                '${event['eventType']} · ${event['actorName'] ?? event['actorType']}',
+                              ),
+                              subtitle: Text('${event['createdAt']}'),
+                            ),
+                        ],
                       ),
-                    const Divider(),
-                    Text(
-                      raftText(context, 'History'),
-                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    if (historyNotice != null) Text(historyNotice!),
-                    for (final event in history)
-                      ListTile(
-                        dense: true,
-                        title: Text(
-                          '${event['eventType']} · ${event['actorName'] ?? event['actorType']}',
-                        ),
-                        subtitle: Text('${event['createdAt']}'),
-                      ),
-                  ],
-                ),
-              ),
             ),
             actions: [
-              if (task['messageId'] is String)
-                TextButton(
-                  onPressed: () =>
-                      closeOwnedDialog(context, scope, 'discussion'),
-                  child: Text(raftText(context, 'Discussion')),
-                ),
-              if (writable && task['status'] != 'done')
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope, 'assign'),
-                  child: Text(raftText(context, 'Assign')),
-                ),
-              if (writable && task['claimedById'] == null)
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope, 'claim'),
-                  child: Text(raftText(context, 'Claim')),
-                ),
-              if (writable &&
-                  task['claimedByType'] == 'user' &&
-                  task['claimedById'] == w.client.user?.id)
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope, 'unclaim'),
-                  child: Text(raftText(context, 'Release')),
-                ),
-              if (cleanup && manage)
-                for (final status in ['done', 'closed'])
+              if (!pending && detailError == null) ...[
+                if (task['messageId'] is String)
                   TextButton(
                     onPressed: () =>
-                        closeOwnedDialog(context, scope, 'cleanup:$status'),
-                    child: Text(
-                      raftText(
-                        context,
-                        status == 'done' ? 'Mark done' : 'Close task',
+                        closeOwnedDialog(context, scope, 'discussion'),
+                    child: Text(raftText(context, 'Discussion')),
+                  ),
+                if (writable && task['status'] != 'done')
+                  TextButton(
+                    onPressed: () => closeOwnedDialog(context, scope, 'assign'),
+                    child: Text(raftText(context, 'Assign')),
+                  ),
+                if (writable && task['claimedById'] == null)
+                  TextButton(
+                    onPressed: () => closeOwnedDialog(context, scope, 'claim'),
+                    child: Text(raftText(context, 'Claim')),
+                  ),
+                if (writable &&
+                    task['claimedByType'] == 'user' &&
+                    task['claimedById'] == w.client.user?.id)
+                  TextButton(
+                    onPressed: () =>
+                        closeOwnedDialog(context, scope, 'unclaim'),
+                    child: Text(raftText(context, 'Release')),
+                  ),
+                if (cleanup && manage)
+                  for (final status in ['done', 'closed'])
+                    TextButton(
+                      onPressed: () =>
+                          closeOwnedDialog(context, scope, 'cleanup:$status'),
+                      child: Text(
+                        raftText(
+                          context,
+                          status == 'done' ? 'Mark done' : 'Close task',
+                        ),
                       ),
                     ),
+                if ((writable || cleanup) && (manage || ownsTask))
+                  TextButton(
+                    onPressed: () => closeOwnedDialog(context, scope, 'delete'),
+                    child: Text(raftText(context, 'Delete')),
                   ),
-              if ((writable || cleanup) && (manage || ownsTask))
-                TextButton(
-                  onPressed: () => closeOwnedDialog(context, scope, 'delete'),
-                  child: Text(raftText(context, 'Delete')),
-                ),
+              ],
               TextButton(
                 onPressed: () => closeOwnedDialog(context, scope),
                 child: Text(raftText(context, 'Close')),
