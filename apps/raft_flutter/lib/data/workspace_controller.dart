@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'workspace_cache.dart';
+import 'workspace_entity_directory.dart';
 import 'message_window_snapshot.dart';
 import 'attachment_image_repository.dart';
 
@@ -42,7 +43,20 @@ class WorkspaceController extends ChangeNotifier {
     this.cache,
     this.mobileNavigation = false,
     this.ownsClient = true,
+    WorkspaceEntityDirectory? entityDirectory,
   }) {
+    _ownsEntityDirectory = entityDirectory == null;
+    this.entityDirectory =
+        entityDirectory ??
+        WorkspaceEntityDirectory(
+          scope: _entityScope,
+          query: (path) => query(path),
+          events: client.events,
+        );
+    if (_ownsEntityDirectory) {
+      addListener(_entityAuthorityChanged);
+      this.entityDirectory.addListener(_entityDirectoryChanged);
+    }
     subscription = client.events.listen(_event);
   }
 
@@ -51,6 +65,44 @@ class WorkspaceController extends ChangeNotifier {
   final bool ownsClient;
   final RaftClient client;
   final WorkspaceCache? cache;
+  late final WorkspaceEntityDirectory entityDirectory;
+  late final bool _ownsEntityDirectory;
+  WorkspaceEntityScope? _entityScope() {
+    final principal = client.user?.id;
+    final serverId = client.serverId;
+    if (_disposed ||
+        principal == null ||
+        serverId == null ||
+        server?.id != serverId) {
+      return null;
+    }
+    return WorkspaceEntityScope(
+      origin: client.origin,
+      principal: principal,
+      serverId: serverId,
+      generation: client.generation,
+      role: server?.string('role') ?? '',
+      capabilities: {
+        if (can('viewAgents')) WorkspaceEntityKind.agents,
+        if (can('viewMachines')) WorkspaceEntityKind.computers,
+        if (can('viewMembers')) WorkspaceEntityKind.members,
+      },
+    );
+  }
+
+  void _entityDirectoryChanged() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _entityAuthorityChanged() {
+    if (_disposed || !_ownsEntityDirectory) return;
+    if (entityDirectory.synchronize() && entityDirectory.started) {
+      scheduleMicrotask(() {
+        if (!_disposed) unawaited(entityDirectory.preload());
+      });
+    }
+  }
+
   AttachmentImageRepository? _attachmentImages;
   int get retainedImageCount => _attachmentImages?.entryCount ?? 0;
   int get retainedImageEncodedBytes => _attachmentImages?.encodedByteCount ?? 0;
@@ -984,6 +1036,8 @@ class WorkspaceController extends ChangeNotifier {
     if (!canVisitSection(section)) section = 'chat';
     sidebarOrder = {};
     client.selectServer(next.id);
+    entityDirectory.synchronize();
+    unawaited(entityDirectory.preload());
     ledger.switchServer(next.id);
     readState.reset();
     reactionViewer.reset();
@@ -2217,6 +2271,11 @@ class WorkspaceController extends ChangeNotifier {
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    if (_ownsEntityDirectory) {
+      removeListener(_entityAuthorityChanged);
+      entityDirectory.removeListener(_entityDirectoryChanged);
+      entityDirectory.dispose();
+    }
     _imageAuthorities.clear();
     _attachmentImages?.dispose();
     for (final drafts in _uploads.values) {

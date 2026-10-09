@@ -17,6 +17,8 @@ const agent = <String, dynamic>{
   'id': 'a',
   'name': 'Cindy',
   'runtime': 'codex',
+  // Source local detail availability requires a real model string.
+  'model': 'gpt-6',
   'status': 'active',
   'serverRole': 'member',
   'creatorType': 'user',

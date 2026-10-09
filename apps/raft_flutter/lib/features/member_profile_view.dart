@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'agent_detail_view.dart';
 import 'public_avatar_url.dart';
@@ -41,6 +43,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
   @override
   void initState() {
     super.initState();
+    profile = w.entityDirectory.member(widget.userId) ?? {};
+    w.entityDirectory.addListener(directoryChanged);
     startManagement();
   }
 
@@ -48,10 +52,35 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
   void didUpdateWidget(MemberProfileView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != w) {
+      oldWidget.controller.entityDirectory.removeListener(directoryChanged);
+      w.entityDirectory.addListener(directoryChanged);
       rebindManagementController();
+      profile = w.entityDirectory.member(widget.userId) ?? {};
     } else if (oldWidget.userId != widget.userId) {
       refreshAuthority();
+      profile = w.entityDirectory.member(widget.userId) ?? {};
     }
+  }
+
+  void directoryChanged() {
+    if (!mounted) return;
+    final failure = w.entityDirectory.state(WorkspaceEntityKind.members).error;
+    if (failure is RaftApiException && [401, 403].contains(failure.status)) {
+      setState(() {
+        profile = {};
+        error = '$failure';
+        loading = false;
+      });
+      return;
+    }
+    final live = w.entityDirectory.member(widget.userId);
+    if (live != null) setState(() => profile = {...profile, ...live});
+  }
+
+  @override
+  void dispose() {
+    w.entityDirectory.removeListener(directoryChanged);
+    super.dispose();
   }
 
   @override
@@ -64,8 +93,22 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
     }
     final server = w.server!.id, id = widget.userId;
     final value = await w.query('/servers/$server/members/$id/profile');
-    if (accepts(generation, request) && value is Map) {
-      profile = Map<String, dynamic>.from(value);
+    if (value is! Map || value['name'] is! String) {
+      throw const FormatException('Invalid member profile response.');
+    }
+    if (accepts(generation, request)) {
+      final failure = w.entityDirectory
+          .state(WorkspaceEntityKind.members)
+          .error;
+      if (failure is RaftApiException && [401, 403].contains(failure.status)) {
+        throw failure;
+      }
+      // resolveHumanProfile.ts:4–17: accepted live membership wins over a
+      // fallback detail projection; preserve detail-only fields.
+      profile = {
+        ...Map<String, dynamic>.from(value),
+        ...?w.entityDirectory.member(widget.userId),
+      };
     }
   }
 
@@ -145,6 +188,14 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       w.client.origin,
       profile['avatarUrl'] as String?,
     );
+    if (profile.isEmpty) {
+      return SourceProfileLoadingPanel(
+        onBack: widget.onBack,
+        onClose: widget.onClose,
+        error: loading ? null : error ?? 'Profile unavailable',
+        onRetry: reload,
+      );
+    }
     return RaftPanelTextScope(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -178,22 +229,17 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
             ],
           ),
           Expanded(
-            child: loading
-                ? RaftPanelMessage(raftText(context, 'Loading...'))
-                : error != null
-                ? RaftPanelMessage(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                if (error != null)
+                  RaftPanelMessage(
                     raftText(context, 'Profile could not be loaded.'),
                     action: RaftButton(label: 'Retry', onPressed: reload),
-                  )
-                : profile.isEmpty
-                ? RaftEmptyState(
-                    title: raftText(context, 'Profile unavailable'),
-                    detail: '',
-                  )
-                : ListView(
-                    padding: EdgeInsets.zero,
-                    children: _sections(context, name, handle, self, avatarUrl),
                   ),
+                ..._sections(context, name, handle, self, avatarUrl),
+              ],
+            ),
           ),
         ],
       ),
@@ -214,9 +260,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         .toList();
     final joinedRaw = profile['joinedAt'];
     final joined = joinedRaw is String && DateTime.tryParse(joinedRaw) != null
-        ? DateFormat.yMMMd(
-            Localizations.localeOf(context).toLanguageTag(),
-          ).format(DateTime.parse(joinedRaw).toLocal())
+        ? DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
+              .format(DateTime.parse(joinedRaw).toLocal())
         : null;
     final canRole = !self && w.can('changeMemberRoles');
     final canRemove = !self && w.can('removeMembers');
@@ -239,7 +284,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
             RaftRoleField(
               label: raftText(context, 'Role'),
               badge: RaftRecipeBadge(
-                raftText(context, '${role[0].toUpperCase()}${role.substring(1)}'),
+                raftText(
+                  context,
+                  '${role[0].toUpperCase()}${role.substring(1)}',
+                ),
                 appearance: RaftBadgeRecipeAppearance.solid,
                 background: roleColor(t, role),
               ),

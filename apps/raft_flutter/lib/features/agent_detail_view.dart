@@ -14,12 +14,59 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'agent_apps_view.dart';
 import 'agent_trajectory_log.dart';
 import 'agent_metadata_catalog.dart';
 import 'mcp_views.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
 import 'resource_cards.dart' show resourceRelativeTime;
+
+/// ProfilePanel.tsx:349–401: immediately usable blank header and loading
+/// body until a real accepted profile exists. No avatar, status, tabs or facts.
+class SourceProfileLoadingPanel extends StatelessWidget {
+  const SourceProfileLoadingPanel({
+    super.key,
+    this.onBack,
+    this.onClose,
+    this.error,
+    this.onRetry,
+  });
+  final VoidCallback? onBack, onClose, onRetry;
+  final String? error;
+  @override
+  Widget build(BuildContext context) => RaftPanelTextScope(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RaftPanelHeaderBar(
+          title: '',
+          onBack: onBack,
+          backTooltip: raftText(context, 'Back'),
+          actions: [
+            if (onClose != null)
+              RaftPanelIconButton(
+                glyph: RaftGlyph.x,
+                tooltip: raftText(context, 'Close profile'),
+                onPressed: onClose,
+              ),
+          ],
+        ),
+        Expanded(
+          child: RaftPanelMessage(
+            raftText(
+              context,
+              error == null ? 'Loading...' : 'Profile could not be loaded.',
+            ),
+            action: error == null || onRetry == null
+                ? null
+                : RaftButton(label: 'Retry', onPressed: onRetry),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 enum AgentDetailTab { profile, activity, chat, reminders, workspace, apps, mcp }
 
@@ -168,6 +215,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
 
   @override
   Widget build(BuildContext context) {
+    if (!canRenderWorkspaceAgent(a, widget.controller.server?.id)) {
+      return SourceProfileLoadingPanel(
+        onBack: widget.actions.onBack,
+        error: widget.error,
+      );
+    }
     final visible = tabs;
     final current = visible.contains(tab) ? tab : AgentDetailTab.profile;
     final menu = <RaftMenuEntry>[

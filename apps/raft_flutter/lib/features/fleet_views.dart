@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'runtime_form_dialog.dart';
 import 'managed_agent_launcher.dart';
 import 'mcp_views.dart';
@@ -14,6 +15,7 @@ import 'agent_migration_view.dart';
 import 'agent_apps_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_avatar_dialog.dart';
+
 import 'package:raft_ui/recipes.dart';
 
 export 'agent_detail_view.dart' show AgentDetailTab;
@@ -49,7 +51,10 @@ class _FleetScope {
 /// Web accepts both.
 List<dynamic> _machineRows(dynamic result) {
   final rows = result is Map ? result['machines'] : result;
-  return rows is List ? rows.whereType<Map>().toList() : const [];
+  if (rows is! List || rows.any((row) => row is! Map)) {
+    throw const FormatException('Invalid computer directory response.');
+  }
+  return rows;
 }
 
 Future<T?> _fleetDialog<T>(
@@ -135,10 +140,15 @@ class FleetView extends StatefulWidget {
     required this.controller,
     required this.computers,
     this.attentionOnly = false,
+    this.onOpenDetail,
   });
   final WorkspaceController controller;
   final bool computers;
   final bool attentionOnly;
+
+  /// The workspace supplies URI-owned navigation; standalone surfaces retain
+  /// their existing Navigator route.
+  final ValueChanged<Map<String, dynamic>>? onOpenDetail;
   @override
   State<FleetView> createState() => _FleetViewState();
 }
@@ -173,6 +183,12 @@ class _FleetViewState extends State<FleetView> {
   void initState() {
     super.initState();
     scope = _FleetScope(w);
+    rows = w.entityDirectory.rows(
+      widget.computers
+          ? WorkspaceEntityKind.computers
+          : WorkspaceEntityKind.agents,
+    );
+    loading = rows.isEmpty;
     w.addListener(authorityChanged);
     load();
     subscription = w.client.events.listen((e) {
@@ -362,6 +378,10 @@ class _FleetViewState extends State<FleetView> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () async {
                       if (!current(captured)) return;
+                      if (widget.onOpenDetail != null) {
+                        widget.onOpenDetail!(Map.of(row));
+                        return;
+                      }
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -468,6 +488,31 @@ class _FleetDetailState extends State<FleetDetail> {
     if (route.isActive) navigator?.removeRoute(route);
   }
 
+  void directoryChanged() {
+    if (!current) return;
+    final failure = w.entityDirectory
+        .state(
+          widget.computers
+              ? WorkspaceEntityKind.computers
+              : WorkspaceEntityKind.agents,
+        )
+        .error;
+    if (failure is RaftApiException && [401, 403].contains(failure.status)) {
+      closeProfile();
+      return;
+    }
+    final accepted = widget.computers
+        ? w.entityDirectory.computer(id)
+        : w.entityDirectory.agent(id);
+    if (accepted != null) setState(() => row = accepted);
+    if (!widget.computers &&
+        w.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
+      setState(
+        () => machines = w.entityDirectory.rows(WorkspaceEntityKind.computers),
+      );
+    }
+  }
+
   void authorityChanged() {
     if (!scope.current(w)) closeProfile();
   }
@@ -478,6 +523,15 @@ class _FleetDetailState extends State<FleetDetail> {
     serverId = w.server!.id;
     scope = _FleetScope(w);
     id = widget.initial['id'] as String;
+    final cached = widget.computers
+        ? w.entityDirectory.computer(id)
+        : w.entityDirectory.agent(id);
+    if (cached != null) row = cached;
+    final computerRows = w.entityDirectory.rows(WorkspaceEntityKind.computers);
+    if (w.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
+      machines = computerRows;
+    }
+    w.entityDirectory.addListener(directoryChanged);
     w.addListener(authorityChanged);
     load();
     if (!widget.computers) loadMachines();
@@ -492,10 +546,8 @@ class _FleetDetailState extends State<FleetDetail> {
           (e.payload as Map)['agentId'] == id) {
         final p = e.payload as Map;
         setState(
-          () => liveActivity = {
-            'activity': p['activity'],
-            'detail': p['detail'],
-          },
+          () =>
+              liveActivity = {'activity': p['activity'], 'detail': p['detail']},
         );
         return;
       }
@@ -515,6 +567,7 @@ class _FleetDetailState extends State<FleetDetail> {
     scope.revoked = true;
     ++request;
     w.removeListener(authorityChanged);
+    w.entityDirectory.removeListener(directoryChanged);
     timer?.cancel();
     subscription?.cancel();
     super.dispose();
@@ -557,15 +610,14 @@ class _FleetDetailState extends State<FleetDetail> {
     try {
       final result = await w.query('/servers/$serverId/machines');
       if (!current) return;
-      final rows = result is Map ? result['machines'] : result;
+      final rows = _machineRows(result);
       setState(
-        () => machines = [
-          for (final m in (rows is List ? rows : const []))
-            if (m is Map) Map<String, dynamic>.from(m),
-        ],
+        () => machines = [for (final m in rows) Map<String, dynamic>.from(m)],
       );
-    } catch (_) {
-      if (current) setState(() => machines = const []);
+    } catch (failure) {
+      // A failed refresh cannot prove there are no Computers. Keep accepted
+      // rows (or unresolved null) and expose the failure independently.
+      if (current) setState(() => error = '$failure');
     }
   }
 
@@ -935,6 +987,14 @@ class _FleetDetailState extends State<FleetDetail> {
   @override
   Widget build(BuildContext context) => !current
       ? const SizedBox.shrink()
+      : !(widget.computers
+            ? canRenderWorkspaceComputer(row)
+            : canRenderWorkspaceAgent(row, serverId))
+      ? SourceProfileLoadingPanel(
+          onBack: widget.onClose ?? () => Navigator.of(context).maybePop(),
+          error: error,
+          onRetry: load,
+        )
       : !widget.computers
       ? agentPanel(context)
       : Scaffold(
