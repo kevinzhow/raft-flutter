@@ -516,6 +516,8 @@ Future<void> section(WidgetTester tester, String name) async {
     'members',
     'computers',
     'settings',
+    'search',
+    'activity',
   ].contains(name)) {
     final target = find.byKey(
       ValueKey('rail-${name == 'home' ? 'chat' : name}'),
@@ -524,6 +526,11 @@ Future<void> section(WidgetTester tester, String name) async {
     await tester.tap(target);
     await tester.pumpAndSettle();
     return;
+  }
+  if (!mobileViewport(tester) && name == 'saved') {
+    // Source Saved is a Chat sidebar destination, not a rail destination.
+    await tester.tap(find.byKey(const ValueKey('rail-chat')));
+    await tester.pumpAndSettle();
   }
   final target = find.byKey(Key('nav-$name'));
   await revealSidebar(tester, target);
