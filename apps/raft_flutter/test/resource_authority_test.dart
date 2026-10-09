@@ -9,6 +9,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+import 'package:raft_flutter/features/task_surface.dart';
 
 class _Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
@@ -161,49 +162,38 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
-        final dialog = find.byKey(const ValueKey('task-details-loading'));
-        expect(dialog, findsOneWidget);
-        final bones = find.descendant(
-          of: dialog,
-          matching: find.byType(RaftSkeleton),
-        );
-        expect(bones, findsNWidgets(3));
-        final sizes = bones
-            .evaluate()
-            .map((e) => tester.getSize(find.byWidget(e.widget)))
-            .toList();
-        expect(sizes.map((s) => s.height), [24, 16, 16]);
-        expect(sizes[0].width, closeTo(sizes[1].width * 2 / 3, .1));
-        expect(sizes[2].width, closeTo(sizes[1].width * .8, .1));
+        // MainLayout.tsx1132–1195 mounts TaskModalHead independently of
+        // task-history loading; the 24/16 skeleton is only lazy-module fallback.
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+        expect(find.byKey(const ValueKey('task-modal-title')), findsOneWidget);
+        expect(find.text('History'), findsOneWidget);
         expect(
-          find.descendant(
-            of: find.byType(AlertDialog),
-            matching: find.text('Private details'),
-          ),
-          findsNothing,
+          find.byKey(const ValueKey('task-modal-description')),
+          findsOneWidget,
         );
-        expect(find.text('History'), findsNothing);
         details.complete({'task': task});
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 1));
-        expect(dialog, findsOneWidget);
-        expect(find.text('History'), findsNothing);
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+        expect(find.text('History'), findsOneWidget);
         history.complete({
           'events': [
             {'eventType': 'created', 'actorName': 'Alice'},
           ],
         });
         await tester.pumpAndSettle();
-        expect(dialog, findsNothing);
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
         expect(
           find.descendant(
-            of: find.byType(AlertDialog),
+            of: find.byType(SourceTaskSurface),
             matching: find.text('Private details'),
           ),
           findsOneWidget,
         );
         expect(find.text('History'), findsOneWidget);
-        expect(find.text('created · Alice'), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey('task-properties-history')));
+        await tester.pumpAndSettle();
+        expect(find.text('Created task'), findsOneWidget);
         expect(tester.takeException(), isNull);
       },
     );
@@ -221,18 +211,15 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
-        expect(
-          find.byKey(const ValueKey('task-details-loading')),
-          findsOneWidget,
-        );
-        await tester.tap(find.widgetWithText(TextButton, 'Close'));
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+        await tester.tap(find.byTooltip('Close task'));
         await tester.pumpAndSettle();
         details.complete({'task': task});
         await tester.pumpAndSettle();
-        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(SourceTaskSurface), findsNothing);
         expect(
           find.descendant(
-            of: find.byType(AlertDialog),
+            of: find.byType(SourceTaskSurface),
             matching: find.text('Private details'),
           ),
           findsNothing,
@@ -255,19 +242,16 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Private task'));
         await tester.pump();
-        expect(
-          find.byKey(const ValueKey('task-details-loading')),
-          findsOneWidget,
-        );
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
         w.channels = [];
         w.notifyListeners();
         await tester.pumpAndSettle();
-        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(SourceTaskSurface), findsNothing);
         details.complete({'task': task});
         await tester.pumpAndSettle();
         expect(
           find.descendant(
-            of: find.byType(AlertDialog),
+            of: find.byType(SourceTaskSurface),
             matching: find.text('Private details'),
           ),
           findsNothing,
@@ -292,20 +276,19 @@ void main() {
         await tester.tap(find.text('Private task'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 1));
-        expect(
-          find.byKey(const ValueKey('task-details-loading')),
-          findsOneWidget,
-        );
+        expect(find.byType(SourceTaskSurface), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey('task-properties-history')));
+        await tester.pump();
         history.complete({'error': 'History failed'});
         await tester.pumpAndSettle();
         expect(
-          find.byKey(const ValueKey('task-details-error')),
+          find.byKey(const ValueKey('task-history-error')),
           findsOneWidget,
         );
-        expect(find.text('History'), findsNothing);
+        expect(find.text('History'), findsOneWidget);
         expect(
           (tester.state(find.byType(ResourceView)) as dynamic).error,
-          isNotNull,
+          isNull,
         );
         expect(tester.takeException(), isNull);
       },
@@ -326,11 +309,11 @@ void main() {
         await tester.tap(find.text('Private task'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 1));
-        await tester.tap(find.widgetWithText(TextButton, 'Close'));
+        await tester.tap(find.byTooltip('Close task'));
         await tester.pumpAndSettle();
         history.complete({'error': 'Late history failed'});
         await tester.pumpAndSettle();
-        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(SourceTaskSurface), findsNothing);
         expect(
           (tester.state(find.byType(ResourceView)) as dynamic).error,
           isNull,
@@ -380,7 +363,7 @@ void main() {
   );
 
   testWidgets(
-    'canonical task creator fields preserve member delete authorization',
+    'Source task properties retain creator facts without inventing a Delete control',
     (tester) async {
       final (w, a) = (await tester.runAsync(_fixture))!;
       addTearDown(w.dispose);
@@ -390,7 +373,11 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Private task'));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(TextButton, 'Delete'), findsOneWidget);
+      // TaskModalHead.tsx/TaskProperties.tsx: creator is a fact, not a
+      // modal Delete/Claim/Release action. Server delete authority is unchanged.
+      expect(find.text('@Alice'), findsOneWidget);
+      expect(find.text('Delete'), findsNothing);
+      expect(a.calls.where((c) => c.method == 'DELETE'), isEmpty);
     },
   );
 
@@ -535,7 +522,7 @@ void main() {
       expect(find.text('Private task'), findsNothing);
       expect(find.text('Private details'), findsNothing);
       expect(a.calls.where((o) => o.path.endsWith('/history')), isEmpty);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(SourceTaskSurface), findsNothing);
     },
   );
   testWidgets(
@@ -550,7 +537,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Private task'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Assign'));
+      await tester.tap(find.byKey(const ValueKey('task-properties-assignee')));
       await tester.pump();
       _role(w, 'guest');
       await tester.pumpAndSettle();
@@ -662,7 +649,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.descendant(
-          of: find.byType(AlertDialog),
+          of: find.byType(SourceTaskSurface),
           matching: find.text('Private details'),
         ),
         findsOneWidget,
@@ -671,7 +658,7 @@ void main() {
       w.notifyListeners();
       await tester.pumpAndSettle();
       expect(find.text('Private details'), findsNothing);
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(SourceTaskSurface), findsNothing);
     },
   );
 }

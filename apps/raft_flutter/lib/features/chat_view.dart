@@ -56,11 +56,17 @@ class RaftChatView extends StatefulWidget {
     super.key,
     required this.controller,
     this.thread = false,
+    this.threadParentSlot,
+    this.hideThreadParent = false,
     this.selectionHandle,
     this.viewportHandle,
   });
   final WorkspaceController controller;
   final bool thread;
+
+  /// Source TaskModalHead is an independent task subject above the replies.
+  final Widget? threadParentSlot;
+  final bool hideThreadParent;
   final ChatSelectionHandle? selectionHandle;
   final ChatViewportHandle? viewportHandle;
   @override
@@ -1741,7 +1747,8 @@ class _RaftChatViewState extends State<RaftChatView> {
   }
 
   Widget threadTopSliver({bool loading = false}) => RaftThreadTimelineTopSliver(
-    parent: w.presentedThreadParent == null
+    parentSlot: widget.threadParentSlot,
+    parent: widget.hideThreadParent || w.presentedThreadParent == null
         ? null
         : tile(w.presentedThreadParent!, parent: true),
     hasMore: loading || w.threadHasMore,
@@ -2021,12 +2028,21 @@ class _RaftChatViewState extends State<RaftChatView> {
     );
   }
 
+  /// A long expanded task history stays scrollable while replies resolve;
+  /// the fixed task bar and composer stay outside this viewport.
+  Widget taskLoadingBody(Widget body) => CustomScrollView(
+    slivers: [
+      SliverToBoxAdapter(child: widget.threadParentSlot!),
+      SliverFillRemaining(hasScrollBody: false, child: body),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     if (widget.thread &&
         w.threadChannelId == null &&
         (w.threadResolutionLoading || w.threadResolutionError != null)) {
-      return RaftThreadResolutionBody(
+      final body = RaftThreadResolutionBody(
         loadingLabel: raftText(context, 'Loading...'),
         errorTitle: w.threadResolutionError == null
             ? null
@@ -2048,14 +2064,18 @@ class _RaftChatViewState extends State<RaftChatView> {
           }
         },
       );
+      return widget.threadParentSlot == null ? body : taskLoadingBody(body);
     }
+    final loadingBody = RaftThreadRepliesLoadingBody(
+      loadingLabel: raftText(context, 'Loading...'),
+      parent: widget.hideThreadParent || w.presentedThreadParent == null
+          ? null
+          : tile(w.presentedThreadParent!, parent: true),
+    );
     final currentTimeline = widget.thread && w.threadLoading
-        ? RaftThreadRepliesLoadingBody(
-            loadingLabel: raftText(context, 'Loading...'),
-            parent: w.presentedThreadParent == null
-                ? null
-                : tile(w.presentedThreadParent!, parent: true),
-          )
+        ? widget.threadParentSlot == null
+              ? loadingBody
+              : taskLoadingBody(loadingBody)
         : buildTimeline(adapter, viewport, listRevision);
     if (!focusStaging) displayedTimeline = currentTimeline;
     final bottomCount = w.hasNewer

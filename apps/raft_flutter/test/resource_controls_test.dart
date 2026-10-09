@@ -534,9 +534,30 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Assign'), findsNothing);
       expect(find.text('Claim'), findsNothing);
-      expect(find.text('Mark done'), findsOneWidget);
-      expect(find.text('Close task'), findsOneWidget);
-      await t.tap(find.text('Mark done'));
+      // Terminal cleanup stays freshly authorized; its status uses the same
+      // TaskProperties InlineBadgeEditor rather than invented dialog actions.
+      await t.tap(find.byKey(const ValueKey('task-properties-status')));
+      await t.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(RaftInlineBadgeMenu),
+          matching: find.byKey(const ValueKey('done')),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(RaftInlineBadgeMenu),
+          matching: find.byKey(const ValueKey('closed')),
+        ),
+        findsOneWidget,
+      );
+      await t.tap(
+        find.descendant(
+          of: find.byType(RaftInlineBadgeMenu),
+          matching: find.byKey(const ValueKey('done')),
+        ),
+      );
       await t.pumpAndSettle();
       expect(
         w.calls.any((r) => r.path == '/tasks/channel/gone/number/7'),

@@ -11,6 +11,8 @@ import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
 import '../data/workspace_controller.dart';
 import '../data/search_memory.dart';
 import 'search_home.dart';
+import 'task_surface.dart';
+import 'task_surface_controller.dart';
 import 'resource_filters.dart';
 import 'page_layout.dart';
 import 'resource_cards.dart';
@@ -406,27 +408,27 @@ class _ResourceViewState extends State<ResourceView> {
 
   Future<V?> scopedDialog<V>(
     String scope,
-    Widget Function(BuildContext) builder,
-  ) async {
+    Widget Function(BuildContext) builder, {
+    bool sourceModal = false,
+  }) async {
     if (!accepts(scope)) return null;
     ModalRoute<dynamic>? owned;
+    Widget buildOwned(BuildContext context) {
+      owned = ModalRoute.of(context);
+      if (owned != null) dialogs.add(owned!);
+      if (!accepts(scope)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (owned?.isActive == true) owned?.navigator?.removeRoute(owned!);
+        });
+        return const SizedBox.shrink();
+      }
+      return builder(context);
+    }
+
     try {
-      return await showDialog<V>(
-        context: context,
-        builder: (context) {
-          owned = ModalRoute.of(context);
-          if (owned != null) dialogs.add(owned!);
-          if (!accepts(scope)) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (owned?.isActive == true) {
-                owned?.navigator?.removeRoute(owned!);
-              }
-            });
-            return const SizedBox.shrink();
-          }
-          return builder(context);
-        },
-      );
+      return sourceModal
+          ? await showRaftModal<V>(context, builder: buildOwned)
+          : await showDialog<V>(context: context, builder: buildOwned);
     } finally {
       dialogs.remove(owned);
     }
@@ -3016,237 +3018,43 @@ class _ResourceViewState extends State<ResourceView> {
   }) async {
     final scope = sourceScope ?? authority;
     if (!accepts(scope)) return;
-    var task = row;
-    var history = <dynamic>[];
-    String? historyNotice;
-    var writable = false, manage = false, cleanup = false, ownsTask = false;
-    var closed = false;
-    Object? detailError;
-    Future<void> loadDetails() async {
-      try {
-        if (row['channelId'] != null && row['taskNumber'] != null) {
-          try {
-            final full = await w.query(
-              '/tasks/channel/${row['channelId']}/number/${row['taskNumber']}',
-            );
-            if (closed || !accepts(scope)) return;
-            task = Map<String, dynamic>.from(full['task']);
-          } on RaftApiException catch (e) {
-            if (closed || !accepts(scope)) return;
-            // Number lookup excludes deleted surfaces. History below resolves
-            // includeDeleted and must freshly authorize this already-known ID
-            // before exposing terminal cleanup; an inaccessible history fails.
-            if (e.status != 404 ||
-                w.channels.any((c) => c.id == row['channelId'])) {
-              rethrow;
-            }
-          }
+    final owner = TaskSurfaceController(
+      parent: w,
+      row: row,
+      valid: () => accepts(scope),
+      // The resource bucket gets its authoritative order/filter result again;
+      // task mutations cannot leave a closed modal's card at the old status.
+      onMutationAccepted: () async {
+        if (accepts(scope)) await load();
+      },
+      onFailure: (cause) {
+        // Authorization failures revoke the entire accepted resource scope.
+        if (cause is RaftApiException && [401, 403].contains(cause.status)) {
+          fail(cause, scope);
         }
-        if (closed || !accepts(scope)) return;
-        try {
-          final audit = await w.query('/tasks/${task['id']}/history');
-          if (closed || !accepts(scope)) return;
-          history = audit['events'] as List;
-        } on RaftApiException catch (e) {
-          if (e.status != 409) rethrow;
-          historyNotice = 'This legacy task has no recorded history.';
-        }
-      } catch (e) {
-        if (closed || !accepts(scope)) return;
-        detailError = e;
-        fail(e, scope);
-        return;
-      }
-      if (closed || !accepts(scope)) return;
-      writable =
-          w.server?.string('role') != 'guest' &&
-          task['readOnlyReason'] == null &&
-          w.channels.any(
-            (c) => c.id == task['channelId'] && c.joined && !c.archived,
-          );
-      manage = w.can('deleteAnyTask');
-      // Absence from the local directory is not a declaration of deletion.
-      // A fresh accessible task permits requesting only terminal cleanup;
-      // the mounted server route rechecks deleted-channel and actor authority.
-      final missingParent = !w.channels.any((c) => c.id == task['channelId']);
-      cleanup =
-          missingParent &&
-          task['readOnlyReason'] == null &&
-          w.server?.string('role') != 'guest';
-      ownsTask =
-          task['createdByType'] == 'user' &&
-          task['createdById'] == w.client.user?.id;
-    }
-
-    // Opening is synchronous with activation; scoped ownership keeps a closed
-    // or revoked dialog from reopening when either request completes later.
-    final detailLoad = loadDetails();
-    final result = await scopedDialog<String>(
-      scope,
-      (context) => FutureBuilder<void>(
-        future: detailLoad,
-        builder: (context, snapshot) {
-          final pending = snapshot.connectionState != ConnectionState.done;
-          if (!accepts(scope)) return const SizedBox.shrink();
-          if (detailError is RaftApiException &&
-              (detailError as RaftApiException).status == 404) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              closeOwnedDialog(context, scope);
-            });
-            return const SizedBox.shrink();
-          }
-          return AlertDialog(
-            key: pending
-                ? const ValueKey('task-details-loading')
-                : detailError != null
-                ? const ValueKey('task-details-error')
-                : null,
-            title: pending
-                ? const Align(
-                    alignment: Alignment.centerLeft,
-                    child: FractionallySizedBox(
-                      widthFactor: 2 / 3,
-                      child: RaftSkeleton(height: 24),
-                    ),
-                  )
-                : detailError != null
-                ? Text(raftText(context, 'Unable to load task'))
-                : Text('task #${task['taskNumber'] ?? ''} · ${task['title']}'),
-            content: SizedBox(
-              width: 560,
-              child: pending
-                  ? const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        RaftSkeleton(height: 16),
-                        SizedBox(height: RaftSpace.x3),
-                        FractionallySizedBox(
-                          widthFactor: .8,
-                          child: RaftSkeleton(height: 16),
-                        ),
-                      ],
-                    )
-                  : detailError != null
-                  ? Text('$detailError')
-                  : SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SelectableText('${task['description'] ?? ''}'),
-                          const SizedBox(height: 16),
-                          Text(
-                            raftFormat(context, 'Status: {status}', {
-                              'status': raftText(
-                                context,
-                                raftTaskStatusLabel('${task['status']}'),
-                              ),
-                            }),
-                          ),
-                          Text(
-                            raftFormat(context, 'Assignee: {name}', {
-                              'name':
-                                  task['claimedByName'] ??
-                                  raftText(context, 'Unassigned'),
-                            }),
-                          ),
-                          if (task['revision'] != null)
-                            Text(
-                              raftFormat(context, 'Revision: {revision}', {
-                                'revision': task['revision'],
-                              }),
-                            ),
-                          const Divider(),
-                          Text(
-                            raftText(context, 'History'),
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          if (historyNotice != null) Text(historyNotice!),
-                          for (final event in history)
-                            ListTile(
-                              dense: true,
-                              title: Text(
-                                '${event['eventType']} · ${event['actorName'] ?? event['actorType']}',
-                              ),
-                              subtitle: Text('${event['createdAt']}'),
-                            ),
-                        ],
-                      ),
-                    ),
-            ),
-            actions: [
-              if (!pending && detailError == null) ...[
-                if (task['messageId'] is String)
-                  TextButton(
-                    onPressed: () =>
-                        closeOwnedDialog(context, scope, 'discussion'),
-                    child: Text(raftText(context, 'Discussion')),
-                  ),
-                if (writable && task['status'] != 'done')
-                  TextButton(
-                    onPressed: () => closeOwnedDialog(context, scope, 'assign'),
-                    child: Text(raftText(context, 'Assign')),
-                  ),
-                if (writable && task['claimedById'] == null)
-                  TextButton(
-                    onPressed: () => closeOwnedDialog(context, scope, 'claim'),
-                    child: Text(raftText(context, 'Claim')),
-                  ),
-                if (writable &&
-                    task['claimedByType'] == 'user' &&
-                    task['claimedById'] == w.client.user?.id)
-                  TextButton(
-                    onPressed: () =>
-                        closeOwnedDialog(context, scope, 'unclaim'),
-                    child: Text(raftText(context, 'Release')),
-                  ),
-                if (cleanup && manage)
-                  for (final status in ['done', 'closed'])
-                    TextButton(
-                      onPressed: () =>
-                          closeOwnedDialog(context, scope, 'cleanup:$status'),
-                      child: Text(
-                        raftText(
-                          context,
-                          status == 'done' ? 'Mark done' : 'Close task',
-                        ),
-                      ),
-                    ),
-                if ((writable || cleanup) && (manage || ownsTask))
-                  TextButton(
-                    onPressed: () => closeOwnedDialog(context, scope, 'delete'),
-                    child: Text(raftText(context, 'Delete')),
-                  ),
-              ],
-              TextButton(
-                onPressed: () => closeOwnedDialog(context, scope),
-                child: Text(raftText(context, 'Close')),
-              ),
-            ],
-          );
-        },
-      ),
+      },
     );
-    closed = true;
+    unawaited(owner.start());
+    String? result;
+    Map<String, dynamic> task;
+    try {
+      result = await scopedDialog<String>(scope, (context) {
+        return SourceTaskSurface(
+          owner: owner,
+          onClose: () => closeOwnedDialog(context, scope),
+          onCleanupDelete: () {
+            if (owner.canCleanupDelete) {
+              closeOwnedDialog(context, scope, 'delete');
+            }
+          },
+        );
+      }, sourceModal: true);
+      task = {...owner.task};
+    } finally {
+      owner.dispose();
+    }
     if (!accepts(scope)) return;
-    if (result != null && result.startsWith('cleanup:') && cleanup && manage) {
-      await command(
-        'PATCH',
-        '/tasks/${task['id']}/status',
-        data: {'status': result.substring('cleanup:'.length)},
-        sourceScope: scope,
-      );
-    } else if (result == 'assign') {
-      await assignTask(task, sourceScope: scope);
-    } else if (result == 'discussion') {
-      await widget.onMessage(task['channelId'], task['messageId']);
-    } else if (result == 'claim' || result == 'unclaim') {
-      await command(
-        'PATCH',
-        '/tasks/${task['id']}/$result',
-        sourceScope: scope,
-      );
-    } else if (result == 'delete' && mounted) {
+    if (result == 'delete' && mounted) {
       final confirmed = await scopedDialog<bool>(
         scope,
         (context) => AlertDialog(
