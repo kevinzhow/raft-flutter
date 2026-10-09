@@ -22,6 +22,11 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
+  "Notification settings could not be loaded.": "无法加载通知设置。",
+  "Stops web push notifications from {serverName} for your account. Other servers are unchanged.":
+      "停止向你的账户推送来自 {serverName} 的网页通知。其他服务器不受影响。",
+  "Notifications from {serverName} are muted.": "已静音来自 {serverName} 的通知。",
+  "Notifications from {serverName} are unmuted.": "已恢复来自 {serverName} 的通知。",
   "Comments · {filename}": "评论 · {filename}",
   "Comments here are pinned to {filename}. For general discussion, reply in the thread.": "这里的评论仅关联 {filename}。如需一般性讨论，请在消息列中回复。",
   "Comment on {filename}…": "评论 {filename}…",
