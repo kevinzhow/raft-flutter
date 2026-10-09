@@ -139,7 +139,20 @@ class ParityContext {
 
 /// Theme the React render host uses for a case id: `.elegant` suffix →
 /// elegant-light, otherwise brutal (light). No official case declares dark.
-(RaftFamily, bool) parityThemeFor(Map<String, dynamic> visualCase) {
+(RaftFamily, bool) parityThemeFor(
+  Map<String, dynamic> visualCase, {
+  String? override,
+}) {
+  // Supplemental theme runs preserve each original case/fixture identity.
+  // The official run leaves this unset and retains its original 99-case matrix.
+  if (override != null && override.isNotEmpty) {
+    return switch (override) {
+      'brutal-light' => (RaftFamily.brutal, false),
+      'elegant-light' => (RaftFamily.elegant, false),
+      'elegant-dark' => (RaftFamily.elegant, true),
+      _ => throw ArgumentError.value(override, 'override', 'Unknown parity theme'),
+    };
+  }
   final id = visualCase['id'] as String;
   final propsTheme =
       (((visualCase['variants'] as List?)?.firstOrNull as Map?)?['props']
@@ -224,7 +237,10 @@ Future<Map<String, dynamic>> captureParityCase(
   required Directory outputDir,
   required Map<String, dynamic> runInfo,
 }) async {
-  final (family, dark) = parityThemeFor(visualCase);
+  final (family, dark) = parityThemeFor(
+    visualCase,
+    override: Platform.environment['PARITY_THEME_OVERRIDE'],
+  );
   final ctx = ParityContext(
     caseJson: visualCase,
     fixtures: fixtures,

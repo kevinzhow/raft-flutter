@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Supplemental original case × three-theme matrix; official 99 results untouched."""
+import argparse
+import datetime as dt
+import importlib.machinery
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+import urllib.request
+
+ROOT = Path(__file__).resolve().parent.parent
+loader = importlib.machinery.SourceFileLoader('parity_theme_official_adapter', str(ROOT / 'tool/parity'))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+parity = importlib.util.module_from_spec(spec)
+loader.exec_module(parity)
+THEMES = ('brutal-light', 'elegant-light', 'elegant-dark')
+
+
+def once(text, before, after):
+    return parity.patch_exactly_once(text, before, after, 'supplemental provider')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--cases', help='original case IDs/globs; default all 99')
+    parser.add_argument('--themes', default=','.join(THEMES))
+    parser.add_argument('--port', type=int, default=15264)
+    parser.add_argument('--shards', type=int, default=2)
+    args = parser.parse_args()
+    themes = args.themes.split(',')
+    if not themes or any(t not in THEMES for t in themes):
+        parser.error('themes must be brutal-light,elegant-light,elegant-dark')
+    out = args.out.resolve()
+    if out.exists():
+        parser.error('use a new output directory to preserve previous attempts')
+    out.mkdir(parents=True)
+    chosen = parity.select(parity.manifest_cases(), args.cases)
+    if not chosen:
+        parser.error('no original cases selected')
+    source_hash = subprocess.check_output([str(ROOT / 'tool/source-hash')], text=True).strip()
+    receipt = {
+        'startedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+        'sourceHash': source_hash, 'flutterCommit': parity.git(ROOT, 'rev-parse', 'HEAD'),
+        'sourceCommit': parity.git(parity.RAFT_SOURCE, 'rev-parse', 'HEAD'),
+        'sourceStatusBefore': parity.git(parity.RAFT_SOURCE, 'status', '--porcelain'),
+        'selectedCases': [c['id'] for c in chosen], 'themes': themes,
+        'unit': 'original case x theme (each original fixture/variant retained)',
+        'platform': 'Linux Flutter widget capture, provider android; not an Android device',
+        'calibration': 'existing production-font/Android-text-render adapter unchanged',
+        'completed': False,
+    }
+    (out / 'input-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+    env = parity.node_env()
+    env.update({'PARITY_RAFT_SOURCE': str(parity.RAFT_SOURCE),
+                'PARITY_THEME_HOST_OUT': str(out / 'host'),
+                'PARITY_THEME_HOST_PORT': str(args.port)})
+    with (out / 'host.log').open('w') as log:
+        host = subprocess.Popen(['node', str(ROOT / 'tool/theme-parity-web.mjs')],
+                                cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
+        rows, errors = [], []
+        try:
+            for attempt in range(120):
+                if host.poll() is not None:
+                    raise RuntimeError('theme host stopped; see host.log')
+                try:
+                    urllib.request.urlopen(f'http://127.0.0.1:{args.port}/visual-testing.html', timeout=1).close()
+                    break
+                except (OSError, TimeoutError):
+                    time.sleep(.25)
+            else:
+                raise RuntimeError('theme host did not become ready')
+            for theme in themes:
+                parity.OUT = out / theme
+                parity.RESULTS = parity.OUT / 'visual-testing-results'
+                parity.REACT_GEN = parity.OUT / 'react-provider'
+                parity.SITE = parity.OUT / 'site'
+                parity.WEB_PORT = str(args.port)
+                parity.OUT.mkdir(parents=True)
+                parity.cmd_fonts(argparse.Namespace(refresh=False))
+                config_path = parity.prepare_react_provider()
+                provider = parity.REACT_GEN / 'react-provider.spec.ts'
+                code = provider.read_text()
+                code = once(code, '  return `/visual-testing.html?${params.toString()}`;',
+                            '  params.set("parityTheme", process.env.PARITY_THEME_OVERRIDE!);\n'
+                            '  return `/visual-testing.html?${params.toString()}`;')
+                code = once(code, '    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);',
+                            '''    const actualTheme = await page.evaluate(() => ({
+      family: document.documentElement.dataset.theme,
+      dark: document.documentElement.classList.contains('dark'),
+      colorScheme: document.documentElement.style.colorScheme,
+    }));
+    expect(actualTheme.family).toBe(process.env.PARITY_THEME_OVERRIDE === 'brutal-light' ? 'brutal' : 'elegant');
+    expect(actualTheme.dark).toBe(process.env.PARITY_THEME_OVERRIDE === 'elegant-dark');
+    expect(actualTheme.colorScheme).toBe(process.env.PARITY_THEME_OVERRIDE === 'elegant-dark' ? 'dark' : 'light');
+    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);''')
+                code = once(code, '          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",',
+                            '          theme: process.env.PARITY_THEME_OVERRIDE, actualTheme,\n'
+                            '          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",')
+                provider.write_text(code)
+                run_env = parity.node_env()
+                run_env.update({
+                    'SLOCK_VISUAL_CASE_IDS': ','.join(c['id'] for c in chosen),
+                    'SLOCK_VISUAL_CASE_MANIFEST': str(parity.SHARED / 'sharedCases.json'),
+                    'SLOCK_VISUAL_RESULT_ROOT': str(parity.RESULTS),
+                    'PARITY_VT_ROOT': str(parity.VT), 'PARITY_FONT_CACHE': str(parity.FONT_CACHE),
+                    'PARITY_CHROMIUM_ARGS': json.dumps(parity.CHROMIUM_TEXT_ARGS['android']),
+                    'PARITY_THEME_OVERRIDE': theme,
+                })
+                with (parity.OUT / 'react-capture.log').open('w') as sink:
+                    result = subprocess.run(['pnpm', 'exec', 'playwright', 'test', '--config', str(config_path), '--reporter=line'],
+                                            cwd=parity.RAFT_SOURCE / 'packages/web', env=run_env,
+                                            stdout=sink, stderr=subprocess.STDOUT)
+                if result.returncode:
+                    errors.append({'theme': theme, 'provider': 'react', 'exit': result.returncode})
+                previous = os.environ.get('PARITY_THEME_OVERRIDE')
+                os.environ['PARITY_THEME_OVERRIDE'] = theme
+                try:
+                    parity.flutter_capture(chosen, args.cases, args.shards)
+                finally:
+                    if previous is None:
+                        os.environ.pop('PARITY_THEME_OVERRIDE', None)
+                    else:
+                        os.environ['PARITY_THEME_OVERRIDE'] = previous
+                parity.cli('diff', '--pairs', parity.PAIR, log=parity.OUT / 'cli.log')
+                diff = json.loads((parity.RESULTS / 'diff' / f'{parity.PAIR}.json').read_text())
+                mapping = json.loads((parity.RESULTS / 'android-case-map.json').read_text())
+                ids = {c['id'] for c in chosen}
+                for row in diff['results']:
+                    if row['id'] not in ids:
+                        continue
+                    row['matrixTheme'] = theme
+                    row['flutterMapping'] = mapping.get(row['id'])
+                    rows.append(row)
+                print(f'{theme}: captured and compared {len(ids)} selected original cases', flush=True)
+        finally:
+            host.terminate()
+            try:
+                host.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                host.kill()
+                host.wait()
+            receipt['endedAt'] = dt.datetime.now(dt.timezone.utc).isoformat()
+            receipt['sourceChanged'] = source_hash != subprocess.check_output([str(ROOT / 'tool/source-hash')], text=True).strip()
+            receipt['sourceStatusAfter'] = parity.git(parity.RAFT_SOURCE, 'status', '--porcelain')
+            receipt['sourceCheckoutChanged'] = receipt['sourceStatusBefore'] != receipt['sourceStatusAfter']
+            receipt['completed'] = (len(rows) == len(chosen) * len(themes) and not errors
+                                    and not receipt['sourceChanged'] and not receipt['sourceCheckoutChanged'])
+            receipt['providerErrors'] = errors
+            (out / 'input-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
+            (out / 'matrix-results.json').write_text(json.dumps({'receipt': receipt, 'results': rows}, indent=2) + '\n')
+
+
+if __name__ == '__main__':
+    main()
