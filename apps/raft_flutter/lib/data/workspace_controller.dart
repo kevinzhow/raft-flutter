@@ -41,9 +41,14 @@ class WorkspaceController extends ChangeNotifier {
     this.client, {
     this.cache,
     this.mobileNavigation = false,
+    this.ownsClient = true,
   }) {
     subscription = client.events.listen(_event);
   }
+
+  /// Borrowed editor controllers project messages but never own the session,
+  /// membership recovery, server selection, socket resume, or client teardown.
+  final bool ownsClient;
   final RaftClient client;
   final WorkspaceCache? cache;
   AttachmentImageRepository? _attachmentImages;
@@ -408,9 +413,11 @@ class WorkspaceController extends ChangeNotifier {
     _mainPresented = _threadPresented = true;
   }
 
+  final foregroundChanges = ValueNotifier<bool>(true);
   bool foreground = true;
   void setForeground(bool value) {
     foreground = value;
+    foregroundChanges.value = value;
     if (value && section == 'chat') {
       if (channel != null && !hasNewer) markRead(channel!.id);
       if (threadChannelId != null) markRead(threadChannelId!);
@@ -455,7 +462,7 @@ class WorkspaceController extends ChangeNotifier {
       messageSync.reset();
       syncCoreMessagesEnabled = false;
       _messageFlagRequest++;
-      client.selectServer(null);
+      if (ownsClient) client.selectServer(null);
       loading = false;
       channelLoading = false;
       threadLoading = false;
@@ -699,16 +706,29 @@ class WorkspaceController extends ChangeNotifier {
     if (scope == null || files.isEmpty) return;
     final generation = ledger.generation;
     final authority = jsonEncode([
-      client.generation, client.user?.id, client.serverId, server?.id,
-      server?.string('role'), channel?.joined, channel?.archived,
+      client.generation,
+      client.user?.id,
+      client.serverId,
+      server?.id,
+      server?.string('role'),
+      channel?.joined,
+      channel?.archived,
       channel?.json['channelCapabilities'],
     ]);
-    bool current() => generation == ledger.generation &&
-        scope == draftScope(thread: thread) && authority == jsonEncode([
-          client.generation, client.user?.id, client.serverId, server?.id,
-          server?.string('role'), channel?.joined, channel?.archived,
-          channel?.json['channelCapabilities'],
-        ]);
+    bool current() =>
+        generation == ledger.generation &&
+        scope == draftScope(thread: thread) &&
+        authority ==
+            jsonEncode([
+              client.generation,
+              client.user?.id,
+              client.serverId,
+              server?.id,
+              server?.string('role'),
+              channel?.joined,
+              channel?.archived,
+              channel?.json['channelCapabilities'],
+            ]);
     final limit = await uploadLimitBytes();
     if (!current()) return;
     final accepted = <({String name, Uint8List bytes})>[];
@@ -918,6 +938,9 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   Future<void> bootstrap() async {
+    if (!ownsClient) {
+      throw StateError('A borrowed editor cannot bootstrap a session.');
+    }
     loading = true;
     error = null;
     notifyListeners();
@@ -952,6 +975,9 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   Future<void> selectServer(RaftRecord next) async {
+    if (!ownsClient) {
+      throw StateError('A borrowed editor cannot select a server.');
+    }
     if (_revokedServers.contains(next.id)) return;
     server = next;
     if (mobileNavigation) section = 'home';
@@ -1364,6 +1390,7 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   Future<void> recoverMembership() async {
+    if (!ownsClient) return;
     final generation = client.generation,
         request = ++_membershipRequest,
         revision = _membershipRevision;
@@ -2035,6 +2062,16 @@ class WorkspaceController extends ChangeNotifier {
   void _event(RaftEvent event) {
     if (_disposed) return;
     _ensureSyncIdentity();
+    if (!ownsClient &&
+        !const {
+          'message:new',
+          'message:updated',
+          'thread:updated',
+          'reaction_viewer:updated',
+          'channel:removed',
+        }.contains(event.name)) {
+      return;
+    }
     if (event.name == 'connected') {
       connected = true;
       recoverMembership();
@@ -2189,7 +2226,8 @@ class WorkspaceController extends ChangeNotifier {
     }
     _uploads.clear();
     subscription.cancel();
-    client.dispose();
+    foregroundChanges.dispose();
+    if (ownsClient) client.dispose();
     super.dispose();
   }
 }

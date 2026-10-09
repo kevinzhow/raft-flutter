@@ -11,8 +11,14 @@ import 'public_avatar_url.dart';
 import 'page_component_recipes.dart';
 
 class AccountSettings extends StatefulWidget {
-  const AccountSettings({super.key, required this.controller, this.onLogout});
+  const AccountSettings({
+    super.key,
+    required this.controller,
+    this.onLogout,
+    this.workspaceModeCard,
+  });
   final WorkspaceController controller;
+  final Widget? workspaceModeCard;
 
   /// AccountSignOutSection; the host owns the session teardown.
   final Future<void> Function()? onLogout;
@@ -485,6 +491,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.workspaceModeCard != null) widget.workspaceModeCard!,
         const RaftSettingsSectionHeader(
           label: 'Account',
           glyph: RaftGlyph.user,
@@ -497,8 +504,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
         ),
         RaftSettingsActionCard(
           title: 'Log out',
-          description:
-              'Log out of this browser. Your account and data stay; you can log back in any time.',
+          description: 'Log out of this browser. Your account and data stay; you can log back in any time.',
           // `variant="warning" size="md"`, text only.
           action: RaftSettingsRecipeButton(
             key: const Key('account-logout'),
@@ -519,8 +525,7 @@ class _AccountSettingsState extends ManagementState<AccountSettings> {
       context,
       const RaftConfirmDialog(
         title: 'Log out',
-        message:
-            'Log out of this browser? Your account and data are kept; you can log back in any time.',
+        message: 'Log out of this browser? Your account and data are kept; you can log back in any time.',
         confirmLabel: 'Log out',
         // confirmColor="bg-brutal-orange" -> warning tone.
         confirmVariant: RaftButtonRecipeVariant.warning,
