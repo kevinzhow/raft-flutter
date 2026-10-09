@@ -105,3 +105,4 @@ export 'src/create_channel_view.dart';
 export 'src/channel_members_view.dart';
 
 export 'src/channel_header.dart';
+export 'src/agent_avatar_picker.dart';
