@@ -432,7 +432,7 @@ class RaftMenuButtonItem extends StatelessWidget {
             decorationOverride: (d) {
               final color = topDivider ? dividerColor : Colors.transparent;
               BorderSide sideOf(double w) =>
-                  BorderSide(color: color, width: w);
+                  w <= 0 ? BorderSide.none : BorderSide(color: color, width: w);
               return d.copyWith(
                 color: hover
                     ? (t.brutal
