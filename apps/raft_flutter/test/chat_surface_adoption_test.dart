@@ -107,14 +107,45 @@ void main() {
             MaterialApp(
               theme: raftTheme(family, dark: dark),
               home: Scaffold(
-                body: RaftChatView(controller: w, thread: thread),
+                body: thread
+                    ? RaftConversationSurface(
+                        role: RaftConversationSurfaceRole.threadTimeline,
+                        child: RaftChatView(controller: w, thread: true),
+                      )
+                    : RaftChatView(controller: w),
               ),
             ),
           );
           await t.pumpAndSettle();
-          final timeline = t.widget<Chat>(find.byType(Chat));
+          // Source ThreadPanel.tsx:2523–2552 renders the actual parent and
+          // loading body while replies wait, with its composer still mounted.
+          final replyLoading = thread && state == 'loading';
+          final Color timelineColor;
+          if (replyLoading) {
+            expect(find.byType(Chat), findsNothing);
+            expect(find.byType(RaftThreadRepliesLoadingBody), findsOneWidget);
+            expect(find.text('Loading...'), findsOneWidget);
+            expect(find.text('Public parent body'), findsOneWidget);
+            expect(
+              t.widget<RaftComposer>(find.byType(RaftComposer)).enabled,
+              true,
+            );
+            final surface = find.byType(RaftConversationSurface);
+            timelineColor = t
+                .widget<ColoredBox>(
+                  find
+                      .descendant(
+                        of: surface,
+                        matching: find.byType(ColoredBox),
+                      )
+                      .first,
+                )
+                .color;
+          } else {
+            timelineColor = t.widget<Chat>(find.byType(Chat)).backgroundColor!;
+          }
           expect(
-            timeline.backgroundColor,
+            timelineColor,
             dark
                 ? thread
                       ? const Color(0xff1b1b19)
