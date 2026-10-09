@@ -13,6 +13,8 @@ import 'recipes/button_variants.g.dart';
 import 'recipe_surface.dart';
 import 'recipes/card.g.dart';
 import 'recipes/recipe_utilities.g.dart';
+import 'recipes/recipe_runtime.dart';
+import 'panel_layout.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -538,6 +540,7 @@ class RaftSelectionPopover extends StatelessWidget {
     this.searchFocusNode,
     this.emptyLabel = 'No options',
     this.width,
+    this.surfaceStyle,
   });
 
   final String title;
@@ -556,6 +559,11 @@ class RaftSelectionPopover extends StatelessWidget {
   /// Explicit width; null = `min-w-[220px]` content width.
   final double? width;
 
+  /// Final Card surface recipe for a caller's Source `className` composition.
+  /// Null uses SelectionPopover's product default. The supplied recipe replaces
+  /// that surface only; header, search, options and their interaction stay live.
+  final RaftSlotStyle? surfaceStyle;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -569,6 +577,26 @@ class RaftSelectionPopover extends StatelessWidget {
       letterSpacing: .25,
       color: s.foregroundMuted,
     );
+    final card = surfaceStyle ?? _selectionPopoverSurface(t);
+    final radius =
+        card.borderRadius?.resolve(Directionality.of(context)) ??
+        BorderRadius.zero;
+    final border = card.borderWidth;
+    Radius inner(Radius r, double x, double y) => Radius.elliptical(
+      (r.x - x).clamp(0, double.infinity),
+      (r.y - y).clamp(0, double.infinity),
+    );
+    final contentRadius = BorderRadius.only(
+      topLeft: inner(radius.topLeft, border.left, border.top),
+      topRight: inner(radius.topRight, border.right, border.top),
+      bottomLeft: inner(radius.bottomLeft, border.left, border.bottom),
+      bottomRight: inner(radius.bottomRight, border.right, border.bottom),
+    );
+    final inputText = TextStyle(
+      fontFamily: t.monoFont,
+      fontSize: 12,
+      height: 16 / 12,
+    );
     Widget body = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -581,7 +609,11 @@ class RaftSelectionPopover extends StatelessWidget {
               children: [
                 Expanded(child: Text(title.toUpperCase(), style: eyebrow)),
                 if (onClear != null)
-                  _ClearAction(label: clearLabel, style: eyebrow, onTap: onClear!),
+                  _ClearAction(
+                    label: clearLabel,
+                    style: eyebrow,
+                    onTap: onClear!,
+                  ),
               ],
             ),
           ),
@@ -589,14 +621,24 @@ class RaftSelectionPopover extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(border: Border(bottom: divider)),
-            child: RaftTextInput(
-              controller: searchController,
-              focusNode: searchFocusNode,
-              autofocus: true,
-              hintText: searchPlaceholder,
-              onChanged: onSearchChanged,
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              style: TextStyle(fontFamily: t.monoFont, fontSize: 12, height: 16 / 12),
+            // Source Input is inline in the inherited Card text line. The
+            // official caller's Inter 16px/24px line expands by 1px; use the
+            // actual ancestor/recipe font metrics rather than a theme offset.
+            child: RaftCssInlineBox(
+              lineText: card.text(
+                t.recipeTokens, base: DefaultTextStyle.of(context).style,
+              ),
+              childText: inputText,
+              height: 16 + 8 + (t.brutal ? 4 : 2),
+              child: RaftTextInput(
+                controller: searchController,
+                focusNode: searchFocusNode,
+                autofocus: true,
+                hintText: searchPlaceholder,
+                onChanged: onSearchChanged,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                style: inputText,
+              ),
             ),
           ),
         ConstrainedBox(
@@ -630,38 +672,88 @@ class RaftSelectionPopover extends StatelessWidget {
         ),
       ],
     );
-    // SelectionPopover mounts Card. Its shadow-raft-md utility survives
-    // the caller's shadow-brutal/sm class and wins the compiled CSS order.
-    // The generic Card theme shadow therefore supplies both tone and layers.
-    final shadows = [
-      for (final l in t.themeShadows.md.layers.reversed)
-        if (!l.inset)
-          BoxShadow(
-            color: l.color,
-            offset: l.offset,
-            blurRadius: raftCssBlurRadius(l.blur),
-            spreadRadius: l.spread,
-          ),
-    ];
-    return CustomPaint(
-      painter: RaftOuterShadowPainter(shadows, BorderRadius.zero),
-      child: Container(
+    // HTML autoFocus moves focus into a newly mounted popup even when the
+    // trigger owns focus. A fresh scope gives Flutter's real TextField the
+    // same admission; Tab may still leave into the owner's scope.
+    return _SelectionFocusScope(
+      child: RaftRecipeBox(
+        style: card,
+        tokens: t.recipeTokens,
         width: width,
-        constraints: const BoxConstraints(minWidth: 220),
-        clipBehavior: Clip.hardEdge,
-        decoration: BoxDecoration(
-          color: t.brutal ? RaftPrimitiveColors.white : s.layerPanel,
-          border: t.brutal
-              ? Border.all(color: black, width: 2)
-              : Border.all(color: s.lineMuted),
-        ),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(color: s.foreground),
-          child: body,
-        ),
+        clip: true,
+        padding: EdgeInsets.zero,
+        // Source's theme-brutal:shadow-brutal is a product utility. It replaces
+        // the default recipe shadow; an explicit caller recipe owns its shadows.
+        decorationOverride: surfaceStyle == null && t.brutal
+            ? (decoration) => decoration.copyWith(
+                boxShadow: RaftProductShadows.shadowBrutal.paintOrder,
+              )
+            : null,
+        child: ClipRRect(borderRadius: contentRadius, child: body),
       ),
     );
   }
+}
+
+// Exact Card/default SelectionPopover composition (SelectionPopover.tsx:117).
+// Placement belongs to the popup owner; this recipe owns surface appearance.
+RaftSlotStyle _selectionPopoverSurface(RaftTokens tokens) {
+  final card = RaftCardRecipe.resolve(
+    theme: tokens.recipeTheme,
+    states: tokens.recipeStates(),
+    tokens: tokens.recipeTokens,
+  ).root;
+  final classes = [
+    ...card.classes.where(
+      (name) => !const {
+        'min-w-0',
+        'border-2',
+        'border-[0.5px]',
+        'border-line-muted',
+        'border-line-strong',
+        'border-black',
+        'bg-white',
+        'bg-layer-panel',
+        'shadow-raft-md',
+        'shadow-raft-xs',
+      }.contains(name),
+    ),
+    'min-w-[220px]',
+    tokens.brutal ? 'border-2' : 'border',
+    tokens.brutal ? 'border-black' : 'border-line-muted',
+    tokens.brutal ? 'bg-white' : 'bg-layer-panel',
+    'shadow-raft-sm',
+  ];
+  return raftRecipeEngine.resolveSlot(
+    [
+      for (final name in classes)
+        raftRecipeUtilities.indexWhere((utility) => utility.name == name),
+    ],
+    tokens.recipeStates(),
+    tokens.recipeTokens,
+  );
+}
+
+class _SelectionFocusScope extends StatefulWidget {
+  const _SelectionFocusScope({required this.child});
+  final Widget child;
+  @override
+  State<_SelectionFocusScope> createState() => _SelectionFocusScopeState();
+}
+
+class _SelectionFocusScopeState extends State<_SelectionFocusScope> {
+  final scope = FocusScopeNode(
+    traversalEdgeBehavior: TraversalEdgeBehavior.parentScope,
+  );
+  @override
+  void dispose() {
+    scope.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FocusScope(node: scope, child: widget.child);
 }
 
 class _ClearAction extends StatelessWidget {

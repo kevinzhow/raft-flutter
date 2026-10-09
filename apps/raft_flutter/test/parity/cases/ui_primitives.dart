@@ -11,6 +11,7 @@ import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart';
 
 import '../parity_harness.dart';
 
@@ -627,45 +628,93 @@ final ParityCase _sectionHeader = ParityCase(
 final ParityCase _selectionPopover = ParityCase(
   widgets: const ['raft_ui:RaftSelectionPopover'],
   notes:
-      'Fixture className (w-full overflow-hidden border-2 border-black '
-      'bg-white shadow-brutal) equals the brutal default chrome at full width.',
+      'Actual Source caller className replaces the product default: w-full '
+      'overflow-hidden border-2 border-black bg-white shadow-brutal. '
+      'Card rounding/dark transparent border and its surviving shadow remain.',
   build: (ctx) => _frame(
     ctx,
     height: 252,
-    child: RaftSelectionPopover(
-      title: 'Channels',
-      width: 310,
-      onClear: () {},
-      searchController: TextEditingController(text: 'des'),
-      searchPlaceholder: 'Search channels',
-      options: [
-        RaftSelectionOption(
-          label: 'design',
-          checked: true,
-          onTap: () {},
-          reserveLeadingSlot: true,
-        ),
-        RaftSelectionOption(
-          label: 'visual-testing',
-          checked: false,
-          onTap: () {},
-          reserveLeadingSlot: true,
-        ),
-        RaftSelectionOption(
-          label: 'archived channel',
-          checked: false,
-          disabled: true,
-          onTap: () {},
-          reserveLeadingSlot: true,
-        ),
-        RaftSelectionOption(
-          label: 'No channel',
-          checked: false,
-          italic: true,
-          onTap: () {},
-          reserveLeadingSlot: true,
-        ),
-      ],
+    child: Builder(
+      builder: (context) {
+        final tokens = RaftTokens.of(context);
+        final card = RaftCardRecipe.resolve(
+          theme: tokens.recipeTheme,
+          states: tokens.recipeStates(),
+          tokens: tokens.recipeTokens,
+        ).root;
+        // Final CSS from the real Card + caller class merge. The dark-prefixed
+        // border transparency beats unprefixed border-black; shadow-brutal does
+        // not remove the recipe's shadow-raft-md/xs in this actual Source call.
+        final surface = RaftSlotStyle(
+          {
+            ...card.properties,
+            'background-color': const CssColor(0xffffffff),
+            for (final side in ['top', 'right', 'bottom', 'left']) ...{
+              'border-$side-width': const CssNum(2, 'px'),
+              if (!tokens.dark)
+                'border-$side-color': const CssColor(0xff000000),
+            },
+          },
+          card.targets,
+          [
+            ...card.classes.where(
+              (name) => !const {
+                'overflow-hidden',
+                'border-2',
+                'border-[0.5px]',
+                'border-black',
+                'border-line-muted',
+                'border-line-strong',
+                'bg-white',
+                'bg-layer-panel',
+              }.contains(name),
+            ),
+            'w-full',
+            'overflow-hidden',
+            'border-2',
+            'border-black',
+            'bg-white',
+            'shadow-brutal',
+          ],
+          tokens.recipeTokens,
+        );
+        return RaftSelectionPopover(
+          surfaceStyle: surface,
+          title: 'Channels',
+          width: 310,
+          onClear: () {},
+          searchController: TextEditingController(text: 'des'),
+          searchPlaceholder: 'Search channels',
+          options: [
+            RaftSelectionOption(
+              label: 'design',
+              checked: true,
+              onTap: () {},
+              reserveLeadingSlot: true,
+            ),
+            RaftSelectionOption(
+              label: 'visual-testing',
+              checked: false,
+              onTap: () {},
+              reserveLeadingSlot: true,
+            ),
+            RaftSelectionOption(
+              label: 'archived channel',
+              checked: false,
+              disabled: true,
+              onTap: () {},
+              reserveLeadingSlot: true,
+            ),
+            RaftSelectionOption(
+              label: 'No channel',
+              checked: false,
+              italic: true,
+              onTap: () {},
+              reserveLeadingSlot: true,
+            ),
+          ],
+        );
+      },
     ),
   ),
 );
