@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' as recipes;
 
 /// The product panel header shared by the source's individual page columns.
 /// Platform safe-area insets are supplied by the host, outside this rectangle.
@@ -41,20 +42,40 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       mobile: mobile,
       variant: variant,
     );
+    final canonical = variant == RaftPanelHeaderVariant.canonical;
+    final source = recipes.RaftPanelHeaderRecipe.resolve(
+      theme: t.recipeTheme,
+      states: recipes.RaftRecipeStates(
+        {if (t.dark) recipes.RaftRecipeStates.dark},
+        MediaQuery.sizeOf(context).width,
+        MediaQuery.sizeOf(context).height,
+      ),
+      tokens: t.recipeTokens,
+    );
+    final titleStyle = canonical
+        ? source.title.text(t.recipeTokens, base: RaftTypography.body(t))
+        : recipe.title;
+    final subtitleStyle = canonical && !t.brutal
+        ? source.meta.text(t.recipeTokens, base: RaftTypography.body(t))
+        : recipe.subtitle;
+    final gap = canonical && !t.brutal ? 8.0 : RaftLayoutMetrics.panelGap;
     return Container(
       key: const Key('page-header-surface'),
       height: height,
-      padding: EdgeInsets.symmetric(horizontal: RaftLayoutMetrics.panelInset),
+      padding: canonical && !t.brutal && mobile
+          ? const EdgeInsets.only(left: 20, right: 14)
+          : EdgeInsets.symmetric(horizontal: RaftLayoutMetrics.panelInset),
       decoration: BoxDecoration(
         color: recipe.background,
-        border: Border(bottom: recipe.border),
+        border: Border(
+          bottom: canonical && !t.brutal && mobile
+              ? BorderSide(color: t.line)
+              : recipe.border,
+        ),
       ),
       child: Row(
         children: [
-          if (leading != null) ...[
-            leading!,
-            const SizedBox(width: RaftLayoutMetrics.panelGap),
-          ],
+          if (leading != null) ...[leading!, SizedBox(width: gap)],
           if (!mobile && icon != null) ...[
             Container(
               width: RaftLayoutMetrics.panelIcon,
@@ -70,26 +91,46 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
                 child: icon!,
               ),
             ),
-            const SizedBox(width: RaftLayoutMetrics.panelGap),
+            SizedBox(width: gap),
           ],
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.title,
-                ),
-                if (subtitle != null && subtitle!.isNotEmpty)
+                if (!canonical)
                   Text(
-                    subtitle!,
+                    title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: recipe.subtitle,
+                    style: titleStyle,
                   ),
+                if (canonical)
+                  RaftCssText(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: titleStyle,
+                  ),
+                if (canonical &&
+                    !t.brutal &&
+                    subtitle != null &&
+                    subtitle!.isNotEmpty)
+                  const SizedBox(height: 4),
+                if (subtitle != null && subtitle!.isNotEmpty)
+                  canonical
+                      ? RaftCssText(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: subtitleStyle,
+                        )
+                      : Text(
+                          subtitle!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: subtitleStyle,
+                        ),
               ],
             ),
           ),

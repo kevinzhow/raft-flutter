@@ -47,7 +47,7 @@ class RaftConversationCardRecipe {
     // SavedItem Card: `theme-brutal:border-2 theme-brutal:border-black`.
     color: saved && tokens.brutal
         ? tokens.colors['color-black']!
-        : saved && tokens.dark
+        : tokens.dark
         ? Colors.transparent
         : tokens.brutal && !saved
         ? tokens.colors['color-black']!.withValues(alpha: .3)
@@ -61,18 +61,35 @@ class RaftConversationCardRecipe {
         ? 8
         : 6,
   );
-  TextStyle get body => RaftTypography.body(
-    tokens,
-    size: saved ? 14 : 12,
-    line: saved ? 20 : 16,
-    color: saved ? tokens.ink : tokens.strong,
+  TextStyle get body =>
+      RaftTypography.body(
+        tokens,
+        size: saved ? 14 : 12,
+        line: saved ? 20 : 16,
+        color: saved ? tokens.ink : tokens.strong,
+      ).copyWith(
+        fontFamily: saved || tokens.brutal
+            ? tokens.bodyFont
+            : tokens.headingFont,
+      );
+  TextStyle get metadata =>
+      RaftTypography.body(
+        tokens,
+        size: 12,
+        line: 16,
+        color: tokens.muted,
+      ).copyWith(
+        fontFamily: saved || tokens.brutal
+            ? tokens.bodyFont
+            : tokens.headingFont,
+        fontWeight: FontWeight.w700,
+      );
+  TextStyle titleStyle(bool unread) => body.copyWith(
+    fontSize: 14,
+    height: 20 / 14,
+    color: titleColor(unread),
+    fontWeight: unread ? FontWeight.w700 : FontWeight.w600,
   );
-  TextStyle get metadata => RaftTypography.body(
-    tokens,
-    size: 12,
-    line: 16,
-    color: tokens.muted,
-  ).copyWith(fontWeight: FontWeight.w700);
   TextStyle get timestamp => RaftTypography.mono(
     tokens,
     size: 12,
@@ -135,13 +152,45 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
     final rt = RaftRecipeTokens(t);
     // raft-ui Card root shadow (brutal themeShadowMd, elegant themeShadowXs);
     // SavedItem opts out with `shadow-none`.
-    final shadows = widget.saved
-        ? const <BoxShadow>[]
-        : RaftCardRecipe.resolve(
-            theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-            states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
-            tokens: rt,
-          ).root.boxShadow.toBoxShadows(rt);
+    final cardStyle = RaftCardRecipe.resolve(
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
+      tokens: rt,
+    ).root;
+    Widget surface(Widget child) {
+      if (widget.saved) {
+        return Material(
+          color: hovered || focused
+              ? recipe.hoverBackground
+              : recipe.background,
+          shape: RoundedRectangleBorder(
+            borderRadius: recipe.radius,
+            side: recipe.border,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: child,
+        );
+      }
+      // Card's dark elevation contains an inset top-light and a dark outer
+      // ring. The shared CSS painter retains both and keeps outer shadows
+      // outside a translucent background throughout transitions.
+      return RaftRecipeBox(
+        style: cardStyle,
+        tokens: rt,
+        padding: EdgeInsets.zero,
+        applyText: false,
+        clip: true,
+        decorationOverride: (base) => base.copyWith(
+          color: hovered || focused
+              ? recipe.hoverBackground
+              : recipe.background,
+          border: Border.fromBorderSide(recipe.border),
+          borderRadius: recipe.radius,
+        ),
+        child: Material(type: MaterialType.transparency, child: child),
+      );
+    }
+
     return _ConversationActionScope(
       visible: widget.actions != null && showActions,
       child: Focus(
@@ -155,62 +204,48 @@ class _RaftConversationCardState extends State<RaftConversationCard> {
           child: Semantics(
             button: true,
             label: widget.semanticLabel,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
+            child: surface(
+              InkWell(
+                splashFactory: NoSplash.splashFactory,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                focusColor: Colors.transparent,
+                onTap: widget.onOpen,
+                onLongPress: widget.onContextMenu,
+                onSecondaryTap: widget.onContextMenu,
                 borderRadius: recipe.radius,
-                boxShadow: shadows,
-              ),
-              child: Material(
-                color: hovered || focused
-                    ? recipe.hoverBackground
-                    : recipe.background,
-                shape: RoundedRectangleBorder(
-                  borderRadius: recipe.radius,
-                  side: recipe.border,
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  splashFactory: NoSplash.splashFactory,
-                  highlightColor: Colors.transparent,
-                  hoverColor: Colors.transparent,
-                  focusColor: Colors.transparent,
-                  onTap: widget.onOpen,
-                  onLongPress: widget.onContextMenu,
-                  onSecondaryTap: widget.onContextMenu,
-                  borderRadius: recipe.radius,
-                  child: Padding(
-                    // CSS content box = border + padding; Material paints the side
-                    // inside its shape without insetting the child.
-                    padding: RaftConversationCardRecipe.inset.add(
-                      EdgeInsets.all(recipe.border.width),
-                    ),
-                    child: Stack(
-                      children: [
-                        widget.child,
-                        if (widget.actions != null)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: ExcludeSemantics(
-                              excluding: !showActions,
-                              child: IgnorePointer(
-                                ignoring: !showActions,
-                                child: AnimatedOpacity(
-                                  opacity: showActions ? 1 : 0,
-                                  duration:
-                                      MediaQuery.disableAnimationsOf(context)
-                                      ? Duration.zero
-                                      : RaftConversationCardRecipe.actionFade,
-                                  child: Material(
-                                    color: recipe.background,
-                                    child: widget.actions!,
-                                  ),
+                child: Padding(
+                  // RecipeBox includes its CSS border in Container padding;
+                  // the Saved Material shape only paints the border.
+                  padding: RaftConversationCardRecipe.inset.add(
+                    EdgeInsets.all(widget.saved ? recipe.border.width : 0),
+                  ),
+                  child: Stack(
+                    children: [
+                      widget.child,
+                      if (widget.actions != null)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: ExcludeSemantics(
+                            excluding: !showActions,
+                            child: IgnorePointer(
+                              ignoring: !showActions,
+                              child: AnimatedOpacity(
+                                opacity: showActions ? 1 : 0,
+                                duration:
+                                    MediaQuery.disableAnimationsOf(context)
+                                    ? Duration.zero
+                                    : RaftConversationCardRecipe.actionFade,
+                                child: Material(
+                                  color: recipe.background,
+                                  child: widget.actions!,
                                 ),
                               ),
                             ),
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),

@@ -15,3 +15,43 @@ Private incremental comparisons: 91.957% before, 92.177% after inline structure 
 Six shared native fixtures cover the three themes with desktop and touch input, stable timestamp geometry, keyboard opening, descendant focus, nested action activation, and row navigation. The original minimal touch fixtures failed on both native renderers because the inflated action center was clipped; failure logs and Linux frame captures are retained. The first engineering run separately failed the design-system ratchet for a duplicate inline duration; both opacity users now refer to one Source-derived recipe value. These attempts remain failures, not NOT_RUN.
 
 The full 99-case and project checks, exact input hash, current native receipts, screenshots and prior attempts are recorded in the published batch receipt. Shared native fixtures do not establish authentication, operating-system notifications, or full application flows. Markdown wrapping work was deferred at the owner’s instruction (2941ea76).
+
+## Follow-up: theme paint and inherited typography
+
+Fresh Source measurements retained the exact SHA-256 of all three previously
+captured theme PNGs. ActivityInboxPanel has a 1px attached left edge in every
+theme, with its own canvas fill beneath translucent borders. Elegant InboxRow
+text inherits Inter from this product panel; it does not inherit the explicit
+Geist `font-sans` used by its toolbar. Dark row borders are transparent and the
+Card elevation includes an inset top-light as well as exterior dark shadows.
+The client now follows these rules through the shared CSS painter.
+
+Canonical mobile PanelHeader uses its generated title/meta recipes and CSS
+line boxes. The measured Elegant title is Inter 17/21.25 with -0.425px tracking;
+the subtitle is Geist 12/15 with a 4px gap. Brutal's title is 16/20 and the
+subtitle remains Geist Mono 12/16. The Tasks header retains its separate
+product variant. The Activity header no longer adds an unsupported Filters
+button; Source places the feature-gated scope controls below the header.
+Mark all read uses Source's outline/sm recipe with its explicit 32px height,
+8px horizontal padding and 12/16 bold label.
+
+Resource badges reduce CSS rounded-full radii to half their 18px height before
+painting; the generated max-double value overflowed Skia's radius arithmetic
+and produced square badges. Product decoration overrides now also determine
+the CSS painter's inset radius, so InboxRow's 6px corners use the same geometry
+for their background, border and inset layers.
+
+The final private comparison is Brutal **96.83% PASS**, Elegant light **95.81%
+DIFF**, and Elegant dark **91.44% DIFF**, under the unchanged 96% basic threshold.
+Earlier private attempts remain preserved. The final capture receipt confirms
+unchanged input during capture, unchanged Source checkout, and no provider
+errors. It is a Flutter widget capture, not an Android device result.
+
+Focused verification: 18 app tests cover measured header geometry, Activity
+inline layout and existing desktop/touch input; SDK tests verify the painted
+badge corners, decoration-override inset geometry and existing three-theme
+black-flash transitions. The feature-gated Activity sidebar/scope flows,
+desktop canonical header composition, remaining shadow raster differences and
+Markdown preview wrapping are still separate parity gaps. This follow-up does
+not claim current full application or full 99-case verification; the integrating
+agent runs those after consolidation.

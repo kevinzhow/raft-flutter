@@ -223,6 +223,7 @@ void main() {
     'Activity wraps title after an inline source icon without indenting continuation',
     (t) async {
       await mount(t, 'activity', const Size(342, 620));
+      expect(find.byTooltip('Filters'), findsNothing);
       final card = find.byKey(
         const ValueKey('activity-thread-thread-msg-agent-reply'),
       );

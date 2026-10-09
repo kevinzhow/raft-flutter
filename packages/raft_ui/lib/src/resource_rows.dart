@@ -1,4 +1,5 @@
 import 'recipe_surface.dart';
+
 import 'package:flutter/material.dart';
 
 import '../recipes.dart';
@@ -244,7 +245,16 @@ class RaftResourceBadge extends StatelessWidget {
     return Container(
       height: root.height,
       padding: root.padding,
-      decoration: root.decoration(rt),
+      // CSS rounded-full radii are reduced to half the box's height. Passing
+      // the generated max-double radius into Skia instead overflows its
+      // radius arithmetic and paints a square badge.
+      decoration: root
+          .decoration(rt)
+          .copyWith(
+            borderRadius: t.brutal
+                ? root.borderRadius
+                : BorderRadius.circular((root.height ?? 18) / 2),
+          ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         spacing: root.columnGap ?? 4,

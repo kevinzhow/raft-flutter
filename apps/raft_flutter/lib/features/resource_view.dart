@@ -714,11 +714,16 @@ class _ResourceViewState extends State<ResourceView> {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     // ThreadsInbox mounts ActivityInboxPanel with `theme-brutal:!border-l`.
-    final activityEdge = widget.section == 'activity' && t.brutal;
+    final activityEdge = widget.section == 'activity';
     return Container(
       decoration: activityEdge
           ? BoxDecoration(
-              border: Border(left: BorderSide(color: t.colors['color-black']!)),
+              color: t.brutal ? t.panel : t.sidebar,
+              border: Border(
+                left: BorderSide(
+                  color: t.brutal ? t.colors['color-black']! : t.line,
+                ),
+              ),
             )
           : null,
       child: widget.section == 'tasks'
@@ -1412,17 +1417,34 @@ class _ResourceViewState extends State<ResourceView> {
           ),
           const SizedBox(width: 12),
           // Button sm outline `h-8 px-2 text-xs font-bold`.
-          RaftControl(
-            variant: RaftControlVariant.outline,
-            visualHeight: RaftMetrics.buttonMd,
-            minimumTargetSize: RaftMetrics.buttonMd,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+          RaftInteractive(
             semanticLabel: raftText(context, 'Mark all read'),
             onPressed: () =>
                 command('POST', '/channels/inbox/read-all', sourceScope: scope),
-            child: Text(
-              raftText(context, 'Mark all read'),
-              style: RaftTypography.heading(t, size: 12, line: 16),
+            builder: (context, state) => RaftRecipeBox(
+              style: RaftButtonRecipe.resolve(
+                theme: t.recipeTheme,
+                variant: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.sm,
+                states: t.recipeStates(
+                  hovered: state.hovered,
+                  pressed: state.pressed,
+                  focusVisible: state.focusVisible,
+                ),
+                tokens: t.recipeTokens,
+              ).root,
+              tokens: t.recipeTokens,
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              alignment: Alignment.center,
+              child: RaftCssText(
+                raftText(context, 'Mark all read'),
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 16 / 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
           if (extraFilters)
@@ -1486,16 +1508,6 @@ class _ResourceViewState extends State<ResourceView> {
       leading: mobile && widget.section != 'tasks'
           ? RaftPanelBackAction(onPressed: widget.onBack ?? () {})
           : null,
-      actions: [
-        if (widget.section == 'activity')
-          RaftIconButton(
-            glyph: RaftGlyph.slidersHorizontal,
-            tooltip: 'Filters',
-            onPressed: () {
-              if (accepts(scope)) setState(() => extraFilters = !extraFilters);
-            },
-          ),
-      ],
     );
   }
 
@@ -1744,8 +1756,7 @@ class _ResourceViewState extends State<ResourceView> {
       );
 
   Widget activityCard(Map<String, dynamic> row, String scope) {
-    final t = RaftTokens.of(context),
-        recipe = RaftConversationCardRecipe(RaftTokens.of(context));
+    final recipe = RaftConversationCardRecipe(RaftTokens.of(context));
     final thread = row['kind'] == 'thread';
     final dm = row['kind'] == 'dm' || row['channelType'] == 'dm';
     final unread = (row['unreadCount'] as num? ?? 0).toInt();
@@ -1842,17 +1853,7 @@ class _ResourceViewState extends State<ResourceView> {
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style:
-                      RaftTypography.body(
-                        t,
-                        size: 14,
-                        line: 20,
-                        color: recipe.titleColor(unread > 0),
-                      ).copyWith(
-                        fontWeight: unread > 0
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                      ),
+                  style: recipe.titleStyle(unread > 0),
                 ),
               ),
               const SizedBox(width: 8),
