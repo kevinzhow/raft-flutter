@@ -20,9 +20,14 @@ class ConversationPanel extends StatefulWidget {
     super.key,
     required this.controller,
     this.selectionHandle,
+    this.onTask,
+    this.onMessageTask,
   });
   final WorkspaceController controller;
   final ChatSelectionHandle? selectionHandle;
+  final void Function(Map<String, dynamic>, Future<void> Function())? onTask;
+  final void Function(Map<String, dynamic>, Future<void> Function())?
+  onMessageTask;
   @override
   State<ConversationPanel> createState() => _ConversationPanelState();
 }
@@ -187,6 +192,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
                   child: RaftChatView(
                     controller: w,
                     selectionHandle: widget.selectionHandle,
+                    onTask: widget.onMessageTask,
                   ),
                 ),
               ),
@@ -196,6 +202,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
                   controller: w,
                   section: 'tasks',
                   channelId: channel.id,
+                  onTask: widget.onTask,
                   onMessage: (id, message) async {
                     setState(() => tab = RaftConversationTabId.chat);
                     w.setChatTabPresentation(this, true);

@@ -60,6 +60,7 @@ class RaftChatView extends StatefulWidget {
     this.hideThreadParent = false,
     this.selectionHandle,
     this.viewportHandle,
+    this.onTask,
   });
   final WorkspaceController controller;
   final bool thread;
@@ -69,6 +70,7 @@ class RaftChatView extends StatefulWidget {
   final bool hideThreadParent;
   final ChatSelectionHandle? selectionHandle;
   final ChatViewportHandle? viewportHandle;
+  final void Function(Map<String, dynamic>, Future<void> Function())? onTask;
   @override
   State<RaftChatView> createState() => _RaftChatViewState();
 }
@@ -1650,7 +1652,17 @@ class _RaftChatViewState extends State<RaftChatView> {
           ? () {
               if (authority == workspaceAuthority(w) &&
                   identical(taskProjection.taskFor(message), task)) {
-                w.openThread(message);
+                // Source MessageItem3685–3700: the footer task chip opens the
+                // independent task slot; the replies action keeps side intent.
+                if (widget.onTask case final open?) {
+                  open(task, () async {
+                    if (mounted && authority == workspaceAuthority(w)) {
+                      taskProjection.refresh();
+                    }
+                  });
+                } else {
+                  w.openThread(message);
+                }
               }
             }
           : null,

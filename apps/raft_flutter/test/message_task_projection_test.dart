@@ -45,7 +45,7 @@ void main() {
     },
   );
   test(
-    'late task read and old refresh cannot repopulate another principal',
+    'Source pending refresh shares reads; late old principal stays retired',
     () async {
       final (w, transport) = await fixture('owner');
       addTearDown(w.dispose);
@@ -58,6 +58,12 @@ void main() {
       await drain();
       projection.refresh();
       await drain();
+      // Source taskStore440–467 suppresses duplicate pending bucket reads.
+      expect(reads, 1);
+      w.client.user = RaftRecord({'id': 'new principal'});
+      w.notifyListeners();
+      await drain();
+      expect(reads, 2);
       second.complete({
         'tasks': [task],
       });

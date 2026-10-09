@@ -126,8 +126,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   TaskSurfaceSeed? taskSeed;
   void openTaskSurface(
     Map<String, dynamic> row,
-    Future<void> Function() reload,
-  ) {
+    Future<void> Function() reload, {
+    bool boardIntent = true,
+  }) {
     final channelId = row['channelId'];
     final itemId = row['isLegacy'] == true ? row['id'] : row['messageId'];
     if (channelId is! String || itemId is! String || itemId.isEmpty) return;
@@ -138,18 +139,24 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
     final legacy = row['isLegacy'] == true;
     final next = w.location.withQuery({
-      'profile': null,
-      'legacyTask': legacy ? '$channelId:$itemId' : null,
-      'task': legacy ? null : '$channelId:$itemId',
-      if (legacy) 'thread': null,
+      if (boardIntent) 'profile': null,
+      if (legacy || boardIntent)
+        'legacyTask': legacy ? '$channelId:$itemId' : null,
+      if (!legacy || boardIntent) 'task': legacy ? null : '$channelId:$itemId',
+      if (legacy && boardIntent) 'thread': null,
     });
     w.navigation.navigateTask(
       next,
       kind: w.location.panelNavigationKindTo(next),
     );
-    if (legacy) w.closeThread(navigate: false);
+    if (legacy && boardIntent) w.closeThread(navigate: false);
     w.notifyListeners();
   }
+
+  void openMessageTaskSurface(
+    Map<String, dynamic> row,
+    Future<void> Function() reload,
+  ) => openTaskSurface(row, reload, boardIntent: false);
 
   String? lastAuthority, lastChannelId;
   Map<String, dynamic>? lastChannelAuthority;
@@ -949,6 +956,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               child: ConversationPanel(
                 controller: w,
                 selectionHandle: mainSelection,
+                onTask: openTaskSurface,
+                onMessageTask: openMessageTaskSurface,
               ),
             )
           : route == 'search' && channelSearchRevoked
@@ -1317,6 +1326,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                         thread: true,
                                         viewportHandle: threadViewport,
                                         selectionHandle: threadSelection,
+                                        onTask: openMessageTaskSurface,
                                       ),
                                     ),
                                   ),
@@ -1768,10 +1778,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                           thread: true,
                           selectionHandle: threadSelection,
                           viewportHandle: threadViewport,
+                          onTask: openMessageTaskSurface,
                         )
                       : ConversationPanel(
                           controller: w,
                           selectionHandle: mainSelection,
+                          onTask: openTaskSurface,
+                          onMessageTask: openMessageTaskSurface,
                         ),
                 ),
         ),

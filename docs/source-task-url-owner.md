@@ -108,3 +108,7 @@ composition remain unimplemented. Source Timeline details and the exact
 assignee popover pixels remain outside this batch. Real Linux/Android task
 process pairs and task screenshot comparison are **NOT RUN**. Mounted tests,
 preview tests and model vectors do not replace platform-renderer evidence.
+
+The later [task-entrypoint follow-up](source-task-entrypoints.md) closes the
+classic channel Tasks and message footer-chip entry gaps with actual mounted
+input tests. This URI-owner report's receipts and other limits remain unchanged.
