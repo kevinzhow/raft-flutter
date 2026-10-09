@@ -1375,8 +1375,10 @@ void main() {
       await tester.tap(
         find.descendant(of: taskCard, matching: find.text(taskTitle)),
       );
-      // The real dialog opens after the task and history HTTP requests finish.
-      // A settled frame does not imply those requests have completed.
+      // Activation opens the actual dialog on the first frame, before waiting
+      // for either HTTP request. The contents then replace its loading state.
+      await tester.pump();
+      expect(find.byType(AlertDialog), findsOneWidget);
       try {
         await until(tester, () => find.text('History').evaluate().isNotEmpty ||
             (tester.state(find.byType(ResourceView)) as dynamic).error != null);
@@ -1445,8 +1447,11 @@ void main() {
       );
       expect(jumped, findsOneWidget);
       debugPrint('Native Search: target attached and intersects real viewport');
-      // Open the real channel header entry after a previous global query.
-      // This exercises production routing and excludes restored global state.
+      // Source desktop search keeps its own route and embedded conversation.
+      // Open Chat through the actual rail before using its channel header.
+      await section(tester, 'chat');
+      await until(tester, () => w.section == 'chat' &&
+          find.bySemanticsLabel('Search this channel').evaluate().isNotEmpty);
       await tester.tap(find.bySemanticsLabel('Search this channel'));
       await tester.pumpAndSettle();
       final channelSearch = tester.widget<ResourceView>(

@@ -60,6 +60,12 @@ def main():
         run['path'] = str((target / 'receipt.json').relative_to(args.out))
     baseline = json.loads((HERE / 'data' / 'baseline-audit.json').read_text())
     audited = {item['id']: item for item in baseline['items']}
+    # Add newly discovered gaps without rewriting the original frozen audit.
+    discoveries = json.loads((HERE / 'data' / 'discovery-audit.json').read_text())
+    for item in discoveries['items']:
+        if item['id'] in audited:
+            raise ValueError('Discovery must not replace a historical audit item')
+        audited[item['id']] = item
     groups = []
     for name in ('nav', 'loading'):
         for item in json.loads((HERE / 'data' / f'{name}.json').read_text()):

@@ -3019,155 +3019,227 @@ class _ResourceViewState extends State<ResourceView> {
     var task = row;
     var history = <dynamic>[];
     String? historyNotice;
-    try {
-      if (row['channelId'] != null && row['taskNumber'] != null) {
-        try {
-          final full = await w.query(
-            '/tasks/channel/${row['channelId']}/number/${row['taskNumber']}',
-          );
-          if (!accepts(scope)) return;
-          task = Map<String, dynamic>.from(full['task']);
-        } on RaftApiException catch (e) {
-          if (!accepts(scope)) return;
-          // Number lookup excludes deleted surfaces. History below resolves
-          // includeDeleted and must freshly authorize this already-known ID
-          // before exposing terminal cleanup; an inaccessible history fails.
-          if (e.status != 404 ||
-              w.channels.any((c) => c.id == row['channelId'])) {
-            rethrow;
+    var writable = false, manage = false, cleanup = false, ownsTask = false;
+    var closed = false;
+    Object? detailError;
+    Future<void> loadDetails() async {
+      try {
+        if (row['channelId'] != null && row['taskNumber'] != null) {
+          try {
+            final full = await w.query(
+              '/tasks/channel/${row['channelId']}/number/${row['taskNumber']}',
+            );
+            if (closed || !accepts(scope)) return;
+            task = Map<String, dynamic>.from(full['task']);
+          } on RaftApiException catch (e) {
+            if (closed || !accepts(scope)) return;
+            // Number lookup excludes deleted surfaces. History below resolves
+            // includeDeleted and must freshly authorize this already-known ID
+            // before exposing terminal cleanup; an inaccessible history fails.
+            if (e.status != 404 ||
+                w.channels.any((c) => c.id == row['channelId'])) {
+              rethrow;
+            }
           }
         }
+        if (closed || !accepts(scope)) return;
+        try {
+          final audit = await w.query('/tasks/${task['id']}/history');
+          if (closed || !accepts(scope)) return;
+          history = audit['events'] as List;
+        } on RaftApiException catch (e) {
+          if (e.status != 409) rethrow;
+          historyNotice = 'This legacy task has no recorded history.';
+        }
+      } catch (e) {
+        if (closed || !accepts(scope)) return;
+        detailError = e;
+        fail(e, scope);
+        return;
       }
-      if (!accepts(scope)) return;
-      try {
-        final audit = await w.query('/tasks/${task['id']}/history');
-        if (!accepts(scope)) return;
-        history = audit['events'] as List;
-      } on RaftApiException catch (e) {
-        if (e.status != 409) rethrow;
-        historyNotice = 'This legacy task has no recorded history.';
-      }
-    } catch (e) {
-      fail(e, scope);
-      return;
+      if (closed || !accepts(scope)) return;
+      writable =
+          w.server?.string('role') != 'guest' &&
+          task['readOnlyReason'] == null &&
+          w.channels.any(
+            (c) => c.id == task['channelId'] && c.joined && !c.archived,
+          );
+      manage = w.can('deleteAnyTask');
+      // Absence from the local directory is not a declaration of deletion.
+      // A fresh accessible task permits requesting only terminal cleanup;
+      // the mounted server route rechecks deleted-channel and actor authority.
+      final missingParent = !w.channels.any((c) => c.id == task['channelId']);
+      cleanup =
+          missingParent &&
+          task['readOnlyReason'] == null &&
+          w.server?.string('role') != 'guest';
+      ownsTask =
+          task['createdByType'] == 'user' &&
+          task['createdById'] == w.client.user?.id;
     }
-    if (!accepts(scope)) return;
-    final writable =
-        w.server?.string('role') != 'guest' &&
-        task['readOnlyReason'] == null &&
-        w.channels.any(
-          (c) => c.id == task['channelId'] && c.joined && !c.archived,
-        );
-    final manage = w.can('deleteAnyTask');
-    // Absence from the local directory is not a declaration of deletion.
-    // A fresh accessible task permits requesting only terminal cleanup;
-    // the mounted server route rechecks deleted-channel and actor authority.
-    final missingParent = !w.channels.any((c) => c.id == task['channelId']);
-    final cleanup =
-        missingParent &&
-        task['readOnlyReason'] == null &&
-        w.server?.string('role') != 'guest';
-    final ownsTask =
-        task['createdByType'] == 'user' &&
-        task['createdById'] == w.client.user?.id;
+
+    // Opening is synchronous with activation; scoped ownership keeps a closed
+    // or revoked dialog from reopening when either request completes later.
+    final detailLoad = loadDetails();
     final result = await scopedDialog<String>(
       scope,
-      (context) => AlertDialog(
-        title: Text('task #${task['taskNumber'] ?? ''} · ${task['title']}'),
-        content: SizedBox(
-          width: 560,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SelectableText('${task['description'] ?? ''}'),
-                const SizedBox(height: 16),
-                Text(
-                  raftFormat(context, 'Status: {status}', {
-                    'status': raftText(
-                      context,
-                      raftTaskStatusLabel('${task['status']}'),
-                    ),
-                  }),
-                ),
-                Text(
-                  raftFormat(context, 'Assignee: {name}', {
-                    'name':
-                        task['claimedByName'] ??
-                        raftText(context, 'Unassigned'),
-                  }),
-                ),
-                if (task['revision'] != null)
-                  Text(
-                    raftFormat(context, 'Revision: {revision}', {
-                      'revision': task['revision'],
-                    }),
-                  ),
-                const Divider(),
-                Text(
-                  raftText(context, 'History'),
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                if (historyNotice != null) Text(historyNotice),
-                for (final event in history)
-                  ListTile(
-                    dense: true,
-                    title: Text(
-                      '${event['eventType']} · ${event['actorName'] ?? event['actorType']}',
-                    ),
-                    subtitle: Text('${event['createdAt']}'),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          if (task['messageId'] is String)
-            TextButton(
-              onPressed: () => closeOwnedDialog(context, scope, 'discussion'),
-              child: Text(raftText(context, 'Discussion')),
-            ),
-          if (writable && task['status'] != 'done')
-            TextButton(
-              onPressed: () => closeOwnedDialog(context, scope, 'assign'),
-              child: Text(raftText(context, 'Assign')),
-            ),
-          if (writable && task['claimedById'] == null)
-            TextButton(
-              onPressed: () => closeOwnedDialog(context, scope, 'claim'),
-              child: Text(raftText(context, 'Claim')),
-            ),
-          if (writable &&
-              task['claimedByType'] == 'user' &&
-              task['claimedById'] == w.client.user?.id)
-            TextButton(
-              onPressed: () => closeOwnedDialog(context, scope, 'unclaim'),
-              child: Text(raftText(context, 'Release')),
-            ),
-          if (cleanup && manage)
-            for (final status in ['done', 'closed'])
-              TextButton(
-                onPressed: () =>
-                    closeOwnedDialog(context, scope, 'cleanup:$status'),
-                child: Text(
-                  raftText(
-                    context,
-                    status == 'done' ? 'Mark done' : 'Close task',
-                  ),
+      (context) => FutureBuilder<void>(
+        future: detailLoad,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return AlertDialog(
+              key: const ValueKey('task-details-loading'),
+              title: const Align(
+                alignment: Alignment.centerLeft,
+                child: FractionallySizedBox(
+                  widthFactor: 2 / 3,
+                  child: RaftSkeleton(height: 24),
                 ),
               ),
-          if ((writable || cleanup) && (manage || ownsTask))
-            TextButton(
-              onPressed: () => closeOwnedDialog(context, scope, 'delete'),
-              child: Text(raftText(context, 'Delete')),
+              content: const SizedBox(
+                width: 560,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    RaftSkeleton(height: 16),
+                    SizedBox(height: 12),
+                    FractionallySizedBox(
+                      widthFactor: .8,
+                      child: RaftSkeleton(height: 16),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => closeOwnedDialog(context, scope),
+                  child: Text(raftText(context, 'Close')),
+                ),
+              ],
+            );
+          }
+          if (!accepts(scope)) return const SizedBox.shrink();
+          if (detailError is RaftApiException &&
+              (detailError as RaftApiException).status == 404) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              closeOwnedDialog(context, scope);
+            });
+            return const SizedBox.shrink();
+          }
+          if (detailError != null) {
+            return AlertDialog(
+              key: const ValueKey('task-details-error'),
+              title: Text(raftText(context, 'Unable to load task')),
+              content: Text('$detailError'),
+              actions: [
+                TextButton(
+                  onPressed: () => closeOwnedDialog(context, scope),
+                  child: Text(raftText(context, 'Close')),
+                ),
+              ],
+            );
+          }
+          return AlertDialog(
+            title: Text('task #${task['taskNumber'] ?? ''} · ${task['title']}'),
+            content: SizedBox(
+              width: 560,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SelectableText('${task['description'] ?? ''}'),
+                    const SizedBox(height: 16),
+                    Text(
+                      raftFormat(context, 'Status: {status}', {
+                        'status': raftText(
+                          context,
+                          raftTaskStatusLabel('${task['status']}'),
+                        ),
+                      }),
+                    ),
+                    Text(
+                      raftFormat(context, 'Assignee: {name}', {
+                        'name':
+                            task['claimedByName'] ??
+                            raftText(context, 'Unassigned'),
+                      }),
+                    ),
+                    if (task['revision'] != null)
+                      Text(
+                        raftFormat(context, 'Revision: {revision}', {
+                          'revision': task['revision'],
+                        }),
+                      ),
+                    const Divider(),
+                    Text(
+                      raftText(context, 'History'),
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    if (historyNotice != null) Text(historyNotice!),
+                    for (final event in history)
+                      ListTile(
+                        dense: true,
+                        title: Text(
+                          '${event['eventType']} · ${event['actorName'] ?? event['actorType']}',
+                        ),
+                        subtitle: Text('${event['createdAt']}'),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          TextButton(
-            onPressed: () => closeOwnedDialog(context, scope),
-            child: Text(raftText(context, 'Close')),
-          ),
-        ],
+            actions: [
+              if (task['messageId'] is String)
+                TextButton(
+                  onPressed: () =>
+                      closeOwnedDialog(context, scope, 'discussion'),
+                  child: Text(raftText(context, 'Discussion')),
+                ),
+              if (writable && task['status'] != 'done')
+                TextButton(
+                  onPressed: () => closeOwnedDialog(context, scope, 'assign'),
+                  child: Text(raftText(context, 'Assign')),
+                ),
+              if (writable && task['claimedById'] == null)
+                TextButton(
+                  onPressed: () => closeOwnedDialog(context, scope, 'claim'),
+                  child: Text(raftText(context, 'Claim')),
+                ),
+              if (writable &&
+                  task['claimedByType'] == 'user' &&
+                  task['claimedById'] == w.client.user?.id)
+                TextButton(
+                  onPressed: () => closeOwnedDialog(context, scope, 'unclaim'),
+                  child: Text(raftText(context, 'Release')),
+                ),
+              if (cleanup && manage)
+                for (final status in ['done', 'closed'])
+                  TextButton(
+                    onPressed: () =>
+                        closeOwnedDialog(context, scope, 'cleanup:$status'),
+                    child: Text(
+                      raftText(
+                        context,
+                        status == 'done' ? 'Mark done' : 'Close task',
+                      ),
+                    ),
+                  ),
+              if ((writable || cleanup) && (manage || ownsTask))
+                TextButton(
+                  onPressed: () => closeOwnedDialog(context, scope, 'delete'),
+                  child: Text(raftText(context, 'Delete')),
+                ),
+              TextButton(
+                onPressed: () => closeOwnedDialog(context, scope),
+                child: Text(raftText(context, 'Close')),
+              ),
+            ],
+          );
+        },
       ),
     );
+    closed = true;
     if (!accepts(scope)) return;
     if (result != null && result.startsWith('cleanup:') && cleanup && manage) {
       await command(

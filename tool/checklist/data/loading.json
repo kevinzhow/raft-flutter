@@ -361,5 +361,50 @@
         ]
       }
     ]
+  },
+  {
+    "id": "K10",
+    "group": "Kevin 反馈",
+    "title_zh": "任务弹窗立即打开，加载期间显示标题骨架屏，关闭和权限变化不接受迟到结果；现代任务与旧式任务使用各自的 Source 面板。",
+    "web_source": "packages/web/src/components/layout/MainLayout.tsx:1135-1195; packages/web/src/components/task/TasksPanel.tsx:964-987; packages/web/src/components/task/LegacyTaskPanel.tsx:24-144",
+    "audit_note": "2026-10-09 新发现（Cindy 48a49d6e、6a7c345c）：ResourceView.taskDetails 原先等待两次 HTTP 才打开 Material AlertDialog。立即反馈和迟到请求可独立修复，完整 Source 任务属性/讨论与旧式面板仍需另外证明，不可据此报整项完成。",
+    "checks": [
+      {
+        "id": "K10a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "proof_file": "resource_authority_test.dart",
+        "title_zh": "真实任务行激活立即打开，任务及历史请求分别延迟时保持骨架屏",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "K10b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "proof_file": "workspace_task_surface_test.dart",
+        "title_zh": "现代任务属性及讨论、旧式任务面板、桌面和窄屏结构对应 Source",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "K10c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "proof_file": "resource_authority_test.dart",
+        "title_zh": "等待中关闭和权限撤销拒绝迟到结果",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      }
+    ]
   }
 ]

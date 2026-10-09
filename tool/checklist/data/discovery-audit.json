@@ -1,0 +1,11 @@
+{
+  "items": [
+    {
+      "id": "K10",
+      "status": "not_started",
+      "discoveredAt": "2026-10-09T17:24:49Z",
+      "sourceMessage": "48a49d6e-b92a-45ef-99e7-943f2295cfcf",
+      "evidence": "Before this repair, taskDetails awaited task lookup and history before scopedDialog. New discovery; historical original47 audit remains unchanged."
+    }
+  ]
+}

@@ -12,6 +12,7 @@ import 'package:raft_flutter/features/resource_view.dart';
 
 class _Adapter implements HttpClientAdapter {
   final calls = <RequestOptions>[];
+  final statuses = <String, int>{};
   final routes = <String, FutureOr<dynamic> Function(RequestOptions)>{};
   @override
   Future<ResponseBody> fetch(
@@ -25,7 +26,7 @@ class _Adapter implements HttpClientAdapter {
       jsonEncode(
         route == null ? {'error': 'Unexpected request'} : await route(o),
       ),
-      route == null ? 404 : 200,
+      route == null ? 404 : statuses['${o.method} ${o.path}'] ?? 200,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
       },
@@ -88,8 +89,14 @@ Future<(_Workspace, _Adapter)> _fixture() async {
   return (w, adapter);
 }
 
-Widget _host(_Workspace w, String section, {String? channelId}) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
+Widget _host(
+  _Workspace w,
+  String section, {
+  String? channelId,
+  RaftFamily family = RaftFamily.elegant,
+  bool dark = false,
+}) => MaterialApp(
+  theme: raftTheme(family, dark: dark),
   home: Scaffold(
     body: ResourceView(
       controller: w,
@@ -134,6 +141,205 @@ void _taskRoutes(_Workspace w, _Adapter a) {
 }
 
 void main() {
+  for (final theme in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    testWidgets(
+      '[K10a] immediate task dialog while both requests are held ${theme.$1}/${theme.$2}',
+      (tester) async {
+        final (w, a) = (await tester.runAsync(_fixture))!;
+        addTearDown(w.dispose);
+        _taskRoutes(w, a);
+        final details = Completer<dynamic>(), history = Completer<dynamic>();
+        a.routes['GET /tasks/channel/c1/number/1'] = (_) => details.future;
+        a.routes['GET /tasks/t1/history'] = (_) => history.future;
+        await tester.pumpWidget(
+          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Private task'));
+        await tester.pump();
+        final dialog = find.byKey(const ValueKey('task-details-loading'));
+        expect(dialog, findsOneWidget);
+        final bones = find.descendant(
+          of: dialog,
+          matching: find.byType(RaftSkeleton),
+        );
+        expect(bones, findsNWidgets(3));
+        final sizes = bones
+            .evaluate()
+            .map((e) => tester.getSize(find.byWidget(e.widget)))
+            .toList();
+        expect(sizes.map((s) => s.height), [24, 16, 16]);
+        expect(sizes[0].width, closeTo(sizes[1].width * 2 / 3, .1));
+        expect(sizes[2].width, closeTo(sizes[1].width * .8, .1));
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Private details'),
+          ),
+          findsNothing,
+        );
+        expect(find.text('History'), findsNothing);
+        details.complete({'task': task});
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(dialog, findsOneWidget);
+        expect(find.text('History'), findsNothing);
+        history.complete({
+          'events': [
+            {'eventType': 'created', 'actorName': 'Alice'},
+          ],
+        });
+        await tester.pumpAndSettle();
+        expect(dialog, findsNothing);
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Private details'),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('History'), findsOneWidget);
+        expect(find.text('created · Alice'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      '[K10c] closing a pending task rejects late details ${theme.$1}/${theme.$2}',
+      (tester) async {
+        final (w, a) = (await tester.runAsync(_fixture))!;
+        addTearDown(w.dispose);
+        _taskRoutes(w, a);
+        final details = Completer<dynamic>();
+        a.routes['GET /tasks/channel/c1/number/1'] = (_) => details.future;
+        await tester.pumpWidget(
+          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Private task'));
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('task-details-loading')),
+          findsOneWidget,
+        );
+        await tester.tap(find.widgetWithText(TextButton, 'Close'));
+        await tester.pumpAndSettle();
+        details.complete({'task': task});
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Private details'),
+          ),
+          findsNothing,
+        );
+        expect(a.calls.where((o) => o.path.endsWith('/history')), isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      '[K10c] revocation closes a pending task before late lookup ${theme.$1}/${theme.$2}',
+      (tester) async {
+        final (w, a) = (await tester.runAsync(_fixture))!;
+        addTearDown(w.dispose);
+        _taskRoutes(w, a);
+        final details = Completer<dynamic>();
+        a.routes['GET /tasks/channel/c1/number/1'] = (_) => details.future;
+        await tester.pumpWidget(
+          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Private task'));
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('task-details-loading')),
+          findsOneWidget,
+        );
+        w.channels = [];
+        w.notifyListeners();
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
+        details.complete({'task': task});
+        await tester.pumpAndSettle();
+        expect(
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('Private details'),
+          ),
+          findsNothing,
+        );
+        expect(a.calls.where((o) => o.path.endsWith('/history')), isEmpty);
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      'pending task history failure remains an error ${theme.$1}/${theme.$2}',
+      (tester) async {
+        final (w, a) = (await tester.runAsync(_fixture))!;
+        addTearDown(w.dispose);
+        _taskRoutes(w, a);
+        final history = Completer<dynamic>();
+        a.routes['GET /tasks/t1/history'] = (_) => history.future;
+        a.statuses['GET /tasks/t1/history'] = 500;
+        await tester.pumpWidget(
+          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Private task'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(
+          find.byKey(const ValueKey('task-details-loading')),
+          findsOneWidget,
+        );
+        history.complete({'error': 'History failed'});
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('task-details-error')),
+          findsOneWidget,
+        );
+        expect(find.text('History'), findsNothing);
+        expect(
+          (tester.state(find.byType(ResourceView)) as dynamic).error,
+          isNotNull,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+    testWidgets(
+      'closed task discards late history failure ${theme.$1}/${theme.$2}',
+      (tester) async {
+        final (w, a) = (await tester.runAsync(_fixture))!;
+        addTearDown(w.dispose);
+        _taskRoutes(w, a);
+        final history = Completer<dynamic>();
+        a.routes['GET /tasks/t1/history'] = (_) => history.future;
+        a.statuses['GET /tasks/t1/history'] = 500;
+        await tester.pumpWidget(
+          _host(w, 'tasks', family: theme.$1, dark: theme.$2),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Private task'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.tap(find.widgetWithText(TextButton, 'Close'));
+        await tester.pumpAndSettle();
+        history.complete({'error': 'Late history failed'});
+        await tester.pumpAndSettle();
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(
+          (tester.state(find.byType(ResourceView)) as dynamic).error,
+          isNull,
+        );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
   testWidgets(
     'authority changes close private task filter menus and reject a stale Activity action',
     (tester) async {
