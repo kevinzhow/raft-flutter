@@ -1934,7 +1934,7 @@ class _ResourceViewState extends State<ResourceView> {
                 for (final row in visibleRows.where(
                   (r) => r['status'] == status,
                 ))
-                  item(row),
+                  SourceTaskRowExtent(child: item(row)),
               ],
             ),
             const SizedBox(height: 24),

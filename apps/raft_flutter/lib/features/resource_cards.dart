@@ -1,6 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' hide RaftPanelHeaderRecipe;
+
+/// VirtualizedTaskStack's tanstack measurement rounds each observed row to
+/// whole CSS pixels. Keep the card's fractional box, but use that same row
+/// extent when placing the following cards/sections.
+class SourceTaskRowExtent extends SingleChildRenderObjectWidget {
+  const SourceTaskRowExtent({super.key, required super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _SourceTaskRowExtent();
+}
+
+class _SourceTaskRowExtent extends RenderProxyBox {
+  @override
+  void performLayout() {
+    child!.layout(constraints.loosen(), parentUsesSize: true);
+    size = constraints.constrain(
+      Size(child!.size.width, child!.size.height.roundToDouble()),
+    );
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final measured = child!.getDryLayout(constraints.loosen());
+    return constraints.constrain(
+      Size(measured.width, measured.height.roundToDouble()),
+    );
+  }
+}
 
 /// Page component tokens traced to SavedPanel SavedItem and ThreadsInbox
 /// InboxRow at Web 26f77ef. A panel card and an inbox card have different fills.

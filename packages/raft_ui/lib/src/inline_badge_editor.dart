@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'icons.dart';
 import 'design_primitives.dart';
 import 'recipe_surface.dart';
+import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
 import '../recipes.dart';
 import 'theme.dart';
 
@@ -190,7 +191,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
             mainAxisSize: MainAxisSize.min,
             spacing: 4, // gap-1
             children: [
-              Text(
+              RaftCssText(
                 widget.uppercase ? widget.label.toUpperCase() : widget.label,
                 style: label,
               ),
@@ -623,22 +624,123 @@ class RaftInlineLineBox extends StatelessWidget {
   final TextStyle style;
   final Widget child;
   @override
-  Widget build(BuildContext context) => Text.rich(
-    TextSpan(
-      children: [
-        WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: child,
-        ),
-      ],
+  Widget build(BuildContext context) => DefaultTextStyle.merge(
+    style: style,
+    child: _InlineLineBox(
+      style: style,
+      textScaler: MediaQuery.textScalerOf(context),
+      child: child,
     ),
-    // CSS leading belongs to the font strut, not the inline widget box.
-    // Applying height to both inflates a tall inline-block twice in Flutter.
-    style: style.copyWith(height: 1),
-    strutStyle: StrutStyle.fromTextStyle(style),
-    textScaler: TextScaler.noScaling,
   );
+}
+
+class _InlineLineBox extends SingleChildRenderObjectWidget {
+  const _InlineLineBox({
+    required this.style,
+    required this.textScaler,
+    required super.child,
+  });
+  final TextStyle style;
+  final TextScaler textScaler;
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderInlineLineBox(style, textScaler);
+  @override
+  void updateRenderObject(BuildContext context, _RenderInlineLineBox render) {
+    render
+      ..style = style
+      ..textScaler = textScaler;
+  }
+}
+
+/// CSS inline layout combines the document strut with the control's baseline;
+/// it does not round either inline box to a Flutter paragraph's line height.
+class _RenderInlineLineBox extends RenderProxyBox {
+  _RenderInlineLineBox(this._style, this._textScaler);
+  TextStyle _style;
+  TextScaler _textScaler;
+  double _top = 0, _baseline = 0;
+  set style(TextStyle value) {
+    if (_style == value) return;
+    _style = value;
+    markNeedsLayout();
+  }
+
+  set textScaler(TextScaler value) {
+    if (_textScaler == value) return;
+    _textScaler = value;
+    markNeedsLayout();
+  }
+
+  (double, double, double) _line(Size childSize, double childBaseline) {
+    final fontSize = _textScaler.scale(_style.fontSize ?? 16);
+    final lineHeight = fontSize * (_style.height ?? 1.5);
+    final strutBaseline = raftCssBaseline(_style.copyWith(fontSize: fontSize));
+    final ascent = childBaseline > strutBaseline
+        ? childBaseline
+        : strutBaseline;
+    final childDescent = childSize.height - childBaseline;
+    final strutDescent = lineHeight - strutBaseline;
+    final descent = childDescent > strutDescent ? childDescent : strutDescent;
+    return (ascent + descent, ascent - childBaseline, ascent);
+  }
+
+  @override
+  void performLayout() {
+    child!.layout(constraints.loosen(), parentUsesSize: true);
+    final (height, top, baseline) = _line(
+      child!.size,
+      child!.getDistanceToBaseline(TextBaseline.alphabetic) ??
+          child!.size.height,
+    );
+    _top = top;
+    _baseline = baseline;
+    size = constraints.constrain(Size(child!.size.width, height));
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final loose = constraints.loosen();
+    final measured = child!.getDryLayout(loose);
+    final (height, _, _) = _line(
+      measured,
+      child!.getDryBaseline(loose, TextBaseline.alphabetic) ?? measured.height,
+    );
+    return constraints.constrain(Size(measured.width, height));
+  }
+
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) => _baseline;
+
+  @override
+  double? computeDryBaseline(
+    BoxConstraints constraints,
+    TextBaseline baseline,
+  ) {
+    final loose = constraints.loosen();
+    final measured = child!.getDryLayout(loose);
+    return _line(
+      measured,
+      child!.getDryBaseline(loose, baseline) ?? measured.height,
+    ).$3;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) =>
+      context.paintChild(child!, offset + Offset(0, _top));
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
+      result.addWithPaintOffset(
+        offset: Offset(0, _top),
+        position: position,
+        hitTest: (result, transformed) =>
+            child!.hitTest(result, position: transformed),
+      );
+
+  @override
+  void applyPaintTransform(RenderBox child, Matrix4 transform) =>
+      transform.translateByDouble(0, _top, 0, 1);
 }
 
 /// Grows the hit-test and semantics rectangle of [child] to [minSize]

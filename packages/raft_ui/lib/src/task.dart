@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import 'localization.dart';
 
@@ -8,6 +9,7 @@ import 'design_primitives.dart';
 import 'inline_badge_editor.dart';
 import 'recipe_surface.dart';
 import 'mounted_task_chip.dart';
+import 'panel_layout.dart' show RaftCssText;
 import '../recipes.dart';
 
 const raftTaskStatuses = ['todo', 'in_progress', 'in_review', 'done', 'closed'];
@@ -243,23 +245,25 @@ class RaftTaskCard extends StatelessWidget {
                   children: [
                     Padding(
                       padding: r.meta.margin,
-                      child: Row(
-                        spacing: r.meta.columnGap ?? 8,
-                        children: [
-                          if (channel.isNotEmpty)
-                            Flexible(
-                              child: Text(
-                                '#$channel',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: text(r.channel),
+                      child: _TaskMetaBaseline(
+                        child: Row(
+                          spacing: r.meta.columnGap ?? 8,
+                          children: [
+                            if (channel.isNotEmpty)
+                              Flexible(
+                                child: RaftCssText(
+                                  '#$channel',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: text(r.channel),
+                                ),
                               ),
-                            ),
-                          Text('#$number', style: text(r.number)),
-                        ],
+                            RaftCssText('#$number', style: text(r.number)),
+                          ],
+                        ),
                       ),
                     ),
-                    Text(
+                    RaftCssText(
                       title,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
@@ -268,7 +272,7 @@ class RaftTaskCard extends StatelessWidget {
                     if (description.isNotEmpty)
                       Padding(
                         padding: r.description.margin,
-                        child: Text(
+                        child: RaftCssText(
                           description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -301,6 +305,28 @@ class RaftTaskCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// TaskCardMeta is an `items-center` flex row. CSS takes its first item's
+// baseline; RenderFlex instead takes the smallest baseline among its items.
+// The channel's 16px line and number's 16.5px line expose that difference.
+class _TaskMetaBaseline extends SingleChildRenderObjectWidget {
+  const _TaskMetaBaseline({required super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTaskMetaBaseline();
+}
+
+class _RenderTaskMetaBaseline extends RenderProxyBox {
+  @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    final row = child as RenderFlex;
+    final first = row.firstChild;
+    if (first == null) return null;
+    final distance = first.getDistanceToActualBaseline(baseline);
+    final offset = (first.parentData! as FlexParentData).offset.dy;
+    return distance == null ? null : offset + distance;
   }
 }
 
