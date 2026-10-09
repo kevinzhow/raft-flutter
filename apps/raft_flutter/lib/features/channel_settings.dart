@@ -14,6 +14,7 @@ class ChannelSettings extends StatefulWidget {
     required this.channel,
     this.leave = true,
     this.collapseLongMessages = true,
+    this.isPanel = false,
   });
   final WorkspaceController controller;
   final RaftChannel channel;
@@ -21,6 +22,10 @@ class ChannelSettings extends StatefulWidget {
   /// Web `onLeaveChannel` / `collapseLongMessages` props: hosts that do not
   /// offer Leave or the collapse preference in this sheet pass false.
   final bool leave, collapseLongMessages;
+
+  /// Source ChannelPreferencesSection: activity mute is a panel-only preference,
+  /// omitted in standalone EditChannelDialog and for one-to-one DMs.
+  final bool isPanel;
   @override
   State<ChannelSettings> createState() => _ChannelSettingsState();
 }
@@ -232,6 +237,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   @override
   Widget build(BuildContext context) {
     final c = channel;
+    final generation = w.client.generation, serverId = w.server?.id;
     final dm = c.type == 'dm';
     final all = c.name == 'all';
     final archived = c.archived;
@@ -308,12 +314,43 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             value: pinned,
             onChanged: pin,
           ),
+          if (widget.isPanel &&
+              !dm &&
+              c.joined &&
+              c.flag('activityMuteSupported') &&
+              notification['activityMuted'] is bool)
+            RaftSheetSwitchRow(
+              title: 'Mute activity',
+              description:
+                  'Mute ordinary activity from this channel. Only affects you.',
+              value: notification['activityMuted'] == true,
+              onChanged: (value) => run(() async {
+                final fresh = [
+                  ...w.channels,
+                  ...w.dms,
+                ].where((next) => next.id == c.id).firstOrNull;
+                if (w.client.generation != generation ||
+                    w.server?.id != serverId ||
+                    fresh == null ||
+                    !fresh.joined ||
+                    !fresh.flag('activityMuteSupported') ||
+                    !w.can('viewChannel', resource: fresh)) {
+                  throw StateError(
+                    'Channel activity preference is no longer available.',
+                  );
+                }
+                await w.command(
+                  'PATCH',
+                  '/channels/${c.id}/notification-settings',
+                  data: {'activityMuted': value},
+                );
+              }),
+            ),
           if (widget.collapseLongMessages &&
               display.containsKey('collapseLongMessages'))
             RaftSheetSwitchRow(
               title: 'Collapse long messages',
-              description:
-                  'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
+              description: 'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
               value: display['collapseLongMessages'] != false,
               onChanged: (v) => run(() async {
                 await w.command(

@@ -70,7 +70,8 @@ Future<void> settingsTab(WidgetTester tester, String tab) async {
   await tester.pumpAndSettle();
   await until(
     tester,
-    () => find.byKey(ValueKey('settings-page-$destinationId')).evaluate().isNotEmpty,
+    () => find.byKey(ValueKey('settings-page-$destinationId')).evaluate().isNotEmpty ||
+        find.byKey(ValueKey(destinationId)).evaluate().isNotEmpty,
   );
 }
 
@@ -492,6 +493,11 @@ Future<WorkspaceController> openNativeChat(
 }
 
 Future<void> section(WidgetTester tester, String name) async {
+  if (name == 'workspace-settings') {
+    await section(tester, 'settings');
+    await settingsTab(tester, 'server');
+    return;
+  }
   if (mobileViewport(tester)) {
     await mobileHome(tester);
     if (name == 'home') return;
@@ -551,7 +557,8 @@ Future<void> openAccountSettings(WidgetTester tester) async {
 
 Finder field(String label) => find.descendant(
   of: find.byWidgetPredicate(
-    (w) => w is Semantics && w.properties.label == label,
+    (w) => (w is Semantics && w.properties.label == label) ||
+        (w is RaftProductFormField && w.label == label),
   ),
   matching: find.byType(TextField),
 );
@@ -1490,16 +1497,16 @@ void main() {
       await tester.tap(find.byTooltip('Create channel'));
       await tester.pumpAndSettle();
       final createdName = 'native-ui-${DateTime.now().millisecondsSinceEpoch}';
-      await tester.enterText(field('Channel name'), createdName);
+      await tester.enterText(field('Name'), createdName);
       await tester.enterText(
         field('Description'),
         'Native channel settings verification',
       );
-      await tester.tap(find.widgetWithText(RaftButton, 'Create'));
+      await tester.tap(find.widgetWithText(RaftRecipeButton, 'Create Channel'));
       await until(
         tester,
         () =>
-            find.byType(RaftFormDialog).evaluate().isEmpty &&
+            find.byType(RaftCreateChannelDialogView).evaluate().isEmpty &&
             w.channel?.name == createdName &&
             !w.channelLoading,
       );
@@ -1511,52 +1518,38 @@ void main() {
         await tester.pumpAndSettle();
         await until(
           tester,
-          () => find.text('Pin conversation').evaluate().isNotEmpty,
+          () => find.text('Pin channel').evaluate().isNotEmpty,
         );
       }
 
       Future<void> setting(String title) async {
-        final scroll = find
-            .descendant(
-              of: find.byType(Dialog),
-              matching: find.byType(Scrollable),
-            )
-            .first;
-        final state = tester.state<ScrollableState>(scroll);
-        state.position.jumpTo(0);
+        final sheet = find.byType(RaftChannelSettingsSheet);
+        final scroll = find.descendant(of: sheet, matching: find.byType(Scrollable)).first;
+        final toggle = find.byWidgetPredicate((widget) => widget is RaftSwitch && widget.semanticLabel == title);
+        final action = toggle.evaluate().isNotEmpty ? toggle : find.text(title);
+        await tester.scrollUntilVisible(action, 150, scrollable: scroll);
+        await tester.ensureVisible(action);
         await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(
-          find.text(title),
-          150,
-          scrollable: scroll,
-        );
-        await tester.ensureVisible(find.text(title));
-        await tester.pumpAndSettle();
-        final toggle = find.widgetWithText(SwitchListTile, title);
         if (toggle.evaluate().isNotEmpty) {
-          await until(
-            tester,
-            () => tester.widget<SwitchListTile>(toggle).onChanged != null,
-          );
+          await until(tester, () => tester.widget<RaftSwitch>(toggle).onChanged != null);
         }
-        await tester.tap(find.text(title));
+        await tester.tap(action);
         await tester.pumpAndSettle();
         if (toggle.evaluate().isNotEmpty) {
-          await until(
-            tester,
-            () => tester.widget<SwitchListTile>(toggle).onChanged != null,
-          );
+          await until(tester, () => tester.widget<RaftSwitch>(toggle).onChanged != null);
         }
       }
 
       await openSettings();
-      await setting('Pin conversation');
+      await setting('Pin channel');
       await until(
         tester,
         () => (w.sidebarOrder['pinned'] as List? ?? []).any(
           (p) => p['id'] == createdId,
         ),
       );
+      final priorMute = (await w.query('/channels/$createdId/notification-settings'))['activityMuted'];
+      expect(priorMute, false);
       await setting('Mute activity');
       expect(
         (await w.query(
@@ -1564,6 +1557,9 @@ void main() {
         ))['activityMuted'],
         true,
       );
+      await screenshot(tester, 'linux-channel-activity-muted');
+      await setting('Mute activity');
+      expect((await w.query('/channels/$createdId/notification-settings'))['activityMuted'], priorMute);
       await setting('Collapse long messages');
       expect(
         (await w.query(
@@ -1571,21 +1567,21 @@ void main() {
         ))['collapseLongMessages'],
         false,
       );
-      await setting('Edit channel');
       await tester.enterText(
         field('Description'),
         'Updated from native UI 中文 日本語',
       );
-      await tester.tap(find.widgetWithText(RaftButton, 'Save'));
+      await tester.tap(find.widgetWithText(RaftRecipeButton, 'Save'));
       await until(
         tester,
         () =>
-            find.byType(RaftFormDialog).evaluate().isEmpty &&
+            find.byType(RaftChannelSettingsSheet).evaluate().isEmpty &&
             w.channel?.description == 'Updated from native UI 中文 日本語',
       );
       await tester.pumpAndSettle();
       await screenshot(tester, 'linux-channel-settings');
-      await setting('Archive channel');
+      await openSettings();
+      await setting('Archive Channel');
       await tester.tap(find.widgetWithText(RaftButton, 'Confirm'));
       await until(
         tester,
@@ -1603,8 +1599,7 @@ void main() {
         false,
       );
       await openSettings();
-      await setting('Unarchive channel');
-      await tester.tap(find.widgetWithText(RaftButton, 'Confirm'));
+      await setting('Unarchive Channel');
       await until(
         tester,
         () =>
@@ -1612,7 +1607,7 @@ void main() {
             w.channel?.archived == false,
       );
       await tester.pumpAndSettle();
-      await setting('Delete channel');
+      await setting('Delete Channel');
       await tester.tap(find.widgetWithText(RaftButton, 'Delete'));
       await until(
         tester,
@@ -1647,15 +1642,12 @@ void main() {
       );
       await tester.pumpAndSettle();
       final ownServerId = w.server!.id;
+      final ownServerSlug = w.server!.string('slug');
       await section(tester, 'workspace-settings');
-      await until(
-        tester,
-        () => find.text('Edit workspace').evaluate().isNotEmpty,
-      );
-      await tester.tap(find.text('Edit workspace'));
+      final serverName = find.byKey(const Key('server-profile-name-input'));
+      await tester.enterText(serverName, '$workspaceName edited');
       await tester.pumpAndSettle();
-      await tester.enterText(field('Workspace name'), '$workspaceName edited');
-      await tester.tap(find.widgetWithText(RaftButton, 'Save'));
+      await tester.tap(find.byKey(const Key('server-profile-save-button')));
       await until(
         tester,
         () =>
@@ -1663,7 +1655,12 @@ void main() {
             w.server!.name == '$workspaceName edited',
       );
       await tester.pumpAndSettle();
-      final notificationChoice = find.byType(DropdownButtonFormField<String>);
+      await settingsTab(tester, 'administration');
+      final notificationChoice = find.byWidgetPredicate(
+        (widget) => widget is DropdownButtonFormField<String> &&
+            widget.decoration.labelText == 'Workspace push notifications',
+      );
+      await until(tester, () => notificationChoice.evaluate().isNotEmpty);
       await tester.ensureVisible(notificationChoice);
       await tester.tap(notificationChoice);
       await tester.pumpAndSettle();
@@ -1813,7 +1810,14 @@ void main() {
           await tester.pumpAndSettle();
         }
 
-        await detailAction(computers ? 'Edit computer' : 'Edit agent');
+        if (computers) {
+          await detailAction('Edit computer');
+        } else {
+          final edit = find.byTooltip('Edit display name');
+          await tester.ensureVisible(edit);
+          await tester.tap(edit);
+          await tester.pumpAndSettle();
+        }
         await tester.enterText(field('Display name'), '$name edited');
         await tester.enterText(
           field('Description'),
@@ -1843,7 +1847,10 @@ void main() {
           computers ? 'linux-computer-details' : 'linux-agent-details',
         );
         if (!computers) {
-          await detailAction('Agent permissions');
+          final editRole = find.byTooltip('Edit role');
+          await tester.ensureVisible(editRole);
+          await tester.tap(editRole);
+          await tester.pumpAndSettle();
           await until(
             tester,
             () =>
@@ -1912,16 +1919,27 @@ void main() {
           await tester.pumpAndSettle();
           await tester.tap(find.byTooltip('Back'));
           await tester.pumpAndSettle();
-          await detailAction('Activity log');
+          final activityTab = find.bySemanticsLabel('Activity');
+          await tester.ensureVisible(activityTab);
+          await tester.tap(activityTab);
+          await tester.pumpAndSettle();
           await until(
             tester,
             () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
           );
-          expect(find.text('Activity log'), findsOneWidget);
-          await tester.tap(find.byTooltip('Back'));
+          expect(find.text('Activity Diagnostics'), findsOneWidget);
+          await screenshot(tester, 'linux-agent-activity-tab');
+          await tester.tap(find.bySemanticsLabel('Profile'));
           await tester.pumpAndSettle();
         }
-        await detailAction(computers ? 'Delete computer' : 'Delete agent');
+        if (computers) {
+          await detailAction('Delete computer');
+        } else {
+          final delete = find.widgetWithText(RaftButton, 'Delete Agent');
+          await tester.ensureVisible(delete);
+          await tester.tap(delete);
+          await tester.pumpAndSettle();
+        }
         await tester.tap(find.widgetWithText(RaftButton, 'Delete'));
         await until(
           tester,
@@ -1945,19 +1963,26 @@ void main() {
       await fleetFlow(false);
       await fleetFlow(true);
       await section(tester, 'workspace-settings');
-      await until(
-        tester,
-        () => find.text('Delete workspace').evaluate().isNotEmpty,
-      );
-      await tester.ensureVisible(find.text('Delete workspace'));
+      final deleteServer = find.byKey(const Key('server-danger-delete-button'));
+      await tester.ensureVisible(deleteServer);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Delete workspace'));
+      await tester.tap(deleteServer);
       await tester.pumpAndSettle();
-      await tester.enterText(
-        field('Type workspace name'),
-        '$workspaceName edited',
+      final slugInput = find.descendant(
+        of: find.byKey(const Key('server-delete-slug-input')),
+        matching: find.byType(TextField),
       );
-      await tester.tap(find.widgetWithText(RaftButton, 'Delete'));
+      await tester.enterText(slugInput, '$workspaceName edited');
+      await tester.pumpAndSettle();
+      // Source confirms the immutable slug, not the editable display name.
+      final confirmDelete = find.byKey(const Key('server-delete-confirm-button'));
+      await tester.tap(confirmDelete);
+      await tester.pumpAndSettle();
+      expect(w.servers.any((server) => server.id == ownServerId), true);
+      expect(slugInput, findsOneWidget);
+      await tester.enterText(slugInput, ownServerSlug);
+      await tester.pumpAndSettle();
+      await tester.tap(confirmDelete);
       await until(
         tester,
         () =>
