@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
 import 'localization.dart';
+import 'recipe_surface.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipes.g.dart';
 import 'recipes/token_binding.dart';
@@ -100,82 +101,66 @@ class RaftSettingsRecipeButton extends StatefulWidget {
   /// Callsite `disabled:opacity-*` override (ConfirmDialog uses 80 / 30).
   final double? disabledOpacity;
   @override
-  State<RaftSettingsRecipeButton> createState() => _RaftSettingsRecipeButtonState();
+  State<RaftSettingsRecipeButton> createState() =>
+      _RaftSettingsRecipeButtonState();
 }
 
 class _RaftSettingsRecipeButtonState extends State<RaftSettingsRecipeButton> {
-  bool hovered = false, pressed = false;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), tokens = RaftRecipeTokens(t);
-    final disabled = widget.onPressed == null;
-    final s = RaftButtonRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      variant: widget.variant,
-      size: widget.size,
-      states: _states(
-        t,
-        hovered: hovered,
-        pressed: pressed,
-        disabled: disabled,
-      ),
-      tokens: tokens,
-    ).root;
-    final text = _slotText(t, s);
-    final svg = s.target("& svg:not([class*='size-'])");
-    final opacity = disabled
-        ? (widget.disabledOpacity ?? s.opacity ?? 1)
-        : (s.opacity ?? 1);
-    final row = Row(
-      mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (widget.glyph != null) ...[
-          RaftIcon(
-            widget.glyph!,
-            size: widget.glyphSize ?? svg?.width ?? 16,
-            color: text.color,
-          ),
-          if (widget.label.isNotEmpty) SizedBox(width: s.columnGap ?? 6),
-        ],
-        if (widget.label.isNotEmpty)
-          Text(
-            raftText(context, widget.label),
-            maxLines: 1,
-            softWrap: false,
-            style: text,
-          ),
-      ],
-    );
-    return Semantics(
-      button: true,
-      enabled: !disabled,
-      child: MouseRegion(
-        cursor: disabled ? SystemMouseCursors.basic : SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          onTapDown: disabled ? null : (_) => setState(() => pressed = true),
-          onTapCancel: () => setState(() => pressed = false),
-          onTapUp: (_) => setState(() => pressed = false),
-          onTap: widget.onPressed,
-          child: Opacity(
-            opacity: opacity,
-            child: Transform.translate(
-              offset: s.translate ?? Offset.zero,
-              child: Container(
-                width: s.width,
-                height: s.height,
-                padding: s.padding,
-                decoration: s.decoration(tokens),
-                child: row,
-              ),
-            ),
+  Widget build(BuildContext context) => RaftInteractive(
+    onPressed: widget.onPressed,
+    builder: (context, state) {
+      final t = RaftTokens.of(context), tokens = RaftRecipeTokens(t);
+      final s = RaftButtonRecipe.resolve(
+        theme: raftRecipeTheme(t),
+        variant: widget.variant,
+        size: widget.size,
+        states: t.recipeStates(
+          hovered: state.hovered,
+          pressed: state.pressed,
+          focusVisible: state.focusVisible,
+          disabled: !state.enabled,
+        ),
+        tokens: tokens,
+      ).root;
+      final text = _slotText(t, s);
+      final svg = s.target("& svg:not([class*='size-'])");
+      final opacity = !state.enabled
+          ? (widget.disabledOpacity ?? s.opacity ?? 1)
+          : (s.opacity ?? 1);
+      return Opacity(
+        opacity: opacity,
+        child: RaftRecipeBox(
+          style: s,
+          tokens: tokens,
+          applyText: false,
+          applyOpacity: false,
+          overflowCenter: true,
+          child: Row(
+            mainAxisSize: widget.expand ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.glyph != null) ...[
+                RaftIcon(
+                  widget.glyph!,
+                  size: widget.glyphSize ?? svg?.width ?? 16,
+                  color: text.color,
+                ),
+                if (widget.label.isNotEmpty) SizedBox(width: s.columnGap ?? 6),
+              ],
+              if (widget.label.isNotEmpty)
+                Text(
+                  raftText(context, widget.label),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: text,
+                ),
+            ],
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 /// FormField.tsx `labelStyle="plain" size="compact"`: raft-ui `Field`
@@ -313,7 +298,8 @@ class RaftSettingsPrefixedInput extends StatefulWidget {
   final Color? rootColor, rootBorderColor, textColor;
   final bool flat;
   @override
-  State<RaftSettingsPrefixedInput> createState() => _RaftSettingsPrefixedInputState();
+  State<RaftSettingsPrefixedInput> createState() =>
+      _RaftSettingsPrefixedInputState();
 }
 
 class _RaftSettingsPrefixedInputState extends State<RaftSettingsPrefixedInput> {
