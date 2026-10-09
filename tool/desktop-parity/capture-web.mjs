@@ -5,11 +5,13 @@
 //   <out>/react/<caseId>.metadata.json
 //
 // Usage: node capture-web.mjs [--only substr[,substr]] [--out dir] [--base url]
+// Optional --regions-out dir writes separate read-only layout diagnostics.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
+import { measureDesktopRegions } from './measure-regions.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../..');
@@ -24,6 +26,11 @@ const opt = (name, fallback) => {
   return i >= 0 ? args[i + 1] : fallback;
 };
 const only = opt('only', '').split(',').filter(Boolean);
+const regionsRoot = opt('regions-out', null);
+if (regionsRoot) {
+  if (existsSync(resolve(regionsRoot))) throw new Error('Choose a fresh --regions-out directory; preserve previous DOM evidence.');
+  mkdirSync(resolve(regionsRoot), { recursive: true });
+}
 const outRoot = resolve(opt('out', resolve(repo, '.local/desktop-parity/visual-testing-results')));
 const portFile = resolve(repo, '.local/desktop-parity/web-runtime.port');
 const base = opt('base', `http://127.0.0.1:${existsSync(portFile) ? readFileSync(portFile, 'utf8').trim() : 15260}`);
@@ -165,6 +172,15 @@ for (const visualCase of manifest.cases) {
       'composer': '[data-testid="composer-textarea"]',
       'message.agent-reply': '#message-msg-agent-reply',
     });
+    if (regionsRoot) {
+      const measured = await page.evaluate(measureDesktopRegions);
+      writeFileSync(resolve(regionsRoot, `${visualCase.id}.regions.json`), JSON.stringify({
+        ...measured, caseId: visualCase.id, theme: visualCase.theme,
+        route: variant.props.route, url: page.url(), fixtureSha256: fixtureSha,
+        sourceCommit: '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6',
+        capturedAt: new Date().toISOString(),
+      }, null, 2));
+    }
     await page.screenshot({ path: imagePath });
     writeFileSync(resolve(outDir, `${visualCase.id}.metadata.json`), JSON.stringify({
       provider: 'react',
