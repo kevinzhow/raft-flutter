@@ -282,12 +282,25 @@ class RaftReferenceChip extends StatelessWidget {
         children: [
           if (icon != null) ...[icon, SizedBox(width: gap)],
           Flexible(
-            child: Text(
-              label,
-              maxLines: 1,
-              softWrap: false,
-              overflow: TextOverflow.ellipsis,
-              style: text,
+            // CSS uses the declared line-height as the inline-flex line box.
+            // RenderParagraph rounds its natural height to whole pixels.
+            child: SizedBox(
+              height: size * (text.height ?? lineHeight),
+              child: Text(
+                label,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: text,
+                // CSS line-height fixes the line box even when a CJK fallback
+                // glyph has taller font metrics than the surrounding face.
+                strutStyle: StrutStyle.fromTextStyle(
+                  text,
+                  leading: 0,
+                  leadingDistribution: TextLeadingDistribution.even,
+                  forceStrutHeight: true,
+                ),
+              ),
             ),
           ),
         ],

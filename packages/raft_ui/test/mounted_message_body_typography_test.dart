@@ -102,6 +102,48 @@ void main() {
         expect(t.takeException(), isNull);
       },
     );
+    testWidgets('inline code padding preserves selected code $family/$dark', (
+      t,
+    ) async {
+      String? copied;
+      t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        (call) async {
+          if (call.method == 'Clipboard.setData')
+            copied = (call.arguments as Map)['text'] as String;
+          return null;
+        },
+      );
+      addTearDown(
+        () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          SystemChannels.platform,
+          null,
+        ),
+      );
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(family, dark: dark),
+          home: const Scaffold(
+            body: RaftMessageBody(
+              content: 'prefix `a/<app>/latest` suffix',
+              mountedMessage: true,
+            ),
+          ),
+        ),
+      );
+      await t.pump();
+      final paragraph = find.byWidgetPredicate(
+        (w) => w is RichText && w.text.toPlainText().contains('a/<app>/latest'),
+      );
+      await t.tap(paragraph.first);
+      await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await t.sendKeyEvent(LogicalKeyboardKey.keyA);
+      await t.sendKeyEvent(LogicalKeyboardKey.keyC);
+      await t.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await t.pump();
+      expect(copied, 'prefix a/<app>/latest suffix');
+      expect(t.takeException(), isNull);
+    });
     for (final (size, line) in [(12.0, 16.0), (14.0, 20.0), (16.0, 24.0)]) {
       test(
         'mounted preference $size keeps source line height $family/$dark',

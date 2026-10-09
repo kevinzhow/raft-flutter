@@ -254,6 +254,7 @@ class RaftMessageBody extends StatelessWidget {
         builders: {
           'a': _MessageLinkBuilder(onLink, referenceAppearance),
           'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
+          'code': _MessageInlineCodeBuilder(),
         },
         inlineSyntaxes: [_ReferenceSentinelSyntax()],
         paddingBuilders: MessageContentRecipe(
@@ -862,6 +863,57 @@ class _ReferenceSentinelSyntax extends md.InlineSyntax {
         ..attributes['href'] = match[1]!,
     );
     return true;
+  }
+}
+
+/// Message InlineCode is a splittable text run with CSS px-1 padding, not
+/// an indivisible chip. Empty placeholders add layout space without changing
+/// authored code or the text returned by selection and accessibility.
+class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
+  @override
+  Widget? visitElementAfterWithContext(
+    BuildContext context,
+    dynamic element,
+    TextStyle? preferredStyle,
+    TextStyle? parentStyle,
+  ) {
+    final style = (parentStyle ?? DefaultTextStyle.of(context).style).merge(
+      preferredStyle,
+    );
+    final painter = TextPainter(
+      text: TextSpan(text: ' ', style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final metrics = painter.computeLineMetrics().single;
+    final height = painter.height;
+    painter.dispose();
+    InlineSpan padding() => WidgetSpan(
+      alignment: PlaceholderAlignment.baseline,
+      baseline: TextBaseline.alphabetic,
+      child: ExcludeSemantics(
+        child: Baseline(
+          baseline: metrics.baseline,
+          baselineType: TextBaseline.alphabetic,
+          child: SizedBox(
+            width: 4,
+            height: height,
+            child: ColoredBox(
+              color: style.backgroundColor ?? Colors.transparent,
+            ),
+          ),
+        ),
+      ),
+    );
+    return Text.rich(
+      TextSpan(
+        children: [
+          padding(),
+          TextSpan(text: element.textContent as String, style: style),
+          padding(),
+        ],
+      ),
+    );
   }
 }
 

@@ -33,11 +33,16 @@ class MessagePresentation extends StatelessWidget {
     this.exportMode = false,
     this.exportAttachmentBuilder,
     this.taskByNumber,
+    this.knownTaskNumber,
   });
 
   /// Loaded task for an in-body `#N` reference (Web `taskByNumber`); null
   /// when unknown.
   final Map<String, dynamic>? Function(int number)? taskByNumber;
+
+  /// A linked task can supply a status without entering Web's known bare-task
+  /// directory. Explicit `task #N` still resolves through [taskByNumber].
+  final bool Function(int number)? knownTaskNumber;
   final WorkspaceController controller;
   final RaftMessage message;
   final ValueChanged<String> onExternalLink;
@@ -440,9 +445,9 @@ class MessagePresentation extends StatelessWidget {
             ).toString()
           : null,
       onLink: exportMode ? null : (href) => open(context, href),
-      knownTaskNumber: taskByNumber == null
-          ? null
-          : (n) => taskByNumber!(n) != null,
+      knownTaskNumber:
+          knownTaskNumber ??
+          (taskByNumber == null ? null : (n) => taskByNumber!(n) != null),
       referenceAppearance: appearance,
     );
   }

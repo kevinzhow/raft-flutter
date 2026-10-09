@@ -49,6 +49,46 @@ void main() {
       expect(value, contains('```txt\n@Mona #team\n```'));
     },
   );
+  test('linked-only task is not a known bare task inside a link', () {
+    const source =
+        'Review [#1487 feat(search)](https://github.com/botiverse/mobile/pull/1487) '
+        'then follow task #1487. '
+        '[notes in #visual-testing](https://raft.build/visual-testing) '
+        '[ping @artin](https://raft.build/mentions)';
+    final result = raftMessageReferences(
+      source,
+      taskHref: (n) => 'raft-ref://task/$n',
+      knownTaskNumber: (_) => false,
+      references: const [
+        RaftTextReference(
+          text: '#visual-testing',
+          href: 'raft-ref://channel/visual',
+        ),
+        RaftTextReference(
+          text: '@artin',
+          href: 'raft-ref://mention/user/artin',
+        ),
+      ],
+    );
+    expect(
+      result,
+      startsWith(
+        'Review [#1487 feat(search)](https://github.com/botiverse/mobile/pull/1487)',
+      ),
+    );
+    expect(
+      result,
+      contains('then follow task [#1487](<raft-ref://task/1487>)'),
+    );
+    expect(result, contains('[notes in \u{E000}raft-ref://channel/visual'));
+    expect(result, contains('[ping \u{E000}raft-ref://mention/user/artin'));
+    final known = raftMessageReferences(
+      '[#1487](https://example.org)',
+      taskHref: (n) => 'raft-ref://task/$n',
+      knownTaskNumber: (n) => n == 1487,
+    );
+    expect(known, contains('\u{E000}raft-ref://task/1487'));
+  });
   for (final theme in [
     raftTheme(RaftFamily.brutal),
     raftTheme(RaftFamily.elegant),

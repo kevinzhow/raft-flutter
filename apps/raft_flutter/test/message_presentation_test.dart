@@ -151,6 +151,48 @@ void main() {
     w.dispose();
   });
 
+  for (final (family, dark) in [
+    (RaftFamily.brutal, false),
+    (RaftFamily.elegant, false),
+    (RaftFamily.elegant, true),
+  ]) {
+    testWidgets('linked-only task keeps bare label external $family/$dark', (
+      tester,
+    ) async {
+      final (w, _) = (await tester.runAsync(() => fixture('owner')))!;
+      addTearDown(w.dispose);
+      final linked = {'taskNumber': 1487, 'status': 'in_review'};
+      Widget body(bool known) => MaterialApp(
+        theme: raftTheme(family, dark: dark),
+        home: Scaffold(
+          body: MessagePresentation(
+            controller: w,
+            message: RaftMessage({
+              'id': 'm1',
+              'channelId': 'c1',
+              'content': 'Review [#1487 link title](https://example.org/review/1487) then task #1487.',
+            }),
+            taskByNumber: (n) => n == 1487 ? linked : null,
+            knownTaskNumber: (_) => known,
+            onExternalLink: (_) {},
+          ),
+        ),
+      );
+      await tester.pumpWidget(body(false));
+      await tester.pump();
+      expect(find.byType(RaftReferenceChip), findsOneWidget);
+      final spans = find.byWidgetPredicate(
+        (w) =>
+            w is RichText &&
+            w.text.toPlainText().contains('Review #1487 link title'),
+      );
+      expect(spans, findsOneWidget);
+      await tester.pumpWidget(body(true));
+      await tester.pump();
+      expect(find.byType(RaftReferenceChip), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    });
+  }
   testWidgets(
     'inline action submits exact state/version and shows canonical server result',
     (tester) async {

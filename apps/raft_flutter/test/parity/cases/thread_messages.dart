@@ -20,11 +20,14 @@
 // out like the React render host fixture for the same case id. Cases the
 // Flutter app cannot show go to [threadMessageUncovered] with an honest reason.
 //
-// Every message row is the mounted product row: RaftChatView (features/
+// Most message rows are mounted via RaftChatView (features/
 // chat_view.dart) over a canned RaftClient (thread_messages/chat_stage.dart)
 // fed the same Message/Task/threadSummary values VisualTestingCases.tsx
 // passes to MessageItem. Element crops window onto the mounted
 // RaftMessageRow box, sized to React's MessageItem width.
+// The linked-only task case mounts the real RaftMessageTile/MessagePresentation
+// directly: Source supplies linkedTask without seeding channelTasks, so that
+// task must not enter the bare-reference directory used by Markdown labels.
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,6 +35,8 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_comments_view.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/message_presentation.dart';
+import 'package:raft_flutter/data/source_time_formatter.dart';
 import 'package:raft_flutter/features/forward_messages_dialog.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -592,50 +597,7 @@ final Map<String, ParityCase> threadMessageCases = {
       ],
     ),
   ),
-  'components.thread.message-row.md-link-ref': _rowCase(
-    stage: (ctx) => ChatStage(
-      ctx,
-      rowWidth: 390,
-      channelId: 'channel-visual-testing',
-      extraChannels: [
-        ParityIdentities(ctx).extraChannel(
-          'channel-visual-testing',
-          'visual-testing',
-          'Visual parity fixtures',
-        ),
-      ],
-      messages: [
-        _cindyMessage(
-          ctx,
-          id: 'msg_md_link_ref_visual',
-          channelId: 'channel-visual-testing',
-          content:
-              'Review [#1487 feat(search): pin entities from long-press and channel settings](https://github.com/botiverse/mobile/pull/1487) then follow task #1487.\n\n'
-              'Channel ref in label: [notes in #visual-testing](https://raft.build/visual-testing) and outside #visual-testing.\n\n'
-              'Mention in label: [ping @artin](https://raft.build/mentions) and outside @artin.',
-          mentions: [
-            {'type': 'user', 'id': _owner(ctx)['id'], 'name': 'artin'},
-          ],
-          threadId: 'thread-msg-md-link-ref-visual',
-          createdAt: '2026-07-25T08:20:00.000Z',
-        ),
-      ],
-      tasks: [
-        _task(
-          ctx,
-          id: 'task_1487',
-          messageId: 'msg_md_link_ref_visual',
-          channelId: 'channel-visual-testing',
-          channelName: 'visual-testing',
-          number: 1487,
-          title:
-              'feat(search): pin entities from long-press and channel settings',
-          status: 'in_review',
-          createdAt: '2026-07-25T07:50:00.000Z',
-        ),
-      ],
-    ),
-  ),
+  'components.thread.message-row.md-link-ref': _linkedTaskCase,
   'components.thread.message-row.md-latest-release': _mdCase(
     id: 'msg_md_latest_release_visual',
     width: 390,
@@ -680,8 +642,7 @@ final Map<String, ParityCase> threadMessageCases = {
         'name': _fx(ctx)['agents']['androidDev4']['name'],
       },
     ],
-    content:
-        '另外帮一个澄清避免混淆：#31（read-state→Activity，我的）和 @Android-Developer-4 的 **task #521**（`message:new`→Activity 即时新增，artin 原话"新消息来了 activity 没刷新"）是两个不同 gap，不是重复——Codex 早前建议的"#521 判重关闭"是把两者混了，AD4 已更正。#31 复用 versioned read-state fact，#521 是 SharedActivityStore 缺 message:new realtime，两条链路各修各的。',
+    content: '另外帮一个澄清避免混淆：#31（read-state→Activity，我的）和 @Android-Developer-4 的 **task #521**（`message:new`→Activity 即时新增，artin 原话"新消息来了 activity 没刷新"）是两个不同 gap，不是重复——Codex 早前建议的"#521 判重关闭"是把两者混了，AD4 已更正。#31 复用 versioned read-state fact，#521 是 SharedActivityStore 缺 message:new realtime，两条链路各修各的。',
   ),
   'components.thread.message-row.md-wrap-adjacent': _mdCase(
     id: 'msg_md_wrap_adjacent_visual',
@@ -698,8 +659,7 @@ final Map<String, ParityCase> threadMessageCases = {
     mentions: (ctx) => [
       {'type': 'user', 'id': _owner(ctx)['id'], 'name': 'artin'},
     ],
-    content:
-        'Task #606 新真机基线已就绪：PR #785 exact `0e5a82b02` Alpha 已附在 #对话流专修:661a12bf，SHA-256 `db01c5e5b91f3696bfda64edde2fc31b3a40ffe9b508813d651a6de735e8a85b`。这是 process-owned decoded auth-session snapshot 根修包，不是日志抑制包；`8a5e542f4` 作废。\n\n等待 @artin 验普通导航/滚动及 `#/@` suggestion。若仍卡，以新 Hands 对比 auth durable cold-read 次数和 traversal/layout/draw；task #606 保持 In Progress，PR 不合。',
+    content: 'Task #606 新真机基线已就绪：PR #785 exact `0e5a82b02` Alpha 已附在 #对话流专修:661a12bf，SHA-256 `db01c5e5b91f3696bfda64edde2fc31b3a40ffe9b508813d651a6de735e8a85b`。这是 process-owned decoded auth-session snapshot 根修包，不是日志抑制包；`8a5e542f4` 作废。\n\n等待 @artin 验普通导航/滚动及 `#/@` suggestion。若仍卡，以新 Hands 对比 auth durable cold-read 次数和 traversal/layout/draw；task #606 保持 In Progress，PR 不合。',
   ),
   'components.thread.message-row.md-wrap-task607': _mdCase(
     id: 'msg_md_wrap_task607_visual',
@@ -714,10 +674,118 @@ final Map<String, ParityCase> threadMessageCases = {
         'name': 'Android-Developer-2',
       },
     ],
-    content:
-        '@artin 建好了：**task #607**（#对话流专修，我已 claim）——slice-1 那个 mapper→network.sync 解耦 follow-up。scope + @Android-Developer-2 的 A/B 设计选择（接受耦合 vs observer-routed 重构）我贴在 task thread 了。AD2 定 A 我 close 成 by-design，定 B 我实现。V2 那条独立、等赵定信封。',
+    content: '@artin 建好了：**task #607**（#对话流专修，我已 claim）——slice-1 那个 mapper→network.sync 解耦 follow-up。scope + @Android-Developer-2 的 A/B 设计选择（接受耦合 vs observer-routed 重构）我贴在 task thread 了。AD2 定 A 我 close 成 by-design，定 B 我实现。V2 那条独立、等赵定信封。',
   ),
 };
+
+/// Source md-link-ref supplies only MessageItem.linkedTask, not channelTasks.
+/// Mount the same real row/presentation widgets with that prop distinction;
+/// other cases retain the complete chat/store host.
+final _linkedTaskCase = ParityCase(
+  widgets: const [
+    'raft_flutter:MessagePresentation',
+    'raft_ui:RaftMessageTile',
+    'raft_ui:RaftMessageRow',
+    'raft_ui:RaftMessageBody',
+    'raft_ui:RaftAvatar',
+    'raft_ui:RaftMountedMessageTaskChip',
+  ],
+  notes: 'Matches Source MessageItem linkedTask input separately from its known channel/server task directory. The task is available to explicit references and the footer; its bare number in an authored link remains external link text.',
+  build: (ctx) {
+    final ids = ParityIdentities(ctx);
+    final channel = ids.extraChannel(
+      'channel-visual-testing',
+      'visual-testing',
+      'Visual parity fixtures',
+    );
+    final w = WorkspaceController(ParityRaftClient({}, user: ids.user))
+      ..server = RaftRecord(ids.server)
+      ..channel = RaftChannel(channel)
+      ..channels = [RaftChannel(channel)];
+    addTearDown(w.dispose);
+    final message = RaftMessage(
+      _cindyMessage(
+        ctx,
+        id: 'msg_md_link_ref_visual',
+        channelId: 'channel-visual-testing',
+        content:
+            'Review [#1487 feat(search): pin entities from long-press and channel settings](https://github.com/botiverse/mobile/pull/1487) then follow task #1487.\n\n'
+            'Channel ref in label: [notes in #visual-testing](https://raft.build/visual-testing) and outside #visual-testing.\n\n'
+            'Mention in label: [ping @artin](https://raft.build/mentions) and outside @artin.',
+        mentions: [
+          {'type': 'user', 'id': _owner(ctx)['id'], 'name': 'artin'},
+        ],
+        threadId: 'thread-msg-md-link-ref-visual',
+        createdAt: '2026-07-25T08:20:00.000Z',
+      ),
+    );
+    final task = _task(
+      ctx,
+      id: 'task_1487',
+      messageId: message.id,
+      channelId: message.channelId,
+      channelName: 'visual-testing',
+      number: 1487,
+      title: 'feat(search): pin entities from long-press and channel settings',
+      status: 'in_review',
+      createdAt: '2026-07-25T07:50:00.000Z',
+    );
+    return Scaffold(
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: ctx.target(
+          SizedBox(
+            width: 390,
+            child: RaftMessageTile(
+              author: message.author,
+              content: message.content,
+              timestamp: SourceTimeFormatter(
+                preferredTimezone: ids.owner['timezone'],
+                preferredTimeFormat: sourceTimeFormatPreference(
+                  ids.owner['timeFormat'],
+                ),
+              ).messageTime(message.createdAt),
+              modelLabel: 'GPT-5 Codex',
+              subtitle: ids.cindy['description'],
+              collapseLongMessages: false,
+              coarsePointer: true,
+              hoverToolbar: const RaftMessageToolbar(children: []),
+              avatar: RaftAvatar(
+                name: ids.cindy['displayName'],
+                kind: RaftAvatarKind.agent,
+                mountedContext: RaftMountedAvatarContext.panelHeader,
+                presence: const RaftAvatarPresence(
+                  activity: RaftAvatarActivity.working,
+                ),
+                content: RaftAvatarContent(
+                  name: ids.cindy['displayName'],
+                  kind: RaftAvatarContentKind.agent,
+                  pixelKey: (ids.cindy['avatar'] as String).substring(6),
+                ),
+              ),
+              body: MessagePresentation(
+                controller: w,
+                message: message,
+                onExternalLink: (_) {},
+                taskByNumber: (n) => n == 1487 ? task : null,
+                knownTaskNumber: (_) => false,
+              ),
+              taskReference: RaftMountedMessageTaskChip(
+                number: 1487,
+                status: RaftMessageTaskStatus.inReview,
+                claimant: 'Cindy',
+                title: task['title'],
+                openLabel: 'Open task',
+                tooltipLabel: task['title'],
+                onOpen: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  },
+);
 
 /// Narrow/standard markdown rows: React `<main p-0><div width=W>` with one
 /// Cindy MessageItem in channel-markdown, no task/summary/reactions.
@@ -772,8 +840,7 @@ final ParityCase _commentAnchor = ParityCase(
     'raft_ui:RaftCommentAnchorChip',
     'raft_ui:RaftComposer(compact)',
   ],
-  notes:
-      'Same comment payload as the React spec stub, served by the canned client.',
+  notes: 'Same comment payload as the React spec stub, served by the canned client.',
   build: (ctx) {
     final ids = ParityIdentities(ctx);
     final client = ParityRaftClient({
