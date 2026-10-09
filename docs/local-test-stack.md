@@ -38,3 +38,13 @@
 源码HEAD仍是 source-reference.json 的固定commit，但工作目录含已列出的校验脚本和fixture补丁。新机器可复现，不把dirty工作目录伪称完整原样快照。
 
 种子脚本把历史消息设成几分钟前/几天前，却用当前时间写频道加入记录。RW Activity遵守加入后活动的规则，原PG校验计入该历史，初始totalCount34 vs28。`seed-history.patch`仅调整本地fixtures的加入时间早于其历史，并为primary #all创建一条普通参照消息；不改服务端查询/权限逻辑。所有兼容文件均有固定前后hash，且完整严格parity仍执行。
+
+## 本地 RisingWave 内存上限
+
+`tool/raft-stack start` 还会应用固定哈希的 `risingwave-memory.patch`，仅修改上述本地 Source 副本的 `scripts/dev/raftdev.ts` 启动参数。容器上限为 2GiB，`--memory-swap=2g` 禁止额外 swap；`single_node --total-memory-bytes 1610612736` 使用 1.5GiB 内部预算。此补丁不修改 Web、查询、种子数据或截图基线。
+
+固定 v2.8.0 镜像仅缩小总预算会在 compactor 启动时触发断言。因此本地小容量配置同时使用 16MiB compactor metadata cache、32MiB SST、一个 streaming worker 和一个 compaction worker。这是本地 fixture 的容量配置，吞吐量不能代表生产部署。参数来源与断言见 [v2.8.0 single_node](https://raw.githubusercontent.com/risingwavelabs/risingwave/v2.8.0/src/cmd_all/src/single_node.rs) 和 [compactor 初始化](https://raw.githubusercontent.com/risingwavelabs/risingwave/v2.8.0/src/storage/compactor/src/server.rs)。
+
+2026-10-09 已实际重建该 RisingWave 容器。原 PostgreSQL 容器、数据卷及 16 张 CDC 源表计数保持一致；48 条 bootstrap 语句成功完成。重建前的 PostgreSQL dump、旧停止容器和第一次 compactor 启动失败记录保留在本机，未提交身份或连接资料。
+
+初次重建后 Docker 显示约 650MiB / 2GiB，cgroup OOM 计数为零。这是观测结果，不能替代持续负载验收。Source 的普通和 bootstrap 严格 Inbox 比较都保留了 `PG 21 / RW 19` 未读差异；不得把健康检查或 bootstrap 成功写成该严格比较通过。后续真实客户端流程和差异定位记录于本机 `.local/cody-risingwave-memory-20261009/`。

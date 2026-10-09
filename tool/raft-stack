@@ -33,7 +33,9 @@ action = sys.argv[1]
 if action == 'start':
     import hashlib
     repair_dir = root / 'tool/reference-patches'
-    for name in ('verify-inbox-parity', 'seed-history'):
+    # Local RisingWave uses a 2 GiB container limit and a 1.5 GiB internal
+    # budget; the pinned Source launcher patch survives stack recreation.
+    for name in ('verify-inbox-parity', 'seed-history', 'risingwave-memory'):
         repair = json.loads((repair_dir / (name + '.json')).read_text())
         target = source / repair['path']
         digest = hashlib.sha256(target.read_bytes()).hexdigest()
