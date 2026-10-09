@@ -7,6 +7,8 @@ export 'src/task.dart';
 export 'src/inline_badge_editor.dart';
 export 'src/flex_shrink_row.dart';
 export 'src/resource_rows.dart';
+export 'src/search_result_surface.dart';
+export 'src/search_input.dart';
 export 'src/form_dialog.dart';
 
 export 'src/collapsible.dart';

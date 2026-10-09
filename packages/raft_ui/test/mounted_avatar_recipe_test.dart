@@ -23,6 +23,7 @@ void main() {
     for (final (context, extent, inner) in [
       (RaftMountedAvatarContext.panelHeader, 36.0, 32.0),
       (RaftMountedAvatarContext.compactList, 20.0, 18.0),
+      (RaftMountedAvatarContext.previewMini, 14.0, 12.0),
     ]) {
       testWidgets(
         'mounted $context frame and real inner content $family/$dark',

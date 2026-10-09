@@ -9,12 +9,17 @@ import 'package:raft_flutter/features/resource_view.dart';
 
 class _Workspace extends WorkspaceController {
   _Workspace(super.client);
-  final requests = <({String text, Completer<dynamic> response})>[];
+  final requests =
+      <({String text, String? channelId, Completer<dynamic> response})>[];
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     if (path == '/messages/search') {
       final response = Completer<dynamic>();
-      requests.add((text: query!['q'] as String, response: response));
+      requests.add((
+        text: query!['q'] as String,
+        channelId: query['channelId'] as String?,
+        response: response,
+      ));
       return response.future;
     }
     if (path.endsWith('/members')) {
@@ -63,6 +68,62 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets(
+    'explicit channel entry sends channel filter and drops revoked results',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.elegant),
+          home: Scaffold(
+            body: ResourceView(
+              controller: w,
+              section: 'search',
+              initialSearchChannelId: 'c',
+              restoreSearchState: false,
+              onMessage: (_, _) async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(w.requests, hasLength(1));
+      expect(w.requests.single.text, '');
+      expect(w.requests.single.channelId, 'c');
+      w.channels = [];
+      w.notifyListeners();
+      await tester.pump();
+      w.requests.single.response.complete({
+        'results': [
+          {'id': 'old', 'channelId': 'c', 'content': 'Revoked private result'},
+        ],
+        'hasMore': false,
+      });
+      await tester.pumpAndSettle();
+      expect(w.requests, hasLength(1));
+      expect(find.textContaining('Revoked private result'), findsNothing);
+    },
+  );
+  testWidgets('unavailable explicit channel never falls back to global query', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(RaftFamily.elegant),
+        home: Scaffold(
+          body: ResourceView(
+            controller: w,
+            section: 'search',
+            initialQuery: 'secret',
+            initialSearchChannelId: 'unavailable',
+            onMessage: (_, _) async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(w.requests, isEmpty);
+    expect(find.text('This channel is no longer available.'), findsOneWidget);
+  });
   testWidgets('debounced query drops late previous-query response', (
     tester,
   ) async {

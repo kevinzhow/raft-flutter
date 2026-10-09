@@ -185,7 +185,8 @@ class RaftRecipeBox extends StatelessWidget {
             ),
       ],
     );
-    if (decorationOverride != null) decoration = decorationOverride!(decoration);
+    if (decorationOverride != null)
+      decoration = decorationOverride!(decoration);
     // CSS outer box-shadows never paint under the border box (a translucent
     // background must not reveal them), unlike Flutter's BoxDecoration.
     final outerShadows = decoration.boxShadow ?? const <BoxShadow>[];
@@ -195,7 +196,10 @@ class RaftRecipeBox extends StatelessWidget {
       borderRadius: decoration.borderRadius,
       shape: decoration.shape,
     );
-    final inset = [for (final l in layers) if (l.inset) l];
+    final inset = [
+      for (final l in layers)
+        if (l.inset) l,
+    ];
     final before = style.before;
     final sheen = before?['background-image'];
     Widget? content = child;
@@ -242,7 +246,9 @@ class RaftRecipeBox extends StatelessWidget {
       clipBehavior: clip ? Clip.antiAlias : Clip.none,
       child: content,
     );
-    if (outerShadows.isNotEmpty) {
+    // Keep the child Element path stable when focus adds a ring/shadow.
+    // Conditional wrapping would dispose a live TextField and its IME session.
+    {
       box = CustomPaint(
         painter: RaftOuterShadowPainter(
           outerShadows,
@@ -256,7 +262,7 @@ class RaftRecipeBox extends StatelessWidget {
     if (applyTransform) {
       final translate = style.translate ?? Offset.zero;
       final scale = style.scale ?? 1;
-      if (translate != Offset.zero || scale != 1) {
+      {
         box = Transform(
           alignment: Alignment.center,
           transform: Matrix4.identity()
@@ -267,8 +273,8 @@ class RaftRecipeBox extends StatelessWidget {
       }
     }
     final opacity = style.opacity;
-    if (applyOpacity && opacity != null && opacity < 1) {
-      box = Opacity(opacity: opacity, child: box);
+    if (applyOpacity) {
+      box = Opacity(opacity: opacity ?? 1, child: box);
     }
     return box;
   }
@@ -300,7 +306,8 @@ Gradient? _sheenGradient(CssValue v) {
       if (i > 0 && k == 0) continue;
       final f = k / n;
       final alpha = as[i] + (as[i + 1] - as[i]) * f;
-      final premult = ls[i] * as[i] + (ls[i + 1] * as[i + 1] - ls[i] * as[i]) * f;
+      final premult =
+          ls[i] * as[i] + (ls[i + 1] * as[i + 1] - ls[i] * as[i]) * f;
       final l = alpha == 0 ? (as[i] == 0 ? ls[i + 1] : ls[i]) : premult / alpha;
       final c = _oklabLToSrgb(l);
       colors.add(Color.fromRGBO(c, c, c, alpha));
@@ -317,7 +324,9 @@ Gradient? _sheenGradient(CssValue v) {
 
 int _oklabLToSrgb(double l) {
   final lin = l * l * l;
-  final c = lin <= .0031308 ? 12.92 * lin : 1.055 * math.pow(lin, 1 / 2.4) - .055;
+  final c = lin <= .0031308
+      ? 12.92 * lin
+      : 1.055 * math.pow(lin, 1 / 2.4) - .055;
   return (c * 255).round().clamp(0, 255);
 }
 
@@ -379,8 +388,7 @@ class _InsetPainter extends BoxPainter {
     // CSS inset shadows paint inside the padding box (inside the border).
     final paddingBox = d.border.deflateRect(offset & size);
     final bw = math.max(d.border.top, d.border.left);
-    Radius shrink(Radius r) =>
-        Radius.circular(math.max(0, r.x - bw));
+    Radius shrink(Radius r) => Radius.circular(math.max(0, r.x - bw));
     final inner = RRect.fromRectAndCorners(
       paddingBox,
       topLeft: shrink(d.radius.topLeft),
@@ -391,9 +399,7 @@ class _InsetPainter extends BoxPainter {
     for (final l in d.layers.reversed) {
       canvas.save();
       canvas.clipRRect(inner);
-      final hole = inner
-          .shift(l.offset)
-          .deflate(l.spread);
+      final hole = inner.shift(l.offset).deflate(l.spread);
       final path = Path()
         ..fillType = PathFillType.evenOdd
         ..addRect(inner.outerRect.inflate(l.blur + l.spread.abs() + 20))
@@ -417,7 +423,11 @@ class _InsetPainter extends BoxPainter {
 /// Paints outer box-shadows clipped to the outside of the border box (CSS
 /// semantics); use behind a translucent box.
 class RaftOuterShadowPainter extends CustomPainter {
-  const RaftOuterShadowPainter(this.shadows, this.radius, {this.circle = false});
+  const RaftOuterShadowPainter(
+    this.shadows,
+    this.radius, {
+    this.circle = false,
+  });
   final List<BoxShadow> shadows;
   final BorderRadius radius;
   final bool circle;
@@ -453,7 +463,8 @@ class RaftOuterShadowPainter extends CustomPainter {
 class RaftCssOverflowY extends SingleChildRenderObjectWidget {
   const RaftCssOverflowY({super.key, super.child});
   @override
-  RenderObject createRenderObject(BuildContext context) => _RenderCssOverflowY();
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderCssOverflowY();
 }
 
 class _RenderCssOverflowY extends RenderShiftedBox {
