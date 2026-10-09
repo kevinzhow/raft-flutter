@@ -960,6 +960,12 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               controller: w,
               section: route,
               onTask: openTaskSurface,
+              activitySidebarEnabled:
+                  route == 'activity' && activityFlag.enabled,
+              compactActivitySidebar:
+                  route == 'activity' &&
+                  wide &&
+                  activityFlag.masterDetail(MediaQuery.sizeOf(context).width),
               onActivityWindowAccepted: route == 'activity'
                   ? (window) {
                       if (!identical(attentionOwner, activityUnread)) return;

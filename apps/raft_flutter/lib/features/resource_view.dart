@@ -38,6 +38,8 @@ class ResourceView extends StatefulWidget {
     this.onSearchQueryCommitted,
     this.onActivityItem,
     this.onActivityCanonical,
+    this.activitySidebarEnabled = false,
+    this.compactActivitySidebar = false,
     this.onActivityUnreadAccepted,
     this.onActivityWindowAccepted,
     this.searchMemory,
@@ -79,6 +81,7 @@ class ResourceView extends StatefulWidget {
   /// to the canonical route and cancels the pending 220 ms content-slot open.
   /// Custom embedded consumers without this callback keep immediate onOpen.
   final Future<void> Function(Map<String, dynamic>)? onActivityCanonical;
+  final bool activitySidebarEnabled, compactActivitySidebar;
 
   /// Server-wide Activity total from an accepted window, independent of filter.
   /// Null retires the projection after an explicit authority denial.
@@ -255,6 +258,15 @@ class _ResourceViewState extends State<ResourceView> {
   ResourceFilters advanced = ResourceFilters();
   List<ResourceSender> senders = [];
   List<Map<String, dynamic>> activityGroups = [];
+  List<Map<String, dynamic>> acceptedActivityItems = [];
+  String activeActivityFilter = 'all';
+  int? activityAllCount;
+  int savedActivityTotal = 0;
+  List<Map<String, dynamic>> savedActivityItems = [], doneActivityItems = [];
+  bool activitySearchVisible = false;
+  int activityFacetRequest = 0;
+  bool get enabledActivity =>
+      widget.section == 'activity' && widget.activitySidebarEnabled;
   String? catalogScope;
   int catalogRequest = 0;
   String taskLayout = 'list';
@@ -342,6 +354,14 @@ class _ResourceViewState extends State<ResourceView> {
     cursor = null;
     hasMore = false;
     activityGroups = [];
+    acceptedActivityItems = [];
+    activityAllCount = null;
+    savedActivityTotal = 0;
+    savedActivityItems = [];
+    doneActivityItems = [];
+    activeActivityFilter = 'all';
+    activitySearchVisible = false;
+    ++activityFacetRequest;
     totalCount = null;
     totalUnreadCount = null;
     taskAdvanced.clear();
@@ -556,6 +576,17 @@ class _ResourceViewState extends State<ResourceView> {
       subscribeEvents();
     }
     authorityChanged();
+    if (widget.section == 'activity' &&
+        oldWidget.activitySidebarEnabled != widget.activitySidebarEnabled) {
+      ++requestGeneration;
+      ++activityFacetRequest;
+      closeDialogs();
+      if (!widget.activitySidebarEnabled) {
+        filter = activeActivityFilter;
+        advanced.channelId = null;
+      }
+      unawaited(load());
+    }
     if (widget.section == 'search' &&
         oldWidget.initialQuery != widget.initialQuery &&
         (widget.initialQuery ?? '') != lastPublishedQuery) {
@@ -607,6 +638,7 @@ class _ResourceViewState extends State<ResourceView> {
     final acceptActivityWindow = widget.onActivityWindowAccepted;
     saveSearchState();
     final request = ++requestGeneration, scope = authority;
+    ++activityFacetRequest;
     if (widget.section == 'tasks' && !acceptsTaskChannel) {
       if (accepts(scope, request)) {
         setState(() {
@@ -653,12 +685,16 @@ class _ResourceViewState extends State<ResourceView> {
       laneBusy.clear();
       if (!append &&
           ['search', 'saved', 'activity'].contains(widget.section) &&
+          !enabledActivity &&
           !(widget.section == 'activity' && activityFollowState.busy)) {
         rows = [];
         cursor = null;
         hasMore = false;
       }
     });
+    if (enabledActivity && ['saved', 'done'].contains(filter) && !append) {
+      unawaited(loadActivityFacets(scope));
+    }
     try {
       if (widget.section == 'tasks' && taskLayout == 'board') {
         final pages = await Future.wait(
@@ -685,6 +721,7 @@ class _ResourceViewState extends State<ResourceView> {
       }
       final path = switch (widget.section) {
         'activity' => switch (filter) {
+          'saved' when enabledActivity => '/channels/saved',
           'done' => '/channels/inbox/done',
           'unfollowed' => '/channels/inbox/unfollowed',
           _ => '/channels/inbox',
@@ -705,10 +742,14 @@ class _ResourceViewState extends State<ResourceView> {
             ? advanced.list(
                 query.text,
                 offset: append ? rows.length : 0,
-                limit: widget.section == 'saved' ? 20 : 30,
+                limit:
+                    widget.section == 'saved' ||
+                        enabledActivity && filter == 'saved'
+                    ? 20
+                    : 30,
                 filter:
                     widget.section == 'activity' &&
-                        !['done', 'unfollowed'].contains(filter)
+                        !['saved', 'done', 'unfollowed'].contains(filter)
                     ? filter
                     : null,
               )
@@ -726,7 +767,7 @@ class _ResourceViewState extends State<ResourceView> {
               },
       );
       if (!accepts(scope, request)) return;
-      if (widget.section == 'activity' && value is Map) {
+      if (widget.section == 'activity' && filter != 'saved' && value is Map) {
         value = activityFollowState.window(value);
       }
       final list = value is List
@@ -742,19 +783,33 @@ class _ResourceViewState extends State<ResourceView> {
           final fetched = (list as List)
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
-          rows = append ? [...rows, ...fetched] : fetched;
+          final accepted = enabledActivity && filter == 'saved'
+              ? fetched.map(savedActivityItem).toList()
+              : fetched;
+          rows = append ? [...rows, ...accepted] : accepted;
+          if (enabledActivity && filter == 'saved') {
+            savedActivityItems = List.of(rows);
+          }
+          if (enabledActivity && filter == 'done') {
+            doneActivityItems = List.of(rows);
+          }
           dragFeedbackRevision.value++;
-          if (value is Map) {
+          if (enabledActivity && filter == 'saved' && value is Map) {
+            savedActivityTotal =
+                (value['globalTotal'] as num?)?.toInt() ??
+                (query.text.trim().isEmpty && advanced.channelId == null
+                    ? (value['total'] as num?)?.toInt() ?? rows.length
+                    : savedActivityTotal);
+          }
+          if (value is Map &&
+              !(enabledActivity && ['saved', 'done'].contains(filter))) {
             totalCount = (value['total'] ?? value['totalCount']) as int?;
             totalUnreadCount = value['totalUnreadCount'] as int?;
           }
           if (widget.section == 'activity' &&
-              value is Map &&
-              value['groups'] is List) {
-            activityGroups = (value['groups'] as List)
-                .whereType<Map>()
-                .map((g) => Map<String, dynamic>.from(g))
-                .toList();
+              !['saved', 'done'].contains(filter) &&
+              value is Map) {
+            acceptActivityFacets(value, rows);
           }
           cursor = value is Map ? value['next_cursor'] as String? : null;
           hasMore = widget.section == 'tasks'
@@ -762,13 +817,16 @@ class _ResourceViewState extends State<ResourceView> {
               : value is Map && value['hasMore'] == true;
         });
         if (widget.section == 'activity' &&
+            !['saved', 'done'].contains(filter) &&
             value is Map &&
             value['totalUnreadCount'] is num) {
           widget.onActivityUnreadAccepted?.call(
             (value['totalUnreadCount'] as num).toInt(),
           );
         }
-        if (widget.section == 'activity' && value is Map) {
+        if (widget.section == 'activity' &&
+            !['saved', 'done'].contains(filter) &&
+            value is Map) {
           acceptActivityWindow?.call(value);
         }
       }
@@ -804,7 +862,7 @@ class _ResourceViewState extends State<ResourceView> {
     final t = RaftTokens.of(context);
     // ThreadsInbox mounts ActivityInboxPanel with `theme-brutal:!border-l`.
     final activityEdge = widget.section == 'activity';
-    return Container(
+    final body = Container(
       decoration: activityEdge
           ? BoxDecoration(
               color: t.brutal ? t.panel : t.sidebar,
@@ -822,6 +880,17 @@ class _ResourceViewState extends State<ResourceView> {
             )
           : buildBody(context),
     );
+    return enabledActivity
+        ? CallbackShortcuts(
+            bindings: {
+              const SingleActivator(LogicalKeyboardKey.keyF, control: true):
+                  showActivitySearch,
+              const SingleActivator(LogicalKeyboardKey.keyF, meta: true):
+                  showActivitySearch,
+            },
+            child: body,
+          )
+        : body;
   }
 
   Widget buildBody(BuildContext context) {
@@ -988,7 +1057,10 @@ class _ResourceViewState extends State<ResourceView> {
               ],
             ),
           ),
-        if (widget.section == 'activity') activityToolbar(scope),
+        if (widget.section == 'activity')
+          enabledActivity
+              ? enabledActivityToolbar(scope)
+              : activityToolbar(scope),
         if (widget.section == 'search') searchFilters(),
         if (['saved', 'activity'].contains(widget.section) && extraFilters)
           advancedFilters(),
@@ -1003,7 +1075,9 @@ class _ResourceViewState extends State<ResourceView> {
           ),
         Expanded(
           child: loading && rows.isEmpty
-              ? Center(child: CircularProgressIndicator())
+              ? enabledActivity
+                    ? const RaftActivityLoadingList()
+                    : Center(child: CircularProgressIndicator())
               : widget.section == 'search' &&
                     query.text.trim().isEmpty &&
                     (!advanced.hasSearchFilter ||
@@ -1041,12 +1115,23 @@ class _ResourceViewState extends State<ResourceView> {
                         minHeight: constraints.maxHeight,
                       ),
                       child: RaftEmptyState(
-                        title: widget.section == 'search'
+                        title: enabledActivity
+                            ? activityEmptyTitle
+                            : widget.section == 'search'
                             ? 'Search your workspace'
                             : 'No ${widget.section}',
-                        detail: widget.section == 'search'
+                        detail: enabledActivity
+                            ? activityEmptyDetail
+                            : widget.section == 'search'
                             ? 'Enter words to find messages.'
                             : 'There are no items in this view.',
+                        glyph: enabledActivity
+                            ? (filter == 'saved'
+                                  ? RaftGlyph.bookmark
+                                  : filter == 'done'
+                                  ? RaftGlyph.checkCircle2
+                                  : RaftGlyph.messageSquareText)
+                            : null,
                       ),
                     ),
                   ),
@@ -1475,6 +1560,345 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
+  Map<String, dynamic> savedActivityItem(Map<String, dynamic> entry) {
+    final thread = entry['channelType'] == 'thread';
+    final senderType =
+        ['agent', 'system', 'external_projection'].contains(entry['senderType'])
+        ? entry['senderType']
+        : 'user';
+    return {
+      'kind': thread
+          ? 'thread'
+          : entry['channelType'] == 'dm'
+          ? 'dm'
+          : 'channel',
+      if (thread) ...{
+        'threadChannelId': entry['channelId'],
+        'parentChannelId': entry['parentChannelId'] ?? entry['channelId'],
+        'parentMessageId': entry['parentMessageId'] ?? entry['messageId'],
+        'parentChannelName': entry['parentChannelName'] ?? entry['channelName'],
+        'parentChannelType': entry['parentChannelType'] ?? 'channel',
+        'parentMessagePreview':
+            entry['parentMessagePreview'] ?? entry['content'],
+        'parentMessageSenderType':
+            [
+              'agent',
+              'external_projection',
+            ].contains(entry['parentMessageSenderType'])
+            ? entry['parentMessageSenderType']
+            : 'user',
+        'parentMessageSenderId':
+            entry['parentMessageSenderId'] ?? entry['senderId'],
+        'latestActivityPreview': entry['content'],
+        'latestActivitySenderType': senderType,
+        'latestActivitySenderId': entry['senderId'],
+        'latestActivitySenderName': entry['senderName'],
+        'latestActivityMessageId': entry['messageId'],
+        'replyCount': entry['replyCount'] ?? 0,
+        'lastActivityAt': entry['createdAt'],
+        'lastReplyAt': entry['createdAt'],
+      } else ...{
+        'channelId': entry['channelId'],
+        'channelName': entry['channelName'],
+        'channelType': ['private', 'joint', 'dm'].contains(entry['channelType'])
+            ? entry['channelType']
+            : 'channel',
+        'lastMessageId': entry['messageId'],
+        'lastMessageAt': entry['createdAt'],
+        'lastMessagePreview': entry['content'],
+        'lastMessageSenderType': senderType,
+        'lastMessageSenderId': entry['senderId'],
+        'lastMessageSenderName': entry['senderName'],
+      },
+      'latestActivitySeq': null,
+      'firstUnreadMessageId': null,
+      'firstMentionMessageId': null,
+      'unreadCount': 0,
+      'hasMention': false,
+      'savedMessageId': entry['messageId'],
+    };
+  }
+
+  void acceptActivityFacets(Map value, List<Map<String, dynamic>> items) {
+    acceptedActivityItems = List.of(items);
+    totalCount = (value['totalCount'] as num?)?.toInt() ?? totalCount;
+    totalUnreadCount =
+        (value['totalUnreadCount'] as num?)?.toInt() ?? totalUnreadCount;
+    activityAllCount =
+        ((value['allCount'] ?? value['unfilteredCount']) as num?)?.toInt() ??
+        (activeActivityFilter == 'all' &&
+                query.text.trim().isEmpty &&
+                advanced.channelId == null
+            ? totalCount
+            : activityAllCount);
+    if (value['groups'] is! List) return;
+    final selected = activityGroups
+        .where((g) => g['channelId'] == advanced.channelId)
+        .firstOrNull;
+    activityGroups = (value['groups'] as List)
+        .whereType<Map>()
+        .map((g) => Map<String, dynamic>.from(g))
+        .toList();
+    if (selected != null &&
+        !activityGroups.any((g) => g['channelId'] == advanced.channelId)) {
+      activityGroups.add({...selected, 'count': 0});
+    }
+  }
+
+  Future<void> loadActivityFacets(String scope) async {
+    final ticket = ++activityFacetRequest;
+    final acceptWindow = widget.onActivityWindowAccepted;
+    try {
+      var value = await w.query(
+        '/channels/inbox',
+        query: advanced.list(query.text, filter: activeActivityFilter),
+      );
+      if (!accepts(scope) || ticket != activityFacetRequest || value is! Map) {
+        return;
+      }
+      value = activityFollowState.window(value);
+      final items = (value['items'] as List? ?? const [])
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+      setState(() => acceptActivityFacets(value, items));
+      if (value['totalUnreadCount'] is num) {
+        widget.onActivityUnreadAccepted?.call(
+          (value['totalUnreadCount'] as num).toInt(),
+        );
+      }
+      acceptWindow?.call(value);
+    } catch (e) {
+      if (accepts(scope) && ticket == activityFacetRequest) fail(e, scope);
+    }
+  }
+
+  List<RaftActivityGroup> get activitySourceGroups {
+    final byId = <String, Map<String, dynamic>>{
+      for (final g in activityGroups)
+        if (g['channelId'] is String) g['channelId']: g,
+    };
+    for (final item in acceptedActivityItems) {
+      final thread = item['kind'] == 'thread';
+      final type = thread ? item['parentChannelType'] : item['channelType'];
+      final id = thread ? item['parentChannelId'] : item['channelId'];
+      if (type != 'dm' || id is! String) continue;
+      byId.putIfAbsent(
+        id,
+        () => {
+          'channelId': id,
+          'channelName': thread
+              ? item['parentChannelName']
+              : item['channelName'],
+          'channelType': 'dm',
+          'count': 1,
+        },
+      );
+    }
+    final channels = [...w.channels, ...w.dms];
+    final sourceGroups = [
+      ...byId.values.where((g) => g['channelType'] == 'dm'),
+      ...byId.values.where((g) => g['channelType'] != 'dm'),
+    ];
+    final indexed = sourceGroups.indexed.toList()
+      ..sort((a, b) {
+        int priority(Map g) => g['channelId'] == advanced.channelId
+            ? 0
+            : (w.unread['${g['channelId']}'] ?? 0) > 0
+            ? 1
+            : 2;
+        final delta = priority(a.$2).compareTo(priority(b.$2));
+        return delta != 0 ? delta : a.$1.compareTo(b.$1);
+      });
+    return indexed.map((entry) {
+      final g = entry.$2;
+      final label = '${g['channelName'] ?? ''}'.replaceFirst(
+        RegExp(r'^[@#]+'),
+        '',
+      );
+      final dm = g['channelType'] == 'dm';
+      final channel = channels.where((c) => c.id == g['channelId']).firstOrNull;
+      final agent = channel?.string('peerType') == 'agent';
+      final avatar = projectSenderAvatar(
+        origin: w.client.origin,
+        senderId: channel?.string('peerId') ?? '',
+        senderType: agent ? 'agent' : 'user',
+        agents: agent
+            ? [
+                {
+                  'id': channel?.string('peerId'),
+                  'avatarUrl': channel?.string('peerAvatarUrl'),
+                },
+              ]
+            : const [],
+        members: !agent
+            ? [
+                {
+                  'userId': channel?.string('peerId'),
+                  'avatarUrl': channel?.string('peerAvatarUrl'),
+                  'gravatarHash': channel?.string('peerGravatarHash'),
+                },
+              ]
+            : const [],
+        requestSize: 20,
+      );
+      return RaftActivityGroup(
+        id: g['channelId'],
+        label: label,
+        count: (g['count'] as num? ?? 0).toInt(),
+        dm: dm,
+        icon: dm && channel != null
+            ? RaftAvatar(
+                name: label,
+                mountedContext: RaftMountedAvatarContext.compactList,
+                kind: channel.string('peerType') == 'agent'
+                    ? RaftAvatarKind.agent
+                    : RaftAvatarKind.human,
+                content: RaftAvatarContent(
+                  name: label,
+                  kind: agent
+                      ? RaftAvatarContentKind.agent
+                      : RaftAvatarContentKind.human,
+                  uploadedUrl: avatar.uploadedUrl,
+                  gravatarUrl: avatar.gravatarUrl,
+                  pixelKey: avatar.pixelKey,
+                ),
+              )
+            : null,
+      );
+    }).toList();
+  }
+
+  void selectActivityView(RaftActivityView next, String scope) {
+    if (!accepts(scope) || !enabledActivity) return;
+    setState(() {
+      filter = next.name;
+      rows = List.of(switch (next) {
+        RaftActivityView.saved => savedActivityItems,
+        RaftActivityView.done => doneActivityItems,
+        _ => acceptedActivityItems,
+      });
+      if (!['saved', 'done'].contains(filter)) activeActivityFilter = filter;
+    });
+    load();
+  }
+
+  Future<void> activitySwitcher(String scope) =>
+      scopedDialog<void>(scope, (dialogContext) {
+        void select(VoidCallback action) {
+          if (!accepts(scope) || !enabledActivity) return;
+          Navigator.pop(dialogContext);
+          action();
+        }
+
+        return Center(
+          child: RaftDialogCard(
+            key: const ValueKey('activity-switcher-dialog'),
+            title: 'Activity',
+            onClose: () => Navigator.pop(dialogContext),
+            child: RaftActivityScopePicker(
+              view: RaftActivityView.values.byName(filter),
+              counts: {
+                RaftActivityView.all: activityAllCount ?? totalCount ?? 0,
+                RaftActivityView.unread: totalUnreadCount ?? 0,
+                RaftActivityView.saved: savedActivityTotal,
+                RaftActivityView.done: doneActivityItems.length,
+              },
+              groups: activitySourceGroups,
+              selectedGroup: advanced.channelId,
+              onView: (value) => select(() => selectActivityView(value, scope)),
+              onGroup: (id) => select(() {
+                advanced.channelId = advanced.channelId == id ? null : id;
+                load();
+              }),
+              onClearGroup: () => select(() {
+                advanced.channelId = null;
+                load();
+              }),
+            ),
+          ),
+        );
+      });
+
+  String get activityEmptyTitle => switch (filter) {
+    'saved' => 'No saved threads yet',
+    'done' => 'Nothing completed yet',
+    'mentions' => 'No mentions yet',
+    'unread' => 'No unread chats',
+    _ =>
+      advanced.channelId == null
+          ? 'Activity is empty'
+          : 'No activity in ${activitySourceGroups.where((g) => g.id == advanced.channelId).firstOrNull?.label ?? 'Selected channel'}',
+  };
+  String get activityEmptyDetail => switch (filter) {
+    'saved' => 'Save a thread or message from Activity to keep it here.',
+    'done' => 'Items you mark done appear here and can be restored.',
+    _ when advanced.channelId != null =>
+      'Try another channel or clear the channel filter.',
+    'mentions' => 'Channels, DMs, and threads where someone @mentions you will appear here.',
+    _ => 'Channels, DMs, and followed threads stay here until they are done.',
+  };
+
+  void showActivitySearch() {
+    if (!mounted || !enabledActivity || !widget.compactActivitySidebar) return;
+    setState(() => activitySearchVisible = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && enabledActivity) {
+        queryFocus.requestFocus();
+      }
+    });
+  }
+
+  Widget enabledActivityToolbar(String scope) {
+    final selected = activitySourceGroups
+        .where((g) => g.id == advanced.channelId)
+        .firstOrNull;
+    return RaftActivityScopeToolbar(
+      compact: widget.compactActivitySidebar,
+      view: RaftActivityView.values.byName(filter),
+      scopeLabel: selected?.label,
+      onView: (value) => selectActivityView(value, scope),
+      onOpenSwitcher: () => activitySwitcher(scope),
+      sort: advanced.direction,
+      onSort: (value) {
+        if (accepts(scope)) {
+          advanced.direction = value;
+          load();
+        }
+      },
+      search:
+          widget.compactActivitySidebar &&
+              (activitySearchVisible || query.text.trim().isNotEmpty)
+          ? RaftActivitySearchInput(
+              controller: query,
+              focusNode: queryFocus,
+              onDismissEmpty: () =>
+                  setState(() => activitySearchVisible = false),
+              onChanged: (_) {
+                searchDebounce?.cancel();
+                searchDebounce = Timer(const Duration(milliseconds: 250), () {
+                  if (accepts(scope)) load();
+                });
+              },
+            )
+          : null,
+      markAllRead:
+          (totalUnreadCount ?? 0) > 0 && !['saved', 'done'].contains(filter)
+          ? RaftTextButton(
+              label: 'Mark all read',
+              variant: RaftControlVariant.outline,
+              visualHeight: 32,
+              minimumTargetSize: 32,
+              onPressed: () => command(
+                'POST',
+                '/channels/inbox/read-all',
+                sourceScope: scope,
+              ),
+            )
+          : null,
+    );
+  }
+
   Widget activityToolbar(String scope) {
     final t = RaftTokens.of(context);
     // ThreadsInbox `inbox-toolbar`: `flex h-[54px] items-center
@@ -1518,6 +1942,7 @@ class _ResourceViewState extends State<ResourceView> {
                 onChanged: (value) {
                   if (accepts(scope) && filter != value) {
                     filter = value;
+                    activeActivityFilter = value;
                     load();
                   }
                 },
@@ -1911,7 +2336,9 @@ class _ResourceViewState extends State<ResourceView> {
       onContextMenu: row['kind'] == 'mention_action'
           ? null
           : () => activityMenu(row, scope),
-      actions: row['kind'] == 'mention_action'
+      actions: enabledActivity && filter == 'saved'
+          ? null
+          : row['kind'] == 'mention_action'
           ? null
           // ThreadsInbox row action: ghost icon-sm Check 14 (RotateCcw 14 to
           // restore). Follow/unfollow is only in the context menu.
@@ -2179,11 +2606,11 @@ class _ResourceViewState extends State<ResourceView> {
     } catch (e) {
       if (!accepts(scope) || ticket != catalogRequest) return;
       catalogScope = null;
-      if (widget.section == 'saved') {
-        // Saved entries are authorized by their own endpoint. The optional
+      if (['saved', 'activity'].contains(widget.section)) {
+        // Saved and Activity entries are authorized by their own endpoint. The optional
         // identity directory can fail independently (Source falls back to the
         // entry name); it must not finish a pending saved-page request or
-        // restart its infinite-scroll sentinel.
+        // restart its infinite-scroll sentinel or finish an Activity request.
         setState(() {
           searchPeople = [];
           searchAgents = [];
@@ -2469,6 +2896,15 @@ class _ResourceViewState extends State<ResourceView> {
             following: action == 'follow',
           );
           rows = rows.map(activityFollowState.project).toList();
+          acceptedActivityItems = acceptedActivityItems
+              .map(activityFollowState.project)
+              .toList();
+          savedActivityItems = savedActivityItems
+              .map(activityFollowState.project)
+              .toList();
+          doneActivityItems = doneActivityItems
+              .map(activityFollowState.project)
+              .toList();
           if (totalUnreadCount != null) {
             totalUnreadCount = (totalUnreadCount! - cleared).clamp(0, 1 << 53);
           }

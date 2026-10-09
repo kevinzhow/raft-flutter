@@ -8,8 +8,8 @@ Flutter test's Unfollowed view in either branch.
 
 Flutter DesktopActivityFlag already requests `/feature-flags/evaluate` with
 selected server ID and actual platform, and fences origin, principal, generation,
-server and role changes. It currently applies only the master/detail breakpoint.
-ResourceView still renders the classic branch when evaluation is enabled. This
+server and role changes. At the original gap audit it applied only the master/detail breakpoint.
+ResourceView rendered the classic branch when evaluation is enabled. This
 is an implementation gap, not proof that enabled and disabled pages match.
 
 Checklist N24h requires six mounted page proofs: both service evaluation states
@@ -23,3 +23,7 @@ The 74fa876 Linux run failed when its old lifecycle helper attempted a Filters /
 Done / Unfollowed menu in the actual disabled branch. That failure and its prior
 22 checkpoints remain archived. Correcting the flow must use real Source entry
 points and backend readback; it cannot add a non-Source menu just to pass a test.
+
+The bounded implementation and its before/after mounted receipts are recorded
+in [activity-server-flag-implementation.md](activity-server-flag-implementation.md).
+Native and full-page pixel claims remain separate.
