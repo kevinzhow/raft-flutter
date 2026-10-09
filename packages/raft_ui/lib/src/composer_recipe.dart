@@ -85,7 +85,7 @@ class RaftComposerRecipe {
     size: desktop ? 14 : 16,
     line: 20,
     weight: FontWeight.w400,
-  );
+  ).copyWith(color: tokens.brutal ? Colors.black : tokens.strong);
   TextStyle get placeholder => editorText.copyWith(
     color: tokens.brutal
         ? Colors.black.withValues(alpha: .35)

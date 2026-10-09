@@ -19,9 +19,10 @@ import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'mounted_avatar_recipe.dart';
 import 'design_primitives.dart';
+import 'css_opacity.dart';
 import 'icons.dart';
 import 'indicators.dart' show RaftWebPalette;
-import 'panel_layout.dart' show RaftCssText;
+import 'panel_layout.dart' show RaftCssText, RaftCssLineBox;
 import 'tokens/tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
@@ -149,6 +150,7 @@ class RaftButton extends StatelessWidget {
     this.focusNode,
     this.tooltip,
     this.semanticLabel,
+    this.opacityCompositing = RaftOpacityCompositing.layer,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -177,6 +179,9 @@ class RaftButton extends StatelessWidget {
 
   /// Explicit authored aria-label, independent of transient visual feedback.
   final String? semanticLabel;
+
+  /// Matches the mounted Source component's opacity compositing boundary.
+  final RaftOpacityCompositing opacityCompositing;
 
   RaftButtonRecipeVariant get recipeVariant =>
       tone ??
@@ -297,6 +302,7 @@ class RaftButton extends StatelessWidget {
           style: s,
           tokens: rt,
           overflowCenter: true,
+          opacityCompositing: opacityCompositing,
           width: expand ? double.infinity : null,
           decorationOverride: highContrastDanger
               ? (d) => d.copyWith(color: t.components.buttonDangerHighContrast)
@@ -2038,41 +2044,49 @@ class _RaftComposerState extends State<RaftComposer> {
                                             },
                                           ),
                                     },
-                                    child: TextField(
-                                      controller: controller,
-                                      focusNode: focus,
-                                      onChanged: (_) {
-                                        // A typed collapsed caret replaces the
-                                        // previous insertion handle. Merely
-                                        // fading it leaves its overlay hit box
-                                        // above the Source composer toolbar.
-                                        if (controller.selection.isCollapsed) {
-                                          focus.context
-                                              ?.findAncestorStateOfType<
-                                                EditableTextState
-                                              >()
-                                              ?.hideToolbar();
-                                        }
-                                      },
-                                      enabled: widget.enabled,
-                                      minLines: 1,
-                                      maxLines: 6,
+                                    child: RaftCssLineBox(
                                       style: recipe.editorText,
-                                      decoration: InputDecoration(
-                                        hintText: widget.hint,
-                                        hintStyle: recipe.placeholder,
-                                        filled: false,
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                        border: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        focusedBorder: InputBorder.none,
-                                        disabledBorder: InputBorder.none,
-                                        errorBorder: InputBorder.none,
-                                        focusedErrorBorder: InputBorder.none,
+                                      textScaler: MediaQuery.textScalerOf(
+                                        context,
                                       ),
-                                      textCapitalization:
-                                          TextCapitalization.sentences,
+                                      child: TextField(
+                                        controller: controller,
+                                        focusNode: focus,
+                                        onChanged: (_) {
+                                          // A typed collapsed caret replaces the
+                                          // previous insertion handle. Merely
+                                          // fading it leaves its overlay hit box
+                                          // above the Source composer toolbar.
+                                          if (controller
+                                              .selection
+                                              .isCollapsed) {
+                                            focus.context
+                                                ?.findAncestorStateOfType<
+                                                  EditableTextState
+                                                >()
+                                                ?.hideToolbar();
+                                          }
+                                        },
+                                        enabled: widget.enabled,
+                                        minLines: 1,
+                                        maxLines: 6,
+                                        style: recipe.editorText,
+                                        decoration: InputDecoration(
+                                          hintText: widget.hint,
+                                          hintStyle: recipe.placeholder,
+                                          filled: false,
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                          border: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          focusedBorder: InputBorder.none,
+                                          disabledBorder: InputBorder.none,
+                                          errorBorder: InputBorder.none,
+                                          focusedErrorBorder: InputBorder.none,
+                                        ),
+                                        textCapitalization:
+                                            TextCapitalization.sentences,
+                                      ),
                                     ),
                                   ),
                                 ),

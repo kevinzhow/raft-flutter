@@ -16,6 +16,45 @@ Widget conversationTabsTouchPreview() => const _TabPreview(RaftDensity.touch);
 @RaftPreviews('Composer task action', size: Size(640, 440))
 Widget composerTaskActionPreview() => const _TaskPreview();
 
+@RaftPreviews('Recipe group opacity', size: Size(390, 180))
+Widget recipeGroupOpacityPreview() => Padding(
+  padding: const EdgeInsets.all(24),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      const RaftButton(
+        label: 'Create Cindy',
+        tone: RaftButtonRecipeVariant.accent,
+        size: RaftButtonRecipeSize.lg,
+        expand: true,
+        opacityCompositing: RaftOpacityCompositing.alphaFilter,
+      ),
+      const SizedBox(height: 16),
+      RaftCssOpacity(
+        opacity: .4,
+        child: RaftButton(
+          label: 'Create Cindy',
+          tone: RaftButtonRecipeVariant.accent,
+          size: RaftButtonRecipeSize.lg,
+          expand: true,
+          onPressed: () {},
+        ),
+      ),
+    ],
+  ),
+);
+
+@RaftPreviews('Composer editable CSS line boxes', size: Size(390, 240))
+Widget composerEditableLineBoxPreview() => Align(
+  alignment: Alignment.bottomCenter,
+  child: RaftComposer(
+    initialDraft: 'Review the Android composer crop before release.',
+    onImagePick: () {},
+    onAttach: () {},
+    onSend: (_) async => false,
+  ),
+);
+
 class _GroupPreview extends StatefulWidget {
   const _GroupPreview();
   @override

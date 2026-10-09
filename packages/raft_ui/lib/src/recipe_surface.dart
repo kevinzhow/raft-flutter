@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import 'css_opacity.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
 import 'theme.dart';
@@ -272,6 +273,7 @@ class RaftRecipeBox extends StatelessWidget {
     this.clip = false,
     this.applyText = true,
     this.applyOpacity = true,
+    this.opacityCompositing = RaftOpacityCompositing.layer,
     this.applyTransform = true,
     this.decorationOverride,
     this.overflowCenter = false,
@@ -291,6 +293,7 @@ class RaftRecipeBox extends StatelessWidget {
   final AlignmentGeometry? alignment;
   final bool clip;
   final bool applyText, applyOpacity, applyTransform;
+  final RaftOpacityCompositing opacityCompositing;
   final BoxDecoration Function(BoxDecoration)? decorationOverride;
 
   @override
@@ -408,38 +411,16 @@ class RaftRecipeBox extends StatelessWidget {
     }
     final opacity = style.opacity;
     if (applyOpacity) {
-      final alpha = opacity ?? 1;
-      // CSS group opacity retains the unscaled RGB bytes before compositing.
-      // A Flutter opacity layer quantizes premultiplied channels first, which
-      // shifts translucent disabled controls by one channel value.
-      box = Opacity(
-        opacity: alpha == 0 ? 0 : 1,
-        child: ColorFiltered(
-          colorFilter: ColorFilter.matrix(<double>[
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            alpha,
-            0,
-          ]),
+      box = switch (opacityCompositing) {
+        RaftOpacityCompositing.layer => Opacity(
+          opacity: opacity ?? 1,
           child: box,
         ),
-      );
+        RaftOpacityCompositing.alphaFilter => RaftCssOpacity(
+          opacity: opacity ?? 1,
+          child: box,
+        ),
+      };
     }
     return box;
   }

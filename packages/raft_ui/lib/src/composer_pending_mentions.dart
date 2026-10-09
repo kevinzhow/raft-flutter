@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'components.dart';
+import 'dialog_card.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'mounted_avatar_recipe.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -225,7 +227,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    RaftCssText(
                       target,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -237,7 +239,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
                         color: t.strong,
                       ),
                     ),
-                    Text(
+                    RaftCssText(
                       status,
                       key: const ValueKey('pending-mention-action-status'),
                       maxLines: 2,
@@ -305,7 +307,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
 
 /// raft-ui `Button size="sm"` resolved from the generated recipe (h-7,
 /// px-2.5, 12/16 bold, 14px icon, gap 5, hover lift + larger shadow).
-class _StripButton extends StatefulWidget {
+class _StripButton extends StatelessWidget {
   const _StripButton({
     required this.variant,
     required this.label,
@@ -316,71 +318,16 @@ class _StripButton extends StatefulWidget {
   final String label;
   final RaftGlyph? glyph;
   final VoidCallback? onPressed;
-  @override
-  State<_StripButton> createState() => _StripButtonState();
-}
 
-class _StripButtonState extends State<_StripButton> {
-  bool hovered = false, pressed = false;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final resolver = RaftRecipeTokens(t);
-    final enabled = widget.onPressed != null;
-    final s = RaftButtonRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-      variant: widget.variant,
-      size: RaftButtonRecipeSize.sm,
-      states: RaftRecipeStates({
-        if (enabled && hovered) RaftRecipeStates.hover,
-        if (enabled && pressed) RaftRecipeStates.active,
-        if (!enabled) RaftRecipeStates.disabled,
-      }),
-      tokens: resolver,
-    ).root;
-    final text = s
-        .textStyle(resolver)
-        .copyWith(leadingDistribution: TextLeadingDistribution.even);
-    final icon = s.target("& svg:not([class*='size-'])")?.width ?? 14;
-    Widget button = Container(
-      height: s.height,
-      padding: s.padding,
-      decoration: s.decoration(resolver),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (widget.glyph != null) ...[
-            RaftIcon(widget.glyph!, size: icon, color: text.color),
-            SizedBox(width: s.columnGap ?? 5),
-          ],
-          Text(widget.label, style: text),
-        ],
-      ),
-    );
-    final offset = s.translate;
-    if (offset != null && offset != Offset.zero) {
-      button = Transform.translate(offset: offset, child: button);
-    }
-    return Semantics(
-      button: true,
-      enabled: enabled,
-      label: widget.label,
-      excludeSemantics: true,
-      child: MouseRegion(
-        cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: enabled ? (_) => setState(() => pressed = true) : null,
-          onTapCancel: () => setState(() => pressed = false),
-          onTapUp: (_) => setState(() => pressed = false),
-          onTap: widget.onPressed,
-          child: Opacity(opacity: s.opacity ?? 1, child: button),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RaftRecipeButton(
+    label: label,
+    glyph: glyph,
+    variant: variant,
+    size: RaftButtonRecipeSize.sm,
+    disabled: onPressed == null,
+    onPressed: onPressed,
+  );
 }
 
 /// MessageInput slot above the composer: the mention-action notice, then the

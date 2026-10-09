@@ -169,6 +169,9 @@ class RaftCindySetupScreen extends StatelessWidget {
       size: RaftButtonRecipeSize.lg,
       expand: !wide,
       busy: busy,
+      // Source's onboarding footer groups the disabled surface differently
+      // from ordinary CreateAgent dialogs (original99 measured RGBA bytes).
+      opacityCompositing: RaftOpacityCompositing.alphaFilter,
       onPressed: busy ? null : onCreate,
     );
     final footer = Container(

@@ -724,7 +724,7 @@ class RaftCssText extends StatelessWidget {
             softWrap: softWrap,
             strutStyle: strutStyle,
           );
-    return _CssLineBox(
+    return RaftCssLineBox(
       style: effective,
       textScaler: MediaQuery.textScalerOf(context),
       child: text,
@@ -732,8 +732,14 @@ class RaftCssText extends StatelessWidget {
   }
 }
 
-class _CssLineBox extends SingleChildRenderObjectWidget {
-  const _CssLineBox({
+/// CSS line-box geometry and paint-baseline alignment for a text-bearing child.
+///
+/// This keeps the real editable child, including its selection, caret, input
+/// connection and hit coordinates, while sharing [RaftCssText]'s baseline
+/// calculation. The child must use [style]'s line height.
+class RaftCssLineBox extends SingleChildRenderObjectWidget {
+  const RaftCssLineBox({
+    super.key,
     required this.style,
     required this.textScaler,
     required super.child,

@@ -118,3 +118,5 @@ export 'src/editor_groups.dart';
 
 export 'src/banner.dart';
 export 'src/combobox_panel.dart';
+
+export 'src/css_opacity.dart';
