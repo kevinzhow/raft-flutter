@@ -73,11 +73,15 @@ class WorkspaceView extends StatefulWidget {
     this.notifications,
     this.sharing,
     this.presentation,
+    this.onChooseServer,
   });
   final WorkspaceController controller;
   final NativeNotificationService? notifications;
   final NativeSharing? sharing;
   final PersonalPresentationStore? presentation;
+
+  /// App root owns the Source `/` server chooser outside a workspace URI.
+  final VoidCallback? onChooseServer;
 
   final RaftAppearance appearance;
   final Future<void> Function(RaftAppearance) onAppearance;
