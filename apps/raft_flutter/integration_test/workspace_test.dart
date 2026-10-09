@@ -29,6 +29,7 @@ import 'runtime_review_flow.dart';
 import 'sidebar_flow.dart';
 import 'forward_flow.dart';
 import 'message_selection_flow.dart';
+import 'native_message_menu.dart';
 import 'resource_flow.dart';
 import 'joint_channel_flow.dart';
 import 'composer_suggestions_flow.dart';
@@ -887,13 +888,8 @@ void main() {
       expect(w.messages.where((m) => m.content == text), hasLength(1));
       final sent = w.messages.firstWhere((m) => m.content == text);
       final messageRow = find.byKey(ValueKey('message-${sent.id}'));
-      final replyButton = find.descendant(
-        of: messageRow,
-        matching: find.text('Reply in thread'),
-      );
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(replyButton);
-      await tester.pumpAndSettle();
+      final replyButton = find.byKey(const ValueKey('message-menu-thread'));
+      await openNativeMessageMenu(tester, messageRow, entry: replyButton);
       await tester.tap(replyButton);
       await until(
         tester,
@@ -1391,18 +1387,10 @@ void main() {
                 true,
       );
       expect(jumped, findsOneWidget);
-      await tester.tap(
-        find.descendant(
-          of: jumped,
-          matching: find.byTooltip('Message actions'),
-        ),
-      );
-      await until(
-        tester,
-        () => find.text('Save message').evaluate().isNotEmpty,
-      );
-      await tester.tap(find.text('Save message'));
-      await until(tester, () => find.text('Save message').evaluate().isEmpty);
+      final saveEntry = find.byKey(const ValueKey('message-menu-save'));
+      await openNativeMessageMenu(tester, jumped, entry: saveEntry);
+      await tester.tap(saveEntry);
+      await until(tester, () => saveEntry.evaluate().isEmpty);
       await section(tester, 'saved');
       await until(tester, () => find.text(text).evaluate().isNotEmpty);
       await screenshot(tester, 'linux-saved');
