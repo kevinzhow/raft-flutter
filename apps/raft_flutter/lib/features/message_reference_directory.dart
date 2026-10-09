@@ -62,9 +62,9 @@ class MessageReferenceDirectory extends ChangeNotifier {
         final out = await w.query(path),
             rows = out is List ? out : out[key] ?? [];
         for (final row in (rows as List).whereType<Map>()) {
-          if (kind == 'agent' &&
-              row['id'] is String &&
-              row['deletedAt'] == null) {
+          // Authorized tombstones still identify historical senders and
+          // suppress their live activity/mention affordances.
+          if (kind == 'agent' && row['id'] is String) {
             permittedAgents.add(
               Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(row)),
             );
@@ -74,6 +74,7 @@ class MessageReferenceDirectory extends ChangeNotifier {
               Map<String, dynamic>.unmodifiable(Map<String, dynamic>.from(row)),
             );
           }
+          if (kind == 'agent' && row['deletedAt'] != null) continue;
           final name = row['name'],
               id = kind == 'user' ? row['userId'] ?? row['id'] : row['id'];
           if (name is! String || name.isEmpty || id is! String) continue;

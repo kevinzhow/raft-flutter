@@ -174,7 +174,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
       if (widget.actions.onMessage != null)
         RaftMenuEntry(
           label: raftText(context, 'Direct Message'),
-          glyph: RaftGlyph.messageSquareMore,
+          leading: const RaftDirectMessageIcon(size: 14),
           onPressed: widget.actions.onMessage,
         ),
       if (widget.canControlRuntime && !external) ...[

@@ -2189,10 +2189,10 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
       viewportHeight: MediaQuery.sizeOf(context).height,
     );
     final enabled = widget.onPressed != null;
-    final height = RaftDensityScope.of(context) == RaftDensity.touch
-        ? math.max(48.0, recipe.rowVisualHeight)
-        : recipe.rowVisualHeight;
-    return Semantics(
+    // Match DropdownMenuItem's CSS row while retaining the same 48px native
+    // hit/semantics expansion as the shared recipe controls.
+    final height = recipe.rowVisualHeight;
+    Widget result = Semantics(
       role: widget.kind == RaftMenuKind.selectionPopover
           ? SemanticsRole.menuItemCheckbox
           : SemanticsRole.menuItem,
@@ -2318,6 +2318,10 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
         ),
       ),
     );
+    if (RaftDensityScope.of(context) == RaftDensity.touch) {
+      result = RaftTouchTarget(child: result);
+    }
+    return result;
   }
 }
 

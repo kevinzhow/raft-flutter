@@ -14,6 +14,93 @@ void main() {
     (RaftFamily.elegant, true),
   ]) {
     testWidgets(
+      '$family/$dark departed senders retain history but cannot be mentioned',
+      (t) async {
+        final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
+        addTearDown(w.dispose);
+        w.ledger.switchServer('s1');
+        w.ledger.ingest([
+          for (final (id, type, status, seq) in [
+            ('active', 'user', 'active', 1),
+            ('removed', 'user', 'removed', 2),
+            ('left', 'user', 'left', 3),
+            ('deleted', 'agent', 'active', 4),
+            ('external', 'external_projection', 'removed', 5),
+          ])
+            {
+              'id': id,
+              'channelId': 'c1',
+              'seq': seq,
+              'senderId': id,
+              'senderType': type,
+              'senderName': 'Author $id',
+              'senderMembershipStatus': status,
+              'sourceServerId': 's1',
+              'content': 'History $id',
+              'createdAt': '2026-06-22T02:30:00Z',
+            },
+        ], expectedGeneration: w.ledger.generation);
+        w.visibleIds['c1'] = {
+          'active',
+          'removed',
+          'left',
+          'deleted',
+          'external',
+        };
+        transport.routes['GET /servers/s1/members'] = (_) => [
+          // Deliberately stale directory names must not restore a departed
+          // message sender's mention affordance.
+          for (final id in ['active', 'removed', 'left'])
+            {'userId': id, 'name': id, 'role': 'member'},
+        ];
+        transport.routes['GET /agents'] = (_) => [
+          {
+            'id': 'deleted',
+            'name': 'deleted',
+            'status': 'active',
+            'runtime': 'codex',
+            'deletedAt': '2026-06-22T03:00:00Z',
+          },
+        ];
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: Scaffold(body: RaftChatView(controller: w)),
+          ),
+        );
+        await t.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 40)),
+        );
+        await t.pumpAndSettle();
+        expect(find.text('REMOVED'), findsOneWidget);
+        expect(find.text('LEFT'), findsOneWidget);
+        expect(find.text('DELETED'), findsOneWidget);
+        for (final id in ['removed', 'left', 'deleted', 'external']) {
+          final row = find.ancestor(
+            of: find.text('Author $id'),
+            matching: find.byType(RaftMessageRow),
+          );
+          expect(t.widget<RaftMessageRow>(row).onAuthor, isNull);
+          expect(find.text('History $id'), findsOneWidget);
+        }
+        final activeRow = find.ancestor(
+          of: find.text('Author active'),
+          matching: find.byType(RaftMessageRow),
+        );
+        expect(t.widget<RaftMessageRow>(activeRow).onAuthor, isNotNull);
+        final editor = find.descendant(
+          of: find.byType(RaftComposer),
+          matching: find.byType(TextField),
+        );
+        await t.tap(find.text('Author active'));
+        await t.pump();
+        expect(t.widget<TextField>(editor).controller!.text, '@active ');
+        await t.pumpWidget(const SizedBox());
+        await t.pump(const Duration(seconds: 1));
+        expect(t.takeException(), isNull);
+      },
+    );
+    testWidgets(
       '$family/$dark protocol user gets scoped Owner and typed mention; foreign same-id stays private',
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;

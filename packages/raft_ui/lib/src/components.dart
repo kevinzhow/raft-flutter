@@ -20,6 +20,8 @@ import 'recipes/token_binding.dart';
 import 'mounted_avatar_recipe.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'indicators.dart' show RaftWebPalette;
+import 'panel_layout.dart' show RaftCssText;
 import 'tokens/tokens.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
@@ -1106,6 +1108,7 @@ class RaftMessageTile extends StatelessWidget {
     this.taskReference,
     this.threadRepliesBadge,
     this.badge,
+    this.departureLabel,
     this.modelLabel,
     this.subtitle,
     this.avatar,
@@ -1135,6 +1138,9 @@ class RaftMessageTile extends StatelessWidget {
   final String author, content, timestamp;
   final RaftMessageRowContext rowContext;
   final String? threadLabel, badge;
+
+  /// Authorized left/removed/deleted sender status, separate from custom badges.
+  final String? departureLabel;
 
   /// Permitted adapter-projected label; this component performs no model lookup.
   final String? modelLabel, subtitle;
@@ -1192,7 +1198,7 @@ class RaftMessageTile extends StatelessWidget {
       highlighted: highlighted,
       toolbar: hoverToolbar,
       subtitle: subtitle,
-      metadata: modelLabel == null && badge == null
+      metadata: modelLabel == null && badge == null && departureLabel == null
           ? null
           : Row(
               mainAxisSize: MainAxisSize.min,
@@ -1218,10 +1224,36 @@ class RaftMessageTile extends StatelessWidget {
                 if (badge != null)
                   Padding(
                     padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      badge!,
+                    child: Text(badge!, maxLines: 1,
+                      style: recipe.time.copyWith(fontSize: 10)),
+                  ),
+                if (departureLabel != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: t.brutal
+                          ? RaftWebPalette.gray300
+                          : t.colors['fill-muted'],
+                      border: Border.all(
+                        color: t.brutal
+                            ? Colors.black
+                            : t.colors['line-muted']!,
+                      ),
+                    ),
+                    child: RaftCssText(
+                      departureLabel!.toUpperCase(),
                       maxLines: 1,
-                      style: recipe.time.copyWith(fontSize: 10),
+                      softWrap: false,
+                      style: recipe.body.copyWith(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: t.brutal
+                            ? Colors.black.withValues(alpha: .6)
+                            : t.muted,
+                      ),
                     ),
                   ),
               ],

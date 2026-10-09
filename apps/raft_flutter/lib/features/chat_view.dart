@@ -1236,6 +1236,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   }
 
   VoidCallback? senderMention(RaftMessage message) {
+    if (senderDepartureLabel(message) != null) return null;
     if (message.json['sourceServerId'] != null &&
         message.json['sourceServerId'] != w.server?.id) {
       return null;
@@ -1270,6 +1271,20 @@ class _RaftChatViewState extends State<RaftChatView> {
       }
     };
   }
+
+  String? senderDepartureLabel(RaftMessage message) =>
+      switch (messageSenderIdentityKind(message)) {
+        'agent' =>
+          senderAgent(message)?.deleted == true
+              ? raftText(context, 'Deleted')
+              : null,
+        'human' => switch (message.string('senderMembershipStatus')) {
+          'left' => raftText(context, 'Left'),
+          'removed' => raftText(context, 'Removed'),
+          _ => null,
+        },
+        _ => null,
+      };
 
   void closePickerOnScroll() {
     if (reactionPicker != null) closeReactionPicker();
@@ -1525,6 +1540,7 @@ class _RaftChatViewState extends State<RaftChatView> {
       timestamp: m.createdAt == null ? '' : clock(m.createdAt!),
       // Source renders a badge only for deactivated/departed identities.
       // Sender type is already represented by the scoped avatar, not an Agent badge.
+      departureLabel: senderDepartureLabel(m),
       onActions: () => actions(m, parentTile: parent),
       onActionsAt: (anchor) => actions(m, anchor: anchor, parentTile: parent),
       onThread: parent || widget.thread ? null : () => w.openThread(m),

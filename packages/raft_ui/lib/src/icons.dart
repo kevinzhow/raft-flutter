@@ -396,6 +396,69 @@ RaftGlyph? raftGlyphForMaterialIcon(IconData icon) => {
   Icons.done_all: RaftGlyph.checkCheck,
 }[icon];
 
+/// raft-ui0.5.27 DirectMessageIcon (dist/index.mjs19015).
+class RaftDirectMessageIcon extends StatelessWidget {
+  const RaftDirectMessageIcon({super.key, this.size = 18, this.color});
+  final double size;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _DirectMessageIconPainter(
+          color ??
+              IconTheme.of(context).color ??
+              DefaultTextStyle.of(context).style.color ??
+              Colors.black,
+        ),
+      ),
+    ),
+  );
+}
+
+class _DirectMessageIconPainter extends CustomPainter {
+  const _DirectMessageIconPainter(this.color);
+  final Color color;
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.save();
+    canvas.scale(size.width / 18, size.height / 18);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(
+      Path()
+        ..moveTo(16.25, 5)
+        ..lineTo(16.25, 4.25)
+        ..cubicTo(16.25, 3.15, 15.35, 2.25, 14.25, 2.25)
+        ..lineTo(3.75, 2.25)
+        ..cubicTo(2.65, 2.25, 1.75, 3.15, 1.75, 4.25)
+        ..lineTo(1.75, 11.25)
+        ..cubicTo(1.75, 12.35, 2.65, 13.25, 3.75, 13.25)
+        ..lineTo(5.75, 13.25)
+        ..lineTo(5.75, 16.25)
+        ..lineTo(7.5, 14.85),
+      paint,
+    );
+    canvas.drawCircle(const Offset(14.25, 8), 1.75, paint);
+    canvas.drawPath(
+      Path()
+        ..moveTo(11, 16.25)
+        ..cubicTo(11.3, 13.65, 12.5, 12, 14.25, 12)
+        ..cubicTo(16, 12, 17.2, 13.65, 17.5, 16.25),
+      paint,
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_DirectMessageIconPainter old) => old.color != color;
+}
+
 /// raft-ui0.5.27 ThreadIcon (dist/index.mjs19040).
 /// The product uses this 18-unit two-bubble SVG for search thread metadata.
 class RaftThreadIcon extends StatelessWidget {

@@ -1695,6 +1695,7 @@ class _RaftOverflowMenuButtonState extends State<RaftOverflowMenuButton> {
                     RaftMenuItem(
                       label: e.label ?? '',
                       glyph: e.glyph,
+                      leading: e.leading,
                       onPressed: () {
                         menu.hide();
                         e.onPressed?.call();

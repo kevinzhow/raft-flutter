@@ -381,9 +381,11 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         children: [
           author,
           if (widget.metadata != null)
-            SizedBox(
-              height: recipe.headerLine,
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: recipe.headerLine),
               child: Align(
+                widthFactor: 1,
+                heightFactor: 1,
                 alignment: Alignment.centerLeft,
                 child: widget.metadata!,
               ),
@@ -743,7 +745,7 @@ class _RenderMessageHeader extends RenderBox
   Size computeDryLayout(BoxConstraints constraints) {
     final sizes = [
       for (final child in getChildrenAsList())
-        child.getDryLayout(BoxConstraints(maxHeight: lineHeight)),
+        child.getDryLayout(const BoxConstraints()),
     ];
     final height = sizes.fold(
       0.0,
@@ -762,7 +764,9 @@ class _RenderMessageHeader extends RenderBox
   void performLayout() {
     final children = getChildrenAsList();
     var fixed = gap * (children.length - 1).clamp(0, children.length);
-    final natural = BoxConstraints(maxHeight: lineHeight);
+    // CSS flex items can enlarge the line: the 10px departure badge inherits
+    // 20/14 leading and adds 6px border/padding, yielding 20.2857px in Brutal.
+    const natural = BoxConstraints();
     for (var i = 0; i < children.length; i++) {
       if (i == subtitleIndex) continue;
       children[i].layout(natural, parentUsesSize: true);
@@ -774,7 +778,7 @@ class _RenderMessageHeader extends RenderBox
     if (subtitleIndex != null) {
       final remaining = (width - reserve - fixed).clamp(0.0, double.infinity);
       children[subtitleIndex!].layout(
-        BoxConstraints(maxWidth: remaining, maxHeight: lineHeight),
+        BoxConstraints(maxWidth: remaining),
         parentUsesSize: true,
       );
     }
