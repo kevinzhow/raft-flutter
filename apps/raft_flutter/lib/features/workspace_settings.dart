@@ -37,8 +37,10 @@ class WorkspaceSettings extends StatelessWidget {
     this.onMobileDetailChanged,
     this.providerEnabled = false,
     this.bridgeEnabled = false,
+    this.workspaceModeCard,
   });
   final WorkspaceController controller;
+  final Widget? workspaceModeCard;
   final RaftAppearance appearance;
   final ValueChanged<RaftAppearance> onAppearance;
   final PersonalPresentationStore presentation;
@@ -71,7 +73,11 @@ class WorkspaceSettings extends StatelessWidget {
           'account',
           'Account',
           RaftGlyph.user,
-          (_) => AccountSettings(controller: w, onLogout: onLogout),
+          (_) => AccountSettings(
+            controller: w,
+            onLogout: onLogout,
+            workspaceModeCard: workspaceModeCard,
+          ),
         ),
         RaftSettingsDestination(
           'language-region',
