@@ -401,6 +401,7 @@ class _WorkspacePreviewState extends State<_WorkspacePreview> {
     result = '${id[0].toUpperCase()}${id.substring(1)} opened';
   });
   Widget rail() => RaftWorkspaceRail(
+    thinDivider: selected == 'activity',
     destinations: destinations,
     selected: selected,
     onSelected: select,

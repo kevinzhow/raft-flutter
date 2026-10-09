@@ -336,6 +336,7 @@ class RaftWorkspaceRail extends StatelessWidget {
     this.workspaceTooltip = 'Switch workspace',
     this.workspaceHeader,
     this.footer,
+    this.thinDivider = false,
   });
   final List<RaftRailDestination> destinations;
   final String selected, workspaceName, workspaceTooltip;
@@ -345,6 +346,9 @@ class RaftWorkspaceRail extends StatelessWidget {
   /// Mounted Source server-switcher owns the complete header anchor.
   final Widget? workspaceHeader;
   final Widget? footer;
+
+  /// LeftRail's Activity caller uses a one-pixel Brutal border-right override.
+  final bool thinDivider;
 
   Widget railGlyph(RaftRailDestination destination, double size) =>
       destination.iconWidget ??
@@ -380,7 +384,13 @@ class RaftWorkspaceRail extends StatelessWidget {
       padding: EdgeInsets.zero,
       decoration: BoxDecoration(
         color: recipe.background,
-        border: t.brutal ? Border(right: recipe.border) : null,
+        border: t.brutal
+            ? Border(
+                right: thinDivider
+                    ? recipe.border.copyWith(width: 1)
+                    : recipe.border,
+              )
+            : null,
       ),
       child: SafeArea(
         child: Column(

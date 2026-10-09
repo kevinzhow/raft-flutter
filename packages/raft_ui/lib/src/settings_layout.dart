@@ -1,5 +1,6 @@
 import 'panel_layout.dart' show raftRecipeTheme;
 export 'panel_layout.dart' show raftRecipeTheme;
+
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
@@ -333,7 +334,9 @@ class RaftSettingsPanelFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Material(
-      color: t.brutal ? Colors.white : t.panel,
+      // SettingsPanel's Panel supplies bg-layer-canvas-muted to the transparent
+      // desktop Elegant header. Its content div owns bg-layer-panel separately.
+      color: t.brutal ? Colors.white : t.sidebar,
       // Container insets the child by the border width, as CSS does.
       child: Container(
         decoration: BoxDecoration(
@@ -348,7 +351,12 @@ class RaftSettingsPanelFrame extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             header,
-            Expanded(child: child),
+            Expanded(
+              child: Material(
+                color: t.brutal ? Colors.white : t.panel,
+                child: child,
+              ),
+            ),
           ],
         ),
       ),

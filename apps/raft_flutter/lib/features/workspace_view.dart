@@ -1873,6 +1873,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   Widget workspaceRail() {
     final mobileAppScope = mobileAppBadge.key;
     return RaftWorkspaceRail(
+      thinDivider: w.location.route == RaftRoute.activity,
       destinations: railDestinations,
       selected: wide
           ? DesktopNavigationPolicy.forSection(
