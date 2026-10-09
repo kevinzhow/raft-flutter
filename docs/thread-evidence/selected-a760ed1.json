@@ -1,0 +1,153 @@
+{
+  "recordedAt": "2026-10-09T03:37:00.104008+00:00",
+  "nativeCommit": "a760ed1f24e71074101ed799316b5f1ade693e21",
+  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "command": "PARITY_OUT=build/parity-thread-channel-final-20261009 PARITY_SHARDS=1 tool/parity run --cases components.thread.* --shards 1",
+  "scope": "official selected Thread fixtures; Source actual Playwright capture + Flutter host raster; not native OS",
+  "totals": {
+    "selected": 25,
+    "sourceCaptured": 25,
+    "flutterCaptured": 25,
+    "officialPassing": 6,
+    "different": 19,
+    "otherManifestCasesUnrun": 74
+  },
+  "cases": [
+    {
+      "id": "components.thread.composer.empty",
+      "officialStatus": "basic-pass",
+      "pixelPerfectSimilarity": 0.9748505523066927
+    },
+    {
+      "id": "components.thread.composer.states",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9386744639376219
+    },
+    {
+      "id": "components.thread.composer.pending-mention-actions",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9529531043445139
+    },
+    {
+      "id": "components.thread.composer.as-task-selected",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9385120207927226
+    },
+    {
+      "id": "components.thread.composer.member-suggestions",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.8761218729694606
+    },
+    {
+      "id": "components.thread.composer.channel-suggestions",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.8845201835607537
+    },
+    {
+      "id": "components.thread.composer.image-preview",
+      "officialStatus": "basic-pass",
+      "pixelPerfectSimilarity": 0.9685773074661963
+    },
+    {
+      "id": "components.thread.files.list",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9476060462171574
+    },
+    {
+      "id": "components.thread.header.states",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.8644705603038937
+    },
+    {
+      "id": "components.thread.message.row",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9431818181818182
+    },
+    {
+      "id": "components.thread.message-row.deleted-human",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9348413327171498
+    },
+    {
+      "id": "components.thread.message-menu.default",
+      "officialStatus": "basic-pass",
+      "pixelPerfectSimilarity": 0.9876456569584532
+    },
+    {
+      "id": "components.thread.message-menu.task",
+      "officialStatus": "basic-pass",
+      "pixelPerfectSimilarity": 0.9865171952849678
+    },
+    {
+      "id": "components.thread.message-share.selection",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.888407528928856
+    },
+    {
+      "id": "components.thread.forward-modal",
+      "officialStatus": "pass",
+      "pixelPerfectSimilarity": 0.9932430699018376
+    },
+    {
+      "id": "components.thread.comment-anchor",
+      "officialStatus": "basic-pass",
+      "pixelPerfectSimilarity": 0.9700334859102632
+    },
+    {
+      "id": "components.thread.message-row.rich-content",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9435758365401126
+    },
+    {
+      "id": "components.thread.message-row.long-inline-code",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.9383795883795883
+    },
+    {
+      "id": "components.thread.message-row.md-link-ref",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.8992393824951964
+    },
+    {
+      "id": "components.thread.message-row.md-latest-release",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.8828983516483516
+    },
+    {
+      "id": "components.thread.message-row.md-wrap-slice1",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.7784892826777644
+    },
+    {
+      "id": "components.thread.message-row.md-wrap-clarify",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.8410110976864904
+    },
+    {
+      "id": "components.thread.message-row.md-wrap-adjacent",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.889041211813489
+    },
+    {
+      "id": "components.thread.message-row.md-wrap-status606",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.777392192837219
+    },
+    {
+      "id": "components.thread.message-row.md-wrap-task607",
+      "officialStatus": "different",
+      "pixelPerfectSimilarity": 0.841357900389314
+    }
+  ],
+  "limits": [
+    "Known Source TaskStatusIconRoot/Markdown fixture failure preserved; do not match raw fallback.",
+    "Header Source/native permission context differs.",
+    "Only header and selection pairs personally re-reviewed in this follow-up; earlier reviews retained.",
+    "No dark official cases, device integration, remote publication or whole-Thread acceptance."
+  ],
+  "fileShas": {
+    "build/parity-thread-channel-final-20261009/summary.json": "240d3ac2b176066b5705a87943c68746c8273948ae6ddd6d16b22ed846a769c7",
+    "build/parity-thread-channel-final-20261009/react-source.json": "2f0f9f3494d5d24a110879cfdb3a988433440951df9ea544974f8c38e77f697e",
+    "build/parity-thread-channel-final-20261009/visual-testing-results/diff/react__android.json": "679e7eb4a246a0c3dfb1e572a03193ada32231d2569cd39d91ffad4f3dc47c42"
+  }
+}
