@@ -930,6 +930,7 @@ class RaftActivityLogView extends StatelessWidget {
                       ],
                     ],
                   ),
+                  style: primary,
                 ),
                 if (e.detail != null && e.detail!.isNotEmpty)
                   Padding(

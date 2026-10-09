@@ -15,6 +15,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import 'agent_apps_view.dart';
+import 'agent_trajectory_log.dart';
 import 'agent_metadata_catalog.dart';
 import 'mcp_views.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
@@ -97,6 +98,7 @@ class AgentDetailPanel extends StatefulWidget {
     required this.machines,
     required this.actions,
     this.liveActivity,
+    this.initialTrajectoryLog = const [],
     this.initialTab = AgentDetailTab.profile,
     this.canManage = false,
     this.canViewPrivate = false,
@@ -114,6 +116,9 @@ class AgentDetailPanel extends StatefulWidget {
 
   /// Latest `agent:activity` socket projection ({activity, detail}).
   final Map<String, dynamic>? liveActivity;
+
+  /// Already admitted session trajectory; distinct from the REST response.
+  final List<Map<String, dynamic>> initialTrajectoryLog;
   final AgentDetailTab initialTab;
   final bool canManage, canViewPrivate, canControlRuntime, busy;
   final String? error;
@@ -272,6 +277,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
       AgentDetailTab.activity => AgentActivityTab(
         controller: w,
         agentId: agentId,
+        initialEntries: widget.initialTrajectoryLog,
       ),
       AgentDetailTab.chat => AgentChatTab(controller: w, agentId: agentId),
       AgentDetailTab.reminders => AgentRemindersTab(
@@ -626,9 +632,11 @@ class AgentActivityTab extends StatefulWidget {
     super.key,
     required this.controller,
     required this.agentId,
+    this.initialEntries = const [],
   });
   final WorkspaceController controller;
   final String agentId;
+  final List<Map<String, dynamic>> initialEntries;
   @override
   State<AgentActivityTab> createState() => _AgentActivityTabState();
 }
@@ -639,35 +647,126 @@ class _AgentActivityTabState extends State<AgentActivityTab>
   WorkspaceController get w => widget.controller;
   List<Map<String, dynamic>> entries = [];
   StreamSubscription<RaftEvent>? events;
+  Timer? reloadTimer;
+  int readRevision = 0;
+  late String openingScope;
+  String get scope =>
+      '${w.client.origin}|${w.client.generation}|${w.client.user?.id}|${w.client.serverId}|${w.server?.id}|${w.server?.string('role')}|${widget.agentId}';
   @override
   void initState() {
     super.initState();
+    openingScope = scope;
+    entries = mergeAgentTrajectoryLog(
+      [],
+      admittedAgentTrajectoryRows(widget.initialEntries),
+    );
+    w.addListener(scopeChanged);
+    listenEvents();
     reload();
+  }
+
+  void listenEvents() {
     events = w.client.events.listen((e) {
-      if (e.name.startsWith('agent:activity') &&
-          e.payload is Map &&
-          (e.payload as Map)['agentId'] == widget.agentId) {
-        reload();
+      if (e.name == 'connected') {
+        scheduleReload();
+        return;
+      }
+      if (e.name != 'agent:activity' ||
+          e.payload is! Map ||
+          (e.payload as Map)['agentId'] != widget.agentId) {
+        return;
+      }
+      final payload = e.payload as Map;
+      if (payload['isHeartbeat'] == true ||
+          payload['isRefreshOnly'] == true ||
+          (payload['sourceServerId'] != null &&
+              payload['sourceServerId'] != w.server?.id)) {
+        return;
+      }
+      final raw = payload['entries'];
+      if (raw is List && raw.isNotEmpty && payload['timestamp'] is num) {
+        final rows = admittedAgentTrajectoryRows([
+          for (final entry in raw.whereType<Map>())
+            {
+              'timestamp': payload['timestamp'],
+              'entry': entry,
+              for (final key in [
+                'serverSeq',
+                'launchId',
+                'clientSeq',
+                'probeId',
+              ])
+                if (payload[key] != null) key: payload[key],
+            },
+        ]);
+        if (mounted && openingScope == scope) {
+          setState(() => entries = mergeAgentTrajectoryLog(entries, rows));
+        }
+      } else {
+        scheduleReload();
       }
     });
   }
 
+  void scheduleReload() {
+    reloadTimer?.cancel();
+    reloadTimer = Timer(const Duration(milliseconds: 500), () {
+      if (mounted && openingScope == scope) reload();
+    });
+  }
+
+  void scopeChanged() {
+    if (openingScope == scope) return;
+    openingScope = scope;
+    readRevision++;
+    reloadTimer?.cancel();
+    setState(() => entries = []);
+    reload();
+  }
+
+  @override
+  void didUpdateWidget(AgentActivityTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller) ||
+        oldWidget.agentId != widget.agentId) {
+      oldWidget.controller.removeListener(scopeChanged);
+      w.addListener(scopeChanged);
+      events?.cancel();
+      openingScope = scope;
+      readRevision++;
+      reloadTimer?.cancel();
+      entries = [];
+      listenEvents();
+      reload();
+    }
+  }
+
   @override
   void dispose() {
+    readRevision++;
+    w.removeListener(scopeChanged);
+    reloadTimer?.cancel();
     events?.cancel();
     super.dispose();
   }
 
   @override
   Future<void> fetch() async {
-    final result = await w.query(
+    final captured = scope, owner = w, revision = ++readRevision;
+    final result = await owner.query(
       '/agents/${widget.agentId}/activity-log',
       query: {'limit': '50'},
     );
-    entries = [
-      for (final e in (result is List ? result : const []))
-        if (e is Map) Map<String, dynamic>.from(e),
-    ];
+    if (!mounted ||
+        revision != readRevision ||
+        captured != scope ||
+        !identical(owner, w)) {
+      return;
+    }
+    entries = mergeAgentTrajectoryLog(
+      entries,
+      admittedAgentTrajectoryRows(result),
+    );
   }
 
   static String _toolLabel(String name) => switch (name) {
