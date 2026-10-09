@@ -148,7 +148,7 @@ class _RaftInlineIconButtonState extends State<RaftInlineIconButton> {
 
 /// raft-ui PanelAction (panelAction recipe): bordered square icon action of
 /// the panel header (`& > svg` 14px in brutal).
-class RaftPanelAction extends StatefulWidget {
+class RaftPanelAction extends StatelessWidget {
   const RaftPanelAction({
     super.key,
     required this.glyph,
@@ -159,60 +159,77 @@ class RaftPanelAction extends StatefulWidget {
   final String tooltip;
   final VoidCallback? onPressed;
   @override
-  State<RaftPanelAction> createState() => _RaftPanelActionState();
-}
-
-class _RaftPanelActionState extends State<RaftPanelAction> {
-  bool hovered = false, pressed = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final rt = RaftRecipeTokens(t);
-    final s = RaftPanelActionRecipe.resolve(
-      theme: raftRecipeTheme(t),
-      states: RaftRecipeStates({
-        if (hovered) RaftRecipeStates.hover,
-        if (pressed) RaftRecipeStates.active,
-        if (widget.onPressed == null) RaftRecipeStates.disabled,
-        if (t.dark) RaftRecipeStates.dark,
-      }),
-      tokens: rt,
-    ).base;
-    final svg = s.target('& > svg');
-    final iconSize = svg?.width ?? 14;
-    final color = s.color?.resolve(rt) ?? t.strong;
-    final translate = s.translate ?? Offset.zero;
-    return RaftTooltip(
-      message: widget.tooltip,
-      excludeFromSemantics: true,
-      child: Semantics(
-        button: true,
-        label: widget.tooltip,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => hovered = true),
-          onExit: (_) => setState(() => hovered = false),
-          child: GestureDetector(
-            onTapDown: (_) => setState(() => pressed = true),
-            onTapUp: (_) => setState(() => pressed = false),
-            onTapCancel: () => setState(() => pressed = false),
-            onTap: widget.onPressed,
-            child: Opacity(
-              opacity: s.opacity ?? 1,
-              child: Transform.translate(
-                offset: translate,
-                child: Container(
-                  padding: s.padding,
-                  decoration: s.decoration(rt),
-                  child: RaftIcon(widget.glyph, size: iconSize, color: color),
-                ),
+  Widget build(BuildContext context) => RaftInteractive(
+    onPressed: onPressed,
+    semanticLabel: tooltip,
+    tooltip: tooltip,
+    builder: (context, state) {
+      final t = RaftTokens.of(context),
+          rt = RaftRecipeTokens(RaftTokens.of(context));
+      final s = RaftPanelActionRecipe.resolve(
+        theme: raftRecipeTheme(t),
+        states: RaftRecipeStates({
+          if (state.hovered) RaftRecipeStates.hover,
+          if (state.pressed) RaftRecipeStates.active,
+          if (state.focusVisible) RaftRecipeStates.focusVisible,
+          if (!state.enabled) RaftRecipeStates.disabled,
+          if (t.dark) RaftRecipeStates.dark,
+        }),
+        tokens: rt,
+      ).base;
+      final svg = s.target('& > svg');
+      return CustomPaint(
+        foregroundPainter: _PanelActionFocusOutline(
+          enabled: state.focusVisible,
+          color: t.colors['line-strong']!,
+          radius: s.borderRadius ?? BorderRadius.zero,
+        ),
+        child: Opacity(
+          opacity: s.opacity ?? 1,
+          child: Transform.translate(
+            offset: s.translate ?? Offset.zero,
+            child: Container(
+              padding: s.padding,
+              decoration: s.decoration(rt),
+              child: RaftIcon(
+                glyph,
+                size: svg?.width ?? 14,
+                color: s.color?.resolve(rt) ?? t.strong,
               ),
             ),
           ),
         ),
-      ),
+      );
+    },
+  );
+}
+
+// Source global index.css focus-visible outline: 2px, offset 2px.
+// Pointer focus keeps the generated resting surface and geometry unchanged.
+class _PanelActionFocusOutline extends CustomPainter {
+  const _PanelActionFocusOutline({
+    required this.enabled,
+    required this.color,
+    required this.radius,
+  });
+  final bool enabled;
+  final Color color;
+  final BorderRadius radius;
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (!enabled) return;
+    canvas.drawRRect(
+      radius.toRRect(Offset.zero & size).inflate(3),
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     );
   }
+
+  @override
+  bool shouldRepaint(_PanelActionFocusOutline old) =>
+      old.enabled != enabled || old.color != color || old.radius != radius;
 }
 
 /// raft-ui PanelHeader as composed by Web `components/ui/PanelHeader.tsx`
