@@ -10,6 +10,7 @@ import 'recipes/input.g.dart';
 import 'recipes/input_group.g.dart';
 import 'recipes/label.g.dart';
 import 'recipes/recipe_runtime.dart';
+import 'recipes/recipe_utilities.g.dart';
 import 'recipes/textarea.g.dart';
 import 'recipes/textarea_counter.g.dart';
 import 'theme.dart';
@@ -247,12 +248,13 @@ class _RaftTextInputState extends State<RaftTextInput>
     final rt = t.recipeTokens;
     final focused = focus.hasFocus;
     final base = DefaultTextStyle.of(context).style;
-    late final RaftSlotStyle? s;
-    late final BoxDecoration decoration;
+    late final RaftSlotStyle s;
+    final BoxDecoration? legacyDecoration;
     late final TextStyle textStyle;
     late final Color placeholder;
     const padding = EdgeInsets.symmetric(horizontal: 12, vertical: 8);
     if (widget.chrome == RaftInputChrome.recipe) {
+      legacyDecoration = null;
       s = RaftInputRecipe.resolve(
         theme: t.recipeTheme,
         states: t.recipeStates(
@@ -273,7 +275,27 @@ class _RaftTextInputState extends State<RaftTextInput>
           s.target('::placeholder')?.color?.resolve(rt) ??
           t.semantic.foregroundPlaceholder;
     } else {
-      s = null;
+      // Source index.css .input-brutal includes the complete shadow-raft-xs
+      // (or focus shadow-raft-sm), including Elegant dark inset layers.
+      // The product's hard Brutal shadow and explicit invalid ring remain
+      // caller overrides; no global recipe or renderer changes are required.
+      s = raftRecipeEngine.resolveSlot(
+        [
+          for (final name in [
+            t.brutal ? 'border-2' : 'border',
+            t.brutal
+                ? 'border-black'
+                : focused
+                ? 'border-line-strong'
+                : 'border-line-field',
+            t.brutal ? 'bg-white' : 'bg-layer-panel',
+            focused ? 'shadow-raft-sm' : 'shadow-raft-xs',
+          ])
+            raftRecipeUtilities.indexWhere((u) => u.name == name),
+        ],
+        t.recipeStates(),
+        rt,
+      );
       final red = t.product.brutalRed;
       textStyle = raftCssText
           .merge(base)
@@ -290,7 +312,7 @@ class _RaftTextInputState extends State<RaftTextInput>
                 ? RaftProductShadows.shadowBrutal
                 : RaftProductShadows.shadowBrutalSm)
           : (focused ? t.themeShadows.sm : t.themeShadows.xs);
-      decoration = BoxDecoration(
+      legacyDecoration = BoxDecoration(
         color: t.brutal ? RaftPrimitiveColors.white : t.semantic.layerPanel,
         border: Border.all(
           width: t.brutal ? 2 : 1,
@@ -341,22 +363,19 @@ class _RaftTextInputState extends State<RaftTextInput>
         hintStyle: textStyle.copyWith(color: placeholder),
       ),
     );
-    final box = s != null
-        ? RaftRecipeBox(
-            style: s,
-            tokens: rt,
-            padding: widget.padding,
-            child: field,
-          )
-        : Container(
-            padding: widget.padding ?? padding,
-            decoration: decoration,
-            child: field,
-          );
-    return Semantics(
-      label: widget.semanticLabel,
-      child: hoverRegion(box),
+    final box = RaftRecipeBox(
+      style: s,
+      tokens: rt,
+      padding:
+          widget.padding ??
+          (widget.chrome == RaftInputChrome.legacy ? padding : null),
+      applyText: widget.chrome == RaftInputChrome.recipe,
+      decorationOverride: legacyDecoration == null
+          ? null
+          : (_) => legacyDecoration!,
+      child: field,
     );
+    return Semantics(label: widget.semanticLabel, child: hoverRegion(box));
   }
 }
 
