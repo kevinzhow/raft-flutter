@@ -1152,6 +1152,52 @@ class WorkspaceController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Hydrates the account's real server directory without selecting a server.
+  /// The app root uses this before exposing the global chooser. Offline rows
+  /// retain the existing account-scoped cache contract; fresh authority and
+  /// cache writes share the membership reducer's request/revocation fences.
+  Future<bool> loadServerDirectory() async {
+    if (!ownsClient) {
+      throw StateError('A borrowed editor cannot load the server directory.');
+    }
+    final generation = client.generation,
+        principal = client.user?.id,
+        request = ++_membershipRequest,
+        revision = _membershipRevision;
+    bool current() =>
+        !_disposed &&
+        generation == client.generation &&
+        principal == client.user?.id &&
+        request == _membershipRequest &&
+        revision == _membershipRevision;
+    if (principal == null) return false;
+    if (client.restoredOffline) {
+      final cached = await _cached('servers', '', server: '');
+      if (!current()) return false;
+      if (cached is List && cached.isNotEmpty) {
+        servers = cached
+            .map((row) => RaftRecord(Map<String, dynamic>.from(row)))
+            .where((server) => !_revokedServers.contains(server.id))
+            .toList();
+        notifyListeners();
+        return true;
+      }
+    }
+    final accepted = await client.servers();
+    if (!current()) return false;
+    _revokedServers.removeAll(accepted.map((server) => server.id));
+    servers = accepted;
+    await _save(
+      'servers',
+      '',
+      accepted.map((server) => server.json).toList(),
+      server: '',
+    );
+    if (!current()) return false;
+    notifyListeners();
+    return true;
+  }
+
   Future<void> bootstrap() async {
     if (!ownsClient) {
       throw StateError('A borrowed editor cannot bootstrap a session.');
