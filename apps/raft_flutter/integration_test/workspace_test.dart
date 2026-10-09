@@ -1225,7 +1225,7 @@ void main() {
       await tester.enterText(field('Title'), taskTitle);
       await tester.enterText(
         field('Description (Markdown)'),
-        'Created, claimed, reviewed and deleted by the native UI.',
+        'Created, assigned and reviewed through the native Source task controls.',
       );
       await tester.pump();
       await tester.tap(find.widgetWithText(RaftButton, 'Create'));
@@ -1248,13 +1248,51 @@ void main() {
         find.descendant(of: taskCard, matching: find.text(taskTitle)),
       );
       await tester.pumpAndSettle();
-      // taskDetails fetches the authoritative task and history before mounting
-      // the dialog. Settled frames alone do not acknowledge either HTTP read.
-      final claim = find.widgetWithText(TextButton, 'Claim');
-      await until(tester, () => claim.evaluate().isNotEmpty);
-      await tester.ensureVisible(claim);
+      // Source opens an independent task discussion immediately. Assignment
+      // uses TaskProperties' actual searchable member picker, not a Claim
+      // button. Read back the exact actor identity from the server afterward.
+      await until(
+        tester,
+        () => find
+            .byKey(const ValueKey('task-properties-assignee'))
+            .evaluate()
+            .isNotEmpty,
+      );
+      final taskRows =
+          (tester.state(find.byType(ResourceView)) as dynamic).rows as List;
+      final createdTask =
+          taskRows.singleWhere((row) => row['title'] == taskTitle) as Map;
+      final createdTaskId = createdTask['id'] as String;
+      final taskNumber = createdTask['taskNumber'];
+      final members =
+          await w.client.get('/channels/${general.id}/members') as Map;
+      final self = (members['humans'] as List).whereType<Map>().singleWhere(
+        (row) => (row['userId'] ?? row['id']) == w.client.user!.id,
+      );
+      final selfLabel = '${self['displayName'] ?? self['name']}';
+      final assign = find.byKey(const ValueKey('task-properties-assignee'));
+      await tester.ensureVisible(assign);
+      await tester.tap(assign);
+      final assigneeSearch = find.byKey(const ValueKey('task-assignee-search'));
+      await until(tester, () => assigneeSearch.evaluate().isNotEmpty);
+      await tester.enterText(assigneeSearch, selfLabel);
       await tester.pumpAndSettle();
-      await tester.tap(claim);
+      await tester.tap(find.widgetWithText(RaftMenuItem, selfLabel));
+      await until(
+        tester,
+        () => tester.widget<RaftTextButton>(assign).label == '@$selfLabel',
+      );
+      final acceptedAssignment = await w.client.get(
+        '/tasks/channel/${general.id}/number/$taskNumber',
+      ) as Map;
+      expect(acceptedAssignment['task']['claimedById'], w.client.user!.id);
+      expect(acceptedAssignment['task']['claimedByType'], 'user');
+      await screenshot(tester, 'linux-task-assignee');
+      await tester.tap(find.byTooltip('Close task'));
+      await until(
+        tester,
+        () => find.byKey(const ValueKey('task-thread-modal')).evaluate().isEmpty,
+      );
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text(taskTitle),
@@ -1309,11 +1347,6 @@ void main() {
                     .status ==
                 'in_review',
       );
-      final taskRows =
-          (tester.state(find.byType(ResourceView)) as dynamic).rows as List;
-      final createdTaskId =
-          taskRows.singleWhere((row) => row['title'] == taskTitle)['id']
-              as String;
       await verifyAdvancedTaskFilters(
         tester,
         w,
@@ -1393,23 +1426,59 @@ void main() {
       await tester.tap(
         find.descendant(of: taskCard, matching: find.text(taskTitle)),
       );
-      // Activation opens the actual dialog on the first frame, before waiting
-      // for either HTTP request. The contents then replace its loading state.
+      // First-frame Source discussion owns its properties while HTTP facts
+      // resolve. History starts collapsed and is opened through its real row.
       await tester.pump();
-      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byKey(const ValueKey('task-thread-modal')), findsOneWidget);
+      final historyRow = find.byKey(const ValueKey('task-properties-history'));
       try {
-        await until(tester, () => find.text('History').evaluate().isNotEmpty ||
-            (tester.state(find.byType(ResourceView)) as dynamic).error != null);
+        await until(tester, () => historyRow.evaluate().isNotEmpty);
+        await tester.ensureVisible(historyRow);
+        await tester.tap(historyRow);
+        await until(
+          tester,
+          () =>
+              find.text('Changed status').evaluate().isNotEmpty ||
+              find
+                  .byKey(const ValueKey('task-history-error'))
+                  .evaluate()
+                  .isNotEmpty,
+        );
       } catch (_) {
         await screenshot(tester, 'linux-task-history-failed');
         rethrow;
       }
-      expect((tester.state(find.byType(ResourceView)) as dynamic).error, isNull);
-      expect(find.text('History'), findsOneWidget);
+      expect(find.byKey(const ValueKey('task-history-error')), findsNothing);
+      expect(find.text('Changed assignee'), findsWidgets);
+      expect(find.text('Changed status'), findsWidgets);
+      final acceptedHistory =
+          await w.client.get('/tasks/$createdTaskId/history') as Map;
+      final events = (acceptedHistory['events'] as List)
+          .whereType<Map>()
+          .toList();
+      expect(
+        events.any((event) => event['eventType'] == 'assignee_changed'),
+        isTrue,
+      );
+      expect(
+        events.any(
+          (event) =>
+              event['eventType'] == 'status_changed' &&
+              event['payload'] is Map &&
+              event['payload']['to'] == 'in_review',
+        ),
+        isTrue,
+      );
       await screenshot(tester, 'linux-task-history');
-      await tester.tap(find.widgetWithText(TextButton, 'Delete'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(RaftButton, 'Delete'));
+      await tester.tap(find.byTooltip('Close task'));
+      await until(
+        tester,
+        () => find.byKey(const ValueKey('task-thread-modal')).evaluate().isEmpty,
+      );
+      // Ordinary Source tasks have no modal Delete button. This is fixture
+      // cleanup through the API, not evidence of a native deletion flow.
+      await w.client.request('DELETE', '/tasks/$createdTaskId');
+      await (tester.state(find.byType(ResourceView)) as dynamic).load();
       await until(
         tester,
         () => find.widgetWithText(RaftTaskCard, taskTitle).evaluate().isEmpty,
