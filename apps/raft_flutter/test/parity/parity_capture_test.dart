@@ -43,6 +43,11 @@ void main() {
       file.readAsStringSync(),
     );
   }
+  // Owner-authorized complete task projection shared with the generated
+  // React fixture host. Message content and official manifest stay pinned.
+  fixtures['markdownTasksFixture'] = json.decode(
+    File('../../tool/reference-patches/markdown-tasks.json').readAsStringSync(),
+  );
   final patterns = (env['PARITY_CASES'] ?? '')
       .split(',')
       .map((p) => p.trim())

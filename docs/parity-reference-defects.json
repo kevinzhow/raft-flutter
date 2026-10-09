@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "cases": {
+    "components.thread.message-row.md-wrap-status606": {
+      "baselineSha256": "be869317f9c78376177d1b121993bd360735e1522c835475cef564cc6f3bafd2",
+      "title": "React 基准渲染失败",
+      "description": "Web 测试仅给 #606 填了 taskNumber，没有 status。TaskStatusIconRoot 报错后，MarkdownContentErrorBoundary 显示原始处理文本，因此左图出现 <a data-task-ref=...> 和反引号。这张图无法作为正常 Markdown 排版的验收基准。原始差异结果、图片和 99 用例分母保留；此说明不代表 Flutter 通过。",
+      "sourceEvidence": [
+        "packages/web/visual-testing/VisualTestingCases.tsx:2036-2043",
+        "packages/web/src/components/message/MessageItem.tsx:239-240",
+        "TaskStatusIconRoot: Element type is invalid (undefined)",
+        "MarkdownContentErrorBoundary: render failed; falling back to raw markdown"
+      ]
+    }
+  }
+}

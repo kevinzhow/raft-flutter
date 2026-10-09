@@ -4,7 +4,9 @@ import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const source = process.env.PARITY_RAFT_SOURCE;
 const out = process.env.PARITY_THEME_HOST_OUT;
@@ -30,6 +32,13 @@ code = once(code,
   '<ThemeProvider defaultTheme={defaultTheme} defaultMode="light">',
   '<ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>');
 mkdirSync(out, { recursive: true });
+// Apply the same owner-authorized fixture repair as the original 99 runner.
+// Theme overrides still affect only the fixture root; no product code edits.
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+execFileSync('python3', [resolve(root, 'tool/parity_baseline_repairs.py'),
+  '--root', root, '--source', source, '--out', out]);
+const casesTarget = resolve(web, 'visual-testing/VisualTestingCases.tsx');
+const casesCode = readFileSync(resolve(out, 'VisualTestingCases.generated.tsx'), 'utf8');
 const sha = text => createHash('sha256').update(text).digest('hex');
 writeFileSync(resolve(out, 'host-receipt.json'), JSON.stringify({
   originalHostSha256: sha(original), generatedHostSha256: sha(code),
@@ -44,7 +53,10 @@ const host = await createServer({
   root: web, configFile: resolve(web, 'vite.config.ts'),
   plugins: [{
     name: 'raft-supplemental-theme-fixture-host', enforce: 'pre',
-    load(id) { if (id.split('?')[0] === target) return { code, map: null }; },
+    load(id) {
+      if (id.split('?')[0] === target) return { code, map: null };
+      if (id.split('?')[0] === casesTarget) return { code: casesCode, map: null };
+    },
   }],
   server: { host: '127.0.0.1', port, strictPort: true, hmr: false },
   logLevel: 'warn',

@@ -22,6 +22,9 @@ import shutil
 import subprocess
 import sys
 import urllib.request
+from parity_reference_defects import admitted_defects, annotate_site
+from parity_baseline_repairs import (repair_definition,
+                                    capture_is_current, preserve_capture, repair_annotations, prepare_cases)
 
 root = pathlib.Path(__file__).resolve().parent.parent
 RAFT_SOURCE = pathlib.Path(os.environ.get(
@@ -98,7 +101,8 @@ def git(cwd, *args):
 # Space Grotesk/Space Mono stub, so raft-ui's Hanken Grotesk/Geist/Geist
 # Mono/Inter fall back to Chromium's system-ui. We run a GENERATED copy of the
 # official spec + Playwright config (raft-source stays untouched) whose only
-# changes are: path wiring, serving the cached production Google Fonts
+# changes are: path wiring, the documented owner-authorized task fixture
+# repair, serving the cached production Google Fonts
 # response for raft-ui's URL, font assertions retargeted to the production
 # families, and font provenance (document.fonts + CDP platform fonts) added to
 # each capture's metadata. Every patch anchor must match exactly once.
@@ -230,8 +234,44 @@ def patch_exactly_once(text, old, new, what):
     return text.replace(old, new)
 
 
+BASELINE_REPAIR_GUARD = r'''
+
+const PARITY_BASELINE_REPAIR = JSON.parse(readFileSync(
+  resolve(process.env.PARITY_BASELINE_HOST_OUT!, "baseline-repair.json"), "utf8"));
+const parityRenderErrors = new WeakMap<Page, string[]>();
+test.beforeEach(async ({ page }) => {
+  const errors: string[] = [];
+  parityRenderErrors.set(page, errors);
+  page.on("pageerror", error => errors.push(String(error)));
+  page.on("console", message => {
+    const text = message.text();
+    if (text.includes("TaskStatusIconRoot") || text.includes("[MarkdownContent] render failed")) errors.push(text);
+  });
+});
+async function parityVerifyRepairedMarkdown(page: Page, caseId: string, selector: string) {
+  if (!PARITY_BASELINE_REPAIR.cases.includes(caseId)) return null;
+  expect(parityRenderErrors.get(page) ?? [], "Repaired baseline must render without fallback/errors").toEqual([]);
+  const rendered = await page.locator(selector).evaluate(root => ({
+    rawTaskMarkup: (root.textContent ?? "").includes("<a data-task-ref="),
+    taskRefs: [...root.querySelectorAll('[data-testid="message-task-ref-badge"]')].map(node => ({
+      text: node.textContent, status: node.getAttribute("data-status"),
+    })),
+    inlineCodeCount: root.querySelectorAll("code").length,
+  }));
+  expect(rendered.rawTaskMarkup).toBe(false);
+  expect(rendered.taskRefs.length).toBeGreaterThan(0);
+  for (const ref of rendered.taskRefs) expect(ref.status).toBe("in_progress");
+  return { repairId: PARITY_BASELINE_REPAIR.repairId,
+    fixtureSha256: PARITY_BASELINE_REPAIR.fixtureSha256,
+    sourceCommit: PARITY_BASELINE_REPAIR.sourceCommit,
+    renderVerified: true, ...rendered };
+}
+'''
+
+
 def prepare_react_provider():
     REACT_GEN.mkdir(parents=True, exist_ok=True)
+    prepare_cases(root, RAFT_SOURCE, REACT_GEN, git(RAFT_SOURCE, 'rev-parse', 'HEAD'))
     spec = (VT / 'tests/react-provider.spec.ts').read_text()
     for old, new in SPEC_PATCHES:
         spec = patch_exactly_once(spec, old, new, 'react-provider.spec.ts')
@@ -243,7 +283,15 @@ def prepare_react_provider():
     if spec.count(shot) != 4:
         sys.exit(f'upstream react-provider.spec.ts changed: expected 4 screenshot calls, found {spec.count(shot)}')
     spec = spec.replace(shot, shot + ', animations: "disabled"')
-    (REACT_GEN / 'react-provider.spec.ts').write_text(spec + SPEC_APPENDIX)
+    spec = patch_exactly_once(spec,
+        '    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);',
+        '    const baselineRepair = await parityVerifyRepairedMarkdown(page, visualCase.id, selector);\n'
+        '    const parityPlatformFonts = await parityCollectPlatformFonts(page, selector);', 'baseline render guard')
+    spec = patch_exactly_once(spec,
+        '          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",',
+        '          ...(baselineRepair ? { baselineRepair } : {}),\n'
+        '          fontSource: "production Google Fonts response for raft-ui fonts.css (raft-flutter parity deviation from upstream stub)",', 'baseline repair metadata')
+    (REACT_GEN / 'react-provider.spec.ts').write_text(spec + SPEC_APPENDIX + BASELINE_REPAIR_GUARD)
     # Same module type as the upstream package (packages/visual-testing is ESM).
     (REACT_GEN / 'package.json').write_text(json.dumps({'type': json.loads((VT / 'package.json').read_text())['type']}) + '\n')
     web = RAFT_SOURCE / 'packages/web'
@@ -262,6 +310,8 @@ def prepare_react_provider():
          '    launchOptions: { args: JSON.parse(process.env.PARITY_CHROMIUM_ARGS || "[]") },'),
         ('    url: `http://127.0.0.1:${port}`,',
          f'    cwd: {json.dumps(str(web))},\n    url: `http://127.0.0.1:${{port}}`,'),
+        ('    command: `pnpm exec vite --host 127.0.0.1 --port ${port}`,',
+         '    command: ' + json.dumps('node ' + str(root / 'tool/parity-baseline-web.mjs')) + ','),
     ]:
         config = patch_exactly_once(config, old, new, 'playwright.visual-testing.config.ts')
     (REACT_GEN / 'playwright.visual-testing.config.ts').write_text(config)
@@ -294,6 +344,7 @@ def run_react_production_fonts(case_ids, log, text_render='android'):
         'PARITY_VT_ROOT': str(VT),
         'PARITY_FONT_CACHE': str(FONT_CACHE),
         'PARITY_CHROMIUM_ARGS': json.dumps(CHROMIUM_TEXT_ARGS[text_render]),
+        'PARITY_BASELINE_HOST_OUT': str(REACT_GEN),
     })
     cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
     print('+', ' '.join(cmd), flush=True)
@@ -305,14 +356,21 @@ def run_react_production_fonts(case_ids, log, text_render='android'):
 
 def react_capture(cases, refresh, fonts='production', text_render='android'):
     react_dir = RESULTS / 'react'
+    repair = repair_definition(root)
     need = [c['id'] for c in cases
-            if refresh or not (react_dir / f"{c['id']}.png").is_file()]
+            if refresh or not (react_dir / f"{c['id']}.png").is_file()
+            or (fonts == 'production' and c['id'] in repair['cases']
+                and not capture_is_current(react_dir / f"{c['id']}.metadata.json", repair))]
     if not need:
         print(f'react: cached captures for all {len(cases)} selected cases ({react_dir})')
         return
     log = OUT / 'react-capture.log'
     log.write_text('')
     print(f'react: capturing {len(need)} case(s); log {log}')
+    preserved = [record for case_id in need if case_id in repair['cases']
+                 if (record := preserve_capture(react_dir, OUT / 'react-baseline-history', case_id))]
+    if preserved:
+        (OUT / 'baseline-repair-preservation.json').write_text(json.dumps(preserved, indent=2) + '\n')
     # The official provider; --case limits it to the cases that need capture.
     if fonts == 'upstream':
         # The unmodified official provider (Space Grotesk stub for raft-ui's URL).
@@ -485,6 +543,10 @@ def cmd_run(a):
         '--commit-subject', 'raft-flutter parity (Flutter provider as android, source=flutter)', log=log)
     (OUT / 'site-stamp.txt').write_text(stamp)
     summary = summarize()
+    registry = json.loads((root / 'docs/parity-reference-defects.json').read_text())
+    defects = admitted_defects(registry, git(RAFT_SOURCE, 'rev-parse', 'HEAD'), RESULTS / 'react')
+    repairs = repair_annotations(OUT, SITE, repair_definition(root))
+    annotate_site(SITE, {**defects, **repairs})
     shutil.copy(OUT / 'summary.json', SITE / 'flutter-parity-summary.json')
     shutil.copy(OUT / 'summary.md', SITE / 'flutter-parity-summary.md')
     return summary
@@ -494,7 +556,8 @@ def cmd_probe(a):
     """Capture a few Flutter cases into a private dir and score them against
     the cached React captures with the official image-diff script. Does not
     touch build/parity results, the site or the summary."""
-    out = pathlib.Path(a.out)
+    out = pathlib.Path(a.out).resolve()
+    out.mkdir(parents=True, exist_ok=True)
     results = out / 'visual-testing-results'
     android = results / 'android'
     shutil.rmtree(android, ignore_errors=True)
@@ -509,12 +572,14 @@ def cmd_probe(a):
         for line in (r.stdout + r.stderr).splitlines():
             if 'EXCEPTION' in line or 'Error' in line or 'threw' in line or ': Error:' in line:
                 print('  ' + line[:300])
+    missing = 0
     for c in select(manifest_cases(), a.cases):
         cid = c['id']
         flutter_png = android / f'{cid}.png'
         react_png = RESULTS / 'react' / f'{cid}.png'
         if not flutter_png.is_file():
             print(f'{cid}: no flutter capture')
+            missing += 1
             continue
         side, metrics = out / 'diff' / f'{cid}.side-by-side.png', out / 'diff' / f'{cid}.metrics.json'
         side.parent.mkdir(parents=True, exist_ok=True)
@@ -526,6 +591,8 @@ def cmd_probe(a):
               f"react={m.get('baselineWidth')}x{m.get('baselineHeight')} "
               f"flutter={m.get('currentWidth')}x{m.get('currentHeight')}\n"
               f"  react {react_png}\n  flutter {flutter_png}\n  side-by-side {side}")
+    if r.returncode or missing:
+        sys.exit(1)
 
 
 def fetch(url):

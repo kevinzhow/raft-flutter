@@ -19,5 +19,15 @@
     }
   ],
   "flutterVersion": "3.47.6",
-  "dartVersion": "3.13.5"
+  "dartVersion": "3.13.5",
+  "visualBaselineRepairs": [
+    {
+      "id": "markdown-task-status-v1",
+      "authorizedBy": "#raft-flutter:1c308713 message 65b111e1 (2026-10-09)",
+      "fixture": "tool/reference-patches/markdown-tasks.json",
+      "host": "tool/parity-baseline-web.mjs",
+      "sourceFile": "packages/web/visual-testing/VisualTestingCases.tsx",
+      "scope": "Generated test host replaces five number-only channel task records with complete shared in_progress fixtures. Both providers use those exact records. Reference product code, message bodies, manifest, geometry and thresholds remain unchanged; old captures are preserved by SHA-256."
+    }
+  ]
 }

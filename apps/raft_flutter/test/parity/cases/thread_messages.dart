@@ -730,12 +730,10 @@ ParityCase _mdCase({
   List<Map<String, dynamic>> Function(ParityContext ctx)? mentions,
 }) => _rowCase(
   notes:
-      'React marks bare #N chips from a seeded task-number store '
-      '(787/31/521/607/606); the Flutter body only links explicit "task #N" '
-      'refs, so bare numbers stay text by product design. Note: the React '
-      'baseline itself renders some of these bodies as raw markdown/HTML '
-      'source in mono (e.g. `<a data-task-ref=...>`), so part of the diff is '
-      'a React-side fixture defect.',
+      'Both providers receive the complete owner-authorized public task '
+      'fixture (787/31/521/607/606), replacing the reference host\'s '
+      'invalid number-only records. Original message bodies and widths '
+      'remain unchanged; prior defective React captures are archived.',
   stage: (ctx) => ChatStage(
     ctx,
     rowWidth: width,
@@ -743,6 +741,10 @@ ParityCase _mdCase({
     extraChannels: [
       _extra(ctx, _markdownChannel),
       if (extra != null) _extra(ctx, extra),
+    ],
+    tasks: [
+      for (final task in ctx.fixtures['markdownTasksFixture']['tasks'] as List)
+        Map<String, dynamic>.from(task as Map),
     ],
     messages: [
       _cindyMessage(

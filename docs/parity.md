@@ -6,6 +6,30 @@ home-grown differ. The Flutter app is plugged in as a **provider**: it writes
 captures in the official provider output contract and the official CLI does
 `diff`, `site` and all scoring.
 
+## Authorized baseline fixture repair (2026-10-09)
+
+Human message `65b111e1` authorizes fixing defective test baselines. Five
+`components.thread.message-row.md-wrap-*` cases previously seeded channel
+tasks with `taskNumber` alone. Missing `status` made `TaskStatusIconRoot`
+throw, and `MarkdownContentErrorBoundary` showed processed raw Markdown/HTML
+instead of the intended message.
+
+`tool/reference-patches/markdown-tasks.json` now declares complete public
+task fixtures shared by both providers. All five are explicitly `in_progress`;
+#606 and #607 match their message text. These are declared test states,
+not claims about historical live tasks. A generated Vite host replaces only
+that exact fixture block in the pinned reference. Neither the Source checkout
+nor reference product components are edited. The three-theme runner applies
+the same fixture repair.
+
+Capture admission checks the pinned Source commit and exact patch anchor.
+Repaired cases invalidate the old cache and must show real task chips with
+valid states and no render error/raw-markdown fallback. Metadata records the
+fixture SHA-256 and DOM evidence. Old PNGs and metadata are archived by hash
+before replacement; the existing report links them alongside the current
+image. The 99-case selection, message content, geometry and official scoring
+thresholds remain unchanged. Repairing a React baseline does not pass Flutter.
+
 ## One command
 
 ```bash

@@ -109,6 +109,7 @@ def main():
                     'PARITY_VT_ROOT': str(parity.VT), 'PARITY_FONT_CACHE': str(parity.FONT_CACHE),
                     'PARITY_CHROMIUM_ARGS': json.dumps(parity.CHROMIUM_TEXT_ARGS['android']),
                     'PARITY_THEME_OVERRIDE': theme,
+                    'PARITY_BASELINE_HOST_OUT': str(parity.REACT_GEN),
                 })
                 with (parity.OUT / 'react-capture.log').open('w') as sink:
                     result = subprocess.run(['pnpm', 'exec', 'playwright', 'test', '--config', str(config_path), '--reporter=line'],
