@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import 'components.dart';
 import 'design_primitives.dart';
@@ -43,6 +44,50 @@ class RaftSelectionToolbar extends StatefulWidget {
 class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
   int compactLevel = 0;
   double lastActionsWidth = 0;
+  final actionsKey = GlobalKey();
+  bool measureQueued = false;
+  double measurementWidth = 0, measurementGap = 0;
+  int measurementMax = 0;
+
+  void measureActions(double width, double gap, int maximum) {
+    measurementWidth = width;
+    measurementGap = gap;
+    measurementMax = maximum;
+    if (measureQueued) return;
+    measureQueued = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      measureQueued = false;
+      if (!mounted) return;
+      final row = actionsKey.currentContext?.findRenderObject();
+      if (row is! RenderWrap || !row.hasSize) return;
+      double requiredWidth = 0;
+      var count = 0;
+      double? firstY;
+      var wrapped = false;
+      row.visitChildren((child) {
+        if (child is RenderBox && child.hasSize) {
+          requiredWidth += child.size.width;
+          final data = child.parentData;
+          if (data is WrapParentData) {
+            firstY ??= data.offset.dy;
+            wrapped = wrapped || (data.offset.dy - firstY!).abs() > .5;
+          }
+          count++;
+        }
+      });
+      if (count > 1) requiredWidth += (count - 1) * measurementGap;
+      // Source sums actual DOM offsetWidth rather than predicting text fonts.
+      // Use actual shared controls after their inherited face/box is laid out.
+      // CSS offsetWidth/clientWidth are integral. RenderWrap can start a
+      // second run for a subpixel excess inside that 1px measurement tolerance.
+      // A real second run is overflow too; compact without any viewport pin.
+      if ((requiredWidth > measurementWidth + 1 || wrapped) &&
+          compactLevel < measurementMax) {
+        setState(() => compactLevel++);
+      }
+    });
+  }
+
   Widget action(
     BuildContext context,
     String label,
@@ -119,43 +164,9 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
                         bool isCancel(int n) =>
                             n >= 1 + (copy ? 1 : 0) + (forward ? 1 : 0);
                         bool isAll(int n) => n >= maxLevel;
-                        double width(int n) {
-                          final items = [
-                            if (all)
-                              recipe.buttonWidth(
-                                context,
-                                raftText(context, 'Select All'),
-                                compact: isAll(n),
-                              ),
-                            recipe.buttonWidth(
-                              context,
-                              raftText(context, 'Cancel'),
-                              compact: isCancel(n),
-                            ),
-                            if (forward)
-                              recipe.buttonWidth(
-                                context,
-                                raftText(context, 'Forward'),
-                                compact: isForward(n),
-                                accent: true,
-                              ),
-                            if (copy)
-                              recipe.buttonWidth(
-                                context,
-                                raftText(context, copyLabel),
-                                compact: isCopy(n),
-                              ),
-                            recipe.buttonWidth(context, '', compact: true),
-                          ];
-                          return items.fold<double>(0, (a, b) => a + b) +
-                              (items.length - 1) * recipe.gap;
-                        }
-
-                        while (compactLevel < maxLevel &&
-                            width(compactLevel) > bounds.maxWidth + 1) {
-                          compactLevel++;
-                        }
+                        measureActions(bounds.maxWidth, recipe.gap, maxLevel);
                         return Wrap(
+                          key: actionsKey,
                           alignment: WrapAlignment.end,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           spacing: recipe.gap,
