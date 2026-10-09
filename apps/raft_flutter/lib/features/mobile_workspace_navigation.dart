@@ -102,24 +102,28 @@ class WorkspaceMobileHomeHeader extends StatelessWidget {
     required this.controller,
     required this.onServer,
     required this.onBilling,
+    this.serverSwitcher,
   });
   final WorkspaceController controller;
   final VoidCallback onServer;
   final VoidCallback onBilling;
+  final Widget? serverSwitcher;
 
   @override
-  Widget build(BuildContext context) => RaftMobileRootHeader(
-    leading: RaftMobileServerSelector(
-      key: const Key('mobile-server-selector'),
-      label: controller.server?.name ?? raftText(context, 'Workspace'),
-      onPressed: onServer,
-    ),
-    actions: [
-      SystemNotificationBell(
-        key: const Key('mobile-home-notifications'),
-        controller: controller,
-        onBilling: onBilling,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) =>
+      serverSwitcher ??
+      RaftMobileRootHeader(
+        leading: RaftMobileServerSelector(
+          key: const Key('mobile-server-selector'),
+          label: controller.server?.name ?? raftText(context, 'Workspace'),
+          onPressed: onServer,
+        ),
+        actions: [
+          SystemNotificationBell(
+            key: const Key('mobile-home-notifications'),
+            controller: controller,
+            onBilling: onBilling,
+          ),
+        ],
+      );
 }

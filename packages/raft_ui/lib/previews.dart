@@ -853,8 +853,17 @@ Widget initialAcceptedEndPreview() => const _InitialAcceptedEndPreview();
 @RaftPreviews('Server switcher', size: Size(390, 360))
 Widget serverSwitcherPreview() => const _ServerSwitcherPreview();
 
+@RaftPreviews('Mobile Home server switcher', size: Size(390, 900))
+Widget mobileServerSwitcherPreview() =>
+    const _ServerSwitcherPreview(mobile: true);
+
+@RaftPreviews('Server URI resolution', size: Size(390, 360))
+Widget serverResolutionPreview() =>
+    const RaftServerResolutionBody(label: 'Loading...');
+
 class _ServerSwitcherPreview extends StatefulWidget {
-  const _ServerSwitcherPreview();
+  const _ServerSwitcherPreview({this.mobile = false});
+  final bool mobile;
   @override
   State<_ServerSwitcherPreview> createState() => _ServerSwitcherPreviewState();
 }
@@ -871,8 +880,9 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
   Widget build(BuildContext context) => Align(
     alignment: Alignment.topLeft,
     child: SizedBox(
-      width: 64,
+      width: widget.mobile ? 390 : 64,
       child: RaftServerSwitcher(
+        mobile: widget.mobile,
         controller: controller,
         workspaceName: 'Visual Server',
         label: 'Switch server',
@@ -903,7 +913,8 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
             glyph: RaftGlyph.plus,
             onPressed: () {},
           ),
-          RaftMenuEntry(
+          RaftServerMenuAction(
+            tone: RaftServerMenuActionTone.invite,
             label: 'Invite human',
             glyph: RaftGlyph.userPlus,
             onPressed: () {},

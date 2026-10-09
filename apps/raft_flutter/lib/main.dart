@@ -83,6 +83,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   late final PlatformRouteInformationProvider routeInformation;
   Uri requestedLocation = Uri(path: '/');
   Uri? chooserReturn;
+  Uri? serverSwitchLocation, serverSwitchReturn;
   bool showServerSelector = true,
       directoryLoading = true,
       selectingServer = false;
@@ -235,6 +236,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       rootRequest++;
       serverSurfaces.clear();
       chooserReturn = null;
+      serverSwitchLocation = serverSwitchReturn = null;
       showServerSelector = true;
       client = c;
       origin = base.trim();
@@ -280,10 +282,15 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       return;
     }
     if (workspace != null) {
-      if (!showServerSelector) content.bindWorkspace(workspace);
+      if (!showServerSelector && serverSwitchLocation == null) {
+        content.bindWorkspace(workspace);
+      }
       setState(() {});
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && identical(c, client) && !showServerSelector) {
+        if (mounted &&
+            identical(c, client) &&
+            !showServerSelector &&
+            serverSwitchLocation == null) {
           workspace?.setForeground(true);
         }
       });
@@ -372,7 +379,15 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   void workspaceChanged() {
     final w = workspace;
     if (!mounted || w == null) return;
+    if (serverSwitchLocation != null && w.server != null) {
+      // The app-root URI already owns the accepted switch. Controller
+      // hydration notifications cannot publish its temporary default channel.
+      setState(() {});
+      appRouter.refresh();
+      return;
+    }
     if (w.server == null && !directoryLoading) {
+      serverSwitchLocation = serverSwitchReturn = null;
       showServerSelector = true;
       if (chooserReturn != null &&
           !w.servers.any(
@@ -421,6 +436,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     final w = workspace;
     if (w == null || client?.user == null) return;
     final request = ++rootRequest;
+    serverSwitchLocation = serverSwitchReturn = null;
     chooserReturn = w.server == null ? null : w.location.uri;
     requestedLocation = Uri(path: '/');
     showServerSelector = true;
@@ -446,6 +462,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
 
   Future<void> receiveAppLocation(Uri location) async {
     requestedLocation = location;
+    serverSwitchLocation = serverSwitchReturn = null;
     final w = workspace;
     if (w == null || directoryLoading) return;
     if (location.path == '/' || location.path == '/servers') {
@@ -465,19 +482,97 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   }
 
   Future<bool> returnFromSelector() async {
-    final w = workspace, uri = chooserReturn;
-    if (!showServerSelector || w == null || uri == null) {
+    final w = workspace, uri = serverSwitchReturn ?? chooserReturn;
+    if ((!showServerSelector && serverSwitchLocation == null) ||
+        w == null ||
+        uri == null) {
       return false;
     }
     final target = w.servers
         .where((s) => s.string('slug') == uri.pathSegments.elementAtOrNull(1))
         .firstOrNull;
     if (target == null) return false;
+    if (serverSwitchLocation != null) {
+      serverSwitchLocation = uri;
+      serverSwitchReturn = null;
+      appRouter.publish(uri, replace: true);
+      setState(() {});
+    }
     await chooseServer(target, location: uri);
     return true;
   }
 
-  Future<void> chooseServer(RaftRecord selected, {Uri? location}) async {
+  /// ServerSwitcherMenu.tsx310–324 publishes one accepted route before the
+  /// server resolver changes context; mobile explicitly discards old memory.
+  Future<void> switchServerFromMenu(
+    RaftRecord selected,
+    bool replaceWithHome,
+  ) async {
+    final w = workspace, c = client;
+    if (w == null ||
+        c?.user == null ||
+        w.server?.id == selected.id ||
+        !w.servers.any((s) => s.id == selected.id)) {
+      return;
+    }
+    final request = ++rootRequest, principal = c!.user!.id;
+    bool current() =>
+        mounted &&
+        request == rootRequest &&
+        identical(client, c) &&
+        identical(workspace, w) &&
+        c.user?.id == principal &&
+        w.servers.any((s) => s.id == selected.id);
+    final before = w.location.uri;
+    final prefs = await SharedPreferences.getInstance();
+    if (!current()) return;
+    final remembered =
+        serverSurfaces[selected.id]?.toString() ??
+        prefs.getString('$serverMemoryKey.${selected.id}');
+    var uri = Uri(path: '/s/${selected.string('slug')}');
+    if (!replaceWithHome && remembered != null) {
+      final candidate = Uri.tryParse(remembered);
+      if (candidate != null &&
+          !candidate.hasScheme &&
+          !candidate.hasAuthority &&
+          candidate.pathSegments.length >= 2 &&
+          candidate.pathSegments[0] == 's' &&
+          candidate.pathSegments[1] == selected.string('slug')) {
+        try {
+          uri = RaftLocation.fromUri(candidate).uri;
+        } on ArgumentError {
+          /* Invalid persisted surfaces fall back to the server root. */
+        }
+      }
+    }
+    serverSwitchReturn = replaceWithHome ? null : before;
+    serverSwitchLocation = uri;
+    requestedLocation = uri;
+    w.setForeground(false);
+    content.bindWorkspace(null);
+    sharing.onIncoming = null;
+    appRouter.publish(uri, replace: replaceWithHome);
+    setState(() {});
+    // Browser history changes synchronously before resolver effects. Flutter
+    // reports through the engine after a frame; retain this first PUSH even
+    // when cached hydration immediately redirects the server root with REPLACE.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!current()) return;
+    await chooseServer(
+      selected,
+      location: uri,
+      resolveDesktopRoot:
+          !replaceWithHome &&
+          (uri.path == '/s/${selected.string('slug')}' ||
+              uri.path == '/s/${selected.string('slug')}/'),
+    );
+  }
+
+  Future<void> chooseServer(
+    RaftRecord selected, {
+    Uri? location,
+    bool resolveDesktopRoot = false,
+  }) async {
     final w = workspace, c = client;
     if (w == null ||
         c?.user == null ||
@@ -504,7 +599,22 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           !w.servers.any((s) => s.id == selected.id)) {
         return;
       }
-      final uri = location ?? serverSurfaces[selected.id];
+      var uri = location ?? serverSurfaces[selected.id];
+      // MainLayout DefaultRoute914–947 redirects a desktop server root to the
+      // first actual channel with REPLACE. Mobile deliberately stays Home.
+      if (resolveDesktopRoot && w.channels.isNotEmpty) {
+        final channel = w.channels.first;
+        uri = RaftLocation.at(
+          serverSlug: selected.string('slug'),
+          route: RaftRoute.channel,
+          entityId: channel.id,
+        ).uri;
+        if (w.channel?.id != channel.id) {
+          await w.selectChannel(channel, navigate: false);
+        }
+        if (!current()) return;
+        appRouter.publish(uri, replace: true);
+      }
       if (uri != null &&
           uri.pathSegments.length >= 2 &&
           uri.pathSegments[1] == selected.string('slug')) {
@@ -515,6 +625,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         );
       }
       showServerSelector = false;
+      serverSwitchLocation = serverSwitchReturn = null;
       chooserReturn = null;
       directoryLoading = false;
       content.bindWorkspace(w);
@@ -608,12 +719,19 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         onRetry: discoverServers,
       );
     }
+    if (serverSwitchLocation != null) {
+      return RaftServerResolutionBody(
+        key: const Key('server-resolution-loading'),
+        label: selectorError ?? 'Loading...',
+      );
+    }
     return WorkspaceView(
       controller: workspace!,
       appearance: appearance,
       onAppearance: setAppearance,
       onLogout: logout,
       onChooseServer: openServerSelector,
+      onSwitchServer: switchServerFromMenu,
       notifications: content.notifications,
       sharing: sharing,
     );
@@ -666,6 +784,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         workspace = null;
         serverSurfaces.clear();
         chooserReturn = null;
+        serverSwitchLocation = serverSwitchReturn = null;
         showServerSelector = true;
         appRouter.publish(Uri(path: '/'));
         client = null;
@@ -688,6 +807,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     oldWorkspace?.removeListener(workspaceChanged);
     serverSurfaces.clear();
     chooserReturn = null;
+    serverSwitchLocation = serverSwitchReturn = null;
     showServerSelector = true;
     appRouter.publish(Uri(path: '/'));
     client = null;
@@ -713,7 +833,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     workspace?.setForeground(
-      state == AppLifecycleState.resumed && !showServerSelector,
+      state == AppLifecycleState.resumed &&
+          !showServerSelector &&
+          serverSwitchLocation == null,
     );
     if (state == AppLifecycleState.resumed) {
       unawaited(content.notifications.refreshPermission());

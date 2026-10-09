@@ -76,6 +76,7 @@ class WorkspaceView extends StatefulWidget {
     this.sharing,
     this.presentation,
     this.onChooseServer,
+    this.onSwitchServer,
   });
   final WorkspaceController controller;
   final NativeNotificationService? notifications;
@@ -84,6 +85,10 @@ class WorkspaceView extends StatefulWidget {
 
   /// App root owns the Source `/` server chooser outside a workspace URI.
   final VoidCallback? onChooseServer;
+
+  /// App root publishes the accepted server URI before server hydration.
+  final Future<void> Function(RaftRecord server, bool replaceWithHome)?
+  onSwitchServer;
 
   final RaftAppearance appearance;
   final Future<void> Function(RaftAppearance) onAppearance;
@@ -1788,7 +1793,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   ];
 
   Widget workspaceRail() {
-    final scope = mobileAuthority;
     return RaftWorkspaceRail(
       destinations: railDestinations,
       selected: wide
@@ -1799,58 +1803,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       onSelected: select,
       workspaceName: w.server?.name ?? 'Raft',
       workspaceTooltip: tr('Switch workspace'),
-      workspaceHeader: RaftServerSwitcher(
-        controller: serverMenu,
-        workspaceName: w.server?.name ?? 'Raft',
-        label: tr('Switch workspace'),
-        rows: [
-          for (final server in w.servers)
-            RaftServerMenuRow(
-              id: server.id,
-              name: server.name,
-              slug: server.string('slug'),
-              avatarUrl: server.json['avatarUrl'] as String?,
-              current: server.id == w.server?.id,
-              activityUnreadCount: serverUnread[server.id]?.activityUnreadCount,
-              pushMuted: serverUnread[server.id]?.pushMuted ?? false,
-              onSelected: () => unawaited(selectMenuServer(server, scope)),
-              onAuxiliary:
-                  defaultTargetPlatform == TargetPlatform.linux &&
-                      workspaceBrowserOrigin(w.client.origin) != null
-                  ? () => unawaited(openWorkspaceInBrowser(context, w, server))
-                  : null,
-            ),
-        ],
-        actions: [
-          if (!w.servers.any((server) => server.string('slug') == 'community'))
-            RaftMenuEntry(
-              label: tr('Join Community'),
-              glyph: RaftGlyph.plus,
-              onPressed: joiningCommunityFromHelp
-                  ? null
-                  : () => unawaited(openCommunityFromHelp()),
-            ),
-          RaftMenuEntry(
-            label: tr('Switch or Create Server'),
-            glyph: RaftGlyph.plus,
-            onPressed: widget.onChooseServer == null
-                ? null
-                : () {
-                    if (mounted && scope == mobileAuthority) {
-                      widget.onChooseServer!();
-                    }
-                  },
-          ),
-          if (w.can('inviteMembers'))
-            RaftServerMenuAction(
-              tone: RaftServerMenuActionTone.invite,
-              label: tr('Invite human'),
-              glyph: RaftGlyph.userPlus,
-              onPressed: () => unawaited(inviteFromServerMenu(scope)),
-            ),
-        ],
-        onReorder: (from, to) => unawaited(reorderMenuServers(from, to, scope)),
-      ),
+      workspaceHeader: workspaceServerMenu(),
       onWorkspace: () => showWorkspaceSwitcher(),
       footer: RaftWorkspaceRailFooter(
         children: [
@@ -1913,6 +1866,73 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget workspaceServerMenu({bool mobile = false}) {
+    final scope = mobileAuthority;
+    return RaftServerSwitcher(
+      mobile: mobile,
+      headerActions: mobile
+          ? [
+              SystemNotificationBell(
+                key: const Key('mobile-home-notifications'),
+                controller: w,
+                onBilling: () => select('billing'),
+              ),
+            ]
+          : const [],
+      controller: serverMenu,
+      workspaceName: w.server?.name ?? 'Raft',
+      label: tr('Switch workspace'),
+      rows: [
+        for (final server in w.servers)
+          RaftServerMenuRow(
+            id: server.id,
+            name: server.name,
+            slug: server.string('slug'),
+            avatarUrl: server.json['avatarUrl'] as String?,
+            current: server.id == w.server?.id,
+            activityUnreadCount: serverUnread[server.id]?.activityUnreadCount,
+            pushMuted: serverUnread[server.id]?.pushMuted ?? false,
+            onSelected: () =>
+                unawaited(selectMenuServer(server, scope, mobile: mobile)),
+            onAuxiliary:
+                defaultTargetPlatform == TargetPlatform.linux &&
+                    workspaceBrowserOrigin(w.client.origin) != null
+                ? () => unawaited(openWorkspaceInBrowser(context, w, server))
+                : null,
+          ),
+      ],
+      actions: [
+        if (!w.servers.any((server) => server.string('slug') == 'community'))
+          RaftMenuEntry(
+            label: tr('Join Community'),
+            glyph: RaftGlyph.plus,
+            onPressed: joiningCommunityFromHelp
+                ? null
+                : () => unawaited(openCommunityFromHelp()),
+          ),
+        RaftMenuEntry(
+          label: tr('Switch or Create Server'),
+          glyph: RaftGlyph.plus,
+          onPressed: widget.onChooseServer == null
+              ? null
+              : () {
+                  if (mounted && scope == mobileAuthority) {
+                    widget.onChooseServer!();
+                  }
+                },
+        ),
+        if (w.can('inviteMembers'))
+          RaftServerMenuAction(
+            tone: RaftServerMenuActionTone.invite,
+            label: tr('Invite human'),
+            glyph: RaftGlyph.userPlus,
+            onPressed: () => unawaited(inviteFromServerMenu(scope)),
+          ),
+      ],
+      onReorder: (from, to) => unawaited(reorderMenuServers(from, to, scope)),
     );
   }
 
@@ -2048,11 +2068,19 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
-  Future<void> selectMenuServer(RaftRecord target, String scope) async {
+  Future<void> selectMenuServer(
+    RaftRecord target,
+    String scope, {
+    bool mobile = false,
+  }) async {
     if (!mounted || scope != mobileAuthority) return;
     final accepted = w.servers.where((s) => s.id == target.id).firstOrNull;
     if (accepted == null || accepted.id == w.server?.id) return;
-    await w.selectServer(accepted);
+    if (widget.onSwitchServer != null) {
+      await widget.onSwitchServer!(accepted, mobile);
+    } else {
+      await w.selectServer(accepted);
+    }
   }
 
   Future<void> inviteFromServerMenu(String scope) async {
@@ -2430,6 +2458,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 controller: w,
                 onServer: showWorkspaceSwitcher,
                 onBilling: () => select('billing'),
+                serverSwitcher: workspaceServerMenu(mobile: true),
               )
             else
               RaftChatSidebarHeading(

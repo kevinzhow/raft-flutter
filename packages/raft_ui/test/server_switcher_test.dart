@@ -13,6 +13,73 @@ void main() {
     (RaftFamily.elegant, true),
   ]) {
     testWidgets(
+      '$family/$dark Source mobile Home menu uses full header anchor, viewport gutters and container keyboard focus',
+      (t) async {
+        t.view.physicalSize = const Size(390, 900);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        final controller = RaftMenuController();
+        addTearDown(controller.dispose);
+        var selected = 0;
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(family, dark: dark),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: RaftServerSwitcher(
+                  mobile: true,
+                  controller: controller,
+                  workspaceName: 'Visual Server',
+                  label: 'Switch workspace',
+                  rows: [
+                    RaftServerMenuRow(
+                      id: 'visual',
+                      name: 'Visual Server',
+                      slug: 'visual',
+                      current: true,
+                      onSelected: () => selected++,
+                    ),
+                  ],
+                  actions: [
+                    RaftMenuEntry(label: 'Join Community', onPressed: () {}),
+                    RaftMenuEntry(
+                      label: 'Switch or Create Server',
+                      onPressed: () {},
+                    ),
+                    RaftServerMenuAction(
+                      label: 'Invite human',
+                      tone: RaftServerMenuActionTone.invite,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await t.tap(find.byKey(const Key('mobile-server-selector')));
+        await t.pumpAndSettle();
+        expect(
+          t.getRect(find.byKey(const Key('server-switcher-menu'))),
+          Rect.fromLTWH(
+            8,
+            family == RaftFamily.brutal ? 64 : 59,
+            374,
+            family == RaftFamily.brutal ? 162 : 167,
+          ),
+        );
+        expect(FocusManager.instance.primaryFocus!.skipTraversal, isTrue);
+        await t.sendKeyEvent(LogicalKeyboardKey.tab);
+        await t.sendKeyEvent(LogicalKeyboardKey.enter);
+        await t.pumpAndSettle();
+        expect(selected, 1);
+        expect(find.byKey(const Key('server-switcher-menu')), findsNothing);
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
+    testWidgets(
       '$family/$dark Source pointer server handle requires distance6 then reorders the real list',
       (t) async {
         final controller = RaftMenuController();

@@ -419,12 +419,14 @@ class RaftMobileServerSelector extends StatelessWidget {
     this.attention = false,
     this.viewportHeight,
     this.attentionLabel,
+    this.focusNode,
   });
   final String label;
   final VoidCallback? onPressed;
   final bool attention;
   final String? attentionLabel;
   final double? viewportHeight;
+  final FocusNode? focusNode;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -438,6 +440,7 @@ class RaftMobileServerSelector extends StatelessWidget {
       onPressed: onPressed,
       attention: attention,
       attentionLabel: attentionLabel,
+      focusNode: focusNode,
     );
   }
 }
@@ -449,14 +452,17 @@ class _SelectorControl extends StatelessWidget {
     required this.onPressed,
     required this.attention,
     this.attentionLabel,
+    this.focusNode,
   });
   final RaftMobileServerSelectorRecipe recipe;
   final String label;
   final VoidCallback? onPressed;
   final bool attention;
   final String? attentionLabel;
+  final FocusNode? focusNode;
   @override
   Widget build(BuildContext context) => RaftControl(
+    focusNode: focusNode,
     onPressed: onPressed,
     semanticLabel: null,
     visualHeight: recipe.compact ? 24 : 36,

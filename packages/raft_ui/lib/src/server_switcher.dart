@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'agent_profile.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'mobile_navigation.dart';
 import 'recipe_surface.dart';
 import 'recipes/app_rail.g.dart';
 import 'recipes/badge.g.dart';
@@ -65,12 +66,16 @@ class RaftServerSwitcher extends StatefulWidget {
     required this.rows,
     required this.actions,
     this.onReorder,
+    this.mobile = false,
+    this.headerActions = const [],
   });
   final RaftMenuController controller;
   final String workspaceName, label;
   final List<RaftServerMenuRow> rows;
   final List<RaftMenuEntry> actions;
   final void Function(int oldIndex, int newIndex)? onReorder;
+  final bool mobile;
+  final List<Widget> headerActions;
   @override
   State<RaftServerSwitcher> createState() => _RaftServerSwitcherState();
 }
@@ -150,7 +155,10 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
             delegate: _ServerMenuPlacement(
               // AppRailRoot's CSS right border is part of its border box;
               // AppRailHeader's positioned containing block excludes it.
-              Offset(rect.right - (t.brutal ? 2 : 0) + 8, rect.top + 4),
+              widget.mobile
+                  ? Offset(8, rect.bottom - (t.brutal ? 2 : 1) + 4)
+                  : Offset(rect.right - (t.brutal ? 2 : 0) + 8, rect.top + 4),
+              mobileWidth: widget.mobile ? size.width - 16 : null,
             ),
             child: TapRegion(
               groupId: this,
@@ -165,6 +173,7 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                   return KeyEventResult.ignored;
                 },
                 child: RaftServerMenuPanel(
+                  width: widget.mobile ? size.width - 16 : 256,
                   rows: widget.rows,
                   actions: widget.actions,
                   onActivate: activateAction,
@@ -177,45 +186,59 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
         child: SizedBox(
           key: anchor,
           height: RaftLayoutMetrics.shellHeaderHeight(t, size.height),
-          child: Center(
-            child: RaftInteractive(
-              key: const Key('rail-workspace'),
-              semanticLabel: widget.label,
-              tooltip: widget.workspaceName,
-              selected: widget.controller.isOpen,
-              focusNode: triggerFocus,
-              onPressed: () => widget.controller.isOpen
-                  ? widget.controller.close()
-                  : widget.controller.open(),
-              builder: (context, state) {
-                final slot = RaftAppRailRecipe.resolve(
-                  theme: t.recipeTheme,
-                  tokens: t.recipeTokens,
-                  states: t.recipeStates(
-                    hovered: state.hovered,
-                    pressed: state.pressed,
-                    focusVisible: state.focusVisible,
-                    extra: [if (widget.controller.isOpen) 'data-selected=true'],
+          child: widget.mobile
+              ? RaftMobileRootHeader(
+                  leading: RaftMobileServerSelector(
+                    key: const Key('mobile-server-selector'),
+                    label: widget.workspaceName,
+                    focusNode: triggerFocus,
+                    onPressed: () => widget.controller.isOpen
+                        ? widget.controller.close()
+                        : widget.controller.open(),
                   ),
-                ).item;
-                final extent = size.height <= 600 ? 36.0 : 40.0;
-                return RaftRecipeBox(
-                  style: slot,
-                  tokens: t.recipeTokens,
-                  width: extent,
-                  height: extent,
-                  padding: EdgeInsets.zero,
-                  child: Center(
-                    child: _ServerAvatar(
-                      name: widget.workspaceName,
-                      size: extent - 4,
-                      initialSize: 14,
-                    ),
+                  actions: widget.headerActions,
+                )
+              : Center(
+                  child: RaftInteractive(
+                    key: const Key('rail-workspace'),
+                    semanticLabel: widget.label,
+                    tooltip: widget.workspaceName,
+                    selected: widget.controller.isOpen,
+                    focusNode: triggerFocus,
+                    onPressed: () => widget.controller.isOpen
+                        ? widget.controller.close()
+                        : widget.controller.open(),
+                    builder: (context, state) {
+                      final slot = RaftAppRailRecipe.resolve(
+                        theme: t.recipeTheme,
+                        tokens: t.recipeTokens,
+                        states: t.recipeStates(
+                          hovered: state.hovered,
+                          pressed: state.pressed,
+                          focusVisible: state.focusVisible,
+                          extra: [
+                            if (widget.controller.isOpen) 'data-selected=true',
+                          ],
+                        ),
+                      ).item;
+                      final extent = size.height <= 600 ? 36.0 : 40.0;
+                      return RaftRecipeBox(
+                        style: slot,
+                        tokens: t.recipeTokens,
+                        width: extent,
+                        height: extent,
+                        padding: EdgeInsets.zero,
+                        child: Center(
+                          child: _ServerAvatar(
+                            name: widget.workspaceName,
+                            size: extent - 4,
+                            initialSize: 14,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
+                ),
         ),
       ),
     );
@@ -223,12 +246,14 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
 }
 
 class _ServerMenuPlacement extends SingleChildLayoutDelegate {
-  const _ServerMenuPlacement(this.anchored);
+  const _ServerMenuPlacement(this.anchored, {this.mobileWidth});
   final Offset anchored;
+  final double? mobileWidth;
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
       BoxConstraints(
-        maxWidth: math.min(256, constraints.maxWidth),
+        minWidth: mobileWidth ?? 0,
+        maxWidth: math.min(mobileWidth ?? 256, constraints.maxWidth),
         maxHeight: math.max(0, constraints.maxHeight - 16),
       );
   @override
@@ -242,7 +267,8 @@ class _ServerMenuPlacement extends SingleChildLayoutDelegate {
   }
 
   @override
-  bool shouldRelayout(_ServerMenuPlacement old) => old.anchored != anchored;
+  bool shouldRelayout(_ServerMenuPlacement old) =>
+      old.anchored != anchored || old.mobileWidth != mobileWidth;
 }
 
 /// Public panel makes every server-menu state previewable without an API.
@@ -253,11 +279,13 @@ class RaftServerMenuPanel extends StatelessWidget {
     required this.actions,
     required this.onActivate,
     this.onReorder,
+    this.width = 256,
   });
   final List<RaftServerMenuRow> rows;
   final List<RaftMenuEntry> actions;
   final ValueChanged<VoidCallback?> onActivate;
   final void Function(int oldIndex, int newIndex)? onReorder;
+  final double width;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -299,7 +327,7 @@ class RaftServerMenuPanel extends StatelessWidget {
       key: const Key('server-switcher-menu'),
       style: panel,
       tokens: t.recipeTokens,
-      width: 256,
+      width: width,
       padding: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -343,6 +371,31 @@ class RaftServerMenuPanel extends StatelessWidget {
           for (final entry in actions)
             _ServerAction(entry: entry, onActivate: onActivate),
         ],
+      ),
+    );
+  }
+}
+
+/// App.tsx615–621: the URI already identifies an accepted server while the
+/// old workspace is retired. This is presentation only, never a server record.
+class RaftServerResolutionBody extends StatelessWidget {
+  const RaftServerResolutionBody({super.key, required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return ColoredBox(
+      color: t.product.brutalCream,
+      child: Center(
+        child: Text(
+          label,
+          style: RaftTypography.body(
+            t,
+            size: 20,
+            line: 28,
+            weight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
