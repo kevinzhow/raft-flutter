@@ -49,8 +49,9 @@ class WorkspaceNavigation {
     if (kind == RaftNavigationKind.replace && _index >= 0) {
       _entries[_index] = next;
     } else {
-      if (_index + 1 < _entries.length)
+      if (_index + 1 < _entries.length) {
         _entries.removeRange(_index + 1, _entries.length);
+      }
       _entries.add(next);
       _index = _entries.length - 1;
     }

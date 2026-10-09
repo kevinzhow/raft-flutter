@@ -103,6 +103,14 @@ class _RaftChatViewState extends State<RaftChatView> {
   int selectionCaptureTicket = 0;
   bool presentationActive = true;
   int presentationRevision = 0;
+  final timelineKeys = <int, GlobalKey>{};
+  Widget? displayedTimeline, retainedTimeline;
+  bool focusStaging = false, measuredContext = false;
+  GlobalKey measuredWindowKey = GlobalKey();
+  double? measuredWindowExtent;
+  bool atBottom = true, returningLatest = false;
+  int newMessageCount = 0;
+  Timer? highlightTimer;
 
   @override
   void didChangeDependencies() {
@@ -128,7 +136,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   @override
   void initState() {
     super.initState();
-    viewport.addListener(closePickerOnScroll);
+    viewport.addListener(timelineScrolled);
     widget.viewportHandle?.bind(this, jumpToBeginning);
     referenceDirectory = MessageReferenceDirectory(w)
       ..addListener(referencesChanged);
@@ -336,8 +344,12 @@ class _RaftChatViewState extends State<RaftChatView> {
     }
     final authority = workspaceAuthority(w);
     final owner = selection, revision = selection.revision;
-    bool current() => mounted && identical(owner, selection) && owner.active &&
-        owner.revision == revision && authority == workspaceAuthority(w);
+    bool current() =>
+        mounted &&
+        identical(owner, selection) &&
+        owner.active &&
+        owner.revision == revision &&
+        authority == workspaceAuthority(w);
     try {
       final done = await forwardMessages(context, w, messages);
       if (current() && done) {
@@ -405,6 +417,28 @@ class _RaftChatViewState extends State<RaftChatView> {
     }
   }
 
+  void timelineScrolled() {
+    closePickerOnScroll();
+    if (!mounted || focusStaging || viewport.positions.length != 1) return;
+    // MessageTimeline.tsx AT_BOTTOM_THRESHOLD.
+    final next = viewport.position.maxScrollExtent - viewport.offset <= 100;
+    if (next != atBottom || (next && newMessageCount != 0)) {
+      setState(() {
+        atBottom = next;
+        if (next) newMessageCount = 0;
+      });
+    }
+  }
+
+  Future<void> returnToBottom() async {
+    newMessageCount = 0;
+    returningLatest = w.hasNewer;
+    await w.returnToLatest(navigate: w.section == 'chat');
+    if (!mounted || returningLatest || viewport.positions.length != 1) return;
+    viewport.jumpTo(viewport.position.maxScrollExtent);
+    timelineScrolled();
+  }
+
   void referencesChanged() {
     if (mounted) setState(() {});
   }
@@ -413,6 +447,7 @@ class _RaftChatViewState extends State<RaftChatView> {
   void dispose() {
     widget.viewportHandle?.release(this);
     copiedSelectionTimer?.cancel();
+    highlightTimer?.cancel();
     selectionToast.dispose();
     widget.selectionHandle?.update(false, null);
     closeReactionPicker(rebuild: false);
@@ -447,19 +482,33 @@ class _RaftChatViewState extends State<RaftChatView> {
     reactionFailureTimers.clear();
     reactionFailures.clear();
     final oldAdapter = adapter, oldViewport = viewport;
-    if (oldViewport.hasClients) oldViewport.jumpTo(0);
+    retainedTimeline ??= displayedTimeline;
     retiredAdapters.add(oldAdapter);
     retiredViewports.add(oldViewport);
     adapter = chat.InMemoryChatController(messages: messages);
-    viewport = ScrollController()..addListener(closePickerOnScroll);
+    viewport = ScrollController()..addListener(timelineScrolled);
     listRevision++;
     initialEndPending = w.highlightedMessageId == null;
+    positionQueued = false;
+    focusStaging = messages.isNotEmpty;
+    measuredContext = focusStaging;
+    measuredWindowKey = GlobalKey();
+    measuredWindowExtent = null;
     setState(() {});
     // A keyed Chat owns a new observer and controller. The retired list's
     // dispose can only detach its own focus methods, never the new observer.
+    if (!focusStaging) retirePreviousTimelines();
+  }
+
+  void retirePreviousTimelines() {
+    retainedTimeline = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (retiredAdapters.remove(oldAdapter)) oldAdapter.dispose();
-      if (retiredViewports.remove(oldViewport)) oldViewport.dispose();
+      for (final oldAdapter in retiredAdapters.toList()) {
+        if (retiredAdapters.remove(oldAdapter)) oldAdapter.dispose();
+      }
+      for (final oldViewport in retiredViewports.toList()) {
+        if (retiredViewports.remove(oldViewport)) oldViewport.dispose();
+      }
     });
   }
 
@@ -498,9 +547,24 @@ class _RaftChatViewState extends State<RaftChatView> {
       final window = widget.thread ? w.threadGeneration : w.channelGeneration;
       final loading = widget.thread ? w.threadLoading : w.channelLoading;
       final target = w.highlightedMessageId;
-      focusAnchors.removeWhere((id, _) => id != target);
-      if (scope != id ||
-          (!loading && target != null && adapterWindow != window)) {
+      if (loading && scope == id) return;
+      focusAnchors.removeWhere(
+        (id, _) => id != target && id != scrolledHighlight,
+      );
+      if (scope == id &&
+          adapterWindow == window &&
+          !atBottom &&
+          adapter.messages.isNotEmpty &&
+          projected.isNotEmpty) {
+        final priorTail = projected.indexWhere(
+          (m) => m.id == adapter.messages.last.id,
+        );
+        final appended = projected.length - priorTail - 1;
+        if (priorTail >= 0 && appended > 0 && appended <= 5) {
+          newMessageCount += appended;
+        }
+      }
+      if (scope != id || (!loading && adapterWindow != window)) {
         if (scope != id) {
           alsoCreateTask = false;
           selectionToast.clear();
@@ -538,120 +602,112 @@ class _RaftChatViewState extends State<RaftChatView> {
         }
         if (!currentContext()) return;
       }
-      final focusRevision = presentationRevision;
-      bool currentFocus() =>
-          currentContext() &&
-          presentationActive &&
-          focusRevision == presentationRevision;
       if (presentationActive &&
           !loading &&
-          target != null &&
-          (target != scrolledHighlight || window != scrolledWindow) &&
-          adapter.messages.any((m) => m.id == target)) {
-        WidgetsBinding.instance.addPostFrameCallback((_) async {
-          if (!currentFocus() ||
-              target != w.highlightedMessageId ||
-              window !=
-                  (widget.thread ? w.threadGeneration : w.channelGeneration)) {
-            return;
-          }
-          // ChatAnimatedList consumes controller operations asynchronously.
-          // Allow its next layout to attach the message observer before jumping.
-          await WidgetsBinding.instance.endOfFrame;
-          if (!currentFocus() ||
-              target != w.highlightedMessageId ||
-              window !=
-                  (widget.thread ? w.threadGeneration : w.channelGeneration)) {
-            return;
-          }
-          // A pending list animation may have used the previous bounds. Repair
-          // only this committed context before asking its observer to focus.
-          if (viewport.hasClients && viewport.position.outOfRange) {
-            viewport.jumpTo(
-              viewport.offset.clamp(
-                viewport.position.minScrollExtent,
-                viewport.position.maxScrollExtent,
-              ),
-            );
-            await WidgetsBinding.instance.endOfFrame;
-          }
-          if (!currentFocus() ||
-              target != w.highlightedMessageId ||
-              window !=
-                  (widget.thread ? w.threadGeneration : w.channelGeneration)) {
-            return;
-          }
-          // The package's void focus receipt also covers an unattached list
-          // or a target not yet consumed by its operation listener. Confirm
-          // the actual lazy row, and retry only this authorized context.
-          for (var attempt = 0; attempt < 8; attempt++) {
-            if (!currentFocus() ||
-                target != w.highlightedMessageId ||
-                window !=
-                    (widget.thread
-                        ? w.threadGeneration
-                        : w.channelGeneration)) {
-              return;
-            }
-            await ownedAdapter.scrollToMessage(
-              target,
-              duration: Duration.zero,
-              alignment: .3,
-            );
-            WidgetsBinding.instance.scheduleFrame();
-            await WidgetsBinding.instance.endOfFrame;
-            if (!currentFocus() ||
-                target != w.highlightedMessageId ||
-                window !=
-                    (widget.thread
-                        ? w.threadGeneration
-                        : w.channelGeneration)) {
-              return;
-            }
-            if (!focusReceiptVisible(target)) {
-              // Observer estimates can be stale after a variable-height row
-              // replaces its content. Recover from the committed row's actual
-              // viewport transform, never from a previously retained offset.
-              final row = focusAnchors[target]?.currentContext
-                  ?.findRenderObject();
-              final renderedViewport = row == null
-                  ? null
-                  : RenderAbstractViewport.maybeOf(row);
-              if (row != null &&
-                  row.attached &&
-                  renderedViewport != null &&
-                  ownedViewport.hasClients) {
-                final position = ownedViewport.position;
-                final offset = renderedViewport
-                    .getOffsetToReveal(row, .3)
-                    .offset;
-                ownedViewport.jumpTo(
-                  offset.clamp(
-                    position.minScrollExtent,
-                    position.maxScrollExtent,
-                  ),
-                );
-                WidgetsBinding.instance.scheduleFrame();
-                await WidgetsBinding.instance.endOfFrame;
-                if (!currentFocus() ||
-                    target != w.highlightedMessageId ||
-                    window !=
-                        (widget.thread
-                            ? w.threadGeneration
-                            : w.channelGeneration)) {
-                  return;
-                }
-              }
-            }
-            if (focusReceiptVisible(target)) {
-              scrolledHighlight = target;
-              scrolledWindow = window;
-              return;
-            }
-          }
-        });
+          (focusStaging ||
+              (target != null &&
+                  (target != scrolledHighlight || window != scrolledWindow)))) {
+        positionContext(
+          ownedAdapter,
+          ownedViewport,
+          window,
+          adapter.messages.any((m) => m.id == target) ? target : null,
+        );
       }
     });
+  }
+
+  bool positionQueued = false;
+
+  void positionContext(
+    chat.InMemoryChatController owner,
+    ScrollController scroll,
+    int window,
+    String? target,
+  ) {
+    if (positionQueued) return;
+    positionQueued = true;
+    final revision = presentationRevision;
+    bool current() =>
+        mounted &&
+        presentationActive &&
+        revision == presentationRevision &&
+        identical(owner, adapter) &&
+        identical(scroll, viewport) &&
+        window == (widget.thread ? w.threadGeneration : w.channelGeneration);
+    void reveal() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        positionQueued = false;
+        if (!current()) return;
+        if (target != null && !focusReceiptVisible(target)) return;
+        setState(() {
+          focusStaging = false;
+          returningLatest = false;
+          scrolledHighlight = target;
+          scrolledWindow = window;
+          initialEndPending = false;
+          atBottom = scroll.position.maxScrollExtent - scroll.offset <= 100;
+        });
+        retirePreviousTimelines();
+        highlightTimer?.cancel();
+        if (target != null) {
+          highlightTimer = Timer(const Duration(seconds: 2), () {
+            if (current()) w.clearHighlightedMessage(target);
+          });
+        }
+      });
+      WidgetsBinding.instance.ensureVisualUpdate();
+    }
+
+    void center() {
+      if (!current() || scroll.positions.length != 1) {
+        positionQueued = false;
+        return;
+      }
+      final position = scroll.position;
+      double offset;
+      if (target == null) {
+        offset = position.maxScrollExtent;
+      } else {
+        final row = focusAnchors[target]?.currentContext?.findRenderObject();
+        final view = row == null ? null : RenderAbstractViewport.maybeOf(row);
+        if (row == null || !row.attached || view == null) {
+          positionQueued = false;
+          return;
+        }
+        // Source scrollIntoView({block: "center"}); actual laid-out geometry.
+        offset = view.getOffsetToReveal(row, .5).offset;
+      }
+      scroll.jumpTo(
+        offset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      );
+      reveal();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!current()) {
+        positionQueued = false;
+        return;
+      }
+      if (measuredContext) {
+        final box = measuredWindowKey.currentContext?.findRenderObject();
+        if (box is! RenderBox || !box.hasSize || !box.size.height.isFinite) {
+          positionQueued = false;
+          return;
+        }
+        setState(() {
+          measuredWindowExtent = box.size.height;
+          measuredContext = false;
+        });
+        // Restore the real animated sliver while the old accepted list still
+        // paints. Its whole finite window can now be laid out without guesses.
+        WidgetsBinding.instance.addPostFrameCallback((_) => center());
+        WidgetsBinding.instance.ensureVisualUpdate();
+      } else {
+        center();
+      }
+    });
+    WidgetsBinding.instance.ensureVisualUpdate();
   }
 
   bool focusReceiptVisible(String target) {
@@ -722,9 +778,8 @@ class _RaftChatViewState extends State<RaftChatView> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -930,9 +985,8 @@ class _RaftChatViewState extends State<RaftChatView> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -971,9 +1025,8 @@ class _RaftChatViewState extends State<RaftChatView> {
             if (current()) setState(() => reactionFailures.remove(m.id));
           },
         );
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1395,9 +1448,8 @@ class _RaftChatViewState extends State<RaftChatView> {
       );
     } catch (e) {
       if (mounted && authority == workspaceAuthority(w)) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1600,7 +1652,7 @@ class _RaftChatViewState extends State<RaftChatView> {
     }),
   );
 
-  Widget datedTile(RaftMessage message) {
+  Widget datedTile(RaftMessage message, {bool captureFocus = true}) {
     final stamp = message.createdAt;
     final current = rows;
     final index = current.indexWhere((row) => row.id == message.id);
@@ -1625,15 +1677,18 @@ class _RaftChatViewState extends State<RaftChatView> {
         Padding(
           key: ValueKey('message-wrapper-${message.id}'),
           padding: const RaftTimelineCompositionRecipe().messageInset,
-          child: tile(message),
+          child: tile(message, captureFocus: captureFocus),
         ),
       ],
     );
   }
 
-  Widget tile(RaftMessage m, {bool parent = false}) {
+  Widget tile(RaftMessage m, {bool parent = false, bool captureFocus = true}) {
     final body = messageTile(m, parent: parent);
-    final child = !parent && m.id == w.highlightedMessageId
+    final child =
+        captureFocus &&
+            !parent &&
+            (m.id == w.highlightedMessageId || m.id == scrolledHighlight)
         ? KeyedSubtree(
             key: focusAnchors.putIfAbsent(m.id, GlobalKey.new),
             child: body,
@@ -1671,10 +1726,182 @@ class _RaftChatViewState extends State<RaftChatView> {
     );
   }
 
+  Widget buildTimeline(
+    chat.InMemoryChatController timelineAdapter,
+    ScrollController timelineViewport,
+    int revision,
+  ) {
+    final anchorRevision = revision, anchorViewport = timelineViewport;
+    final loading = widget.thread ? w.threadLoading : w.channelLoading;
+    final empty = rows.isEmpty;
+    final hasOlder = w.hasMore,
+        limited = w.historyLimited,
+        fetchingOlder = w.loadingOlder;
+    return Chat(
+      key: timelineKeys.putIfAbsent(revision, GlobalKey.new),
+      currentUserId: w.client.user?.id ?? '',
+      resolveUser: (id) async => chat.User(id: id),
+      chatController: timelineAdapter,
+      backgroundColor: RaftConversationSurfaceRecipe(RaftTokens.of(context))
+          .background(
+            widget.thread
+                ? RaftConversationSurfaceRole.threadTimeline
+                : RaftConversationSurfaceRole.channelTimeline,
+          ),
+      builders: chat.Builders(
+        scrollToBottomBuilder: (_, animation, callback) =>
+            const SizedBox.shrink(),
+        composerBuilder: (_) => const SizedBox.shrink(),
+        chatMessageBuilder: (
+          context,
+          message,
+          index,
+          animation,
+          child, {
+          isRemoved,
+          required isSentByMe,
+          groupStatus,
+        }) => child,
+        customMessageBuilder:
+            (context, message, index, {required isSentByMe, groupStatus}) =>
+                datedTile(
+                  RaftMessage(message.metadata!),
+                  captureFocus: identical(timelineAdapter, adapter),
+                ),
+        chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
+          controller: timelineViewport,
+          presentationActive: presentationActive,
+          enabled: !widget.thread && w.highlightedMessageId == null,
+          contentReady: !loading,
+          onInitialReady: () {
+            if (mounted &&
+                listRevision == anchorRevision &&
+                identical(viewport, anchorViewport) &&
+                initialEndPending) {
+              setState(() => initialEndPending = false);
+            }
+          },
+          child: ChatAnimatedList(
+            scrollController: timelineViewport,
+            key: ValueKey('chat-list-${widget.thread ? 'thread' : 'channel'}'),
+            itemBuilder: item,
+            cacheExtent: identical(timelineAdapter, adapter)
+                ? measuredWindowExtent
+                : null,
+            // Mounted MessageTimeline owns its two sentinels and natural
+            // footer. Generic Flyer padding/safe-area must not duplicate
+            // that spacing or the external composer's OS inset.
+            topPadding: 0,
+            bottomPadding: 0,
+            handleSafeArea: false,
+            messageSliverWrapper: (context, messageSliver) =>
+                RaftTimelineCompositionSliver(
+                  anchor: const RaftTimelineCompositionRecipe().anchorFor(
+                    widget.thread
+                        ? RaftTimelineHost.threadPanel
+                        : RaftTimelineHost.chatPanel,
+                  ),
+                  // The hidden staging layout measures the bounded accepted
+                  // window. The visible timeline always retains Flyer's own
+                  // animated sliver and uses that finite measured cache extent.
+                  messagesSliver:
+                      identical(timelineAdapter, adapter) && measuredContext
+                      ? SliverToBoxAdapter(
+                          child: Column(
+                            key: measuredWindowKey,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (final message in timelineAdapter.messages)
+                                datedTile(
+                                  RaftMessage(message.metadata!),
+                                  captureFocus: identical(
+                                    timelineAdapter,
+                                    adapter,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : messageSliver,
+                  footer: const RaftTimelineFooter(),
+                ),
+            topSliver: widget.thread
+                ? SliverMainAxisGroup(
+                    slivers: [
+                      threadTopSliver(loading: loading),
+                      if (!loading && w.replies.isEmpty)
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: RaftEmptyState(
+                            title: raftText(context, 'No replies yet'),
+                            detail: raftText(
+                              context,
+                              'Reply to start a thread.',
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                : SliverToBoxAdapter(
+                    child: empty
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: const RaftTimelineCompositionRecipe()
+                                .channelHeaderInset,
+                            child: RaftThreadHistoryTopState(
+                              hasMore: hasOlder,
+                              historyLimited: limited,
+                              loadingOlder: fetchingOlder,
+                              loadingOlderLabel: raftText(
+                                context,
+                                'Loading...',
+                              ),
+                              historyLimitedLabel: raftText(
+                                context,
+                                'Earlier messages are unavailable due to plan limits.',
+                              ),
+                              beginningLabel: raftText(
+                                context,
+                                'Beginning of messages',
+                              ),
+                            ),
+                          ),
+                  ),
+            onEndReached:
+                !presentationActive || (!widget.thread && initialEndPending)
+                ? null
+                : () => w.older(thread: widget.thread),
+            initialScrollToEndMode: InitialScrollToEndMode.none,
+          ),
+        ),
+        emptyChatListBuilder: (_) => widget.thread
+            ? const SizedBox.shrink()
+            : loading
+            ? Center(
+                child: Text(
+                  raftText(context, 'Loading...'),
+                  style: RaftTypography.mono(
+                    RaftTokens.of(context),
+                    size: 14,
+                    line: 20,
+                  ),
+                ),
+              )
+            : RaftEmptyState(
+                title: raftText(context, 'Start the conversation'),
+                detail: raftText(context, 'Send a message to this channel.'),
+              ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final anchorRevision = listRevision, anchorViewport = viewport;
-    final loading = widget.thread ? w.threadLoading : w.channelLoading;
+    final currentTimeline = buildTimeline(adapter, viewport, listRevision);
+    if (!focusStaging) displayedTimeline = currentTimeline;
+    final bottomCount = w.hasNewer
+        ? (w.unread[w.channel?.id] ?? 0)
+        : newMessageCount;
     final composeScope = w.draftScope(thread: widget.thread),
         composeAuthority = workspaceAuthority(w);
     var composeWindow = widget.thread
@@ -1730,146 +1957,49 @@ class _RaftChatViewState extends State<RaftChatView> {
       children: [
         RaftToastPortal(controller: selectionToast),
         Expanded(
-          child: Chat(
-            key: ValueKey('chat-context-$listRevision'),
-            currentUserId: w.client.user?.id ?? '',
-            resolveUser: (id) async => chat.User(id: id),
-            chatController: adapter,
-            backgroundColor:
-                RaftConversationSurfaceRecipe(
-                  RaftTokens.of(context),
-                ).background(
-                  widget.thread
-                      ? RaftConversationSurfaceRole.threadTimeline
-                      : RaftConversationSurfaceRole.channelTimeline,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (focusStaging && retainedTimeline != null)
+                IgnorePointer(
+                  child: ExcludeSemantics(child: retainedTimeline!),
                 ),
-            builders: chat.Builders(
-              composerBuilder: (_) => const SizedBox.shrink(),
-              chatMessageBuilder:
-                  (
-                    context,
-                    message,
-                    index,
-                    animation,
-                    child, {
-                    isRemoved,
-                    required isSentByMe,
-                    groupStatus,
-                  }) => child,
-              customMessageBuilder:
-                  (
-                    context,
-                    message,
-                    index, {
-                    required isSentByMe,
-                    groupStatus,
-                  }) => datedTile(RaftMessage(message.metadata!)),
-              chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
-                controller: viewport,
-                presentationActive: presentationActive,
-                enabled: !widget.thread && w.highlightedMessageId == null,
-                contentReady: !loading,
-                onInitialReady: () {
-                  if (mounted &&
-                      listRevision == anchorRevision &&
-                      identical(viewport, anchorViewport) &&
-                      initialEndPending) {
-                    setState(() => initialEndPending = false);
-                  }
-                },
-                child: ChatAnimatedList(
-                  scrollController: viewport,
-                  key: ValueKey(
-                    'chat-list-${widget.thread ? 'thread' : 'channel'}',
-                  ),
-                  itemBuilder: item,
-                  // Mounted MessageTimeline owns its two sentinels and natural
-                  // footer. Generic Flyer padding/safe-area must not duplicate
-                  // that spacing or the external composer's OS inset.
-                  topPadding: 0,
-                  bottomPadding: 0,
-                  handleSafeArea: false,
-                  messageSliverWrapper: (context, messageSliver) =>
-                      RaftTimelineCompositionSliver(
-                        anchor: const RaftTimelineCompositionRecipe().anchorFor(
-                          widget.thread
-                              ? RaftTimelineHost.threadPanel
-                              : RaftTimelineHost.chatPanel,
-                        ),
-                        messagesSliver: messageSliver,
-                        footer: const RaftTimelineFooter(),
-                      ),
-                  topSliver: widget.thread
-                      ? SliverMainAxisGroup(
-                          slivers: [
-                            threadTopSliver(loading: loading),
-                            if (!loading && w.replies.isEmpty)
-                              SliverFillRemaining(
-                                hasScrollBody: false,
-                                child: RaftEmptyState(
-                                  title: raftText(context, 'No replies yet'),
-                                  detail: raftText(
-                                    context,
-                                    'Reply to start a thread.',
-                                  ),
-                                ),
-                              ),
-                          ],
-                        )
-                      : SliverToBoxAdapter(
-                          child: loading || rows.isEmpty
-                              ? const SizedBox.shrink()
-                              : Padding(
-                                  padding: const RaftTimelineCompositionRecipe()
-                                      .channelHeaderInset,
-                                  child: RaftThreadHistoryTopState(
-                                    hasMore: w.hasMore,
-                                    historyLimited: w.historyLimited,
-                                    loadingOlder: w.loadingOlder,
-                                    loadingOlderLabel: raftText(
-                                      context,
-                                      'Loading...',
-                                    ),
-                                    historyLimitedLabel: raftText(
-                                      context,
-                                      'Earlier messages are unavailable due to plan limits.',
-                                    ),
-                                    beginningLabel: raftText(
-                                      context,
-                                      'Beginning of messages',
-                                    ),
-                                  ),
-                                ),
-                        ),
-                  onEndReached:
-                      !presentationActive ||
-                          (!widget.thread && initialEndPending)
-                      ? null
-                      : () => w.older(thread: widget.thread),
-                  initialScrollToEndMode: InitialScrollToEndMode.none,
+              IgnorePointer(
+                ignoring: focusStaging,
+                child: Opacity(
+                  opacity: focusStaging ? 0 : 1,
+                  child: currentTimeline,
                 ),
               ),
-              emptyChatListBuilder: (_) => widget.thread
-                  ? const SizedBox.shrink()
-                  : loading
-                  ? Center(
-                      child: Text(
-                        raftText(context, 'Loading...'),
-                        style: RaftTypography.mono(
-                          RaftTokens.of(context),
-                          size: 14,
-                          line: 20,
-                        ),
+              if (!widget.thread &&
+                  !focusStaging &&
+                  (w.hasNewer || !atBottom || newMessageCount > 0))
+                Positioned(
+                  bottom: 12,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: RaftRecipeButton(
+                      label: bottomCount > 0
+                          ? raftFormat(context, '{count} new messages', {
+                              'count': bottomCount,
+                            })
+                          : raftText(context, 'Back to bottom'),
+                      glyph: RaftGlyph.arrowDown,
+                      glyphSize: 12,
+                      variant: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.sm,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                    )
-                  : RaftEmptyState(
-                      title: raftText(context, 'Start the conversation'),
-                      detail: raftText(
-                        context,
-                        'Send a message to this channel.',
-                      ),
+                      textStep: (12, 16),
+                      gap: 6,
+                      onPressed: returnToBottom,
                     ),
-            ),
+                  ),
+                ),
+            ],
           ),
         ),
         if (!selection.active && w.uploads(thread: widget.thread).isNotEmpty)

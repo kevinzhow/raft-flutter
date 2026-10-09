@@ -291,11 +291,10 @@ void main() {
       await tester.pump();
       expect(viewport.offset, 5364);
       await tester.runAsync(() => w.jumpToMessage('c1', 'offset-94'));
-      // This is the live failure's inter-frame state: authority has committed
-      // 16 rows while the old 5364px viewport still belongs to the previous list.
-      // Keep it within the observed replacement bound before observer layout.
+      // The accepted 16-row context stages behind the real retained timeline.
+      // Source keeps the old reading position until the new target is centered.
       expect(w.messages, hasLength(16));
-      expect(viewport.offset, lessThanOrEqualTo(1654));
+      expect(viewport.offset, 5364);
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

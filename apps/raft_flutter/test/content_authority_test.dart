@@ -45,7 +45,11 @@ class _Workspace extends WorkspaceController {
   _Workspace(super.client);
   final jumps = <String>[];
   @override
-  Future<void> jumpToMessage(String id, String? message) async {
+  Future<void> jumpToMessage(
+    String id,
+    String? message, {
+    bool navigate = true,
+  }) async {
     jumps.add('$id/$message');
   }
 }

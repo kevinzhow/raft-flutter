@@ -59,7 +59,12 @@ class _Workspace extends WorkspaceController {
   String? selected;
   int refreshes = 0;
   @override
-  Future<void> selectChannel(RaftChannel next, {bool autoRead = true}) async {
+  Future<void> selectChannel(
+    RaftChannel next, {
+    bool autoRead = true,
+    bool navigate = true,
+    bool retainContextUntilAccepted = false,
+  }) async {
     selected = next.id;
   }
 
