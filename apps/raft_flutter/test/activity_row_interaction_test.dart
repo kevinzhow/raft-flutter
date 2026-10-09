@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_flutter/features/resource_cards.dart';
 
 import '../../../packages/raft_ui/test/control_transition_paint_test.dart'
     show pixel;

@@ -58,12 +58,14 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
     final subtitleStyle = canonical && !t.brutal
         ? source.meta.text(t.recipeTokens, base: RaftTypography.body(t))
         : recipe.subtitle;
-    final gap = canonical && !t.brutal ? 8.0 : RaftLayoutMetrics.panelGap;
+    final gap = canonical && !t.brutal
+        ? RaftResourceMetrics.elegantHeaderGap
+        : RaftLayoutMetrics.panelGap;
     return Container(
       key: const Key('page-header-surface'),
       height: height,
       padding: canonical && !t.brutal && mobile
-          ? const EdgeInsets.only(left: 20, right: 14)
+          ? RaftResourceMetrics.elegantMobileHeaderInset
           : EdgeInsets.symmetric(horizontal: RaftLayoutMetrics.panelInset),
       decoration: BoxDecoration(
         color: recipe.background,
@@ -116,7 +118,9 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
                     !t.brutal &&
                     subtitle != null &&
                     subtitle!.isNotEmpty)
-                  const SizedBox(height: 4),
+                  const SizedBox(
+                    height: RaftResourceMetrics.elegantHeaderMetaGap,
+                  ),
                 if (subtitle != null && subtitle!.isNotEmpty)
                   canonical
                       ? RaftCssText(

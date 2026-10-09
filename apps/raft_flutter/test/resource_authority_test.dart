@@ -155,8 +155,12 @@ void main() {
       _role(w, 'owner');
       await tester.pumpWidget(_host(w, 'activity'));
       await tester.pumpAndSettle();
-      final action = tester.widget<RaftControl>(
-        find.widgetWithText(RaftControl, 'Mark all read'),
+      final action = tester.widget<RaftInteractive>(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftInteractive &&
+              widget.semanticLabel == 'Mark all read',
+        ),
       );
       _role(w, 'member');
       await tester.pumpAndSettle();

@@ -55,3 +55,30 @@ desktop canonical header composition, remaining shadow raster differences and
 Markdown preview wrapping are still separate parity gaps. This follow-up does
 not claim current full application or full 99-case verification; the integrating
 agent runs those after consolidation.
+
+
+## SDK ownership and retained Activity test contracts (2026-10-09)
+
+The conversation card, its source recipe, pointer/focus action scope, timestamp
+fade and Source task-row measurement now live in `raft_ui/src/resource_cards.dart`.
+The app keeps a compatibility export and its relative-time formatter. This is a
+UI-only SDK boundary: no controller, API, account, permission or route payload
+moved into the SDK. The measured toolbar/header values live with
+`RaftResourceMetrics`; this transfer preserves their paint and geometry.
+
+The classic Source header has no Filters, Unfollowed or group-toggle entry.
+Tests previously tried to enter those unsupported controls before exercising
+unrelated row actions. They now assert that those entries are absent, invoke the
+real ResourceView state for retained done/unfollowed request and local grouping
+projection contracts, and still use the real visible All button to return from
+terminal protocol states. Original API-path/query/frontier/authority assertions
+remain. These state-seeded tests do not prove a visible Source entry for these
+protocol states. The `activity_sidebar_inbox_v0` feature-gated sidebar, compact
+scope switcher, channel groups and advanced new-inbox behavior remain
+unimplemented by this change. No invented switcher opens the old advanced UI.
+
+The Mark-all-read stale-handler test locates the mounted `RaftInteractive` by
+its semantic label, captures the actual handler, changes authority, and invokes
+that retained handler; no read-all POST is still required. Previous complete-run
+failures are retained by the integration owner. This batch does not rerun or
+relabel official pixel results, native behavior or any previously failed pair.

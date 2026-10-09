@@ -1415,7 +1415,7 @@ class _ResourceViewState extends State<ResourceView> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: RaftResourceMetrics.activityToolbarGap),
           // Button sm outline `h-8 px-2 text-xs font-bold`.
           RaftInteractive(
             semanticLabel: raftText(context, 'Mark all read'),
@@ -1434,16 +1434,12 @@ class _ResourceViewState extends State<ResourceView> {
                 tokens: t.recipeTokens,
               ).root,
               tokens: t.recipeTokens,
-              height: 32,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              height: RaftResourceMetrics.activityToolbarActionHeight,
+              padding: RaftResourceMetrics.activityToolbarActionInset,
               alignment: Alignment.center,
               child: RaftCssText(
                 raftText(context, 'Mark all read'),
-                style: const TextStyle(
-                  fontSize: 12,
-                  height: 16 / 12,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: RaftResourceMetrics.activityToolbarActionLabel,
               ),
             ),
           ),

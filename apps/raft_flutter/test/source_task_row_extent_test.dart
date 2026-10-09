@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/features/resource_cards.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import 'parity/parity_harness.dart' show loadParityFonts;

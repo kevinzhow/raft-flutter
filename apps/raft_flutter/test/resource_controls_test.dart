@@ -125,12 +125,29 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    // SavedPanel has no filter controls; Activity keeps its filter toggle.
-    if (section == 'activity') {
-      await t.tap(find.byTooltip('Filters'));
-      await t.pumpAndSettle();
-    }
   }
+
+  testWidgets(
+    'classic Source Activity omits unsupported filter and terminal-view controls',
+    (t) async {
+      await mount(t, 'activity');
+      expect(find.byTooltip('Filters'), findsNothing);
+      expect(find.byTooltip('Activity actions'), findsNothing);
+      expect(find.text('Unfollowed threads'), findsNothing);
+      expect(find.text('Group by channel'), findsNothing);
+      expect(find.text('All'), findsOneWidget);
+      expect(find.text('Unread'), findsOneWidget);
+      expect(find.text('Mentions'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is RaftInteractive &&
+              widget.semanticLabel == 'Mark all read',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets(
     'task assignee picker searches and selects self then unassigned',
@@ -279,8 +296,7 @@ void main() {
     w.channels = [
       RaftChannel({
         'id': 'c',
-        'name':
-            'A very long accessible conversation name for the native filter menu',
+        'name': 'A very long accessible conversation name for the native filter menu',
         'joined': true,
       }),
     ];
@@ -296,41 +312,50 @@ void main() {
     ('Done conversations', '/channels/inbox/done'),
     ('Unfollowed threads', '/channels/inbox/unfollowed'),
   ]) {
-    testWidgets('Activity ${special.$1} returns to All with one click', (
-      t,
-    ) async {
-      await mount(t, 'activity');
-      await menu(t, 'Activity actions', special.$1);
-      expect(w.calls.last.path, special.$2);
-      await t.tap(
-        find.descendant(
-          of: find.byType(RaftSegmentedControl<String>),
-          matching: find.text('All'),
-        ),
-      );
-      await t.pumpAndSettle();
-      expect(w.calls.last.path, '/channels/inbox');
-      expect(w.calls.last.query!['filter'], 'all');
-      final count = w.calls.length;
-      // Empty-selection support must not let the current All selection crash.
-      await t.tap(
-        find.descendant(
-          of: find.byType(RaftSegmentedControl<String>),
-          matching: find.text('All'),
-        ),
-      );
-      await t.pumpAndSettle();
-      expect(t.takeException(), isNull);
-      expect(w.calls.length, count);
-      expect(
-        t
-            .widget<RaftSegmentedControl<String>>(
-              find.byType(RaftSegmentedControl<String>),
-            )
-            .value,
-        'all',
-      );
-    });
+    testWidgets(
+      'Activity ${special.$1} protocol state returns to visible All with one click',
+      (t) async {
+        await mount(t, 'activity');
+        // The classic Source header exposes only All/Unread/Mentions. The
+        // historical terminal-view request remains a protocol contract; seed the
+        // real ResourceView state without inventing an unsupported UI entry.
+        final dynamic state = t.state(find.byType(ResourceView));
+        state.filter = special.$1 == 'Done conversations'
+            ? 'done'
+            : 'unfollowed';
+        await state.load();
+        await t.pumpAndSettle();
+        expect(w.calls.last.path, special.$2);
+        await t.tap(
+          find.descendant(
+            of: find.byType(RaftSegmentedControl<String>),
+            matching: find.text('All'),
+          ),
+        );
+        await t.pumpAndSettle();
+        expect(w.calls.last.path, '/channels/inbox');
+        expect(w.calls.last.query!['filter'], 'all');
+        final count = w.calls.length;
+        // Empty-selection support must not let the current All selection crash.
+        await t.tap(
+          find.descendant(
+            of: find.byType(RaftSegmentedControl<String>),
+            matching: find.text('All'),
+          ),
+        );
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull);
+        expect(w.calls.length, count);
+        expect(
+          t
+              .widget<RaftSegmentedControl<String>>(
+                find.byType(RaftSegmentedControl<String>),
+              )
+              .value,
+          'all',
+        );
+      },
+    );
   }
 
   testWidgets(
@@ -397,7 +422,7 @@ void main() {
     expect(t.takeException(), isNull);
   });
   testWidgets(
-    'Activity channel grouping and query filters do not invent API grouping params',
+    'Activity protocol grouping projection and query do not invent API grouping params',
     (t) async {
       w.activity = [
         {
@@ -408,11 +433,15 @@ void main() {
         },
       ];
       await mount(t, 'activity');
-      await t.tap(find.text('Group by channel'));
+      // This exercises retained protocol/projection behavior, not Source's
+      // feature-gated sidebar/switcher, which is not implemented here.
+      final dynamic state = t.state(find.byType(ResourceView));
+      state.advanced.groupByChannel = true;
+      await state.load();
       await t.pumpAndSettle();
       expect(find.text('General · 1'), findsOneWidget);
-      await t.enterText(find.byType(TextField), 'body');
-      await t.testTextInput.receiveAction(TextInputAction.done);
+      state.query.text = 'body';
+      await state.load();
       await t.pumpAndSettle();
       expect(w.calls.last.query!['q'], 'body');
       expect(w.calls.last.query!.containsKey('groupBy'), false);

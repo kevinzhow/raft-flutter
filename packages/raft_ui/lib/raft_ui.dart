@@ -120,3 +120,5 @@ export 'src/banner.dart';
 export 'src/combobox_panel.dart';
 
 export 'src/css_opacity.dart';
+
+export 'src/resource_cards.dart';

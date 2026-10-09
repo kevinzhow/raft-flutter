@@ -330,6 +330,26 @@ abstract final class RaftResourceMetrics {
 
   /// ThreadsInbox `inbox-toolbar`: `h-[54px] px-4`.
   static const double activityToolbarHeight = 54;
+
+  /// ThreadsInbox toolbar `gap-3`; outline `h-8 px-2 text-xs font-bold`.
+  static const double activityToolbarGap = 12;
+  static const double activityToolbarActionHeight = 32;
+  static const EdgeInsets activityToolbarActionInset = EdgeInsets.symmetric(
+    horizontal: 8,
+  );
+  static const TextStyle activityToolbarActionLabel = TextStyle(
+    fontSize: 12,
+    height: 16 / 12,
+    fontWeight: FontWeight.w700,
+  );
+
+  /// PanelHeader Elegant mobile `pl-5 pr-3.5 gap-2`, meta `mt-1`.
+  static const EdgeInsets elegantMobileHeaderInset = EdgeInsets.only(
+    left: 20,
+    right: 14,
+  );
+  static const double elegantHeaderGap = 8;
+  static const double elegantHeaderMetaGap = 4;
   static const EdgeInsets activityToolbarInset = EdgeInsets.symmetric(
     horizontal: 16,
   );
