@@ -271,7 +271,9 @@ final ParityCase _searchResults = ParityCase(
       'sort=recent from the case URL params; Flutter has no URL state, so the '
       'same values are chosen through the date-range and sort dropdowns. The '
       'React sender/channel props match no React id and stay unselected, so '
-      'they are not applied here either. Relative times use the fixture clock.',
+      'they are not applied here either. Input focus is restored after choosing '
+      'the filters: React seeds them via URL and then fills the focused input. '
+      'Relative times use the fixture clock.',
   build: (ctx) => _resource(ctx, 'search'),
   interact: (t, ctx) async {
     await _typeSearch(t);
@@ -283,6 +285,8 @@ final ParityCase _searchResults = ParityCase(
     await t.pump(const Duration(milliseconds: 300));
     await t.tap(find.text('Recent').last);
     await t.pump(const Duration(milliseconds: 600));
+    await t.tap(find.byType(TextField).first);
+    await t.pump();
   },
 );
 

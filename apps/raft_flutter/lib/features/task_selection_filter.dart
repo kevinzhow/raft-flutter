@@ -197,48 +197,89 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
           // TasksPanel filter chip: Button sm outline `h-8 gap-2` with the
           // field icon (14), label, optional count and ChevronDown 12. Layout
           // follows the 32px Web box; the touch target stays 48px.
-          child: RaftTouchTargetExpander(
-            minSize: const Size.square(RaftMetrics.touchTarget),
-            child: RaftControl(
-              kind: RaftControlKind.filter,
-              variant: widget.selection.isEmpty
-                  ? RaftControlVariant.outline
-                  : RaftControlVariant.primary,
-              selected: widget.selection.isNotEmpty,
-              recipe: widget.picker
-                  ? RaftPickerTriggerRecipe(
-                      t,
-                      selected: widget.selection.isNotEmpty,
-                    )
-                  : null,
-              visualHeight: pickerHeight,
-              minimumTargetSize: pickerHeight,
-              onPressed: () {
-                if (!widget.valid()) return;
-                controller.isOpen ? controller.close() : controller.open();
-              },
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: RaftResourceMetrics.gap2,
-                children: [
-                  RaftIcon(
-                    widget.glyph ??
-                        switch (widget.field) {
-                          'Channel' => RaftGlyph.hash,
-                          'Creator' || 'From' => RaftGlyph.userCircle2,
-                          _ => RaftGlyph.user,
-                        },
-                    size: 14,
+          child: widget.picker
+              ? RaftTouchTargetExpander(
+                  minSize: const Size.square(RaftMetrics.touchTarget),
+                  child: RaftControl(
+                    kind: RaftControlKind.filter,
+                    variant: widget.selection.isEmpty
+                        ? RaftControlVariant.outline
+                        : RaftControlVariant.primary,
+                    selected: widget.selection.isNotEmpty,
+                    recipe: widget.picker
+                        ? RaftPickerTriggerRecipe(
+                            t,
+                            selected: widget.selection.isNotEmpty,
+                          )
+                        : null,
+                    visualHeight: pickerHeight,
+                    minimumTargetSize: pickerHeight,
+                    onPressed: () {
+                      if (!widget.valid()) return;
+                      controller.isOpen
+                          ? controller.close()
+                          : controller.open();
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: RaftResourceMetrics.gap2,
+                      children: [
+                        RaftIcon(
+                          widget.glyph ??
+                              switch (widget.field) {
+                                'Channel' => RaftGlyph.hash,
+                                'Creator' || 'From' => RaftGlyph.userCircle2,
+                                _ => RaftGlyph.user,
+                              },
+                          size: 14,
+                        ),
+                        Text(
+                          widget.label ??
+                              '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
+                        ),
+                        RaftIcon(
+                          RaftGlyph.chevronDown,
+                          size: widget.picker ? 12 : 14,
+                        ),
+                      ],
+                    ),
                   ),
-                  Text(
-                    widget.label ??
-                        '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
+                )
+              : RaftTouchTargetExpander(
+                  minSize: const Size.square(RaftMetrics.touchTarget),
+                  child: RaftTaskFilterButton(
+                    selected: widget.selection.isNotEmpty,
+                    onPressed: () {
+                      if (!widget.valid()) return;
+                      controller.isOpen
+                          ? controller.close()
+                          : controller.open();
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: RaftResourceMetrics.gap2,
+                      children: [
+                        RaftIcon(
+                          widget.glyph ??
+                              switch (widget.field) {
+                                'Channel' => RaftGlyph.hash,
+                                'Creator' || 'From' => RaftGlyph.userCircle2,
+                                _ => RaftGlyph.user,
+                              },
+                          size: 14,
+                        ),
+                        Text(
+                          widget.label ??
+                              '${raftText(context, widget.field)}${widget.selection.isEmpty ? '' : ' (${widget.selection.length})'}',
+                        ),
+                        RaftIcon(
+                          RaftGlyph.chevronDown,
+                          size: widget.picker ? 12 : 14,
+                        ),
+                      ],
+                    ),
                   ),
-                  const RaftIcon(RaftGlyph.chevronDown, size: 12),
-                ],
-              ),
-            ),
-          ),
+                ),
         ),
       ),
     );

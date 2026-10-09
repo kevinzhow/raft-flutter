@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' as rui;
 
-import 'public_avatar_url.dart';
+import 'sender_avatar_projection.dart';
 import 'resource_cards.dart';
 import 'page_component_recipes.dart';
 import 'search_ranking.dart';
@@ -198,8 +198,13 @@ class ResourceSearchResults extends StatelessWidget {
     required this.onEntity,
     required this.hasMore,
     required this.onMore,
+    this.agents = const [],
+    this.members = const [],
+    this.currentUser,
   });
   final String query, origin, plan;
+  final List<Map<String, dynamic>> agents, members;
+  final Map<String, dynamic>? currentUser;
   final List<Map<String, dynamic>> rows;
   final List<SearchEntity> entities;
   final DateTime now;
@@ -208,6 +213,53 @@ class ResourceSearchResults extends StatelessWidget {
   final void Function(SearchEntity) onEntity;
   final bool hasMore;
   final VoidCallback onMore;
+
+  Widget _senderAvatar(Map<String, dynamic> row, String sender) {
+    final type = '${row['senderType'] ?? 'user'}';
+    final projection = projectSenderAvatar(
+      origin: origin,
+      senderId: '${row['senderId']}',
+      senderType: type,
+      agents: agents,
+      members: members,
+      currentUser: currentUser,
+      externalAuthor: type == 'external_projection'
+          ? {...row, 'avatarUrl': row['senderAvatarUrl'] ?? row['avatarUrl']}
+          : null,
+      requestSize: 14,
+    );
+    return RaftAvatar(
+      name: sender,
+      size: 14,
+      mountedContext: RaftMountedAvatarContext.previewMini,
+      kind: type == 'agent'
+          ? RaftAvatarKind.agent
+          : type == 'external_projection'
+          ? RaftAvatarKind.app
+          : RaftAvatarKind.human,
+      content: RaftAvatarContent(
+        name: sender,
+        kind: type == 'agent'
+            ? RaftAvatarContentKind.agent
+            : type == 'external_projection'
+            ? RaftAvatarContentKind.app
+            : RaftAvatarContentKind.human,
+        uploadedUrl: projection.uploadedUrl,
+        gravatarUrl: projection.gravatarUrl,
+        pixelKey: type == 'agent' ? projection.pixelKey ?? 'robot' : null,
+        fallback: RaftMountedAvatarFallback(
+          avatarContext: RaftMountedAvatarContext.previewMini,
+          identity: type == 'agent'
+              ? RaftMountedAvatarIdentity.agent
+              : type == 'external_projection'
+              ? RaftMountedAvatarIdentity.app
+              : RaftMountedAvatarIdentity.human,
+          gravatar: projection.gravatarUrl != null,
+          initials: sender,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -266,27 +318,12 @@ class ResourceSearchResults extends StatelessWidget {
       Widget child,
       VoidCallback open, {
       bool entity = false,
-      EdgeInsets? inset,
     }) {
-      final side = selectedKey == key
-          ? BorderSide(color: recipe.selectedLine, width: t.brutal ? 2 : 1)
-          : recipe.border;
-      return Material(
-        color: t.panel,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(recipe.cardRadius),
-          side: side,
-        ),
-        child: InkWell(
-          onTap: open,
-          borderRadius: BorderRadius.circular(recipe.cardRadius),
-          child: Padding(
-            // CSS content box: inside the border, then the padding.
-            padding: (inset ?? (entity ? recipe.entityInset : EdgeInsets.zero))
-                .add(EdgeInsets.all(side.width)),
-            child: child,
-          ),
-        ),
+      return RaftSearchResultSurface(
+        selected: selectedKey == key,
+        entity: entity,
+        onPressed: open,
+        child: child,
       );
     }
 
@@ -310,6 +347,7 @@ class ResourceSearchResults extends StatelessWidget {
             : rui.RaftRecipeTheme.elegant,
         states: rui.RaftRecipeStates({if (t.dark) rui.RaftRecipeStates.dark}),
         tokens: rt,
+        selected: selectedKey == 'message:${row['id']}',
       );
       TextStyle meta(rui.RaftSlotStyle slot) {
         final header = m.messageHeader.textStyle(rt);
@@ -338,9 +376,20 @@ class ResourceSearchResults extends StatelessWidget {
                     style: meta(m.messageMeta),
                   ),
                   if (thread)
-                    Text(
-                      raftText(context, 'Thread'),
-                      style: meta(m.messageThreadMeta),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: m.messageThreadMeta.columnGap ?? 0,
+                      children: [
+                        RaftThreadIcon(
+                          size:
+                              10, // MessageSearchPage ThreadIcon width/height.
+                          color: meta(m.messageThreadMeta).color,
+                        ),
+                        Text(
+                          raftText(context, 'Thread').toLowerCase(),
+                          style: meta(m.messageThreadMeta),
+                        ),
+                      ],
                     ),
                   if ((thread
                           ? row['parentChannelArchivedAt']
@@ -357,19 +406,7 @@ class ResourceSearchResults extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        RaftAvatar(
-                          name: sender,
-                          size: 16,
-                          kind: row['senderType'] == 'agent'
-                              ? RaftAvatarKind.agent
-                              : row['senderType'] == 'external_projection'
-                              ? RaftAvatarKind.app
-                              : RaftAvatarKind.human,
-                          imageUrl: raftPublicAvatarUrl(
-                            origin,
-                            row['senderAvatarUrl'] as String?,
-                          ),
-                        ),
+                        _senderAvatar(row, sender),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
@@ -406,7 +443,6 @@ class ResourceSearchResults extends StatelessWidget {
           ],
         ),
         () => onMessage(row),
-        inset: m.message.padding,
       );
     }
 
@@ -542,29 +578,17 @@ class ResourceSearchResults extends StatelessWidget {
   }
 
   Widget _entityBadge(BuildContext context, String kind) {
-    final t = RaftTokens.of(context);
     final label = switch (kind) {
       'channel' => 'Channel',
       'computer' => 'Computer',
       'agent' => 'Agent',
       _ => 'Human',
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: t.colors['fill-muted'],
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 99),
-      ),
-      child: Text(
-        raftText(context, label),
-        style: RaftTypography.body(
-          t,
-          size: 10,
-          line: 14,
-          weight: FontWeight.w700,
-          color: t.muted,
-        ),
-      ),
+    return RaftBadge(
+      label: raftText(context, label),
+      appearance: RaftBadgeRecipeAppearance.soft,
+      variant: RaftBadgeRecipeVariant.muted,
+      uppercase: true,
     );
   }
 

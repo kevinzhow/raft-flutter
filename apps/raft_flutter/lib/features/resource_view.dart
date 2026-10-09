@@ -28,6 +28,7 @@ class ResourceView extends StatefulWidget {
     this.onBack,
     this.clock,
     this.initialQuery,
+    this.initialSearchChannelId,
     this.onSearchEntity,
     this.onActivityItem,
     this.searchMemory,
@@ -41,6 +42,11 @@ class ResourceView extends StatefulWidget {
   final VoidCallback? onBack;
   final DateTime Function()? clock;
   final String? initialQuery;
+
+  /// Explicit channel search entry. Consumers key the view by entry identity;
+  /// saved global search state is not restored over this initial filter.
+  final String? initialSearchChannelId;
+
   final SearchMemoryStore? searchMemory;
   final bool restoreSearchState;
   final Future<void> Function(SearchEntity)? onSearchEntity;
@@ -61,6 +67,7 @@ class _ResourceViewState extends State<ResourceView> {
   SearchMemoryStore get searchMemory =>
       widget.searchMemory ?? ownedSearchMemory;
   String? memoryReadyKey, restoringSenderKey;
+  bool initialSearchUnavailable = false;
   SearchMemoryScope? get memoryScope {
     final server = w.server?.id, principal = w.client.user?.id;
     return widget.section == 'search' && server != null && principal != null
@@ -92,7 +99,10 @@ class _ResourceViewState extends State<ResourceView> {
     final untouched = before == jsonEncode(currentSearchState.toJson());
     setState(() {
       memoryReadyKey = personal.key;
-      if (restore && untouched && widget.initialQuery == null) {
+      if (restore &&
+          untouched &&
+          widget.initialQuery == null &&
+          widget.initialSearchChannelId == null) {
         final snapshot = data.state;
         query.text = snapshot.query;
         advanced.scopes.addAll(snapshot.scopes);
@@ -297,6 +307,7 @@ class _ResourceViewState extends State<ResourceView> {
     selectedSearchKey = null;
     restoringSenderKey = null;
     memoryReadyKey = null;
+    initialSearchUnavailable = false;
     searchDebounce?.cancel();
     catalogScope = null;
     ++catalogRequest;
@@ -444,6 +455,18 @@ class _ResourceViewState extends State<ResourceView> {
     super.initState();
     acceptedAuthority = authority;
     query.text = widget.initialQuery ?? '';
+    if (widget.section == 'search' && widget.initialSearchChannelId != null) {
+      final channel = [
+        ...w.channels,
+        ...w.dms,
+        if (w.channel != null) w.channel!,
+      ].where((c) => c.id == widget.initialSearchChannelId).firstOrNull;
+      if (channel != null && w.can('viewChannel', resource: channel)) {
+        advanced.channelId = channel.id;
+      } else {
+        initialSearchUnavailable = true;
+      }
+    }
     w.addListener(authorityChanged);
     subscribeEvents();
     unawaited(activateSearchMemory(restore: widget.restoreSearchState));
@@ -514,6 +537,14 @@ class _ResourceViewState extends State<ResourceView> {
           error = 'This channel is not available.';
         });
       }
+      return;
+    }
+    if (widget.section == 'search' && initialSearchUnavailable) {
+      setState(() {
+        clearRows();
+        loading = false;
+        error = 'This channel is no longer available.';
+      });
       return;
     }
     if (['search', 'tasks', 'activity'].contains(widget.section)) {
@@ -852,7 +883,7 @@ class _ResourceViewState extends State<ResourceView> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              error!,
+              raftText(context, error!),
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
@@ -869,6 +900,9 @@ class _ResourceViewState extends State<ResourceView> {
                   rows: rows,
                   entities: currentSearchEntities,
                   origin: w.client.origin,
+                  agents: searchAgents,
+                  members: searchPeople,
+                  currentUser: w.client.user?.json,
                   plan: w.server?.string('plan', 'free') ?? 'free',
                   now: widget.clock?.call() ?? DateTime.now(),
                   selectedKey:
@@ -1028,7 +1062,7 @@ class _ResourceViewState extends State<ResourceView> {
       child: Row(
         children: [
           if (mobile) ...[
-            RaftBackButton(tooltip: 'Back', onPressed: widget.onBack ?? () {}),
+            RaftPanelBackAction(onPressed: widget.onBack ?? () {}),
             const SizedBox(width: RaftLayoutMetrics.panelGap),
           ],
           Container(
@@ -1072,29 +1106,16 @@ class _ResourceViewState extends State<ResourceView> {
                 }
                 return KeyEventResult.ignored;
               },
-              child: TextField(
+              child: RaftSearchInput(
                 controller: query,
                 focusNode: queryFocus,
-                style: RaftTypography.body(t, size: 14, line: 20),
-                decoration: InputDecoration(
-                  hintText: raftText(context, 'Search messages'),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  suffixIcon: query.text.isNotEmpty
-                      ? RaftIconButton(
-                          glyph: RaftGlyph.x,
-                          glyphSize: 12,
-                          visualSize: 24,
-                          tooltip: 'Clear search',
-                          onPressed: () {
-                            query.clear();
-                            searchChanged('');
-                          },
-                        )
-                      : null,
-                ),
+                hint: raftText(context, 'Search messages'),
+                clearLabel: raftText(context, 'Clear search'),
+                showEscape: !mobile,
+                onClear: () {
+                  query.clear();
+                  searchChanged('');
+                },
                 onChanged: searchChanged,
                 onSubmitted: (_) {
                   searchDebounce?.cancel();
@@ -1244,7 +1265,7 @@ class _ResourceViewState extends State<ResourceView> {
               label: advanced.sender == null
                   ? raftText(context, 'From')
                   : '${raftText(context, 'From')}: ${advanced.sender!.label}',
-              glyph: RaftGlyph.user,
+              glyph: RaftGlyph.userCircle2,
             ),
             picker(
               'Scope',
@@ -2269,117 +2290,129 @@ class _ResourceViewState extends State<ResourceView> {
       decoration: toolbar.decoration(rt),
       child: SizedBox(
         width: double.infinity,
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            for (final field in [
-              if (widget.channelId == null) 'Channel',
-              'Creator',
-              'Assignee',
-            ])
-              Builder(
-                builder: (context) {
-                  final selection = switch (field) {
-                    'Channel' => taskAdvanced.channels,
-                    'Creator' => taskAdvanced.creators,
-                    _ => taskAdvanced.assignees,
-                  };
-                  final self = w.client.user;
-                  final options = field == 'Channel'
-                      ? channelOptions
-                      : <String, String>{
-                          if (field == 'Assignee')
-                            'unassigned': raftText(context, 'Unassigned'),
-                          if (self != null)
-                            'user:${self.id}': raftText(
-                              context,
-                              field == 'Creator'
-                                  ? 'Created by me'
-                                  : 'Assigned to me',
-                            ),
-                          for (final entry in ordered)
-                            if (entry.key != 'user:${self?.id}')
-                              entry.key: entry.value,
-                        };
-                  return TaskSelectionFilter(
-                    key: ValueKey('$scope:$field'),
-                    field: field,
-                    options: options,
-                    selection: selection,
-                    beforeOpen: (active) {
-                      for (final menu in filterMenus) {
-                        if (!identical(menu, active) && menu.isOpen) {
-                          menu.close();
+        child: Padding(
+          // The mobile CSS grid keeps its 8px column gap even with an empty
+          // auto track. Desktop switches to flex and has no reserved track.
+          padding: EdgeInsets.only(
+            right:
+                MediaQuery.sizeOf(context).width <
+                    RaftLayoutMetrics.desktopBreakpoint
+                ? toolbar.columnGap ?? 0
+                : 0,
+          ),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (final field in [
+                if (widget.channelId == null) 'Channel',
+                'Creator',
+                'Assignee',
+              ])
+                Builder(
+                  builder: (context) {
+                    final selection = switch (field) {
+                      'Channel' => taskAdvanced.channels,
+                      'Creator' => taskAdvanced.creators,
+                      _ => taskAdvanced.assignees,
+                    };
+                    final self = w.client.user;
+                    final options = field == 'Channel'
+                        ? channelOptions
+                        : <String, String>{
+                            if (field == 'Assignee')
+                              'unassigned': raftText(context, 'Unassigned'),
+                            if (self != null)
+                              'user:${self.id}': raftText(
+                                context,
+                                field == 'Creator'
+                                    ? 'Created by me'
+                                    : 'Assigned to me',
+                              ),
+                            for (final entry in ordered)
+                              if (entry.key != 'user:${self?.id}')
+                                entry.key: entry.value,
+                          };
+                    return TaskSelectionFilter(
+                      key: ValueKey('$scope:$field'),
+                      field: field,
+                      options: options,
+                      selection: selection,
+                      beforeOpen: (active) {
+                        for (final menu in filterMenus) {
+                          if (!identical(menu, active) && menu.isOpen) {
+                            menu.close();
+                          }
                         }
-                      }
-                    },
-                    valid: () => accepts(scope),
-                    aliases: {
-                      for (final person in senders)
-                        person.key: '${person.handle} ${person.label}',
-                    },
-                    onController: (menu, add) {
-                      if (add) {
-                        filterMenus.add(menu);
-                      } else {
-                        filterMenus.remove(menu);
-                      }
-                    },
-                    onToggle: (key) {
-                      if (accepts(scope)) {
-                        setState(() {
-                          if (!selection.remove(key)) selection.add(key);
-                        });
-                      }
-                    },
-                    onClear: () {
-                      if (accepts(scope)) setState(selection.clear);
-                    },
-                  );
+                      },
+                      valid: () => accepts(scope),
+                      aliases: {
+                        for (final person in senders)
+                          person.key: '${person.handle} ${person.label}',
+                      },
+                      onController: (menu, add) {
+                        if (add) {
+                          filterMenus.add(menu);
+                        } else {
+                          filterMenus.remove(menu);
+                        }
+                      },
+                      onToggle: (key) {
+                        if (accepts(scope)) {
+                          setState(() {
+                            if (!selection.remove(key)) selection.add(key);
+                          });
+                        }
+                      },
+                      onClear: () {
+                        if (accepts(scope)) setState(selection.clear);
+                      },
+                    );
+                  },
+                ),
+              // TasksPanel.tsx: "New Task" (Plus 12) is channel mode only.
+              if (widget.channelId != null &&
+                  w.server?.string('role') != 'guest')
+                RaftNewTaskButton(
+                  onPressed: () => createTask(sourceScope: scope),
+                ),
+              RaftSegmentedControl<String>(
+                style: RaftSegmentedStyle.taskViews,
+                value: taskLayout,
+                visualHeight: RaftMetrics.buttonMd,
+                minimumTargetSize: RaftMetrics.buttonMd,
+                label: raftText(context, 'Task view'),
+                items: const [
+                  RaftSegmentedOption(
+                    value: 'board',
+                    label: 'Board',
+                    tooltip: 'Show task board',
+                    glyph: RaftGlyph.columns3,
+                  ),
+                  RaftSegmentedOption(
+                    value: 'list',
+                    label: 'List',
+                    tooltip: 'Show task list',
+                    glyph: RaftGlyph.layoutList,
+                  ),
+                ],
+                onChanged: (layout) {
+                  if (accepts(scope) && taskLayout != layout) {
+                    taskLayout = layout;
+                    load();
+                  }
                 },
               ),
-            // TasksPanel.tsx: "New Task" (Plus 12) is channel mode only.
-            if (widget.channelId != null && w.server?.string('role') != 'guest')
-              RaftNewTaskButton(
-                onPressed: () => createTask(sourceScope: scope),
-              ),
-            RaftSegmentedControl<String>(
-              style: RaftSegmentedStyle.tabs,
-              value: taskLayout,
-              visualHeight: RaftMetrics.buttonMd,
-              minimumTargetSize: RaftMetrics.buttonMd,
-              label: raftText(context, 'Task view'),
-              items: const [
-                RaftSegmentedOption(
-                  value: 'board',
-                  label: 'Board',
-                  tooltip: 'Show task board',
-                  glyph: RaftGlyph.columns,
+              if (!taskAdvanced.isEmpty)
+                TextButton(
+                  onPressed: () {
+                    if (accepts(scope)) setState(taskAdvanced.clear);
+                  },
+                  child: Text(raftText(context, 'Clear filters')),
                 ),
-                RaftSegmentedOption(
-                  value: 'list',
-                  label: 'List',
-                  tooltip: 'Show task list',
-                  glyph: RaftGlyph.list,
-                ),
-              ],
-              onChanged: (layout) {
-                if (accepts(scope) && taskLayout != layout) {
-                  taskLayout = layout;
-                  load();
-                }
-              },
-            ),
-            if (!taskAdvanced.isEmpty)
-              TextButton(
-                onPressed: () {
-                  if (accepts(scope)) setState(taskAdvanced.clear);
-                },
-                child: Text(raftText(context, 'Clear filters')),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

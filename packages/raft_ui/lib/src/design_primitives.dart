@@ -1,4 +1,6 @@
 import 'tooltip.dart';
+import 'search_result_surface.dart';
+import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
 
 import 'dart:math' as math;
 
@@ -404,7 +406,7 @@ enum RaftControlKind {
   savedAction,
 }
 
-enum RaftSegmentedStyle { tabs, buttons }
+enum RaftSegmentedStyle { tabs, buttons, taskViews }
 
 enum RaftControlVariant { surface, primary, accent, outline, ghost, danger }
 
@@ -2494,30 +2496,50 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
                       ? null
                       : () => widget.onChanged!(widget.items[i].value),
                 )
+              else if (widget.style == RaftSegmentedStyle.taskViews)
+                RaftTouchTargetExpander(
+                  minSize: const Size.square(RaftMetrics.touchTarget),
+                  child: RaftTaskFilterButton(
+                    selected: widget.items[i].value == widget.value,
+                    onPressed:
+                        widget.onChanged == null || !widget.items[i].enabled
+                        ? null
+                        : () => widget.onChanged!(widget.items[i].value),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 6,
+                      children: [
+                        if (widget.items[i].glyph != null)
+                          RaftIcon(widget.items[i].glyph!, size: 14),
+                        Text(widget.items[i].label),
+                      ],
+                    ),
+                  ),
+                )
               else
-              RaftControl(
-                kind: RaftControlKind.tab,
-                variant: widget.items[i].value == widget.value
-                    ? RaftControlVariant.primary
-                    : RaftControlVariant.outline,
-                selected: widget.items[i].value == widget.value,
-                tooltip: widget.items[i].tooltip,
-                visualHeight: widget.visualHeight,
-                minimumTargetSize: widget.minimumTargetSize,
-                onPressed: widget.onChanged == null
-                    ? null
-                    : () => widget.onChanged!(widget.items[i].value),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.items[i].glyph != null) ...[
-                      RaftIcon(widget.items[i].glyph!, size: 13),
-                      const SizedBox(width: 4),
+                RaftControl(
+                  kind: RaftControlKind.tab,
+                  variant: widget.items[i].value == widget.value
+                      ? RaftControlVariant.primary
+                      : RaftControlVariant.outline,
+                  selected: widget.items[i].value == widget.value,
+                  tooltip: widget.items[i].tooltip,
+                  visualHeight: widget.visualHeight,
+                  minimumTargetSize: widget.minimumTargetSize,
+                  onPressed: widget.onChanged == null
+                      ? null
+                      : () => widget.onChanged!(widget.items[i].value),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (widget.items[i].glyph != null) ...[
+                        RaftIcon(widget.items[i].glyph!, size: 13),
+                        const SizedBox(width: 4),
+                      ],
+                      Text(widget.items[i].label),
                     ],
-                    Text(widget.items[i].label),
-                  ],
+                  ),
                 ),
-              ),
             ],
           ],
         ),

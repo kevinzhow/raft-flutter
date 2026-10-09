@@ -153,6 +153,9 @@ void main() {
               only.split(',').any((s) => (c['id'] as String).contains(s)),
         )
         .toList();
+    if (cases.isEmpty) {
+      throw StateError('Desktop selection matched no cases: $only');
+    }
     final outDir = Directory('$outPath/android')..createSync(recursive: true);
     final summary = <Map<String, dynamic>>[];
 
@@ -299,7 +302,7 @@ void main() {
           case 'tasks-list':
             await tap(find.byKey(const ValueKey('rail-tasks')));
             await waitText('Align the tabbar capture crops');
-            await tap(find.byTooltip('Show task list'));
+            await tap(find.text('List')); // Source task view buttons expose their label.
             await frames(30);
           case 'search-empty':
             await tap(find.byKey(const ValueKey('rail-search')));
@@ -441,5 +444,10 @@ void main() {
       }),
     );
     await t.binding.setSurfaceSize(null);
+    expect(
+      summary.where((result) => result['ok'] != true),
+      isEmpty,
+      reason: 'Each selected desktop capture must finish its real navigation flow.',
+    );
   }, timeout: const Timeout(Duration(minutes: 60)));
 }
