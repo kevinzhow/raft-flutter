@@ -9,9 +9,11 @@ wall timestamps, status and input hashes are preserved.
 The original verified pair is **Activity → uncached target in an already accepted
 channel**. The runner also supports separately labeled thread opening and
 channel-after-thread gestures; their native receipts and retained failures are in
-the [N24 report](../../docs/process-parity-n24-first-batch.md). Cold-channel,
-cached-target, race/revocation and entity-hydration flows remain outside this
-batch. Three actual themes and 390×844/1440×900 are selectable inputs; a supported
+the [N24 report](../../docs/process-parity-n24-first-batch.md). Cold known/unknown
+metadata and stale context after Back/retarget now have separate actual Source
+browser receipts and a native detector; see the [cold loading batch](../../docs/process-parity-cold-loading-first-batch.md).
+Cached-target, revocation and entity-hydration flows remain outside this batch.
+Three actual themes and 390×844/1440×900 are selectable inputs; a supported
 input is not a completed platform/matrix claim.
 
 ## Run

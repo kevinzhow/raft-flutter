@@ -28,7 +28,7 @@ def main():
     p.add_argument('--only', default='brutal-desktop', help='comma separated theme-form, or all')
     p.add_argument('--source-only', action='store_true')
     p.add_argument('--fixture', type=Path, help='Copy exact immutable bytes; do not rebuild input')
-    p.add_argument('--flow', choices=('channel-single', 'thread-single', 'thread-double', 'channel-after-thread-single', 'channel-after-thread-double'), default='channel-single')
+    p.add_argument('--flow', choices=('channel-single', 'thread-single', 'thread-double', 'channel-after-thread-single', 'channel-after-thread-double', 'cold-known', 'cold-unknown', 'stale-back-retarget-success', 'stale-back-retarget-error'), default='channel-single')
     p.add_argument('--port', type=int, default=15413)
     args = p.parse_args()
     out = Path(args.out).resolve()
@@ -40,6 +40,8 @@ def main():
     fixture = out / 'fixture.json'
     if args.fixture:
         fixture.write_bytes(args.fixture.resolve().read_bytes())
+    elif args.flow.startswith(('cold-', 'stale-')):
+        subprocess.run(['python3', str(TOOLS / 'build-loading-fixture.py'), '--flow', args.flow, '--out', str(fixture)], check=True, cwd=ROOT)
     elif args.flow == 'channel-single':
         subprocess.run(['python3', str(TOOLS / 'build-fixture.py'), '--out', str(fixture)], check=True, cwd=ROOT)
     else:
@@ -78,7 +80,8 @@ def main():
         for theme, form in cases:
             item = {'id': f'{theme}-{form}', 'started': time.time(), 'providers': []}
             manifest['cases'].append(item)
-            commands = [('Source', ['node', str(TOOLS / 'capture-source.mjs'), str(fixture), str(out / f'source-{theme}-{form}'), base, theme, form])]
+            source_runner = 'capture-loading-source.mjs' if flow['flow'].startswith(('cold-', 'stale-')) else 'capture-source.mjs'
+            commands = [('Source', ['node', str(TOOLS / source_runner), str(fixture), str(out / f'source-{theme}-{form}'), base, theme, form])]
             if not args.source_only:
                 commands.append(('Flutter Linux', [str(TOOLS / 'capture-flutter.sh'), str(fixture), str(out / f'flutter-{theme}-{form}'), theme, form]))
             for provider, command in commands:

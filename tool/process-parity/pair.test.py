@@ -57,5 +57,24 @@ class BoundProcessReceipts(unittest.TestCase):
                 source[key] = flutter[key] = 'same-unverified-value'
                 self.assertTrue(pair.input_failures(source, flutter))
 
+    def test_unknown_identity_cannot_borrow_resolved_controls(self):
+        shell = {'headers': 1, 'tabs': 1, 'composer': 1, 'accepted': None}
+        unresolved = {'channelPlaceholder': True, 'tabs': 0, 'composer': 0, 'accepted': None}
+        summary = {'stages': {'pending-tail': shell, 'tail-still-held': shell, 'pending-identity': unresolved}}
+        self.assertEqual(pair.loading_failures('cold-unknown', summary, summary), [])
+        borrowed = copy.deepcopy(summary)
+        borrowed['stages']['pending-identity']['composer'] = 1
+        self.assertTrue(pair.loading_failures('cold-unknown', summary, borrowed))
+        fake_tail = copy.deepcopy(summary)
+        fake_tail['stages']['pending-tail']['accepted'] = {'inView': True}
+        self.assertTrue(pair.loading_failures('cold-known', summary, fake_tail))
+
+    def test_canceled_request_is_not_late_success_or_late_error_proof(self):
+        delivered = {'receipt': {'stages': [{'name': 'stale-response-released', 'staleResponseObserved': True}]}}
+        canceled = {'receipt': {'stages': [{'name': 'stale-response-released', 'staleResponseObserved': False}]}}
+        for flow in ('stale-back-retarget-success', 'stale-back-retarget-error'):
+            self.assertEqual(pair.loading_failures(flow, delivered, delivered), [])
+            self.assertTrue(pair.loading_failures(flow, delivered, canceled))
+
 if __name__ == '__main__':
     unittest.main()

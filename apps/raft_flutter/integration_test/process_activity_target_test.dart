@@ -304,8 +304,13 @@ void main() {
         ].where((finder) => visibleRect(finder) != null).length,
         'tabs': visibleRect(find.byType(RaftConversationTabs)) == null ? 0 : 1,
         'composer': visibleRect(find.byType(RaftComposer)) == null ? 0 : 1,
+        'channelPlaceholder':
+            visibleRect(find.byType(RaftChannelResolutionBody)) != null,
         'accepted': message(flow['acceptedMessageId'] as String),
         'target': message(flow['targetMessageId'] as String),
+        'replacement': flow['replacementTargetId'] == null
+            ? null
+            : message(flow['replacementTargetId'] as String),
         'threadTarget': flow['threadTargetMessageId'] == null
             ? null
             : message(flow['threadTargetMessageId'] as String),
@@ -416,49 +421,63 @@ void main() {
         image.dispose();
       }
 
-      try {
-        await t.binding.setSurfaceSize(size);
-        final elegant = theme != 'brutal', dark = theme == 'elegant-dark';
-        await t.pumpWidget(
-          MaterialApp(
-            debugShowCheckedModeBanner: false,
-            locale: const Locale('en'),
-            localizationsDelegates: GlobalMaterialLocalizations.delegates,
-            supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
-            theme: raftTheme(elegant ? RaftFamily.elegant : RaftFamily.brutal),
-            darkTheme: raftTheme(RaftFamily.elegant, dark: true),
-            themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-            builder: (context, child) => Align(
-              alignment: Alignment.topLeft,
-              child: RepaintBoundary(
-                key: shotKey,
-                child: SizedBox(
-                  width: size.width,
-                  height: size.height,
-                  child: MediaQuery(
-                    data: MediaQuery.of(context)
-                        .copyWith(size: size, devicePixelRatio: 1),
-                    child: RaftTooltipProvider(child: child!),
-                  ),
-                ),
-              ),
-            ),
-            home: WorkspaceView(
-              controller: w,
-              appearance: RaftAppearance(
-                mode: dark ? ThemeMode.dark : ThemeMode.light,
-                light: elegant ? RaftFamily.elegant : RaftFamily.brutal,
-              ),
-              onAppearance: (_) async {},
-              onLogout: () async {},
-            ),
-          ),
-        );
-        unawaited(w.bootstrap());
+      Future<void> waitHeld(String key) async {
+        for (var i = 0; i < 150; i++) {
+          final runtime = await state();
+          if ((runtime['held'] as List).cast<Map>().any(
+            (row) => row['key'] == key && (row['count'] as num) > 0,
+          )) {
+            return;
+          }
+          await t.pump(const Duration(milliseconds: 50));
+        }
+        throw StateError('Native did not request held endpoint: $key');
+      }
+
+      Future<void> openActivity() async {
+        if (form == 'mobile') {
+          if (find.byKey(const ValueKey('nav-activity')).evaluate().isEmpty) {
+            await t.tap(find.byTooltip('Back').first);
+            await t.pump();
+          }
+          await t.tap(find.byKey(const ValueKey('nav-activity')));
+        } else {
+          await t.tap(find.byKey(const ValueKey('rail-activity')));
+        }
         await until(
-          () => w.server != null && w.channels.isNotEmpty && !w.loading,
-          'authorized bootstrap',
+          () => find
+              .byKey(ValueKey('activity-channel-${flow['channelId']}'))
+              .evaluate()
+              .isNotEmpty,
+          'actual Activity row',
         );
+      }
+
+      Future<void> activateCanonical(String channelId) async {
+        final row = find.byKey(ValueKey('activity-channel-$channelId'));
+        await t.tap(row);
+        if (form == 'desktop') {
+          await t.pump(const Duration(milliseconds: 50));
+          await t.tap(row);
+        }
+      }
+
+      Future<void> goBackToActivity() async {
+        if (form == 'desktop') {
+          await t.binding.handlePopRoute();
+        } else {
+          await t.tap(find.byTooltip('Back').first);
+        }
+        await until(
+          () => find
+              .byKey(ValueKey('activity-channel-${flow['channelId']}'))
+              .evaluate()
+              .isNotEmpty,
+          'Activity after Back',
+        );
+      }
+
+      Future<void> captureActivityTarget() async {
         if (form == 'mobile') {
           w.section = 'home';
           w.notifyListeners();
@@ -487,19 +506,6 @@ void main() {
           'actual Activity row',
         );
         await snapshot('activity');
-        Future<void> waitHeld(String key) async {
-          for (var i = 0; i < 150; i++) {
-            final runtime = await state();
-            if ((runtime['held'] as List).cast<Map>().any(
-              (row) => row['key'] == key && (row['count'] as num) > 0,
-            )) {
-              return;
-            }
-            await t.pump(const Duration(milliseconds: 50));
-          }
-          throw StateError('Native did not request held endpoint: $key');
-        }
-
         if (flow['threadChannelId'] != null) {
           for (final key in [
             flow['parentHold'],
@@ -741,6 +747,224 @@ void main() {
             isNull,
             'highlight expires after two seconds',
           );
+        }
+      }
+
+      try {
+        await t.binding.setSurfaceSize(size);
+        final elegant = theme != 'brutal', dark = theme == 'elegant-dark';
+        await t.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            locale: const Locale('en'),
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
+            supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
+            theme: raftTheme(elegant ? RaftFamily.elegant : RaftFamily.brutal),
+            darkTheme: raftTheme(RaftFamily.elegant, dark: true),
+            themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+            builder: (context, child) => Align(
+              alignment: Alignment.topLeft,
+              child: RepaintBoundary(
+                key: shotKey,
+                child: SizedBox(
+                  width: size.width,
+                  height: size.height,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context)
+                        .copyWith(size: size, devicePixelRatio: 1),
+                    child: RaftTooltipProvider(child: child!),
+                  ),
+                ),
+              ),
+            ),
+            home: WorkspaceView(
+              controller: w,
+              appearance: RaftAppearance(
+                mode: dark ? ThemeMode.dark : ThemeMode.light,
+                light: elegant ? RaftFamily.elegant : RaftFamily.brutal,
+              ),
+              onAppearance: (_) async {},
+              onLogout: () async {},
+            ),
+          ),
+        );
+        unawaited(w.bootstrap());
+        await until(
+          () => w.server != null && w.channels.isNotEmpty && !w.loading,
+          'authorized bootstrap',
+        );
+        final processFlow = flow['flow'] as String;
+        if (processFlow.startsWith('cold-') ||
+            processFlow.startsWith('stale-')) {
+          if (processFlow.startsWith('stale-')) {
+            if (form == 'mobile') {
+              w.section = 'home';
+              w.notifyListeners();
+              await t.pump();
+            }
+            await t.tap(
+              find.byKey(ValueKey('sidebar-channel-${flow['channelId']}')),
+            );
+            await until(
+              () =>
+                  message(flow['acceptedMessageId'] as String)?['inView'] ==
+                  true,
+              'accepted tail',
+            );
+            await snapshot('accepted-tail');
+          }
+          await openActivity();
+          await snapshot('activity-ready');
+          if (processFlow.startsWith('cold-')) {
+            await control('arm', flow['tailHold'] as String);
+            if (processFlow == 'cold-unknown') {
+              await control('arm', flow['metadataHold'] as String);
+            }
+            stageName = 'cold-activation';
+            await activateCanonical(flow['channelId'] as String);
+            if (processFlow == 'cold-unknown') {
+              await waitHeld(flow['metadataHold'] as String);
+              await snapshot('pending-identity');
+              final pending = stages.last['frame'] as Map;
+              check(
+                pending['channelPlaceholder'],
+                true,
+                'unresolved identity has real resolution placeholder',
+              );
+              check(pending['composer'], 0, 'unknown identity no composer');
+              check(pending['tabs'], 0, 'unknown identity no fabricated tabs');
+              check(pending['accepted'], isNull, 'unknown identity no tail');
+              await control('release', flow['metadataHold'] as String);
+            }
+            await waitHeld(flow['tailHold'] as String);
+            await until(
+              () => visibleRect(find.byType(RaftComposer)) != null,
+              'resolved cold composer',
+            );
+            await snapshot('pending-tail');
+            final pending = stages.last['frame'] as Map;
+            check(pending['headers'], greaterThan(0), 'cold known header');
+            check(pending['tabs'], 1, 'cold known tabs');
+            check(pending['composer'], 1, 'cold known composer');
+            check(pending['accepted'], isNull, 'cold tail not fabricated');
+            check(
+              pending['channelPlaceholder'],
+              false,
+              'resolved cold shell no unknown identity placeholder',
+            );
+            final held = await state();
+            final tailRequest = (held['requests'] as List)
+                .cast<Map>()
+                .lastWhere(
+                  (row) =>
+                      row['kind'] == 'request' &&
+                      row['key'] == flow['tailHold'] &&
+                      row['seq'] > requestStart,
+                );
+            final reads = (held['requests'] as List).cast<Map>().where(
+              (row) =>
+                  row['kind'] == 'request' &&
+                  row['key'] == 'POST /channels/${flow['channelId']}/read' &&
+                  row['seq'] > tailRequest['seq'],
+            );
+            check(
+              reads.every((row) => (row['body']?['seq'] ?? 0) == 0),
+              true,
+              'cold tail has no unaccepted positive read ACK',
+            );
+            await t.pump(const Duration(milliseconds: 350));
+            await snapshot('tail-still-held');
+            await control('release', flow['tailHold'] as String);
+            await until(
+              () =>
+                  message(flow['acceptedMessageId'] as String)?['inView'] ==
+                  true,
+              'accepted cold tail',
+            );
+            await snapshot('tail-accepted');
+          } else {
+            await control('arm');
+            await control('arm', flow['replacementHold'] as String);
+            await activateCanonical(flow['channelId'] as String);
+            await waitHeld(flow['hold'] as String);
+            await snapshot('superseded-target-pending');
+            await goBackToActivity();
+            await snapshot('back-to-activity');
+            await activateCanonical(flow['replacementChannelId'] as String);
+            await waitHeld(flow['replacementHold'] as String);
+            await snapshot('replacement-pending');
+            await control('release', flow['replacementHold'] as String);
+            await until(
+              () =>
+                  message(flow['replacementTargetId'] as String)?['inView'] ==
+                  true,
+              'accepted replacement target',
+            );
+            await snapshot('replacement-accepted');
+            final accepted = stages.last['frame'] as Map;
+            final before = await state();
+            final releaseStart =
+                (before['requests'] as List).last['seq'] as int;
+            stageName = 'late-response-delivery';
+            await control('release');
+            await t.pump(const Duration(milliseconds: 350));
+            await snapshot('stale-response-released');
+            final after = stages.last['frame'] as Map;
+            check(after['url'], accepted['url'], 'stale response URI fenced');
+            check(
+              (after['replacement'] as Map?)?['inView'],
+              true,
+              'replacement remains visible after stale success/error',
+            );
+            check(after['target'], isNull, 'stale target never paints');
+            check(
+              frames
+                  .where(
+                    (row) =>
+                        row['stage'] == 'late-response-delivery' ||
+                        row['stage'] == 'stale-response-released',
+                  )
+                  .every(
+                    (row) =>
+                        row['url'] == accepted['url'] &&
+                        row['target'] == null &&
+                        (row['replacement'] as Map?)?['inView'] == true,
+                  ),
+              true,
+              'every observed stale response frame retains replacement target',
+            );
+            final runtime = await state();
+            final late = (runtime['requests'] as List).cast<Map>().where(
+              (row) => row['seq'] > releaseStart,
+            );
+            check(
+              late.where(
+                (row) =>
+                    row['kind'] == 'request' && row['key'] == flow['tailHold'],
+              ),
+              isEmpty,
+              'superseded context error cannot start old fallback tail',
+            );
+            check(
+              late
+                  .where(
+                    (row) =>
+                        row['kind'] == 'request' &&
+                        row['key'] ==
+                            'POST /channels/${flow['channelId']}/read',
+                  )
+                  .every(
+                    (row) => (row['body']?['seq'] ?? 0) <= flow['acceptedSeq'],
+                  ),
+              true,
+              'stale context cannot advance old read frontier',
+            );
+            stages.last['staleResponseObserved'] = late.any(
+              (row) => row['kind'] == 'response' && row['key'] == flow['hold'],
+            );
+          }
+        } else {
+          await captureActivityTarget();
         }
       } catch (error, stack) {
         failures.add('$error\n$stack');

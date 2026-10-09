@@ -64,6 +64,27 @@ def input_failures(source, flutter):
     return failures
 
 
+def loading_failures(flow, source, flutter):
+    """Reject a resolved shell before metadata or a canceled-only race receipt."""
+    failures = []
+    if flow.startswith('cold-'):
+        for name, summary_ in [('Source', source), ('Flutter', flutter)]:
+            for stage_name in ('pending-tail', 'tail-still-held'):
+                frame = summary_['stages'].get(stage_name, {})
+                if not all(frame.get(key) for key in ('headers', 'tabs', 'composer')) or frame.get('accepted'):
+                    failures.append(f'{name} cold resolved shell/window mismatch at {stage_name}')
+            if flow == 'cold-unknown':
+                frame = summary_['stages'].get('pending-identity', {})
+                if not frame.get('channelPlaceholder') or frame.get('tabs') or frame.get('composer') or frame.get('accepted'):
+                    failures.append(f'{name} unresolved identity fabricated conversation state')
+    elif flow.startswith('stale-'):
+        for name, summary_ in [('Source', source), ('Flutter', flutter)]:
+            released = next((s for s in summary_['receipt']['stages'] if s['name'] == 'stale-response-released'), {})
+            if not released.get('staleResponseObserved'):
+                failures.append(f'{name} late HTTP response was not delivered; cancellation is separate evidence')
+    return failures
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('source', type=Path)
@@ -84,7 +105,13 @@ def main():
     if flow != b.get('flow', 'activity-uncached-channel-target') or requirement != b.get('requirement', 'N24/channel-single'):
         failures.append('Input mismatch: process flow or N24 gesture')
     checkpoints = ['accepted-tail', 'activity']
-    if flow != 'activity-uncached-channel-target':
+    if flow.startswith('cold-'):
+        checkpoints = ['activity-ready', 'pending-tail', 'tail-still-held', 'tail-accepted']
+        if flow == 'cold-unknown':
+            checkpoints += ['pending-identity']
+    elif flow.startswith('stale-'):
+        checkpoints = ['accepted-tail', 'activity-ready', 'superseded-target-pending', 'back-to-activity', 'replacement-pending', 'replacement-accepted', 'stale-response-released']
+    elif flow != 'activity-uncached-channel-target':
         checkpoints += ['thread-pending-parent-and-replies', 'thread-replies-before-parent', 'thread-parent-accepted', 'thread-highlight-expired']
     if flow in ('activity-uncached-channel-target', 'activity-channel-after-thread'):
         checkpoints += ['pending-context', 'accepted-context', 'highlight-expired']
@@ -93,6 +120,7 @@ def main():
             failures.append(f'Missing paired checkpoint {name}'); continue
         if url(source['stages'][name]['url']) != url(flutter['stages'][name]['url']):
             failures.append(f'Location mismatch at {name}')
+    failures += loading_failures(flow, source, flutter)
     evidence = {
         'flow': flow, 'requirement': requirement, 'result': 'FAIL' if failures else 'BEHAVIOR_PASS_WITH_LIMITS',
         'failures': failures, 'source': source, 'flutter': flutter,
