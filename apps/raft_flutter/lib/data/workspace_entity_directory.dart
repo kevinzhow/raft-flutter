@@ -66,7 +66,9 @@ bool canRenderWorkspaceAgent(Map<String, dynamic>? row, String? serverId) {
       row['serverId'] is String &&
       serverId != null &&
       row['serverId'] != serverId &&
+      row.containsKey('displayName') &&
       (row['displayName'] == null || row['displayName'] is String) &&
+      row.containsKey('avatarUrl') &&
       (row['avatarUrl'] == null || row['avatarUrl'] is String) &&
       ['active', 'inactive', 'stopped'].contains(row['status']);
   return remote ||

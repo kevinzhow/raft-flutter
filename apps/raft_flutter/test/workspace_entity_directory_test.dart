@@ -211,11 +211,22 @@ void main() {
           'name': 'remote',
           'status': 'active',
           'serverId': 'remote',
+          'displayName': null,
+          'avatarUrl': null,
         }, 's'),
         isTrue,
       );
       expect(
         canRenderWorkspaceAgent({...agent, 'deletedAt': 'now'}, 's'),
+        isFalse,
+      );
+      expect(
+        canRenderWorkspaceAgent({
+          'id': 'a',
+          'name': 'remote',
+          'status': 'active',
+          'serverId': 'remote',
+        }, 's'),
         isFalse,
       );
       expect(canRenderWorkspaceComputer({'id': 'c'}), isFalse);
