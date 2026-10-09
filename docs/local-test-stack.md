@@ -47,4 +47,6 @@
 
 2026-10-09 已实际重建该 RisingWave 容器。原 PostgreSQL 容器、数据卷及 16 张 CDC 源表计数保持一致；48 条 bootstrap 语句成功完成。重建前的 PostgreSQL dump、旧停止容器和第一次 compactor 启动失败记录保留在本机，未提交身份或连接资料。
 
-初次重建后 Docker 显示约 650MiB / 2GiB，cgroup OOM 计数为零。这是观测结果，不能替代持续负载验收。Source 的普通和 bootstrap 严格 Inbox 比较都保留了 `PG 21 / RW 19` 未读差异；不得把健康检查或 bootstrap 成功写成该严格比较通过。后续真实客户端流程和差异定位记录于本机 `.local/cody-risingwave-memory-20261009/`。
+初次重建后 Docker 显示约 650MiB / 2GiB，cgroup OOM 计数为零。这是观测结果，不能替代持续负载验收。Source 的普通和 bootstrap 严格 Inbox 比较都保留了 `PG 21 / RW 19` 未读差异；不得把健康检查或 bootstrap 成功写成该严格比较通过。
+
+逐行定位发现两端 56 条结果身份、最新消息和读取游标一致，仅一个频道的未读数为 `PG 2 / RW 0`。差异是已存在的自己创建任务通知和删除任务通知：固定 Source 的 RW SQL 排除自己的 causal system 消息以及 `task.deleted_summary`，该 verifier 使用的 canonical PG Inbox 路径缺少这两项排除。等待追平和 bootstrap 模式均不改变差异。客户端继续显示接口返回的数据，不另算一套数字；本批未修改 Source 查询，也未将原始严格比较 FAIL 改为 PASS。实际接口的 All、Unread、Mentions 和 sidebar unread summary 均 HTTP 200。后续真实客户端流程和差异定位记录于本机 `.local/cody-risingwave-memory-20261009/`。
