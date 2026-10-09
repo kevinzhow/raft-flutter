@@ -918,48 +918,40 @@ void main() {
         (page['messages'] as List).where((m) => m['content'] == replyText),
         hasLength(1),
       );
-      await until(
-        tester,
-        () =>
-            find
-                .byKey(const Key('thread-follow-toggle'))
-                .evaluate()
-                .isNotEmpty &&
-            tester
-                    .widget<TextButton>(
-                      find.byKey(const Key('thread-follow-toggle')),
-                    )
-                    .onPressed !=
-                null,
-      );
-      final initiallyFollowing = find
-          .text('Unfollow thread')
-          .evaluate()
-          .isNotEmpty;
-      await tester.tap(find.byKey(const Key('thread-follow-toggle')));
-      await until(
-        tester,
-        () => find
-            .text(initiallyFollowing ? 'Follow thread' : 'Unfollow thread')
-            .evaluate()
-            .isNotEmpty,
-      );
-      await tester.tap(find.byKey(const Key('thread-follow-toggle')));
-      await until(
-        tester,
-        () => find
-            .text(initiallyFollowing ? 'Unfollow thread' : 'Follow thread')
-            .evaluate()
-            .isNotEmpty,
-      );
-      // Keep this test-created parent followed for the actual followed-list check.
-      if (!initiallyFollowing) {
-        await tester.tap(find.byKey(const Key('thread-follow-toggle')));
-        await until(
-          tester,
-          () => find.text('Unfollow thread').evaluate().isNotEmpty,
-        );
+      final followEntry = find.byKey(const Key('thread-follow-menu-item'));
+      Future<void> openFollowEntry({String? expected}) async {
+        await tester.tap(find.byKey(const Key('thread-options')));
+        await until(tester, () {
+          if (followEntry.evaluate().isEmpty) return false;
+          final item = tester.widget<RaftMenuItem>(followEntry);
+          return item.onPressed != null &&
+              (expected == null || item.label == expected);
+        });
       }
+
+      Future<void> toggleFollow() async {
+        await tester.tap(followEntry);
+        await until(tester, () => followEntry.evaluate().isEmpty);
+      }
+
+      await openFollowEntry();
+      final initiallyFollowing =
+          tester.widget<RaftMenuItem>(followEntry).label == 'Unfollow thread';
+      await toggleFollow();
+      await openFollowEntry(
+        expected: initiallyFollowing ? 'Follow thread' : 'Unfollow thread',
+      );
+      await toggleFollow();
+      await openFollowEntry(
+        expected: initiallyFollowing ? 'Unfollow thread' : 'Follow thread',
+      );
+      // Keep this test-created parent followed for actual projection readback.
+      if (!initiallyFollowing) {
+        await toggleFollow();
+        await openFollowEntry(expected: 'Unfollow thread');
+      }
+      await tester.tap(find.byKey(const Key('thread-options')));
+      await until(tester, () => followEntry.evaluate().isEmpty);
       bool projectedFollow = false;
       for (var attempt = 0; attempt < 50 && !projectedFollow; attempt++) {
         final followedRows = await w.query('/channels/threads/followed');

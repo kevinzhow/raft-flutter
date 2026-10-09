@@ -53,7 +53,7 @@ class _ThreadActionsState extends State<ThreadActions> {
 
   void authorityChanged() {
     if (!current) closeMenu();
-    if (mounted) setState(() {});
+    if (mounted) rebuild(() {});
   }
 
   bool get current =>
@@ -62,12 +62,19 @@ class _ThreadActionsState extends State<ThreadActions> {
       authority == workspaceAuthority(w) &&
       widget.parent.id == w.threadParent?.id;
 
+  // OverlayEntry lives outside this State's subtree. Async membership and
+  // busy changes must rebuild both the trigger and an already open menu.
+  void rebuild(VoidCallback change) {
+    setState(change);
+    menu?.markNeedsBuild();
+  }
+
   Future<void> load() async {
     final request = ++ticket;
     try {
       final response = await w.query('/channels/threads/followed');
       if (!current || request != ticket) return;
-      setState(() {
+      rebuild(() {
         following = (response['threads'] as List).any(
           (row) => row['parentMessageId'] == widget.parent.id,
         );
@@ -75,7 +82,7 @@ class _ThreadActionsState extends State<ThreadActions> {
       });
     } catch (_) {
       if (current && request == ticket) {
-        setState(
+        rebuild(
           () => error = 'Thread notification settings could not be loaded.',
         );
       }
@@ -88,7 +95,7 @@ class _ThreadActionsState extends State<ThreadActions> {
     final threadId = w.threadChannelId;
     if (wasFollowing && threadId == null) return;
     ++ticket;
-    setState(() {
+    rebuild(() {
       busy = true;
       error = null;
     });
@@ -103,15 +110,15 @@ class _ThreadActionsState extends State<ThreadActions> {
       if (!current) return;
       // The write acknowledgement is authoritative; an asynchronous Activity
       // projection may still return the old follow membership immediately.
-      setState(() => following = !wasFollowing);
+      rebuild(() => following = !wasFollowing);
     } catch (_) {
       if (current) {
-        setState(
+        rebuild(
           () => error = 'Thread notification settings could not be changed.',
         );
       }
     } finally {
-      if (current) setState(() => busy = false);
+      if (current) rebuild(() => busy = false);
     }
   }
 
@@ -166,18 +173,21 @@ class _ThreadActionsState extends State<ThreadActions> {
               if (widget.onViewChannel != null)
                 RaftMenuItem(
                   label: raftText(context, 'View in channel'),
-                  glyph: RaftGlyph.hash,
+                  glyph: RaftGlyph.mapPin,
                   onPressed: () {
                     closeMenu();
                     if (current) widget.onViewChannel!();
                   },
                 ),
               RaftMenuItem(
+                key: const Key('thread-follow-menu-item'),
                 label: raftText(
                   context,
                   following == true ? 'Unfollow thread' : 'Follow thread',
                 ),
-                glyph: RaftGlyph.bell,
+                glyph: following == true
+                    ? RaftGlyph.messageCircleOff
+                    : RaftGlyph.messageCirclePlus,
                 onPressed: following == null || busy
                     ? null
                     : () {
