@@ -3,7 +3,7 @@
 // max-width per size), Header (title + corner close), Body, Footer, Title,
 // Description; enter/exit `transition-[opacity,transform] duration-150
 // ease-out` from `opacity: 0; scale: 0.98`.
-import 'dart:ui' show ImageFilter;
+import 'dart:ui' show ImageFilter, SemanticsRole;
 
 import 'package:flutter/material.dart';
 
@@ -191,6 +191,9 @@ class RaftDialog extends StatelessWidget {
             child: Semantics(
               scopesRoute: true,
               namesRoute: true,
+              role: kind == RaftDialogKind.alert
+                  ? SemanticsRole.alertDialog
+                  : SemanticsRole.dialog,
               explicitChildNodes: true,
               label:
                   semanticLabel ?? (title is String ? title as String : null),
@@ -506,7 +509,7 @@ class RaftDialogRoute<T> extends PopupRoute<T> {
     this.dismissible = true,
     this.label,
     super.settings,
-  });
+  }) : super(traversalEdgeBehavior: TraversalEdgeBehavior.closedLoop);
 
   final WidgetBuilder builder;
   final CapturedThemes capturedThemes;

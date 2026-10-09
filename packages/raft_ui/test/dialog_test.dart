@@ -1,3 +1,5 @@
+import 'dart:ui' show SemanticsRole;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -153,4 +155,60 @@ void main() {
     expect(result, true);
     expect(tester.takeException(), isNull);
   });
+  for (final alert in [false, true]) {
+    testWidgets('modal focus remains inside ${alert ? "alert" : "dialog"}', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.elegant),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => RaftButton(
+                  label: 'Open',
+                  onPressed: () => showRaftDialog<void>(
+                    context: context,
+                    builder: (_) => RaftDialog(
+                      kind: alert
+                          ? RaftDialogKind.alert
+                          : RaftDialogKind.dialog,
+                      title: 'Owned modal',
+                      content: const Text('Body'),
+                      actions: [RaftButton(label: 'Confirm', onPressed: () {})],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Open'));
+        await tester.pumpAndSettle();
+        final route = ModalRoute.of(tester.element(find.byType(RaftDialog)));
+        for (var i = 0; i < 8; i++) {
+          await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+          await tester.pump();
+          final focusContext = FocusManager.instance.primaryFocus?.context;
+          expect(focusContext, isNotNull);
+          expect(
+            ModalRoute.of(focusContext!),
+            same(route),
+            reason: 'Tab must cycle through this modal, never its hidden page.',
+          );
+        }
+        final role = alert ? SemanticsRole.alertDialog : SemanticsRole.dialog;
+        final roleNode = find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.role == role,
+        );
+        expect(roleNode, findsOneWidget);
+        expect(tester.getSemantics(roleNode).getSemanticsData().role, role);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pumpAndSettle();
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
 }
