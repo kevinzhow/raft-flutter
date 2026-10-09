@@ -86,7 +86,9 @@ void main() {
         expect(style.letterSpacing, family == RaftFamily.brutal ? 0 : -.14);
         expect(
           style.color,
-          family == RaftFamily.brutal ? tokens.strong : tokens.muted,
+          // Mounted MessageItem overrides Brutal body to text-black;
+          // generic/document prose still uses foreground-strong below.
+          family == RaftFamily.brutal ? Colors.black : tokens.muted,
         );
         if (family == RaftFamily.elegant) {
           // Actual loaded Web Geist: 0 tracking=537.01px, -.14=525.39px.
