@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -29,6 +30,8 @@ Future<bool?> previewMessageImage(
   AttachmentFiles? files,
   NativeSharing? sharing,
   String Function(DateTime)? clock,
+  bool Function()? authorized,
+  Listenable? authorityChanges,
 }) async {
   if (messages.isEmpty || messages.length > MessageSelection.limit) {
     return false;
@@ -58,7 +61,11 @@ Future<bool?> previewMessageImage(
       row.message.id: selectedMessageFingerprint(row.message),
   };
   bool current() {
-    if (!context.mounted || authority != scope()) return false;
+    if (!context.mounted ||
+        authority != scope() ||
+        (authorized != null && !authorized())) {
+      return false;
+    }
     if (channelAuthorityReduced(channelAuthority, w.channel?.json)) {
       return false;
     }
@@ -100,6 +107,7 @@ Future<bool?> previewMessageImage(
   }
 
   w.addListener(revoke);
+  authorityChanges?.addListener(revoke);
   Uint8List? png;
   try {
     final fontSize = switch (w.client.user?.string(
@@ -277,6 +285,7 @@ Future<bool?> previewMessageImage(
         bytes: png!,
         filename: filename,
         authorized: current,
+        authorityChanges: authorityChanges,
         files: files,
         sharing: sharing,
       ),
@@ -288,6 +297,7 @@ Future<bool?> previewMessageImage(
   } finally {
     entry?.remove();
     w.removeListener(revoke);
+    authorityChanges?.removeListener(revoke);
     if (png != null) {
       await MemoryImage(png).evict();
       png.fillRange(0, png.length, 0);
@@ -302,6 +312,7 @@ class MessageImageReview extends StatefulWidget {
     required this.bytes,
     required this.filename,
     required this.authorized,
+    this.authorityChanges,
     this.files,
     this.sharing,
   });
@@ -309,6 +320,7 @@ class MessageImageReview extends StatefulWidget {
   final Uint8List bytes;
   final String filename;
   final bool Function() authorized;
+  final Listenable? authorityChanges;
   final AttachmentFiles? files;
   final NativeSharing? sharing;
   @override
@@ -324,8 +336,18 @@ class _MessageImageReviewState extends State<MessageImageReview> {
   bool get current => mounted && widget.authorized();
   void changed() {
     if (!current) {
-      final route = ModalRoute.of(context);
-      if (route?.isActive == true) route!.navigator?.removeRoute(route);
+      void closeOwnedReview() {
+        if (!mounted || current) return;
+        final route = ModalRoute.of(context);
+        if (route?.isActive == true) route!.navigator?.removeRoute(route);
+      }
+
+      if (WidgetsBinding.instance.schedulerPhase ==
+          SchedulerPhase.persistentCallbacks) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => closeOwnedReview());
+      } else {
+        closeOwnedReview();
+      }
       unawaited(lease?.dispose() ?? Future<void>.value());
       lease = null;
     }
@@ -335,11 +357,13 @@ class _MessageImageReviewState extends State<MessageImageReview> {
   void initState() {
     super.initState();
     widget.controller.addListener(changed);
+    widget.authorityChanges?.addListener(changed);
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(changed);
+    widget.authorityChanges?.removeListener(changed);
     unawaited(lease?.dispose() ?? Future<void>.value());
     lease = null;
     super.dispose();

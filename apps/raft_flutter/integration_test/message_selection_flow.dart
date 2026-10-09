@@ -8,6 +8,8 @@ import 'package:raft_flutter/features/message_image_export.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'native_message_menu.dart';
+
 /// Captures the actual selected-message PNG before cancellation; no fixture
 /// pixels, OS picker, or save destination are supplied to this native flow.
 Future<void> verifyMessageSelection(
@@ -39,28 +41,23 @@ Future<void> verifyMessageSelection(
     await capture('linux-failure-selection-context');
   }
   expect(tile, findsOneWidget, reason: 'The context target must be rendered.');
-  final actions = find.descendant(
-    of: tile,
-    matching: find.byTooltip('Message actions'),
-  );
-  await tester.ensureVisible(actions);
-  await tester.pump(const Duration(milliseconds: 300));
-  await tester.tap(actions);
-  await tester.pump(const Duration(milliseconds: 300));
+  await openNativeMessageMenu(tester, tile, entry: find.text('Select Message'));
   await tester.tap(find.text('Select Message'));
   await tester.pump(const Duration(milliseconds: 300));
   expect(find.byType(RaftSelectionToolbar), findsOneWidget);
   expect(find.text('1 selected'), findsOneWidget);
-  await tester.tap(find.text('Copy Markdown'));
+  await tester.tap(find.byTooltip('More'));
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.text('Copy MD'));
   await tester.pump(const Duration(milliseconds: 300));
   final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
   expect(clipboard?.text, contains(body));
-  final preview = find.text('Preview image');
+  final more = find.byTooltip('More');
   // Clipboard completion can enqueue a toast after the first pump; wait for
   // the actual overlay to leave before using the bottom toolbar target.
   for (var i = 0; i < 100; i++) {
     if (find.byType(SnackBar).evaluate().isEmpty &&
-        preview.hitTestable().evaluate().isNotEmpty) {
+        more.hitTestable().evaluate().isNotEmpty) {
       break;
     }
     final close = find.descendant(
@@ -73,8 +70,10 @@ Future<void> verifyMessageSelection(
     await tester.pump(const Duration(milliseconds: 300));
   }
   expect(find.byType(SnackBar), findsNothing);
-  expect(preview.hitTestable(), findsOneWidget);
-  await tester.tap(preview);
+  expect(more.hitTestable(), findsOneWidget);
+  await tester.tap(more);
+  await tester.pump(const Duration(milliseconds: 300));
+  await tester.tap(find.text('Generate image'));
   for (
     var i = 0;
     i < 200 && find.byType(MessageImageReview).evaluate().isEmpty;
@@ -116,7 +115,7 @@ Future<void> verifyMessageSelection(
   await tester.tap(
     find.descendant(
       of: find.byType(RaftSelectionToolbar),
-      matching: find.byTooltip('Exit selection'),
+      matching: find.byTooltip('Cancel'),
     ),
   );
   await tester.pump(const Duration(milliseconds: 300));

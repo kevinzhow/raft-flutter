@@ -1660,18 +1660,36 @@ class RaftMenuController extends ChangeNotifier {
 
 @immutable
 class RaftMenuEntry {
-  const RaftMenuEntry({required this.label, this.glyph, this.onPressed});
+  const RaftMenuEntry({
+    required this.label,
+    this.glyph,
+    this.leading,
+    this.onPressed,
+  });
   const RaftMenuEntry.separator()
     : label = null,
       glyph = null,
+      leading = null,
       onPressed = null;
   final String? label;
   final RaftGlyph? glyph;
+  final Widget? leading;
   final VoidCallback? onPressed;
 }
 
 /// Original dropdown composition with one owner for popup and keyboard focus.
 enum RaftDropdownTriggerStyle { button, picker }
+
+enum RaftDropdownSide { bottom, top }
+
+enum RaftDropdownAlign { start, end }
+
+/// The popup retains ownership of its trigger focus and dismissal callbacks.
+typedef RaftDropdownTriggerBuilder = Widget Function(
+  BuildContext context,
+  FocusNode focusNode,
+  VoidCallback? onPressed,
+);
 
 class RaftDropdownMenu extends StatefulWidget {
   const RaftDropdownMenu({
@@ -1688,11 +1706,19 @@ class RaftDropdownMenu extends StatefulWidget {
     this.triggerStyle = RaftDropdownTriggerStyle.button,
     this.selected = false,
     this.minimumTargetSize,
+    this.side = RaftDropdownSide.bottom,
+    this.align = RaftDropdownAlign.start,
+    this.sideOffset,
+    this.triggerBuilder,
   });
 
   /// Passed to the trigger [RaftControl] (layout follows the Web box when
   /// set to the visual height).
   final double? minimumTargetSize;
+  final RaftDropdownSide side;
+  final RaftDropdownAlign align;
+  final double? sideOffset;
+  final RaftDropdownTriggerBuilder? triggerBuilder;
   final String label;
   final List<RaftMenuEntry> entries;
   final RaftMenuController? controller;
@@ -1888,6 +1914,19 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
       t,
       viewportHeight: MediaQuery.sizeOf(context).height,
     );
+    void toggle() {
+      if (!widget.enabled) return;
+      if (controller.isOpen) {
+        close();
+      } else {
+        show();
+      }
+    }
+
+    final end = widget.align == RaftDropdownAlign.end;
+    final right = end == (Directionality.of(context) == TextDirection.ltr);
+    final top = widget.side == RaftDropdownSide.top;
+    final gap = widget.sideOffset ?? recipe.popupGap;
     return OverlayPortal(
       controller: portal,
       overlayChildBuilder: (context) => !widget.enabled
@@ -1904,9 +1943,9 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                 CompositedTransformFollower(
                   link: anchor,
                   showWhenUnlinked: false,
-                  targetAnchor: Alignment.bottomLeft,
-                  followerAnchor: Alignment.topLeft,
-                  offset: Offset(0, recipe.popupGap),
+                  targetAnchor: Alignment(right ? 1 : -1, top ? -1 : 1),
+                  followerAnchor: Alignment(right ? 1 : -1, top ? 1 : -1),
+                  offset: Offset(0, top ? -gap : gap),
                   child: FocusScope(
                     node: popup,
                     child: CallbackShortcuts(
@@ -1947,6 +1986,7 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                                 RaftMenuItem(
                                   label: widget.entries[i].label!,
                                   glyph: widget.entries[i].glyph,
+                                  leading: widget.entries[i].leading,
                                   focusNode: nodes[i],
                                   onMove: move,
                                   onPressed: widget.entries[i].onPressed == null
@@ -1970,56 +2010,66 @@ class _RaftDropdownMenuState extends State<RaftDropdownMenu> {
                   show(edge: 1),
               const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
                   show(edge: -1),
-              const SingleActivator(LogicalKeyboardKey.escape): () => close(),
+              if (controller.isOpen)
+                const SingleActivator(LogicalKeyboardKey.escape): () => close(),
             },
           },
-          child: RaftControl(
-            focusNode: trigger,
-            tooltip: widget.tooltip,
-            minimumTargetSize: widget.minimumTargetSize,
-            variant: RaftControlVariant.outline,
-            visualHeight: widget.triggerStyle == RaftDropdownTriggerStyle.picker
-                ? t.brutal
-                      ? 32
-                      : 28
-                : 32,
-            recipe: widget.triggerStyle == RaftDropdownTriggerStyle.picker
-                ? RaftPickerTriggerRecipe(t, selected: widget.selected)
-                : null,
-            onPressed: !widget.enabled
-                ? null
-                : () {
-                    if (controller.isOpen) {
-                      close();
-                    } else {
-                      show();
-                    }
-                  },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (widget.glyph != null) ...[
-                  RaftIcon(widget.glyph!, size: 14),
-                  SizedBox(
-                    width:
-                        widget.triggerStyle == RaftDropdownTriggerStyle.picker
-                        ? 8
-                        : 6,
-                  ),
-                ],
-                Text(widget.label),
-                if (widget.trailingGlyph != null) ...[
-                  SizedBox(
-                    width:
-                        widget.triggerStyle == RaftDropdownTriggerStyle.picker
-                        ? 8
-                        : 6,
-                  ),
-                  RaftIcon(widget.trailingGlyph!, size: 12),
-                ],
-              ],
-            ),
-          ),
+          child:
+              widget.triggerBuilder?.call(
+                context,
+                trigger,
+                widget.enabled ? toggle : null,
+              ) ??
+              RaftControl(
+                focusNode: trigger,
+                tooltip: widget.tooltip,
+                minimumTargetSize: widget.minimumTargetSize,
+                variant: RaftControlVariant.outline,
+                visualHeight:
+                    widget.triggerStyle == RaftDropdownTriggerStyle.picker
+                    ? t.brutal
+                          ? 32
+                          : 28
+                    : 32,
+                recipe: widget.triggerStyle == RaftDropdownTriggerStyle.picker
+                    ? RaftPickerTriggerRecipe(t, selected: widget.selected)
+                    : null,
+                onPressed: !widget.enabled
+                    ? null
+                    : () {
+                        if (controller.isOpen) {
+                          close();
+                        } else {
+                          show();
+                        }
+                      },
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.glyph != null) ...[
+                      RaftIcon(widget.glyph!, size: 14),
+                      SizedBox(
+                        width:
+                            widget.triggerStyle ==
+                                RaftDropdownTriggerStyle.picker
+                            ? 8
+                            : 6,
+                      ),
+                    ],
+                    Text(widget.label),
+                    if (widget.trailingGlyph != null) ...[
+                      SizedBox(
+                        width:
+                            widget.triggerStyle ==
+                                RaftDropdownTriggerStyle.picker
+                            ? 8
+                            : 6,
+                      ),
+                      RaftIcon(widget.trailingGlyph!, size: 12),
+                    ],
+                  ],
+                ),
+              ),
         ),
       ),
     );
@@ -2082,6 +2132,7 @@ class RaftMenuItem extends StatefulWidget {
     required this.label,
     this.onPressed,
     this.glyph,
+    this.leading,
     this.selected = false,
     this.kind = RaftMenuKind.dropdown,
     this.autofocus = false,
@@ -2091,6 +2142,9 @@ class RaftMenuItem extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
   final RaftGlyph? glyph;
+
+  /// Caller-owned content (e.g. an authored 14px glyph or loading spinner).
+  final Widget? leading;
   final FocusNode? focusNode;
   final ValueChanged<int>? onMove;
   final bool selected, autofocus;
@@ -2207,15 +2261,25 @@ class _RaftMenuItemState extends State<RaftMenuItem> {
                 opacity: enabled ? 1 : .3,
                 child: Row(
                   children: [
-                    if (widget.glyph != null) ...[
-                      RaftIcon(
-                        widget.glyph!,
-                        size: t.brutal ? 14 : 16,
-                        strokeWidth: t.brutal ? 2 : 1.5,
-                        color: enabled && (hovered || focused)
-                            ? t.ink
-                            : recipe.foreground,
-                      ),
+                    if (widget.leading != null || widget.glyph != null) ...[
+                      if (widget.leading != null)
+                        DefaultTextStyle.merge(
+                          style: TextStyle(
+                            color: enabled && (hovered || focused)
+                                ? t.ink
+                                : recipe.foreground,
+                          ),
+                          child: widget.leading!,
+                        )
+                      else
+                        RaftIcon(
+                          widget.glyph!,
+                          size: t.brutal ? 14 : 16,
+                          strokeWidth: t.brutal ? 2 : 1.5,
+                          color: enabled && (hovered || focused)
+                              ? t.ink
+                              : recipe.foreground,
+                        ),
                       SizedBox(width: t.brutal ? 8 : 10),
                     ],
                     Expanded(

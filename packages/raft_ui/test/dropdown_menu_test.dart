@@ -221,4 +221,62 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'custom trigger top/end uses logical RTL edge and restores its owned focus',
+    (t) async {
+      final controller = RaftMenuController();
+      addTearDown(controller.dispose);
+      FocusNode? trigger;
+      var activated = 0;
+      await t.pumpWidget(
+        menuHost(
+          Directionality(
+            textDirection: TextDirection.rtl,
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: RaftDropdownMenu(
+                  label: 'RTL actions',
+                  controller: controller,
+                  side: RaftDropdownSide.top,
+                  align: RaftDropdownAlign.end,
+                  sideOffset: 8,
+                  triggerBuilder: (context, node, pressed) {
+                    trigger = node;
+                    return RaftButton(
+                      label: 'RTL custom trigger',
+                      focusNode: node,
+                      onPressed: pressed,
+                    );
+                  },
+                  entries: [
+                    RaftMenuEntry(
+                      label: 'Copy current',
+                      onPressed: () => activated++,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      final rect = t.getRect(find.text('RTL custom trigger'));
+      final box = t.getRect(find.byType(RaftButton));
+      await t.tapAt(rect.center);
+      await t.pumpAndSettle();
+      final menu = t.getRect(find.byType(RaftMenuPanel));
+      expect(menu.left, closeTo(box.left, .01));
+      expect(menu.bottom, closeTo(box.top - 8, .01));
+      await t.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await t.pump();
+      await t.sendKeyEvent(LogicalKeyboardKey.enter);
+      await t.pumpAndSettle();
+      expect(activated, 1);
+      expect(controller.isOpen, isFalse);
+      expect(trigger!.hasFocus, isTrue);
+      expect(t.takeException(), isNull);
+    },
+  );
 }

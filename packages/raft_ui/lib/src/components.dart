@@ -138,6 +138,7 @@ class RaftButton extends StatelessWidget {
     this.expand = false,
     this.focusNode,
     this.tooltip,
+    this.semanticLabel,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -163,6 +164,9 @@ class RaftButton extends StatelessWidget {
   final bool expand;
   final FocusNode? focusNode;
   final String? tooltip;
+
+  /// Explicit authored aria-label, independent of transient visual feedback.
+  final String? semanticLabel;
 
   RaftButtonRecipeVariant get recipeVariant =>
       tone ??
@@ -200,7 +204,7 @@ class RaftButton extends StatelessWidget {
       busy: busy,
       focusNode: focusNode,
       tooltip: tooltip,
-      semanticLabel: busy ? text : null,
+      semanticLabel: semanticLabel ?? (busy ? text : null),
       builder: (context, st) {
         final s = RaftButtonRecipe.resolve(
           theme: t.recipeTheme,
@@ -287,7 +291,9 @@ class RaftButton extends StatelessWidget {
           decorationOverride: highContrastDanger
               ? (d) => d.copyWith(color: t.components.buttonDangerHighContrast)
               : null,
-          child: content2,
+          child: semanticLabel == null
+              ? content2
+              : ExcludeSemantics(child: content2),
         );
       },
     );
