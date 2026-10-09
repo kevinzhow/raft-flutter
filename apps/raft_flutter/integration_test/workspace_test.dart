@@ -336,7 +336,7 @@ Future<void> captureDesktopNotificationThemes(WidgetTester tester) async {
     await section(tester, 'chat');
   }
 
-  final mouse = await tester.createGesture(kind: ui.PointerDeviceKind.mouse);
+  final mouse = createNativeMouse(tester);
   await mouse.addPointer(location: Offset.zero);
   try {
     for (final entry in [

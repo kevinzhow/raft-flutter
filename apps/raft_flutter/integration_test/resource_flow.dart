@@ -1,13 +1,13 @@
-import 'dart:ui' show PointerDeviceKind;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:flutter/gestures.dart' show kSecondaryMouseButton;
+import 'package:flutter/gestures.dart' show kSecondaryMouseButton, kPrimaryMouseButton;
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
+
+import 'native_message_menu.dart';
 
 /// Runs real ResourceView controls against the mounted server. The caller owns
 /// the already-created message/channel and saved entry; this adds no fixture.
@@ -362,7 +362,9 @@ Future<void> verifyActivityThreadLifecycle(
     TestGesture? mouse;
     try {
       if (RaftDensityScope.of(tester.element(tile)) == RaftDensity.desktop) {
-        mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+        mouse = createNativeMouse(tester, buttons:
+            tooltip == 'Unfollow thread' || tooltip == 'Follow thread'
+              ? kSecondaryMouseButton : kPrimaryMouseButton);
         await mouse.addPointer(location: tester.getCenter(tile));
         await mouse.moveTo(tester.getCenter(tile));
         await tester.pump(const Duration(milliseconds: 200));
@@ -372,9 +374,9 @@ Future<void> verifyActivityThreadLifecycle(
       if (tooltip == 'Unfollow thread' || tooltip == 'Follow thread') {
         final point = tester.getTopLeft(tile) + const Offset(16, 16);
         if (defaultTargetPlatform == TargetPlatform.linux) {
-          final press = await tester.startGesture(point,
-              kind: PointerDeviceKind.mouse, buttons: kSecondaryMouseButton);
-          await press.up();
+          // Reuse this owned hover device for the secondary-button press.
+          await mouse!.down(point);
+          await mouse.up();
         } else {
           await tester.longPressAt(point);
         }
