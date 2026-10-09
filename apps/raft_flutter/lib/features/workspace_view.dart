@@ -2701,11 +2701,14 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Future<void> channelSettings() async {
-    if (w.channel == null) return;
+    // The route can rebuild after archive/delete refresh clears the current
+    // selection. Its identity belongs to the channel that opened the sheet.
+    final channel = w.channel;
+    if (channel == null) return;
     await showDialog(
       context: context,
       builder: (_) =>
-          ChannelSettings(controller: w, channel: w.channel!, isPanel: true),
+          ChannelSettings(controller: w, channel: channel, isPanel: true),
     );
   }
 
