@@ -12,7 +12,6 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../data/personal_presentation.dart';
 import '../data/sidebar_disclosure.dart';
-import 'appearance_section.dart';
 import 'message_reference_directory.dart';
 import 'chat_agent_presentation.dart';
 import 'live_agent_activity_bar.dart';
@@ -26,9 +25,9 @@ import 'package:flutter/scheduler.dart';
 import 'resource_view.dart';
 import 'page_layout.dart';
 import 'channel_settings.dart';
+import 'create_channel_dialog.dart';
+import 'workspace_settings.dart';
 import 'server_views.dart';
-import 'account_settings.dart';
-import 'settings_page.dart';
 import 'mobile_workspace_navigation.dart';
 import 'desktop_navigation_policy.dart';
 import 'desktop_master_detail.dart';
@@ -36,14 +35,12 @@ import 'desktop_directory_view.dart';
 import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
 import 'member_profile_view.dart';
-import 'locale_settings_page.dart';
 import 'fleet_views.dart';
 import 'integrations_views.dart';
 import 'provider_views.dart';
 import 'admin_views.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
-import 'notification_settings_view.dart';
 import 'sidebar_preferences_view.dart';
 import 'sidebar_projection.dart';
 import 'sidebar_sort_menu.dart';
@@ -590,7 +587,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               'joint-channels' => 'Joint channels',
               _ => route[0].toUpperCase() + route.substring(1),
             });
-      Widget content = w.loading
+      // Mobile home keeps the sidebar mounted while the lists load and shows
+      // SidebarRowsSkeleton rows (Sidebar.tsx channelsLoading), not a spinner.
+      final homeSkeleton = route == 'home' && !wide && w.server != null;
+      Widget content = w.loading && !homeSkeleton
           ? const Center(child: CircularProgressIndicator())
           : route == 'settings'
           ? settings()
@@ -1379,8 +1379,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   Widget mobileNavigation() {
     final scope = mobileAuthority;
-    return RaftMobileNav(
-      key: const Key('workspace-mobile-navigation'),
+    return WorkspaceMobileTabBar(
+      controller: w,
       selectedId:
           mobileWorkspaceRootTab(
             w.section,
@@ -1391,33 +1391,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       // The enclosing SafeArea consumed this inset exactly once.
       bottomInset: 0,
       onSelected: (tab) => selectMobileTab(tab, scope),
-      items: [
-        RaftMobileNavItem(
-          id: 'chat',
-          label: tr('Home'),
-          glyph: RaftGlyph.home,
-          key: const Key('mobile-tab-home'),
-        ),
-        RaftMobileNavItem(
-          id: 'tasks',
-          label: tr('Tasks'),
-          glyph: RaftGlyph.checkSquare,
-          key: const Key('mobile-tab-tasks'),
-        ),
-        if (w.server?.string('role') != 'guest' && w.can('viewMembers'))
-          RaftMobileNavItem(
-            id: 'members',
-            label: tr('Members'),
-            glyph: RaftGlyph.users,
-            key: const Key('mobile-tab-members'),
-          ),
-        RaftMobileNavItem(
-          id: 'settings',
-          label: tr('Settings'),
-          glyph: RaftGlyph.settings,
-          key: const Key('mobile-tab-settings'),
-        ),
-      ],
     );
   }
 
@@ -1634,19 +1607,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         child: Column(
           children: [
             if (mobileHome)
-              RaftMobileRootHeader(
-                leading: RaftMobileServerSelector(
-                  key: const Key('mobile-server-selector'),
-                  label: w.server?.name ?? tr('Workspace'),
-                  onPressed: showWorkspaceSwitcher,
-                ),
-                actions: [
-                  SystemNotificationBell(
-                    key: const Key('mobile-home-notifications'),
-                    controller: w,
-                    onBilling: () => select('billing'),
-                  ),
-                ],
+              WorkspaceMobileHomeHeader(
+                controller: w,
+                onServer: showWorkspaceSwitcher,
+                onBilling: () => select('billing'),
               )
             else
               SizedBox(
@@ -1900,26 +1864,29 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final scope = mobileAuthority, id = group.id;
     final sortable = !group.custom;
     final anchor = sortable ? sortAnchors.putIfAbsent(id, GlobalKey.new) : null;
+    // Sidebar.tsx renderSectionAddButton: Plus 14 on Channels
+    // (createChannels) and Joint channels (federateChannels) only; Pinned and
+    // Direct messages carry just the sort menu.
     final VoidCallback? onAdd =
         id == 'system:channels' && w.can('createChannels')
         ? createChannel
-        : id == 'system:dms'
-        ? newConversation
+        : id == 'system:joint' && w.can('federateChannels')
+        ? () => select('joint-channels')
         : null;
     return [
       if (sortable)
         RaftSidebarSectionAction(
           key: anchor,
           label: tr('Sort'),
-          glyph: RaftGlyph.arrowDownUp,
+          glyph: RaftGlyph.arrowUpDown, // Sidebar.tsx ArrowUpDown 14
           onPressed: sortingGroups.contains(id)
               ? null
               : () => sortSidebarGroup(group),
         ),
       if (onAdd != null)
         RaftSidebarSectionAction(
-          label: id == 'system:dms'
-              ? tr('New direct message')
+          label: id == 'system:joint'
+              ? tr('Create joint channel')
               : tr('Create channel'),
           glyph: RaftGlyph.plus,
           onPressed: () {
@@ -1948,230 +1915,34 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
-  Future<void> newConversation() async {
-    try {
-      final lists = await Future.wait([
-        w.query('/servers/${w.server!.id}/members'),
-        w.query('/agents'),
-      ]);
-      if (!mounted) return;
-      final people = [
-        for (final p in lists[0] as List)
-          {
-            ...Map<String, dynamic>.from(p),
-            'target': 'userId',
-            'targetId': p['userId'] ?? p['id'],
-          },
-        for (final p in lists[1] as List)
-          {
-            ...Map<String, dynamic>.from(p),
-            'target': 'agentId',
-            'targetId': p['id'],
-          },
-      ];
-      final person = await showDialog<Map<String, dynamic>>(
-        context: context,
-        builder: (context) => SimpleDialog(
-          title: Text(tr('New direct message')),
-          children: [
-            for (final person in people.where(
-              (p) => p['targetId'] != w.client.user!.id,
-            ))
-              SimpleDialogOption(
-                onPressed: () => Navigator.pop(context, person),
-                child: ListTile(
-                  leading: RaftAvatar(
-                    name: '${person['displayName'] ?? person['name']}',
-                  ),
-                  title: Text('${person['displayName'] ?? person['name']}'),
-                  subtitle: Text(
-                    person['target'] == 'agentId' ? 'Agent' : 'Member',
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
-      if (person != null) {
-        final result = await w.command(
-          'POST',
-          '/channels/dm',
-          data: {person['target']: person['targetId']},
-        );
-        await w.refreshChannels();
-        await chooseChannel(RaftChannel(Map<String, dynamic>.from(result)));
-      }
-    } catch (e) {
-      w.setError('$e');
-    }
-  }
-
-  Future<void> createChannel() async {
-    await showDialog<bool>(
-      context: context,
-      builder: (_) => RaftFormDialog(
-        title: tr('Create channel'),
-        submitLabel: tr('Create'),
-        fields: [
-          RaftFormField('name', 'Channel name', required: true),
-          RaftFormField('description', 'Description', multiline: true),
-          RaftFormField(
-            'visibility',
-            'Visibility',
-            initial: 'public',
-            choices: {'public': 'Public channel', 'private': 'Private channel'},
-          ),
-        ],
-        onSubmit: (values) async {
-          final result = await w.command(
-            'POST',
-            '/channels',
-            data: {
-              'name': values['name'],
-              'description': values['description'],
-              'visibility': values['visibility'],
-              'type': 'channel',
-            },
-          );
-          await w.refreshChannels();
-          await chooseChannel(RaftChannel(Map<String, dynamic>.from(result)));
-        },
-      ),
-    );
-  }
+  Future<void> createChannel() => CreateChannelDialog.show(
+    context,
+    controller: w,
+    onCreated: (channel) => chooseChannel(channel),
+  );
 
   Widget settings() {
     final scope = mobileAuthority;
     return KeyedSubtree(
       key: const Key('workspace-account-settings'),
-      child: RaftSettingsPage(
+      child: WorkspaceSettings(
         key: ValueKey(
           'workspace-account-settings-${w.client.generation}-${w.client.user?.id}-${w.server?.id}-${w.server?.string('role')}',
         ),
+        controller: w,
+        appearance: widget.appearance,
+        onAppearance: (appearance) => widget.onAppearance(appearance),
+        presentation: presentation,
+        notifications: widget.notifications,
+        onLogout: widget.onLogout,
         mobileRoot: true,
         mobileResetRevision: mobileSettingsRevision,
         onMobileDetailChanged: (detail) {
           if (!mounted || scope != mobileAuthority) return;
           setState(() => mobileSettingsDetail = detail);
         },
-        destinations: [
-          RaftSettingsDestination(
-            'account',
-            'Account',
-            RaftGlyph.user,
-            (_) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AccountSettings(controller: w),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: RaftButton(
-                    label: tr('Sign out'),
-                    secondary: true,
-                    icon: Icons.logout,
-                    onPressed: widget.onLogout,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          RaftSettingsDestination(
-            'language',
-            'Language & Region',
-            RaftGlyph.globe,
-            (_) => LocaleSettingsPage(controller: w),
-          ),
-          RaftSettingsDestination(
-            'appearance',
-            'Appearance',
-            RaftGlyph.palette,
-            (_) => RaftAppearanceSection(
-              appearance: widget.appearance,
-              onAppearance: (appearance) => widget.onAppearance(appearance),
-              presentation: presentation,
-            ),
-          ),
-          if (widget.notifications != null)
-            RaftSettingsDestination(
-              'notifications',
-              'Notifications',
-              RaftGlyph.info,
-              (_) => NotificationSettingsView(service: widget.notifications!),
-            ),
-          if (w.server != null) ...[
-            RaftSettingsDestination(
-              'sidebar',
-              'Sidebar preferences',
-              RaftGlyph.columns2,
-              (_) => SidebarPreferencesView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
-            if (w.can('federateChannels'))
-              RaftSettingsDestination(
-                'joint-channels',
-                'Joint channels',
-                RaftGlyph.gitBranch,
-                (_) => JointChannelsView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            RaftSettingsDestination(
-              'server',
-              'Server profile',
-              RaftGlyph.settings,
-              (_) => ServerSettingsView(controller: w),
-              group: 'Workspace',
-              scroll: false,
-            ),
-            if (w.can('viewBilling'))
-              RaftSettingsDestination(
-                'billing',
-                'Plan & Billing',
-                RaftGlyph.fileText,
-                (_) => BillingView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (w.can('viewServerSettings'))
-              RaftSettingsDestination(
-                'administration',
-                'Administration',
-                RaftGlyph.settings,
-                (_) => AdministrationView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (w.can('manageIntegrations'))
-              RaftSettingsDestination(
-                'applications',
-                'Applications',
-                RaftGlyph.bot,
-                (_) => IntegrationsView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (providerEnabled && w.can('manageExternalAuth'))
-              RaftSettingsDestination(
-                'providers',
-                'Providers',
-                RaftGlyph.lock,
-                (_) => ProviderConnectionsView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-            if (bridgeEnabled && w.can('manageIntegrations'))
-              RaftSettingsDestination(
-                'bridges',
-                'IM bridges',
-                RaftGlyph.link,
-                (_) => IMBridgesView(controller: w),
-                group: 'Workspace',
-                scroll: false,
-              ),
-          ],
-        ],
+        providerEnabled: providerEnabled,
+        bridgeEnabled: bridgeEnabled,
       ),
     );
   }

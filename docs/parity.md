@@ -201,6 +201,35 @@ fractional widths (`textRendering.textRunWidths` in each React metadata JSON;
 the rest are elements whose box width comes from layout, e.g. block
 elements sized by their container, not from their text).
 
+## Capture determinism: animations and carets
+
+* **React animations:** the upstream spec takes screenshots with Playwright's
+  default `animations: "allow"`, so animated elements were caught mid-frame:
+  Skeleton's `animate-pulse` at opacity ~0.999 (greys 231/243 instead of the
+  at-rest #e5e5e5 = 229 / 242), and the Spinner mid-rotation (arc at 3
+  o'clock) because its `animation: none` style does not reach the rotating
+  inner element. The generated spec now passes `animations: "disabled"` to all
+  four screenshot calls (the run stops if upstream's call count changes):
+  finite animations/transitions finish, infinite ones reset to their initial
+  frame — the at-rest first frame the Web shows before animating.
+* **Spinner frame:** React's at-rest frame is rotation 0 (arc centred on 12
+  o'clock). Flutter's `RaftSpinner` under reduced motion paints rotation 0,
+  i.e. its own t=0 frame (brutal has no dash phase). The two t=0 frames
+  differ in arc start angle (Flutter's arc spans ~9:30–12:30); that is a
+  `RaftSpinner` painter difference left for the UI track, not a capture issue.
+* **Flutter caret:** Playwright captures with `caret: "hide"`. The harness
+  already made the theme's cursor colour transparent, but product fields now
+  set `cursorColor` explicitly, so the harness also sets every
+  `RenderEditable.cursorColor` to transparent for the captured frame and
+  repaints with a zero-duration pump (no blink-timer advance, no product
+  change). Verified: `components.ui.selection-popover.states` shows no caret.
+
+Effect on integration 053ffa0 (Flutter identical before/after; React refreshed
+with the new option): skeleton 60.15% → 62.36%, spinner 98.11% → 98.94%
+(basic-pass), selection-popover 95.39% → 95.43%; four other cases moved by
+<= 0.04pp; total stays 29/99 (29.29%), mean pixelPerfect over 95 captured
+80.38% → 80.42%.
+
 ## Scoring
 
 Unit = official case x variant x theme. Every default case (non-skipped,
@@ -287,10 +316,10 @@ byte-identical.
   product composite (message rows in `RaftChatView`) are captured through a
   clipped window aligned to React's element rect, so style probes there
   include neighbouring paragraphs.
-* Some app compositions live in private `WorkspaceView` methods (mobile nav,
-  mobile home header, create-channel, settings destination list); those
-  builders copy that code and say so in `notes` — if the app changes, the
-  copy must follow.
+* The mobile nav, mobile home header, create-channel dialog and settings
+  destination list are public product widgets (`WorkspaceMobileTabBar`,
+  `WorkspaceMobileHomeHeader`, `CreateChannelDialog`, `WorkspaceSettings`)
+  that both `WorkspaceView` and the builders mount; no builder copies app code.
 * State substitutions are documented per case in `notes` and in metadata
   (`flutter.notes`), e.g. create-agent dialogs (React never selects a runtime
   because its host lacks the runtime-options mock), composer image preview

@@ -59,7 +59,8 @@ void main() {
           );
           await tester.pumpAndSettle();
           final header = tester.getRect(find.byType(RaftSidebarSectionHeader));
-          final target = density == RaftDensity.touch ? 48.0 : 24.0;
+          // Sidebar.tsx 24px header controls on every density.
+          const target = 24.0;
           expect(header.size, Size(320, target + 16));
           final disclosure = tester.getRect(find.byKey(disclosureKey));
           final sort = tester.getRect(find.byKey(sortKey));

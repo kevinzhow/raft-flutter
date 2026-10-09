@@ -268,13 +268,15 @@ class RaftMessageTaskStatusIcon extends StatelessWidget {
     required this.status,
     required this.color,
     required this.inverse,
+    this.size = 12,
   });
   final RaftMessageTaskStatus status;
   final Color color, inverse;
+  final double size;
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: SizedBox.square(
-      dimension: 12,
+      dimension: size,
       child: CustomPaint(painter: _TaskIconPainter(status, color, inverse)),
     ),
   );

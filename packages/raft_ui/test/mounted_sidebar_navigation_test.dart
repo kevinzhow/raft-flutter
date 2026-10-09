@@ -100,10 +100,8 @@ void main() {
                   : 38.0;
               expect(recipe.sourceHeight, expected);
               expect(widget.visualHeight, expected);
-              expect(
-                tester.getSize(nav).height,
-                (density == RaftDensity.touch ? 48.0 : expected) + 4,
-              );
+              // Sidebar.tsx row box on every density (no 48dp inflation).
+              expect(tester.getSize(nav).height, expected + 4);
               expect(
                 recipe.textStyle.fontFamily,
                 family == RaftFamily.brutal

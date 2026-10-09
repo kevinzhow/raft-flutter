@@ -91,10 +91,9 @@ class _AuthState extends State<AuthView> {
       );
       if (mounted && request == providerRequest) {
         setState(
-          () =>
-              providers = managementRows(data['providers'])
-                  .where((p) => p['enabled'] == true)
-                  .toList(),
+          () => providers = managementRows(
+            data['providers'],
+          ).where((p) => p['enabled'] == true).toList(),
         );
       }
     } catch (_) {
@@ -128,7 +127,9 @@ class _AuthState extends State<AuthView> {
           base.text.trim(),
           handoff.code,
           handoff.verifier,
-          accepted,
+          // Login: "By continuing, you agree to the Terms of Service and
+          // Privacy Policy" (pages.login.legalAgreement); register: checkbox.
+          mode == 'login' || accepted,
         );
       }
     } catch (e) {
@@ -203,7 +204,8 @@ class _AuthState extends State<AuthView> {
           });
           if (mounted) {
             setState(
-              () => notice = 'If an account exists with that email, a reset link has been sent.',
+              () => notice =
+                  'If an account exists with that email, a reset link has been sent.',
             );
           }
         case 'reset':
@@ -245,273 +247,134 @@ class _AuthState extends State<AuthView> {
     });
   }
 
-  String get title => switch (mode) {
-    'register' => 'Create account',
-    'forgot' => 'Reset password',
-    'reset' => 'Set new password',
-    _ => 'Sign in',
+  RaftAuthMode get authMode => switch (mode) {
+    'register' => RaftAuthMode.register,
+    'forgot' => RaftAuthMode.forgot,
+    'reset' => RaftAuthMode.reset,
+    _ => RaftAuthMode.login,
   };
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Raft',
-                  style: Theme.of(context).textTheme.displaySmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  raftText(
-                    context,
-                    'A shared workspace for humans and agents.',
-                  ),
-                ),
-                const SizedBox(height: 24),
-                RaftPanel(
-                  shadow: true,
-                  child: Form(
-                    key: form,
-                    child: AutofillGroup(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            raftText(context, title),
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                          const SizedBox(height: 20),
-                          TextFormField(
-                            key: const Key('login-origin'),
-                            onChanged: (_) {
-                              providerRequest++;
-                              setState(() => providers = []);
-                              providerDebounce?.cancel();
-                              providerDebounce = Timer(
-                                const Duration(milliseconds: 400),
-                                loadProviders,
-                              );
-                            },
-                            controller: base,
-                            enabled: !busy,
-                            keyboardType: TextInputType.url,
-                            validator: (v) => authOriginError(v ?? ''),
-                            decoration: InputDecoration(
-                              labelText: raftText(context, 'Server URL'),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (mode != 'reset') ...[
-                            TextFormField(
-                              key: const Key('login-email'),
-                              controller: email,
-                              enabled: !busy,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.username],
-                              validator: (v) => authEmailError(v ?? ''),
-                              decoration: InputDecoration(
-                                labelText: raftText(context, 'Email'),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          if (mode == 'reset') ...[
-                            TextFormField(
-                              key: const Key('reset-token'),
-                              controller: token,
-                              enabled: !busy,
-                              obscureText: true,
-                              validator: (v) => v?.trim().isEmpty ?? true
-                                  ? 'Enter a password reset link or code.'
-                                  : null,
-                              decoration: InputDecoration(
-                                labelText: raftText(
-                                  context,
-                                  'Password reset link or code',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          if (mode != 'forgot') ...[
-                            TextFormField(
-                              key: const Key('login-password'),
-                              controller: password,
-                              enabled: !busy,
-                              obscureText: !visible,
-                              autofillHints: [
-                                mode == 'login'
-                                    ? AutofillHints.password
-                                    : AutofillHints.newPassword,
-                              ],
-                              validator: (v) => v == null || v.isEmpty
-                                  ? 'Enter your password.'
-                                  : mode != 'login' && v.length < 8
-                                  ? 'Use at least 8 characters.'
-                                  : null,
-                              onFieldSubmitted: (_) => submit(),
-                              decoration: InputDecoration(
-                                labelText: raftText(
-                                  context,
-                                  mode == 'reset' ? 'New password' : 'Password',
-                                ),
-                                suffixIcon: IconButton(
-                                  tooltip: raftText(
-                                    context,
-                                    visible ? 'Hide password' : 'Show password',
-                                  ),
-                                  onPressed: () =>
-                                      setState(() => visible = !visible),
-                                  icon: Icon(
-                                    visible
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          if (mode == 'register' ||
-                              (mode == 'login' && providers.isNotEmpty)) ...[
-                            CheckboxListTile(
-                              key: const Key('register-legal'),
-                              contentPadding: EdgeInsets.zero,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              value: accepted,
-                              onChanged: busy
-                                  ? null
-                                  : (v) => setState(() => accepted = v == true),
-                              title: Text(
-                                raftText(
-                                  context,
-                                  'I accept the terms and privacy policy.',
-                                ),
-                              ),
-                            ),
-                            Wrap(
-                              children: [
-                                TextButton(
-                                  onPressed: () => managementLaunch(
-                                    'https://raft.build/terms',
-                                  ),
-                                  child: Text(
-                                    raftText(context, 'Terms of service'),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => managementLaunch(
-                                    'https://raft.build/privacy',
-                                  ),
-                                  child: Text(
-                                    raftText(context, 'Privacy policy'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                          if (providers.isNotEmpty &&
-                              (mode == 'login' || mode == 'register')) ...[
-                            for (final provider in providers)
-                              TextButton.icon(
-                                onPressed: busy
-                                    ? null
-                                    : () => social(provider['id']),
-                                icon: const Icon(Icons.open_in_browser),
-                                label: Text(
-                                  '${raftText(context, 'Continue with')} ${provider['label']}',
-                                ),
-                              ),
-                            if (broker != null)
-                              TextButton(
-                                onPressed: () => broker!.cancel(),
-                                child: Text(
-                                  raftText(context, 'Cancel browser sign-in'),
-                                ),
-                              ),
-                          ],
-                          if (error != null || widget.bootError != null)
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                error ?? widget.bootError!,
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                            ),
-                          if (notice != null)
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(raftText(context, notice!)),
-                            ),
-                          const SizedBox(height: 20),
-                          RaftButton(
-                            key: const Key('login-submit'),
-                            label: raftText(context, title),
-                            busy: busy,
-                            onPressed: submit,
-                          ),
-                          if (mode == 'login')
-                            Wrap(
-                              alignment: WrapAlignment.spaceBetween,
-                              children: [
-                                TextButton(
-                                  onPressed: busy
-                                      ? null
-                                      : () => switchMode('register'),
-                                  child: Text(
-                                    raftText(context, 'Create account'),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: busy
-                                      ? null
-                                      : () => switchMode('forgot'),
-                                  child: Text(
-                                    raftText(context, 'Forgot password?'),
-                                  ),
-                                ),
-                              ],
-                            )
-                          else
-                            TextButton(
-                              onPressed: busy
-                                  ? null
-                                  : () => switchMode('login'),
-                              child: Text(raftText(context, 'Back to sign in')),
-                            ),
-                          if (mode == 'forgot')
-                            TextButton(
-                              onPressed: busy
-                                  ? null
-                                  : () => switchMode('reset'),
-                              child: Text(
-                                raftText(context, 'I have a reset link'),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Linux · Android · macOS',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
+
+  /// Platform exception (native client only): the Web page is served by its
+  /// own origin, a native client must be told which server to use. The origin
+  /// is edited from the brand bar instead of adding a form row, so the Web
+  /// card keeps its exact layout.
+  Future<void> editServer() async {
+    if (busy) return;
+    String? next;
+    // ds-allow: native-only server origin editor (no Web counterpart); opens the shared RaftFormDialog.
+    await showDialog<void>(
+      context: context,
+      builder: (context) => RaftFormDialog(
+        title: raftText(context, 'Server URL'),
+        fields: [
+          RaftFormField(
+            'origin',
+            'Server URL',
+            initial: base.text.trim(),
+            required: true,
+            validator: authOriginError,
           ),
+        ],
+        onSubmit: (values) async => next = values['origin'],
+      ),
+    );
+    if (next == null || next == base.text.trim()) return;
+    setState(() {
+      base.text = next!;
+      providers = [];
+    });
+    providerRequest++;
+    providerDebounce?.cancel();
+    await loadProviders();
+  }
+
+  Future<void> submitChecked() async {
+    final originError = authOriginError(base.text);
+    if (originError != null) {
+      setState(() => error = originError);
+      return;
+    }
+    await submit();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    String tr(String s) => raftText(context, s);
+    return Form(
+      key: form,
+      child: AutofillGroup(
+        child: RaftAuthPage(
+          mode: authMode,
+          busy: busy,
+          server: Uri.tryParse(base.text.trim())?.authority ?? base.text.trim(),
+          onServer: busy ? null : editServer,
+          banner: error ?? widget.bootError,
+          notice: notice,
+          emailField: mode == 'reset'
+              ? null
+              : TextFormField(
+                  key: const Key('login-email'),
+                  controller: email,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.username],
+                  validator: (v) => authEmailError(v ?? ''),
+                  style: t.fieldStyle,
+                ),
+          tokenField: mode != 'reset'
+              ? null
+              : TextFormField(
+                  key: const Key('reset-token'),
+                  controller: token,
+                  obscureText: true,
+                  validator: (v) => v?.trim().isEmpty ?? true
+                      ? 'Enter a password reset link or code.'
+                      : null,
+                  style: t.fieldStyle,
+                ),
+          passwordField: mode == 'forgot'
+              ? null
+              : TextFormField(
+                  key: const Key('login-password'),
+                  controller: password,
+                  // Web: plain Input type=password, no visibility toggle
+                  // (LoginPage.tsx:96-108, RegisterPage.tsx).
+                  obscureText: true,
+                  obscuringCharacter: '•',
+                  autofillHints: [
+                    mode == 'login'
+                        ? AutofillHints.password
+                        : AutofillHints.newPassword,
+                  ],
+                  validator: (v) => v == null || v.isEmpty
+                      ? 'Enter your password.'
+                      : mode != 'login' && v.length < 8
+                      ? 'Use at least 8 characters.'
+                      : null,
+                  onFieldSubmitted: (_) => submitChecked(),
+                  style: t.fieldStyle,
+                  decoration: InputDecoration(
+                    hintText: mode == 'login' ? null : tr('Min 8 characters'),
+                  ),
+                ),
+          accepted: accepted,
+          onAccepted: (v) => setState(() => accepted = v),
+          submitKey: const Key('login-submit'),
+          // RegisterPage: disabled={loading || !acceptedLegal}.
+          onSubmit: busy || (mode == 'register' && !accepted)
+              ? null
+              : submitChecked,
+          providers: [
+            for (final p in providers)
+              RaftAuthProviderEntry('${p['id']}', '${p['label']}'),
+          ],
+          onProvider: (id) => social(id),
+          onCancelBrowser: broker == null ? null : () => broker!.cancel(),
+          onMode: (next) => switchMode(next.name),
+          onTerms: () => managementLaunch('https://raft.build/terms'),
+          onPrivacy: () => managementLaunch('https://raft.build/privacy'),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

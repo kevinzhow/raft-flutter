@@ -20,10 +20,11 @@ class RaftSidebarSectionRecipe {
   final RaftTokens tokens;
   final RaftDensity density;
 
-  /// Native targets own real non-overlapping slots. Desktop uses source24.
-  double get targetSize => density == RaftDensity.touch
-      ? RaftMetrics.touchTarget
-      : RaftSidebarSectionMetrics.headerHeight;
+  /// Sidebar.tsx section header geometry (24px row, 24px actions) on every
+  /// density: the Web mobile sidebar uses the same boxes, and the exact-replica
+  /// policy keeps the layout identical (listed platform decision: no 48dp
+  /// layout inflation inside the sidebar).
+  double get targetSize => RaftSidebarSectionMetrics.headerHeight;
   EdgeInsets get inset => const EdgeInsets.fromLTRB(8, 12, 8, 4);
   Color get foreground => tokens.brutal ? Colors.black : tokens.strong;
   Color get hoverForeground =>
