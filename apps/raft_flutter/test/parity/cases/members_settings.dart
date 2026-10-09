@@ -41,6 +41,7 @@ import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/managed_agent_launcher.dart';
 import 'package:raft_flutter/features/runtime_form_dialog.dart';
+import 'package:raft_flutter/features/create_agent_dialog.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
 import 'package:raft_flutter/platform/native_notifications.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -179,8 +180,8 @@ ParityCase _createAgent(
 }) => ParityCase(
   widgets: onboarding
       ? const [
-          'raft_flutter:RuntimeFormDialog',
-          'raft_ui:RaftAgentDialogCard',
+          'raft_flutter:CreateAgentDialog',
+          'raft_ui:RaftCindySetupScreen',
           'raft_ui:RaftStableField',
         ]
       : const [
@@ -193,11 +194,9 @@ ParityCase _createAgent(
           'raft_ui:RaftButton',
         ],
   notes: onboarding
-      ? 'Onboarding create = RuntimeFormDialog(onboarding: true) as opened by '
-            'server_setup_gate.dart after its computer/runtime pickers: '
-            'DialogCard with locked name "Cindy", runtime "$runtime" v2 '
-            'fields and Create Agent. Flutter has no "Meet Cindy" step '
-            'layout (header, pixel-avatar hero, footer CTA).$extraNotes'
+      ? 'CreateAgentDialog onboarding step uses the genuine Meet Cindy shell, '
+            'scoped runtime-options admission and protocol-v2 fields. Public source '
+            'fixture embeds onboardingShell=step, so no modal backdrop is added.$extraNotes'
       : 'showManagedAgentForm → CreateAgentDialog (DialogCard, capacity '
             'Banner from /billing/subscription, COMPUTER / NAME / DESCRIPTION '
             'StableFields, RUNTIME select from runtime-options, then the '
@@ -254,6 +253,19 @@ ParityCase _createAgent(
     }
     final (w, _) = fixture.workspace(routes);
     final props = ctx.props;
+    if (onboarding) {
+      return Scaffold(
+        body: SingleChildScrollView(
+          child: CreateAgentDialog(
+            controller: w,
+            machines: _createAgentMachines(fixture, machineRuntimes),
+            initialMachineId: 'computer-mbp',
+            onboarding: true,
+            onSwitchServer: () {}, // Public visual fixture: navigation callback is not exercised.
+          ),
+        ),
+      );
+    }
     return _Host(
       page: const Scaffold(),
       open: (context) => onboarding
