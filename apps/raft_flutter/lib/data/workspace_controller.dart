@@ -7,6 +7,8 @@ import 'package:raft_sync/raft_sync.dart';
 
 import 'workspace_cache.dart';
 import 'workspace_entity_directory.dart';
+import 'raft_location.dart';
+import 'workspace_navigation.dart';
 import 'message_window_snapshot.dart';
 import 'attachment_image_repository.dart';
 
@@ -965,7 +967,65 @@ class WorkspaceController extends ChangeNotifier {
       hasMore = false;
   bool connected = false;
   String? error;
-  String section = 'chat';
+  final navigation = WorkspaceNavigation();
+  String _unboundSection = 'chat';
+  String? _navigationAuthority;
+  String get navigationAuthority => jsonEncode([
+    client.origin,
+    client.generation,
+    client.user?.id,
+    server?.id,
+    server?.string('role'),
+  ]);
+  void bindNavigation() {
+    if (server == null) return;
+    final authority = navigationAuthority;
+    if (_navigationAuthority == authority) return;
+    final slug = server!.string('slug') ?? server!.id;
+    final initial = _navigationAuthority == null
+        ? WorkspaceNavigation.locationForSection(
+            slug,
+            _unboundSection,
+            channelId: channel?.id,
+            dm: channel?.type == 'dm',
+          )
+        : navigation.location.serverSlug == slug
+        ? navigation.location.tabHome()
+        : WorkspaceNavigation.locationForSection(
+            slug,
+            mobileNavigation ? 'home' : _unboundSection,
+            channelId: null,
+          );
+    _navigationAuthority = authority;
+    navigation.bind(authority, initial);
+  }
+
+  RaftLocation get location {
+    bindNavigation();
+    return navigation.location;
+  }
+
+  int get navigationRevision {
+    bindNavigation();
+    return navigation.revision;
+  }
+
+  String get section {
+    bindNavigation();
+    return server == null ? _unboundSection : navigation.section;
+  }
+
+  set section(String value) {
+    _unboundSection = value;
+    bindNavigation();
+    if (server != null)
+      navigation.selectSection(
+        value,
+        channelId: channel?.id,
+        dm: channel?.type == 'dm',
+      );
+  }
+
   int channelGeneration = 0, threadGeneration = 0;
   Map<String, dynamic> threadSummaries = {};
   List<RaftMessage> get messages => channel == null
