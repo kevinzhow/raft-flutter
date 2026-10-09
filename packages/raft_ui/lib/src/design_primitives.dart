@@ -1043,7 +1043,7 @@ class _RaftControlState extends State<RaftControl> {
                             : 0,
                         0,
                       ),
-                    decoration: BoxDecoration(
+                    decoration: RaftCssBoxDecoration(
                       color: bg,
                       borderRadius: recipe.radius,
                       border: Border.fromBorderSide(

@@ -125,6 +125,134 @@ RaftShadow _themeShadow(RaftTokens t, String name) {
 double raftCssBlurRadius(double cssBlur) =>
     cssBlur <= 1 ? cssBlur / 2 : (cssBlur / 2 - .5) / .57735;
 
+/// CSS colors interpolate with premultiplied alpha. Transparent black must
+/// fade a white hover fill, rather than introduce a grey intermediate fill.
+Color? raftCssColorLerp(Color? a, Color? b, double t) {
+  if (a == null && b == null) return null;
+  if (t == 0) return a;
+  if (t == 1) return b;
+  final alphaA = (a?.a ?? 0) * (1 - t);
+  final alphaB = (b?.a ?? 0) * t;
+  final alpha = alphaA + alphaB;
+  if (alpha <= 0) return (b ?? a)!.withValues(alpha: 0);
+  double channel(double? x, double? y) =>
+      (((x ?? 0) * alphaA + (y ?? 0) * alphaB) / alpha).clamp(0, 1);
+  return Color.from(
+    alpha: alpha.clamp(0, 1),
+    red: channel(a?.r, b?.r),
+    green: channel(a?.g, b?.g),
+    blue: channel(a?.b, b?.b),
+  );
+}
+
+/// Animated CSS box paint. Flutter's default BoxDecoration paints shadows
+/// beneath the whole box, and scales a disappearing shadow without fading
+/// its color. That exposes black inside a background fading to transparent.
+/// Keep the outer shadow outside the border box throughout the transition.
+class RaftCssBoxDecoration extends BoxDecoration {
+  const RaftCssBoxDecoration({
+    super.color,
+    super.border,
+    super.borderRadius,
+    super.boxShadow,
+    super.gradient,
+    super.image,
+    super.backgroundBlendMode,
+    super.shape,
+  });
+
+  factory RaftCssBoxDecoration.from(BoxDecoration d) => RaftCssBoxDecoration(
+    color: d.color,
+    border: d.border,
+    borderRadius: d.borderRadius,
+    boxShadow: d.boxShadow,
+    gradient: d.gradient,
+    image: d.image,
+    backgroundBlendMode: d.backgroundBlendMode,
+    shape: d.shape,
+  );
+
+  static RaftCssBoxDecoration interpolate(
+    BoxDecoration? a,
+    BoxDecoration? b,
+    double t,
+  ) {
+    final d = BoxDecoration.lerp(a, b, t)!;
+    if (t == 0 || t == 1) return RaftCssBoxDecoration.from(d);
+    final from = a?.boxShadow ?? const <BoxShadow>[];
+    final to = b?.boxShadow ?? const <BoxShadow>[];
+    final shadows = <BoxShadow>[];
+    for (var i = 0; i < math.max(from.length, to.length); i++) {
+      final first = i < from.length ? from[i] : null;
+      final last = i < to.length ? to[i] : null;
+      final geometry = BoxShadow.lerp(first, last, t)!;
+      shadows.add(
+        geometry.copyWith(
+          color: raftCssColorLerp(first?.color, last?.color, t)!,
+        ),
+      );
+    }
+    return RaftCssBoxDecoration.from(
+      d.copyWith(
+        color: raftCssColorLerp(a?.color, b?.color, t),
+        boxShadow: shadows,
+      ),
+    );
+  }
+
+  @override
+  BoxDecoration? lerpFrom(Decoration? a, double t) =>
+      a == null || a is BoxDecoration
+      ? interpolate(a as BoxDecoration?, this, t)
+      : null;
+
+  @override
+  BoxDecoration? lerpTo(Decoration? b, double t) => b == null || b is BoxDecoration
+      ? interpolate(this, b as BoxDecoration?, t)
+      : null;
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _CssBoxPainter(this, onChanged);
+}
+
+class _CssBoxPainter extends BoxPainter {
+  _CssBoxPainter(this.decoration, VoidCallback? onChanged)
+    : surface = BoxDecoration(
+        color: decoration.color,
+        border: decoration.border,
+        borderRadius: decoration.borderRadius,
+        gradient: decoration.gradient,
+        image: decoration.image,
+        backgroundBlendMode: decoration.backgroundBlendMode,
+        shape: decoration.shape,
+      ).createBoxPainter(onChanged),
+      super(onChanged);
+
+  final RaftCssBoxDecoration decoration;
+  final BoxPainter surface;
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    canvas.save();
+    canvas.translate(offset.dx, offset.dy);
+    RaftOuterShadowPainter(
+      decoration.boxShadow ?? const [],
+      decoration.borderRadius?.resolve(configuration.textDirection) ??
+          BorderRadius.zero,
+      circle: decoration.shape == BoxShape.circle,
+    ).paint(canvas, configuration.size!);
+    canvas.restore();
+    surface.paint(canvas, offset, configuration);
+  }
+
+  @override
+  void dispose() {
+    surface.dispose();
+    super.dispose();
+  }
+}
+
 /// A box painted from one recipe slot.
 ///
 /// Size follows CSS `box-sizing: border-box` (Tailwind preflight): `height`

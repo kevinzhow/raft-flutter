@@ -675,7 +675,7 @@ class _FileRowState extends State<SourceChannelFileRow> {
           duration: MediaQuery.disableAnimationsOf(context)
               ? Duration.zero
               : const Duration(milliseconds: 150),
-          decoration: BoxDecoration(
+          decoration: RaftCssBoxDecoration(
             color: recipe.rowBackground,
             borderRadius: recipe.radius,
             border: Border.fromBorderSide(recipe.border(hovered)),

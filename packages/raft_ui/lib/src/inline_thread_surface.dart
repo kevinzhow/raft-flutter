@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
+import 'recipe_surface.dart';
 
 /// Plain recipient-projected fields. Avatar resolution and clock formatting are
 /// owned by the authorized adapter; this widget never looks up an identity.
@@ -127,7 +128,7 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
           ? Duration.zero
           : const Duration(milliseconds: 150),
       padding: recipe.padding,
-      decoration: BoxDecoration(
+      decoration: RaftCssBoxDecoration(
         color: hovered
             ? t.brutal
                   ? Colors.black.withValues(alpha: .08)
