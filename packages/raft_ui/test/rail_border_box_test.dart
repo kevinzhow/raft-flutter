@@ -1,4 +1,7 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -29,28 +32,31 @@ void main() {
           home: Scaffold(
             body: RaftDensityScope(
               density: RaftDensity.desktop,
-              child: SizedBox(
-                width: width,
-                child: RaftWorkspaceRail(
-                  workspaceName: 'Visual',
-                  onWorkspace: () {},
-                  selected: 'chat',
-                  destinations: const [
-                    RaftRailDestination(
-                      id: 'chat',
-                      label: 'Chat',
-                      glyph: RaftGlyph.messageSquare,
-                    ),
-                  ],
-                  onSelected: (_) => routeCalls++,
-                  footer: RaftWorkspaceRailFooter(
-                    children: [
-                      RaftWorkspaceRailAction(
-                        label: 'Settings',
-                        glyph: RaftGlyph.settings,
-                        onPressed: () => footerCalls++,
+              child: RepaintBoundary(
+                key: const ValueKey('rail-paint'),
+                child: SizedBox(
+                  width: width,
+                  child: RaftWorkspaceRail(
+                    workspaceName: 'Visual',
+                    onWorkspace: () {},
+                    selected: 'chat',
+                    destinations: const [
+                      RaftRailDestination(
+                        id: 'chat',
+                        label: 'Chat',
+                        glyph: RaftGlyph.messageSquare,
                       ),
                     ],
+                    onSelected: (_) => routeCalls++,
+                    footer: RaftWorkspaceRailFooter(
+                      children: [
+                        RaftWorkspaceRailAction(
+                          label: 'Settings',
+                          glyph: RaftGlyph.settings,
+                          onPressed: () => footerCalls++,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -67,6 +73,30 @@ void main() {
       expect(t.getSize(primary), const Size(40, 40));
       expect(t.getSize(footer), const Size(40, 40));
       expect(t.getSize(find.byType(RaftWorkspaceRail)).width, width);
+      // Real AppRailRoot uses bg-primary -> --primary-400, not the
+      // product's Button primary alias (#FFD440). Source blank-rail pixels:
+      // Brutal #FFD441; Elegant light #F8F8F7; Elegant dark #0D0D0B.
+      final boundary = t.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('rail-paint')),
+      );
+      final pixel = await t.runAsync(() async {
+        final image = await boundary.toImage();
+        final rgba = (await image.toByteData(
+          format: ui.ImageByteFormat.rawRgba,
+        ))!;
+        final offset = (100 * image.width + 2) * 4;
+        final pixel = rgba.buffer.asUint8List(offset, 4).toList();
+        image.dispose();
+        return pixel;
+      });
+      expect(
+        pixel,
+        family == RaftFamily.brutal
+            ? [255, 212, 65, 255]
+            : dark
+            ? [13, 13, 11, 255]
+            : [248, 248, 247, 255],
+      );
       await t.tapAt(t.getCenter(primary));
       await t.tapAt(t.getCenter(footer));
       expect(routeCalls, 1);

@@ -230,7 +230,10 @@ class RaftRailRecipe {
   double get itemSize => tokens.brutal && viewportHeight <= 600
       ? RaftMetrics.railItemCompact
       : RaftMetrics.railItem;
-  Color get background => tokens.brutal ? tokens.primaryFill : tokens.sidebar;
+  // AppRailRoot's bg-primary resolves the primary-400 ramp; primaryFill is
+  // the separate product Button alias and differs by one blue channel.
+  Color get background =>
+      tokens.brutal ? tokens.colors['primary-400']! : tokens.sidebar;
   Color get selectedBackground => tokens.brutal
       ? tokens.panel
       : tokens.dark
