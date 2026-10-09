@@ -1984,6 +1984,17 @@ class _RaftComposerState extends State<RaftComposer> {
                                     child: TextField(
                                       controller: controller,
                                       focusNode: focus,
+                                      onChanged: (_) {
+                                        // A typed collapsed caret replaces the
+                                        // previous insertion handle. Merely
+                                        // fading it leaves its overlay hit box
+                                        // above the Source composer toolbar.
+                                        if (controller.selection.isCollapsed) {
+                                          focus.context
+                                              ?.findAncestorStateOfType<EditableTextState>()
+                                              ?.hideToolbar();
+                                        }
+                                      },
                                       enabled: widget.enabled,
                                       minLines: 1,
                                       maxLines: 6,
