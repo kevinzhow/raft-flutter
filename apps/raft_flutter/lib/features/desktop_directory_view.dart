@@ -8,6 +8,8 @@ import '../data/workspace_controller.dart';
 import 'desktop_navigation_policy.dart';
 import 'management_support.dart';
 import 'page_layout.dart';
+import 'fleet_views.dart' show showFleetRegistration;
+import 'managed_agent_launcher.dart';
 import 'public_avatar_url.dart';
 
 /// The classic Sidebar's Members/Computers column. This is a current-authority
@@ -18,10 +20,11 @@ class DesktopDirectoryView extends StatefulWidget {
     required this.controller,
     required this.onSelected,
     this.computers = false,
+    this.mobileRoot = false,
     this.selected,
   });
   final WorkspaceController controller;
-  final bool computers;
+  final bool computers, mobileRoot;
   final DesktopContentTarget? selected;
   final ValueChanged<DesktopContentTarget> onSelected;
   @override
@@ -33,6 +36,8 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
   WorkspaceController get w => widget.controller;
   List<Map<String, dynamic>> agents = [], humans = [], computers = [];
   StreamSubscription<RaftEvent>? events;
+  final agentMenu = RaftMenuController();
+  bool agentsExpanded = true, humansExpanded = true;
   @override
   String get authority =>
       '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.computers}|'
@@ -70,11 +75,13 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
   @override
   void dispose() {
     events?.cancel();
+    agentMenu.dispose();
     super.dispose();
   }
 
   @override
   void clearData() {
+    agentMenu.close();
     agents = [];
     humans = [];
     computers = [];
@@ -118,6 +125,54 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
       humans = results[1];
     }
   }
+
+  Future<void> register(bool computer) async {
+    final captured = authority;
+    await showFleetRegistration(
+      context,
+      w,
+      computers: computer,
+      onCreated: reload,
+      authorized: () => mounted && captured == authority,
+    );
+  }
+
+  Widget addAgentMenu() => RaftDropdownMenu(
+    controller: agentMenu,
+    label: 'Add agent',
+    tooltip: 'Add agent',
+    width: 190,
+    align: RaftDropdownAlign.end,
+    sideOffset: 8,
+    entries: [
+      RaftMenuEntry(
+        label: raftText(context, 'Create agent'),
+        glyph: RaftGlyph.bot,
+        onPressed: () async {
+          final captured = authority;
+          await showManagedAgentForm(context, w);
+          if (mounted && captured == authority) await reload();
+        },
+      ),
+      RaftMenuEntry(
+        label: raftText(context, 'Create external agent'),
+        glyph: RaftGlyph.link2,
+        onPressed: () => register(false),
+      ),
+    ],
+    triggerBuilder: (context, focus, open) => RaftControl(
+      key: const ValueKey('desktop-directory-add-agent'),
+      semanticLabel: raftText(context, 'Add agent'),
+      tooltip: raftText(context, 'Add agent'),
+      focusNode: focus,
+      visualHeight: 24,
+      visualWidth: 24,
+      minimumTargetSize: 24,
+      recipe: RaftSidebarSectionActionRecipe(RaftTokens.of(context)),
+      onPressed: open,
+      child: const RaftIcon(RaftGlyph.plus, size: 14),
+    ),
+  );
 
   Widget row(Map<String, dynamic> value, DesktopContentKind kind) {
     final id = kind == DesktopContentKind.human
@@ -192,11 +247,39 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
       children: [
         RaftSidebarSectionHeader(
           label: label,
-          expanded: true,
-          onExpandedChanged: null,
+          expanded: kind == DesktopContentKind.agent
+              ? agentsExpanded
+              : humansExpanded,
+          onExpandedChanged: widget.computers
+              ? null
+              : (expanded) => setState(() {
+                  if (kind == DesktopContentKind.agent) {
+                    agentsExpanded = expanded;
+                  } else {
+                    humansExpanded = expanded;
+                  }
+                }),
           count: rows.length,
+          trailing: kind == DesktopContentKind.agent && w.can('createAgents')
+              ? addAgentMenu()
+              : null,
+          actions:
+              kind == DesktopContentKind.computer && w.can('registerMachines')
+              ? [
+                  RaftSidebarSectionAction(
+                    label: raftText(context, 'Add computer'),
+                    key: const ValueKey('desktop-directory-add-computer'),
+                    glyph: RaftGlyph.plus,
+                    onPressed: () => register(true),
+                  ),
+                ]
+              : const [],
         ),
-        for (final value in rows) row(value, kind),
+        if (widget.computers ||
+            (kind == DesktopContentKind.agent
+                ? agentsExpanded
+                : humansExpanded))
+          for (final value in rows) row(value, kind),
       ],
     );
     return Material(
@@ -208,17 +291,29 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
       ).bodyBackground,
       child: Column(
         children: [
-          RaftPageHeader(
-            title: widget.computers ? 'Computers' : 'Members',
-            height: raftPageHeaderHeight(context),
-            actions: [
-              RaftIconButton(
-                glyph: RaftGlyph.refreshCw,
-                tooltip: 'Refresh',
-                onPressed: reload,
-              ),
-            ],
-          ),
+          if (widget.mobileRoot)
+            RaftMobileRootHeader(
+              title: widget.computers ? 'Computers' : 'Members',
+              actions: [
+                RaftIconButton(
+                  glyph: RaftGlyph.refreshCw,
+                  tooltip: 'Refresh members',
+                  onPressed: reload,
+                ),
+              ],
+            )
+          else
+            RaftPageHeader(
+              title: widget.computers ? 'Computers' : 'Members',
+              height: raftPageHeaderHeight(context),
+              actions: [
+                RaftIconButton(
+                  glyph: RaftGlyph.refreshCw,
+                  tooltip: 'Refresh',
+                  onPressed: reload,
+                ),
+              ],
+            ),
           Expanded(
             child:
                 loading && agents.isEmpty && humans.isEmpty && computers.isEmpty

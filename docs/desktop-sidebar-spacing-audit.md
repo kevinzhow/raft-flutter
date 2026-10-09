@@ -1,0 +1,11 @@
+# Shared sidebar geometry audit
+
+The paired 1280×800 original frames for Chat/channel in Brutal, Elegant light and Elegant dark identify two shared structural errors. Source `SidebarItem` owns a bottom margin independently of its visible control height: 4px in Brutal (`raft-ui/dist/index.mjs:3819`) and 2px in Elegant (line3862). The Flutter conversation row omitted this margin. Consequently the second channel was 4px/2px too high and the Direct Messages heading was 8px/4px too high. Section-header spacing itself was correct in these frames.
+
+Source's SidebarRoot is a border box. In Brutal its right edge consumes 2px and is black; Elegant consumes 1px of line-muted. The Flutter panel omitted that reserved border and painted a neutral one-pixel resize line across its right edge. This made Brutal selected rows two pixels too wide, the heading border extend too far and the shared separator gray. The panel now reserves its real border; the overlaid resize handle remains transparent until hover or keyboard focus, following MainLayout's overlay behavior. Neither handle hit width nor total panel width changes.
+
+Mounted Brutal conversation text also inherited foreground-strong instead of Source's explicit black. This shared row recipe now uses black for both selected and ordinary rows. Generic components and Elegant foregrounds remain unchanged.
+
+These are Source rules, not screenshot-coordinate offsets. The current source reference, Source PNGs, DPR, animation/AA policy, comparator and 96% whole-frame criterion remain unchanged. A focused row test distinguishes the painted control height from its trailing margin and verifies successive row positions across widths and themes. Existing pointer/keyboard resize, section and selection tests remain required.
+
+The preceding published batch's sidebar result is 0/87 (18 absent), mean raw RGBA exact similarity 91.4643%. The fresh actual Linux 105-frame capture and five-region diagnostics will report the effect and retain all regressions. Remaining avatar/activity badges, directory grouping and description differences are separate gaps; this batch does not claim every sidebar or whole frame matches.

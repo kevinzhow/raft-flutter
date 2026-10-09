@@ -113,6 +113,10 @@ void main() {
                 ? 32
                 : 30,
           );
+          final dm = find.byKey(const ValueKey('dm'));
+          expect(tester.getRect(dm).top - tester.getRect(control).bottom,
+              tokens.brutal ? 4 : 2,
+              reason: 'Mounted SidebarItem bottom margin is separate from the row box.');
           final badge = find.descendant(
             of: channel,
             matching: find.byType(RaftConversationUnreadCount),
@@ -346,8 +350,12 @@ void main() {
         );
         final a = tester.getRect(find.byKey(const ValueKey('row-0')));
         final b = tester.getRect(find.byKey(const ValueKey('row-1')));
-        expect(a.height, expected);
-        expect(b.top - a.top, expected);
+        final margin = family == RaftFamily.brutal ? 4.0 : 2.0;
+        expect(a.height, expected + margin);
+        expect(b.top - a.top, expected + margin);
+        expect(tester.getSize(find.descendant(
+          of: find.byKey(const ValueKey('row-0')),
+          matching: find.byType(RaftControl))).height, expected);
         expect(
           tester.getSize(find.byType(RaftConversationUnreadCount).first).height,
           16,

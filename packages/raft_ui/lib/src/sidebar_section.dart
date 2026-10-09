@@ -73,6 +73,7 @@ class RaftSidebarSectionHeader extends StatelessWidget {
     this.emoji,
     this.attention,
     this.actions = const [],
+    this.trailing,
   });
   final String label;
   final bool expanded;
@@ -82,6 +83,7 @@ class RaftSidebarSectionHeader extends StatelessWidget {
   final String? emoji;
   final Widget? attention;
   final List<RaftSidebarSectionAction> actions;
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -159,6 +161,7 @@ class RaftSidebarSectionHeader extends StatelessWidget {
             const SizedBox(width: 4),
             _SectionAction(action: action, targetSize: recipe.targetSize),
           ],
+          if (trailing != null) ...[const SizedBox(width: 4), trailing!],
         ],
       ),
     );
@@ -207,8 +210,11 @@ class _DisclosureRecipe extends RaftControlRecipe {
 }
 
 /// Product btn-flat-sm: no border, shadow or transform; visible keyboard focus.
-class _SectionActionRecipe extends _DisclosureRecipe {
-  const _SectionActionRecipe(super.tokens, {this.keyboardFocused = false});
+class RaftSidebarSectionActionRecipe extends _DisclosureRecipe {
+  const RaftSidebarSectionActionRecipe(
+    super.tokens, {
+    this.keyboardFocused = false,
+  });
   final bool keyboardFocused;
   @override
   Color get foreground => keyboardFocused ? tokens.strong : tokens.muted;
@@ -255,7 +261,7 @@ class _SectionActionState extends State<_SectionAction> {
       visualHeight: 24,
       visualWidth: 24,
       minimumTargetSize: widget.targetSize,
-      recipe: _SectionActionRecipe(
+      recipe: RaftSidebarSectionActionRecipe(
         RaftTokens.of(context),
         keyboardFocused:
             hasFocus &&

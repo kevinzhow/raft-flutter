@@ -13,6 +13,13 @@
       "discoveredAt": "2026-10-09T19:43:38Z",
       "sourceMessage": "c221af55-0a86-47b5-b975-ed861fceaecb",
       "evidence": "Three real mounted loading-image clicks failed before repair; Source opens its lightbox at intent independent of thumbnail readiness. Original47 and prior K10 discovery remain unchanged."
+    },
+    {
+      "id": "K12",
+      "status": "not_started",
+      "discoveredAt": "2026-10-09T21:42:31Z",
+      "sourceMessage": "e75a4506-7853-4c6f-92e9-c09dcef5283f",
+      "evidence": "Native Linux real Members/Computers rail clicks show no Add agent/Add computer; old Agent sidebar helper also obsolete. Initial action evidence 2026-10-09T21:40:47.551753Z retained. Mobile Members also had no Agents directory."
     }
   ]
 }

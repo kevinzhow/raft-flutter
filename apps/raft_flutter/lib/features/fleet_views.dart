@@ -134,6 +134,63 @@ Future<void> showCredential(
 
 /// Agent and Computer directories share lifecycle and authority fencing, but
 /// their commands use separate mounted API contracts.
+/// Shared account/workspace-guarded registration used by both native
+/// directories; one-time computer credentials stay inside the private dialog.
+Future<void> showFleetRegistration(
+  BuildContext context,
+  WorkspaceController w, {
+  bool computers = false,
+  Future<void> Function()? onCreated,
+  bool Function()? authorized,
+}) async {
+  final captured = _FleetScope(w);
+  final endpoint = computers ? '/servers/${w.server!.id}/machines' : '/agents';
+  final cap = computers ? 'registerMachines' : 'createAgents';
+  bool valid() =>
+      context.mounted &&
+      captured.current(w) &&
+      w.can(cap) &&
+      (authorized?.call() ?? true);
+  if (!valid()) return;
+  String? credential;
+  await _fleetDialog<void>(
+    context,
+    w,
+    valid,
+    (_) => RaftFormDialog(
+      title: computers ? 'Register computer' : 'Create external agent',
+      submitLabel: computers ? 'Register' : 'Create',
+      description: computers
+          ? 'Register a computer, then use its one-time key to connect the Raft Computer service.'
+          : 'An external agent runs in a client you connect yourself.',
+      fields: [
+        const RaftFormField('name', 'Name', required: true),
+        if (!computers)
+          const RaftFormField('description', 'Description', multiline: true),
+      ],
+      onSubmit: (values) async {
+        if (!valid()) throw const RaftApiException('Fleet access changed.');
+        final result = await w.command(
+          'POST',
+          endpoint,
+          data: {...values, if (!computers) 'external': true},
+        );
+        if (!valid()) return;
+        if (computers) credential = result['apiKey'];
+        await onCreated?.call();
+      },
+    ),
+  );
+  if (credential != null && context.mounted && valid()) {
+    await showCredential(
+      context,
+      credential!,
+      controller: w,
+      authorized: valid,
+    );
+  }
+}
+
 class FleetView extends StatefulWidget {
   const FleetView({
     super.key,
@@ -245,47 +302,14 @@ class _FleetViewState extends State<FleetView> {
   }
 
   Future<void> create() async {
-    final captured = scope, endpoint = base;
-    final cap = widget.computers ? 'registerMachines' : 'createAgents';
-    bool valid() => current(captured) && w.can(cap);
-    if (!valid()) return;
-    String? credential;
-    await _fleetDialog<void>(
+    final captured = scope;
+    await showFleetRegistration(
       context,
       w,
-      valid,
-      (_) => RaftFormDialog(
-        title: widget.computers ? 'Register computer' : 'Create external agent',
-        submitLabel: widget.computers ? 'Register' : 'Create',
-        description: widget.computers
-            ? 'Register a computer, then use its one-time key to connect the Raft Computer service.'
-            : 'An external agent runs in a client you connect yourself.',
-        fields: [
-          const RaftFormField('name', 'Name', required: true),
-          if (!widget.computers)
-            const RaftFormField('description', 'Description', multiline: true),
-        ],
-        onSubmit: (values) async {
-          if (!valid()) throw const RaftApiException('Fleet access changed.');
-          final result = await w.command(
-            'POST',
-            endpoint,
-            data: {...values, if (!widget.computers) 'external': true},
-          );
-          if (!valid()) return;
-          if (widget.computers) credential = result['apiKey'];
-          await load();
-        },
-      ),
+      computers: widget.computers,
+      onCreated: load,
+      authorized: () => current(captured),
     );
-    if (credential != null && mounted && valid()) {
-      await showCredential(
-        context,
-        credential!,
-        controller: w,
-        authorized: valid,
-      );
-    }
   }
 
   Future<void> managed() async {

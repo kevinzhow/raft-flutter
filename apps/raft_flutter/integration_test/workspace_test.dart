@@ -550,6 +550,15 @@ Future<WorkspaceController> openNativeChat(
 }
 
 Future<void> section(WidgetTester tester, String name) async {
+  if (name == 'agents') {
+    await section(tester, 'members');
+    return;
+  }
+  if (mobileViewport(tester) && name == 'computers') {
+    await section(tester, 'settings');
+    await settingsTab(tester, 'computers');
+    return;
+  }
   if (name == 'workspace-settings') {
     await section(tester, 'settings');
     await settingsTab(tester, 'server');
@@ -1866,18 +1875,6 @@ void main() {
       await tester.pumpAndSettle();
       await screenshot(tester, 'linux-workspace-settings');
       await section(tester, 'members');
-      if (mobileViewport(tester)) {
-        final memberTile = find.widgetWithText(ListTile, otherName);
-        await until(tester, () => memberTile.evaluate().isNotEmpty);
-        await tester.ensureVisible(memberTile);
-        await tester.pumpAndSettle();
-        await tester.tap(find.descendant(
-          of: memberTile,
-          matching: find.byTooltip('Member actions'),
-        ));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Make Admin'));
-      } else {
         // The desktop Members rail is Source's directory; role management
         // lives on the selected human profile, not an old ListTile menu.
         final memberRow = find.byKey(
@@ -1898,7 +1895,7 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('field-role')));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Admin').last);
-      }
+
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(RaftButton, 'Confirm'));
       await until(tester, () => find.byType(RaftFormDialog).evaluate().isEmpty);
@@ -1917,22 +1914,22 @@ void main() {
         await section(tester, computers ? 'computers' : 'agents');
         final name =
             'native-${computers ? 'computer' : 'agent'}-${DateTime.now().millisecondsSinceEpoch}';
-        await until(
-          tester,
-          () => find
-              .widgetWithText(
-                RaftButton,
-                computers ? 'Register computer' : 'Create agent',
-              )
-              .evaluate()
-              .isNotEmpty,
-        );
-        await tester.tap(
-          find.widgetWithText(
-            RaftButton,
-            computers ? 'Register computer' : 'Create agent',
-          ),
-        );
+        if (!computers) {
+          final add = find.byKey(const ValueKey('desktop-directory-add-agent'));
+          await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
+          await tester.tap(add);
+          final create = find.widgetWithText(RaftMenuItem, 'Create external agent');
+          await until(tester, () => create.hitTestable().evaluate().isNotEmpty);
+          await tester.tap(create);
+        } else if (!mobileViewport(tester)) {
+          final add = find.byKey(const ValueKey('desktop-directory-add-computer'));
+          await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
+          await tester.tap(add);
+        } else {
+          final add = find.widgetWithText(RaftButton, 'Register computer');
+          await until(tester, () => add.hitTestable().evaluate().isNotEmpty);
+          await tester.tap(add);
+        }
         await tester.pumpAndSettle();
         await tester.enterText(field('Name'), name);
         await tester.tap(
@@ -1951,22 +1948,18 @@ void main() {
           // Do not reveal/copy the real key during automated tests.
           await tester.tap(find.text('Close'));
         }
-        await until(
-          tester,
-          () => find
-              .descendant(
-                of: find.byKey(const Key('fleet-directory')),
-                matching: find.widgetWithText(ListTile, name),
-              )
-              .evaluate()
-              .isNotEmpty,
-        );
-        await tester.tap(
-          find.descendant(
-            of: find.byKey(const Key('fleet-directory')),
-            matching: find.widgetWithText(ListTile, name),
-          ),
-        );
+        final createdResult = await w.query(computers ? '/servers/$ownServerId/machines' : '/agents');
+        final createdRows = createdResult is Map ? createdResult['machines'] as List : createdResult as List;
+        final created = createdRows.singleWhere((row) => row['name'] == name) as Map;
+        final directoryRow = computers && mobileViewport(tester)
+            ? find.descendant(of: find.byKey(const Key('fleet-directory')),
+                matching: find.widgetWithText(ListTile, name))
+            : find.byKey(ValueKey('desktop-directory-${computers ? 'computer' : 'agent'}-${created['id']}'));
+        await until(tester, () => directoryRow.evaluate().isNotEmpty);
+        await tester.ensureVisible(directoryRow);
+        await tester.pumpAndSettle();
+        await until(tester, () => directoryRow.hitTestable().evaluate().isNotEmpty);
+        await tester.tap(directoryRow);
         await tester.pumpAndSettle();
         final detailScroll = find
             .descendant(

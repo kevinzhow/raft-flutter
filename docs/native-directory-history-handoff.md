@@ -1,0 +1,13 @@
+# Native directory and task History repair
+
+The former Agent test navigation was obsolete, but the mounted native directory also omitted Source's Add agent and Add computer actions. Members now owns the shared Agents/Humans directory on desktop and mobile. Its Add agent menu opens the existing managed form or guarded external registration form. Computers reuses the same guarded registration flow and keeps its one-time credential hidden.
+
+K12 is a new discovery from Cindy's message `e75a4506-7853-4c6f-92e9-c09dcef5283f`. The live checklist grows from 49 to 50; the original 47-item audit remains immutable. Menu/form submission, permission revocation, account replacement and late response rejection have three-theme mounted tests. The native fleet flow uses Members' actual menu, the accepted resource ID and the real directory row, then reads create/edit/delete results back from the backend.
+
+Android's History failure was a product input defect. During reply positioning, ChatView mounted a painted old task-properties subtree under IgnorePointer and an invisible replacement under Opacity(0). A native pointer was dispatched to the sole painted History row at logical (205.7143, 223.8095); the current run recorded two rows, zero hit-ready rows and an ignoring ancestor. History did not expand within the original 30-second assertion. A simpler first opening accepted input, so it could not explain the full-flow failure.
+
+Task discussions now retain one interactive properties subtree during reply positioning. Normal message timelines retain their previous staging behavior. Six tests across desktop/mobile widths and all three themes failed with the original ChatView because the handoff frame had two properties owners; the same six pass with the repair and a pointer dispatched at the already painted location. Existing task lifetime and ordinary message-arrival staging regressions also pass.
+
+The initial Linux directory run was `2026-10-09T21:40:47.551753Z`, input `90a02155aadb290b539f9f9fd7faedfd35d2e48c7290be06520c296adc466ef6`. The Android pointer run was `2026-10-09T21:43:15.419494Z`, input `b3d15a2a0a03d13bb476a23b67f09fc5a134da6b3962ea087d800b13338e6ca1`. These are diagnostic inputs containing observation code, not the final product input. Both failures remain preserved privately alongside the previous full-flow failures. Android's collector lost late failure images when Flutter uninstalled its test APK; its retained 16 checkpoints and pointer JSON do not establish complete image capture.
+
+Current full-platform results will be bound to a fresh product source hash in the published batch receipt. Mounted and local protocol results alone do not establish a completed Linux or Android application flow.

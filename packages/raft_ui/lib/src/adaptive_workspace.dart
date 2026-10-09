@@ -185,6 +185,16 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                 Container(
                   key: const Key('workspace-sidebar-panel'),
                   width: sidebarWidth,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: BorderSide(
+                        color: t.brutal
+                            ? Colors.black
+                            : t.colors['line-muted']!,
+                        width: t.brutal ? 2 : 1,
+                      ),
+                    ),
+                  ),
                   child: Material(
                     color: t.brutal ? t.colors['brutal-cream'] : t.sidebar,
                     child: widget.sidebar,
@@ -305,7 +315,7 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
               child: Center(
                 child: Container(
                   width: focused || hovering ? 3 : 1,
-                  color: focused || hovering ? t.accent : t.line,
+                  color: focused || hovering ? t.accent : Colors.transparent,
                 ),
               ),
             ),

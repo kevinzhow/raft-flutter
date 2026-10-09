@@ -449,6 +449,18 @@
           "RaftFamily.elegant/false",
           "RaftFamily.elegant/true"
         ]
+      },
+      {
+        "id": "K10d",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "proof_file": "task_history_handoff_test.dart",
+        "title_zh": "三主题桌面及窄屏任务回复交接时，已显示的 History 保持单一所有者，真实指针点击不丢失",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   },
@@ -496,6 +508,40 @@
         "id": "K11c",
         "minimum_passes": 3,
         "title_zh": "图片完成解码但尚未绘制新缩略图时，从已有绘制位置发出的真实指针点击不丢失"
+      }
+    ]
+  },
+  {
+    "id": "K12",
+    "group": "Kevin 反馈",
+    "title_zh": "成员目录支持创建 Agent 和外部 Agent；电脑目录支持添加电脑，撤权或切换账户后旧入口和迟到结果失效。",
+    "web_source": "packages/web/src/components/layout/Sidebar.tsx:2402-2455,3917-3943,4372-4392",
+    "audit_note": "Cindy e75a4506 新发现：旧测试导航过时，实际原生目录也缺添加入口；不改原始47项审计。",
+    "checks": [
+      {
+        "id": "K12a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "proof_file": "directory_creation_test.dart",
+        "title_zh": "三主题桌面与窄屏通过真实添加按钮打开受控表单",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      },
+      {
+        "id": "K12b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "proof_file": "directory_creation_test.dart",
+        "title_zh": "权限降低后菜单关闭，迟到创建结果不能进入新工作区",
+        "required_name_fragments": [
+          "revoke",
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
       }
     ]
   }

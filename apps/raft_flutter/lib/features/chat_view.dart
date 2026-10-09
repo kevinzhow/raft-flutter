@@ -2089,7 +2089,11 @@ class _RaftChatViewState extends State<RaftChatView> {
               ? loadingBody
               : taskLoadingBody(loadingBody)
         : buildTimeline(adapter, viewport, listRevision);
-    if (!focusStaging) displayedTimeline = currentTimeline;
+    // Task properties belong to the active discussion, including while a new
+    // reply window is being positioned. Retaining a second properties tree
+    // would paint a disabled History row and hide the interactive replacement.
+    final preserveTimeline = focusStaging && widget.threadParentSlot == null;
+    if (!preserveTimeline) displayedTimeline = currentTimeline;
     final bottomCount = w.hasNewer
         ? (w.unread[w.channel?.id] ?? 0)
         : newMessageCount;
@@ -2151,14 +2155,14 @@ class _RaftChatViewState extends State<RaftChatView> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (focusStaging && retainedTimeline != null)
+              if (preserveTimeline && retainedTimeline != null)
                 IgnorePointer(
                   child: ExcludeSemantics(child: retainedTimeline!),
                 ),
               IgnorePointer(
-                ignoring: focusStaging,
+                ignoring: preserveTimeline,
                 child: Opacity(
-                  opacity: focusStaging ? 0 : 1,
+                  opacity: preserveTimeline ? 0 : 1,
                   child: currentTimeline,
                 ),
               ),

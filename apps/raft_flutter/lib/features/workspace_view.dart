@@ -866,23 +866,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
               controller: w,
             )
           : route == 'members'
-          ? wide
-                ? DesktopDirectoryView(
-                    key: ValueKey('directory-$desktopAuthority'),
-                    controller: w,
-                    selected: desktopNavigation.target,
-                    onSelected: selectDesktopDirectoryTarget,
-                  )
-                : MembersView(
-                    key: ValueKey('members-${w.server!.id}'),
-                    controller: w,
-                    mobileRoot: !wide,
-                    onOpenProfile: (id) => openDirectoryLocation(
-                      RaftRoute.human,
-                      id,
-                      expectedScope: navigationScope,
-                    ),
-                  )
+          ? DesktopDirectoryView(
+              key: ValueKey('directory-$desktopAuthority'),
+              controller: w,
+              mobileRoot: !wide,
+              selected: desktopNavigation.target,
+              onSelected: selectDesktopDirectoryTarget,
+            )
           : route == 'providers'
           ? ProviderConnectionsView(
               key: ValueKey('providers-${w.server!.id}'),

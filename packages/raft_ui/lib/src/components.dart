@@ -637,13 +637,15 @@ class RaftMountedConversationControlRecipe extends RaftControlRecipe {
   Color get focusRing =>
       tokens.brutal ? Colors.black : tokens.colors['line-strong']!;
   @override
-  Color get foreground => tokens.brutal || selected
+  Color get foreground => tokens.brutal
+      ? Colors.black
+      : selected
       ? tokens.colors['foreground-strong']!
       : tokens.colors['foreground-muted']!;
   @override
   Color foregroundFor({bool hovered = false}) =>
       hovered || pointerPressed || selected
-      ? tokens.colors['foreground-strong']!
+      ? (tokens.brutal ? Colors.black : tokens.colors['foreground-strong']!)
       : foreground;
   @override
   Color get background => !selected
@@ -1025,7 +1027,10 @@ class RaftNavItem extends StatelessWidget {
       excludeSemantics: true,
       child: conversationKind == null
           ? row(false)
-          : _MountedNavigationPointerSurface(builder: row),
+          : Padding(
+              padding: EdgeInsets.only(bottom: t.brutal ? 4 : 2),
+              child: _MountedNavigationPointerSurface(builder: row),
+            ),
     );
   }
 

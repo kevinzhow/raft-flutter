@@ -105,7 +105,7 @@ void main() {
           // Source Sidebar.tsx3754 supplies inherited Brutalist black;
           // DmRow's title at 1001 adds no text-color override.
           // Ordinary channel rendering remains independently asserted here.
-          tokens.brutal && kind == RaftConversationNavKind.directMessage
+          tokens.brutal
               ? Colors.black
               : tokens.colors['foreground-strong'],
         );
