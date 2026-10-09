@@ -3,15 +3,22 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
+import 'design_primitives.dart';
+import 'recipe_surface.dart';
 import '../recipes.dart';
 import 'theme.dart';
 
 /// One option of a [RaftInlineBadgeEditor] menu.
 @immutable
 class RaftInlineBadgeOption {
-  const RaftInlineBadgeOption({required this.id, required this.label});
+  const RaftInlineBadgeOption({
+    required this.id,
+    required this.label,
+    this.disabled = false,
+  });
   final String id;
   final String label;
+  final bool disabled;
 }
 
 /// Product InlineBadgeEditor (packages/web/src/components/InlineBadgeEditor.tsx):
@@ -59,8 +66,26 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
   final portal = OverlayPortalController();
   final link = LayerLink();
   bool ownedOpen = false;
-  bool hovered = false;
-  bool get isOpen => widget.open ?? ownedOpen;
+  final triggerFocus = FocusNode();
+  final menuKey = GlobalKey<_RaftInlineBadgeMenuState>();
+  bool? keyboardEdge;
+  bool get isOpen => widget.enabled && (widget.open ?? ownedOpen);
+
+  @override
+  void dispose() {
+    triggerFocus.dispose();
+    super.dispose();
+  }
+
+  void openFromKeyboard({bool last = false}) {
+    if (!widget.enabled) return;
+    if (isOpen && menuKey.currentState != null) {
+      menuKey.currentState!.focusEdge(last: last);
+    } else {
+      keyboardEdge = last;
+      _setOpen(true);
+    }
+  }
 
   @override
   void initState() {
@@ -71,6 +96,16 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
   @override
   void didUpdateWidget(RaftInlineBadgeEditor old) {
     super.didUpdateWidget(old);
+    if (old.open == true &&
+        !isOpen &&
+        widget.enabled &&
+        menuKey.currentState?.ownsFocus == true) {
+      triggerFocus.requestFocus();
+    }
+    if (!widget.enabled) {
+      ownedOpen = false;
+      keyboardEdge = null;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
   }
 
@@ -80,7 +115,12 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
     if (!isOpen && portal.isShowing) portal.hide();
   }
 
-  void _setOpen(bool value) {
+  void _setOpen(bool value, {bool restoreFocus = true}) {
+    if (value && !widget.enabled) return;
+    if (!value) {
+      keyboardEdge = null;
+      if (restoreFocus && widget.enabled) triggerFocus.requestFocus();
+    }
     if (widget.open == null) setState(() => ownedOpen = value);
     widget.onOpenChanged?.call(value);
     WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
@@ -101,10 +141,11 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
       uppercase: widget.uppercase,
       tokens: rt,
     ).root;
-    final inherited = badge.textStyle(rt);
+    final inherited = DefaultTextStyle.of(context).style
+        .merge(badge.textStyle(rt));
     final label = inherited.copyWith(
-      // Badge sets no family: it inherits the document `font-sans`.
-      fontFamily: inherited.fontFamily ?? t.bodyFont,
+      // Badge sets no family: inherit the caller's mounted shell style.
+      fontFamily: inherited.fontFamily,
       decoration: TextDecoration.none,
       fontSize: 12, // text-xs
       height: 16 / 12,
@@ -112,113 +153,160 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
       color: widget.foreground,
       letterSpacing: widget.uppercase ? 12 * .025 : badge.letterSpacing,
     );
-    final trigger = Container(
-      // brutal Badge `h-5`; elegant has no fixed height (py-0.5 + 16px line).
-      height: badge.height,
-      margin: const EdgeInsets.only(top: 2), // mt-0.5
-      // px-2 py-0.5; with the brutal fixed h-5 the 16px line is centred
-      // (items-center) and overflows into the padding, so only elegant keeps
-      // the vertical inset in layout.
-      padding: EdgeInsets.symmetric(
-        horizontal: 8,
-        vertical: badge.height == null ? 2 : 0,
-      ),
-      decoration: BoxDecoration(
-        color: widget.background,
-        borderRadius: badge.borderRadius,
-        border: t.brutal
-            ? Border.all(color: Colors.black, width: 2)
-            : Border.all(color: Colors.transparent),
-      ),
-      foregroundDecoration: hovered && widget.enabled
-          // hover:brightness-90 (brutal) / brightness-[0.96] (elegant).
-          ? BoxDecoration(
-              color: Colors.black.withValues(alpha: t.brutal ? .1 : .04),
-              borderRadius: badge.borderRadius,
-            )
-          : null,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 4, // gap-1
-        children: [
-          Text(
-            widget.uppercase ? widget.label.toUpperCase() : widget.label,
-            style: label,
+    Widget trigger(RaftInteractionState state) => Padding(
+      padding: const EdgeInsets.only(top: 2), // mt-0.5 is outside the button.
+      child: CustomPaint(
+        foregroundPainter: state.focusVisible
+            ? _BadgeFocusOutline(t.semantic.lineStrong, badge.borderRadius)
+            : null,
+        child: Container(
+          // brutal Badge `h-5`; elegant has no fixed height (py-0.5 + 16px line).
+          height: badge.height,
+          // px-2 py-0.5; with the brutal fixed h-5 the 16px line is centred
+          // (items-center) and overflows into the padding, so only elegant keeps
+          // the vertical inset in layout.
+          padding: EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: badge.height == null ? 2 : 0,
           ),
-          Opacity(
-            opacity: .4,
-            child: RaftIcon(
-              RaftGlyph.pencil,
-              size: 10,
-              color: widget.foreground,
-            ),
+          decoration: BoxDecoration(
+            color: widget.background,
+            borderRadius: badge.borderRadius,
+            border: t.brutal
+                ? Border.all(color: Colors.black, width: 2)
+                : Border.all(color: Colors.transparent),
           ),
-        ],
+          foregroundDecoration: state.hovered && widget.enabled
+              // Product InlineBadgeEditor: hover:brightness-90 in both families.
+              ? BoxDecoration(
+                  color: Colors.black.withValues(alpha: .1),
+                  borderRadius: badge.borderRadius,
+                )
+              : null,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 4, // gap-1
+            children: [
+              Text(
+                widget.uppercase ? widget.label.toUpperCase() : widget.label,
+                style: label,
+              ),
+              Opacity(
+                opacity: .4,
+                child: RaftIcon(
+                  RaftGlyph.pencil,
+                  size: 10,
+                  color: widget.foreground,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
     return OverlayPortal(
       controller: portal,
-      overlayChildBuilder: (context) => Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => _setOpen(false),
-            ),
-          ),
-          CompositedTransformFollower(
-            link: link,
-            showWhenUnlinked: false,
-            targetAnchor: widget.alignRight
-                ? Alignment.bottomRight
-                : Alignment.bottomLeft,
-            followerAnchor: widget.alignRight
-                ? Alignment.topRight
-                : Alignment.topLeft,
-            offset: const Offset(0, 4), // triggerRect.bottom + 4
-            child: Align(
-              alignment: widget.alignRight
-                  ? Alignment.topRight
-                  : Alignment.topLeft,
-              child: CallbackShortcuts(
-                bindings: {
-                  const SingleActivator(LogicalKeyboardKey.escape): () =>
-                      _setOpen(false),
-                },
-                child: RaftInlineBadgeMenu(
-                  minWidth: widget.menuMinWidth,
-                  selectedId: widget.selectedId,
-                  options: widget.options,
-                  onSelect: (id) {
-                    widget.onSelect(id);
-                    _setOpen(false);
-                  },
+      overlayChildBuilder: (context) => !isOpen
+          ? const SizedBox.shrink()
+          : Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _setOpen(false, restoreFocus: false),
+                  ),
                 ),
-              ),
+                CompositedTransformFollower(
+                  link: link,
+                  showWhenUnlinked: false,
+                  targetAnchor: widget.alignRight
+                      ? Alignment.bottomRight
+                      : Alignment.bottomLeft,
+                  followerAnchor: widget.alignRight
+                      ? Alignment.topRight
+                      : Alignment.topLeft,
+                  offset: const Offset(0, 4), // triggerRect.bottom + 4
+                  child: Align(
+                    alignment: widget.alignRight
+                        ? Alignment.topRight
+                        : Alignment.topLeft,
+                    child: CallbackShortcuts(
+                      bindings: {
+                        const SingleActivator(LogicalKeyboardKey.escape): () =>
+                            _setOpen(false),
+                      },
+                      child: RaftInlineBadgeMenu(
+                        key: menuKey,
+                        autofocus: keyboardEdge != null,
+                        focusLast: keyboardEdge ?? false,
+                        onDismiss: () => _setOpen(false),
+                        minWidth: widget.menuMinWidth,
+                        selectedId: widget.selectedId,
+                        options: widget.options,
+                        onSelect: (id) {
+                          if (!mounted ||
+                              !widget.enabled ||
+                              !isOpen ||
+                              !widget.options.any(
+                                (o) => o.id == id && !o.disabled,
+                              ))
+                            return;
+                          _setOpen(false);
+                          widget.onSelect(id);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
       child: CompositedTransformTarget(
         link: link,
-        child: Semantics(
-          button: true,
-          enabled: widget.enabled,
-          label: widget.tooltip ?? widget.label,
-          excludeSemantics: true,
-          onTap: widget.enabled ? () => _setOpen(!isOpen) : null,
-          child: MouseRegion(
-            cursor: widget.enabled
-                ? SystemMouseCursors.click
-                : SystemMouseCursors.forbidden,
-            onEnter: (_) => setState(() => hovered = true),
-            onExit: (_) => setState(() => hovered = false),
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: widget.enabled ? () => _setOpen(!isOpen) : null,
-              child: Opacity(
-                opacity: widget.enabled ? 1 : .6, // disabled:opacity-60
-                child: trigger,
+        child: Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onKeyEvent: (_, event) {
+            if (event is! KeyDownEvent || !widget.enabled)
+              return KeyEventResult.ignored;
+            if (event.logicalKey == LogicalKeyboardKey.enter ||
+                event.logicalKey == LogicalKeyboardKey.space) {
+              if (isOpen) {
+                _setOpen(false);
+              } else {
+                openFromKeyboard();
+              }
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
+                event.logicalKey == LogicalKeyboardKey.arrowUp) {
+              openFromKeyboard(
+                last: event.logicalKey == LogicalKeyboardKey.arrowUp,
+              );
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.escape && isOpen) {
+              _setOpen(false);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Semantics(
+            expanded: isOpen,
+            child: RaftInteractive(
+              focusNode: triggerFocus,
+              semanticLabel: widget.tooltip ?? widget.label,
+              tooltip: widget.tooltip,
+              onPressed: widget.enabled
+                  ? () {
+                      if (triggerFocus.hasFocus) keyboardEdge = null;
+                      _setOpen(!isOpen);
+                    }
+                  : null,
+              builder: (context, state) => ExcludeSemantics(
+                child: Opacity(
+                  opacity: widget.enabled ? 1 : .6,
+                  child: trigger(state),
+                ),
               ),
             ),
           ),
@@ -233,47 +321,146 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
 /// (packages/web/src/components/ui/MenuItem.tsx: Button size=sm variant=ghost
 /// + `flex w-full items-center gap-2 px-3 py-2 text-sm font-medium
 /// text-foreground-strong theme-brutal:text-black`) with a trailing Check 14.
-class RaftInlineBadgeMenu extends StatelessWidget {
+class RaftInlineBadgeMenu extends StatefulWidget {
   const RaftInlineBadgeMenu({
     super.key,
     required this.options,
     required this.selectedId,
     required this.onSelect,
     this.minWidth = 120,
+    this.autofocus = false,
+    this.focusLast = false,
+    this.onDismiss,
   });
   final List<RaftInlineBadgeOption> options;
   final String selectedId;
   final ValueChanged<String> onSelect;
   final double minWidth;
+  final bool autofocus, focusLast;
+  final VoidCallback? onDismiss;
+  @override
+  State<RaftInlineBadgeMenu> createState() => _RaftInlineBadgeMenuState();
+}
+
+class _RaftInlineBadgeMenuState extends State<RaftInlineBadgeMenu> {
+  final nodes = <String, FocusNode>{};
+  List<RaftInlineBadgeOption> get eligible =>
+      widget.options.where((o) => !o.disabled).toList();
+  bool get ownsFocus => nodes.values.any((node) => node.hasFocus);
+  @override
+  void initState() {
+    super.initState();
+    updateNodes();
+    if (widget.autofocus)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) focusEdge(last: widget.focusLast);
+      });
+  }
+
+  void updateNodes() {
+    final ids = widget.options.map((o) => o.id).toSet();
+    for (final id in nodes.keys.toList()) {
+      if (!ids.contains(id)) nodes.remove(id)!.dispose();
+    }
+    for (final o in widget.options) {
+      nodes.putIfAbsent(o.id, () => FocusNode());
+      nodes[o.id]!.canRequestFocus = !o.disabled;
+    }
+  }
+
+  @override
+  void didUpdateWidget(RaftInlineBadgeMenu old) {
+    super.didUpdateWidget(old);
+    final focusedIds = nodes.entries
+        .where((entry) => entry.value.hasFocus)
+        .map((entry) => entry.key)
+        .toSet();
+    updateNodes();
+    if (focusedIds.isNotEmpty &&
+        !eligible.any((option) => focusedIds.contains(option.id))) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) focusEdge();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final node in nodes.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  void focusEdge({bool last = false}) {
+    if (eligible.isEmpty) return;
+    nodes[(last ? eligible.last : eligible.first).id]!.requestFocus();
+  }
+
+  KeyEventResult keyEvent(FocusNode _, KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent)
+      return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.escape) {
+      widget.onDismiss?.call();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.home || key == LogicalKeyboardKey.end) {
+      focusEdge(last: key == LogicalKeyboardKey.end);
+      return KeyEventResult.handled;
+    }
+    if (key != LogicalKeyboardKey.arrowDown &&
+        key != LogicalKeyboardKey.arrowUp)
+      return KeyEventResult.ignored;
+    final rows = eligible;
+    if (rows.isEmpty) return KeyEventResult.handled;
+    final index = rows.indexWhere((o) => nodes[o.id]!.hasFocus);
+    final next = index < 0
+        ? (key == LogicalKeyboardKey.arrowUp ? rows.length - 1 : 0)
+        : (index + (key == LogicalKeyboardKey.arrowUp ? -1 : 1)) % rows.length;
+    nodes[rows[next].id]!.requestFocus();
+    return KeyEventResult.handled;
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final theme = t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant;
     final content = RaftDropdownMenuRecipe.resolve(
-      theme: theme,
+      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
       states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
       tokens: rt,
     ).content;
-    return Semantics(
-      role: SemanticsRole.menu,
-      child: Container(
-        constraints: BoxConstraints(minWidth: minWidth),
-        decoration: content.decoration(rt),
-        clipBehavior: Clip.hardEdge,
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final option in options)
-                _InlineBadgeMenuRow(
-                  label: option.label,
-                  selected: option.id == selectedId,
-                  onPressed: () => onSelect(option.id),
-                ),
-            ],
+    return FocusScope(
+      onKeyEvent: keyEvent,
+      child: Semantics(
+        role: SemanticsRole.menu,
+        child: Container(
+          constraints: BoxConstraints(minWidth: widget.minWidth),
+          decoration: content.decoration(rt),
+          clipBehavior: Clip.hardEdge,
+          child: IntrinsicWidth(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final option in widget.options)
+                  _InlineBadgeMenuRow(
+                    key: ValueKey(option.id),
+                    option: option,
+                    selected: option.id == widget.selectedId,
+                    focusNode: nodes[option.id]!,
+                    onPressed: () {
+                      if (!mounted ||
+                          !widget.options.any(
+                            (o) => o.id == option.id && !o.disabled,
+                          ))
+                        return;
+                      widget.onSelect(option.id);
+                    },
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -283,90 +470,145 @@ class RaftInlineBadgeMenu extends StatelessWidget {
 
 class _InlineBadgeMenuRow extends StatefulWidget {
   const _InlineBadgeMenuRow({
-    required this.label,
+    super.key,
+    required this.option,
     required this.selected,
     required this.onPressed,
+    required this.focusNode,
   });
-  final String label;
+  final RaftInlineBadgeOption option;
   final bool selected;
   final VoidCallback onPressed;
+  final FocusNode focusNode;
   @override
   State<_InlineBadgeMenuRow> createState() => _InlineBadgeMenuRowState();
 }
 
 class _InlineBadgeMenuRowState extends State<_InlineBadgeMenuRow> {
-  bool hovered = false;
+  @override
+  void initState() {
+    super.initState();
+    widget.focusNode.addListener(focusChanged);
+  }
+
+  void focusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didUpdateWidget(_InlineBadgeMenuRow old) {
+    super.didUpdateWidget(old);
+    if (old.focusNode != widget.focusNode) {
+      old.focusNode.removeListener(focusChanged);
+      widget.focusNode.addListener(focusChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(focusChanged);
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final rt = RaftRecipeTokens(t);
-    final button = RaftButtonRecipe.resolve(
-      theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
-      variant: RaftButtonRecipeVariant.ghost,
-      size: RaftButtonRecipeSize.sm,
-      tokens: rt,
-    ).root;
-    final foreground = t.brutal ? Colors.black : t.strong;
-    final style = button
-        .textStyle(rt)
-        .copyWith(
-          fontSize: 14, // text-sm
-          height: 20 / 14,
-          fontWeight: FontWeight.w500, // font-medium
-          color: foreground,
-          decoration: TextDecoration.none,
-        );
-    final hoverFill = t.brutal
-        // theme-brutal:hover:bg-soft-signal/30
-        ? t.colors['color-soft-signal']!.withValues(alpha: .3)
-        // hover:bg-fill-muted
-        : t.colors['fill-muted']!;
-    return Semantics(
-      role: SemanticsRole.menuItem,
-      selected: widget.selected,
-      label: widget.label,
-      excludeSemantics: true,
-      onTap: widget.onPressed,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) => setState(() => hovered = true),
-        onExit: (_) => setState(() => hovered = false),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: widget.onPressed,
-          child: Container(
-            height: button.height, // Button size=sm h-7
-            padding: const EdgeInsets.symmetric(horizontal: 12), // px-3
-            decoration: BoxDecoration(
-              color: hovered ? hoverFill : null,
-              borderRadius: button.borderRadius,
-              // brutal Button border-2 (ghost: transparent).
+    return RaftInteractive(
+      focusNode: widget.focusNode,
+      button: false,
+      onPressed: widget.option.disabled ? null : widget.onPressed,
+      builder: (context, state) {
+        final button = RaftButtonRecipe.resolve(
+          theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+          variant: RaftButtonRecipeVariant.ghost,
+          size: RaftButtonRecipeSize.sm,
+          states: t.recipeStates(
+            hovered: state.hovered,
+            pressed: state.pressed,
+            focusVisible: state.focusVisible,
+            disabled: widget.option.disabled,
+          ),
+          tokens: rt,
+        ).root;
+        final foreground = widget.option.disabled
+            ? (t.brutal ? Colors.black.withValues(alpha: .3) : t.muted)
+            : (t.brutal ? Colors.black : t.strong);
+        final hoverFill = t.brutal
+            ? t.colors['color-soft-signal']!.withValues(alpha: .3)
+            : t.colors['fill-muted']!;
+        return Semantics(
+          role: SemanticsRole.menuItem,
+          selected: widget.selected,
+          label: widget.option.label,
+          enabled: !widget.option.disabled,
+          focusable: !widget.option.disabled,
+          focused: widget.option.disabled ? null : widget.focusNode.hasFocus,
+          excludeSemantics: true,
+          child: RaftRecipeBox(
+            style: button,
+            tokens: rt,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decorationOverride: (d) => d.copyWith(
+              color: state.hovered ? hoverFill : null,
               border: t.brutal
                   ? Border.all(color: Colors.transparent, width: 2)
                   : null,
             ),
-            child: Row(
-              spacing: 8, // gap-2
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: style,
+            child: DefaultTextStyle.merge(
+              style: button
+                  .textStyle(rt)
+                  .copyWith(
+                    fontFamily: t.bodyFont,
+                    fontSize: 14,
+                    height: 20 / 14,
+                    fontWeight: FontWeight.w500,
+                    color: foreground,
+                    decoration: TextDecoration.none,
                   ),
-                ),
-                Opacity(
-                  opacity: widget.selected ? 1 : 0,
-                  child: RaftIcon(RaftGlyph.check, size: 14, color: foreground),
-                ),
-              ],
+              child: Row(
+                spacing: 8,
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.option.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Opacity(
+                    opacity: widget.selected ? 1 : 0,
+                    child: RaftIcon(
+                      RaftGlyph.check,
+                      size: 14,
+                      color: foreground,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+class _BadgeFocusOutline extends CustomPainter {
+  const _BadgeFocusOutline(this.color, this.radius);
+  final Color color;
+  final BorderRadius? radius;
+  @override
+  void paint(Canvas canvas, Size size) => canvas.drawRRect(
+    (radius ?? BorderRadius.zero).toRRect(Offset.zero & size).inflate(3),
+    Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2,
+  );
+  @override
+  bool shouldRepaint(_BadgeFocusOutline old) =>
+      old.color != color || old.radius != radius;
 }
 
 /// An inline-level control placed in a block container, as the Web DOM does
