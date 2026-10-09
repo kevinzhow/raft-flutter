@@ -110,3 +110,4 @@ export 'src/agent_avatar_picker.dart';
 
 export 'src/notification_settings_card.dart';
 export 'src/cindy_setup_screen.dart';
+export 'src/toast.dart';

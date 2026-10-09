@@ -170,6 +170,9 @@ void main() {
         await t.tap(find.text('Copy MD'));
         await t.pumpAndSettle();
         expect(writes, hasLength(1));
+        expect(find.byType(RaftToast), findsOneWidget);
+        expect(find.text('Copied Markdown'), findsWidgets);
+        expect(find.byType(SnackBar), findsNothing);
         expect(writes.single, contains('Public selected parent'));
         expect(
           writes.single,
