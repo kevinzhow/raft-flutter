@@ -31,7 +31,11 @@ class _SearchSurfacesState extends State<_SearchSurfaces> {
           selected: !selected,
           onPressed: () => setState(() => selected = !selected),
           child: const Row(
-            children: [RaftThreadIcon(size: 10), SizedBox(width: 8), Text('A thread message result')],
+            children: [
+              RaftThreadIcon(size: 10),
+              SizedBox(width: 8),
+              Text('A thread message result'),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -89,6 +93,33 @@ class _SearchInputPreviewState extends State<_SearchInputPreview> {
           onClear: controller.clear,
         ),
       ],
+    ),
+  );
+}
+
+@RaftPreviews('Task document typography and inline status')
+Widget taskDocumentPreview() => const _TaskDocumentPreview();
+
+class _TaskDocumentPreview extends StatefulWidget {
+  const _TaskDocumentPreview();
+  @override
+  State<_TaskDocumentPreview> createState() => _TaskDocumentPreviewState();
+}
+
+class _TaskDocumentPreviewState extends State<_TaskDocumentPreview> {
+  String status = 'todo';
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle.merge(
+    style: RaftTaskSectionRecipe(RaftTokens.of(context)).documentStyle,
+    child: RaftTaskCard(
+      title: 'Review the thread header strip baselines',
+      number: '210',
+      channel: 'design',
+      description: 'Source task description',
+      status: status,
+      onTap: () {},
+      statusOptions: const ['todo', 'in_progress', 'done'],
+      onStatus: (value) => setState(() => status = value),
     ),
   );
 }
