@@ -554,6 +554,16 @@ class _RaftChatViewState extends State<RaftChatView> {
       final window = widget.thread ? w.threadGeneration : w.channelGeneration;
       final loading = widget.thread ? w.threadLoading : w.channelLoading;
       final target = w.highlightedMessageId;
+      // A newly mounted preview can own a still-accepted same-channel window
+      // while its permalink GET waits. Publish that accepted window at its
+      // actual end; the pending target is not part of it. Cross-channel rows
+      // are already excluded by the controller's projection.
+      final pendingAcceptedMount =
+          !widget.thread &&
+          loading &&
+          scope != id &&
+          w.pendingMessageContextChannelId == id &&
+          projected.isNotEmpty;
       if (loading && scope == id) return;
       focusAnchors.removeWhere(
         (id, _) => id != target && id != scrolledHighlight,
@@ -612,7 +622,9 @@ class _RaftChatViewState extends State<RaftChatView> {
         // Ordinary diffs and history prepend do not enter this branch.
         replaceContext(projected);
         scrolledHighlight = null;
-        adapterWindow = window;
+        // Acceptance of the pending response must still enter atomic staging,
+        // even though its controller generation matches this retained mount.
+        adapterWindow = pendingAcceptedMount ? null : window;
       }
       final ownedAdapter = adapter, ownedViewport = viewport;
       bool currentContext() =>
@@ -639,7 +651,7 @@ class _RaftChatViewState extends State<RaftChatView> {
         if (!currentContext()) return;
       }
       if (presentationActive &&
-          !loading &&
+          (!loading || pendingAcceptedMount) &&
           (focusStaging ||
               (target != null &&
                   (target != scrolledHighlight || window != scrolledWindow)))) {
@@ -647,9 +659,10 @@ class _RaftChatViewState extends State<RaftChatView> {
           ownedAdapter,
           ownedViewport,
           window,
-          adapter.messages.any(
-                (m) => m.id == (preservedContextTarget ?? target),
-              )
+          !pendingAcceptedMount &&
+                  adapter.messages.any(
+                    (m) => m.id == (preservedContextTarget ?? target),
+                  )
               ? preservedContextTarget ?? target
               : null,
         );
