@@ -28,3 +28,41 @@ class _ChannelHeaderPreviewState extends State<_ChannelHeaderPreview> {
     ],
   );
 }
+
+@RaftPreviews('Desktop panel header flow', size: Size(960, 180))
+Widget desktopPanelHeaderPreview() => const _DesktopPanelHeaderPreview();
+
+class _DesktopPanelHeaderPreview extends StatefulWidget {
+  const _DesktopPanelHeaderPreview();
+  @override
+  State<_DesktopPanelHeaderPreview> createState() =>
+      _DesktopPanelHeaderPreviewState();
+}
+
+class _DesktopPanelHeaderPreviewState
+    extends State<_DesktopPanelHeaderPreview> {
+  String result = 'Ready';
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      RaftChannelHeader(
+        name: 'design',
+        description: 'Product and UI decisions',
+        onSearch: () => setState(() => result = 'Search channel'),
+        onSettings: () => setState(() => result = 'Channel settings'),
+      ),
+      RaftPanelHeaderBar(
+        title: 'Designer',
+        subtitle: '@designer',
+        actions: [
+          RaftPanelIconButton(
+            glyph: RaftGlyph.x,
+            tooltip: 'Close profile',
+            onPressed: () => setState(() => result = 'Close profile'),
+          ),
+        ],
+      ),
+      Text(result),
+    ],
+  );
+}

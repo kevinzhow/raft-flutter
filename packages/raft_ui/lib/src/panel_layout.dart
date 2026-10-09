@@ -232,6 +232,72 @@ class RaftCssFocusOutline extends CustomPainter {
       old.enabled != enabled || old.color != color || old.radius != radius;
 }
 
+/// Title/meta flow of the real raft-ui PanelHeaderContent slot.
+///
+/// The generated recipe supplies its column/row direction and spacing. Callers
+/// resolve `has:>data-slot=panel-meta` when [meta] is present so desktop Elegant
+/// aligns the two CSS line boxes on their alphabetic baseline. One Flex owner
+/// remains mounted when the theme or viewport changes.
+class RaftPanelHeaderContent extends StatelessWidget {
+  const RaftPanelHeaderContent({
+    super.key,
+    required this.style,
+    required this.heading,
+    this.meta,
+  });
+  final RaftSlotStyle style;
+  final Widget heading;
+  final Widget? meta;
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontal = switch (style['flex-direction']) {
+      CssKeyword(value: 'row') => true,
+      _ => false,
+    };
+    final gap =
+        (horizontal ? style.columnGap : style.rowGap) ??
+        style.length('gap') ??
+        0;
+    final baseline =
+        horizontal &&
+        meta != null &&
+        switch (style['align-items']) {
+          CssKeyword(value: 'baseline') => true,
+          _ => false,
+        };
+    return LayoutBuilder(
+      builder: (context, constraints) => Flex(
+        direction: horizontal ? Axis.horizontal : Axis.vertical,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: horizontal
+            ? baseline
+                  ? CrossAxisAlignment.baseline
+                  : CrossAxisAlignment.center
+            : CrossAxisAlignment.start,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: horizontal && meta != null
+                  ? (constraints.maxWidth - gap).clamp(0, double.infinity)
+                  : constraints.maxWidth,
+            ),
+            child: heading,
+          ),
+          if (meta != null) ...[
+            SizedBox(width: horizontal ? gap : 0, height: horizontal ? 0 : gap),
+            Flexible(
+              fit: horizontal ? FlexFit.tight : FlexFit.loose,
+              child: meta!,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// raft-ui PanelHeader as composed by Web `components/ui/PanelHeader.tsx`
 /// (AppPanelHeader): back action, identity icon slot, title (+ suffix) and
 /// subtitle, right-aligned actions.
@@ -262,7 +328,10 @@ class RaftPanelHeaderBar extends StatelessWidget {
     final width = MediaQuery.sizeOf(context).width;
     final s = RaftPanelHeaderRecipe.resolve(
       theme: raftRecipeTheme(t),
-      states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}, width),
+      states: RaftRecipeStates({
+        if (t.dark) RaftRecipeStates.dark,
+        if (subtitle != null) 'has:>data-slot=panel-meta',
+      }, width),
       tokens: rt,
     );
     final base = RaftTypography.body(t, size: 16, line: 20);
@@ -295,24 +364,22 @@ class RaftPanelHeaderBar extends StatelessWidget {
             SizedBox(width: gap),
           ],
           Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RaftCssText(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text(s.title),
-                ),
-                if (subtitle != null)
-                  RaftCssText(
-                    subtitle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text(s.meta),
-                  ),
-              ],
+            child: RaftPanelHeaderContent(
+              style: s.headerContent,
+              heading: RaftCssText(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text(s.title),
+              ),
+              meta: subtitle == null
+                  ? null
+                  : RaftCssText(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text(s.meta),
+                    ),
             ),
           ),
           if (actions.isNotEmpty) ...[

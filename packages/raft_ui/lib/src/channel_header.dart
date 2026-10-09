@@ -38,6 +38,7 @@ class RaftChannelHeader extends StatelessWidget {
       theme: raftRecipeTheme(t),
       states: RaftRecipeStates({
         if (t.dark) RaftRecipeStates.dark,
+        if (description.isNotEmpty) 'has:>data-slot=panel-meta',
       }, MediaQuery.sizeOf(context).width),
       tokens: rt,
     );
@@ -75,45 +76,34 @@ class RaftChannelHeader extends StatelessWidget {
           ),
           SizedBox(width: gap),
           Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                RaftCssText(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text(recipe.title),
-                  // CSS establishes the line box from the primary face; CJK
-                  // fallback glyph ascent must not change that box/baseline.
-                  strutStyle: StrutStyle.fromTextStyle(
-                    text(recipe.title),
-                    forceStrutHeight: true,
-                  ),
+            child: RaftPanelHeaderContent(
+              style: recipe.headerContent,
+              heading: RaftCssText(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: text(recipe.title),
+                // Keep the primary CSS face's line box with CJK fallbacks.
+                strutStyle: StrutStyle.fromTextStyle(
+                  text(recipe.title),
+                  forceStrutHeight: true,
                 ),
-                if (description.isNotEmpty &&
-                    (recipe.headerContent.rowGap ??
-                            recipe.headerContent.length('gap') ??
-                            0) >
-                        0)
-                  SizedBox(
-                    height:
-                        recipe.headerContent.rowGap ??
-                        recipe.headerContent.length('gap'),
-                  ),
-                if (description.isNotEmpty)
-                  Text(
-                    description,
-                    maxLines: MediaQuery.sizeOf(context).height <= 600 ? 1 : 2,
-                    overflow: TextOverflow.clip,
-                    softWrap: recipe.meta.whiteSpace != 'nowrap',
-                    style: text(recipe.meta),
-                    strutStyle: StrutStyle.fromTextStyle(
-                      text(recipe.meta),
-                      forceStrutHeight: true,
+              ),
+              meta: description.isEmpty
+                  ? null
+                  : RaftCssText(
+                      description,
+                      maxLines: MediaQuery.sizeOf(context).height <= 600
+                          ? 1
+                          : 2,
+                      overflow: TextOverflow.clip,
+                      softWrap: recipe.meta.whiteSpace != 'nowrap',
+                      style: text(recipe.meta),
+                      strutStyle: StrutStyle.fromTextStyle(
+                        text(recipe.meta),
+                        forceStrutHeight: true,
+                      ),
                     ),
-                  ),
-              ],
             ),
           ),
           SizedBox(width: gap),
