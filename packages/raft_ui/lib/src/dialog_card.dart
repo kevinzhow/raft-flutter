@@ -293,7 +293,7 @@ class RaftRecipeCard extends StatelessWidget {
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
       child: RaftRecipeBox(
-        style: root,
+        style: root.withCssUsedBorderWidths(),
         tokens: tokens,
         width: double.infinity,
         padding: padding,

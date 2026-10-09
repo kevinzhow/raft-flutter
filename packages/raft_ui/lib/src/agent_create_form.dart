@@ -127,7 +127,7 @@ class RaftAgentDialogCard extends StatelessWidget {
               child: Material(
                 type: MaterialType.transparency,
                 child: RaftRecipeBox(
-                  style: card.root,
+                  style: card.root.withCssUsedBorderWidths(),
                   tokens: tokens,
                   applyText: false,
                   width: double.infinity,

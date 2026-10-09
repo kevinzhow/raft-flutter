@@ -50,6 +50,29 @@ const TextStyle raftCssText = TextStyle(
 );
 
 extension RaftSlotPaint on RaftSlotStyle {
+  /// Used border box for the two Source Card wrappers measured at normal zoom,
+  /// DPR 3: a positive specified width below 1px becomes 1px; larger fractions
+  /// round down. Generated recipes retain their specified values, and the
+  /// global renderer does not apply this projection automatically.
+  RaftSlotStyle withCssUsedBorderWidths() {
+    final widths = borderWidth;
+    final used = <String, CssValue>{
+      ...properties,
+      for (final (side, width) in [
+        ('top', widths.top),
+        ('right', widths.right),
+        ('bottom', widths.bottom),
+        ('left', widths.left),
+      ])
+        if (width > 0)
+          'border-$side-width': CssNum(
+            math.max(1, width.floorToDouble()),
+            'px',
+          ),
+    };
+    return RaftSlotStyle(used, targets, classes, tokens);
+  }
+
   /// Resolved `color` (falls back to [inherited]).
   Color? foreground(RaftTokenResolver tokens, {Color? inherited}) =>
       color?.resolve(tokens, currentColor: inherited) ?? inherited;
