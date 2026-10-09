@@ -1375,7 +1375,16 @@ void main() {
       await tester.tap(
         find.descendant(of: taskCard, matching: find.text(taskTitle)),
       );
-      await tester.pumpAndSettle();
+      // The real dialog opens after the task and history HTTP requests finish.
+      // A settled frame does not imply those requests have completed.
+      try {
+        await until(tester, () => find.text('History').evaluate().isNotEmpty ||
+            (tester.state(find.byType(ResourceView)) as dynamic).error != null);
+      } catch (_) {
+        await screenshot(tester, 'linux-task-history-failed');
+        rethrow;
+      }
+      expect((tester.state(find.byType(ResourceView)) as dynamic).error, isNull);
       expect(find.text('History'), findsOneWidget);
       await screenshot(tester, 'linux-task-history');
       await tester.tap(find.widgetWithText(TextButton, 'Delete'));
