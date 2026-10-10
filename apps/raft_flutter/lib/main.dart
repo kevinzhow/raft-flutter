@@ -821,7 +821,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         authAttempt++;
         rootRequest++;
         sharing.onIncoming = null;
-        final flushed = workspace?.flushCache() ?? Future<void>.value();
+        // Nothing more is written for this account once its data is cleared.
+        final flushed = workspace?.retireCache() ?? Future<void>.value();
         final servers = <String>[
           for (final s in workspace?.servers ?? const <RaftRecord>[]) s.id,
         ];
@@ -864,7 +865,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     client = null;
     sessionEvents?.cancel();
     if (mounted) setState(() {});
-    await oldWorkspace?.flushCache();
+    // Late writes (debounced directory saves, socket-driven windows) must not
+    // land after the account's device data is cleared.
+    await oldWorkspace?.retireCache();
     if (c != null && principal != null) {
       await cache?.clearAccount(c.origin, principal);
       // Cached image bytes of this account go with its other cached data.

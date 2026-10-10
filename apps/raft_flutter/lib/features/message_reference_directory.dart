@@ -13,8 +13,9 @@ import 'private_route_guard.dart';
 /// the server-level identity ([directoryAuthority]) changes. A revalidation
 /// (agent events, reconnect, conflicts) keeps the accepted lists in place and
 /// replaces them when the response is accepted; [loading] is true only while
-/// the current identity has no settled data. Nothing is written to the
-/// workspace cache.
+/// the current identity has no settled data. Lists saved on the device for
+/// the same identity count as settled data (painted at the first frame and
+/// revalidated in place); see [WorkspaceEntityDirectory].
 class MessageReferenceDirectory extends ChangeNotifier {
   MessageReferenceDirectory(this.w) : store = w.entityDirectory {
     observed = directoryAuthority(w);

@@ -162,6 +162,9 @@ class RootFixture {
   /// Routes held by a test (`'GET /servers'`, ...): installed after the
   /// defaults, so the response arrives only when the test completes it.
   final holds = <String, Completer<dynamic>>{};
+
+  /// Routes replacing the defaults (installed before [holds]).
+  final overrides = <String, FutureOr<dynamic> Function(RequestOptions)>{};
   Future<void> mount(
     WidgetTester t,
     String theme,
@@ -269,6 +272,7 @@ class RootFixture {
       adapter.routes['POST /channels/c$id/read'] = (_) => {};
       adapter.routes['GET /channels/c$id/members'] = (_) => [];
     }
+    adapter.routes.addAll(overrides);
     for (final held in holds.entries) {
       final ordinary = adapter.routes[held.key];
       adapter.routes[held.key] = (o) async {

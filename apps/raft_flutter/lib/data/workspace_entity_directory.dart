@@ -91,19 +91,56 @@ dynamic _copyValue(dynamic value) => value is Map
     ? value.map(_copyValue).toList()
     : value;
 
-/// Memory-only Source store projection. Cold requests show a shell; refresh
-/// failures preserve accepted rows and carry a separate error. Every response
-/// is fenced by scope and request revision. Borrowed editors share this object.
+/// Reads the record [WorkspaceEntityDirectory] last saved for [kind] under
+/// the account/server of [scope] (null when nothing is on the device).
+typedef WorkspaceEntityDeviceRead = Future<dynamic> Function(
+  WorkspaceEntityScope scope,
+  WorkspaceEntityKind kind,
+);
+
+/// Saves (or, for null, deletes) the record of [kind] under the
+/// account/server of [scope].
+typedef WorkspaceEntityDeviceWrite = void Function(
+  WorkspaceEntityScope scope,
+  WorkspaceEntityKind kind,
+  Map<String, dynamic>? record,
+);
+
+/// Source store projection. Cold requests show a shell; refresh failures
+/// preserve accepted rows and carry a separate error. Every response is
+/// fenced by scope and request revision. Borrowed editors share this object.
+///
+/// With [readDevice]/[writeDevice] the accepted rows of each kind (agents
+/// with their tombstones, members, computers) are also kept on the device,
+/// one record per kind under (origin, principal, server), stamped with the
+/// role they were accepted under. Each new scope paints that record before
+/// any response ([restored]); it is never an authorization grant: it is only
+/// adopted for a kind the scope allows, under the same role, while no fresher
+/// facts were accepted, and it is always revalidated by the scope's own read.
+/// A record for another role, or for a kind the scope no longer allows, is
+/// deleted. Accepted reads and realtime patches are written back (debounced,
+/// see [persistDelay]); a 401/403 deletes the kind.
 class WorkspaceEntityDirectory extends ChangeNotifier {
   WorkspaceEntityDirectory({
     required WorkspaceEntityScope? Function() scope,
     required this.query,
     Stream<RaftEvent>? events,
+    this.readDevice,
+    this.writeDevice,
   }) : _readScope = scope {
     _subscription = events?.listen(_event);
   }
   final WorkspaceEntityScope? Function() _readScope;
   final Future<dynamic> Function(String path) query;
+  final WorkspaceEntityDeviceRead? readDevice;
+  final WorkspaceEntityDeviceWrite? writeDevice;
+
+  /// Version of the on-device record layout.
+  static const deviceRecordVersion = 1;
+
+  /// Window in which accepted reads and realtime patches are coalesced into
+  /// one device write per kind.
+  static const persistDelay = Duration(milliseconds: 500);
   WorkspaceEntityScope? _scope;
   final _rows = <WorkspaceEntityKind, Map<String, Map<String, dynamic>>>{};
   final _states = <WorkspaceEntityKind, WorkspaceEntityLoadState>{};
@@ -118,6 +155,19 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
 
   /// Kinds that settled (accepted or failed) at least once in this scope.
   final _settled = <WorkspaceEntityKind>{};
+
+  /// Kinds whose rows came from the device and await this scope's read.
+  final _fromDevice = <WorkspaceEntityKind>{};
+
+  /// Kinds the server refused (401/403) in this scope: never restored.
+  final _denied = <WorkspaceEntityKind>{};
+
+  /// Kinds read (at least started) from the server in this scope. A kind
+  /// painted from the device is settled but still read once.
+  final _requested = <WorkspaceEntityKind>{};
+  final _persistDirty = <WorkspaceEntityKind>{};
+  Timer? _persistTimer;
+  Future<void> _restoring = Future.value();
   int _authorRevision = 0, _agentRevision = 0, _agentRequests = 0;
   int _computerRevision = 0;
   List<Map<String, dynamic>>? _authorAgents, _authorMembers;
@@ -147,6 +197,14 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _tombstones.clear();
     _settled.clear();
     _latestComputerVersion = null;
+    _fromDevice.clear();
+    _denied.clear();
+    _requested.clear();
+    // Unwritten changes belong to the previous scope, which may have been
+    // revoked: they are dropped, never written under the new one.
+    _persistTimer?.cancel();
+    _persistTimer = null;
+    _persistDirty.clear();
     _authorAgents = _authorMembers = null;
     _authorRevision++;
     _agentRevision++;
@@ -155,7 +213,159 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _refresh = null;
     _dirty.clear();
     _queued.clear();
+    _restoring = next == null ? Future.value() : _restore(next, _epoch);
     return true;
+  }
+
+  /// Completes once the device records of the current scope were read and,
+  /// when still valid, painted. Server selection waits for it before its
+  /// first workspace frame.
+  Future<void> get restored {
+    synchronize();
+    return _restoring;
+  }
+
+  /// True while the rows of [kind] are the device copy and this scope's own
+  /// read has not been accepted yet (they are being revalidated).
+  bool fromDevice(WorkspaceEntityKind kind) {
+    synchronize();
+    return _fromDevice.contains(kind);
+  }
+
+  Future<void> _restore(WorkspaceEntityScope scope, int epoch) async {
+    final read = readDevice, write = writeDevice;
+    if (read == null) return;
+    await Future.wait([
+      for (final kind in WorkspaceEntityKind.values)
+        if (scope.allows(kind))
+          _restoreKind(scope, epoch, kind, read)
+        else if (write != null)
+          // A permission downgrade retires what the old role saved.
+          Future.sync(() => write(scope, kind, null)),
+    ]);
+  }
+
+  Future<void> _restoreKind(
+    WorkspaceEntityScope scope,
+    int epoch,
+    WorkspaceEntityKind kind,
+    WorkspaceEntityDeviceRead read,
+  ) async {
+    dynamic value;
+    try {
+      value = await read(scope, kind);
+    } catch (_) {
+      return;
+    }
+    if (value == null || !_accepts(scope, epoch)) return;
+    final record = _deviceRecord(scope, kind, value);
+    if (record == null) {
+      // Another role (or an unknown layout) never paints; it is retired.
+      writeDevice?.call(scope, kind, null);
+      return;
+    }
+    // Fresher facts of this scope (an accepted read, or a refusal) win.
+    if (_rows.containsKey(kind) || _denied.contains(kind)) return;
+    _rows[kind] = record.$1;
+    if (kind == WorkspaceEntityKind.agents) {
+      _tombstones
+        ..clear()
+        ..addAll(record.$2);
+    }
+    if (kind == WorkspaceEntityKind.computers) {
+      final latest = value['latestComputerVersion'];
+      _latestComputerVersion = latest is String ? latest : null;
+    }
+    _fromDevice.add(kind);
+    _settled.add(kind);
+    _states[kind] = WorkspaceEntityLoadState(
+      loading: _pending.containsKey(kind),
+      loaded: true,
+      error: _states[kind]?.error,
+    );
+    _authorsChanged(kind);
+    notifyListeners();
+  }
+
+  (Map<String, Map<String, dynamic>>, Map<String, Map<String, dynamic>>)?
+  _deviceRecord(
+    WorkspaceEntityScope scope,
+    WorkspaceEntityKind kind,
+    dynamic value,
+  ) {
+    if (value is! Map ||
+        value['version'] != deviceRecordVersion ||
+        value['kind'] != kind.name ||
+        value['role'] != scope.role ||
+        value['rows'] is! List) {
+      return null;
+    }
+    final rows = <String, Map<String, dynamic>>{};
+    for (final item in value['rows'] as List) {
+      if (item is! Map) return null;
+      final row = _copy(Map<String, dynamic>.from(item));
+      final id = _id(kind, row);
+      if (id == null ||
+          (kind == WorkspaceEntityKind.agents && row['deletedAt'] != null)) {
+        return null;
+      }
+      rows[id] = row;
+    }
+    final tombstones = <String, Map<String, dynamic>>{};
+    if (kind == WorkspaceEntityKind.agents && value['tombstones'] is List) {
+      for (final item in value['tombstones'] as List) {
+        if (item is! Map) return null;
+        final row = _copy(Map<String, dynamic>.from(item));
+        final id = row['id'];
+        if (id is! String || id.isEmpty || row['deletedAt'] == null) {
+          return null;
+        }
+        tombstones[id] = row;
+      }
+    }
+    return (rows, tombstones);
+  }
+
+  /// Schedules a device write of [kind]'s current rows (or its deletion when
+  /// the scope holds none).
+  void _persist(WorkspaceEntityKind kind) {
+    if (_disposed || writeDevice == null || _scope == null) return;
+    _persistDirty.add(kind);
+    _persistTimer ??= Timer(persistDelay, flushDevice);
+  }
+
+  /// Writes every scheduled change now (the owner calls this before it
+  /// flushes or closes its device cache).
+  void flushDevice() {
+    _persistTimer?.cancel();
+    _persistTimer = null;
+    final write = writeDevice, scope = _scope;
+    final kinds = Set.of(_persistDirty);
+    _persistDirty.clear();
+    if (_disposed || write == null || scope == null) return;
+    if (scope != _readScope()) return;
+    for (final kind in kinds) {
+      if (!scope.allows(kind)) continue;
+      final rows = _rows[kind];
+      write(
+        scope,
+        kind,
+        rows == null
+            ? null
+            : {
+                'version': deviceRecordVersion,
+                'kind': kind.name,
+                'role': scope.role,
+                'rows': [for (final row in rows.values) _copy(row)],
+                if (kind == WorkspaceEntityKind.agents)
+                  'tombstones': [
+                    for (final row in _tombstones.values) _copy(row),
+                  ],
+                if (kind == WorkspaceEntityKind.computers)
+                  'latestComputerVersion': _latestComputerVersion,
+              },
+      );
+    }
   }
 
   // Message-author directory: one server-scoped projection shared by every
@@ -230,15 +440,16 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   void ensureAuthors() =>
       ensure(const [WorkspaceEntityKind.agents, WorkspaceEntityKind.members]);
 
-  /// Starts each kind that has not settled in this scope. Accepted or
-  /// in-flight lists are reused, so a revisited surface renders its rows at the
-  /// first frame without a request. [retryFailed] also re-reads a kind whose
+  /// Starts each kind that has not settled (or was only painted from the
+  /// device) in this scope. Accepted or in-flight lists are reused, so a
+  /// revisited surface renders its rows at the first frame without a request. [retryFailed] also re-reads a kind whose
   /// last read failed (a surface the user explicitly opens again).
   void ensure(Iterable<WorkspaceEntityKind> kinds, {bool retryFailed = false}) {
     synchronize();
     for (final kind in kinds) {
       if (_pending.containsKey(kind)) continue;
       if (!_settled.contains(kind) ||
+          !_requested.contains(kind) ||
           (retryFailed && _states[kind]?.error != null)) {
         unawaited(refresh(kind));
       }
@@ -341,6 +552,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     final existing = _pending[kind];
     if (existing != null && !force) return existing;
     final epoch = _epoch;
+    _requested.add(kind);
     final ticket = _tickets[kind] = (_tickets[kind] ?? 0) + 1;
     if (kind == WorkspaceEntityKind.agents) _agentRequests++;
     bool current() => _accepts(scope, epoch) && _tickets[kind] == ticket;
@@ -417,13 +629,18 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         }
         _states[kind] = const WorkspaceEntityLoadState(loaded: true);
         _settled.add(kind);
+        _fromDevice.remove(kind);
         _authorsChanged(kind);
+        _persist(kind);
       } catch (error) {
         if (!current()) return;
         if (error is RaftApiException && [401, 403].contains(error.status)) {
           _rows.remove(kind);
           if (kind == WorkspaceEntityKind.agents) _tombstones.clear();
+          _fromDevice.remove(kind);
+          _denied.add(kind);
           _authorsChanged(kind);
+          _persist(kind);
         }
         _states[kind] = WorkspaceEntityLoadState(
           loaded: _rows[kind]?.isNotEmpty == true,
@@ -475,6 +692,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           return;
         }
         row.addAll(patch);
+        _persist(WorkspaceEntityKind.agents);
         notifyListeners();
       // Source agentStore.applyAgentSeen: monotonic, no request.
       case 'agent:seen' when agents:
@@ -522,6 +740,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
               !accepted.containsKey(id)) {
             accepted[id] = _copy(value);
             _authorsChanged(WorkspaceEntityKind.agents);
+            _persist(WorkspaceEntityKind.agents);
             notifyListeners();
           }
         }
@@ -539,6 +758,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             'deletedAt': DateTime.now().toUtc().toIso8601String(),
           };
           _authorsChanged(WorkspaceEntityKind.agents);
+          _persist(WorkspaceEntityKind.agents);
           notifyListeners();
         }
         _scheduleReload(const {WorkspaceEntityKind.agents});
@@ -570,6 +790,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         row['status'] = status;
         if (version is int) row['statusVersion'] = version;
         _computerRevision++;
+        _persist(WorkspaceEntityKind.computers);
         notifyListeners();
         _scheduleReload(const {
           WorkspaceEntityKind.computers,
@@ -600,6 +821,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         }
         row.addAll(patch);
         _computerRevision++;
+        _persist(WorkspaceEntityKind.computers);
         notifyListeners();
       // Source machine:updated / machine:upgrade-request / successful restart:
       // re-read the machine list only.
@@ -633,7 +855,10 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
 
   void _patchAgent(String id, bool Function(Map<String, dynamic> row) patch) {
     final row = _rows[WorkspaceEntityKind.agents]?[id];
-    if (row != null && patch(row)) notifyListeners();
+    if (row != null && patch(row)) {
+      _persist(WorkspaceEntityKind.agents);
+      notifyListeners();
+    }
   }
 
   static bool _sameValue(dynamic a, dynamic b) {
@@ -697,6 +922,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _refresh?.cancel();
     _dirty.clear();
     _queued.clear();
+    // Unflushed device writes are dropped: the owner flushes before closing.
+    _persistTimer?.cancel();
+    _persistDirty.clear();
     _subscription?.cancel();
     super.dispose();
   }

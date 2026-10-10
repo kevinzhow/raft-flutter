@@ -8,8 +8,13 @@
 /// with, and is dropped (screen and disk) as soon as fresher facts revoke
 /// the channel, the server membership, or change the role. Message and
 /// thread windows are bounded (500 rows each, least recently written
-/// evicted past a per-server count). Logout, a rejected session and an
-/// account switch clear the account's rows.
+/// evicted past a per-server count). The server-scoped entity directory
+/// (kind `entities`, one record per agents/members/computers) follows the
+/// same rule: painted at server selection before any read, adopted only
+/// under the role it was saved with and for kinds the role may view, and
+/// deleted on a role/permission change, a 401/403, server revocation or
+/// account clear. Logout, a rejected session and an account switch clear the
+/// account's rows.
 abstract interface class WorkspaceCache {
   Future<dynamic> read(
     String origin,

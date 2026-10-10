@@ -123,6 +123,8 @@ class WorkspaceController extends ChangeNotifier {
           scope: _entityScope,
           query: (path) => query(path),
           events: client.events,
+          readDevice: cache == null ? null : _readEntities,
+          writeDevice: cache == null ? null : _writeEntities,
         );
     // Directory changes are not forwarded to this notifier: agent heartbeats,
     // last-seen and machine status patches would rebuild every workspace
@@ -164,6 +166,55 @@ class WorkspaceController extends ChangeNotifier {
         if (can('viewMembers')) WorkspaceEntityKind.members,
       },
     );
+  }
+
+  /// Device records of the server-scoped entity directory: kind `entities`,
+  /// id = [WorkspaceEntityKind.name], under the scope's origin, principal and
+  /// server (so logout, account and server revocation clear them with the
+  /// rest of the account/server data). The directory checks role and
+  /// capabilities before painting one.
+  Future<dynamic> _readEntities(
+    WorkspaceEntityScope scope,
+    WorkspaceEntityKind kind,
+  ) async {
+    final store = cache;
+    if (store == null || _disposed || _cacheRetired) return null;
+    await _cacheWrites;
+    if (_disposed || _cacheRetired) return null;
+    return store.read(
+      scope.origin,
+      scope.principal,
+      scope.serverId,
+      'entities',
+      kind.name,
+    );
+  }
+
+  void _writeEntities(
+    WorkspaceEntityScope scope,
+    WorkspaceEntityKind kind,
+    Map<String, dynamic>? record,
+  ) {
+    final store = cache;
+    if (store == null ||
+        _cacheRetired ||
+        (record != null && _revokedServers.contains(scope.serverId))) {
+      return;
+    }
+    _cacheWrites = _cacheWrites.then((_) async {
+      try {
+        await store.write(
+          scope.origin,
+          scope.principal,
+          scope.serverId,
+          'entities',
+          kind.name,
+          record,
+        );
+      } catch (_) {
+        // Best effort: the directory is revalidated on every start anyway.
+      }
+    });
   }
 
   void _entityAuthorityChanged() {
@@ -750,7 +801,26 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   Future<void> _cacheWrites = Future<void>.value();
-  Future<void> flushCache() => _cacheWrites;
+
+  /// Set when the account's device data is being cleared (logout): nothing
+  /// more is written for it, so a late write cannot resurrect cleared rows.
+  bool _cacheRetired = false;
+
+  /// Writes every pending (debounced) change and completes once all queued
+  /// device writes have landed.
+  Future<void> flushCache() {
+    if (_ownsEntityDirectory) entityDirectory.flushDevice();
+    return _cacheWrites;
+  }
+
+  /// Stops all further device writes of this workspace and completes once
+  /// the writes already queued have landed. The caller then clears the
+  /// account's device data.
+  Future<void> retireCache() {
+    _cacheRetired = true;
+    return _cacheWrites;
+  }
+
   final Map<String, String> drafts = {};
   final Set<String> _revokedChannels = {};
   final Set<String> _revokedServers = {};
@@ -871,7 +941,7 @@ class WorkspaceController extends ChangeNotifier {
     final origin = client.origin,
         principal = client.user!.id,
         serverId = server ?? client.serverId ?? '';
-    await flushCache();
+    await _cacheWrites;
     try {
       return await cache!.read(origin, principal, serverId, kind, id);
     } catch (_) {
@@ -887,7 +957,7 @@ class WorkspaceController extends ChangeNotifier {
     String? server,
   }) async {
     final user = client.user?.id;
-    if (cache == null || user == null) return;
+    if (cache == null || user == null || _cacheRetired) return;
     if (_revokedChannels.contains(id) ||
         value is Map && _revokedChannels.contains(value['channelId'])) {
       return;
@@ -1812,6 +1882,9 @@ class WorkspaceController extends ChangeNotifier {
     sidebarOrder = {};
     client.selectServer(next.id);
     entityDirectory.synchronize();
+    // Agents, members and computers saved on this device paint with the
+    // cached channels (first workspace frame); the preload revalidates them.
+    final restoredEntities = entityDirectory.restored;
     unawaited(entityDirectory.preload());
     followedThreads.start();
     ledger.switchServer(next.id);
@@ -1864,6 +1937,7 @@ class WorkspaceController extends ChangeNotifier {
     final generation = client.generation;
     final replyIdentity = _syncIdentity();
     final cached = await _cached('channels', '');
+    await restoredEntities;
     if (generation != client.generation) return;
     if (cached is Map) {
       channels = (cached['channels'] as List)

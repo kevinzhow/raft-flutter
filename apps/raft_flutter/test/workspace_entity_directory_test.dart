@@ -348,56 +348,50 @@ void main() {
       expect(identical(directory.authorAgents, authors), isTrue);
     });
 
-    test(
-      'machine:status is statusVersion-gated; stale and duplicate frames cost nothing',
-      () async {
-        final pending = directory.preload();
-        requests['/agents']!.last.complete([agent]);
-        requests['/servers/s/machines']!.last.complete([
-          {...computer, 'statusVersion': 5},
-        ]);
-        requests['/servers/s/members']!.last.complete([member]);
-        await pending;
-        final before = counts();
-        var notifications = 0;
-        directory.addListener(() => notifications++);
-        for (final frame in [
-          {'machineId': 'c', 'status': 'offline', 'statusVersion': 4},
-          {'machineId': 'c', 'status': 'online', 'statusVersion': 5},
-          {'machineId': 'unknown', 'status': 'offline', 'statusVersion': 9},
-        ]) {
-          events.add(RaftEvent('machine:status', frame));
-        }
-        await settle();
-        expect(directory.computer('c')!['status'], 'online');
-        expect(notifications, 0);
-        expect(counts(), before);
-      },
-    );
+    test('machine:status is statusVersion-gated; stale and duplicate frames cost nothing', () async {
+      final pending = directory.preload();
+      requests['/agents']!.last.complete([agent]);
+      requests['/servers/s/machines']!.last.complete([
+        {...computer, 'statusVersion': 5},
+      ]);
+      requests['/servers/s/members']!.last.complete([member]);
+      await pending;
+      final before = counts();
+      var notifications = 0;
+      directory.addListener(() => notifications++);
+      for (final frame in [
+        {'machineId': 'c', 'status': 'offline', 'statusVersion': 4},
+        {'machineId': 'c', 'status': 'online', 'statusVersion': 5},
+        {'machineId': 'unknown', 'status': 'offline', 'statusVersion': 9},
+      ]) {
+        events.add(RaftEvent('machine:status', frame));
+      }
+      await settle();
+      expect(directory.computer('c')!['status'], 'online');
+      expect(notifications, 0);
+      expect(counts(), before);
+    });
 
-    test(
-      'accepted machine transitions patch at once and coalesce into one machines+agents recovery read',
-      () async {
-        await hydrate();
-        for (var version = 1; version <= 5; version++) {
-          events.add(
-            RaftEvent('machine:status', {
-              'machineId': 'c',
-              'status': version.isOdd ? 'offline' : 'online',
-              'statusVersion': version,
-            }),
-          );
-        }
-        // The visible row is patched before any request.
-        expect(directory.computer('c')!['status'], 'offline');
-        expect(directory.computer('c')!['statusVersion'], 5);
-        expect(reads('/servers/s/machines'), 1);
-        await settle();
-        expect(reads('/servers/s/machines'), 2);
-        expect(reads('/agents'), 2);
-        expect(reads('/servers/s/members'), 1);
-      },
-    );
+    test('accepted machine transitions patch at once and coalesce into one machines+agents recovery read', () async {
+      await hydrate();
+      for (var version = 1; version <= 5; version++) {
+        events.add(
+          RaftEvent('machine:status', {
+            'machineId': 'c',
+            'status': version.isOdd ? 'offline' : 'online',
+            'statusVersion': version,
+          }),
+        );
+      }
+      // The visible row is patched before any request.
+      expect(directory.computer('c')!['status'], 'offline');
+      expect(directory.computer('c')!['statusVersion'], 5);
+      expect(reads('/servers/s/machines'), 1);
+      await settle();
+      expect(reads('/servers/s/machines'), 2);
+      expect(reads('/agents'), 2);
+      expect(reads('/servers/s/members'), 1);
+    });
 
     test(
       'catalog events re-read only the affected kind, once per burst',
@@ -443,49 +437,46 @@ void main() {
       },
     );
 
-    test(
-      'agent:created upserts the pushed row and agent:deleted leaves a tombstone before the agent list read',
-      () async {
-        await hydrate();
-        const created = {
-          'id': 'b',
-          'name': 'Created agent',
-          'status': 'active',
-          'runtime': 'codex',
-          'model': 'gpt-6',
-        };
-        events.add(const RaftEvent('agent:created', {'agent': created}));
-        expect(directory.agent('b'), created);
-        expect(directory.authorAgents.map((row) => row['id']), ['a', 'b']);
-        events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
-        expect(directory.agent('a'), isNull);
-        expect(directory.agentDeleted('a'), isTrue);
-        expect(directory.rows(WorkspaceEntityKind.agents).single['id'], 'b');
-        // A deleted agent still identifies its historical messages.
-        final tombstone = directory.authorAgents.firstWhere(
+    test('agent:created upserts the pushed row and agent:deleted leaves a tombstone before the agent list read', () async {
+      await hydrate();
+      const created = {
+        'id': 'b',
+        'name': 'Created agent',
+        'status': 'active',
+        'runtime': 'codex',
+        'model': 'gpt-6',
+      };
+      events.add(const RaftEvent('agent:created', {'agent': created}));
+      expect(directory.agent('b'), created);
+      expect(directory.authorAgents.map((row) => row['id']), ['a', 'b']);
+      events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
+      expect(directory.agent('a'), isNull);
+      expect(directory.agentDeleted('a'), isTrue);
+      expect(directory.rows(WorkspaceEntityKind.agents).single['id'], 'b');
+      // A deleted agent still identifies its historical messages.
+      final tombstone = directory.authorAgents.firstWhere(
+        (row) => row['id'] == 'a',
+      );
+      expect(tombstone['deletedAt'], isNotNull);
+      await settle();
+      expect(counts(), {
+        '/agents': 2,
+        '/servers/s/machines': 1,
+        '/servers/s/members': 1,
+      });
+      requests['/agents']!.last.complete([
+        created,
+        {...agent, 'deletedAt': '2026-10-10T00:00:00.000Z'},
+      ]);
+      await Future<void>.delayed(Duration.zero);
+      expect(directory.agent('b'), created);
+      expect(
+        directory.authorAgents.firstWhere(
           (row) => row['id'] == 'a',
-        );
-        expect(tombstone['deletedAt'], isNotNull);
-        await settle();
-        expect(counts(), {
-          '/agents': 2,
-          '/servers/s/machines': 1,
-          '/servers/s/members': 1,
-        });
-        requests['/agents']!.last.complete([
-          created,
-          {...agent, 'deletedAt': '2026-10-10T00:00:00.000Z'},
-        ]);
-        await Future<void>.delayed(Duration.zero);
-        expect(directory.agent('b'), created);
-        expect(
-          directory.authorAgents.firstWhere(
-            (row) => row['id'] == 'a',
-          )['deletedAt'],
-          '2026-10-10T00:00:00.000Z',
-        );
-      },
-    );
+        )['deletedAt'],
+        '2026-10-10T00:00:00.000Z',
+      );
+    });
 
     test(
       'a change during an in-flight read is followed by exactly one more read',
@@ -566,6 +557,198 @@ void main() {
           ..add(const RaftEvent('server:member-added', {'serverId': 's'}));
         await settle();
         expect(requests, isEmpty);
+      },
+    );
+  });
+
+  group('device records', () {
+    late Map<String, dynamic> disk;
+    late WorkspaceEntityDirectory device;
+    late Map<String, List<Completer<dynamic>>> reads;
+    String key(WorkspaceEntityScope s, WorkspaceEntityKind kind) =>
+        '${s.origin}|${s.principal}|${s.serverId}|${kind.name}';
+    Map<String, dynamic> record(
+      WorkspaceEntityKind kind,
+      List<Map<String, dynamic>> rows, {
+      String role = 'owner',
+      List<Map<String, dynamic>> tombstones = const [],
+    }) => {
+      'version': WorkspaceEntityDirectory.deviceRecordVersion,
+      'kind': kind.name,
+      'role': role,
+      'rows': rows,
+      if (kind == WorkspaceEntityKind.agents) 'tombstones': tombstones,
+    };
+    setUp(() {
+      disk = {};
+      reads = {};
+      device = WorkspaceEntityDirectory(
+        scope: () => authority,
+        query: (path) {
+          final pending = Completer<dynamic>();
+          reads.putIfAbsent(path, () => []).add(pending);
+          return pending.future;
+        },
+        events: events.stream,
+        readDevice: (s, kind) async => disk[key(s, kind)],
+        writeDevice: (s, kind, value) {
+          if (value == null) {
+            disk.remove(key(s, kind));
+          } else {
+            disk[key(s, kind)] = value;
+          }
+        },
+      );
+    });
+    tearDown(() => device.dispose());
+
+    test(
+      'paints the saved rows before the read and replaces them in place',
+      () async {
+        final s = scope();
+        disk[key(s, WorkspaceEntityKind.agents)] = record(
+          WorkspaceEntityKind.agents,
+          [agent],
+          tombstones: [
+            {...agent, 'id': 'gone', 'deletedAt': '2026-10-01T00:00:00Z'},
+          ],
+        );
+        disk[key(s, WorkspaceEntityKind.members)] = record(
+          WorkspaceEntityKind.members,
+          [member],
+        );
+        expect(device.authorsLoading, isTrue);
+        final pending = device.preload();
+        await device.restored;
+        expect(device.agent('a')?['model'], 'gpt-6');
+        expect(device.agentDeleted('gone'), isTrue);
+        expect(device.member('u')?['name'], 'Source Human');
+        expect(device.authorsLoading, isFalse);
+        expect(device.fromDevice(WorkspaceEntityKind.agents), isTrue);
+        expect(device.state(WorkspaceEntityKind.agents).loading, isTrue);
+        expect(device.state(WorkspaceEntityKind.agents).loaded, isTrue);
+        final before = device.agentRevision;
+        reads['/agents']!.single.complete([
+          {...agent, 'model': 'gpt-7'},
+        ]);
+        reads['/servers/s/members']!.single.complete([member]);
+        reads['/servers/s/machines']!.single.complete({
+          'machines': [computer],
+        });
+        await pending;
+        expect(device.agentRevision, isNot(before));
+        expect(device.agent('a')?['model'], 'gpt-7');
+        expect(device.agentDeleted('gone'), isFalse);
+        expect(device.fromDevice(WorkspaceEntityKind.agents), isFalse);
+        device.flushDevice();
+        final saved = disk[key(s, WorkspaceEntityKind.agents)] as Map;
+        expect((saved['rows'] as List).single['model'], 'gpt-7');
+        expect(saved['role'], 'owner');
+        expect(disk[key(s, WorkspaceEntityKind.computers)], isNotNull);
+      },
+    );
+
+    test(
+      'an accepted read is never overwritten by a late device record',
+      () async {
+        final gate = Completer<void>();
+        final late = WorkspaceEntityDirectory(
+          scope: () => authority,
+          query: (path) async => path == '/agents'
+              ? [
+                  {...agent, 'model': 'fresh'},
+                ]
+              : path.endsWith('/machines')
+              ? {'machines': []}
+              : [],
+          readDevice: (s, kind) async {
+            await gate.future;
+            return record(
+              kind,
+              kind == WorkspaceEntityKind.agents ? [agent] : [],
+            );
+          },
+          writeDevice: (_, _, _) {},
+        );
+        addTearDown(late.dispose);
+        await late.preload();
+        gate.complete();
+        await late.restored;
+        expect(late.agent('a')?['model'], 'fresh');
+        expect(late.fromDevice(WorkspaceEntityKind.agents), isFalse);
+      },
+    );
+
+    test(
+      'another role or a disallowed kind never paints and is retired',
+      () async {
+        final s = scope(
+          role: 'member',
+          capabilities: const {WorkspaceEntityKind.members},
+        );
+        authority = s;
+        disk[key(s, WorkspaceEntityKind.agents)] = record(
+          WorkspaceEntityKind.agents,
+          [agent],
+          role: 'member',
+        );
+        disk[key(s, WorkspaceEntityKind.members)] = record(
+          WorkspaceEntityKind.members,
+          [member],
+          role: 'owner',
+        );
+        await device.restored;
+        expect(device.authorAgents, isEmpty);
+        expect(device.member('u'), isNull);
+        expect(device.settled(WorkspaceEntityKind.members), isFalse);
+        expect(disk, isEmpty);
+      },
+    );
+
+    test('a device-painted kind is still read once by ensure', () async {
+      final s = scope();
+      disk[key(s, WorkspaceEntityKind.computers)] = record(
+        WorkspaceEntityKind.computers,
+        [computer],
+      );
+      await device.restored;
+      expect(device.settled(WorkspaceEntityKind.computers), isTrue);
+      expect(reads, isEmpty);
+      device.ensure(const [WorkspaceEntityKind.computers]);
+      expect(reads.keys, ['/servers/s/machines']);
+      device.ensure(const [WorkspaceEntityKind.computers]);
+      expect(reads['/servers/s/machines'], hasLength(1));
+    });
+
+    test(
+      'a refusal deletes the record; unwritten changes never cross scopes',
+      () async {
+        final s = scope();
+        disk[key(s, WorkspaceEntityKind.agents)] = record(
+          WorkspaceEntityKind.agents,
+          [agent],
+        );
+        await device.restored;
+        expect(device.agent('a'), isNotNull);
+        final pending = device.refresh(WorkspaceEntityKind.agents);
+        reads['/agents']!.single.completeError(
+          const RaftApiException('Forbidden', status: 403),
+        );
+        await pending;
+        expect(device.agent('a'), isNull);
+        device.flushDevice();
+        expect(disk[key(s, WorkspaceEntityKind.agents)], isNull);
+
+        // A patch scheduled under the owner role is dropped by a role change.
+        final second = device.refresh(WorkspaceEntityKind.computers);
+        reads['/servers/s/machines']!.single.complete({
+          'machines': [computer],
+        });
+        await second;
+        authority = scope(role: 'admin');
+        device.synchronize();
+        device.flushDevice();
+        expect(disk[key(s, WorkspaceEntityKind.computers)], isNull);
       },
     );
   });
