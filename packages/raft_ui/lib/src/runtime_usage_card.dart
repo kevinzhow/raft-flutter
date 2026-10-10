@@ -685,3 +685,25 @@ class RaftRuntimeUsageSheet extends StatelessWidget {
     );
   }
 }
+
+/// Opens [RaftRuntimeUsageSheet] over a dimmed backdrop; [data] is re-read
+/// whenever [listenable] notifies so the sheet follows refreshes.
+Future<void> showRaftRuntimeUsageSheet(
+  BuildContext context, {
+  required Listenable listenable,
+  required RaftRuntimeUsageData Function(BuildContext context) data,
+  required VoidCallback onRefresh,
+}) => showGeneralDialog<void>(
+  context: context,
+  barrierDismissible: true,
+  barrierLabel: raftText(context, 'Close runtime usage'),
+  barrierColor: Colors.black.withValues(alpha: .4),
+  pageBuilder: (dialogContext, _, _) => ListenableBuilder(
+    listenable: listenable,
+    builder: (sheetContext, _) => RaftRuntimeUsageSheet(
+      data: data(sheetContext),
+      onRefresh: onRefresh,
+      onClose: () => Navigator.of(dialogContext).maybePop(),
+    ),
+  ),
+);

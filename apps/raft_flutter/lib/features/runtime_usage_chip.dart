@@ -352,19 +352,11 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
   }
 
   void openSheet(BuildContext context) {
-    showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: raftText(context, 'Close runtime usage'),
-      barrierColor: Colors.black.withValues(alpha: .4),
-      pageBuilder: (dialogContext, _, _) => ListenableBuilder(
-        listenable: model,
-        builder: (sheetContext, _) => RaftRuntimeUsageSheet(
-          data: data(sheetContext),
-          onRefresh: refresh,
-          onClose: () => Navigator.of(dialogContext).maybePop(),
-        ),
-      ),
+    showRaftRuntimeUsageSheet(
+      context,
+      listenable: model,
+      data: data,
+      onRefresh: refresh,
     );
     read();
   }
