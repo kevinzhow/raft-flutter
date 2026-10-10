@@ -1697,7 +1697,16 @@ void main() {
         final sheet = find.byType(RaftChannelSettingsSheet);
         final scroll = find.descendant(of: sheet, matching: find.byType(Scrollable)).first;
         final toggle = find.byWidgetPredicate((widget) => widget is RaftSwitch && widget.semanticLabel == title);
-        final action = toggle.evaluate().isNotEmpty ? toggle : find.text(title);
+        final button = find.widgetWithText(RaftRecipeButton, title);
+        final action = toggle.evaluate().isNotEmpty ? toggle : button;
+        // A channel publication precedes completion of the sheet's command.
+        // Reveal and press the current enabled action, once, after that owner
+        // can accept input. A disabled Delete label cannot own the gesture.
+        if (toggle.evaluate().isEmpty) {
+          await until(tester, () => button.evaluate().length == 1 &&
+              !tester.widget<RaftRecipeButton>(button).disabled &&
+              tester.widget<RaftRecipeButton>(button).onPressed != null);
+        }
         await tester.scrollUntilVisible(action, 150, scrollable: scroll);
         await tester.ensureVisible(action);
         await tester.pumpAndSettle();
