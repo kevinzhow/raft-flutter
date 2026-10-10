@@ -12,6 +12,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'reading_anchor.dart';
+import 'row_extents.dart';
 
 import '../data/workspace_controller.dart';
 import '../data/source_time_formatter.dart';
@@ -1922,35 +1923,94 @@ class _RaftChatViewState extends State<RaftChatView>
     }),
   );
 
+  // id -> index over the displayed window, rebuilt when the window changes;
+  // rows used to project and scan the whole channel on every build.
+  List<chat.Message>? indexedWindow;
+  int indexedLength = -1;
+  String? indexedFirst, indexedLast;
+  final windowIndex = <String, int>{};
+  int? windowIndexOf(String id) {
+    final list = adapter.messages;
+    final first = list.isEmpty ? null : list.first.id;
+    final last = list.isEmpty ? null : list.last.id;
+    if (!identical(list, indexedWindow) ||
+        list.length != indexedLength ||
+        first != indexedFirst ||
+        last != indexedLast) {
+      windowIndex
+        ..clear()
+        ..addAll({for (var i = 0; i < list.length; i++) list[i].id: i});
+      indexedWindow = list;
+      indexedLength = list.length;
+      indexedFirst = first;
+      indexedLast = last;
+    }
+    return windowIndex[id];
+  }
+
   Widget datedTile(RaftMessage message, {bool captureFocus = true}) {
     final stamp = message.createdAt;
-    final current = rows;
-    final index = current.indexWhere((row) => row.id == message.id);
-    final previous = index > 0 ? current[index - 1].createdAt : null;
+    final index = windowIndexOf(message.id);
+    DateTime? previous;
+    if (index != null) {
+      previous = index > 0
+          ? RaftMessage(adapter.messages[index - 1].metadata!).createdAt
+          : null;
+    } else {
+      // A row of the retained (previous) window while a new one is staged.
+      final current = rows;
+      final at = current.indexWhere((row) => row.id == message.id);
+      previous = at > 0 ? current[at - 1].createdAt : null;
+    }
     final showDay =
         stamp != null &&
         (previous == null ||
             timeFormatter.dayKey(previous) != timeFormatter.dayKey(stamp));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (showDay &&
-            const RaftTimelineCompositionRecipe().emitsDayDivider(
-              widget.thread
-                  ? RaftTimelineHost.threadPanel
-                  : RaftTimelineHost.chatPanel,
-            ))
-          RaftConversationDateHeader(
-            key: ValueKey('message-day-${message.id}'),
-            label: timeFormatter.dayLabel(stamp),
+    return RaftRowExtentRecorder(
+      cacheKey: rowExtentKey(context, message.id),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showDay &&
+              const RaftTimelineCompositionRecipe().emitsDayDivider(
+                widget.thread
+                    ? RaftTimelineHost.threadPanel
+                    : RaftTimelineHost.chatPanel,
+              ))
+            RaftConversationDateHeader(
+              key: ValueKey('message-day-${message.id}'),
+              label: timeFormatter.dayLabel(stamp),
+            ),
+          Padding(
+            key: ValueKey('message-wrapper-${message.id}'),
+            padding: const RaftTimelineCompositionRecipe().messageInset,
+            child: tile(message, captureFocus: captureFocus),
           ),
-        Padding(
-          key: ValueKey('message-wrapper-${message.id}'),
-          padding: const RaftTimelineCompositionRecipe().messageInset,
-          child: tile(message, captureFocus: captureFocus),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+
+  String rowExtentKey(BuildContext context, String id) {
+    final tokens = RaftTokens.of(context);
+    return '${tokens.family.name}|${tokens.dark}|${widget.thread}|$id';
+  }
+
+  /// Total-extent estimate for a row not laid out yet: its last measured
+  /// height at this width, otherwise a content-based guess.
+  double estimateRow(
+    BuildContext context,
+    chat.InMemoryChatController timelineAdapter,
+    int visualIndex,
+  ) {
+    final width = raftLastRowWidth;
+    final list = timelineAdapter.messages;
+    final index = bottomAnchored ? list.length - 1 - visualIndex : visualIndex;
+    if (index < 0 || index >= list.length) return 96;
+    final message = list[index];
+    final measured = raftRowExtents[rowExtentKey(context, message.id)];
+    if (measured != null && (measured.$1 - width).abs() < 1) return measured.$2;
+    return estimateMessageExtent(message.metadata, width);
   }
 
   Widget tile(RaftMessage m, {bool parent = false, bool captureFocus = true}) {
@@ -2068,6 +2128,8 @@ class _RaftChatViewState extends State<RaftChatView>
                 'chat-list-${widget.thread ? 'thread' : 'channel'}',
               ),
               itemBuilder: item,
+              extentEstimation: (index) =>
+                  estimateRow(context, timelineAdapter, index),
               // Mounted MessageTimeline owns its two sentinels and natural
               // footer. Generic Flyer padding/safe-area must not duplicate
               // that spacing or the external composer's OS inset.

@@ -137,6 +137,12 @@ class ChatAnimatedList extends StatefulWidget {
   /// leave the viewport.
   final double? cacheExtent;
 
+  /// Estimated main-axis extent of the item at a visual index, used for items
+  /// that have not been laid out. The list's total extent (and so the
+  /// scrollbar) sums these instead of extrapolating from the average of the
+  /// few laid-out items, which jumps when item heights vary a lot.
+  final double Function(int index)? extentEstimation;
+
   /// Creates an animated chat list.
   const ChatAnimatedList({
     super.key,
@@ -196,6 +202,7 @@ class ChatAnimatedList extends StatefulWidget {
     this.messageGroupingTimeoutInSeconds,
     this.physics,
     this.cacheExtent,
+    this.extentEstimation,
   });
 
   @override
@@ -206,7 +213,10 @@ class ChatAnimatedList extends StatefulWidget {
 /// State for [ChatAnimatedList].
 class _ChatAnimatedListState extends State<ChatAnimatedList>
     with TickerProviderStateMixin {
-  final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey();
+  // A plain lazy SliverList: Raft inserts without animation, so the animated
+  // list's transitions are unused, and a custom delegate can supply the total
+  // extent estimate.
+  final GlobalKey _listKey = GlobalKey();
   late final ChatController _chatController;
   late final SliverObserverController _observerController;
   late final ScrollController _scrollController;
@@ -381,32 +391,33 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
     // Define the SliverAnimatedList once as it's used for both
     // reversed and non-reversed lists.
-    final sliverAnimatedList = SliverAnimatedList(
+    final sliverAnimatedList = SliverList(
       key: _listKey,
-      initialItemCount: _oldList.length,
-      findChildIndexCallback: (Key key) {
-        if (key is ValueKey<MessageID>) {
-          final index = _oldList.indexWhere((m) => m.id == key.value);
-          if (index != -1) {
-            return visualPosition(index);
+      delegate: _EstimatingChildDelegate(
+        (BuildContext context, int index) {
+          final message = _oldList[visualPosition(index)];
+          return widget.itemBuilder(
+            context,
+            message,
+            visualPosition(index),
+            kAlwaysCompleteAnimation,
+            messagesGroupingMode: widget.messagesGroupingMode,
+            messageGroupingTimeoutInSeconds:
+                widget.messageGroupingTimeoutInSeconds,
+          );
+        },
+        childCount: _oldList.length,
+        estimate: widget.extentEstimation,
+        findChildIndexCallback: (Key key) {
+          if (key is ValueKey<MessageID>) {
+            final index = _oldList.indexWhere((m) => m.id == key.value);
+            if (index != -1) {
+              return visualPosition(index);
+            }
           }
-        }
-        return null;
-      },
-      itemBuilder:
-          (BuildContext context, int index, Animation<double> animation) {
-            final message = _oldList[visualPosition(index)];
-
-            return widget.itemBuilder(
-              context,
-              message,
-              visualPosition(index),
-              animation,
-              messagesGroupingMode: widget.messagesGroupingMode,
-              messageGroupingTimeoutInSeconds:
-                  widget.messageGroupingTimeoutInSeconds,
-            );
-          },
+          return null;
+        },
+      ),
     );
 
     final effectiveMessageSliver =
@@ -1100,14 +1111,8 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
     _oldList.insert(position, data);
     _updateOldListEmptyNotifier();
-    // The insertItem method requires the position of the item after the insert
-    _listKey.currentState!.insertItem(
-      visualPosition(position),
-      // We are only animating items when scroll view is not yet scrollable,
-      // otherwise we just insert the item without animation.
-      // (animation is replaced with scroll to bottom animation)
-      duration: duration,
-    );
+    assert(duration >= Duration.zero);
+    if (mounted) setState(() {});
 
     // Used later to trigger scroll to end only for the last inserted message.
     _lastInsertedMessageId = data.id;
@@ -1169,11 +1174,9 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
       visualStartIndexForInsertAllItems = visualPosition(position);
     }
 
-    _listKey.currentState!.insertAllItems(
-      visualStartIndexForInsertAllItems,
-      messagesToInsert.length,
-      duration: duration,
-    );
+    assert(visualStartIndexForInsertAllItems >= 0);
+    assert(duration >= Duration.zero);
+    if (mounted) setState(() {});
 
     _lastInsertedMessageId = messagesToInsert.last.id;
 
@@ -1196,19 +1199,9 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
     _oldList.removeAt(position);
     _updateOldListEmptyNotifier();
 
-    _listKey.currentState!.removeItem(
-      visualIndex, // Use the pre-calculated visual index.
-      (context, animation) => widget.itemBuilder(
-        context,
-        data, // Pass the actual message data being removed.
-        position, // Pass its original position.
-        animation,
-        messagesGroupingMode: widget.messagesGroupingMode,
-        messageGroupingTimeoutInSeconds: widget.messageGroupingTimeoutInSeconds,
-        isRemoved: true,
-      ),
-      duration: duration,
-    );
+    assert(visualIndex >= 0);
+    assert(duration >= Duration.zero);
+    if (mounted) setState(() {});
   }
 
   void _onChanged(
@@ -1369,5 +1362,35 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
       }
     }
     _isProcessingOperations = false;
+  }
+}
+
+/// Builder delegate whose total extent sums per-item estimates for the items
+/// after the last laid-out child, instead of the framework's average-based
+/// extrapolation.
+class _EstimatingChildDelegate extends SliverChildBuilderDelegate {
+  _EstimatingChildDelegate(
+    super.builder, {
+    required int super.childCount,
+    required this.estimate,
+    super.findChildIndexCallback,
+  });
+  final double Function(int index)? estimate;
+
+  @override
+  double? estimateMaxScrollOffset(
+    int firstIndex,
+    int lastIndex,
+    double leadingScrollOffset,
+    double trailingScrollOffset,
+  ) {
+    final perItem = estimate;
+    final count = childCount;
+    if (perItem == null || count == null) return null;
+    var extent = trailingScrollOffset;
+    for (var i = lastIndex + 1; i < count; i++) {
+      extent += perItem(i);
+    }
+    return extent;
   }
 }
