@@ -43,7 +43,8 @@ Map<String, dynamic>? projectThreadReply(
     'senderDisplayName': m['senderDisplayName'] is String
         ? m['senderDisplayName']
         : (m['senderName'] is String ? m['senderName'] : ''),
-    'senderAvatarUrl': !snapshot && m['senderAvatarUrl'] is String
+    // Kept in snapshots too: a cached preview paints its final avatar.
+    'senderAvatarUrl': m['senderAvatarUrl'] is String
         ? m['senderAvatarUrl']
         : null,
     'createdAt': m['createdAt'] is String ? m['createdAt'] : '',

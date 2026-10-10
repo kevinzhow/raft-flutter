@@ -192,7 +192,7 @@ void main() {
           ),
         );
         glyph = tester.widget<RaftIcon>(find.byType(RaftIcon));
-        expect(glyph.size, 16);
+        expect(glyph.size, 18);
       },
     );
   }

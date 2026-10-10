@@ -36,6 +36,9 @@ SenderAvatarProjection projectSenderAvatar({
   Map<String, dynamic>? currentUser,
   Map<String, dynamic>? externalAuthor,
   double requestSize = 80,
+  // Message-carried `senderAvatarUrl`: the first-paint source when the
+  // directory has no row for this sender yet (never overrides a directory row).
+  String? carriedAvatarUrl,
 }) {
   if (senderType == 'external_projection') {
     return SenderAvatarProjection(
@@ -56,7 +59,7 @@ SenderAvatarProjection projectSenderAvatar({
       break;
     }
   }
-  final rawUrl = resolved?['avatarUrl'];
+  final rawUrl = resolved == null ? carriedAvatarUrl : resolved['avatarUrl'];
   if (isAgent) {
     final pixel = rawUrl is String && rawUrl.startsWith('pixel:')
         ? rawUrl.substring(6)
@@ -80,7 +83,7 @@ SenderAvatarProjection projectSenderAvatar({
       hash = sha256.convert(utf8.encode(email.trim().toLowerCase())).toString();
     }
   }
-  final humanUrl = resolved?['avatarUrl'];
+  final humanUrl = resolved == null ? carriedAvatarUrl : resolved['avatarUrl'];
   return SenderAvatarProjection(
     identity: 'user:$senderId',
     kind: 'human',

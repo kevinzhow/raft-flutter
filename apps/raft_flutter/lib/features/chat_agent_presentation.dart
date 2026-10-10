@@ -36,9 +36,7 @@ class ChatAgentPresentation extends ChangeNotifier {
   Map<String, dynamic>? agent(String id) =>
       directory.agents.where((a) => a['id'] == id).firstOrNull;
   String? modelLabel(String id) {
-    if (scope != workspaceAuthority(w) ||
-        directory.scope != scope ||
-        !w.can('viewAgents')) {
+    if (directory.scope != directoryAuthority(w) || !w.can('viewAgents')) {
       return null;
     }
     final value = agent(id)?['model'];
@@ -62,7 +60,11 @@ class ChatAgentPresentation extends ChangeNotifier {
       expiry?.cancel();
     }
     items = items
-        .where((i) => directory.scope == scope && agent(i.agentId) != null)
+        .where(
+          (i) =>
+              directory.scope == directoryAuthority(w) &&
+              agent(i.agentId) != null,
+        )
         .toList();
     notifyListeners();
   }
@@ -72,7 +74,7 @@ class ChatAgentPresentation extends ChangeNotifier {
         event.name != 'agent:activity' ||
         event.payload is! Map ||
         scope != workspaceAuthority(w) ||
-        directory.scope != scope ||
+        directory.scope != directoryAuthority(w) ||
         !w.can('viewAgents')) {
       return;
     }

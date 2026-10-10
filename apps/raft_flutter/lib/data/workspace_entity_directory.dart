@@ -110,6 +110,16 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   final _pending = <WorkspaceEntityKind, Future<void>>{};
   final _activityVersions = <String, int>{};
   final _activity = <String, Map<String, dynamic>>{};
+  final _tickets = <WorkspaceEntityKind, int>{};
+
+  /// Authorized agent tombstones. They are not live entities (lookups and
+  /// [rows] never return them) but still identify historical message senders.
+  final _tombstones = <String, Map<String, dynamic>>{};
+
+  /// Kinds that settled (accepted or failed) at least once in this scope.
+  final _settled = <WorkspaceEntityKind>{};
+  int _authorRevision = 0, _agentRevision = 0, _agentRequests = 0;
+  List<Map<String, dynamic>>? _authorAgents, _authorMembers;
   int _epoch = 0;
   bool _disposed = false;
   bool started = false;
@@ -128,8 +138,109 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _states.clear();
     _activityVersions.clear();
     _activity.clear();
+    _tombstones.clear();
+    _settled.clear();
+    _authorAgents = _authorMembers = null;
+    _authorRevision++;
+    _agentRevision++;
     _refresh?.cancel();
     return true;
+  }
+
+  // Message-author directory: one server-scoped projection shared by every
+  // mounted chat, thread, activity and saved surface. It is cleared only when
+  // the server-level identity (principal, server, generation, role or
+  // capabilities) changes. Revalidation keeps the accepted lists in place.
+
+  /// Agents, including authorized tombstones, as immutable rows.
+  List<Map<String, dynamic>> get authorAgents {
+    synchronize();
+    if (_disposed || _scope?.allows(WorkspaceEntityKind.agents) != true) {
+      return const [];
+    }
+    return _authorAgents ??= List.unmodifiable([
+      for (final row in [
+        ...?_rows[WorkspaceEntityKind.agents]?.values,
+        ..._tombstones.values,
+      ])
+        Map<String, dynamic>.unmodifiable(_copy(row)),
+    ]);
+  }
+
+  List<Map<String, dynamic>> get authorMembers {
+    synchronize();
+    if (_disposed || _scope?.allows(WorkspaceEntityKind.members) != true) {
+      return const [];
+    }
+    return _authorMembers ??= List.unmodifiable([
+      for (final row
+          in _rows[WorkspaceEntityKind.members]?.values ??
+              const <Map<String, dynamic>>[])
+        Map<String, dynamic>.unmodifiable(_copy(row)),
+    ]);
+  }
+
+  /// Changes whenever [authorAgents] or [authorMembers] is replaced/cleared.
+  int get authorRevision {
+    synchronize();
+    return _authorRevision;
+  }
+
+  /// Changes whenever [authorAgents] is replaced or cleared.
+  int get agentRevision {
+    synchronize();
+    return _agentRevision;
+  }
+
+  /// Changes whenever an agents request starts.
+  int get agentRequestRevision => _agentRequests;
+
+  /// True only while the current scope has no settled author data yet. A
+  /// revalidation of accepted lists never reports loading.
+  bool get authorsLoading {
+    synchronize();
+    final scope = _scope;
+    if (_disposed || scope == null) return false;
+    return [
+      WorkspaceEntityKind.agents,
+      WorkspaceEntityKind.members,
+    ].any((kind) => scope.allows(kind) && !_settled.contains(kind));
+  }
+
+  /// Starts the author lists once per scope; accepted or in-flight lists are
+  /// reused by every surface.
+  void ensureAuthors() {
+    synchronize();
+    for (final kind in [
+      WorkspaceEntityKind.agents,
+      WorkspaceEntityKind.members,
+    ]) {
+      if (!_settled.contains(kind) && !_pending.containsKey(kind)) {
+        unawaited(refresh(kind));
+      }
+    }
+  }
+
+  /// Supersedes any in-flight author read (reconnect/conflict reconcile). The
+  /// previous lists stay visible until the replacement is accepted.
+  void revalidateAuthors() {
+    for (final kind in [
+      WorkspaceEntityKind.agents,
+      WorkspaceEntityKind.members,
+    ]) {
+      unawaited(refresh(kind, force: true));
+    }
+  }
+
+  void _authorsChanged(WorkspaceEntityKind kind) {
+    if (kind == WorkspaceEntityKind.agents) {
+      _authorAgents = null;
+      _agentRevision++;
+      _authorRevision++;
+    } else if (kind == WorkspaceEntityKind.members) {
+      _authorMembers = null;
+      _authorRevision++;
+    }
   }
 
   Map<String, dynamic>? _lookup(WorkspaceEntityKind kind, String id) {
@@ -167,7 +278,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     ]);
   }
 
-  Future<void> refresh(WorkspaceEntityKind kind) {
+  Future<void> refresh(WorkspaceEntityKind kind, {bool force = false}) {
     started = true;
     synchronize();
     final scope = _scope;
@@ -175,8 +286,11 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
       return Future.value();
     }
     final existing = _pending[kind];
-    if (existing != null) return existing;
+    if (existing != null && !force) return existing;
     final epoch = _epoch;
+    final ticket = _tickets[kind] = (_tickets[kind] ?? 0) + 1;
+    if (kind == WorkspaceEntityKind.agents) _agentRequests++;
+    bool current() => _accepts(scope, epoch) && _tickets[kind] == ticket;
     final versions = Map<String, int>.of(_activityVersions);
     _states[kind] = WorkspaceEntityLoadState(
       loading: true,
@@ -198,7 +312,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             WorkspaceEntityKind.members => '/servers/${scope.serverId}/members',
           }),
         );
-        if (!_accepts(scope, epoch)) return;
+        if (!current()) return;
         final raw = kind == WorkspaceEntityKind.computers && value is Map
             ? value['machines']
             : value;
@@ -208,9 +322,12 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           );
         }
         final accepted = <String, Map<String, dynamic>>{};
+        final tombstones = <String, Map<String, dynamic>>{};
         for (final item in raw) {
           final row = Map<String, dynamic>.from(item as Map);
           if (kind == WorkspaceEntityKind.agents && row['deletedAt'] != null) {
+            final id = row['id'];
+            if (id is String && id.isNotEmpty) tombstones[id] = _copy(row);
             continue;
           }
           final id = _id(kind, row);
@@ -224,18 +341,28 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           accepted[id] = _copy(row);
         }
         _rows[kind] = accepted;
+        if (kind == WorkspaceEntityKind.agents) {
+          _tombstones
+            ..clear()
+            ..addAll(tombstones);
+        }
         _states[kind] = const WorkspaceEntityLoadState(loaded: true);
+        _settled.add(kind);
+        _authorsChanged(kind);
       } catch (error) {
-        if (!_accepts(scope, epoch)) return;
+        if (!current()) return;
         if (error is RaftApiException && [401, 403].contains(error.status)) {
           _rows.remove(kind);
+          if (kind == WorkspaceEntityKind.agents) _tombstones.clear();
+          _authorsChanged(kind);
         }
         _states[kind] = WorkspaceEntityLoadState(
           loaded: _rows[kind]?.isNotEmpty == true,
           error: error,
         );
+        _settled.add(kind);
       } finally {
-        if (_accepts(scope, epoch) && identical(_pending[kind], pending)) {
+        if (current() && identical(_pending[kind], pending)) {
           _pending.remove(kind);
           notifyListeners();
         }
@@ -287,6 +414,8 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _disposed = true;
     ++_epoch;
     _rows.clear();
+    _tombstones.clear();
+    _authorAgents = _authorMembers = null;
     _pending.clear();
     _refresh?.cancel();
     _subscription?.cancel();

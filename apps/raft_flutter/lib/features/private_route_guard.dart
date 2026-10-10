@@ -58,6 +58,18 @@ String workspaceAuthority(WorkspaceController w) => jsonEncode([
   w.channel?.json['channelCapabilities'],
 ]);
 
+/// Server-level identity of the shared agent/member directory. Unlike
+/// [workspaceAuthority] it excludes the channel: switching channels, opening a
+/// thread or refreshing channel capabilities keeps the accepted directory.
+String directoryAuthority(WorkspaceController w) => jsonEncode([
+  w.client.generation,
+  w.client.user?.id,
+  w.server?.id,
+  w.server?.string('role'),
+  w.can('viewAgents'),
+  w.can('viewMembers'),
+]);
+
 /// A newly loaded projection or an archive flag does not revoke visibility.
 /// Only an explicit membership/permission reduction closes channel overlays.
 bool channelAuthorityReduced(

@@ -71,11 +71,9 @@ class RaftMountedAvatarRecipe {
       : sidebarList || previewMini
       ? 10
       : 12;
-  double get gravatarFallbackExtent => panelHeader
-      ? 16
-      : sidebarList || previewMini
-      ? 10
-      : 12;
+  // One glyph size for the humanPlaceholder and the Gravatar User fallback:
+  // a gravatar hash that arrives after first paint never resizes the glyph.
+  double get gravatarFallbackExtent => placeholderExtent;
   double get badgeExtent => panelHeader ? 10 : 6;
   double get radius => tokens.brutal ? 0 : extent / 2;
   Color get border => tokens.brutal ? Colors.black : Colors.transparent;

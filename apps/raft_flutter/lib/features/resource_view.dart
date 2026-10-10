@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -24,6 +25,8 @@ import 'page_layout.dart';
 import 'resource_cards.dart';
 import 'task_selection_filter.dart';
 import 'sender_avatar_projection.dart';
+import 'message_reference_directory.dart';
+import 'private_route_guard.dart';
 import 'resource_search.dart';
 import 'resource_list_updates.dart';
 import 'reading_anchor.dart';
@@ -111,6 +114,54 @@ class _ResourceViewState extends State<ResourceView> {
   List<Map<String, dynamic>> searchPeople = [],
       searchAgents = [],
       searchComputers = [];
+
+  /// Row presentation (Saved/Activity/Search senders) reads the workspace's
+  /// shared, preloaded author directory: rows paint their final author at
+  /// once and a page reset or catalog refresh never blanks them.
+  MessageReferenceDirectory? authorDirectory;
+  List<Map<String, dynamic>> get rowAgents =>
+      authorDirectory?.agents ?? searchAgents;
+  List<Map<String, dynamic>> get rowPeople =>
+      authorDirectory?.members ?? searchPeople;
+
+  /// A row first painted before the directory settled keeps the label it was
+  /// painted with (no author-name swap), until the directory identity changes.
+  final paintedSenders = <String, String>{};
+  String? paintedSendersAuthority;
+
+  void bindAuthors() {
+    authorDirectory?.removeListener(authorsChanged);
+    authorDirectory?.dispose();
+    authorDirectory = ['saved', 'activity', 'search'].contains(widget.section)
+        ? (MessageReferenceDirectory(w)..addListener(authorsChanged))
+        : null;
+  }
+
+  void authorsChanged() {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+    } else {
+      setState(() {});
+    }
+  }
+
+  String stableSender(String key, String Function() resolve) {
+    final authority = directoryAuthority(w);
+    if (paintedSendersAuthority != authority) {
+      paintedSendersAuthority = authority;
+      paintedSenders.clear();
+    }
+    final locked = paintedSenders[key];
+    if (locked != null) return locked;
+    final value = resolve();
+    if (authorDirectory?.loading == true) paintedSenders[key] = value;
+    return value;
+  }
+
   final queryFocus = FocusNode();
   late final ownedSearchMemory = SearchMemoryStore(clock: widget.clock);
   SearchMemoryStore get searchMemory =>
@@ -1265,6 +1316,7 @@ class _ResourceViewState extends State<ResourceView> {
   @override
   void initState() {
     super.initState();
+    bindAuthors();
     acceptedAuthority = authority;
     acceptedIdentity = identityAuthority;
     acceptedAccess = channelAccess;
@@ -1315,6 +1367,10 @@ class _ResourceViewState extends State<ResourceView> {
   @override
   void didUpdateWidget(covariant ResourceView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, w) ||
+        oldWidget.section != widget.section) {
+      bindAuthors();
+    }
     if (!identical(oldWidget.controller, w)) {
       oldWidget.controller.removeListener(authorityChanged);
       events?.cancel();
@@ -1377,6 +1433,9 @@ class _ResourceViewState extends State<ResourceView> {
     requestGeneration++;
     ++catalogRequest;
     w.removeListener(authorityChanged);
+    authorDirectory?.removeListener(authorsChanged);
+    authorDirectory?.dispose();
+    authorDirectory = null;
     searchDebounce?.cancel();
     activityActivation?.cancel();
     queryFocus.dispose();
@@ -2014,8 +2073,8 @@ class _ResourceViewState extends State<ResourceView> {
                   rows: rows,
                   entities: currentSearchEntities,
                   origin: w.client.origin,
-                  agents: searchAgents,
-                  members: searchPeople,
+                  agents: rowAgents,
+                  members: rowPeople,
                   currentUser: w.client.user?.json,
                   plan: w.server?.string('plan', 'free') ?? 'free',
                   now: widget.clock?.call() ?? DateTime.now(),
@@ -3063,28 +3122,35 @@ class _ResourceViewState extends State<ResourceView> {
     final thread = row['channelType'] == 'thread';
     final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
     final senderId = '${row['senderId'] ?? ''}';
-    final agent = row['senderType'] == 'agent'
-        ? searchAgents.where((a) => a['id'] == senderId).firstOrNull
-        : null;
-    final person = row['senderType'] == 'user'
-        ? searchPeople
-              .where((m) => (m['userId'] ?? m['id']) == senderId)
-              .firstOrNull
-        : null;
-    final sender =
-        '${agent?['displayName'] ?? agent?['name'] ?? person?['displayName'] ?? person?['name'] ?? row['senderName'] ?? ''}';
+    final senderType = switch (row['senderType']) {
+      'agent' => 'agent',
+      'external_projection' => 'external_projection',
+      _ => 'user',
+    };
+    final sender = stableSender('saved:${row['messageId']}', () {
+      final agent = senderType == 'agent'
+          ? rowAgents.where((a) => a['id'] == senderId).firstOrNull
+          : null;
+      final person = senderType == 'user'
+          ? rowPeople
+                .where((m) => (m['userId'] ?? m['id']) == senderId)
+                .firstOrNull
+          : null;
+      return '${agent?['displayName'] ?? agent?['name'] ?? person?['displayName'] ?? person?['name'] ?? row['senderDisplayName'] ?? row['senderName'] ?? ''}';
+    });
+    // The avatar kind is the message-carried sender type, never "found in the
+    // directory yet".
     final projection = projectSenderAvatar(
       origin: w.client.origin,
       senderId: senderId,
-      senderType: row['senderType'] == 'external_projection'
-          ? 'external_projection'
-          : agent != null
-          ? 'agent'
-          : 'user',
-      agents: searchAgents,
-      members: searchPeople,
+      senderType: senderType,
+      agents: rowAgents,
+      members: rowPeople,
       currentUser: w.client.user?.json,
       externalAuthor: {'avatarUrl': row['senderAvatarUrl']},
+      carriedAvatarUrl: row['senderAvatarUrl'] is String
+          ? row['senderAvatarUrl'] as String
+          : null,
       requestSize: 14,
     );
     final label = dm
@@ -3289,7 +3355,7 @@ class _ResourceViewState extends State<ResourceView> {
         row[thread ? 'latestActivitySenderId' : 'lastMessageSenderId'];
     final sender = senderType == 'system' || senderId == 'system'
         ? raftText(context, 'System')
-        : '${row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'] ?? senders.where((s) => s.id == senderId && s.type == senderType).firstOrNull?.label ?? ''}';
+        : '${row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'] ?? stableSender('activity:$senderType:$senderId', () => directorySenderLabel(senderId, senderType))}';
     final preview =
         '${thread ? row['latestActivityPreview'] ?? '' : row['lastMessagePreview'] ?? row['messagePreview'] ?? ''}';
     return RaftConversationCard(
@@ -3498,6 +3564,19 @@ class _ResourceViewState extends State<ResourceView> {
         ],
       ),
     );
+  }
+
+  /// Shared-directory label for an entry that carries no sender name.
+  String directorySenderLabel(dynamic id, dynamic type) {
+    final row = type == 'agent'
+        ? rowAgents.where((a) => a['id'] == id).firstOrNull
+        : rowPeople.where((m) => (m['userId'] ?? m['id']) == id).firstOrNull;
+    if (row != null) return '${row['displayName'] ?? row['name'] ?? ''}';
+    return senders
+            .where((s) => s.id == id && s.type == type)
+            .firstOrNull
+            ?.label ??
+        '';
   }
 
   Future<void> loadSenders(String scope) async {

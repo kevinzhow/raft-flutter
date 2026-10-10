@@ -237,7 +237,10 @@ void main() {
     expect(previews.map((dynamic r) => r['seq']), [4, 6, 7]);
     expect(previews.first['senderName'], 'alice');
     expect(previews.first['senderDisplayName'], 'Alice');
-    expect(previews.first['senderAvatarUrl'], isNull);
+    expect(
+      previews.first['senderAvatarUrl'],
+      'https://example.invalid/avatar.png',
+    );
     final id = w.threadRepliesSync.scopeId(
       'server',
       'alice',

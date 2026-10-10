@@ -10,6 +10,9 @@ import 'private_route_guard.dart';
 
 /// Authorized directory/activity adapter for message metadata. Ambient presence
 /// persists until a real terminal event; it is separate from the 90s work ticker.
+/// It is scoped by the server-level [directoryAuthority]: channel switches and
+/// thread opens keep the accepted identities, and a directory revalidation
+/// keeps presenting them until the replacement is accepted.
 class MessageAgentPresentation extends ChangeNotifier {
   MessageAgentPresentation(this.w, this.directory) {
     projection = AgentAmbientProjection(currentScope);
@@ -36,20 +39,20 @@ class MessageAgentPresentation extends ChangeNotifier {
   );
   bool get authorityCurrent =>
       !ended &&
-      authority == workspaceAuthority(w) &&
+      authority == directoryAuthority(w) &&
       directory.scope == authority &&
       w.can('viewAgents');
-  // A refresh immediately withdraws display/mention authority. The private
-  // merge snapshot remains only to reject an older REST activity receipt.
+  // Only an identity without settled data withdraws presentation; an in-place
+  // revalidation keeps it. The merge snapshot rejects an older REST receipt.
   bool get authorized => authorityCurrent && !directory.loading;
 
   void changed() {
     if (ended) return;
-    final next = workspaceAuthority(w);
+    final next = directoryAuthority(w);
     if (authority != next) {
       authority = next;
       // The pure scope includes the explicit principal/server. A role or
-      // channel authority change also retires every prior projection here.
+      // capability change also retires every prior projection here.
       projection.adopt(currentScope);
       projection.replaceAuthorizedDirectory(currentScope, const []);
       identities.clear();
@@ -139,8 +142,8 @@ class MessageAgentPresentation extends ChangeNotifier {
     if (!authorityCurrent) return;
     if (event.name == 'connected') {
       projection.resetSequenceBaseline();
-      directory.scope = null;
-      directory.changed();
+      directory.refresh();
+      changed();
       return;
     }
     if ((event.name != 'agent:activity' && event.name != 'agent:seen') ||
@@ -191,9 +194,9 @@ class MessageAgentPresentation extends ChangeNotifier {
     );
     if (result == AgentAmbientApply.applied) notifyListeners();
     if (result == AgentAmbientApply.conflict) {
-      // Existing directory refresh owns the reconcile and its request fence.
-      directory.scope = null;
-      directory.changed();
+      // The shared directory revalidation owns the reconcile and its fence.
+      directory.refresh();
+      changed();
     }
   }
 

@@ -1381,6 +1381,7 @@ class _RaftChatViewState extends State<RaftChatView>
               'senderId': value['senderId'],
               'senderType': value['senderType'],
               'senderName': author,
+              'senderAvatarUrl': value['senderAvatarUrl'],
               if (value['senderType'] == 'external_projection')
                 'externalAuthor': {
                   'displayName': author,
@@ -1527,14 +1528,22 @@ class _RaftChatViewState extends State<RaftChatView>
         message.json['sourceServerId'] != w.server?.id) {
       return null;
     }
+    final carried = message.json['senderDescription'];
     final agent = senderAgent(message);
     if (agent != null) {
       return agentPresentationSubtitle(agent) ??
-          (message.json['senderDescription'] as String?);
+          (carried is String && carried.isNotEmpty ? carried : null);
     }
-    if (messageSenderIdentityKind(message) != 'human' ||
-        referenceDirectory.scope != workspaceAuthority(w)) {
-      return null;
+    final kind = messageSenderIdentityKind(message);
+    if (kind == 'agent') {
+      // First paint (or no directory access) uses the message-carried field.
+      return carried is String && carried.isNotEmpty ? carried : null;
+    }
+    if (kind != 'human') return null;
+    if (referenceDirectory.scope != directoryAuthority(w)) {
+      return humanPresentationSubtitle(
+        description: carried is String ? carried : null,
+      );
     }
     final member = referenceDirectory.members
         .where((row) => (row['userId'] ?? row['id']) == message.senderId)
@@ -1563,7 +1572,7 @@ class _RaftChatViewState extends State<RaftChatView>
     }
     if (!presentationActive ||
         selection.active ||
-        referenceDirectory.scope != workspaceAuthority(w)) {
+        referenceDirectory.scope != directoryAuthority(w)) {
       return null;
     }
     final type = messageSenderIdentityKind(message);
@@ -1735,6 +1744,9 @@ class _RaftChatViewState extends State<RaftChatView>
       currentUser: local ? w.client.user?.json : null,
       externalAuthor: message.json['externalAuthor'] is Map
           ? Map<String, dynamic>.from(message.json['externalAuthor'])
+          : null,
+      carriedAvatarUrl: message.json['senderAvatarUrl'] is String
+          ? message.json['senderAvatarUrl'] as String
           : null,
     );
     final kind = switch (source.kind) {

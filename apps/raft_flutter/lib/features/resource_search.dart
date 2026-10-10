@@ -225,6 +225,9 @@ class ResourceSearchResults extends StatelessWidget {
       externalAuthor: type == 'external_projection'
           ? {...row, 'avatarUrl': row['senderAvatarUrl'] ?? row['avatarUrl']}
           : null,
+      carriedAvatarUrl: row['senderAvatarUrl'] is String
+          ? row['senderAvatarUrl'] as String
+          : null,
       requestSize: 14,
     );
     return RaftAvatar(

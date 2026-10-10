@@ -58,7 +58,9 @@ class RaftAvatarContent extends StatelessWidget {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        gaplessPlayback: false,
+        // Keep the previous frame while a replacement resolves; decoded
+        // images come from the shared ImageCache on remount.
+        gaplessPlayback: true,
         excludeFromSemantics: true,
         frameBuilder: (context, child, frame, loadedSynchronously) =>
             frame == null ? placeholder : child,

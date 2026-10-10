@@ -783,9 +783,15 @@ class RaftControl extends StatefulWidget {
     this.focusNode,
     this.focusOnPointer = true,
     this.recipe,
+    this.inertWhenDisabled = false,
   });
   final Widget child;
   final VoidCallback? onPressed;
+
+  /// A control whose affordance can arrive after first paint (e.g. a message
+  /// author that becomes linkable) keeps one widget shape and paints the same
+  /// without [onPressed]: no disabled dimming and no button semantics.
+  final bool inertWhenDisabled;
   final RaftControlVariant variant;
   final RaftControlKind kind;
   final bool selected;
@@ -934,13 +940,16 @@ class _RaftControlState extends State<RaftControl> {
       hovered: hovered,
       pressed: pressed,
     );
+    final inert = widget.inertWhenDisabled && !enabled;
     Widget result = Semantics(
       label: widget.semanticLabel,
       excludeSemantics: widget.busy,
-      button: !{
-        RaftControlKind.tab,
-        RaftControlKind.segmentedButton,
-      }.contains(widget.kind),
+      button:
+          !inert &&
+          !{
+            RaftControlKind.tab,
+            RaftControlKind.segmentedButton,
+          }.contains(widget.kind),
       checked:
           {
             RaftControlKind.tab,
@@ -956,7 +965,7 @@ class _RaftControlState extends State<RaftControl> {
       toggled: widget.kind == RaftControlKind.savedAction
           ? widget.selected
           : null,
-      enabled: enabled,
+      enabled: inert ? null : enabled,
       onTap: enabled ? activateControl : null,
       child: MouseRegion(
         onEnter: enabled ? (_) => setState(() => hovered = true) : null,
@@ -1017,7 +1026,9 @@ class _RaftControlState extends State<RaftControl> {
                 widthFactor: 1,
                 heightFactor: 1,
                 child: Opacity(
-                  opacity: enabled || widget.busy ? 1 : recipe.disabledOpacity,
+                  opacity: enabled || widget.busy || inert
+                      ? 1
+                      : recipe.disabledOpacity,
                   child: AnimatedContainer(
                     duration: MediaQuery.disableAnimationsOf(context)
                         ? Duration.zero

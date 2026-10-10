@@ -232,4 +232,50 @@ void main() {
       expect(canRenderWorkspaceComputer({'id': 'c'}), isFalse);
     },
   );
+  test('shared author directory keeps tombstones, revalidates in place and fences superseded or cross-identity reads', () async {
+    const tombstone = {'id': 'gone', 'name': 'gone', 'deletedAt': 'then'};
+    expect(directory.authorsLoading, isTrue);
+    directory.ensureAuthors();
+    directory.ensureAuthors();
+    expect(requests['/agents'], hasLength(1));
+    expect(requests['/servers/s/members'], hasLength(1));
+    expect(requests.containsKey('/servers/s/machines'), isFalse);
+    requests['/agents']!.single.complete([agent, tombstone]);
+    requests['/servers/s/members']!.single.complete([member]);
+    await Future<void>.delayed(Duration.zero);
+    expect(directory.authorsLoading, isFalse);
+    expect(directory.authorAgents.map((r) => r['id']), ['a', 'gone']);
+    expect(directory.authorMembers.single['userId'], 'u');
+    // A tombstone identifies a historical sender, never a live entity.
+    expect(directory.agent('gone'), isNull);
+    expect(directory.rows(WorkspaceEntityKind.agents), hasLength(1));
+
+    final revision = directory.agentRevision;
+    final requestRevision = directory.agentRequestRevision;
+    directory.revalidateAuthors();
+    expect(directory.agentRequestRevision, requestRevision + 1);
+    directory.revalidateAuthors();
+    expect(requests['/agents'], hasLength(3));
+    // Stale-while-revalidate: accepted lists stay, nothing reports loading.
+    expect(directory.authorsLoading, isFalse);
+    expect(directory.authorAgents, hasLength(2));
+    // The superseded read is dropped even when it lands last.
+    requests['/agents']![2].complete([
+      {...agent, 'name': 'Renamed'},
+    ]);
+    await Future<void>.delayed(Duration.zero);
+    requests['/agents']![1].complete([agent, tombstone]);
+    await Future<void>.delayed(Duration.zero);
+    expect(directory.agentRevision, revision + 1);
+    expect(directory.authorAgents.single['name'], 'Renamed');
+
+    // A read in flight under the old identity never lands in the new one.
+    directory.revalidateAuthors();
+    authority = scope(role: 'member');
+    expect(directory.authorAgents, isEmpty);
+    expect(directory.authorsLoading, isTrue);
+    requests['/agents']!.last.complete([agent, tombstone]);
+    await Future<void>.delayed(Duration.zero);
+    expect(directory.authorAgents, isEmpty);
+  });
 }

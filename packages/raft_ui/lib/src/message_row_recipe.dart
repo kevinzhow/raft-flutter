@@ -418,27 +418,24 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       popupOpen: widget.popupOpen,
       highlighted: widget.highlighted,
     );
-    final author = widget.onAuthor == null
-        ? Text(
-            widget.author,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: recipe.author,
-          )
-        : RaftControl(
-            onPressed: widget.onAuthor,
-            kind: RaftControlKind.textLink,
-            shadow: false,
-            visualHeight: recipe.tokens.brutal ? 20 : 14,
-            minimumTargetSize: 0,
-            padding: EdgeInsets.zero,
-            child: Text(
-              widget.author,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: recipe.author,
-            ),
-          );
+    // One widget shape whether or not the author is linkable: a mention
+    // affordance that arrives after first paint never reflows the header.
+    final author = RaftControl(
+      key: const ValueKey('message-author'),
+      onPressed: widget.onAuthor,
+      inertWhenDisabled: true,
+      kind: RaftControlKind.textLink,
+      shadow: false,
+      visualHeight: recipe.tokens.brutal ? 20 : 14,
+      minimumTargetSize: 0,
+      padding: EdgeInsets.zero,
+      child: Text(
+        widget.author,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: recipe.author,
+      ),
+    );
     final header = ClipRect(
       child: _MessageHeader(
         lineHeight: recipe.headerLine,

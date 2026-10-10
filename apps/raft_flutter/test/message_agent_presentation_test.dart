@@ -14,6 +14,18 @@ Future<void> accepted(MessageReferenceDirectory directory) async {
   expect(directory.loading, false);
 }
 
+/// Waits for an in-place revalidation (agents read) to be accepted.
+Future<void> revalidated(
+  MessageReferenceDirectory directory,
+  int before,
+) async {
+  for (var i = 0; i < 100 && directory.acceptedRevision == before; i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 1));
+  }
+  expect(directory.acceptedRevision, isNot(before));
+  expect(directory.loading, false);
+}
+
 const agent = {
   'id': 'agent',
   'name': 'Cindy',
@@ -72,48 +84,47 @@ void main() {
       expect(presentation.display('agent'), null);
     },
   );
-  test(
-    'late REST cannot replace a newer socket activity and revoked directory',
-    () async {
-      final (w, transport) = await fixture('owner');
-      addTearDown(w.dispose);
-      transport.routes['GET /agents'] = (_) => [agent];
-      transport.routes['GET /servers/s1/members'] = (_) => [];
-      final directory = MessageReferenceDirectory(w);
-      final presentation = MessageAgentPresentation(w, directory);
-      addTearDown(() {
-        presentation.dispose();
-        directory.dispose();
-      });
-      await accepted(directory);
-      final response = Completer<dynamic>();
-      transport.routes['GET /agents'] = (_) => response.future;
-      directory.scope = null;
-      directory.changed();
-      expect(presentation.identity('agent'), null);
-      expect(presentation.display('agent'), null);
-      presentation.event(
-        RaftEvent('agent:activity', {
-          'agentId': 'agent',
-          'serverId': 's1',
-          'serverSeq': 5,
-          'activity': 'offline',
-        }),
-      );
-      response.complete([agent]);
-      await accepted(directory);
-      expect(presentation.display('agent')?.activity, 'offline');
-      final stale = Completer<dynamic>();
-      transport.routes['GET /agents'] = (_) => stale.future;
-      directory.scope = null;
-      directory.changed();
-      w.revokeServer('s1');
-      expect(presentation.identity('agent'), null);
-      stale.complete([agent]);
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(presentation.identity('agent'), null);
-    },
-  );
+  test('revalidation keeps identities; late REST cannot replace a newer socket activity or a revoked directory', () async {
+    final (w, transport) = await fixture('owner');
+    addTearDown(w.dispose);
+    transport.routes['GET /agents'] = (_) => [agent];
+    transport.routes['GET /servers/s1/members'] = (_) => [];
+    final directory = MessageReferenceDirectory(w);
+    final presentation = MessageAgentPresentation(w, directory);
+    addTearDown(() {
+      presentation.dispose();
+      directory.dispose();
+    });
+    await accepted(directory);
+    final response = Completer<dynamic>();
+    transport.routes['GET /agents'] = (_) => response.future;
+    final before = directory.acceptedRevision;
+    directory.refresh();
+    // Stale-while-revalidate: nothing is withdrawn while the read runs.
+    expect(directory.loading, false);
+    expect(presentation.identity('agent')?.description, 'Public designer');
+    expect(presentation.display('agent')?.activity, 'working');
+    presentation.event(
+      RaftEvent('agent:activity', {
+        'agentId': 'agent',
+        'serverId': 's1',
+        'serverSeq': 5,
+        'activity': 'offline',
+      }),
+    );
+    expect(presentation.display('agent')?.activity, 'offline');
+    response.complete([agent]);
+    await revalidated(directory, before);
+    expect(presentation.display('agent')?.activity, 'offline');
+    final stale = Completer<dynamic>();
+    transport.routes['GET /agents'] = (_) => stale.future;
+    directory.refresh();
+    w.revokeServer('s1');
+    expect(presentation.identity('agent'), null);
+    stale.complete([agent]);
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+    expect(presentation.identity('agent'), null);
+  });
   test('reconnect reloads and resets sequence; external seen is monotonic across REST', () async {
     final (w, transport) = await fixture('owner');
     addTearDown(w.dispose);
@@ -148,10 +159,10 @@ void main() {
       }),
     );
     expect(presentation.identity('agent')?.lastSeenAt, seen);
-    directory.scope = null;
-    directory.changed();
-    expect(presentation.identity('agent'), null);
-    await accepted(directory);
+    final before = directory.acceptedRevision;
+    directory.refresh();
+    expect(presentation.identity('agent')?.lastSeenAt, seen);
+    await revalidated(directory, before);
     expect(presentation.identity('agent')?.lastSeenAt, seen);
     presentation.event(
       RaftEvent('agent:activity', {
@@ -165,9 +176,11 @@ void main() {
     final reads = transport.calls
         .where((call) => call.path == '/agents')
         .length;
+    final reconnect = directory.acceptedRevision;
     presentation.event(RaftEvent('connected', {}));
-    expect(presentation.display('agent'), null);
-    await accepted(directory);
+    // Reconnect revalidates in place: the avatar badge is not withdrawn.
+    expect(presentation.display('agent')?.activity, 'error');
+    await revalidated(directory, reconnect);
     expect(
       transport.calls.where((call) => call.path == '/agents').length,
       reads + 1,
