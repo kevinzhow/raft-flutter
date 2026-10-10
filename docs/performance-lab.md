@@ -157,7 +157,7 @@ All channels come from the product's own network-page path, through a mock dio a
 
 The runs below were taken on a quiet host, with start load between 2.4 and 5.8. A run taken while other agents were running test suites (load 13–25) was 2–5× slower, raster included. It is kept out of this report.
 
-Run `baseline-2b3f334`: commit `47bd63e` (the lab on `cindy/integration`), fixture `perf-lab-fixture-v1`, view 1009x741 px, semantics `platform` (embedder on), host load at start 3.4, at end 0.0.
+Run `baseline-2b3f334`: product `2b3f334` plus the lab, fixture `perf-lab-fixture-v1`, view 1009x741 px, semantics `platform` (embedder on), host load at start 3.4.
 
 ### Frames per scenario
 
