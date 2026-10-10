@@ -14,6 +14,7 @@ export 'src/search_input.dart';
 export 'src/form_dialog.dart';
 
 export 'src/collapsible.dart';
+export 'src/viewport_breakpoints.dart';
 export 'src/secret_view.dart';
 export 'src/attachment_card.dart';
 

@@ -75,7 +75,8 @@ class RaftChatView extends StatefulWidget {
   State<RaftChatView> createState() => _RaftChatViewState();
 }
 
-class _RaftChatViewState extends State<RaftChatView> {
+class _RaftChatViewState extends State<RaftChatView>
+    with WidgetsBindingObserver {
   late MessageReferenceDirectory referenceDirectory;
   late ComposerDirectory composerDirectory;
   late MessageAgentPresentation agentPresentation;
@@ -87,7 +88,6 @@ class _RaftChatViewState extends State<RaftChatView> {
   /// Message whose context menu is open (row shows its popup-open state).
   String? menuMessageId;
   Timer? pickerCloseTimer;
-  Size? pickerViewport;
   late MessageSelection selection;
   bool capturingSelection = false;
   bool copiedSelectionMarkdown = false;
@@ -123,11 +123,6 @@ class _RaftChatViewState extends State<RaftChatView> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final nextViewport = MediaQuery.sizeOf(context);
-    if (pickerViewport != null && pickerViewport != nextViewport) {
-      closeReactionPicker(rebuild: false);
-    }
-    pickerViewport = nextViewport;
     final active = Visibility.of(context);
     if (active != presentationActive) {
       presentationActive = active;
@@ -144,6 +139,10 @@ class _RaftChatViewState extends State<RaftChatView> {
   @override
   void initState() {
     super.initState();
+    // Close the anchored reaction picker on window metric changes without a
+    // MediaQuery size dependency: that dependency rebuilt the whole timeline
+    // on every frame of a window resize.
+    WidgetsBinding.instance.addObserver(this);
     viewport.addListener(timelineScrolled);
     if (!widget.thread &&
         w.channelLoading &&
@@ -480,7 +479,14 @@ class _RaftChatViewState extends State<RaftChatView> {
   }
 
   @override
+  @override
+  void didChangeMetrics() {
+    if (reactionPicker != null) closeReactionPicker();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.viewportHandle?.release(this);
     copiedSelectionTimer?.cancel();
     highlightTimer?.cancel();
@@ -872,7 +878,8 @@ class _RaftChatViewState extends State<RaftChatView> {
     final first = sliver?.firstChild, last = sliver?.lastChild;
     if (sliver == null || first == null || last == null) return null;
     final lo = sliver.indexOf(first), hi = sliver.indexOf(last);
-    final loTop = sliver.childScrollOffset(first), hiTop = sliver.childScrollOffset(last);
+    final loTop = sliver.childScrollOffset(first),
+        hiTop = sliver.childScrollOffset(last);
     if (loTop == null || hiTop == null) return null;
     final base = sliver.constraints.precedingScrollExtent;
     final perRow = hi > lo ? (hiTop - loTop) / (hi - lo) : last.size.height;
@@ -2183,155 +2190,160 @@ class _RaftChatViewState extends State<RaftChatView> {
         ),
       );
     }
-    return Column(
-      children: [
-        RaftToastPortal(controller: selectionToast),
-        Expanded(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Keys keep the staged timeline's element when the retained
-              // copy above it is removed. Without them the staged list moves
-              // to a new Stack slot, remounts at its end offset and lays out
-              // every message from the top in one frame.
-              if (preserveTimeline && retainedTimeline != null)
+    // Rows read breakpoint bands, not the raw window width, so a resize
+    // within a band does not rebuild every mounted message.
+    return RaftViewportBreakpointScope(
+      child: Column(
+        children: [
+          RaftToastPortal(controller: selectionToast),
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Keys keep the staged timeline's element when the retained
+                // copy above it is removed. Without them the staged list moves
+                // to a new Stack slot, remounts at its end offset and lays out
+                // every message from the top in one frame.
+                if (preserveTimeline && retainedTimeline != null)
+                  IgnorePointer(
+                    key: const ValueKey('retained-timeline'),
+                    child: ExcludeSemantics(child: retainedTimeline!),
+                  ),
                 IgnorePointer(
-                  key: const ValueKey('retained-timeline'),
-                  child: ExcludeSemantics(child: retainedTimeline!),
+                  key: const ValueKey('current-timeline'),
+                  ignoring: preserveTimeline,
+                  child: Opacity(
+                    opacity: preserveTimeline ? 0 : 1,
+                    child: currentTimeline,
+                  ),
                 ),
-              IgnorePointer(
-                key: const ValueKey('current-timeline'),
-                ignoring: preserveTimeline,
-                child: Opacity(
-                  opacity: preserveTimeline ? 0 : 1,
-                  child: currentTimeline,
-                ),
-              ),
-              if (!widget.thread &&
-                  !focusStaging &&
-                  (w.hasNewer || !atBottom || newMessageCount > 0))
-                RaftTimelineBottomButton(
-                  label: bottomCount > 0
-                      ? raftFormat(context, '{count} new messages', {
-                          'count': bottomCount,
-                        })
-                      : raftText(context, 'Back to bottom'),
-                  onPressed: returnToBottom,
-                ),
-            ],
-          ),
-        ),
-        if (!selection.active && w.uploads(thread: widget.thread).isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: w
-                  .uploads(thread: widget.thread)
-                  .map(
-                    (draft) => RaftUploadChip(
-                      name: draft.filename,
-                      progress: draft.progress,
-                      ready: draft.id != null,
-                      error: draft.error,
-                      onRetry: () =>
-                          w.retryUpload(draft, thread: widget.thread),
-                      onRemove: () =>
-                          w.removeUpload(draft, thread: widget.thread),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        if (selection.active)
-          CallbackShortcuts(
-            bindings: {
-              const SingleActivator(LogicalKeyboardKey.escape): selection.exit,
-            },
-            child: Focus(autofocus: true, child: selectionToolbar()),
-          )
-        else if (w.conversationPaused)
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(raftText(context, 'Channel conversion in progress')),
-          )
-        else
-          RaftComposer(
-            accessoryRow: composerAccessory(),
-            autofocus:
-                widget.thread &&
-                RaftDensityScope.of(context) == RaftDensity.desktop,
-            canAutofocus: () =>
-                presentationActive &&
-                currentComposer() &&
-                w.client.user != null &&
-                w.can('viewChannel', resource: w.channel),
-            handle: composerHandle,
-            initialDraft: w.drafts[w.draftScope(thread: widget.thread)] ?? '',
-            onDraftChanged: (text) {
-              if (currentComposer()) w.saveDraft(text, thread: widget.thread);
-            },
-            key: ValueKey(
-              'compose-${widget.thread ? w.threadParentMessageId : w.channel?.id}',
-            ),
-            taskAction: !widget.thread && w.channel?.type != 'thread'
-                ? RaftComposerTaskToggle(
-                    key: const Key('composer-as-task'),
-                    checked: alsoCreateTask,
-                    label: raftText(context, 'As Task'),
-                    onChanged:
-                        presentationActive &&
-                            currentComposer() &&
-                            !w.conversationPaused &&
-                            w.channel?.archived != true
-                        ? (checked) => setState(() {
-                            taskChoiceRevision++;
-                            alsoCreateTask = checked;
+                if (!widget.thread &&
+                    !focusStaging &&
+                    (w.hasNewer || !atBottom || newMessageCount > 0))
+                  RaftTimelineBottomButton(
+                    label: bottomCount > 0
+                        ? raftFormat(context, '{count} new messages', {
+                            'count': bottomCount,
                           })
-                        : null,
-                  )
-                : null,
-            onAttach: () {
-              if (presentationActive && currentComposer()) attach();
-            },
-            onImagePick: () {
-              if (presentationActive && currentComposer()) {
-                attach(imagesOnly: true);
-              }
-            },
-            pendingLabel: w.uploads(thread: widget.thread).isEmpty
-                ? null
-                : raftFormat(context, '{count} attachment(s)', {
-                    'count': w.uploads(thread: widget.thread).length,
-                  }),
-            hint: widget.thread
-                ? raftText(context, 'Message thread')
-                : raftFormat(context, 'Message #{name}', {
-                    'name': w.channel?.name ?? '',
-                  }),
-            enabled:
-                !w.conversationPaused &&
-                (widget.thread
-                    ? w.threadParentMessageId != null &&
-                          w.threadSourceChannel?.archived != true &&
-                          w.threadSourceChannel?.joined == true
-                    : w.channel?.archived != true),
-            canSend: w.uploadsReady(thread: widget.thread),
-            suggestions: composerDirectory.suggestions,
-            onSuggestionsRequested: (prefix) {
-              if (presentationActive && currentComposer()) {
-                composerDirectory.request(prefix);
-              }
-            },
-            onForceTaskSendWithMentions: !widget.thread
-                ? (text, mentions) =>
-                      sendCurrent(text, mentions, forceTask: true)
-                : null,
-            onSendWithMentions: sendCurrent,
-            onSend: (text) => sendCurrent(text, const []),
+                        : raftText(context, 'Back to bottom'),
+                    onPressed: returnToBottom,
+                  ),
+              ],
+            ),
           ),
-      ],
+          if (!selection.active && w.uploads(thread: widget.thread).isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: w
+                    .uploads(thread: widget.thread)
+                    .map(
+                      (draft) => RaftUploadChip(
+                        name: draft.filename,
+                        progress: draft.progress,
+                        ready: draft.id != null,
+                        error: draft.error,
+                        onRetry: () =>
+                            w.retryUpload(draft, thread: widget.thread),
+                        onRemove: () =>
+                            w.removeUpload(draft, thread: widget.thread),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          if (selection.active)
+            CallbackShortcuts(
+              bindings: {
+                const SingleActivator(LogicalKeyboardKey.escape):
+                    selection.exit,
+              },
+              child: Focus(autofocus: true, child: selectionToolbar()),
+            )
+          else if (w.conversationPaused)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(raftText(context, 'Channel conversion in progress')),
+            )
+          else
+            RaftComposer(
+              accessoryRow: composerAccessory(),
+              autofocus:
+                  widget.thread &&
+                  RaftDensityScope.of(context) == RaftDensity.desktop,
+              canAutofocus: () =>
+                  presentationActive &&
+                  currentComposer() &&
+                  w.client.user != null &&
+                  w.can('viewChannel', resource: w.channel),
+              handle: composerHandle,
+              initialDraft: w.drafts[w.draftScope(thread: widget.thread)] ?? '',
+              onDraftChanged: (text) {
+                if (currentComposer()) w.saveDraft(text, thread: widget.thread);
+              },
+              key: ValueKey(
+                'compose-${widget.thread ? w.threadParentMessageId : w.channel?.id}',
+              ),
+              taskAction: !widget.thread && w.channel?.type != 'thread'
+                  ? RaftComposerTaskToggle(
+                      key: const Key('composer-as-task'),
+                      checked: alsoCreateTask,
+                      label: raftText(context, 'As Task'),
+                      onChanged:
+                          presentationActive &&
+                              currentComposer() &&
+                              !w.conversationPaused &&
+                              w.channel?.archived != true
+                          ? (checked) => setState(() {
+                              taskChoiceRevision++;
+                              alsoCreateTask = checked;
+                            })
+                          : null,
+                    )
+                  : null,
+              onAttach: () {
+                if (presentationActive && currentComposer()) attach();
+              },
+              onImagePick: () {
+                if (presentationActive && currentComposer()) {
+                  attach(imagesOnly: true);
+                }
+              },
+              pendingLabel: w.uploads(thread: widget.thread).isEmpty
+                  ? null
+                  : raftFormat(context, '{count} attachment(s)', {
+                      'count': w.uploads(thread: widget.thread).length,
+                    }),
+              hint: widget.thread
+                  ? raftText(context, 'Message thread')
+                  : raftFormat(context, 'Message #{name}', {
+                      'name': w.channel?.name ?? '',
+                    }),
+              enabled:
+                  !w.conversationPaused &&
+                  (widget.thread
+                      ? w.threadParentMessageId != null &&
+                            w.threadSourceChannel?.archived != true &&
+                            w.threadSourceChannel?.joined == true
+                      : w.channel?.archived != true),
+              canSend: w.uploadsReady(thread: widget.thread),
+              suggestions: composerDirectory.suggestions,
+              onSuggestionsRequested: (prefix) {
+                if (presentationActive && currentComposer()) {
+                  composerDirectory.request(prefix);
+                }
+              },
+              onForceTaskSendWithMentions: !widget.thread
+                  ? (text, mentions) =>
+                        sendCurrent(text, mentions, forceTask: true)
+                  : null,
+              onSendWithMentions: sendCurrent,
+              onSend: (text) => sendCurrent(text, const []),
+            ),
+        ],
+      ),
     );
   }
 }

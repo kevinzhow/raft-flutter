@@ -68,6 +68,12 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
     if (bottom > clippedBottom) setState(() => expanded = true);
   }
 
+  void sizeChanged(Size size) {
+    if (mounted && (height - size.height).abs() > .5) {
+      setState(() => height = size.height);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final overflow = height > MessageContentPrimitive.collapseHeight;
@@ -96,11 +102,9 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
                     maxHeight: widget.enabled && !expanded
                         ? MessageContentPrimitive.collapseHeight
                         : null,
-                    onSize: (size) {
-                      if (mounted && (height - size.height).abs() > .5) {
-                        setState(() => height = size.height);
-                      }
-                    },
+                    // A stable tear-off: a new closure per build would make
+                    // the reporter relayout the whole message on every rebuild.
+                    onSize: sizeChanged,
                     child: widget.child,
                   ),
                 ),

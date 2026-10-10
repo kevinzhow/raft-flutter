@@ -13,6 +13,7 @@ import 'package:mermaid_flutter/mermaid_flutter.dart';
 import 'package:mermaid_core/mermaid_core.dart' as core;
 
 import 'package:re_highlight/re_highlight.dart';
+import 'viewport_breakpoints.dart';
 import 'package:re_highlight/styles/github.dart';
 import 'package:re_highlight/styles/github-dark.dart';
 import 'package:re_highlight/languages/bash.dart';
@@ -699,7 +700,7 @@ class _MermaidToolbar extends StatelessWidget {
         }
 
         final toolbarRecipe = RaftMermaidToolbarRecipe(
-          viewportWidth: MediaQuery.sizeOf(context).width,
+          viewportWidth: raftBreakpointWidth(context),
           availableWidth: constraints.maxWidth,
           density: RaftDensityScope.of(context),
           showSource: showSource,
@@ -1256,7 +1257,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                           onPressed: widget.code.isEmpty ? null : copy,
                           visualSize: RaftMetrics.buttonXs,
                           minimumTargetSize:
-                              MediaQuery.sizeOf(context).width < 768
+                              raftBreakpointWidth(context) < 768
                               ? RaftMetrics.touchTarget
                               : RaftMetrics.buttonXs,
                           glyphSize: RaftMetrics.iconSm,

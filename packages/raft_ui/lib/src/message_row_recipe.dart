@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'design_primitives.dart';
+import 'viewport_breakpoints.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
 
@@ -408,7 +409,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   Widget buildContent(BuildContext context) {
     final recipe = RaftMessageRowRecipe(
       RaftTokens.of(context),
-      viewportWidth: MediaQuery.sizeOf(context).width,
+      viewportWidth: raftBreakpointWidth(context),
       rowContext: widget.rowContext,
       continuation: widget.continuation,
       nextContinuation: widget.nextContinuation,
@@ -637,7 +638,7 @@ class RaftMessageToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final recipe = RaftMessageRowRecipe(
       RaftTokens.of(context),
-      viewportWidth: MediaQuery.sizeOf(context).width,
+      viewportWidth: raftBreakpointWidth(context),
     );
     return Container(
       decoration: recipe.toolbarDecoration,

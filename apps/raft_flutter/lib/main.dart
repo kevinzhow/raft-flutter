@@ -889,7 +889,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         key: raftScreenshotKey,
         child: RaftTooltipProvider(
           delay: const Duration(milliseconds: 600),
-          child: RaftSystemBars(child: child!),
+          child: RaftViewportBreakpointScope(
+            child: RaftSystemBars(child: child!),
+          ),
         ),
       ),
       debugShowCheckedModeBanner: false,

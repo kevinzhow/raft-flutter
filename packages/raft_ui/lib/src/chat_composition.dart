@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
+import 'viewport_breakpoints.dart';
 import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'sidebar_section.dart';
@@ -441,7 +442,7 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
     final recipe = RaftConversationTabsRecipe(
       tokens,
       mobile:
-          MediaQuery.sizeOf(context).width <
+          raftBreakpointWidth(context) <
           RaftLayoutMetrics.desktopBreakpoint,
       density: RaftDensityScope.of(context),
     );
@@ -672,7 +673,7 @@ class RaftConversationHeaderActions extends StatelessWidget {
     final recipe = RaftConversationHeaderActionsRecipe(
       RaftTokens.of(context),
       mobile:
-          MediaQuery.sizeOf(context).width <
+          raftBreakpointWidth(context) <
           RaftLayoutMetrics.desktopBreakpoint,
     );
     return Row(
