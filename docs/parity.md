@@ -119,7 +119,7 @@ Starting point: integration 80769ee, official run `20261010T144652Z`
 | Brutal departure badge keeps the 20px sender line (inherited 20/14 ratio at 10px grew the header by 1/3px) | layout metric | message-row.deleted-human 95.73 -> 96.57 (pass) |
 | Message task chip label uses the Blink line box (13px on 16.25px: Blink baseline 12, Flutter rounded 12.63 -> 13) | layout metric | message.row +0.32, md-link-ref +0.20, rich-content +0.14, long-inline-code +0.07 |
 
-Result on the branch: **86/99** (9+1 strict pass).
+Result on the branch: **86/99** (10 strict passes).
 
 ### Why the remaining 13 rows stay below 96%
 
