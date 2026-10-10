@@ -1,3 +1,4 @@
+import 'native_control.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
@@ -92,65 +93,15 @@ Future<void> verifyRichContent(
   Finder action(String tooltip) =>
       find.descendant(of: tile, matching: find.byTooltip(tooltip));
   Future<void> tapToolbar(String tooltip) async {
-    final target = action(tooltip);
-    expect(target, findsOneWidget);
-    final before = tester.getRect(target);
-    final hitBefore = target.hitTestable().evaluate().length;
-    final positions = find
-        .byType(CustomScrollView)
-        .evaluate()
-        .expand((e) {
-          return (e.widget as CustomScrollView).controller?.positions ??
-              const <ScrollPosition>[];
-        })
-        .map(
-          (p) => {
-            'pixels': p.pixels,
-            'min': p.minScrollExtent,
-            'max': p.maxScrollExtent,
-            'outOfRange': p.outOfRange,
-            'scrolling': p.isScrollingNotifier.value,
-          },
-        )
-        .toList();
-    final slivers = find.byType(SliverAnimatedList).evaluate().map((e) {
-      final render = e.findRenderObject();
-      return render is RenderSliver
-          ? {
-              'paint': render.geometry?.paintExtent,
-              'layout': render.geometry?.layoutExtent,
-              'scroll': render.geometry?.scrollExtent,
-              'hit': render.geometry?.hitTestExtent,
-            }
-          : <String, Object?>{};
-    }).toList();
-    debugPrint(
-      'Rich toolbar $tooltip: beforeScroll=$before hitCount=$hitBefore '
-      'positions=$positions slivers=$slivers',
-    );
-    // Toggling source changes this message's height. Re-observe the actual
-    // toolbar after the list has adjusted its scroll extent, as a user would
-    // scroll back to the control. Search separately proves autonomous focus.
-    if (hitBefore == 0) {
-      await tester.ensureVisible(target);
-    }
-    for (
-      var i = 0;
-      i < 30 && target.hitTestable().evaluate().length != 1;
-      i++
-    ) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    if (target.hitTestable().evaluate().length != 1) {
-      debugPrint(
-        'Rich toolbar $tooltip: reveal failed; afterRect=${tester.getRect(target)}',
-      );
+    try {
+      final ready = await revealNativeControl(tester, action(tooltip));
+      expect(ready, findsOneWidget);
+      await tester.tap(ready);
+      await tester.pump(const Duration(milliseconds: 300));
+    } catch (_) {
       await capture('linux-rich-toolbar-hit-failure');
+      rethrow;
     }
-    expect(target.hitTestable(), findsOneWidget);
-    debugPrint('Rich toolbar $tooltip: pointerReady=${tester.getRect(target)}');
-    await tester.tap(target);
-    await tester.pump(const Duration(milliseconds: 300));
   }
 
   await tapToolbar('Show source');
@@ -162,6 +113,11 @@ Future<void> verifyRichContent(
   await tapToolbar('Copy code');
   final clipboard = await Clipboard.getData(Clipboard.kTextPlain);
   expect(clipboard?.text, source);
+  expect(
+    find.descendant(of: tile, matching: find.text(source)),
+    findsOneWidget,
+    reason: 'Copy and highlight expiry must preserve the selected source tab.',
+  );
   await tapToolbar('Show diagram');
   await tapToolbar('Expand diagram');
   expect(find.byType(Dialog), findsOneWidget);

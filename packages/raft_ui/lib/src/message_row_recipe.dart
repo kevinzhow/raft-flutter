@@ -452,7 +452,11 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
               child: Container(
                 constraints: BoxConstraints(minHeight: recipe.minimumHeight),
                 decoration: recipe.decoration,
-                foregroundDecoration: recipe.highlightRing,
+                // Container inserts/removes a wrapper for a nullable foreground
+                // decoration. Keep that wrapper mounted when focus paint expires
+                // so rich-content tabs, selection and copy state survive.
+                foregroundDecoration:
+                    recipe.highlightRing ?? const BoxDecoration(),
                 child: portalBody(
                   context,
                   recipe,

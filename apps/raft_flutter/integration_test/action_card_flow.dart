@@ -1,3 +1,4 @@
+import 'native_control.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -172,12 +173,14 @@ Future<void> verifyPreparedActionCard(
     expect(card, findsOneWidget);
     final confirm = find.descendant(
       of: card,
-      matching: find.text('Create channel'),
+      matching: find.widgetWithText(RaftButton, 'Create channel'),
     );
-    await tester.ensureVisible(confirm.last);
-    await tester.pump(const Duration(milliseconds: 300));
+    await revealNativeControl(tester, confirm);
     await capture('linux-prepared-action-card');
-    await tester.tap(confirm.last);
+    // Capturing pumps a real frame too; re-observe before the first press.
+    final ready = await revealNativeControl(tester, confirm);
+    expect(ready, findsOneWidget);
+    await tester.tap(ready);
     for (
       var i = 0;
       i < 100 && find.byType(RaftFormDialog).evaluate().isEmpty;

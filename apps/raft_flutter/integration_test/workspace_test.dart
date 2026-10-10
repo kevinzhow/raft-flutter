@@ -2028,7 +2028,13 @@ void main() {
         expect(edited['description'], 'Native managed resource 中文 日本語');
         tester.state<ScrollableState>(detailScroll).position.jumpTo(0);
         await tester.pumpAndSettle();
-        expect(find.text('Native managed resource 中文 日本語'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const Key('fleet-detail')),
+            matching: find.text('Native managed resource 中文 日本語'),
+          ),
+          findsOneWidget,
+        );
         await screenshot(
           tester,
           computers ? 'linux-computer-details' : 'linux-agent-details',
