@@ -2316,6 +2316,10 @@ class _RaftChatViewState extends State<RaftChatView>
                   ? null
                   : () => w.older(thread: widget.thread),
               initialScrollToEndMode: InitialScrollToEndMode.none,
+              // No animated or inertial travel: every automatic move to the
+              // end is a jump (an animation across lazily estimated extents
+              // overshoots the real end and springs back with a blank gap).
+              scrollToEndAnimationDuration: Duration.zero,
               // The app positions and publishes a replacement window atomically.
               // An arrival in its hidden preparation cannot race that positioning
               // with Flyer's independent scroll-to-end callback.

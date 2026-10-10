@@ -600,6 +600,23 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
     );
   }
 
+  /// Jumps to the end and re-jumps on the next frames while the lazily
+  /// estimated end settles (rows near the end get built and measured).
+  void _jumpToEndSettled([int attempt = 0]) {
+    if (!_scrollController.hasClients || !mounted) return;
+    final end = _chatEndScrollPosition;
+    if ((_scrollController.offset - end).abs() > .5) {
+      _scrollController.jumpTo(end);
+    } else if (attempt > 0) {
+      return;
+    }
+    if (attempt < 6) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _jumpToEndSettled(attempt + 1),
+      );
+    }
+  }
+
   void _initialScrollToEnd() async {
     // Delay the scroll to the end animation so new message is painted, otherwise
     // maxScrollExtent is not yet updated and the animation might not work.
@@ -612,7 +629,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
     }
 
     if (widget.scrollToEndAnimationDuration == Duration.zero) {
-      _scrollController.jumpTo(_chatEndScrollPosition);
+      _jumpToEndSettled();
     } else {
       await _scrollController.animateTo(
         _chatEndScrollPosition,
@@ -647,7 +664,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
         widget.shouldScrollToEndWhenAtBottom == true &&
         !_userHasScrolled) {
       if (widget.scrollToEndAnimationDuration == Duration.zero) {
-        _scrollController.jumpTo(_chatEndScrollPosition);
+        _jumpToEndSettled();
       } else {
         await _scrollController.animateTo(
           _chatEndScrollPosition,
@@ -671,14 +688,16 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
       // When scrolled up in chat history use fling to guarantee scrolling
       // to the very end of the list.
       // See https://stackoverflow.com/a/77175903 for more details.
-      if (!widget.reversed && _userHasScrolled) {
+      if (!widget.reversed &&
+          _userHasScrolled &&
+          widget.scrollToEndAnimationDuration != Duration.zero) {
         _scrollAnimationController.value =
             _scrollController.offset /
             _scrollController.position.maxScrollExtent;
         await _scrollAnimationController.fling();
       } else {
         if (widget.scrollToEndAnimationDuration == Duration.zero) {
-          _scrollController.jumpTo(_chatEndScrollPosition);
+          _jumpToEndSettled();
         } else {
           await _scrollController.animateTo(
             _chatEndScrollPosition,
@@ -754,7 +773,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
       if (widget.reversed) {
         if (widget.scrollToEndAnimationDuration == Duration.zero) {
-          _scrollController.jumpTo(_chatEndScrollPosition);
+          _jumpToEndSettled();
         } else {
           _scrollController.animateTo(
             _chatEndScrollPosition,
@@ -762,6 +781,10 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
             curve: Curves.linearToEaseOut,
           );
         }
+      } else if (widget.scrollToEndAnimationDuration == Duration.zero) {
+        // Raft: no animated or inertial travel to the end. A spring/fling
+        // across lazily estimated extents overshoots and springs back.
+        _jumpToEndSettled();
       } else {
         // Use fling to guarantee scrolling to the very end of the list.
         // See https://stackoverflow.com/a/77175903 for more details.
