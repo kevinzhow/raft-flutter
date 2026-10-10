@@ -172,10 +172,21 @@ class _ServerGate {
 }
 
 /// Web `useTranslationStore`, owned by [WorkspaceController.translations]: settings for the
-/// selected server, the in-memory translation cache keyed by message id, and
-/// the batched `/message-translations:batch` requests. Like Web the cache is
-/// not persisted; it survives channel and server switches and is dropped
-/// with the account.
+/// selected server, the translation cache keyed by message id, and the
+/// batched `/message-translations:batch` requests. Like Web the cache
+/// survives channel and server switches, an entry is current only for its
+/// target language and original content (an edit or a new language reads as
+/// absent and is requested again), and it is dropped with the account.
+///
+/// Unlike Web (memory only), settled entries and the server gate are also
+/// saved in the device workspace cache under (origin, principal, server) and
+/// painted when the server is selected, before any channel frame, so a
+/// restart shows cached translations at the first frame. Only stable results
+/// are saved (translated, and skips that depend on the content alone);
+/// pending, failed and quota/provider skips are asked again. Writes are
+/// debounced ([persistDelay]); the device keeps the most recently used
+/// entries per server and deletes them with their channel, server or
+/// account.
 class MessageTranslationStore extends ChangeNotifier {
   MessageTranslationStore(this.w) {
     _events = w.client.events.listen((event) {
@@ -200,6 +211,20 @@ class MessageTranslationStore extends ChangeNotifier {
   static const batchDelay = Duration(milliseconds: 120);
   static const maxBatch = 200;
 
+  /// Coalesces a batch response (and the touches of one scroll burst) into
+  /// one device write.
+  static const persistDelay = Duration(milliseconds: 800);
+
+  /// Skip reasons that depend only on the message content and target
+  /// language: a restart would get the same answer from the server's cache.
+  static const _stableSkips = {
+    'same_language',
+    'system_message',
+    'code_or_link_only',
+    'low_confidence',
+    'content_invalid',
+  };
+
   final WorkspaceController w;
   StreamSubscription<RaftEvent>? _events;
   Object? _identity;
@@ -212,6 +237,24 @@ class MessageTranslationStore extends ChangeNotifier {
   final _queued = <String, RaftMessage>{};
   Timer? _flush;
   String? settingsError;
+
+  /// Servers whose gate was read (or set) in this session; a gate restored
+  /// from the device is shown but still read once.
+  final _verified = <String>{};
+
+  /// Servers whose device entries were restored in this session.
+  final _restored = <String>{};
+
+  /// Where an entry is saved: message id → (server, channel).
+  final _homes = <String, (String, String)>{};
+
+  /// Restored entries not shown yet this session; the first use marks them
+  /// most recently used on the device.
+  final _fromDevice = <String>{};
+
+  /// Entries changed since the last device write.
+  final _dirty = <String>{};
+  Timer? _persist;
 
   /// Drops everything learned under another account.
   void _adopt() {
@@ -227,6 +270,14 @@ class MessageTranslationStore extends ChangeNotifier {
     _inFlight.clear();
     _queued.clear();
     _flush?.cancel();
+    _verified.clear();
+    _restored.clear();
+    _homes.clear();
+    _fromDevice.clear();
+    // Unwritten changes belong to the previous account.
+    _dirty.clear();
+    _persist?.cancel();
+    _persist = null;
     for (final timer in _timeouts.values) {
       timer.cancel();
     }
@@ -305,10 +356,11 @@ class MessageTranslationStore extends ChangeNotifier {
     _adopt();
     final id = _serverId;
     if (_disposed || id == null || _loading.contains(id)) return;
-    final gate = _servers[id];
     // Web loads once per server id; a role change keeps the accepted gate.
-    if (gate != null && !force) return;
-    if (gate == null && _failedLoads.contains(id) && !force) return;
+    // A gate restored from the device is shown while it is read once.
+    if (!force && (_verified.contains(id) || _failedLoads.contains(id))) {
+      return;
+    }
     _loading.add(id);
     _failedLoads.remove(id);
     settingsError = null;
@@ -318,14 +370,13 @@ class MessageTranslationStore extends ChangeNotifier {
       try {
         final data = await w.client.get('/servers/$id/translation-settings');
         if (epoch != _epoch) return;
-        _servers[id] = _gate(data);
+        _acceptGate(id, _gate(data));
       } on RaftApiException catch (e) {
         if (epoch != _epoch) return;
         if (e.status == 404 || e.status == 501) {
-          _servers[id] = _ServerGate(
-            enabled: false,
-            available: false,
-            canManage: false,
+          _acceptGate(
+            id,
+            _ServerGate(enabled: false, available: false, canManage: false),
           );
         } else if (generation == w.client.generation) {
           _failedLoads.add(id);
@@ -346,6 +397,21 @@ class MessageTranslationStore extends ChangeNotifier {
     }());
   }
 
+  /// An accepted gate of [id]: current for this session and saved, stamped
+  /// with the role it was read under.
+  void _acceptGate(String id, _ServerGate gate) {
+    _servers[id] = gate;
+    _verified.add(id);
+    final role = w.server?.id == id ? w.server?.string('role') : null;
+    if (role == null) return;
+    w.saveTranslationGate(id, {
+      'translationEnabled': gate.enabled,
+      'translationAvailable': gate.available,
+      'canManageTranslation': gate.canManage,
+      'role': role,
+    });
+  }
+
   _ServerGate _gate(Object? data) {
     final map = data is Map ? data : const {};
     return _ServerGate(
@@ -362,7 +428,7 @@ class MessageTranslationStore extends ChangeNotifier {
     _adopt();
     final id = _serverId;
     if (id == null || response is! Map) return;
-    _servers[id] = _gate(response);
+    _acceptGate(id, _gate(response));
     notifyListeners();
   }
 
@@ -387,6 +453,8 @@ class MessageTranslationStore extends ChangeNotifier {
                 raw.originalContent == message.content)
         ? raw
         : null;
+    // A restored entry shown again is the most recently used on the device.
+    if (entry != null && _fromDevice.remove(message.id)) _save(message.id);
     final hasContent = entry?.hasContent ?? false;
     final display = switch (entry?.showOriginal) {
       true => MessageTranslationDisplay.original,
@@ -459,6 +527,7 @@ class MessageTranslationStore extends ChangeNotifier {
     final entry = _entries[messageId];
     if (entry == null) return;
     _entries[messageId] = entry.withShowOriginal(showOriginal);
+    _save(messageId);
     notifyListeners();
   }
 
@@ -498,7 +567,10 @@ class MessageTranslationStore extends ChangeNotifier {
     final serial = ++_batch, epoch = _epoch;
     final generation = w.client.generation;
     final original = {for (final m in batch) m.id: m.content};
+    final server = _serverId;
     for (final m in batch) {
+      if (server != null) _homes[m.id] = (server, m.channelId);
+      _fromDevice.remove(m.id);
       _entries[m.id] = MessageTranslationEntry(
         messageId: m.id,
         status: MessageTranslationStatus.pending,
@@ -548,6 +620,7 @@ class MessageTranslationStore extends ChangeNotifier {
                 pendingBatch: previous?.pendingBatch ?? serial,
               )
             : entry;
+        _save(id);
       }
       for (final id in ids) {
         if (answered.contains(id)) continue;
@@ -662,6 +735,112 @@ class MessageTranslationStore extends ChangeNotifier {
         : entry;
   }
 
+  /// Restores the selected server's saved gate and entries, once per server
+  /// and session. Entries already in memory are fresher and kept. Awaited by
+  /// [WorkspaceController.selectServer] before the cached channels paint.
+  Future<void> restore() async {
+    _adopt();
+    final server = _serverId, role = w.server?.string('role');
+    if (_disposed || server == null || w.cache == null) return;
+    if (!_restored.add(server)) return;
+    final epoch = _epoch;
+    final (rows, gate) = await (
+      w.readDeviceTranslations(server),
+      w.readTranslationGate(server),
+    ).wait;
+    if (_disposed || epoch != _epoch) return;
+    if (gate is Map && _servers[server] == null) {
+      // Never adopted under another role than it was read under.
+      if (gate['role'] == role && role != null) {
+        _servers[server] = _gate(gate);
+      } else {
+        w.saveTranslationGate(server, null);
+      }
+    }
+    for (final row in rows) {
+      final entry = _restoredEntry(row);
+      final channel = row['channelId'];
+      if (entry == null || channel is! String) continue;
+      if (_entries.containsKey(entry.messageId)) continue;
+      _entries[entry.messageId] = entry;
+      _homes[entry.messageId] = (server, channel);
+      _fromDevice.add(entry.messageId);
+    }
+    notifyListeners();
+  }
+
+  /// Whether [entry] is saved on the device: a settled answer bound to the
+  /// target language and original content it was requested for.
+  static bool _persistable(MessageTranslationEntry entry) =>
+      entry.targetLanguage != null &&
+      entry.originalContent != null &&
+      (entry.hasContent ||
+          entry.status == MessageTranslationStatus.skipped &&
+              _stableSkips.contains(entry.reason));
+
+  static MessageTranslationEntry? _restoredEntry(Map<String, dynamic> row) {
+    final id = row['messageId'], target = row['targetLanguage'];
+    final original = row['originalContent'];
+    if (id is! String || target is! String || original is! String) {
+      return null;
+    }
+    String? text(String key) => row[key] is String ? row[key] : null;
+    final entry = MessageTranslationEntry(
+      messageId: id,
+      status: switch (row['status']) {
+        'translated' => MessageTranslationStatus.translated,
+        'skipped' => MessageTranslationStatus.skipped,
+        _ => MessageTranslationStatus.notFound,
+      },
+      reason: text('reason'),
+      translatedContent: text('translatedContent'),
+      sourceLanguage: text('sourceLanguage'),
+      targetLanguage: target,
+      originalContent: original,
+      showOriginal: row['showOriginal'] is bool ? row['showOriginal'] : null,
+    );
+    return _persistable(entry) ? entry : null;
+  }
+
+  /// Queues [id]'s current entry for the next device write.
+  void _save(String id) {
+    if (_disposed || w.cache == null || !_homes.containsKey(id)) return;
+    final entry = _entries[id];
+    if (entry == null || !_persistable(entry)) return;
+    _dirty.add(id);
+    _persist ??= Timer(persistDelay, flushDevice);
+  }
+
+  /// Writes the changed entries now (see [WorkspaceController.flushCache]).
+  void flushDevice() {
+    _persist?.cancel();
+    _persist = null;
+    // An account switch drops changes made under the previous account.
+    _adopt();
+    if (_disposed || _dirty.isEmpty) return;
+    final byServer = <String, List<Map<String, dynamic>>>{};
+    for (final id in _dirty) {
+      final entry = _entries[id], home = _homes[id];
+      if (entry == null || home == null || !_persistable(entry)) continue;
+      final (server, channel) = home;
+      byServer.putIfAbsent(server, () => []).add({
+        'messageId': id,
+        'channelId': channel,
+        'status': entry.status.name,
+        'reason': ?entry.reason,
+        'translatedContent': ?entry.translatedContent,
+        'sourceLanguage': ?entry.sourceLanguage,
+        'targetLanguage': entry.targetLanguage,
+        'originalContent': entry.originalContent,
+        'showOriginal': ?entry.showOriginal,
+      });
+    }
+    _dirty.clear();
+    for (final MapEntry(key: server, value: rows) in byServer.entries) {
+      w.writeDeviceTranslations(server, rows);
+    }
+  }
+
   bool _disposed = false;
   @override
   void notifyListeners() {
@@ -674,6 +853,7 @@ class MessageTranslationStore extends ChangeNotifier {
     _epoch++;
     _events?.cancel();
     _flush?.cancel();
+    _persist?.cancel();
     for (final timer in _timeouts.values) {
       timer.cancel();
     }

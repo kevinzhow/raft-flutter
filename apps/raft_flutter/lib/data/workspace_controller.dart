@@ -224,6 +224,70 @@ class WorkspaceController extends ChangeNotifier {
     });
   }
 
+  /// Saved message translations of [serverId] under the current account
+  /// (see [MessageTranslationStore.restore]); empty without a device cache.
+  Future<List<Map<String, dynamic>>> readDeviceTranslations(
+    String serverId,
+  ) async {
+    final store = cache, principal = client.user?.id;
+    if (store == null || principal == null || _disposed || _cacheRetired) {
+      return const [];
+    }
+    final origin = client.origin;
+    await _cacheWrites;
+    if (_disposed || _cacheRetired) return const [];
+    try {
+      return await store.readTranslations(origin, principal, serverId);
+    } catch (_) {
+      // Best effort: missing entries are requested again.
+      return const [];
+    }
+  }
+
+  /// Queues a device write of translation [entries] of [serverId] under the
+  /// current account. Nothing is written once the cache is retired, for a
+  /// revoked server, or for a channel revoked since the entry was made.
+  void writeDeviceTranslations(
+    String serverId,
+    List<Map<String, dynamic>> entries,
+  ) {
+    final store = cache, principal = client.user?.id;
+    if (store == null ||
+        principal == null ||
+        _cacheRetired ||
+        _revokedServers.contains(serverId)) {
+      return;
+    }
+    final rows = [
+      for (final entry in entries)
+        if (client.serverId != serverId ||
+            !_revokedChannels.contains(entry['channelId']))
+          entry,
+    ];
+    if (rows.isEmpty) return;
+    final origin = client.origin;
+    _cacheWrites = _cacheWrites.then((_) async {
+      if (_cacheRetired) return;
+      try {
+        await store.writeTranslations(origin, principal, serverId, rows);
+      } catch (_) {
+        // Best effort: unsaved translations are requested again.
+      }
+    });
+  }
+
+  /// The server translation gate saved for [serverId] (kind
+  /// `translation-settings`), or null.
+  Future<dynamic> readTranslationGate(String serverId) => _cacheRetired
+      ? Future.value()
+      : _cached('translation-settings', '', server: serverId);
+
+  /// Saves (or with null deletes) the translation gate of [serverId].
+  void saveTranslationGate(String serverId, Map<String, dynamic>? gate) {
+    if (gate != null && _revokedServers.contains(serverId)) return;
+    unawaited(_save('translation-settings', '', gate, server: serverId));
+  }
+
   void _entityAuthorityChanged() {
     if (_disposed || !_ownsEntityDirectory) return;
     if (entityDirectory.synchronize() && entityDirectory.started) {
@@ -817,6 +881,7 @@ class WorkspaceController extends ChangeNotifier {
   /// device writes have landed.
   Future<void> flushCache() {
     if (_ownsEntityDirectory) entityDirectory.flushDevice();
+    _translations?.flushDevice();
     return _cacheWrites;
   }
 
@@ -1892,6 +1957,9 @@ class WorkspaceController extends ChangeNotifier {
     // Agents, members and computers saved on this device paint with the
     // cached channels (first workspace frame); the preload revalidates them.
     final restoredEntities = entityDirectory.restored;
+    // Saved translations and the server's translation gate paint with them,
+    // so a cached row shows its translation at its first frame.
+    final restoredTranslations = translations.restore();
     unawaited(entityDirectory.preload());
     followedThreads.start();
     ledger.switchServer(next.id);
@@ -1945,6 +2013,7 @@ class WorkspaceController extends ChangeNotifier {
     final replyIdentity = _syncIdentity();
     final cached = await _cached('channels', '');
     await restoredEntities;
+    await restoredTranslations;
     if (generation != client.generation) return;
     if (cached is Map) {
       channels = (cached['channels'] as List)

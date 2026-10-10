@@ -71,26 +71,70 @@ class RootCache implements WorkspaceCache {
     rows[key(origin, principal, server, kind, id)] = value;
   }
 
+  /// `origin|principal|server` → message id → entry, least recently used
+  /// first.
+  final translations = <String, Map<String, Map<String, dynamic>>>{};
+
   @override
-  Future<void> clearAccount(String origin, String principal) async =>
-      rows.removeWhere((k, _) => k.startsWith('$origin|$principal|'));
+  Future<void> clearAccount(String origin, String principal) async {
+    rows.removeWhere((k, _) => k.startsWith('$origin|$principal|'));
+    translations.removeWhere((k, _) => k.startsWith('$origin|$principal|'));
+  }
+
   @override
   Future<void> revokeServer(
     String origin,
     String principal,
     String server,
-  ) async =>
-      rows.removeWhere((k, _) => k.startsWith('$origin|$principal|$server|'));
+  ) async {
+    rows.removeWhere((k, _) => k.startsWith('$origin|$principal|$server|'));
+    translations.remove('$origin|$principal|$server');
+  }
+
   @override
   Future<void> revokeChannel(
     String origin,
     String principal,
     String server,
     String channel,
-  ) async => rows.removeWhere(
-    (k, _) =>
-        k.startsWith('$origin|$principal|$server|') && k.endsWith('|$channel'),
-  );
+  ) async {
+    rows.removeWhere(
+      (k, _) =>
+          k.startsWith('$origin|$principal|$server|') &&
+          k.endsWith('|$channel'),
+    );
+    translations['$origin|$principal|$server']?.removeWhere(
+      (_, e) => e['channelId'] == channel,
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> readTranslations(
+    String origin,
+    String principal,
+    String server,
+  ) async => [
+    ...?translations['$origin|$principal|$server']?.values.toList().reversed,
+  ];
+
+  @override
+  Future<void> writeTranslations(
+    String origin,
+    String principal,
+    String server,
+    List<Map<String, dynamic>> entries,
+  ) async {
+    final scope = translations.putIfAbsent(
+      '$origin|$principal|$server',
+      () => {},
+    );
+    for (final entry in entries) {
+      scope
+        ..remove('${entry['messageId']}')
+        ..['${entry['messageId']}'] = Map<String, dynamic>.from(entry);
+    }
+  }
+
   @override
   Future<void> close() async {}
 }

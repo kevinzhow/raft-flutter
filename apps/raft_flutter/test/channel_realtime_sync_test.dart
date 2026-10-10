@@ -54,6 +54,10 @@ class _MemoryCache implements WorkspaceCache {
   @override
   Future<void> revokeServer(o, p, s) async => values.clear();
   @override
+  Future<List<Map<String, dynamic>>> readTranslations(o, p, s) async => [];
+  @override
+  Future<void> writeTranslations(o, p, s, entries) async {}
+  @override
   Future<void> close() async {}
 }
 

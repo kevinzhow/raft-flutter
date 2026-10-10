@@ -113,6 +113,19 @@ class _DelayedCache implements WorkspaceCache {
   @override
   Future<void> clearAccount(String o, String p) => db.clearAccount(o, p);
   @override
+  Future<List<Map<String, dynamic>>> readTranslations(
+    String o,
+    String p,
+    String s,
+  ) => db.readTranslations(o, p, s);
+  @override
+  Future<void> writeTranslations(
+    String o,
+    String p,
+    String s,
+    List<Map<String, dynamic>> entries,
+  ) => db.writeTranslations(o, p, s, entries);
+  @override
   Future<void> close() => db.close();
 }
 
