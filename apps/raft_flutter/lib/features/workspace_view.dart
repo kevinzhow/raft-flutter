@@ -356,7 +356,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   bool sharingReady = false,
       reviewingIncoming = false,
       bridgeEnabled = false,
-      providerEnabled = false;
+      providerEnabled = false,
+      labsEnabled = false;
   String? shareReceiverScope, bridgeScope;
   int bridgeRequest = 0;
   String tr(String source) => raftText(context, source);
@@ -465,10 +466,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     if (bridgeScope == next) return;
     bridgeScope = next;
     final request = ++bridgeRequest;
-    if (w.server == null ||
-        (!w.can('manageIntegrations') && !w.can('manageExternalAuth'))) {
+    // Settings rail gates (WorkspaceSettingsModal hiddenTabIds): IM Bridges
+    // and Labs follow their flags alone; AI Providers also needs
+    // manageExternalAuth (checked by WorkspaceSettings).
+    if (w.server == null) {
       bridgeEnabled = false;
       providerEnabled = false;
+      labsEnabled = false;
       return;
     }
     // Last evaluation under this identity: the first frame already has the
@@ -482,12 +486,17 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     bridgeEnabled = FeatureFlagMemory.read(memory, 'slack_bridge_v0') ?? false;
     providerEnabled =
         FeatureFlagMemory.read(memory, 'provider_connections_v0') ?? false;
+    labsEnabled = FeatureFlagMemory.read(memory, 'server_labs_ui_v0') ?? false;
     () async {
       try {
         final result = await w.client.post(
           '/feature-flags/evaluate',
           data: {
-            'keys': ['slack_bridge_v0', 'provider_connections_v0'],
+            'keys': [
+              'slack_bridge_v0',
+              'provider_connections_v0',
+              'server_labs_ui_v0',
+            ],
             'serverId': w.server!.id,
             'platform':
                 (defaultTargetPlatform == TargetPlatform.android ||
@@ -506,14 +515,23 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         final bridge = rows.whereType<Map>().any(
           (f) => f['key'] == 'slack_bridge_v0' && f['enabled'] == true,
         );
+        final labs = rows.whereType<Map>().any(
+          (f) => f['key'] == 'server_labs_ui_v0' && f['enabled'] == true,
+        );
         FeatureFlagMemory.write(memory, {
           'provider_connections_v0': provider,
           'slack_bridge_v0': bridge,
+          'server_labs_ui_v0': labs,
         });
-        if (provider == providerEnabled && bridge == bridgeEnabled) return;
+        if (provider == providerEnabled &&
+            bridge == bridgeEnabled &&
+            labs == labsEnabled) {
+          return;
+        }
         setState(() {
           providerEnabled = provider;
           bridgeEnabled = bridge;
+          labsEnabled = labs;
         });
       } catch (_) {
         /* Unresolved flags keep bridge navigation unavailable. */
@@ -3089,6 +3107,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         },
         providerEnabled: providerEnabled,
         bridgeEnabled: bridgeEnabled,
+        labsEnabled: labsEnabled,
       ),
     );
   }

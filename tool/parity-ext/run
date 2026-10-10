@@ -98,7 +98,19 @@ SPEC_EXT_APPENDIX = r'''
 // ("METHOD /path" -> JSON body), the same data the Flutter fixture client serves.
 async function parityExtRoutes(page: Page, visualCase: VisualCase) {
   const dir = process.env.PARITY_EXT_FIXTURES!;
-  const { readdirSync } = await import("node:fs");
+  const { readdirSync, appendFileSync, mkdirSync } = await import("node:fs");
+  // Debug aid: PARITY_EXT_LOG_REQUESTS=<dir> lists every /api request a case
+  // makes (to align the fixture routes both providers answer).
+  const logDir = process.env.PARITY_EXT_LOG_REQUESTS;
+  if (logDir) {
+    mkdirSync(logDir, { recursive: true });
+    page.on("request", (request: any) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith("/api/")) {
+        appendFileSync(resolve(logDir, `${visualCase.id}.txt`), `${request.method()} ${url.pathname}${url.search}\n`);
+      }
+    });
+  }
   const props = (visualCase.variants?.[0]?.props || {}) as Record<string, string>;
   for (const file of readdirSync(dir).filter((f: string) => f.endsWith(".json"))) {
     const fixture = JSON.parse(readFileSync(resolve(dir, file), "utf8"));

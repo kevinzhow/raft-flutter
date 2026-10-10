@@ -19,7 +19,6 @@ class _AdministrationState extends ManagementState<AdministrationView> {
   Map<String, dynamic> analytics = {},
       translation = {},
       agreement = {},
-      labs = {},
       onboarding = {},
       setup = {},
       public = {};
@@ -38,7 +37,6 @@ class _AdministrationState extends ManagementState<AdministrationView> {
     analytics = {};
     translation = {};
     agreement = {};
-    labs = {};
     onboarding = {};
     setup = {};
     public = {};
@@ -53,7 +51,6 @@ class _AdministrationState extends ManagementState<AdministrationView> {
     'analytics': analytics,
     'translation': translation,
     'agreement': agreement,
-    'labs': labs,
     'onboarding': onboarding,
     'setup': setup,
     'public': public,
@@ -65,7 +62,6 @@ class _AdministrationState extends ManagementState<AdministrationView> {
     analytics = fields['analytics'] as Map<String, dynamic>;
     translation = fields['translation'] as Map<String, dynamic>;
     agreement = fields['agreement'] as Map<String, dynamic>;
-    labs = fields['labs'] as Map<String, dynamic>;
     onboarding = fields['onboarding'] as Map<String, dynamic>;
     setup = fields['setup'] as Map<String, dynamic>;
     public = fields['public'] as Map<String, dynamic>;
@@ -99,7 +95,6 @@ class _AdministrationState extends ManagementState<AdministrationView> {
     final results = await Future.wait([
       w.client.get('$base/product-analytics-settings'),
       w.client.get('$base/translation-settings'),
-      w.client.get('$base/labs'),
       w.client.get('$base/onboarding-settings'),
       w.client.get('$base/setup-projection'),
       if (edit) w.client.get('$base/agreement'),
@@ -108,10 +103,9 @@ class _AdministrationState extends ManagementState<AdministrationView> {
     if (!accepts(generation, request)) return;
     analytics = managementMap(results[0]);
     translation = managementMap(results[1]);
-    labs = managementMap(results[2]);
-    onboarding = managementMap(results[3]);
-    setup = managementMap(results[4]);
-    var index = 5;
+    onboarding = managementMap(results[2]);
+    setup = managementMap(results[3]);
+    var index = 4;
     agreement = edit ? managementMap(results[index++]) : {};
     public = enablePublic ? managementMap(results[index]) : {};
     publicEnabled = enablePublic;
@@ -156,8 +150,7 @@ class _AdministrationState extends ManagementState<AdministrationView> {
           },
         );
       },
-      description:
-          'New invitees must explicitly accept the active agreement before joining.',
+      description: 'New invitees must explicitly accept the active agreement before joining.',
     );
   }
 
@@ -320,59 +313,6 @@ class _AdministrationState extends ManagementState<AdministrationView> {
           subtitle: Text('${channel['description'] ?? ''}'),
         ),
     ],
-    heading('Labs'),
-    SwitchListTile(
-      title: const Text('Enable workspace Labs'),
-      subtitle: const Text(
-        'Allow opt-in features that are open in the server catalog.',
-      ),
-      value: labs['accessEnabled'] == true,
-      onChanged: busy || labs['canManageAccess'] != true
-          ? null
-          : (v) => run(() async {
-              await confirm(
-                v ? 'Enable workspace Labs?' : 'Disable workspace Labs?',
-                v
-                    ? 'This lets admins opt in to available Labs features.'
-                    : 'All Labs features will stop being effective in this workspace.',
-                () async {
-                  await w.client.patch(
-                    '$base/labs/access',
-                    data: {'enabled': v, 'expectedVersion': labs['version']},
-                  );
-                },
-                submit: v ? 'Enable' : 'Disable',
-              );
-            }),
-    ),
-    for (final lab in managementRows(labs['labs']))
-      SwitchListTile(
-        title: Text('${lab['name']}'),
-        subtitle: Text(
-          '${lab['description']}\n${lab['state']}${lab['effective'] == true ? ' · Active' : ''}',
-        ),
-        value: lab['enrolled'] == true,
-        onChanged:
-            busy ||
-                labs['accessEnabled'] != true ||
-                labs['canManageEnrollments'] != true ||
-                lab['state'] != 'open'
-            ? null
-            : (v) => run(() async {
-                await confirm(
-                  v ? 'Enable ${lab['name']}?' : 'Disable ${lab['name']}?',
-                  lab['description'] ?? '',
-                  () async {
-                    await w.client.request(
-                      'PUT',
-                      '$base/labs/${Uri.encodeComponent(lab['labKey'])}',
-                      data: {'enabled': v, 'expectedVersion': labs['version']},
-                    );
-                  },
-                  submit: v ? 'Enable' : 'Disable',
-                );
-              }),
-      ),
     heading('Onboarding'),
     if (edit)
       ListTile(
@@ -609,8 +549,7 @@ class _BillingState extends ManagementState<BillingView> {
         }
       },
       submit: subscribed ? 'Review changes' : 'Review purchase',
-      description:
-          'Choose the total capacity after this purchase. Human seats and agent seats must cover current workspace usage.',
+      description: 'Choose the total capacity after this purchase. Human seats and agent seats must cover current workspace usage.',
     );
   }
 
@@ -667,8 +606,7 @@ class _BillingState extends ManagementState<BillingView> {
                     'Keep current access until the billing period ends. Your subscription will stop renewing.',
                     () async {
                       await w.client.post('/billing/cancel');
-                      notice =
-                          'Cancellation scheduled for the end of the billing period.';
+                      notice = 'Cancellation scheduled for the end of the billing period.';
                     },
                     submit: 'Cancel subscription',
                     destructive: true,

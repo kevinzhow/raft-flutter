@@ -14,7 +14,7 @@ import '../../parity_harness.dart';
 typedef MsRoutes = Map<String, Object? Function(dynamic data)>;
 
 class MsFixtureClient extends RaftClient {
-  MsFixtureClient(this.routes, Map<String, dynamic> user)
+  MsFixtureClient(this.routes, Map<String, dynamic> user, {this.fallback})
     : super(
         origin: 'https://visual-fixture.invalid',
         sessionStore: MemorySessionStore(),
@@ -24,6 +24,10 @@ class MsFixtureClient extends RaftClient {
   }
 
   final MsRoutes routes;
+
+  /// Answer for requests no route matches (extension cases mirror the
+  /// official spec's 200 catch-all); null keeps the 404.
+  final Object? Function(String method, String path, dynamic data)? fallback;
   final requests = <String>[];
 
   @override
@@ -76,6 +80,7 @@ class MsFixtureClient extends RaftClient {
         return {'threads': []};
       }
     }
+    if (fallback != null) return fallback!(method, path, data);
     // No backend behind the React render host either: unmocked endpoints
     // fail rather than inventing data.
     throw RaftApiException('Not found: $key', status: 404);
@@ -181,7 +186,10 @@ class MsFixture {
       'runtime': a['runtime'],
       'reasoningEffort': a['reasoningEffort'],
       'executionMode': a['executionMode'],
-      'envVars': {'RAFT_PROFILE': 'product-ux', 'SLOCK_VISUAL_PROVIDER': 'react'},
+      'envVars': {
+        'RAFT_PROFILE': 'product-ux',
+        'SLOCK_VISUAL_PROVIDER': 'react',
+      },
       'machineId': machineIdFor(a),
       'sessionId': a['sessionId'],
       'runtimeProfile': null,
@@ -259,8 +267,9 @@ class MsFixture {
   (WorkspaceController, MsFixtureClient) workspace(
     MsRoutes routes, {
     List<String> channels = const ['design'],
+    Object? Function(String method, String path, dynamic data)? fallback,
   }) {
-    final client = MsFixtureClient(routes, user);
+    final client = MsFixtureClient(routes, user, fallback: fallback);
     final w = WorkspaceController(client)
       ..server = RaftRecord(server)
       ..servers = [RaftRecord(server)]

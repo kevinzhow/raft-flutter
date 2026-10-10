@@ -12,6 +12,7 @@ import 'appearance_section.dart';
 import 'fleet_views.dart';
 import 'im_bridges_view.dart';
 import 'integrations_views.dart';
+import 'labs_view.dart';
 import 'locale_settings_page.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
@@ -203,6 +204,14 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               (_) => IntegrationsView(controller: w),
               group: WorkspaceSettings.workspace,
               scroll: false,
+            ),
+          if (widget.labsEnabled)
+            RaftSettingsDestination(
+              'labs',
+              'Labs',
+              RaftGlyph.flaskConical,
+              (_) => LabsView(controller: w),
+              group: WorkspaceSettings.workspace,
             ),
           if (!guest)
             RaftSettingsDestination(

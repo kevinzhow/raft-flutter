@@ -68,6 +68,7 @@ export 'src/settings_layout.dart';
 export 'src/qr_code.dart';
 export 'src/settings_resources.dart';
 export 'src/feedback_inbox.dart';
+export 'src/settings_workspace.dart';
 export 'src/settings_controls.dart';
 export 'src/appearance_picker.dart';
 

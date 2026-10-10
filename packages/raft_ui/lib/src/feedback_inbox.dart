@@ -167,7 +167,7 @@ class RaftFeedbackInbox extends StatelessWidget {
                                   if (loading)
                                     for (var i = 0; i < 3; i++) ...[
                                       if (i > 0) const SizedBox(height: 8),
-                                      const _RaftUiSkeleton(height: 64),
+                                      const RaftUiSkeleton(height: 64),
                                     ],
                                   if (error != null) ...[
                                     if (loading) const SizedBox(height: 12),
@@ -630,11 +630,12 @@ class RaftFeedbackUnreadCount extends StatelessWidget {
   );
 }
 
-/// raft-ui `Skeleton` (block): the recipe's `data-[variant=block]` fill and
+/// raft-ui `Skeleton` (block, as opposed to the Web app's own
+/// ui/Skeleton [RaftSkeleton]): the recipe's `data-[variant=block]` fill and
 /// radius, held at its first `animate-pulse` frame like Playwright's
 /// disabled animations (reduced motion).
-class _RaftUiSkeleton extends StatelessWidget {
-  const _RaftUiSkeleton({required this.height});
+class RaftUiSkeleton extends StatelessWidget {
+  const RaftUiSkeleton({super.key, required this.height});
   final double height;
 
   @override
@@ -700,9 +701,10 @@ class RaftFeedbackEmptyState extends StatelessWidget {
     );
     return CustomPaint(
       key: const ValueKey('feedback-empty'),
-      foregroundPainter: _DashedBorder(t.product.brutalStone, 2),
+      foregroundPainter: RaftDashedBorderPainter(t.product.brutalStone, 2),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 40, 24, 48),
+        // `padding: 40px 24px 48px` inside the 2px dashed border.
+        padding: const EdgeInsets.fromLTRB(26, 42, 26, 50),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -774,8 +776,8 @@ double _zeroWidth(TextStyle style) {
 
 /// CSS `border: 2px dashed` (Chromium: dashes of 3x the width, gaps evenly
 /// distributed per side).
-class _DashedBorder extends CustomPainter {
-  _DashedBorder(this.color, this.width);
+class RaftDashedBorderPainter extends CustomPainter {
+  const RaftDashedBorderPainter(this.color, this.width);
   final Color color;
   final double width;
 
@@ -806,7 +808,7 @@ class _DashedBorder extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_DashedBorder old) =>
+  bool shouldRepaint(RaftDashedBorderPainter old) =>
       old.color != color || old.width != width;
 }
 

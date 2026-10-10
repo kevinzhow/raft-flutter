@@ -413,6 +413,69 @@ mcp_linear = {
 }
 mcp_notion = {'id': 'notion', 'name': 'Notion', 'description': 'Pages, databases and comments', 'provider': 'notion',
               'authMode': 'oauth', 'endpointUrl': 'https://mcp.notion.com/mcp', 'credentialHeaderNames': []}
+T = OFFICIAL['times']
+H = OFFICIAL['humans']
+members = [{'userId': H[k]['memberId'] if k == 'owner' else H[k]['id'], 'serverId': SID, 'email': H[k]['email'], 'gravatarHash': '',
+            'name': H[k]['name'], 'displayName': H[k]['displayName'], 'description': H[k].get('description'),
+            'avatarUrl': None, 'role': H[k]['role'], 'joinedAt': T['memberJoinedAtIso'], 'membershipStatus': 'active'}
+           for k in ('owner', 'designer', 'jiacheng')]
+invites = [
+    {'id': 'invite-visual-designer', 'invitedEmail': H['designer']['email'], 'invitedByUserId': H['owner']['id'],
+     'status': 'pending', 'expiresAt': '2026-07-18T00:00:00.000Z', 'createdAt': T['entityCreatedAtIso']},
+    {'id': 'invite-visual-qa', 'invitedEmail': 'qa@slock.ai', 'invitedByUserId': OFFICIAL['agents']['cindy']['id'],
+     'status': 'pending', 'expiresAt': '2026-07-19T12:24:00.000Z', 'createdAt': T['recentActivityAtIso']},
+]
+join_links = [{'id': 'join-link-visual', 'token': 'design', 'createdAt': T['entityCreatedAtIso'],
+               'expiresAt': T['recentActivityAtIso'], 'maxUses': 25, 'useCount': 8, 'revokedAt': None}]
+billing_free = {
+    'plan': 'free', 'displayName': 'Free', 'serverPlan': 'free', 'source': 'server',
+    'capacity': {'maxHumans': 1, 'maxAgents': 2, 'maxUniversalSeats': -1},
+    'usage': {'humans': 2, 'agents': 2, 'universalSeats': 0},
+    'provisioned': {'humans': 1, 'agents': 2, 'proPackQuantity': 0, 'trialFreePackQuantity': 0,
+                    'firstPackTrialEndsAt': None},
+    'fileUploadQuota': {'month': '2026-06', 'plan': 'free', 'limited': True, 'enforced': False,
+                        'limitBytes': 524_288_000, 'usedBytes': 188_743_680, 'reservedBytes': 0,
+                        'remainingBytes': 335_544_320},
+    'price': None, 'subscription': None, 'stripeConfigured': True,
+    'permissions': {'canReadBillingSummary': True, 'canManageBilling': True},
+}
+
+
+def oauth_app(**fields):
+    base = {'serverId': SID, 'publishRejectionReason': None, 'returnUrl': None, 'agentManifestUrl': None,
+            'allowedScopes': [], 'logoUrl': None, 'createdByUserId': H['owner']['id'],
+            'createdAt': T['entityCreatedAtIso'], 'updatedAt': T['entityCreatedAtIso']}
+    base.update(fields)
+    return base
+
+
+marketplace = [
+    oauth_app(id='market_slack', clientId='client_slack_bridge', appType='third_party_global',
+              publishStatus='published', category='Productivity & Collaboration',
+              dataAccessSummary='Messages and channel metadata', name='Slack Bridge',
+              description='Mirror Slock activity into Slack channels.', homepageUrl='https://example.com/slack',
+              humanMarketplaceVisible=True, installedAt=None, publisherName='Raft Labs', privateShared=False),
+    oauth_app(id='market_github', clientId='client_github_issues', appType='third_party_global',
+              publishStatus='published', category='Development', dataAccessSummary='Tasks and feedback',
+              name='GitHub Issues', description='Create issues from tasks and feedback.',
+              homepageUrl='https://example.com/github', humanMarketplaceVisible=True,
+              installedAt=T['entityCreatedAtIso'], publisherName='Raft Labs', privateShared=False),
+]
+clients = [oauth_app(id='client_1', clientId='client_slack_bridge', appType='server_local', publishStatus='private',
+                     category='Productivity & Collaboration', dataAccessSummary='Messages and channel metadata',
+                     name='Slack Bridge', description='Server-local OAuth client.', homepageUrl='https://example.com',
+                     returnUrl='https://example.com/oauth/callback',
+                     agentManifestUrl='https://example.com/manifest.json', humanMarketplaceVisible=False)]
+# GET /servers/:id/labs (canonical readback): one open lab enrolled, one paused.
+labs = {'serverId': SID, 'accessEnabled': True, 'version': 3, 'canManageAccess': True, 'canManageEnrollments': True,
+        'labs': [
+            {'labKey': 'workspace_grid_v0', 'name': 'Workspace grid',
+             'description': 'Arrange channels, threads and agents side by side in draggable editor groups.',
+             'state': 'open', 'enrolled': True, 'effective': True, 'updatedAt': '2026-10-01T00:00:00.000Z'},
+            {'labKey': 'composer_resource_references_v0', 'name': 'Resource references',
+             'description': 'Reference tasks, files and computers from the composer with #.',
+             'state': 'paused', 'enrolled': False, 'effective': False, 'updatedAt': None},
+        ]}
 settings_fixture = {
     'name': 'raft-flutter parity extension: settings (Workspace + Resources groups)',
     'scope': 'Public deterministic test data; no credentials.',
@@ -424,7 +487,27 @@ settings_fixture = {
         'GET /release-notes': {'items': releases, 'nextCursor': None},
         'GET /product-feedback/tickets': {'tickets': tickets, 'next_cursor': None, 'unread_total': 2},
         'GET /mcp/servers': {'servers': [mcp_linear], 'recommendations': [mcp_notion]},
+        # Workspace tabs: the official react-provider.spec.ts payloads for
+        # these endpoints (served to every case id there), restated so both
+        # providers render the same data.
+        f'GET /servers/{SID}/usage': {'agents': 2, 'machines': 1, 'channels': 4},
+        'GET /billing/subscription': billing_free,
+        f'GET /servers/{SID}/members': members,
+        f'GET /servers/{SID}/invites': invites,
+        f'GET /servers/{SID}/join-links': join_links,
+        f'GET /servers/{SID}/agreement': {'enabled': True, 'agreement': {
+            'title': 'Raft Design workspace agreement',
+            'bodyMarkdown': 'Please keep feedback actionable and avoid sharing credentials in public channels.'}},
+        f'GET /servers/{SID}/translation-settings': {
+            'translationEnabled': True, 'translationAvailable': True, 'canManageTranslation': True},
+        'GET /integrations/marketplace': marketplace,
+        'GET /integrations/clients': clients,
+        'GET /integrations/overview': [],
+        f'GET /servers/{SID}/labs': labs,
     },
+    # Anything else answers the official spec's catch-all body (200) on both
+    # providers.
+    'fallback': {'agents': [], 'humans': [], 'results': []},
     # props.routeSet -> overrides; {"$status": N} answers N, {"$pending": true}
     # never answers (loading state).
     'routeSets': {

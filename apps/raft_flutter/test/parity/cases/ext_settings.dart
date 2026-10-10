@@ -58,10 +58,26 @@ Widget _page(ParityContext ctx) {
   final fixture = MsFixture(ctx);
   final role = ctx.props['role'] as String? ?? 'owner';
   final flags = '${ctx.props['flags'] ?? ''}'.split(',').toSet();
+  // Server feature flags the React host sets before render (props.flags).
+  const flagKeys = {
+    'labs': 'server_labs_ui_v0',
+    'providers': 'provider_connections_v0',
+    'bridge': 'slack_bridge_v0',
+  };
+  final enabled = {
+    for (final MapEntry(:key, :value) in flagKeys.entries)
+      if (flags.contains(key)) value,
+  };
   final (w, _) = fixture.workspace({
     'GET /servers/visual-server': (_) => {...fixture.server, 'role': role},
+    'POST /feature-flags/evaluate': (data) => {
+      'evaluations': [
+        for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
+          {'key': key, 'enabled': enabled.contains(key)},
+      ],
+    },
     ..._routes(ctx),
-  });
+  }, fallback: (method, path, data) => _fx(ctx)['fallback']);
   final server = RaftRecord({...fixture.server, 'role': role});
   w
     ..server = server

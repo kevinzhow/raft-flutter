@@ -11,6 +11,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
 import 'package:raft_flutter/features/provider_views.dart';
 import 'package:raft_flutter/features/admin_views.dart';
+import 'package:raft_flutter/features/labs_view.dart';
 import 'package:raft_flutter/features/server_setup_gate.dart';
 import 'package:raft_flutter/features/account_connections_view.dart';
 import 'package:raft_flutter/features/agent_apps_view.dart';
@@ -767,15 +768,84 @@ void main() {
       };
       await tester.pumpWidget(host(ProviderConnectionsView(controller: w)));
       await tester.pumpAndSettle();
-      expect(
-        find.text('Provider connections are not enabled for this workspace.'),
-        findsOneWidget,
-      );
-      expect(find.text('Add provider'), findsNothing);
+      // ProviderConnectionsSettings renders nothing while the flag is off.
+      expect(find.byType(RaftProviderConnectionsFrame), findsNothing);
+      expect(find.text('Add connection'), findsNothing);
       expect(a.calls.any((c) => c.path == '/provider-connections'), false);
       expect(a.calls.any((c) => c.path == '/feature-flags/evaluate'), true);
     },
   );
+  testWidgets('Labs tab reads the canonical readback and writes versioned '
+      'enrollment like LabsSection', (tester) async {
+    final (w, a) = (await tester.runAsync(() => _fixture('admin')))!;
+    addTearDown(w.dispose);
+    Map<String, dynamic> readback({bool enrolled = false}) => {
+      'serverId': 's1',
+      'accessEnabled': true,
+      'version': 4,
+      'canManageAccess': false,
+      'canManageEnrollments': true,
+      'labs': [
+        {
+          'labKey': 'grid_v0',
+          'name': 'Workspace grid',
+          'description': 'Editor groups.',
+          'state': 'open',
+          'enrolled': enrolled,
+          'effective': enrolled,
+        },
+        {
+          'labKey': 'inline_thread_replies_v0',
+          'name': 'Retired',
+          'description': '',
+          'state': 'retired',
+          'enrolled': false,
+          'effective': false,
+        },
+        {
+          'labKey': 'refs_v0',
+          'name': 'Resource references',
+          'description': 'Composer refs.',
+          'state': 'paused',
+          'enrolled': false,
+          'effective': false,
+        },
+      ],
+    };
+    a.routes['GET /servers/s1/labs'] = (_) => readback();
+    a.routes['PUT /servers/s1/labs/grid_v0'] = (o) {
+      expect(o.data, {'enabled': true, 'expectedVersion': 4});
+      return readback(enrolled: true);
+    };
+    await tester.pumpWidget(host(LabsView(controller: w)));
+    await tester.pumpAndSettle();
+    expect(find.text('Workspace grid'), findsOneWidget);
+    expect(find.text('Retired'), findsNothing);
+    // Admins cannot flip the master gate; paused Labs are read-only.
+    expect(
+      find.text('Only server owners can change the master gate.'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Paused, draft, and retired Labs are read-only here.'),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('server-lab-grid_v0')),
+        matching: find.byType(RaftSwitch),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(a.calls.any((c) => c.path == '/servers/s1/labs/grid_v0'), true);
+  });
+  testWidgets('Labs tab shows the unavailable notice on 404', (tester) async {
+    final (w, a) = (await tester.runAsync(() => _fixture('owner')))!;
+    addTearDown(w.dispose);
+    await tester.pumpWidget(host(LabsView(controller: w)));
+    await tester.pumpAndSettle();
+    expect(find.text('Labs settings unavailable'), findsOneWidget);
+  });
   testWidgets('admin can read Stripe billing but cannot purchase or cancel', (
     tester,
   ) async {

@@ -442,93 +442,99 @@ class _ProviderConnectionsState
     );
   }
 
+  /// ProviderConnectionsSettings renders nothing while the feature is off.
   @override
-  Widget build(BuildContext context) => page(
-    'Provider connections',
-    [
-      if (!enabled && !loading)
-        const Text('Provider connections are not enabled for this workspace.'),
-      if (enabled && connections.isEmpty && !loading)
-        const Text(
-          'Add a provider connection to share an encrypted credential with agents.',
-        ),
-      for (final connection in connections)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${connection['name']}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  '${options.where((p) => p['id'] == connection['providerId']).firstOrNull?['label'] ?? connection['providerId']} · ${connection['status']} · ${connection['enabled'] == true ? 'Enabled' : 'Disabled'}',
-                ),
-                if (connection['endpointUrl'] != null)
-                  SelectableText('${connection['endpointUrl']}'),
-                Text(
-                  '${connection['assignedAgentCount']} assigned agents · ${connection['hasCredential'] == true ? 'Credential saved' : 'No credential'}',
-                ),
-                if (connection['latestVerified'] is Map)
-                  Text(
-                    'Verified on ${managementMap(connection['latestVerified'])['computerName'] ?? 'computer'} · ${managementMap(connection['latestVerified'])['model']}',
+  Widget build(BuildContext context) => !enabled && !loading
+      ? const SizedBox.shrink()
+      : ListView(
+          primary: false,
+          padding: RaftSettingsPanelFrame.contentInset,
+          children: [
+            RaftProviderConnectionsFrame(
+              loading: loading && connections.isEmpty,
+              error: error == null
+                  ? null
+                  : raftText(
+                      context,
+                      'Provider connections could not be loaded.',
+                    ),
+              canAdd: options.isNotEmpty && !busy,
+              onAdd: w.can('manageExternalAuth') ? () => run(create) : null,
+              rows: [
+                for (final connection in connections)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${connection['name']}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          '${options.where((p) => p['id'] == connection['providerId']).firstOrNull?['label'] ?? connection['providerId']} · ${connection['status']} · ${connection['enabled'] == true ? 'Enabled' : 'Disabled'}',
+                        ),
+                        if (connection['endpointUrl'] != null)
+                          SelectableText('${connection['endpointUrl']}'),
+                        Text(
+                          '${connection['assignedAgentCount']} assigned agents · ${connection['hasCredential'] == true ? 'Credential saved' : 'No credential'}',
+                        ),
+                        if (connection['latestVerified'] is Map)
+                          Text(
+                            'Verified on ${managementMap(connection['latestVerified'])['computerName'] ?? 'computer'} · ${managementMap(connection['latestVerified'])['model']}',
+                          ),
+                        Wrap(
+                          children: [
+                            action(
+                              'Edit connection',
+                              () => run(() => edit(connection)),
+                            ),
+                            action(
+                              'Assigned agents',
+                              () => run(
+                                () => assigned(connection),
+                                refresh: false,
+                              ),
+                            ),
+                            action(
+                              'Verify on computer',
+                              () => run(() => verify(connection)),
+                            ),
+                            action(
+                              'Verification history',
+                              () => run(
+                                () => history(connection),
+                                refresh: false,
+                              ),
+                            ),
+                            if (w.can('rotateServerSecrets'))
+                              action(
+                                'Rotate credential',
+                                () => run(() => rotate(connection)),
+                              ),
+                            action(
+                              'Delete connection',
+                              () => run(() async {
+                                await confirm(
+                                  'Delete ${connection['name']}?',
+                                  'Remove this connection and its encrypted credential. Assigned agents must be detached first.',
+                                  () async {
+                                    await w.client.delete(
+                                      '/provider-connections/${connection['id']}',
+                                    );
+                                  },
+                                  submit: 'Delete',
+                                  destructive: true,
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                Wrap(
-                  children: [
-                    action(
-                      'Edit connection',
-                      () => run(() => edit(connection)),
-                    ),
-                    action(
-                      'Assigned agents',
-                      () => run(() => assigned(connection), refresh: false),
-                    ),
-                    action(
-                      'Verify on computer',
-                      () => run(() => verify(connection)),
-                    ),
-                    action(
-                      'Verification history',
-                      () => run(() => history(connection), refresh: false),
-                    ),
-                    if (w.can('rotateServerSecrets'))
-                      action(
-                        'Rotate credential',
-                        () => run(() => rotate(connection)),
-                      ),
-                    action(
-                      'Delete connection',
-                      () => run(() async {
-                        await confirm(
-                          'Delete ${connection['name']}?',
-                          'Remove this connection and its encrypted credential. Assigned agents must be detached first.',
-                          () async {
-                            await w.client.delete(
-                              '/provider-connections/${connection['id']}',
-                            );
-                          },
-                          submit: 'Delete',
-                          destructive: true,
-                        );
-                      }),
-                    ),
-                  ],
-                ),
               ],
             ),
-          ),
-        ),
-    ],
-    actions: [
-      if (enabled && w.can('manageExternalAuth'))
-        action(
-          'Add provider',
-          () => run(create),
-          glyph: RaftGlyph.plus,
-          glyphSize: 16,
-        ),
-    ],
-  );
+          ],
+        );
 }

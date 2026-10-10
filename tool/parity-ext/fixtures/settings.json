@@ -241,7 +241,240 @@
      "credentialHeaderNames": []
     }
    ]
+  },
+  "GET /servers/visual-server/usage": {
+   "agents": 2,
+   "machines": 1,
+   "channels": 4
+  },
+  "GET /billing/subscription": {
+   "plan": "free",
+   "displayName": "Free",
+   "serverPlan": "free",
+   "source": "server",
+   "capacity": {
+    "maxHumans": 1,
+    "maxAgents": 2,
+    "maxUniversalSeats": -1
+   },
+   "usage": {
+    "humans": 2,
+    "agents": 2,
+    "universalSeats": 0
+   },
+   "provisioned": {
+    "humans": 1,
+    "agents": 2,
+    "proPackQuantity": 0,
+    "trialFreePackQuantity": 0,
+    "firstPackTrialEndsAt": null
+   },
+   "fileUploadQuota": {
+    "month": "2026-06",
+    "plan": "free",
+    "limited": true,
+    "enforced": false,
+    "limitBytes": 524288000,
+    "usedBytes": 188743680,
+    "reservedBytes": 0,
+    "remainingBytes": 335544320
+   },
+   "price": null,
+   "subscription": null,
+   "stripeConfigured": true,
+   "permissions": {
+    "canReadBillingSummary": true,
+    "canManageBilling": true
+   }
+  },
+  "GET /servers/visual-server/members": [
+   {
+    "userId": "visual-human-1",
+    "serverId": "visual-server",
+    "email": "artin@slock.ai",
+    "gravatarHash": "",
+    "name": "artin",
+    "displayName": "artin",
+    "description": "Owner",
+    "avatarUrl": null,
+    "role": "owner",
+    "joinedAt": "2026-06-18T00:00:00.000Z",
+    "membershipStatus": "active"
+   },
+   {
+    "userId": "visual-human-designer",
+    "serverId": "visual-server",
+    "email": "designer@slock.ai",
+    "gravatarHash": "",
+    "name": "designer",
+    "displayName": "Designer",
+    "description": "Product design",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z",
+    "membershipStatus": "active"
+   },
+   {
+    "userId": "visual-human-jiacheng",
+    "serverId": "visual-server",
+    "email": "jiacheng@slock.ai",
+    "gravatarHash": "",
+    "name": "jiacheng",
+    "displayName": "Jiacheng",
+    "description": "Android",
+    "avatarUrl": null,
+    "role": "member",
+    "joinedAt": "2026-06-18T00:00:00.000Z",
+    "membershipStatus": "active"
+   }
+  ],
+  "GET /servers/visual-server/invites": [
+   {
+    "id": "invite-visual-designer",
+    "invitedEmail": "designer@slock.ai",
+    "invitedByUserId": "visual-user",
+    "status": "pending",
+    "expiresAt": "2026-07-18T00:00:00.000Z",
+    "createdAt": "2026-06-18T00:00:00.000Z"
+   },
+   {
+    "id": "invite-visual-qa",
+    "invitedEmail": "qa@slock.ai",
+    "invitedByUserId": "agent-cindy",
+    "status": "pending",
+    "expiresAt": "2026-07-19T12:24:00.000Z",
+    "createdAt": "2026-06-19T12:24:00.000Z"
+   }
+  ],
+  "GET /servers/visual-server/join-links": [
+   {
+    "id": "join-link-visual",
+    "token": "design",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "expiresAt": "2026-06-19T12:24:00.000Z",
+    "maxUses": 25,
+    "useCount": 8,
+    "revokedAt": null
+   }
+  ],
+  "GET /servers/visual-server/agreement": {
+   "enabled": true,
+   "agreement": {
+    "title": "Raft Design workspace agreement",
+    "bodyMarkdown": "Please keep feedback actionable and avoid sharing credentials in public channels."
+   }
+  },
+  "GET /servers/visual-server/translation-settings": {
+   "translationEnabled": true,
+   "translationAvailable": true,
+   "canManageTranslation": true
+  },
+  "GET /integrations/marketplace": [
+   {
+    "serverId": "visual-server",
+    "publishRejectionReason": null,
+    "returnUrl": null,
+    "agentManifestUrl": null,
+    "allowedScopes": [],
+    "logoUrl": null,
+    "createdByUserId": "visual-user",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "updatedAt": "2026-06-18T00:00:00.000Z",
+    "id": "market_slack",
+    "clientId": "client_slack_bridge",
+    "appType": "third_party_global",
+    "publishStatus": "published",
+    "category": "Productivity & Collaboration",
+    "dataAccessSummary": "Messages and channel metadata",
+    "name": "Slack Bridge",
+    "description": "Mirror Slock activity into Slack channels.",
+    "homepageUrl": "https://example.com/slack",
+    "humanMarketplaceVisible": true,
+    "installedAt": null,
+    "publisherName": "Raft Labs",
+    "privateShared": false
+   },
+   {
+    "serverId": "visual-server",
+    "publishRejectionReason": null,
+    "returnUrl": null,
+    "agentManifestUrl": null,
+    "allowedScopes": [],
+    "logoUrl": null,
+    "createdByUserId": "visual-user",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "updatedAt": "2026-06-18T00:00:00.000Z",
+    "id": "market_github",
+    "clientId": "client_github_issues",
+    "appType": "third_party_global",
+    "publishStatus": "published",
+    "category": "Development",
+    "dataAccessSummary": "Tasks and feedback",
+    "name": "GitHub Issues",
+    "description": "Create issues from tasks and feedback.",
+    "homepageUrl": "https://example.com/github",
+    "humanMarketplaceVisible": true,
+    "installedAt": "2026-06-18T00:00:00.000Z",
+    "publisherName": "Raft Labs",
+    "privateShared": false
+   }
+  ],
+  "GET /integrations/clients": [
+   {
+    "serverId": "visual-server",
+    "publishRejectionReason": null,
+    "returnUrl": "https://example.com/oauth/callback",
+    "agentManifestUrl": "https://example.com/manifest.json",
+    "allowedScopes": [],
+    "logoUrl": null,
+    "createdByUserId": "visual-user",
+    "createdAt": "2026-06-18T00:00:00.000Z",
+    "updatedAt": "2026-06-18T00:00:00.000Z",
+    "id": "client_1",
+    "clientId": "client_slack_bridge",
+    "appType": "server_local",
+    "publishStatus": "private",
+    "category": "Productivity & Collaboration",
+    "dataAccessSummary": "Messages and channel metadata",
+    "name": "Slack Bridge",
+    "description": "Server-local OAuth client.",
+    "homepageUrl": "https://example.com",
+    "humanMarketplaceVisible": false
+   }
+  ],
+  "GET /integrations/overview": [],
+  "GET /servers/visual-server/labs": {
+   "serverId": "visual-server",
+   "accessEnabled": true,
+   "version": 3,
+   "canManageAccess": true,
+   "canManageEnrollments": true,
+   "labs": [
+    {
+     "labKey": "workspace_grid_v0",
+     "name": "Workspace grid",
+     "description": "Arrange channels, threads and agents side by side in draggable editor groups.",
+     "state": "open",
+     "enrolled": true,
+     "effective": true,
+     "updatedAt": "2026-10-01T00:00:00.000Z"
+    },
+    {
+     "labKey": "composer_resource_references_v0",
+     "name": "Resource references",
+     "description": "Reference tasks, files and computers from the composer with #.",
+     "state": "paused",
+     "enrolled": false,
+     "effective": false,
+     "updatedAt": null
+    }
+   ]
   }
+ },
+ "fallback": {
+  "agents": [],
+  "humans": [],
+  "results": []
  },
  "routeSets": {
   "release-notes-loading": {

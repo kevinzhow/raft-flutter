@@ -442,10 +442,15 @@ class RaftSettingsSectionHeader extends StatelessWidget {
     this.glyph,
     this.action,
     this.bottom = 12,
+    this.count,
   });
   final String label;
   final RaftGlyph? glyph;
   final Widget? action;
+
+  /// SectionHeader `count`: `ml-2 font-mono text-foreground-placeholder
+  /// theme-brutal:text-black/40` after the label.
+  final int? count;
 
   /// Callsite margin (`mb-3` on every SettingsPanel section).
   final double bottom;
@@ -472,8 +477,30 @@ class RaftSettingsSectionHeader extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Expanded(
-            child: Text(
-              raftText(context, label).toUpperCase(),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: raftText(context, label).toUpperCase()),
+                  if (count != null && count! >= 0) ...[
+                    const WidgetSpan(child: SizedBox(width: 8)),
+                    TextSpan(
+                      text: '$count',
+                      style:
+                          RaftTypography.mono(
+                            t,
+                            size: 12,
+                            line: 16,
+                            color: t.brutal
+                                ? Colors.black.withValues(alpha: .4)
+                                : t.colors['foreground-placeholder'],
+                          ).copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                          ),
+                    ),
+                  ],
+                ],
+              ),
               style: eyebrow(t),
             ),
           ),
