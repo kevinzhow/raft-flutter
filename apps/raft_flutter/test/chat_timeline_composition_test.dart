@@ -65,10 +65,19 @@ void main() {
           expect(list.topPadding, 0);
           expect(list.bottomPadding, 0);
           expect(list.handleSafeArea, false);
-          final sparse = t.renderObject<RenderRaftSparseTimelineSliver>(
-            find.byType(RaftSparseTimelineSliver),
-          );
-          expect(sparse.leadingExtent, thread ? 0 : greaterThan(0));
+          if (thread) {
+            final sparse = t.renderObject<RenderRaftSparseTimelineSliver>(
+              find.byType(RaftSparseTimelineSliver),
+            );
+            expect(sparse.leadingExtent, 0);
+          } else {
+            // Bottom-anchored channel: the reversed timeline needs no measured
+            // spacer; the history state fills the space above short content.
+            expect(find.byType(RaftSparseTimelineSliver), findsNothing);
+            final chat = t.getRect(find.byType(Chat));
+            final beginning = t.getRect(find.text('Beginning of messages'));
+            expect(beginning.top - chat.top, lessThan(48));
+          }
           expect(
             find.byType(RaftConversationDateHeader),
             thread ? findsNothing : findsOneWidget,

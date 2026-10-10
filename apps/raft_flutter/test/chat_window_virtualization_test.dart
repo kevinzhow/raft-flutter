@@ -47,7 +47,7 @@ void main() {
           lessThan(80),
         );
         final dynamic state = tester.state(find.byType(RaftChatView));
-        expect(state.viewport.offset, state.viewport.position.maxScrollExtent);
+        expect(state.distanceFromLatest(state.viewport.position), 0);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());
       },

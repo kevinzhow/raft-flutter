@@ -269,7 +269,10 @@ void main() {
       }
       Future<void> scrollForTenSeconds() async {
         final ScrollController current = state.viewport;
-        final end = (current.offset - 12000).clamp(current.position.minScrollExtent, current.position.maxScrollExtent);
+        // Scroll toward older history: down in offset for a top-anchored list,
+        // up in offset for a bottom-anchored (reversed) one.
+        final older = current.position.axisDirection == AxisDirection.up ? 12000 : -12000;
+        final end = (current.offset + older).clamp(current.position.minScrollExtent, current.position.maxScrollExtent);
         await current.animateTo(end, duration: const Duration(seconds: seconds), curve: Curves.linear);
       }
       await sample('channel-scroll', scrollForTenSeconds);

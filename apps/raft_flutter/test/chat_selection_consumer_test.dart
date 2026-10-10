@@ -128,7 +128,16 @@ void main() {
                 w is Checkbox && w.semanticLabel == 'Select message by Alice',
           );
           expect(checkbox, findsNWidgets(2));
-          await t.tap(checkbox.last);
+          // Pick the unselected row by state, not tree order: the bottom-
+          // anchored (reversed) timeline builds newest rows first.
+          await t.tap(
+            find.byWidgetPredicate(
+              (w) =>
+                  w is Checkbox &&
+                  w.semanticLabel == 'Select message by Alice' &&
+                  w.value == false,
+            ),
+          );
         }
         await t.pumpAndSettle();
         expect(find.text('2 selected'), findsOneWidget);
@@ -157,7 +166,9 @@ void main() {
         if (thread) {
           await t.tap(find.byTooltip('Select All'));
         } else {
-          await t.tap(find.byType(Checkbox).last);
+          await t.tap(
+            find.byWidgetPredicate((w) => w is Checkbox && w.value == false),
+          );
         }
         await t.pumpAndSettle();
         await t.tap(find.byTooltip('More'));

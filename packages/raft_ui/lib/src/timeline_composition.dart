@@ -53,15 +53,33 @@ class RaftTimelineCompositionSliver extends StatelessWidget {
     this.header,
     required this.messagesSliver,
     this.footer,
+    this.reversed = false,
   });
   final RaftTimelineSparseAnchor anchor;
   final Widget? header;
   final Widget messagesSliver;
   final Widget? footer;
 
+  /// The host scroll view is reversed (newest message at scroll offset 0).
+  /// Slivers grow upward, so the visual order is listed bottom-first and a
+  /// short timeline sits at the bottom without a measured spacer; the host
+  /// keeps its top content at the top with a fill-remaining sliver.
+  final bool reversed;
+
   @override
   Widget build(BuildContext context) {
     const recipe = RaftTimelineCompositionRecipe();
+    if (reversed) {
+      return SliverMainAxisGroup(
+        slivers: [
+          if (footer != null) SliverToBoxAdapter(child: footer),
+          SliverToBoxAdapter(child: SizedBox(height: recipe.sentinelExtent)),
+          messagesSliver,
+          SliverToBoxAdapter(child: SizedBox(height: recipe.sentinelExtent)),
+          if (header != null) SliverToBoxAdapter(child: header),
+        ],
+      );
+    }
     return SliverMainAxisGroup(
       slivers: [
         if (header != null) SliverToBoxAdapter(child: header),
