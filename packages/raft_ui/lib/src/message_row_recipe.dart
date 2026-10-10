@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 
 import 'design_primitives.dart';
 import 'tokens/tokens.dart';
@@ -163,7 +164,7 @@ class RaftMessageRowRecipe {
 }
 
 /// Controlled mounted row. No message model, cache, API, or authority lookup.
-/// Toolbar stays hit-testable above the row while invisible, as source does.
+/// Active toolbars remain hit-testable above their row, inside its viewport.
 class RaftMessageRow extends StatefulWidget {
   const RaftMessageRow({
     super.key,
@@ -211,28 +212,72 @@ class RaftMessageRow extends StatefulWidget {
 class _RaftMessageRowState extends State<RaftMessageRow> {
   bool hovered = false, toolbarHovered = false, focused = false;
   bool secondaryDown = false;
-  final portal = OverlayPortalController()..show();
-  ScrollPosition? position;
-  bool overlayUpdateQueued = false;
+  final portal = OverlayPortalController();
+  final toolbarKey = GlobalKey();
+  ScrollPosition? position, listeningPosition;
+  bool overlayUpdateQueued = false, portalSyncQueued = false;
+  bool tickerEnabled = true, portalMounted = false;
+  bool get toolbarActive =>
+      tickerEnabled &&
+      !widget.coarsePointer &&
+      widget.toolbar != null &&
+      (hovered || toolbarHovered || focused || widget.popupOpen);
+
+  @override
+  void initState() {
+    super.initState();
+    if (toolbarActive) portal.show();
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final next = Scrollable.maybeOf(context)?.position;
-    if (next != position) {
-      position?.removeListener(scrollChanged);
-      position = next;
-      position?.addListener(scrollChanged);
+    position = Scrollable.maybeOf(context)?.position;
+    tickerEnabled = TickerMode.valuesOf(context).enabled;
+    syncPortal();
+  }
+
+  void syncPortal() {
+    final active = toolbarActive;
+    final next = active ? position : null;
+    if (!identical(next, listeningPosition)) {
+      listeningPosition?.removeListener(scrollChanged);
+      listeningPosition = next;
+      listeningPosition?.addListener(scrollChanged);
+    }
+    if (active == portal.isShowing) return;
+    // Parent property/TickerMode changes can occur during build. Pointer and
+    // focus events update immediately; dependency updates retire after layout.
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      if (portalSyncQueued) return;
+      portalSyncQueued = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        portalSyncQueued = false;
+        if (mounted) syncPortal();
+      });
+      return;
+    }
+    if (active) {
+      portal.show();
+    } else {
+      portal.hide();
     }
   }
 
+  void attentionChanged(VoidCallback update) {
+    setState(update);
+    syncPortal();
+  }
+
   void scrollChanged() {
-    // Scroll corrections can occur during layout. Coalesce a current-frame
-    // overlay refresh rather than writing state from that layout callback.
-    if (overlayUpdateQueued) return;
+    // Only the active floating toolbar follows the scroll position. Refresh
+    // its portal geometry without rebuilding the message or its content.
+    if (!toolbarActive || overlayUpdateQueued) return;
     overlayUpdateQueued = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       overlayUpdateQueued = false;
-      if (mounted) setState(() {});
+      if (mounted && toolbarActive) portal.show();
     });
   }
 
@@ -240,11 +285,12 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   void didUpdateWidget(covariant RaftMessageRow oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.coarsePointer || widget.toolbar == null) toolbarHovered = false;
+    syncPortal();
   }
 
   @override
   void dispose() {
-    position?.removeListener(scrollChanged);
+    listeningPosition?.removeListener(scrollChanged);
     super.dispose(); // OverlayPortal removes its owned overlay on unmount.
   }
 
@@ -286,10 +332,12 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
               right: info.overlaySize.width - row.right + recipe.toolbarRight,
               child: MouseRegion(
                 onEnter: (_) {
-                  if (!toolbarHovered) setState(() => toolbarHovered = true);
+                  if (!toolbarHovered)
+                    attentionChanged(() => toolbarHovered = true);
                 },
                 onExit: (_) {
-                  if (toolbarHovered) setState(() => toolbarHovered = false);
+                  if (toolbarHovered)
+                    attentionChanged(() => toolbarHovered = false);
                 },
                 child: ExcludeSemantics(
                   excluding: !recipe.toolbarVisible,
@@ -297,7 +345,10 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                     ignoring: !recipe.toolbarVisible,
                     child: Opacity(
                       opacity: recipe.toolbarVisible ? 1 : 0,
-                      child: widget.toolbar!,
+                      child: KeyedSubtree(
+                        key: toolbarKey,
+                        child: widget.toolbar!,
+                      ),
                     ),
                   ),
                 ),
@@ -314,18 +365,36 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     RaftMessageRowRecipe recipe,
     Widget child,
   ) {
-    if (widget.coarsePointer ||
-        widget.toolbar == null ||
-        !TickerMode.valuesOf(context).enabled) {
+    if (widget.coarsePointer || widget.toolbar == null || !tickerEnabled) {
+      portalMounted = false;
       return child;
     }
-    // Detachment clears the controller visibility. A re-enabled retained row
-    // owns a newly mounted portal, which must reopen explicitly.
-    if (!portal.isShowing) portal.show();
+    // A retained route/density change remounts a detached portal. Its unattached
+    // controller can publish the current attention before the first layout.
+    if (!portalMounted && toolbarActive && !portal.isShowing) portal.show();
+    portalMounted = true;
+    // Keep the wrapper stable when attention changes: inserting/removing it
+    // would remount rich message state. Hidden portals mount no overlay child.
     return OverlayPortal.overlayChildLayoutBuilder(
       controller: portal,
-      overlayChildBuilder: (context, info) => overlay(context, info, recipe),
-      child: child,
+      overlayChildBuilder: (context, info) => toolbarActive
+          ? overlay(context, info, recipe)
+          : const SizedBox.shrink(),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          child,
+          // CSS opacity hides paint, not keyboard traversal. Retain the owned
+          // action nodes offstage while idle, and move the same subtree into
+          // the portal when its keyboard focus reveals the strip.
+          if (!toolbarActive)
+            ExcludeSemantics(
+              child: Offstage(
+                child: KeyedSubtree(key: toolbarKey, child: widget.toolbar!),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -425,14 +494,14 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       child: Focus(
         canRequestFocus: false,
         onFocusChange: (value) {
-          if (focused != value) setState(() => focused = value);
+          if (focused != value) attentionChanged(() => focused = value);
         },
         child: MouseRegion(
           onEnter: (_) {
-            if (!hovered) setState(() => hovered = true);
+            if (!hovered) attentionChanged(() => hovered = true);
           },
           onExit: (_) {
-            if (hovered) setState(() => hovered = false);
+            if (hovered) attentionChanged(() => hovered = false);
           },
           child: GestureDetector(
             onTap: widget.onTap,
