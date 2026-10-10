@@ -89,3 +89,31 @@ Widget mountedSidebarPreview() {
     ),
   );
 }
+
+@RaftPreviews(
+  'Mounted channel unread, mute and draft states',
+  size: Size(390, 240),
+)
+Widget sidebarUnreadIndicatorsPreview() => Padding(
+  padding: const EdgeInsets.all(8),
+  child: Column(
+    children: [
+      for (final (name, joined, muted, unread, draft) in [
+        ('general', true, false, 4, false),
+        ('muted channel', true, true, 104, false),
+        ('unjoined channel', false, false, 8, false),
+        ('draft channel', true, false, 0, true),
+      ])
+        RaftNavItem(
+          label: name,
+          glyph: RaftGlyph.hash,
+          conversationKind: RaftConversationNavKind.channel,
+          joined: joined,
+          activityMuted: muted,
+          unread: unread,
+          hasDraft: draft,
+          onTap: () {},
+        ),
+    ],
+  ),
+);
