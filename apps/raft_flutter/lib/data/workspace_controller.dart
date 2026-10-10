@@ -1822,7 +1822,8 @@ class WorkspaceController extends ChangeNotifier {
     channelGeneration++;
     threadGeneration++;
     final selectionAtStart = channelGeneration,
-        threadAtStart = threadGeneration;
+        threadAtStart = threadGeneration,
+        navigationAtStart = navigationRevision;
     notifyListeners();
     final generation = client.generation;
     final replyIdentity = _syncIdentity();
@@ -1964,7 +1965,12 @@ class WorkspaceController extends ChangeNotifier {
         channel = selected;
         await _restoreDraft(selected.id);
       } else {
-        await selectChannel(selected);
+        // A location the app root applied over the cache-painted workspace
+        // (e.g. a remembered non-chat page) keeps its section.
+        await selectChannel(
+          selected,
+          navigate: navigationAtStart == navigationRevision,
+        );
       }
     } else if (heldAuthorityChanged &&
         channel != null &&
