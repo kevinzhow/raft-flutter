@@ -21,6 +21,7 @@ import '../data/workspace_mode_store.dart';
 import 'workspace_grid_view.dart';
 import 'workspace_mode_settings_card.dart';
 import '../data/personal_presentation.dart';
+import '../data/device_preferences.dart';
 import '../data/sidebar_disclosure.dart';
 import 'message_reference_directory.dart';
 import 'chat_agent_presentation.dart';
@@ -252,6 +253,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
   }
 
+  /// Source loads the first Saved page when the connection is established, so
+  /// earlier saves are known before the Saved page is visited.
+  void syncSavedIds() => SavedCountStore.of(w).sync();
+
   late SourceMobileAppBadge mobileAppBadge;
   void syncMobileAppBadge() =>
       unawaited(mobileAppBadge.bind(w.client.origin, w.client.user?.id));
@@ -344,6 +349,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     syncPresentation();
     w.addListener(syncSidebarDisclosure);
     syncSidebarDisclosure();
+    w.addListener(syncSavedIds);
+    syncSavedIds();
     mainSelection.addListener(chatSelectionChanged);
     threadSelection.addListener(chatSelectionChanged);
     restorePanels();
@@ -418,13 +425,24 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     ]);
     if (bridgeScope == next) return;
     bridgeScope = next;
-    bridgeEnabled = false;
-    providerEnabled = false;
     final request = ++bridgeRequest;
     if (w.server == null ||
         (!w.can('manageIntegrations') && !w.can('manageExternalAuth'))) {
+      bridgeEnabled = false;
+      providerEnabled = false;
       return;
     }
+    // Last evaluation under this identity: the first frame already has the
+    // final navigation, and the fresh evaluation replaces it in place.
+    final memory = [
+      w.client.origin,
+      w.client.user?.id,
+      w.server?.id,
+      w.server?.string('role'),
+    ];
+    bridgeEnabled = FeatureFlagMemory.read(memory, 'slack_bridge_v0') ?? false;
+    providerEnabled =
+        FeatureFlagMemory.read(memory, 'provider_connections_v0') ?? false;
     () async {
       try {
         final result = await w.client.post(
@@ -443,14 +461,20 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         final rows = result is Map
             ? result['evaluations'] as List? ?? []
             : const [];
+        final provider = rows.whereType<Map>().any(
+          (f) => f['key'] == 'provider_connections_v0' && f['enabled'] == true,
+        );
+        final bridge = rows.whereType<Map>().any(
+          (f) => f['key'] == 'slack_bridge_v0' && f['enabled'] == true,
+        );
+        FeatureFlagMemory.write(memory, {
+          'provider_connections_v0': provider,
+          'slack_bridge_v0': bridge,
+        });
+        if (provider == providerEnabled && bridge == bridgeEnabled) return;
         setState(() {
-          providerEnabled = rows.whereType<Map>().any(
-            (f) =>
-                f['key'] == 'provider_connections_v0' && f['enabled'] == true,
-          );
-          bridgeEnabled = rows.whereType<Map>().any(
-            (f) => f['key'] == 'slack_bridge_v0' && f['enabled'] == true,
-          );
+          providerEnabled = provider;
+          bridgeEnabled = bridge;
         });
       } catch (_) {
         /* Unresolved flags keep bridge navigation unavailable. */
@@ -500,6 +524,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       syncPresentation();
       w.addListener(syncSidebarDisclosure);
       syncSidebarDisclosure();
+      oldWidget.controller.removeListener(syncSavedIds);
+      w.addListener(syncSavedIds);
+      syncSavedIds();
       oldWidget.controller.removeListener(syncSidebarAgents);
       oldWidget.controller.removeListener(syncSharing);
       oldWidget.controller.removeListener(syncBridgeFlag);
@@ -532,19 +559,29 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
+  void applyPanels(SharedPreferences prefs) {
+    sidebarWidth = (prefs.getDouble('raft.layout.sidebarWidth') ?? 240).clamp(
+      180,
+      320,
+    );
+    threadWidth = prefs.getDouble('raft.layout.threadWidth') ?? 400;
+    masterWideWidth = prefs.getDouble('raft.layout.masterWideWidth') ?? 560;
+    masterCompactWidth =
+        prefs.getDouble('raft.layout.masterCompactWidth') ?? 320;
+  }
+
+  /// Saved panel widths come from the preferences preloaded at app start, so
+  /// the first frame already has them; only an unloaded store falls back to
+  /// an asynchronous read.
   Future<void> restorePanels() async {
+    final loaded = DevicePreferences.current;
+    if (loaded != null) {
+      applyPanels(loaded);
+      return;
+    }
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
-    setState(() {
-      sidebarWidth = (prefs.getDouble('raft.layout.sidebarWidth') ?? 240).clamp(
-        180,
-        320,
-      );
-      threadWidth = prefs.getDouble('raft.layout.threadWidth') ?? 400;
-      masterWideWidth = prefs.getDouble('raft.layout.masterWideWidth') ?? 560;
-      masterCompactWidth =
-          prefs.getDouble('raft.layout.masterCompactWidth') ?? 320;
-    });
+    setState(() => applyPanels(prefs));
   }
 
   void saveMasterPanel(double value, bool compact) {
@@ -591,6 +628,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.removeListener(syncChannelSearch);
     w.removeListener(syncPresentation);
     w.removeListener(syncSidebarDisclosure);
+    w.removeListener(syncSavedIds);
     sidebarDisclosure.dispose();
     liveActivities.dispose();
     activityDirectory.dispose();

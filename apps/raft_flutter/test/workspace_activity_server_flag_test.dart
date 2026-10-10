@@ -374,20 +374,26 @@ void main() {
               expect(find.byType(RaftActivityScopeToolbar), findsNothing);
               expect(find.byType(RaftSegmentedControl<String>), findsOneWidget);
               expect(
-                api.calls.where(
-                  (c) => [
-                    '/channels/saved',
-                    '/channels/inbox/done',
-                  ].contains(c.path),
-                ),
+                api.calls.where((c) => c.path == '/channels/inbox/done'),
                 isEmpty,
+              );
+              // Source loads the first Saved page on connect (saved ids and
+              // the badge); the disabled Activity page adds no read of its own.
+              expect(
+                api.calls
+                    .where((c) => c.path == '/channels/saved')
+                    .map((c) => c.queryParameters),
+                [
+                  {'limit': 20, 'offset': 0, 'sort': 'desc'},
+                ],
               );
               return;
             }
             expect(
               find.byType(RaftActivityScopeToolbar),
               findsOneWidget,
-              reason: 'The accepted server flag must mount Source enabled controls.',
+              reason:
+                  'The accepted server flag must mount Source enabled controls.',
             );
             final toolbar = tester.widget<RaftActivityScopeToolbar>(
               find.byType(RaftActivityScopeToolbar),

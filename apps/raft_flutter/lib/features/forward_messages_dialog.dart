@@ -166,9 +166,12 @@ class _ForwardMessagesDialogState extends State<ForwardMessagesDialog> {
   void changedSearch(String _) {
     ++request;
     debounce?.cancel();
+    final empty = search.text.trim().isEmpty;
     setState(() {
-      targets = [];
-      loading = search.text.trim().isNotEmpty;
+      // Results stay until the new ones arrive (replaced in place); only an
+      // emptied query returns to the idle, empty list.
+      if (empty) targets = [];
+      loading = !empty;
       error = null;
     });
     debounce = Timer(const Duration(milliseconds: 250), loadTargets);
@@ -195,6 +198,7 @@ class _ForwardMessagesDialogState extends State<ForwardMessagesDialog> {
       denied(e);
       if (current) {
         setState(() {
+          targets = [];
           loading = false;
           error = '$e';
         });
@@ -306,7 +310,11 @@ class _ForwardMessagesDialogState extends State<ForwardMessagesDialog> {
                 ),
               ),
             if (error != null) Semantics(liveRegion: true, child: Text(error!)),
-            if (loading) const LinearProgressIndicator(),
+            // ds-allow: reserves the progress bar's height so it appearing never moves the rows.
+            SizedBox(
+              height: 4,
+              child: loading ? const LinearProgressIndicator() : null,
+            ),
             Expanded(
               child: ListView(
                 children: [

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/task_surface.dart';
@@ -51,6 +52,7 @@ Future<(WorkspaceController, ParentAdapter)> parentFixture(
   WidgetTester t,
 ) async {
   SharedPreferences.setMockInitialValues({});
+  DevicePreferences.reset();
   final api = ParentAdapter();
   api.routes['POST /auth/login'] = (_) => {
     'accessToken': 'fixture-only',

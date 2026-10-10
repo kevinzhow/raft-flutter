@@ -106,6 +106,8 @@ class SavedCountStore extends ChangeNotifier {
         _move(-delta);
         notifyListeners();
         w.notifyListeners();
+        // A first read retired by this change has to be asked again.
+        if (count == null) unawaited(_load());
       }
       rethrow;
     } finally {
@@ -118,9 +120,9 @@ class SavedCountStore extends ChangeNotifier {
   /// Moves the badge by [delta] and retires any total read still in flight,
   /// whose answer predates this change.
   void _move(int delta) {
-    if (delta == 0 || count == null) return;
-    count = (count! + delta).clamp(0, 9007199254740991);
+    if (delta == 0) return;
     ++_request;
+    if (count != null) count = (count! + delta).clamp(0, 9007199254740991);
   }
 
   /// Adopts the current authority; callers rebuild themselves afterwards.
@@ -145,9 +147,28 @@ class SavedCountStore extends ChangeNotifier {
     try {
       final value = await w.query(
         '/channels/saved',
-        query: {'limit': 1, 'offset': 0, 'sort': 'desc'},
+        query: {'limit': 20, 'offset': 0, 'sort': 'desc'},
       );
       if (ticket != _request || captured != authority) return;
+      // Source `loadSaved` on connect: the first page also tells which
+      // messages are already saved, so an earlier save shows "Remove from
+      // Saved" without visiting the Saved page. A save/unsave still in
+      // flight owns its id.
+      final rows = value is Map ? value['saved'] : null;
+      var known = false;
+      if (rows is List) {
+        for (final row in rows) {
+          final id = row is Map ? row['messageId'] : null;
+          if (id is String && !_tickets.containsKey(id) && _ids.add(id)) {
+            known = true;
+          }
+        }
+      }
+      if (known) {
+        notifyListeners();
+        // Message rows read the saved state through the workspace listener.
+        w.notifyListeners();
+      }
       final total = value is Map
           ? value['globalTotal'] ?? value['total']
           : null;

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
+import '../data/device_preferences.dart';
 import '../data/workspace_controller.dart';
 
 /// ThreadsInbox's mounted activity_sidebar_inbox_v0 gate. Unknown/failed
@@ -21,6 +22,7 @@ class DesktopActivityFlag extends ChangeNotifier {
   String? scope;
   bool enabled = false, ended = false;
   int request = 0;
+  static const flag = 'activity_sidebar_inbox_v0';
   String get authority => jsonEncode([
     w.client.origin,
     w.client.generation,
@@ -28,7 +30,22 @@ class DesktopActivityFlag extends ChangeNotifier {
     w.server?.id,
     w.server?.string('role'),
   ]);
+
+  /// Device-stable identity of the last evaluation (no session generation),
+  /// so the flag evaluated in an earlier launch gives the first frame its
+  /// final breakpoint.
+  List<Object?> get memoryScope => [
+    w.client.origin,
+    w.client.user?.id,
+    w.server?.id,
+    w.server?.string('role'),
+  ];
+  bool remembered() =>
+      w.server != null &&
+      w.client.user != null &&
+      (FeatureFlagMemory.read(memoryScope, flag) ?? false);
   bool masterDetail(double width) => width >= (enabled ? 768 : 1024);
+
   /// A new principal/server/role retires the evaluated presentation at once.
   /// [reevaluate] (server:updated under the same authority) keeps the
   /// accepted value until the fresh evaluation lands, so the Activity page is
@@ -40,7 +57,10 @@ class DesktopActivityFlag extends ChangeNotifier {
     scope = next;
     final ticket = ++request;
     if (!same) {
-      enabled = false;
+      // The last evaluation under this identity (if any) stays the
+      // presentation until the fresh one lands, so the breakpoint does not
+      // jump after load.
+      enabled = remembered();
       notifyListeners();
     }
     if (w.server != null && w.client.user != null) {
@@ -76,6 +96,7 @@ class DesktopActivityFlag extends ChangeNotifier {
                 row['key'] == 'activity_sidebar_inbox_v0' &&
                 row['enabled'] == true,
           );
+      FeatureFlagMemory.write(memoryScope, {flag: next});
       if (next == enabled) return;
       enabled = next;
       notifyListeners();
@@ -89,6 +110,7 @@ class DesktopActivityFlag extends ChangeNotifier {
           error is RaftApiException &&
           [401, 403].contains(error.status)) {
         enabled = false;
+        FeatureFlagMemory.write(memoryScope, {flag: false});
         notifyListeners();
       }
     }

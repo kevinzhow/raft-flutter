@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/device_preferences.dart';
 import 'package:raft_flutter/data/raft_navigation_history.dart';
 import 'package:raft_flutter/features/conversation_panel.dart';
 import 'package:raft_flutter/features/task_surface.dart';
@@ -145,7 +146,8 @@ void main() {
             expect(
               w.navigation.index,
               index,
-              reason: 'Source back chevron closes its legacy slot; no browser Back.',
+              reason:
+                  'Source back chevron closes its legacy slot; no browser Back.',
             );
             expect(w.navigationRevision, revision);
             expect(w.channel!.id, 'c1');
@@ -552,6 +554,9 @@ void main() {
           await t.runAsync(
             () => prefs.setString('slock:legacyTaskPanelWidth', saved),
           );
+          // App start preloads the preferences, so the dock's first frame
+          // already knows the saved width.
+          await t.runAsync(DevicePreferences.load);
           final held = Completer<Map>();
           api.routes['GET /tasks/channel/c1'] = (_) => held.future;
           w.navigation.navigateTask(
@@ -574,11 +579,16 @@ void main() {
           held.complete({
             'tasks': [legacyTask],
           });
-          await flush(t);
-          expect(
-            t.getSize(find.byKey(const ValueKey('legacy-task-panel'))).width,
-            saved == '450' ? 450 : 380,
-          );
+          // The dock is final from the frame it first exists: its width never
+          // passes through the 380 default on the way to the saved width.
+          final widths = <double>{};
+          for (var i = 0; i < 30; i++) {
+            await t.runAsync(() => Future<void>.delayed(Duration.zero));
+            await t.pump(const Duration(milliseconds: 16));
+            final panel = find.byKey(const ValueKey('legacy-task-panel'));
+            if (panel.evaluate().isNotEmpty) widths.add(t.getSize(panel).width);
+          }
+          expect(widths, {saved == '450' ? 450.0 : 380.0});
           expect(t.takeException(), isNull);
           await t.pumpWidget(const SizedBox.shrink());
           await t.pump(const Duration(milliseconds: 300));

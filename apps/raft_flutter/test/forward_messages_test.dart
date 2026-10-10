@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -23,6 +24,9 @@ Map<String, dynamic> _success(String id) => {
 
 class _Transport implements HttpClientAdapter {
   final writes = <Map<String, dynamic>>[];
+
+  /// Held search answers by query; absent queries answer at once.
+  final heldSearch = <String, Completer<List<String>>>{};
   @override
   Future<ResponseBody> fetch(
     RequestOptions o,
@@ -37,9 +41,11 @@ class _Transport implements HttpClientAdapter {
         'user': {'id': 'alice'},
       };
     } else if (o.path == '/messages/forward/targets/search') {
+      final held = heldSearch['${o.queryParameters['q']}'];
+      final ids = held == null ? ['c1', 'c2'] : await held.future;
       value = {
         'targets': [
-          for (final id in ['c1', 'c2'])
+          for (final id in ids)
             {
               'id': id,
               'channelId': id,
@@ -202,6 +208,68 @@ void main() {
       expect(t.writes[1], t.writes[0]);
       expect(find.byType(ForwardMessagesDialog), findsNothing);
       expect(find.text('Open'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'typing more keeps the current results until the new ones replace them',
+    (tester) async {
+      final t = _Transport()..heldSearch['ch'] = Completer<List<String>>();
+      final client = (await tester.runAsync(() async {
+        final c = RaftClient(
+          origin: 'https://example.invalid',
+          sessionStore: MemorySessionStore(),
+          transport: Dio()..httpClientAdapter = t,
+        );
+        await c.login('fixture', 'fixture');
+        return c;
+      }))!;
+      client.selectServer('s1');
+      final w = WorkspaceController(client)
+        ..server = RaftRecord({'id': 's1', 'role': 'owner'});
+      addTearDown(w.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.elegant),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => forwardMessages(context, w, [
+                  RaftMessage({'id': 'm1', 'messageType': 'chat'}),
+                ]),
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      final field = find.widgetWithText(TextField, 'Search channels or people');
+      await tester.enterText(field, 'c');
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('#c1'), findsOneWidget);
+      final rect = tester.getRect(find.text('#c1'));
+      // Keystroke two: the held request keeps the first results on screen,
+      // frame after frame, at the same place.
+      await tester.enterText(field, 'ch');
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(find.text('#c1'), findsOneWidget);
+        expect(find.text('#c2'), findsOneWidget);
+        expect(tester.getRect(find.text('#c1')), rect);
+      }
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      t.heldSearch['ch']!.complete(['c2', 'c3']);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('#c1'), findsNothing);
+      expect(find.text('#c3'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      // An emptied query returns to the idle, empty list.
+      await tester.enterText(field, '');
+      await tester.pump();
+      expect(find.text('#c2'), findsNothing);
     },
   );
   testWidgets(

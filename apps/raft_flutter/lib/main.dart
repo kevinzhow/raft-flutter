@@ -8,6 +8,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/device_preferences.dart';
 import 'data/workspace_controller.dart';
 import 'data/source_time_formatter.dart';
 import 'data/workspace_cache.dart';
@@ -32,6 +33,8 @@ final raftScreenshotKey = GlobalKey();
 Future<void> main([List<String> args = const []]) async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeSourceTimeFormatting();
+  // First frames read saved layout choices synchronously from this.
+  await DevicePreferences.load();
   runApp(ProviderScope(child: RaftApp(initialArguments: args)));
 }
 
@@ -145,6 +148,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         return;
       }
       final p = await SharedPreferences.getInstance();
+      DevicePreferences.adopt(p);
       origin = p.getString('raft.origin') ?? origin;
       appearance = RaftAppearance(
         mode: ThemeMode.values.byName(p.getString('raft.mode') ?? 'system'),

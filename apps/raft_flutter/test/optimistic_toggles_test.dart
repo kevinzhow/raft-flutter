@@ -386,6 +386,37 @@ void main() {
     expect(_badge(t), 5);
   });
 
+  testWidgets('a message saved earlier shows "Remove from Saved" without '
+      'visiting the Saved page (first Saved page loaded on connect)', (
+    t,
+  ) async {
+    final (w, api, _) = (await t.runAsync(_fixture))!;
+    addTearDown(w.dispose);
+    var saved = [
+      {'messageId': 'm1', 'channelId': 'c1'},
+    ];
+    api.routes['GET /channels/saved'] = (_) => (
+      200,
+      {'globalTotal': saved.length, 'total': saved.length, 'saved': saved},
+    );
+    api.routes['DELETE /channels/saved/m1'] = (_) {
+      saved = [];
+      return (200, {'ok': true});
+    };
+    await _mount(t, w);
+    expect(SavedCountStore.of(w).isSaved('m1'), isTrue);
+    final rect = t.getRect(find.byType(RaftMessageRow));
+    await t.longPressAt(Offset(rect.left + 2, rect.center.dy));
+    await t.pumpAndSettle();
+    expect(find.text('Remove from Saved'), findsOneWidget);
+    expect(find.text('Save Message'), findsNothing);
+    // Unsaving moves the id and the badge; the menu then offers Save again.
+    await t.tap(find.text('Remove from Saved'));
+    await _settle(t);
+    expect(SavedCountStore.of(w).isSaved('m1'), isFalse);
+    expect(_badge(t), 0);
+  });
+
   testWidgets('the hover toolbar shows the saved state', (t) async {
     final (w, api, _) = (await t.runAsync(_fixture))!;
     addTearDown(w.dispose);

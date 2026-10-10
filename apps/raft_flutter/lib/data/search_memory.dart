@@ -4,6 +4,8 @@ import 'dart:math' as math;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'device_preferences.dart';
+
 /// Personal, local convenience state. No entity labels, messages or API payloads
 /// are retained. Source: searchHome.ts at pinned Web26f77ef.
 abstract interface class SearchMemoryStorage {
@@ -11,7 +13,20 @@ abstract interface class SearchMemoryStorage {
   Future<void> write(String key, String value);
 }
 
-class PreferencesSearchMemoryStorage implements SearchMemoryStorage {
+/// Storage that can answer from memory once preloaded, so a first frame can
+/// use the stored value without waiting for an asynchronous read.
+abstract interface class SynchronousSearchMemoryStorage {
+  /// Whether [readSync] reflects the real stored values.
+  bool get ready;
+  String? readSync(String key);
+}
+
+class PreferencesSearchMemoryStorage
+    implements SearchMemoryStorage, SynchronousSearchMemoryStorage {
+  @override
+  bool get ready => DevicePreferences.current != null;
+  @override
+  String? readSync(String key) => DevicePreferences.current?.getString(key);
   @override
   Future<String?> read(String key) async =>
       (await SharedPreferences.getInstance()).getString(key);

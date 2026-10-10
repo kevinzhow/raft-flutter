@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/device_preferences.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
@@ -75,26 +76,33 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
   void initState() {
     super.initState();
     synchronize();
-    unawaited(loadWidth());
+    // The preloaded width is used by the first frame; an unloaded store
+    // falls back to one asynchronous read.
+    final loaded = DevicePreferences.current;
+    if (loaded != null) {
+      legacyWidth = savedWidth(loaded) ?? legacyWidth;
+    } else {
+      unawaited(loadWidth());
+    }
   }
 
-  Future<void> loadWidth() async {
-    final revision = widthRevision;
-    final prefs = await SharedPreferences.getInstance();
+  double? savedWidth(SharedPreferences prefs) {
     final stored = prefs.get(widthPreference);
     final saved = stored is num
         ? stored.toDouble()
         : stored is String
         ? double.tryParse(stored)
         : null;
-    if (!mounted ||
-        revision != widthRevision ||
-        saved == null ||
-        !saved.isFinite ||
-        saved < 320 ||
-        saved > 560) {
-      return;
-    }
+    return saved == null || !saved.isFinite || saved < 320 || saved > 560
+        ? null
+        : saved;
+  }
+
+  Future<void> loadWidth() async {
+    final revision = widthRevision;
+    final prefs = await SharedPreferences.getInstance();
+    final saved = savedWidth(prefs);
+    if (!mounted || revision != widthRevision || saved == null) return;
     setState(() => legacyWidth = saved);
   }
 

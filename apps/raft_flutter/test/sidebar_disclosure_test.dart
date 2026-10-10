@@ -5,6 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/search_memory.dart';
 import 'package:raft_flutter/data/sidebar_disclosure.dart';
 
+class _SyncStorage extends _Storage implements SynchronousSearchMemoryStorage {
+  @override
+  bool ready = true;
+  @override
+  String? readSync(String key) => values[key];
+}
+
 class _Storage implements SearchMemoryStorage {
   final values = <String, String>{};
   final pending = <String, Completer<String?>>{};
@@ -17,6 +24,26 @@ class _Storage implements SearchMemoryStorage {
 }
 
 void main() {
+  test('preloaded storage answers in the same call, before any await', () {
+    final storage = _SyncStorage()
+      ..values['raft:sidebar-disclosure:["https://fixture.invalid","alice","s"]'] =
+          '{"system:channels":true}';
+    final store = SidebarDisclosureStore(storage: storage);
+    var notified = 0;
+    store.addListener(() => notified++);
+    unawaited(
+      store.bind(
+        origin: 'https://fixture.invalid',
+        principal: 'alice',
+        server: 's',
+        scope: 'a',
+      ),
+    );
+    expect(store.collapsed, {'system:channels': true});
+    expect(notified, greaterThan(0));
+    store.dispose();
+  });
+
   test(
     'disclosure persists booleans and isolates account, origin and workspace',
     () async {

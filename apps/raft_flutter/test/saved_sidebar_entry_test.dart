@@ -77,7 +77,7 @@ void main() {
         ..server = RaftRecord({'id': 's', 'role': 'owner'});
       await host(t, controller);
       expect(t.widget<RaftNavItem>(find.byType(RaftNavItem)).count, 105);
-      expect(client.reads.single, {'limit': 1, 'offset': 0, 'sort': 'desc'});
+      expect(client.reads.single, {'limit': 20, 'offset': 0, 'sort': 'desc'});
       client.total = 106;
       await controller.command(
         'POST',

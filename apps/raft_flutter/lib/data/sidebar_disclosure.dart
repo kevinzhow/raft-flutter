@@ -30,8 +30,23 @@ class SidebarDisclosureStore extends ChangeNotifier {
     authority = scope;
     final ticket = ++revision;
     collapsed.clear();
+    if (nextKey == null) {
+      notifyListeners();
+      return;
+    }
+    // Preloaded preferences answer in the same frame, so a collapsed section
+    // is never rendered expanded first.
+    final Object sync = storage;
+    if (sync is SynchronousSearchMemoryStorage && sync.ready) {
+      String? stored;
+      try {
+        stored = sync.readSync(nextKey);
+      } catch (_) {}
+      _adopt(stored);
+      notifyListeners();
+      return;
+    }
     notifyListeners();
-    if (nextKey == null) return;
     String? raw;
     try {
       raw = await storage.read(nextKey);
@@ -41,6 +56,11 @@ class SidebarDisclosureStore extends ChangeNotifier {
     if (closed || ticket != revision || key != nextKey || authority != scope) {
       return;
     }
+    _adopt(raw);
+    notifyListeners();
+  }
+
+  void _adopt(String? raw) {
     try {
       final value = raw == null ? null : jsonDecode(raw);
       if (value is Map) {
@@ -55,7 +75,6 @@ class SidebarDisclosureStore extends ChangeNotifier {
     } catch (_) {
       // Malformed optional device preferences retain expanded defaults.
     }
-    notifyListeners();
   }
 
   bool setExpanded(String scope, String group, bool expanded) {
