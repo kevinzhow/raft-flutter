@@ -208,7 +208,10 @@ ParityCase agentDetailParityCase(
         // VisualTestingCases.primeAgentDetailStores supplies this created
         // agent to EVERY detail variant, independently of the /agents mock.
         // Match that public seed rather than silently using the variant's
-        // empty wire createdAgents list in the real-screen detail host.
+        // empty wire createdAgents list in the real-screen detail host. The
+        // seed lives in the agent store React reads, so it is applied to the
+        // /agents list row too: Flutter's detail composes the shared entity
+        // directory row over GET /agents/:id, like the Web agent store.
         final seededAgent = {
           ...wire.agent(agentKey),
           'createdAgents': wire.agent('productUx')['createdAgents'],
@@ -218,6 +221,11 @@ ParityCase agentDetailParityCase(
               ? ScreenFixtureClient.pending
               : p == '/agents/${seededAgent['id']}'
               ? seededAgent
+              : p == '/agents'
+              ? [
+                  for (final row in wire.common(m, p, q)! as List)
+                    (row as Map)['id'] == seededAgent['id'] ? seededAgent : row,
+                ]
               : wire.common(m, p, q),
           user: wire.me(),
           server: _serverId,
@@ -369,6 +377,7 @@ final ParityCase _loginSigning = ParityCase(
               ],
             }
           : {},
+      origin: origin,
     ),
   ),
   interact: (t, ctx) async {

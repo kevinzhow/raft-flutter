@@ -325,10 +325,16 @@ class ParityThreadFixture {
       },
     );
     final channels = composerChannels.map(RaftChannel.new).toList();
-    return WorkspaceController(client)
+    final w = WorkspaceController(client)
       ..server = RaftRecord(serverRecord)
       ..channels = channels
       ..channel = channels.first;
+    // The app preloads the server-scoped entity directory when a server is
+    // selected (WorkspaceController.selectServer); the composer's people
+    // come from it, like React's agentStore/serverStore seeded by
+    // primeVisualStores.
+    unawaited(w.entityDirectory.preload());
+    return w;
   }
 
   /// primeNavigationVisualStores: channel-home (首页专修) + channel-product,

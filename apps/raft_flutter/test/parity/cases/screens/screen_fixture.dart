@@ -12,15 +12,22 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 
 /// Answers one request. Return [ScreenFixtureClient.pending] to keep the
 /// request in flight forever (React's delayed `route.fulfill`).
-typedef ScreenRoute =
-    Object? Function(String method, String path, Map<String, dynamic>? query);
+typedef ScreenRoute = Object? Function(
+  String method,
+  String path,
+  Map<String, dynamic>? query,
+);
 
 class ScreenFixtureClient extends RaftClient {
-  ScreenFixtureClient(this.route, {Map<String, dynamic>? user, String? server})
-    : super(
-        origin: 'https://parity-fixture.invalid',
-        sessionStore: MemorySessionStore(),
-      ) {
+  /// [origin] matters to code that inspects the client origin before a
+  /// request (AuthView's Android local-network check resolves non-loopback
+  /// hosts with real DNS, which never completes under the test clock).
+  ScreenFixtureClient(
+    this.route, {
+    Map<String, dynamic>? user,
+    String? server,
+    super.origin = 'https://parity-fixture.invalid',
+  }) : super(sessionStore: MemorySessionStore()) {
     if (user != null) this.user = RaftRecord(user);
     if (server != null) selectServer(server);
   }
@@ -136,7 +143,10 @@ class ScreenWire {
       'runtime': a['runtime'],
       'reasoningEffort': a['reasoningEffort'],
       'executionMode': a['executionMode'],
-      'envVars': {'RAFT_PROFILE': 'product-ux', 'SLOCK_VISUAL_PROVIDER': 'react'},
+      'envVars': {
+        'RAFT_PROFILE': 'product-ux',
+        'SLOCK_VISUAL_PROVIDER': 'react',
+      },
       'machineId': machineIdFor(a),
       'sessionId': a['sessionId'],
       'runtimeProfile': null,
@@ -231,8 +241,7 @@ class ScreenWire {
       'timestamp': 1781872140000,
       'entry': {
         'kind': 'thinking',
-        'text':
-            'Comparing React and Android Members Activity screenshots before publishing.',
+        'text': 'Comparing React and Android Members Activity screenshots before publishing.',
       },
     },
     {
@@ -240,8 +249,7 @@ class ScreenWire {
       'entry': {
         'kind': 'tool_start',
         'toolName': 'shell',
-        'toolInput':
-            'pnpm --filter @botiverse/raft-visual-testing exec slock-visual diff --case screens.members.agent-detail.activity',
+        'toolInput': 'pnpm --filter @botiverse/raft-visual-testing exec slock-visual diff --case screens.members.agent-detail.activity',
       },
     },
     {
@@ -249,8 +257,7 @@ class ScreenWire {
       'entry': {
         'kind': 'slock_action',
         'title': 'Posted status update',
-        'text':
-            'Reported capture progress in #product:d4870bc3 and kept #225 in review.',
+        'text': 'Reported capture progress in #product:d4870bc3 and kept #225 in review.',
       },
     },
   ];
