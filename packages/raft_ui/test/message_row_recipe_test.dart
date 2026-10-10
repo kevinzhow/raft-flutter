@@ -160,7 +160,7 @@ void main() {
               )
               .first,
         );
-        expect(strip().opacity, 0);
+        expect(find.byType(RaftMessageToolbar), findsNothing);
         final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: const Offset(2, 300));
         await mouse.moveTo(tester.getCenter(find.byKey(bodyKey)));
@@ -173,7 +173,7 @@ void main() {
         );
         await mouse.moveTo(const Offset(2, 300));
         await tester.pump();
-        expect(strip().opacity, 0);
+        expect(find.byType(RaftMessageToolbar), findsNothing);
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
         expect(strip().opacity, 1);
