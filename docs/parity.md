@@ -452,6 +452,36 @@ runtime chip (its own surface, fixture has no snapshot), CreateAgentDialog
 from "Create" (covered by the official create-agent cases), the Add
 Computer "connected" step (needs a live socket event).
 
+### Computers result (run 20261010T125257Z)
+
+Report: <http://100.109.192.23:18931/raft_flutter_parity_ext/latest/>
+(`raft_flutter_parity_ext/<stamp>`; the official `raft_flutter_parity/` is
+untouched).
+
+| | React | Flutter | passing (>96%) | failing | Flutter capture failed |
+| --- | --- | --- | --- | --- | --- |
+| before (pre-port UI, same suite) | 117 | 18 | 3 | 15 | 99 (no matching section / control) |
+| after | 117 | 117 | 23 | 94 | 0 |
+
+Before, the Computer detail was a Material `ListView` (Status / Hostname /
+OS / version tiles and an action list) and the rail rows were one-line nav
+items, so 99 section, state, interaction and dialog cases had nothing to
+capture. After the port every case renders the same structure; all 117
+crops have identical sizes on both sides.
+
+Reading the numbers: the official metric is exact-pixel equality, so text
+anti-aliasing (light-on-dark mono code, Chromium vs Skia stem darkening)
+and Chromium's pixel snapping of borders at fractional layout positions
+(the Description line box is 22.75px, so everything below it sits at .75)
+keep text-dense crops near 86–95% even when geometry matches. The
+remaining delta>24 mismatch per case is 0.5–11%; the highest are the
+small row/agent crops (one row of text over a 50px crop) and the bulk bar.
+Remaining channel deltas of 1 (e.g. `brutal-cyan/15`, `info-muted` tints)
+are oklch→sRGB rounding. Side-by-side review of the list, every detail
+section, the state variants and the dialogs found no remaining layout,
+copy, control or state difference beyond sub-pixel offsets (<=0.5px) of a
+few text runs.
+
 ## Known harness limitations
 
 * React baseline fonts deviate from the official spec on purpose (production
