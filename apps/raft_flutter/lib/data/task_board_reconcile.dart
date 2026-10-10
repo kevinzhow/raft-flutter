@@ -23,6 +23,16 @@ Map<String, dynamic> mergeTaskFields(
 int compareTaskNumbers(Map a, Map b) =>
     (b['taskNumber'] as num? ?? 0).compareTo(a['taskNumber'] as num? ?? 0);
 
+/// [lane] as Source TasksPanel renders it: newest task number first. A lane
+/// that already is stays the same list.
+List<Map<String, dynamic>> sortedLane(List<Map<String, dynamic>> lane) {
+  var sorted = true;
+  for (var i = 1; i < lane.length && sorted; i++) {
+    sorted = compareTaskNumbers(lane[i - 1], lane[i]) <= 0;
+  }
+  return sorted ? lane : (List.of(lane)..sort(compareTaskNumbers));
+}
+
 /// Insert [task] into an ordered lane at its task-number position. A task
 /// that sorts past the loaded window of a lane with more pages is left to
 /// that page (null), so paging neither skips nor duplicates it.

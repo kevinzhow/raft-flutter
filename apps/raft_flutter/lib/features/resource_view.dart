@@ -4764,10 +4764,11 @@ class _ResourceViewState extends State<ResourceView> {
                                   spacing: RaftResourceMetrics
                                       .gap2_5, // taskBoardColumn items
                                   children: [
-                                    for (final row
-                                        in (lanes[status] ?? []).where(
-                                          matchesTask,
-                                        ))
+                                    for (final row in sortedLane(
+                                      (lanes[status] ?? [])
+                                          .where(matchesTask)
+                                          .toList(),
+                                    ))
                                       KeyedSubtree(
                                         // The drag source follows its task
                                         // when rows land above it.
