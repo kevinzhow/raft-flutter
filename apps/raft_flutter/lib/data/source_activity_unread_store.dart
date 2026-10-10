@@ -315,7 +315,8 @@ class SourceActivityUnreadStore extends ChangeNotifier {
   Future<void> _load(String authority, int revision, int request) async {
     final readGeneration = workspace.readState.generation;
     try {
-      final value = await workspace.client.get(
+      // Shared with a mounted Activity page reconciling the same window.
+      final value = await workspace.sharedQuery(
         '/channels/inbox',
         query: {'filter': 'all', 'sort': 'desc', 'limit': 30, 'offset': 0},
       );

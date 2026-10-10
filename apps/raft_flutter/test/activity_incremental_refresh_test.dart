@@ -50,6 +50,13 @@ class ActivityClient extends RaftClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
   }) async {
+    if (path == '/auth/login') {
+      return {
+        'accessToken': 'fixture-only',
+        'refreshToken': 'fixture-only',
+        'user': {'id': 'alice'},
+      };
+    }
     posts.add('$method $path');
     bodies.add(data);
     return <String, dynamic>{};

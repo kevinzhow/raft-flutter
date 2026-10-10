@@ -2789,6 +2789,50 @@ class WorkspaceController extends ChangeNotifier {
 
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) =>
       client.get(path, query: query);
+
+  final _sharedReads = <String, Future<dynamic>>{};
+
+  /// Coalesce identical concurrent reads of the same window. The Activity
+  /// page and the Activity attention badge both reconcile the inbox 150 ms
+  /// after the same socket event; they now share one request. Every caller
+  /// receives its own copy of the decoded response.
+  Future<dynamic> sharedQuery(String path, {Map<String, dynamic>? query}) {
+    final params = query == null
+        ? null
+        : (query.keys.toList()..sort()).map((k) => [k, query[k]]).toList();
+    final key = jsonEncode([
+      client.origin,
+      client.generation,
+      client.user?.id,
+      client.serverId,
+      path,
+      params,
+    ]);
+    var pending = _sharedReads[key];
+    if (pending == null) {
+      final started = pending = this.query(path, query: query);
+      _sharedReads[key] = started;
+      unawaited(
+        started
+            .then<void>((_) {}, onError: (Object _, StackTrace _) {})
+            .whenComplete(() {
+              if (identical(_sharedReads[key], started)) {
+                _sharedReads.remove(key);
+              }
+            }),
+      );
+    }
+    return pending.then(_copyDecoded);
+  }
+
+  static dynamic _copyDecoded(dynamic value) => switch (value) {
+    Map() => <String, dynamic>{
+      for (final MapEntry(:key, :value) in value.entries)
+        '$key': _copyDecoded(value),
+    },
+    List() => [for (final item in value) _copyDecoded(item)],
+    _ => value,
+  };
   int savedRevision = 0;
   Future<dynamic> command(String method, String path, {dynamic data}) async {
     final generation = client.generation,

@@ -257,8 +257,19 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       unawaited(mobileAppBadge.bind(w.client.origin, w.client.user?.id));
 
   late SourceActivityUnreadStore activityUnread;
+  String? presentedAttention;
   void activityUnreadChanged() {
     if (!mounted) return;
+    // The workspace presents only the attention dot and the store authority
+    // captured by the Activity page; accepted windows that change neither
+    // do not rebuild the whole workspace.
+    final next = jsonEncode([
+      activityUnread.hasAttention,
+      activityUnread.scope,
+      activityUnread.authorityEpoch,
+    ]);
+    if (next == presentedAttention) return;
+    presentedAttention = next;
     if (SchedulerBinding.instance.schedulerPhase ==
         SchedulerPhase.persistentCallbacks) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

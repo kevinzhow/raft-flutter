@@ -1193,7 +1193,9 @@ class _ResourceViewState extends State<ResourceView> {
               entry.key: entry.value,
         },
       ]);
-      var value = await w.query(path, query: params);
+      var value = path == '/channels/inbox'
+          ? await w.sharedQuery(path, query: params)
+          : await w.query(path, query: params);
       if (!accepts(scope, request)) return;
       if (widget.section == 'activity' && filter != 'saved' && value is Map) {
         value = activityFollowState.window(value);
