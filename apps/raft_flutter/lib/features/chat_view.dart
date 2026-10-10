@@ -181,6 +181,23 @@ class _RaftChatViewState extends State<RaftChatView>
     }
   }
 
+  /// Whether this diff inserts rows on the side of the list that moves the
+  /// reader's rows: older rows at the top of a top-anchored (thread) list,
+  /// newer rows at offset 0 of the bottom-anchored (channel) list. Older
+  /// history in the channel grows away at the far end and must not be
+  /// "corrected" at all (an estimated correction could only move it).
+  bool insertsShiftReader(List<chat.Message> projected) {
+    // A top-anchored thread also shifts on its loading row and late
+    // extents; keep holding there (structural fix pending).
+    if (!bottomAnchored) return true;
+    final current = adapter.messages;
+    if (current.isEmpty || projected.isEmpty) return false;
+    final firstAt = projected.indexWhere((m) => m.id == current.first.id);
+    final lastAt = projected.indexWhere((m) => m.id == current.last.id);
+    if (firstAt < 0 || lastAt < 0) return true;
+    return bottomAnchored ? lastAt < projected.length - 1 : firstAt > 0;
+  }
+
   RenderSliverMultiBoxAdaptor? messageSliver() {
     final host = readingAnchor.host;
     if (host == null || !host.attached) return null;
@@ -834,7 +851,10 @@ class _RaftChatViewState extends State<RaftChatView>
       // Either direction: an older page prepended above a thread's reader
       // (top-anchored) or rows arriving below a channel's reader keep the
       // row on screen exactly in place.
-      if (!atBottom && !focusStaging && identical(adapter, ownedAdapter)) {
+      if (!atBottom &&
+          !focusStaging &&
+          identical(adapter, ownedAdapter) &&
+          insertsShiftReader(projected)) {
         captureReadingAnchor();
       }
       final wanted = projected.map((m) => m.id).toSet();
