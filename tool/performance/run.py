@@ -54,7 +54,7 @@ def main():
     receipt['gateExitCode']=gate
     receipt['exitCode']=status
     def artifact(p):return {'path':str(p.relative_to(out)),'sha256':sha(p)}
-    receipt['samples']=[artifact(p) for p in sorted(out.glob('*-scroll.json'))]+[artifact(p) for p in sorted(out.glob('*-native-resize.json'))]
+    receipt['samples']=[artifact(p) for p in sorted(out.glob('*-scroll.json'))]+[artifact(p) for p in sorted(out.glob('*-view-resize.json'))]+[artifact(p) for p in sorted(out.glob('*-native-resize.json'))]
     receipt['driverResult']=artifact(out/'driver-result.json') if (out/'driver-result.json').is_file() else None
     receipt['gateResult']=artifact(out/'gate.json') if (out/'gate.json').is_file() else None
     response=json.loads((out/'driver-result.json').read_text()) if (out/'driver-result.json').is_file() else {}

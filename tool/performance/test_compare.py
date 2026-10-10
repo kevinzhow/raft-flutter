@@ -11,7 +11,7 @@ def samples():
                  nativeSizeChanges=[{'width':1100+i, 'height':800} for i in range(20)],
                  frames=[{'buildStartUs':i*16667,'buildUs':2000,'rasterUs':1000} for i in range(600)])
             for t in ['brutal-light','elegant-light','elegant-dark']
-            for a in ['channel-scroll','context-scroll','native-resize']]
+            for a in ['channel-scroll','context-scroll','view-resize']]
 
 
 class ActualSampleGuards(unittest.TestCase):
