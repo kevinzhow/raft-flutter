@@ -2427,6 +2427,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           entry.channel != null &&
           w.channel?.id == entry.channel!.id,
       unread: w.unread[entry.channel?.id] ?? 0,
+      hasDraft: (w.drafts[entry.channel?.id] ?? '').isNotEmpty,
       onTap: () => chooseSidebarAgent(entry),
     );
   }
@@ -2537,6 +2538,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ? gridKey.currentState?.activeChannelId == c.id
           : w.section == 'chat' && w.channel?.id == c.id,
       unread: w.unread[c.id] ?? 0,
+      joined: c.joined,
+      activityMuted: c.flag('activityMuted'),
+      hasDraft: (w.drafts[c.id] ?? '').isNotEmpty,
       onTap: () => chooseChannel(c, expectedScope: scope),
     );
   }
