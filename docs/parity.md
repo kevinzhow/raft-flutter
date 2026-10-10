@@ -622,6 +622,61 @@ similarity 0.798; the 3 hover cases had no keyed Search button), after
 Elegant text, sub-pixel baseline offsets (thread title, mobile meta line) and
 the tooltip surface of the hover case. All 99 official values are unchanged.
 
+### Settings cases (40 surfaces x 3 themes = 120)
+
+`python3 tool/parity-ext/build-cases.py` also writes
+`components.ext-settings.<surface>.<theme>` and
+`tool/parity-ext/fixtures/settings.json`. Derived from Web
+`layout/Sidebar.tsx` `settingsSidebarGroups` + `SettingsSidebarList.tsx`
+(desktop Settings rail: Personal / Workspace / Resources), `SettingsPanel.tsx`
+(every Workspace tab and AboutSection), `ReleaseNotesPanel.tsx`
+(`/release-notes`) and `AboutFeedbackDialog.tsx` (the
+`@botiverse/hands-feedback-react` My Feedback workspace).
+
+* React (`host/SettingsCases.tsx`) mounts the real Sidebar in Settings mode
+  (route primed before render) beside SettingsPanel / ReleaseNotesPanel in the
+  1216px desktop frame (1280 minus the rail); props select tab, role
+  (owner / member / guest) and the resolved server flags (Labs, AI Providers,
+  IM Bridges). Flutter (`cases/ext_settings.dart`) mounts `WorkspaceSettings`.
+* Crops: the rail (`settings-navigation`), the panel (`settings-panel`), About
+  sections, single release cards; states: release notes loading / error /
+  empty and feedback empty / loading / error through per-case `routeSets`
+  (`{"$pending": true}` never answers, `{"$status": N}` fails) honoured by both
+  providers.
+* The fixture restates the official spec payloads for the Workspace tabs
+  (billing, usage, members, invites, join links, agreement, translation,
+  integrations) plus Labs, MCP, release notes and feedback tickets; unmatched
+  Flutter requests get the official catch-all body, and Flutter answers flag
+  evaluation from the case props. `PARITY_EXT_LOG_REQUESTS=<dir>` lists every
+  `/api` request a React case makes.
+* The QR code is encoded by `RaftQrMatrix`, a port of the `uqr` encoder Web
+  uses (unit-tested module-for-module), from the React host's origin.
+* The feedback workspace renders in `ui-sans-serif, system-ui`; product code
+  names `system-ui` and the harness maps it to the host's Noto Sans (what
+  Chromium's fontconfig picks).
+
+Result (`cindy/parity-settings`):
+
+| group | before | after |
+| --- | --- | --- |
+| Settings rail (18) | 0 passing, mean 0.810 | 4 passing, mean 0.883 |
+| About (15) | 0 passing, 9 capture failures (no sections), mean 0.705 | 9 passing, mean 0.966 |
+| Release Notes (24) | 6 passing, 9 capture failures, mean 0.864 | 14 passing, mean 0.970 |
+| Feedback (15) | 1 passing, mean 0.795 | 9 passing, mean 0.971 |
+| Server Profile, Labs, AI Providers, IM Bridges, MCP (30) | 8 passing | 28 passing, mean 0.979 |
+| Plan & Billing, Administration, Applications (18) | 2 passing | 0 passing, mean 0.79 (not ported) |
+| total (120) | 17 passing, 18 capture failures | 64 passing, 0 capture failures |
+
+The "before" Workspace tab numbers predate the fixture alignment (Flutter
+then answered 404 where React had data), so they are not comparable to the
+"after" column; Billing, Administration and Applications still render the
+pre-port management pages. The remaining rail delta is text rasterisation and
+a 1px sub-pixel heading offset; `nav.row-hover.elegant` (0.04) differs only by
+one channel level everywhere in the `bg-fill-strong/80` hover fill (Chromium
+quantises the alpha before blending, see the Computers result). Official
+set: 98 values unchanged; `components.settings.root.page` (shared rail rows)
+0.9743 -> 0.9905.
+
 ### Outlier review (select-all, bulk-restart, workspace-scan)
 
 The official `pixelPerfectSimilarity` (visual-testing
