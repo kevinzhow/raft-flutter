@@ -463,17 +463,27 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
-  /// The server Tasks page keeps its board and list across navigation.
-  bool get taskSnapshotted =>
-      widget.section == 'tasks' && widget.channelId == null;
+  /// The server Tasks page and each channel's Tasks tab keep their board and
+  /// list across navigation (Source's task store is per server and channel).
+  bool get taskSnapshotted => widget.section == 'tasks';
+
+  /// Snapshot slot of this page; the identity binding includes the channel.
+  String get snapshotSection => widget.channelId == null
+      ? widget.section
+      : '${widget.section}:${widget.channelId}';
   ScrollController? taskListScroll, taskBoardScroll;
   double taskListOffset = 0, taskBoardOffset = 0;
 
   bool restoreTaskSnapshot() {
-    final snapshot = w.resourceSnapshots.read<TaskSnapshot>(
-      widget.section,
+    var snapshot = w.resourceSnapshots.read<TaskSnapshot>(
+      snapshotSection,
       identityAuthority,
     );
+    if (snapshot != null && !acceptsTaskChannel) {
+      // A channel lost while the tab was away never shows its cached tasks.
+      w.resourceSnapshots.remove(snapshotSection);
+      snapshot = null;
+    }
     taskListOffset = snapshot?.listOffset ?? 0;
     taskBoardOffset = snapshot?.boardOffset ?? 0;
     // Children unmount before this state disposes; track the offsets live.
@@ -526,11 +536,11 @@ class _ResourceViewState extends State<ResourceView> {
         loading ||
         error != null ||
         rowsView == null) {
-      w.resourceSnapshots.remove(widget.section);
+      w.resourceSnapshots.remove(snapshotSection);
       return;
     }
     w.resourceSnapshots.write(
-      widget.section,
+      snapshotSection,
       TaskSnapshot(
         identity: acceptedIdentity!,
         layout: taskLayout,
