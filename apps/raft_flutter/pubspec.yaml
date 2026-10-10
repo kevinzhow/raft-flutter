@@ -40,6 +40,8 @@ dependencies:
   media_kit_libs_macos_video: ^1.1.4
   flutter_svg: ^2.3.0
 dev_dependencies:
+  flutter_driver:
+    sdk: flutter
   flutter_test:
     sdk: flutter
   integration_test:
