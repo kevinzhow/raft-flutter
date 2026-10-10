@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
+import 'message_task_cache.dart';
+import 'reaction_toggle.dart';
 import 'workspace_cache.dart';
 import 'resource_snapshot_cache.dart';
 import 'workspace_entity_directory.dart';
@@ -1881,6 +1883,8 @@ class WorkspaceController extends ChangeNotifier {
         _prefetched.add(c.id);
         final authority = authorityOf(c), reply = _replyToken(c.id);
         try {
+          // The channel's task chips load with its first page.
+          unawaited(MessageTaskCache.of(client).warm(this, c.id));
           final page = await client.messagePage(c.id);
           if (!stillCurrent() ||
               reply != _replyToken(c.id) ||
@@ -2726,6 +2730,9 @@ class WorkspaceController extends ChangeNotifier {
         !_revokedChannels.contains(next.id) &&
         can('viewChannel', resource: channel);
     notifyListeners();
+    // Source ChatPanel loads the channel's tasks with its messages: start the
+    // bucket read now so the chips are cached when the rows first render.
+    unawaited(MessageTaskCache.of(client).warm(this, next.id));
     await _restoreDraft(next.id);
     if (!current()) return;
     try {
@@ -3875,52 +3882,182 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
-  Future<void> toggleReaction(RaftMessage message, String emoji) async {
+  /// Reaction toggles in flight per message, so a presented row shows the
+  /// viewer's own state at once (Web `pendingReactionTargetsRef`).
+  final Map<String, Map<String, PendingReaction>> _pendingReactions = {};
+
+  /// The state each pending toggle is heading for (null when none).
+  Map<String, bool>? pendingReactionTargets(String messageId) {
+    final pending = _pendingReactions[messageId];
+    return pending == null || pending.isEmpty
+        ? null
+        : {for (final e in pending.entries) e.key: e.value.target};
+  }
+
+  String get _reactionViewerName => client.user?.name ?? '';
+
+  /// Replace a held message's reactions (and the open thread's parent copy).
+  /// Not persisted: optimistic state never reaches the disk cache.
+  bool _setMessageReactions(
+    String channelId,
+    String messageId,
+    List<Map<String, dynamic>> reactions,
+  ) {
+    var changed = false;
+    if (ledger.contains(channelId, messageId)) {
+      changed = ledger.ingestUpdate({
+        'id': messageId,
+        'channelId': channelId,
+        'reactions': reactions,
+      }, expectedGeneration: ledger.generation);
+    }
+    final parent = threadParent;
+    if (parent != null && parent.id == messageId) {
+      threadParent = RaftMessage({...parent.json, 'reactions': reactions});
+      changed = true;
+    }
+    return changed;
+  }
+
+  List<Map<String, dynamic>> _heldReactions(RaftMessage message) =>
+      reactionList(
+        (ledger.message(message.channelId, message.id) ??
+            message.json)['reactions'],
+      );
+
+  /// Socket rows carry server state that may predate a pending write: lay the
+  /// pending toggles back over the row's reactions.
+  void _overlayPendingReactions(Map<String, dynamic> row) {
+    final id = row['id'], channelId = row['channelId'];
+    final pending = _pendingReactions[id];
+    final viewerId = client.user?.id;
+    if (pending == null ||
+        pending.isEmpty ||
+        viewerId == null ||
+        id is! String ||
+        channelId is! String ||
+        !row.containsKey('reactions')) {
+      return;
+    }
+    final held = reactionList(ledger.message(channelId, id)?['reactions']);
+    final next = overlayPendingReactions(
+      held,
+      pending,
+      viewerId: viewerId,
+      viewerName: _reactionViewerName,
+    );
+    if (!identical(next, held)) _setMessageReactions(channelId, id, next);
+  }
+
+  /// Web MessageItem `handleToggleReaction`: the chip and the viewer's own
+  /// state change at once, the write follows, the server row reconciles and a
+  /// failure puts the previous reaction back. A second toggle of the same
+  /// emoji while one is in flight is ignored (Web `pendingReactionEmojisRef`).
+  Future<void> toggleReaction(RaftMessage message, String emoji) {
     final key = '${message.id}:$emoji';
-    if (_reactionWrites.containsKey(key)) return _reactionWrites[key];
-    final generation = ledger.generation, serverId = client.serverId;
-    if (serverId == null) return;
+    final inFlight = _reactionWrites[key];
+    if (inFlight != null) return inFlight;
+    final generation = ledger.generation,
+        serverId = client.serverId,
+        viewerId = client.user?.id;
+    if (serverId == null || viewerId == null) return Future.value();
     Future<void> change() async {
-      if (reactionViewer.reacted(message.id) == null) {
+      var reacted =
+          reactionViewer.reacted(message.id)?.contains(emoji) ??
+          ownReactionFromRow(_heldReactions(message), emoji, viewerId);
+      if (reacted == null) {
+        // Canonical chip without a private snapshot: read it first.
         final viewer = await client.get(
           '/messages/${message.id}/reactions/viewer',
         );
         if (_disposed || generation != ledger.generation) return;
         reactionViewer.accept(viewer, serverId: serverId);
+        reacted = reactionViewer.reacted(message.id)?.contains(emoji);
+        if (reacted == null) {
+          throw StateError('Your reaction state could not be loaded.');
+        }
       }
-      final own = reactionViewer.reacted(message.id);
-      if (own == null) {
-        throw StateError('Your reaction state could not be loaded.');
-      }
-      final value = await client.request(
-        own.contains(emoji) ? 'DELETE' : 'POST',
-        '/messages/${message.id}/reactions',
-        data: {'emoji': emoji},
+      final target = !reacted;
+      final before = _heldReactions(message);
+      final pending = beginReaction(before, emoji, target: target);
+      (_pendingReactions[message.id] ??= {})[emoji] = pending;
+      _setMessageReactions(
+        message.channelId,
+        message.id,
+        setOwnReaction(
+          before,
+          emoji,
+          reacted: target,
+          viewerId: viewerId,
+          viewerName: _reactionViewerName,
+        ),
       );
-      if (_disposed ||
-          generation != ledger.generation ||
-          _revokedChannels.contains(message.channelId)) {
-        return;
-      }
-      if (value is Map) {
-        reactionViewer.accept(value['reactionViewer'], serverId: serverId);
-        final row = Map<String, dynamic>.from(value)..remove('reactionViewer');
-        ledger.ingest([row], expectedGeneration: generation);
-        _saveWindow(
-          message.channelId,
-          thread: message.channelId == threadChannelId,
-        );
-      }
       notifyListeners();
+      bool stale() =>
+          _disposed ||
+          generation != ledger.generation ||
+          _revokedChannels.contains(message.channelId);
+      try {
+        final value = await client.request(
+          target ? 'POST' : 'DELETE',
+          '/messages/${message.id}/reactions',
+          data: {'emoji': emoji},
+        );
+        _clearPendingReaction(message.id, emoji);
+        if (stale()) return;
+        if (value is Map) {
+          final accepted = reactionViewer.accept(
+            value['reactionViewer'],
+            serverId: serverId,
+          );
+          final row = Map<String, dynamic>.from(value)
+            ..remove('reactionViewer');
+          ledger.ingest([row], expectedGeneration: generation);
+          // Other emojis still in flight keep their optimistic state.
+          _overlayPendingReactions(row);
+          final snapshot = reactionViewer.reacted(message.id);
+          if (accepted != 'accepted' &&
+              snapshot != null &&
+              snapshot.contains(emoji) != target) {
+            // A snapshot older than the write would show the old state.
+            reactionViewer.remove(message.id);
+            unawaited(hydrateReactionViewer(message));
+          }
+          final held = ledger.message(message.channelId, message.id);
+          if (held != null && threadParent?.id == message.id) {
+            threadParent = RaftMessage(held);
+          }
+          _saveWindow(
+            message.channelId,
+            thread: message.channelId == threadChannelId,
+          );
+        }
+        notifyListeners();
+      } catch (_) {
+        _clearPendingReaction(message.id, emoji);
+        if (!stale()) {
+          _setMessageReactions(
+            message.channelId,
+            message.id,
+            restoreReaction(_heldReactions(message), emoji, pending),
+          );
+          notifyListeners();
+        }
+        rethrow;
+      }
     }
 
     final pending = change();
     _reactionWrites[key] = pending;
-    try {
-      await pending;
-    } finally {
+    return pending.whenComplete(() {
       if (identical(_reactionWrites[key], pending)) _reactionWrites.remove(key);
-    }
+    });
+  }
+
+  void _clearPendingReaction(String messageId, String emoji) {
+    final pending = _pendingReactions[messageId];
+    pending?.remove(emoji);
+    if (pending != null && pending.isEmpty) _pendingReactions.remove(messageId);
   }
 
   void _event(RaftEvent event) {
@@ -4017,6 +4154,7 @@ class WorkspaceController extends ChangeNotifier {
         if (!ledger.ingestUpdate(row, expectedGeneration: ledger.generation)) {
           return;
         }
+        _overlayPendingReactions(row);
       } else {
         final projection = syncCoreMessagesEnabled
             ? messageSync.consumeNew(row)

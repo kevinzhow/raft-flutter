@@ -35,6 +35,7 @@ import 'message_agent_presentation.dart';
 import 'agent_metadata_projection.dart';
 import 'agent_avatar_projection.dart';
 import 'message_task_projection.dart';
+import 'saved_sidebar_entry.dart';
 
 /// Controlled mounted-viewport action; no route, controller or data ownership.
 class ChatViewportHandle {
@@ -1100,6 +1101,7 @@ class _RaftChatViewState extends State<RaftChatView>
     final task = taskProjection.taskFor(message);
     final guest = w.server?.string('role') == 'guest';
     final supportsTasks = w.channel?.type != 'thread';
+    final saved = SavedCountStore.of(w).isSaved(message.id);
     String? result;
     void pick(BuildContext menuContext, String value) {
       result = value;
@@ -1185,7 +1187,7 @@ class _RaftChatViewState extends State<RaftChatView>
                 ),
               item(
                 'save',
-                'Save Message',
+                saved ? 'Remove from Saved' : 'Save Message',
                 raftMessageMenuIcon(RaftGlyph.bookmark),
               ),
               if (follow)
@@ -1284,7 +1286,7 @@ class _RaftChatViewState extends State<RaftChatView>
         reactionFailureTimers.remove(m.id)?.cancel();
         setState(() => reactionFailures.remove(m.id));
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted && current()) {
         reactionFailureTimers.remove(m.id)?.cancel();
         setState(() => reactionFailures[m.id] = emoji);
@@ -1294,9 +1296,7 @@ class _RaftChatViewState extends State<RaftChatView>
             if (current()) setState(() => reactionFailures.remove(m.id));
           },
         );
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        // Web surfaces a failed toggle as the 400ms chip flash only.
       }
     }
   }
@@ -1694,45 +1694,48 @@ class _RaftChatViewState extends State<RaftChatView>
     setState(() {});
   }
 
-  Widget messageToolbar(RaftMessage message, {required bool parent}) =>
-      RaftMessageToolbar(
-        children: [
-          if (!parent && !widget.thread)
-            RaftMessageToolbarAction(
-              key: ValueKey('message-thread-${message.id}'),
-              label: raftText(context, 'Reply in thread'),
-              icon: const RaftMessageThreadGlyph(),
-              onPressed: presentationActive
-                  ? () => w.openThread(message)
-                  : null,
-            ),
-          if (canReact)
-            Builder(
-              builder: (anchor) => RaftMessageToolbarAction(
-                key: ValueKey('message-react-${message.id}'),
-                label: raftText(context, 'Add reaction'),
-                icon: const RaftMessageAddReactionGlyph(),
-                popupOpen: pickerMessageId == message.id,
-                onPressed: () => openReactionPicker(message, anchor),
-              ),
-            ),
+  Widget messageToolbar(RaftMessage message, {required bool parent}) {
+    final saved = SavedCountStore.of(w).isSaved(message.id);
+    return RaftMessageToolbar(
+      children: [
+        if (!parent && !widget.thread)
           RaftMessageToolbarAction(
-            key: ValueKey('message-save-${message.id}'),
-            label: raftText(context, 'Save message'),
-            icon: const RaftIcon(RaftGlyph.bookmark, size: 13),
-            onPressed: presentationActive ? () => saveMessage(message) : null,
+            key: ValueKey('message-thread-${message.id}'),
+            label: raftText(context, 'Reply in thread'),
+            icon: const RaftMessageThreadGlyph(),
+            onPressed: presentationActive ? () => w.openThread(message) : null,
           ),
-        ],
-      );
+        if (canReact)
+          Builder(
+            builder: (anchor) => RaftMessageToolbarAction(
+              key: ValueKey('message-react-${message.id}'),
+              label: raftText(context, 'Add reaction'),
+              icon: const RaftMessageAddReactionGlyph(),
+              popupOpen: pickerMessageId == message.id,
+              onPressed: () => openReactionPicker(message, anchor),
+            ),
+          ),
+        RaftMessageToolbarAction(
+          key: ValueKey('message-save-${message.id}'),
+          label: raftText(
+            context,
+            saved ? 'Remove from Saved' : 'Save message',
+          ),
+          icon: const RaftIcon(RaftGlyph.bookmark, size: 13),
+          active: saved,
+          onPressed: presentationActive ? () => saveMessage(message) : null,
+        ),
+      ],
+    );
+  }
 
+  /// Source MessageItem `handleToggleSave`: the saved state and the Saved
+  /// badge change at once; a failed request puts them back.
   Future<void> saveMessage(RaftMessage message) async {
     final authority = workspaceAuthority(w);
+    final store = SavedCountStore.of(w);
     try {
-      await w.command(
-        'POST',
-        '/channels/saved',
-        data: {'messageId': message.id},
-      );
+      await store.setSaved(message.id, !store.isSaved(message.id));
     } catch (e) {
       if (mounted && authority == workspaceAuthority(w)) {
         ScaffoldMessenger.of(
@@ -1975,10 +1978,13 @@ class _RaftChatViewState extends State<RaftChatView>
           .whereType<Map>()
           .map((e) => Map<String, dynamic>.from(e))
           .toList(),
-      reactedEmojis: projectedOwnReactions(
-        principal: w.client.user?.id,
-        reactions: m.json['reactions'] as List? ?? const [],
-        completeViewer: w.reactionViewer.reacted(m.id),
+      reactedEmojis: withPendingReactions(
+        projectedOwnReactions(
+          principal: w.client.user?.id,
+          reactions: m.json['reactions'] as List? ?? const [],
+          completeViewer: w.reactionViewer.reacted(m.id),
+        ),
+        w.pendingReactionTargets(m.id),
       ),
       failedReactionEmojis: reactionFailures[m.id] == null
           ? const {}

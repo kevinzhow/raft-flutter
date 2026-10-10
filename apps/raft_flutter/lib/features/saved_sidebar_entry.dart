@@ -6,11 +6,15 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
 
-/// Server-scoped Saved total shared by every mounted Saved entry of one
-/// workspace. It retains only the mounted API's numeric global total, never
-/// saved rows. The total is cleared only by a server-level identity change
-/// (principal, server, generation, role); save receipts and channel
-/// membership/capability changes revalidate it in place.
+/// Server-scoped Saved state shared by every mounted Saved entry, message
+/// menu and Saved page of one workspace: the numeric global total and the
+/// ids known to be saved (Source savedStore `total` + `savedIds`). It
+/// retains no saved rows. It is cleared only by a server-level identity
+/// change (principal, server, generation, role); save receipts and channel
+/// membership/capability changes revalidate the total in place.
+///
+/// Saving and unsaving are optimistic like Source savedStore: the id set
+/// and the total move before the request, and a failure puts both back.
 class SavedCountStore extends ChangeNotifier {
   SavedCountStore._(this.w);
   static final _stores = Expando<SavedCountStore>('saved count');
@@ -21,6 +25,10 @@ class SavedCountStore extends ChangeNotifier {
   int? count;
   int _request = 0, _acceptedRevision = -1;
   String? _scope, _channels;
+  Object? _identity;
+  final _ids = <String>{};
+  final _tickets = <String, int>{};
+  int _ticket = 0;
 
   String get authority => jsonEncode([
     identityHashCode(w),
@@ -35,16 +43,89 @@ class SavedCountStore extends ChangeNotifier {
     for (final c in w.channels) [c.id, c.joined, c.json['channelCapabilities']],
   ]);
 
+  /// Drops everything learned under an earlier identity. Called per message
+  /// row, so it compares fields instead of encoding [authority].
+  void _adopt() {
+    final next = (
+      w.client.origin,
+      w.client.generation,
+      w.client.user?.id,
+      w.client.serverId,
+      w.server?.id,
+      w.server?.string('role'),
+    );
+    if (_identity == next) return;
+    _identity = next;
+    _scope = authority;
+    count = null;
+    ++_request;
+    _acceptedRevision = -1;
+    _channels = null;
+    _ids.clear();
+    _tickets.clear();
+  }
+
+  /// Whether [messageId] is known to be saved (Source `isSaved`).
+  bool isSaved(String messageId) {
+    _adopt();
+    return _ids.contains(messageId);
+  }
+
+  /// Message ids a loaded Saved result discloses (Source `loadSaved` adds
+  /// every entry to `savedIds`).
+  void know(Iterable<String> messageIds) {
+    _adopt();
+    final before = _ids.length;
+    _ids.addAll(messageIds);
+    if (_ids.length != before) notifyListeners();
+  }
+
+  /// Source `saveMessage` / `unsaveMessage`: the saved state and the badge
+  /// change before the request; a failure restores both and rethrows.
+  Future<void> setSaved(String messageId, bool saved) async {
+    _adopt();
+    final scope = _scope, was = _ids.contains(messageId);
+    final delta = was == saved ? 0 : (saved ? 1 : -1);
+    final ticket = _tickets[messageId] = ++_ticket;
+    saved ? _ids.add(messageId) : _ids.remove(messageId);
+    _move(delta);
+    notifyListeners();
+    // Message rows read the saved state through the workspace listener.
+    w.notifyListeners();
+    try {
+      await w.command(
+        saved ? 'POST' : 'DELETE',
+        saved ? '/channels/saved' : '/channels/saved/$messageId',
+        data: saved ? {'messageId': messageId} : null,
+      );
+    } catch (_) {
+      if (_scope == authority) {
+        if (_tickets[messageId] == ticket) {
+          was ? _ids.add(messageId) : _ids.remove(messageId);
+        }
+        _move(-delta);
+        notifyListeners();
+        w.notifyListeners();
+      }
+      rethrow;
+    } finally {
+      if (_scope == scope && _tickets[messageId] == ticket) {
+        _tickets.remove(messageId);
+      }
+    }
+  }
+
+  /// Moves the badge by [delta] and retires any total read still in flight,
+  /// whose answer predates this change.
+  void _move(int delta) {
+    if (delta == 0 || count == null) return;
+    count = (count! + delta).clamp(0, 9007199254740991);
+    ++_request;
+  }
+
   /// Adopts the current authority; callers rebuild themselves afterwards.
   void sync() {
-    final next = authority;
-    if (_scope != next) {
-      _scope = next;
-      count = null;
-      ++_request;
-      _acceptedRevision = -1;
-      _channels = null;
-    }
+    _adopt();
     var reload = false;
     if (_acceptedRevision != w.savedRevision) {
       _acceptedRevision = w.savedRevision;

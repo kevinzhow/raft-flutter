@@ -29,6 +29,7 @@ import 'message_reference_directory.dart';
 import 'private_route_guard.dart';
 import 'resource_search.dart';
 import 'resource_list_updates.dart';
+import 'saved_sidebar_entry.dart';
 import 'reading_anchor.dart';
 import '../platform/content_links.dart';
 
@@ -1741,6 +1742,13 @@ class _ResourceViewState extends State<ResourceView> {
           if (enabledActivity && filter == 'saved') {
             savedActivityItems = List.of(rows);
           }
+          if (widget.section == 'saved' ||
+              enabledActivity && filter == 'saved') {
+            SavedCountStore.of(w).know([
+              for (final row in rows)
+                if (row['messageId'] is String) row['messageId'] as String,
+            ]);
+          }
           if (enabledActivity && filter == 'done') {
             doneActivityItems = List.of(rows);
           }
@@ -1836,6 +1844,51 @@ class _ResourceViewState extends State<ResourceView> {
       // mutation (Mark all read, Remove saved message, task status).
       await load(keep: rows.isNotEmpty);
     } catch (e) {
+      fail(e, scope);
+    }
+  }
+
+  /// Source savedStore `unsaveMessage`: the row, the page totals and the
+  /// sidebar badge go at once; a failed request restores them (Source then
+  /// reloads, which also reconciles the list).
+  Future<void> removeSaved(Map<String, dynamic> row, String scope) async {
+    if (!accepts(scope)) return;
+    final id = row['messageId'];
+    if (id is! String) return;
+    final index = rows.indexWhere((item) => item['messageId'] == id);
+    final held = index < 0 ? null : rows[index];
+    final heldTotal = totalCount, heldSaved = savedActivityTotal;
+    final removes = held != null;
+    List<Map<String, dynamic>> without(List<Map<String, dynamic>> list) =>
+        list.where((item) => item['messageId'] != id).toList();
+    setState(() {
+      rows = without(rows);
+      savedActivityItems = without(savedActivityItems);
+      if (removes && totalCount != null) {
+        totalCount = (totalCount! - 1).clamp(0, 1 << 53);
+      }
+      if (removes) {
+        savedActivityTotal = (savedActivityTotal - 1).clamp(0, 1 << 53);
+      }
+    });
+    try {
+      await SavedCountStore.of(w).setSaved(id, false);
+      if (!accepts(scope)) return;
+      await w.refreshUnread();
+      if (!accepts(scope)) return;
+      await load(keep: true);
+    } catch (e) {
+      if (!accepts(scope)) return;
+      setState(() {
+        if (held != null && !rows.any((item) => item['messageId'] == id)) {
+          rows = [...rows]..insert(index.clamp(0, rows.length), held);
+        }
+        totalCount = heldTotal;
+        savedActivityTotal = heldSaved;
+        if (enabledActivity && filter == 'saved') {
+          savedActivityItems = List.of(rows);
+        }
+      });
       fail(e, scope);
     }
   }
@@ -3217,11 +3270,7 @@ class _ResourceViewState extends State<ResourceView> {
           const SizedBox(width: 12),
           RaftSavedToggle(
             label: 'Remove saved message',
-            onPressed: () => command(
-              'DELETE',
-              '/channels/saved/${row['messageId']}',
-              sourceScope: scope,
-            ),
+            onPressed: () => removeSaved(row, scope),
           ),
         ],
       ),
@@ -3287,11 +3336,7 @@ class _ResourceViewState extends State<ResourceView> {
           onPressed: () {
             if (!accepts(scope)) return;
             closeOwnedDialog(context, scope);
-            command(
-              'DELETE',
-              '/channels/saved/${row['messageId']}',
-              sourceScope: scope,
-            );
+            removeSaved(row, scope);
           },
         ),
       ]),

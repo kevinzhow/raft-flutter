@@ -52,6 +52,10 @@ class MessageLedger {
   bool contains(String channelId, String messageId) =>
       _channels[channelId]?.containsKey(messageId) ?? false;
 
+  /// The held row for [messageId], without copying or sorting the channel.
+  Map<String, dynamic>? message(String channelId, String messageId) =>
+      _channels[channelId]?[messageId];
+
   void _changed(String channelId) {
     revision++;
     _sorted.remove(channelId);

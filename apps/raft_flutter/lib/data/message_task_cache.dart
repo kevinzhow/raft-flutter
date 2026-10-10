@@ -160,6 +160,26 @@ class MessageTaskCache extends ChangeNotifier {
     if (had) notifyListeners();
   }
 
+  /// Starts [channelId]'s task bucket read ahead of its timeline (channel
+  /// select and prefetch), in parallel with the message page, so the chips
+  /// are in the cache by the time the rows first render. Does nothing when
+  /// the bucket is fresh, the channel hides task references (threads,
+  /// read-only) or the member may not view it. The returned future never
+  /// fails; callers must not block the timeline on it.
+  Future<void> warm(WorkspaceController w, String channelId) {
+    final channel = _channel(w, channelId);
+    if (channel == null ||
+        channel.type == 'thread' ||
+        channel.json['readOnlyReason'] != null ||
+        w.client.user == null ||
+        !w.can('viewChannel', resource: channel) ||
+        !needsRevalidation(w, channelId) ||
+        (_scopes[messageTaskIdentity(w)]?[channelId]?.inFlight ?? 0) > 0) {
+      return Future.value();
+    }
+    return revalidate(w, channelId);
+  }
+
   /// Background read of [channelId]'s task bucket. The shown bucket stays in
   /// place until the response is accepted; unchanged tasks keep their
   /// objects. A response is dropped when the identity, the channel authority

@@ -18,3 +18,15 @@ Set<String> projectedOwnReactions({
         reaction['emoji'] as String,
   };
 }
+
+/// [own] with the toggles still in flight applied: the viewer's chip state
+/// changes when they tap, not when the server answers.
+Set<String> withPendingReactions(Set<String> own, Map<String, bool>? pending) {
+  if (pending == null || pending.isEmpty) return own;
+  return Set.unmodifiable({
+    for (final emoji in own)
+      if (pending[emoji] != false) emoji,
+    for (final e in pending.entries)
+      if (e.value) e.key,
+  });
+}
