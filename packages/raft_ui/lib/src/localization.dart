@@ -31,6 +31,8 @@ const raftChinese = <String, String>{
   "Comments here are pinned to {filename}. For general discussion, reply in the thread.": "这里的评论仅关联 {filename}。如需一般性讨论，请在消息列中回复。",
   "Comment on {filename}…": "评论 {filename}…",
   "Row {n}": "第 {n} 行",
+  "{count} new update": "{count} 条新更新",
+  "{count} new updates": "{count} 条新更新",
   "Row {start}–{end}": "第 {start}–{end} 行",
   "Only {max} attachments per message. {extra} extra files skipped.": "每条消息最多 {max} 个附件。已跳过 {extra} 个多余文件。",
   "{count} empty files skipped.": "已跳过 {count} 个空文件。",

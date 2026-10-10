@@ -16,6 +16,12 @@ abstract final class RaftPrimitives {
   /// Tailwind `--ease-in-out` (`--default-transition-timing-function`).
   static const Curve controlCurve = RaftScale.defaultTransitionCurve;
 
+  /// Web `element.scrollTo({behavior: "smooth"})` (e.g. the Activity "new
+  /// updates" pill). The browser owns that animation; this is a short
+  /// ease-in-out of comparable length.
+  static const Duration smoothScrollDuration = Duration(milliseconds: 300);
+  static const Curve smoothScrollCurve = RaftScale.defaultTransitionCurve;
+
   /// fonts.css `--sans-font` / `--heading-font` (Brutal) bundled family.
   static String get brutalFont => RaftThemeMetrics.brutal.sansFont;
 

@@ -830,6 +830,15 @@ Widget timelineBottomButtonPreview() => Stack(
   ],
 );
 
+@RaftPreviews('Activity new updates', size: Size(390, 360))
+Widget newUpdatesButtonPreview() => Stack(
+  fit: StackFit.expand,
+  children: [
+    const Center(child: Text('Activity list scrolled down')),
+    RaftNewUpdatesButton(label: '3 new updates', onPressed: () {}),
+  ],
+);
+
 @RaftPreviews('Thread resolution loading', size: Size(390, 360))
 Widget threadResolutionPreview() =>
     const RaftThreadResolutionBody(loadingLabel: 'Loading...');
