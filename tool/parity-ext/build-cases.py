@@ -273,7 +273,7 @@ detail('dialog.stop-agents', 'dialog: stop selected agents', 'computer-mbp', vie
        android=F_SELECT_ALL + [{'type': 'tap', 'key': 'computer-bulk-stop'}])
 detail('dialog.delete-workspace', 'dialog: delete workspace', 'computer-mbp', viewport=DESKTOP,
        selector=DIALOG, android_key='computer-dialog',
-       interactions=SCAN + [{'type': 'click', 'target': f'{btn("Delete workspace")} >> nth=3'}],
+       interactions=SCAN + [{'type': 'click', 'target': f'{btn("Delete workspace")} >> nth=0'}],
        android=F_SCAN + [{'type': 'tap', 'key': 'computer-workspace-delete-agent-0f3c9a'}])
 detail('dialog.delete-blocked', 'dialog: cannot delete computer with agents', 'computer-mbp', viewport=DESKTOP,
        selector=DIALOG, android_key='computer-dialog',

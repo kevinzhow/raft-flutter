@@ -23,7 +23,12 @@ class RaftBanner extends StatelessWidget {
     this.strongPrefix,
     this.leading,
     this.descriptionWeight,
+    this.titleGap,
   });
+
+  /// Measured space between title and description where the Web grid adds
+  /// it (MachineDetailPanel disk-low banner: 4px); null keeps the recipe.
+  final double? titleGap;
 
   /// Icon / Status node before the copy (Web Banner `icon`, `gap-x-2`).
   final Widget? leading;
@@ -70,7 +75,9 @@ class RaftBanner extends StatelessWidget {
             children: [
               if (title != null)
                 Padding(
-                  padding: recipe.title.margin,
+                  padding: titleGap == null
+                      ? recipe.title.margin
+                      : recipe.title.margin.copyWith(bottom: titleGap),
                   child: Text(
                     raftText(context, title!),
                     style: recipe.title.text(tokens, base: base),

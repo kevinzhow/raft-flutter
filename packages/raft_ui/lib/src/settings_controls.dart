@@ -546,7 +546,10 @@ class RaftConfirmDialog extends StatelessWidget {
       ),
       tokens: tokens,
     );
-    final gap = d.content.rowGap ?? 16;
+    // Brutal: padded content with `gap-4`; Elegant: an unpadded popup whose
+    // header (`px-6 py-3`), body (`px-6 py-5`) and footer (`px-6 py-3`) own
+    // their padding and sit flush.
+    final gap = d.content.rowGap ?? (t.brutal ? 16.0 : 0.0);
     final titleStyle = _slotText(t, d.title);
     final body = DefaultTextStyle.merge(
       style: messageStyle(t),
@@ -565,26 +568,33 @@ class RaftConfirmDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      raftText(context, title).toUpperCase(),
-                      style: titleStyle,
+              Padding(
+                padding: d.header.padding,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        raftText(context, title).toUpperCase(),
+                        style: titleStyle,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: d.header.columnGap ?? 12),
-                  RaftSettingsRecipeButton(
-                    key: const Key('confirm-dialog-close'),
-                    label: '',
-                    glyph: RaftGlyph.x,
-                    // DialogClose: brutal `outline` / `icon-md`, X `size-5`.
-                    variant: RaftButtonRecipeVariant.outline,
-                    size: RaftButtonRecipeSize.iconMd,
-                    glyphSize: 20,
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
-                ],
+                    SizedBox(width: d.header.columnGap ?? 12),
+                    RaftSettingsRecipeButton(
+                      key: const Key('confirm-dialog-close'),
+                      label: '',
+                      glyph: RaftGlyph.x,
+                      // DialogClose: brutal `outline` / `icon-md`, X `size-5`.
+                      variant: t.brutal
+                          ? RaftButtonRecipeVariant.outline
+                          : RaftButtonRecipeVariant.ghost,
+                      size: t.brutal
+                          ? RaftButtonRecipeSize.iconMd
+                          : RaftButtonRecipeSize.iconSm,
+                      glyphSize: t.brutal ? 20 : 16,
+                      onPressed: () => Navigator.of(context).pop(false),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: gap),
               Flexible(
@@ -594,33 +604,37 @@ class RaftConfirmDialog extends StatelessWidget {
                 ),
               ),
               SizedBox(height: gap),
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: d.footer.columnGap ?? 12,
-                runSpacing: d.footer.rowGap ?? 12,
-                children: [
-                  if (showCancel)
-                    RaftSettingsRecipeButton(
-                      label: cancelLabel,
-                      size: RaftButtonRecipeSize.sm,
-                      disabledOpacity: .3,
-                      onPressed: () => Navigator.of(context).pop(false),
+              Padding(
+                padding: d.footer.padding,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: d.footer.columnGap ?? 12,
+                  runSpacing: d.footer.rowGap ?? 12,
+                  children: [
+                    if (showCancel)
+                      RaftSettingsRecipeButton(
+                        label: cancelLabel,
+                        size: RaftButtonRecipeSize.sm,
+                        disabledOpacity: .3,
+                        onPressed: () => Navigator.of(context).pop(false),
+                      ),
+                    ValueListenableBuilder<bool>(
+                      valueListenable:
+                          confirmEnabled ?? const AlwaysStoppedAnimation(true),
+                      builder: (context, enabled, _) =>
+                          RaftSettingsRecipeButton(
+                            key: confirmKey,
+                            label: confirmLabel,
+                            variant: confirmVariant,
+                            size: RaftButtonRecipeSize.sm,
+                            disabledOpacity: .8,
+                            onPressed: enabled
+                                ? () => Navigator.of(context).pop(true)
+                                : null,
+                          ),
                     ),
-                  ValueListenableBuilder<bool>(
-                    valueListenable:
-                        confirmEnabled ?? const AlwaysStoppedAnimation(true),
-                    builder: (context, enabled, _) => RaftSettingsRecipeButton(
-                      key: confirmKey,
-                      label: confirmLabel,
-                      variant: confirmVariant,
-                      size: RaftButtonRecipeSize.sm,
-                      disabledOpacity: .8,
-                      onPressed: enabled
-                          ? () => Navigator.of(context).pop(true)
-                          : null,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

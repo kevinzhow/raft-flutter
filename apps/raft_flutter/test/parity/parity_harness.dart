@@ -343,11 +343,17 @@ Future<Map<String, dynamic>> captureParityCase(
     rect = raw.intersect(Offset.zero & size);
     if (rect != raw) targetNote = 'target clamped to viewport like React';
   }
+  // Extension element crops (`capture.androidKey`) follow Playwright's
+  // element screenshot, which captures the pixel rect enclosing a
+  // fractional box (floor / ceil); official crops keep their rounding.
+  final enclose = keyed != null;
+  double lo(double v) => enclose ? v.floorToDouble() : v.roundToDouble();
+  double hi(double v) => enclose ? v.ceilToDouble() : v.roundToDouble();
   final pixelRect = Rect.fromLTRB(
-    (rect.left * ctx.density).roundToDouble(),
-    (rect.top * ctx.density).roundToDouble(),
-    (rect.right * ctx.density).roundToDouble(),
-    (rect.bottom * ctx.density).roundToDouble(),
+    lo(rect.left * ctx.density),
+    lo(rect.top * ctx.density),
+    hi(rect.right * ctx.density),
+    hi(rect.bottom * ctx.density),
   );
 
   final png = await t.runAsync(() async {
@@ -460,7 +466,9 @@ Future<void> _androidInteractions(
     }
     switch (raw['type']) {
       case 'tap':
-        // Playwright scrolls a click target into view first.
+        // Playwright scrolls a click target into view first (after the
+        // page's reads settle, since late rows move it).
+        await t.pump(const Duration(milliseconds: 300));
         await t.ensureVisible(target!.first);
         await t.pump();
         await t.tap(target.first, warnIfMissed: false);

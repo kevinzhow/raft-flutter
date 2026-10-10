@@ -54,10 +54,16 @@ class RaftSurfaceListItem extends StatefulWidget {
     this.interactive,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     this.background,
+    this.selectedBackground,
   });
 
   final Widget child;
   final bool selected;
+
+  /// Callsite `bg-*` that also wins over the selected fill (e.g. the
+  /// MachineAgentList bulk bar: `SurfaceListItem selected` +
+  /// `bg-layer-canvas-muted theme-brutal:bg-gray-100`).
+  final Color? selectedBackground;
 
   /// Callsite `bg-*` override of the unselected, unhovered surface (e.g.
   /// MachineAgentList `bg-layer-canvas-muted theme-brutal:bg-gray-100`).
@@ -130,7 +136,8 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
     BoxDecoration brutalDecoration(BoxDecoration decoration) =>
         decoration.copyWith(
           color: widget.selected
-              ? t.product.brutalCyan.withValues(alpha: .15)
+              ? widget.selectedBackground ??
+                    t.product.brutalCyan.withValues(alpha: .15)
               : hover || widget.background == null
               ? RaftPrimitiveColors.white
               : widget.background,
@@ -148,6 +155,8 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
       clip: true,
       decorationOverride: t.brutal
           ? brutalDecoration
+          : widget.selected && widget.selectedBackground != null
+          ? (d) => d.copyWith(color: widget.selectedBackground)
           : widget.background != null && !widget.selected
           // `hover:bg-layer-panel` replaces the callsite fill on hover.
           ? (d) => d.copyWith(

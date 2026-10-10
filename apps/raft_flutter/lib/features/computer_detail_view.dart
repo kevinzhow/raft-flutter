@@ -269,7 +269,16 @@ Widget _smallButton(
   RaftGlyph? glyph,
   RaftButtonRecipeVariant variant = RaftButtonRecipeVariant.outline,
   VoidCallback? onPressed,
+  bool brutalDisabledFill = false,
 }) => RaftRecipeButton(
+  // `theme-brutal:disabled:bg-gray-200` (bulk action bar).
+  brutalSurface: brutalDisabledFill && onPressed == null
+      ? (t, _) => BoxDecoration(
+          color: const Color(0xFFE5E7EB),
+          border: Border.all(color: Colors.black, width: 2),
+          boxShadow: RaftShadowSet.brutalSm,
+        )
+      : null,
   key: key,
   label: label,
   glyph: glyph,
@@ -772,6 +781,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
                               'Low disk space: ${disk.$1} free (${_pct(disk.$2)}%)',
                           description: 'Agents on this computer may fail to save work or start. Raft removes its own old migration data automatically; if space stays low, free up space on this computer.',
                           size: RaftBannerRecipeSize.sm,
+                          titleGap: 4,
                         ),
                       ),
                     _nameSection(t, manage),
@@ -789,8 +799,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
                         if (isComputer && !online) _recoveryCard(t, manage),
                         _agentsSection(t, manage),
                         if (online)
+                          // `mt-2` collapses into `space-y-6` (24px).
                           Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                            padding: EdgeInsets.zero,
                             child: _rule(
                               t,
                               key: const ValueKey(
@@ -845,9 +856,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     final ink = _Ink(t);
     return _rule(
       t,
+      key: const ValueKey('computer-section-identity'),
       top: false,
       child: Padding(
-        key: const ValueKey('computer-section-identity'),
         padding: const EdgeInsets.all(20),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -934,9 +945,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   Widget _section(RaftTokens t, String name, List<Widget> children) => _rule(
     t,
+    key: ValueKey('computer-section-$name'),
     top: false,
     child: Padding(
-      key: ValueKey('computer-section-$name'),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1526,7 +1537,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
               RaftSurfaceListItem(
                 selected: true,
                 interactive: false,
-                background: t.brutal
+                selectedBackground: t.brutal
                     ? const Color(0xFFF3F4F6)
                     : t.colors['layer-canvas-muted'],
                 padding: const EdgeInsets.symmetric(
@@ -1536,44 +1547,56 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        RaftSectionEyebrow(
-                          '${selected.length} selected',
-                          color: ink.strong,
-                        ),
-                        _smallButton(
-                          bulkAction == _Bulk.start ? 'Starting…' : 'Start',
-                          glyph: RaftGlyph.play,
-                          variant: RaftButtonRecipeVariant.success,
-                          onPressed:
-                              bulkAction == null &&
-                                  selectedOffline.isNotEmpty &&
-                                  online
-                              ? () => runBulk(_Bulk.start)
-                              : null,
-                        ),
-                        _smallButton(
-                          'Stop',
-                          key: const ValueKey('computer-bulk-stop'),
-                          glyph: RaftGlyph.square,
-                          onPressed:
-                              bulkAction == null && selectedOnline.isNotEmpty
-                              ? showStopConfirm
-                              : null,
-                        ),
-                        _smallButton(
-                          'Restart / Reset',
-                          key: const ValueKey('computer-bulk-restart-reset'),
-                          glyph: RaftGlyph.rotateCcw,
-                          onPressed: bulkAction == null && online
-                              ? showResetOptions
-                              : null,
-                        ),
-                      ],
+                    // `flex flex-wrap items-center gap-2`, eyebrow `mr-auto`.
+                    Row(
+                      children:
+                          [
+                                Expanded(
+                                  child: RaftSectionEyebrow(
+                                    '${selected.length} selected',
+                                    color: ink.strong,
+                                  ),
+                                ),
+                                _smallButton(
+                                  bulkAction == _Bulk.start
+                                      ? 'Starting…'
+                                      : 'Start',
+                                  glyph: RaftGlyph.play,
+                                  variant: RaftButtonRecipeVariant.success,
+                                  brutalDisabledFill: true,
+                                  onPressed:
+                                      bulkAction == null &&
+                                          selectedOffline.isNotEmpty &&
+                                          online
+                                      ? () => runBulk(_Bulk.start)
+                                      : null,
+                                ),
+                                _smallButton(
+                                  'Stop',
+                                  key: const ValueKey('computer-bulk-stop'),
+                                  glyph: RaftGlyph.square,
+                                  brutalDisabledFill: true,
+                                  onPressed:
+                                      bulkAction == null &&
+                                          selectedOnline.isNotEmpty
+                                      ? showStopConfirm
+                                      : null,
+                                ),
+                                _smallButton(
+                                  'Restart / Reset',
+                                  key: const ValueKey(
+                                    'computer-bulk-restart-reset',
+                                  ),
+                                  glyph: RaftGlyph.rotateCcw,
+                                  brutalDisabledFill: true,
+                                  onPressed: bulkAction == null && online
+                                      ? showResetOptions
+                                      : null,
+                                ),
+                              ]
+                              .expand((w) => [w, const SizedBox(width: 8)])
+                              .toList()
+                            ..removeLast(),
                     ),
                     if (bulkError.isNotEmpty) ...[
                       const SizedBox(height: 8),

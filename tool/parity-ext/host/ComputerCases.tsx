@@ -17,6 +17,7 @@
 import ParityExtMachineDetailPanel from "../src/components/machine/MachineDetailPanel";
 import ParityExtAddMachineDialog from "../src/components/machine/AddMachineDialog";
 import parityExtFixture from "virtual:parity-ext/computers";
+import type { CSSProperties as ParityExtCSSProperties } from "react";
 
 const PARITY_EXT_THEME_SUFFIXES = [".elegant-dark", ".elegant", ".brutal"];
 
@@ -110,6 +111,14 @@ function parityExtPrimeStores(props: ParityExtProps) {
   }
 }
 
+// The real app mounts these inside raft-ui AppShell, whose root sets
+// `[--shell-header-height:62px]` (Brutal) / `56px` (Elegant); Sidebar's
+// `h-panel-header` reads it (index.css defaults to 62px without the shell).
+function parityExtShellVars(): ParityExtCSSProperties {
+  const theme = new URLSearchParams(window.location.search).get("parityTheme");
+  return { ["--shell-header-height" as string]: theme === "brutal-light" ? "62px" : "56px" } as ParityExtCSSProperties;
+}
+
 function ParityExtCaseView({ props }: { props: ParityExtProps }) {
   const caseId = parityExtRawCaseId();
   useMemo(() => parityExtPrimeStores(props), [props]);
@@ -117,7 +126,7 @@ function ParityExtCaseView({ props }: { props: ParityExtProps }) {
     // Sidebar column of the desktop shell: 240 x viewport height.
     return (
       <main className="min-h-screen bg-white p-0 font-display text-black">
-        <div data-visual-case={caseId} style={{ width: 240, height: 800, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div data-visual-case={caseId} style={{ ...parityExtShellVars(), width: 240, height: 800, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <Routes>
             <Route path="/s/:serverSlug/*" element={<Sidebar />} />
           </Routes>
@@ -128,7 +137,7 @@ function ParityExtCaseView({ props }: { props: ParityExtProps }) {
   if (props.extKind === "add") {
     return (
       <main className="min-h-screen bg-white p-0 font-display text-black">
-        <div data-visual-case={caseId} style={{ width: 1280, height: 800 }}>
+        <div data-visual-case={caseId} style={{ ...parityExtShellVars(), width: 1280, height: 800 }}>
           <ParityExtAddMachineDialog onClose={() => undefined} />
         </div>
       </main>
@@ -144,7 +153,7 @@ function ParityExtCaseView({ props }: { props: ParityExtProps }) {
       <div
         data-visual-case={caseId}
         className="bg-layer-canvas-muted theme-brutal:bg-white"
-        style={{ width: 976, height: window.innerHeight, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        style={{ ...parityExtShellVars(), width: 976, height: window.innerHeight, display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {machine ? <ParityExtMachineDetailPanel machine={machine} /> : null}
       </div>

@@ -179,8 +179,14 @@ class RaftOptionCard extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: base.copyWith(
+          // A translucent tint (`bg-brutal-cyan/20`) composites over the
+          // dialog surface; painted alone it would show the box shadow
+          // through it (CSS never paints a shadow under its own box).
           color: selected
-              ? selectedFill
+              ? Color.alphaBlend(
+                  selectedFill,
+                  t.brutal ? Colors.white : t.colors['layer-panel']!,
+                )
               : (t.brutal ? Colors.white : t.colors['layer-panel']),
           border: Border.all(color: border, width: t.brutal ? 2 : 1),
           boxShadow: t.brutal && selected
@@ -332,7 +338,8 @@ class RaftComputerRow extends StatelessWidget {
         fill = selected
             ? (t.dark ? t.colors['layer-card'] : t.colors['layer-panel'])
             : hover
-            ? t.colors['fill-muted']
+            // `dark:hover:bg-ink-6` outranks the callsite hover fill.
+            ? (t.dark ? t.colors['ink-6'] : t.colors['fill-muted'])
             : null;
         border = hover ? t.colors['line-strong']! : Colors.transparent;
         if (hover) shadow = t.themeShadows.sm.paintOrder;
@@ -370,11 +377,16 @@ class RaftComputerRow extends StatelessWidget {
         tokens: RaftRecipeTokens(t),
       ).root;
       final cardBorder = cardRoot.borderWidth.top;
+      // CSS paints a translucent fill (`dark:bg-ink-6`) over the sidebar,
+      // never over the row's own shadow.
+      final paint = fill == null || fill.a == 1
+          ? fill
+          : Color.alphaBlend(fill, t.sidebar);
       return Container(
         // The list owns `mb-1.5` and elegant's 6px bleed.
         padding: EdgeInsets.symmetric(horizontal: 10, vertical: brutal ? 4 : 6),
         decoration: BoxDecoration(
-          color: fill,
+          color: paint,
           borderRadius: brutal ? null : BorderRadius.circular(6),
           border: Border.all(color: border, width: brutal ? 2 : 1),
           boxShadow: shadow,
@@ -444,52 +456,60 @@ class RaftComputerRow extends StatelessWidget {
                   ),
                   if (description != null && description!.isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    RaftCssText(
-                      description!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: raftCssText.merge(
-                        RaftTypography.body(
-                          t,
-                          size: 11,
-                          line: 13.75,
-                          weight: FontWeight.w500,
-                          color: raftPanelInk(
+                    SizedBox(
+                      height: 13.75,
+                      child: RaftCssText(
+                        description!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: raftCssText.merge(
+                          RaftTypography.body(
                             t,
-                            .6,
-                            t.colors['foreground-muted']!,
+                            size: 11,
+                            line: 13.75,
+                            weight: FontWeight.w500,
+                            color: raftPanelInk(
+                              t,
+                              .6,
+                              t.colors['foreground-muted']!,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ],
                   const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: RaftCssText(
-                          runLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: offline
-                              ? meta.copyWith(
-                                  fontStyle: FontStyle.italic,
-                                  color: brutal
-                                      ? Colors.black.withValues(alpha: .3)
-                                      : t.colors['foreground-placeholder'],
-                                )
-                              : meta,
+                  // The CSS line box is fractional (15.71 / 16.5); a
+                  // paragraph would round it up and push the row's text.
+                  SizedBox(
+                    height: metaLine,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: RaftCssText(
+                            runLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: offline
+                                ? meta.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: brutal
+                                        ? Colors.black.withValues(alpha: .3)
+                                        : t.colors['foreground-placeholder'],
+                                  )
+                                : meta,
+                          ),
                         ),
-                      ),
-                      if (availableVersion != null) ...[
-                        const SizedBox(width: 6),
-                        RaftCssText('→ v$availableVersion', style: orange),
+                        if (availableVersion != null) ...[
+                          const SizedBox(width: 6),
+                          RaftCssText('→ v$availableVersion', style: orange),
+                        ],
+                        if (diskLow) ...[
+                          const SizedBox(width: 6),
+                          RaftCssText('Low disk', style: orange),
+                        ],
                       ],
-                      if (diskLow) ...[
-                        const SizedBox(width: 6),
-                        RaftCssText('Low disk', style: orange),
-                      ],
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -573,6 +593,12 @@ class RaftMachineTypeOption extends StatelessWidget {
             : t.colors['foreground-muted']!;
         iconInk = titleInk;
       }
+      // Composite translucent tints (`bg-primary-soft`) over the dialog
+      // surface so the ring shadow does not show through them.
+      final surface = Color.alphaBlend(
+        fill,
+        brutal ? Colors.white : t.colors['layer-panel']!,
+      );
       return CustomPaint(
         foregroundPainter: disabled
             ? _DashedBorder(
@@ -584,7 +610,7 @@ class RaftMachineTypeOption extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: fill,
+            color: surface,
             borderRadius: brutal ? null : BorderRadius.circular(6),
             border: disabled
                 ? null
