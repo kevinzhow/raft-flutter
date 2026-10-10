@@ -67,8 +67,6 @@ export 'src/appearance_picker.dart';
 
 export 'src/notification_center.dart';
 
-export 'src/initial_end_anchor.dart';
-
 export 'src/system_message.dart';
 
 export 'src/composer_recipe.dart';

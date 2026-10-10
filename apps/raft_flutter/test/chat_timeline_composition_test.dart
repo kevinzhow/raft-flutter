@@ -62,7 +62,6 @@ void main() {
           // The two-sided timeline needs no measured tail spacer: a short
           // thread rests at its top, a short channel at its latest end with
           // the history state filling the space above.
-          expect(find.byType(RaftSparseTimelineSliver), findsNothing);
           if (!thread) {
             final chat = t.getRect(find.byType(Chat));
             final beginning = t.getRect(find.text('Beginning of messages'));

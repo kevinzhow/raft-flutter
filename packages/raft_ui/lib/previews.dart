@@ -857,9 +857,6 @@ Widget threadRepliesLoadingPreview() => const RaftThreadRepliesLoadingBody(
   parent: Text('Actual parent record'),
 );
 
-@RaftPreviews('Initial accepted window at end', size: Size(390, 360))
-Widget initialAcceptedEndPreview() => const _InitialAcceptedEndPreview();
-
 @RaftPreviews('Server switcher', size: Size(390, 360))
 Widget serverSwitcherPreview() => const _ServerSwitcherPreview();
 
@@ -931,33 +928,6 @@ class _ServerSwitcherPreviewState extends State<_ServerSwitcherPreview> {
           ),
         ],
       ),
-    ),
-  );
-}
-
-class _InitialAcceptedEndPreview extends StatefulWidget {
-  const _InitialAcceptedEndPreview();
-  @override
-  State<_InitialAcceptedEndPreview> createState() =>
-      _InitialAcceptedEndPreviewState();
-}
-
-class _InitialAcceptedEndPreviewState
-    extends State<_InitialAcceptedEndPreview> {
-  final controller = RaftInitialEndScrollController();
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => ListView.builder(
-    controller: controller,
-    itemCount: 80,
-    itemBuilder: (_, index) => SizedBox(
-      height: 20.0 * (index % 4 + 1),
-      child: Text('Accepted row $index'),
     ),
   );
 }
