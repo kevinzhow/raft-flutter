@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -233,4 +234,33 @@ void main() {
       },
     );
   }
+
+  testWidgets('image lightbox: the 0 key resets zoom and pan', (tester) async {
+    final (_, _, files) = await mountImage(
+      tester,
+      RaftFamily.elegant,
+      false,
+      store: _MemoryStore(),
+    );
+    await tester.pump();
+    final action = find.byTooltip('Preview image.png');
+    final center = tester.getCenter(action);
+    files.bytes.complete(png);
+    await decodeWithoutPainting(tester);
+    await tester.tapAt(center);
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pump();
+    final zoom = tester
+        .widget<InteractiveViewer>(find.byType(InteractiveViewer))
+        .transformationController!;
+    zoom.value = Matrix4.identity()..scaleByDouble(2, 2, 1, 1);
+    expect(zoom.value.getMaxScaleOnAxis(), 2);
+    await tester.sendKeyEvent(LogicalKeyboardKey.digit0);
+    await tester.pump();
+    expect(zoom.value, Matrix4.identity());
+    expect(find.byTooltip('Close preview'), findsOneWidget);
+  });
 }

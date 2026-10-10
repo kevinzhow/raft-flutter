@@ -19,7 +19,10 @@ List<String> pushRecentConversation(
   int limit = recentConversationLimit,
 }) {
   if (channelId.isEmpty) return List.of(ids);
-  return [channelId, ...ids.where((id) => id != channelId)].take(limit).toList();
+  return [
+    channelId,
+    ...ids.where((id) => id != channelId),
+  ].take(limit).toList();
 }
 
 List<String> normalizeRecentConversationIds(
@@ -100,7 +103,9 @@ class RecentConversationStore extends ChangeNotifier {
   static List<String> _decode(String? stored) {
     try {
       final raw = stored == null ? null : jsonDecode(stored);
-      return normalizeRecentConversationIds(raw is Map ? raw['channelIds'] : raw);
+      return normalizeRecentConversationIds(
+        raw is Map ? raw['channelIds'] : raw,
+      );
     } catch (_) {
       return const [];
     }

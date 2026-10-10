@@ -366,6 +366,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     mobileAppBadge = SourceMobileAppBadge()..addListener(chatSelectionChanged);
     // Starts recording visits to conversations from the first frame.
     quickSwitcher.changed();
+    HardwareKeyboard.instance.addHandler(globalShortcut);
     w.addListener(syncMobileAppBadge);
     syncMobileAppBadge();
     activityUnread = SourceActivityUnreadStore(w)
@@ -671,6 +672,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.removeListener(syncPresentation);
     w.removeListener(syncSidebarDisclosure);
     w.removeListener(syncSavedIds);
+    HardwareKeyboard.instance.removeHandler(globalShortcut);
     quickSwitcher.dispose();
     sidebarDisclosure.dispose();
     liveActivities.dispose();
@@ -1197,14 +1199,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         VoidCallback? onLegacyEscape,
       ) => CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.keyK, control: true):
-              openSearchShortcut,
-          const SingleActivator(LogicalKeyboardKey.keyK, meta: true):
-              openSearchShortcut,
-          const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-              select('settings'),
-          const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
-              select('settings'),
           const SingleActivator(LogicalKeyboardKey.escape):
               onLegacyEscape ?? dismissPanel,
         },
@@ -1796,6 +1790,32 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.closeThread(navigate: false);
     w.notifyListeners();
     setState(() {});
+  }
+
+  /// Cmd/Ctrl+K (search) and Cmd/Ctrl+, (settings) are global, like Source's
+  /// document-level listener and native menu: they work wherever focus is
+  /// (composer, a field, nothing focused) while this workspace is the visible
+  /// route, and never under an open dialog.
+  bool globalShortcut(KeyEvent event) {
+    final key = event.logicalKey;
+    if (event is! KeyDownEvent ||
+        key != LogicalKeyboardKey.keyK && key != LogicalKeyboardKey.comma ||
+        !mounted ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return false;
+    }
+    final keyboard = HardwareKeyboard.instance;
+    if (keyboard.isShiftPressed ||
+        keyboard.isAltPressed ||
+        keyboard.isControlPressed == keyboard.isMetaPressed) {
+      return false;
+    }
+    if (key == LogicalKeyboardKey.keyK) {
+      openSearchShortcut();
+    } else {
+      select('settings');
+    }
+    return true;
   }
 
   /// Cmd/Ctrl+K. A desktop window floats the quick switcher over the current

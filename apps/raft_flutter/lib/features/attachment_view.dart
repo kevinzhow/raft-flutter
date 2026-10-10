@@ -627,11 +627,13 @@ class _AttachmentViewState extends State<AttachmentView> {
     if (imageProvider == null && !loading) unawaited(loadImage());
     final fullKey = fullImageKey;
     late final DialogRoute<void> operationRoute;
+    final zoom = TransformationController();
     operationRoute = DialogRoute<void>(
       context: context,
       builder: (dialogContext) => RaftAttachmentLightbox(
         title: name,
         titleBold: true,
+        onResetZoom: () => zoom.value = Matrix4.identity(),
         onClose: () {
           if (identical(previewRoute, operationRoute) &&
               operationRoute.isActive) {
@@ -650,6 +652,7 @@ class _AttachmentViewState extends State<AttachmentView> {
             if (!current()) return const SizedBox.shrink();
             return _FullAttachmentImage(
               imageKey: ValueKey('attachment-image-${widget.metadata['id']}'),
+              zoom: zoom,
               acquire: () => w.acquireAttachmentImage(
                 fullKey,
                 authorized: current,
@@ -664,6 +667,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     );
     previewRoute = operationRoute;
     await Navigator.of(context, rootNavigator: true).push(operationRoute);
+    zoom.dispose();
     if (identical(previewRoute, operationRoute)) previewRoute = null;
   }
 
@@ -762,11 +766,13 @@ class _AttachmentViewState extends State<AttachmentView> {
 class _FullAttachmentImage extends StatefulWidget {
   const _FullAttachmentImage({
     required this.imageKey,
+    required this.zoom,
     required this.acquire,
     required this.placeholder,
     required this.previewFailed,
   });
   final Key imageKey;
+  final TransformationController zoom;
   final WorkspaceAttachmentImageLease Function() acquire;
   final ImageProvider? placeholder;
   final bool previewFailed;
@@ -828,6 +834,7 @@ class _FullAttachmentImageState extends State<_FullAttachmentImage> {
                 ? unavailable
                 : const RaftSpinner(inverse: true)
           : InteractiveViewer(
+              transformationController: widget.zoom,
               child: Image(
                 image: provider,
                 key: widget.imageKey,

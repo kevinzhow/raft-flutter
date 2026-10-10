@@ -9,13 +9,16 @@ import 'theme.dart';
 /// SafeArea keeps interactive controls above native system bars and gestures.
 class RaftAttachmentLightbox extends StatelessWidget {
   const RaftAttachmentLightbox({super.key, required this.title, required this.child,
-    required this.onClose, this.actions = const [], this.footer, this.titleBold = false, this.closeLabel = 'Close preview'});
+    required this.onClose, this.actions = const [], this.footer, this.titleBold = false, this.closeLabel = 'Close preview', this.onResetZoom});
   final String title, closeLabel;
   final Widget child;
   final VoidCallback onClose;
   final List<Widget> actions;
   final Widget? footer;
   final bool titleBold;
+
+  /// Source ImageLightbox: the 0 key resets zoom and pan.
+  final VoidCallback? onResetZoom;
   @override
   Widget build(BuildContext context) {
     final recipe = RaftLightboxRecipe(RaftTokens.of(context));
@@ -24,6 +27,10 @@ class RaftAttachmentLightbox extends StatelessWidget {
         const SingleActivator(LogicalKeyboardKey.escape): onClose,
         const SingleActivator(LogicalKeyboardKey.keyW, control: true): onClose,
         const SingleActivator(LogicalKeyboardKey.keyW, meta: true): onClose,
+        if (onResetZoom != null) ...{
+          const SingleActivator(LogicalKeyboardKey.digit0): onResetZoom!,
+          const SingleActivator(LogicalKeyboardKey.numpad0): onResetZoom!,
+        },
       }, child: Focus(autofocus: true, child: SafeArea(child: Column(children: [
         DecoratedBox(decoration: BoxDecoration(color: recipe.surface,
           border: Border(bottom: recipe.navigationBorder)),

@@ -216,6 +216,7 @@ class SearchMemoryStore {
     }
     return current(scope);
   }
+
   Future<SearchMemoryData> load(SearchMemoryScope scope) {
     if (_data.containsKey(scope.key)) return Future.value(current(scope));
     return _loads
