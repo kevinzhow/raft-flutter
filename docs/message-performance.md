@@ -54,3 +54,7 @@ message ensures that target-center hit testing does not confuse empty space in
 a tall row with a hidden page. First failures and target geometry are retained.
 An AT-SPI bus setting alone cannot prove the semantics state of a previous
 user session; record the actual engine setting for each sample.
+
+For per-frame budgets (8.33 ms target, 16.7 ms gate), per-scenario attribution
+and before/after comparison of any change, use the perf lab:
+`python3 tool/performance/lab.py` (see `docs/performance-lab.md`).
