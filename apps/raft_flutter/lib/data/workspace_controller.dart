@@ -11,6 +11,7 @@ import 'source_channel_files_store.dart';
 import 'reaction_toggle.dart';
 import 'workspace_cache.dart';
 import 'resource_snapshot_cache.dart';
+import 'user_activity.dart';
 import 'workspace_entity_directory.dart';
 import 'followed_threads_store.dart';
 import 'raft_location.dart';
@@ -778,6 +779,7 @@ class WorkspaceController extends ChangeNotifier {
   bool foreground = true;
   void setForeground(bool value) {
     foreground = value;
+    if (!value) RaftUserActivity.forget();
     foregroundChanges.value = value;
     if (value) {
       if (channel != null && !hasNewer) markRead(channel!.id);
@@ -2011,7 +2013,12 @@ class WorkspaceController extends ChangeNotifier {
     if (seq != null && seq > (_latestActivity[id] ?? BigInt.zero)) {
       _latestActivity[id] = seq;
     }
-    if ((id == channel?.id || id == threadChannelId) && _mayMarkRead(id)) {
+    // Source canAutoMarkLiveAppendRead: a live arrival in the open
+    // conversation is read only if the user was just interacting; while the
+    // user is idle it stays unread (Activity keeps its indicator).
+    if ((id == channel?.id || id == threadChannelId) &&
+        _mayMarkRead(id) &&
+        RaftUserActivity.recent) {
       unawaited(markRead(id));
       return;
     }
