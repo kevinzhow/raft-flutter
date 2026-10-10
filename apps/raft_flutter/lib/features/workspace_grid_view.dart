@@ -396,7 +396,7 @@ class _ConversationState extends State<_Conversation> {
                       actions: [
                         ThreadActions(
                           controller: w,
-                          parent: w.threadParent!,
+                          parentMessageId: w.threadParentMessageId!,
                           menuMode: true,
                         ),
                       ],

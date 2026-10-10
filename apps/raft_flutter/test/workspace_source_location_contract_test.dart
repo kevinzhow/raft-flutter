@@ -196,13 +196,14 @@ void main() {
             expect(find.byKey(const Key('mobile-detail-back')), findsOneWidget);
             if (dm) {
               expect(find.byType(RaftChannelHeader), findsNothing);
+              // ChatPanel's DM titleSlot: the peer identity, not a page title.
               expect(
                 tester
-                    .widget<RaftPageHeader>(
+                    .widget<RaftDmHeader>(
                       find.byKey(const Key('workspace-mobile-detail-header')),
                     )
-                    .title,
-                accepted.name,
+                    .name,
+                'Actual peer',
               );
             } else {
               final header = tester.widget<RaftChannelHeader>(

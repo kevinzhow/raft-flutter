@@ -13,13 +13,15 @@ class ThreadActions extends StatefulWidget {
   const ThreadActions({
     super.key,
     required this.controller,
-    required this.parent,
+    required this.parentMessageId,
     this.menuMode = false,
     this.onSearch,
     this.onViewChannel,
   });
   final WorkspaceController controller;
-  final RaftMessage parent;
+  /// The open thread's parent message identity. The menu does not wait for
+  /// the parent message body: the header is final at the first frame.
+  final String parentMessageId;
   final bool menuMode;
   final VoidCallback? onSearch, onViewChannel;
   @override
@@ -72,13 +74,13 @@ class _ThreadActionsState extends State<ThreadActions> {
       mounted &&
       generation == w.client.generation &&
       authority == workspaceAuthority(w) &&
-      widget.parent.id == w.threadParent?.id;
+      widget.parentMessageId == w.threadParentMessageId;
 
   /// Membership from the server-scoped followed list; null before its first
   /// accepted read for this identity.
   bool? get following =>
-      store.loaded ? store.isFollowing(widget.parent.id) : null;
-  bool get busy => store.isPending(widget.parent.id);
+      store.loaded ? store.isFollowing(widget.parentMessageId) : null;
+  bool get busy => store.isPending(widget.parentMessageId);
 
   /// Shown only when the list never loaded for this identity.
   String? get loadError => store.loaded || store.error == null
@@ -101,14 +103,14 @@ class _ThreadActionsState extends State<ThreadActions> {
     final wasFollowing = following;
     if (!current || busy || wasFollowing == null) return;
     final threadId =
-        store.threadChannelIdFor(widget.parent.id) ?? w.threadChannelId;
+        store.threadChannelIdFor(widget.parentMessageId) ?? w.threadChannelId;
     if (wasFollowing && threadId == null) return;
     rebuild(() => error = null);
     try {
       // Optimistic in the shared store; it reverts if the write fails.
       wasFollowing
-          ? await store.unfollow(widget.parent.id, threadChannelId: threadId)
-          : await store.follow(widget.parent.id);
+          ? await store.unfollow(widget.parentMessageId, threadChannelId: threadId)
+          : await store.follow(widget.parentMessageId);
     } catch (_) {
       if (current) {
         rebuild(

@@ -126,7 +126,7 @@ void main() {
         );
         expect(find.byKey(const ValueKey('thread-back')), findsOneWidget);
         expect(find.byKey(const ValueKey('thread-close')), findsNothing);
-        expect(find.text('Thread — #公开中文 日本語'), findsOneWidget);
+        expect(find.text('Thread— #公开中文 日本語'), findsOneWidget);
         final semantics = tester.ensureSemantics();
         try {
           final node = tester.getSemantics(
@@ -286,9 +286,15 @@ void main() {
         final titleRect = tester.getRect(
           find.byKey(const ValueKey('title-target')),
         );
-        expect(backRect.height, greaterThanOrEqualTo(48));
+        // Back is the source-sized PanelAction (as AppPanelHeader); its
+        // touch target extends past the painted box without moving the
+        // title, like the channel header's actions.
+        expect(backRect.height, lessThan(48));
         expect(titleRect.height, greaterThanOrEqualTo(48));
         expect(backRect.overlaps(titleRect), false);
+        final semantics = tester.ensureSemantics();
+        await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+        semantics.dispose();
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);
         await tester.pump();
         await tester.sendKeyEvent(LogicalKeyboardKey.tab);

@@ -44,7 +44,7 @@ void main() {
             home: Scaffold(
               body: ThreadActions(
                 controller: w,
-                parent: parent,
+                parentMessageId: parent.id,
                 menuMode: true,
               ),
             ),

@@ -1,0 +1,93 @@
+{
+ "name": "raft-flutter parity extension: conversation headers",
+ "scope": "Public deterministic test data; no credentials.",
+ "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+ "channels": [
+  {
+   "id": "channel-colvalley",
+   "serverId": "visual-server",
+   "name": "colvalley",
+   "description": "Visual testing release gates",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-colvalley-long",
+   "serverId": "visual-server",
+   "name": "colvalley",
+   "description": "日语 lost and found 单词 App 结合了 crowded scene 的特性: every channel description that is longer than the header can show is clamped to two lines on Web, so this sentence keeps going with more release notes, review links, owners, and the reasons the team created the channel in the first place, until it is far longer than two lines at any desktop or mobile width.",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-colvalley-none",
+   "serverId": "visual-server",
+   "name": "colvalley",
+   "description": null,
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-colvalley-private",
+   "serverId": "visual-server",
+   "name": "colvalley-private",
+   "description": "Visual testing release gates",
+   "type": "private",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-colvalley-newline",
+   "serverId": "visual-server",
+   "name": "colvalley",
+   "description": "日语 lost and found 单词 App\n结合了 crowded scene 的特性",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  }
+ ],
+ "dms": [
+  {
+   "id": "dm-agent-cindy",
+   "serverId": "visual-server",
+   "name": "dm-agent-cindy",
+   "description": null,
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerType": "agent",
+   "peerId": "agent-cindy",
+   "peerName": "Cindy",
+   "peerDisplayName": "Cindy",
+   "peerAvatarUrl": "pixel:robot"
+  },
+  {
+   "id": "dm-human-designer",
+   "serverId": "visual-server",
+   "name": "dm-human-designer",
+   "description": null,
+   "type": "dm",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "peerType": "user",
+   "peerId": "visual-human-designer",
+   "peerName": "designer",
+   "peerDisplayName": "Designer",
+   "peerAvatarUrl": null,
+   "peerGravatarHash": null
+  }
+ ],
+ "routes": {
+  "GET /channels/threads/followers": {
+   "threads": []
+  }
+ },
+ "thread": {
+  "parentChannelId": "channel-colvalley",
+  "parentMessageId": "msg-colvalley-thread-parent",
+  "threadChannelId": "thread-colvalley-1"
+ }
+}

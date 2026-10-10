@@ -84,10 +84,27 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
               ),
             ),
             if (split && widget.thread != null)
-              SizedBox(
-                key: const Key('workspace-thread-panel'),
-                width: threadSize,
-                child: thread(),
+              Builder(
+                builder: (context) {
+                  final t = RaftTokens.of(context);
+                  // ThreadPanelRoot is an attached Panel: its own left border
+                  // is the Channel | Thread divider (dropped when folded).
+                  return Container(
+                    key: const Key('workspace-thread-panel'),
+                    width: threadSize,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: t.brutal
+                              ? Colors.black
+                              : t.colors['line-muted']!,
+                          width: t.brutal ? 2 : 1,
+                        ),
+                      ),
+                    ),
+                    child: thread(),
+                  );
+                },
               ),
           ],
         ),

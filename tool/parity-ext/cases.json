@@ -7166,6 +7166,2109 @@
     "layoutDp": 1,
     "ignoreAntialiasing": true
    }
+  },
+  {
+   "id": "components.channelheader.desktop.short.brutal",
+   "title": "Conversation header desktop channel, short description (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.short",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.short.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.short'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.short.elegant",
+   "title": "Conversation header desktop channel, short description (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.short",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.short.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.short'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.short.elegant-dark",
+   "title": "Conversation header desktop channel, short description (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.short",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.short.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.short'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.long.brutal",
+   "title": "Conversation header desktop channel, long description (two-line clamp) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.long",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-long"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.long.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.long.elegant",
+   "title": "Conversation header desktop channel, long description (two-line clamp) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.long",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-long"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.long.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.long.elegant-dark",
+   "title": "Conversation header desktop channel, long description (two-line clamp) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.long",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-long"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.long.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.none.brutal",
+   "title": "Conversation header desktop channel, no description (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.none",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-none"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.none.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.none'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.none.elegant",
+   "title": "Conversation header desktop channel, no description (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.none",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-none"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.none.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.none'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.none.elegant-dark",
+   "title": "Conversation header desktop channel, no description (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.none",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-none"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.none.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.none'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.private.brutal",
+   "title": "Conversation header desktop private channel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.private",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-private"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.private.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.private'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.private.elegant",
+   "title": "Conversation header desktop private channel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.private",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-private"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.private.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.private'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.private.elegant-dark",
+   "title": "Conversation header desktop private channel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.private",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-private"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.private.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.private'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.dm-agent.brutal",
+   "title": "Conversation header desktop agent DM (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.dm-agent",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "dm-agent-cindy"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.dm-agent.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.dm-agent'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.dm-agent.elegant",
+   "title": "Conversation header desktop agent DM (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.dm-agent",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "dm-agent-cindy"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.dm-agent.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.dm-agent'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.dm-agent.elegant-dark",
+   "title": "Conversation header desktop agent DM (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.dm-agent",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "dm-agent-cindy"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.dm-agent.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.dm-agent'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.thread.brutal",
+   "title": "Conversation header desktop side thread panel header (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.thread",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 64,
+      "channel": "channel-colvalley",
+      "thread": "true"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.thread.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.thread'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.thread.elegant",
+   "title": "Conversation header desktop side thread panel header (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.thread",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 64,
+      "channel": "channel-colvalley",
+      "thread": "true"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.thread.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.thread'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.thread.elegant-dark",
+   "title": "Conversation header desktop side thread panel header (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.thread",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 64,
+      "channel": "channel-colvalley",
+      "thread": "true"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.thread.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.thread'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.short.brutal",
+   "title": "Conversation header mobile channel, short description (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.short",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.short.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.short'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.short.elegant",
+   "title": "Conversation header mobile channel, short description (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.short",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.short.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.short'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.short.elegant-dark",
+   "title": "Conversation header mobile channel, short description (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.short",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.short.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.short'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.long.brutal",
+   "title": "Conversation header mobile channel, long description (two-line clamp) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.long",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-long"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.long.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.long.elegant",
+   "title": "Conversation header mobile channel, long description (two-line clamp) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.long",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-long"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.long.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.long.elegant-dark",
+   "title": "Conversation header mobile channel, long description (two-line clamp) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.long",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-long"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.long.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.none.brutal",
+   "title": "Conversation header mobile channel, no description (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.none",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-none"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.none.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.none'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.none.elegant",
+   "title": "Conversation header mobile channel, no description (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.none",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-none"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.none.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.none'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.none.elegant-dark",
+   "title": "Conversation header mobile channel, no description (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.none",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-none"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.none.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.none'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.private.brutal",
+   "title": "Conversation header mobile private channel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.private",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-private"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.private.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.private'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.private.elegant",
+   "title": "Conversation header mobile private channel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.private",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-private"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.private.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.private'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.private.elegant-dark",
+   "title": "Conversation header mobile private channel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.private",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-private"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.private.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.private'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.dm-agent.brutal",
+   "title": "Conversation header mobile agent DM (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.dm-agent",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "dm-agent-cindy"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.dm-agent.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.dm-agent'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.dm-agent.elegant",
+   "title": "Conversation header mobile agent DM (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.dm-agent",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "dm-agent-cindy"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.dm-agent.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.dm-agent'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.dm-agent.elegant-dark",
+   "title": "Conversation header mobile agent DM (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.dm-agent",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "dm-agent-cindy"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.dm-agent.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.dm-agent'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.thread.brutal",
+   "title": "Conversation header mobile side thread panel header (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.thread",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 64,
+      "channel": "channel-colvalley",
+      "thread": "true"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.thread.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.thread'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.thread.elegant",
+   "title": "Conversation header mobile side thread panel header (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.thread",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 64,
+      "channel": "channel-colvalley",
+      "thread": "true"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.thread.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.thread'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.thread.elegant-dark",
+   "title": "Conversation header mobile side thread panel header (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.thread",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 64,
+      "channel": "channel-colvalley",
+      "thread": "true"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.thread.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.thread'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.dm-human.brutal",
+   "title": "Conversation header desktop human DM (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.dm-human",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "dm-human-designer"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.dm-human.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.dm-human'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.dm-human.elegant",
+   "title": "Conversation header desktop human DM (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.dm-human",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "dm-human-designer"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.dm-human.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.dm-human'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.dm-human.elegant-dark",
+   "title": "Conversation header desktop human DM (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.dm-human",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "dm-human-designer"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.dm-human.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.dm-human'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.hover-search.brutal",
+   "title": "Conversation header desktop channel, hovered Search button (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.hover-search",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.hover-search.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "[data-testid=\"channel-topbar-search\"]"
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "channel-topbar-search"
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.hover-search'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   },
+   "notes": "Pointer rests on the Search icon button (hover fill; the tooltip opens after the provider delay)."
+  },
+  {
+   "id": "components.channelheader.desktop.hover-search.elegant",
+   "title": "Conversation header desktop channel, hovered Search button (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.hover-search",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.hover-search.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "[data-testid=\"channel-topbar-search\"]"
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "channel-topbar-search"
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.hover-search'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   },
+   "notes": "Pointer rests on the Search icon button (hover fill; the tooltip opens after the provider delay)."
+  },
+  {
+   "id": "components.channelheader.desktop.hover-search.elegant-dark",
+   "title": "Conversation header desktop channel, hovered Search button (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.hover-search",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.hover-search.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "[data-testid=\"channel-topbar-search\"]"
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "channel-topbar-search"
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.hover-search'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   },
+   "notes": "Pointer rests on the Search icon button (hover fill; the tooltip opens after the provider delay)."
+  },
+  {
+   "id": "components.channelheader.desktop.newline.brutal",
+   "title": "Conversation header desktop channel, description with an authored newline (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.newline",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-newline"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.newline.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.newline'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.newline.elegant",
+   "title": "Conversation header desktop channel, description with an authored newline (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.newline",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-newline"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.newline.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.newline'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.desktop.newline.elegant-dark",
+   "title": "Conversation header desktop channel, description with an authored newline (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.newline",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-newline"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.desktop.newline.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'desktop.newline'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.newline.brutal",
+   "title": "Conversation header mobile channel, description with an authored newline (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.newline",
+      "extKind": "channelheader",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-newline"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.newline.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.newline'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.newline.elegant",
+   "title": "Conversation header mobile channel, description with an authored newline (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.newline",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-newline"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.newline.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.newline'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.channelheader.mobile.newline.elegant-dark",
+   "title": "Conversation header mobile channel, description with an authored newline (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "channel-header",
+   "category": "extension/channel-header",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.newline",
+      "extKind": "channelheader",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "windowHeight": 120,
+      "channel": "channel-colvalley-newline"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.channelheader.mobile.newline.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/message/ChatPanel.tsx + ui/PanelHeader.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_channel_header.dart 'mobile.newline'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
   }
  ]
 }

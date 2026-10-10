@@ -450,11 +450,15 @@ class _ConversationTabsState extends State<RaftConversationTabs> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: recipe.background,
+        // Elegant desktop tabs have no rule (`border-b-0`); a zero-width
+        // Flutter BorderSide would still paint a hairline.
         border: Border(
-          bottom: BorderSide(
-            color: recipe.border,
-            width: recipe.outerBottomBorder,
-          ),
+          bottom: recipe.outerBottomBorder == 0
+              ? BorderSide.none
+              : BorderSide(
+                  color: recipe.border,
+                  width: recipe.outerBottomBorder,
+                ),
         ),
       ),
       child: SizedBox(

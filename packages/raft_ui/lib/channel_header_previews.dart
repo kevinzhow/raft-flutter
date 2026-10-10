@@ -66,3 +66,45 @@ class _DesktopPanelHeaderPreviewState
     ],
   );
 }
+
+@RaftPreviews('DM header', size: Size(960, 160))
+Widget dmHeaderPreview() => const _DmHeaderPreview();
+
+class _DmHeaderPreview extends StatefulWidget {
+  const _DmHeaderPreview();
+  @override
+  State<_DmHeaderPreview> createState() => _DmHeaderPreviewState();
+}
+
+class _DmHeaderPreviewState extends State<_DmHeaderPreview> {
+  String result = 'Ready';
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      RaftDmHeader(
+        name: 'Cindy',
+        avatar: const RaftAvatar(
+          name: 'Cindy',
+          kind: RaftAvatarKind.agent,
+          mountedContext: RaftMountedAvatarContext.panelHeader,
+        ),
+        activity: RaftActivityTone.working,
+        activityText: 'Capturing visual testing baselines',
+        onSearch: () => setState(() => result = 'Search DM'),
+        onSettings: () => setState(() => result = 'DM settings'),
+      ),
+      RaftDmHeader(
+        name: 'Designer',
+        avatar: const RaftAvatar(
+          name: 'Designer',
+          mountedContext: RaftMountedAvatarContext.panelHeader,
+        ),
+        muted: true,
+        onBack: () => setState(() => result = 'Back'),
+        onSearch: () => setState(() => result = 'Search DM'),
+        onSettings: () => setState(() => result = 'DM settings'),
+      ),
+      Text(result),
+    ],
+  );
+}

@@ -30,6 +30,7 @@ import 'chat_agent_presentation.dart';
 import 'live_agent_activity_bar.dart';
 import 'chat_view.dart';
 import 'thread_actions.dart';
+import 'computer_detail_view.dart';
 import 'conversation_panel.dart';
 import 'message_selection.dart';
 
@@ -1314,6 +1315,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                                                   'joint',
                                                 ].contains(w.channel!.type)
                                             ? channelHeader()
+                                            : route == 'chat' &&
+                                                  w.channel?.type == 'dm'
+                                            ? dmHeader()
                                             : RaftPageHeader(
                                                 title: route == 'home'
                                                     ? (w.channel?.name ?? title)
@@ -1508,7 +1512,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final unresolved =
         w.threadChannelId == null &&
         (w.threadResolutionLoading || w.threadResolutionError != null);
-    final parent = w.presentedThreadParent;
+    // The menu needs only the thread identity, never the loaded parent row,
+    // so the header's actions are present at its first frame.
+    final parentId = w.threadParentMessageId,
+        parentChannelId = w.threadParentChannelId;
     final sourceChannel = w.threadSourceChannel;
     return RaftThreadHeader(
       key: Key(
@@ -1531,16 +1538,16 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       onClose: onClose ?? (mobile ? dismissPanel : closeThreadPanel),
       onJumpToStart: unresolved ? null : threadViewport.jumpToBeginning,
       actions: [
-        if (!unresolved && parent != null)
+        if (!unresolved && parentId != null && parentChannelId != null)
           ThreadActions(
-            key: ValueKey('thread-menu-${parent.id}'),
+            key: ValueKey('thread-menu-$parentId'),
             controller: w,
-            parent: parent,
+            parentMessageId: parentId,
             menuMode: true,
             onSearch: () => select('search'),
             onViewChannel: () {
               w.closeThread(navigate: false);
-              w.jumpToMessage(parent.channelId, parent.id);
+              w.jumpToMessage(parentChannelId, parentId);
             },
           ),
       ],
@@ -2476,8 +2483,61 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     onSearch: searchThisChannel,
     onSettings: channelSettings,
     searchLabel: tr('Search this channel'),
-    settingsLabel: tr('Channel settings'),
+    settingsLabel: tr('Channel details and settings'),
   );
+
+  /// ChatPanel's DM header: identity from the DM record (first frame), the
+  /// agent's status from the server-scoped agent directory.
+  Widget dmHeader({bool mobile = false}) {
+    final c = w.channel!;
+    final peer = dmPeer(c, requestSize: 36);
+    final row = peer.profile;
+    final activity = !peer.agent
+        ? null
+        : switch ('${row?['activity'] ?? ''}') {
+            'online' => RaftActivityTone.online,
+            'thinking' => RaftActivityTone.thinking,
+            'working' => RaftActivityTone.working,
+            'error' => RaftActivityTone.error,
+            'offline' => RaftActivityTone.offline,
+            _ =>
+              row?['status'] == 'active'
+                  ? RaftActivityTone.online
+                  : RaftActivityTone.offline,
+          };
+    final tone = activity?.name;
+    return RaftDmHeader(
+      key: Key(
+        mobile ? 'workspace-mobile-detail-header' : 'workspace-channel-header',
+      ),
+      name: peer.name,
+      avatar: mountedPeerAvatar(
+        peer.name,
+        peer.agent,
+        peer.avatar,
+        avatarContext: RaftMountedAvatarContext.panelHeader,
+      ),
+      activity: activity,
+      external: peer.agent && row?['runtime'] == 'external',
+      activityText: tone == null
+          ? null
+          : row?['activityDetail'] is String &&
+                (row!['activityDetail'] as String).isNotEmpty &&
+                tone != 'offline'
+          ? row['activityDetail'] as String
+          // Source formatActivityText: the localized activity label.
+          : tr(computerAgentActivityText({'activity': tone})),
+      muted: c.flag('activityMuted'),
+      mutedLabel: tr('Activity muted. Direct mentions can still notify you.'),
+      onBack: mobile ? dismissPanel : null,
+      backKey: mobile ? const Key('mobile-detail-back') : null,
+      backLabel: mainSelection.active ? tr('Exit selection') : tr('Back'),
+      onSearch: searchThisChannel,
+      onSettings: channelSettings,
+      searchLabel: tr('Search this channel'),
+      settingsLabel: tr('Channel details and settings'),
+    );
+  }
 
   Widget mobilePageHeader(String title, bool thread) => thread
       ? sourceThreadHeader(mobile: true)
@@ -2485,6 +2545,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             w.channel != null &&
             ['channel', 'private', 'joint'].contains(w.channel!.type)
       ? channelHeader(mobile: true)
+      : w.section == 'chat' && w.channel?.type == 'dm'
+      ? dmHeader(mobile: true)
       : RaftPageHeader(
           key: const Key('workspace-mobile-detail-header'),
           title: thread ? tr('Thread') : title,
@@ -2587,11 +2649,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   Widget mountedPeerAvatar(
     String name,
     bool agent,
-    SenderAvatarProjection source,
-  ) => RaftAvatar(
+    SenderAvatarProjection source, {
+    RaftMountedAvatarContext avatarContext =
+        RaftMountedAvatarContext.sidebarList,
+  }) => RaftAvatar(
     name: name,
     kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-    mountedContext: RaftMountedAvatarContext.sidebarList,
+    mountedContext: avatarContext,
     content: RaftAvatarContent(
       name: name,
       kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
@@ -2599,7 +2663,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       gravatarUrl: source.gravatarUrl,
       pixelKey: source.pixelKey,
       fallback: RaftMountedAvatarFallback(
-        avatarContext: RaftMountedAvatarContext.sidebarList,
+        avatarContext: avatarContext,
         identity: agent
             ? RaftMountedAvatarIdentity.agent
             : RaftMountedAvatarIdentity.human,
@@ -2676,8 +2740,17 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         ),
   ];
 
-  Widget channelItem(RaftChannel c) {
-    final scope = mobileAuthority;
+  /// A DM's peer as the sidebar row and the DM header show it: the accepted
+  /// agent directory row when present, else the DM record's own peer fields
+  /// (present at the first frame).
+  ({
+    bool agent,
+    String name,
+    String description,
+    Map<String, dynamic>? profile,
+    SenderAvatarProjection avatar,
+  })
+  dmPeer(RaftChannel c, {double requestSize = 16}) {
     final agent = c.type == 'dm' && c.string('peerType') == 'agent';
     final profile = agent
         ? w.entityDirectory.agent(c.string('peerId')) ??
@@ -2699,7 +2772,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     final description = profile == null
         ? c.string('peerDescription')
         : '${profile['description'] ?? ''}';
-    final source = projectSenderAvatar(
+    final avatar = projectSenderAvatar(
       origin: w.client.origin,
       senderId: c.string('peerId'),
       senderType: agent ? 'agent' : 'user',
@@ -2719,8 +2792,23 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             'gravatarHash': c.json['peerGravatarHash'],
           },
       ],
-      requestSize: 16,
+      requestSize: requestSize,
     );
+    return (
+      agent: agent,
+      name: name,
+      description: description,
+      profile: profile,
+      avatar: avatar,
+    );
+  }
+
+  Widget channelItem(RaftChannel c) {
+    final scope = mobileAuthority;
+    final peer = dmPeer(c);
+    final agent = peer.agent, name = peer.name;
+    final description = peer.description;
+    final source = peer.avatar;
     return RaftNavItem(
       key: ValueKey('sidebar-channel-${c.id}'),
       leading: c.type == 'dm' ? mountedPeerAvatar(name, agent, source) : null,

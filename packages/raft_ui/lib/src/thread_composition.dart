@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'conversation_surface.dart';
 import 'icons.dart';
+import 'panel_layout.dart';
 import 'theme.dart';
 
 /// Mounted Web ThreadPanel presentation, independent of the host OS.
@@ -153,38 +154,38 @@ class RaftThreadHeader extends StatelessWidget {
         text: threadLabel,
         style: recipe.title,
         children: [
+          // Source `<span> — {label}</span>` is a flex item of the title
+          // button: its leading space is collapsed at the item start.
           if (parentLabel != null)
-            TextSpan(text: ' — $parentLabel', style: recipe.titleSuffix),
+            TextSpan(text: '— $parentLabel', style: recipe.titleSuffix),
         ],
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );
-    return DecoratedBox(
+    // CSS border-box: the bottom rule is inside the header height and the
+    // row is centred in the remaining content box.
+    return Container(
+      height: recipe.headerHeight,
       decoration: BoxDecoration(
         color: recipe.headerBackground,
         border: Border(bottom: recipe.headerBorder),
       ),
       child: SizedBox(
-        height: recipe.headerHeight,
+        height: recipe.headerHeight - recipe.headerBorder.width,
         child: Padding(
           padding: recipe.headerInset,
           child: Row(
             children: [
               if (recipe.showBack && onBack != null) ...[
-                RaftControl(
+                // AppPanelHeader's mobile Back is the raft-ui PanelAction (the
+                // same control as the channel header): source-sized layout,
+                // touch hit area extended without moving the title.
+                RaftPanelAction(
                   key: backKey,
-                  recipe: _ThreadBackRecipe(tokens),
-                  onPressed: onBack,
+                  glyph: RaftGlyph.arrowLeft,
                   tooltip: backLabel,
-                  semanticLabel: backLabel,
-                  visualWidth: tokens.brutal ? 26 : 32,
-                  visualHeight: tokens.brutal ? 28 : 32,
-                  padding: EdgeInsets.zero,
-                  child: RaftIcon(
-                    RaftGlyph.arrowLeft,
-                    size: tokens.brutal ? 14 : 16,
-                  ),
+                  onPressed: onBack,
                 ),
                 SizedBox(width: recipe.headerGap),
               ],
@@ -262,47 +263,15 @@ class RaftThreadOverflowAction extends StatelessWidget {
   });
   final String label;
   final VoidCallback? onPressed;
+
+  // ThreadOverflowMenu trigger: Button size="icon-sm" variant="outline" with
+  // EllipsisVertical (14px), the same control as the channel topbar actions.
   @override
-  Widget build(BuildContext context) => RaftControl(
+  Widget build(BuildContext context) => RaftPanelIconButton(
+    glyph: RaftGlyph.ellipsisVertical,
     tooltip: label,
-    semanticLabel: label,
-    variant: RaftControlVariant.outline,
-    visualWidth: 28,
-    visualHeight: 28,
-    padding: EdgeInsets.zero,
     onPressed: onPressed,
-    child: ExcludeSemantics(
-      child: SizedBox.square(
-        dimension: 14,
-        child: Builder(
-          builder: (context) => CustomPaint(
-            painter: _ThreadOverflowPainter(
-              IconTheme.of(context).color ?? RaftTokens.of(context).muted,
-            ),
-          ),
-        ),
-      ),
-    ),
   );
-}
-
-class _ThreadOverflowPainter extends CustomPainter {
-  const _ThreadOverflowPainter(this.color);
-  final Color color;
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.scale(size.width / 24, size.height / 24);
-    final pen = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    for (final y in [12.0, 5.0, 19.0]) {
-      canvas.drawCircle(Offset(12, y), 1, pen);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_ThreadOverflowPainter old) => old.color != color;
 }
 
 class _ThreadTitleRecipe extends RaftControlRecipe {

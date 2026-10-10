@@ -111,7 +111,11 @@ Future<void> _pumpThreadActions(WidgetTester t, WorkspaceController w) async {
     MaterialApp(
       theme: raftTheme(RaftFamily.elegant),
       home: Scaffold(
-        body: ThreadActions(controller: w, parent: _parent, menuMode: true),
+        body: ThreadActions(
+          controller: w,
+          parentMessageId: _parent.id,
+          menuMode: true,
+        ),
       ),
     ),
   );
