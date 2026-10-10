@@ -263,14 +263,11 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         p?.rows(key).where((c) => c['id'] == id).firstOrNull?['name']
             as String? ??
         '$id';
-    return page('IM Bridges', [
-      if (!loading && !enabled)
-        Text(
-          raftText(
-            context,
-            'Slack bridging is not enabled for this workspace.',
-          ),
-        ),
+    // IMBridgesSettingsSection renders nothing while the flag is off.
+    if (!loading && !enabled && error == null) {
+      return const SizedBox.shrink();
+    }
+    final body = <Widget>[
       if (enabled && p != null) ...[
         heading('Slack'),
         if (p.snapshot['workspaceName'] != null)
@@ -377,7 +374,32 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
           ),
         ),
       ],
-    ]);
+    ];
+    return ListView(
+      primary: false,
+      padding: RaftSettingsPanelFrame.contentInset,
+      children: [
+        RaftMessagingBridgesSection(
+          // SlackBridgeSetupWizard: a failed load with no view.
+          failed: error != null && p == null,
+          child: loading && p == null
+              ? const RaftSkeleton(height: 48)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (error != null)
+                      RaftBanner(
+                        status: RaftBannerRecipeStatus.warning,
+                        size: RaftBannerRecipeSize.sm,
+                        glyph: RaftGlyph.circleAlert,
+                        description: 'The Slack bridge operation failed. No setup state was assumed.',
+                      ),
+                    ...body,
+                  ],
+                ),
+        ),
+      ],
+    );
   }
 }
 

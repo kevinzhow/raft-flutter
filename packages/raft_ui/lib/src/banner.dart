@@ -146,15 +146,23 @@ class RaftBanner extends StatelessWidget {
     }
     final gap = recipe.root.columnGap ?? 8;
     final svg = recipe.root.target('& > svg');
+    // Title + description: the svg spans both rows at the top (`mt-0.5`).
+    final stacked = title != null;
     return Row(
+      crossAxisAlignment: stacked
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.center,
       children: [
         if (glyph != null) ...[
-          RaftIcon(
-            glyph!,
-            size: svg?.width ?? 16,
-            color:
-                svg?.textStyle(tokens).color ??
-                recipe.root.textStyle(tokens).color,
+          Padding(
+            padding: EdgeInsets.only(top: stacked ? 2 : 0),
+            child: RaftIcon(
+              glyph!,
+              size: svg?.width ?? 16,
+              color:
+                  svg?.textStyle(tokens).color ??
+                  recipe.root.textStyle(tokens).color,
+            ),
           ),
           SizedBox(width: gap),
         ],

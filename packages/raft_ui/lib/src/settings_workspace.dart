@@ -10,6 +10,7 @@ import 'components.dart' show RaftButton;
 import 'design_primitives.dart' show RaftSpinner, RaftTypography;
 import 'feedback_inbox.dart' show RaftDashedBorderPainter, RaftUiSkeleton;
 import 'icons.dart';
+import 'list_items.dart' show RaftSectionEyebrow;
 import 'localization.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
@@ -411,6 +412,82 @@ class RaftProviderConnectionsFrame extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// IMBridgesSection: the bordered intro card (`SectionEyebrow` Messaging,
+/// `text-lg font-black` title, `text-xs leading-relaxed text-black/60`
+/// description; Brutal `border-2 border-black bg-brutal-cream`) over the
+/// provider body ([child]), `space-y-4`. [failed] renders the Raft for Slack
+/// warning banner (`density="lg" withIcon`) instead.
+class RaftMessagingBridgesSection extends StatelessWidget {
+  const RaftMessagingBridgesSection({
+    super.key,
+    this.child,
+    this.failed = false,
+  });
+  final Widget? child;
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final copy = Colors.black.withValues(alpha: .6);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          key: const ValueKey('im-bridges-header'),
+          padding: const EdgeInsets.all(16),
+          decoration: RaftSettingsCard.decoration(t)
+              .copyWith(color: t.brutal ? t.product.brutalCream : null),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              RaftSectionEyebrow(raftText(context, 'Messaging')),
+              const SizedBox(height: 4),
+              Text(
+                raftText(context, 'Messaging bridges'),
+                style: RaftTypography.body(
+                  t,
+                  size: 18,
+                  line: 28,
+                  weight: FontWeight.w900,
+                  color: RaftSettingsText(t).strong,
+                ),
+              ),
+              const SizedBox(height: 4),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 672),
+                child: Text(
+                  raftText(
+                    context,
+                    'Manage connections between Raft and external messaging services.',
+                  ),
+                  style: RaftTypography.body(
+                    t,
+                    size: 12,
+                    line: 12 * 1.625,
+                    color: copy,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (failed)
+          RaftBanner(
+            status: RaftBannerRecipeStatus.warning,
+            size: RaftBannerRecipeSize.lg,
+            glyph: RaftGlyph.circleAlert,
+            title: 'Raft for Slack',
+            description: 'The Slack bridge operation failed. No setup state was assumed.',
+          )
+        else
+          ?child,
+      ],
     );
   }
 }

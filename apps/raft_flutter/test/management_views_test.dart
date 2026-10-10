@@ -115,7 +115,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Fixture Slack'), findsNothing);
       expect(find.text('Disconnect Slack'), findsNothing);
-      expect(find.textContaining('Permission changed'), findsOneWidget);
+      // SlackBridgeSetupWizard: a failed load with no view shows the
+      // generic Raft for Slack failure (never the stale projection).
+      expect(
+        find.text(
+          'The Slack bridge operation failed. No setup state was assumed.',
+        ),
+        findsOneWidget,
+      );
     },
   );
   testWidgets(
@@ -323,10 +330,8 @@ void main() {
     };
     await tester.pumpWidget(host(IMBridgesView(controller: w)));
     await tester.pumpAndSettle();
-    expect(
-      find.text('Slack bridging is not enabled for this workspace.'),
-      findsOneWidget,
-    );
+    // IMBridgesSettingsSection renders nothing while the flag is off.
+    expect(find.byType(RaftMessagingBridgesSection), findsNothing);
     expect(a.calls.where((c) => c.path.startsWith('/slack-bridge')), isEmpty);
   });
   testWidgets('failed Slack preflight never enables bridge', (tester) async {
