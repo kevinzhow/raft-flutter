@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'workspace_cache.dart';
+import 'resource_snapshot_cache.dart';
 import 'workspace_entity_directory.dart';
 import 'raft_location.dart';
 import 'raft_navigation_history.dart';
@@ -557,6 +558,7 @@ class WorkspaceController extends ChangeNotifier {
       threadGeneration++;
       ledger.switchServer(null);
       readState.reset();
+      resourceSnapshots.clear();
       reactionViewer.reset();
       messageSync.reset();
       syncCoreMessagesEnabled = false;
@@ -989,6 +991,10 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   final readState = ReadStateLedger();
+
+  /// Workspace-owned page snapshots (Activity, Saved) that survive
+  /// navigation; dropped on every server or account switch.
+  final resourceSnapshots = ResourceSnapshotCache();
   final Map<String, Set<String>> visibleIds = {};
   final Map<String, (String, bool, String)> _windowState = {};
   final Set<String> _contextWindows = {};
@@ -1303,6 +1309,7 @@ class WorkspaceController extends ChangeNotifier {
     unawaited(entityDirectory.preload());
     ledger.switchServer(next.id);
     readState.reset();
+    resourceSnapshots.clear();
     reactionViewer.reset();
     messageSync.reset();
     syncCoreMessagesEnabled = false;

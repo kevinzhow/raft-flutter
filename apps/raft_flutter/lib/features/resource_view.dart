@@ -14,6 +14,7 @@ import '../data/activity_follow_state.dart';
 import '../data/activity_done_state.dart';
 import '../data/source_read_all_transport.dart';
 import '../data/resource_row_reconcile.dart';
+import '../data/resource_snapshot_cache.dart';
 import 'search_home.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -297,6 +298,87 @@ class _ResourceViewState extends State<ResourceView> {
 
   /// Activity rows advanced by live messages beyond their accepted window.
   final activityLocalFrontiers = <String, BigInt>{};
+
+  /// Activity and Saved keep their accepted list in the workspace across
+  /// navigation, including where the list was scrolled.
+  bool get snapshotted =>
+      ['activity', 'saved'].contains(widget.section) &&
+      widget.channelId == null;
+  ScrollController? listScroll;
+  double listOffset = 0;
+
+  bool restoreSnapshot() {
+    if (!snapshotted) return false;
+    final snapshot = w.resourceSnapshots.read(
+      widget.section,
+      identityAuthority,
+    );
+    final usable =
+        snapshot != null && snapshot.enabledActivity == enabledActivity;
+    listOffset = usable ? snapshot.scrollOffset : 0;
+    // Children unmount before this state disposes; track the offset live.
+    listScroll = ScrollController(initialScrollOffset: listOffset)
+      ..addListener(() {
+        if (listScroll?.hasClients == true) listOffset = listScroll!.offset;
+      });
+    if (!usable) return false;
+    rows = snapshot.rows;
+    rowsView = snapshot.view;
+    hasMore = snapshot.hasMore;
+    filter = snapshot.filter;
+    activeActivityFilter = snapshot.activeActivityFilter;
+    query.text = snapshot.query;
+    advanced.channelId = snapshot.channelId;
+    advanced.direction = snapshot.direction;
+    totalCount = snapshot.totalCount;
+    totalUnreadCount = snapshot.totalUnreadCount;
+    activityAllCount = snapshot.activityAllCount;
+    savedActivityTotal = snapshot.savedActivityTotal;
+    activityGroups = snapshot.activityGroups;
+    acceptedActivityItems = snapshot.acceptedActivityItems;
+    savedActivityItems = snapshot.savedActivityItems;
+    doneActivityItems = snapshot.doneActivityItems;
+    loading = false;
+    // Channels lost while the page was away never reappear from the cache.
+    refilterRows(lostChannels(snapshot.channelAccess, acceptedAccess));
+    return true;
+  }
+
+  void saveSnapshot() {
+    if (!snapshotted) return;
+    if (identityAuthority != acceptedIdentity ||
+        loading ||
+        error != null ||
+        rowsView == null) {
+      w.resourceSnapshots.remove(widget.section);
+      return;
+    }
+    w.resourceSnapshots.write(
+      widget.section,
+      ResourceSnapshot(
+        identity: acceptedIdentity!,
+        enabledActivity: enabledActivity,
+        view: rowsView,
+        rows: rows,
+        hasMore: hasMore,
+        filter: filter,
+        activeActivityFilter: activeActivityFilter,
+        query: query.text,
+        channelId: advanced.channelId,
+        direction: advanced.direction,
+        totalCount: totalCount,
+        totalUnreadCount: totalUnreadCount,
+        activityAllCount: activityAllCount,
+        savedActivityTotal: savedActivityTotal,
+        activityGroups: activityGroups,
+        acceptedActivityItems: acceptedActivityItems,
+        savedActivityItems: savedActivityItems,
+        doneActivityItems: doneActivityItems,
+        channelAccess: acceptedAccess,
+        scrollOffset: listOffset,
+      ),
+    );
+  }
   StreamSubscription<RaftEvent>? events;
   Timer? refreshTimer;
   WorkspaceController get w => widget.controller;
@@ -819,7 +901,12 @@ class _ResourceViewState extends State<ResourceView> {
     w.addListener(authorityChanged);
     subscribeEvents();
     unawaited(activateSearchMemory(restore: widget.restoreSearchState));
-    load();
+    if (restoreSnapshot()) {
+      // Cached rows are on screen at once; revalidate them in place.
+      unawaited(load(keep: true, quietErrors: true));
+    } else {
+      load();
+    }
   }
 
   @override
@@ -886,6 +973,8 @@ class _ResourceViewState extends State<ResourceView> {
 
   @override
   void dispose() {
+    saveSnapshot();
+    listScroll?.dispose();
     dragFeedbackRevision.value++;
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => dragFeedbackRevision.dispose(),
@@ -1506,6 +1595,7 @@ class _ResourceViewState extends State<ResourceView> {
                       ? RaftTokens.of(context).panel
                       : RaftTokens.of(context).sidebar,
                   child: ListView.separated(
+                    controller: listScroll,
                     padding: const EdgeInsets.all(16),
                     // SavedPanel loads the next page when its sentinel comes
                     // within `rootMargin: 240px` of the scroller.

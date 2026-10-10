@@ -70,12 +70,40 @@ class ActivityWorkspace extends WorkspaceController {
     for (var i = 0; i < 60; i++) channelRow(i, unread: i == 3 ? 2 : 0),
   ];
   final inboxQueries = <Map<String, dynamic>>[];
+  final savedQueries = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> saved = [
+    for (var i = 0; i < 30; i++)
+      {
+        'messageId': 'saved$i',
+        'channelId': 'ch${i % 10}',
+        'channelName': 'Channel ${i % 10}',
+        'channelType': 'channel',
+        'senderId': 'bob',
+        'senderType': 'user',
+        'senderName': 'Bob',
+        'content': 'Saved body $i',
+        'createdAt': '2026-10-10T00:00:00Z',
+      },
+  ];
   Completer<void>? hold;
   @override
   Future<void> refreshUnread() async {}
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
     if (path == '/agents' || path.endsWith('/members')) return [];
+    if (path == '/channels/saved') {
+      final offset = query?['offset'] as int? ?? 0,
+          limit = query?['limit'] as int? ?? 20;
+      savedQueries.add({...?query});
+      final gate = hold;
+      if (gate != null) await gate.future;
+      final page = saved.skip(offset).take(limit).toList();
+      return {
+        'saved': [for (final row in page) Map<String, dynamic>.of(row)],
+        'total': saved.length,
+        'hasMore': offset + page.length < saved.length,
+      };
+    }
     if (path != '/channels/inbox') return {'items': [], 'hasMore': false};
     final params = {...?query};
     inboxQueries.add(params);
