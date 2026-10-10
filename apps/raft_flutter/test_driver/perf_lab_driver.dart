@@ -133,7 +133,8 @@ Future<Map<String, Object?>> attribute(VmService service, String isolateId, Map<
 
   // Inclusive cost categories (a sample may count in several).
   const categories = <String, List<String>>{
-    'fontFallback': ['libfontconfig', 'Fc'],
+    // System font fallback: fontconfig (Linux), CoreText (macOS).
+    'fontFallback': ['libfontconfig', 'Fc', 'CTFont', 'FontParser', 'TDescriptorSource', 'SkFontMgr'],
     'textLayout': ['Paragraph._layout', 'Paragraph.layout', 'TextPainter.layout', '_NativeParagraph', 'ParagraphBuilder.build'],
     'semantics': ['flushSemantics', 'SemanticsOwner.sendSemanticsUpdate'],
     'build': ['BuildOwner.buildScope'],

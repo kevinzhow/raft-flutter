@@ -266,6 +266,10 @@ def compare(base, cand, threshold=0.10, floor_us=500):
         for group, q in COMPARED:
             old, new = x[group][q], y[group][q]
             row['metrics'][f'{group}.{q}'] = (old, new)
+            # Single-frame maxima are reported but too noisy to flag; frames
+            # beyond the 60 Hz budget are flagged through over16 counts.
+            if q == 'max':
+                continue
             if new > old * (1 + threshold) and new - old > floor_us:
                 row['regressions'].append(f'{group[:-2]} {q} {ms(old)}→{ms(new)} ms')
             elif new < old * (1 - threshold) and old - new > floor_us:

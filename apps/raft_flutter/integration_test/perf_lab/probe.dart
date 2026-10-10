@@ -164,6 +164,18 @@ double latestOffset(ScrollPosition p) => p.axisDirection == AxisDirection.up ? p
 Finder messageRow(String id) => find.byKey(ValueKey('message-$id'));
 Finder visibleText(String id) => find.descendant(of: messageRow(id), matching: find.byType(RichText)).hitTestable();
 
+/// The painted, on-screen render box of message [id] (a list may also hold
+/// offstage or measuring copies of a row).
+RenderBox? visibleRowBox(String id, Rect viewport) {
+  for (final element in messageRow(id).evaluate()) {
+    final box = element.renderObject;
+    if (box is! RenderBox || !box.attached || !box.hasSize) continue;
+    final rect = box.localToGlobal(Offset.zero) & box.size;
+    if (rect.overlaps(viewport)) return box;
+  }
+  return null;
+}
+
 /// Message ids currently mounted under a chat view, restricted to [known].
 Set<String> mountedIds(Set<String> known) {
   final out = <String>{};

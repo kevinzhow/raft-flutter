@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart' show PointerDeviceKind;
@@ -194,6 +195,26 @@ void main() {
         await p.animateTo(target, duration: Duration(seconds: secs), curve: Curves.linear);
       }
 
+      /// Drags the timeline by [dy] px toward older history over [time] from
+      /// the avatar gutter (content such as images or code may claim drags),
+      /// then holds still before lifting so no fling follows.
+      Future<void> userDrag(double dy, Duration time) async {
+        final chat = t.getRect(find.byType(RaftChatView).first);
+        final gesture = await t.startGesture(Offset(chat.left + 24, chat.center.dy), kind: PointerDeviceKind.touch);
+        final clock = Stopwatch()..start();
+        var done = 0.0;
+        while (done < dy) {
+          await nextFrame();
+          final step = math.min(dy - done, dy * clock.elapsedMicroseconds / time.inMicroseconds - done);
+          if (step <= 0) continue;
+          await gesture.moveBy(Offset(0, step), timeStamp: Duration(microseconds: clock.elapsedMicroseconds));
+          done += step;
+        }
+        await idle(const Duration(milliseconds: 150));
+        await gesture.moveBy(Offset.zero, timeStamp: Duration(microseconds: clock.elapsedMicroseconds));
+        await gesture.up(timeStamp: Duration(microseconds: clock.elapsedMicroseconds));
+      }
+
       Map<String, Object?> moved(ScrollPosition p, double from) => {
         'startOffset': from, 'endOffset': p.pixels, 'movedPx': (p.pixels - from).abs(),
         'axisDirection': p.axisDirection.name, 'minScrollExtent': p.minScrollExtent, 'maxScrollExtent': p.maxScrollExtent,
@@ -255,7 +276,11 @@ void main() {
       await run('older-drag', prepare: () => show(hist, latest: true), () async {
         final p = position(), from = p.pixels, rowsBefore = w.messages.length;
         final servedBefore = hist.olderPagesServed;
-        final gesture = await t.startGesture(t.getCenter(find.byType(RaftChatView).first), kind: PointerDeviceKind.touch);
+        // Grab the avatar gutter, not row content: with semantics enabled a
+        // drag starting on row content did not scroll (see
+        // docs/performance-lab.md); images and code may claim drags too.
+        final chat = t.getRect(find.byType(RaftChatView).first);
+        final gesture = await t.startGesture(Offset(chat.left + 24, chat.center.dy), kind: PointerDeviceKind.touch);
         final clock = Stopwatch()..start();
         var last = 0;
         while (clock.elapsedMilliseconds < seconds * 1000) {
@@ -275,20 +300,21 @@ void main() {
       // history; the row being read must not move.
       await run('arrival-scrolled-up', prepare: () async {
         await show(mix, latest: true);
-        final p = position();
-        p.jumpTo(p.pixels + olderSign(p) * 2500);
-        await lab.settle(t);
+        // A real user drag (not jumpTo): the product decides whether the
+        // reader left the bottom from user scroll notifications.
+        await userDrag(2500, const Duration(milliseconds: 1500));
+        await lab.settle(t, time: const Duration(milliseconds: 800));
       }, () async {
         final known = {for (final r in mix.rows) r['id'] as String};
         final viewportBox = timelineScrollable(t).context.findRenderObject() as RenderBox;
-        final center = viewportBox.localToGlobal(viewportBox.size.center(Offset.zero)).dy;
+        final viewport = viewportBox.localToGlobal(Offset.zero) & viewportBox.size;
         RenderBox? anchorBox;
         String? anchor;
         var best = double.infinity;
         for (final id in mountedIds(known)) {
-          final box = messageRow(id).evaluate().firstOrNull?.renderObject;
-          if (box is! RenderBox || !box.hasSize || !box.attached) continue;
-          final d = (box.localToGlobal(Offset.zero).dy - center).abs();
+          final box = visibleRowBox(id, viewport);
+          if (box == null) continue;
+          final d = (box.localToGlobal(Offset.zero).dy - viewport.center.dy).abs();
           if (d < best) {
             best = d;
             anchor = id;
@@ -296,18 +322,20 @@ void main() {
           }
         }
         final y0 = anchorBox?.localToGlobal(Offset.zero).dy;
-        var drift = 0.0, lost = 0, sampled = 0, remounts = 0;
+        final offsetBefore = position().pixels;
+        var drift = 0.0, lost = 0, sampled = 0, remounts = 0, frame = 0;
         var active = true;
         void sample(Duration _) {
           if (!active) return;
-          if (anchor != null && !(anchorBox?.attached ?? false)) {
-            // The read row's render object was replaced (row remounted).
-            remounts++;
-            final found = messageRow(anchor).evaluate().firstOrNull?.renderObject;
-            anchorBox = found is RenderBox && found.attached ? found : null;
+          frame++;
+          // A replaced render object means the read row was remounted; look
+          // it up again (rarely: the lookup walks the tree).
+          if (anchor != null && !(anchorBox?.attached ?? false) && (anchorBox != null || frame % 8 == 0)) {
+            if (anchorBox != null) remounts++;
+            anchorBox = visibleRowBox(anchor, viewport);
           }
           final box = anchorBox;
-          if (box == null || !box.hasSize || y0 == null) {
+          if (box == null || !box.attached || y0 == null) {
             lost++;
           } else {
             final d = (box.localToGlobal(Offset.zero).dy - y0).abs();
@@ -320,11 +348,12 @@ void main() {
         SchedulerBinding.instance.addPostFrameCallback(sample);
         final count = seconds * 4;
         for (var k = 0; k < count; k++) {
-          client.emit('message:new', labRow('mix', mixCycle[k % mixCycle.length], 600 + k));
+          client.emit('message:new', labRow('mix', mixCycle[k % mixCycle.length], 600 + k, others: true));
           await idle(const Duration(milliseconds: 250));
         }
         active = false;
-        return {'arrivals': count, 'anchor': anchor, 'anchorDriftPx': drift, 'anchorLostFrames': lost, 'anchorSampledFrames': sampled, 'anchorRemounts': remounts};
+        final visibleAfter = [for (final id in mountedIds({...known, for (var k = 0; k < count; k++) 'mix-${600 + k}'})) if (visibleRowBox(id, viewport) != null) id]..sort();
+        return {'arrivals': count, 'anchor': anchor, 'offsetBefore': offsetBefore, 'offsetAfter': position().pixels, 'visibleAfter': visibleAfter, 'anchorDriftPx': drift, 'anchorLostFrames': lost, 'anchorSampledFrames': sampled, 'anchorRemounts': remounts};
       }, kind: 'events');
 
       // Drive the engine view's size every frame (relayout cost only; the

@@ -13,7 +13,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 
 /// Bump when any generated content, size or route timing changes.
-const fixtureVersion = 'perf-lab-fixture-v1';
+const fixtureVersion = 'perf-lab-fixture-v2';
 
 /// Row kinds measured individually by the row-mount scenario.
 const rowKinds = [
@@ -163,8 +163,10 @@ String codeMessage(int i) {
 }
 
 /// One fixed message row of [kind]. [n] is the message's position.
-Map<String, dynamic> labRow(String channel, String kind, int n, {String? id, DateTime? base, int seqBase = 0}) {
-  final (sender, name) = _users[(n ~/ 2) % _users.length];
+/// The signed-in fixture user is `alice` (`_users[0]`); [others] picks only
+/// other senders, as for live arrivals from teammates.
+Map<String, dynamic> labRow(String channel, String kind, int n, {String? id, DateTime? base, int seqBase = 0, bool others = false}) {
+  final (sender, name) = others ? _users[1 + n % (_users.length - 1)] : _users[(n ~/ 2) % _users.length];
   final messageId = id ?? '$channel-$n';
   final row = <String, dynamic>{
     'id': messageId,
