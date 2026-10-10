@@ -542,6 +542,7 @@ class WorkspaceController extends ChangeNotifier {
       visibleIds.clear();
       _windowState.clear();
       _windowHistoryLimited.clear();
+      _threadWindows.clear();
       historyLimited = threadHistoryLimited = false;
       _contextWindows.clear();
       channel = null;
@@ -998,6 +999,11 @@ class WorkspaceController extends ChangeNotifier {
   final resourceSnapshots = ResourceSnapshotCache();
   final Map<String, Set<String>> visibleIds = {};
   final Map<String, (String, bool, String)> _windowState = {};
+
+  /// Accepted reply windows by parent message (Source threadStore keeps a
+  /// thread's messages after it closes): reopening shows them at once and
+  /// revalidates in the background. Bound to the authority that accepted them.
+  final Map<String, _ThreadWindow> _threadWindows = {};
   final Set<String> _contextWindows = {};
   bool hasNewer = false, threadHasMore = false;
   bool threadHistoryLimited = false, historyLimited = false;
@@ -1329,6 +1335,7 @@ class WorkspaceController extends ChangeNotifier {
     visibleIds.clear();
     _windowState.clear();
     _windowHistoryLimited.clear();
+    _threadWindows.clear();
     historyLimited = threadHistoryLimited = false;
     _contextWindows.clear();
     _revokedChannels.clear();
@@ -2455,14 +2462,34 @@ class WorkspaceController extends ChangeNotifier {
     _threadIdentityNavigation = navigationWindow;
     _threadIdentityToken = requestAuthority;
     _threadIdentityAuthority = messageAuthority;
-    threadParent = acceptedParent;
-    threadChannelId = knownThreadChannelId;
-    threadLoading = true;
-    _threadResolutionLoading = knownThreadChannelId == null;
-    _threadParentLoading = acceptedParent == null;
+    final cachedWindow = _threadWindows[parentMessageId];
+    final cached =
+        cachedWindow != null &&
+            cachedWindow.parentChannelId == parentChannelId &&
+            cachedWindow.token == requestAuthority &&
+            cachedWindow.authority == messageAuthority &&
+            cachedWindow.generation == generation &&
+            (knownThreadChannelId == null ||
+                knownThreadChannelId == cachedWindow.threadChannelId) &&
+            !_revokedChannels.contains(cachedWindow.threadChannelId) &&
+            (visibleIds[cachedWindow.threadChannelId]?.isNotEmpty ?? false) &&
+            (focusedMessageId == null ||
+                visibleIds[cachedWindow.threadChannelId]!.contains(
+                  focusedMessageId,
+                ))
+        ? cachedWindow
+        : null;
+    if (cachedWindow != null && cached == null) {
+      _threadWindows.remove(parentMessageId);
+    }
+    threadParent = acceptedParent ?? cached?.parent;
+    threadChannelId = knownThreadChannelId ?? cached?.threadChannelId;
+    threadLoading = cached == null;
+    _threadResolutionLoading = threadChannelId == null;
+    _threadParentLoading = threadParent == null;
     _threadResolutionError = null;
-    threadHasMore = false;
-    threadHistoryLimited = false;
+    threadHasMore = cached?.hasMore ?? false;
+    threadHistoryLimited = cached?.historyLimited ?? false;
     highlightedMessageId = focusedMessageId;
     notifyListeners();
     Future<void> restoreCurrentDraft() async {
@@ -2493,11 +2520,14 @@ class WorkspaceController extends ChangeNotifier {
         final liveParent = channel?.id == parentChannelId
             ? messages.where((row) => row.id == parentMessageId).firstOrNull
             : null;
-        threadParent =
+        final resolved =
             liveParent ?? (parent == null ? null : RaftMessage(parent));
+        // A background revalidation never takes away a shown parent.
+        if (resolved != null || threadParent == null) threadParent = resolved;
+        _threadWindows[parentMessageId]?.parent = threadParent;
       } catch (_) {
         if (!current()) return;
-        threadParent = null;
+        if (cached?.parent == null) threadParent = null;
       } finally {
         if (current()) {
           _threadParentLoading = false;
@@ -2508,7 +2538,7 @@ class WorkspaceController extends ChangeNotifier {
 
     Future<void> resolveReplies() async {
       try {
-        if (knownThreadChannelId == null) {
+        if (threadChannelId == null) {
           dynamic info;
           try {
             info = await client.get(
@@ -2542,11 +2572,22 @@ class WorkspaceController extends ChangeNotifier {
             : page['hasOlder'] == true;
         client.joinChannel(threadChannelId!);
         threadLoading = false;
+        _threadWindows[parentMessageId] = _ThreadWindow(
+          parentChannelId: parentChannelId,
+          threadChannelId: threadChannelId!,
+          token: requestAuthority,
+          authority: messageAuthority,
+          generation: generation,
+          hasMore: threadHasMore,
+          historyLimited: threadHistoryLimited,
+          parent: threadParent ?? cached?.parent,
+        );
         notifyListeners();
         await markRead(threadChannelId!);
         if (current()) _saveWindow(threadChannelId!, thread: true);
       } catch (e) {
-        if (current()) {
+        // A cached window stays readable when its revalidation fails.
+        if (current() && cached == null) {
           _threadResolutionError = '$e';
           error = '$e';
         }
@@ -3200,3 +3241,21 @@ List<Map<String, dynamic>> normalizePendingMentionActions(dynamic value) => [
           row['availableActions'] is List)
         Map<String, dynamic>.from(row),
 ];
+
+class _ThreadWindow {
+  _ThreadWindow({
+    required this.parentChannelId,
+    required this.threadChannelId,
+    required this.token,
+    required this.authority,
+    required this.generation,
+    required this.hasMore,
+    required this.historyLimited,
+    this.parent,
+  });
+  final String parentChannelId, threadChannelId, token;
+  final String? authority;
+  final int generation;
+  final bool hasMore, historyLimited;
+  RaftMessage? parent;
+}
