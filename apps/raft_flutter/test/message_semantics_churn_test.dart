@@ -100,7 +100,8 @@ int rowNodeCount(Element row) {
   final owned = <SemanticsNode>{};
   void visit(Element e) {
     final node = e.renderObject?.debugSemantics;
-    if (node != null) owned.add(node);
+    // Excluded render objects keep a detached cached node; skip those.
+    if (node != null && node.attached) owned.add(node);
     e.visitChildren(visit);
   }
 
@@ -182,7 +183,7 @@ void main() {
     await t.pump();
     await t.pump();
     final rebuildUpdates = binding.updated;
-    // Reference (before compact rows) on this fixture: 10–14 nodes per row,
+    // Reference (before compact rows) on this fixture: 6–10 nodes per row,
     // 42 tree nodes, 13.6 nodes re-sent per scroll frame, 9 on a rebuild.
     debugPrint(
       'message semantics: nodesPerRow=$counts treeNodes=$total '
