@@ -30,6 +30,47 @@ before replacement; the existing report links them alongside the current
 image. The 99-case selection, message content, geometry and official scoring
 thresholds remain unchanged. Repairing a React baseline does not pass Flutter.
 
+## Message-row markdown cluster (2026-10-10)
+
+Run `20261010T110648Z-flutter-cf9c833` reused the same React captures as
+the `cfb67cc` run. All 99 PNGs are byte-identical. The run scored 82/99:
+9 pass, 73 basic-pass and 17 different.
+
+On the unfixed 0cc2888, four cases had dropped below the pass line because
+the parity harness drifted from the app:
+
+- `login.signing`: the fixture client's `.invalid` origin went to real DNS
+  through the Android local-network check, so the providers never loaded.
+- agent-detail `no-computer` / `computer-missing`: the directory row now
+  wins over `GET /agents/:id`, so the seeded `createdAgents` was lost.
+- `composer.member-suggestions`: people now come from the entity directory,
+  which was not preloaded.
+
+The fixed root causes in the markdown rows were these colours and metrics:
+
+| Item | Web value | Old Flutter value |
+| --- | --- | --- |
+| brutal message inline code | `bg-black/5 text-black` | foreground ink on strong/5 |
+| elegant message inline code | `bg-fill-muted text-foreground-strong` | foreground ink |
+| link colour (light / dark) | Tailwind 4 blue-700 / blue-300: `#1447e6` / `#8ec5ff` | Tailwind 3 values |
+| reference chip label baseline | Blink rounded ascent plus floored half-leading | fractional metrics |
+
+Remaining causes, all measured from the side-by-side images:
+
+1. **Line breaking.** Web uses `overflow-wrap: anywhere` for inline code. A
+   token longer than a line moves to the next line first. SkParagraph breaks
+   it at once on the current line. The code's padding placeholders also add
+   break opportunities that Blink does not have, for example after `（`.
+   Blink does not break after `/` before a letter, but ICU does.
+2. **Host font fallback.** Chromium on this host draws `。` and `→` from Noto
+   Sans Mongolian / Liberation Sans.
+3. **List item gap.** It is 4px in Flutter (`blockSpacing`) and `mb-0.5`
+   (2px) on the Web.
+4. **Text rasterisation.** Chromium's text gamma and contrast differ from
+   Flutter's Skia. About half of all ink pixels differ even when glyph
+   positions match exactly, so text-dense captures stay at about 93–95%
+   pixel-perfect after their layout matches.
+
 ## One command
 
 ```bash
