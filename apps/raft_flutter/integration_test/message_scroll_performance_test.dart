@@ -148,7 +148,10 @@ void main() {
       final ScrollController scroll = state.viewport;
       expect(scroll.hasClients, true);
       expect(w.messages.length, 500);
-      for (var i = 0; i < 100 && (scroll.position.maxScrollExtent - scroll.offset).abs() > 1; i++) {
+      // Wait for the latest end: maximum offset for a top-anchored list,
+      // minimum for a bottom-anchored (reversed) one.
+      double latest() => scroll.position.axisDirection == AxisDirection.up ? scroll.position.minScrollExtent : scroll.position.maxScrollExtent;
+      for (var i = 0; i < 100 && (latest() - scroll.offset).abs() > 1; i++) {
         await t.pump(const Duration(milliseconds: 20));
       }
       // Load ends when the channel is actually published (visible, hit-testable
@@ -215,6 +218,7 @@ void main() {
           SchedulerBinding.instance.addPostFrameCallback(sampleThumb);
         }
         SchedulerBinding.instance.addPostFrameCallback(sampleThumb);
+        File('$out/$name-$action.start').writeAsStringSync('');
         await binding.watchPerformance(() async {
           startCpu = cpuTicks(); clock.start(); actionStart = developer.Timeline.now;
           await run();
@@ -301,6 +305,15 @@ void main() {
       expect(targetText.evaluate(), isNotEmpty, reason: 'A real text node in the accepted context target must be visible before sampling.');
       File('$out/$name-context-load.json').writeAsStringSync(jsonEncode({'elapsedSeconds': contextClock.elapsedMicroseconds / 1e6, 'contextMessages': w.messages.length, 'mountedRows': find.byType(RaftMessageTile, skipOffstage: false).evaluate().length, 'rssBytes': ProcessInfo.currentRss}));
       await sample('context-scroll', scrollForTenSeconds);
+      // Resize the same content in every build: the latest messages.
+      {
+        final ScrollController current = state.viewport;
+        final p = current.position;
+        current.jumpTo(p.axisDirection == AxisDirection.up ? p.minScrollExtent : p.maxScrollExtent);
+        for (var i = 0; i < 30; i++) {
+          await t.pump(const Duration(milliseconds: 16));
+        }
+      }
       await sample('view-resize', () async {
         // Drive the real engine view's logical size every frame (profile mode,
         // real FrameTimings). This measures the app's own relayout on resize;

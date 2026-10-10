@@ -17,12 +17,13 @@ Future<void> main(List<String> args) async {
   final ws = '${http.replaceFirst('http://', 'ws://')}ws';
   final service = await vmServiceConnectUri(ws);
   final vm = await service.getVM();
-  final load = File('${out.path}/$theme-load.json');
-  while (!load.existsSync()) {
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+  // Optional 4th argument: which sample to profile (default channel-scroll).
+  final action = args.length > 3 ? args[3] : 'channel-scroll';
+  final start = File('${out.path}/$theme-$action.start');
+  while (!start.existsSync()) {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
   }
-  // Initial publication diagnostic and screenshot precede the scroll sample.
-  await Future<void>.delayed(const Duration(milliseconds: 1500));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   final isolate = vm.isolates!.firstWhere((i) => i.name == 'main');
   await service.clearCpuSamples(isolate.id!);
   await Future<void>.delayed(const Duration(seconds: 9));
@@ -61,7 +62,7 @@ Future<void> main(List<String> args) async {
       .take(400)
       .map((e) => {'samples': e.value, 'name': e.key})
       .toList();
-  File('${out.path}/$theme-cpu-profile.json').writeAsStringSync(
+  File('${out.path}/$theme-$action-cpu-profile.json').writeAsStringSync(
     const JsonEncoder.withIndent(' ').convert({
       'total': samples.samples!.length,
       'self': top(self),
