@@ -1,0 +1,271 @@
+{
+ "name": "raft-flutter parity extension: computers",
+ "scope": "Public deterministic test data; no credentials.",
+ "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+ "latestComputerVersion": "0.0.50",
+ "machines": {
+  "computer-mbp": {
+   "id": "computer-mbp",
+   "name": "Jiachengs-MacBook-Pro",
+   "description": null,
+   "hostname": "Jiachengs-MacBook-Pro.local",
+   "os": "darwin",
+   "status": "online",
+   "statusVersion": 7,
+   "apiKeyPrefix": "slk_vis",
+   "runtimes": [
+    "codex",
+    "claude"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.48",
+   "isComputer": true,
+   "lastHeartbeat": "2026-06-19T12:28:00.000Z",
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "computer-studio": {
+   "id": "computer-studio",
+   "name": "Studio Test Rig",
+   "description": null,
+   "hostname": "studio-test-rig.local",
+   "os": "linux",
+   "status": "offline",
+   "statusVersion": 3,
+   "apiKeyPrefix": "slk_off",
+   "runtimes": [
+    "codex"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.50",
+   "isComputer": true,
+   "lastHeartbeat": null,
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "computer-build": {
+   "id": "computer-build",
+   "name": "Build Server",
+   "description": "Runs nightly Android builds",
+   "hostname": "computer-build.local",
+   "os": "linux",
+   "status": "online",
+   "statusVersion": 1,
+   "apiKeyPrefix": null,
+   "runtimes": [
+    "claude",
+    "codex",
+    "opencode"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.50",
+   "isComputer": true,
+   "lastHeartbeat": null,
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "creator": {
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null,
+    "gravatarHash": null
+   }
+  },
+  "computer-qa": {
+   "id": "computer-qa",
+   "name": "QA Laptop",
+   "description": null,
+   "hostname": "computer-qa.local",
+   "os": "darwin",
+   "status": "online",
+   "statusVersion": 1,
+   "apiKeyPrefix": null,
+   "runtimes": [
+    "codex"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.48",
+   "isComputer": true,
+   "lastHeartbeat": null,
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "upgradeRequest": {
+    "id": "upgrade-qa",
+    "targetVersion": "0.0.50",
+    "requestedAt": "2026-06-19T12:00:00.000Z",
+    "state": "pending",
+    "observedVersion": null,
+    "reason": null,
+    "resolvedAt": null
+   }
+  },
+  "computer-disk": {
+   "id": "computer-disk",
+   "name": "Render Box",
+   "description": null,
+   "hostname": "computer-disk.local",
+   "os": "linux",
+   "status": "online",
+   "statusVersion": 1,
+   "apiKeyPrefix": null,
+   "runtimes": [
+    "codex"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.50",
+   "isComputer": true,
+   "lastHeartbeat": null,
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "diskStatus": {
+    "availableBytes": 3221225472,
+    "totalBytes": 536870912000
+   }
+  },
+  "computer-legacy": {
+   "id": "computer-legacy",
+   "name": "Old Daemon Host",
+   "description": null,
+   "hostname": "computer-legacy.local",
+   "os": "linux",
+   "status": "online",
+   "statusVersion": 1,
+   "apiKeyPrefix": null,
+   "runtimes": [
+    "codex"
+   ],
+   "daemonVersion": "0.40.2",
+   "computerVersion": null,
+   "isComputer": false,
+   "lastHeartbeat": null,
+   "createdAt": "2026-06-18T00:00:00.000Z"
+  },
+  "computer-mbp-one-click": {
+   "id": "computer-mbp",
+   "name": "Jiachengs-MacBook-Pro",
+   "description": null,
+   "hostname": "Jiachengs-MacBook-Pro.local",
+   "os": "darwin",
+   "status": "online",
+   "statusVersion": 7,
+   "apiKeyPrefix": "slk_vis",
+   "runtimes": [
+    "codex",
+    "claude"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.48",
+   "isComputer": true,
+   "lastHeartbeat": "2026-06-19T12:28:00.000Z",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "computerUpgradeAvailable": true,
+   "remoteUpgradeSupported": true,
+   "computerBroadcastPolicy": {
+    "eligibility": "eligible",
+    "targetVersion": "0.0.50",
+    "targetRole": null,
+    "migrationClass": "seamless",
+    "policyRevision": "r1",
+    "reasonCode": "eligible"
+   }
+  }
+ },
+ "lists": {
+  "default": [
+   "computer-mbp",
+   "computer-studio"
+  ],
+  "states": [
+   "computer-mbp",
+   "computer-studio",
+   "computer-build",
+   "computer-qa",
+   "computer-disk",
+   "computer-legacy"
+  ],
+  "empty": []
+ },
+ "agents": [
+  {
+   "id": "agent-cindy",
+   "name": "Cindy",
+   "displayName": "Cindy",
+   "avatarUrl": "pixel:robot",
+   "description": "Keeps visual testing release notes aligned.",
+   "runtime": "codex",
+   "model": "gpt-5-codex",
+   "machineId": "computer-mbp",
+   "status": "active",
+   "activity": "working",
+   "activityDetail": "Capturing visual testing baselines"
+  },
+  {
+   "id": "agent-product-ux",
+   "name": "Product-UX-Designer",
+   "displayName": "Product UX Designer",
+   "avatarUrl": "pixel:robot",
+   "description": "Turns product feedback, screenshots, and release notes into actionable UX specs.",
+   "runtime": "codex",
+   "model": "gpt-5-codex",
+   "machineId": "computer-mbp",
+   "status": "active",
+   "activity": "online",
+   "activityDetail": null
+  }
+ ],
+ "routes": {
+  "GET /servers/visual-server/machines/computer-mbp/workspaces": [
+   {
+    "directoryName": "agent-cindy",
+    "totalSizeBytes": 50331648,
+    "lastModified": "2026-06-19T12:00:00.000Z",
+    "fileCount": 312,
+    "status": "active",
+    "agentName": "Cindy",
+    "agentStatus": "active"
+   },
+   {
+    "directoryName": "agent-product-ux",
+    "totalSizeBytes": 12890112,
+    "lastModified": "2026-06-18T08:00:00.000Z",
+    "fileCount": 54,
+    "status": "stopped",
+    "agentName": "Product UX Designer",
+    "agentStatus": "inactive"
+   },
+   {
+    "directoryName": "agent-retired",
+    "totalSizeBytes": 2097152,
+    "lastModified": "2026-06-10T08:00:00.000Z",
+    "fileCount": 9,
+    "status": "deleted",
+    "agentName": "Retired Helper",
+    "agentStatus": null
+   },
+   {
+    "directoryName": "agent-0f3c9a",
+    "totalSizeBytes": 655360,
+    "lastModified": "2026-06-01T08:00:00.000Z",
+    "fileCount": 3,
+    "status": "orphan",
+    "agentName": null,
+    "agentStatus": null
+   }
+  ],
+  "POST /servers/visual-server/machines/computer-mbp/computer/restart": {},
+  "POST /servers/visual-server/machines": {
+   "machine": {
+    "id": "computer-new",
+    "name": "my-computer",
+    "description": null,
+    "hostname": "computer-new.local",
+    "os": "linux",
+    "status": "offline",
+    "statusVersion": 1,
+    "apiKeyPrefix": null,
+    "runtimes": [],
+    "daemonVersion": "0.65.0",
+    "computerVersion": null,
+    "isComputer": true,
+    "lastHeartbeat": null,
+    "createdAt": "2026-06-18T00:00:00.000Z"
+   },
+   "apiKey": "slk_fixture_not_a_real_key"
+  }
+ }
+}
