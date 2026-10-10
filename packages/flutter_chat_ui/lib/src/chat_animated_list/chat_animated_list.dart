@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
+import 'package:super_sliver_list/super_sliver_list.dart';
 
 import '../empty_chat_list.dart';
 import '../load_more.dart';
@@ -137,6 +138,16 @@ class ChatAnimatedList extends StatefulWidget {
   /// leave the viewport.
   final double? cacheExtent;
 
+  /// Estimated main-axis extent for an item that has not been laid out yet
+  /// (index is the visual index). Better estimates keep the scrollbar
+  /// stable; the list corrects the scroll position when real extents differ.
+  final ExtentEstimationProvider? extentEstimation;
+
+  /// Optional eager background measurement of off-screen items (bounded per
+  /// frame by the list's layout budget). Off by default: measuring heavy rows
+  /// and re-measuring after every width change costs more than it saves.
+  final ExtentPrecalculationPolicy? extentPrecalculationPolicy;
+
   /// Creates an animated chat list.
   const ChatAnimatedList({
     super.key,
@@ -196,6 +207,8 @@ class ChatAnimatedList extends StatefulWidget {
     this.messageGroupingTimeoutInSeconds,
     this.physics,
     this.cacheExtent,
+    this.extentEstimation,
+    this.extentPrecalculationPolicy,
   });
 
   @override
@@ -204,9 +217,25 @@ class ChatAnimatedList extends StatefulWidget {
 }
 
 /// State for [ChatAnimatedList].
+/// Measures every item of a loaded window up to [limit] items.
+class LoadedWindowPrecalculation extends ExtentPrecalculationPolicy {
+  LoadedWindowPrecalculation({this.limit = 2000});
+  final int limit;
+  @override
+  bool shouldPrecalculateExtents(ExtentPrecalculationContext context) =>
+      context.numberOfItems <= limit &&
+      context.numberOfItemsWithEstimatedExtent > 0;
+}
+
+
 class _ChatAnimatedListState extends State<ChatAnimatedList>
     with TickerProviderStateMixin {
-  final GlobalKey<SliverAnimatedListState> _listKey = GlobalKey();
+  // SuperSliverList replaces SliverAnimatedList: it estimates extents of
+  // items outside the viewport (stable scrollbar) and can jump to any item
+  // without laying out every item in between. Raft inserts without
+  // animation, so the animated list's insert/remove transitions are unused.
+  final GlobalKey _listKey = GlobalKey();
+  final ListController _superList = ListController();
   late final ChatController _chatController;
   late final SliverObserverController _observerController;
   late final ScrollController _scrollController;
@@ -329,6 +358,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
   @override
   void dispose() {
+    _superList.dispose();
     _oldListEmptyNotifier.dispose();
     _scrollToBottomShowTimer?.cancel();
     _scrollToBottomController.dispose();
@@ -381,9 +411,12 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
     // Define the SliverAnimatedList once as it's used for both
     // reversed and non-reversed lists.
-    final sliverAnimatedList = SliverAnimatedList(
+    final sliverAnimatedList = SuperSliverList.builder(
       key: _listKey,
-      initialItemCount: _oldList.length,
+      listController: _superList,
+      itemCount: _oldList.length,
+      extentEstimation: widget.extentEstimation,
+      extentPrecalculationPolicy: widget.extentPrecalculationPolicy,
       findChildIndexCallback: (Key key) {
         if (key is ValueKey<MessageID>) {
           final index = _oldList.indexWhere((m) => m.id == key.value);
@@ -393,20 +426,19 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
         }
         return null;
       },
-      itemBuilder:
-          (BuildContext context, int index, Animation<double> animation) {
-            final message = _oldList[visualPosition(index)];
+      itemBuilder: (BuildContext context, int index) {
+        final message = _oldList[visualPosition(index)];
 
-            return widget.itemBuilder(
-              context,
-              message,
-              visualPosition(index),
-              animation,
-              messagesGroupingMode: widget.messagesGroupingMode,
-              messageGroupingTimeoutInSeconds:
-                  widget.messageGroupingTimeoutInSeconds,
-            );
-          },
+        return widget.itemBuilder(
+          context,
+          message,
+          visualPosition(index),
+          kAlwaysCompleteAnimation,
+          messagesGroupingMode: widget.messagesGroupingMode,
+          messageGroupingTimeoutInSeconds:
+              widget.messageGroupingTimeoutInSeconds,
+        );
+      },
     );
 
     final effectiveMessageSliver =
@@ -1044,6 +1076,26 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
     final visualIndex = visualPosition(index);
 
+    // Jump/animate on estimated extents; no traversal of intermediate items.
+    if (_superList.isAttached) {
+      if (duration == Duration.zero) {
+        _superList.jumpToItem(
+          index: visualIndex,
+          scrollController: _scrollController,
+          alignment: alignment,
+        );
+      } else {
+        _superList.animateToItem(
+          index: () => visualIndex,
+          scrollController: _scrollController,
+          alignment: alignment,
+          duration: (_) => duration,
+          curve: (_) => curve,
+        );
+      }
+      return;
+    }
+
     try {
       if (duration == Duration.zero) {
         await _observerController.jumpTo(
@@ -1100,14 +1152,10 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
 
     _oldList.insert(position, data);
     _updateOldListEmptyNotifier();
-    // The insertItem method requires the position of the item after the insert
-    _listKey.currentState!.insertItem(
-      visualPosition(position),
-      // We are only animating items when scroll view is not yet scrollable,
-      // otherwise we just insert the item without animation.
-      // (animation is replaced with scroll to bottom animation)
-      duration: duration,
-    );
+    // Shift cached extents so measured items keep their own extent.
+    if (_superList.isAttached) _superList.addItem(visualPosition(position));
+    assert(duration >= Duration.zero);
+    if (mounted) setState(() {});
 
     // Used later to trigger scroll to end only for the last inserted message.
     _lastInsertedMessageId = data.id;
@@ -1169,11 +1217,13 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
       visualStartIndexForInsertAllItems = visualPosition(position);
     }
 
-    _listKey.currentState!.insertAllItems(
-      visualStartIndexForInsertAllItems,
-      messagesToInsert.length,
-      duration: duration,
-    );
+    if (_superList.isAttached) {
+      for (var i = 0; i < messagesToInsert.length; i++) {
+        _superList.addItem(visualStartIndexForInsertAllItems);
+      }
+    }
+    assert(duration >= Duration.zero);
+    if (mounted) setState(() {});
 
     _lastInsertedMessageId = messagesToInsert.last.id;
 
@@ -1196,19 +1246,9 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
     _oldList.removeAt(position);
     _updateOldListEmptyNotifier();
 
-    _listKey.currentState!.removeItem(
-      visualIndex, // Use the pre-calculated visual index.
-      (context, animation) => widget.itemBuilder(
-        context,
-        data, // Pass the actual message data being removed.
-        position, // Pass its original position.
-        animation,
-        messagesGroupingMode: widget.messagesGroupingMode,
-        messageGroupingTimeoutInSeconds: widget.messageGroupingTimeoutInSeconds,
-        isRemoved: true,
-      ),
-      duration: duration,
-    );
+    if (_superList.isAttached) _superList.removeItem(visualIndex);
+    assert(duration >= Duration.zero);
+    if (mounted) setState(() {});
   }
 
   void _onChanged(

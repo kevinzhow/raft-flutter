@@ -21,6 +21,7 @@ dependencies:
   flutter_chat_core: ^2.9.1
   provider: ^6.1.5+1
   scrollview_observer: ^1.26.2
+  super_sliver_list: any
 
   material_ui: any
 dev_dependencies:

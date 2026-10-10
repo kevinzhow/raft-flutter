@@ -8,4 +8,5 @@ workspace:
   - packages/raft_client
   - packages/raft_sync
   - packages/flutter_chat_ui
+  - packages/super_sliver_list
   - tool/ds_audit

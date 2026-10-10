@@ -801,20 +801,18 @@ class _RaftChatViewState extends State<RaftChatView>
         final view = row == null ? null : RenderAbstractViewport.maybeOf(row);
         if (row == null || !row.attached || view == null) {
           // Only rows near the viewport are built. While the staged list is
-          // hidden, estimate the target position from the built rows and
-          // refine it on the next frame.
-          final seek = seekOffset(owner, scroll, target);
+          // hidden, jump by index on the list's estimated extents (no
+          // intermediate layout), then center on real geometry next frame.
           if (focusSeekAttempts >= 16) {
             positionQueued = false;
             return;
           }
           focusSeekAttempts++;
-          // No rows yet: the list builds its first rows on the next frame.
-          if (seek != null) {
-            scroll.jumpTo(
-              seek.clamp(position.minScrollExtent, position.maxScrollExtent),
-            );
-          }
+          owner.scrollToMessage(
+            target,
+            duration: Duration.zero,
+            alignment: .5,
+          );
           again();
           return;
         }
@@ -847,47 +845,6 @@ class _RaftChatViewState extends State<RaftChatView>
       center();
     });
     WidgetsBinding.instance.ensureVisualUpdate();
-  }
-
-  /// Estimated scroll offset of [target], from the rows the lazy message
-  /// sliver has currently built. Refined on each frame until the row exists.
-  double? seekOffset(
-    chat.InMemoryChatController owner,
-    ScrollController scroll,
-    String target,
-  ) {
-    final index = owner.messages.indexWhere((m) => m.id == target);
-    if (index < 0) return null;
-    final root = scroll.position.context.storageContext.findRenderObject();
-    // The message list is the lazy sliver with the largest scroll extent;
-    // header and footer slivers are small.
-    RenderSliverMultiBoxAdaptor? list;
-    void visit(RenderObject node) {
-      if (node is RenderSliverMultiBoxAdaptor &&
-          (list == null ||
-              (node.geometry?.scrollExtent ?? 0) >
-                  (list!.geometry?.scrollExtent ?? 0))) {
-        list = node;
-      }
-      node.visitChildren(visit);
-    }
-
-    if (root == null) return null;
-    visit(root);
-    final sliver = list;
-    final first = sliver?.firstChild, last = sliver?.lastChild;
-    if (sliver == null || first == null || last == null) return null;
-    final lo = sliver.indexOf(first), hi = sliver.indexOf(last);
-    final loTop = sliver.childScrollOffset(first),
-        hiTop = sliver.childScrollOffset(last);
-    if (loTop == null || hiTop == null) return null;
-    final base = sliver.constraints.precedingScrollExtent;
-    final perRow = hi > lo ? (hiTop - loTop) / (hi - lo) : last.size.height;
-    final top = index < lo
-        ? loTop - (lo - index) * perRow
-        : hiTop + (index - hi) * perRow;
-    // Center the estimated row like the final scrollIntoView step.
-    return base + top - scroll.position.viewportDimension / 2;
   }
 
   bool focusReceiptVisible(String target) {
@@ -1991,6 +1948,14 @@ class _RaftChatViewState extends State<RaftChatView>
             scrollController: timelineViewport,
             key: ValueKey('chat-list-${widget.thread ? 'thread' : 'channel'}'),
             itemBuilder: item,
+            // Content-based first guess for rows not laid out yet; the list
+            // measures the loaded window in the background and corrects.
+            extentEstimation: (index, width) => estimateMessageExtent(
+              index == null || index >= timelineAdapter.messages.length
+                  ? null
+                  : timelineAdapter.messages[index].metadata,
+              width,
+            ),
             // Mounted MessageTimeline owns its two sentinels and natural
             // footer. Generic Flyer padding/safe-area must not duplicate
             // that spacing or the external composer's OS inset.
@@ -2346,4 +2311,42 @@ class _RaftChatViewState extends State<RaftChatView>
       ),
     );
   }
+}
+
+/// Rough rendered height of a message row before it is laid out. Only used
+/// as the list's initial extent estimate; real extents replace it.
+double estimateMessageExtent(Map<String, dynamic>? message, double width) {
+  if (message == null) return 96;
+  final content = '${message['content'] ?? ''}';
+  // Text column: row width minus avatar gutter and paddings.
+  final textWidth = (width - 88).clamp(120.0, 2000.0);
+  var height = 44.0; // author line + row padding
+  var inCode = false;
+  for (final line in content.split('\n')) {
+    if (line.trimLeft().startsWith('```')) {
+      inCode = !inCode;
+      height += 12;
+      continue;
+    }
+    if (inCode) {
+      height += 20;
+      continue;
+    }
+    if (line.trim().isEmpty) {
+      height += 8;
+      continue;
+    }
+    var units = 0.0;
+    for (final rune in line.runes) {
+      units += rune > 0x2e80 ? 14 : 7.4; // CJK glyphs are about twice as wide
+    }
+    height += (units / textWidth).ceil() * 22;
+  }
+  // Long content is clipped by the collapsible at 320px plus its toggle.
+  height = height.clamp(44.0, 44.0 + 320 + 36);
+  final attachments = message['attachments'];
+  if (attachments is List) height += attachments.length * 140;
+  final reactions = message['reactions'];
+  if (reactions is List && reactions.isNotEmpty) height += 32;
+  return height;
 }

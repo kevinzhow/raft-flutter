@@ -288,13 +288,17 @@ void main() {
           .controller!;
       expect(viewport.position.maxScrollExtent, greaterThan(5364));
       viewport.jumpTo(5364);
-      await tester.pump();
-      expect(viewport.offset, 5364);
+      // Background extent measurement corrects the offset of estimated rows
+      // above the viewport without moving visible content; read the settled
+      // reading position.
+      await tester.pumpAndSettle();
+      final reading = viewport.offset;
+      expect(reading, greaterThan(4000));
       await tester.runAsync(() => w.jumpToMessage('c1', 'offset-94'));
       // The accepted 16-row context stages behind the real retained timeline.
       // Source keeps the old reading position until the new target is centered.
       expect(w.messages, hasLength(16));
-      expect(viewport.offset, 5364);
+      expect(viewport.offset, reading);
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
