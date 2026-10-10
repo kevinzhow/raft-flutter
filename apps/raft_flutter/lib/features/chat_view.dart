@@ -851,8 +851,15 @@ class _RaftChatViewState extends State<RaftChatView> {
     if (!rowRect.overlaps(viewRect)) {
       return false;
     }
-    // A partial intersection under a page header is not a focus receipt. Short
-    // messages must fit; tall messages expose their header and half a viewport.
+    // Source centers the row even when it is taller than the viewport. Such a
+    // row cannot expose its header at the top, but covering the full viewport
+    // is a valid receipt. A small intersection from an obsolete offset is not.
+    if (rowRect.height > viewRect.height &&
+        rowRect.top <= viewRect.top + .5 &&
+        rowRect.bottom >= viewRect.bottom - .5) {
+      return true;
+    }
+    // Preserve the existing receipt for ordinary rows and retained top anchors.
     final requiredHeight = rowRect.height.clamp(0.0, viewRect.height * .5);
     return rowRect.top >= viewRect.top - .5 &&
         rowRect.top + requiredHeight <= viewRect.bottom + .5;
