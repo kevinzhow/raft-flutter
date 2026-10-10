@@ -125,7 +125,7 @@ void main() {
         } else {
           final checkbox = find.byWidgetPredicate(
             (w) =>
-                w is Checkbox && w.semanticLabel == 'Select message by Alice',
+                w is RaftCheckbox && w.semanticLabel == 'Select message by Alice',
           );
           expect(checkbox, findsNWidgets(2));
           // Pick the unselected row by state, not tree order: the bottom-
@@ -133,7 +133,7 @@ void main() {
           await t.tap(
             find.byWidgetPredicate(
               (w) =>
-                  w is Checkbox &&
+                  w is RaftCheckbox &&
                   w.semanticLabel == 'Select message by Alice' &&
                   w.value == false,
             ),
@@ -167,7 +167,7 @@ void main() {
           await t.tap(find.byTooltip('Select All'));
         } else {
           await t.tap(
-            find.byWidgetPredicate((w) => w is Checkbox && w.value == false),
+            find.byWidgetPredicate((w) => w is RaftCheckbox && w.value == false),
           );
         }
         await t.pumpAndSettle();

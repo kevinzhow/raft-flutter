@@ -294,6 +294,21 @@ final ParityCase _menu = ParityCase(
 
 ChatStage _shareStage(ParityContext ctx) => ChatStage(
   ctx,
+  // VisualTestingCases.tsx ThreadMessageShareSelectionVisualCaseView: a
+  // 390x844 white column, 16px padded rows on top, SelectModeToolbar below.
+  rowWidth: 358,
+  rowOrigin: const Offset(16, 16),
+  rowCount: 2,
+  canvas: const Size(390, 844),
+  footer: RaftSelectionToolbar(
+    selected: 2,
+    total: 2,
+    onExit: () {},
+    onCopyMarkdown: () {},
+    onCopyLinks: () {},
+    onPreview: () {},
+    onForward: () {},
+  ),
   messages: [
     _cindyMessage(
       ctx,
@@ -324,13 +339,15 @@ final ParityCase _shareSelection = ParityCase(
   ],
   notes:
       '$_clockNote Selection entered through the real path: long-press row '
-      '1 → "Select Message", tap row 2. The whole mounted RaftChatView is '
-      'the viewport (timeline header/day divider included); React stacks two '
+      '1 → "Select Message", tap row 2. The two mounted rows are windowed '
+      'to the top of a 390x844 canvas (the real timeline is bottom-anchored '
+      'under its history header and day divider) and a RaftSelectionToolbar '
+      'with the same actions is pinned to the bottom, as React stacks two '
       'MessageItems over SelectModeToolbar.',
   build: (ctx) => stageFor(ctx, () => _shareStage(ctx)).build(),
   interact: (t, ctx) async {
     final stage = stageFor(ctx, () => _shareStage(ctx));
-    await stage.settle(t, rows: 2);
+    await stage.alignRow(t);
     await _longPressRow(t, 0);
     await t.tap(
       find.text(
@@ -344,6 +361,7 @@ final ParityCase _shareSelection = ParityCase(
     for (var i = 0; i < 6; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }
+    await stage.alignRow(t);
   },
 );
 

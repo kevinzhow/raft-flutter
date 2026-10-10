@@ -15,9 +15,11 @@ import 'recipes/recipe_utilities.g.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
-export 'recipes/badge.g.dart' show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
+export 'recipes/badge.g.dart'
+    show RaftBadgeRecipeAppearance, RaftBadgeRecipeVariant;
 export 'recipes/checkbox.g.dart' show RaftCheckboxRecipeSize;
-export 'recipes/progress.g.dart' show RaftProgressRecipeVariant, RaftProgressRecipeSize;
+export 'recipes/progress.g.dart'
+    show RaftProgressRecipeVariant, RaftProgressRecipeSize;
 
 /// Tailwind default-palette colours used by Web JSX classes (not raft-ui
 /// tokens). Values are Tailwind v4 oklch → sRGB (tool/recipes/css-of.mjs).
@@ -167,14 +169,13 @@ class RaftStatusDot extends StatelessWidget {
   final bool external;
   final RaftStatusDotSize size;
 
-  static Color activityColor(RaftTokens t, RaftActivityTone a) =>
-      switch (a) {
-        RaftActivityTone.online => t.product.brutalLime,
-        RaftActivityTone.thinking ||
-        RaftActivityTone.working => t.product.statusBusy,
-        RaftActivityTone.error => t.product.brutalOrange,
-        RaftActivityTone.offline => RaftWebPalette.gray400,
-      };
+  static Color activityColor(RaftTokens t, RaftActivityTone a) => switch (a) {
+    RaftActivityTone.online => t.product.brutalLime,
+    RaftActivityTone.thinking ||
+    RaftActivityTone.working => t.product.statusBusy,
+    RaftActivityTone.error => t.product.brutalOrange,
+    RaftActivityTone.offline => RaftWebPalette.gray400,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -202,7 +203,11 @@ class RaftStatusDot extends StatelessWidget {
 /// (or the warning `bg-brutal-orange`); elegant: borderless `bg-accent`
 /// (`bg-warning` for warning tones).
 class RaftAttentionDot extends StatelessWidget {
-  const RaftAttentionDot({super.key, this.compact = false, this.warning = false});
+  const RaftAttentionDot({
+    super.key,
+    this.compact = false,
+    this.warning = false,
+  });
 
   /// `sm` = `size-1` (4px); default `lg` = `size-2.5` (10px).
   final bool compact;
@@ -320,12 +325,16 @@ class RaftCheckbox extends StatelessWidget {
     this.size = RaftCheckboxRecipeSize.sm,
     this.primary = false,
     this.circle = false,
+    this.flatWhenChecked = false,
     this.semanticLabel,
   });
 
   final bool value;
   final ValueChanged<bool>? onChanged;
   final RaftCheckboxRecipeSize size;
+
+  /// `data-checked:shadow-none` of the MessageMultiSelectCheckbox slot.
+  final bool flatWhenChecked;
 
   /// `color="primary"` / `variant="primary"`: yellow fill.
   final bool primary;
@@ -407,11 +416,19 @@ class RaftCheckbox extends StatelessWidget {
         return RaftRecipeBox(
           style: c.root,
           tokens: rt,
-          decorationOverride: (d) =>
-              d.copyWith(color: fill, borderRadius: BorderRadius.circular(circle ? 8 : 3)),
+          // `circle` is the SVG `rx` = half the 16-unit viewBox scaled to the
+          // box (a full circle at every size); square keeps `rounded-[3px]`.
+          decorationOverride: (d) => d.copyWith(
+            color: fill,
+            borderRadius: BorderRadius.circular(circle ? 999 : 3),
+            boxShadow: flatWhenChecked && value ? const [] : d.boxShadow,
+          ),
           alignment: Alignment.center,
           child: value
-              ? CustomPaint(size: const Size(10, 8), painter: _CheckMarkPainter(ink))
+              ? CustomPaint(
+                  size: const Size(10, 8),
+                  painter: _CheckMarkPainter(ink),
+                )
               : null,
         );
       },
@@ -654,7 +671,10 @@ class _RaftSkeletonState extends State<RaftSkeleton>
           // @keyframes pulse { 50% { opacity: .5 } }
           final v = pulse.value;
           final half = v < .5 ? v * 2 : (1 - v) * 2;
-          return Opacity(opacity: 1 - .5 * _curve.transform(half), child: child);
+          return Opacity(
+            opacity: 1 - .5 * _curve.transform(half),
+            child: child,
+          );
         },
         child: box,
       ),

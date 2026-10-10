@@ -218,6 +218,9 @@ class ChatStage {
     this.rowWidth,
     this.rowOrigin = Offset.zero,
     this.rowIndex = 0,
+    this.rowCount = 1,
+    this.canvas,
+    this.footer,
     this.targetRow = true,
     this.backgroundColor,
   }) : ids = ParityIdentities(ctx) {
@@ -272,6 +275,15 @@ class ChatStage {
   final Offset rowOrigin;
   final int rowIndex;
 
+  /// Consecutive rows (from [rowIndex]) the element window spans.
+  final int rowCount;
+
+  /// When set, the capture target is a white [canvas] with the row window at
+  /// [rowOrigin] and [footer] pinned to its bottom edge (React stacks
+  /// MessageItems over a bottom `SelectModeToolbar` in a fixed-height box).
+  final Size? canvas;
+  final Widget? footer;
+
   /// False for `body` captures that still frame one row like React (menus).
   final bool targetRow;
 
@@ -293,36 +305,74 @@ class ChatStage {
     // composer TextField, ScaffoldMessenger, bottom sheets).
     final chat = RaftChatView(key: chatKey, controller: w);
     if (rowWidth == null) return Scaffold(backgroundColor: backgroundColor, body: chat);
+    final canvas = this.canvas;
     return Scaffold(
       backgroundColor: backgroundColor,
       body: ValueListenableBuilder(
         valueListenable: geometry,
         builder: (context, g, _) {
-          final (chatWidth, shift, window) = g;
+          final (chatWidth, shift, _) = g;
           // Tall enough that the row lays out unconstrained by the composer.
           const chatHeight = 1800.0;
+          final windowed = ClipRect(
+            child: SizedBox(
+              width: g.$3?.width ?? chatWidth,
+              height: g.$3?.height ?? 844,
+              child: OverflowBox(
+                alignment: Alignment.topLeft,
+                minWidth: chatWidth,
+                maxWidth: chatWidth,
+                minHeight: chatHeight,
+                maxHeight: chatHeight,
+                child: Transform.translate(offset: shift, child: chat),
+              ),
+            ),
+          );
+          if (canvas != null) {
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: ctx.target(
+                    SizedBox.fromSize(
+                      size: canvas,
+                      child: ClipRect(
+                        child: ColoredBox(
+                          color: Colors.white,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Positioned(
+                                left: rowOrigin.dx,
+                                top: rowOrigin.dy,
+                                child: windowed,
+                              ),
+                              if (footer != null)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  child: footer!,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
           return Stack(
             clipBehavior: Clip.none,
             children: [
               Positioned(
                 left: rowOrigin.dx,
                 top: rowOrigin.dy,
-                child: (targetRow ? ctx.target : (Widget w) => w)(
-                  ClipRect(
-                    child: SizedBox(
-                      width: window?.width ?? chatWidth,
-                      height: window?.height ?? 844,
-                      child: OverflowBox(
-                        alignment: Alignment.topLeft,
-                        minWidth: chatWidth,
-                        maxWidth: chatWidth,
-                        minHeight: chatHeight,
-                        maxHeight: chatHeight,
-                        child: Transform.translate(offset: shift, child: chat),
-                      ),
-                    ),
-                  ),
-                ),
+                child: (targetRow ? ctx.target : (Widget w) => w)(windowed),
               ),
             ],
           );
@@ -347,9 +397,13 @@ class ChatStage {
   }
 
   Rect _rowRect(WidgetTester t) {
-    final row = find.byType(RaftMessageRow).at(rowIndex);
     final chat = t.getTopLeft(find.byKey(chatKey));
-    final rect = t.getRect(row);
+    var rect = t.getRect(find.byType(RaftMessageRow).at(rowIndex));
+    for (var i = 1; i < rowCount; i++) {
+      rect = rect.expandToInclude(
+        t.getRect(find.byType(RaftMessageRow).at(rowIndex + i)),
+      );
+    }
     return rect.shift(-chat);
   }
 

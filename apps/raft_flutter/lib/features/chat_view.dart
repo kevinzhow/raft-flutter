@@ -1915,7 +1915,11 @@ class _RaftChatViewState extends State<RaftChatView>
     child: Opacity(opacity: pending ? .7 : 1, child: child),
   );
 
-  Widget messageTile(RaftMessage m, {bool parent = false}) {
+  Widget messageTile(
+    RaftMessage m, {
+    bool parent = false,
+    Widget? selectionLeading,
+  }) {
     // Optimistic rows share the final row's key and widget shape; only the
     // actions that need a server message id stay inert until it arrives.
     final key = w.messageKey(m);
@@ -1934,6 +1938,7 @@ class _RaftChatViewState extends State<RaftChatView>
           : RaftMessageRowContext.main,
       author: m.author,
       avatar: senderAvatar(m),
+      selectionLeading: selectionLeading,
       content: m.content,
       body: MessagePresentation(
         controller: w,
@@ -2147,7 +2152,30 @@ class _RaftChatViewState extends State<RaftChatView>
   }
 
   Widget tile(RaftMessage m, {bool parent = false, bool captureFocus = true}) {
-    final body = messageTile(m, parent: parent);
+    final selectable =
+        selection.active && m.string('messageType') != 'system';
+    final checked = selectable && selection.ids.contains(m.id);
+    // Web MessageMultiSelectCheckbox: circle, size lg, primary variant, in the
+    // row's flex line before the avatar (the row owns `mt-1.5` and the gap).
+    final body = messageTile(
+      m,
+      parent: parent,
+      selectionLeading: selectable
+          ? RaftCheckbox(
+              value: checked,
+              size: RaftCheckboxRecipeSize.lg,
+              primary: true,
+              circle: true,
+              flatWhenChecked: true,
+              semanticLabel: raftFormat(context, 'Select message by {name}', {
+                'name': m.author,
+              }),
+              onChanged: capturingSelection
+                  ? null
+                  : (_) => selection.toggle(m.id),
+            )
+          : null,
+    );
     final child =
         captureFocus &&
             !parent &&
@@ -2157,34 +2185,13 @@ class _RaftChatViewState extends State<RaftChatView>
             child: body,
           )
         : body;
-    if (!selection.active) return child;
-    final checked = selection.ids.contains(m.id);
+    if (!selectable) return child;
     return Semantics(
       selected: checked,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 48,
-            height: 48,
-            child: Checkbox(
-              value: checked,
-              semanticLabel: raftFormat(context, 'Select message by {name}', {
-                'name': m.author,
-              }),
-              onChanged: capturingSelection
-                  ? null
-                  : (_) => selection.toggle(m.id),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: capturingSelection ? null : () => selection.toggle(m.id),
-              child: AbsorbPointer(child: child),
-            ),
-          ),
-        ],
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: capturingSelection ? null : () => selection.toggle(m.id),
+        child: AbsorbPointer(child: child),
       ),
     );
   }

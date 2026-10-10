@@ -153,9 +153,15 @@ class RaftButton extends StatelessWidget {
     this.tooltip,
     this.semanticLabel,
     this.foreground,
+    this.iconInlineStart = true,
     this.opacityCompositing = RaftOpacityCompositing.layer,
   });
   final String label;
+
+  /// Whether the icon carries Source `data-icon="inline-start"` (the smaller
+  /// `has-data-[icon=inline-start]:pl-*` padding). Call sites that render a
+  /// bare `<svg>` (no `data-icon`) keep the size's plain `px-*`.
+  final bool iconInlineStart;
 
   /// Explicit caller text/icon color; null retains the resolved button recipe.
   final Color? foreground;
@@ -238,7 +244,7 @@ class RaftButton extends StatelessWidget {
             disabled: onPressed == null,
             extra: [
               if (busy) RaftRecipeStates.loading,
-              if (icon != null || glyph != null)
+              if (iconInlineStart && (icon != null || glyph != null))
                 RaftRecipeStates.iconInlineStart,
             ],
           ),
@@ -1279,6 +1285,7 @@ class RaftMessageTile extends StatelessWidget {
     this.bodyFontSize = 14,
     this.body,
     this.hoverToolbar,
+    this.selectionLeading,
     this.onAuthor,
     this.onTap,
     this.rowContext = RaftMessageRowContext.main,
@@ -1334,6 +1341,9 @@ class RaftMessageTile extends StatelessWidget {
 
   /// Exact source action strip, supplied only with authorized callbacks.
   final Widget? hoverToolbar;
+
+  /// Multi-select checkbox shown while the app is in select mode.
+  final Widget? selectionLeading;
   final VoidCallback? onAuthor, onTap;
   final bool continuation,
       nextContinuation,
@@ -1384,6 +1394,7 @@ class RaftMessageTile extends StatelessWidget {
       popupOpen: popupOpen,
       highlighted: highlighted,
       toolbar: hoverToolbar,
+      selectionLeading: selectionLeading,
       subtitle: subtitle,
       metadata: modelLabel == null && badge == null && departureLabel == null
           ? null

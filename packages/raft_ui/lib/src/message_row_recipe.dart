@@ -183,6 +183,7 @@ class RaftMessageRow extends StatefulWidget {
     this.footer,
     this.inlineReplies,
     this.toolbar,
+    this.selectionLeading,
     this.onAuthor,
     this.onActions,
     this.onActionsAt,
@@ -209,6 +210,10 @@ class RaftMessageRow extends StatefulWidget {
   final List<RaftMessageSemanticsAction> semanticsActions;
   final Widget content;
   final Widget? avatar, metadata, attachments, footer, inlineReplies, toolbar;
+
+  /// Web MessageItem multi-select checkbox: first flex child of the row
+  /// (`self-start mt-1.5`, `gap` before the avatar gutter).
+  final Widget? selectionLeading;
   final String? subtitle;
   final VoidCallback? onAuthor, onActions, onTap;
 
@@ -596,6 +601,13 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (widget.selectionLeading != null) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: widget.selectionLeading,
+                              ),
+                              SizedBox(width: recipe.gap),
+                            ],
                             SizedBox(
                               width: recipe.gutterWidth,
                               height: widget.continuation

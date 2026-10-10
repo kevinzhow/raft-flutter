@@ -103,6 +103,9 @@ class _RaftSelectionToolbarState extends State<RaftSelectionToolbar> {
     glyph: glyph,
     tooltip: tooltip ?? raftText(context, label),
     onPressed: pressed,
+    // SelectModeToolbar renders bare lucide icons (no `data-icon`), so the
+    // size's plain px-2.5 applies, not `has-data-[icon=inline-start]:pl-2`.
+    iconInlineStart: false,
     focusNode: focusNode,
     semanticLabel: semanticLabel ?? raftText(context, label),
     tone: accent
@@ -335,70 +338,73 @@ class RaftImageReview extends StatelessWidget {
   final bool busy;
   final String? error;
   @override
-  Widget build(BuildContext context) => Material(color: RaftTokens.of(context).panel, child: Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                raftText(context, 'Share selected messages'),
-                style: Theme.of(context).textTheme.titleMedium,
+  Widget build(BuildContext context) => Material(
+    color: RaftTokens.of(context).panel,
+    child: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  raftText(context, 'Share selected messages'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-            ),
-            IconButton(
-              tooltip: raftText(context, 'Close preview'),
-              onPressed: busy ? null : onClose,
-              icon: const Icon(Icons.close),
-            ),
-          ],
-        ),
-      ),
-      const Divider(height: 1),
-      Expanded(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: preview,
-        ),
-      ),
-      if (error != null)
-        Semantics(
-          liveRegion: true,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(error!),
+              IconButton(
+                tooltip: raftText(context, 'Close preview'),
+                onPressed: busy ? null : onClose,
+                icon: const Icon(Icons.close),
+              ),
+            ],
           ),
         ),
-      const Divider(height: 1),
-      Padding(
-        padding: const EdgeInsets.all(12),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            RaftButton(
-              label: 'Cancel',
-              secondary: true,
-              onPressed: busy ? null : onClose,
-            ),
-            if (onSave != null)
-              RaftButton(
-                label: 'Save image',
-                icon: Icons.download_outlined,
-                busy: busy,
-                onPressed: onSave,
-              ),
-            if (onShare != null)
-              RaftButton(
-                label: 'Share image',
-                icon: Icons.share_outlined,
-                secondary: true,
-                onPressed: busy ? null : onShare,
-              ),
-          ],
+        const Divider(height: 1),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: preview,
+          ),
         ),
-      ),
-    ],
-  ));
+        if (error != null)
+          Semantics(
+            liveRegion: true,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(error!),
+            ),
+          ),
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              RaftButton(
+                label: 'Cancel',
+                secondary: true,
+                onPressed: busy ? null : onClose,
+              ),
+              if (onSave != null)
+                RaftButton(
+                  label: 'Save image',
+                  icon: Icons.download_outlined,
+                  busy: busy,
+                  onPressed: onSave,
+                ),
+              if (onShare != null)
+                RaftButton(
+                  label: 'Share image',
+                  icon: Icons.share_outlined,
+                  secondary: true,
+                  onPressed: busy ? null : onShare,
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }
