@@ -1,0 +1,281 @@
+{
+ "name": "raft-flutter parity extension: settings (Workspace + Resources groups)",
+ "scope": "Public deterministic test data; no credentials.",
+ "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+ "appVersion": "1.17.5",
+ "routes": {
+  "GET /release-notes": {
+   "items": [
+    {
+     "releaseId": "rel-1212",
+     "releaseKey": "web-1.21.2",
+     "version": "1.21.2",
+     "tag": "v1.21.2",
+     "date": "2026-10-08",
+     "revision": 1,
+     "snapshotHash": "abababababababababababababababababababababababababababababababab",
+     "publishedAt": "2026-10-08T10:00:00.000Z",
+     "state": "published",
+     "entries": [
+      {
+       "entryId": "e1",
+       "type": "feature",
+       "text": "Quick switcher: jump to any channel, DM or agent with Cmd/Ctrl+K",
+       "emphasis": true,
+       "ordinal": 0
+      },
+      {
+       "entryId": "e2",
+       "type": "feature",
+       "text": "Settings now lists Release Notes under Resources",
+       "emphasis": false,
+       "ordinal": 1
+      },
+      {
+       "entryId": "e3",
+       "type": "improvement",
+       "text": "Faster channel switching on large workspaces",
+       "emphasis": false,
+       "ordinal": 2
+      },
+      {
+       "entryId": "e4",
+       "type": "fix",
+       "text": "Unread badges clear after reading a thread",
+       "emphasis": false,
+       "ordinal": 3
+      },
+      {
+       "entryId": "e5",
+       "type": "fix",
+       "text": "Computer detail no longer flickers while a restart is in progress",
+       "emphasis": false,
+       "ordinal": 4
+      }
+     ]
+    },
+    {
+     "releaseId": "rel-1211",
+     "releaseKey": "web-1.21.1",
+     "version": "1.21.1",
+     "tag": "v1.21.1",
+     "date": "2026-10-02",
+     "revision": 2,
+     "snapshotHash": "abababababababababababababababababababababababababababababababab",
+     "publishedAt": "2026-10-02T10:00:00.000Z",
+     "state": "retracted",
+     "entries": []
+    },
+    {
+     "releaseId": "rel-1210",
+     "releaseKey": "web-1.21.0",
+     "version": "1.21.0",
+     "tag": "v1.21.0",
+     "date": "2026-09-30",
+     "revision": 1,
+     "snapshotHash": "abababababababababababababababababababababababababababababababab",
+     "publishedAt": "2026-09-30T10:00:00.000Z",
+     "state": "published",
+     "entries": [
+      {
+       "entryId": "e6",
+       "type": "breaking",
+       "text": "Legacy daemon hosts must reinstall the Computer service",
+       "emphasis": true,
+       "ordinal": 0
+      },
+      {
+       "entryId": "e7",
+       "type": "deprecated",
+       "text": "The old /machines route redirects to /computers",
+       "emphasis": false,
+       "ordinal": 1
+      },
+      {
+       "entryId": "e8",
+       "type": "improvement",
+       "text": "Message translation keeps the original text one tap away",
+       "emphasis": false,
+       "ordinal": 2
+      }
+     ]
+    },
+    {
+     "releaseId": "rel-0925",
+     "releaseKey": "web-2026-09-25",
+     "version": null,
+     "tag": null,
+     "date": "2026-09-25",
+     "revision": 1,
+     "snapshotHash": "abababababababababababababababababababababababababababababababab",
+     "publishedAt": "2026-09-25T10:00:00.000Z",
+     "state": "published",
+     "entries": [
+      {
+       "entryId": "e9",
+       "type": "improvement",
+       "text": "Smaller attachment thumbnails on mobile",
+       "emphasis": false,
+       "ordinal": 0
+      }
+     ]
+    }
+   ],
+   "nextCursor": null
+  },
+  "GET /product-feedback/tickets": {
+   "tickets": [
+    {
+     "id": "5b0e8c1a-7d3f-4c2e-9a61-0f2d3c4b5a61",
+     "kind": "feedback",
+     "status": "in_progress",
+     "closure_reason": null,
+     "duplicate_of_ticket_id": null,
+     "message": "Let me keep the app open when I switch workspaces\nIt reloads every time.",
+     "created_at": 1790740800000,
+     "updated_at": 1790992800000,
+     "unread": true,
+     "unread_count": 2,
+     "attachment_count": 1,
+     "comment_count": 3
+    },
+    {
+     "id": "8c2f4e6a-1b3d-4f5e-8a7c-2d4e6f8a0b12",
+     "kind": "bug",
+     "status": "open",
+     "closure_reason": null,
+     "duplicate_of_ticket_id": null,
+     "message": "Notification badge did not clear after opening Activity",
+     "created_at": 1790568000000,
+     "updated_at": 1790654400000,
+     "unread": false,
+     "unread_count": 0,
+     "attachment_count": 0,
+     "comment_count": 1
+    },
+    {
+     "id": "1a3c5e7f-9b2d-4c6e-8f1a-3b5d7f9a1c23",
+     "kind": "feedback",
+     "status": "resolved",
+     "closure_reason": null,
+     "duplicate_of_ticket_id": null,
+     "message": "Export a channel as Markdown",
+     "created_at": 1790222400000,
+     "updated_at": 1790481600000,
+     "unread": false,
+     "unread_count": 0,
+     "attachment_count": 0,
+     "comment_count": 2
+    },
+    {
+     "id": "9e8d7c6b-5a4f-4e3d-9c2b-1a0f9e8d7c34",
+     "kind": "bug",
+     "status": "closed",
+     "closure_reason": "duplicate",
+     "duplicate_of_ticket_id": null,
+     "message": "Crash when pasting a very large image",
+     "created_at": 1789963200000,
+     "updated_at": 1790049600000,
+     "unread": false,
+     "unread_count": 0,
+     "attachment_count": 0,
+     "comment_count": 1
+    }
+   ],
+   "next_cursor": null,
+   "unread_total": 2
+  },
+  "GET /mcp/servers": {
+   "servers": [
+    {
+     "id": "mcp-linear",
+     "name": "Linear",
+     "description": "Issues and projects",
+     "provider": "linear",
+     "authMode": "oauth",
+     "oauthStatus": "connected",
+     "transport": "streamable_http",
+     "endpointUrl": "https://mcp.linear.app/mcp",
+     "enabled": true,
+     "configVersion": 1,
+     "catalogVersion": 1,
+     "toolCatalog": [
+      {
+       "name": "list_issues",
+       "title": "List issues",
+       "description": "List issues in a team",
+       "inputSchema": {
+        "type": "object"
+       },
+       "annotations": {
+        "readOnlyHint": true
+       }
+      },
+      {
+       "name": "create_issue",
+       "title": "Create issue",
+       "description": "Create a new issue",
+       "inputSchema": {
+        "type": "object"
+       }
+      }
+     ],
+     "lastCheckedAt": "2026-10-08T09:00:00.000Z",
+     "lastCheckError": null,
+     "credentialHeaderNames": [],
+     "hasCredentials": true,
+     "assignment": null,
+     "usage": null,
+     "createdAt": "2026-09-01T00:00:00.000Z",
+     "updatedAt": "2026-10-08T09:00:00.000Z"
+    }
+   ],
+   "recommendations": [
+    {
+     "id": "notion",
+     "name": "Notion",
+     "description": "Pages, databases and comments",
+     "provider": "notion",
+     "authMode": "oauth",
+     "endpointUrl": "https://mcp.notion.com/mcp",
+     "credentialHeaderNames": []
+    }
+   ]
+  }
+ },
+ "routeSets": {
+  "release-notes-loading": {
+   "GET /release-notes": {
+    "$pending": true
+   }
+  },
+  "release-notes-error": {
+   "GET /release-notes": {
+    "$status": 500
+   }
+  },
+  "release-notes-empty": {
+   "GET /release-notes": {
+    "items": [],
+    "nextCursor": null
+   }
+  },
+  "feedback-empty": {
+   "GET /product-feedback/tickets": {
+    "tickets": [],
+    "next_cursor": null,
+    "unread_total": 0
+   }
+  },
+  "feedback-loading": {
+   "GET /product-feedback/tickets": {
+    "$pending": true
+   }
+  },
+  "feedback-error": {
+   "GET /product-feedback/tickets": {
+    "$status": 500
+   }
+  }
+ }
+}

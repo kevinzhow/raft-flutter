@@ -165,17 +165,18 @@ def btn(name):
 
 
 def add(key, title, *, kind, viewport, selector=None, android_key=None, props=None, interactions=(),
-        android=(), hint=MDP, notes=None):
+        android=(), hint=MDP, notes=None, family='computers', label='Computers',
+        dart='ext_computers.dart'):
     for suffix, theme in THEMES.items():
-        cid = f'components.computers.{key}.{suffix}'
+        cid = f'components.{family}.{key}.{suffix}'
         sel = selector or f"[data-visual-case='{cid}']"
         p = {'extCase': key, 'extKind': kind, 'parityTheme': theme, 'platform': 'desktop', **(props or {})}
         c = {
             'id': cid,
-            'title': f'Computers {title} ({theme})',
+            'title': f'{label} {title} ({theme})',
             'captureType': 'component-fixture',
-            'surface': 'computers',
-            'category': 'extension/computers',
+            'surface': family,
+            'category': f'extension/{family}',
             'suite': 'raft-flutter-extension',
             'viewport': viewport,
             'theme': theme,
@@ -185,7 +186,7 @@ def add(key, title, *, kind, viewport, selector=None, android_key=None, props=No
                         'androidKey': android_key, 'interactions': list(interactions),
                         'androidInteractions': list(android)},
             'reactPathHint': hint,
-            'androidCaseHint': f"apps/raft_flutter/test/parity/cases/ext_computers.dart '{key}'",
+            'androidCaseHint': f"apps/raft_flutter/test/parity/cases/{dart} '{key}'",
             'tolerance': {'pixelRatio': 0.02, 'layoutDp': 1, 'ignoreAntialiasing': True},
         }
         if not android_key:
@@ -332,6 +333,191 @@ detail('detail.runtime-usage.card', 'detail: runtime usage hover card', 'compute
        android=[{'type': 'hover', 'key': 'runtime-usage-computer-usage-claude'},
                 {'type': 'wait', 'ms': 300}])
 
+# ============================================================ settings
+# Settings > Workspace and Resources groups at raft-source 26f77ef:
+#   Sidebar.tsx:2228-2280 settingsSidebarGroups (desktop Settings rail:
+#   Personal / Workspace / Resources = About, Documentation, Feedback,
+#   Release Notes), SettingsSidebarList.tsx;
+#   SettingsPanel.tsx tabs (AboutSection, ServerTabContent, BillingTabContent,
+#   AdministrationTabContent, IntegrationsSection, McpSettingsSection, LabsTabContent,
+#   ProviderConnectionsSettings, IMBridgesSettingsSection);
+#   LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (My Feedback workspace);
+#   ReleaseNotesPanel.tsx (/release-notes, part of the Settings rail).
+# Frame: the desktop shell minus the 64px LeftRail = 1216 wide: the 240px
+# Sidebar settings rail + the 976px main column.
+SETTINGS_HINT = 'packages/web/src/components/settings/SettingsPanel.tsx'
+DAY = 86_400_000
+FB_NOW = 1_791_000_000_000  # 2026-10-03T03:20:00Z, fixed (absolute dates only)
+HASH = 'ab' * 32
+
+
+def entry(eid, kind, text, ordinal, emphasis=False):
+    return {'entryId': eid, 'type': kind, 'text': text, 'emphasis': emphasis, 'ordinal': ordinal}
+
+
+releases = [
+    {'releaseId': 'rel-1212', 'releaseKey': 'web-1.21.2', 'version': '1.21.2', 'tag': 'v1.21.2',
+     'date': '2026-10-08', 'revision': 1, 'snapshotHash': HASH, 'publishedAt': '2026-10-08T10:00:00.000Z',
+     'state': 'published', 'entries': [
+         entry('e1', 'feature', 'Quick switcher: jump to any channel, DM or agent with Cmd/Ctrl+K', 0, True),
+         entry('e2', 'feature', 'Settings now lists Release Notes under Resources', 1),
+         entry('e3', 'improvement', 'Faster channel switching on large workspaces', 2),
+         entry('e4', 'fix', 'Unread badges clear after reading a thread', 3),
+         entry('e5', 'fix', 'Computer detail no longer flickers while a restart is in progress', 4)]},
+    {'releaseId': 'rel-1211', 'releaseKey': 'web-1.21.1', 'version': '1.21.1', 'tag': 'v1.21.1',
+     'date': '2026-10-02', 'revision': 2, 'snapshotHash': HASH, 'publishedAt': '2026-10-02T10:00:00.000Z',
+     'state': 'retracted', 'entries': []},
+    {'releaseId': 'rel-1210', 'releaseKey': 'web-1.21.0', 'version': '1.21.0', 'tag': 'v1.21.0',
+     'date': '2026-09-30', 'revision': 1, 'snapshotHash': HASH, 'publishedAt': '2026-09-30T10:00:00.000Z',
+     'state': 'published', 'entries': [
+         entry('e6', 'breaking', 'Legacy daemon hosts must reinstall the Computer service', 0, True),
+         entry('e7', 'deprecated', 'The old /machines route redirects to /computers', 1),
+         entry('e8', 'improvement', 'Message translation keeps the original text one tap away', 2)]},
+    {'releaseId': 'rel-0925', 'releaseKey': 'web-2026-09-25', 'version': None, 'tag': None,
+     'date': '2026-09-25', 'revision': 1, 'snapshotHash': HASH, 'publishedAt': '2026-09-25T10:00:00.000Z',
+     'state': 'published', 'entries': [entry('e9', 'improvement', 'Smaller attachment thumbnails on mobile', 0)]},
+]
+
+
+# Ticket ids are UUIDs, as the API returns them (the Flutter projection rejects
+# anything else).
+def ticket(tid, kind, status, message, created, updated, unread=0, attachments=0, comments=0, closure=None):
+    return {'id': tid, 'kind': kind, 'status': status, 'closure_reason': closure, 'duplicate_of_ticket_id': None,
+            'message': message, 'created_at': created, 'updated_at': updated, 'unread': unread > 0,
+            'unread_count': unread, 'attachment_count': attachments, 'comment_count': comments}
+
+
+tickets = [
+    ticket('5b0e8c1a-7d3f-4c2e-9a61-0f2d3c4b5a61', 'feedback', 'in_progress', 'Let me keep the app open when I switch workspaces\nIt reloads every time.',
+           FB_NOW - 3 * DAY, FB_NOW - 2 * 3_600_000, unread=2, attachments=1, comments=3),
+    ticket('8c2f4e6a-1b3d-4f5e-8a7c-2d4e6f8a0b12', 'bug', 'open', 'Notification badge did not clear after opening Activity',
+           FB_NOW - 5 * DAY, FB_NOW - 4 * DAY, comments=1),
+    ticket('1a3c5e7f-9b2d-4c6e-8f1a-3b5d7f9a1c23', 'feedback', 'resolved', 'Export a channel as Markdown',
+           FB_NOW - 9 * DAY, FB_NOW - 6 * DAY, comments=2),
+    ticket('9e8d7c6b-5a4f-4e3d-9c2b-1a0f9e8d7c34', 'bug', 'closed', 'Crash when pasting a very large image',
+           FB_NOW - 12 * DAY, FB_NOW - 11 * DAY, comments=1, closure='duplicate'),
+]
+mcp_linear = {
+    'id': 'mcp-linear', 'name': 'Linear', 'description': 'Issues and projects', 'provider': 'linear',
+    'authMode': 'oauth', 'oauthStatus': 'connected', 'transport': 'streamable_http',
+    'endpointUrl': 'https://mcp.linear.app/mcp', 'enabled': True, 'configVersion': 1, 'catalogVersion': 1,
+    'toolCatalog': [
+        {'name': 'list_issues', 'title': 'List issues', 'description': 'List issues in a team',
+         'inputSchema': {'type': 'object'}, 'annotations': {'readOnlyHint': True}},
+        {'name': 'create_issue', 'title': 'Create issue', 'description': 'Create a new issue',
+         'inputSchema': {'type': 'object'}},
+    ],
+    'lastCheckedAt': '2026-10-08T09:00:00.000Z', 'lastCheckError': None, 'credentialHeaderNames': [],
+    'hasCredentials': True, 'assignment': None, 'usage': None,
+    'createdAt': '2026-09-01T00:00:00.000Z', 'updatedAt': '2026-10-08T09:00:00.000Z',
+}
+mcp_notion = {'id': 'notion', 'name': 'Notion', 'description': 'Pages, databases and comments', 'provider': 'notion',
+              'authMode': 'oauth', 'endpointUrl': 'https://mcp.notion.com/mcp', 'credentialHeaderNames': []}
+settings_fixture = {
+    'name': 'raft-flutter parity extension: settings (Workspace + Resources groups)',
+    'scope': 'Public deterministic test data; no credentials.',
+    'sourceCommit': '26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6',
+    # Web AboutSection shows the Web artifact version (packages/web/package.json
+    # at the pinned commit); the Flutter builder passes the same string.
+    'appVersion': '1.17.5',
+    'routes': {
+        'GET /release-notes': {'items': releases, 'nextCursor': None},
+        'GET /product-feedback/tickets': {'tickets': tickets, 'next_cursor': None, 'unread_total': 2},
+        'GET /mcp/servers': {'servers': [mcp_linear], 'recommendations': [mcp_notion]},
+    },
+    # props.routeSet -> overrides; {"$status": N} answers N, {"$pending": true}
+    # never answers (loading state).
+    'routeSets': {
+        'release-notes-loading': {'GET /release-notes': {'$pending': True}},
+        'release-notes-error': {'GET /release-notes': {'$status': 500}},
+        'release-notes-empty': {'GET /release-notes': {'items': [], 'nextCursor': None}},
+        'feedback-empty': {'GET /product-feedback/tickets': {'tickets': [], 'next_cursor': None, 'unread_total': 0}},
+        'feedback-loading': {'GET /product-feedback/tickets': {'$pending': True}},
+        'feedback-error': {'GET /product-feedback/tickets': {'$status': 500}},
+    },
+}
+
+FRAME = {'width': 1280, 'height': 800, 'density': 1}
+FRAME_TALL = {'width': 1280, 'height': 1600, 'density': 1}
+NAV = "[data-parity-region='settings-navigation']"
+PANEL = "[data-parity-region='settings-panel']"
+
+
+def settings_case(key, title, *, tab, region=None, selector=None, android_key=None, viewport=FRAME, role='owner',
+                  flags='', route_set='', interactions=(), android=(), hint=SETTINGS_HINT, notes=None):
+    props = {'tab': tab, 'role': role}
+    if flags:
+        props['flags'] = flags
+    if route_set:
+        props['routeSet'] = route_set
+    if region == 'nav':
+        selector, android_key = NAV, 'settings-navigation'
+    elif region == 'panel':
+        selector, android_key = PANEL, 'settings-panel'
+    # The Feedback workspace is a lazy chunk and every tab loads data after
+    # mount; let the React page settle before the capture.
+    add(key, title, kind='settings', viewport=viewport, props=props, selector=selector, android_key=android_key,
+        interactions=[{'type': 'wait', 'ms': 800}, *interactions], android=android, hint=hint, notes=notes, family='ext-settings',
+        label='Settings', dart='ext_settings.dart')
+
+
+SIDEBAR_HINT = 'packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx'
+ALL_FLAGS = 'labs,providers,bridge'
+# Navigation: the Settings rail column (240 x 800).
+settings_case('nav.owner', 'rail: owner, About active', tab='about', region='nav', hint=SIDEBAR_HINT)
+settings_case('nav.owner-all', 'rail: owner, every workspace flag on', tab='about', region='nav', flags=ALL_FLAGS,
+              hint=SIDEBAR_HINT, notes='server_labs_ui_v0, provider_connections_v0 and slack_bridge_v0 on')
+settings_case('nav.member', 'rail: member (no billing/administration)', tab='about', region='nav', role='member',
+              hint=SIDEBAR_HINT)
+settings_case('nav.guest', 'rail: guest (no applications/MCP)', tab='about', region='nav', role='guest',
+              hint=SIDEBAR_HINT)
+settings_case('nav.release-notes-active', 'rail: Release Notes active', tab='release-notes', region='nav',
+              hint=SIDEBAR_HINT)
+settings_case('nav.row-hover', 'rail: hovered Documentation row', tab='about', hint=SIDEBAR_HINT,
+              selector="[data-parity-region='settings-navigation'] a[aria-label='Documentation']",
+              android_key='workspace-settings-nav-documentation',
+              interactions=[{'type': 'hover',
+                             'target': "[data-parity-region='settings-navigation'] a[aria-label='Documentation']"}],
+              android=[{'type': 'hover', 'key': 'workspace-settings-nav-documentation'}])
+
+# Resources group pages.
+ABOUT_HINT = SETTINGS_HINT + '#AboutSection + MobileDownloadQr.tsx'
+settings_case('about.page', 'About: whole page', tab='about', hint=ABOUT_HINT, selector=None)
+settings_case('about.panel', 'About: panel', tab='about', region='panel', hint=ABOUT_HINT)
+for i, name in enumerate(['version', 'mobile-app', 'workspace'], start=1):
+    settings_case(f'about.{name}', f'About section: {name}', tab='about', hint=ABOUT_HINT,
+                  selector=f"[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type({i})",
+                  android_key=f'settings-about-{name}')
+RN_HINT = 'packages/web/src/components/settings/ReleaseNotesPanel.tsx'
+settings_case('release-notes.page', 'Release Notes: whole page', tab='release-notes', hint=RN_HINT)
+settings_case('release-notes.panel', 'Release Notes: panel (all releases)', tab='release-notes', region='panel',
+              viewport=FRAME_TALL, hint=RN_HINT)
+settings_case('release-notes.current', 'Release Notes: current release card', tab='release-notes', hint=RN_HINT,
+              selector="[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(1)", android_key='release-entry-rel-1212')
+settings_case('release-notes.retracted', 'Release Notes: retracted release card', tab='release-notes', hint=RN_HINT,
+              selector="[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(2)", android_key='release-entry-rel-1211')
+settings_case('release-notes.older', 'Release Notes: breaking/deprecated release card', tab='release-notes',
+              hint=RN_HINT, selector="[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(3)", android_key='release-entry-rel-1210')
+for state in ['loading', 'error', 'empty']:
+    settings_case(f'release-notes.{state}', f'Release Notes: {state}', tab='release-notes', region='panel',
+                  route_set=f'release-notes-{state}', hint=RN_HINT)
+FB_HINT = ('packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx '
+           '(@botiverse/hands-feedback-react FeedbackWorkspace)')
+settings_case('feedback.page', 'Feedback: whole page (inbox)', tab='feedback', hint=FB_HINT)
+settings_case('feedback.panel', 'Feedback: panel (inbox)', tab='feedback', region='panel', hint=FB_HINT)
+for state in ['empty', 'loading', 'error']:
+    settings_case(f'feedback.{state}', f'Feedback: {state}', tab='feedback', region='panel',
+                  route_set=f'feedback-{state}', hint=FB_HINT)
+
+# Workspace group pages (owner; flags on for the gated tabs).
+for tab, title, flags in [
+    ('server', 'Server Profile', ''), ('billing', 'Plan & Billing', ''), ('administration', 'Administration', ''),
+    ('integrations', 'Applications', ''), ('mcp', 'MCP Servers', ''), ('labs', 'Labs', 'labs'),
+    ('providers', 'AI Providers', 'providers'), ('im-bridges', 'IM Bridges', 'bridge'),
+]:
+    settings_case(f'{tab}.page', f'{title}: whole page', tab=tab, flags=flags)
+    settings_case(f'{tab}.panel', f'{title}: panel', tab=tab, region='panel', flags=flags, viewport=FRAME_TALL)
+
 manifest = {
     'version': 1,
     'name': 'raft-flutter parity extension suite',
@@ -342,4 +528,5 @@ manifest = {
 }
 (here / 'cases.json').write_text(json.dumps(manifest, indent=1, ensure_ascii=False) + '\n')
 (here / 'fixtures/computers.json').write_text(json.dumps(fixture, indent=1, ensure_ascii=False) + '\n')
-print(f'{len(cases)} extension cases -> tool/parity-ext/cases.json; fixture -> tool/parity-ext/fixtures/computers.json')
+(here / 'fixtures/settings.json').write_text(json.dumps(settings_fixture, indent=1, ensure_ascii=False) + '\n')
+print(f"{len(cases)} extension cases -> tool/parity-ext/cases.json; fixtures -> tool/parity-ext/fixtures/{{computers,settings}}.json")

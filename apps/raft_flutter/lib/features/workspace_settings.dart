@@ -41,6 +41,8 @@ class WorkspaceSettings extends StatelessWidget {
     this.onMobileLocationChanged,
     this.providerEnabled = false,
     this.bridgeEnabled = false,
+    this.labsEnabled = false,
+    this.appVersion,
     this.workspaceModeCard,
   });
   final WorkspaceController controller;
@@ -56,8 +58,11 @@ class WorkspaceSettings extends StatelessWidget {
   final ValueChanged<bool>? onMobileDetailChanged;
   final ValueChanged<String?>? onMobileLocationChanged;
 
-  /// Server feature flags (provider connections / Slack bridge).
-  final bool providerEnabled, bridgeEnabled;
+  /// Server feature flags (provider connections / Slack bridge / Labs UI).
+  final bool providerEnabled, bridgeEnabled, labsEnabled;
+
+  /// The running app version shown by About (Web: WEB_APP_VERSION).
+  final String? appVersion;
 
   static const documentationUrl = 'https://docs.raft.build';
   static const personal = 'Personal', workspace = 'Workspace';

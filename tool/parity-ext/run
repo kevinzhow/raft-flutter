@@ -116,11 +116,19 @@ async function parityExtRoutes(page: Page, visualCase: VisualCase) {
           machines, latestComputerVersion: fixture.latestComputerVersion, latestComputerReleaseNotes: null }) });
       });
     }
-    const routes = fixture.routes || {};
+    // props.routeSet selects per-case overrides from `routeSets`:
+    // {"$pending": true} never answers (loading), {"$status": N} answers N.
+    const routes = { ...(fixture.routes || {}), ...((fixture.routeSets || {})[props.routeSet] || {}) };
     for (const [key, body] of Object.entries(routes)) {
       const [method, path] = key.split(" ");
+      const special = (body || {}) as { $pending?: boolean; $status?: number };
       await page.route((url: URL) => url.pathname === `/api${path}`, (route: any) => {
         if (route.request().method() !== method) return route.fallback();
+        if (special.$pending) return;
+        if (special.$status) {
+          return route.fulfill({ status: special.$status, contentType: "application/json",
+            body: JSON.stringify({ error: "fixture error" }) });
+        }
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
       });
     }

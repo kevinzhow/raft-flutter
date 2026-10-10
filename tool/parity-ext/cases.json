@@ -5785,6 +5785,6240 @@
    }
   },
   {
+   "id": "components.computers.detail.runtime-usage.info.brutal",
+   "title": "Computers detail: runtime usage health on Detected Runtimes (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 2000,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.info",
+      "extKind": "detail",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "computer-section-info",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.info.elegant",
+   "title": "Computers detail: runtime usage health on Detected Runtimes (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 2000,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.info",
+      "extKind": "detail",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "computer-section-info",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.info.elegant-dark",
+   "title": "Computers detail: runtime usage health on Detected Runtimes (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 2000,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.info",
+      "extKind": "detail",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "computer-section-info",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.card.brutal",
+   "title": "Computers detail: runtime usage hover card (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.card",
+      "extKind": "detail",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "runtime-usage-card",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "role=button[name=\"Claude\"s]"
+     },
+     {
+      "type": "wait",
+      "ms": 600
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "runtime-usage-computer-usage-claude"
+     },
+     {
+      "type": "wait",
+      "ms": 300
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.card.elegant",
+   "title": "Computers detail: runtime usage hover card (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.card",
+      "extKind": "detail",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "runtime-usage-card",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "role=button[name=\"Claude\"s]"
+     },
+     {
+      "type": "wait",
+      "ms": 600
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "runtime-usage-computer-usage-claude"
+     },
+     {
+      "type": "wait",
+      "ms": 300
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.card.elegant-dark",
+   "title": "Computers detail: runtime usage hover card (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.card",
+      "extKind": "detail",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "runtime-usage-card",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "role=button[name=\"Claude\"s]"
+     },
+     {
+      "type": "wait",
+      "ms": 600
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "runtime-usage-computer-usage-claude"
+     },
+     {
+      "type": "wait",
+      "ms": 300
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.owner.brutal",
+   "title": "Settings rail: owner, About active (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.owner",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.owner'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.owner.elegant",
+   "title": "Settings rail: owner, About active (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.owner",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.owner'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.owner.elegant-dark",
+   "title": "Settings rail: owner, About active (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.owner",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.owner'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.owner-all.brutal",
+   "title": "Settings rail: owner, every workspace flag on (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.owner-all",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner",
+      "flags": "labs,providers,bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.owner-all'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   },
+   "notes": "server_labs_ui_v0, provider_connections_v0 and slack_bridge_v0 on"
+  },
+  {
+   "id": "components.ext-settings.nav.owner-all.elegant",
+   "title": "Settings rail: owner, every workspace flag on (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.owner-all",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner",
+      "flags": "labs,providers,bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.owner-all'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   },
+   "notes": "server_labs_ui_v0, provider_connections_v0 and slack_bridge_v0 on"
+  },
+  {
+   "id": "components.ext-settings.nav.owner-all.elegant-dark",
+   "title": "Settings rail: owner, every workspace flag on (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.owner-all",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner",
+      "flags": "labs,providers,bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.owner-all'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   },
+   "notes": "server_labs_ui_v0, provider_connections_v0 and slack_bridge_v0 on"
+  },
+  {
+   "id": "components.ext-settings.nav.member.brutal",
+   "title": "Settings rail: member (no billing/administration) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.member",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "member"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.member'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.member.elegant",
+   "title": "Settings rail: member (no billing/administration) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.member",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "member"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.member'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.member.elegant-dark",
+   "title": "Settings rail: member (no billing/administration) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.member",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "member"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.member'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.guest.brutal",
+   "title": "Settings rail: guest (no applications/MCP) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.guest",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "guest"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.guest'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.guest.elegant",
+   "title": "Settings rail: guest (no applications/MCP) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.guest",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "guest"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.guest'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.guest.elegant-dark",
+   "title": "Settings rail: guest (no applications/MCP) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.guest",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "guest"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.guest'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.release-notes-active.brutal",
+   "title": "Settings rail: Release Notes active (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.release-notes-active",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.release-notes-active'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.release-notes-active.elegant",
+   "title": "Settings rail: Release Notes active (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.release-notes-active",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.release-notes-active'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.release-notes-active.elegant-dark",
+   "title": "Settings rail: Release Notes active (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.release-notes-active",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-navigation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.release-notes-active'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.row-hover.brutal",
+   "title": "Settings rail: hovered Documentation row (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.row-hover",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation'] a[aria-label='Documentation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "workspace-settings-nav-documentation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     },
+     {
+      "type": "hover",
+      "target": "[data-parity-region='settings-navigation'] a[aria-label='Documentation']"
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "workspace-settings-nav-documentation"
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.row-hover'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.row-hover.elegant",
+   "title": "Settings rail: hovered Documentation row (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.row-hover",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation'] a[aria-label='Documentation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "workspace-settings-nav-documentation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     },
+     {
+      "type": "hover",
+      "target": "[data-parity-region='settings-navigation'] a[aria-label='Documentation']"
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "workspace-settings-nav-documentation"
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.row-hover'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.nav.row-hover.elegant-dark",
+   "title": "Settings rail: hovered Documentation row (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "nav.row-hover",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-navigation'] a[aria-label='Documentation']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "workspace-settings-nav-documentation",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     },
+     {
+      "type": "hover",
+      "target": "[data-parity-region='settings-navigation'] a[aria-label='Documentation']"
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "workspace-settings-nav-documentation"
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/layout/Sidebar.tsx (settingsSidebarGroups) + settings/SettingsSidebarList.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'nav.row-hover'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.page.brutal",
+   "title": "Settings About: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.about.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.page.elegant",
+   "title": "Settings About: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.about.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.page.elegant-dark",
+   "title": "Settings About: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.about.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.panel.brutal",
+   "title": "Settings About: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.panel.elegant",
+   "title": "Settings About: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.panel.elegant-dark",
+   "title": "Settings About: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.version.brutal",
+   "title": "Settings About section: version (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.version",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(1)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-version",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.version'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.version.elegant",
+   "title": "Settings About section: version (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.version",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(1)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-version",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.version'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.version.elegant-dark",
+   "title": "Settings About section: version (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.version",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(1)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-version",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.version'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.mobile-app.brutal",
+   "title": "Settings About section: mobile-app (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.mobile-app",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(2)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-mobile-app",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.mobile-app'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.mobile-app.elegant",
+   "title": "Settings About section: mobile-app (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.mobile-app",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(2)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-mobile-app",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.mobile-app'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.mobile-app.elegant-dark",
+   "title": "Settings About section: mobile-app (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.mobile-app",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(2)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-mobile-app",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.mobile-app'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.workspace.brutal",
+   "title": "Settings About section: workspace (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.workspace",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(3)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-workspace",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.workspace'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.workspace.elegant",
+   "title": "Settings About section: workspace (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.workspace",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(3)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-workspace",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.workspace'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.about.workspace.elegant-dark",
+   "title": "Settings About section: workspace (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "about.workspace",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "about",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > section:nth-of-type(3)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-about-workspace",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx#AboutSection + MobileDownloadQr.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'about.workspace'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.page.brutal",
+   "title": "Settings Release Notes: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.release-notes.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.page.elegant",
+   "title": "Settings Release Notes: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.release-notes.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.page.elegant-dark",
+   "title": "Settings Release Notes: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.release-notes.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.panel.brutal",
+   "title": "Settings Release Notes: panel (all releases) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.panel.elegant",
+   "title": "Settings Release Notes: panel (all releases) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.panel.elegant-dark",
+   "title": "Settings Release Notes: panel (all releases) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.current.brutal",
+   "title": "Settings Release Notes: current release card (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.current",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(1)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1212",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.current'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.current.elegant",
+   "title": "Settings Release Notes: current release card (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.current",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(1)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1212",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.current'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.current.elegant-dark",
+   "title": "Settings Release Notes: current release card (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.current",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(1)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1212",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.current'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.retracted.brutal",
+   "title": "Settings Release Notes: retracted release card (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.retracted",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(2)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1211",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.retracted'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.retracted.elegant",
+   "title": "Settings Release Notes: retracted release card (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.retracted",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(2)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1211",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.retracted'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.retracted.elegant-dark",
+   "title": "Settings Release Notes: retracted release card (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.retracted",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(2)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1211",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.retracted'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.older.brutal",
+   "title": "Settings Release Notes: breaking/deprecated release card (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.older",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(3)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1210",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.older'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.older.elegant",
+   "title": "Settings Release Notes: breaking/deprecated release card (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.older",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(3)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1210",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.older'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.older.elegant-dark",
+   "title": "Settings Release Notes: breaking/deprecated release card (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.older",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel'] div.space-y-4 > [data-testid='release-entry']:nth-child(3)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "release-entry-rel-1210",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.older'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.loading.brutal",
+   "title": "Settings Release Notes: loading (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.loading",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-loading"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.loading'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.loading.elegant",
+   "title": "Settings Release Notes: loading (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.loading",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-loading"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.loading'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.loading.elegant-dark",
+   "title": "Settings Release Notes: loading (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.loading",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-loading"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.loading'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.error.brutal",
+   "title": "Settings Release Notes: error (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.error",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-error"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.error'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.error.elegant",
+   "title": "Settings Release Notes: error (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.error",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-error"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.error'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.error.elegant-dark",
+   "title": "Settings Release Notes: error (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.error",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-error"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.error'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.empty.brutal",
+   "title": "Settings Release Notes: empty (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.empty",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-empty"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.empty'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.empty.elegant",
+   "title": "Settings Release Notes: empty (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.empty",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-empty"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.empty'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.release-notes.empty.elegant-dark",
+   "title": "Settings Release Notes: empty (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "release-notes.empty",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "release-notes",
+      "role": "owner",
+      "routeSet": "release-notes-empty"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/ReleaseNotesPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'release-notes.empty'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.page.brutal",
+   "title": "Settings Feedback: whole page (inbox) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.feedback.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.page.elegant",
+   "title": "Settings Feedback: whole page (inbox) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.feedback.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.page.elegant-dark",
+   "title": "Settings Feedback: whole page (inbox) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.feedback.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.panel.brutal",
+   "title": "Settings Feedback: panel (inbox) (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.panel.elegant",
+   "title": "Settings Feedback: panel (inbox) (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.panel.elegant-dark",
+   "title": "Settings Feedback: panel (inbox) (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.empty.brutal",
+   "title": "Settings Feedback: empty (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.empty",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-empty"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.empty'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.empty.elegant",
+   "title": "Settings Feedback: empty (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.empty",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-empty"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.empty'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.empty.elegant-dark",
+   "title": "Settings Feedback: empty (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.empty",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-empty"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.empty'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.loading.brutal",
+   "title": "Settings Feedback: loading (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.loading",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-loading"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.loading'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.loading.elegant",
+   "title": "Settings Feedback: loading (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.loading",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-loading"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.loading'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.loading.elegant-dark",
+   "title": "Settings Feedback: loading (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.loading",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-loading"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.loading'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.error.brutal",
+   "title": "Settings Feedback: error (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.error",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-error"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.error'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.error.elegant",
+   "title": "Settings Feedback: error (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.error",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-error"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.error'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.feedback.error.elegant-dark",
+   "title": "Settings Feedback: error (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "feedback.error",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "feedback",
+      "role": "owner",
+      "routeSet": "feedback-error"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/LazyAboutFeedbackDialog.tsx + AboutFeedbackDialog.tsx (@botiverse/hands-feedback-react FeedbackWorkspace)",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'feedback.error'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.server.page.brutal",
+   "title": "Settings Server Profile: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "server.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "server",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.server.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'server.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.server.page.elegant",
+   "title": "Settings Server Profile: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "server.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "server",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.server.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'server.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.server.page.elegant-dark",
+   "title": "Settings Server Profile: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "server.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "server",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.server.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'server.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.server.panel.brutal",
+   "title": "Settings Server Profile: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "server.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "server",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'server.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.server.panel.elegant",
+   "title": "Settings Server Profile: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "server.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "server",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'server.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.server.panel.elegant-dark",
+   "title": "Settings Server Profile: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "server.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "server",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'server.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.billing.page.brutal",
+   "title": "Settings Plan & Billing: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "billing.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "billing",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.billing.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'billing.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.billing.page.elegant",
+   "title": "Settings Plan & Billing: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "billing.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "billing",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.billing.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'billing.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.billing.page.elegant-dark",
+   "title": "Settings Plan & Billing: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "billing.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "billing",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.billing.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'billing.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.billing.panel.brutal",
+   "title": "Settings Plan & Billing: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "billing.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "billing",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'billing.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.billing.panel.elegant",
+   "title": "Settings Plan & Billing: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "billing.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "billing",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'billing.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.billing.panel.elegant-dark",
+   "title": "Settings Plan & Billing: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "billing.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "billing",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'billing.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.administration.page.brutal",
+   "title": "Settings Administration: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "administration.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "administration",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.administration.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'administration.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.administration.page.elegant",
+   "title": "Settings Administration: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "administration.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "administration",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.administration.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'administration.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.administration.page.elegant-dark",
+   "title": "Settings Administration: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "administration.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "administration",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.administration.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'administration.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.administration.panel.brutal",
+   "title": "Settings Administration: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "administration.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "administration",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'administration.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.administration.panel.elegant",
+   "title": "Settings Administration: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "administration.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "administration",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'administration.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.administration.panel.elegant-dark",
+   "title": "Settings Administration: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "administration.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "administration",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'administration.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.integrations.page.brutal",
+   "title": "Settings Applications: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "integrations.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "integrations",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.integrations.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'integrations.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.integrations.page.elegant",
+   "title": "Settings Applications: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "integrations.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "integrations",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.integrations.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'integrations.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.integrations.page.elegant-dark",
+   "title": "Settings Applications: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "integrations.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "integrations",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.integrations.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'integrations.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.integrations.panel.brutal",
+   "title": "Settings Applications: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "integrations.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "integrations",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'integrations.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.integrations.panel.elegant",
+   "title": "Settings Applications: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "integrations.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "integrations",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'integrations.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.integrations.panel.elegant-dark",
+   "title": "Settings Applications: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "integrations.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "integrations",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'integrations.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.mcp.page.brutal",
+   "title": "Settings MCP Servers: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mcp.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "mcp",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.mcp.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'mcp.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.mcp.page.elegant",
+   "title": "Settings MCP Servers: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mcp.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "mcp",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.mcp.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'mcp.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.mcp.page.elegant-dark",
+   "title": "Settings MCP Servers: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mcp.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "mcp",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.mcp.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'mcp.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.mcp.panel.brutal",
+   "title": "Settings MCP Servers: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mcp.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "mcp",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'mcp.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.mcp.panel.elegant",
+   "title": "Settings MCP Servers: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mcp.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "mcp",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'mcp.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.mcp.panel.elegant-dark",
+   "title": "Settings MCP Servers: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mcp.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "mcp",
+      "role": "owner"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'mcp.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.labs.page.brutal",
+   "title": "Settings Labs: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "labs.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "labs",
+      "role": "owner",
+      "flags": "labs"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.labs.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'labs.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.labs.page.elegant",
+   "title": "Settings Labs: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "labs.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "labs",
+      "role": "owner",
+      "flags": "labs"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.labs.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'labs.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.labs.page.elegant-dark",
+   "title": "Settings Labs: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "labs.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "labs",
+      "role": "owner",
+      "flags": "labs"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.labs.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'labs.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.labs.panel.brutal",
+   "title": "Settings Labs: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "labs.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "labs",
+      "role": "owner",
+      "flags": "labs"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'labs.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.labs.panel.elegant",
+   "title": "Settings Labs: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "labs.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "labs",
+      "role": "owner",
+      "flags": "labs"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'labs.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.labs.panel.elegant-dark",
+   "title": "Settings Labs: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "labs.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "labs",
+      "role": "owner",
+      "flags": "labs"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'labs.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.providers.page.brutal",
+   "title": "Settings AI Providers: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "providers.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "providers",
+      "role": "owner",
+      "flags": "providers"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.providers.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'providers.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.providers.page.elegant",
+   "title": "Settings AI Providers: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "providers.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "providers",
+      "role": "owner",
+      "flags": "providers"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.providers.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'providers.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.providers.page.elegant-dark",
+   "title": "Settings AI Providers: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "providers.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "providers",
+      "role": "owner",
+      "flags": "providers"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.providers.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'providers.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.providers.panel.brutal",
+   "title": "Settings AI Providers: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "providers.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "providers",
+      "role": "owner",
+      "flags": "providers"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'providers.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.providers.panel.elegant",
+   "title": "Settings AI Providers: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "providers.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "providers",
+      "role": "owner",
+      "flags": "providers"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'providers.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.providers.panel.elegant-dark",
+   "title": "Settings AI Providers: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "providers.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "providers",
+      "role": "owner",
+      "flags": "providers"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'providers.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.im-bridges.page.brutal",
+   "title": "Settings IM Bridges: whole page (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "im-bridges.page",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "im-bridges",
+      "role": "owner",
+      "flags": "bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.im-bridges.page.brutal']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'im-bridges.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.im-bridges.page.elegant",
+   "title": "Settings IM Bridges: whole page (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "im-bridges.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "im-bridges",
+      "role": "owner",
+      "flags": "bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.im-bridges.page.elegant']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'im-bridges.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.im-bridges.page.elegant-dark",
+   "title": "Settings IM Bridges: whole page (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "im-bridges.page",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "im-bridges",
+      "role": "owner",
+      "flags": "bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-visual-case='components.ext-settings.im-bridges.page.elegant-dark']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'im-bridges.page'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.im-bridges.panel.brutal",
+   "title": "Settings IM Bridges: panel (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "im-bridges.panel",
+      "extKind": "settings",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "tab": "im-bridges",
+      "role": "owner",
+      "flags": "bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'im-bridges.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.im-bridges.panel.elegant",
+   "title": "Settings IM Bridges: panel (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "im-bridges.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "tab": "im-bridges",
+      "role": "owner",
+      "flags": "bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'im-bridges.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.ext-settings.im-bridges.panel.elegant-dark",
+   "title": "Settings IM Bridges: panel (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "ext-settings",
+   "category": "extension/ext-settings",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 1600,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "im-bridges.panel",
+      "extKind": "settings",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "tab": "im-bridges",
+      "role": "owner",
+      "flags": "bridge"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-parity-region='settings-panel']",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "settings-panel",
+    "interactions": [
+     {
+      "type": "wait",
+      "ms": 800
+     }
+    ],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/settings/SettingsPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_settings.dart 'im-bridges.panel'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
    "id": "components.liveactivity.desktop.tool-finished.brutal",
    "title": "Live agent activity bar desktop tool-finished (brutal-light)",
    "captureType": "component-fixture",
@@ -6843,324 +13077,6 @@
    },
    "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
    "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.long'",
-   "tolerance": {
-    "pixelRatio": 0.02,
-    "layoutDp": 1,
-    "ignoreAntialiasing": true
-   }
-  },
-  {
-   "id": "components.computers.detail.runtime-usage.info.brutal",
-   "title": "Computers detail: runtime usage health on Detected Runtimes (brutal-light)",
-   "captureType": "component-fixture",
-   "surface": "computers",
-   "category": "extension/computers",
-   "suite": "raft-flutter-extension",
-   "viewport": {
-    "width": 1280,
-    "height": 2000,
-    "density": 1
-   },
-   "theme": "brutal-light",
-   "locale": "en",
-   "variants": [
-    {
-     "id": "default",
-     "name": "Default",
-     "props": {
-      "extCase": "detail.runtime-usage.info",
-      "extKind": "detail",
-      "parityTheme": "brutal-light",
-      "platform": "desktop",
-      "machine": "computer-usage",
-      "list": "usage"
-     }
-    }
-   ],
-   "capture": {
-    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
-    "crop": "element",
-    "contract": "component-bounds",
-    "androidKey": "computer-section-info",
-    "interactions": [],
-    "androidInteractions": []
-   },
-   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
-   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
-   "tolerance": {
-    "pixelRatio": 0.02,
-    "layoutDp": 1,
-    "ignoreAntialiasing": true
-   }
-  },
-  {
-   "id": "components.computers.detail.runtime-usage.info.elegant",
-   "title": "Computers detail: runtime usage health on Detected Runtimes (elegant-light)",
-   "captureType": "component-fixture",
-   "surface": "computers",
-   "category": "extension/computers",
-   "suite": "raft-flutter-extension",
-   "viewport": {
-    "width": 1280,
-    "height": 2000,
-    "density": 1
-   },
-   "theme": "elegant-light",
-   "locale": "en",
-   "variants": [
-    {
-     "id": "default",
-     "name": "Default",
-     "props": {
-      "extCase": "detail.runtime-usage.info",
-      "extKind": "detail",
-      "parityTheme": "elegant-light",
-      "platform": "desktop",
-      "machine": "computer-usage",
-      "list": "usage"
-     }
-    }
-   ],
-   "capture": {
-    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
-    "crop": "element",
-    "contract": "component-bounds",
-    "androidKey": "computer-section-info",
-    "interactions": [],
-    "androidInteractions": []
-   },
-   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
-   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
-   "tolerance": {
-    "pixelRatio": 0.02,
-    "layoutDp": 1,
-    "ignoreAntialiasing": true
-   }
-  },
-  {
-   "id": "components.computers.detail.runtime-usage.info.elegant-dark",
-   "title": "Computers detail: runtime usage health on Detected Runtimes (elegant-dark)",
-   "captureType": "component-fixture",
-   "surface": "computers",
-   "category": "extension/computers",
-   "suite": "raft-flutter-extension",
-   "viewport": {
-    "width": 1280,
-    "height": 2000,
-    "density": 1
-   },
-   "theme": "elegant-dark",
-   "locale": "en",
-   "variants": [
-    {
-     "id": "default",
-     "name": "Default",
-     "props": {
-      "extCase": "detail.runtime-usage.info",
-      "extKind": "detail",
-      "parityTheme": "elegant-dark",
-      "platform": "desktop",
-      "machine": "computer-usage",
-      "list": "usage"
-     }
-    }
-   ],
-   "capture": {
-    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
-    "crop": "element",
-    "contract": "component-bounds",
-    "androidKey": "computer-section-info",
-    "interactions": [],
-    "androidInteractions": []
-   },
-   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
-   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
-   "tolerance": {
-    "pixelRatio": 0.02,
-    "layoutDp": 1,
-    "ignoreAntialiasing": true
-   }
-  },
-  {
-   "id": "components.computers.detail.runtime-usage.card.brutal",
-   "title": "Computers detail: runtime usage hover card (brutal-light)",
-   "captureType": "component-fixture",
-   "surface": "computers",
-   "category": "extension/computers",
-   "suite": "raft-flutter-extension",
-   "viewport": {
-    "width": 1280,
-    "height": 800,
-    "density": 1
-   },
-   "theme": "brutal-light",
-   "locale": "en",
-   "variants": [
-    {
-     "id": "default",
-     "name": "Default",
-     "props": {
-      "extCase": "detail.runtime-usage.card",
-      "extKind": "detail",
-      "parityTheme": "brutal-light",
-      "platform": "desktop",
-      "machine": "computer-usage",
-      "list": "usage"
-     }
-    }
-   ],
-   "capture": {
-    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
-    "crop": "element",
-    "contract": "component-bounds",
-    "androidKey": "runtime-usage-card",
-    "interactions": [
-     {
-      "type": "hover",
-      "target": "role=button[name=\"Claude\"s]"
-     },
-     {
-      "type": "wait",
-      "ms": 600
-     }
-    ],
-    "androidInteractions": [
-     {
-      "type": "hover",
-      "key": "runtime-usage-computer-usage-claude"
-     },
-     {
-      "type": "wait",
-      "ms": 300
-     }
-    ]
-   },
-   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
-   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
-   "tolerance": {
-    "pixelRatio": 0.02,
-    "layoutDp": 1,
-    "ignoreAntialiasing": true
-   }
-  },
-  {
-   "id": "components.computers.detail.runtime-usage.card.elegant",
-   "title": "Computers detail: runtime usage hover card (elegant-light)",
-   "captureType": "component-fixture",
-   "surface": "computers",
-   "category": "extension/computers",
-   "suite": "raft-flutter-extension",
-   "viewport": {
-    "width": 1280,
-    "height": 800,
-    "density": 1
-   },
-   "theme": "elegant-light",
-   "locale": "en",
-   "variants": [
-    {
-     "id": "default",
-     "name": "Default",
-     "props": {
-      "extCase": "detail.runtime-usage.card",
-      "extKind": "detail",
-      "parityTheme": "elegant-light",
-      "platform": "desktop",
-      "machine": "computer-usage",
-      "list": "usage"
-     }
-    }
-   ],
-   "capture": {
-    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
-    "crop": "element",
-    "contract": "component-bounds",
-    "androidKey": "runtime-usage-card",
-    "interactions": [
-     {
-      "type": "hover",
-      "target": "role=button[name=\"Claude\"s]"
-     },
-     {
-      "type": "wait",
-      "ms": 600
-     }
-    ],
-    "androidInteractions": [
-     {
-      "type": "hover",
-      "key": "runtime-usage-computer-usage-claude"
-     },
-     {
-      "type": "wait",
-      "ms": 300
-     }
-    ]
-   },
-   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
-   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
-   "tolerance": {
-    "pixelRatio": 0.02,
-    "layoutDp": 1,
-    "ignoreAntialiasing": true
-   }
-  },
-  {
-   "id": "components.computers.detail.runtime-usage.card.elegant-dark",
-   "title": "Computers detail: runtime usage hover card (elegant-dark)",
-   "captureType": "component-fixture",
-   "surface": "computers",
-   "category": "extension/computers",
-   "suite": "raft-flutter-extension",
-   "viewport": {
-    "width": 1280,
-    "height": 800,
-    "density": 1
-   },
-   "theme": "elegant-dark",
-   "locale": "en",
-   "variants": [
-    {
-     "id": "default",
-     "name": "Default",
-     "props": {
-      "extCase": "detail.runtime-usage.card",
-      "extKind": "detail",
-      "parityTheme": "elegant-dark",
-      "platform": "desktop",
-      "machine": "computer-usage",
-      "list": "usage"
-     }
-    }
-   ],
-   "capture": {
-    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
-    "crop": "element",
-    "contract": "component-bounds",
-    "androidKey": "runtime-usage-card",
-    "interactions": [
-     {
-      "type": "hover",
-      "target": "role=button[name=\"Claude\"s]"
-     },
-     {
-      "type": "wait",
-      "ms": 600
-     }
-    ],
-    "androidInteractions": [
-     {
-      "type": "hover",
-      "key": "runtime-usage-computer-usage-claude"
-     },
-     {
-      "type": "wait",
-      "ms": 300
-     }
-    ]
-   },
-   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
-   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
    "tolerance": {
     "pixelRatio": 0.02,
     "layoutDp": 1,

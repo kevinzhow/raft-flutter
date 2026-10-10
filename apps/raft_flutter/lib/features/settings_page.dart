@@ -173,10 +173,16 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     return Row(
       children: [
         SizedBox(
+          key: const ValueKey('settings-navigation'),
           width: RaftSettingsLayoutRecipe.navigationWidth,
           child: navigation(),
         ),
-        Expanded(child: content()),
+        Expanded(
+          child: KeyedSubtree(
+            key: const ValueKey('settings-panel'),
+            child: content(),
+          ),
+        ),
       ],
     );
   }
