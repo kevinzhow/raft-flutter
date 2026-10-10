@@ -828,6 +828,7 @@ class RaftNavItem extends StatelessWidget {
     this.trailing,
     this.leading,
     this.description,
+    this.labelSuffix,
     this.role = RaftNavItemRole.generic,
     this.viewportHeight,
     this.count,
@@ -843,7 +844,7 @@ class RaftNavItem extends StatelessWidget {
   final bool selected;
   final int unread;
   final Widget? trailing, leading;
-  final String? description;
+  final String? description, labelSuffix;
   final RaftNavItemRole role;
   final double? viewportHeight;
 
@@ -854,6 +855,26 @@ class RaftNavItem extends StatelessWidget {
   /// unchanged. DM avatars must be supplied by the product, not inferred here.
   final RaftConversationNavKind? conversationKind;
   final RaftChannelGlyphVariant channelGlyphVariant;
+  Widget _title(RaftTokens t, TextStyle style) => labelSuffix == null
+      ? Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: style)
+      : Text.rich(
+          TextSpan(
+            text: label,
+            children: [
+              TextSpan(
+                text: ' $labelSuffix',
+                style: style.copyWith(
+                  color: t.brutal
+                      ? Colors.black.withValues(alpha: .4)
+                      : t.colors['foreground-placeholder'],
+                ),
+              ),
+            ],
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: style,
+        );
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -899,7 +920,8 @@ class RaftNavItem extends StatelessWidget {
       minimumTargetSize: conversationKind == RaftConversationNavKind.directory
           ? conversation!.rowHeight(
               viewportWidth: MediaQuery.sizeOf(context).width,
-              viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
+              viewportHeight:
+                  viewportHeight ?? MediaQuery.sizeOf(context).height,
             )
           : null,
       kind: RaftControlKind.sidebar,
@@ -928,32 +950,29 @@ class RaftNavItem extends StatelessWidget {
             const SizedBox(width: 6),
             Expanded(
               child: description == null
-                  ? Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          (conversation?.titleStyle(loudUnread: unread > 0) ??
-                                  RaftTypography.body(
-                                    t,
-                                    size: t.brutal ? 14 : 13,
-                                    line: 20,
-                                    weight: selected || unread > 0
-                                        ? FontWeight.w700
-                                        : t.brutal
-                                        ? FontWeight.w400
-                                        : FontWeight.w500,
-                                  ))
-                              .copyWith(
-                                color: conversationKind == null
-                                    ? t.strong
-                                    : conversationKind ==
-                                              RaftConversationNavKind
-                                                  .directMessage &&
-                                          t.brutal
-                                    ? Colors.black
-                                    : DefaultTextStyle.of(context).style.color,
-                              ),
+                  ? _title(
+                      t,
+                      (conversation?.titleStyle(loudUnread: unread > 0) ??
+                              RaftTypography.body(
+                                t,
+                                size: t.brutal ? 14 : 13,
+                                line: 20,
+                                weight: selected || unread > 0
+                                    ? FontWeight.w700
+                                    : t.brutal
+                                    ? FontWeight.w400
+                                    : FontWeight.w500,
+                              ))
+                          .copyWith(
+                            color: conversationKind == null
+                                ? t.strong
+                                : conversationKind ==
+                                          RaftConversationNavKind
+                                              .directMessage &&
+                                      t.brutal
+                                ? Colors.black
+                                : DefaultTextStyle.of(context).style.color,
+                          ),
                     )
                   : LayoutBuilder(
                       builder: (context, box) => Row(
@@ -964,25 +983,20 @@ class RaftNavItem extends StatelessWidget {
                             constraints: BoxConstraints(
                               maxWidth: box.maxWidth * .7,
                             ),
-                            child: Text(
-                              label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  RaftTypography.heading(
-                                    t,
-                                    size: 14,
-                                    line: 20,
-                                    weight: unread > 0
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                  ).copyWith(
-                                    color: t.brutal
-                                        ? Colors.black
-                                        : DefaultTextStyle.of(context)
-                                              .style
-                                              .color,
-                                  ),
+                            child: _title(
+                              t,
+                              RaftTypography.heading(
+                                t,
+                                size: 14,
+                                line: 20,
+                                weight: unread > 0
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ).copyWith(
+                                color: t.brutal
+                                    ? Colors.black
+                                    : DefaultTextStyle.of(context).style.color,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 4),

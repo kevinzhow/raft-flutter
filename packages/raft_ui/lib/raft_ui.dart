@@ -133,3 +133,6 @@ export 'src/rail_attention.dart';
 
 export 'src/workspace_shell.dart';
 export 'src/server_switcher.dart';
+
+export 'src/page_recipes.dart';
+export 'src/sidebar_frame.dart';

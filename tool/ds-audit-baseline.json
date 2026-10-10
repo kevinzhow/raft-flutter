@@ -5,22 +5,21 @@
  "totals": {
   "style.border_radius": 11,
   "style.color_literal": 1,
-  "style.dimension": 57,
+  "style.dimension": 55,
   "style.duration": 2,
-  "style.edge_insets": 87,
+  "style.edge_insets": 70,
   "style.font_size": 1,
-  "style.font_weight": 7,
-  "style.material_colors": 29,
-  "style.material_icons": 28,
+  "style.font_weight": 5,
+  "style.material_colors": 28,
+  "style.material_icons": 27,
   "style.material_theme": 38,
   "style.sized_box": 77,
-  "style.text_metrics": 5,
+  "style.text_metrics": 1,
   "style.text_style": 15,
   "widget.app_bar": 7,
   "widget.button": 43,
   "widget.chip": 6,
   "widget.dialog": 50,
-  "widget.divider": 1,
   "widget.icon_button": 13,
   "widget.ink": 1,
   "widget.list_tile": 64,
@@ -31,10 +30,10 @@
   "widget.scaffold": 10,
   "widget.select": 8,
   "widget.snackbar": 36,
-  "widget.surface": 13,
+  "widget.surface": 10,
   "widget.text_field": 26,
   "widget.toggle": 1,
-  "widget.tooltip": 6
+  "widget.tooltip": 4
  },
  "files": {
   "apps/raft_flutter/lib/features/account_auth_previews.dart": {
@@ -147,10 +146,6 @@
    "style.sized_box": 2,
    "widget.snackbar": 8,
    "widget.toggle": 1
-  },
-  "apps/raft_flutter/lib/features/desktop_directory_view.dart": {
-   "style.edge_insets": 1,
-   "widget.surface": 1
   },
   "apps/raft_flutter/lib/features/desktop_master_detail.dart": {
    "style.dimension": 1
@@ -273,16 +268,6 @@
   "apps/raft_flutter/lib/features/page_alignment_previews.dart": {
    "style.edge_insets": 2
   },
-  "apps/raft_flutter/lib/features/page_component_recipes.dart": {
-   "style.dimension": 2,
-   "style.edge_insets": 16,
-   "style.font_weight": 2,
-   "style.material_colors": 1,
-   "style.text_metrics": 4,
-   "widget.divider": 1,
-   "widget.surface": 1,
-   "widget.tooltip": 2
-  },
   "apps/raft_flutter/lib/features/page_layout.dart": {
    "style.dimension": 1,
    "style.sized_box": 2
@@ -358,9 +343,6 @@
    "widget.select": 4,
    "widget.text_field": 1
   },
-  "apps/raft_flutter/lib/features/settings_page.dart": {
-   "widget.surface": 1
-  },
   "apps/raft_flutter/lib/features/share_message_link.dart": {
    "widget.snackbar": 2
   },
@@ -431,7 +413,7 @@
   "apps/raft_flutter/lib/features/workspace_view.dart": {
    "style.dimension": 3,
    "style.edge_insets": 3,
-   "style.material_icons": 2,
+   "style.material_icons": 1,
    "style.sized_box": 1,
    "widget.button": 1,
    "widget.dialog": 6,

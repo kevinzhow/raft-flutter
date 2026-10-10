@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'page_component_recipes.dart';
-
 /// SettingsPanel / Sidebar(mobileInline) SettingsSidebarList composition.
 /// Account transport and platform notification ownership are supplied by the
 /// caller, never by this UI shell.
@@ -87,7 +85,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), recipe = RaftSettingsLayoutRecipe(t);
+    final t = RaftTokens.of(context);
     final available = widget.destinations;
     final pages = available.where((d) => d.builder != null).toList();
     if (pages.isEmpty) return const SizedBox.shrink();
@@ -139,32 +137,11 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
               ],
             ),
           )
-        : Material(
-            color: recipe.navigationFill,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Sidebar.tsx desktop header: `h-panel-header border-b
-                // theme-brutal:border-b-2 theme-brutal:border-black px-5`,
-                // title `text-lg font-bold`.
-                Container(
-                  height: RaftLayoutMetrics.shellHeaderHeight(
-                    t,
-                    MediaQuery.sizeOf(context).height,
-                  ),
-                  padding: RaftSettingsLayoutRecipe.navigationHeaderInset,
-                  alignment: Alignment.centerLeft,
-                  decoration: BoxDecoration(
-                    border: Border(bottom: recipe.navigationHeaderLine),
-                  ),
-                  child: Text(
-                    raftText(context, 'Settings'),
-                    style: recipe.navigationTitle,
-                  ),
-                ),
-                Expanded(child: list(active.id)),
-              ],
+        : RaftMountedSidebarFrame(
+            header: RaftChatSidebarHeading(
+              label: raftText(context, 'Settings'),
             ),
+            body: list(active.id),
           );
     Widget content() => RaftSettingsPanelFrame(
       header: RaftSettingsPanelHeader(

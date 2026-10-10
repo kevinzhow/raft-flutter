@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'page_component_recipes.dart';
 
 import '../data/workspace_controller.dart';
 

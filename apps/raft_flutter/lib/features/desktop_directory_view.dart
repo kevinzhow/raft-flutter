@@ -7,10 +7,9 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import 'desktop_navigation_policy.dart';
 import 'management_support.dart';
-import 'page_layout.dart';
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
-import 'public_avatar_url.dart';
+import 'sender_avatar_projection.dart';
 
 /// The classic Sidebar's Members/Computers column. This is a current-authority
 /// directory, separate from settings' member-role management and fleet routes.
@@ -38,6 +37,7 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
   StreamSubscription<RaftEvent>? events;
   final agentMenu = RaftMenuController();
   bool agentsExpanded = true, humansExpanded = true;
+  final collapsedMachineGroups = <String, bool>{};
   @override
   String get authority =>
       '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.computers}|'
@@ -85,6 +85,7 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
     agents = [];
     humans = [];
     computers = [];
+    collapsedMachineGroups.clear();
   }
 
   @override
@@ -112,6 +113,17 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
         w.can('viewMembers') &&
         !(w.server!.string('role') == 'member' &&
             w.server!.json['hideHumansFromMembers'] == true);
+    Future<List<Map<String, dynamic>>> readGroupMachines() async {
+      if (!w.can('viewMachines')) return const [];
+      try {
+        return await read('/servers/$server/machines', 'machines');
+      } catch (_) {
+        // Auxiliary names may be unavailable. Never discard accepted members
+        // or infer machine access from an agent's machineId.
+        return const [];
+      }
+    }
+
     final results = await Future.wait([
       w.can('viewAgents')
           ? read('/agents', 'agents')
@@ -119,10 +131,12 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
       showHumans
           ? read('/servers/$server/members', 'members')
           : Future.value(<Map<String, dynamic>>[]),
+      readGroupMachines(),
     ]);
     if (accepts(generation, request)) {
       agents = results[0].where((row) => row['deletedAt'] == null).toList();
       humans = results[1];
+      computers = results[2];
     }
   }
 
@@ -181,7 +195,20 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
     if (id is! String) {
       return const SizedBox.shrink();
     }
-    final name = '${value['displayName'] ?? value['name'] ?? ''}';
+    final displayName = '${value['displayName'] ?? ''}';
+    final name = displayName.isNotEmpty
+        ? displayName
+        : '${value['name'] ?? ''}';
+    final agent = kind == DesktopContentKind.agent;
+    final avatar = projectSenderAvatar(
+      origin: w.client.origin,
+      senderId: id,
+      senderType: agent ? 'agent' : 'user',
+      agents: agent ? [value] : const [],
+      members: agent ? const [] : [value],
+      currentUser: w.client.user?.json,
+      requestSize: 16,
+    );
     final target = DesktopContentTarget(kind, id);
     final sourceAuthority = authority;
     final selected = widget.selected?.kind == kind && widget.selected?.id == id;
@@ -189,9 +216,13 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
     return RaftNavItem(
       key: ValueKey('desktop-directory-${kind.name}-$id'),
       label: name,
+      labelSuffix: kind == DesktopContentKind.human && id == w.client.user?.id
+          ? raftText(context, '(you)')
+          : null,
       conversationKind: RaftConversationNavKind.directory,
       selected: selected,
-      description: kind == DesktopContentKind.agent &&
+      description:
+          kind != DesktopContentKind.computer &&
               '${value['description'] ?? ''}'.isNotEmpty
           ? '${value['description']}'
           : null,
@@ -203,9 +234,21 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
               kind: kind == DesktopContentKind.agent
                   ? RaftAvatarKind.agent
                   : RaftAvatarKind.human,
-              imageUrl: raftPublicAvatarUrl(
-                w.client.origin,
-                value['avatarUrl'] as String?,
+              content: RaftAvatarContent(
+                name: name,
+                kind: agent
+                    ? RaftAvatarContentKind.agent
+                    : RaftAvatarContentKind.human,
+                uploadedUrl: avatar.uploadedUrl,
+                gravatarUrl: avatar.gravatarUrl,
+                pixelKey: avatar.pixelKey,
+                fallback: RaftMountedAvatarFallback(
+                  avatarContext: RaftMountedAvatarContext.sidebarList,
+                  identity: agent
+                      ? RaftMountedAvatarIdentity.agent
+                      : RaftMountedAvatarIdentity.human,
+                  gravatar: avatar.gravatarUrl != null,
+                ),
               ),
             ),
       onTap: () {
@@ -214,6 +257,32 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
         }
       },
     );
+  }
+
+  List<Widget> agentMachineGroups(List<Map<String, dynamic>> rows) {
+    final groups = <String, List<Map<String, dynamic>>>{};
+    for (final value in rows) {
+      final machine = value['machineId'];
+      final id = machine is String ? machine : '__no_machine__';
+      groups.putIfAbsent(id, () => []).add(value);
+    }
+    return [
+      for (final entry in groups.entries)
+        RaftSidebarMachineGroup(
+          key: ValueKey('directory-machine-group-${entry.key}'),
+          disclosureKey: ValueKey('directory-machine-disclosure-${entry.key}'),
+          name:
+              '${computers.where((m) => m['id'] == entry.key).firstOrNull?['name'] ?? raftText(context, 'No computer')}',
+          count: entry.value.length,
+          expanded: collapsedMachineGroups[entry.key] != true,
+          onExpandedChanged: (expanded) =>
+              setState(() => collapsedMachineGroups[entry.key] = !expanded),
+          children: [
+            for (final value in entry.value)
+              row(value, DesktopContentKind.agent),
+          ],
+        ),
+    ];
   }
 
   @override
@@ -260,81 +329,57 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
             (kind == DesktopContentKind.agent
                 ? agentsExpanded
                 : humansExpanded))
-          for (final value in rows) row(value, kind),
+          if (kind == DesktopContentKind.agent)
+            ...agentMachineGroups(rows)
+          else
+            for (final value in rows) row(value, kind),
       ],
     );
-    return Material(
-      color: RaftSidebarRecipe(
-        t,
-        viewportWidth: MediaQuery.sizeOf(context).width,
-        viewportHeight: MediaQuery.sizeOf(context).height,
-        variant: RaftSidebarVariant.mountedProduct,
-      ).bodyBackground,
-      child: Column(
-        children: [
-          if (widget.mobileRoot)
-            RaftMobileRootHeader(
+    final size = MediaQuery.sizeOf(context);
+    final recipe = RaftSidebarRecipe(
+      t,
+      viewportWidth: size.width,
+      viewportHeight: size.height,
+      variant: RaftSidebarVariant.mountedProduct,
+    );
+    return RaftMountedSidebarFrame(
+      header: widget.mobileRoot
+          ? RaftMobileRootHeader(
               title: widget.computers ? 'Computers' : 'Members',
-              actions: [
-                RaftIconButton(
-                  glyph: RaftGlyph.refreshCw,
-                  tooltip: 'Refresh members',
-                  onPressed: reload,
-                ),
-              ],
             )
-          else
-            RaftPageHeader(
-              title: widget.computers ? 'Computers' : 'Members',
-              height: raftPageHeaderHeight(context),
-              actions: [
-                RaftIconButton(
-                  glyph: RaftGlyph.refreshCw,
-                  tooltip: 'Refresh',
-                  onPressed: reload,
-                ),
+          : RaftChatSidebarHeading(
+              label: widget.computers ? 'Computers' : 'Members',
+            ),
+      body: loading && agents.isEmpty && humans.isEmpty && computers.isEmpty
+          ? Center(
+              child: Text(
+                raftText(context, 'Loading...'),
+                style: RaftTypography.mono(t, size: 14, line: 20),
+              ),
+            )
+          : ListView(
+              key: const Key('desktop-directory-list'),
+              padding: recipe.contentInset(headerInFlow: true),
+              children: [
+                if (error != null)
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      raftText(context, 'Directory could not be loaded.'),
+                    ),
+                  ),
+                if (widget.computers)
+                  section('Computers', computers, DesktopContentKind.computer)
+                else ...[
+                  if (w.can('viewAgents'))
+                    section('Agents', agents, DesktopContentKind.agent),
+                  if (w.can('viewMembers') &&
+                      !(w.server?.string('role') == 'member' &&
+                          w.server?.json['hideHumansFromMembers'] == true))
+                    section('Humans', humans, DesktopContentKind.human),
+                ],
               ],
             ),
-          Expanded(
-            child:
-                loading && agents.isEmpty && humans.isEmpty && computers.isEmpty
-                ? Center(
-                    child: Text(
-                      raftText(context, 'Loading...'),
-                      style: RaftTypography.mono(t, size: 14, line: 20),
-                    ),
-                  )
-                : ListView(
-                    key: const Key('desktop-directory-list'),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 12,
-                    ),
-                    children: [
-                      if (error != null)
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            raftText(context, 'Directory could not be loaded.'),
-                          ),
-                        ),
-                      if (widget.computers)
-                        section(
-                          'Computers',
-                          computers,
-                          DesktopContentKind.computer,
-                        )
-                      else ...[
-                        if (w.can('viewAgents'))
-                          section('Agents', agents, DesktopContentKind.agent),
-                        if (w.can('viewMembers'))
-                          section('Humans', humans, DesktopContentKind.human),
-                      ],
-                    ],
-                  ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -8,7 +8,6 @@ import 'account_onboarding.dart';
 import 'account_connections_view.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
-import 'page_component_recipes.dart';
 
 class AccountSettings extends StatefulWidget {
   const AccountSettings({

@@ -2380,19 +2380,56 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     }
   }
 
-  Widget sidebarEntry(SidebarEntry entry) => entry.agent == null
-      ? channelItem(entry.channel!)
-      : RaftNavItem(
-          key: ValueKey('sidebar-${entry.key}'),
-          label: entry.label,
-          icon: Icons.smart_toy_outlined,
-          selected:
-              w.section == 'chat' &&
-              entry.channel != null &&
-              w.channel?.id == entry.channel!.id,
-          unread: w.unread[entry.channel?.id] ?? 0,
-          onTap: () => chooseSidebarAgent(entry),
-        );
+  Widget mountedPeerAvatar(
+    String name,
+    bool agent,
+    SenderAvatarProjection source,
+  ) => RaftAvatar(
+    name: name,
+    kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
+    mountedContext: RaftMountedAvatarContext.sidebarList,
+    content: RaftAvatarContent(
+      name: name,
+      kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
+      uploadedUrl: source.uploadedUrl,
+      gravatarUrl: source.gravatarUrl,
+      pixelKey: source.pixelKey,
+      fallback: RaftMountedAvatarFallback(
+        avatarContext: RaftMountedAvatarContext.sidebarList,
+        identity: agent
+            ? RaftMountedAvatarIdentity.agent
+            : RaftMountedAvatarIdentity.human,
+        gravatar: source.gravatarUrl != null,
+      ),
+    ),
+  );
+
+  Widget sidebarEntry(SidebarEntry entry) {
+    final agent = entry.agent;
+    if (agent == null) return channelItem(entry.channel!);
+    final source = projectSenderAvatar(
+      origin: w.client.origin,
+      senderId: '${agent['id']}',
+      senderType: 'agent',
+      agents: [agent],
+      members: const [],
+      requestSize: 16,
+    );
+    final description = '${agent['description'] ?? ''}';
+    return RaftNavItem(
+      key: ValueKey('sidebar-${entry.key}'),
+      label: entry.label,
+      conversationKind: RaftConversationNavKind.directMessage,
+      leading: mountedPeerAvatar(entry.label, true, source),
+      description: description.isEmpty ? null : description,
+      selected:
+          w.section == 'chat' &&
+          entry.channel != null &&
+          w.channel?.id == entry.channel!.id,
+      unread: w.unread[entry.channel?.id] ?? 0,
+      onTap: () => chooseSidebarAgent(entry),
+    );
+  }
 
   List<Widget> conversationSections() => [
     for (final group in sidebarGroups)
@@ -2481,29 +2518,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     );
     return RaftNavItem(
       key: ValueKey('sidebar-channel-${c.id}'),
-      leading: c.type == 'dm'
-          ? RaftAvatar(
-              name: name,
-              kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-              mountedContext: RaftMountedAvatarContext.sidebarList,
-              content: RaftAvatarContent(
-                name: name,
-                kind: agent
-                    ? RaftAvatarContentKind.agent
-                    : RaftAvatarContentKind.human,
-                uploadedUrl: source.uploadedUrl,
-                gravatarUrl: source.gravatarUrl,
-                pixelKey: source.pixelKey,
-                fallback: RaftMountedAvatarFallback(
-                  avatarContext: RaftMountedAvatarContext.sidebarList,
-                  identity: agent
-                      ? RaftMountedAvatarIdentity.agent
-                      : RaftMountedAvatarIdentity.human,
-                  gravatar: source.gravatarUrl != null,
-                ),
-              ),
-            )
-          : null,
+      leading: c.type == 'dm' ? mountedPeerAvatar(name, agent, source) : null,
       description: c.type == 'dm' && description.isNotEmpty
           ? description
           : null,

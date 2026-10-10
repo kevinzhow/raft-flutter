@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/search_memory.dart';
-import 'page_component_recipes.dart';
 import 'public_avatar_url.dart';
 import 'resource_search.dart';
 

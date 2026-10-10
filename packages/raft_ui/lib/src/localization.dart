@@ -2179,6 +2179,7 @@ const raftChinese = <String, String>{
   "No channels are currently marked visible to Guests.": "目前没有标记为「访客可见」的频道。",
   "No channels yet": "暂无频道",
   "No chats yet": "暂无聊天",
+  "No computer": "无计算机",
   "No computer assigned": "未分配计算机",
   "No computers need attention": "暂无需要关注的 Computer",
   "No computers yet": "暂无计算机",

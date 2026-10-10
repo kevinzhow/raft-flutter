@@ -4,7 +4,6 @@ import 'package:raft_ui/recipes.dart' as rui;
 
 import 'sender_avatar_projection.dart';
 import 'resource_cards.dart';
-import 'page_component_recipes.dart';
 import 'search_ranking.dart';
 
 /// Source searchEntities identity: channel, durable computer, live agent, human.
