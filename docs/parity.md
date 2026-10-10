@@ -71,6 +71,38 @@ Remaining causes, all measured from the side-by-side images:
    positions match exactly, so text-dense captures stay at about 93–95%
    pixel-perfect after their layout matches.
 
+Per-row classification of the 17 remaining `different` rows (run
+`20261010T112612Z`, `.local/parity-final/classify*.py`). Each mismatched
+pixel was put into one of four buckets:
+
+- **AA**: another-image pixel within 1 device px differs by <= 40/255.
+- **subpx**: the same, within 2 device px.
+- **other**: everything left after AA and subpx.
+- **visible**: differs by more than 40/255 after a 1-CSS-px Gaussian blur.
+
+React used production fonts and `--disable-lcd-text --font-render-hinting=none`
+(`textRendering.chromiumArgs` in all 99 metadata files).
+
+| row | exact | AA | subpx | other | visible | remaining real difference |
+| --- | --- | --- | --- | --- | --- | --- |
+| ui.card.states.elegant | 6.83 | 6.66 | 0.12 | 0.06 | 0.00 | none: rasteriser only (text coverage, shadow blur ±1 level) |
+| members.avatar-management | 5.05 | 4.55 | 0.28 | 0.23 | 0.00 | none: rasteriser and fractional border edges |
+| message-row.deleted-human | 4.37 | 3.51 | 0.47 | 0.39 | 0.00 | none visible: badge border at fractional x, `+` icon stroke coverage |
+| thread.message.row | 5.68 | 4.02 | 0.84 | 0.82 | 0.01 | `+` add-reaction icon stroke slightly heavier |
+| create-agent.dialog-onboarding | 4.34 | 2.64 | 0.82 | 0.88 | 0.85 | section borders 0.3–0.7 CSS px off (Blink snaps borders to device px) |
+| message-row.rich-content | 5.19 | 3.38 | 0.85 | 0.97 | 0.44 | link underline thickness/offset |
+| message-row.long-inline-code | 5.76 | 3.78 | 0.86 | 1.12 | 0.67 | line with the 20px unknown-task badge does not grow: flutter_markdown_plus forces a strut, Web grows the line box (+2px below) |
+| message-row.md-wrap-adjacent | 6.31 | 4.32 | 0.72 | 1.27 | 0.16 | `。` drawn by host fallback font (Noto Sans Mongolian) in Chromium |
+| message-row.md-wrap-task607 | 7.34 | 4.48 | 1.05 | 1.81 | 0.70 | `→` / `。` host fallback fonts |
+| message-row.md-link-ref | 6.99 | 3.81 | 1.21 | 1.97 | 1.31 | link underline 2px at baseline+2 (Web) vs font-metric ×2 (≈1.1px, 1px higher) |
+| message-row.md-latest-release | 8.69 | 6.08 | 0.73 | 1.88 | 1.71 | Flutter breaks inside `` `/share/<token>` `` after `/` |
+| message-row.md-wrap-slice1 | 9.10 | 5.98 | 1.24 | 1.88 | 1.76 | list item gap 4px vs `mb-0.5`; fallback `。`/`→` |
+| composer.pending-mention-actions | 4.15 | 3.22 | 0.06 | 0.87 | 1.59 | composer keeps focus after button send (shadow-md); Source blurs on click send |
+| message-row.md-wrap-clarify | 11.15 | 5.24 | 1.98 | 3.93 | 4.84 | break after `（` before inline code (padding placeholders add break opportunities) |
+| settings.notifications.page | 6.79 | 1.08 | 0.44 | 5.27 | 6.21 | Android copy instead of Web push copy (platform content); panel left border height |
+| message-share.selection | 5.81 | 1.31 | 0.04 | 4.46 | 6.63 | bottom-anchored real chat with date divider; square vs circular select checkbox; no Owner badge |
+| message-row.md-wrap-status606 | 16.63 | 7.96 | 1.92 | 6.76 | 9.61 | long inline code breaks on the current line instead of moving down (`wrap-anywhere`); break after `/` |
+
 ## One command
 
 ```bash
