@@ -9,6 +9,7 @@
 // column. Data: tool/parity-ext/fixtures/settings.json (fixtures['ext:settings'])
 // on top of the official fixture user/server (members_settings MsFixture).
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
@@ -87,6 +88,10 @@ Widget _page(ParityContext ctx) {
         bridgeEnabled: flags.contains('bridge'),
         labsEnabled: flags.contains('labs'),
         appVersion: _fx(ctx)['appVersion'] as String,
+        // The React render host's origin (the QR encodes `<origin>/download`).
+        frontendOrigin: Uri.parse(
+          'http://127.0.0.1:${Platform.environment['PARITY_EXT_WEB_PORT'] ?? '4396'}',
+        ),
       ),
     ),
   );

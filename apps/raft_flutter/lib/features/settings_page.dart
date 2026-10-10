@@ -14,6 +14,10 @@ class RaftSettingsDestination {
     this.scroll = true,
     this.title,
     this.onOpen,
+    this.mobileOnly = false,
+    this.attention = false,
+    this.attached = true,
+    this.ownHeader = false,
   }) : assert(builder != null || onOpen != null);
 
   /// A row that leaves the Settings page (external link or another route),
@@ -24,10 +28,28 @@ class RaftSettingsDestination {
     this.glyph, {
     required VoidCallback this.onOpen,
     this.group = 'Personal',
+    this.mobileOnly = false,
+    this.attention = false,
   }) : builder = null,
        scroll = false,
-       title = null;
+       title = null,
+       attached = true,
+       ownHeader = false;
   final String id, label, group;
+
+  /// Listed only in the mobile Settings root (Sidebar.tsx adds Computers to
+  /// the Settings sub-nav on mobile only; desktop has its own rail mode).
+  final bool mobileOnly;
+
+  /// Trailing attention dot (Feedback's unread replies).
+  final bool attention;
+
+  /// Rendered inside SettingsPanel's `Panel edge="attached"` (false for the
+  /// /release-notes route, which is a plain column).
+  final bool attached;
+
+  /// The page draws its own panel header (My Feedback).
+  final bool ownHeader;
 
   /// Panel title (SETTINGS_TAB_TITLE_ID) when it differs from the nav label.
   final String? title;
@@ -86,13 +108,16 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final available = widget.destinations;
+    final mobile =
+        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
+    final available = [
+      for (final d in widget.destinations)
+        if (mobile || !d.mobileOnly) d,
+    ];
     final pages = available.where((d) => d.builder != null).toList();
     if (pages.isEmpty) return const SizedBox.shrink();
     final active =
         pages.where((d) => d.id == selected).firstOrNull ?? pages.first;
-    final mobile =
-        MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint;
     void open(RaftSettingsDestination destination) {
       if (destination.onOpen != null) {
         destination.onOpen!();
@@ -116,13 +141,14 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
               label: d.label,
               glyph: d.glyph,
               onTap: () => open(d),
+              attention: d.attention,
             ),
         ]),
     ];
     // Sidebar.tsx mobile root highlights nothing until a sub-page is open.
     Widget list(String? activeId) => ListView(
       primary: false,
-      padding: RaftSettingsLayoutRecipe.navigationInset,
+      padding: RaftSettingsSidebarList.inset(t),
       children: [RaftSettingsSidebarList(groups: groups, activeId: activeId)],
     );
     Widget navigation() => mobile
@@ -138,36 +164,50 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
             ),
           )
         : RaftMountedSidebarFrame(
+            trailingEdge: true,
             header: RaftChatSidebarHeading(
               label: raftText(context, 'Settings'),
             ),
             body: list(active.id),
           );
+    Widget header() => RaftSettingsPanelHeader(
+      title: active.title ?? active.label,
+      glyph: active.glyph,
+      mobile: mobile,
+      backKey: const Key('mobile-settings-back'),
+      backTooltip: 'Back',
+      onMobileBack: showNavigation,
+    );
+    Widget page() => active.scroll
+        ? ListView(
+            key: ValueKey('settings-page-${active.id}'),
+            primary: false,
+            padding: RaftSettingsPanelFrame.contentInset,
+            children: [
+              KeyedSubtree(
+                key: ValueKey(active.id),
+                child: active.builder!(context),
+              ),
+            ],
+          )
+        : KeyedSubtree(
+            key: ValueKey(active.id),
+            child: active.builder!(context),
+          );
+    // ownHeader: the header sits inside the content surface, outside the
+    // Panel's header slot (AboutFeedbackPanel), so no frame divider.
     Widget content() => RaftSettingsPanelFrame(
-      header: RaftSettingsPanelHeader(
-        title: active.title ?? active.label,
-        glyph: active.glyph,
-        mobile: mobile,
-        backKey: const Key('mobile-settings-back'),
-        backTooltip: 'Back',
-        onMobileBack: showNavigation,
-      ),
-      child: active.scroll
-          ? ListView(
-              key: ValueKey('settings-page-${active.id}'),
-              primary: false,
-              padding: RaftSettingsPanelFrame.contentInset,
+      attached: active.attached,
+      header: active.ownHeader ? null : header(),
+      child: active.ownHeader
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                KeyedSubtree(
-                  key: ValueKey(active.id),
-                  child: active.builder!(context),
-                ),
+                header(),
+                Expanded(child: page()),
               ],
             )
-          : KeyedSubtree(
-              key: ValueKey(active.id),
-              child: active.builder!(context),
-            ),
+          : page(),
     );
     if (mobile) return mobileNavigation ? navigation() : content();
     return Row(

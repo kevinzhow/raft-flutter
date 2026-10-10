@@ -2,9 +2,11 @@ import 'dart:ui' show SemanticsRole;
 
 import 'package:flutter/widgets.dart';
 
+import 'icons.dart';
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
+import 'recipes/recipe_runtime.dart' show RaftTokenResolver;
 import 'theme.dart';
 
 export 'recipes/banner.g.dart'
@@ -24,7 +26,17 @@ class RaftBanner extends StatelessWidget {
     this.leading,
     this.descriptionWeight,
     this.titleGap,
+    this.glyph,
+    this.action,
   });
+
+  /// ui/Banner.tsx `withIcon` / `icon`: the leading `svg` grid cell
+  /// (`[&>svg]` size and intent colour from the recipe).
+  final RaftGlyph? glyph;
+
+  /// `actions` -> `BannerAction` (trailing grid cell, `gap-x` from the
+  /// recipe).
+  final Widget? action;
 
   /// Measured space between title and description where the Web grid adds
   /// it (MachineDetailPanel disk-low banner: 4px); null keeps the recipe.
@@ -53,6 +65,8 @@ class RaftBanner extends StatelessWidget {
         extra: {
           'group/banner:data-size=${size.css}',
           'group/banner:data-status=${status.css}',
+          if (glyph != null) 'has:>svg',
+          if (action != null) 'has:>data-slot=banner-action',
           if (title != null)
             'has:>data-slot=banner-description+has:>data-slot=banner-title',
         },
@@ -69,6 +83,8 @@ class RaftBanner extends StatelessWidget {
         style: recipe.root,
         tokens: tokens,
         child: _withLeading(
+          recipe,
+          tokens,
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,13 +128,39 @@ class RaftBanner extends StatelessWidget {
     );
   }
 
-  Widget _withLeading(Widget content) => leading == null
-      ? content
-      : Row(
-          children: [
-            leading!,
-            const SizedBox(width: 8),
-            Expanded(child: content),
-          ],
-        );
+  Widget _withLeading(
+    RaftBannerRecipeStyle recipe,
+    RaftTokenResolver tokens,
+    Widget content,
+  ) {
+    if (glyph == null && action == null) {
+      return leading == null
+          ? content
+          : Row(
+              children: [
+                leading!,
+                const SizedBox(width: 8),
+                Expanded(child: content),
+              ],
+            );
+    }
+    final gap = recipe.root.columnGap ?? 8;
+    final svg = recipe.root.target('& > svg');
+    return Row(
+      children: [
+        if (glyph != null) ...[
+          RaftIcon(
+            glyph!,
+            size: svg?.width ?? 16,
+            color:
+                svg?.textStyle(tokens).color ??
+                recipe.root.textStyle(tokens).color,
+          ),
+          SizedBox(width: gap),
+        ],
+        Expanded(child: content),
+        if (action != null) ...[SizedBox(width: gap), action!],
+      ],
+    );
+  }
 }

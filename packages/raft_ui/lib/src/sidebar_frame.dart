@@ -12,8 +12,14 @@ class RaftMountedSidebarFrame extends StatelessWidget {
     super.key,
     required this.header,
     required this.body,
+    this.trailingEdge = false,
   });
   final Widget header, body;
+
+  /// Sidebar.tsx desktop root `border-r border-line-muted
+  /// theme-brutal:border-r-2 theme-brutal:border-black`, drawn inside the
+  /// column width (border-box) when no shell edge separates it.
+  final bool trailingEdge;
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
@@ -23,15 +29,28 @@ class RaftMountedSidebarFrame extends StatelessWidget {
       viewportHeight: size.height,
       variant: RaftSidebarVariant.mountedProduct,
     );
-    return ColoredBox(
-      color: recipe.bodyBackground,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          header,
-          Expanded(child: body),
-        ],
+    final t = RaftTokens.of(context);
+    final column = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        header,
+        Expanded(child: body),
+      ],
+    );
+    if (!trailingEdge) {
+      return ColoredBox(color: recipe.bodyBackground, child: column);
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: recipe.bodyBackground,
+        border: Border(
+          right: BorderSide(
+            color: t.brutal ? Colors.black : t.colors['line-muted']!,
+            width: t.brutal ? 2 : 1,
+          ),
+        ),
       ),
+      child: column,
     );
   }
 }

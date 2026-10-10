@@ -1,7 +1,7 @@
 // raft-flutter parity EXTENSION cases: Settings (Workspace + Resources groups).
-// Appended after ComputerCases.tsx (same module, same rules: identifiers are
-// prefixed `parityExt` / `ParityExt`; ComputerCases' parityExtCaseElement falls
-// through to parityExtSettingsCaseElement for `components.ext-settings.*`).
+// Appended to the generated VisualTestingCases module like the other host
+// files (identifiers prefixed `parityExt` / `ParityExt`); tool/parity-ext-web.mjs
+// chains parityExtSettingsCaseElement() for `components.ext-settings.*`.
 //
 // Each case mounts what the Web desktop shell shows for a Settings route, minus
 // the 64px LeftRail (1216 wide):

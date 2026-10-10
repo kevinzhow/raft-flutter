@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
+import 'indicators.dart';
 import 'localization.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/recipes.g.dart';
@@ -30,10 +31,15 @@ class RaftSettingsNavEntry {
     required this.label,
     required this.glyph,
     required this.onTap,
+    this.attention = false,
   });
   final String id, label;
   final RaftGlyph glyph;
   final VoidCallback onTap;
+
+  /// Trailing `ml-auto` AttentionDot (SettingsSidebarList's
+  /// FeedbackUnreadDot on the Feedback row).
+  final bool attention;
 }
 
 class RaftSettingsNavGroup {
@@ -52,9 +58,20 @@ class RaftSettingsSidebarList extends StatelessWidget {
   final List<RaftSettingsNavGroup> groups;
   final String? activeId;
 
+  /// Elegant SidebarItem rows hang `-mx-(--sidebar-row-inset-x,6px)` past
+  /// the Sidebar's `px-2` scroll inset (`w-[calc(100%+12px)]`); Brutal rows
+  /// sit inside it.
+  static double rowOverhang(RaftTokens t) => t.brutal ? 0 : 6;
+
+  /// The Sidebar scroll surface (`px-2 py-3`) minus the row overhang, so the
+  /// rows can span it while the group labels keep their `px-2`.
+  static EdgeInsets inset(RaftTokens t) =>
+      EdgeInsets.symmetric(horizontal: 8 - rowOverhang(t), vertical: 12);
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final overhang = rowOverhang(t);
     final visible = groups.where((g) => g.items.isNotEmpty).toList();
     // `mb-1 px-2 text-[10px] font-bold uppercase tracking-widest
     // text-foreground-muted theme-brutal:text-black/40`; line-height is the
@@ -73,9 +90,11 @@ class RaftSettingsSidebarList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var i = 0; i < visible.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
+          // `space-y-3` between group divs; the last row's `mb-*` collapses
+          // into it (block margins), so the visible gap stays 12px.
+          if (i > 0) SizedBox(height: 12 - (t.brutal ? 4 : 2)),
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+            padding: EdgeInsets.fromLTRB(8 + overhang, 0, 8 + overhang, 4),
             child: Text(
               raftText(context, visible[i].label).toUpperCase(),
               style: label,
@@ -83,7 +102,7 @@ class RaftSettingsSidebarList extends StatelessWidget {
           ),
           for (final item in visible[i].items)
             RaftSettingsSidebarItem(
-              key: ValueKey('workspace-settings-nav-${item.id}'),
+              rowKey: ValueKey('workspace-settings-nav-${item.id}'),
               entry: item,
               active: item.id == activeId,
             ),
@@ -99,9 +118,14 @@ class RaftSettingsSidebarItem extends StatefulWidget {
     super.key,
     required this.entry,
     this.active = false,
+    this.rowKey,
   });
   final RaftSettingsNavEntry entry;
   final bool active;
+
+  /// Key of the row box itself (the SidebarItem border box, margin
+  /// excluded).
+  final Key? rowKey;
   @override
   State<RaftSettingsSidebarItem> createState() =>
       _RaftSettingsSidebarItemState();
@@ -127,10 +151,12 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
       ),
       tokens: tokens,
     ).sidebarItem;
+    // Elegant `text-[13px]` sets no line-height: the row inherits the
+    // Sidebar's preflight 1.5 (13px -> 19.5px line, 35.5px row pitch).
     final text = RaftTypography.heading(
       t,
       size: s.fontSize ?? 14,
-      line: (s.fontSize ?? 14) * (s.lineHeight ?? 20 / 14),
+      line: (s.fontSize ?? 14) * (s.lineHeight ?? 1.5),
       weight: s.fontWeight ?? FontWeight.w500,
     ).merge(s.textStyle(tokens));
     return Padding(
@@ -147,6 +173,7 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
             behavior: HitTestBehavior.opaque,
             onTap: widget.entry.onTap,
             child: Container(
+              key: widget.rowKey,
               padding: s.padding,
               decoration: s.decoration(tokens),
               child: Row(
@@ -154,13 +181,19 @@ class _RaftSettingsSidebarItemState extends State<RaftSettingsSidebarItem> {
                   RaftIcon(widget.entry.glyph, size: 14, color: text.color),
                   SizedBox(width: s.columnGap ?? 6),
                   Expanded(
-                    child: Text(
-                      raftText(context, widget.entry.label),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text,
+                    // The CSS line box (19.5px), not Flutter's ceiled
+                    // paragraph height, sets the row height.
+                    child: SizedBox(
+                      height: text.fontSize! * text.height!,
+                      child: Text(
+                        raftText(context, widget.entry.label),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: text,
+                      ),
                     ),
                   ),
+                  if (widget.entry.attention) const RaftAttentionDot(),
                 ],
               ),
             ),
@@ -324,8 +357,18 @@ class RaftSettingsPanelFrame extends StatelessWidget {
     super.key,
     required this.header,
     required this.child,
+    this.attached = true,
   });
-  final Widget header, child;
+
+  /// Null when the page brings its own header inside the content
+  /// (AboutFeedbackPanel's PanelHeader sits in SettingsPanel's content div).
+  final Widget? header;
+  final Widget child;
+
+  /// `Panel edge="attached"`: the left edge line and the header divider.
+  /// False for routes that render outside a Panel (ReleaseNotesPanel's
+  /// plain `flex-col` div).
+  final bool attached;
   static const contentInset = EdgeInsets.symmetric(
     horizontal: 20,
     vertical: 16,
@@ -333,24 +376,36 @@ class RaftSettingsPanelFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final edge = t.brutal ? Colors.black : t.colors['line-muted']!;
     return Material(
       // SettingsPanel's Panel supplies bg-layer-canvas-muted to the transparent
       // desktop Elegant header. Its content div owns bg-layer-panel separately.
       color: t.brutal ? Colors.white : t.sidebar,
       // Container insets the child by the border width, as CSS does.
       child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: t.brutal ? Colors.black : t.colors['line-muted']!,
-              width: t.brutal ? 2 : 1,
-            ),
-          ),
-        ),
+        decoration: attached
+            ? BoxDecoration(
+                border: Border(
+                  left: BorderSide(color: edge, width: t.brutal ? 2 : 1),
+                ),
+              )
+            : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            header,
+            // Panel edge="attached": `*:data-panel-frame-header:border-b`
+            // (Elegant 1px line-muted inside the header box; Brutal's header
+            // recipe already draws border-b-2 black).
+            if (header != null)
+              if (t.brutal || !attached)
+                header!
+              else
+                Container(
+                  foregroundDecoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: edge)),
+                  ),
+                  child: header,
+                ),
             Expanded(
               child: Material(
                 color: t.brutal ? Colors.white : t.panel,
