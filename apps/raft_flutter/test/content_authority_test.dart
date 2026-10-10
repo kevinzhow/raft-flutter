@@ -49,6 +49,7 @@ class _Workspace extends WorkspaceController {
     String id,
     String? message, {
     bool navigate = true,
+    bool replaceEntry = false,
   }) async {
     jumps.add('$id/$message');
   }
