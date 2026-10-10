@@ -897,7 +897,13 @@ class _RenderCssLineBox extends RenderProxyBox {
     size = constraints.constrain(
       Size(c.size.width, _lines * _metrics.lineHeight),
     );
-    _flutterBaseline = c.getDistanceToBaseline(TextBaseline.alphabetic) ?? 0;
+    // SkParagraph reports the fractional even-leading baseline but draws the
+    // glyphs at that baseline rounded to a whole logical pixel (measured: a
+    // 12/20 Hanken line reports 14.182 and paints at 14, a 14/20 line reports
+    // 14.879 and paints at 15). Align the painted baseline, not the reported
+    // one, or every snapped line lands up to half a pixel off Chromium's.
+    final reported = c.getDistanceToBaseline(TextBaseline.alphabetic) ?? 0;
+    _flutterBaseline = (reported + 0.5).floorToDouble();
   }
 
   @override
