@@ -43,11 +43,7 @@ TextStyle _slotText(RaftTokens t, RaftSlotStyle s, {TextStyle? base}) {
       .merge(style)
       .copyWith(
         fontVariations: const [],
-        fontFamilyFallback: const [
-          'Noto Sans CJK JP',
-          'Noto Sans CJK SC',
-          'sans-serif',
-        ],
+        fontFamilyFallback: t.fontFallback,
       );
 }
 
@@ -251,6 +247,7 @@ class _RaftRecipeInputState extends State<RaftRecipeInput> {
       decoration: s.decoration(tokens),
       padding: widget.padding ?? s.padding,
       child: TextField(
+        autofillHints: null,
         key: widget.fieldKey,
         controller: widget.controller,
         focusNode: focus,
@@ -382,6 +379,7 @@ class _RaftSettingsPrefixedInputState extends State<RaftSettingsPrefixedInput> {
               child: Padding(
                 padding: g.control.padding,
                 child: TextField(
+                  autofillHints: null,
                   controller: controller,
                   focusNode: focus,
                   readOnly: widget.readOnly,

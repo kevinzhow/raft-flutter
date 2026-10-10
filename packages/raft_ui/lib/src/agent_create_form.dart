@@ -412,6 +412,7 @@ class _RaftAgentTextInputState extends State<RaftAgentTextInput> {
           ].reduce((a, b) => a > b ? a : b)
         : null;
     final editor = TextField(
+      autofillHints: null,
       controller: widget.controller,
       focusNode: focus,
       readOnly: widget.readOnly,

@@ -161,6 +161,7 @@ class _DesignFieldsState extends State<_DesignFields> {
         const SizedBox(height: 4),
         const RaftFieldSurface(
           child: TextField(
+            autofillHints: null,
             decoration: InputDecoration(hintText: 'Workspace name'),
           ),
         ),
@@ -280,6 +281,7 @@ Widget sourceInputsPreview() => Padding(
       SizedBox(height: 4),
       RaftFieldSurface(
         child: TextField(
+          autofillHints: null,
           decoration: InputDecoration(hintText: 'Workspace name'),
         ),
       ),
@@ -288,6 +290,7 @@ Widget sourceInputsPreview() => Padding(
       SizedBox(height: 4),
       RaftFieldSurface(
         child: TextFormField(
+          autofillHints: null,
           initialValue: 'hello@example.invalid',
           readOnly: true,
         ),
@@ -297,6 +300,7 @@ Widget sourceInputsPreview() => Padding(
       SizedBox(height: 4),
       RaftFieldSurface(
         child: TextField(
+          autofillHints: null,
           enabled: false,
           decoration: InputDecoration(hintText: 'Unavailable'),
         ),

@@ -273,6 +273,7 @@ class _OnboardingState extends State<AccountOnboardingView> {
             RaftAuthField(
               label: tr('Verification link or code'),
               child: TextField(
+                autofillHints: null,
                 key: const Key('verification-token'),
                 controller: token,
                 obscureText: true,
@@ -320,7 +321,7 @@ class _OnboardingState extends State<AccountOnboardingView> {
                       controller: username,
                       focusNode: usernameFocus,
                       style: t.fieldStyle,
-                      autofillHints: const [AutofillHints.username],
+                      autofillHints: null,
                       decoration: raftAuthGroupedInputDecoration(
                         hintText: tr('alexchen'),
                       ),
@@ -350,7 +351,7 @@ class _OnboardingState extends State<AccountOnboardingView> {
                     key: const Key('onboarding-display-name'),
                     controller: displayName,
                     style: t.fieldStyle,
-                    autofillHints: const [AutofillHints.name],
+                    autofillHints: null,
                     decoration: InputDecoration(hintText: tr('Alex Chen')),
                     onChanged: (_) => setState(() {
                       displayNameEdited = true;

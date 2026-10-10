@@ -660,6 +660,7 @@ class RaftDialogTextInput extends StatelessWidget {
     final base = Theme.of(context).inputDecorationTheme.contentPadding;
     final resolved = base?.resolve(Directionality.of(context));
     Widget field = TextField(
+      autofillHints: null,
       key: fieldKey,
       controller: controller,
       enabled: enabled,

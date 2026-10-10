@@ -159,6 +159,7 @@ class _TaskSelectionFilterState extends State<TaskSelectionFilter> {
               Padding(
                 padding: const EdgeInsets.all(8),
                 child: TextField(
+                  autofillHints: null,
                   controller: search,
                   autofocus: true,
                   style: RaftTypography.mono(t, size: 12, line: 16),

@@ -154,6 +154,7 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
                       onChanged: busy ? null : (v) => choices[field.id] = v!,
                     )
                   : TextFormField(
+                      autofillHints: null,
                       key: ValueKey('field-${field.id}'),
                       controller: editors[field.id],
                       enabled: !busy,

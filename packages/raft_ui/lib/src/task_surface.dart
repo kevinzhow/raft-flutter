@@ -502,6 +502,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
             Padding(
               padding: const EdgeInsets.all(8),
               child: TextField(
+                autofillHints: null,
                 key: const ValueKey('task-assignee-search'),
                 controller: assigneeSearch,
                 autofocus: true,

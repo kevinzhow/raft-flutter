@@ -636,6 +636,7 @@ class _JointCreateDialogState extends State<_JointCreateDialog> {
     String? Function(String) validator, {
     int lines = 1,
   }) => TextFormField(
+    autofillHints: null,
     key: ValueKey(key),
     controller: controller,
     enabled: !busy,

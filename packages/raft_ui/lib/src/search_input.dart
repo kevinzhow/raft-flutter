@@ -98,6 +98,7 @@ class _RaftSearchInputState extends State<RaftSearchInput> {
               child: Padding(
                 padding: g.control.padding,
                 child: TextField(
+                  autofillHints: null,
                   controller: widget.controller,
                   focusNode: widget.focusNode,
                   onChanged: widget.onChanged,

@@ -43,21 +43,32 @@ Map<String, Color> raftColorMap(RaftTokenSet set) => _colorMaps.putIfAbsent(
 class RaftTokens extends ThemeExtension<RaftTokens> {
   /// [colors] is the string-keyed view; [tokens] defaults to the generated
   /// set for [family]/[dark].
-  const RaftTokens(this.family, this.dark, this.colors, {RaftTokenSet? tokens})
-    : _tokens = tokens;
+  const RaftTokens(
+    this.family,
+    this.dark,
+    this.colors, {
+    RaftTokenSet? tokens,
+    this.systemFonts = false,
+  }) : _tokens = tokens;
 
   /// Tokens generated from raft-ui CSS for a theme (dark forces elegant).
-  factory RaftTokens.theme(RaftFamily family, {bool dark = false}) {
+  factory RaftTokens.theme(
+    RaftFamily family, {
+    bool dark = false,
+    bool systemFonts = false,
+  }) {
     final set = RaftTokenSet.of(raftThemeId(family, dark: dark));
     return RaftTokens(
       dark ? RaftFamily.elegant : family,
       dark,
       raftColorMap(set),
       tokens: set,
+      systemFonts: systemFonts,
     );
   }
   final RaftFamily family;
   final bool dark;
+  final bool systemFonts;
   final Map<String, Color> colors;
   final RaftTokenSet? _tokens;
 
@@ -85,15 +96,21 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   Color get accentSoft => colors['accent-soft']!;
   Color get accentFill => colors['accent']!;
   Color get primaryFill => colors['primary']!;
-  String get bodyFont => metrics.sansFont;
-  String get headingFont => metrics.headingFont;
-  String get monoFont => metrics.monoFont;
+  String get bodyFont => systemFonts ? 'sans-serif' : metrics.sansFont;
+  String get headingFont => systemFonts ? 'sans-serif' : metrics.headingFont;
+  String get monoFont => systemFonts ? 'monospace' : metrics.monoFont;
+  List<String> get fontFallback => systemFonts
+      ? const []
+      : const ['Noto Sans CJK JP', 'Noto Sans CJK SC', 'sans-serif'];
   double get radius => brutal ? 0 : 8;
   double get fieldRadius => brutal ? 0 : 6;
   double get border => brutal ? 2 : 1;
   TextStyle get fieldStyle => TextStyle(
     fontFamily: headingFont,
-    fontVariations: brutal ? null : const [FontVariation('opsz', 14)],
+    fontVariations: brutal || systemFonts
+        ? null
+        : const [FontVariation('opsz', 14)],
+    fontFamilyFallback: fontFallback,
     fontSize: metrics.fieldFontSize,
     height: metrics.fieldLineHeight / metrics.fieldFontSize,
     fontWeight: raftFontWeight(metrics.fieldFontWeight),
@@ -129,6 +146,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           this.dark,
           colors ?? this.colors,
           tokens: _tokens,
+          systemFonts: systemFonts,
         )
       : RaftTokens(
           family ?? this.family,
@@ -139,6 +157,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
                   raftThemeId(family ?? this.family, dark: dark ?? this.dark),
                 ),
               ),
+          systemFonts: systemFonts,
         );
   @override
   RaftTokens lerp(covariant RaftTokens? other, double t) =>
@@ -319,9 +338,13 @@ class RaftFieldBorder extends OutlineInputBorder {
 FontWeight raftFontWeight(double weight) =>
     FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)];
 
-ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
+ThemeData raftTheme(
+  RaftFamily family, {
+  bool dark = false,
+  bool systemFonts = false,
+}) {
   if (dark) family = RaftFamily.elegant;
-  final t = RaftTokens.theme(family, dark: dark);
+  final t = RaftTokens.theme(family, dark: dark, systemFonts: systemFonts);
   RoundedRectangleBorder shape(
     double radius, {
     BorderSide side = BorderSide.none,
@@ -374,14 +397,10 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
     Color? color,
   }) => TextStyle(
     fontFamily: heading ? t.headingFont : t.bodyFont,
-    fontVariations: heading && !t.brutal
+    fontVariations: heading && !t.brutal && !t.systemFonts
         ? [FontVariation('opsz', size.clamp(14.0, 32.0).toDouble())]
         : null,
-    fontFamilyFallback: const [
-      'Noto Sans CJK JP',
-      'Noto Sans CJK SC',
-      'sans-serif',
-    ],
+    fontFamilyFallback: t.fontFallback,
     fontSize: size,
     height: line / size,
     fontWeight: weight,
@@ -418,13 +437,7 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
     titleLarge: text(18, 28, heading: true, weight: FontWeight.w700),
     titleMedium: text(16, 24, heading: true, weight: FontWeight.w700),
     titleSmall: text(14, 20, heading: true, weight: FontWeight.w600),
-    bodyLarge: t.fieldStyle.copyWith(
-      fontFamilyFallback: const [
-        'Noto Sans CJK JP',
-        'Noto Sans CJK SC',
-        'sans-serif',
-      ],
-    ),
+    bodyLarge: t.fieldStyle.copyWith(fontFamilyFallback: t.fontFallback),
     bodyMedium: text(16, 24),
     bodySmall: text(12, 16, color: t.muted),
     labelLarge: text(
@@ -468,11 +481,7 @@ ThemeData raftTheme(RaftFamily family, {bool dark = false}) {
     scaffoldBackgroundColor: t.canvas,
     canvasColor: t.panel,
     fontFamily: t.bodyFont,
-    fontFamilyFallback: const [
-      'Noto Sans CJK JP',
-      'Noto Sans CJK SC',
-      'sans-serif',
-    ],
+    fontFamilyFallback: t.fontFallback,
     textTheme: textTheme,
     extensions: [t],
     dividerColor: t.line,

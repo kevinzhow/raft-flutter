@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../platform/oauth_broker.dart';
+import '../platform/local_network_access.dart';
 
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -70,7 +72,7 @@ class _AuthState extends State<AuthView> {
     loadProviders();
   }
 
-  Future<void> loadProviders() async {
+  Future<void> loadProviders({bool requestPermission = false}) async {
     final request = ++providerRequest;
     if (widget.onOAuth == null || authOriginError(base.text) != null) {
       if (mounted) setState(() => providers = []);
@@ -83,6 +85,11 @@ class _AuthState extends State<AuthView> {
           sessionStore: MemorySessionStore(),
         );
     try {
+      await const LocalNetworkAccess().ensure(
+        client.origin,
+        request: requestPermission,
+      );
+      if (!mounted || request != providerRequest) return;
       final data = await client.request(
         'GET',
         '/auth/providers',
@@ -91,13 +98,19 @@ class _AuthState extends State<AuthView> {
       );
       if (mounted && request == providerRequest) {
         setState(
-          () => providers = managementRows(
-            data['providers'],
-          ).where((p) => p['enabled'] == true).toList(),
+          () =>
+              providers = managementRows(data['providers'])
+                  .where((p) => p['enabled'] == true)
+                  .toList(),
         );
       }
-    } catch (_) {
-      if (mounted && request == providerRequest) setState(() => providers = []);
+    } catch (e) {
+      if (mounted && request == providerRequest) {
+        setState(() {
+          providers = [];
+          if (requestPermission && e is RaftApiException) error = e.message;
+        });
+      }
     } finally {
       await client.dispose();
     }
@@ -121,6 +134,8 @@ class _AuthState extends State<AuthView> {
     final active = NativeOAuthBroker();
     broker = active;
     try {
+      await const LocalNetworkAccess().ensure(base.text.trim(), request: true);
+      if (!mounted) return;
       final handoff = await active.begin(client, provider);
       if (mounted) {
         await widget.onOAuth!(
@@ -163,6 +178,8 @@ class _AuthState extends State<AuthView> {
           sessionStore: MemorySessionStore(),
         );
     try {
+      await const LocalNetworkAccess().ensure(base.text.trim(), request: true);
+      if (!mounted) return null;
       return await client.request('POST', path, data: data, authorized: false);
     } finally {
       await client.dispose();
@@ -204,8 +221,7 @@ class _AuthState extends State<AuthView> {
           });
           if (mounted) {
             setState(
-              () => notice =
-                  'If an account exists with that email, a reset link has been sent.',
+              () => notice = 'If an account exists with that email, a reset link has been sent.',
             );
           }
         case 'reset':
@@ -237,6 +253,7 @@ class _AuthState extends State<AuthView> {
 
   void switchMode(String next) {
     if (busy) return;
+    TextInput.finishAutofillContext(shouldSave: false);
     setState(() {
       mode = next;
       error = null;
@@ -278,14 +295,15 @@ class _AuthState extends State<AuthView> {
         onSubmit: (values) async => next = values['origin'],
       ),
     );
-    if (next == null || next == base.text.trim()) return;
+    if (!mounted || next == null) return;
     setState(() {
       base.text = next!;
       providers = [];
+      error = null;
     });
     providerRequest++;
     providerDebounce?.cancel();
-    await loadProviders();
+    await loadProviders(requestPermission: true);
   }
 
   Future<void> submitChecked() async {
@@ -304,6 +322,10 @@ class _AuthState extends State<AuthView> {
     return Form(
       key: form,
       child: AutofillGroup(
+        key: ValueKey(mode),
+        onDisposeAction: mode == 'login'
+            ? AutofillContextAction.commit
+            : AutofillContextAction.cancel,
         child: RaftAuthPage(
           mode: authMode,
           busy: busy,
@@ -317,13 +339,16 @@ class _AuthState extends State<AuthView> {
                   key: const Key('login-email'),
                   controller: email,
                   keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.username],
+                  autofillHints: mode == 'login'
+                      ? const [AutofillHints.username]
+                      : null,
                   validator: (v) => authEmailError(v ?? ''),
                   style: t.fieldStyle,
                 ),
           tokenField: mode != 'reset'
               ? null
               : TextFormField(
+                  autofillHints: null,
                   key: const Key('reset-token'),
                   controller: token,
                   obscureText: true,
@@ -341,11 +366,9 @@ class _AuthState extends State<AuthView> {
                   // (LoginPage.tsx:96-108, RegisterPage.tsx).
                   obscureText: true,
                   obscuringCharacter: '•',
-                  autofillHints: [
-                    mode == 'login'
-                        ? AutofillHints.password
-                        : AutofillHints.newPassword,
-                  ],
+                  autofillHints: mode == 'login'
+                      ? const [AutofillHints.password]
+                      : null,
                   validator: (v) => v == null || v.isEmpty
                       ? 'Enter your password.'
                       : mode != 'login' && v.length < 8

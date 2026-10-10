@@ -47,6 +47,7 @@ class _EditorsState extends State<_Editors> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
+              autofillHints: null,
               key: ValueKey(id),
               decoration: InputDecoration(hintText: 'Draft for $id'),
             ),

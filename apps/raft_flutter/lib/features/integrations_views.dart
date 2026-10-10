@@ -304,6 +304,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     'Connected apps',
     [
       TextField(
+        autofillHints: null,
         decoration: const InputDecoration(
           labelText: 'Search apps',
           prefixIcon: Icon(Icons.search),

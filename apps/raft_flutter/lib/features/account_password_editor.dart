@@ -123,7 +123,6 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
       String label,
       TextEditingController controller,
       String hint,
-      String autofill,
     ) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -143,7 +142,7 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
             controller: controller,
             obscureText: true,
             enabled: !saving,
-            autofillHints: [autofill],
+            autofillHints: null,
             autocorrect: false,
             enableSuggestions: false,
             decoration: InputDecoration(
@@ -174,20 +173,18 @@ class _AccountPasswordEditorState extends State<AccountPasswordEditor> {
         ),
         if (expanded) ...[
           const SizedBox(height: 12),
-          field('Current password', current, '', AutofillHints.password),
+          field('Current password', current, ''),
           const SizedBox(height: 12),
           field(
             'New password',
             next,
             'At least 8 characters',
-            AutofillHints.newPassword,
           ),
           const SizedBox(height: 12),
           field(
             'Confirm new password',
             confirmation,
             '',
-            AutofillHints.newPassword,
           ),
           if (error != null)
             Padding(

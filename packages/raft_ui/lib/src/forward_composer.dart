@@ -341,6 +341,7 @@ class RaftForwardNoteField extends StatelessWidget {
   final bool enabled, autofocus;
   @override
   Widget build(BuildContext context) => TextField(
+    autofillHints: null,
     controller: controller,
     autofocus: autofocus,
     enabled: enabled,
@@ -607,6 +608,7 @@ class _RaftForwardSearchInputState extends State<RaftForwardSearchInput> {
         alignment: Alignment.centerLeft,
         children: [
           TextField(
+            autofillHints: null,
             controller: widget.controller,
             focusNode: widget.focusNode,
             onChanged: widget.onChanged,

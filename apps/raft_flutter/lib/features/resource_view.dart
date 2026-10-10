@@ -1965,6 +1965,7 @@ class _ResourceViewState extends State<ResourceView> {
                 if (['search', 'saved'].contains(widget.section))
                   Expanded(
                     child: TextField(
+                      autofillHints: null,
                       controller: query,
                       decoration: InputDecoration(
                         hintText: raftText(
@@ -3920,6 +3921,7 @@ class _ResourceViewState extends State<ResourceView> {
             SizedBox(
               width: 220,
               child: TextField(
+                autofillHints: null,
                 controller: query,
                 decoration: InputDecoration(
                   hintText: raftText(context, 'Filter Activity'),

@@ -2228,6 +2228,7 @@ class _RaftComposerState extends State<RaftComposer> {
                                         context,
                                       ),
                                       child: TextField(
+                                        autofillHints: null,
                                         controller: controller,
                                         focusNode: focus,
                                         onChanged: (_) {

@@ -37,11 +37,7 @@ class RaftTooltipRecipe {
       : tokens.colors['layer-hud-foreground'] ?? const Color(0xfff3f3f5);
   TextStyle get text => TextStyle(
     fontFamily: tokens.bodyFont,
-    fontFamilyFallback: const [
-      'Noto Sans CJK JP',
-      'Noto Sans CJK SC',
-      'sans-serif',
-    ],
+    fontFamilyFallback: tokens.fontFallback,
     fontSize: 13,
     height: 18 / 13,
     fontWeight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,

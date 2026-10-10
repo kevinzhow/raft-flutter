@@ -147,6 +147,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                   style: r.input,
                   tokens: tokens,
                   child: TextField(
+                    autofillHints: null,
                     controller: query,
                     focusNode: inputFocus,
                     enabled: widget.enabled,

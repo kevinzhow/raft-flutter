@@ -292,6 +292,7 @@ class _ForwardMessagesDialogState extends State<ForwardMessagesDialog> {
           children: [
             Text('${widget.messages.length} ${raftText(context, 'messages')}'),
             TextField(
+              autofillHints: null,
               controller: note,
               enabled: attempt == null && !busy,
               maxLength: 4000,
@@ -302,6 +303,7 @@ class _ForwardMessagesDialogState extends State<ForwardMessagesDialog> {
             ),
             if (attempt == null)
               TextField(
+                autofillHints: null,
                 controller: search,
                 enabled: !busy,
                 onChanged: changedSearch,

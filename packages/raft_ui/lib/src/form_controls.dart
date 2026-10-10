@@ -457,6 +457,7 @@ class _RaftTextareaState extends State<RaftTextarea>
           tokens: rt,
           height: height,
           child: TextField(
+            autofillHints: null,
             controller: controller,
             focusNode: focus,
             readOnly: widget.readOnly,
@@ -614,6 +615,7 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
                   child: Padding(
                     padding: g.control.padding,
                     child: TextField(
+                      autofillHints: null,
                       controller: controller,
                       focusNode: focus,
                       readOnly: widget.readOnly,

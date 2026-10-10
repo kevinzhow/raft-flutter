@@ -67,11 +67,10 @@ class RaftRecipeTokens extends RaftTokenResolver {
 
   @override
   String? fontFamily(String name) {
-    final m = tokens.metrics;
     return switch (name) {
-      'headingFont' || 'fontHeading' => m.headingFont,
-      'sansFont' || 'fontSans' => m.sansFont,
-      'monoFont' || 'fontMono' => m.monoFont,
+      'headingFont' || 'fontHeading' => tokens.headingFont,
+      'sansFont' || 'fontSans' => tokens.bodyFont,
+      'monoFont' || 'fontMono' => tokens.monoFont,
       _ => null,
     };
   }

@@ -287,14 +287,10 @@ abstract final class RaftTypography {
     FontWeight weight = FontWeight.w700,
   }) => TextStyle(
     fontFamily: t.headingFont,
-    fontVariations: t.brutal
+    fontVariations: t.brutal || t.systemFonts
         ? null
         : [FontVariation('opsz', size.clamp(14.0, 32.0).toDouble())],
-    fontFamilyFallback: const [
-      'Noto Sans CJK JP',
-      'Noto Sans CJK SC',
-      'sans-serif',
-    ],
+    fontFamilyFallback: t.fontFallback,
     fontSize: size,
     height: line / size,
     fontWeight: weight,
@@ -354,11 +350,7 @@ abstract final class RaftTypography {
     Color? color,
   }) => TextStyle(
     fontFamily: t.bodyFont,
-    fontFamilyFallback: const [
-      'Noto Sans CJK JP',
-      'Noto Sans CJK SC',
-      'sans-serif',
-    ],
+    fontFamilyFallback: t.fontFallback,
     fontSize: size,
     height: line / size,
     fontWeight: weight,

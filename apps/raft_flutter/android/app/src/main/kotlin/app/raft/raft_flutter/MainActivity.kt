@@ -4,6 +4,9 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import android.app.Activity
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.content.Intent
 import android.net.Uri
 import java.io.File
@@ -12,11 +15,29 @@ class MainActivity : FlutterActivity() {
     private var sharing: NativeSharingBridge? = null
     private var saveResult: MethodChannel.Result? = null
     private val saveRequest = 45071
+    private val localNetworkRequest = 45072
+    private val localNetworkResults = mutableListOf<MethodChannel.Result>()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         sharing = NativeSharingBridge(this, flutterEngine)
         NativePdfPreviewBridge(this, flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/local-network")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "ensure") {
+                    result.notImplemented()
+                } else if (Build.VERSION.SDK_INT < 37 ||
+                    checkSelfPermission(Manifest.permission.ACCESS_LOCAL_NETWORK) == PackageManager.PERMISSION_GRANTED) {
+                    result.success(true)
+                } else if (call.argument<Boolean>("request") != true) {
+                    result.success(false)
+                } else {
+                    localNetworkResults.add(result)
+                    if (localNetworkResults.size == 1) {
+                        requestPermissions(arrayOf(Manifest.permission.ACCESS_LOCAL_NETWORK), localNetworkRequest)
+                    }
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/attachment-files")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -79,6 +100,22 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         sharing?.receive(intent)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == localNetworkRequest) {
+            val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+            val pending = localNetworkResults.toList()
+            localNetworkResults.clear()
+            pending.forEach { it.success(granted) }
+        }
+    }
+
+    override fun onDestroy() {
+        localNetworkResults.forEach { it.success(false) }
+        localNetworkResults.clear()
+        super.onDestroy()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

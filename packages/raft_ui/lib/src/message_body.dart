@@ -436,7 +436,7 @@ class _RaftMermaidBlockState extends State<RaftMermaidBlock> {
     child: SelectableText(
       widget.source,
       style: TextStyle(
-        fontFamily: 'packages/raft_ui/GeistMono',
+        fontFamily: RaftTokens.of(context).monoFont,
         fontSize: 14,
         height: 20 / 14,
         color: RaftCodeRecipe(RaftTokens.of(context)).foreground,

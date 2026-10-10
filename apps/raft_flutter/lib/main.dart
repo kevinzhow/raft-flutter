@@ -23,6 +23,7 @@ import 'features/auth_view.dart';
 import 'features/account_onboarding.dart';
 import 'features/private_route_guard.dart';
 import 'platform/session_store.dart';
+import 'platform/local_network_access.dart';
 import 'platform/session_persistence.dart';
 import 'platform/native_sharing.dart';
 import 'platform/content_coordinator.dart';
@@ -225,6 +226,11 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     final c = authClient(base, attempt);
     bool current() => mounted && attempt == authAttempt;
     try {
+      await const LocalNetworkAccess().ensure(base, request: true);
+      if (!current()) {
+        await c.dispose();
+        return;
+      }
       await action(c);
       if (!current()) {
         await c.dispose();
@@ -942,8 +948,15 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         ),
       ),
       debugShowCheckedModeBanner: false,
-      theme: raftTheme(appearance.light),
-      darkTheme: raftTheme(RaftFamily.elegant, dark: true),
+      theme: raftTheme(
+        appearance.light,
+        systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+      ),
+      darkTheme: raftTheme(
+        RaftFamily.elegant,
+        dark: true,
+        systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+      ),
       themeMode: appearance.mode,
     );
   }

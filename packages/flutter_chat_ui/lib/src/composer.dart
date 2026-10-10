@@ -303,6 +303,7 @@ class _ComposerState extends State<Composer> {
                 SizedBox(width: widget.gap),
                 Expanded(
                   child: TextField(
+                    autofillHints: null,
                     controller: _textController,
                     contentInsertionConfiguration:
                         widget.contentInsertionConfiguration,
