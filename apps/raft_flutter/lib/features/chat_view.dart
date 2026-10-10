@@ -732,6 +732,12 @@ class _RaftChatViewState extends State<RaftChatView> {
         if (target != null && !focusReceiptVisible(target)) return;
         setState(() {
           focusStaging = false;
+          // The full measured window is only needed to resolve an exact
+          // context anchor before publication. Retaining it as cache extent
+          // keeps every message mounted and laid out on scroll and resize.
+          // The accepted target remains in the viewport when the normal
+          // animated-list cache takes over, preserving its mounted state.
+          measuredWindowExtent = null;
           returningLatest = false;
           scrolledHighlight = target;
           scrolledWindow = window;
