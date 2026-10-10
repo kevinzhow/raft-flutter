@@ -559,6 +559,7 @@ class WorkspaceController extends ChangeNotifier {
       ledger.switchServer(null);
       readState.reset();
       resourceSnapshots.clear();
+      _prefetched.clear();
       reactionViewer.reset();
       messageSync.reset();
       syncCoreMessagesEnabled = false;
@@ -1178,6 +1179,7 @@ class WorkspaceController extends ChangeNotifier {
             .where((m) => visibleIds[channel!.id]?.contains(m['id']) ?? false)
             .map(RaftMessage.new)
             .toList();
+
   /// Same membership as [messages], in constant time (no list projection).
   bool presentsMessage(String? id) {
     final current = channel;
@@ -1310,6 +1312,7 @@ class WorkspaceController extends ChangeNotifier {
     ledger.switchServer(next.id);
     readState.reset();
     resourceSnapshots.clear();
+    _prefetched.clear();
     reactionViewer.reset();
     messageSync.reset();
     syncCoreMessagesEnabled = false;
@@ -1512,8 +1515,82 @@ class WorkspaceController extends ChangeNotifier {
         _persistReadState();
       }
       notifyListeners();
+      unawaited(prefetchLikelyChannels());
     } catch (_) {
       /* Keep accepted counts through transient failures. */
+    }
+  }
+
+  final _prefetched = <String>{};
+  bool _prefetching = false;
+
+  /// Loads the latest page of channels the member is likely to open next
+  /// (those with unread messages) in the background, so a first open shows
+  /// content at once instead of waiting for the network. Never selects,
+  /// joins or marks anything read; each channel is prefetched once per
+  /// session, sequentially, and only while the same account/server/role and
+  /// view permission hold.
+  Future<void> prefetchLikelyChannels({int limit = 6}) async {
+    // Not during startup: the restored selection (possibly hidden behind
+    // mobile Home) is decided first and is never prefetched.
+    if (_prefetching || _disposed || loading || channel == null) return;
+    _prefetching = true;
+    try {
+      // A window's authority is per channel (role + that channel's record).
+      String authorityOf(RaftChannel c) =>
+          messageWindowAuthority(server?.string('role'), c.json);
+      final role = server?.string('role'),
+          reply = _replyToken(),
+          generation = ledger.generation;
+      bool stillCurrent() =>
+          !_disposed &&
+          role == server?.string('role') &&
+          reply == _replyToken() &&
+          generation == ledger.generation;
+      final candidates = [
+        for (final c in [...channels, ...dms])
+          if (c.id != channel?.id &&
+              !_prefetched.contains(c.id) &&
+              !_revokedChannels.contains(c.id) &&
+              _windowState[c.id] == null &&
+              (unread[c.id] ?? 0) > 0 &&
+              can('viewChannel', resource: c))
+            c,
+      ].take(limit).toList();
+      for (final c in candidates) {
+        if (!stillCurrent()) return;
+        _prefetched.add(c.id);
+        final authority = authorityOf(c);
+        try {
+          final page = await client.messagePage(c.id);
+          if (!stillCurrent() ||
+              channel?.id == c.id ||
+              _windowState[c.id] != null ||
+              _revokedChannels.contains(c.id) ||
+              authority != authorityOf(c) ||
+              !can('viewChannel', resource: c)) {
+            continue;
+          }
+          final rows = (page['messages'] as List? ?? const [])
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .where((e) => e['channelId'] == c.id && e['id'] is String)
+              .toList();
+          if (rows.isEmpty) continue;
+          ledger.ingest(rows, expectedGeneration: generation);
+          final limited = page['historyLimited'] == true;
+          visibleIds[c.id] = rows.map((e) => e['id'] as String).toSet();
+          _windowState[c.id] = (
+            authority,
+            !limited && rows.length >= 50,
+            reply,
+          );
+          _windowHistoryLimited[c.id] = limited;
+        } catch (_) {
+          // Best effort: the channel opens normally on demand.
+        }
+      }
+    } finally {
+      _prefetching = false;
     }
   }
 
