@@ -1,3 +1,4 @@
+import 'message_semantics.dart';
 import 'message_row_recipe.dart';
 import 'message_content_tokens.dart';
 import 'mounted_reaction_recipe.dart';
@@ -1286,10 +1287,23 @@ class RaftMessageTile extends StatelessWidget {
     this.coarsePointer = false,
     this.popupOpen = false,
     this.highlighted = false,
+    this.compactSemantics = false,
+    this.semanticsContent,
+    this.semanticsActions = const [],
   });
   final String author, content, timestamp;
   final RaftMessageRowContext rowContext;
   final String? threadLabel, badge;
+
+  /// Timeline rows: one semantics node labelled with author, status, time and
+  /// the plain [content]; prose nodes are dropped (links, code blocks and
+  /// controls stay reachable). [semanticsActions] become its custom actions.
+  final bool compactSemantics;
+
+  /// Markdown the compact label announces instead of [content]; empty when a
+  /// custom [body] (an action card, a forwarded bundle) keeps its own nodes.
+  final String? semanticsContent;
+  final List<RaftMessageSemanticsAction> semanticsActions;
 
   /// Authorized left/removed/deleted sender status, separate from custom badges.
   final String? departureLabel;
@@ -1326,6 +1340,15 @@ class RaftMessageTile extends StatelessWidget {
       coarsePointer,
       popupOpen,
       highlighted;
+  /// The default Markdown body in a compact row contributes only its links.
+  Widget compactProse(Widget prose) => compactSemantics
+      ? RaftMessageProseSemantics(
+          links: raftMessageSemanticsLinks(content),
+          onLink: onLink,
+          child: prose,
+        )
+      : prose;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -1337,6 +1360,18 @@ class RaftMessageTile extends StatelessWidget {
     return RaftMessageRow(
       author: author,
       timestamp: timestamp,
+      semanticsLabel: compactSemantics
+          ? [
+              author,
+              ?departureLabel,
+              if (badge != null && badge!.trim().isNotEmpty) badge!,
+              if (timestamp.isNotEmpty) timestamp,
+            ].join(', ')
+          : null,
+      semanticsText: compactSemantics
+          ? raftMessageSemanticsText(context, semanticsContent ?? content)
+          : '',
+      semanticsActions: semanticsActions,
       avatar: avatar ?? RaftAvatar(name: author, size: 36),
       onAuthor: onAuthor,
       onActions: onActions,
@@ -1414,7 +1449,7 @@ class RaftMessageTile extends StatelessWidget {
         enabled: collapseLongMessages,
         child:
             body ??
-            SelectionArea(
+            compactProse(SelectionArea(
               child: MarkdownBody(
                 data: content,
                 onTapLink: (_, href, _) {
@@ -1440,7 +1475,7 @@ class RaftMessageTile extends StatelessWidget {
                           ),
                         ),
               ),
-            ),
+            )),
       ),
       attachments: attachments.isEmpty
           ? null

@@ -1039,6 +1039,12 @@ const raftChinese = <String, String>{
   "Copy Page Link": "复制页面链接",
   "Copy client secret": "复制客户端密钥",
   "Copy code": "复制代码",
+  "Code block, {lines} line": "代码块，{lines} 行",
+  "Code block, {lines} lines": "代码块，{lines} 行",
+  "Code block, {lines} line, {language}": "代码块，{lines} 行，{language}",
+  "Code block, {lines} lines, {language}": "代码块，{lines} 行，{language}",
+  "Mention {name}": "提及 {name}",
+  "Add reaction": "添加回应",
   "Copy command": "复制命令",
   "Copy credential": "复制凭据",
   "Copy failed. Use the app menu and choose Open in Browser.":

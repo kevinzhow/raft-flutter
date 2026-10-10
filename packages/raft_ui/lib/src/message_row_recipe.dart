@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
 import 'font_warm_up.dart';
+import 'localization.dart';
+import 'message_semantics.dart';
 import 'viewport_breakpoints.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
@@ -191,9 +193,20 @@ class RaftMessageRow extends StatefulWidget {
     this.coarsePointer = false,
     this.popupOpen = false,
     this.highlighted = false,
+    this.semanticsLabel,
+    this.semanticsText = '',
+    this.semanticsActions = const [],
   });
   final String author, timestamp;
   final RaftMessageRowContext rowContext;
+
+  /// Compact accessibility: when set (e.g. "Alice, 10:01 AM"), the row is one
+  /// semantics node labelled with it and [semanticsText]. Header and avatar
+  /// are excluded, [semanticsActions] become custom actions and long press
+  /// opens the message menu. See [RaftMessageSemanticsScope].
+  final String? semanticsLabel;
+  final String semanticsText;
+  final List<RaftMessageSemanticsAction> semanticsActions;
   final Widget content;
   final Widget? avatar, metadata, attachments, footer, inlineReplies, toolbar;
   final String? subtitle;
@@ -231,6 +244,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   ScrollPosition? position, listeningPosition;
   bool overlayUpdateQueued = false, portalSyncQueued = false;
   bool tickerEnabled = true, portalMounted = false;
+  final visibleFraction = ValueNotifier<double?>(null);
   bool get toolbarActive =>
       tickerEnabled &&
       !widget.coarsePointer &&
@@ -309,6 +323,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     listeningPosition?.removeListener(scrollChanged);
     toolbarProxy.dispose();
     toolbarGroup.dispose();
+    visibleFraction.dispose();
     super.dispose(); // OverlayPortal removes its owned overlay on unmount.
   }
 
@@ -478,6 +493,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         style: recipe.author,
       ),
     );
+    // Compact rows announce author, metadata and time in their own label.
+    final compact = widget.semanticsLabel != null;
     final header = ClipRect(
       child: _MessageHeader(
         lineHeight: recipe.headerLine,
@@ -515,7 +532,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         ],
       ),
     );
-    return Listener(
+    final row = Listener(
       // Right-click reaches the row even over selectable body text (whose
       // SelectionArea wins the secondary-tap gesture arena), like Web's
       // `contextmenu` handler on the MessageItem root.
@@ -533,6 +550,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       onPointerCancel: (_) => secondaryDown = false,
       child: Focus(
         canRequestFocus: false,
+        includeSemantics: !compact,
         onFocusChange: (value) {
           if (focused != value) attentionChanged(() => focused = value);
         },
@@ -544,6 +562,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
             if (hovered) attentionChanged(() => hovered = false);
           },
           child: GestureDetector(
+            excludeFromSemantics: compact,
             onTap: widget.onTap,
             onLongPressStart: widget.onActionsAt != null
                 ? (d) => widget.onActionsAt!(d.globalPosition)
@@ -589,9 +608,12 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                         Positioned(
                                           right: 4,
                                           top: 4,
-                                          child: Text(
-                                            widget.timestamp,
-                                            style: recipe.continuationTime,
+                                          child: ExcludeSemantics(
+                                            excluding: compact,
+                                            child: Text(
+                                              widget.timestamp,
+                                              style: recipe.continuationTime,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -608,7 +630,10 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                         maxHeight: recipe.avatarExtent,
                                         child: SizedBox.square(
                                           dimension: recipe.avatarExtent,
-                                          child: widget.avatar,
+                                          child: ExcludeSemantics(
+                                            excluding: compact,
+                                            child: widget.avatar,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -619,14 +644,24 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  if (!widget.continuation) header,
+                                  if (!widget.continuation)
+                                    ExcludeSemantics(
+                                      excluding: compact,
+                                      child: header,
+                                    ),
                                   Padding(
                                     padding: EdgeInsets.symmetric(
                                       vertical: recipe.bodyGap,
                                     ),
                                     child: DefaultTextStyle.merge(
                                       style: recipe.body,
-                                      child: widget.content,
+                                      // Only the body reports its collapse.
+                                      child: compact
+                                          ? RaftMessageSemanticsScope(
+                                              visibleFraction: visibleFraction,
+                                              child: widget.content,
+                                            )
+                                          : widget.content,
                                     ),
                                   ),
                                   if (widget.attachments != null)
@@ -666,6 +701,58 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         ),
       ),
     );
+    if (!compact) return row;
+    return ValueListenableBuilder<double?>(
+      valueListenable: visibleFraction,
+      builder: (context, fraction, child) {
+        final text = raftMessageSemanticsExcerpt(
+          widget.semanticsText,
+          fraction,
+        );
+        return RaftMessageRowSemantics(
+          label: text.isEmpty
+              ? widget.semanticsLabel!
+              : '${widget.semanticsLabel}\n$text',
+          actions: [
+            for (final action in widget.semanticsActions) action.label,
+            if (widget.onAuthor != null)
+              raftFormat(context, 'Mention {name}', {'name': widget.author}),
+          ],
+          onAction: semanticsAction,
+          onLongPress: widget.onActionsAt != null || widget.onActions != null
+              ? semanticsLongPress
+              : null,
+          child: child,
+        );
+      },
+      child: row,
+    );
+  }
+
+  void semanticsAction(int index) {
+    if (!mounted) return;
+    final actions = widget.semanticsActions;
+    if (index < actions.length) {
+      actions[index].onInvoke(context);
+    } else {
+      widget.onAuthor?.call();
+    }
+  }
+
+  /// Assistive long press opens the message menu at the row, like the
+  /// pointer long press does at the touch point.
+  void semanticsLongPress() {
+    if (!mounted) return;
+    if (widget.onActionsAt case final open?) {
+      final box = context.findRenderObject();
+      open(
+        box is RenderBox && box.hasSize
+            ? box.localToGlobal(box.size.center(Offset.zero))
+            : Offset.zero,
+      );
+    } else {
+      widget.onActions?.call();
+    }
   }
 }
 

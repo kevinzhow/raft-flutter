@@ -544,6 +544,8 @@ class MessagePresentation extends StatelessWidget {
     }
     return RaftMessageBody(
       mountedMessage: true,
+      // A compact timeline row already announces this text in its label.
+      compactSemantics: RaftMessageSemanticsScope.maybeOf(context) != null,
       content: message.content,
       exportMode: exportMode,
       fontSize: fontSize,

@@ -1707,6 +1707,48 @@ class _RaftChatViewState extends State<RaftChatView>
     );
   }
 
+  /// Screen-reader row actions: the hover toolbar's actions (same conditions),
+  /// copy, and the message menu that holds every other action.
+  List<RaftMessageSemanticsAction> messageSemanticsActions(
+    RaftMessage message, {
+    required bool parent,
+    required bool pending,
+  }) {
+    if (pending) return const [];
+    final saved = SavedCountStore.of(w).isSaved(message.id);
+    return [
+      if (!parent && !widget.thread && presentationActive)
+        RaftMessageSemanticsAction(
+          raftText(context, 'Reply in thread'),
+          (_) => w.openThread(message),
+        ),
+      if (canReact)
+        RaftMessageSemanticsAction(
+          raftText(context, 'Add reaction'),
+          (row) => openReactionPicker(message, row),
+        ),
+      if (presentationActive)
+        RaftMessageSemanticsAction(
+          raftText(context, saved ? 'Remove from Saved' : 'Save message'),
+          (_) => saveMessage(message),
+        ),
+      RaftMessageSemanticsAction(
+        raftText(context, 'Copy Markdown'),
+        (_) => Clipboard.setData(ClipboardData(text: message.content)),
+      ),
+      RaftMessageSemanticsAction(raftText(context, 'Message actions'), (row) {
+        final box = row.findRenderObject();
+        actions(
+          message,
+          anchor: box is RenderBox && box.hasSize
+              ? box.localToGlobal(box.size.center(Offset.zero))
+              : null,
+          parentTile: parent,
+        );
+      }),
+    ];
+  }
+
   /// Source MessageItem `handleToggleSave`: the saved state and the Saved
   /// badge change at once; a failed request puts them back.
   Future<void> saveMessage(RaftMessage message) async {
@@ -1917,6 +1959,20 @@ class _RaftChatViewState extends State<RaftChatView>
           excluding: pending,
           child: messageToolbar(m, parent: parent),
         ),
+      ),
+      compactSemantics: true,
+      semanticsContent:
+          m.json['actionMetadata'] is Map &&
+              const {
+                'action-card',
+                'forwarded-bundle',
+              }.contains(m.json['actionMetadata']['kind'])
+          ? ''
+          : null,
+      semanticsActions: messageSemanticsActions(
+        m,
+        parent: parent,
+        pending: pending,
       ),
       coarsePointer: RaftDensityScope.of(context) == RaftDensity.touch,
       popupOpen: pickerMessageId == m.id || menuMessageId == m.id,

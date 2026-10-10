@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'localization.dart';
 import 'design_primitives.dart';
 import 'message_content_tokens.dart';
+import 'message_semantics.dart';
 import 'theme.dart';
 
 import 'package:flutter/rendering.dart';
@@ -76,15 +77,25 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   bool currentOverflow() => widget.enabled && overflow;
   void toggle() => setState(() => expanded = !expanded);
 
+  /// Visible share of the content while collapsed, for a compact message
+  /// row's label; null when everything is shown.
+  double? visibleShare() =>
+      collapsed ? MessageContentPrimitive.collapseHeight / natural : null;
+
   @override
   Widget build(BuildContext context) {
     final label = raftText(context, expanded ? 'Collapse' : 'Show more');
     final fade = MessageContentSemantic(RaftTokens.of(context)).collapseFade;
+    final scope = RaftMessageSemanticsScope.maybeOf(context);
     return _CollapsibleLayout(
       overflow: currentOverflow,
+      visibleShare: visibleShare,
+      semanticsFraction: scope?.visibleFraction,
       fadeColor: widget.enabled && !expanded ? fade : null,
       textDirection: Directionality.maybeOf(context) ?? TextDirection.ltr,
       content: Focus(
+        // Compact rows: a focus listener, not an announced element.
+        includeSemantics: scope == null,
         onFocusChange: (focused) {
           if (focused && collapsed) {
             WidgetsBinding.instance.addPostFrameCallback(
@@ -133,19 +144,25 @@ class _CollapsibleLayout extends RenderObjectWidget {
     required this.content,
     required this.toggle,
     required this.overflow,
+    required this.visibleShare,
+    required this.semanticsFraction,
     required this.fadeColor,
     required this.textDirection,
   });
   final Widget content;
   final Widget? Function(bool overflow) toggle;
   final bool Function() overflow;
+  final double? Function() visibleShare;
+  final ValueNotifier<double?>? semanticsFraction;
   final Color? fadeColor;
   final TextDirection textDirection;
   @override
   RenderObjectElement createElement() => _CollapsibleLayoutElement(this);
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderCollapsibleLayout(overflow, fadeColor, textDirection);
+      _RenderCollapsibleLayout(overflow, fadeColor, textDirection)
+        ..visibleShare = visibleShare
+        ..semanticsFraction = semanticsFraction;
   @override
   void updateRenderObject(
     BuildContext context,
@@ -153,6 +170,8 @@ class _CollapsibleLayout extends RenderObjectWidget {
   ) {
     renderObject
       ..overflow = overflow
+      ..visibleShare = visibleShare
+      ..semanticsFraction = semanticsFraction
       ..fadeColor = fadeColor
       ..textDirection = textDirection;
   }
@@ -241,6 +260,42 @@ class _RenderCollapsibleLayout extends RenderBox {
   bool _toggleStale = true;
   bool? _builtFor;
 
+  /// Compact message rows: collapsed content leaves the semantics tree (the
+  /// toggle stays) and the visible share is reported to the row's label.
+  double? Function()? visibleShare;
+  ValueNotifier<double?>? _semanticsFraction;
+  set semanticsFraction(ValueNotifier<double?>? value) {
+    if (identical(value, _semanticsFraction)) return;
+    _semanticsFraction = value;
+    markNeedsSemanticsUpdate();
+  }
+
+  bool get _semanticsCollapsed =>
+      _semanticsFraction != null && _builtFor == true && _fadeColor != null;
+
+  @override
+  void visitChildrenForSemantics(RenderObjectVisitor visitor) {
+    if (_semanticsCollapsed) {
+      if (_toggle != null) visitor(_toggle!);
+      return;
+    }
+    super.visitChildrenForSemantics(visitor);
+  }
+
+  void _reportVisibleShare() {
+    final target = _semanticsFraction;
+    if (target == null) return;
+    final share = visibleShare?.call();
+    if (target.value == share) return;
+    // Notifying listeners during layout is not allowed; the label follows
+    // after this frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (attached && identical(target, _semanticsFraction)) {
+        target.value = visibleShare?.call();
+      }
+    });
+  }
+
   bool Function() _overflow;
   set overflow(bool Function() value) {
     if (value == _overflow) return;
@@ -253,6 +308,8 @@ class _RenderCollapsibleLayout extends RenderBox {
     if (value == _fadeColor) return;
     _fadeColor = value;
     markNeedsPaint();
+    // Expanding or collapsing changes which children are announced.
+    markNeedsSemanticsUpdate();
   }
 
   TextDirection _textDirection;
@@ -330,6 +387,7 @@ class _RenderCollapsibleLayout extends RenderBox {
       invokeLayoutCallback<BoxConstraints>((_) => buildToggle?.call(overflow));
     }
     final toggle = _toggle?..layout(childConstraints, parentUsesSize: true);
+    _reportVisibleShare();
     var width = content.size.width, height = content.size.height;
     if (toggle != null) {
       width = math.max(width, toggle.size.width);
@@ -605,9 +663,12 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
               widget.icon!,
               const SizedBox(width: 4),
             ],
-            Text(
-              widget.label,
-              style: style.copyWith(color: color, decorationColor: color),
+            // The control's semantic label already announces it once.
+            ExcludeSemantics(
+              child: Text(
+                widget.label,
+                style: style.copyWith(color: color, decorationColor: color),
+              ),
             ),
           ],
         ),

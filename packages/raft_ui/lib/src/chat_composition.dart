@@ -728,8 +728,11 @@ class RaftConversationDateHeader extends StatelessWidget {
           ? Colors.black.withValues(alpha: .15)
           : t.colors[t.dark ? 'ink-4' : 'line-hairline'],
     );
+    // Announced in the label's own case, not the visual uppercase.
     return Semantics(
       header: true,
+      label: label,
+      excludeSemantics: true,
       child: Opacity(
         opacity: t.brutal ? 1 : .7,
         child: Padding(

@@ -57,6 +57,7 @@ import 'attachment_lightbox.dart';
 import 'diagram_theme.dart';
 import 'design_primitives.dart';
 import 'localization.dart';
+import 'message_semantics.dart';
 import 'theme.dart';
 
 /// A reference is interactive only when its identity is supplied by the
@@ -391,7 +392,12 @@ class RaftMessageBody extends StatelessWidget {
     this.knownTaskNumber,
     this.lineHeight,
     this.enableProseSelection = true,
+    this.compactSemantics = false,
   });
+
+  /// Inside a compact timeline row whose label already announces the text:
+  /// prose contributes only its links (see [RaftMessageProseSemantics]).
+  final bool compactSemantics;
 
   /// Optional prose line height (px) for non-message surfaces.
   final double? lineHeight;
@@ -473,6 +479,14 @@ class RaftMessageBody extends StatelessWidget {
     final indent = documentMode
         ? MessageContentPrimitive.documentListIndent
         : MessageContentPrimitive.compactListIndent;
+    // A compact row's label announces the prose; only its links stay.
+    Widget compactProse(String markdown, Widget block) => compactSemantics
+        ? RaftMessageProseSemantics(
+            links: raftMessageSemanticsLinks(markdown),
+            onLink: onLink,
+            child: block,
+          )
+        : block;
     final proseSelection =
         enableProseSelection && chunks.any((c) => c.markdown);
     Widget selectable(Widget block) =>
@@ -480,21 +494,24 @@ class RaftMessageBody extends StatelessWidget {
     final blocks = <Widget>[
       for (final chunk in chunks)
         if (chunk.markdown)
-          _RaftMarkdown(
-            data: chunk.text,
-            styleSheet: resolveStyleSheets().$1,
-            resolvedStyleSheet: resolveStyleSheets().$2,
-            builders: builders,
-            paddingBuilderFactory: () => recipe.headingPadding(chunk.text),
-            onTapLink: (_, href, _) {
-              if (href != null) onLink?.call(href);
-            },
-            bulletBuilder: (parameters) => RaftMarkdownListMarker(
-              orderedIndex: parameters.style == BulletStyle.orderedList
-                  ? parameters.index
-                  : null,
-              indent: indent,
-              style: bulletStyle,
+          compactProse(
+            chunk.text,
+            _RaftMarkdown(
+              data: chunk.text,
+              styleSheet: resolveStyleSheets().$1,
+              resolvedStyleSheet: resolveStyleSheets().$2,
+              builders: builders,
+              paddingBuilderFactory: () => recipe.headingPadding(chunk.text),
+              onTapLink: (_, href, _) {
+                if (href != null) onLink?.call(href);
+              },
+              bulletBuilder: (parameters) => RaftMarkdownListMarker(
+                orderedIndex: parameters.style == BulletStyle.orderedList
+                    ? parameters.index
+                    : null,
+                indent: indent,
+                style: bulletStyle,
+              ),
             ),
           )
         else
@@ -1525,14 +1542,10 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
       padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Semantics(
-          label: widget.code,
-          excludeSemantics: true,
-          child: SelectableText.rich(
-            span,
-            style: textStyle,
-            textAlign: TextAlign.left,
-          ),
+        child: SelectableText.rich(
+          span,
+          style: textStyle,
+          textAlign: TextAlign.left,
         ),
       ),
     );
@@ -1541,7 +1554,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    return Padding(
+    final block = Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: MouseRegion(
         onEnter: (_) => setState(() => hovered = true),
@@ -1584,6 +1597,24 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
           ),
         ),
       ),
+    );
+    // One short node instead of the whole source (and a nested horizontal
+    // scroll node): screen readers announce "Code block, N lines, language"
+    // and activation copies the code, like the hover copy button.
+    final canCopy = !widget.exportMode && widget.code.isNotEmpty;
+    return Semantics(
+      container: true,
+      label: raftCodeBlockSemanticsLabel(context, widget.code, widget.language),
+      value: error != null
+          ? raftText(context, error!)
+          : copied
+          ? raftText(context, 'Copied')
+          : null,
+      liveRegion: error != null || copied,
+      onTap: canCopy ? copy : null,
+      onTapHint: canCopy ? raftText(context, 'Copy code') : null,
+      excludeSemantics: true,
+      child: block,
     );
   }
 }
