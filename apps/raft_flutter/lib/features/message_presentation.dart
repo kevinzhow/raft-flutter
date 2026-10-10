@@ -21,6 +21,71 @@ String? messageSenderIdentityKind(RaftMessage message) =>
       _ => null,
     };
 
+final _dmReference = RegExp(
+  r'dm:@([\w.-]+(?:~(?:agent|human))?)(?::([a-f0-9]{6,8}))?',
+  caseSensitive: false,
+);
+final _threadReference = RegExp(
+  r'#([\p{L}\p{N}_-]+):([a-f0-9]{6,8})',
+  unicode: true,
+  caseSensitive: false,
+);
+final _messageReference = RegExp(
+  r'#([\p{L}\p{N}_-]+)(?::[a-f0-9]{6,8})?\s+msg=([A-Za-z0-9][A-Za-z0-9-]{1,63})',
+  unicode: true,
+);
+
+final _referencesMemo = RaftLruCache<_ReferenceInputs, List<RaftTextReference>>(
+  1024,
+);
+
+/// Everything [MessagePresentation.references] reads. Lists compare by
+/// identity (the controller and directory replace them on change) and by
+/// length, which also catches an in-place removal.
+@immutable
+class _ReferenceInputs {
+  _ReferenceInputs(MessagePresentation p)
+    : messageId = p.message.id,
+      content = p.message.content,
+      mentions = p.message.json['mentions'],
+      localAuthority = p.localAuthority,
+      directory = p.directoryReferences,
+      channels = p.controller.channels,
+      channelCount = p.controller.channels.length,
+      dms = p.controller.dms,
+      dmCount = p.controller.dms.length;
+  final String messageId, content;
+  final Object? mentions;
+  final bool localAuthority;
+  final List<RaftTextReference> directory;
+  final List<RaftChannel> channels, dms;
+  final int channelCount, dmCount;
+  @override
+  bool operator ==(Object other) =>
+      other is _ReferenceInputs &&
+      other.messageId == messageId &&
+      other.content == content &&
+      identical(other.mentions, mentions) &&
+      other.localAuthority == localAuthority &&
+      identical(other.directory, directory) &&
+      identical(other.channels, channels) &&
+      other.channelCount == channelCount &&
+      identical(other.dms, dms) &&
+      other.dmCount == dmCount;
+  @override
+  int get hashCode => Object.hash(
+    messageId,
+    content,
+    identityHashCode(mentions),
+    localAuthority,
+    identityHashCode(directory),
+    identityHashCode(channels),
+    channelCount,
+    identityHashCode(dms),
+    dmCount,
+  );
+}
+
 /// Resolves message references only in the current authority. Structured
 /// mention IDs survive renamed handles; unknown references preserve raw text.
 class MessagePresentation extends StatelessWidget {
@@ -55,7 +120,14 @@ class MessagePresentation extends StatelessWidget {
       message.string('senderType') != 'external_projection' &&
       (message.json['sourceServerId'] == null ||
           message.json['sourceServerId'] == controller.server?.id);
-  List<RaftTextReference> get references {
+
+  /// Memoised per message text and the identity of every projection it
+  /// reads, so scrolling a row back into view or rebuilding it for an
+  /// unrelated change does not rescan the directories.
+  List<RaftTextReference> get references =>
+      _referencesMemo.putIfAbsent(_ReferenceInputs(this), () => _references);
+
+  List<RaftTextReference> get _references {
     if (!localAuthority) return [];
     final content = message.content;
     // Only references whose text occurs in this message can match; building
@@ -98,10 +170,7 @@ class MessagePresentation extends StatelessWidget {
       return matches.length == 1 ? matches.single : null;
     }
 
-    for (final m in RegExp(
-      r'dm:@([\w.-]+(?:~(?:agent|human))?)(?::([a-f0-9]{6,8}))?',
-      caseSensitive: false,
-    ).allMatches(message.content)) {
+    for (final m in _dmReference.allMatches(content)) {
       final c = dm(m[1]!);
       if (c == null) continue;
       refs[m[0]!] = RaftTextReference(
@@ -111,11 +180,7 @@ class MessagePresentation extends StatelessWidget {
             : href('thread', [c.id, m[2]!]),
       );
     }
-    for (final m in RegExp(
-      r'#([\p{L}\p{N}_-]+):([a-f0-9]{6,8})',
-      unicode: true,
-      caseSensitive: false,
-    ).allMatches(message.content)) {
+    for (final m in _threadReference.allMatches(content)) {
       final c = channels
           .where((c) => c.string('name').toLowerCase() == m[1]!.toLowerCase())
           .firstOrNull;
@@ -126,10 +191,7 @@ class MessagePresentation extends StatelessWidget {
         );
       }
     }
-    for (final m in RegExp(
-      r'#([\p{L}\p{N}_-]+)(?::[a-f0-9]{6,8})?\s+msg=([A-Za-z0-9][A-Za-z0-9-]{1,63})',
-      unicode: true,
-    ).allMatches(message.content)) {
+    for (final m in _messageReference.allMatches(content)) {
       final c = channels.where((c) => c.string('name') == m[1]).firstOrNull;
       if (c != null) {
         refs[m[0]!] = RaftTextReference(

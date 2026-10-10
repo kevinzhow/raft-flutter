@@ -943,7 +943,8 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         child: RaftTooltipProvider(
           delay: const Duration(milliseconds: 600),
           child: RaftViewportBreakpointScope(
-            child: RaftSystemBars(child: child!),
+            // Resolves the theme's font combinations once the app is idle.
+            child: RaftFontWarmUpScope(child: RaftSystemBars(child: child!)),
           ),
         ),
       ),
