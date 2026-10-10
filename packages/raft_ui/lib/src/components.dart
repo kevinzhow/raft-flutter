@@ -1453,8 +1453,14 @@ class RaftMessageTile extends StatelessWidget {
                       departureLabel!.toUpperCase(),
                       maxLines: 1,
                       softWrap: false,
+                      // Brutal, measured on the Web capture (deleted-human, 3x): the
+                      // bordered py-0.5 badge is exactly 20px tall, the same
+                      // as the sender line, and the header row does not grow;
+                      // the inherited 20/14 ratio (14.29px) made Flutter's row
+                      // 1/3px taller and pushed the body down a device row.
                       style: recipe.body.copyWith(
                         fontSize: 10,
+                        height: t.brutal ? 14 / 10 : null,
                         fontWeight: FontWeight.w700,
                         color: t.brutal
                             ? Colors.black.withValues(alpha: .6)
