@@ -1467,6 +1467,7 @@ class RaftCodeBlock extends StatefulWidget {
 
 class _RaftCodeBlockState extends State<RaftCodeBlock> {
   bool hovered = false, focused = false, copied = false;
+  bool buttonHovered = false;
   String? error;
   int revision = 0;
   Timer? copiedTimer;
@@ -1571,18 +1572,33 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                     Positioned(
                       right: 8,
                       top: 8,
-                      child: Opacity(
-                        opacity: hovered || focused || copied ? 1 : 0,
-                        child: RaftIconButton(
-                          glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
-                          tooltip: copied ? 'Copied' : 'Copy code',
-                          onPressed: widget.code.isEmpty ? null : copy,
-                          visualSize: RaftMetrics.buttonXs,
-                          minimumTargetSize: raftBreakpointWidth(context) < 768
-                              ? RaftMetrics.touchTarget
-                              : RaftMetrics.buttonXs,
-                          glyphSize: RaftMetrics.iconSm,
-                          variant: RaftControlVariant.ghost,
+                      // index.css `.r-code-copy`: hidden; row hover or
+                      // focus-visible .55; its own hover or copied 1;
+                      // `@media (hover: none)` (touch) always .55.
+                      child: MouseRegion(
+                        onEnter: (_) => setState(() => buttonHovered = true),
+                        onExit: (_) => setState(() => buttonHovered = false),
+                        child: Opacity(
+                          opacity: copied || buttonHovered
+                              ? 1
+                              : hovered ||
+                                    focused ||
+                                    RaftDensityScope.of(context) ==
+                                        RaftDensity.touch
+                              ? .55
+                              : 0,
+                          child: RaftIconButton(
+                            glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
+                            tooltip: copied ? 'Copied' : 'Copy code',
+                            onPressed: widget.code.isEmpty ? null : copy,
+                            visualSize: RaftMetrics.buttonXs,
+                            minimumTargetSize:
+                                raftBreakpointWidth(context) < 768
+                                ? RaftMetrics.touchTarget
+                                : RaftMetrics.buttonXs,
+                            glyphSize: RaftMetrics.iconSm,
+                            variant: RaftControlVariant.ghost,
+                          ),
                         ),
                       ),
                     ),

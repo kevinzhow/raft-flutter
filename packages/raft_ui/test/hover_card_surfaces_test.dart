@@ -438,4 +438,67 @@ void main() {
       await finish(tester, mouse);
     });
   });
+
+  group('hover-revealed code copy', () {
+    double copyOpacity(WidgetTester tester) => tester
+        .widget<Opacity>(
+          find
+              .ancestor(
+                of: find.byTooltip('Copy code'),
+                matching: find.byType(Opacity),
+              )
+              .first,
+        )
+        .opacity;
+
+    for (final density in RaftDensity.values) {
+      testWidgets('index.css .r-code-copy reveal ($density)', (tester) async {
+        await tester.pumpWidget(
+          surfaceHost(
+            RaftDensityScope(
+              density: density,
+              child: const SizedBox(
+                width: 500,
+                child: RaftCodeBlock(code: 'echo hi', language: 'bash'),
+              ),
+            ),
+          ),
+        );
+        final touch = density == RaftDensity.touch;
+        // hover:none shows it at .55; pointer layouts hide it at rest.
+        expect(copyOpacity(tester), touch ? .55 : 0);
+        if (touch) return;
+        final mouse = await hoverAt(
+          tester,
+          tester.getTopLeft(find.byType(RaftCodeBlock)) + const Offset(20, 20),
+        );
+        await tester.pump();
+        expect(copyOpacity(tester), .55);
+        await mouse.moveTo(tester.getCenter(find.byTooltip('Copy code')));
+        await tester.pump();
+        expect(copyOpacity(tester), 1);
+        await finish(tester, mouse);
+      });
+    }
+
+    testWidgets('keyboard reaches the hidden copy control', (tester) async {
+      await tester.pumpWidget(
+        surfaceHost(
+          const RaftDensityScope(
+            density: RaftDensity.desktop,
+            child: SizedBox(
+              width: 500,
+              child: RaftCodeBlock(code: 'echo hi', language: 'bash'),
+            ),
+          ),
+        ),
+      );
+      expect(copyOpacity(tester), 0);
+      for (var i = 0; i < 4 && copyOpacity(tester) == 0; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+      }
+      expect(copyOpacity(tester), .55);
+    });
+  });
 }
