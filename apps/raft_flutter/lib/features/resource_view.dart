@@ -360,6 +360,68 @@ class _ResourceViewState extends State<ResourceView> {
   /// Request shape (path and filters, without the window) of accepted [rows].
   String? rowsView;
 
+  /// Legacy Activity, Saved and Search keep the accepted window of each
+  /// recently visited filter/query, so switching back shows it at once and
+  /// revalidates it in place instead of blanking (Source keeps these stores).
+  final viewWindows = <String, ResourceViewWindow>{};
+  static const maxViewWindows = 8;
+
+  bool get cachesViewWindows =>
+      !enabledActivity &&
+      ['search', 'saved', 'activity'].contains(widget.section) &&
+      widget.channelId == null;
+
+  /// Request shape (path and filters, without the window) the list would load
+  /// now; the same key [rowsView] records for accepted rows.
+  String? get listView {
+    if (!cachesViewWindows) return null;
+    final path = switch (widget.section) {
+      'activity' => switch (filter) {
+        'done' => '/channels/inbox/done',
+        'unfollowed' => '/channels/inbox/unfollowed',
+        _ => '/channels/inbox',
+      },
+      'saved' => '/channels/saved',
+      _ => '/messages/search',
+    };
+    final params = widget.section == 'search'
+        ? advanced.search(query.text)
+        : advanced.list(
+            query.text,
+            filter:
+                widget.section == 'activity' &&
+                    !['saved', 'done', 'unfollowed'].contains(filter)
+                ? filter
+                : null,
+          );
+    if (params == null) return null;
+    return jsonEncode([
+      path,
+      {
+        for (final entry in params.entries)
+          if (!['limit', 'offset', 'cursor'].contains(entry.key))
+            entry.key: entry.value,
+      },
+    ]);
+  }
+
+  /// Remember the accepted [rows] under [rowsView] before another view
+  /// replaces them.
+  void stashViewWindow() {
+    final view = rowsView;
+    if (!cachesViewWindows || view == null || rows.isEmpty) return;
+    viewWindows.remove(view);
+    viewWindows[view] = ResourceViewWindow(
+      rows: rows,
+      hasMore: hasMore,
+      totalCount: totalCount,
+      totalUnreadCount: totalUnreadCount,
+    );
+    while (viewWindows.length > maxViewWindows) {
+      viewWindows.remove(viewWindows.keys.first);
+    }
+  }
+
   /// Activity rows advanced by live messages beyond their accepted window.
   final activityLocalFrontiers = <String, BigInt>{};
 
@@ -533,6 +595,9 @@ class _ResourceViewState extends State<ResourceView> {
     acceptedActivityItems = snapshot.acceptedActivityItems;
     savedActivityItems = snapshot.savedActivityItems;
     doneActivityItems = snapshot.doneActivityItems;
+    viewWindows
+      ..clear()
+      ..addAll(snapshot.viewWindows);
     loading = false;
     // Channels lost while the page was away never reappear from the cache.
     refilterRows(lostChannels(snapshot.channelAccess, acceptedAccess));
@@ -549,6 +614,7 @@ class _ResourceViewState extends State<ResourceView> {
       w.resourceSnapshots.remove(widget.section);
       return;
     }
+    viewWindows.remove(rowsView);
     w.resourceSnapshots.write(
       widget.section,
       ResourceSnapshot(
@@ -572,6 +638,7 @@ class _ResourceViewState extends State<ResourceView> {
         doneActivityItems: doneActivityItems,
         channelAccess: acceptedAccess,
         scrollOffset: listOffset,
+        viewWindows: Map.of(viewWindows),
       ),
     );
   }
@@ -690,6 +757,17 @@ class _ResourceViewState extends State<ResourceView> {
     if (lost.isEmpty) return;
     bool keep(Map row) => !rowChannelIds(row).any(lost.contains);
     rows = rows.where(keep).toList();
+    for (final MapEntry(key: view, value: window)
+        in viewWindows.entries.toList()) {
+      if (window.rows.any((row) => !keep(row))) {
+        viewWindows[view] = ResourceViewWindow(
+          rows: window.rows.where(keep).toList(),
+          hasMore: window.hasMore,
+          totalCount: window.totalCount,
+          totalUnreadCount: window.totalUnreadCount,
+        );
+      }
+    }
     for (final MapEntry(key: status, value: lane) in lanes.entries.toList()) {
       if (lane.any((row) => !keep(row))) {
         lanes[status] = lane.where(keep).toList();
@@ -722,6 +800,7 @@ class _ResourceViewState extends State<ResourceView> {
     dragFeedbackRevision.value++;
     rows = [];
     rowsView = null;
+    viewWindows.clear();
     trailingReconcile = false;
     activityLocalFrontiers.clear();
     activityReadMarkers.clear();
@@ -1517,7 +1596,26 @@ class _ResourceViewState extends State<ResourceView> {
       });
       return;
     }
-    if (!keep) {
+    final wanted = !keep && !append ? listView : null;
+    final cached = wanted == null ? null : viewWindows[wanted];
+    if (cached != null &&
+        !(widget.section == 'activity' && activityFollowState.busy)) {
+      // A view shown before returns at once and revalidates in place.
+      setState(() {
+        stashViewWindow();
+        viewWindows.remove(wanted);
+        rows = cached.rows;
+        rowsView = wanted;
+        hasMore = cached.hasMore;
+        totalCount = cached.totalCount;
+        totalUnreadCount = cached.totalUnreadCount;
+        loading = false;
+        error = null;
+        laneBusy.clear();
+        laneGeneration++;
+      });
+      keep = true;
+    } else if (!keep) {
       setState(() {
         loading = true;
         error = null;
@@ -1527,7 +1625,9 @@ class _ResourceViewState extends State<ResourceView> {
             ['search', 'saved', 'activity'].contains(widget.section) &&
             !enabledActivity &&
             !(widget.section == 'activity' && activityFollowState.busy)) {
+          stashViewWindow();
           rows = [];
+          rowsView = null;
           cursor = null;
           hasMore = false;
         }

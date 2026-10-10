@@ -9,6 +9,22 @@ abstract class PageSnapshot {
   final String identity;
 }
 
+/// An accepted list window of one request shape (path and filters, without
+/// the window). Pages keep one per recently visited filter/query so switching
+/// back shows it at once and revalidates it in place.
+class ResourceViewWindow {
+  const ResourceViewWindow({
+    required this.rows,
+    required this.hasMore,
+    required this.totalCount,
+    required this.totalUnreadCount,
+  });
+
+  final List<Map<String, dynamic>> rows;
+  final bool hasMore;
+  final int? totalCount, totalUnreadCount;
+}
+
 /// Activity and Saved list snapshot.
 class ResourceSnapshot extends PageSnapshot {
   const ResourceSnapshot({
@@ -32,6 +48,7 @@ class ResourceSnapshot extends PageSnapshot {
     required this.doneActivityItems,
     required this.channelAccess,
     required this.scrollOffset,
+    this.viewWindows = const {},
   });
 
   final bool enabledActivity;
@@ -48,6 +65,9 @@ class ResourceSnapshot extends PageSnapshot {
       doneActivityItems;
   final Map<String, Map<String, dynamic>> channelAccess;
   final double scrollOffset;
+
+  /// Other recently accepted filter/query windows, by request shape.
+  final Map<String, ResourceViewWindow> viewWindows;
 }
 
 /// Tasks page snapshot (Source taskStore serverTasks + serverTaskPages):
