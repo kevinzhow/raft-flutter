@@ -244,6 +244,9 @@ void main() {
       )..user = RaftRecord({'id': 'u'});
       client.selectServer('s');
       final w = _Workspace(client)
+        ..agents = [
+          {'id': 'a', 'name': 'Cindy', 'avatarUrl': 'pixel:cat'},
+        ]
         ..server = RaftRecord({'id': 's', 'role': 'owner'});
       final directory = MessageReferenceDirectory(w);
       await t.pump();
@@ -270,6 +273,19 @@ void main() {
         ),
       );
       expect(find.text('Public fixture work'), findsOneWidget);
+      // The strip is raft_ui's, with the agent's pixel artwork (not the bot
+      // glyph) and the Web "<agent>: <text>" live-region label.
+      expect(find.byType(RaftLiveAgentActivityBar), findsOneWidget);
+      expect(
+        t.widget<RaftPixelAvatar>(find.byType(RaftPixelAvatar)).avatarKey,
+        'cat',
+      );
+      expect(
+        t.widget<RaftLiveAgentActivityBar>(
+          find.byType(RaftLiveAgentActivityBar),
+        ).agentName,
+        'Cindy',
+      );
       store.update(store.key, liveActivity: false);
       await t.pump();
       expect(find.text('Public fixture work'), findsNothing);

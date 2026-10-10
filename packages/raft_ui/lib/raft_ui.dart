@@ -40,6 +40,7 @@ export 'src/attachment_comments.dart';
 export 'src/design_primitives.dart';
 export 'src/recipe_surface.dart';
 export 'src/indicators.dart';
+export 'src/live_agent_activity_bar.dart';
 export 'src/form_controls.dart';
 export 'src/list_items.dart';
 export 'src/select_field.dart';

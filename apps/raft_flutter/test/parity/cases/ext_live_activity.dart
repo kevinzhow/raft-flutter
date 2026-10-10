@@ -17,9 +17,19 @@ import '../parity_harness.dart';
 Widget _bar(ParityContext ctx) {
   final agents = ctx.fixtureData['agents'] as Map<String, dynamic>;
   final cindy = agents['cindy'] as Map<String, dynamic>;
-  return LegacyBar(
-    name: '${cindy['displayName']}',
+  final avatar = '${cindy['avatar']}';
+  final name = '${cindy['displayName']}';
+  return RaftLiveAgentActivityBar(
+    agentName: name,
     text: '${ctx.props['text']}',
+    activity: ctx.props['activity'] == 'thinking'
+        ? RaftActivityTone.thinking
+        : RaftActivityTone.working,
+    avatarContent: RaftAvatarContent(
+      name: name,
+      kind: RaftAvatarContentKind.agent,
+      pixelKey: avatar.startsWith('pixel:') ? avatar.substring(6) : null,
+    ),
   );
 }
 
@@ -28,41 +38,47 @@ Widget _build(ParityContext ctx) => Builder(
     final t = RaftTokens.of(context);
     final mobile = ctx.props['platform'] == 'mobile';
     final bar = _bar(ctx);
-    return Align(
-      alignment: Alignment.topLeft,
-      child: ctx.target(
-        mobile
-            ? ColoredBox(
-                color: t.brutal ? Colors.white : t.sidebar,
-                child: SizedBox(
+    // The app mounts the strip under the workspace Scaffold's Material.
+    return Material(
+      type: MaterialType.transparency,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: ctx.target(
+          mobile
+              ? ColoredBox(
+                  color: t.brutal ? Colors.white : t.sidebar,
+                  child: SizedBox(
+                    width: ctx.width,
+                    height: ctx.height,
+                    child: Align(alignment: Alignment.bottomCenter, child: bar),
+                  ),
+                )
+              : SizedBox(
                   width: ctx.width,
                   height: ctx.height,
-                  child: Align(alignment: Alignment.bottomCenter, child: bar),
-                ),
-              )
-            : SizedBox(
-                width: ctx.width,
-                height: ctx.height,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: t.brutal ? t.product.brutalCream : t.sidebar,
-                    border: Border(
-                      right: BorderSide(
-                        color: t.brutal ? Colors.black : t.colors['line-muted']!,
-                        width: t.brutal ? 2 : 1,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: t.brutal ? t.product.brutalCream : t.sidebar,
+                      border: Border(
+                        right: BorderSide(
+                          color: t.brutal
+                              ? Colors.black
+                              : t.colors['line-muted']!,
+                          width: t.brutal ? 2 : 1,
+                        ),
                       ),
                     ),
+                    child: Align(alignment: Alignment.bottomCenter, child: bar),
                   ),
-                  child: Align(alignment: Alignment.bottomCenter, child: bar),
                 ),
-              ),
+        ),
       ),
     );
   },
 );
 
 ParityCase _case() => ParityCase(
-  widgets: const ['raft_flutter:NativeLiveAgentActivityBar'],
+  widgets: const ['raft_ui:RaftLiveAgentActivityBar'],
   notes: 'Extension suite (not official).',
   settle: const Duration(milliseconds: 300),
   build: _build,
@@ -80,46 +96,3 @@ final Map<String, ParityCase> extLiveActivityCases = {
       for (final theme in const ['brutal', 'elegant', 'elegant-dark'])
         'components.liveactivity.$platform.$kind.$theme': _case(),
 };
-
-class LegacyBar extends StatelessWidget {
-  const LegacyBar({super.key, required this.name, required this.text});
-  final String name, text;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return Container(
-      key: const Key('live-agent-activity-bar'),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: t.panel,
-        border: Border(top: BorderSide(color: t.line)),
-      ),
-      child: Row(
-        children: [
-          RaftAvatar(name: name, kind: RaftAvatarKind.agent, size: 20),
-          const SizedBox(width: 8),
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: const Color(0xffffd440),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: t.brutal ? t.strong : Colors.transparent,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: RaftTypography.body(t, size: 12, line: 16, color: t.strong),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

@@ -485,6 +485,51 @@ over white is (254,245,240) in Chromium = alpha 26/255 then truncation,
 over `layer-panel` is 29.53/46.58/49.78 exactly, Chromium (29,46,49), Flutter
 (30,47,50).
 
+### Live agent activity bar cases (8 surfaces x 3 themes = 24)
+
+Derived from Web `components/layout/LiveAgentActivityBar.tsx`
+(`LiveAgentActivityBarPresentation`), the raft-ui `liveAgentActivityBar`
+recipe, `MainLayout.tsx` / `MobileBottomBarStack.tsx` (placement) and
+`utils/liveAgentActivity.ts` (only `working` / `thinking` items show).
+`tool/parity-ext/build-live-activity.py` appends the ids
+`components.liveactivity.<platform>.<kind>.<theme>` to `cases.json` (run it
+after `build-cases.py`); the React side is `host/LiveActivityCases.tsx`, the
+Flutter side `test/parity/cases/ext_live_activity.dart`. The capture is the bar
+itself (`[data-testid="live-agent-activity-bar"]` / `ValueKey
+live-agent-activity-bar`) on the sidebar surface it sits in:
+
+* desktop (240 wide, 1x): the Sidebar `bottomSlot`, inside `border-r` on the
+  canvas (brutal: cream); kinds tool-finished, working, thinking, compacting,
+  long (truncated);
+* mobile (390 wide, 3x): `mobile-live-activity-slot`, elegant floating
+  (`fixed inset-x-0 bottom-0`), brutal in flow above the tab bar; kinds
+  tool-finished, thinking, long.
+
+Web spec: one strip for the newest live item (`items[0]`, expiry 90 s,
+heartbeat refreshes in place, terminal activity clears), flush with its
+container (no outer margin). Elegant: `rounded-lg border border-line-muted
+bg-layer-panel shadow-raft-md px-3 py-2` (dark: transparent border). Brutal:
+`border-t-2 border-black bg-white px-3` (`md:bg-brutal-cream`), no radius or
+shadow. Row `min-h-8 items-center gap-2`: 36px agent avatar (`size-9`, 1px
+border, black in brutal, pixel art or image), 10px `Status` dot (elegant
+semantic warning orange; brutal fixed busy `#FFD440` with a black border), one
+ellipsised line of text (elegant 13px sans `foreground-muted`; brutal 14px
+mono `black/60`). Nothing is tappable; the text has a hover tooltip. The
+220 ms elegant enter/exit motion in raft-ui never runs in the product because
+the connected wrapper unmounts instead of passing a null child. Production
+Flutter now uses `RaftLiveAgentActivityBar` (`packages/raft_ui`), fed by
+`NativeLiveAgentActivityBar` from `ChatAgentPresentation`.
+
+| | before (old bar) | after |
+| --- | --- | --- |
+| mean pixel-perfect similarity | 70.96 % | 95.78 % |
+| passing (basic-pass or better) | 0 / 24 | 11 / 24 |
+
+What changed: floating card instead of a top-bordered strip, 36px avatar
+(pixel art was missing before), status dot colours per theme (orange in
+elegant, not a fixed yellow), 13px sans / 14px mono text. The remaining
+difference is Chromium vs Skia text rasterisation (see "Text rendering").
+
 ### Outlier review (select-all, bulk-restart, workspace-scan)
 
 The official `pixelPerfectSimilarity` (visual-testing
