@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/src/message_content_tokens.dart';
-import 'package:raft_ui/src/panel_layout.dart' show raftCssBaseline;
 
 /// Web MarkdownContent / raft-ui InlineCode appearance="message" colours,
 /// checked against the official React captures (visual parity cases
