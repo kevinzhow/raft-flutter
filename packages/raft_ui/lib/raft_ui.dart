@@ -71,6 +71,7 @@ export 'src/system_message.dart';
 
 export 'src/composer_recipe.dart';
 export 'src/composer_drop_overlay.dart';
+export 'src/sos_dialog.dart';
 
 export 'src/avatar_content.dart';
 

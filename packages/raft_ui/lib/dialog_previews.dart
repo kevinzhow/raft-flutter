@@ -71,3 +71,30 @@ class _DialogPreviewState extends State<_DialogPreview> {
     ),
   );
 }
+
+@RaftPreviews('SOS stop all agents', size: Size(420, 360))
+Widget sosConfirmPreview() => Center(
+  child: RaftSosDialog(
+    channelName: 'release',
+    onStop: () async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      return null;
+    },
+    onResume: (_) async => null,
+    onClose: () {},
+  ),
+);
+
+@RaftPreviews('SOS agents stopped guidance', size: Size(420, 460))
+Widget sosStoppedPreview() => Center(
+  child: RaftSosDialog(
+    channelName: 'release',
+    initialPhase: RaftSosPhase.stopped,
+    onStop: () async => null,
+    onResume: (_) async {
+      await Future<void>.delayed(const Duration(seconds: 1));
+      return 'Agents could not be resumed. Try again.';
+    },
+    onClose: () {},
+  ),
+);

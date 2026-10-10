@@ -351,6 +351,16 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       (p) => p is Map && p['kind'] == 'channel' && p['id'] == c.id,
     );
     final info = !dm && canEdit;
+    // Web ChatPanel `onStopAllAgents={joined && canManageAgents}` inside the
+    // settings sheet (`joined && (canManageChannels || canLeaveChannel)`),
+    // hidden for archived channels (EditChannelDialog `!isArchived`).
+    final showStopAgents =
+        !dm &&
+        c.type != 'thread' &&
+        c.joined &&
+        !archived &&
+        (canEdit || !all) &&
+        w.can('controlAgentRuntime');
     return RaftChannelSettingsSheet(
       channelName: widget.channel.name,
       title: dm ? 'Conversation settings' : 'Settings',
@@ -467,7 +477,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       ],
       showActions:
           !dm &&
-          (showLeave || showManage || (archived && cap('archiveChannels'))),
+          (showLeave ||
+              showManage ||
+              showStopAgents ||
+              (archived && cap('archiveChannels'))),
       actions: [
         if (showLeave)
           RaftSheetAction(
@@ -517,6 +530,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                     '/channels/${c.id}/archive',
                   ),
                 ),
+        if (showStopAgents)
+          RaftSheetAction(
+            'Stop Agents',
+            RaftGlyph.circleStop,
+            RaftButtonRecipeVariant.outline,
+            stopAgents,
+          ),
         if (!all && !archived && cap('deleteChannels'))
           RaftSheetAction(
             'Delete Channel',
@@ -527,6 +547,64 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       ],
       onSave: canEdit && !dm ? save : null,
       saveDisabled: archived,
+    );
+  }
+
+  /// Web SOSDialog: `POST /channels/:id/stop-all-agents`, then the guidance
+  /// prompt through `POST /channels/:id/resume-all-agents`. Both re-check
+  /// that this account may still control agent runtime in the same session.
+  Future<void> stopAgents() async {
+    final c = channel, identity = pageIdentity(w);
+    String? refused() =>
+        identity != pageIdentity(w) || !w.can('controlAgentRuntime')
+        ? 'You no longer have permission to control agents here.'
+        : null;
+    String failure(Object error, String fallback) =>
+        error is RaftApiException ? error.message : fallback;
+    await showRaftDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        String tr(String text) => raftText(dialogContext, text);
+        return Center(
+          child: RaftSosDialog(
+            key: const ValueKey('channel-sos-dialog'),
+            channelName: c.name,
+            onClose: () => Navigator.of(dialogContext).pop(),
+            onStop: () async {
+              final denied = refused();
+              if (denied != null) return tr(denied);
+              try {
+                await w.command('POST', '/channels/${c.id}/stop-all-agents');
+                return null;
+              } catch (e) {
+                return failure(
+                  e,
+                  tr('Agents could not be stopped. Try again.'),
+                );
+              }
+            },
+            onResume: (guidance) async {
+              final denied = refused();
+              if (denied != null) return tr(denied);
+              final prompt =
+                  '[SOS] The user has emergency-stopped all agents in #${c.name} because they were going off-track. Here is the user\'s correction and new guidance:\n\n$guidance\n\nRead this carefully, acknowledge the correction, and adjust your approach accordingly. Use check_messages and read_history to understand the current state before taking any action.';
+              try {
+                await w.command(
+                  'POST',
+                  '/channels/${c.id}/resume-all-agents',
+                  data: {'prompt': prompt},
+                );
+                return null;
+              } catch (e) {
+                return failure(
+                  e,
+                  tr('Agents could not be resumed. Try again.'),
+                );
+              }
+            },
+          ),
+        );
+      },
     );
   }
 

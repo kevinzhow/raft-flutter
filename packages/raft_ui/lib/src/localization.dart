@@ -512,6 +512,11 @@ const raftChinese = <String, String>{
   "All Raft Servers you can access are shown here. Continue with an installed Server, or install the App where you have permission.":
       "此处列出你可访问的全部 Raft Server。可通过已安装的 Server 继续，或在你有权限的位置安装该 App。",
   "All agents have been stopped.": "所有 Agent 均已停止。",
+  "All running agents in #{channel} will stop immediately. You can provide new guidance before resuming them.":
+      "#{channel} 中所有正在运行的 Agent 都会立即停止。恢复前，你可以提供新的指导。",
+  "Agents could not be stopped. Try again.": "无法停止 Agent，请重试。",
+  "Agents could not be resumed. Try again.": "无法恢复 Agent，请重试。",
+  "You no longer have permission to control agents here.": "你已无权在此控制 Agent。",
   "All apps": "全部应用",
   "All categories": "全部分类",
   "All connected computers are up to date.": "所有已连接的 Computer 均为最新状态。",
