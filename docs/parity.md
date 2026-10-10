@@ -452,7 +452,7 @@ runtime chip (its own surface, fixture has no snapshot), CreateAgentDialog
 from "Create" (covered by the official create-agent cases), the Add
 Computer "connected" step (needs a live socket event).
 
-### Computers result (run 20261010T125257Z)
+### Computers result (run 20261010T134947Z, ea1c3d5)
 
 Report: <http://100.109.192.23:18931/raft_flutter_parity_ext/latest/>
 (`raft_flutter_parity_ext/<stamp>`; the official `raft_flutter_parity/` is
