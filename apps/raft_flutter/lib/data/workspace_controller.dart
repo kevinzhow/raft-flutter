@@ -1559,6 +1559,10 @@ class WorkspaceController extends ChangeNotifier {
     historyLimited = threadHistoryLimited = false;
     _contextWindows.clear();
     _revokedChannels.clear();
+    _channelRowSeq.clear();
+    // The new server's socket connects for the first time.
+    _connectedBefore = _roomsJoinedPending = false;
+    _gapSyncedThrough = null;
     highlightedMessageId = null;
     hasNewer = false;
     channels = [];
@@ -2057,39 +2061,436 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
+  /// Read order of channel-row authority. Every list read, single-row read
+  /// and realtime row patch takes the next value when it starts; a row keeps
+  /// the value of whatever last wrote it. An older response therefore never
+  /// overwrites a newer row, and never revokes a row added after it started.
+  int _channelReadSeq = 0, _channelListSeq = 0;
+  final Map<String, int> _channelRowSeq = {};
+
+  /// Full channel and DM list reload (Source `loadChannels` +
+  /// `loadDMChannels`): server selection, `rooms:joined`, a role change, or a
+  /// channel event without an id. Unchanged rows keep their objects.
   Future<void> refreshChannels() async {
     final generation = ledger.generation;
+    final read = ++_channelReadSeq;
     try {
       final lists = await Future.wait([
         client.channels(),
         client.channels(dm: true),
       ]);
       if (generation != ledger.generation || _disposed) return;
-      final accessible = [...lists[0], ...lists[1]].map((c) => c.id).toSet();
-      for (final old in [...channels, ...dms]) {
-        if (!accessible.contains(old.id)) _revokeChannel(old.id);
-      }
-      _revokedChannels.removeAll(accessible);
-      channels = lists[0];
-      dms = lists[1];
-      _save('channels', '', {
-        'channels': channels.map((c) => c.json).toList(),
-        'dms': dms.map((c) => c.json).toList(),
-      });
-      if (channel != null) {
-        channel = [
-          ...channels,
-          ...dms,
-        ].where((c) => c.id == channel!.id).firstOrNull;
-        if (channel == null) {
-          if (threadChannelId != null) ledger.revokeChannel(threadChannelId!);
-          closeThread();
-          channelGeneration++;
+      // A list read that started later has already been applied.
+      if (read < _channelListSeq) return;
+      _channelListSeq = read;
+      // Rows written after this read started keep their current state.
+      final newer = {
+        for (final entry in _channelRowSeq.entries)
+          if (entry.value > read) entry.key,
+      };
+      _channelRowSeq.removeWhere((_, seq) => seq <= read);
+      List<RaftChannel> merge(
+        List<RaftChannel> fetched,
+        List<RaftChannel> current,
+      ) {
+        final held = {for (final c in current) c.id: c};
+        final fetchedIds = {for (final c in fetched) c.id};
+        final next = [
+          for (final c in fetched)
+            if (!newer.contains(c.id))
+              _reuseChannelRow(held[c.id], c)
+            else if (held[c.id] != null)
+              held[c.id]!,
+        ];
+        // A row added after this read started keeps its held position.
+        for (var i = 0; i < current.length; i++) {
+          final c = current[i];
+          if (newer.contains(c.id) && !fetchedIds.contains(c.id)) {
+            next.insert(i < next.length ? i : next.length, c);
+          }
         }
+        return next;
       }
-      notifyListeners();
+
+      _acceptChannelLists(
+        merge(lists[0], channels),
+        merge(lists[1], dms),
+        readmit: {
+          for (final c in [...lists[0], ...lists[1]])
+            if (!newer.contains(c.id)) c.id,
+        },
+      );
     } catch (e) {
       if (generation == ledger.generation && !_disposed) setError('$e');
+    }
+  }
+
+  /// The one place channel lists change after selection. A row missing from
+  /// the next lists lost access and is revoked; [readmit] are rows the
+  /// server just confirmed readable.
+  void _acceptChannelLists(
+    List<RaftChannel> nextChannels,
+    List<RaftChannel> nextDms, {
+    required Set<String> readmit,
+  }) {
+    final accessible = {
+      for (final c in [...nextChannels, ...nextDms]) c.id,
+    };
+    for (final old in [...channels, ...dms]) {
+      if (!accessible.contains(old.id)) _revokeChannel(old.id);
+    }
+    _revokedChannels.removeAll(readmit);
+    channels = nextChannels;
+    dms = nextDms;
+    _save('channels', '', {
+      'channels': channels.map((c) => c.json).toList(),
+      'dms': dms.map((c) => c.json).toList(),
+    });
+    if (channel != null) {
+      channel = [
+        ...channels,
+        ...dms,
+      ].where((c) => c.id == channel!.id).firstOrNull;
+      if (channel == null) {
+        if (threadChannelId != null) ledger.revokeChannel(threadChannelId!);
+        closeThread();
+        channelGeneration++;
+      }
+    }
+    notifyListeners();
+  }
+
+  /// A refreshed row equal to the held one keeps the held object, so sidebar
+  /// rows and the open channel do not rebuild for an unchanged read.
+  static RaftChannel _reuseChannelRow(RaftChannel? held, RaftChannel fresh) {
+    if (held == null) return fresh;
+    try {
+      return jsonEncode(held.json) == jsonEncode(fresh.json) ? held : fresh;
+    } catch (_) {
+      return fresh;
+    }
+  }
+
+  /// Whether the server's channel lists carry [row] for this viewer: private
+  /// and joint channels only for members (`requiresExplicitMembership`).
+  static bool _listsChannel(RaftChannel row) =>
+      !const {'private', 'joint'}.contains(row.type) || row.joined;
+
+  /// Replaces [next]'s row in place, or adds it (a new DM goes first, as the
+  /// server's recency-ordered DM list would place it).
+  void _putChannelRow(RaftChannel next) {
+    final held = [...channels, ...dms].where((c) => c.id == next.id);
+    if (held.length == 1 && identical(held.single, next)) return;
+    final dm = next.type == 'dm';
+    List<RaftChannel> put(List<RaftChannel> list, bool owns) {
+      final index = list.indexWhere((c) => c.id == next.id);
+      if (!owns) return index < 0 ? list : ([...list]..removeAt(index));
+      if (index >= 0) return [...list]..[index] = next;
+      return dm ? [next, ...list] : [...list, next];
+    }
+
+    _acceptChannelLists(put(channels, !dm), put(dms, dm), readmit: {next.id});
+  }
+
+  static String? _payloadChannelId(dynamic payload) {
+    if (payload is! Map) return null;
+    final id = payload['channelId'] ?? payload['id'];
+    return id is String && id.isNotEmpty ? id : null;
+  }
+
+  /// Source `readApiChannel`: `{channel: row}` or a bare row with a name.
+  static Map<String, dynamic>? _payloadChannelRow(dynamic payload) {
+    if (payload is! Map) return null;
+    final candidate = payload.containsKey('channel')
+        ? payload['channel']
+        : payload;
+    if (candidate is! Map ||
+        candidate['id'] is! String ||
+        candidate['name'] is! String) {
+      return null;
+    }
+    return Map<String, dynamic>.from(candidate);
+  }
+
+  /// Source channelRealtimeSync: a channel event changes one row. A carried
+  /// row is patched in place; an id re-reads that one channel; only an event
+  /// without an id reloads both lists.
+  void _channelRealtime(String name, dynamic payload) {
+    if (name == 'channel:updated') {
+      final row = _payloadChannelRow(payload);
+      if (row != null) {
+        // A user-room event can carry another server's joint-channel row.
+        final serverId = row['serverId'];
+        if (serverId is String &&
+            client.serverId != null &&
+            serverId != client.serverId) {
+          return;
+        }
+        _patchChannelRow(row);
+        return;
+      }
+    }
+    final id = _payloadChannelId(payload);
+    if (id == null) {
+      if (name != 'dm:new') unawaited(refreshChannels());
+      return;
+    }
+    if (name == 'dm:new') {
+      client.joinChannel(id);
+      // Source addOrRefreshDM: a held DM moves first without a read.
+      final index = dms.indexWhere((c) => c.id == id);
+      if (index >= 0 && !_revokedChannels.contains(id)) {
+        if (index > 0) {
+          _acceptChannelLists(channels, [
+            dms[index],
+            for (var i = 0; i < dms.length; i++)
+              if (i != index) dms[i],
+          ], readmit: const {});
+        }
+        return;
+      }
+    }
+    unawaited(refreshChannel(id));
+  }
+
+  void _patchChannelRow(Map<String, dynamic> patch) {
+    final id = patch['id'] as String;
+    final held = [...channels, ...dms].where((c) => c.id == id).firstOrNull;
+    // A projection lacks viewer fields (membership, capabilities): an unknown
+    // or revoked row is read once instead of trusted.
+    if (held == null || _revokedChannels.contains(id)) {
+      unawaited(refreshChannel(id));
+      return;
+    }
+    final next = _reuseChannelRow(held, RaftChannel({...held.json, ...patch}));
+    if (!_listsChannel(next) || next.type == 'thread') {
+      unawaited(refreshChannel(id));
+      return;
+    }
+    _channelRowSeq[id] = ++_channelReadSeq;
+    _putChannelRow(next);
+  }
+
+  final Map<String, Future<void>> _channelReads = {};
+  final Set<String> _channelRereads = {};
+
+  /// Source `ensureChannel(id, {refresh: true})`: reads one channel and
+  /// upserts its row. Lost access (403/404, or a private row the lists would
+  /// not carry) revokes that channel through the list revocation path.
+  Future<void> refreshChannel(String id) {
+    final pending = _channelReads[id];
+    if (pending != null) {
+      // The read in flight may predate this change: read once more after it.
+      _channelRereads.add(id);
+      return pending;
+    }
+    final read = _readChannel(id).whenComplete(() {
+      _channelReads.remove(id);
+      if (_channelRereads.remove(id) && !_disposed) {
+        unawaited(refreshChannel(id));
+      }
+    });
+    return _channelReads[id] = read;
+  }
+
+  Future<void> _readChannel(String id) async {
+    final generation = ledger.generation, identity = _syncIdentity();
+    final read = ++_channelReadSeq;
+    bool current() =>
+        !_disposed &&
+        generation == ledger.generation &&
+        identity == _syncIdentity() &&
+        read > _channelListSeq &&
+        read > (_channelRowSeq[id] ?? 0);
+    RaftChannel? fresh;
+    try {
+      final data = await client.get('/channels/$id');
+      if (!current() || data is! Map || data['id'] != id) return;
+      fresh = RaftChannel(Map<String, dynamic>.from(data));
+      if (fresh.type == 'thread') return;
+      final serverId = fresh.json['serverId'];
+      if (serverId is String && serverId != client.serverId) fresh = null;
+    } on RaftApiException catch (e) {
+      if (!current() || (e.status != 403 && e.status != 404)) return;
+    } catch (_) {
+      // Transient failure: the held row stays until a later read.
+      return;
+    }
+    _channelRowSeq[id] = read;
+    final held = [...channels, ...dms].where((c) => c.id == id).firstOrNull;
+    if (fresh != null && _listsChannel(fresh)) {
+      _putChannelRow(_reuseChannelRow(held, fresh));
+    } else if (held != null) {
+      _acceptChannelLists(
+        channels.where((c) => c.id != id).toList(),
+        dms.where((c) => c.id != id).toList(),
+        readmit: const {},
+      );
+    }
+  }
+
+  bool _roomsJoinedPending = false, _connectedBefore = false;
+  DateTime? _lastHeartbeat, _lastServerEvent;
+  (int, BigInt)? _gapSyncedThrough;
+
+  /// Source socketBridge `roomsJoined`: the server joined this socket's
+  /// rooms, so missed messages can be resumed and the lists re-read.
+  void _roomsJoined() {
+    _roomsJoinedPending = false;
+    if (ledger.watermark > BigInt.zero) client.resume(ledger.watermark);
+    unawaited(syncVisibleScopes());
+    unawaited(refreshChannels());
+    unawaited(refreshUnread());
+  }
+
+  /// Source `recordHeartbeat`: a server seq past the ledger watermark means
+  /// a push was missed; the visible scopes read their gap.
+  void _heartbeat(dynamic payload) {
+    _lastHeartbeat = DateTime.now();
+    // A lost `rooms:joined`: the connection's first heartbeat stands in.
+    if (_roomsJoinedPending) {
+      _roomsJoined();
+      return;
+    }
+    final seq = payload is Map ? BigInt.tryParse('${payload['seq']}') : null;
+    final synced = _gapSyncedThrough;
+    if (seq == null ||
+        seq <= ledger.watermark ||
+        synced != null && synced.$1 == ledger.generation && seq <= synced.$2) {
+      return;
+    }
+    unawaited(syncVisibleScopes(through: seq));
+  }
+
+  /// Source `recoverLiveSession` on return to the foreground: reconnect a
+  /// dropped or silent socket (its `rooms:joined` resumes and gap-syncs), or
+  /// resume and gap-sync on the live one; then refresh live counts.
+  void resumeLiveSession() {
+    if (_disposed || !ownsClient || client.serverId == null) return;
+    final now = DateTime.now();
+    final heartbeat = _lastHeartbeat, inbound = _lastServerEvent;
+    final silent =
+        heartbeat != null &&
+        inbound != null &&
+        now.difference(heartbeat) > const Duration(seconds: 90) &&
+        now.difference(inbound) > const Duration(seconds: 120);
+    if (!client.connected || silent) {
+      client.connect();
+    } else {
+      if (ledger.watermark > BigInt.zero) client.resume(ledger.watermark);
+      unawaited(syncVisibleScopes());
+    }
+    unawaited(refreshUnread());
+    loadSidebar();
+    if (entityDirectory.started) entityDirectory.revalidateAuthors();
+  }
+
+  static const _gapPageLimit = 200;
+  bool _gapSyncing = false;
+
+  /// Source `syncVisibleScopes`: the open thread and the presented channel
+  /// tail each read the messages after their newest row and append them to
+  /// the held window. Nothing is cleared or reloaded.
+  Future<void> syncVisibleScopes({BigInt? through}) async {
+    if (_gapSyncing || _disposed) return;
+    final thread = threadChannelId, main = channel?.id;
+    final targets = [
+      if (thread != null && !threadLoading) thread,
+      if (main != null &&
+          main != thread &&
+          !hasNewer &&
+          !channelLoading &&
+          pendingMessageContextChannelId != main)
+        main,
+    ];
+    if (targets.isEmpty) return;
+    final generation = ledger.generation;
+    var complete = true;
+    _gapSyncing = true;
+    try {
+      for (final id in targets) {
+        if (!await _syncGap(id)) complete = false;
+      }
+    } finally {
+      _gapSyncing = false;
+    }
+    if (complete && through != null && generation == ledger.generation) {
+      _gapSyncedThrough = (generation, through);
+    }
+  }
+
+  Future<bool> _syncGap(String id) async {
+    final thread = id == threadChannelId;
+    var cursor = BigInt.zero;
+    for (final row in ledger.messages(id)) {
+      if (visibleIds[id]?.contains(row['id']) != true) continue;
+      final seq = RaftMessage(row).seq;
+      if (seq > cursor) cursor = seq;
+    }
+    if (cursor == BigInt.zero) return true;
+    final generation = ledger.generation,
+        window = thread ? threadGeneration : channelGeneration,
+        owner = thread ? threadParentChannelId : id,
+        reply = _replyToken(owner),
+        authority = _windowAuthority();
+    bool current() =>
+        !_disposed &&
+        generation == ledger.generation &&
+        window == (thread ? threadGeneration : channelGeneration) &&
+        reply == _replyToken(owner) &&
+        authority == _windowAuthority() &&
+        !_revokedChannels.contains(id) &&
+        (thread ? threadChannelId == id : channel?.id == id && !hasNewer);
+    try {
+      while (true) {
+        final page = await client.get(
+          '/messages/sync',
+          query: {
+            'since_seq': '$cursor',
+            'channel_id': id,
+            'limit': _gapPageLimit,
+          },
+        );
+        if (!current()) return false;
+        final listed = page is List ? page : const [];
+        final rows = [
+          for (final row in listed.whereType<Map>())
+            if (row['channelId'] == id && row['id'] is String)
+              Map<String, dynamic>.from(row),
+        ];
+        if (rows.isEmpty) break;
+        final arrived = [
+          for (final row in rows)
+            if (!ledger.contains(id, row['id'] as String)) row,
+        ];
+        ledger.ingest(rows, expectedGeneration: generation);
+        visibleIds
+            .putIfAbsent(id, () => {})
+            .addAll(rows.map((row) => row['id'] as String));
+        var next = cursor;
+        for (final row in rows) {
+          final seq = RaftMessage(row).seq;
+          if (seq > next) next = seq;
+        }
+        if (_mayMarkRead(id)) {
+          unawaited(markRead(id));
+        } else {
+          arrived.forEach(_receiveUnread);
+        }
+        unawaited(_saveWindow(id, thread: thread));
+        notifyListeners();
+        if (listed.length < _gapPageLimit || next <= cursor) break;
+        cursor = next;
+      }
+      return true;
+    } on RaftApiException catch (e) {
+      // Lost access is decided by the channel read and its revocation path.
+      if (current() && owner != null && (e.status == 403 || e.status == 404)) {
+        unawaited(refreshChannel(owner));
+      }
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -3535,15 +3936,26 @@ class WorkspaceController extends ChangeNotifier {
         }.contains(event.name)) {
       return;
     }
+    _lastServerEvent = DateTime.now();
     if (event.name == 'connected') {
       connected = true;
+      // Source socketBridge reconnectSnapshot: server-level reads only. The
+      // channel list, unread counts and the resume/gap sync wait for
+      // `rooms:joined`, once the server has joined this socket's rooms.
+      _roomsJoinedPending = true;
+      _lastHeartbeat = _lastServerEvent;
       recoverMembership();
-      client.resume(ledger.watermark);
-      refreshUnread();
-      refreshChannels();
       refreshMessageSyncFlag();
       loadSidebar();
+      // A reconnect refreshes agents and members in place; the first connect
+      // reuses the reads the selection already started.
+      if (_connectedBefore && entityDirectory.started) {
+        entityDirectory.revalidateAuthors();
+      }
+      _connectedBefore = true;
     }
+    if (event.name == 'rooms:joined') _roomsJoined();
+    if (event.name == 'heartbeat') _heartbeat(event.payload);
     if (event.name == 'disconnected' || event.name == 'connection:error') {
       connected = false;
     }
@@ -3584,7 +3996,7 @@ class WorkspaceController extends ChangeNotifier {
         event.name == 'channel:members-updated' ||
         event.name == 'dm:new' ||
         event.name == 'channel:authority-updated') {
-      refreshChannels();
+      _channelRealtime(event.name, event.payload);
     }
     if (event.name == 'pinned:updated') loadSidebar();
     if (event.name == 'thread:updated' && event.payload is Map) {

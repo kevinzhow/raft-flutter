@@ -85,6 +85,10 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _login() async {
     for (final c in [_c1, _c2, _c3, _lobby]) c.json,
   ];
   a.routes['GET /channels/dm'] = (_) => [];
+  // A channel event re-reads only that channel (Source ensureChannel).
+  for (final c in [_c1, _c2, _c3, _lobby]) {
+    a.routes['GET /channels/${c.id}'] = (_) => c.json;
+  }
   a.routes['GET /channels/unread'] = (_) => {'channels': {}};
   var seq = 10;
   for (final id in ['c1', 'c2', 'c3']) {
@@ -356,7 +360,7 @@ void main() {
       },
     );
 
-    test('connect reconciles with the unread snapshot', () async {
+    test('rooms:joined reconciles with the unread snapshot', () async {
       final (w, a, client) = await _login();
       addTearDown(w.dispose);
       a.routes['GET /servers'] = (_) => [
@@ -368,6 +372,10 @@ void main() {
       };
       final reads = _unreadReads(a);
       client.emit('connected', null);
+      await _drain();
+      // Source socketBridge: counts wait for the server's room joins.
+      expect(_unreadReads(a), reads);
+      client.emit('rooms:joined', null);
       await _drain();
       expect(_unreadReads(a), reads + 1);
       expect(w.unread['c3'], 4);

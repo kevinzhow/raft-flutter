@@ -841,9 +841,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       unawaited(content.notifications.refreshPermission());
       final w = workspace;
       if (w == null) return;
-      w.client.recoverConnection(w.ledger.watermark);
-      w.refreshChannels();
-      w.refreshUnread();
+      w.resumeLiveSession();
     }
   }
 
