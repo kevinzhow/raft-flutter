@@ -608,6 +608,7 @@ class RaftOuterShadowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (shadows.isEmpty) return;
     final rect = Offset.zero & size;
     final box = circle
         ? RRect.fromRectAndRadius(rect, Radius.circular(size.shortestSide / 2))
