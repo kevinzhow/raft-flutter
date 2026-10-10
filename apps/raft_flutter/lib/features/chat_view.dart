@@ -1317,7 +1317,7 @@ class _RaftChatViewState extends State<RaftChatView>
     void open() {
       if (!mounted ||
           authority != workspaceAuthority(w) ||
-          !w.messages.any((m) => m.id == parent.id) ||
+          !w.presentsMessage(parent.id) ||
           !w.can('viewChannel', resource: w.channel)) {
         return;
       }

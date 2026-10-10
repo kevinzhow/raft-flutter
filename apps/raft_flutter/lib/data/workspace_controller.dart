@@ -1172,6 +1172,26 @@ class WorkspaceController extends ChangeNotifier {
             .where((m) => visibleIds[channel!.id]?.contains(m['id']) ?? false)
             .map(RaftMessage.new)
             .toList();
+  /// Same membership as [messages], in constant time (no list projection).
+  bool presentsMessage(String? id) {
+    final current = channel;
+    if (id == null || current == null) return false;
+    if (pendingMessageContextChannelId == current.id &&
+        !_pendingMessageContextRetainsRows) {
+      return false;
+    }
+    return (visibleIds[current.id]?.contains(id) ?? false) &&
+        ledger.contains(current.id, id);
+  }
+
+  /// Same membership as [replies], in constant time.
+  bool presentsReply(String? id) {
+    final thread = threadChannelId;
+    if (id == null || thread == null) return false;
+    return (visibleIds[thread]?.contains(id) ?? false) &&
+        ledger.contains(thread, id);
+  }
+
   List<RaftMessage> get replies => threadChannelId == null
       ? []
       : ledger

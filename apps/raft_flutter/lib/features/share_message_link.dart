@@ -28,8 +28,8 @@ Future<void> shareMessageLink(
       principal == w.client.user?.id &&
       server == w.client.serverId &&
       w.channel?.id == channel.id &&
-      (w.messages.any((m) => m.id == message.id) ||
-          w.replies.any((m) => m.id == message.id) ||
+      (w.presentsMessage(message.id) ||
+          w.presentsReply(message.id) ||
           w.threadParent?.id == message.id);
   try {
     await NativeContentCoordinator.authorize(

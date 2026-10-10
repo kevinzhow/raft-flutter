@@ -86,8 +86,8 @@ class _AttachmentViewState extends State<AttachmentView> {
       projectedServer == w.server?.id &&
       role == w.server?.string('role') &&
       (widget.messageId == null ||
-          w.messages.any((m) => m.id == widget.messageId) ||
-          w.replies.any((m) => m.id == widget.messageId) ||
+          w.presentsMessage(widget.messageId) ||
+          w.presentsReply(widget.messageId) ||
           w.threadParent?.id == widget.messageId ||
           visibleExportDescendant);
 
@@ -256,7 +256,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     try {
       imageLease?.release();
       final ownerChannel =
-          '${widget.metadata['channelId'] ?? (w.replies.any((m) => m.id == widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
+          '${widget.metadata['channelId'] ?? (w.presentsReply(widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
       final key = AttachmentImageKey.fromMetadata(
         scope: w.attachmentImageScope,
         channelId: ownerChannel,

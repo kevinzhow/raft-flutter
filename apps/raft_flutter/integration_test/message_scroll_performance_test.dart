@@ -6,6 +6,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
@@ -201,6 +202,19 @@ void main() {
         final rawSizesStart = sizes.rawEngineChanges.length;
         final mountedAllBefore = find.byType(RaftMessageTile, skipOffstage: false).evaluate().length;
         final mountedBefore = find.byType(RaftMessageTile).evaluate().length;
+        // Scrollbar stability: sample the thumb fraction/position each frame.
+        final thumb = <Map<String, double>>[];
+        var sampling = true;
+        void sampleThumb(Duration _) {
+          if (!sampling) return;
+          final p = (state.viewport as ScrollController).position;
+          final total = p.maxScrollExtent - p.minScrollExtent + p.viewportDimension;
+          if (total > 0) {
+            thumb.add({'length': p.viewportDimension / total, 'top': (p.pixels - p.minScrollExtent) / total});
+          }
+          SchedulerBinding.instance.addPostFrameCallback(sampleThumb);
+        }
+        SchedulerBinding.instance.addPostFrameCallback(sampleThumb);
         await binding.watchPerformance(() async {
           startCpu = cpuTicks(); clock.start(); actionStart = developer.Timeline.now;
           await run();
@@ -209,9 +223,23 @@ void main() {
           cpu = (cpuTicks() - startCpu) / ticksPerSecond;
         }, reportKey: '$name-$action');
         binding.removeTimingsCallback(timing);
+        sampling = false;
+        double thumbLengthSpread = 0;
+        var thumbReversals = 0;
+        if (thumb.length > 2) {
+          final lengths = [for (final v in thumb) v['length']!];
+          final mean = lengths.reduce((a, b) => a + b) / lengths.length;
+          thumbLengthSpread = (lengths.reduce((a, b) => a > b ? a : b) - lengths.reduce((a, b) => a < b ? a : b)) / mean;
+          // The action scrolls one way; a thumb step the other way is a jump.
+          final direction = (thumb.last['top']! - thumb.first['top']!).sign;
+          for (var i = 1; i < thumb.length; i++) {
+            final step = thumb[i]['top']! - thumb[i - 1]['top']!;
+            if (direction != 0 && step * direction < -0.002) thumbReversals++;
+          }
+        }
         frames.removeWhere((f) => f.timestampInMicroseconds(ui.FramePhase.buildStart) < actionStart || f.timestampInMicroseconds(ui.FramePhase.buildStart) > actionEnd);
         final record = <String, dynamic>{
-          'revision': revision, 'theme': name, 'action': action, 'profile': kProfileMode, 'semanticsEnabled': semanticsEnabled, 'instrumented': false,
+          'revision': revision, 'theme': name, 'action': action, 'profile': kProfileMode, 'semanticsEnabled': semanticsEnabled, 'engineSemantics': SemanticsBinding.instance.semanticsEnabled, 'instrumented': false,
           'displayRefreshRate': binding.renderViews.first.flutterView.display.refreshRate, 'pid': pid, 'fixtureMessages': 500, 'viewportWidth': binding.renderViews.first.flutterView.physicalSize.width, 'viewportHeight': binding.renderViews.first.flutterView.physicalSize.height,
           'actionElapsedSeconds': elapsed, 'actionStartUs': actionStart, 'actionEndUs': actionEnd, 'rawEngineSizeChanges': sizes.rawEngineChanges.skip(rawSizesStart).where((s) => (s['timestampUs'] as int) >= actionStart && (s['timestampUs'] as int) <= actionEnd).toList(),
           'nativeSizeChanges': sizes.changes.skip(sizeChangesStart).where((s) => (s['timestampUs'] as int) >= actionStart && (s['timestampUs'] as int) <= actionEnd).toList(), 'cpuSeconds': cpu,
@@ -220,6 +248,7 @@ void main() {
           'mountedVisibleBefore': mountedBefore, 'mountedVisibleAfter': find.byType(RaftMessageTile).evaluate().length,
           'mountedBefore': mountedAllBefore, 'mountedAfter': find.byType(RaftMessageTile, skipOffstage: false).evaluate().length,
           'imageReads': imageReads, 'rssBytes': ProcessInfo.currentRss,
+          'thumbSamples': thumb.length, 'thumbLengthSpread': thumbLengthSpread, 'thumbReversals': thumbReversals,
           'frames': [for (final f in frames) {'buildStartUs': f.timestampInMicroseconds(ui.FramePhase.buildStart), 'buildUs': f.buildDuration.inMicroseconds, 'rasterUs': f.rasterDuration.inMicroseconds, 'totalUs': f.totalSpan.inMicroseconds}],
           'summary': binding.reportData!['$name-$action'],
         };

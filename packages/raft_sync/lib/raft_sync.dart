@@ -48,6 +48,10 @@ class MessageLedger {
     return List.of(sorted);
   }
 
+  /// Whether [messageId] is held for [channelId], without copying or sorting.
+  bool contains(String channelId, String messageId) =>
+      _channels[channelId]?.containsKey(messageId) ?? false;
+
   void _changed(String channelId) {
     revision++;
     _sorted.remove(channelId);
