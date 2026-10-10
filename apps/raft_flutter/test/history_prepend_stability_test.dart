@@ -131,8 +131,18 @@ void main() {
             }
             expect(reading, isNotNull);
             await tester.runAsync(() async {
-              older.first.complete({});
-              await Future<void>.delayed(const Duration(milliseconds: 20));
+              // Every older request issued so far lands (the prefetch may
+              // have superseded the first); wait until the page is accepted.
+              for (final page in older) {
+                if (!page.isCompleted) page.complete({});
+              }
+              for (
+                var i = 0;
+                i < 200 && w.messages.length + w.replies.length <= 50;
+                i++
+              ) {
+                await Future<void>.delayed(const Duration(milliseconds: 10));
+              }
             });
             final log = <String>[];
             var moved = 0;
