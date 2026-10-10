@@ -5783,6 +5783,1071 @@
     "layoutDp": 1,
     "ignoreAntialiasing": true
    }
+  },
+  {
+   "id": "components.liveactivity.desktop.tool-finished.brutal",
+   "title": "Live agent activity bar desktop tool-finished (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.tool-finished",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Tool finished"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.tool-finished'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.tool-finished.elegant",
+   "title": "Live agent activity bar desktop tool-finished (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.tool-finished",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Tool finished"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.tool-finished'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.tool-finished.elegant-dark",
+   "title": "Live agent activity bar desktop tool-finished (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.tool-finished",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Tool finished"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.tool-finished'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.working.brutal",
+   "title": "Live agent activity bar desktop working (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.working",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Capturing visual testing baselines"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.working'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.working.elegant",
+   "title": "Live agent activity bar desktop working (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.working",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Capturing visual testing baselines"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.working'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.working.elegant-dark",
+   "title": "Live agent activity bar desktop working (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.working",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Capturing visual testing baselines"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.working'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.thinking.brutal",
+   "title": "Live agent activity bar desktop thinking (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.thinking",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "activity": "thinking",
+      "text": "Thinking…",
+      "descriptor": "activity.status.thinkingEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.thinking'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.thinking.elegant",
+   "title": "Live agent activity bar desktop thinking (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.thinking",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "activity": "thinking",
+      "text": "Thinking…",
+      "descriptor": "activity.status.thinkingEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.thinking'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.thinking.elegant-dark",
+   "title": "Live agent activity bar desktop thinking (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.thinking",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "activity": "thinking",
+      "text": "Thinking…",
+      "descriptor": "activity.status.thinkingEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.thinking'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.compacting.brutal",
+   "title": "Live agent activity bar desktop compacting (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.compacting",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Compacting context…",
+      "descriptor": "activity.status.compactingContextEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.compacting'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.compacting.elegant",
+   "title": "Live agent activity bar desktop compacting (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.compacting",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Compacting context…",
+      "descriptor": "activity.status.compactingContextEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.compacting'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.compacting.elegant-dark",
+   "title": "Live agent activity bar desktop compacting (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.compacting",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Compacting context…",
+      "descriptor": "activity.status.compactingContextEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.compacting'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.long.brutal",
+   "title": "Live agent activity bar desktop long (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.long",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Reading apps/raft_flutter/lib/features/chat_agent_presentation.dart and comparing it with the Web LiveAgentActivityBar source before changing the recipe"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.long.elegant",
+   "title": "Live agent activity bar desktop long (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.long",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Reading apps/raft_flutter/lib/features/chat_agent_presentation.dart and comparing it with the Web LiveAgentActivityBar source before changing the recipe"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.desktop.long.elegant-dark",
+   "title": "Live agent activity bar desktop long (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 240,
+    "height": 400,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "desktop.long",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "activity": "working",
+      "text": "Reading apps/raft_flutter/lib/features/chat_agent_presentation.dart and comparing it with the Web LiveAgentActivityBar source before changing the recipe"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'desktop.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.tool-finished.brutal",
+   "title": "Live agent activity bar mobile tool-finished (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.tool-finished",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "activity": "working",
+      "text": "Tool finished"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.tool-finished'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.tool-finished.elegant",
+   "title": "Live agent activity bar mobile tool-finished (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.tool-finished",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "activity": "working",
+      "text": "Tool finished"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.tool-finished'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.tool-finished.elegant-dark",
+   "title": "Live agent activity bar mobile tool-finished (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.tool-finished",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "activity": "working",
+      "text": "Tool finished"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.tool-finished'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.thinking.brutal",
+   "title": "Live agent activity bar mobile thinking (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.thinking",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "activity": "thinking",
+      "text": "Thinking…",
+      "descriptor": "activity.status.thinkingEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.thinking'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.thinking.elegant",
+   "title": "Live agent activity bar mobile thinking (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.thinking",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "activity": "thinking",
+      "text": "Thinking…",
+      "descriptor": "activity.status.thinkingEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.thinking'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.thinking.elegant-dark",
+   "title": "Live agent activity bar mobile thinking (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.thinking",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "activity": "thinking",
+      "text": "Thinking…",
+      "descriptor": "activity.status.thinkingEllipsis"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.thinking'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.long.brutal",
+   "title": "Live agent activity bar mobile long (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.long",
+      "extKind": "live",
+      "parityTheme": "brutal-light",
+      "platform": "mobile",
+      "activity": "working",
+      "text": "Reading apps/raft_flutter/lib/features/chat_agent_presentation.dart and comparing it with the Web LiveAgentActivityBar source before changing the recipe"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.long.elegant",
+   "title": "Live agent activity bar mobile long (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.long",
+      "extKind": "live",
+      "parityTheme": "elegant-light",
+      "platform": "mobile",
+      "activity": "working",
+      "text": "Reading apps/raft_flutter/lib/features/chat_agent_presentation.dart and comparing it with the Web LiveAgentActivityBar source before changing the recipe"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.liveactivity.mobile.long.elegant-dark",
+   "title": "Live agent activity bar mobile long (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "live-activity",
+   "category": "extension/live-activity",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 390,
+    "height": 844,
+    "density": 3
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "mobile.long",
+      "extKind": "live",
+      "parityTheme": "elegant-dark",
+      "platform": "mobile",
+      "activity": "working",
+      "text": "Reading apps/raft_flutter/lib/features/chat_agent_presentation.dart and comparing it with the Web LiveAgentActivityBar source before changing the recipe"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[data-testid=\"live-agent-activity-bar\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "live-agent-activity-bar",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/layout/LiveAgentActivityBar.tsx + raft-ui live-agent-activity-bar recipe",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_live_activity.dart 'mobile.long'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
   }
  ]
 }

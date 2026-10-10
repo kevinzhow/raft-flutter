@@ -53,12 +53,18 @@ const casesOriginal = readFileSync(casesTarget, 'utf8');
 const hostFiles = readdirSync(resolve(ext, 'host')).filter((f) => f.endsWith('.tsx')).sort();
 let casesCode = once(casesOriginal,
   'export default function VisualTestingCases() {\n  const caseId = requestedCaseId();',
-  'export default function VisualTestingCases() {\n  const parityExtElement = parityExtCaseElement();\n'
+  'export default function VisualTestingCases() {\n  const parityExtElement = parityExtElements();\n'
   + '  if (parityExtElement) return parityExtElement;\n  const caseId = requestedCaseId();');
+// Every host file exposes one `function parityExt<Name>Element()` returning its
+// element for its own case ids (or null); the registry asks each in turn.
+const hostElements = [];
 for (const file of hostFiles) {
-  casesCode += `\n// ---- raft-flutter parity extension: tool/parity-ext/host/${file}\n`
-    + readFileSync(resolve(ext, 'host', file), 'utf8');
+  const code = readFileSync(resolve(ext, 'host', file), 'utf8');
+  hostElements.push(...[...code.matchAll(/^function (parityExt\w*[eE]lement)\(\)/gm)].map((m) => m[1]));
+  casesCode += `\n// ---- raft-flutter parity extension: tool/parity-ext/host/${file}\n${code}`;
 }
+casesCode += `\nfunction parityExtElements() {\n  for (const element of [${hostElements.map((n) => `${n}()`).join(', ')}]) {\n`
+  + '    if (element) return element;\n  }\n  return null;\n}\n';
 const fixtures = Object.fromEntries(readdirSync(resolve(ext, 'fixtures'))
   .filter((f) => f.endsWith('.json'))
     .map((f) => [`virtual:parity-ext/${f.slice(0, -5)}`, readFileSync(resolve(ext, 'fixtures', f), 'utf8')]));

@@ -4,6 +4,7 @@
 // in [parityUncovered] carry the reason, everything else defaults to
 // "harnessTodo".
 import 'cases/ext_computers.dart';
+import 'cases/ext_live_activity.dart';
 import 'cases/home_tasks.dart';
 import 'cases/members_settings.dart';
 import 'cases/screens.dart';
@@ -21,6 +22,7 @@ final Map<String, ParityCase> parityCases = {
   ...screenCases,
   // Extension suite (tool/parity-ext/cases.json), not official cases.
   ...extComputerCases,
+  ...extLiveActivityCases,
 };
 
 final Map<String, ParityUncovered> parityUncovered = {
