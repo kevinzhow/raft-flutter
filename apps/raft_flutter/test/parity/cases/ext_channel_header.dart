@@ -183,7 +183,15 @@ const _states = {
     'hover-search',
     'newline',
   ],
-  'mobile': ['short', 'long', 'none', 'private', 'dm-agent', 'thread', 'newline'],
+  'mobile': [
+    'short',
+    'long',
+    'none',
+    'private',
+    'dm-agent',
+    'thread',
+    'newline',
+  ],
 };
 
 /// Every extension conversation-header case, keyed by id (3 themes each).

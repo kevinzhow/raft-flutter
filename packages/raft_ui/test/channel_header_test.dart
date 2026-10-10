@@ -159,7 +159,10 @@ void main() {
         expect(find.text('Capturing visual testing baselines'), findsOneWidget);
         // Fully visible texts never repeat themselves in a tooltip.
         for (final tooltip in t.widgetList<RaftTooltip>(
-          find.ancestor(of: find.text('Cindy'), matching: find.byType(RaftTooltip)),
+          find.ancestor(
+            of: find.text('Cindy'),
+            matching: find.byType(RaftTooltip),
+          ),
         )) {
           expect(tooltip.onlyWhenTruncated, true);
         }

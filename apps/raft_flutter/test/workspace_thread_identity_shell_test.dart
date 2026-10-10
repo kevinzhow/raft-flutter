@@ -109,7 +109,9 @@ void main() {
             expect(header.parentLabel, '#test');
             expect(header.interactiveTitle, isTrue);
             expect(header.onJumpToStart, isNotNull);
-            expect(header.actions, isEmpty);
+            // Source ThreadOverflowMenu needs only the resolved identity: the
+            // menu is present before the parent row loads (first frame final).
+            expect(header.actions, hasLength(1));
             final composer = find.descendant(
               of: root,
               matching: find.byType(RaftComposer),
@@ -134,6 +136,7 @@ void main() {
           });
           await tester.pump();
           expect(w.presentedThreadParent?.id, 'parent');
+          // The parent row arriving does not change the header.
           expect(
             tester.widget<RaftThreadHeader>(headerFinder).actions,
             hasLength(1),

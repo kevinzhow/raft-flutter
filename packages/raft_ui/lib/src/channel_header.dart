@@ -370,12 +370,11 @@ class _RaftCssShrinkRow extends StatelessWidget {
     final widths = [
       for (final (text, style) in texts)
         (TextPainter(
-                text: TextSpan(text: text, style: style),
-                textDirection: Directionality.of(context),
-                textScaler: scaler,
-                maxLines: 1,
-              )..layout())
-            .width,
+          text: TextSpan(text: text, style: style),
+          textDirection: Directionality.of(context),
+          textScaler: scaler,
+          maxLines: 1,
+        )..layout()).width,
     ];
     // Fixed items: the dot (10px) and trailing icons (12px).
     const dot = 10.0, icon = 12.0;
@@ -387,7 +386,9 @@ class _RaftCssShrinkRow extends StatelessWidget {
       builder: (context, constraints) {
         final total = widths.fold<double>(0, (a, b) => a + b);
         final available = math.max(0.0, constraints.maxWidth - fixed);
-        final scale = total <= available || total == 0 ? 1.0 : available / total;
+        final scale = total <= available || total == 0
+            ? 1.0
+            : available / total;
         Widget text(int i) {
           final (value, style) = texts[i];
           // Unshrunk texts keep their own (unrounded) intrinsic width.

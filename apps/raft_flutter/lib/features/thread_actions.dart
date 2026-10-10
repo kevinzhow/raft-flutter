@@ -19,6 +19,7 @@ class ThreadActions extends StatefulWidget {
     this.onViewChannel,
   });
   final WorkspaceController controller;
+
   /// The open thread's parent message identity. The menu does not wait for
   /// the parent message body: the header is final at the first frame.
   final String parentMessageId;
@@ -109,7 +110,10 @@ class _ThreadActionsState extends State<ThreadActions> {
     try {
       // Optimistic in the shared store; it reverts if the write fails.
       wasFollowing
-          ? await store.unfollow(widget.parentMessageId, threadChannelId: threadId)
+          ? await store.unfollow(
+              widget.parentMessageId,
+              threadChannelId: threadId,
+            )
           : await store.follow(widget.parentMessageId);
     } catch (_) {
       if (current) {

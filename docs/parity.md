@@ -533,6 +533,33 @@ What changed: floating card instead of a top-bordered strip, 36px avatar
 elegant, not a fixed yellow), 13px sans / 14px mono text. The remaining
 difference is Chromium vs Skia text rasterisation (see "Text rendering").
 
+### Conversation header cases (16 surfaces x 3 themes = 48)
+
+`python3 tool/parity-ext/build-channel-header.py` appends
+`components.channelheader.<platform>.<state>.<theme>` (run after
+`build-cases.py`; other families are kept). Derived from Web
+`ChatPanel.tsx` + `ui/PanelHeader.tsx`, `ChannelDescription.tsx`,
+`OverflowSheet.tsx` (OverflowMenuTrigger), `ThreadPanel.tsx` and the raft-ui
+`panelHeader` / `conversationPanel` / `panel` (attached edge) recipes.
+
+* React (`host/ChannelHeaderCases.tsx`) mounts the real ChatPanel in the
+  desktop main column (1280 - rail 64/56 - 240 sidebar) or the 390 page, and
+  ThreadPanel `presentation="side"` in the 400px thread column (mobile: inside
+  `.thread-side-column`, as MainLayout), clipped to a window at the top:
+  header + Chat/Tasks/Files strip (120px; thread 64px).
+* Flutter (`cases/ext_channel_header.dart`) mounts the real `WorkspaceView` at
+  the case viewport, opens the channel / DM / thread through the controller
+  and clips the same window.
+* States: channel with short / long / no description, authored newline in the
+  description (the reported bug), private, agent DM, human DM (desktop),
+  side thread, hovered Search button (desktop).
+
+Result (`cindy/channel-header`): before 9/48 passing (mean exact-pixel
+similarity 0.798; the 3 hover cases had no keyed Search button), after
+33/48 (mean 0.965). The 15 remaining are 0.92-0.96: text antialiasing on
+Elegant text, sub-pixel baseline offsets (thread title, mobile meta line) and
+the tooltip surface of the hover case. All 99 official values are unchanged.
+
 ### Outlier review (select-all, bulk-restart, workspace-scan)
 
 The official `pixelPerfectSimilarity` (visual-testing
