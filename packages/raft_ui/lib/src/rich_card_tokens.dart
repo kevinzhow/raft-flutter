@@ -47,7 +47,7 @@ class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
   BoxDecoration get footerDecoration => tokens.brutal ? BoxDecoration(color: semantic.content, border: Border(top: BorderSide(color: semantic.divider))) : const BoxDecoration();
   BoxDecoration get contentDecoration => BoxDecoration(color: semantic.content, borderRadius: tokens.brutal ? null : BorderRadius.circular(RichCardPrimitive.contentRadius), border: tokens.brutal ? null : Border.all(color: tokens.dark ? RaftPrimitiveColors.black.withValues(alpha: .35) : tokens.colors['line-muted']!, width: RichCardPrimitive.fineBorder));
   @override
-  TextStyle get header => super.header.copyWith(height: 1, fontWeight: tokens.brutal ? FontWeight.w900 : FontWeight.w500, color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .7) : tokens.muted);
+  TextStyle get header => super.header.copyWith(height: 1, fontWeight: tokens.brutal ? RaftTypography.black(tokens) : FontWeight.w500, color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .7) : tokens.muted);
   @override
   TextStyle get metadata => (tokens.brutal ? RaftTypography.mono(tokens, size: 11, line: 110 / 7) : RaftTypography.body(tokens, size: 11, line: 20)).copyWith(color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .55) : tokens.colors['foreground-placeholder']);
   @override
@@ -55,7 +55,7 @@ class ForwardedSnapshotRecipe extends RaftMessageEmbedRecipe {
   @override
   TextStyle get source => super.source.copyWith(height: 20 / 11);
   @override
-  TextStyle get showMore => super.header.copyWith(height: 20 / 11, fontWeight: tokens.brutal ? FontWeight.w900 : FontWeight.w500, color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .6) : tokens.colors['foreground-placeholder'], decoration: tokens.brutal ? TextDecoration.underline : TextDecoration.none);
+  TextStyle get showMore => super.header.copyWith(height: 20 / 11, fontWeight: tokens.brutal ? RaftTypography.black(tokens) : FontWeight.w500, color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .6) : tokens.colors['foreground-placeholder'], decoration: tokens.brutal ? TextDecoration.underline : TextDecoration.none);
 }
 
 class ActionSnapshotRecipe extends RaftActionCardRecipe {

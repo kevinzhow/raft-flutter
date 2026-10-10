@@ -90,7 +90,7 @@ class MessageContentRecipe {
         tokens,
         size: MessageContentPrimitive.toggleSize,
         line: 16,
-        weight: FontWeight.w900,
+        weight: RaftTypography.black(tokens),
         color: semantic.toggle,
       ).copyWith(
         decoration: TextDecoration.underline,

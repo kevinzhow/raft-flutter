@@ -280,6 +280,14 @@ class RaftAttachmentRecipe {
 enum RaftSansSize { large, body, small, caption }
 
 abstract final class RaftTypography {
+  /// CSS `font-black` (900). Web serves the raft-ui families with
+  /// `wght@300..700` / `400..700` @font-face ranges, so Chromium clamps 900
+  /// to the 700 instance. Flutter's bundled faces go to 900 (and a 900
+  /// request pinned to wght 700 is synthetically emboldened), so render the
+  /// 700 instance the Web shows. System fonts keep their own heavy face.
+  static FontWeight black(RaftTokens t) =>
+      t.systemFonts ? FontWeight.w900 : FontWeight.w700;
+
   static TextStyle heading(
     RaftTokens t, {
     double size = 16,
@@ -1619,7 +1627,7 @@ class RaftMessageEmbedRecipe {
       RaftTypography.body(tokens, size: 11, line: 16, color: tokens.muted);
   TextStyle get metadata => header;
   TextStyle get showMore => header.copyWith(
-    fontWeight: FontWeight.w900,
+    fontWeight: RaftTypography.black(tokens),
     decoration: TextDecoration.underline,
   );
   double get collapsedHeight => 160;
@@ -2437,7 +2445,7 @@ class RaftTextLink extends StatelessWidget {
                 fontFamily: RaftTokens.of(context).bodyFont,
                 fontSize: 11,
                 height: 16 / 11,
-                fontWeight: FontWeight.w900,
+                fontWeight: RaftTypography.black(RaftTokens.of(context)),
                 decoration: TextDecoration.underline,
               ),
         ),

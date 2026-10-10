@@ -254,7 +254,7 @@ class RaftActivityScopePicker extends StatelessWidget {
                         t,
                         size: 12,
                         line: 16,
-                        weight: FontWeight.w900,
+                        weight: RaftTypography.black(t),
                         color: t.muted,
                       ),
                     ),

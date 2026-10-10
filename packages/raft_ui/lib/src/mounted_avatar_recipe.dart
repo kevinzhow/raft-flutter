@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'design_primitives.dart' show RaftTypography;
 import 'icons.dart';
 import 'theme.dart';
 import 'tooltip.dart';
@@ -165,7 +166,7 @@ class RaftMountedAvatarFallback extends StatelessWidget {
                 fontFamily: t.headingFont,
                 fontSize: r.panelHeader ? 14 : 10,
                 fontWeight: identity == RaftMountedAvatarIdentity.app
-                    ? FontWeight.w900
+                    ? RaftTypography.black(t)
                     : FontWeight.w700,
                 color: t.brutal ? Colors.black : r.placeholderForeground,
               ),

@@ -40,12 +40,8 @@ class RaftCindySetupScreen extends StatelessWidget {
       fontFamily: family ?? t.bodyFont,
       fontSize: font,
       height: line / font,
-      fontWeight: weight,
-      // The source Google Fonts face declares wght 300..700; CSS font-black
-      // keeps computed 900 but clamps the selected variable face to 700.
-      fontVariations: !t.systemFonts && weight == FontWeight.w900
-          ? const [FontVariation('wght', 700)]
-          : null,
+      // CSS font-black keeps computed 900 but the served face stops at 700.
+      fontWeight: weight == FontWeight.w900 ? RaftTypography.black(t) : weight,
       color: color ?? t.strong,
       letterSpacing: tracking,
     );
