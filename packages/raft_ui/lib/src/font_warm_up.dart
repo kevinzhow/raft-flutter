@@ -38,7 +38,7 @@ abstract final class RaftFontWarmUp {
 
   static final _done = <_FontKey>{};
   static final _queue = Queue<TextStyle>();
-  static final _themes = <(RaftFamily, bool)>{};
+  static final _themes = <(RaftFamily, bool, bool)>{};
   static final _positions = <WeakReference<ScrollPosition>>[];
   static final _watched = Expando<bool>('raftFontWarmUp');
   static Timer? _timer;
@@ -59,8 +59,8 @@ abstract final class RaftFontWarmUp {
     _positions.clear();
   }
 
-  /// Schedules the samples for [context]'s theme once per theme family and
-  /// brightness, and pauses them while [context]'s scrollable moves. Cheap
+  /// Schedules the samples for [context]'s theme once per theme family,
+  /// brightness and font mode, and pauses them while [context]'s scrollable moves. Cheap
   /// to call from every build.
   static void schedule(BuildContext context) {
     if (!enabled) return;
@@ -76,6 +76,7 @@ abstract final class RaftFontWarmUp {
     if (!_themes.add((
       tokens?.family ?? RaftFamily.elegant,
       tokens?.dark ?? theme.brightness == Brightness.dark,
+      tokens?.systemFonts ?? false,
     ))) {
       return;
     }
