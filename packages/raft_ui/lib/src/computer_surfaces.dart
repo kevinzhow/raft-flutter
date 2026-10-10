@@ -8,6 +8,7 @@ import 'agent_profile.dart' show raftGray400;
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'dialog_card.dart';
 import 'icons.dart';
+import 'indicators.dart' show RaftSkeletonRow;
 import 'panel_layout.dart' show raftRecipeTheme, raftPanelInk, RaftCssText;
 import 'recipe_surface.dart' show raftCssText;
 import 'recipes/badge.g.dart';
@@ -688,4 +689,114 @@ class _DashedBorder extends CustomPainter {
   @override
   bool shouldRepaint(_DashedBorder old) =>
       old.color != color || old.width != width || old.radius != radius;
+}
+
+/// Sidebar.tsx computers mode body: `px-2 py-3` scroll column with the
+/// heading, [rows] (`mb-1.5` each; Elegant rows shifted by
+/// `-mx-(--sidebar-row-inset-x,6px)` under the callsite `w-full`), and the
+/// SidebarRowsSkeleton / "No computers yet" states.
+class RaftComputerSidebarList extends StatelessWidget {
+  const RaftComputerSidebarList({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.rows,
+    required this.loading,
+    required this.emptyText,
+    this.errorText,
+    this.onAdd,
+    this.addKey,
+    this.addLabel = 'Add computer',
+    this.listKey,
+  });
+  final String label, emptyText, addLabel;
+  final int count;
+  final List<Widget> rows;
+  final bool loading;
+  final String? errorText;
+  final VoidCallback? onAdd;
+  final Key? addKey, listKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final bleed = t.brutal ? 0.0 : 6.0;
+    // SidebarSectionDescription: `px-2 text-xs font-mono leading-snug
+    // text-foreground-muted theme-brutal:text-black/50`.
+    final description = RaftTypography.mono(
+      t,
+      size: 12,
+      line: 16.5,
+      color: t.brutal
+          ? Colors.black.withValues(alpha: .5)
+          : t.colors['foreground-muted'],
+    );
+    return ListView(
+      key: listKey,
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+      children: [
+        RaftComputerSidebarHeading(
+          label: label,
+          count: count,
+          addKey: addKey,
+          addLabel: addLabel,
+          onAdd: onAdd,
+        ),
+        if (errorText != null)
+          Semantics(liveRegion: true, child: Text(errorText!)),
+        for (final row in rows)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Transform.translate(offset: Offset(-bleed, 0), child: row),
+          ),
+        if (rows.isEmpty)
+          loading
+              ? Column(
+                  children: [
+                    for (var i = 0; i < 2; i++)
+                      // SkeletonRow `gap-1.5 px-2 py-2`, avatar size-[18px].
+                      const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: RaftSkeletonRow(
+                          avatar: true,
+                          gap: 6,
+                          lineFractions: [.6],
+                        ),
+                      ),
+                  ],
+                )
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(emptyText, style: description),
+                ),
+      ],
+    );
+  }
+}
+
+/// Desktop SidebarRoot edge: `border-r border-line-muted
+/// theme-brutal:border-r-2 theme-brutal:border-black` inside the column.
+class RaftSidebarColumnEdge extends StatelessWidget {
+  const RaftSidebarColumnEdge({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final width = t.brutal ? 2.0 : 1.0;
+    return DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        border: Border(
+          right: BorderSide(
+            color: t.brutal ? Colors.black : t.colors['line-muted']!,
+            width: width,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(right: width),
+        child: child,
+      ),
+    );
+  }
 }

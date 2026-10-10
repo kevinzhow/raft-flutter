@@ -32,7 +32,11 @@ class _Workspace extends WorkspaceController {
   Future<dynamic> command(String method, String path, {dynamic data}) async {
     commands.add((method, path, data));
     return pending?.future ??
-        {'id': 'created', 'apiKey': 'TEST_ONLY_NOT_A_CREDENTIAL'};
+        {
+          'id': 'created',
+          'machine': {'id': 'created'},
+          'apiKey': 'TEST_ONLY_NOT_A_CREDENTIAL',
+        };
   }
 }
 
@@ -88,12 +92,37 @@ void main() {
               expect(find.text('Connect a computer first'), findsOneWidget);
               await t.tap(find.byTooltip('Close'));
               await t.pumpAndSettle();
-              await t.tap(find.byKey(const ValueKey('desktop-directory-add-agent')));
+              await t.tap(
+                find.byKey(const ValueKey('desktop-directory-add-agent')),
+              );
               await t.pumpAndSettle();
               await t.tap(
                 find.widgetWithText(RaftMenuItem, 'Create external agent'),
               );
               await t.pumpAndSettle();
+            }
+            if (computer) {
+              // Web AddMachineDialog: choose Your Computer, then Next
+              // registers a placeholder row and shows the connect commands;
+              // the one-time key is never displayed.
+              expect(find.byType(RaftAddComputerDialog), findsOneWidget);
+              await t.tap(find.byKey(const ValueKey('add-computer-next')));
+              await t.pumpAndSettle();
+              expect(w.commands, hasLength(1));
+              expect(w.commands.single.$1, 'POST');
+              expect(w.commands.single.$2, '/servers/s/machines');
+              expect((w.commands.single.$3 as Map)['name'], 'my-computer');
+              expect(
+                find.byKey(const ValueKey('add-computer-waiting')),
+                findsOneWidget,
+              );
+              expect(
+                find.text('Waiting for computer to connect...'),
+                findsOneWidget,
+              );
+              expect(find.text('TEST_ONLY_NOT_A_CREDENTIAL'), findsNothing);
+              expect(t.takeException(), isNull);
+              return;
             }
             expect(find.byType(RaftFormDialog), findsOneWidget);
             await t.enterText(find.byType(TextField).first, 'Own resource');

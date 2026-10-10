@@ -298,74 +298,21 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       ...rows.where((m) => m['computerAttachedByCurrentUser'] == true),
       ...rows.where((m) => m['computerAttachedByCurrentUser'] != true),
     ];
-    // Elegant rows bleed 6px past the column (`-mx-(--sidebar-row-inset-x)`).
-    final bleed = t.brutal ? 0.0 : 6.0;
-    final description = RaftTypography.mono(
-      t,
-      size: 12,
-      line: 16.5,
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .5)
-          : t.colors['foreground-muted'],
-    );
-    return ListView(
-      key: const Key('desktop-directory-list'),
-      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-      children: [
-        Padding(
-          padding: EdgeInsets.zero,
-          child: RaftComputerSidebarHeading(
-            label: raftText(context, 'Computers'),
-            count: rows.length,
-            addKey: const ValueKey('desktop-directory-add-computer'),
-            addLabel: raftText(context, 'Add computer'),
-            onAdd: w.can('registerMachines')
-                ? () => showAddComputerDialog(context, w)
-                : null,
-          ),
-        ),
-        if (error)
-          Semantics(
-            liveRegion: true,
-            child: Text(raftText(context, 'Directory could not be loaded.')),
-          ),
-        for (final m in ordered)
-          Padding(
-            // `mb-1.5`; elegant `-mx-(--sidebar-row-inset-x,6px)` with the
-            // callsite `w-full`: shifted 6px left at the column width.
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Transform.translate(
-              offset: Offset(-bleed, 0),
-              child: computerRow(m),
-            ),
-          ),
-        if (rows.isEmpty)
-          loading
-              ? Column(
-                  children: [
-                    for (var i = 0; i < 2; i++)
-                      Padding(
-                        // SkeletonRow `gap-1.5 px-2 py-2`, avatar size-[18px].
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 8,
-                        ),
-                        child: const RaftSkeletonRow(
-                          avatar: true,
-                          gap: 6,
-                          lineFractions: [.6],
-                        ),
-                      ),
-                  ],
-                )
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    raftText(context, 'No computers yet'),
-                    style: description,
-                  ),
-                ),
-      ],
+    return RaftComputerSidebarList(
+      listKey: const Key('desktop-directory-list'),
+      label: raftText(context, 'Computers'),
+      count: rows.length,
+      loading: loading,
+      errorText: error
+          ? raftText(context, 'Directory could not be loaded.')
+          : null,
+      emptyText: raftText(context, 'No computers yet'),
+      addKey: const ValueKey('desktop-directory-add-computer'),
+      addLabel: raftText(context, 'Add computer'),
+      onAdd: w.can('registerMachines')
+          ? () => showAddComputerDialog(context, w)
+          : null,
+      rows: [for (final m in ordered) computerRow(m)],
     );
   }
 
@@ -508,21 +455,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
               ],
             ),
     );
-    if (widget.mobileRoot) return frame;
-    return DecoratedBox(
-      position: DecorationPosition.foreground,
-      decoration: BoxDecoration(
-        border: Border(
-          right: BorderSide(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(right: t.brutal ? 2 : 1),
-        child: frame,
-      ),
-    );
+    return widget.mobileRoot ? frame : RaftSidebarColumnEdge(child: frame);
   }
 }

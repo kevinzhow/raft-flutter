@@ -109,6 +109,8 @@ export 'src/agent_profile.dart';
 export 'src/dialog_card.dart';
 export 'src/copyable_code.dart';
 export 'src/computer_surfaces.dart';
+export 'src/computer_detail.dart';
+export 'src/add_computer_dialog.dart';
 export 'src/channel_settings_sheet.dart';
 export 'src/create_channel_view.dart';
 export 'src/channel_members_view.dart';
