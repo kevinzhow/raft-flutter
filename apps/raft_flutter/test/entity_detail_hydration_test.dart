@@ -108,7 +108,13 @@ void main() {
           expect(find.text(expected), findsWidgets);
           expect(find.text('Loading...'), findsNothing);
           expect(find.text('null'), findsNothing);
-          expect(w.pending, isNotEmpty);
+          // A revisit never re-reads the shared lists; only detail-only
+          // fields (agent runtime profile, member profile) are fetched.
+          expect(w.pending.keys, switch (kind) {
+            'agent' => ['/agents/a'],
+            'computer' => isEmpty,
+            _ => ['/servers/s/members/u/profile'],
+          });
           expect(t.takeException(), isNull);
         },
       );

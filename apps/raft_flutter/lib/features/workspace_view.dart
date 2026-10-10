@@ -873,7 +873,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             )
           : route == 'members'
           ? DesktopDirectoryView(
-              key: ValueKey('directory-$desktopAuthority'),
+              key: ValueKey('directory-$mobileAuthority'),
               controller: w,
               mobileRoot: !wide,
               selected: desktopNavigation.target,
@@ -909,7 +909,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           : route == 'agents' || route == 'computers'
           ? wide
                 ? DesktopDirectoryView(
-                    key: ValueKey('directory-$desktopAuthority-$route'),
+                    key: ValueKey('directory-$mobileAuthority-$route'),
                     controller: w,
                     computers: route == 'computers',
                     selected: desktopNavigation.target,

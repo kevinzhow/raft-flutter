@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'create_agent_dialog.dart';
 import 'computer_setup_commands.dart';
@@ -81,15 +82,50 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   }
 
   void listenEvents() {
+    // Setup state is server-owned; only account and server-level changes can
+    // move it. Membership churn of other users and agent/machine heartbeats
+    // never re-read it (see [directoryChanged]).
     events = w.client.events.listen((e) {
-      if (e.name.startsWith('machine:') ||
-          e.name.startsWith('agent:') ||
-          e.name.startsWith('server:') ||
+      if ((e.name.startsWith('server:') &&
+              !e.name.startsWith('server:member')) ||
           e.name == 'account:updated') {
-        debounce?.cancel();
-        debounce = Timer(const Duration(milliseconds: 200), reload);
+        scheduleReload();
       }
     });
+    _directory = w.entityDirectory..addListener(directoryChanged);
+    _signature = setupSignature();
+  }
+
+  void scheduleReload() {
+    debounce?.cancel();
+    debounce = Timer(const Duration(milliseconds: 200), reload);
+  }
+
+  WorkspaceEntityDirectory? _directory;
+  String? _signature;
+
+  /// Source ServerSetupProjectionGate re-reads the projection when the
+  /// machines' id/status/runtimes change. Agent creation moves the
+  /// create-agent step, so the agent id set is part of the signature too.
+  /// Activity, presence and session patches leave it unchanged.
+  String setupSignature() {
+    final directory = w.entityDirectory;
+    final machines = [
+      for (final m in directory.rows(WorkspaceEntityKind.computers))
+        '${m['id']}:${m['status']}:'
+            '${m['runtimes'] is List ? (m['runtimes'] as List).join(',') : ''}',
+    ]..sort();
+    final agents = [
+      for (final a in directory.rows(WorkspaceEntityKind.agents)) '${a['id']}',
+    ]..sort();
+    return '${machines.join('|')}#${agents.join('|')}';
+  }
+
+  void directoryChanged() {
+    final next = setupSignature();
+    if (next == _signature) return;
+    _signature = next;
+    if (mounted && (projection == null || blocked)) scheduleReload();
   }
 
   @override
@@ -98,6 +134,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
     if (!identical(oldWidget.controller, widget.controller)) {
       events?.cancel();
       debounce?.cancel();
+      _directory?.removeListener(directoryChanged);
       rebindManagementController();
       listenEvents();
     }
@@ -107,6 +144,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   void dispose() {
     serverSetupRevision.removeListener(reload);
     events?.cancel();
+    _directory?.removeListener(directoryChanged);
     poll?.cancel();
     debounce?.cancel();
     super.dispose();

@@ -278,4 +278,295 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(directory.authorAgents, isEmpty);
   });
+  group('realtime events (Source socketBridge parity)', () {
+    int reads(String path) => requests[path]?.length ?? 0;
+    Map<String, int> counts() => {
+      for (final entry in requests.entries) entry.key: entry.value.length,
+    };
+    // Coalescing window plus margin; the directory runs on the real clock.
+    Future<void> settle() => Future<void>.delayed(
+      WorkspaceEntityDirectory.reloadDelay + const Duration(milliseconds: 50),
+    );
+
+    test('presence and session events patch the row with zero HTTP', () async {
+      await hydrate();
+      final before = counts();
+      var notifications = 0;
+      directory.addListener(() => notifications++);
+      final authors = directory.authorAgents;
+      events.add(
+        const RaftEvent('agent:seen', {
+          'agentId': 'a',
+          'lastSeenAt': '2026-10-10T10:00:00.000Z',
+        }),
+      );
+      expect(directory.agent('a')!['lastSeenAt'], '2026-10-10T10:00:00.000Z');
+      // Older presence is dropped without a notification.
+      events.add(
+        const RaftEvent('agent:seen', {
+          'agentId': 'a',
+          'lastSeenAt': '2026-10-10T09:00:00.000Z',
+        }),
+      );
+      expect(directory.agent('a')!['lastSeenAt'], '2026-10-10T10:00:00.000Z');
+      events.add(
+        const RaftEvent('agent:session', {'agentId': 'a', 'sessionId': 's1'}),
+      );
+      expect(directory.agent('a')!['sessionId'], 's1');
+      events.add(
+        const RaftEvent('agent:session', {'agentId': 'a', 'sessionId': 's1'}),
+      );
+      events.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'working',
+          'detail': 'Heartbeat',
+        }),
+      );
+      events.add(
+        const RaftEvent('machine:capabilities', {
+          'machineId': 'c',
+          'runtimes': ['codex', 'claude'],
+          'hostname': 'host',
+        }),
+      );
+      expect(directory.computer('c')!['runtimes'], ['codex', 'claude']);
+      expect(directory.computer('c')!['hostname'], 'host');
+      events.add(
+        const RaftEvent('machine:capabilities', {
+          'machineId': 'c',
+          'runtimes': ['codex', 'claude'],
+          'hostname': 'host',
+        }),
+      );
+      // seen, session, activity, capabilities: one notification each; the
+      // duplicate frames are no-ops.
+      expect(notifications, 4);
+      await settle();
+      expect(counts(), before);
+      // Author identity is unaffected by presence: no author churn.
+      expect(identical(directory.authorAgents, authors), isTrue);
+    });
+
+    test(
+      'machine:status is statusVersion-gated; stale and duplicate frames cost nothing',
+      () async {
+        final pending = directory.preload();
+        requests['/agents']!.last.complete([agent]);
+        requests['/servers/s/machines']!.last.complete([
+          {...computer, 'statusVersion': 5},
+        ]);
+        requests['/servers/s/members']!.last.complete([member]);
+        await pending;
+        final before = counts();
+        var notifications = 0;
+        directory.addListener(() => notifications++);
+        for (final frame in [
+          {'machineId': 'c', 'status': 'offline', 'statusVersion': 4},
+          {'machineId': 'c', 'status': 'online', 'statusVersion': 5},
+          {'machineId': 'unknown', 'status': 'offline', 'statusVersion': 9},
+        ]) {
+          events.add(RaftEvent('machine:status', frame));
+        }
+        await settle();
+        expect(directory.computer('c')!['status'], 'online');
+        expect(notifications, 0);
+        expect(counts(), before);
+      },
+    );
+
+    test(
+      'accepted machine transitions patch at once and coalesce into one machines+agents recovery read',
+      () async {
+        await hydrate();
+        for (var version = 1; version <= 5; version++) {
+          events.add(
+            RaftEvent('machine:status', {
+              'machineId': 'c',
+              'status': version.isOdd ? 'offline' : 'online',
+              'statusVersion': version,
+            }),
+          );
+        }
+        // The visible row is patched before any request.
+        expect(directory.computer('c')!['status'], 'offline');
+        expect(directory.computer('c')!['statusVersion'], 5);
+        expect(reads('/servers/s/machines'), 1);
+        await settle();
+        expect(reads('/servers/s/machines'), 2);
+        expect(reads('/agents'), 2);
+        expect(reads('/servers/s/members'), 1);
+      },
+    );
+
+    test(
+      'catalog events re-read only the affected kind, once per burst',
+      () async {
+        await hydrate();
+        for (var i = 0; i < 5; i++) {
+          events.add(const RaftEvent('agent:updated', {'agentId': 'a'}));
+        }
+        await settle();
+        expect(counts(), {
+          '/agents': 2,
+          '/servers/s/machines': 1,
+          '/servers/s/members': 1,
+        });
+        requests['/agents']!.last.complete([agent]);
+        events.add(const RaftEvent('machine:updated', {}));
+        await settle();
+        expect(counts(), {
+          '/agents': 2,
+          '/servers/s/machines': 2,
+          '/servers/s/members': 1,
+        });
+        requests['/servers/s/machines']!.last.complete([computer]);
+        events.add(
+          const RaftEvent('server:member-added', {
+            'serverId': 's',
+            'userId': 'v',
+          }),
+        );
+        // Another server's membership never reaches this directory.
+        events.add(
+          const RaftEvent('server:member-added', {
+            'serverId': 'other',
+            'userId': 'v',
+          }),
+        );
+        await settle();
+        expect(counts(), {
+          '/agents': 2,
+          '/servers/s/machines': 2,
+          '/servers/s/members': 2,
+        });
+      },
+    );
+
+    test(
+      'agent:created upserts the pushed row and agent:deleted leaves a tombstone before the agent list read',
+      () async {
+        await hydrate();
+        const created = {
+          'id': 'b',
+          'name': 'Created agent',
+          'status': 'active',
+          'runtime': 'codex',
+          'model': 'gpt-6',
+        };
+        events.add(const RaftEvent('agent:created', {'agent': created}));
+        expect(directory.agent('b'), created);
+        expect(directory.authorAgents.map((row) => row['id']), ['a', 'b']);
+        events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
+        expect(directory.agent('a'), isNull);
+        expect(directory.agentDeleted('a'), isTrue);
+        expect(directory.rows(WorkspaceEntityKind.agents).single['id'], 'b');
+        // A deleted agent still identifies its historical messages.
+        final tombstone = directory.authorAgents.firstWhere(
+          (row) => row['id'] == 'a',
+        );
+        expect(tombstone['deletedAt'], isNotNull);
+        await settle();
+        expect(counts(), {
+          '/agents': 2,
+          '/servers/s/machines': 1,
+          '/servers/s/members': 1,
+        });
+        requests['/agents']!.last.complete([
+          created,
+          {...agent, 'deletedAt': '2026-10-10T00:00:00.000Z'},
+        ]);
+        await Future<void>.delayed(Duration.zero);
+        expect(directory.agent('b'), created);
+        expect(
+          directory.authorAgents.firstWhere(
+            (row) => row['id'] == 'a',
+          )['deletedAt'],
+          '2026-10-10T00:00:00.000Z',
+        );
+      },
+    );
+
+    test(
+      'a change during an in-flight read is followed by exactly one more read',
+      () async {
+        await hydrate();
+        final inFlight = directory.refresh(WorkspaceEntityKind.agents);
+        expect(reads('/agents'), 2);
+        events.add(const RaftEvent('agent:updated', {'agentId': 'a'}));
+        events.add(const RaftEvent('agent:updated', {'agentId': 'a'}));
+        await settle();
+        // The older read may predate the change; it is not superseded.
+        expect(reads('/agents'), 2);
+        events.add(const RaftEvent('agent:updated', {'agentId': 'a'}));
+        await settle();
+        requests['/agents']![1].complete([agent]);
+        await inFlight;
+        await Future<void>.delayed(Duration.zero);
+        expect(reads('/agents'), 3);
+      },
+    );
+
+    test(
+      'presence keeps its newest value across an older list snapshot',
+      () async {
+        await hydrate();
+        final pending = directory.refresh(WorkspaceEntityKind.agents);
+        events.add(
+          const RaftEvent('agent:seen', {
+            'agentId': 'a',
+            'lastSeenAt': '2026-10-10T10:00:00.000Z',
+          }),
+        );
+        requests['/agents']!.last.complete([
+          {...agent, 'lastSeenAt': '2026-10-10T08:00:00.000Z'},
+        ]);
+        await pending;
+        expect(directory.agent('a')!['lastSeenAt'], '2026-10-10T10:00:00.000Z');
+      },
+    );
+
+    test(
+      'an identity change drops scheduled and in-flight event reads',
+      () async {
+        await hydrate();
+        events.add(const RaftEvent('agent:updated', {'agentId': 'a'}));
+        authority = scope(role: 'member');
+        directory.synchronize();
+        await settle();
+        // The scheduled read of the old identity never starts.
+        expect(reads('/agents'), 1);
+        expect(directory.agent('a'), isNull);
+
+        final pending = directory.preload();
+        requests['/agents']!.last.complete([agent]);
+        requests['/servers/s/machines']!.last.complete([computer]);
+        requests['/servers/s/members']!.last.complete([member]);
+        await pending;
+        events.add(const RaftEvent('agent:deleted', {'agentId': 'a'}));
+        await settle();
+        expect(reads('/agents'), 3);
+        authority = scope(principal: 'bob');
+        expect(directory.authorAgents, isEmpty);
+        requests['/agents']!.last.complete([
+          {...agent, 'name': 'Old identity reply'},
+        ]);
+        await Future<void>.delayed(Duration.zero);
+        expect(directory.agent('a'), isNull);
+        expect(directory.authorAgents, isEmpty);
+      },
+    );
+
+    test(
+      'events before any surface started the directory cost nothing',
+      () async {
+        events
+          ..add(const RaftEvent('agent:updated', {'agentId': 'a'}))
+          ..add(const RaftEvent('machine:updated', {}))
+          ..add(const RaftEvent('server:member-added', {'serverId': 's'}));
+        await settle();
+        expect(requests, isEmpty);
+      },
+    );
+  });
 }

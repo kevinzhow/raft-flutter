@@ -19,6 +19,7 @@ class _Client extends RaftClient {
 class _Workspace extends WorkspaceController {
   _Workspace(super.client);
   final reads = <Completer<dynamic>>[];
+  final paths = <String>[];
   Completer<dynamic>? pendingCommand;
   int commands = 0;
   bool queueReads = false, missing = false;
@@ -34,6 +35,7 @@ class _Workspace extends WorkspaceController {
     if (queueReads) {
       final pending = Completer<dynamic>();
       reads.add(pending);
+      paths.add(path);
       return pending.future;
     }
     if (path.endsWith('/machines')) {
@@ -110,19 +112,24 @@ void main() {
         ),
       );
       await t.pump();
-      expect(w.reads.length, 1);
+      expect(w.paths, ['/agents']);
       final generation = c.generation;
       c.user = RaftRecord({'id': 'bob'});
       w.notifyListeners();
       await t.pump();
       expect(c.generation, generation);
-      expect(w.reads.length, 2);
-      w.reads.first.complete([
+      // The shared directory re-reads each kind once under the new identity.
+      List<Completer<dynamic>> agentReads() => [
+        for (var i = 0; i < w.paths.length; i++)
+          if (w.paths[i] == '/agents') w.reads[i],
+      ];
+      expect(agentReads(), hasLength(2));
+      agentReads().first.complete([
         {'id': 'old', 'name': 'Alice private row'},
       ]);
       await t.pump();
       expect(find.text('Alice private row'), findsNothing);
-      w.reads.last.complete([
+      agentReads().last.complete([
         {'id': 'new', 'name': 'Bob authorized row'},
       ]);
       await t.pumpAndSettle();
@@ -201,7 +208,12 @@ void main() {
       expect(w.commands, 1);
       w.missing = true;
       c.stream.add(RaftEvent('machine:deleted', {'id': 'machine'}));
-      await t.pump(const Duration(milliseconds: 200));
+      // The shared directory (created outside the fake clock) coalesces the
+      // event into one machine-list read.
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await t.pump();
       await t.pumpAndSettle();
       expect(find.text('Preserved workspace'), findsOneWidget);
       expect(find.byType(FleetDetail), findsNothing);

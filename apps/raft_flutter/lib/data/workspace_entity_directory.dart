@@ -124,7 +124,12 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   bool _disposed = false;
   bool started = false;
   Timer? _refresh;
+  final _dirty = <WorkspaceEntityKind>{}, _queued = <WorkspaceEntityKind>{};
   StreamSubscription<RaftEvent>? _subscription;
+
+  /// Window in which catalog events (created/deleted/updated, machine
+  /// transitions, member changes) are coalesced into one read per kind.
+  static const reloadDelay = Duration(milliseconds: 150);
 
   /// Called by the owner on authority notification; lookup also fences itself.
   bool synchronize() {
@@ -144,6 +149,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _authorRevision++;
     _agentRevision++;
     _refresh?.cancel();
+    _refresh = null;
+    _dirty.clear();
+    _queued.clear();
     return true;
   }
 
@@ -209,16 +217,37 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
 
   /// Starts the author lists once per scope; accepted or in-flight lists are
   /// reused by every surface.
-  void ensureAuthors() {
+  void ensureAuthors() =>
+      ensure(const [WorkspaceEntityKind.agents, WorkspaceEntityKind.members]);
+
+  /// Starts each kind that has not settled in this scope. Accepted or
+  /// in-flight lists are reused, so a revisited surface renders its rows at the
+  /// first frame without a request. [retryFailed] also re-reads a kind whose
+  /// last read failed (a surface the user explicitly opens again).
+  void ensure(Iterable<WorkspaceEntityKind> kinds, {bool retryFailed = false}) {
     synchronize();
-    for (final kind in [
-      WorkspaceEntityKind.agents,
-      WorkspaceEntityKind.members,
-    ]) {
-      if (!_settled.contains(kind) && !_pending.containsKey(kind)) {
+    for (final kind in kinds) {
+      if (_pending.containsKey(kind)) continue;
+      if (!_settled.contains(kind) ||
+          (retryFailed && _states[kind]?.error != null)) {
         unawaited(refresh(kind));
       }
     }
+  }
+
+  /// True once [kind] was accepted or failed in the current scope. A
+  /// revalidation of a settled kind never makes it unsettled again.
+  bool settled(WorkspaceEntityKind kind) {
+    synchronize();
+    return _settled.contains(kind);
+  }
+
+  /// True when [id] is an authorized deleted agent (a tombstone).
+  bool agentDeleted(String id) {
+    synchronize();
+    return !_disposed &&
+        _scope?.allows(WorkspaceEntityKind.agents) == true &&
+        _tombstones.containsKey(id);
   }
 
   /// Supersedes any in-flight author read (reconnect/conflict reconcile). The
@@ -338,6 +367,18 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
               (_activityVersions[id] ?? 0) > (versions[id] ?? 0)) {
             row.addAll(_activity[id] ?? {});
           }
+          // agent:seen is monotonic across an older list snapshot.
+          final seen = _rows[kind]?[id]?['lastSeenAt'];
+          if (kind == WorkspaceEntityKind.agents &&
+              seen is String &&
+              (row['lastSeenAt'] is! String ||
+                  (DateTime.tryParse(seen)?.isAfter(
+                        DateTime.tryParse(row['lastSeenAt'] as String) ??
+                            DateTime(0),
+                      ) ??
+                      false))) {
+            row['lastSeenAt'] = seen;
+          }
           accepted[id] = _copy(row);
         }
         _rows[kind] = accepted;
@@ -381,11 +422,18 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
 
   void _event(RaftEvent event) {
     synchronize();
-    if (_disposed || _scope == null) return;
-    if (event.name == 'agent:activity' && event.payload is Map) {
-      final payload = event.payload as Map;
-      final id = payload['agentId'];
-      if (id is String && _scope!.allows(WorkspaceEntityKind.agents)) {
+    final scope = _scope;
+    if (_disposed || scope == null) return;
+    final payload = event.payload is Map
+        ? Map<String, dynamic>.from(event.payload as Map)
+        : const <String, dynamic>{};
+    final agents = scope.allows(WorkspaceEntityKind.agents);
+    final computers = scope.allows(WorkspaceEntityKind.computers);
+    switch (event.name) {
+      // Source socketBridge agentActivity -> agentStore.updateActivity.
+      case 'agent:activity' when agents:
+        final id = payload['agentId'];
+        if (id is! String) return;
         final patch = <String, dynamic>{
           if (payload['activity'] is String) 'activity': payload['activity'],
           if (payload['detail'] is String) 'activityDetail': payload['detail'],
@@ -394,18 +442,212 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         _activity[id] = patch;
         _rows[WorkspaceEntityKind.agents]?[id]?.addAll(patch);
         notifyListeners();
-      }
+      // Source agentStore.applyAgentSeen: monotonic, no request.
+      case 'agent:seen' when agents:
+        final id = payload['agentId'], seen = payload['lastSeenAt'];
+        if (id is! String || seen is! String) return;
+        _patchAgent(id, (row) {
+          final next = DateTime.tryParse(seen);
+          final current = row['lastSeenAt'] is String
+              ? DateTime.tryParse(row['lastSeenAt'] as String)
+              : null;
+          if (next == null || (current != null && !next.isAfter(current))) {
+            return false;
+          }
+          row['lastSeenAt'] = seen;
+          return true;
+        });
+      // Source agentStore.updateAgentSession: identity-preserving no-op when
+      // the session is unchanged, no request.
+      case 'agent:session' when agents:
+        final id = payload['agentId'], session = payload['sessionId'];
+        if (id is! String ||
+            !payload.containsKey('sessionId') ||
+            (session != null && session is! String)) {
+          return;
+        }
+        _patchAgent(id, (row) {
+          if (row.containsKey('sessionId') && row['sessionId'] == session) {
+            return false;
+          }
+          row['sessionId'] = session;
+          return true;
+        });
+      // Source agent:created/deleted -> loadAgents; agent:updated ->
+      // reloadAgentsAfterServerChange. Only the agent list is re-read; the
+      // pushed row (or tombstone) is visible before that read lands.
+      case 'agent:created' when agents:
+        final row = payload['agent'];
+        if (row is Map) {
+          final value = Map<String, dynamic>.from(row);
+          final id = _id(WorkspaceEntityKind.agents, value);
+          final accepted = _rows[WorkspaceEntityKind.agents];
+          if (id != null &&
+              value['deletedAt'] == null &&
+              accepted != null &&
+              !accepted.containsKey(id)) {
+            accepted[id] = _copy(value);
+            _authorsChanged(WorkspaceEntityKind.agents);
+            notifyListeners();
+          }
+        }
+        _scheduleReload(const {WorkspaceEntityKind.agents});
+      case 'agent:deleted' when agents:
+        final id = payload['agentId'] ?? payload['id'];
+        if (id is! String) {
+          _scheduleReload(const {WorkspaceEntityKind.agents});
+          return;
+        }
+        final row = _rows[WorkspaceEntityKind.agents]?.remove(id);
+        if (row != null) {
+          _tombstones[id] = {
+            ...row,
+            'deletedAt': DateTime.now().toUtc().toIso8601String(),
+          };
+          _authorsChanged(WorkspaceEntityKind.agents);
+          notifyListeners();
+        }
+        _scheduleReload(const {WorkspaceEntityKind.agents});
+      case 'agent:updated' when agents:
+        _scheduleReload(const {WorkspaceEntityKind.agents});
+      // Source machineEvents applyStatus: statusVersion-gated patch. A stale or
+      // duplicate frame is a no-op; an accepted transition (or an unknown
+      // machine coming online) asks for the machines-and-agents recovery read.
+      case 'machine:status' when computers:
+        final id = payload['machineId'], status = payload['status'];
+        if (id is! String || status is! String) return;
+        final version = payload['statusVersion'];
+        final row = _rows[WorkspaceEntityKind.computers]?[id];
+        if (row == null) {
+          if (status == 'online') {
+            _scheduleReload(const {
+              WorkspaceEntityKind.computers,
+              WorkspaceEntityKind.agents,
+            });
+          }
+          return;
+        }
+        final current = row['statusVersion'];
+        if (version is int && current is int && version < current) return;
+        if (row['status'] == status &&
+            (version is! int || version == current)) {
+          return;
+        }
+        row['status'] = status;
+        if (version is int) row['statusVersion'] = version;
+        notifyListeners();
+        _scheduleReload(const {
+          WorkspaceEntityKind.computers,
+          WorkspaceEntityKind.agents,
+        });
+      // Source machineEvents applyCapabilities: patch only.
+      case 'machine:capabilities' when computers:
+        final id = payload['machineId'];
+        if (id is! String) return;
+        final row = _rows[WorkspaceEntityKind.computers]?[id];
+        if (row == null) return;
+        final patch = <String, dynamic>{
+          if (payload['runtimes'] is List)
+            'runtimes': List<dynamic>.from(payload['runtimes'] as List),
+          for (final key in const [
+            'runtimeVersions',
+            'hostname',
+            'os',
+            'daemonVersion',
+            'computerVersion',
+          ])
+            if (payload.containsKey(key)) key: _copyValue(payload[key]),
+        };
+        if (patch.entries.every(
+          (entry) => _sameValue(row[entry.key], entry.value),
+        )) {
+          return;
+        }
+        row.addAll(patch);
+        notifyListeners();
+      // Source machine:updated / machine:upgrade-request / successful restart:
+      // re-read the machine list only.
+      case 'machine:updated' ||
+              'machine:upgrade-request' ||
+              'machine:created' ||
+              'machine:deleted'
+          when computers:
+        _scheduleReload(const {WorkspaceEntityKind.computers});
+      case 'computer:restart:done' when computers:
+        if (payload['ok'] == true) {
+          _scheduleReload(const {WorkspaceEntityKind.computers});
+        }
+      // Source refreshMembersForServer: re-read members of the current server.
+      case 'server:member-added' ||
+              'server:member:left' ||
+              'server:member-removed' ||
+              'server:member-updated'
+          when scope.allows(WorkspaceEntityKind.members):
+        final server = payload['serverId'];
+        if (server is String && server != scope.serverId) return;
+        _scheduleReload(const {WorkspaceEntityKind.members});
+      // Source loadConnectSnapshotSet re-reads machines on (re)connect. Agents
+      // are revalidated by the author directory's own reconnect path.
+      case 'connected' when computers:
+        if (_settled.contains(WorkspaceEntityKind.computers)) {
+          _scheduleReload(const {WorkspaceEntityKind.computers});
+        }
+    }
+  }
+
+  void _patchAgent(String id, bool Function(Map<String, dynamic> row) patch) {
+    final row = _rows[WorkspaceEntityKind.agents]?[id];
+    if (row != null && patch(row)) notifyListeners();
+  }
+
+  static bool _sameValue(dynamic a, dynamic b) {
+    if (a is List && b is List) {
+      return a.length == b.length &&
+          [
+            for (var i = 0; i < a.length; i++) i,
+          ].every((i) => _sameValue(a[i], b[i]));
+    }
+    if (a is Map && b is Map) {
+      return a.length == b.length &&
+          a.keys.every(
+            (key) => b.containsKey(key) && _sameValue(a[key], b[key]),
+          );
+    }
+    return a == b;
+  }
+
+  /// Coalesces a burst of catalog events into one read per affected kind.
+  /// Nothing is read before the directory has been started by a surface.
+  void _scheduleReload(Set<WorkspaceEntityKind> kinds) {
+    if (!started) return;
+    _dirty.addAll(kinds);
+    _refresh ??= Timer(reloadDelay, () {
+      _refresh = null;
+      if (_disposed) return;
+      final dirty = Set.of(_dirty);
+      _dirty.clear();
+      dirty.forEach(_reloadAfterChange);
+    });
+  }
+
+  /// Source reloadAgentsAfterServerChange: a read already in flight may have
+  /// been answered before the change, so wait for it and read once more.
+  /// Several changes during the same wait share that one extra read.
+  void _reloadAfterChange(WorkspaceEntityKind kind) {
+    final pending = _pending[kind];
+    if (pending == null) {
+      unawaited(refresh(kind));
       return;
     }
-    if (started &&
-        (event.name.startsWith('agent:') ||
-            event.name.startsWith('machine:') ||
-            event.name.startsWith('server:member'))) {
-      _refresh?.cancel();
-      _refresh = Timer(const Duration(milliseconds: 150), () {
-        if (!_disposed) unawaited(preload());
-      });
+    if (!_queued.add(kind)) return;
+    final epoch = _epoch;
+    void again() {
+      if (_disposed || epoch != _epoch) return;
+      _queued.remove(kind);
+      unawaited(refresh(kind));
     }
+
+    unawaited(pending.then((_) => again(), onError: (_) => again()));
   }
 
   @override
@@ -418,6 +660,8 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _authorAgents = _authorMembers = null;
     _pending.clear();
     _refresh?.cancel();
+    _dirty.clear();
+    _queued.clear();
     _subscription?.cancel();
     super.dispose();
   }

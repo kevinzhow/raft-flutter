@@ -47,16 +47,6 @@ class _FleetScope {
       generation == w.client.generation;
 }
 
-/// GET /servers/:id/machines answers `{machines: [...]}` or a bare array;
-/// Web accepts both.
-List<dynamic> _machineRows(dynamic result) {
-  final rows = result is Map ? result['machines'] : result;
-  if (rows is! List || rows.any((row) => row is! Map)) {
-    throw const FormatException('Invalid computer directory response.');
-  }
-  return rows;
-}
-
 Future<T?> _fleetDialog<T>(
   BuildContext context,
   WorkspaceController w,
@@ -212,93 +202,83 @@ class FleetView extends StatefulWidget {
 
 class _FleetViewState extends State<FleetView> {
   WorkspaceController get w => widget.controller;
-  List<Map<String, dynamic>> rows = [];
-  bool loading = true;
-  String? error;
-  int request = 0;
   late _FleetScope scope;
+  WorkspaceController? _listened;
+  WorkspaceEntityDirectory? _directory;
+  String? actionError;
   bool current(_FleetScope captured) => mounted && captured.current(w);
+  WorkspaceEntityKind get kind => widget.computers
+      ? WorkspaceEntityKind.computers
+      : WorkspaceEntityKind.agents;
+
+  /// Rows come from the server-scoped entity directory, which fences and
+  /// clears itself on identity change and patches realtime events in place.
+  List<Map<String, dynamic>> get rows => [
+    if (w.server != null && w.client.user != null)
+      for (final row in w.entityDirectory.rows(kind))
+        if (!widget.attentionOnly ||
+            widget.computers &&
+                row['isComputer'] == true &&
+                (row['computerUpgradeAvailable'] == true ||
+                    row['status'] == 'offline'))
+          row,
+  ];
+
   void authorityChanged() {
     if (!mounted || scope.current(w)) return;
     scope.revoked = true;
     scope = _FleetScope(w);
-    ++request;
-    refresh?.cancel();
-    setState(() {
-      rows = [];
-      error = null;
-      loading = true;
-    });
-    if (w.server != null && w.client.user != null) load();
+    if (w.server != null && w.client.user != null) {
+      w.entityDirectory.ensure([kind]);
+    }
+    setState(() => actionError = null);
   }
 
-  StreamSubscription<RaftEvent>? subscription;
-  Timer? refresh;
-  String get base =>
-      widget.computers ? '/servers/${w.server!.id}/machines' : '/agents';
+  void directoryChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void bind() {
+    _listened?.removeListener(authorityChanged);
+    _directory?.removeListener(directoryChanged);
+    _listened = w..addListener(authorityChanged);
+    _directory = w.entityDirectory..addListener(directoryChanged);
+  }
+
   @override
   void initState() {
     super.initState();
     scope = _FleetScope(w);
-    rows = w.entityDirectory.rows(
-      widget.computers
-          ? WorkspaceEntityKind.computers
-          : WorkspaceEntityKind.agents,
-    );
-    loading = rows.isEmpty;
-    w.addListener(authorityChanged);
-    load();
-    subscription = w.client.events.listen((e) {
-      if (e.name.startsWith(widget.computers ? 'machine:' : 'agent:') ||
-          e.name.startsWith('server:member')) {
-        refresh?.cancel();
-        refresh = Timer(const Duration(milliseconds: 150), load);
-      }
-    });
+    bind();
+    if (w.server != null && w.client.user != null) {
+      w.entityDirectory.ensure([kind], retryFailed: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(FleetView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, w)) {
+      bind();
+      scope.revoked = true;
+      scope = _FleetScope(w);
+      actionError = null;
+      w.entityDirectory.ensure([kind]);
+    }
   }
 
   @override
   void dispose() {
-    ++request;
     scope.revoked = true;
-    w.removeListener(authorityChanged);
-    refresh?.cancel();
-    subscription?.cancel();
+    _listened?.removeListener(authorityChanged);
+    _directory?.removeListener(directoryChanged);
     super.dispose();
   }
 
+  /// Explicit refresh and the user's own mutations re-read the list in place.
   Future<void> load() async {
-    final ticket = ++request;
-    final captured = scope;
-    if (!current(captured) || w.server == null || w.client.user == null) return;
-    try {
-      final result = await w.query(base);
-      if (!current(captured) || ticket != request) {
-        return;
-      }
-      setState(() {
-        rows = [
-          for (final row
-              in (widget.computers ? _machineRows(result) : result) as List)
-            if ((widget.computers || row['deletedAt'] == null) &&
-                (!widget.attentionOnly ||
-                    widget.computers &&
-                        row['isComputer'] == true &&
-                        (row['computerUpgradeAvailable'] == true ||
-                            row['status'] == 'offline')))
-              Map<String, dynamic>.from(row),
-        ];
-        error = null;
-        loading = false;
-      });
-    } catch (e) {
-      if (current(captured) && ticket == request) {
-        setState(() {
-          error = '$e';
-          loading = false;
-        });
-      }
-    }
+    if (!current(scope) || w.server == null || w.client.user == null) return;
+    await w.entityDirectory.refresh(kind, force: true);
   }
 
   Future<void> create() async {
@@ -319,12 +299,26 @@ class _FleetViewState extends State<FleetView> {
       await showManagedAgentForm(context, w);
       if (current(captured)) await load();
     } catch (e) {
-      if (current(captured)) setState(() => error = '$e');
+      if (current(captured)) setState(() => actionError = '$e');
     }
   }
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) {
+    final rows = this.rows;
+    final state = w.entityDirectory.state(kind);
+    final loading = !w.entityDirectory.settled(kind);
+    final error =
+        actionError ?? (state.error == null ? null : '${state.error}');
+    return fleetList(context, rows, loading, error);
+  }
+
+  Widget fleetList(
+    BuildContext context,
+    List<Map<String, dynamic>> rows,
+    bool loading,
+    String? error,
+  ) => Column(
     children: [
       Padding(
         padding: const EdgeInsets.all(16),
@@ -367,7 +361,7 @@ class _FleetViewState extends State<FleetView> {
       if (error != null)
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Semantics(liveRegion: true, child: Text(error!)),
+          child: Semantics(liveRegion: true, child: Text(error)),
         ),
       Expanded(
         child: loading && rows.isEmpty
@@ -406,6 +400,8 @@ class _FleetViewState extends State<FleetView> {
                         widget.onOpenDetail!(Map.of(row));
                         return;
                       }
+                      // The detail edits the shared directory, so the list is
+                      // already current when the route pops.
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -416,7 +412,6 @@ class _FleetViewState extends State<FleetView> {
                           ),
                         ),
                       );
-                      if (mounted) await load();
                     },
                   );
                 },
@@ -512,29 +507,58 @@ class _FleetDetailState extends State<FleetDetail> {
     if (route.isActive) navigator?.removeRoute(route);
   }
 
+  WorkspaceEntityKind get kind => widget.computers
+      ? WorkspaceEntityKind.computers
+      : WorkspaceEntityKind.agents;
+
+  /// Agent detail-only fields (GET /agents/:id: runtime profile, workspace
+  /// role) cached for this route. Fields the shared directory carries win, so
+  /// realtime patches show here exactly as in the list.
+  Map<String, dynamic>? detail;
+
+  /// Whether the shared directory has listed this entity in this scope; only
+  /// then does its absence from an accepted list mean it was deleted.
+  bool listed = false;
+
+  Map<String, dynamic>? get directoryRow => widget.computers
+      ? w.entityDirectory.computer(id)
+      : w.entityDirectory.agent(id);
+
+  /// The visible row never blanks: without any accepted source it keeps the
+  /// row it already shows.
+  Map<String, dynamic> compose() {
+    final accepted = directoryRow;
+    if (accepted != null) listed = true;
+    if (accepted == null && detail == null) return row;
+    return {...?detail, ...?accepted};
+  }
+
   void directoryChanged() {
     if (!current) return;
-    final failure = w.entityDirectory
-        .state(
-          widget.computers
-              ? WorkspaceEntityKind.computers
-              : WorkspaceEntityKind.agents,
-        )
-        .error;
+    final directory = w.entityDirectory;
+    final failure = directory.state(kind).error;
     if (failure is RaftApiException && [401, 403].contains(failure.status)) {
       closeProfile();
       return;
     }
-    final accepted = widget.computers
-        ? w.entityDirectory.computer(id)
-        : w.entityDirectory.agent(id);
-    if (accepted != null) setState(() => row = accepted);
-    if (!widget.computers &&
-        w.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
-      setState(
-        () => machines = w.entityDirectory.rows(WorkspaceEntityKind.computers),
-      );
+    if (!widget.computers && directory.agentDeleted(id)) {
+      closeProfile();
+      return;
     }
+    if (listed && directory.state(kind).loaded && directoryRow == null) {
+      closeProfile();
+      return;
+    }
+    final next = compose();
+    final nextMachines =
+        !widget.computers &&
+            directory.state(WorkspaceEntityKind.computers).loaded
+        ? directory.rows(WorkspaceEntityKind.computers)
+        : machines;
+    setState(() {
+      row = next;
+      machines = nextMachines;
+    });
   }
 
   void authorityChanged() {
@@ -547,41 +571,36 @@ class _FleetDetailState extends State<FleetDetail> {
     serverId = w.server!.id;
     scope = _FleetScope(w);
     id = widget.initial['id'] as String;
-    final cached = widget.computers
-        ? w.entityDirectory.computer(id)
-        : w.entityDirectory.agent(id);
-    if (cached != null) row = cached;
-    final computerRows = w.entityDirectory.rows(WorkspaceEntityKind.computers);
+    row = compose();
     if (w.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
-      machines = computerRows;
+      machines = w.entityDirectory.rows(WorkspaceEntityKind.computers);
     }
     w.entityDirectory.addListener(directoryChanged);
     w.addListener(authorityChanged);
-    load();
-    if (!widget.computers) loadMachines();
+    // The shared directory is read only when this scope has not settled it;
+    // a revisit renders the accepted rows with no list request.
+    w.entityDirectory.ensure([
+      kind,
+      if (!widget.computers) WorkspaceEntityKind.computers,
+    ], retryFailed: true);
+    if (!widget.computers) unawaited(loadDetail());
     subscription = w.client.events.listen((e) {
       if (!scope.current(w)) {
         closeProfile();
         return;
       }
-      if (!widget.computers &&
-          e.name == 'agent:activity' &&
-          e.payload is Map &&
-          (e.payload as Map)['agentId'] == id) {
-        final p = e.payload as Map;
+      if (widget.computers || e.payload is! Map) return;
+      final p = e.payload as Map;
+      if (e.name == 'agent:activity' && p['agentId'] == id) {
         setState(
           () =>
               liveActivity = {'activity': p['activity'], 'detail': p['detail']},
         );
-        return;
-      }
-      if (!widget.computers && e.name.startsWith('machine:')) {
-        loadMachines();
-      }
-      if (e.name.startsWith(widget.computers ? 'machine:' : 'agent:') ||
-          e.name.startsWith('server:member')) {
+      } else if (e.name == 'agent:updated' && (p['agentId'] ?? p['id']) == id) {
+        // Only this agent's stored profile changed; the list itself is
+        // re-read by the shared directory.
         timer?.cancel();
-        timer = Timer(const Duration(milliseconds: 150), load);
+        timer = Timer(WorkspaceEntityDirectory.reloadDelay, loadDetail);
       }
     });
   }
@@ -597,25 +616,21 @@ class _FleetDetailState extends State<FleetDetail> {
     super.dispose();
   }
 
-  Future<void> load() async {
-    if (!current) return;
+  /// GET /agents/:id for detail-only fields. Computers have no detail read:
+  /// the machine list row is the whole record.
+  Future<void> loadDetail() async {
+    if (!current || widget.computers) return;
     final ticket = ++request;
     try {
-      final result = await w.query(
-        widget.computers ? '/servers/$serverId/machines' : base,
-      );
+      final result = await w.query(base);
       if (!current || ticket != request) return;
-      final next = widget.computers
-          ? _machineRows(result).where((r) => r['id'] == id).firstOrNull
-          : result;
-      if (next == null ||
-          next['id'] != id ||
-          (!widget.computers && next['deletedAt'] != null)) {
+      if (result is! Map || result['id'] != id || result['deletedAt'] != null) {
         closeProfile();
         return;
       }
+      detail = Map<String, dynamic>.from(result);
       setState(() {
-        row = Map<String, dynamic>.from(next);
+        row = compose();
         error = null;
       });
     } on RaftApiException catch (e) {
@@ -630,19 +645,25 @@ class _FleetDetailState extends State<FleetDetail> {
     }
   }
 
-  Future<void> loadMachines() async {
-    try {
-      final result = await w.query('/servers/$serverId/machines');
-      if (!current) return;
-      final rows = _machineRows(result);
-      setState(
-        () => machines = [for (final m in rows) Map<String, dynamic>.from(m)],
-      );
-    } catch (failure) {
-      // A failed refresh cannot prove there are no Computers. Keep accepted
-      // rows (or unresolved null) and expose the failure independently.
-      if (current) setState(() => error = '$failure');
+  /// After the user's own mutation (or an explicit retry): re-read the shared
+  /// list in place and, for agents, the detail fields.
+  Future<void> load() async {
+    if (!current) return;
+    final list = w.entityDirectory.refresh(kind, force: true);
+    await Future.wait([list, if (!widget.computers) loadDetail()]);
+    if (!current) return;
+    final failure = w.entityDirectory.state(kind).error;
+    if (widget.computers &&
+        failure == null &&
+        w.entityDirectory.state(kind).loaded &&
+        directoryRow == null) {
+      closeProfile();
+      return;
     }
+    setState(() {
+      row = compose();
+      error = failure == null ? error : '$failure';
+    });
   }
 
   /// Web AgentDetailHeader onMessage: open (or create) the DM and jump to it.
@@ -928,7 +949,11 @@ class _FleetDetailState extends State<FleetDetail> {
         agent: row,
         authorized: valid,
         onSaved: (next) {
-          if (valid()) setState(() => row = next);
+          if (!valid()) return;
+          setState(() => row = next);
+          unawaited(
+            w.entityDirectory.refresh(WorkspaceEntityKind.agents, force: true),
+          );
         },
       ),
     );

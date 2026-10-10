@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'desktop_navigation_policy.dart';
-import 'management_support.dart';
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
 import 'sender_avatar_projection.dart';
@@ -30,115 +27,107 @@ class DesktopDirectoryView extends StatefulWidget {
   State<DesktopDirectoryView> createState() => _DesktopDirectoryViewState();
 }
 
-class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
-  @override
+class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   WorkspaceController get w => widget.controller;
-  List<Map<String, dynamic>> agents = [], humans = [], computers = [];
-  StreamSubscription<RaftEvent>? events;
+  WorkspaceEntityDirectory? _directory;
   final agentMenu = RaftMenuController();
   bool agentsExpanded = true, humansExpanded = true;
   final collapsedMachineGroups = <String, bool>{};
-  @override
+  WorkspaceController? _listened;
+  late String _authority;
+
+  /// Account, workspace, role and the visibility rules of this column. Rows
+  /// themselves are a projection of the server-scoped entity directory, which
+  /// fences its own data, so a channel change never touches this column.
   String get authority =>
-      '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.computers}|'
-      '${w.can('viewAgents')}|${w.can('viewMembers')}|${w.can('viewMachines')}|'
-      '${w.server?.json['hideHumansFromMembers']}';
+      '${w.client.generation}|${w.client.user?.id}|${w.server?.id}|'
+      '${w.server?.string('role')}|${identityHashCode(w)}|${w.client.origin}|'
+      '${widget.computers}|${w.can('viewAgents')}|${w.can('viewMembers')}|'
+      '${w.can('viewMachines')}|${w.server?.json['hideHumansFromMembers']}';
+
+  bool get showHumans =>
+      w.can('viewMembers') &&
+      !(w.server?.string('role') == 'member' &&
+          w.server?.json['hideHumansFromMembers'] == true);
+
+  /// Kinds whose first read decides the column's first frame. Computer names
+  /// label the agent groups, so the Members column waits for them too.
+  List<WorkspaceEntityKind> get waitKinds => [
+    if (w.server != null) ...[
+      if (!widget.computers && w.can('viewAgents')) WorkspaceEntityKind.agents,
+      if (!widget.computers && showHumans) WorkspaceEntityKind.members,
+      if (w.can('viewMachines')) WorkspaceEntityKind.computers,
+    ],
+  ];
+
+  /// Kinds whose failure is reported; group names are auxiliary.
+  List<WorkspaceEntityKind> get errorKinds => widget.computers
+      ? [WorkspaceEntityKind.computers]
+      : [
+          if (w.can('viewAgents')) WorkspaceEntityKind.agents,
+          if (showHumans) WorkspaceEntityKind.members,
+        ];
+
   @override
   void initState() {
     super.initState();
-    startManagement();
-    bindEvents();
+    _authority = authority;
+    bind();
   }
 
-  void bindEvents() {
-    events?.cancel();
-    events = w.client.events.listen((event) {
-      if (event.name.startsWith('agent:') ||
-          event.name.startsWith('machine:') ||
-          event.name.startsWith('server:member')) {
-        reload();
-      }
-    });
+  void bind() {
+    _listened?.removeListener(workspaceChanged);
+    _directory?.removeListener(directoryChanged);
+    _listened = w..addListener(workspaceChanged);
+    _directory = w.entityDirectory..addListener(directoryChanged);
+    w.entityDirectory.ensure(waitKinds, retryFailed: true);
+  }
+
+  void workspaceChanged() {
+    if (!mounted || _authority == authority) return;
+    authorityChanged();
+  }
+
+  void authorityChanged() => setState(resetAuthority);
+
+  /// A new account, workspace, role or visibility retires the open menu and
+  /// remembered folds; the rows follow the directory's own fencing.
+  void resetAuthority() {
+    _authority = authority;
+    agentMenu.close();
+    collapsedMachineGroups.clear();
+    w.entityDirectory.ensure(waitKinds);
+  }
+
+  void directoryChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void didUpdateWidget(DesktopDirectoryView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != w) {
-      rebindManagementController();
-      bindEvents();
+    if (!identical(oldWidget.controller, w)) {
+      bind();
+      resetAuthority();
     } else if (oldWidget.computers != widget.computers) {
-      refreshAuthority();
+      resetAuthority();
     }
   }
 
   @override
   void dispose() {
-    events?.cancel();
+    _listened?.removeListener(workspaceChanged);
+    _directory?.removeListener(directoryChanged);
     agentMenu.dispose();
     super.dispose();
   }
 
-  @override
-  void clearData() {
-    agentMenu.close();
-    agents = [];
-    humans = [];
-    computers = [];
-    collapsedMachineGroups.clear();
-  }
+  List<Map<String, dynamic>> rows(WorkspaceEntityKind kind) =>
+      w.server == null ? const [] : w.entityDirectory.rows(kind);
 
-  @override
-  Future<void> loadData(int request, int generation) async {
-    if (w.server == null) {
-      clearData();
-      return;
-    }
-    final server = w.server!.id;
-    Future<List<Map<String, dynamic>>> read(String path, String key) async {
-      final value = await w.query(path);
-      return managementRows(value is Map ? value[key] : value);
-    }
-
-    if (widget.computers) {
-      final rows = w.can('viewMachines')
-          ? await read('/servers/$server/machines', 'machines')
-          : <Map<String, dynamic>>[];
-      if (accepts(generation, request)) {
-        computers = rows;
-      }
-      return;
-    }
-    final showHumans =
-        w.can('viewMembers') &&
-        !(w.server!.string('role') == 'member' &&
-            w.server!.json['hideHumansFromMembers'] == true);
-    Future<List<Map<String, dynamic>>> readGroupMachines() async {
-      if (!w.can('viewMachines')) return const [];
-      try {
-        return await read('/servers/$server/machines', 'machines');
-      } catch (_) {
-        // Auxiliary names may be unavailable. Never discard accepted members
-        // or infer machine access from an agent's machineId.
-        return const [];
-      }
-    }
-
-    final results = await Future.wait([
-      w.can('viewAgents')
-          ? read('/agents', 'agents')
-          : Future.value(<Map<String, dynamic>>[]),
-      showHumans
-          ? read('/servers/$server/members', 'members')
-          : Future.value(<Map<String, dynamic>>[]),
-      readGroupMachines(),
-    ]);
-    if (accepts(generation, request)) {
-      agents = results[0].where((row) => row['deletedAt'] == null).toList();
-      humans = results[1];
-      computers = results[2];
-    }
-  }
+  /// After the user's own creation the affected list is re-read in place.
+  Future<void> reload(WorkspaceEntityKind kind) =>
+      w.entityDirectory.refresh(kind, force: true);
 
   Future<void> register(bool computer) async {
     final captured = authority;
@@ -146,7 +135,9 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
       context,
       w,
       computers: computer,
-      onCreated: reload,
+      onCreated: () => reload(
+        computer ? WorkspaceEntityKind.computers : WorkspaceEntityKind.agents,
+      ),
       authorized: () => mounted && captured == authority,
     );
   }
@@ -165,7 +156,9 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
         onPressed: () async {
           final captured = authority;
           await showManagedAgentForm(context, w);
-          if (mounted && captured == authority) await reload();
+          if (mounted && captured == authority) {
+            await reload(WorkspaceEntityKind.agents);
+          }
         },
       ),
       RaftMenuEntry(
@@ -259,7 +252,10 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
     );
   }
 
-  List<Widget> agentMachineGroups(List<Map<String, dynamic>> rows) {
+  List<Widget> agentMachineGroups(
+    List<Map<String, dynamic>> rows,
+    List<Map<String, dynamic>> computers,
+  ) {
     final groups = <String, List<Map<String, dynamic>>>{};
     for (final value in rows) {
       final machine = value['machineId'];
@@ -288,6 +284,18 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final directory = w.entityDirectory;
+    final loading = waitKinds.any((kind) => !directory.settled(kind));
+    final error = errorKinds.any((kind) => directory.state(kind).error != null);
+    final computers = w.can('viewMachines')
+        ? rows(WorkspaceEntityKind.computers)
+        : const <Map<String, dynamic>>[];
+    final agents = !widget.computers && w.can('viewAgents')
+        ? rows(WorkspaceEntityKind.agents)
+        : const <Map<String, dynamic>>[];
+    final humans = !widget.computers && showHumans
+        ? rows(WorkspaceEntityKind.members)
+        : const <Map<String, dynamic>>[];
     Widget section(
       String label,
       List<Map<String, dynamic>> rows,
@@ -330,7 +338,7 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
                 ? agentsExpanded
                 : humansExpanded))
           if (kind == DesktopContentKind.agent)
-            ...agentMachineGroups(rows)
+            ...agentMachineGroups(rows, computers)
           else
             for (final value in rows) row(value, kind),
       ],
@@ -350,7 +358,7 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
           : RaftChatSidebarHeading(
               label: widget.computers ? 'Computers' : 'Members',
             ),
-      body: loading && agents.isEmpty && humans.isEmpty && computers.isEmpty
+      body: loading
           ? Center(
               child: Text(
                 raftText(context, 'Loading...'),
@@ -361,7 +369,7 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
               key: const Key('desktop-directory-list'),
               padding: recipe.contentInset(headerInFlow: true),
               children: [
-                if (error != null)
+                if (error)
                   Semantics(
                     liveRegion: true,
                     child: Text(
@@ -373,9 +381,7 @@ class _DesktopDirectoryViewState extends ManagementState<DesktopDirectoryView> {
                 else ...[
                   if (w.can('viewAgents'))
                     section('Agents', agents, DesktopContentKind.agent),
-                  if (w.can('viewMembers') &&
-                      !(w.server?.string('role') == 'member' &&
-                          w.server?.json['hideHumansFromMembers'] == true))
+                  if (showHumans)
                     section('Humans', humans, DesktopContentKind.human),
                 ],
               ],
