@@ -29,11 +29,11 @@
   "widget.progress": 17,
   "widget.scaffold": 10,
   "widget.select": 8,
-  "widget.snackbar": 36,
+  "widget.snackbar": 34,
   "widget.surface": 10,
   "widget.text_field": 26,
   "widget.toggle": 1,
-  "widget.tooltip": 4
+  "widget.tooltip": 3
  },
  "files": {
   "apps/raft_flutter/lib/features/account_auth_previews.dart": {
@@ -144,7 +144,7 @@
    "style.dimension": 4,
    "style.edge_insets": 3,
    "style.sized_box": 2,
-   "widget.snackbar": 8,
+   "widget.snackbar": 6,
    "widget.toggle": 1
   },
   "apps/raft_flutter/lib/features/desktop_master_detail.dart": {
@@ -215,8 +215,7 @@
    "style.dimension": 2,
    "style.edge_insets": 1,
    "style.material_colors": 1,
-   "style.sized_box": 2,
-   "widget.tooltip": 1
+   "style.sized_box": 2
   },
   "apps/raft_flutter/lib/features/locale_settings_page.dart": {
    "style.edge_insets": 2,

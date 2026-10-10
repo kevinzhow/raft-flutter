@@ -66,6 +66,7 @@ class RaftSystemBarSurface extends StatelessWidget {
         ThemeData.estimateBrightnessForColor(statusBarBackground),
         // ds-allow: Android system-bar icon contrast from the bar colour.
         navigationBackground: ThemeData.estimateBrightnessForColor(
+          // ds-allow: Android navigation-bar contrast falls back to the scaffold.
           navigationBarBackground ?? theme.scaffoldBackgroundColor,
         ),
       ),
