@@ -15,6 +15,7 @@ import '../data/activity_done_state.dart';
 import '../data/source_read_all_transport.dart';
 import '../data/resource_row_reconcile.dart';
 import '../data/resource_snapshot_cache.dart';
+import '../data/task_board_reconcile.dart';
 import 'search_home.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -286,6 +287,14 @@ class _ResourceViewState extends State<ResourceView> {
   final Map<String, List<Map<String, dynamic>>> lanes = {};
   final Map<String, String?> laneCursors = {};
   final Set<String> laneBusy = {};
+
+  /// Bumped whenever the lanes are replaced rather than revalidated; a lane
+  /// page requested before that never appends to the replacement.
+  int laneGeneration = 0;
+
+  /// Live task facts (by id; null = deleted) received while a task window was
+  /// in flight. They are newer than that response and are applied over it.
+  final taskTouched = <String, Map<String, dynamic>?>{};
   String? cursor;
   bool hasMore = false;
   int requestGeneration = 0;
@@ -336,9 +345,100 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
 
+  /// The server Tasks page keeps its board and list across navigation.
+  bool get taskSnapshotted =>
+      widget.section == 'tasks' && widget.channelId == null;
+  ScrollController? taskListScroll, taskBoardScroll;
+  double taskListOffset = 0, taskBoardOffset = 0;
+
+  bool restoreTaskSnapshot() {
+    final snapshot = w.resourceSnapshots.read<TaskSnapshot>(
+      widget.section,
+      identityAuthority,
+    );
+    taskListOffset = snapshot?.listOffset ?? 0;
+    taskBoardOffset = snapshot?.boardOffset ?? 0;
+    // Children unmount before this state disposes; track the offsets live.
+    taskListScroll = ScrollController(initialScrollOffset: taskListOffset)
+      ..addListener(() {
+        final scroll = taskListScroll;
+        if (scroll != null && scroll.positions.length == 1) {
+          taskListOffset = scroll.offset;
+        }
+      });
+    taskBoardScroll = ScrollController(initialScrollOffset: taskBoardOffset)
+      ..addListener(() {
+        final scroll = taskBoardScroll;
+        if (scroll != null && scroll.positions.length == 1) {
+          taskBoardOffset = scroll.offset;
+        }
+      });
+    if (snapshot == null) return false;
+    // The user's layout survives; the viewport default applies only once.
+    initializedTaskLayout = true;
+    taskLayout = snapshot.layout;
+    filter = snapshot.filter;
+    rowsView = snapshot.view;
+    rows = snapshot.rows;
+    cursor = snapshot.cursor;
+    hasMore = snapshot.hasMore;
+    totalCount = snapshot.totalCount;
+    lanes
+      ..clear()
+      ..addAll(snapshot.lanes);
+    laneCursors
+      ..clear()
+      ..addAll(snapshot.laneCursors);
+    taskAdvanced
+      ..clear()
+      ..channels.addAll(snapshot.channels)
+      ..creators.addAll(snapshot.creators)
+      ..assignees.addAll(snapshot.assignees);
+    collapsedTaskStatuses
+      ..clear()
+      ..addAll(snapshot.collapsed);
+    loading = false;
+    // Channels lost while the page was away never reappear from the cache.
+    refilterRows(lostChannels(snapshot.channelAccess, acceptedAccess));
+    return true;
+  }
+
+  void saveTaskSnapshot() {
+    if (identityAuthority != acceptedIdentity ||
+        loading ||
+        error != null ||
+        rowsView == null) {
+      w.resourceSnapshots.remove(widget.section);
+      return;
+    }
+    w.resourceSnapshots.write(
+      widget.section,
+      TaskSnapshot(
+        identity: acceptedIdentity!,
+        layout: taskLayout,
+        view: rowsView,
+        filter: filter,
+        rows: rows,
+        cursor: cursor,
+        hasMore: hasMore,
+        totalCount: totalCount,
+        lanes: Map.of(lanes),
+        laneCursors: Map.of(laneCursors),
+        channels: Set.of(taskAdvanced.channels),
+        creators: Set.of(taskAdvanced.creators),
+        assignees: Set.of(taskAdvanced.assignees),
+        collapsed: Set.of(collapsedTaskStatuses),
+        channelAccess: acceptedAccess,
+        listOffset: taskListOffset,
+        boardOffset: taskBoardOffset,
+      ),
+    );
+  }
+
   bool restoreSnapshot() {
+    if (taskSnapshotted) return restoreTaskSnapshot();
     if (!snapshotted) return false;
-    final snapshot = w.resourceSnapshots.read(
+    final snapshot = w.resourceSnapshots.read<ResourceSnapshot>(
       widget.section,
       identityAuthority,
     );
@@ -384,6 +484,7 @@ class _ResourceViewState extends State<ResourceView> {
   }
 
   void saveSnapshot() {
+    if (taskSnapshotted) return saveTaskSnapshot();
     if (!snapshotted) return;
     if (identityAuthority != acceptedIdentity ||
         loading ||
@@ -533,6 +634,11 @@ class _ResourceViewState extends State<ResourceView> {
     if (lost.isEmpty) return;
     bool keep(Map row) => !rowChannelIds(row).any(lost.contains);
     rows = rows.where(keep).toList();
+    for (final MapEntry(key: status, value: lane) in lanes.entries.toList()) {
+      if (lane.any((row) => !keep(row))) {
+        lanes[status] = lane.where(keep).toList();
+      }
+    }
     if (selectedSearchKey case final key?
         when key.startsWith('message:') &&
             !rows.any((row) => 'message:${row['id']}' == key)) {
@@ -565,6 +671,8 @@ class _ResourceViewState extends State<ResourceView> {
     lanes.clear();
     laneCursors.clear();
     laneBusy.clear();
+    laneGeneration++;
+    taskTouched.clear();
     cursor = null;
     hasMore = false;
     activityGroups = [];
@@ -644,7 +752,7 @@ class _ResourceViewState extends State<ResourceView> {
     refreshTimer?.cancel();
     closeDialogs();
     if (sameIdentity &&
-        ['activity', 'saved', 'search'].contains(widget.section)) {
+        ['activity', 'saved', 'tasks', 'search'].contains(widget.section)) {
       // Channel facts changed under the same principal and role. Only rows of
       // a channel that is actually no longer visible leave; the rest (and the
       // query, filters, loaded pages and scroll position) stay on screen.
@@ -654,6 +762,15 @@ class _ResourceViewState extends State<ResourceView> {
         return;
       }
       setState(() => refilterRows(lost));
+      if (widget.section == 'tasks' &&
+          !replacing &&
+          rowsView != null &&
+          acceptsTaskChannel &&
+          !channelsGained(previousAccess, access)) {
+        // Source keeps the task store live through task events; a channel
+        // that only changed or left needs no lane reload.
+        return;
+      }
       // A first window still in flight keeps its skeleton until this
       // replacement request settles.
       unawaited(load(keep: true, quietErrors: rows.isNotEmpty));
@@ -670,6 +787,16 @@ class _ResourceViewState extends State<ResourceView> {
     unawaited(activateSearchMemory(restore: false));
     load();
   }
+
+  /// A channel newly listed or joined can add rows no loaded window has.
+  bool channelsGained(
+    Map<String, Map<String, dynamic>> previous,
+    Map<String, Map<String, dynamic>> next,
+  ) => next.entries.any((entry) {
+    final before = previous[entry.key];
+    return before == null ||
+        before['joined'] != true && entry.value['joined'] == true;
+  });
 
   /// Source MessageSearchPage keeps its query, filters and results across
   /// channel directory changes (they are not inputs of its search request).
@@ -779,7 +906,9 @@ class _ResourceViewState extends State<ResourceView> {
               event.name.startsWith('scope_read:') ||
               event.name.startsWith('thread:') ||
               event.name == 'sync:resume:response',
-        'tasks' => event.name.startsWith('task:'),
+        // Source catchUpServerTasksOnReconnect: events missed while the
+        // socket was down are recovered by revalidating the loaded lanes.
+        'tasks' => event.name.startsWith('task:') || event.name == 'connected',
         'agents' => event.name.startsWith('agent:'),
         'computers' =>
           event.name.startsWith('machine:') || event.name.startsWith('daemon:'),
@@ -788,6 +917,7 @@ class _ResourceViewState extends State<ResourceView> {
       };
       if (relevant) {
         if (widget.section == 'activity') patchActivity(event);
+        if (widget.section == 'tasks' && patchTasks(event)) return;
         final scope = authority;
         refreshTimer?.cancel();
         refreshTimer = Timer(const Duration(milliseconds: 150), () {
@@ -837,6 +967,150 @@ class _ResourceViewState extends State<ResourceView> {
           }(),
     ];
     if (changed) setState(() => rows = next);
+  }
+
+  /// Source taskRealtimeSync: task:created/updated/deleted upsert, move or
+  /// remove the single task by id. False when the payload does not identify
+  /// a task, so the caller revalidates the loaded windows instead.
+  bool patchTasks(RaftEvent event) {
+    final payload = event.payload;
+    if (payload is! Map) return false;
+    if (payload['serverId'] is String &&
+        payload['serverId'] != w.client.serverId) {
+      return true;
+    }
+    Map<String, dynamic>? task(Object? raw) => raw is Map && raw['id'] is String
+        ? Map<String, dynamic>.from(raw)
+        : null;
+    final patches = <String, Map<String, dynamic>?>{};
+    switch (event.name) {
+      case 'task:created':
+        final list = payload['tasks'] is List
+            ? payload['tasks'] as List
+            : [payload['task']];
+        for (final raw in list) {
+          final next = task(raw);
+          if (next == null) return false;
+          patches[next['id'] as String] = next;
+        }
+      case 'task:updated':
+        final next =
+            task(payload['task']) ??
+            (payload['status'] is String ? task(payload) : null);
+        if (next == null) return false;
+        patches[next['id'] as String] = next;
+      case 'task:deleted':
+        final id =
+            payload['taskId'] ?? task(payload['task'])?['id'] ?? payload['id'];
+        if (id is! String) return false;
+        patches[id] = null;
+      default:
+        return false;
+    }
+    if (patches.isEmpty) return false;
+    // A window in flight predates these facts; they are applied over it.
+    taskTouched.addAll(patches);
+    final before = rows;
+    applyTaskPatches(patches);
+    if (!identical(before, rows)) setState(() {});
+    return true;
+  }
+
+  /// Whether [task] belongs to this page and its current view.
+  bool taskBelongs(Map<String, dynamic> task) {
+    if (!raftTaskStatuses.contains(task['status'])) return false;
+    if (taskLayout != 'board' && filter != 'all' && task['status'] != filter) {
+      return false;
+    }
+    if (widget.channelId != null) return task['channelId'] == widget.channelId;
+    // Source shouldIncludeInServerTasks.
+    final type = task['channelType'];
+    if (type is String && !['channel', 'private', 'joint'].contains(type)) {
+      return false;
+    }
+    final channel = [
+      ...w.channels,
+      ...w.dms,
+    ].where((c) => c.id == task['channelId']).firstOrNull;
+    return channel == null || w.can('viewChannel', resource: channel);
+  }
+
+  /// The accepted task with [id], wherever it is shown.
+  Map<String, dynamic>? taskById(Object? id) =>
+      id is! String ? null : rows.where((row) => row['id'] == id).firstOrNull;
+
+  /// Apply live task facts (null = deleted) to the board lanes or the list
+  /// in place. Unchanged rows keep their objects; [rows] is replaced only
+  /// when something changed. Callers rebuild.
+  void applyTaskPatches(Map<String, Map<String, dynamic>?> patches) {
+    if (patches.isEmpty) return;
+    final board = taskLayout == 'board';
+    var changed = false;
+    for (final MapEntry(key: id, value: incoming) in patches.entries) {
+      String? from;
+      var index = -1;
+      Map<String, dynamic>? existing;
+      if (board) {
+        for (final MapEntry(key: status, value: lane) in lanes.entries) {
+          index = lane.indexWhere((row) => row['id'] == id);
+          if (index >= 0) {
+            from = status;
+            existing = lane[index];
+            break;
+          }
+        }
+      } else {
+        index = rows.indexWhere((row) => row['id'] == id);
+        if (index >= 0) existing = rows[index];
+      }
+      var next = incoming == null
+          ? null
+          : existing == null
+          ? incoming
+          : mergeTaskFields(existing, incoming);
+      if (next != null && next['channelName'] == null) {
+        final name = [
+          ...w.channels,
+          ...w.dms,
+        ].where((c) => c.id == next!['channelId']).firstOrNull?.name;
+        if (name != null) next = {...next, 'channelName': name};
+      }
+      if (next != null && !taskBelongs(next)) next = null;
+      if (existing != null && next != null && rowDeepEquals(existing, next)) {
+        continue;
+      }
+      if (board) {
+        final to = next?['status'] as String?;
+        if (from != null && from == to) {
+          lanes[from] = [...lanes[from]!]..[index] = next!;
+        } else {
+          if (from != null) lanes[from] = [...lanes[from]!]..removeAt(index);
+          if (to != null) {
+            final placed = insertTask(
+              lanes[to] ?? const [],
+              next!,
+              more: laneCursors[to] != null,
+            );
+            if (placed != null) lanes[to] = placed;
+          }
+        }
+        changed = true;
+      } else if (existing != null) {
+        rows = next == null
+            ? ([...rows]..removeAt(index))
+            : ([...rows]..[index] = next);
+        if (next == null && totalCount != null) totalCount = totalCount! - 1;
+        changed = true;
+      } else if (next != null) {
+        // The list presents rows in Source sort order (visibleRows).
+        rows = [next, ...rows];
+        if (totalCount != null) totalCount = totalCount! + 1;
+        changed = true;
+      }
+    }
+    if (!changed) return;
+    if (board) rows = lanes.values.expand((r) => r).toList();
+    dragFeedbackRevision.value++;
   }
 
   /// Source socketBridge background reset: never blanks accepted rows and
@@ -1087,6 +1361,8 @@ class _ResourceViewState extends State<ResourceView> {
   void dispose() {
     saveSnapshot();
     listScroll?.dispose();
+    taskListScroll?.dispose();
+    taskBoardScroll?.dispose();
     dragFeedbackRevision.value++;
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => dragFeedbackRevision.dispose(),
@@ -1170,6 +1446,7 @@ class _ResourceViewState extends State<ResourceView> {
         loading = true;
         error = null;
         laneBusy.clear();
+        laneGeneration++;
         if (!append &&
             ['search', 'saved', 'activity'].contains(widget.section) &&
             !enabledActivity &&
@@ -1182,28 +1459,63 @@ class _ResourceViewState extends State<ResourceView> {
     }
     activeLoad = request;
     activeAppend = append;
+    if (widget.section == 'tasks' && !append) taskTouched.clear();
     if (enabledActivity && ['saved', 'done'].contains(filter) && !append) {
       unawaited(loadActivityFacets(scope));
     }
     try {
       if (widget.section == 'tasks' && taskLayout == 'board') {
+        final boardView = jsonEncode([taskPath, 'board']);
+        // Source loadServerTaskStatusPage: a background revalidation spans
+        // each lane's loaded window instead of resetting it to one page.
+        final revalidate = keep && rowsView == boardView;
+        final windows = {
+          for (final status in raftTaskStatuses)
+            status: revalidate
+                ? (lanes[status]?.length ?? 0).clamp(30, 100).toInt()
+                : 30,
+        };
         final pages = await Future.wait(
           raftTaskStatuses.map(
             (status) => w.query(
               taskPath,
-              query: {'status': status, 'detail': 'summary', 'limit': 30},
+              query: {
+                'status': status,
+                'detail': 'summary',
+                'limit': windows[status],
+              },
             ),
           ),
         );
         if (!accepts(scope, request)) return;
+        final fetched = {
+          for (var i = 0; i < raftTaskStatuses.length; i++)
+            raftTaskStatuses[i]: (pages[i]['tasks'] as List)
+                .map((r) => Map<String, dynamic>.from(r))
+                .toList(),
+        };
+        final fetchedIds = {
+          for (final lane in fetched.values)
+            for (final row in lane) row['id'],
+        };
         setState(() {
           for (var i = 0; i < raftTaskStatuses.length; i++) {
-            final status = raftTaskStatuses[i], page = pages[i];
-            lanes[status] = (page['tasks'] as List)
-                .map((r) => Map<String, dynamic>.from(r))
-                .toList();
-            laneCursors[status] = page['next_cursor'];
+            final status = raftTaskStatuses[i];
+            final window = reconcileTaskWindow(
+              fetched: fetched[status]!,
+              current: lanes[status] ?? const [],
+              fetchedCursor: pages[i]['next_cursor'] as String?,
+              currentCursor: laneCursors[status],
+              window: revalidate ? windows[status]! : 1 << 30,
+              fetchedIds: fetchedIds,
+            );
+            lanes[status] = window.rows;
+            laneCursors[status] = window.cursor;
           }
+          rowsView = boardView;
+          if (keep) error = null;
+          applyTaskPatches(taskTouched);
+          taskTouched.clear();
           rows = lanes.values.expand((r) => r).toList();
           dragFeedbackRevision.value++;
         });
@@ -1232,6 +1544,10 @@ class _ResourceViewState extends State<ResourceView> {
       final windowSize = keep
           ? rows.length.clamp(pageSize, 100).toInt()
           : pageSize;
+      // A background revalidation of the task list spans its loaded pages.
+      final taskListWindow = widget.section == 'tasks' && keep
+          ? rows.length.clamp(50, 100).toInt()
+          : 50;
       final params = widget.section == 'search'
           ? advanced.search(query.text, offset: append ? rows.length : 0)
           : ['saved', 'activity'].contains(widget.section)
@@ -1251,7 +1567,7 @@ class _ResourceViewState extends State<ResourceView> {
               if (widget.section == 'tasks') 'detail': 'summary',
               if (query.text.trim().isNotEmpty && widget.section != 'tasks')
                 'q': query.text.trim(),
-              'limit': 50,
+              'limit': taskListWindow,
               if (append && widget.section == 'tasks' && cursor != null)
                 'cursor': cursor,
               if (widget.section != 'tasks') 'offset': append ? rows.length : 0,
@@ -1302,8 +1618,28 @@ class _ResourceViewState extends State<ResourceView> {
           unreadDelta -= known.cleared;
         }
         final List<Map<String, dynamic>> nextRows;
+        var nextCursor = value is Map ? value['next_cursor'] as String? : null;
         if (append) {
-          nextRows = [...rows, ...accepted];
+          final known = {for (final row in rows) rowKey(row)};
+          nextRows = [
+            ...rows,
+            // A live-inserted task may also arrive on its page.
+            ...accepted.where(
+              (row) =>
+                  widget.section != 'tasks' || !known.contains(rowKey(row)),
+            ),
+          ];
+        } else if (keep && view == rowsView && widget.section == 'tasks') {
+          final window = reconcileTaskWindow(
+            fetched: accepted,
+            current: rows,
+            fetchedCursor: nextCursor,
+            currentCursor: cursor,
+            window: taskListWindow,
+            fetchedIds: {for (final row in accepted) row['id']},
+          );
+          nextRows = window.rows;
+          nextCursor = window.cursor;
         } else if (keep &&
             view == rowsView &&
             ['activity', 'saved'].contains(widget.section)) {
@@ -1367,10 +1703,14 @@ class _ResourceViewState extends State<ResourceView> {
               value is Map) {
             acceptActivityFacets(value, rows);
           }
-          cursor = value is Map ? value['next_cursor'] as String? : null;
+          cursor = nextCursor;
           hasMore = widget.section == 'tasks'
               ? cursor != null
               : value is Map && value['hasMore'] == true;
+          if (widget.section == 'tasks' && !append) {
+            applyTaskPatches(taskTouched);
+            taskTouched.clear();
+          }
         });
         if (widget.section == 'activity' &&
             !['saved', 'done'].contains(filter) &&
@@ -1412,12 +1752,30 @@ class _ResourceViewState extends State<ResourceView> {
     final scope = sourceScope ?? authority;
     if (!accepts(scope)) return;
     try {
-      await w.client.request(method, path, data: data);
+      final result = await w.client.request(method, path, data: data);
       if (!accepts(scope)) return;
       await w.refreshUnread();
+      if (!accepts(scope)) return;
+      // Source taskStore applies the task a mutation returns (or removes the
+      // deleted one) instead of reloading every lane.
+      final deleted = RegExp(r'^/tasks/([^/]+)$').firstMatch(path)?.group(1);
+      final task = result is Map && result['task'] is Map
+          ? Map<String, dynamic>.from(result['task'] as Map)
+          : null;
+      if (widget.section == 'tasks' &&
+          rows.isNotEmpty &&
+          (method == 'DELETE' && deleted != null ||
+              task != null && task['id'] is String)) {
+        final patch = method == 'DELETE' && deleted != null
+            ? <String, Map<String, dynamic>?>{deleted: null}
+            : {task!['id'] as String: task};
+        taskTouched.addAll(patch);
+        setState(() => applyTaskPatches(patch));
+        return;
+      }
       // Revalidate in place: an accepted list never blanks behind its own
       // mutation (Mark all read, Remove saved message, task status).
-      if (accepts(scope)) await load(keep: rows.isNotEmpty);
+      await load(keep: rows.isNotEmpty);
     } catch (e) {
       fail(e, scope);
     }
@@ -3101,6 +3459,7 @@ class _ResourceViewState extends State<ResourceView> {
     return ColoredBox(
       color: t.colors[t.brutal ? 'color-white' : 'layer-canvas-muted']!,
       child: ListView(
+        controller: taskListScroll,
         padding: RaftTaskSectionRecipe(t).viewportInset,
         children: [
           for (final status in raftTaskStatuses.where(
@@ -3839,7 +4198,7 @@ class _ResourceViewState extends State<ResourceView> {
 
   Future<void> moreLane(String status) async {
     final cursor = laneCursors[status],
-        request = requestGeneration,
+        lane = laneGeneration,
         scope = authority;
     if (cursor == null || laneBusy.contains(status)) return;
     setState(() => laneBusy.add(status));
@@ -3853,39 +4212,69 @@ class _ResourceViewState extends State<ResourceView> {
           'cursor': cursor,
         },
       );
-      if (!accepts(scope, request)) return;
+      // A background revalidation keeps the lane's cursor; a replaced lane
+      // (or a new authority) never receives this page.
+      if (!accepts(scope) ||
+          lane != laneGeneration ||
+          laneCursors[status] != cursor) {
+        return;
+      }
       setState(() {
-        final ids = lanes[status]!.map((r) => r['id']).toSet();
-        lanes[status]!.addAll(
-          (page['tasks'] as List)
+        final ids = {
+          for (final rows in lanes.values)
+            for (final row in rows) row['id'],
+        };
+        lanes[status] = [
+          ...?lanes[status],
+          ...(page['tasks'] as List)
               .map((r) => Map<String, dynamic>.from(r))
-              .where((r) => ids.add(r['id'])),
-        );
+              // Newer live facts win over this page.
+              .where(
+                (r) =>
+                    !taskTouched.containsKey(r['id']) ||
+                    taskTouched[r['id']] != null,
+              )
+              .map(
+                (r) => switch (taskTouched[r['id']]) {
+                  final live? => mergeTaskFields(r, live),
+                  _ => r,
+                },
+              )
+              .where(
+                (r) => (r['status'] ?? status) == status && ids.add(r['id']),
+              ),
+        ];
         laneCursors[status] = page['next_cursor'];
         rows = lanes.values.expand((r) => r).toList();
+        dragFeedbackRevision.value++;
       });
     } catch (e) {
-      fail(e, scope, request: request);
+      if (lane == laneGeneration) fail(e, scope);
     } finally {
-      if (accepts(scope, request)) setState(() => laneBusy.remove(status));
+      if (mounted && laneBusy.contains(status)) {
+        setState(() => laneBusy.remove(status));
+      }
     }
   }
 
+  /// Task actions resolve the accepted task by id: a background refresh
+  /// replaces row objects, never the task a drag or menu refers to.
   bool canMoveTask(Map<String, dynamic> row, String scope, String next) {
+    final current = taskById(row['id']);
     if (!accepts(scope) ||
-        !rows.any((current) => identical(current, row)) ||
-        row['status'] == next ||
+        current == null ||
+        current['status'] == next ||
         !raftTaskStatuses.contains(next) ||
-        row['readOnlyReason'] != null ||
+        current['readOnlyReason'] != null ||
         w.server?.string('role') == 'guest' ||
         !w.channels.any(
-          (c) => c.id == row['channelId'] && c.joined && !c.archived,
+          (c) => c.id == current['channelId'] && c.joined && !c.archived,
         )) {
       return false;
     }
     final role = w.server?.string('role');
     return ['owner', 'admin'].contains(role) ||
-        (raftTaskTransitions[row['status']] ?? []).contains(next);
+        (raftTaskTransitions[current['status']] ?? []).contains(next);
   }
 
   Widget draggableTask(Map<String, dynamic> row, String scope) {
@@ -3894,13 +4283,15 @@ class _ResourceViewState extends State<ResourceView> {
     final payload = _TaskDrag(row, scope);
     final feedback = AnimatedBuilder(
       animation: dragFeedbackRevision,
-      builder: (context, _) =>
-          accepts(scope) && rows.any((current) => identical(current, row))
-          ? Material(
-              color: Colors.transparent,
-              child: SizedBox(width: 292, child: item(row)),
-            )
-          : const SizedBox.shrink(),
+      builder: (context, _) {
+        final current = accepts(scope) ? taskById(row['id']) : null;
+        return current != null
+            ? Material(
+                color: Colors.transparent,
+                child: SizedBox(width: 292, child: item(current)),
+              )
+            : const SizedBox.shrink();
+      },
     );
     return RaftDensityScope.of(context) == RaftDensity.touch
         ? LongPressDraggable<_TaskDrag>(
@@ -3923,6 +4314,7 @@ class _ResourceViewState extends State<ResourceView> {
     return ColoredBox(
       color: t.brutal ? t.panel : t.sidebar,
       child: SingleChildScrollView(
+        controller: taskBoardScroll,
         primary: false,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.all(16),
@@ -4015,7 +4407,12 @@ class _ResourceViewState extends State<ResourceView> {
                                         in (lanes[status] ?? []).where(
                                           matchesTask,
                                         ))
-                                      draggableTask(row, scope),
+                                      KeyedSubtree(
+                                        // The drag source follows its task
+                                        // when rows land above it.
+                                        key: ValueKey('task-drag-${row['id']}'),
+                                        child: draggableTask(row, scope),
+                                      ),
                                     if (!(lanes[status] ?? []).any(matchesTask))
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -4155,7 +4552,7 @@ class _ResourceViewState extends State<ResourceView> {
             );
             if (!accepts(scope)) return;
             await w.refreshUnread();
-            if (accepts(scope)) await load();
+            if (accepts(scope)) await load(keep: rows.isNotEmpty);
           } catch (e) {
             fail(e, scope);
             rethrow;
@@ -4234,7 +4631,7 @@ class _ResourceViewState extends State<ResourceView> {
     if (widget.onTask != null && (row['isLegacy'] == true || knownParent)) {
       final open = widget.onTask!;
       open(row, () async {
-        if (accepts(scope)) await load();
+        if (accepts(scope)) await load(keep: rows.isNotEmpty);
       });
       return;
     }
@@ -4245,7 +4642,7 @@ class _ResourceViewState extends State<ResourceView> {
       // The resource bucket gets its authoritative order/filter result again;
       // task mutations cannot leave a closed modal's card at the old status.
       onMutationAccepted: () async {
-        if (accepts(scope)) await load();
+        if (accepts(scope)) await load(keep: rows.isNotEmpty);
       },
       onFailure: (cause) {
         // Authorization failures revoke the entire accepted resource scope.

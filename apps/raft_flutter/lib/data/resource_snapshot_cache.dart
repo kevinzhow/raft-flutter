@@ -1,12 +1,18 @@
-/// Last accepted list presentation of a workspace page (Activity, Saved).
+/// Last accepted presentation of a workspace page.
 ///
-/// Source keeps its inbox store across navigation and only fetches the first
-/// window when the store is empty. Returning to a page shows this snapshot at
-/// once and revalidates it in the background. Snapshots are bound to the
+/// Source keeps its inbox and task stores across navigation and only fetches
+/// when the store is empty. Returning to a page shows its snapshot at once and
+/// revalidates it in the background. Snapshots are bound to the
 /// principal/server/role identity that accepted them and never cross it.
-class ResourceSnapshot {
+abstract class PageSnapshot {
+  const PageSnapshot({required this.identity});
+  final String identity;
+}
+
+/// Activity and Saved list snapshot.
+class ResourceSnapshot extends PageSnapshot {
   const ResourceSnapshot({
-    required this.identity,
+    required super.identity,
     required this.enabledActivity,
     required this.view,
     required this.rows,
@@ -28,7 +34,6 @@ class ResourceSnapshot {
     required this.scrollOffset,
   });
 
-  final String identity;
   final bool enabledActivity;
   final String? view;
   final List<Map<String, dynamic>> rows;
@@ -45,19 +50,55 @@ class ResourceSnapshot {
   final double scrollOffset;
 }
 
-class ResourceSnapshotCache {
-  final _snapshots = <String, ResourceSnapshot>{};
+/// Tasks page snapshot (Source taskStore serverTasks + serverTaskPages):
+/// board lanes with their loaded pages and cursors, the list window, the
+/// user's layout and filters, and where each was scrolled.
+class TaskSnapshot extends PageSnapshot {
+  const TaskSnapshot({
+    required super.identity,
+    required this.layout,
+    required this.view,
+    required this.filter,
+    required this.rows,
+    required this.cursor,
+    required this.hasMore,
+    required this.totalCount,
+    required this.lanes,
+    required this.laneCursors,
+    required this.channels,
+    required this.creators,
+    required this.assignees,
+    required this.collapsed,
+    required this.channelAccess,
+    required this.listOffset,
+    required this.boardOffset,
+  });
 
-  /// The snapshot of [section] accepted under exactly [identity], if any.
-  ResourceSnapshot? read(String section, String identity) {
+  final String layout, filter;
+  final String? view, cursor;
+  final List<Map<String, dynamic>> rows;
+  final bool hasMore;
+  final int? totalCount;
+  final Map<String, List<Map<String, dynamic>>> lanes;
+  final Map<String, String?> laneCursors;
+  final Set<String> channels, creators, assignees, collapsed;
+  final Map<String, Map<String, dynamic>> channelAccess;
+  final double listOffset, boardOffset;
+}
+
+class ResourceSnapshotCache {
+  final _snapshots = <String, PageSnapshot>{};
+
+  /// The [T] snapshot of [section] accepted under exactly [identity], if any.
+  T? read<T extends PageSnapshot>(String section, String identity) {
     final snapshot = _snapshots[section];
     if (snapshot == null) return null;
-    if (snapshot.identity == identity) return snapshot;
+    if (snapshot.identity == identity && snapshot is T) return snapshot;
     _snapshots.remove(section);
     return null;
   }
 
-  void write(String section, ResourceSnapshot snapshot) =>
+  void write(String section, PageSnapshot snapshot) =>
       _snapshots[section] = snapshot;
 
   void remove(String section) => _snapshots.remove(section);
