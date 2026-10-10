@@ -291,15 +291,19 @@ List<_BodyChunk> _splitBody(String prepared) {
 /// Reference preparation and block splitting are pure functions of the
 /// message text and its reference projection, so a row that is scrolled away
 /// and back (or rebuilt by an unrelated update) does not redo them.
-final _bodyChunkCache = RaftLruCache<_ReferencesKey, List<_BodyChunk>>(512);
+final _bodyChunkCache = RaftLruCache<_ReferencesKey, List<_BodyChunk>>(1024);
 
+/// Capacities cover a full 500-message channel window (two Markdown runs
+/// per message) so scrolling it end to end does not evict what the next
+/// pass needs.
+///
 /// Parsed Markdown trees keyed by their exact source. Every message body uses
 /// the same parser configuration (GitHub flavoured, reference sentinels).
 /// A tree is shared only when MarkdownBuilder cannot change it: the builder
 /// appends a placeholder to an empty list item after visiting it, which
 /// would alter a second build, so such sources are parsed per build.
 @visibleForTesting
-final raftMarkdownAstCache = RaftLruCache<String, List<md.Node>?>(512);
+final raftMarkdownAstCache = RaftLruCache<String, List<md.Node>?>(1024);
 
 List<md.Node> _parseMarkdownSource(String data) => md.Document(
   inlineSyntaxes: [_ReferenceSentinelSyntax()],
@@ -1337,7 +1341,7 @@ final _codeLanguageAliases = <String, String>{
 /// Highlighted code spans are immutable and depend only on these inputs, so
 /// a row that remounts, rebuilds or changes hover state reuses its tokens.
 final raftCodeSpanCache =
-    RaftLruCache<(String, String?, TextStyle, bool), TextSpan>(256);
+    RaftLruCache<(String, String?, TextStyle, bool), TextSpan>(512);
 
 TextSpan raftCodeSpan(
   String code,
