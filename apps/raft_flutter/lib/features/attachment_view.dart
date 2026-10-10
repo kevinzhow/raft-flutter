@@ -101,8 +101,8 @@ class _AttachmentViewState extends State<AttachmentView> {
     beginImage();
   }
 
-  String fingerprint() => jsonEncode([
-    widget.messageId,
+  String fingerprint({bool withMessage = true}) => jsonEncode([
+    withMessage ? widget.messageId : null,
     widget.exportMode,
     for (final key in [
       'id',
@@ -152,6 +152,17 @@ class _AttachmentViewState extends State<AttachmentView> {
     if (oldWidget.controller == w &&
         oldWidget.files == widget.files &&
         nextFingerprint == metadataFingerprint) {
+      return;
+    }
+    // An optimistic row's attachment (no message yet) adopting the accepted
+    // message keeps the loaded preview; authority is still read per use.
+    if (oldWidget.controller == w &&
+        oldWidget.files == widget.files &&
+        oldWidget.messageId == null &&
+        widget.messageId != null &&
+        oldWidget.exportMode == widget.exportMode &&
+        fingerprint(withMessage: false) == metadataFingerprint) {
+      metadataFingerprint = nextFingerprint;
       return;
     }
     oldWidget.controller.removeListener(scopeChanged);

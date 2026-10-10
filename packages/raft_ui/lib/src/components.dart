@@ -1583,6 +1583,7 @@ class RaftComposer extends StatefulWidget {
     this.suggestionOverlay,
     this.bottomSafeInset = 0,
     this.submitBusy = false,
+    this.clearOnSubmit = false,
     this.variant = RaftComposerVariant.normal,
     this.hint = 'Message',
     this.autofocus = false,
@@ -1610,6 +1611,11 @@ class RaftComposer extends StatefulWidget {
   final Widget? taskAction, accessoryRow, suggestionOverlay;
   final double bottomSafeInset;
   final bool submitBusy;
+
+  /// Web MessageInput submit: the editor clears as the message is handed off
+  /// (the host presents it optimistically) and stays usable for the next one.
+  /// A rejected send merges its text back ahead of anything typed since.
+  final bool clearOnSubmit;
   final RaftComposerVariant variant;
   final String hint;
 
@@ -1873,6 +1879,7 @@ class _RaftComposerState extends State<RaftComposer> {
         !widget.canSend ||
         (text.isEmpty && widget.pendingLabel == null))
       return;
+    if (widget.clearOnSubmit) return handOff(draft, text, forceTask);
     setState(() => sending = true);
     updateSuggestionPortal();
     try {
@@ -1902,6 +1909,39 @@ class _RaftComposerState extends State<RaftComposer> {
         updateSuggestionPortal();
       }
     }
+  }
+
+  Future<void> handOff(String draft, String text, bool forceTask) async {
+    final submitted = Map.of(mentions);
+    final selected = submitted.values
+        .where((m) => raftStructuredMentionAppears(text, m['name'] as String))
+        .map((m) => Map<String, dynamic>.from(m))
+        .toList();
+    final submit = forceTask
+        ? widget.onForceTaskSendWithMentions ?? widget.onSendWithMentions
+        : widget.onSendWithMentions;
+    mentions.clear();
+    controller.clear();
+    // Release the sent draft's insertion handle (see [send]).
+    focus.context?.findAncestorStateOfType<EditableTextState>()?.hideToolbar();
+    final succeeded = submit == null
+        ? await widget.onSend(text)
+        : await submit(text, selected);
+    if (succeeded || !mounted) return;
+    // Web `mergeFailedSendIntoDraft`.
+    final current = controller.text;
+    final restored = current.isEmpty
+        ? draft
+        : draft.isEmpty
+        ? current
+        : '$draft${draft.endsWith('\n') || current.startsWith('\n') ? '' : '\n'}$current';
+    for (final entry in submitted.entries) {
+      mentions.putIfAbsent(entry.key, () => entry.value);
+    }
+    controller.value = TextEditingValue(
+      text: restored,
+      selection: TextSelection.collapsed(offset: restored.length),
+    );
   }
 
   @override

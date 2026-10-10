@@ -72,7 +72,12 @@ void main() {
       );
       await tester.runAsync(() async {
         button.onPressed!();
-        for (var i = 0; i < 100 && editor.text.isNotEmpty; i++) {
+        // The editor clears on submit (Web MessageInput); wait for the ACK.
+        for (
+          var i = 0;
+          i < 100 && !w.messages.any((m) => m.id == 'sent');
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 10));
         }
       });
@@ -152,7 +157,9 @@ void main() {
         });
         await Future<void>.delayed(const Duration(milliseconds: 50));
       });
-      expect(oldController.text, 'Old pending draft');
+      // Web MessageInput clears the editor on submit; the late ACK neither
+      // restores it nor touches the next channel's draft.
+      expect(oldController.text, isEmpty);
       expect(w.drafts[w.draftScope()], 'New scope draft');
       expect(w.messages.any((m) => m.id == 'ack'), isFalse);
       await tester.pumpWidget(const SizedBox());
@@ -228,7 +235,12 @@ void main() {
       for (var i = 0; i < 30; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      final target = find.byKey(const ValueKey('message-rich-next'));
+      // A row sent from this session keeps its optimistic presentation key.
+      final target = find.byKey(
+        ValueKey(
+          'message-${w.messageKey(w.messages.singleWhere((m) => m.id == 'rich-next'))}',
+        ),
+      );
       expect(target, findsOneWidget);
       expect(
         find.descendant(of: target, matching: find.byType(RaftMermaidBlock)),

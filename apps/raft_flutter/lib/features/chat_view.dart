@@ -194,7 +194,7 @@ class _RaftChatViewState extends State<RaftChatView>
   final focusAnchors = <String, GlobalKey>{};
   Future<void> updates = Future.value();
   WorkspaceController get w => widget.controller;
-  List<RaftMessage> get rows => widget.thread ? w.replies : w.messages;
+  List<RaftMessage> get rows => w.timeline(thread: widget.thread);
   @override
   void initState() {
     super.initState();
@@ -215,7 +215,7 @@ class _RaftChatViewState extends State<RaftChatView>
         messages: [
           for (final m in rows)
             chat.Message.custom(
-              id: m.id,
+              id: w.messageKey(m),
               authorId: m.senderId.isEmpty ? 'system' : m.senderId,
               createdAt: m.createdAt,
               metadata: m.json,
@@ -640,14 +640,15 @@ class _RaftChatViewState extends State<RaftChatView>
       if (!currentBinding()) return;
       final id = widget.thread ? w.threadChannelId : w.channel?.id;
       for (final row in rows) {
-        if ((row.json['reactions'] as List? ?? []).isNotEmpty) {
+        if (!WorkspaceController.isPendingSend(row) &&
+            (row.json['reactions'] as List? ?? []).isNotEmpty) {
           w.hydrateReactionViewer(row);
         }
       }
       final projected = rows
           .map(
             (m) => chat.Message.custom(
-              id: m.id,
+              id: w.messageKey(m),
               authorId: m.senderId.isEmpty ? 'system' : m.senderId,
               createdAt: m.createdAt,
               metadata: m.json,
@@ -710,10 +711,25 @@ class _RaftChatViewState extends State<RaftChatView>
         }
       }
       adapterParent = parentProjection;
+      // Optimistic sends are ordinary diffs at the latest end, also in an
+      // empty timeline; the first reply creating its thread channel keeps the
+      // same timeline instead of staging a new context.
+      bool optimisticOnly(List<chat.Message> list) =>
+          list.isNotEmpty &&
+          list.every((m) => m.metadata?['pendingSend'] == true);
+      if (widget.thread &&
+          scope == null &&
+          id != null &&
+          adapterWindow == window &&
+          optimisticOnly(adapter.messages)) {
+        scope = id;
+      }
       if (scope != id ||
           (!loading &&
               (adapterWindow != window ||
-                  adapter.messages.isEmpty && projected.isNotEmpty))) {
+                  adapter.messages.isEmpty &&
+                      projected.isNotEmpty &&
+                      !optimisticOnly(projected)))) {
         if (scope != id) {
           alsoCreateTask = false;
           selectionToast.clear();
@@ -775,7 +791,8 @@ class _RaftChatViewState extends State<RaftChatView>
           window,
           !pendingAcceptedMount &&
                   adapter.messages.any(
-                    (m) => m.id == (preservedContextTarget ?? target),
+                    (m) =>
+                        m.metadata?['id'] == (preservedContextTarget ?? target),
                   )
               ? preservedContextTarget ?? target
               : null,
@@ -931,7 +948,7 @@ class _RaftChatViewState extends State<RaftChatView>
     ScrollController scroll,
     String target,
   ) {
-    final found = owner.messages.indexWhere((m) => m.id == target);
+    final found = owner.messages.indexWhere((m) => m.metadata?['id'] == target);
     if (found < 0) return null;
     // A reversed list builds the newest message at sliver index 0.
     final index = bottomAnchored ? owner.messages.length - 1 - found : found;
@@ -1445,6 +1462,8 @@ class _RaftChatViewState extends State<RaftChatView>
 
     final images = all.where(raster).toList();
     if (images.isEmpty) return null;
+    final pending = WorkspaceController.isPendingSend(message);
+    final messageId = pending ? null : message.id;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1460,13 +1479,16 @@ class _RaftChatViewState extends State<RaftChatView>
                     : null,
               ),
           ],
-          itemBuilder: (index, extent, fit) => AttachmentView(
-            key: ValueKey('attachment-${images[index]['id']}'),
-            controller: w,
-            metadata: images[index],
-            messageId: message.id,
-            imageExtent: extent,
-            imageFit: fit,
+          itemBuilder: (index, extent, fit) => sendStateAttachment(
+            pending,
+            AttachmentView(
+              key: ValueKey('attachment-${images[index]['id']}'),
+              controller: w,
+              metadata: images[index],
+              messageId: messageId,
+              imageExtent: extent,
+              imageFit: fit,
+            ),
           ),
         ),
         if (all.any((a) => !raster(a))) ...[
@@ -1476,11 +1498,14 @@ class _RaftChatViewState extends State<RaftChatView>
             runSpacing: 8,
             children: [
               for (final a in all.where((a) => !raster(a)))
-                AttachmentView(
-                  key: ValueKey('attachment-${a['id']}'),
-                  controller: w,
-                  metadata: a,
-                  messageId: message.id,
+                sendStateAttachment(
+                  pending,
+                  AttachmentView(
+                    key: ValueKey('attachment-${a['id']}'),
+                    controller: w,
+                    metadata: a,
+                    messageId: messageId,
+                  ),
                 ),
             ],
           ),
@@ -1764,7 +1789,9 @@ class _RaftChatViewState extends State<RaftChatView>
       ),
     );
     return RaftAvatar(
-      key: ValueKey('message-avatar-${message.id}-${source.identity}'),
+      key: ValueKey(
+        'message-avatar-${w.messageKey(message)}-${source.identity}',
+      ),
       name: message.author,
       kind: kind,
       content: avatarContent,
@@ -1845,16 +1872,28 @@ class _RaftChatViewState extends State<RaftChatView>
     );
   }
 
+  /// Web AttachmentChip `isOptimistic`: dimmed and inert until the message
+  /// exists. One wrapper shape for every row keeps the attachment state when
+  /// the server copy replaces the optimistic row.
+  Widget sendStateAttachment(bool pending, Widget child) => IgnorePointer(
+    ignoring: pending,
+    child: Opacity(opacity: pending ? .7 : 1, child: child),
+  );
+
   Widget messageTile(RaftMessage m, {bool parent = false}) {
+    // Optimistic rows share the final row's key and widget shape; only the
+    // actions that need a server message id stay inert until it arrives.
+    final key = w.messageKey(m);
+    final pending = WorkspaceController.isPendingSend(m);
     if (m.string('messageType') == 'system') {
       return RaftSystemMessage(
-        key: ValueKey('message-${m.id}'),
+        key: ValueKey('message-$key'),
         content: m.content,
         timestamp: m.createdAt == null ? '' : clock(m.createdAt!),
       );
     }
     return RaftMessageTile(
-      key: ValueKey('message-${m.id}'),
+      key: ValueKey('message-$key'),
       rowContext: widget.thread
           ? RaftMessageRowContext.thread
           : RaftMessageRowContext.main,
@@ -1879,7 +1918,13 @@ class _RaftChatViewState extends State<RaftChatView>
       modelLabel: currentAgentModel(m),
       subtitle: senderSubtitle(m),
       onAuthor: senderMention(m),
-      hoverToolbar: messageToolbar(m, parent: parent),
+      hoverToolbar: IgnorePointer(
+        ignoring: pending,
+        child: ExcludeFocus(
+          excluding: pending,
+          child: messageToolbar(m, parent: parent),
+        ),
+      ),
       coarsePointer: RaftDensityScope.of(context) == RaftDensity.touch,
       popupOpen: pickerMessageId == m.id || menuMessageId == m.id,
       highlighted: w.highlightedMessageId == m.id,
@@ -1891,9 +1936,17 @@ class _RaftChatViewState extends State<RaftChatView>
       // Source renders a badge only for deactivated/departed identities.
       // Sender type is already represented by the scoped avatar, not an Agent badge.
       departureLabel: senderDepartureLabel(m),
-      onActions: () => actions(m, parentTile: parent),
-      onActionsAt: (anchor) => actions(m, anchor: anchor, parentTile: parent),
-      onThread: parent || widget.thread ? null : () => w.openThread(m),
+      onActions: () {
+        if (!pending) actions(m, parentTile: parent);
+      },
+      onActionsAt: (anchor) {
+        if (!pending) actions(m, anchor: anchor, parentTile: parent);
+      },
+      onThread: parent || widget.thread
+          ? null
+          : () {
+              if (!pending) w.openThread(m);
+            },
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       taskReference: taskReference(m),
       threadRepliesBadge: threadRepliesBadge(m, parentTile: parent),
@@ -1909,11 +1962,14 @@ class _RaftChatViewState extends State<RaftChatView>
           ? []
           : m.attachments,
       attachmentGallery: attachmentGallery(m),
-      attachmentBuilder: (metadata) => AttachmentView(
-        key: ValueKey('attachment-${metadata['id']}'),
-        controller: w,
-        metadata: metadata,
-        messageId: m.id,
+      attachmentBuilder: (metadata) => sendStateAttachment(
+        pending,
+        AttachmentView(
+          key: ValueKey('attachment-${metadata['id']}'),
+          controller: w,
+          metadata: metadata,
+          messageId: pending ? null : m.id,
+        ),
       ),
       reactions: (m.json['reactions'] as List? ?? [])
           .whereType<Map>()
@@ -1927,9 +1983,15 @@ class _RaftChatViewState extends State<RaftChatView>
       failedReactionEmojis: reactionFailures[m.id] == null
           ? const {}
           : {reactionFailures[m.id]!},
-      onReaction: canReact ? (emoji) => react(m, emoji) : null,
+      onReaction: canReact
+          ? (emoji) {
+              if (!pending) react(m, emoji);
+            }
+          : null,
       onReactionAdd: canReact
-          ? (anchor) => openReactionPicker(m, anchor)
+          ? (anchor) {
+              if (!pending) openReactionPicker(m, anchor);
+            }
           : null,
     );
   }
@@ -1949,7 +2011,7 @@ class _RaftChatViewState extends State<RaftChatView>
     ),
     beginningLabel: raftText(context, 'Beginning of replies'),
     replyCountLabel: raftFormat(context, '{count} replies', {
-      'count': w.replies.length,
+      'count': rows.length,
     }),
   );
 
@@ -1980,7 +2042,8 @@ class _RaftChatViewState extends State<RaftChatView>
 
   Widget datedTile(RaftMessage message, {bool captureFocus = true}) {
     final stamp = message.createdAt;
-    final index = windowIndexOf(message.id);
+    final key = w.messageKey(message);
+    final index = windowIndexOf(key);
     DateTime? previous;
     if (index != null) {
       previous = index > 0
@@ -1989,7 +2052,7 @@ class _RaftChatViewState extends State<RaftChatView>
     } else {
       // A row of the retained (previous) window while a new one is staged.
       final current = rows;
-      final at = current.indexWhere((row) => row.id == message.id);
+      final at = current.indexWhere((row) => w.messageKey(row) == key);
       previous = at > 0 ? current[at - 1].createdAt : null;
     }
     final showDay =
@@ -1998,7 +2061,7 @@ class _RaftChatViewState extends State<RaftChatView>
             timeFormatter.dayKey(previous) != timeFormatter.dayKey(stamp));
     return RaftRowExtentRecorder(
       scope: rowExtentScope(context),
-      id: message.id,
+      id: key,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -2009,11 +2072,11 @@ class _RaftChatViewState extends State<RaftChatView>
                     : RaftTimelineHost.chatPanel,
               ))
             RaftConversationDateHeader(
-              key: ValueKey('message-day-${message.id}'),
+              key: ValueKey('message-day-$key'),
               label: timeFormatter.dayLabel(stamp),
             ),
           Padding(
-            key: ValueKey('message-wrapper-${message.id}'),
+            key: ValueKey('message-wrapper-$key'),
             padding: const RaftTimelineCompositionRecipe().messageInset,
             child: tile(message, captureFocus: captureFocus),
           ),
@@ -2184,7 +2247,7 @@ class _RaftChatViewState extends State<RaftChatView>
                   ? SliverMainAxisGroup(
                       slivers: [
                         threadHeader!,
-                        if (!loading && w.replies.isEmpty)
+                        if (!loading && rows.isEmpty)
                           SliverFillRemaining(
                             hasScrollBody: false,
                             child: RaftEmptyState(
@@ -2359,7 +2422,9 @@ class _RaftChatViewState extends State<RaftChatView>
           alsoCreateTask) {
         setState(() => alsoCreateTask = false);
       }
-      return accepted && currentComposer();
+      // The composer handed this text off on submit; only a rejected send
+      // gives it back, even if the conversation changed meanwhile.
+      return accepted;
     }
 
     if (!widget.thread && w.channel == null) {
@@ -2450,6 +2515,7 @@ class _RaftChatViewState extends State<RaftChatView>
             )
           else
             RaftComposer(
+              clearOnSubmit: true,
               accessoryRow: composerAccessory(),
               autofocus:
                   widget.thread &&
