@@ -100,6 +100,7 @@ export 'src/attachment_tokens.dart';
 export 'src/mounted_task_chip.dart';
 
 export 'src/popover_surface.dart';
+export 'src/quick_switcher.dart';
 
 export 'src/conversation_surface.dart';
 

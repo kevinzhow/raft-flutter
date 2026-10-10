@@ -1,10 +1,8 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:raft_ui/recipes.dart' as rui;
 
 import 'quick_switcher_model.dart';
 import 'resource_cards.dart';
@@ -71,16 +69,8 @@ class QuickSwitcher extends StatefulWidget {
   static const debounce = Duration(milliseconds: 200);
 
   /// Source searchOverlayCardStyle fallback placement and size.
-  static Rect cardRect(Size viewport) {
-    final width = math.min(720.0, viewport.width * .92);
-    final natural = math.min(680.0, viewport.height * .8);
-    final top = math.max(
-      viewport.height * .08 + 16,
-      (viewport.height - natural) / 2,
-    );
-    final height = math.max(0.0, math.min(natural, viewport.height - top - 24));
-    return Rect.fromLTWH((viewport.width - width) / 2, top, width, height);
-  }
+  static Rect cardRect(Size viewport) =>
+      RaftQuickSwitcherMetrics.cardRect(viewport);
 
   @override
   State<QuickSwitcher> createState() => _QuickSwitcherState();
@@ -286,7 +276,6 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
   }
 
   Widget _card(BuildContext context) {
-    final t = RaftTokens.of(context);
     final data = widget.data();
     final list = query.isEmpty ? const <SearchEntity>[] : rank(data);
     final exact = query.isEmpty ? null : findExactDestination(query, list);
@@ -303,110 +292,43 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         : rows.indexWhere((r) => r.key == selectedKey);
     if (selected < 0) selected = 0;
     final selectedRow = rows.isEmpty ? null : rows[selected];
-    final line = t.colors['line-muted']!;
-    final recipe = RaftSearchRecipe(t, mobile: false);
     return Focus(
       onKeyEvent: (_, event) => keyEvent(rows, selected, event),
-      child: Semantics(
-        container: true,
-        explicitChildNodes: true,
-        namesRoute: true,
-        scopesRoute: true,
-        label: raftText(context, 'Search'),
-        child: RaftPopoverSurface(
-          child: ColoredBox(
-            color: t.popover,
-            child: Column(
-              key: const Key('quick-switcher'),
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _header(context, t, line),
-                Expanded(
-                  child: _body(
-                    context,
-                    t,
-                    recipe,
-                    data,
-                    rows,
-                    selectedRow,
-                    exact,
-                  ),
-                ),
-                _footer(context, t, recipe, line),
-              ],
-            ),
-          ),
+      child: RaftQuickSwitcherFrame(
+        semanticLabel: raftText(context, 'Search'),
+        selectLabel: raftText(context, 'Select'),
+        openLabel: raftText(context, 'Open'),
+        field: RaftQuickSwitcherField(
+          controller: controller,
+          focusNode: focus,
+          hint: raftText(context, 'Channels, people, messages…'),
+          clearLabel: raftText(context, 'Clear search'),
+          onClear: () {
+            controller.clear();
+            focus.requestFocus();
+          },
         ),
+        body: _body(context, data, rows, selectedRow, exact),
       ),
     );
   }
 
-  Widget _header(BuildContext context, RaftTokens t, Color line) =>
-      DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: t.brutal ? t.strong : line,
-              width: t.brutal ? 2 : 1,
-            ),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              RaftIcon(RaftGlyph.search, size: 16, color: t.muted),
-              const SizedBox(width: 8),
-              Expanded(
-                child: RaftSearchInput(
-                  key: const Key('quick-switcher-input'),
-                  controller: controller,
-                  focusNode: focus,
-                  hint: raftText(context, 'Channels, people, messages…'),
-                  clearLabel: raftText(context, 'Clear search'),
-                  showEscape: true,
-                  onClear: () {
-                    controller.clear();
-                    focus.requestFocus();
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-
   Widget _body(
     BuildContext context,
-    RaftTokens t,
-    RaftSearchRecipe recipe,
     QuickSwitcherData data,
     List<_Row> rows,
     _Row? selectedRow,
     SearchEntity? exact,
   ) {
-    Widget heading(String label, RaftGlyph? glyph) => Padding(
-      padding: RaftSearchHomeRecipe.headingInset,
-      child: Row(
-        children: [
-          if (glyph != null) ...[
-            RaftIcon(glyph, size: 12, color: t.muted),
-            const SizedBox(width: 6),
-          ],
-          Expanded(
-            child: Text(raftText(context, label), style: recipe.sectionTitle),
-          ),
-        ],
-      ),
-    );
     Widget entityRow(_Row row, {bool hint = false}) => KeyedSubtree(
       key: keyFor(row.key),
-      child: _EntityRow(
-        entity: row.entity!,
-        data: data,
-        selected: selectedRow?.key == row.key,
-        returnHint: hint,
-        onPressed: () => openRow(row),
+      child: _entityRow(
+        context,
+        row.entity!,
+        data,
+        selectedRow?.key == row.key,
+        hint,
+        () => openRow(row),
       ),
     );
     if (query.isEmpty) {
@@ -418,18 +340,16 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
           glyph: RaftGlyph.search,
         );
       }
-      return ListView(
+      return RaftQuickSwitcherList(
         key: const Key('quick-switcher-recent'),
         controller: scroll,
-        primary: false,
-        padding: const EdgeInsets.all(12),
+        compact: true,
         children: [
-          heading('Recent conversations', RaftGlyph.clock3),
-          for (final row in rows)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: entityRow(row, hint: true),
-            ),
+          RaftQuickSwitcherSection(
+            heading: raftText(context, 'Recent conversations'),
+            glyph: RaftGlyph.clock3,
+            children: [for (final row in rows) entityRow(row, hint: true)],
+          ),
         ],
       );
     }
@@ -444,254 +364,80 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     final empty =
         remaining.isEmpty && exact == null && messageRows.isEmpty && !searching;
     final allRow = rows.firstWhere((r) => r.all);
-    return ListView(
+    return RaftQuickSwitcherList(
       controller: scroll,
-      primary: false,
-      padding: const EdgeInsets.all(16),
       children: [
-        // Overlay head: the exact destination, then "Search for".
-        if (exact != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: entityRow(rows.first),
-          ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: KeyedSubtree(
-            key: keyFor(_allKey),
-            child: _AllResultsRow(
-              query: query,
-              selected: selectedRow?.key == _allKey,
-              onPressed: () => openRow(allRow),
-            ),
-          ),
-        ),
-        if (empty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Column(
-              key: const Key('quick-switcher-no-results'),
-              children: [
-                RaftIcon(RaftGlyph.search, size: 32, color: t.muted),
-                const SizedBox(height: 12),
-                Text(
-                  raftFormat(context, 'No results for "{query}"', {
-                    'query': query,
-                  }),
-                  textAlign: TextAlign.center,
-                  style: recipe.entityTitle.copyWith(color: t.muted),
+        RaftQuickSwitcherHead(
+          children: [
+            // Overlay head: the exact destination, then "Search for".
+            if (exact != null) entityRow(rows.first),
+            KeyedSubtree(
+              key: keyFor(_allKey),
+              child: RaftQuickSwitcherActionRow(
+                key: const Key('quick-switcher-all-results'),
+                glyph: RaftGlyph.search,
+                title: raftFormat(context, 'Search for “{query}”', {
+                  'query': query,
+                }),
+                subtitle: raftText(
+                  context,
+                  'Open the full results page with filters and context preview',
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  raftText(
-                    context,
-                    'Try different keywords or a shorter phrase.',
-                  ),
-                  textAlign: TextAlign.center,
-                  style: recipe.metadata,
-                ),
-              ],
-            ),
-          ),
-        if (remaining.isNotEmpty) ...[
-          heading('Server entities', null),
-          for (final row in remaining)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: entityRow(row),
-            ),
-          const SizedBox(height: 6),
-        ],
-        if (messageRows.isNotEmpty || searching) heading('Messages', null),
-        for (final row in messageRows)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: KeyedSubtree(
-              key: keyFor(row.key),
-              child: _MessageRow(
-                row: row.message!,
-                query: query,
-                selected: selectedRow?.key == row.key,
-                now: widget.clock?.call(),
-                onPressed: () => openRow(row),
+                selected: selectedRow?.key == _allKey,
+                onPressed: () => openRow(allRow),
               ),
             ),
-          ),
-        if (searching && messageRows.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: Text(
-              raftText(context, 'Searching…'),
-              key: const Key('quick-switcher-searching'),
-              style: recipe.metadata,
+          ],
+        ),
+        if (empty)
+          RaftQuickSwitcherNoResults(
+            key: const Key('quick-switcher-no-results'),
+            title: raftFormat(context, 'No results for "{query}"', {
+              'query': query,
+            }),
+            detail: raftText(
+              context,
+              'Try different keywords or a shorter phrase.',
             ),
+          ),
+        if (remaining.isNotEmpty)
+          RaftQuickSwitcherSection(
+            heading: raftText(context, 'Server entities'),
+            children: [for (final row in remaining) entityRow(row)],
+          ),
+        if (messageRows.isNotEmpty || searching)
+          RaftQuickSwitcherSection(
+            heading: raftText(context, 'Messages'),
+            children: [
+              for (final row in messageRows)
+                KeyedSubtree(
+                  key: keyFor(row.key),
+                  child: _messageRow(
+                    context,
+                    row.message!,
+                    selectedRow?.key == row.key,
+                    () => openRow(row),
+                  ),
+                ),
+              if (searching && messageRows.isEmpty)
+                RaftQuickSwitcherStatus(
+                  raftText(context, 'Searching…'),
+                  key: const Key('quick-switcher-searching'),
+                ),
+            ],
           ),
       ],
     );
   }
 
-  Widget _footer(
-    BuildContext context,
-    RaftTokens t,
-    RaftSearchRecipe recipe,
-    Color line,
-  ) => DecoratedBox(
-    decoration: BoxDecoration(
-      border: Border(
-        top: BorderSide(
-          color: t.brutal ? t.strong : line,
-          width: t.brutal ? 2 : 1,
-        ),
-      ),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        key: const Key('quick-switcher-footer'),
-        children: [
-          const _Kbd('↑'),
-          const SizedBox(width: 4),
-          const _Kbd('↓'),
-          const SizedBox(width: 4),
-          Text(
-            raftText(context, 'Select'),
-            style: recipe.metadata.copyWith(fontSize: 11),
-          ),
-          const SizedBox(width: 16),
-          const _Kbd('↵'),
-          const SizedBox(width: 4),
-          Text(
-            raftText(context, 'Open'),
-            style: recipe.metadata.copyWith(fontSize: 11),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _Kbd extends StatelessWidget {
-  const _Kbd(this.glyph);
-  final String glyph;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), rt = t.recipeTokens;
-    return ExcludeSemantics(
-      child: RaftRecipeBox(
-        style: rui.RaftKbdRecipe.resolve(theme: t.recipeTheme, tokens: rt).root,
-        tokens: rt,
-        child: Text(
-          glyph,
-          style: TextStyle(
-            fontSize: 11,
-            height: 1.4,
-            fontWeight: FontWeight.w700,
-            color: t.muted,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AllResultsRow extends StatelessWidget {
-  const _AllResultsRow({
-    required this.query,
-    required this.selected,
-    required this.onPressed,
-  });
-  final String query;
-  final bool selected;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = RaftSearchRecipe(t, mobile: false);
-    return RaftSearchResultSurface(
-      key: const Key('quick-switcher-all-results'),
-      entity: true,
-      selected: selected,
-      onPressed: onPressed,
-      child: Row(
-        children: [
-          _IconBox(glyph: RaftGlyph.search, tokens: t),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  raftFormat(context, 'Search for “{query}”', {'query': query}),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.entityTitle.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  raftText(
-                    context,
-                    'Open the full results page with filters and context preview',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.metadata.copyWith(fontWeight: FontWeight.w400),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          const _Kbd('↵'),
-        ],
-      ),
-    );
-  }
-}
-
-class _IconBox extends StatelessWidget {
-  const _IconBox({required this.glyph, required this.tokens});
-  final RaftGlyph glyph;
-  final RaftTokens tokens;
-  @override
-  Widget build(BuildContext context) {
-    final t = tokens, rt = t.recipeTokens;
-    return Container(
-      width: 32,
-      height: 32,
-      alignment: Alignment.center,
-      decoration: rui.RaftSearchEntityRecipe.resolve(
-        theme: t.recipeTheme,
-        tokens: rt,
-      ).entityIcon.decoration(rt),
-      child: RaftIcon(glyph, size: 16),
-    );
-  }
-}
-
-class _EntityRow extends StatelessWidget {
-  const _EntityRow({
-    required this.entity,
-    required this.data,
-    required this.selected,
-    required this.returnHint,
-    required this.onPressed,
-  });
-  final SearchEntity entity;
-  final QuickSwitcherData data;
-  final bool selected, returnHint;
-  final VoidCallback onPressed;
-
-  Widget leading(BuildContext context, RaftTokens t) {
+  Widget _leading(SearchEntity entity, QuickSwitcherData data) {
     if (entity.kind == 'channel') {
-      return _IconBox(
-        glyph: entity.row['type'] == 'private'
-            ? RaftGlyph.lock
-            : RaftGlyph.hash,
-        tokens: t,
+      return RaftQuickSwitcherIconBox(
+        entity.row['type'] == 'private' ? RaftGlyph.lock : RaftGlyph.hash,
       );
     }
     if (entity.kind == 'computer') {
-      return _IconBox(glyph: RaftGlyph.monitor, tokens: t);
+      return const RaftQuickSwitcherIconBox(RaftGlyph.monitor);
     }
     final agent = entity.kind == 'agent';
     final projection = projectSenderAvatar(
@@ -703,168 +449,84 @@ class _EntityRow extends StatelessWidget {
       currentUser: data.currentUser,
       requestSize: 32,
     );
-    return SizedBox(
-      width: 32,
-      height: 32,
-      child: RaftAvatar(
+    return RaftAvatar(
+      name: entity.title,
+      kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
+      mountedContext: RaftMountedAvatarContext.sidebarList,
+      content: RaftAvatarContent(
         name: entity.title,
-        kind: agent ? RaftAvatarKind.agent : RaftAvatarKind.human,
-        mountedContext: RaftMountedAvatarContext.sidebarList,
-        content: RaftAvatarContent(
-          name: entity.title,
-          kind: agent
-              ? RaftAvatarContentKind.agent
-              : RaftAvatarContentKind.human,
-          uploadedUrl: projection.uploadedUrl,
-          gravatarUrl: projection.gravatarUrl,
-          pixelKey: agent ? projection.pixelKey ?? 'robot' : null,
-          fallback: RaftMountedAvatarFallback(
-            avatarContext: RaftMountedAvatarContext.sidebarList,
-            identity: agent
-                ? RaftMountedAvatarIdentity.agent
-                : RaftMountedAvatarIdentity.human,
-            gravatar: projection.gravatarUrl != null,
-            initials: entity.title,
-          ),
+        kind: agent ? RaftAvatarContentKind.agent : RaftAvatarContentKind.human,
+        uploadedUrl: projection.uploadedUrl,
+        gravatarUrl: projection.gravatarUrl,
+        pixelKey: agent ? projection.pixelKey ?? 'robot' : null,
+        fallback: RaftMountedAvatarFallback(
+          avatarContext: RaftMountedAvatarContext.sidebarList,
+          identity: agent
+              ? RaftMountedAvatarIdentity.agent
+              : RaftMountedAvatarIdentity.human,
+          gravatar: projection.gravatarUrl != null,
+          initials: entity.title,
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = RaftSearchRecipe(t, mobile: false);
-    final badge = switch (entity.kind) {
+  Widget _entityRow(
+    BuildContext context,
+    SearchEntity entity,
+    QuickSwitcherData data,
+    bool selected,
+    bool hint,
+    VoidCallback onPressed,
+  ) {
+    final kind = switch (entity.kind) {
       'channel' => 'Channel',
       'computer' => 'Computer',
       'agent' => 'Agent',
       _ => 'Human',
     };
-    final archived = entity.row['archivedAt'] != null;
-    return RaftSearchResultSurface(
+    return RaftQuickSwitcherRow(
       key: ValueKey('quick-switcher-${entity.key}'),
-      entity: true,
+      leading: _leading(entity, data),
+      title: entity.title,
+      subtitle: raftText(context, entity.subtitle),
+      badges: [
+        raftText(context, kind),
+        if (entity.row['archivedAt'] != null)
+          '${RaftQuickSwitcherRow.warningPrefix}${raftText(context, 'Archived')}',
+      ],
       selected: selected,
+      returnHint: hint,
       onPressed: onPressed,
-      child: Row(
-        children: [
-          leading(context, t),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        entity.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: recipe.entityTitle.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    RaftBadge(
-                      label: raftText(context, badge),
-                      appearance: RaftBadgeRecipeAppearance.soft,
-                      variant: RaftBadgeRecipeVariant.muted,
-                      uppercase: true,
-                    ),
-                    if (archived) ...[
-                      const SizedBox(width: 4),
-                      RaftBadge(
-                        label: raftText(context, 'Archived'),
-                        appearance: RaftBadgeRecipeAppearance.soft,
-                        variant: RaftBadgeRecipeVariant.warning,
-                        uppercase: true,
-                      ),
-                    ],
-                  ],
-                ),
-                Text(
-                  raftText(context, entity.subtitle),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: recipe.metadata.copyWith(fontWeight: FontWeight.w400),
-                ),
-              ],
-            ),
-          ),
-          if (returnHint && selected) ...[
-            const SizedBox(width: 8),
-            const _Kbd('↵'),
-          ],
-        ],
-      ),
     );
   }
-}
 
-class _MessageRow extends StatelessWidget {
-  const _MessageRow({
-    required this.row,
-    required this.query,
-    required this.selected,
-    required this.onPressed,
-    this.now,
-  });
-  final Map<String, dynamic> row;
-  final String query;
-  final bool selected;
-  final DateTime? now;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = RaftSearchRecipe(t, mobile: false);
+  Widget _messageRow(
+    BuildContext context,
+    Map<String, dynamic> row,
+    bool selected,
+    VoidCallback onPressed,
+  ) {
     final thread = row['channelType'] == 'thread';
     final name = thread ? row['parentChannelName'] : row['channelName'];
     final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
-    final sender = '${row['senderName'] ?? ''}';
-    final time = resourceRelativeTime(
-      row['createdAt'] as String?,
-      now: now,
-      chinese: Localizations.localeOf(context).languageCode == 'zh',
-    );
-    return RaftSearchResultSurface(
+    return RaftQuickSwitcherMessageRow(
       key: ValueKey('quick-switcher-message:${row['id']}'),
+      where: '${dm ? '@' : '#'}${name ?? ''}',
+      thread: thread ? raftText(context, 'Thread').toLowerCase() : null,
+      sender: '${row['senderName'] ?? ''}',
+      time: resourceRelativeTime(
+        row['createdAt'] as String?,
+        now: widget.clock?.call(),
+        chinese: Localizations.localeOf(context).languageCode == 'zh',
+      ),
+      snippet: SearchHighlight(
+        text: '${row['snippet'] ?? row['content'] ?? ''}',
+        query: query,
+        style: raftQuickSwitcherSnippetStyle(RaftTokens.of(context)),
+      ),
       selected: selected,
       onPressed: onPressed,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                Text('${dm ? '@' : '#'}${name ?? ''}', style: recipe.metadata),
-                if (thread)
-                  Text(
-                    raftText(context, 'Thread').toLowerCase(),
-                    style: recipe.metadata,
-                  ),
-                if (sender.isNotEmpty) Text(sender, style: recipe.sender),
-                if (time.isNotEmpty) Text(time, style: recipe.timestamp),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-            child: SearchHighlight(
-              text: '${row['snippet'] ?? row['content'] ?? ''}',
-              query: query,
-              style: recipe.snippet,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

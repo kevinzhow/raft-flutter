@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import '../data/raft_location.dart';
 import '../data/recent_conversations.dart';
@@ -196,11 +197,10 @@ class QuickSwitcherHost {
     w.entityDirectory.ensureAuthors();
     final created = RawDialogRoute<void>(
       barrierDismissible: true,
-      barrierColor: Colors.transparent,
+      barrierColor: RaftQuickSwitcherLayer.barrierColor,
       barrierLabel: 'Close search',
       transitionDuration: Duration.zero,
-      pageBuilder: (_, _, _) => Material(
-        type: MaterialType.transparency,
+      pageBuilder: (_, _, _) => RaftQuickSwitcherLayer(
         child: QuickSwitcher(
           listenable: Listenable.merge([w, w.entityDirectory, recents]),
           data: data,

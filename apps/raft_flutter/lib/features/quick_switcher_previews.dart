@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raft_ui/previews.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'quick_switcher.dart';
 import 'quick_switcher_model.dart';
@@ -11,8 +12,7 @@ Widget quickSwitcherRecentPreview() => const _QuickSwitcherPreview();
 class _QuickSwitcherPreview extends StatelessWidget {
   const _QuickSwitcherPreview();
   @override
-  Widget build(BuildContext context) => Material(
-    type: MaterialType.transparency,
+  Widget build(BuildContext context) => RaftQuickSwitcherLayer(
     child: QuickSwitcher(
       listenable: ValueNotifier(0),
       data: () => QuickSwitcherData(
