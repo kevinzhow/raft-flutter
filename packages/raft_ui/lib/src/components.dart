@@ -1552,6 +1552,36 @@ class _RaftForceTaskSendIntent extends Intent {
   const _RaftForceTaskSendIntent();
 }
 
+/// Overrides the editor's [PasteTextIntent] (EditableText actions are
+/// overridable from ancestors). The host is asked for clipboard attachments
+/// first; only when it takes none does the editor's own text paste run.
+class _RaftPasteAction extends Action<PasteTextIntent> {
+  _RaftPasteAction(this.handler);
+  final Future<bool> Function()? Function() handler;
+
+  @override
+  bool isEnabled(PasteTextIntent intent) =>
+      callingAction?.isEnabled(intent) ?? true;
+
+  @override
+  Object? invoke(PasteTextIntent intent) {
+    final fallback = callingAction;
+    final take = handler();
+    if (take == null) return fallback?.invoke(intent);
+    take().then(
+      (taken) {
+        if (!taken && (fallback?.isEnabled(intent) ?? false)) {
+          fallback!.invoke(intent);
+        }
+      },
+      onError: (Object _) {
+        if (fallback?.isEnabled(intent) ?? false) fallback!.invoke(intent);
+      },
+    );
+    return null;
+  }
+}
+
 /// Controlled editor action seam; identity/authority belongs to the caller.
 /// Only the current mounted editor can accept an insertion, and offstage,
 /// disabled, IME-composing and busy editors reject it without moving focus.
@@ -1598,6 +1628,9 @@ class RaftComposer extends StatefulWidget {
     this.onForceTaskSendWithMentions,
     this.onSuggestionsRequested,
     this.handle,
+    this.onPasteAttachments,
+    this.onContentInserted,
+    this.frame,
   }) : assert(bottomSafeInset >= 0);
   final List<RaftComposerSuggestion> suggestions;
   final Future<bool> Function(String, List<Map<String, dynamic>>)?
@@ -1626,6 +1659,23 @@ class RaftComposer extends StatefulWidget {
   final String? pendingLabel;
   final String initialDraft;
   final ValueChanged<String>? onDraftChanged;
+
+  /// Web MessageInput `handlePaste`: a keyboard paste (Ctrl/Cmd+V) first asks
+  /// the host whether the clipboard carries files or an image. It resolves
+  /// true when it took them as attachments; the text paste is then skipped.
+  /// Otherwise the ordinary text paste runs unchanged.
+  final Future<bool> Function()? onPasteAttachments;
+
+  /// Rich content committed by a software keyboard (Android IME image,
+  /// GIF and sticker insertion). Null leaves the editor text-only.
+  final ValueChanged<KeyboardInsertedContent>? onContentInserted;
+
+  /// Host wrapper around the composer root (Web `ComposerRoot`), for
+  /// example a platform file drop target with its overlay. [enabled] is
+  /// false while the composer is disabled or not presented. Keep it set for
+  /// the composer's lifetime: adding or removing it remounts the editor.
+  final Widget Function(BuildContext context, Widget composer, bool enabled)?
+  frame;
   @override
   State<RaftComposer> createState() => _RaftComposerState();
 }
@@ -2101,10 +2151,18 @@ class _RaftComposerState extends State<RaftComposer> {
 
   // CSS places line-height leading evenly above and below the glyphs.
   @override
-  Widget build(BuildContext context) => DefaultTextHeightBehavior(
-    textHeightBehavior: raftCssTextHeightBehavior,
-    child: Builder(builder: buildContent),
-  );
+  Widget build(BuildContext context) {
+    final composer = DefaultTextHeightBehavior(
+      textHeightBehavior: raftCssTextHeightBehavior,
+      child: Builder(builder: buildContent),
+    );
+    return widget.frame?.call(
+          context,
+          composer,
+          presentationActive && widget.enabled,
+        ) ??
+        composer;
+  }
 
   Widget buildContent(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -2221,6 +2279,10 @@ class _RaftComposerState extends State<RaftComposer> {
                                               return null;
                                             },
                                           ),
+                                      if (widget.onPasteAttachments != null)
+                                        PasteTextIntent: _RaftPasteAction(
+                                          () => widget.onPasteAttachments,
+                                        ),
                                     },
                                     child: RaftCssLineBox(
                                       style: recipe.editorText,
@@ -2265,6 +2327,18 @@ class _RaftComposerState extends State<RaftComposer> {
                                         ),
                                         textCapitalization:
                                             TextCapitalization.sentences,
+                                        contentInsertionConfiguration:
+                                            widget.onContentInserted == null
+                                            ? null
+                                            : ContentInsertionConfiguration(
+                                                onContentInserted: (content) {
+                                                  if (presentationActive &&
+                                                      widget.enabled) {
+                                                    widget.onContentInserted
+                                                        ?.call(content);
+                                                  }
+                                                },
+                                              ),
                                       ),
                                     ),
                                   ),

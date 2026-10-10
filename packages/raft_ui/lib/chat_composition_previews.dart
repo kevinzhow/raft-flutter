@@ -204,3 +204,19 @@ class _TaskPreviewState extends State<_TaskPreview> {
     ],
   );
 }
+
+@RaftPreviews('Composer file drop overlay', size: Size(640, 240))
+Widget composerDropOverlayPreview() => Align(
+  alignment: Alignment.bottomCenter,
+  child: Stack(
+    children: [
+      RaftComposer(
+        initialDraft: 'Release notes draft',
+        onImagePick: () {},
+        onAttach: () {},
+        onSend: (_) async => false,
+      ),
+      const Positioned.fill(child: RaftComposerDropOverlay()),
+    ],
+  ),
+);

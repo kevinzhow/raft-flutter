@@ -29,6 +29,7 @@ import 'copy_selection_links.dart';
 import 'message_image_export.dart';
 import 'forward_messages_dialog.dart';
 import 'composer_directory.dart';
+import 'composer_attachment_input.dart';
 import 'sender_avatar_projection.dart';
 import 'message_reaction_projection.dart';
 import 'message_agent_presentation.dart';
@@ -2409,6 +2410,27 @@ class _RaftChatViewState extends State<RaftChatView>
             )
           else
             RaftComposer(
+              // Web MessageInput drag-and-drop, paste and keyboard images.
+              frame: (_, composer, enabled) => ComposerFileDropTarget(
+                controller: w,
+                thread: widget.thread,
+                active: () =>
+                    enabled && presentationActive && currentComposer(),
+                child: composer,
+              ),
+              onPasteAttachments: () => pasteComposerAttachments(
+                context,
+                w,
+                thread: widget.thread,
+                active: () => presentationActive && currentComposer(),
+              ),
+              onContentInserted: (content) => insertComposerContent(
+                context,
+                w,
+                content,
+                thread: widget.thread,
+                active: () => presentationActive && currentComposer(),
+              ),
               clearOnSubmit: true,
               accessoryRow: composerAccessory(),
               autofocus:

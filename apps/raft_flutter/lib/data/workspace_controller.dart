@@ -1108,6 +1108,19 @@ class WorkspaceController extends ChangeNotifier {
   String? composerErrorFor({bool thread = false}) =>
       composerErrors[draftScope(thread: thread)];
 
+  /// Web MessageInput `setError` outside a file selection (for example the
+  /// folder notices of a drop). Null clears the banner.
+  void setComposerError(String? message, {bool thread = false}) {
+    final scope = draftScope(thread: thread);
+    if (scope == null || composerErrors[scope] == message) return;
+    if (message == null) {
+      composerErrors.remove(scope);
+    } else {
+      composerErrors[scope] = message;
+    }
+    notifyListeners();
+  }
+
   /// Web `resolveAttachmentUploadLimitBytes`: the server ceiling from
   /// `GET /attachments/upload-capabilities`, or null when it is unusable.
   Future<int?> uploadLimitBytes() async {
