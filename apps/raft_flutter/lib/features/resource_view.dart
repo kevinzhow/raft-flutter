@@ -380,7 +380,7 @@ class _ResourceViewState extends State<ResourceView> {
     );
   }
   StreamSubscription<RaftEvent>? events;
-  Timer? refreshTimer;
+  Timer? refreshTimer, catalogTimer;
   WorkspaceController get w => widget.controller;
   String get taskPath => widget.channelId == null
       ? '/tasks/server'
@@ -684,21 +684,21 @@ class _ResourceViewState extends State<ResourceView> {
         return;
       }
       if (['search', 'saved'].contains(widget.section) &&
-          (event.name.startsWith('agent:') ||
-              event.name.startsWith('machine:') ||
-              event.name.startsWith('server:member'))) {
+          catalogEvent(event.name)) {
+        // Refresh the identity directory without clearing it or the user's
+        // sender filter; high-frequency presence events do not touch it.
         final scope = authority;
-        ++catalogRequest;
-        catalogScope = null;
-        setState(() {
-          searchPeople = [];
-          searchAgents = [];
-          searchComputers = [];
-          senders = [];
-          advanced.sender = null;
-          selectedSearchKey = null;
+        catalogTimer?.cancel();
+        catalogTimer = Timer(const Duration(milliseconds: 150), () {
+          if (!accepts(scope)) return;
+          catalogScope = null;
+          unawaited(loadSenders(scope));
         });
-        unawaited(loadSenders(scope));
+      }
+      if (['search', 'saved'].contains(widget.section) &&
+          event.name == 'message:updated') {
+        patchMessage(event.payload);
+        return;
       }
       final relevant = switch (widget.section) {
         'activity' =>
@@ -708,7 +708,6 @@ class _ResourceViewState extends State<ResourceView> {
               event.name.startsWith('thread:') ||
               event.name == 'sync:resume:response',
         'tasks' => event.name.startsWith('task:'),
-        'saved' || 'search' => event.name == 'message:updated',
         'agents' => event.name.startsWith('agent:'),
         'computers' =>
           event.name.startsWith('machine:') || event.name.startsWith('daemon:'),
@@ -724,6 +723,48 @@ class _ResourceViewState extends State<ResourceView> {
         });
       }
     });
+  }
+
+  static const presenceEvents = {
+    'agent:activity',
+    'agent:session',
+    'agent:seen',
+    'agent:read',
+  };
+  bool catalogEvent(String name) =>
+      !presenceEvents.contains(name) &&
+      (name.startsWith('agent:') ||
+          name.startsWith('machine:') ||
+          name.startsWith('server:member'));
+
+  /// message:updated is merge-only: patch the matching saved/search row by
+  /// message id instead of reloading the page.
+  void patchMessage(Object? payload) {
+    if (payload is! Map || payload['id'] is! String) return;
+    final id = payload['id'] as String;
+    final field = widget.section == 'saved' ? 'messageId' : 'id';
+    var changed = false;
+    final next = [
+      for (final row in rows)
+        if (row[field] != id)
+          row
+        else
+          () {
+            final merged = <String, dynamic>{
+              ...row,
+              for (final MapEntry(:key, :value) in payload.entries)
+                if (key is String &&
+                    !['id', 'channelId', 'messageId'].contains(key) &&
+                    (row.containsKey(key) || key == 'content') &&
+                    !(key == 'content' && value == null))
+                  key: value,
+            };
+            if (rowDeepEquals(merged, row)) return row;
+            changed = true;
+            return merged;
+          }(),
+    ];
+    if (changed) setState(() => rows = next);
   }
 
   /// Source socketBridge background reset: never blanks accepted rows and
@@ -995,6 +1036,7 @@ class _ResourceViewState extends State<ResourceView> {
     query.dispose();
     events?.cancel();
     refreshTimer?.cancel();
+    catalogTimer?.cancel();
     super.dispose();
   }
 
@@ -1630,7 +1672,10 @@ class _ResourceViewState extends State<ResourceView> {
   );
 
   Future<void> openSearchMessage(Map<String, dynamic> row, String scope) async {
-    if (!accepts(scope) || !rows.any((r) => identical(r, row))) return;
+    if (!accepts(scope) ||
+        !rows.any((r) => identical(r, row) || r['id'] == row['id'])) {
+      return;
+    }
     final channel = row['channelId'], message = row['id'];
     if (channel is! String || message is! String) return;
     setState(() => selectedSearchKey = 'message:$message');
@@ -3055,6 +3100,12 @@ class _ResourceViewState extends State<ResourceView> {
         searchPeople = people;
         searchAgents = agents;
         searchComputers = computers;
+        // A refreshed directory keeps the user's sender filter (with the
+        // current label when that sender is still listed).
+        if (advanced.sender case final selected?) {
+          advanced.sender =
+              options[selected.key] ?? advanced.sender;
+        }
         resolveRestoredSender();
       });
       if (widget.section == 'search') {

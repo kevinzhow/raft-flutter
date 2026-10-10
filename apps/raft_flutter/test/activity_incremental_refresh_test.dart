@@ -71,6 +71,8 @@ class ActivityWorkspace extends WorkspaceController {
   ];
   final inboxQueries = <Map<String, dynamic>>[];
   final savedQueries = <Map<String, dynamic>>[];
+  final searchQueries = <Map<String, dynamic>>[];
+  int agentQueries = 0;
   List<Map<String, dynamic>> saved = [
     for (var i = 0; i < 30; i++)
       {
@@ -90,7 +92,33 @@ class ActivityWorkspace extends WorkspaceController {
   Future<void> refreshUnread() async {}
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
-    if (path == '/agents' || path.endsWith('/members')) return [];
+    if (path == '/agents') {
+      agentQueries++;
+      return [
+        {'id': 'a1', 'name': 'helper', 'displayName': 'Helper'},
+      ];
+    }
+    if (path.endsWith('/members')) return [];
+    if (path == '/messages/search') {
+      searchQueries.add({...?query});
+      return {
+        'results': [
+          for (var i = 0; i < 5; i++)
+            {
+              'id': 'hit$i',
+              'channelId': 'ch$i',
+              'channelName': 'Channel $i',
+              'channelType': 'channel',
+              'senderId': 'bob',
+              'senderType': 'user',
+              'senderName': 'Bob',
+              'content': 'Search body $i',
+              'createdAt': '2026-10-10T00:00:00Z',
+            },
+        ],
+        'hasMore': false,
+      };
+    }
     if (path == '/channels/saved') {
       final offset = query?['offset'] as int? ?? 0,
           limit = query?['limit'] as int? ?? 20;
