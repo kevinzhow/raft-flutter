@@ -586,7 +586,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       enabled: canViewRuntimeUsage(w, m),
       runtimeId: rid,
       machineId: id,
-      label: name,
+      // Web aria-label: the chip's children (label + availability suffix)
+      // are not one string here, so it reads the provider name.
+      label: runtimeUsageProviderName(runtimeUsageProvider(rid)!),
       runtimeVersion: versions is Map ? versions[rid] as String? : null,
       chip: (status) =>
           RaftRuntimeChip(label: name, detected: true, trailing: status),

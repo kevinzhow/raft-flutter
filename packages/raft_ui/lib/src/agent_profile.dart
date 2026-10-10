@@ -109,8 +109,11 @@ class RaftRecipeBadge extends StatelessWidget {
       tokens: rt,
     ).root;
     final decoration = s.decoration(rt);
+    // The recipe's `uppercase` axis only transforms Brutal (`text-transform`).
+    final upper =
+        uppercase && '${s.properties['text-transform']}' == 'uppercase';
     final text = RaftCssText(
-      uppercase ? label.toUpperCase() : label,
+      upper ? label.toUpperCase() : label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: raftCssText.merge(

@@ -425,7 +425,7 @@ Text rendering uses the same Chromium flags as the official run (`--disable-lcd-
 --font-render-hinting=none`, see "Text rendering"), so remaining text
 differences are layout or style, not rasteriser noise.
 
-### Computers cases (39 surfaces x 3 themes = 117)
+### Computers cases (41 surfaces x 3 themes = 123)
 
 Derived from Web `Sidebar.tsx` computers mode + `ComputerRow`,
 `MachineDetailPanel.tsx`, `AddMachineDialog.tsx` + `ComputerCommandGuide.tsx`
@@ -445,10 +445,13 @@ at raft-source 26f77ef:
   install/setup commands expanded, restart in progress;
 * dialogs: restart/reset selected agents, stop agents, delete workspace,
   cannot delete (agents assigned), delete computer, Add Computer (type and
-  connect steps).
+  connect steps);
+* runtime usage (RuntimeAccountUsageChip, `computer-usage` fixture machine
+  with a fresh Claude snapshot and no Codex snapshot, times relative to the
+  fixture instant): Info section with the chip health Status, and the usage
+  hover card after hovering the Claude chip.
 
-Not covered on purpose: the runtime-usage popover behind each detected
-runtime chip (its own surface, fixture has no snapshot), CreateAgentDialog
+Not covered on purpose: CreateAgentDialog
 from "Create" (covered by the official create-agent cases), the Add
 Computer "connected" step (needs a live socket event).
 

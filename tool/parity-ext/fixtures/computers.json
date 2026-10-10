@@ -135,6 +135,36 @@
    "lastHeartbeat": null,
    "createdAt": "2026-06-18T00:00:00.000Z"
   },
+  "computer-usage": {
+   "id": "computer-usage",
+   "name": "Usage Rig",
+   "description": null,
+   "hostname": "computer-usage.local",
+   "os": "linux",
+   "status": "online",
+   "statusVersion": 1,
+   "apiKeyPrefix": null,
+   "runtimes": [
+    "claude",
+    "codex"
+   ],
+   "daemonVersion": "0.65.0",
+   "computerVersion": "0.0.50",
+   "isComputer": true,
+   "lastHeartbeat": null,
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "runtimeVersions": {
+    "claude": "2.1.3"
+   },
+   "creator": {
+    "id": "visual-user",
+    "name": "artin",
+    "displayName": "artin",
+    "avatarUrl": null,
+    "gravatarHash": null
+   },
+   "computerAttachedByCurrentUser": true
+  },
   "computer-mbp-one-click": {
    "id": "computer-mbp",
    "name": "Jiachengs-MacBook-Pro",
@@ -178,7 +208,10 @@
    "computer-disk",
    "computer-legacy"
   ],
-  "empty": []
+  "empty": [],
+  "usage": [
+   "computer-usage"
+  ]
  },
  "agents": [
   {
@@ -266,6 +299,48 @@
     "createdAt": "2026-06-18T00:00:00.000Z"
    },
    "apiKey": "slk_fixture_not_a_real_key"
+  },
+  "GET /servers/visual-server/machines/computer-usage/runtime-account-usage/claude": {
+   "state": "fresh",
+   "snapshot": {
+    "protocolVersion": 2,
+    "provider": "claude",
+    "collectedAt": "2026-06-19T12:25:00.000Z",
+    "staleAfter": "2026-06-19T13:25:00.000Z",
+    "collectorVersion": "1",
+    "accounts": [
+     {
+      "accountKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "planLabel": "Claude Max",
+      "maskedLabel": "art****@example.com",
+      "health": "ok",
+      "windows": [
+       {
+        "id": "five_hour",
+        "label": "5-hour",
+        "status": "ok",
+        "usedRatio": 0.42,
+        "resetsAt": "2026-06-19T15:30:00.000Z"
+       },
+       {
+        "id": "weekly",
+        "label": "Weekly",
+        "status": "limit_reached",
+        "usedRatio": 1,
+        "resetsAt": "2026-06-21T12:30:00.000Z"
+       }
+      ]
+     }
+    ]
+   }
+  },
+  "GET /servers/visual-server/machines/computer-usage/runtime-account-usage/codex": {
+   "state": "missing",
+   "snapshot": null
+  },
+  "POST /servers/visual-server/machines/computer-usage/runtime-account-usage/codex/refresh": {
+   "accepted": false,
+   "state": "computer_offline"
   }
  }
 }

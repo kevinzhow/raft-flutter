@@ -6848,6 +6848,324 @@
     "layoutDp": 1,
     "ignoreAntialiasing": true
    }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.info.brutal",
+   "title": "Computers detail: runtime usage health on Detected Runtimes (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 2000,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.info",
+      "extKind": "detail",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "computer-section-info",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.info.elegant",
+   "title": "Computers detail: runtime usage health on Detected Runtimes (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 2000,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.info",
+      "extKind": "detail",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "computer-section-info",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.info.elegant-dark",
+   "title": "Computers detail: runtime usage health on Detected Runtimes (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 2000,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.info",
+      "extKind": "detail",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "div.px-5.py-4.border-b:has(.gap-x-8)",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "computer-section-info",
+    "interactions": [],
+    "androidInteractions": []
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.info'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.card.brutal",
+   "title": "Computers detail: runtime usage hover card (brutal-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "brutal-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.card",
+      "extKind": "detail",
+      "parityTheme": "brutal-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "runtime-usage-card",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "role=button[name=\"Claude\"s]"
+     },
+     {
+      "type": "wait",
+      "ms": 600
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "runtime-usage-computer-usage-claude"
+     },
+     {
+      "type": "wait",
+      "ms": 300
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.card.elegant",
+   "title": "Computers detail: runtime usage hover card (elegant-light)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-light",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.card",
+      "extKind": "detail",
+      "parityTheme": "elegant-light",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "runtime-usage-card",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "role=button[name=\"Claude\"s]"
+     },
+     {
+      "type": "wait",
+      "ms": 600
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "runtime-usage-computer-usage-claude"
+     },
+     {
+      "type": "wait",
+      "ms": 300
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
+  },
+  {
+   "id": "components.computers.detail.runtime-usage.card.elegant-dark",
+   "title": "Computers detail: runtime usage hover card (elegant-dark)",
+   "captureType": "component-fixture",
+   "surface": "computers",
+   "category": "extension/computers",
+   "suite": "raft-flutter-extension",
+   "viewport": {
+    "width": 1280,
+    "height": 800,
+    "density": 1
+   },
+   "theme": "elegant-dark",
+   "locale": "en",
+   "variants": [
+    {
+     "id": "default",
+     "name": "Default",
+     "props": {
+      "extCase": "detail.runtime-usage.card",
+      "extKind": "detail",
+      "parityTheme": "elegant-dark",
+      "platform": "desktop",
+      "machine": "computer-usage",
+      "list": "usage"
+     }
+    }
+   ],
+   "capture": {
+    "selector": "[role=\"dialog\"][aria-label=\"Claude runtime account usage\"]",
+    "crop": "element",
+    "contract": "component-bounds",
+    "androidKey": "runtime-usage-card",
+    "interactions": [
+     {
+      "type": "hover",
+      "target": "role=button[name=\"Claude\"s]"
+     },
+     {
+      "type": "wait",
+      "ms": 600
+     }
+    ],
+    "androidInteractions": [
+     {
+      "type": "hover",
+      "key": "runtime-usage-computer-usage-claude"
+     },
+     {
+      "type": "wait",
+      "ms": 300
+     }
+    ]
+   },
+   "reactPathHint": "packages/web/src/components/machine/MachineDetailPanel.tsx",
+   "androidCaseHint": "apps/raft_flutter/test/parity/cases/ext_computers.dart 'detail.runtime-usage.card'",
+   "tolerance": {
+    "pixelRatio": 0.02,
+    "layoutDp": 1,
+    "ignoreAntialiasing": true
+   }
   }
  ]
 }

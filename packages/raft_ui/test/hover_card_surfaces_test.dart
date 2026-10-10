@@ -352,7 +352,7 @@ void main() {
         'VERSION 2.1.0',
         'Max',
         'ada****@example.com',
-        'OK',
+        'ok',
         '5h',
         '42% used · resets in 3 hours',
         'Usage format unavailable',
@@ -501,4 +501,89 @@ void main() {
       expect(copyOpacity(tester), .55);
     });
   });
+
+  testWidgets('attachment names show a tooltip only when cut off', (
+    tester,
+  ) async {
+    const long = 'quarterly-visual-parity-baseline-report-final-v2.pdf';
+    await tester.pumpWidget(
+      surfaceHost(
+        RaftTooltipProvider(
+          delay: const Duration(milliseconds: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RaftAttachmentCard(filename: 'a.pdf', onOpen: () {}),
+              const SizedBox(height: 16),
+              RaftAttachmentCard(filename: long, onOpen: () {}),
+            ],
+          ),
+        ),
+      ),
+    );
+    final mouse = await hoverAt(tester, tester.getCenter(find.text('a.pdf')));
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(find.byKey(const ValueKey('raft-tooltip-surface')), findsNothing);
+    await mouse.moveTo(tester.getCenter(find.text(long)));
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('raft-tooltip-surface')),
+        matching: find.text(long),
+      ),
+      findsOneWidget,
+    );
+    await finish(tester, mouse);
+  });
+
+  for (final density in RaftDensity.values) {
+    testWidgets('image download reveals on hover / focus ($density)', (
+      tester,
+    ) async {
+      double opacity() => tester
+          .widget<Opacity>(find.byKey(const ValueKey('image-actions')))
+          .opacity;
+      await tester.pumpWidget(
+        surfaceHost(
+          RaftDensityScope(
+            density: density,
+            child: RaftAttachmentCard(
+              filename: 'shot.png',
+              mimeType: 'image/png',
+              imageWidth: 320,
+              imageHeight: 200,
+              preview: const ColoredBox(color: Color(0xff336699)),
+              onOpen: () {},
+              onDownload: () {},
+            ),
+          ),
+        ),
+      );
+      if (density == RaftDensity.touch) {
+        expect(opacity(), 1);
+        return;
+      }
+      expect(opacity(), 0);
+      final mouse = await hoverAt(
+        tester,
+        tester.getCenter(find.byType(RaftAttachmentCard)),
+      );
+      await tester.pump();
+      expect(opacity(), 1);
+      await mouse.moveTo(Offset.zero);
+      await tester.pump();
+      expect(opacity(), 0);
+      await mouse.removePointer();
+      // Keyboard reaches the hidden download and reveals it.
+      for (var i = 0; i < 4 && opacity() == 0; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+      }
+      expect(opacity(), 1);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+    });
+  }
 }

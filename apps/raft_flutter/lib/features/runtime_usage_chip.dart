@@ -287,7 +287,11 @@ class _RuntimeUsageChipState extends State<RuntimeUsageChip> {
     final r = result;
     final zh = Localizations.localeOf(context).languageCode == 'zh';
     String? relative(Object? at) {
-      final text = resourceRelativeTime(at as String?, chinese: zh);
+      final text = resourceRelativeTime(
+        at as String?,
+        now: client.now(),
+        chinese: zh,
+      );
       return text.isEmpty ? null : text;
     }
 

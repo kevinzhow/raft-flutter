@@ -8,6 +8,7 @@
 // the same file the React render host imports.
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/runtime_account_usage.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/add_computer_dialog.dart';
 import 'package:raft_flutter/features/computer_detail_view.dart';
@@ -77,6 +78,19 @@ WorkspaceController _workspace(ParityContext ctx) {
     ..servers = [server]
     ..server = server;
   w.ledger.switchServer(_serverId);
+  // Runtime usage relative times ("updated 5 minutes ago") read the fixture
+  // instant the React provider freezes its clock at.
+  final now = DateTime.fromMillisecondsSinceEpoch(
+    (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
+  );
+  w.agentTabCache.put(
+    'runtime-account-usage',
+    RuntimeAccountUsageClient(
+      get: w.query,
+      post: (path, body) => w.command('POST', path, data: body),
+      now: () => now,
+    ),
+  );
   return w;
 }
 
@@ -189,6 +203,7 @@ ParityCase _case(String kind) => ParityCase(
       'raft_flutter:ComputerDetailPanel',
       'raft_ui:RaftCopyableCode',
       'raft_ui:RaftRuntimeChip',
+      'raft_ui:RaftRuntimeUsageChip',
     ],
   },
   notes: 'Extension suite (not official).',
@@ -253,4 +268,6 @@ const _extCaseKeys = [
   'dialog.delete-workspace',
   'dialog.delete-blocked',
   'dialog.delete',
+  'detail.runtime-usage.info',
+  'detail.runtime-usage.card',
 ];

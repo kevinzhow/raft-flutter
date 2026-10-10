@@ -5,6 +5,7 @@ import 'icons.dart';
 import 'design_primitives.dart';
 import 'attachment_tokens.dart';
 import 'localization.dart';
+import 'hover_card.dart';
 import 'tooltip.dart';
 
 class RaftAttachmentCard extends StatelessWidget {
@@ -91,11 +92,17 @@ class RaftAttachmentCard extends StatelessWidget {
           const SizedBox(width: AttachmentPrimitive.badgeGap),
         ],
         Expanded(
-          child: Text(
-            filename,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: recipe.title.copyWith(fontWeight: FontWeight.w700),
+          // TruncatedAttachmentTooltip: the full name only when it is cut.
+          child: RaftTooltip(
+            message: filename,
+            onlyWhenTruncated: true,
+            excludeFromSemantics: true,
+            child: Text(
+              filename,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: recipe.title.copyWith(fontWeight: FontWeight.w700),
+            ),
           ),
         ),
       ],
@@ -114,16 +121,21 @@ class RaftAttachmentCard extends StatelessWidget {
               // `mt-0.5 text-[10px] font-medium`, brutal `text-black/70`.
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  summary!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: component.metadata.copyWith(
-                    height: 20 / 14,
-                    fontWeight: FontWeight.w500,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .7)
-                        : t.colors['foreground-muted'],
+                child: RaftTooltip(
+                  message: summary!,
+                  onlyWhenTruncated: true,
+                  excludeFromSemantics: true,
+                  child: Text(
+                    summary!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: component.metadata.copyWith(
+                      height: 20 / 14,
+                      fontWeight: FontWeight.w500,
+                      color: t.brutal
+                          ? Colors.black.withValues(alpha: .7)
+                          : t.colors['foreground-muted'],
+                    ),
                   ),
                 ),
               ),
@@ -180,83 +192,93 @@ class RaftAttachmentCard extends StatelessWidget {
             width: size.width,
             height: size.height,
             // RaftTooltip: rows scrolled under a resting pointer stay quiet.
-            child: RaftTooltip(
-              message: '${raftText(context, 'Preview')} $filename',
-              child: Material(
-                color: t.panel,
-                clipBehavior: Clip.antiAlias,
-                shape: RoundedRectangleBorder(
-                  side: BorderSide(
-                    color: t.strong,
-                    width: t.brutal ? t.border : 0,
-                  ),
-                  borderRadius: recipe.radius,
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Semantics(
-                      label: '${raftText(context, 'Preview')} $filename',
-                      button: !exportMode,
-                      child: InkWell(
-                        onTap: exportMode ? null : onOpen,
-                        child:
-                            preview ??
-                            (previewPending && error == null
-                                ? const SizedBox.expand()
-                                : null) ??
-                            Center(
-                              child: busy
-                                  ? const CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    )
-                                  : Text(
-                                      error ?? filename,
-                                      style: recipe.title,
-                                    ),
-                            ),
-                      ),
+            child: RaftHoverReveal(
+              alwaysVisible: RaftDensityScope.of(context) == RaftDensity.touch,
+              builder: (context, revealed) => RaftTooltip(
+                message: '${raftText(context, 'Preview')} $filename',
+                child: Material(
+                  color: t.panel,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
+                    side: BorderSide(
+                      color: t.strong,
+                      width: t.brutal ? t.border : 0,
                     ),
-                    if (!exportMode)
-                      Positioned(
-                        right: 4,
-                        bottom: 4,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (onShare != null)
-                              RaftIconButton(
-                                glyph: RaftGlyph.share2,
-                                tooltip:
-                                    '${raftText(context, 'Share')} $filename',
-                                onPressed: busy ? null : onShare,
-                                visualSize: 24,
-                                minimumTargetSize: 48,
-                                glyphSize: 12,
+                    borderRadius: recipe.radius,
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Semantics(
+                        label: '${raftText(context, 'Preview')} $filename',
+                        button: !exportMode,
+                        child: InkWell(
+                          onTap: exportMode ? null : onOpen,
+                          child:
+                              preview ??
+                              (previewPending && error == null
+                                  ? const SizedBox.expand()
+                                  : null) ??
+                              Center(
+                                child: busy
+                                    ? const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      )
+                                    : Text(
+                                        error ?? filename,
+                                        style: recipe.title,
+                                      ),
                               ),
-                            if (onDownload != null)
-                              RaftIconButton(
-                                glyph: RaftGlyph.download,
-                                tooltip:
-                                    '${raftText(context, 'Download')} $filename',
-                                onPressed: busy ? null : onDownload,
-                                visualSize: 24,
-                                minimumTargetSize: 48,
-                                glyphSize: 12,
-                              ),
-                          ],
                         ),
                       ),
-                    if (error != null && !exportMode && onRetry != null)
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: RaftTextButton(
-                          label: 'Retry preview',
-                          onPressed: onRetry,
-                          variant: RaftControlVariant.ghost,
+                      if (!exportMode)
+                        Positioned(
+                          right: 4,
+                          bottom: 4,
+                          // MessageImageGalleryAction: `hidden
+                          // group-hover/img:flex focus:flex` on pointer
+                          // layouts; touch keeps the actions at rest.
+                          child: Opacity(
+                            key: const ValueKey('image-actions'),
+                            opacity: revealed ? 1 : 0,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (onShare != null)
+                                  RaftIconButton(
+                                    glyph: RaftGlyph.share2,
+                                    tooltip:
+                                        '${raftText(context, 'Share')} $filename',
+                                    onPressed: busy ? null : onShare,
+                                    visualSize: 24,
+                                    minimumTargetSize: 48,
+                                    glyphSize: 12,
+                                  ),
+                                if (onDownload != null)
+                                  RaftIconButton(
+                                    glyph: RaftGlyph.download,
+                                    tooltip:
+                                        '${raftText(context, 'Download')} $filename',
+                                    onPressed: busy ? null : onDownload,
+                                    visualSize: 24,
+                                    minimumTargetSize: 48,
+                                    glyphSize: 12,
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                  ],
+                      if (error != null && !exportMode && onRetry != null)
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: RaftTextButton(
+                            label: 'Retry preview',
+                            onPressed: onRetry,
+                            variant: RaftControlVariant.ghost,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

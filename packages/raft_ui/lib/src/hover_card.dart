@@ -507,3 +507,45 @@ class _HoverCardPlacement extends SingleChildLayoutDelegate {
       sideOffset != old.sideOffset ||
       padding != old.padding;
 }
+
+/// Tailwind `group-hover:` / `group-focus-within:` reveal: [control] paints
+/// only while the pointer is over the [group] region or focus is inside it.
+/// It stays in the focus order and semantics while hidden (keyboard users
+/// reach it, and reaching it reveals it). Touch layouts ([alwaysVisible])
+/// show it at rest, like `@media (hover: none)`.
+class RaftHoverReveal extends StatefulWidget {
+  const RaftHoverReveal({
+    super.key,
+    required this.builder,
+    this.alwaysVisible = false,
+  });
+
+  /// Builds the group; `revealed` drives the hidden control's visibility.
+  final Widget Function(BuildContext context, bool revealed) builder;
+  final bool alwaysVisible;
+  @override
+  State<RaftHoverReveal> createState() => _RaftHoverRevealState();
+}
+
+class _RaftHoverRevealState extends State<RaftHoverReveal> {
+  bool hovered = false, focused = false;
+  @override
+  Widget build(BuildContext context) => Focus(
+    canRequestFocus: false,
+    skipTraversal: true,
+    onFocusChange: (value) => setState(() => focused = value),
+    child: MouseRegion(
+      onEnter: (event) {
+        if (event.kind == PointerDeviceKind.mouse ||
+            event.kind == PointerDeviceKind.stylus) {
+          setState(() => hovered = true);
+        }
+      },
+      onExit: (_) => setState(() => hovered = false),
+      child: widget.builder(
+        context,
+        widget.alwaysVisible || hovered || focused,
+      ),
+    ),
+  );
+}

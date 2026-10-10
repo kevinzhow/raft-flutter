@@ -530,6 +530,9 @@ class _RaftRuntimeUsageChipState extends State<RaftRuntimeUsageChip> {
       enabled: !mobile,
       delay: const Duration(milliseconds: 200),
       closeDelay: const Duration(milliseconds: 160),
+      // useViewportClamp "vertical-smart": centered on the chip, the side
+      // with more room, 8px gutter.
+      align: RaftHoverCardAlign.center,
       sideOffset: 8,
       collisionPadding: 8,
       surface: false,

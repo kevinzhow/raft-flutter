@@ -101,6 +101,42 @@ routes = {
                                                          computerVersion=None, runtimes=[]),
                                       'apiKey': 'slk_fixture_not_a_real_key'},
 }
+# RuntimeAccountUsageChip hover card (Detected Runtimes): a Computer the
+# viewer attached, with a fresh Claude snapshot and no Codex snapshot. Times
+# are relative to the official fixture instant both providers render at.
+NOW_MS = int(OFFICIAL['locale']['nowEpochMillis'])
+
+
+def iso(offset_ms):
+    import datetime
+    t = datetime.datetime.fromtimestamp((NOW_MS + offset_ms) / 1000, datetime.timezone.utc)
+    return t.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+
+
+machines['computer-usage'] = machine('computer-usage', 'Usage Rig', runtimes=['claude', 'codex'],
+                                     runtimeVersions={'claude': '2.1.3'}, creator=creator,
+                                     computerAttachedByCurrentUser=True)
+lists['usage'] = ['computer-usage']
+USAGE = f'/servers/{SID}/machines/computer-usage/runtime-account-usage'
+routes[f'GET {USAGE}/claude'] = {
+    'state': 'fresh',
+    'snapshot': {
+        'protocolVersion': 2, 'provider': 'claude', 'collectedAt': iso(-5 * 60_000),
+        'staleAfter': iso(55 * 60_000), 'collectorVersion': '1',
+        'accounts': [{
+            'accountKey': 'a' * 64, 'planLabel': 'Claude Max', 'maskedLabel': 'art****@example.com',
+            'health': 'ok',
+            'windows': [
+                {'id': 'five_hour', 'label': '5-hour', 'status': 'ok', 'usedRatio': 0.42,
+                 'resetsAt': iso(3 * 3_600_000)},
+                {'id': 'weekly', 'label': 'Weekly', 'status': 'limit_reached', 'usedRatio': 1,
+                 'resetsAt': iso(2 * 86_400_000)},
+            ],
+        }],
+    },
+}
+routes[f'GET {USAGE}/codex'] = {'state': 'missing', 'snapshot': None}
+routes[f'POST {USAGE}/codex/refresh'] = {'accepted': False, 'state': 'computer_offline'}
 fixture = {
     'name': 'raft-flutter parity extension: computers',
     'scope': 'Public deterministic test data; no credentials.',
@@ -283,6 +319,18 @@ detail('dialog.delete', 'dialog: delete computer', 'computer-studio', viewport=D
        selector=DIALOG, android_key='computer-dialog',
        interactions=[{'type': 'click', 'target': btn('Delete Computer')}],
        android=[{'type': 'tap', 'key': 'computer-delete'}])
+
+# Runtime usage hover card (RuntimeAccountUsageChip). The Detected Runtimes
+# row shows the health Status; hovering the Claude chip opens the usage card
+# after its 200ms delay (portal Card role=dialog).
+detail('detail.runtime-usage.info', 'detail: runtime usage health on Detected Runtimes', 'computer-usage',
+       list_name='usage', section='info')
+detail('detail.runtime-usage.card', 'detail: runtime usage hover card', 'computer-usage', list_name='usage',
+       viewport=DESKTOP, selector='[role="dialog"][aria-label="Claude runtime account usage"]',
+       android_key='runtime-usage-card',
+       interactions=[{'type': 'hover', 'target': btn('Claude')}, {'type': 'wait', 'ms': 600}],
+       android=[{'type': 'hover', 'key': 'runtime-usage-computer-usage-claude'},
+                {'type': 'wait', 'ms': 300}])
 
 manifest = {
     'version': 1,
