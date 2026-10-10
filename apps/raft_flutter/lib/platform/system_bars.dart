@@ -58,10 +58,13 @@ class RaftSystemBarSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return child;
     final padding = MediaQuery.paddingOf(context);
+    // ds-allow: Android system-bar contrast reads the platform theme (no raft_ui equivalent).
     final theme = Theme.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: raftSystemOverlayStyle(
+        // ds-allow: Android system-bar icon contrast from the bar colour.
         ThemeData.estimateBrightnessForColor(statusBarBackground),
+        // ds-allow: Android system-bar icon contrast from the bar colour.
         navigationBackground: ThemeData.estimateBrightnessForColor(
           navigationBarBackground ?? theme.scaffoldBackgroundColor,
         ),
@@ -107,6 +110,7 @@ class _RaftSystemBarsState extends State<RaftSystemBars> {
 
   @override
   Widget build(BuildContext context) {
+    // ds-allow: Android system-bar contrast reads the platform theme (no raft_ui equivalent).
     final theme = Theme.of(context);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: raftSystemOverlayStyle(theme.brightness),
