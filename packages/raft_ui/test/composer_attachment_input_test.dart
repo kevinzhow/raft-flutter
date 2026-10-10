@@ -90,6 +90,31 @@ void main() {
     expect(_text(tester), 'plain words');
   });
 
+  for (final taken in [true, false]) {
+    testWidgets('toolbar Paste asks the host first (taken: $taken)', (
+      tester,
+    ) async {
+      _clipboardText(tester, 'menu words');
+      var asked = 0;
+      await _pump(
+        tester,
+        RaftComposer(
+          onSend: (_) async => true,
+          onPasteAttachments: () async {
+            asked++;
+            return taken;
+          },
+        ),
+      );
+      await tester.longPress(find.byType(TextField));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Paste'));
+      await tester.pumpAndSettle();
+      expect(asked, 1);
+      expect(_text(tester), taken ? isEmpty : 'menu words');
+    });
+  }
+
   testWidgets('a failing clipboard read still pastes the text', (tester) async {
     _clipboardText(tester, 'fallback');
     await _pump(

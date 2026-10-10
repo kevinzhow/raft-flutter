@@ -1552,6 +1552,12 @@ class _RaftForceTaskSendIntent extends Intent {
   const _RaftForceTaskSendIntent();
 }
 
+/// TextField's default context menu (system menu where supported).
+Widget _defaultEditorMenu(BuildContext context, EditableTextState state) =>
+    SystemContextMenu.isSupportedByField(state)
+    ? SystemContextMenu.editableText(editableTextState: state)
+    : AdaptiveTextSelectionToolbar.editableText(editableTextState: state);
+
 /// Overrides the editor's [PasteTextIntent] (EditableText actions are
 /// overridable from ancestors). The host is asked for clipboard attachments
 /// first; only when it takes none does the editor's own text paste run.
@@ -2164,6 +2170,42 @@ class _RaftComposerState extends State<RaftComposer> {
         composer;
   }
 
+  /// The selection toolbar's Paste follows the same host-first order as
+  /// the keyboard shortcut (Web: every paste fires the paste event).
+  Widget pasteAwareMenu(BuildContext context, EditableTextState state) =>
+      SystemContextMenu.isSupportedByField(state)
+      ? _defaultEditorMenu(context, state)
+      : AdaptiveTextSelectionToolbar.buttonItems(
+          anchors: state.contextMenuAnchors,
+          buttonItems: [
+            for (final item in state.contextMenuButtonItems)
+              item.type == ContextMenuButtonType.paste
+                  ? item.copyWith(
+                      onPressed: () {
+                        state.hideToolbar();
+                        final take = widget.onPasteAttachments;
+                        if (take == null) {
+                          state.pasteText(SelectionChangedCause.toolbar);
+                          return;
+                        }
+                        take().then(
+                          (taken) {
+                            if (!taken && state.mounted) {
+                              state.pasteText(SelectionChangedCause.toolbar);
+                            }
+                          },
+                          onError: (Object _) {
+                            if (state.mounted) {
+                              state.pasteText(SelectionChangedCause.toolbar);
+                            }
+                          },
+                        );
+                      },
+                    )
+                  : item,
+          ],
+        );
+
   Widget buildContent(BuildContext context) {
     final t = RaftTokens.of(context);
     final recipe = RaftComposerRecipe(
@@ -2327,6 +2369,10 @@ class _RaftComposerState extends State<RaftComposer> {
                                         ),
                                         textCapitalization:
                                             TextCapitalization.sentences,
+                                        contextMenuBuilder:
+                                            widget.onPasteAttachments == null
+                                            ? _defaultEditorMenu
+                                            : pasteAwareMenu,
                                         contentInsertionConfiguration:
                                             widget.onContentInserted == null
                                             ? null
