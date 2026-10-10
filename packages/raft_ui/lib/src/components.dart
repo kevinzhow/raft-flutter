@@ -2519,11 +2519,12 @@ class _RaftComposerState extends State<RaftComposer> {
                                           tooltip: 'Send message (Ctrl+Enter)',
                                           submit: true,
                                           busy: busy,
+                                          // Source MessageInput only prevents the
+                                          // pointer-down blur: an unfocused composer
+                                          // stays unfocused after a Send tap (no
+                                          // keyboard pop), a focused one keeps focus.
                                           onPressed: submitEnabled
-                                              ? () {
-                                                  send();
-                                                  focus.requestFocus();
-                                                }
+                                              ? () => send()
                                               : null,
                                         ),
                                       ],

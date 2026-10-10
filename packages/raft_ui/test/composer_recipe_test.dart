@@ -163,6 +163,40 @@ void main() {
     );
 
     testWidgets(
+      'Send tap keeps an unfocused composer unfocused: $family/$dark',
+      (tester) async {
+        // Source MessageInput only prevents the Send pointer-down blur; it never
+        // focuses the textarea after a send, so no keyboard pops on Android.
+        var sends = 0;
+        await tester.pumpWidget(
+          host(
+            RaftComposer(
+              initialDraft: 'Restored draft',
+              onSend: (_) async {
+                sends++;
+                return true;
+              },
+            ),
+            family,
+            dark,
+          ),
+        );
+        await tester.tap(find.byTooltip('Send message (Ctrl+Enter)'));
+        await tester.pump();
+        expect(sends, 1);
+        expect(
+          tester
+              .widget<EditableText>(find.byType(EditableText))
+              .focusNode
+              .hasFocus,
+          isFalse,
+        );
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump();
+      },
+    );
+
+    testWidgets(
       'empty disabled, pointer focus, late ACK preserves changed draft: $family/$dark',
       (tester) async {
         final delivered = Completer<bool>();
