@@ -1967,7 +1967,8 @@ class _RaftChatViewState extends State<RaftChatView>
         (previous == null ||
             timeFormatter.dayKey(previous) != timeFormatter.dayKey(stamp));
     return RaftRowExtentRecorder(
-      cacheKey: rowExtentKey(context, message.id),
+      scope: rowExtentScope(context),
+      id: message.id,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1991,15 +1992,15 @@ class _RaftChatViewState extends State<RaftChatView>
     );
   }
 
-  String rowExtentKey(BuildContext context, String id) {
+  String rowExtentScope(BuildContext context) {
     final tokens = RaftTokens.of(context);
-    return '${tokens.family.name}|${tokens.dark}|${widget.thread}|$id';
+    return '${tokens.family.name}|${tokens.dark}|${widget.thread}';
   }
 
   /// Total-extent estimate for a row not laid out yet: its last measured
   /// height at this width, otherwise a content-based guess.
   double estimateRow(
-    BuildContext context,
+    Map<String, (double, double)> measuredRows,
     chat.InMemoryChatController timelineAdapter,
     int visualIndex,
   ) {
@@ -2008,9 +2009,9 @@ class _RaftChatViewState extends State<RaftChatView>
     final index = bottomAnchored ? list.length - 1 - visualIndex : visualIndex;
     if (index < 0 || index >= list.length) return 96;
     final message = list[index];
-    final measured = raftRowExtents[rowExtentKey(context, message.id)];
+    final measured = measuredRows[message.id];
     if (measured != null && (measured.$1 - width).abs() < 1) return measured.$2;
-    return estimateMessageExtent(message.metadata, width);
+    return raftRowExtents.guess(message.id, message.metadata, width);
   }
 
   Widget tile(RaftMessage m, {bool parent = false, bool captureFocus = true}) {
@@ -2062,6 +2063,7 @@ class _RaftChatViewState extends State<RaftChatView>
     int revision,
   ) {
     final anchorRevision = revision, anchorViewport = timelineViewport;
+    final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = widget.thread ? w.threadLoading : w.channelLoading;
     final empty = rows.isEmpty;
     final threadHeader = widget.thread
@@ -2129,7 +2131,7 @@ class _RaftChatViewState extends State<RaftChatView>
               ),
               itemBuilder: item,
               extentEstimation: (index) =>
-                  estimateRow(context, timelineAdapter, index),
+                  estimateRow(measuredRows, timelineAdapter, index),
               // Mounted MessageTimeline owns its two sentinels and natural
               // footer. Generic Flyer padding/safe-area must not duplicate
               // that spacing or the external composer's OS inset.

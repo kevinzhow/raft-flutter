@@ -1,26 +1,48 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-/// Last measured (width, height) of message rows, keyed by theme, host and
-/// message id. Feeds the timeline's total-extent estimate so the scrollbar
-/// stays stable; bounded so long sessions do not grow it without limit.
-final raftRowExtents = _BoundedExtents(4000);
+/// Last measured (width, height) of message rows, grouped by a theme/host
+/// scope and keyed by message id. Feeds the timeline's total-extent estimate
+/// so the scrollbar stays stable. Lookups allocate nothing: the estimate runs
+/// for every unbuilt row on every layout.
+final raftRowExtents = _RowExtentCache(4000);
 
 /// Width of the most recently measured row, used for estimates of rows that
 /// have never been laid out.
 double raftLastRowWidth = 0;
 
-class _BoundedExtents {
-  _BoundedExtents(this.limit);
+class _RowExtentCache {
+  _RowExtentCache(this.limit);
   final int limit;
-  final _map = <String, (double, double)>{};
-  (double, double)? operator [](String key) => _map[key];
-  void record(String key, double width, double height) {
-    final previous = _map.remove(key);
-    if (previous == null && _map.length >= limit) {
-      _map.remove(_map.keys.first);
+  final _scopes = <String, Map<String, (double, double)>>{};
+  // Content-based guesses, computed once per message and width.
+  final _guesses = <String, (double, double)>{};
+  int _size = 0;
+
+  Map<String, (double, double)> scope(String scope) =>
+      _scopes.putIfAbsent(scope, () => <String, (double, double)>{});
+
+  void record(String scope, String id, double width, double height) {
+    final map = this.scope(scope);
+    if (!map.containsKey(id)) {
+      if (_size >= limit) {
+        // Drop the oldest scope's oldest entry.
+        final oldest = _scopes.values.firstWhere((m) => m.isNotEmpty);
+        oldest.remove(oldest.keys.first);
+        _size--;
+      }
+      _size++;
     }
-    _map[key] = (width, height);
+    map[id] = (width, height);
+  }
+
+  double guess(String id, Map<String, dynamic>? metadata, double width) {
+    final cached = _guesses[id];
+    if (cached != null && (cached.$1 - width).abs() < 1) return cached.$2;
+    if (_guesses.length >= limit) _guesses.remove(_guesses.keys.first);
+    final value = estimateMessageExtent(metadata, width);
+    _guesses[id] = (width, value);
+    return value;
   }
 }
 
@@ -28,25 +50,28 @@ class _BoundedExtents {
 class RaftRowExtentRecorder extends SingleChildRenderObjectWidget {
   const RaftRowExtentRecorder({
     super.key,
-    required this.cacheKey,
+    required this.scope,
+    required this.id,
     required super.child,
   });
-  final String cacheKey;
+  final String scope, id;
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      _RenderRowExtentRecorder(cacheKey);
+      _RenderRowExtentRecorder(scope, id);
   @override
   void updateRenderObject(BuildContext context, RenderObject renderObject) =>
-      (renderObject as _RenderRowExtentRecorder).cacheKey = cacheKey;
+      (renderObject as _RenderRowExtentRecorder)
+        ..scope = scope
+        ..id = id;
 }
 
 class _RenderRowExtentRecorder extends RenderProxyBox {
-  _RenderRowExtentRecorder(this.cacheKey);
-  String cacheKey;
+  _RenderRowExtentRecorder(this.scope, this.id);
+  String scope, id;
   @override
   void performLayout() {
     super.performLayout();
-    raftRowExtents.record(cacheKey, size.width, size.height);
+    raftRowExtents.record(scope, id, size.width, size.height);
     raftLastRowWidth = size.width;
   }
 }
