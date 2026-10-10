@@ -544,5 +544,68 @@
         ]
       }
     ]
+  },
+  {
+    "id": "K13",
+    "group": "Kevin 反馈",
+    "title_zh": "消息高亮消退只改变绘制，不重建正文；Mermaid 源码视图、长消息展开、所选文字及输入框编辑状态保留。",
+    "web_source": "packages/web/src/components/message/MessageItem.tsx:4346-4357; packages/web/src/components/message/ChatPanel.tsx:581-597",
+    "audit_note": "Cindy ad336642 新发现：Android 逐帧证据显示高亮结束时源码视图自复位；初次失败和原始47项审计保留。Web 无消息正文编辑入口，编辑态检查为真实输入框草稿、焦点和键盘选择。",
+    "checks": [
+      {
+        "id": "K13a",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "proof_file": "message_highlight_state_test.dart",
+        "title_zh": "三主题桌面与窄屏保留用户选择的 Mermaid 源码视图",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "411.0",
+          "1280.0"
+        ]
+      },
+      {
+        "id": "K13b",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "proof_file": "message_highlight_state_test.dart",
+        "title_zh": "三主题桌面与窄屏保留已展开长消息及其高度",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "411.0",
+          "1280.0"
+        ]
+      },
+      {
+        "id": "K13c",
+        "minimum_layer": "mounted",
+        "minimum_passes": 6,
+        "proof_file": "message_highlight_state_test.dart",
+        "title_zh": "三主题桌面与窄屏保留真实长按选择的源码文字",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true",
+          "411.0",
+          "1280.0"
+        ]
+      },
+      {
+        "id": "K13d",
+        "minimum_layer": "mounted",
+        "minimum_passes": 3,
+        "proof_file": "chat_highlight_draft_state_test.dart",
+        "title_zh": "三主题真实两秒计时结束后保留输入框草稿、焦点和键盘选区",
+        "required_name_fragments": [
+          "RaftFamily.brutal/false",
+          "RaftFamily.elegant/false",
+          "RaftFamily.elegant/true"
+        ]
+      }
+    ]
   }
 ]

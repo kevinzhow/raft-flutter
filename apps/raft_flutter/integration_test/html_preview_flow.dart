@@ -7,6 +7,8 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/attachment_html_preview.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import 'native_control.dart';
+
 /// Uploads known inert fixture content. The native renderer never executes
 /// attachment scripts; external browser execution remains an explicit action.
 Future<void> verifyHtmlPreview(
@@ -36,13 +38,9 @@ Future<void> verifyHtmlPreview(
   await w.jumpToMessage(channelId, message.id);
   final tile = find.byKey(ValueKey('message-${message.id}'));
   final target = find.descendant(of: tile, matching: find.text(filename));
-  for (var i = 0; i < 100 && target.evaluate().isEmpty; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-  expect(target, findsOneWidget);
-  await tester.ensureVisible(target);
-  await tester.pump(const Duration(milliseconds: 300));
-  await tester.tap(target);
+  final visible = await revealNativeControl(tester, target);
+  expect(visible, findsOneWidget);
+  await tester.tapAt(tester.getCenter(visible));
   final viewer = find.byType(HtmlAttachmentPreviewDialog);
   for (
     var i = 0;

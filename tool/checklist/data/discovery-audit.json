@@ -20,6 +20,13 @@
       "discoveredAt": "2026-10-09T21:42:31Z",
       "sourceMessage": "e75a4506-7853-4c6f-92e9-c09dcef5283f",
       "evidence": "Native Linux real Members/Computers rail clicks show no Add agent/Add computer; old Agent sidebar helper also obsolete. Initial action evidence 2026-10-09T21:40:47.551753Z retained. Mobile Members also had no Agents directory."
+    },
+    {
+      "id": "K13",
+      "status": "partial",
+      "discoveredAt": "2026-10-10T00:02:13Z",
+      "sourceMessage": "ad336642-b87c-42eb-9abf-22a3e0c9705e",
+      "evidence": "Android rich-frame run 2026-10-09T23:58:53.137391Z records Source height 168 to diagram 539 at highlight expiry without input. Six original SDK failures and expanded/text-selection regressions retained. Original47 and K10/K11/K12 audit records remain unchanged."
     }
   ]
 }
