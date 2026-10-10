@@ -158,12 +158,18 @@ class RootFixture {
     {'id': 'b', 'name': 'Beta', 'slug': 'beta', 'role': 'owner'},
   ];
   FutureOr<dynamic> Function()? serverDirectory;
+
+  /// Routes held by a test (`'GET /servers'`, ...): installed after the
+  /// defaults, so the response arrives only when the test completes it.
+  final holds = <String, Completer<dynamic>>{};
   Future<void> mount(
     WidgetTester t,
     String theme,
     double width, {
     Uri? uri,
     bool offlineRestore = false,
+    bool cachedSession = false,
+    String principal = 'alice',
     Map<String, Object> preferences = const {},
   }) async {
     SharedPreferences.setMockInitialValues({
@@ -197,20 +203,20 @@ class RootFixture {
       Session(
         accessToken: 'fixture-only',
         refreshToken: 'fixture-only',
-        cachedUser: offlineRestore
+        cachedUser: offlineRestore || cachedSession
             ? {
-                'id': 'alice',
-                'name': 'alice',
-                'email': 'alice@example.invalid',
+                'id': principal,
+                'name': principal,
+                'email': '$principal@example.invalid',
                 'emailVerified': true,
               }
             : null,
       ),
     );
     adapter.routes['GET /auth/me'] = (_) => {
-      'id': 'alice',
-      'name': 'alice',
-      'email': 'alice@example.invalid',
+      'id': principal,
+      'name': principal,
+      'email': '$principal@example.invalid',
       'emailVerified': true,
     };
     if (offlineRestore) adapter.statuses['GET /auth/me'] = 503;
@@ -263,6 +269,13 @@ class RootFixture {
       adapter.routes['POST /channels/c$id/read'] = (_) => {};
       adapter.routes['GET /channels/c$id/members'] = (_) => [];
     }
+    for (final held in holds.entries) {
+      final ordinary = adapter.routes[held.key];
+      adapter.routes[held.key] = (o) async {
+        final value = await held.value.future;
+        return value ?? await ordinary?.call(o);
+      };
+    }
     await t.pumpWidget(
       RaftApp(
         sessionStore: sessions,
@@ -277,12 +290,25 @@ class RootFixture {
     await flush(t);
   }
 
+  /// The root surface painted by each [flush] frame, in order.
+  final surfaces = <String>[];
+
+  /// Runs after every [flush] frame (per-frame assertions).
+  void Function()? onFrame;
   Future<void> flush(WidgetTester t) async {
     for (var i = 0; i < 8; i++) {
       await t.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 2)),
       );
       await t.pump(const Duration(milliseconds: 50));
+      surfaces.add(
+        find.byType(WorkspaceView).evaluate().isNotEmpty
+            ? 'workspace'
+            : find.byType(GlobalServerSelector).evaluate().isNotEmpty
+            ? 'selector'
+            : 'other',
+      );
+      onFrame?.call();
     }
   }
 
@@ -656,14 +682,17 @@ void main() {
           isTrue,
         );
         await f.pushUri(t, '/servers');
+        final chosen = f.engineRoutes.length;
         await t.tap(find.byKey(const ValueKey('global-server-b')));
         await f.flush(t);
-        expect(
-          f.engineRoutes.lastWhere(
-            (r) => (r['uri'] as String).startsWith('/s/beta'),
-          )['replace'],
-          isFalse,
-        );
+        // Leaving the chooser is one PUSH. Beta's cached workspace opens
+        // before its revalidation, which may then only REPLACE that entry.
+        final entered = f.engineRoutes
+            .skip(chosen)
+            .where((r) => (r['uri'] as String).startsWith('/s/beta'))
+            .toList();
+        expect(entered.first['replace'], isFalse);
+        expect(entered.skip(1).every((r) => r['replace'] == true), isTrue);
         await f.close(t);
       },
     );

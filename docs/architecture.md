@@ -74,6 +74,7 @@ UI、纯Dart协议/同步、平台适配在 P0 合同后可并行，feature任�
 - raft_client 提供人类认证、刷新去重、Socket.IO、账户/工作区 generation fence、上传重试与安全错误。main 对跨客户端登录尝试的安全存储提交另加串行栅栏。
 - raft_sync 的纯 reducer 已通过 TS/Dart 等价向量；消息、read-state 与恢复流程通过 WorkspaceController/MessageLedger 接线。source-enabled thread-replies 的最新三条、epoch rebaseline 与 accepted unread refresh 已接入；notification-prefs 使用真实条件开关并保留 legacy 路径。工程和平台结果按下方源码检查点记录，Activity TypeSpec experimental cutover 不由纯 reducer 或旧平台基线替代。
 - Drift 缓存按账户与工作区隔离，保存真实离线消息、草稿与 read frontier；撤权立即清 UI 并串行清缓存。签名附件地址及凭据不进入缓存。
+- 冷启动缓存优先：会话带有上次确认的账号记录时，先用本机服务器目录、频道列表、未读、上次选择的消息窗口（及访问过的消息串窗口）绘制首帧，再在后台依次校验 /auth/me、/servers、频道列表与当前页，原地替换。缓存不设过期时间，始终后台重验；它不是授权：窗口只在保存时相同的角色与频道权限下采用，新事实撤销频道 / 服务器成员身份或改变角色时立即从界面和磁盘移除。未经重验的磁盘窗口不发送已读回执。每个服务器的消息 / 消息串窗口按最近写入保留（默认 120 个，每个最多 500 行）；登出、会话被拒或账号变化清空该账号数据。
 - 管理页面使用现网挂载路径与能力校验：providers、MCP、Apps、Slack、analytics、billing、setup、agents 和 Computers。未配置的第三方 OAuth、计费和 Slack provisioning 不产生模拟成功状态。
 - go_router 尚未作为路由权威接线；本地 URI 与通知由 NativeContentCoordinator 校验服务器成员资格并获取真实消息上下文。Android 原生 share/通知 bridge 和 Linux 单实例 URI 使用平台 facade。Android 周期后台收件箱兜底已有独立冷进程、去重和系统点击证据；iOS 仅源码接入。FCM/APNs 注册、Linux 服务端消息推送及独立桌面多窗口不属于当前已验证能力。
 

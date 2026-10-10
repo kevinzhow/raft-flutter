@@ -119,4 +119,31 @@ void main() {
     );
     await db.close();
   });
+  test(
+    'windows beyond the retention evict least recently written first',
+    () async {
+      final db = DriftWorkspaceCache(
+        NativeDatabase.memory(),
+        windowRetention: 3,
+      );
+      for (final id in ['a', 'b', 'c']) {
+        await db.write('o', 'alice', 's', 'window', id, {'channelId': id});
+      }
+      // Revisiting a rewrites it; the other server and other kinds are kept.
+      await db.write('o', 'alice', 's', 'window', 'a', {'channelId': 'a'});
+      await db.write('o', 'alice', 's', 'channels', '', {'channels': []});
+      await db.write('o', 'alice', 'other', 'window', 'z', {'channelId': 'z'});
+      await db.write('o', 'alice', 's', 'thread-window', 'p', {
+        'threadChannelId': 't',
+      });
+      expect(await db.read('o', 'alice', 's', 'window', 'b'), isNull);
+      for (final id in ['a', 'c']) {
+        expect(await db.read('o', 'alice', 's', 'window', id), isNotNull);
+      }
+      expect(await db.read('o', 'alice', 's', 'thread-window', 'p'), isNotNull);
+      expect(await db.read('o', 'alice', 's', 'channels', ''), isNotNull);
+      expect(await db.read('o', 'alice', 'other', 'window', 'z'), isNotNull);
+      await db.close();
+    },
+  );
 }

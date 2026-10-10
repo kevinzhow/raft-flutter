@@ -8,8 +8,15 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/workspace_cache.dart';
 
+/// On-device workspace cache (see [WorkspaceCache] for the validity rule).
 class DriftWorkspaceCache extends GeneratedDatabase implements WorkspaceCache {
-  DriftWorkspaceCache(super.executor);
+  DriftWorkspaceCache(super.executor, {this.windowRetention = 120});
+
+  /// Message/thread windows kept per account and server. Every write moves a
+  /// row to the newest rowid, so the oldest-written (least recently
+  /// visited) windows are evicted first.
+  final int windowRetention;
+  static const _windowKinds = {'window', 'thread-window'};
   static Future<DriftWorkspaceCache> open() async {
     final support = await getApplicationSupportDirectory();
     final dir = Directory(p.join(support.path, 'raft'));
@@ -90,10 +97,26 @@ class DriftWorkspaceCache extends GeneratedDatabase implements WorkspaceCache {
         [origin, principal, server, kind, id],
       );
     } else {
+      // REPLACE (not an in-place update) gives the row a new rowid: rowid
+      // order is last-write order for eviction.
       await customStatement(
-        'INSERT INTO workspace_cache (origin,principal,server,kind,id,payload) VALUES (?,?,?,?,?,?) ON CONFLICT(origin,principal,server,kind,id) DO UPDATE SET payload=excluded.payload',
+        'INSERT OR REPLACE INTO workspace_cache (origin,principal,server,kind,id,payload) VALUES (?,?,?,?,?,?)',
         [origin, principal, server, kind, id, jsonEncode(_cacheSafe(value))],
       );
+      if (_windowKinds.contains(kind)) {
+        await customStatement(
+          'DELETE FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND kind IN (\'window\',\'thread-window\') AND rowid NOT IN (SELECT rowid FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND kind IN (\'window\',\'thread-window\') ORDER BY rowid DESC LIMIT ?)',
+          [
+            origin,
+            principal,
+            server,
+            origin,
+            principal,
+            server,
+            windowRetention,
+          ],
+        );
+      }
     }
   }
 
@@ -105,8 +128,17 @@ class DriftWorkspaceCache extends GeneratedDatabase implements WorkspaceCache {
     String channel,
   ) async {
     await customStatement(
-      'DELETE FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND (id=? OR id=? OR json_extract(payload,\'\$.channelId\')=? OR json_extract(payload,\'\$.parentChannelId\')=?)',
-      [origin, principal, server, channel, 'thread:$channel', channel, channel],
+      'DELETE FROM workspace_cache WHERE origin=? AND principal=? AND server=? AND (id=? OR id=? OR json_extract(payload,\'\$.channelId\')=? OR json_extract(payload,\'\$.parentChannelId\')=? OR json_extract(payload,\'\$.threadChannelId\')=?)',
+      [
+        origin,
+        principal,
+        server,
+        channel,
+        'thread:$channel',
+        channel,
+        channel,
+        channel,
+      ],
     );
   }
 

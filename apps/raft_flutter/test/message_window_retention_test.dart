@@ -116,7 +116,107 @@ class _DelayedCache implements WorkspaceCache {
   Future<void> close() => db.close();
 }
 
+class _ThreadClient extends _Client {
+  Completer<void>? hold;
+  @override
+  Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
+    await hold?.future;
+    if (path == '/channels/b/threads/b-100') return {'threadChannelId': 't'};
+    if (path == '/messages/context/b-100') {
+      return {
+        'messages': [row(100)],
+      };
+    }
+    return {};
+  }
+
+  @override
+  Future<Map<String, dynamic>> messagePage(
+    String id, {
+    int limit = 50,
+    BigInt? before,
+    BigInt? after,
+  }) async {
+    if (id != 't') {
+      return super.messagePage(id, limit: limit, before: before, after: after);
+    }
+    await hold?.future;
+    return {
+      'messages': [row(1, channel: 't'), row(2, channel: 't')],
+      'historyLimited': false,
+    };
+  }
+}
+
+Future<void> _until(bool Function() condition) async {
+  for (var i = 0; i < 200 && !condition(); i++) {
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
+}
+
 void main() {
+  test('restart paints a visited thread from disk before its lookup', () async {
+    final db = DriftWorkspaceCache(NativeDatabase.memory());
+    var client = _ThreadClient();
+    var w = _controller(client, db);
+    await w.selectChannel(w.channels.last, autoRead: false);
+    await w.openThreadIdentity(
+      parentChannelId: 'b',
+      parentMessageId: 'b-100',
+      navigate: false,
+    );
+    expect(w.replies.map((m) => m.id), ['t-1', 't-2']);
+    await w.flushCache();
+    expect(
+      await db.read(client.origin, 'alice', 'server', 'thread-window', 'b-100'),
+      isA<Map>(),
+    );
+    w.dispose();
+    await client.eventsController.close();
+
+    // Same account/server/role: the window and its parent paint at once.
+    client = _ThreadClient()..hold = Completer<void>();
+    w = _controller(client, db);
+    final opening = w.openThreadIdentity(
+      parentChannelId: 'b',
+      parentMessageId: 'b-100',
+      navigate: false,
+    );
+    await _until(() => w.replies.isNotEmpty);
+    expect(w.replies.map((m) => m.id), ['t-1', 't-2']);
+    expect(w.threadLoading, isFalse);
+    expect(w.threadParent?.id, 'b-100');
+    client.hold!.complete();
+    await opening;
+    expect(w.replies.map((m) => m.id), ['t-1', 't-2']);
+    w.dispose();
+    await client.eventsController.close();
+
+    // A different role never adopts the stored thread window.
+    client = _ThreadClient()..hold = Completer<void>();
+    w = _controller(client, db)
+      ..server = RaftRecord({'id': 'server', 'role': 'member'});
+    final denied = w.openThreadIdentity(
+      parentChannelId: 'b',
+      parentMessageId: 'b-100',
+      navigate: false,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    expect(w.replies, isEmpty);
+    expect(w.threadLoading, isTrue);
+    client.hold!.complete();
+    await denied;
+    w.dispose();
+    await client.eventsController.close();
+
+    // Revoking the thread channel purges the stored window.
+    await db.revokeChannel(client.origin, 'alice', 'server', 't');
+    expect(
+      await db.read(client.origin, 'alice', 'server', 'thread-window', 'b-100'),
+      isNull,
+    );
+    await db.close();
+  });
   test('restart hydrates a noninitial channel before pending HTTP and preserves older history', () async {
     final dir = await Directory.systemTemp.createTemp('raft-window-retention-');
     final file = File('${dir.path}/workspace.sqlite');

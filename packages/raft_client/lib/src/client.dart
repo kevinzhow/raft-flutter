@@ -189,13 +189,30 @@ class RaftClient {
     return pending;
   }
 
-  Future<bool> restore() async {
+  /// Settles when the stored session restored by [restore] has been checked
+  /// against `/auth/me` (accepted, offline, or ended).
+  Future<void> get sessionValidated => _sessionValidated;
+  Future<void> _sessionValidated = Future<void>.value();
+
+  /// Restores the stored session. With [cachedFirst] and a session that
+  /// carries the last accepted account record, [user] is that record at once
+  /// so the app can paint its local cache without a network round trip; the
+  /// account is then revalidated in the background. A changed record emits
+  /// `account:updated` (the app fences a different principal), a rejected
+  /// session ends with `session:ended`, and an unreachable server leaves the
+  /// session in [restoredOffline].
+  Future<bool> restore({bool cachedFirst = false}) async {
     final authentication = ++_authenticationGeneration;
     _generation++;
     final stored = await sessionStore.read(origin);
     if (authentication != _authenticationGeneration || _closed) return false;
     _session = stored;
     if (_session == null) return false;
+    if (cachedFirst && _session!.cachedUser != null) {
+      user = RaftRecord(Map<String, dynamic>.from(_session!.cachedUser!));
+      _sessionValidated = _validateRestoredSession(authentication);
+      return true;
+    }
     try {
       user = RaftRecord(Map<String, dynamic>.from(await get('/auth/me')));
       final s = _session!;
@@ -214,6 +231,42 @@ class RaftClient {
       restoredOffline = true;
     }
     return true;
+  }
+
+  Future<void> _validateRestoredSession(int authentication) async {
+    bool current() => !_closed && authentication == _authenticationGeneration;
+    try {
+      final next = RaftRecord(
+        Map<String, dynamic>.from(await _accountRequest('GET', '/auth/me')),
+      );
+      final s = _session;
+      if (!current() || s == null) return;
+      final changed = jsonEncode(next.json) != jsonEncode(user?.json);
+      user = next;
+      restoredOffline = false;
+      _session = Session(
+        accessToken: s.accessToken,
+        refreshToken: s.refreshToken,
+        installationId: s.installationId,
+        refreshAttemptId: s.refreshAttemptId,
+        cachedUser: next.json,
+      );
+      await _persist(_session);
+      if (changed && current()) {
+        _emit(const RaftEvent('account:updated', null));
+      }
+    } on RaftApiException catch (e) {
+      if (!current() || _session == null) return;
+      if (e.status == null || e.status! >= 500) {
+        restoredOffline = true;
+        return;
+      }
+      // The server rejected the stored session (a failed refresh already
+      // logged out above). Never keep presenting its account.
+      await logout();
+    } catch (_) {
+      if (current()) restoredOffline = true;
+    }
   }
 
   Future<void> login(String email, String password) async {
@@ -380,8 +433,42 @@ class RaftClient {
     Map<String, dynamic>? headers,
     bool acceptServerExit = false,
     Duration? receiveTimeout,
+  }) => _request(
+    method,
+    path,
+    data: data,
+    query: query,
+    authorized: authorized,
+    retried: retried,
+    cancellation: cancellation,
+    onSendProgress: onSendProgress,
+    headers: headers,
+    acceptServerExit: acceptServerExit,
+    receiveTimeout: receiveTimeout,
+  );
+
+  /// An account-level read: fenced by the authentication generation only,
+  /// so a concurrent server switch does not retire it.
+  Future<dynamic> _accountRequest(String method, String path) =>
+      _request(method, path, workspaceScoped: false);
+
+  Future<dynamic> _request(
+    String method,
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? query,
+    bool authorized = true,
+    bool retried = false,
+    UploadCancellation? cancellation,
+    void Function(int, int)? onSendProgress,
+    Map<String, dynamic>? headers,
+    bool acceptServerExit = false,
+    Duration? receiveTimeout,
+    bool workspaceScoped = true,
   }) async {
-    final generation = _generation, authentication = _authenticationGeneration;
+    final authentication = _authenticationGeneration;
+    int generation() => workspaceScoped ? _generation : 0;
+    final requestGeneration = generation();
     final exit =
         acceptServerExit &&
         serverId != null &&
@@ -401,13 +488,14 @@ class RaftClient {
             ...?headers,
             if (authorized && _session != null)
               'Authorization': 'Bearer ${_session!.accessToken}',
-            if (authorized && serverId != null) 'X-Server-Id': serverId,
+            if (authorized && workspaceScoped && serverId != null)
+              'X-Server-Id': serverId,
           },
         ),
       );
       if (authorized &&
           (authentication != _authenticationGeneration ||
-              generation != _generation && !exit))
+              requestGeneration != generation() && !exit))
         throw const RaftApiException(
           'The account or workspace changed. Please retry.',
         );
@@ -415,7 +503,7 @@ class RaftClient {
     } on DioException catch (e) {
       if (authorized &&
           (authentication != _authenticationGeneration ||
-              generation != _generation && !exit)) {
+              requestGeneration != generation() && !exit)) {
         throw const RaftApiException(
           'The account or workspace changed. Please retry.',
         );
@@ -425,15 +513,15 @@ class RaftClient {
           !retried &&
           (!path.startsWith('/auth/') || path == '/auth/me') &&
           _session != null) {
-        if (generation != _generation ||
+        if (requestGeneration != generation() ||
             authentication != _authenticationGeneration) {
           throw const RaftApiException('The account or workspace changed.');
         }
         await refresh();
-        if (generation != _generation ||
+        if (requestGeneration != generation() ||
             authentication != _authenticationGeneration)
           throw const RaftApiException('The account or workspace changed.');
-        return request(
+        return _request(
           method,
           path,
           data: data is FormData ? data.clone() : data,
@@ -444,6 +532,7 @@ class RaftClient {
           headers: headers,
           acceptServerExit: acceptServerExit,
           receiveTimeout: receiveTimeout,
+          workspaceScoped: workspaceScoped,
         );
       }
       final body = e.response?.data;
@@ -610,6 +699,14 @@ class RaftClient {
   Future<List<RaftRecord>> servers() async => (await get('/servers') as List)
       .map((e) => RaftRecord(Map<String, dynamic>.from(e)))
       .toList();
+
+  /// The account's server directory read as an account-level fact: a
+  /// concurrent server switch does not retire it (authentication still does).
+  Future<List<RaftRecord>> accountServers() async =>
+      (await _accountRequest('GET', '/servers') as List)
+          .map((e) => RaftRecord(Map<String, dynamic>.from(e)))
+          .toList();
+
   Future<List<RaftChannel>> channels({bool dm = false}) async =>
       (await get(
                 dm ? '/channels/dm' : '/channels',

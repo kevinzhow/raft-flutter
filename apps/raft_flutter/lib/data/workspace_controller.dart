@@ -803,6 +803,7 @@ class WorkspaceController extends ChangeNotifier {
       drafts.clear();
       visibleIds.clear();
       _windowState.clear();
+      _diskOnlyWindows.clear();
       _windowHistoryLimited.clear();
       _threadWindows.clear();
       historyLimited = threadHistoryLimited = false;
@@ -947,7 +948,7 @@ class WorkspaceController extends ChangeNotifier {
     );
     _windowHistoryLimited[id] = thread ? threadHistoryLimited : historyLimited;
     _contextWindows.remove(id);
-    await _save('window', id, {
+    final saved = _save('window', id, {
       'version': 1,
       'authority': _windowAuthority(),
       'windowKind': 'tail',
@@ -966,6 +967,50 @@ class WorkspaceController extends ChangeNotifier {
       'threadSummaries': thread
           ? {}
           : Map<String, dynamic>.from(threadSummaries),
+    });
+    final identity = _threadIdentity;
+    // Queued in the same turn as the window write, so one flush covers both.
+    if (thread && identity != null && identity.focusedMessageId == null) {
+      await _saveThreadWindow(identity, id);
+    }
+    await saved;
+  }
+
+  /// A thread's accepted tail, keyed by its parent message so a later open
+  /// (including after restart) paints it before any lookup. It belongs to
+  /// the parent channel: that channel's revocation purges it.
+  Future<void> _saveThreadWindow(
+    WorkspaceThreadIdentity identity,
+    String threadId,
+  ) async {
+    final authority = _threadResourceAuthority(identity.parentChannelId);
+    if (authority == null ||
+        _revokedChannels.contains(identity.parentChannelId) ||
+        _revokedChannels.contains(threadId)) {
+      return;
+    }
+    final rows = replies;
+    final parent = threadParent;
+    await _save('thread-window', identity.parentMessageId, {
+      'version': 1,
+      'windowKind': 'tail',
+      'authority': authority,
+      'parentChannelId': identity.parentChannelId,
+      'threadChannelId': threadId,
+      if (parent != null &&
+          parent.id == identity.parentMessageId &&
+          parent.channelId == identity.parentChannelId)
+        'parent': parent.json,
+      'messages': rows
+          .skip(
+            rows.length > messageWindowLimit
+                ? rows.length - messageWindowLimit
+                : 0,
+          )
+          .map((m) => m.json)
+          .toList(),
+      'hasMore': threadHasMore,
+      'historyLimited': threadHistoryLimited,
     });
   }
 
@@ -1559,7 +1604,12 @@ class WorkspaceController extends ChangeNotifier {
   /// The app root uses this before exposing the global chooser. Offline rows
   /// retain the existing account-scoped cache contract; fresh authority and
   /// cache writes share the membership reducer's request/revocation fences.
-  Future<bool> loadServerDirectory() async {
+  ///
+  /// With [cachedFirst] (cold start) an accepted on-device directory is
+  /// adopted at once, so the remembered server and its cached channels paint
+  /// without waiting for the network; [revalidateServerDirectory] then
+  /// replaces it in the background.
+  Future<bool> loadServerDirectory({bool cachedFirst = false}) async {
     if (!ownsClient) {
       throw StateError('A borrowed editor cannot load the server directory.');
     }
@@ -1574,7 +1624,7 @@ class WorkspaceController extends ChangeNotifier {
         request == _membershipRequest &&
         revision == _membershipRevision;
     if (principal == null) return false;
-    if (client.restoredOffline) {
+    if (client.restoredOffline || cachedFirst) {
       final cached = await _cached('servers', '', server: '');
       if (!current()) return false;
       if (cached is List && cached.isNotEmpty) {
@@ -1583,6 +1633,7 @@ class WorkspaceController extends ChangeNotifier {
             .where((server) => !_revokedServers.contains(server.id))
             .toList();
         notifyListeners();
+        if (cachedFirst) unawaited(revalidateServerDirectory());
         return true;
       }
     }
@@ -1599,6 +1650,75 @@ class WorkspaceController extends ChangeNotifier {
     if (!current()) return false;
     notifyListeners();
     return true;
+  }
+
+  /// Background replacement of a cache-first directory once the restored
+  /// session is validated. A server missing from the fresh directory is
+  /// revoked (its on-device data is purged and, when selected, its workspace
+  /// closes); a changed role replaces the selected server's authority, which
+  /// retires role-bound windows and revalidates the open channel. A failure
+  /// keeps the accepted directory (offline).
+  Future<void> revalidateServerDirectory() async {
+    final principal = client.user?.id,
+        request = ++_membershipRequest,
+        revision = _membershipRevision;
+    bool current() =>
+        !_disposed &&
+        principal != null &&
+        principal == client.user?.id &&
+        request == _membershipRequest &&
+        revision == _membershipRevision;
+    await client.sessionValidated;
+    if (!current() || client.restoredOffline) return;
+    final List<RaftRecord> accepted;
+    try {
+      accepted = await client.accountServers();
+    } catch (_) {
+      return;
+    }
+    if (!current()) return;
+    final ids = {for (final s in accepted) s.id};
+    for (final held in [...servers]) {
+      if (!ids.contains(held.id)) revokeServer(held.id);
+    }
+    final selected = server;
+    if (selected != null && !ids.contains(selected.id)) {
+      revokeServer(selected.id);
+    }
+    _revokedServers.removeAll(ids);
+    servers = accepted;
+    _save('servers', '', accepted.map((s) => s.json).toList(), server: '');
+    final held = server;
+    final fresh = held == null
+        ? null
+        : accepted.where((s) => s.id == held.id).firstOrNull;
+    if (held != null && fresh != null) {
+      final role = fresh.string('role');
+      if (role != held.string('role')) {
+        applyMembershipRole({
+          'userId': principal,
+          'serverId': held.id,
+          'role': role,
+        });
+        server = fresh;
+        notifyListeners();
+        await refreshChannels();
+        final open = channel;
+        if (!_disposed && open != null && server?.id == held.id) {
+          unawaited(
+            selectChannel(
+              open,
+              navigate: false,
+              preserveThread: true,
+              autoRead: false,
+            ),
+          );
+        }
+        return;
+      }
+      if (jsonEncode(fresh.json) != jsonEncode(held.json)) server = fresh;
+    }
+    notifyListeners();
   }
 
   Future<void> bootstrap() async {
@@ -1638,7 +1758,14 @@ class WorkspaceController extends ChangeNotifier {
     }
   }
 
-  Future<void> selectServer(RaftRecord next) async {
+  /// [onHydrated] runs once the on-device channels, selection window and
+  /// unread counts of [next] are painted, before any network response; it
+  /// does not run when nothing is cached. The returned future still settles
+  /// only after the fresh channel lists (and the selected page) are applied.
+  Future<void> selectServer(
+    RaftRecord next, {
+    void Function()? onHydrated,
+  }) async {
     if (!ownsClient) {
       throw StateError('A borrowed editor cannot select a server.');
     }
@@ -1673,6 +1800,7 @@ class WorkspaceController extends ChangeNotifier {
     visibleIds.clear();
     _windowState.clear();
     _windowHistoryLimited.clear();
+    _diskOnlyWindows.clear();
     _threadWindows.clear();
     historyLimited = threadHistoryLimited = false;
     _contextWindows.clear();
@@ -1726,6 +1854,15 @@ class WorkspaceController extends ChangeNotifier {
           hasMore = page['hasMore'] == true;
           historyLimited = page['historyLimited'] == true;
           hasNewer = page['hasNewer'] == true;
+          // Record the authority the disk rows were accepted under, so a
+          // later selection under different facts drops them first.
+          _windowState[initial.id] = (
+            _windowAuthority(),
+            hasMore,
+            _replyToken(initial.id),
+          );
+          _windowHistoryLimited[initial.id] = historyLimited;
+          _diskOnlyWindows.add(initial.id);
           _summariesByChannel[initial.id] = _hydrateThreadSummaries(
             page['threadSummaries'],
             initial.id,
@@ -1753,6 +1890,7 @@ class WorkspaceController extends ChangeNotifier {
       };
     }
     notifyListeners();
+    if (cached is Map) onHydrated?.call();
     final readGeneration = readState.generation;
     List<List<RaftChannel>> values;
     try {
@@ -1785,6 +1923,22 @@ class WorkspaceController extends ChangeNotifier {
     }
     channels = values[0];
     dms = values[1];
+    // A cached selection adopts its fresh row. When the fresh row changes
+    // the window authority, the cached rows are not shown under it: the
+    // selection is revalidated below (or by the newer selection in flight).
+    final held = channel;
+    final freshHeld = held == null
+        ? null
+        : [...channels, ...dms].where((c) => c.id == held.id).firstOrNull;
+    var heldAuthorityChanged = false;
+    if (held != null && freshHeld != null && !identical(held, freshHeld)) {
+      final before = _windowAuthority();
+      channel = freshHeld;
+      heldAuthorityChanged = before != _windowAuthority();
+    }
+    // The cache-painted workspace is already on screen: show the fresh lists
+    // (and any revocation) now, not after the unread read below.
+    notifyListeners();
     await _save('channels', '', {
       'channels': channels.map((c) => c.json).toList(),
       'dms': dms.map((c) => c.json).toList(),
@@ -1812,6 +1966,15 @@ class WorkspaceController extends ChangeNotifier {
       } else {
         await selectChannel(selected);
       }
+    } else if (heldAuthorityChanged &&
+        channel != null &&
+        identical(channel, freshHeld)) {
+      await selectChannel(
+        channel!,
+        navigate: false,
+        preserveThread: true,
+        autoRead: false,
+      );
     }
     notifyListeners();
   }
@@ -2082,6 +2245,7 @@ class WorkspaceController extends ChangeNotifier {
       notificationPrefsSync.revokeChannel(scope);
       visibleIds.remove(scope);
       _windowState.remove(scope);
+      _diskOnlyWindows.remove(scope);
       _contextWindows.remove(scope);
       unread.remove(scope);
       _latestActivity.remove(scope);
@@ -2808,6 +2972,7 @@ class WorkspaceController extends ChangeNotifier {
             priorWindow.$3 != replyAuthority)) {
       visibleIds.remove(next.id);
       _windowState.remove(next.id);
+      _diskOnlyWindows.remove(next.id);
       _windowHistoryLimited.remove(next.id);
       _summariesByChannel.remove(next.id);
     }
@@ -2869,6 +3034,9 @@ class WorkspaceController extends ChangeNotifier {
             .addAll(rows.map((e) => e['id'] as String));
         hasMore = page['hasMore'] == true;
         historyLimited = page['historyLimited'] == true;
+        _windowState[next.id] = (authority, hasMore, replyAuthority);
+        _windowHistoryLimited[next.id] = historyLimited;
+        _diskOnlyWindows.add(next.id);
         // Memory is never older than disk: held summaries win.
         _summariesByChannel[next.id] = {
           ..._hydrateThreadSummaries(
@@ -2891,6 +3059,7 @@ class WorkspaceController extends ChangeNotifier {
           .map((e) => Map<String, dynamic>.from(e))
           .toList();
       ledger.ingest(rows, expectedGeneration: generation);
+      _diskOnlyWindows.remove(next.id);
       historyLimited = fresh['historyLimited'] == true;
       visibleIds[next.id] = fresh['historyLimited'] == true
           ? rows.map((e) => e['id'] as String).toSet()
@@ -3038,8 +3207,14 @@ class WorkspaceController extends ChangeNotifier {
         : id == threadChannelId && (threadRoute || threadPreview);
   }
 
+  /// Windows painted from disk whose first fresh page has not arrived yet.
+  /// Their tail may be stale, so they never send a read receipt (nor clear
+  /// the unread count) until revalidated.
+  final Set<String> _diskOnlyWindows = {};
+
   Future<void> markRead(String id) async {
     if (!foreground ||
+        _diskOnlyWindows.contains(id) ||
         id == channel?.id && (!_mainPresented || !_chatTabPresented) ||
         id == threadChannelId && !_threadPresented ||
         !_mayMarkRead(id) ||
@@ -3569,6 +3744,7 @@ class WorkspaceController extends ChangeNotifier {
         visibleIds[threadChannelId!] = rows
             .map((row) => row['id'] as String)
             .toSet();
+        _diskOnlyWindows.remove(threadChannelId);
         threadHistoryLimited = page['historyLimited'] == true;
         threadHasMore = focusedMessageId == null
             ? !threadHistoryLimited && rows.length >= 50
@@ -3589,6 +3765,17 @@ class WorkspaceController extends ChangeNotifier {
         await markRead(threadChannelId!);
         if (current()) _saveWindow(threadChannelId!, thread: true);
       } catch (e) {
+        final diskOnly = threadChannelId;
+        if (current() &&
+            diskOnly != null &&
+            _diskOnlyWindows.contains(diskOnly) &&
+            e is RaftApiException &&
+            (e.status == 403 || e.status == 404)) {
+          // A denied lookup never leaves an on-device window on screen.
+          _diskOnlyWindows.remove(diskOnly);
+          visibleIds.remove(diskOnly);
+          _save('thread-window', parentMessageId, null);
+        }
         // A cached window stays readable when its revalidation fails.
         if (current() && cached == null) {
           _threadResolutionError = '$e';
@@ -3603,6 +3790,45 @@ class WorkspaceController extends ChangeNotifier {
       }
     }
 
+    /// A tail thread with no window in memory paints its on-device window
+    /// (previous visit or previous process) while the lookup revalidates.
+    Future<void> restoreDiskWindow() async {
+      if (cached != null || focusedMessageId != null) return;
+      final page = await _cached('thread-window', parentMessageId);
+      if (!current() || !threadLoading || page is! Map) return;
+      final threadId = page['threadChannelId'];
+      if (page['version'] != 1 ||
+          page['windowKind'] != 'tail' ||
+          messageAuthority == null ||
+          page['authority'] != messageAuthority ||
+          page['parentChannelId'] != parentChannelId ||
+          threadId is! String ||
+          (threadChannelId != null && threadChannelId != threadId) ||
+          _revokedChannels.contains(threadId)) {
+        return;
+      }
+      final rows = acceptedWindowRows(page['messages'], threadId);
+      if (rows.isEmpty) return;
+      ledger.ingest(rows, expectedGeneration: generation);
+      visibleIds[threadId] = rows.map((row) => row['id'] as String).toSet();
+      _diskOnlyWindows.add(threadId);
+      threadChannelId = threadId;
+      final parent = page['parent'];
+      if (threadParent == null &&
+          parent is Map &&
+          parent['id'] == parentMessageId &&
+          parent['channelId'] == parentChannelId) {
+        threadParent = RaftMessage(Map<String, dynamic>.from(parent));
+        _threadParentLoading = false;
+      }
+      threadHasMore = page['hasMore'] == true;
+      threadHistoryLimited = page['historyLimited'] == true;
+      threadLoading = false;
+      _threadResolutionLoading = false;
+      notifyListeners();
+    }
+
+    unawaited(restoreDiskWindow());
     // Source threadStore opens an accepted inbox row's known channel directly,
     // without a lookup. Parent metadata and focused replies load independently.
     final replies = resolveReplies();

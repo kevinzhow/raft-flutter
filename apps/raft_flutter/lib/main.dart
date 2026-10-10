@@ -173,7 +173,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         sessionPersistence.guarded(() => mounted && identical(client, c)),
       );
       client = c;
-      if (await c.restore()) {
+      // Cache-first: a stored account record paints the on-device workspace
+      // at once; the session is revalidated in the background and a
+      // rejected or replaced account ends through the session events below.
+      if (await c.restore(cachedFirst: cache != null)) {
         if (!mounted) {
           await c.dispose();
           return;
@@ -343,7 +346,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       selectorError = null;
     });
     try {
-      if (!await w.loadServerDirectory() || !current()) return;
+      if (!await w.loadServerDirectory(cachedFirst: true) || !current()) {
+        return;
+      }
       final servers = w.servers;
       w.loading = false;
       directoryLoading = false;
@@ -603,7 +608,31 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     try {
       await w.flushCache();
       if (!current() || !w.servers.any((s) => s.id == selected.id)) return;
-      if (w.server?.id != selected.id) await w.selectServer(selected);
+      if (w.server?.id != selected.id) {
+        // A server with an on-device workspace opens as soon as that cache
+        // is painted; its fresh channels and page revalidate in place.
+        final hydrated = Completer<void>();
+        final selecting = w.selectServer(
+          selected,
+          onHydrated: () {
+            if (!hydrated.isCompleted) hydrated.complete();
+          },
+        );
+        final settled = await Future.any([
+          hydrated.future.then((_) => false),
+          selecting.then((_) => true),
+        ]);
+        if (!settled) {
+          unawaited(
+            selecting.then<void>(
+              (_) {},
+              onError: (Object e) {
+                if (current()) w.setError('$e');
+              },
+            ),
+          );
+        }
+      }
       if (!current() ||
           w.server?.id != selected.id ||
           !w.servers.any((s) => s.id == selected.id)) {
