@@ -90,6 +90,7 @@ class WorkspaceGridSessions extends ChangeNotifier {
       cache: parent.cache,
       ownsClient: false,
       entityDirectory: parent.entityDirectory,
+      followedThreads: parent.followedThreads,
     );
     child.server = parent.server;
     child.channel = row;

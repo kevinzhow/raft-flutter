@@ -4022,6 +4022,15 @@ class _ResourceViewState extends State<ResourceView> {
       try {
         await w.client.request('POST', mutation.path, data: mutation.data);
         if (!accepts(scope) || !activityFollowState.accepts(id, ticket)) return;
+        // Source ThreadsInbox mutates through threadStore.followedThreads.
+        final parentId = row['parentMessageId'];
+        if (parentId is String) {
+          w.followedThreads.acknowledge(
+            parentMessageId: parentId,
+            threadChannelId: id,
+            following: action == 'follow',
+          );
+        }
         final current = rows
             .where(
               (item) =>

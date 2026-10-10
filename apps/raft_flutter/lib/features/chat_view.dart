@@ -1076,21 +1076,10 @@ class _RaftChatViewState extends State<RaftChatView>
             (summary['threadChannelId'] != null ||
                 (int.tryParse('${summary['replyCount']}') ?? 0) > 0)) ||
         message.json['threadChannelId'] != null;
-    Map? followed;
-    if (!hideThreadActions && hasThreadConversation) {
-      try {
-        final response = await w.query('/channels/threads/followed');
-        final rows = response is Map ? response['threads'] : null;
-        if (rows is List) {
-          followed = rows.whereType<Map>().firstWhere(
-            (row) => row['parentMessageId'] == message.id,
-            orElse: () => const {},
-          );
-          if (followed.isEmpty) followed = null;
-        }
-      } catch (_) {}
-      if (!mounted || authority != workspaceAuthority(w)) return;
-    }
+    // Source MessageItem reads the server-scoped followed list synchronously.
+    final followedThreads = w.followedThreads;
+    if (!hideThreadActions && hasThreadConversation) followedThreads.ensure();
+    final followed = followedThreads.isFollowing(message.id);
     final task = taskProjection.taskFor(message);
     final guest = w.server?.string('role') == 'guest';
     final supportsTasks = w.channel?.type != 'thread';
@@ -1183,7 +1172,7 @@ class _RaftChatViewState extends State<RaftChatView>
                 raftMessageMenuIcon(RaftGlyph.bookmark),
               ),
               if (follow)
-                followed != null
+                followed
                     ? item(
                         'unfollow',
                         'Unfollow Thread',
@@ -1217,19 +1206,16 @@ class _RaftChatViewState extends State<RaftChatView>
       if (choice == 'select') selection.enter(message.id);
       if (choice == 'thread') await w.openThread(message);
       if (choice == 'save') await saveMessage(message);
-      if (choice == 'follow') {
-        await w.command(
-          'POST',
-          '/channels/threads/follow',
-          data: {'parentMessageId': message.id},
-        );
-      }
-      if (choice == 'unfollow' && followed?['threadChannelId'] is String) {
-        await w.command(
-          'POST',
-          '/channels/threads/unfollow',
-          data: {'threadChannelId': followed!['threadChannelId']},
-        );
+      // Optimistic in the shared store; it reverts before rethrowing.
+      if (choice == 'follow') await followedThreads.follow(message.id);
+      if (choice == 'unfollow') {
+        final threadId =
+            followedThreads.threadChannelIdFor(message.id) ??
+            (summary is Map ? summary['threadChannelId'] : null) ??
+            message.json['threadChannelId'];
+        if (threadId is String) {
+          await followedThreads.unfollow(message.id, threadChannelId: threadId);
+        }
       }
       if (choice.startsWith('react:')) {
         await react(message, choice.substring(6));

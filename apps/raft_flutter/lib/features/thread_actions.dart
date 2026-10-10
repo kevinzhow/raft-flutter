@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/followed_threads_store.dart';
 import '../data/workspace_controller.dart';
 import 'private_route_guard.dart';
 
@@ -27,11 +28,9 @@ class ThreadActions extends StatefulWidget {
 
 class _ThreadActionsState extends State<ThreadActions> {
   WorkspaceController get w => widget.controller;
+  FollowedThreadsStore get store => w.followedThreads;
   late final int generation;
   late final StreamSubscription<RaftEvent> subscription;
-  bool? following;
-  bool busy = false;
-  int ticket = 0;
   String? error;
   late final String authority;
   OverlayEntry? menu;
@@ -42,18 +41,30 @@ class _ThreadActionsState extends State<ThreadActions> {
     super.initState();
     generation = w.client.generation;
     authority = workspaceAuthority(w);
+    // Another device may change this principal's membership of the open
+    // thread; revalidate the shared list in place (no loading state).
     subscription = w.client.events.listen((event) {
-      if (event.name == 'connected' ||
-          event.name == 'thread:followers-updated') {
-        if (!busy) load();
+      final payload = event.payload;
+      if (event.name == 'thread:followers-updated' &&
+          payload is Map &&
+          payload['threadChannelId'] == w.threadChannelId &&
+          current &&
+          !busy) {
+        store.refresh();
       }
     });
     w.addListener(authorityChanged);
-    load();
+    store.addListener(membershipChanged);
+    // Normally started at server selection; a no-op once settled.
+    store.ensure();
   }
 
   void authorityChanged() {
     if (!current) closeMenu();
+    if (mounted) rebuild(() {});
+  }
+
+  void membershipChanged() {
     if (mounted) rebuild(() {});
   }
 
@@ -63,6 +74,17 @@ class _ThreadActionsState extends State<ThreadActions> {
       authority == workspaceAuthority(w) &&
       widget.parent.id == w.threadParent?.id;
 
+  /// Membership from the server-scoped followed list; null before its first
+  /// accepted read for this identity.
+  bool? get following =>
+      store.loaded ? store.isFollowing(widget.parent.id) : null;
+  bool get busy => store.isPending(widget.parent.id);
+
+  /// Shown only when the list never loaded for this identity.
+  String? get loadError => store.loaded || store.error == null
+      ? null
+      : 'Thread notification settings could not be loaded.';
+
   // OverlayEntry lives outside this State's subtree. Async membership and
   // busy changes must rebuild both the trigger and an already open menu.
   void rebuild(VoidCallback change) {
@@ -70,62 +92,36 @@ class _ThreadActionsState extends State<ThreadActions> {
     menu?.markNeedsBuild();
   }
 
-  Future<void> load() async {
-    final request = ++ticket;
-    try {
-      final response = await w.query('/channels/threads/followed');
-      if (!current || request != ticket) return;
-      rebuild(() {
-        following = (response['threads'] as List).any(
-          (row) => row['parentMessageId'] == widget.parent.id,
-        );
-        error = null;
-      });
-    } catch (_) {
-      if (current && request == ticket) {
-        rebuild(
-          () => error = 'Thread notification settings could not be loaded.',
-        );
-      }
-    }
+  void retry() {
+    rebuild(() => error = null);
+    store.refresh();
   }
 
   Future<void> toggle() async {
-    if (!current || busy || following == null) return;
-    final wasFollowing = following!;
-    final threadId = w.threadChannelId;
+    final wasFollowing = following;
+    if (!current || busy || wasFollowing == null) return;
+    final threadId =
+        store.threadChannelIdFor(widget.parent.id) ?? w.threadChannelId;
     if (wasFollowing && threadId == null) return;
-    ++ticket;
-    rebuild(() {
-      busy = true;
-      error = null;
-    });
+    rebuild(() => error = null);
     try {
-      await w.command(
-        'POST',
-        '/channels/threads/${wasFollowing ? 'unfollow' : 'follow'}',
-        data: wasFollowing
-            ? {'threadChannelId': threadId}
-            : {'parentMessageId': widget.parent.id},
-      );
-      if (!current) return;
-      // The write acknowledgement is authoritative; an asynchronous Activity
-      // projection may still return the old follow membership immediately.
-      rebuild(() => following = !wasFollowing);
+      // Optimistic in the shared store; it reverts if the write fails.
+      wasFollowing
+          ? await store.unfollow(widget.parent.id, threadChannelId: threadId)
+          : await store.follow(widget.parent.id);
     } catch (_) {
       if (current) {
         rebuild(
           () => error = 'Thread notification settings could not be changed.',
         );
       }
-    } finally {
-      if (current) rebuild(() => busy = false);
     }
   }
 
   @override
   void dispose() {
     w.removeListener(authorityChanged);
+    store.removeListener(membershipChanged);
     closeMenu();
     subscription.cancel();
     super.dispose();
@@ -197,13 +193,13 @@ class _ThreadActionsState extends State<ThreadActions> {
                         toggle();
                       },
               ),
-              if (error != null)
+              if (error != null || loadError != null)
                 RaftMenuItem(
                   label: raftText(context, 'Retry'),
                   glyph: RaftGlyph.refreshCw,
                   onPressed: () {
                     closeMenu();
-                    load();
+                    retry();
                   },
                 ),
             ],
@@ -231,7 +227,7 @@ class _ThreadActionsState extends State<ThreadActions> {
           child: Row(
             children: [
               Expanded(
-                child: error == null
+                child: (error ?? loadError) == null
                     ? Text(
                         raftText(
                           context,
@@ -245,12 +241,12 @@ class _ThreadActionsState extends State<ThreadActions> {
                       )
                     : Semantics(
                         liveRegion: true,
-                        child: Text(raftText(context, error!)),
+                        child: Text(raftText(context, (error ?? loadError)!)),
                       ),
               ),
-              if (error != null && following == null)
+              if (loadError != null && following == null)
                 TextButton(
-                  onPressed: load,
+                  onPressed: retry,
                   child: Text(raftText(context, 'Retry')),
                 )
               else

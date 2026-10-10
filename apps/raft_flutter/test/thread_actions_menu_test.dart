@@ -17,60 +17,67 @@ class _Workspace extends WorkspaceController {
 
 void main() {
   for (final revoke in [false, true]) {
-    testWidgets('open thread menu receives late membership; revoked=$revoke', (
-      t,
-    ) async {
-      final client = RaftClient(
-        origin: 'https://fixture.invalid',
-        sessionStore: MemorySessionStore(),
-      )..user = RaftRecord({'id': 'u'});
-      final parent = RaftMessage({
-        'id': 'm',
-        'channelId': 'c',
-        'content': 'Thread parent',
-      });
-      final w = _Workspace(client)
-        ..server = RaftRecord({'id': 's', 'role': 'owner'})
-        ..threadParent = parent;
-      addTearDown(() async {
-        w.dispose();
-        await client.dispose();
-      });
-      await t.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: Scaffold(
-            body: ThreadActions(controller: w, parent: parent, menuMode: true),
+    testWidgets(
+      'cold thread menu receives the store first membership; revoked=$revoke',
+      (t) async {
+        final client = RaftClient(
+          origin: 'https://fixture.invalid',
+          sessionStore: MemorySessionStore(),
+        )..user = RaftRecord({'id': 'u'});
+        // The shared followed-threads store is scoped to the selected server.
+        client.selectServer('s');
+        final parent = RaftMessage({
+          'id': 'm',
+          'channelId': 'c',
+          'content': 'Thread parent',
+        });
+        final w = _Workspace(client)
+          ..server = RaftRecord({'id': 's', 'role': 'owner'})
+          ..threadParent = parent;
+        addTearDown(() async {
+          w.dispose();
+          await client.dispose();
+        });
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.elegant),
+            home: Scaffold(
+              body: ThreadActions(
+                controller: w,
+                parent: parent,
+                menuMode: true,
+              ),
+            ),
           ),
-        ),
-      );
-      await t.tap(find.byKey(const Key('thread-options')));
-      await t.pumpAndSettle();
-      final entry = find.byKey(const Key('thread-follow-menu-item'));
-      expect(t.widget<RaftMenuItem>(entry).onPressed, isNull);
-      if (revoke) {
-        client.user = RaftRecord({'id': 'next'});
-        w.notifyListeners();
-        await t.pump();
-        expect(entry, findsNothing);
-      }
-      w.initial.complete({'threads': []});
-      await t.pumpAndSettle();
-      if (revoke) {
-        expect(entry, findsNothing);
-      } else {
-        expect(t.widget<RaftMenuItem>(entry).onPressed, isNotNull);
-        expect(t.widget<RaftMenuItem>(entry).label, 'Follow thread');
-        expect(
-          t.widget<RaftMenuItem>(entry).glyph,
-          RaftGlyph.messageCirclePlus,
         );
         await t.tap(find.byKey(const Key('thread-options')));
         await t.pumpAndSettle();
-        expect(entry, findsNothing);
-      }
-      expect(t.takeException(), isNull);
-      await t.pumpWidget(const SizedBox());
-    });
+        final entry = find.byKey(const Key('thread-follow-menu-item'));
+        expect(t.widget<RaftMenuItem>(entry).onPressed, isNull);
+        if (revoke) {
+          client.user = RaftRecord({'id': 'next'});
+          w.notifyListeners();
+          await t.pump();
+          expect(entry, findsNothing);
+        }
+        w.initial.complete({'threads': []});
+        await t.pumpAndSettle();
+        if (revoke) {
+          expect(entry, findsNothing);
+        } else {
+          expect(t.widget<RaftMenuItem>(entry).onPressed, isNotNull);
+          expect(t.widget<RaftMenuItem>(entry).label, 'Follow thread');
+          expect(
+            t.widget<RaftMenuItem>(entry).glyph,
+            RaftGlyph.messageCirclePlus,
+          );
+          await t.tap(find.byKey(const Key('thread-options')));
+          await t.pumpAndSettle();
+          expect(entry, findsNothing);
+        }
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox());
+      },
+    );
   }
 }

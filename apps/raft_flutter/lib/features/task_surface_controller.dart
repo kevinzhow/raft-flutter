@@ -244,6 +244,7 @@ class TaskSurfaceController extends ChangeNotifier {
       cache: parent.cache,
       ownsClient: false,
       entityDirectory: parent.entityDirectory,
+      followedThreads: parent.followedThreads,
     );
     c.server = parent.server;
     c.servers = [...parent.servers];
