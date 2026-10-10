@@ -454,7 +454,7 @@ class RaftMessagingBridgesSection extends StatelessWidget {
                   t,
                   size: 18,
                   line: 28,
-                  weight: FontWeight.w900,
+                  weight: RaftTypography.black(t),
                   color: RaftSettingsText(t).strong,
                 ),
               ),
