@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
-import 'package:markdown/markdown.dart' as md;
 
 import 'localization.dart';
 
@@ -152,56 +151,45 @@ String raftMessageSemanticsText(BuildContext context, String markdown) {
   return text;
 }
 
-const _blockTags = {
-  'p',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'li',
-  'blockquote',
-  'pre',
-  'tr',
-  'hr',
-  'table',
-  'ul',
-  'ol',
-};
+// Linear regex scans, not a second Markdown parse: rows are built inside
+// list layout, and a full parse per new row showed up in build time.
+final _codeSpan = RegExp(r'(`+)(.+?)\1');
+final _image = RegExp(r'!\[((?:\\.|[^\]\\])*)\]\([^)]*\)');
+final _authoredLink = RegExp(
+  r'\[((?:\\.|[^\]\\])*)\]\(\s*<?([^)\s>]*)>?(?:\s+"[^"]*")?\s*\)',
+);
+final _angleLink = RegExp(r'<((?:https?|mailto):[^>\s]+)>');
+final _bareUrl = RegExp(r'(?<![(<\w/="])https?://[^\s<>()\[\]]+');
+final _sentinel = RegExp(
+  '\u{E000}([^\u{E001}]*)\u{E001}([^\u{E002}]*)\u{E002}',
+);
+final _escape = RegExp(r'\\([\\`*_{}\[\]()#+\-.!|~<>])');
+final _emphasis = RegExp(
+  r'\*\*|__|~~|(?<![\w*\\])[*_](?=\S)|(?<=\S)[*_](?![\w*])',
+);
+final _blockPrefix = RegExp(
+  r'^\s{0,3}(?:#{1,6}\s+|(?:>\s?)+|(?:[-*+]|\d+[.)])\s+(?:\[[ xX]\]\s+)?)+',
+);
+final _rule = RegExp(r'^\s{0,3}(?:(?:[-*_]\s*){3,}|\|?[\s:|-]*-[\s:|-]*)$');
+
+String _unescape(String text) => text.replaceAllMapped(_escape, (m) => m[1]!);
 
 List<String> _plainLines(String markdown) {
-  final nodes = md.Document(
-    extensionSet: md.ExtensionSet.gitHubFlavored,
-    encodeHtml: false,
-    inlineSyntaxes: [_SemanticsSentinelSyntax()],
-  ).parseLines(markdown.split('\n'));
   final lines = <String>[];
-  final line = StringBuffer();
-  void end() {
-    final text = line.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
-    if (text.isNotEmpty) lines.add(text);
-    line.clear();
+  for (final raw in markdown.split('\n')) {
+    if (raw.trim().isEmpty || _rule.hasMatch(raw)) continue;
+    var line = raw.replaceFirst(_blockPrefix, '');
+    line = line
+        .replaceAllMapped(_codeSpan, (m) => m[2]!)
+        .replaceAllMapped(_sentinel, (m) => m[2]!)
+        .replaceAllMapped(_image, (m) => m[1]!)
+        .replaceAllMapped(_authoredLink, (m) => m[1]!)
+        .replaceAllMapped(_angleLink, (m) => m[1]!)
+        .replaceAll(_emphasis, '')
+        .replaceAll('|', ' ');
+    line = _unescape(line).replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (line.isNotEmpty) lines.add(line);
   }
-
-  void visit(md.Node node) {
-    if (node is md.Text) {
-      line.write(node.text);
-    } else if (node is md.Element) {
-      final block = _blockTags.contains(node.tag);
-      if (block) end();
-      if (node.tag == 'img') line.write(node.attributes['alt'] ?? '');
-      if (node.tag == 'br') line.write(' ');
-      if (node.tag == 'td' || node.tag == 'th') line.write(' ');
-      for (final child in node.children ?? const <md.Node>[]) {
-        visit(child);
-      }
-      if (block) end();
-    }
-  }
-
-  nodes.forEach(visit);
-  end();
   return lines;
 }
 
@@ -211,57 +199,55 @@ typedef RaftMessageSemanticsLink = ({String label, String href});
 final _linkCache = LinkedHashMap<String, List<RaftMessageSemanticsLink>>();
 
 /// Links in prepared message Markdown (after [raftMessageReferences]), in
-/// reading order: authored links, autolinks and identity references.
+/// reading order: authored links, autolinks and identity references. Code
+/// spans are skipped, as in the rendered body.
 List<RaftMessageSemanticsLink> raftMessageSemanticsLinks(String markdown) {
   final cached = _linkCache.remove(markdown);
   if (cached != null) return _linkCache[markdown] = cached;
-  final links = <RaftMessageSemanticsLink>[];
-  void visit(md.Node node) {
-    if (node is! md.Element) return;
-    final href = node.attributes['href'];
-    if ((node.tag == 'a' || node.tag == 'raftref') && href != null) {
-      final label = node.textContent.trim();
-      links.add((label: label.isEmpty ? href : label, href: href));
-      // A reference nested in an authored label is its own link.
-      for (final child in node.children ?? const <md.Node>[]) {
-        if (child is md.Element && child.tag == 'raftref') visit(child);
-      }
-      return;
-    }
-    for (final child in node.children ?? const <md.Node>[]) {
-      visit(child);
-    }
-  }
-
+  final found = <(int, RaftMessageSemanticsLink)>[];
   if (markdown.contains('](') ||
       markdown.contains('://') ||
-      markdown.contains('www.') ||
-      markdown.contains('\u{E000}') ||
-      markdown.contains('<')) {
-    md.Document(
-      extensionSet: md.ExtensionSet.gitHubFlavored,
-      encodeHtml: false,
-      inlineSyntaxes: [_SemanticsSentinelSyntax()],
-    ).parseLines(markdown.split('\n')).forEach(visit);
+      markdown.contains('\u{E000}')) {
+    // Blank code spans (same length) so offsets stay comparable.
+    final text = markdown.replaceAllMapped(
+      _codeSpan,
+      (m) => ' ' * m[0]!.length,
+    );
+    final taken = <(int, int)>[];
+    bool free(Match m) => !taken.any((r) => m.start < r.$2 && r.$1 < m.end);
+    for (final m in _authoredLink.allMatches(text)) {
+      if (m.start > 0 && text[m.start - 1] == '!') continue;
+      taken.add((m.start, m.end));
+      final label = _unescape(m[1]!.replaceAllMapped(_sentinel, (s) => s[2]!))
+          .trim();
+      found.add((m.start, (label: label.isEmpty ? m[2]! : label, href: m[2]!)));
+      // A reference nested in an authored label is its own link.
+      for (final s in _sentinel.allMatches(m[1]!)) {
+        found.add((m.start + 1, (label: s[2]!, href: s[1]!)));
+      }
+    }
+    for (final m in _sentinel.allMatches(text)) {
+      if (!free(m)) continue;
+      found.add((m.start, (label: m[2]!, href: m[1]!)));
+    }
+    for (final m in _angleLink.allMatches(text)) {
+      if (!free(m)) continue;
+      taken.add((m.start, m.end));
+      found.add((m.start, (label: m[1]!, href: m[1]!)));
+    }
+    for (final m in _bareUrl.allMatches(text)) {
+      if (!free(m)) continue;
+      final url = m[0]!.replaceFirst(RegExp(r'[.,:;!?]+$'), '');
+      found.add((m.start, (label: url, href: url)));
+    }
   }
-  final result = List<RaftMessageSemanticsLink>.unmodifiable(links);
+  found.sort((a, b) => a.$1.compareTo(b.$1));
+  final result = List<RaftMessageSemanticsLink>.unmodifiable([
+    for (final (_, link) in found) link,
+  ]);
   _linkCache[markdown] = result;
   if (_linkCache.length > 512) _linkCache.remove(_linkCache.keys.first);
   return result;
-}
-
-/// Same private-use sentinel grammar as the message body's reference syntax.
-class _SemanticsSentinelSyntax extends md.InlineSyntax {
-  _SemanticsSentinelSyntax()
-    : super('\u{E000}([^\u{E001}]*)\u{E001}([^\u{E002}]*)\u{E002}');
-  @override
-  bool onMatch(md.InlineParser parser, Match match) {
-    parser.addNode(
-      md.Element('raftref', [md.Text(match[2]!)])
-        ..attributes['href'] = match[1]!,
-    );
-    return true;
-  }
 }
 
 /// Prose whose text the row label announces: its own text nodes are dropped

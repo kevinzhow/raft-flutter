@@ -158,4 +158,40 @@ void main() {
     expect(find.bySemanticsLabel(RegExp(r'^Show more$')), findsOneWidget);
     semantics.dispose();
   });
+
+  testWidgets('message text and links drop Markdown syntax', (t) async {
+    late BuildContext context;
+    await t.pumpWidget(
+      Builder(
+        builder: (c) {
+          context = c;
+          return const SizedBox();
+        },
+      ),
+    );
+    expect(
+      raftMessageSemanticsText(
+        context,
+        '## Title\n\n> **Quoted** _text_ with `a*b`\n\n'
+        '- [x] done item\n1. first\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n'
+        '---\nsnake_case and ![alt](img.png) and <https://x.invalid>\n\n'
+        '```js\nlet a\n```',
+      ),
+      'Title\nQuoted text with a*b\ndone item\nfirst\nA B\n1 2\n'
+      'snake_case and alt and https://x.invalid\nCode block, 1 line, js',
+    );
+    expect(
+      raftMessageSemanticsLinks(
+        'Go to https://a.invalid/x. Not `https://code.invalid`; '
+        '[\u{E000}raft-ref://mention/user/c\u{E001}@c\u{E002} notes](https://n.invalid) '
+        'and \u{E000}raft-ref://channel/1\u{E001}#gen\u{E002}',
+      ),
+      [
+        (label: 'https://a.invalid/x', href: 'https://a.invalid/x'),
+        (label: '@c notes', href: 'https://n.invalid'),
+        (label: '@c', href: 'raft-ref://mention/user/c'),
+        (label: '#gen', href: 'raft-ref://channel/1'),
+      ],
+    );
+  });
 }
