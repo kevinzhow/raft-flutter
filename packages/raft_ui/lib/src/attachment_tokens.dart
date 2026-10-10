@@ -111,6 +111,10 @@ class AttachmentComponentRecipe {
   Border? get badgeBorder => tokens.brutal
       ? Border.all(color: RaftPrimitiveColors.black, width: 2)
       : null;
+
+  /// FilePreviewBadge brutal `shadow-raft-sm`; elegant has none.
+  List<BoxShadow>? get badgeShadows =>
+      tokens.brutal ? tokens.themeShadows.sm.outer : null;
   TextStyle get metadata => RaftTypography.body(
     tokens,
     size: 10,

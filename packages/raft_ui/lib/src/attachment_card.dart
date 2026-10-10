@@ -80,6 +80,7 @@ class RaftAttachmentCard extends StatelessWidget {
               color: badge,
               border: component.badgeBorder,
               borderRadius: component.badgeRadius,
+              boxShadow: component.badgeShadows,
             ),
             child: Text(
               extension,

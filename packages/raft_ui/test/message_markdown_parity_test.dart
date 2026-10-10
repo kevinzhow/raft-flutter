@@ -9,6 +9,7 @@ import 'package:raft_ui/src/message_content_tokens.dart';
 /// checked against the official React captures (visual parity cases
 /// components.thread.message-row.*).
 void main() {
+  _badgeShadowTests();
   for (final (family, dark) in [
     (RaftFamily.brutal, false),
     (RaftFamily.elegant, false),
@@ -112,6 +113,20 @@ void main() {
     expect(baseline, moreOrLessEquals(raftCssBaseline(text.style!)));
     expect(lineBox.size.height, moreOrLessEquals(15 * text.style!.height!));
   });
+}
+
+void _badgeShadowTests() {
+  for (final family in RaftFamily.values) {
+    test('attachment type badge shadow follows FilePreviewBadge $family', () {
+      final tokens = raftTheme(family).extension<RaftTokens>()!;
+      final recipe = AttachmentComponentRecipe(tokens);
+      // brutal `border-2 border-black shadow-raft-sm`; elegant `px-1` only.
+      expect(
+        recipe.badgeShadows,
+        family == RaftFamily.brutal ? tokens.themeShadows.sm.outer : isNull,
+      );
+    });
+  }
 }
 
 typedef MarkdownStyleSheetLike = ({TextStyle code, TextStyle link});
