@@ -74,7 +74,8 @@ void main() {
         await tester.pumpAndSettle();
         final dynamic state = tester.state(find.byType(RaftChatView));
         final ScrollController viewport = state.viewport;
-        viewport.jumpTo(viewport.offset + 2400);
+        // Toward older history (top).
+        viewport.jumpTo(viewport.offset - 2400);
         await tester.pumpAndSettle();
         // Pick a fully painted row in the middle of the viewport.
         String? anchor;

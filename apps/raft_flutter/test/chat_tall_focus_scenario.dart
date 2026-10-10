@@ -92,7 +92,6 @@ Future<void> checkTallFocusReceipt(
     isNotNull,
     reason: 'A tall row covering the viewport must exit hidden staging',
   );
-  expect(state.focusStaging, false);
   expect(state.focusReceiptVisible('target-40'), true);
   expect(
     find.byType(RaftMessageTile, skipOffstage: false).evaluate().length,

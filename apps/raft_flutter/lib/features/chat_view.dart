@@ -11,7 +11,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'reading_anchor.dart';
+import 'message_timeline.dart';
 import 'row_extents.dart';
 
 import '../data/workspace_controller.dart';
@@ -103,13 +103,13 @@ class _RaftChatViewState extends State<RaftChatView>
   final Map<String, Timer> reactionFailureTimers = {};
   String? selectionError;
   var adapter = chat.InMemoryChatController();
-  late ScrollController viewport = RaftAnchoredScrollController(readingAnchor);
+  late RaftTimelineScrollController viewport = RaftTimelineScrollController(
+    bottomAnchored: bottomAnchored,
+  );
   final retiredAdapters = <chat.InMemoryChatController>{};
   final retiredViewports = <ScrollController>{};
   int listRevision = 0;
-  bool initialEndPending = true;
-  String? scope, adapterParent, preservedContextTarget;
-  double? preservedContextTop;
+  String? scope, adapterParent;
   String? scrolledHighlight;
   int? scrolledWindow, adapterWindow;
   int bindingRevision = 0;
@@ -117,163 +117,93 @@ class _RaftChatViewState extends State<RaftChatView>
   bool presentationActive = true;
   int presentationRevision = 0;
   final timelineKeys = <int, GlobalKey>{};
-  Widget? displayedTimeline, retainedTimeline;
-  bool focusStaging = false;
-  int focusSeekAttempts = 0;
   bool atBottom = true, returningLatest = false;
 
-  /// Channels are bottom-anchored (reversed scroll view, newest message at
-  /// scroll offset 0): opening lays out one screen, never the whole window.
-  /// Threads keep the top-anchored timeline.
+  /// Channels keep their bottom edge (latest end) fixed; threads their top.
   bool get bottomAnchored => !widget.thread;
-  final readingAnchor = RaftReadingAnchorController();
 
-  /// Records a fully visible row so the next layout keeps it in place when
-  /// rows are inserted at the latest end while the reader is scrolled up.
-  void captureReadingAnchor() {
-    final host = readingAnchor.host;
-    if (host is! RenderBox ||
-        !host.attached ||
-        !viewport.hasClients ||
-        viewport.positions.length != 1) {
+  /// The timeline's center: rows from [centerFirst] on (or after
+  /// [centerAfter]) are in the forward sliver, older rows in the history
+  /// sliver. Only an explicit jump moves it ([centerEpoch]).
+  String? centerFirst, centerAfter;
+  int centerEpoch = 0, lastCenterIndex = 0;
+
+  int centerIndex() {
+    final list = adapter.messages;
+    final first = centerFirst, after = centerAfter;
+    int? at;
+    if (first != null) {
+      at = windowIndexOf(first);
+    } else if (after != null) {
+      final i = windowIndexOf(after);
+      at = i == null ? null : i + 1;
+    }
+    return lastCenterIndex = (at ?? lastCenterIndex).clamp(0, list.length);
+  }
+
+  /// Keeps the center on a surviving row when its row leaves the window.
+  void retainCenter(List<chat.Message> before, Set<String> kept) {
+    String? survivor(int from, int step) {
+      for (var i = from; i >= 0 && i < before.length; i += step) {
+        if (kept.contains(before[i].id)) return before[i].id;
+      }
+      return null;
+    }
+
+    final first = centerFirst, after = centerAfter;
+    if (first != null && !kept.contains(first)) {
+      final at = before.indexWhere((m) => m.id == first);
+      centerFirst = survivor(at + 1, 1);
+      if (centerFirst == null) centerAfter = survivor(at - 1, -1);
+    } else if (after != null && !kept.contains(after)) {
+      final at = before.indexWhere((m) => m.id == after);
+      centerAfter = survivor(at - 1, -1);
+      if (centerAfter == null) centerFirst = survivor(at + 1, 1);
+    }
+  }
+
+  /// Moves the center (one rebuild) and positions the next layout.
+  void recenter({
+    String? first,
+    String? after,
+    required RaftTimelineAlignment alignment,
+  }) {
+    centerFirst = first;
+    centerAfter = first == null ? after : null;
+    centerEpoch++;
+    viewport.align(alignment);
+    if (mounted) setState(() {});
+  }
+
+  /// Back at the latest end: a jump within a couple of screens, otherwise a
+  /// fresh center at the end (never laying out the distance in between).
+  void showLatest() {
+    if (!viewport.hasClients || viewport.positions.length != 1) return;
+    final position = viewport.position;
+    if (position.hasContentDimensions &&
+        distanceFromLatest(position) <= position.viewportDimension * 2) {
+      viewport.followEnd();
+      if (position.pixels != position.maxScrollExtent) {
+        viewport.jumpTo(position.maxScrollExtent);
+      }
       return;
     }
-    RenderSliverMultiBoxAdaptor? list;
-    void visit(RenderObject node) {
-      if (node is RenderSliverMultiBoxAdaptor &&
-          (list == null ||
-              (node.geometry?.scrollExtent ?? 0) >
-                  (list!.geometry?.scrollExtent ?? 0))) {
-        list = node;
-      }
-      node.visitChildren(visit);
-    }
-
-    host.visitChildren(visit);
-    // A row fully inside the viewport (scroll space; no transforms needed).
-    final position = viewport.position;
-    final low = position.pixels,
-        high = position.pixels + position.viewportDimension;
-    for (
-      var child = list?.firstChild;
-      child != null;
-      child = list!.childAfter(child)
-    ) {
-      if (!child.hasSize) continue;
-      final offset = RaftReadingAnchorController.scrollOffsetOf(child);
-      if (offset != null &&
-          offset >= low &&
-          offset + child.size.height <= high) {
-        final id = rowIdOf(child);
-        if (id == null) {
-          readingAnchor.capture(child, position);
-        } else {
-          // By identity: rows inserted before it re-index the list and its
-          // render box may be rebuilt or collected in the same layout.
-          readingAnchor.captureResolved(
-            offset,
-            () => resolveRowOffset(id),
-            position,
-          );
-        }
-        return;
-      }
-    }
-  }
-
-  /// Whether this diff inserts rows on the side of the list that moves the
-  /// reader's rows: older rows at the top of a top-anchored (thread) list,
-  /// newer rows at offset 0 of the bottom-anchored (channel) list. Older
-  /// history in the channel grows away at the far end and must not be
-  /// "corrected" at all (an estimated correction could only move it).
-  bool insertsShiftReader(List<chat.Message> projected) {
-    // A top-anchored thread also shifts on its loading row and late
-    // extents; keep holding there (structural fix pending).
-    if (!bottomAnchored) return true;
-    final current = adapter.messages;
-    if (current.isEmpty || projected.isEmpty) return false;
-    final firstAt = projected.indexWhere((m) => m.id == current.first.id);
-    final lastAt = projected.indexWhere((m) => m.id == current.last.id);
-    if (firstAt < 0 || lastAt < 0) return true;
-    return bottomAnchored ? lastAt < projected.length - 1 : firstAt > 0;
-  }
-
-  RenderSliverMultiBoxAdaptor? messageSliver() {
-    final host = readingAnchor.host;
-    if (host == null || !host.attached) return null;
-    RenderSliverMultiBoxAdaptor? list;
-    void visit(RenderObject node) {
-      if (node is RenderSliverMultiBoxAdaptor &&
-          (list == null ||
-              (node.geometry?.scrollExtent ?? 0) >
-                  (list!.geometry?.scrollExtent ?? 0))) {
-        list = node;
-      }
-      node.visitChildren(visit);
-    }
-
-    host.visitChildren(visit);
-    return list;
-  }
-
-  static String? rowIdOf(RenderObject child) {
-    String? found;
-    void visit(RenderObject node) {
-      if (found != null) return;
-      if (node is RaftRowIdentity) {
-        found = (node as RaftRowIdentity).rowId;
-        return;
-      }
-      node.visitChildren(visit);
-    }
-
-    visit(child);
-    return found;
-  }
-
-  /// Current scroll offset of the row [id]: exact when its box is laid out,
-  /// otherwise estimated from the built rows by index. Reads only layout
-  /// offsets, so it is safe inside the viewport's layout.
-  ({double offset, bool exact})? resolveRowOffset(String id) {
-    final sliver = messageSliver();
-    final first = sliver?.firstChild, last = sliver?.lastChild;
-    if (sliver == null || first == null || last == null) return null;
-    for (
-      RenderBox? child = first;
-      child != null;
-      child = sliver.childAfter(child)
-    ) {
-      if (rowIdOf(child) == id) {
-        final offset = RaftReadingAnchorController.scrollOffsetOf(child);
-        if (offset != null) return (offset: offset, exact: true);
-      }
-    }
-    final found = windowIndexOf(id);
-    if (found == null) return null;
-    final index = bottomAnchored ? adapter.messages.length - 1 - found : found;
-    final lo = sliver.indexOf(first), hi = sliver.indexOf(last);
-    final loTop = sliver.childScrollOffset(first),
-        hiTop = sliver.childScrollOffset(last);
-    if (loTop == null || hiTop == null) return null;
-    final perRow = hi > lo ? (hiTop - loTop) / (hi - lo) : 120.0;
-    final top = index < lo
-        ? loTop - (lo - index) * perRow
-        : index > hi
-        ? hiTop + (index - hi) * perRow
-        : loTop + (index - lo) * perRow;
-    return (
-      offset: sliver.constraints.precedingScrollExtent + top,
-      exact: false,
+    recenter(
+      after: adapter.messages.lastOrNull?.id,
+      alignment: RaftTimelineAlignment.end,
     );
   }
 
-  double latestOffset(ScrollPosition p) =>
-      bottomAnchored ? p.minScrollExtent : p.maxScrollExtent;
-  double oldestOffset(ScrollPosition p) =>
-      bottomAnchored ? p.maxScrollExtent : p.minScrollExtent;
-  double distanceFromLatest(ScrollPosition p) => bottomAnchored
-      ? p.pixels - p.minScrollExtent
-      : p.maxScrollExtent - p.pixels;
+  RaftTimelineAlignment alignOn(String target, {double? leading}) =>
+      RaftTimelineAlignment.row(
+        find: () {
+          final box = focusAnchors[target]?.currentContext?.findRenderObject();
+          return box is RenderBox ? box : null;
+        },
+        leading: leading,
+      );
+
+  double distanceFromLatest(ScrollPosition p) => p.maxScrollExtent - p.pixels;
   int newMessageCount = 0;
   Timer? highlightTimer;
 
@@ -310,28 +240,13 @@ class _RaftChatViewState extends State<RaftChatView>
       // to retain underneath a hidden replacement at this first mount.
       adapter.dispose();
       adapter = chat.InMemoryChatController(
-        messages: [
-          for (final m in rows)
-            chat.Message.custom(
-              id: w.messageKey(m),
-              authorId: m.senderId.isEmpty ? 'system' : m.senderId,
-              createdAt: m.createdAt,
-              metadata: m.json,
-            ),
-        ],
+        messages: [for (final m in rows) project(m)],
       );
       scope = w.channel?.id;
       // A later accepted response must use its own staging adapter.
       adapterWindow = null;
-      initialEndPending = false;
-      viewport.removeListener(timelineScrolled);
-      viewport.dispose();
-      // A bottom-anchored timeline starts at its latest end (offset 0).
-      viewport =
-          (bottomAnchored
-                ? RaftAnchoredScrollController(readingAnchor)
-                : RaftAnchoredScrollController(readingAnchor, startAtEnd: true))
-            ..addListener(timelineScrolled);
+      centerAfter = adapter.messages.lastOrNull?.id;
+      ++windowRevision;
     }
     widget.viewportHandle?.bind(this, jumpToBeginning);
     referenceDirectory = MessageReferenceDirectory(w)
@@ -607,17 +522,23 @@ class _RaftChatViewState extends State<RaftChatView>
     }
   }
 
+  /// Thread "jump to start": a fresh center at the oldest loaded row.
   void jumpToBeginning() {
-    if (presentationActive && viewport.positions.length == 1) {
-      viewport.jumpTo(oldestOffset(viewport.position));
+    if (presentationActive && adapter.messages.isNotEmpty) {
+      recenter(
+        first: adapter.messages.first.id,
+        alignment: RaftTimelineAlignment.start,
+      );
     }
   }
 
   void timelineScrolled() {
     closePickerOnScroll();
-    if (!mounted || focusStaging || viewport.positions.length != 1) return;
+    if (!mounted || viewport.positions.length != 1) return;
+    final position = viewport.position;
+    if (!position.hasContentDimensions) return;
     // MessageTimeline.tsx AT_BOTTOM_THRESHOLD.
-    final next = distanceFromLatest(viewport.position) <= 100;
+    final next = distanceFromLatest(position) <= 100;
     if (next != atBottom || (next && newMessageCount != 0)) {
       setState(() {
         atBottom = next;
@@ -630,10 +551,32 @@ class _RaftChatViewState extends State<RaftChatView>
     newMessageCount = 0;
     returningLatest = w.hasNewer;
     await w.returnToLatest(navigate: w.section == 'chat');
-    if (!mounted || returningLatest || viewport.positions.length != 1) return;
-    viewport.jumpTo(latestOffset(viewport.position));
+    if (!mounted || returningLatest) return;
+    showLatest();
     timelineScrolled();
   }
+
+  // Projections of the presented rows, reused while a row is unchanged (the
+  // controller returns the same RaftMessage for an unchanged ledger row).
+  final projections = Expando<chat.Message>('chat projections');
+  final sources = Expando<RaftMessage>('projected rows');
+  chat.Message project(RaftMessage m) {
+    final key = w.messageKey(m);
+    final cached = projections[m];
+    if (cached != null && cached.id == key) return cached;
+    final projected = chat.Message.custom(
+      id: key,
+      authorId: m.senderId.isEmpty ? 'system' : m.senderId,
+      createdAt: m.createdAt,
+      metadata: m.json,
+    );
+    sources[projected] = m;
+    return projections[m] = projected;
+  }
+
+  /// The presented row of a projection, without copying its fields again.
+  RaftMessage source(chat.Message message) =>
+      sources[message] ?? RaftMessage(message.metadata!);
 
   void referencesChanged() {
     if (mounted) setState(() {});
@@ -678,38 +621,47 @@ class _RaftChatViewState extends State<RaftChatView>
     super.dispose();
   }
 
+  /// Publishes a new window in one rebuild, positioned inside its first
+  /// layout: at [focus] (centered, or with its top [focusTop] below the
+  /// viewport top) when it is in the window, otherwise at the latest end.
   void replaceContext(
     List<chat.Message> messages, {
-    String? preserveTarget,
-    double? preserveTop,
+    String? focus,
+    double? focusTop,
   }) {
     for (final timer in reactionFailureTimers.values) {
       timer.cancel();
     }
     reactionFailureTimers.clear();
     reactionFailures.clear();
-    final oldAdapter = adapter, oldViewport = viewport;
-    retainedTimeline ??= displayedTimeline;
-    retiredAdapters.add(oldAdapter);
-    retiredViewports.add(oldViewport);
+    retiredAdapters.add(adapter);
+    retiredViewports.add(viewport);
     adapter = chat.InMemoryChatController(messages: messages);
-    viewport = RaftAnchoredScrollController(readingAnchor)
-      ..addListener(timelineScrolled);
+    ++windowRevision;
+    final target = focus == null
+        ? null
+        : messages.where((m) => m.metadata?['id'] == focus).firstOrNull;
+    centerFirst = target?.id;
+    centerAfter = target == null ? messages.lastOrNull?.id : null;
+    lastCenterIndex = target == null ? messages.length : 0;
+    centerEpoch++;
+    viewport = RaftTimelineScrollController(
+      bottomAnchored: bottomAnchored,
+      initial: target != null
+          ? alignOn(focus!, leading: focusTop)
+          // An empty thread (e.g. a task's discussion) shows its head.
+          : messages.isEmpty && !bottomAnchored
+          ? RaftTimelineAlignment.start
+          : RaftTimelineAlignment.end,
+    )..addListener(timelineScrolled);
     listRevision++;
-    initialEndPending = !bottomAnchored && w.highlightedMessageId == null;
-    positionQueued = false;
-    focusStaging = messages.isNotEmpty;
-    focusSeekAttempts = 0;
-    preservedContextTarget = preserveTarget;
-    preservedContextTop = preserveTop;
+    revealPending = messages.isNotEmpty;
+    preservingFocus = focusTop != null;
     setState(() {});
-    // A keyed Chat owns a new observer and controller. The retired list's
-    // dispose can only detach its own focus methods, never the new observer.
-    if (!focusStaging) retirePreviousTimelines();
+    retirePreviousTimelines();
   }
 
   void retirePreviousTimelines() {
-    retainedTimeline = null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       for (final oldAdapter in retiredAdapters.toList()) {
         if (retiredAdapters.remove(oldAdapter)) oldAdapter.dispose();
@@ -719,6 +671,84 @@ class _RaftChatViewState extends State<RaftChatView>
       }
     });
   }
+
+  /// Applies the presented rows to the current window in place. Unchanged
+  /// rows are the same projection objects, so an unchanged window costs one
+  /// identity pass (no per-row search or encoding). Returns whether it changed.
+  bool applyWindow(List<chat.Message> projected) {
+    final current = adapter.messages;
+    final wanted = {for (final m in projected) m.id};
+    final next = ordered(current, projected, wanted);
+    var same = current.length == next.length;
+    for (var i = 0; same && i < next.length; i++) {
+      final a = current[i], b = next[i];
+      same =
+          identical(a, b) ||
+          (a.id == b.id && identical(a.metadata, b.metadata));
+    }
+    if (same) return false;
+    final previousLast = current.lastOrNull?.id;
+    retainCenter(current, wanted);
+    adapter.setMessages(next, animated: false);
+    ++windowRevision;
+    // Rows that arrived after the previous latest row.
+    final from = previousLast == null
+        ? 0
+        : next.indexWhere((m) => m.id == previousLast) + 1;
+    if (from > 0 || previousLast == null) {
+      final appended = next.skip(from);
+      final me = w.client.user?.id;
+      if (appended.isNotEmpty) {
+        if (me != null && appended.last.authorId == me) {
+          // An own message returns to the latest end, wherever the reader is.
+          showLatest();
+        } else if (atBottom) {
+          viewport.followEnd();
+        }
+      }
+    }
+    if (mounted) setState(() {});
+    return true;
+  }
+
+  /// [projected], except that rows already shown keep their order: a row
+  /// whose position changes (e.g. a confirmed send sorting by its server seq)
+  /// stays where the reader saw it; new rows enter at their projected index.
+  static List<chat.Message> ordered(
+    List<chat.Message> current,
+    List<chat.Message> projected,
+    Set<String> wanted,
+  ) {
+    final shown = {for (final m in current) m.id};
+    final keptOrder = [
+      for (final m in current)
+        if (wanted.contains(m.id)) m.id,
+    ];
+    var k = 0, inOrder = true;
+    for (final m in projected) {
+      if (!shown.contains(m.id)) continue;
+      if (k >= keptOrder.length || keptOrder[k] != m.id) {
+        inOrder = false;
+        break;
+      }
+      k++;
+    }
+    if (inOrder) return projected;
+    final next = {for (final m in projected) m.id: m};
+    final list = [for (final id in keptOrder) next[id]!];
+    for (var i = 0; i < projected.length; i++) {
+      if (!shown.contains(projected[i].id)) {
+        list.insert(i.clamp(0, list.length), projected[i]);
+      }
+    }
+    return list;
+  }
+
+  int windowRevision = 0;
+  bool revealPending = false, preservingFocus = false;
+  int revealTicket = 0;
+  String? revealing;
+  int? revealingWindow;
 
   void sync() {
     if (reactionPicker != null && pickerAuthority != workspaceAuthority(w)) {
@@ -737,22 +767,14 @@ class _RaftChatViewState extends State<RaftChatView>
     updates = updates.then((_) async {
       if (!currentBinding()) return;
       final id = widget.thread ? w.threadChannelId : w.channel?.id;
-      for (final row in rows) {
+      final presented = rows;
+      for (final row in presented) {
         if (!WorkspaceController.isPendingSend(row) &&
             (row.json['reactions'] as List? ?? []).isNotEmpty) {
           w.hydrateReactionViewer(row);
         }
       }
-      final projected = rows
-          .map(
-            (m) => chat.Message.custom(
-              id: w.messageKey(m),
-              authorId: m.senderId.isEmpty ? 'system' : m.senderId,
-              createdAt: m.createdAt,
-              metadata: m.json,
-            ),
-          )
-          .toList();
+      final projected = [for (final m in presented) project(m)];
       final window = widget.thread ? w.threadGeneration : w.channelGeneration;
       final loading = widget.thread ? w.threadLoading : w.channelLoading;
       final target = w.highlightedMessageId;
@@ -786,6 +808,7 @@ class _RaftChatViewState extends State<RaftChatView>
       final parentProjection = widget.thread
           ? jsonEncode(w.presentedThreadParent?.json)
           : null;
+      var replaced = false;
       if (widget.thread &&
           !loading &&
           scope == id &&
@@ -805,7 +828,8 @@ class _RaftChatViewState extends State<RaftChatView>
           final top =
               row.localToGlobal(Offset.zero).dy -
               clip.localToGlobal(Offset.zero).dy;
-          replaceContext(projected, preserveTarget: focus, preserveTop: top);
+          replaceContext(projected, focus: focus, focusTop: top);
+          replaced = true;
         }
       }
       adapterParent = parentProjection;
@@ -833,256 +857,111 @@ class _RaftChatViewState extends State<RaftChatView>
           selectionToast.clear();
         }
         scope = id;
-        // A context replacement has different scroll bounds. Carrying the old
-        // history offset into its first layout can leave the sliver entirely
-        // outside the viewport, preventing the observer from finding a target.
-        // Ordinary diffs and history prepend do not enter this branch.
-        replaceContext(projected);
+        // A context replacement has different scroll bounds and its own
+        // center; ordinary diffs and history prepends never enter here.
+        replaceContext(projected, focus: pendingAcceptedMount ? null : target);
+        replaced = true;
         scrolledHighlight = null;
         // Acceptance of the pending response must still enter atomic staging,
         // even though its controller generation matches this retained mount.
         adapterWindow = pendingAcceptedMount ? null : window;
-      }
-      final ownedAdapter = adapter, ownedViewport = viewport;
-      bool currentContext() =>
-          currentBinding() &&
-          identical(adapter, ownedAdapter) &&
-          identical(viewport, ownedViewport);
-      // Either direction: an older page prepended above a thread's reader
-      // (top-anchored) or rows arriving below a channel's reader keep the
-      // row on screen exactly in place.
-      if (!atBottom &&
-          !focusStaging &&
-          identical(adapter, ownedAdapter) &&
-          insertsShiftReader(projected)) {
-        captureReadingAnchor();
-      }
-      final wanted = projected.map((m) => m.id).toSet();
-      for (final old in List<chat.Message>.of(adapter.messages)) {
-        if (!wanted.contains(old.id)) {
-          await adapter.removeMessage(old, animated: false);
-          if (!currentContext()) return;
-        }
-      }
-      for (var i = 0; i < projected.length; i++) {
-        final next = projected[i];
-        final existing = adapter.messages
-            .where((m) => m.id == next.id)
-            .firstOrNull;
-        if (existing == null) {
-          await adapter.insertMessage(next, index: i, animated: false);
-        } else if (jsonEncode(existing.metadata) != jsonEncode(next.metadata)) {
-          await adapter.updateMessage(existing, next);
-        }
-        if (!currentContext()) return;
+      } else if (!replaced) {
+        applyWindow(projected);
       }
       // A plain channel switch publishes its retained/cached window at once
-      // (Web shows the channel's cached bucket, then refetches); the latest
-      // end is offset 0, and the network page updates rows in place.
+      // (Web shows the channel's cached bucket, then refetches); the network
+      // page updates rows in place.
       final showCachedLatest =
           bottomAnchored && target == null && adapter.messages.isNotEmpty;
-      if (presentationActive &&
-          (!loading || pendingAcceptedMount || showCachedLatest) &&
-          (focusStaging ||
-              (target != null &&
-                  (target != scrolledHighlight || window != scrolledWindow)))) {
-        positionContext(
-          ownedAdapter,
-          ownedViewport,
-          window,
+      if (!presentationActive ||
+          (loading && !pendingAcceptedMount && !showCachedLatest)) {
+        return;
+      }
+      final loaded =
           !pendingAcceptedMount &&
-                  adapter.messages.any(
-                    (m) =>
-                        m.metadata?['id'] == (preservedContextTarget ?? target),
-                  )
-              ? preservedContextTarget ?? target
-              : null,
+          target != null &&
+          adapter.messages.any((m) => m.metadata?['id'] == target);
+      if (revealPending) {
+        reveal(window, loaded ? target : null);
+      } else if (loaded &&
+          (target != scrolledHighlight || window != scrolledWindow) &&
+          (revealing != target || revealingWindow != window)) {
+        // A new target inside the current window: one re-centered rebuild.
+        recenter(
+          first: adapter.messages
+              .firstWhere((m) => m.metadata?['id'] == target)
+              .id,
+          alignment: alignOn(target),
         );
+        reveal(window, target);
       }
     });
   }
 
-  bool positionQueued = false;
-
-  void positionContext(
-    chat.InMemoryChatController owner,
-    ScrollController scroll,
-    int window,
-    String? target,
-  ) {
-    if (positionQueued) return;
-    positionQueued = true;
-    final revision = presentationRevision;
-    final preservingAnchor = preservedContextTop != null;
+  /// Records a published position once its first frame shows it.
+  void reveal(int window, String? target) {
+    final ticket = ++revealTicket;
+    revealing = target;
+    revealingWindow = window;
+    final owner = adapter, scroll = viewport, revision = presentationRevision;
+    final preserving = preservingFocus;
     bool current() =>
         mounted &&
+        ticket == revealTicket &&
         presentationActive &&
         revision == presentationRevision &&
         identical(owner, adapter) &&
         identical(scroll, viewport) &&
         window == (widget.thread ? w.threadGeneration : w.channelGeneration);
-    void reveal() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        positionQueued = false;
-        if (!current()) return;
-        if (target != null && !focusReceiptVisible(target)) return;
-        setState(() {
-          focusStaging = false;
-          returningLatest = false;
-          scrolledHighlight = target;
-          scrolledWindow = window;
-          initialEndPending = false;
-          preservedContextTarget = null;
-          preservedContextTop = null;
-          atBottom = distanceFromLatest(scroll.position) <= 100;
-        });
-        retirePreviousTimelines();
-        if (!preservingAnchor) {
-          highlightTimer?.cancel();
-          if (target != null && w.highlightedMessageId == target) {
-            final binding = bindingRevision,
-                ownedScope = scope,
-                authority = workspaceAuthority(w),
-                navigationWindow = w.navigationRevision;
-            highlightTimer = Timer(const Duration(seconds: 2), () {
-              if (mounted &&
-                  binding == bindingRevision &&
-                  scope == ownedScope &&
-                  authority == workspaceAuthority(w) &&
-                  window ==
-                      (widget.thread
-                          ? w.threadGeneration
-                          : w.channelGeneration)) {
-                w.clearHighlightedMessage(
-                  target,
-                  expectedNavigationRevision: navigationWindow,
-                );
-              }
-            });
-          }
-        }
-      });
-      WidgetsBinding.instance.ensureVisualUpdate();
-    }
-
-    void center() {
-      void again() {
-        WidgetsBinding.instance.addPostFrameCallback((_) => center());
-        WidgetsBinding.instance.ensureVisualUpdate();
-      }
-
-      if (!current() || scroll.positions.length != 1) {
-        positionQueued = false;
+    var attempts = 0;
+    void check(Duration _) {
+      if (!current()) {
+        if (mounted && ticket == revealTicket) revealing = null;
         return;
       }
-      final position = scroll.position;
-      double offset;
-      if (target == null) {
-        // A lazy list estimates its extent from the rows it has built.
-        // Jumping to the end builds the last rows and corrects the extent,
-        // so repeat until the end is stable before publishing.
-        final latest = latestOffset(position);
-        if ((position.pixels - latest).abs() > .5 && focusSeekAttempts < 12) {
-          focusSeekAttempts++;
-          scroll.jumpTo(latest);
-          again();
-          return;
-        }
-        offset = latest;
-      } else {
-        final row = focusAnchors[target]?.currentContext?.findRenderObject();
-        final view = row == null ? null : RenderAbstractViewport.maybeOf(row);
-        if (row == null || !row.attached || view == null) {
-          // Only rows near the viewport are built. While the staged list is
-          // hidden, estimate the target position from the built rows and
-          // refine it on the next frame.
-          final seek = seekOffset(owner, scroll, target);
-          if (focusSeekAttempts >= 16) {
-            positionQueued = false;
-            return;
-          }
-          focusSeekAttempts++;
-          // No rows yet: the list builds its first rows on the next frame.
-          if (seek != null) {
-            scroll.jumpTo(
-              seek.clamp(position.minScrollExtent, position.maxScrollExtent),
+      if (target != null && !focusReceiptVisible(target) && attempts++ < 8) {
+        WidgetsBinding.instance.addPostFrameCallback(check);
+        WidgetsBinding.instance.ensureVisualUpdate();
+        return;
+      }
+      revealing = null;
+      setState(() {
+        revealPending = false;
+        preservingFocus = false;
+        returningLatest = false;
+        scrolledHighlight = target;
+        scrolledWindow = window;
+        final position = scroll.positions.length == 1 ? scroll.position : null;
+        atBottom =
+            position == null ||
+            !position.hasContentDimensions ||
+            distanceFromLatest(position) <= 100;
+      });
+      if (preserving) return;
+      highlightTimer?.cancel();
+      if (target != null && w.highlightedMessageId == target) {
+        final binding = bindingRevision,
+            ownedScope = scope,
+            authority = workspaceAuthority(w),
+            navigationWindow = w.navigationRevision;
+        highlightTimer = Timer(const Duration(seconds: 2), () {
+          if (mounted &&
+              binding == bindingRevision &&
+              scope == ownedScope &&
+              authority == workspaceAuthority(w) &&
+              window ==
+                  (widget.thread ? w.threadGeneration : w.channelGeneration)) {
+            w.clearHighlightedMessage(
+              target,
+              expectedNavigationRevision: navigationWindow,
             );
           }
-          again();
-          return;
-        }
-        // Source scrollIntoView({block: "center"}); actual laid-out geometry.
-        offset = preservedContextTop == null
-            ? view.getOffsetToReveal(row, .5).offset
-            : view.getOffsetToReveal(row, 0).offset - preservedContextTop!;
+        });
       }
-      final clamped = offset.clamp(
-        position.minScrollExtent,
-        position.maxScrollExtent,
-      );
-      if ((position.pixels - clamped).abs() > .5) {
-        scroll.jumpTo(clamped);
-        // Rows above the target may correct their estimated extent once built.
-        if (focusSeekAttempts < 12) {
-          focusSeekAttempts++;
-          again();
-          return;
-        }
-      }
-      reveal();
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!current()) {
-        positionQueued = false;
-        return;
-      }
-      center();
-    });
+    WidgetsBinding.instance.addPostFrameCallback(check);
     WidgetsBinding.instance.ensureVisualUpdate();
-  }
-
-  /// Estimated scroll offset of [target], from the rows the lazy message
-  /// sliver has currently built. Refined on each frame until the row exists.
-  double? seekOffset(
-    chat.InMemoryChatController owner,
-    ScrollController scroll,
-    String target,
-  ) {
-    final found = owner.messages.indexWhere((m) => m.metadata?['id'] == target);
-    if (found < 0) return null;
-    // A reversed list builds the newest message at sliver index 0.
-    final index = bottomAnchored ? owner.messages.length - 1 - found : found;
-    final root = scroll.position.context.storageContext.findRenderObject();
-    // The message list is the lazy sliver with the largest scroll extent;
-    // header and footer slivers are small.
-    RenderSliverMultiBoxAdaptor? list;
-    void visit(RenderObject node) {
-      if (node is RenderSliverMultiBoxAdaptor &&
-          (list == null ||
-              (node.geometry?.scrollExtent ?? 0) >
-                  (list!.geometry?.scrollExtent ?? 0))) {
-        list = node;
-      }
-      node.visitChildren(visit);
-    }
-
-    if (root == null) return null;
-    visit(root);
-    final sliver = list;
-    final first = sliver?.firstChild, last = sliver?.lastChild;
-    if (sliver == null || first == null || last == null) return null;
-    final lo = sliver.indexOf(first), hi = sliver.indexOf(last);
-    final loTop = sliver.childScrollOffset(first),
-        hiTop = sliver.childScrollOffset(last);
-    if (loTop == null || hiTop == null) return null;
-    final base = sliver.constraints.precedingScrollExtent;
-    final perRow = hi > lo ? (hiTop - loTop) / (hi - lo) : last.size.height;
-    final top = index < lo
-        ? loTop - (lo - index) * perRow
-        : hiTop + (index - hi) * perRow;
-    // Center the estimated row like the final scrollIntoView step.
-    return base + top - scroll.position.viewportDimension / 2;
   }
 
   bool focusReceiptVisible(String target) {
@@ -1160,9 +1039,8 @@ class _RaftChatViewState extends State<RaftChatView>
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1355,9 +1233,8 @@ class _RaftChatViewState extends State<RaftChatView>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1838,9 +1715,8 @@ class _RaftChatViewState extends State<RaftChatView>
       await store.setSaved(message.id, !store.isSaved(message.id));
     } catch (e) {
       if (mounted && authority == workspaceAuthority(w)) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -2137,24 +2013,16 @@ class _RaftChatViewState extends State<RaftChatView>
   // id -> index over the displayed window, rebuilt when the window changes;
   // rows used to project and scan the whole channel on every build.
   List<chat.Message>? indexedWindow;
-  int indexedLength = -1;
-  String? indexedFirst, indexedLast;
+  int indexedRevision = -1;
   final windowIndex = <String, int>{};
   int? windowIndexOf(String id) {
     final list = adapter.messages;
-    final first = list.isEmpty ? null : list.first.id;
-    final last = list.isEmpty ? null : list.last.id;
-    if (!identical(list, indexedWindow) ||
-        list.length != indexedLength ||
-        first != indexedFirst ||
-        last != indexedLast) {
+    if (!identical(list, indexedWindow) || indexedRevision != windowRevision) {
       windowIndex
         ..clear()
         ..addAll({for (var i = 0; i < list.length; i++) list[i].id: i});
       indexedWindow = list;
-      indexedLength = list.length;
-      indexedFirst = first;
-      indexedLast = last;
+      indexedRevision = windowRevision;
     }
     return windowIndex[id];
   }
@@ -2165,11 +2033,8 @@ class _RaftChatViewState extends State<RaftChatView>
     final index = windowIndexOf(key);
     DateTime? previous;
     if (index != null) {
-      previous = index > 0
-          ? RaftMessage(adapter.messages[index - 1].metadata!).createdAt
-          : null;
+      previous = index > 0 ? adapter.messages[index - 1].createdAt : null;
     } else {
-      // A row of the retained (previous) window while a new one is staged.
       final current = rows;
       final at = current.indexWhere((row) => w.messageKey(row) == key);
       previous = at > 0 ? current[at - 1].createdAt : null;
@@ -2213,12 +2078,10 @@ class _RaftChatViewState extends State<RaftChatView>
   /// height at this width, otherwise a content-based guess.
   double estimateRow(
     Map<String, (double, double)> measuredRows,
-    chat.InMemoryChatController timelineAdapter,
-    int visualIndex,
+    List<chat.Message> list,
+    int index,
   ) {
     final width = raftLastRowWidth;
-    final list = timelineAdapter.messages;
-    final index = bottomAnchored ? list.length - 1 - visualIndex : visualIndex;
     if (index < 0 || index >= list.length) return 96;
     final message = list[index];
     final measured = measuredRows[message.id];
@@ -2269,23 +2132,58 @@ class _RaftChatViewState extends State<RaftChatView>
     );
   }
 
-  Widget buildTimeline(
-    chat.InMemoryChatController timelineAdapter,
-    ScrollController timelineViewport,
-    int revision,
-  ) {
-    final anchorRevision = revision, anchorViewport = timelineViewport;
+  Widget buildTimeline() {
+    final timelineAdapter = adapter;
+    final messages = timelineAdapter.messages;
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
     final loading = widget.thread ? w.threadLoading : w.channelLoading;
     final empty = rows.isEmpty;
-    final threadHeader = widget.thread
-        ? threadTopSliver(loading: loading)
-        : null;
-    final hasOlder = w.hasMore,
-        limited = w.historyLimited,
-        fetchingOlder = w.loadingOlder;
+    const recipe = RaftTimelineCompositionRecipe();
+    final List<Widget> header;
+    if (widget.thread) {
+      header = [
+        threadTopSliver(loading: loading),
+        if (!loading && empty)
+          RaftTimelineSparseFill(
+            child: RaftEmptyState(
+              title: raftText(context, 'No replies yet'),
+              detail: raftText(context, 'Reply to start a thread.'),
+            ),
+          ),
+      ];
+    } else {
+      // Fills the space above a short timeline so the history state stays at
+      // the top while messages sit at the bottom (Source flex-grow spacer),
+      // and is just its own height otherwise.
+      header = [
+        RaftTimelineSparseFill(
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: empty
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: recipe.channelHeaderInset,
+                    child: RaftThreadHistoryTopState(
+                      hasMore: w.hasMore,
+                      historyLimited: w.historyLimited,
+                      loadingOlder: w.loadingOlder,
+                      loadingOlderLabel: raftText(context, 'Loading...'),
+                      historyLimitedLabel: raftText(
+                        context,
+                        'Earlier messages are unavailable due to plan limits.',
+                      ),
+                      beginningLabel: raftText(
+                        context,
+                        'Beginning of messages',
+                      ),
+                    ),
+                  ),
+          ),
+        ),
+      ];
+    }
     return Chat(
-      key: timelineKeys.putIfAbsent(revision, GlobalKey.new),
+      key: timelineKeys.putIfAbsent(listRevision, GlobalKey.new),
       currentUserId: w.client.user?.id ?? '',
       resolveUser: (id) async => chat.User(id: id),
       chatController: timelineAdapter,
@@ -2299,156 +2197,44 @@ class _RaftChatViewState extends State<RaftChatView>
         scrollToBottomBuilder: (_, animation, callback) =>
             const SizedBox.shrink(),
         composerBuilder: (_) => const SizedBox.shrink(),
-        chatMessageBuilder:
-            (
-              context,
-              message,
-              index,
-              animation,
-              child, {
-              isRemoved,
-              required isSentByMe,
-              groupStatus,
-            }) => child,
-        customMessageBuilder:
-            (context, message, index, {required isSentByMe, groupStatus}) =>
-                datedTile(
-                  RaftMessage(message.metadata!),
-                  captureFocus: identical(timelineAdapter, adapter),
-                ),
-        chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
-          controller: timelineViewport,
-          presentationActive: presentationActive,
-          // A reversed timeline already starts at its end (offset 0).
-          enabled:
-              !widget.thread &&
-              !bottomAnchored &&
-              (w.highlightedMessageId == null ||
-                  loading && timelineAdapter.messages.isNotEmpty),
-          contentReady: !loading || timelineAdapter.messages.isNotEmpty,
-          onInitialReady: () {
-            if (mounted &&
-                listRevision == anchorRevision &&
-                identical(viewport, anchorViewport) &&
-                initialEndPending) {
-              setState(() => initialEndPending = false);
-            }
-          },
-          child: RaftReadingAnchor(
-            controller: readingAnchor,
-            child: ChatAnimatedList(
-              scrollController: timelineViewport,
-              reversed: bottomAnchored,
-              key: ValueKey(
-                'chat-list-${widget.thread ? 'thread' : 'channel'}',
-              ),
-              itemBuilder: item,
-              extentEstimation: (index) =>
-                  estimateRow(measuredRows, timelineAdapter, index),
-              // Mounted MessageTimeline owns its two sentinels and natural
-              // footer. Generic Flyer padding/safe-area must not duplicate
-              // that spacing or the external composer's OS inset.
-              topPadding: 0,
-              bottomPadding: 0,
-              handleSafeArea: false,
-              messageSliverWrapper: (context, messageSliver) =>
-                  RaftTimelineCompositionSliver(
-                    anchor: const RaftTimelineCompositionRecipe().anchorFor(
-                      widget.thread
-                          ? RaftTimelineHost.threadPanel
-                          : RaftTimelineHost.chatPanel,
-                    ),
-                    messagesSliver: messageSliver,
-                    footer: const RaftTimelineFooter(),
-                    reversed: bottomAnchored,
-                  ),
-              topSliver: widget.thread
-                  ? SliverMainAxisGroup(
-                      slivers: [
-                        threadHeader!,
-                        if (!loading && rows.isEmpty)
-                          SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: RaftEmptyState(
-                              title: raftText(context, 'No replies yet'),
-                              detail: raftText(
-                                context,
-                                'Reply to start a thread.',
-                              ),
-                            ),
-                          ),
-                      ],
-                    )
-                  // Fills the space above a short timeline so the history state
-                  // stays at the top while messages sit at the bottom (Source
-                  // flex-grow spacer), and is just its own height otherwise.
-                  : SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: empty
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                padding: const RaftTimelineCompositionRecipe()
-                                    .channelHeaderInset,
-                                child: RaftThreadHistoryTopState(
-                                  hasMore: hasOlder,
-                                  historyLimited: limited,
-                                  loadingOlder: fetchingOlder,
-                                  loadingOlderLabel: raftText(
-                                    context,
-                                    'Loading...',
-                                  ),
-                                  historyLimitedLabel: raftText(
-                                    context,
-                                    'Earlier messages are unavailable due to plan limits.',
-                                  ),
-                                  beginningLabel: raftText(
-                                    context,
-                                    'Beginning of messages',
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ),
-              onEndReached:
-                  !presentationActive || (!widget.thread && initialEndPending)
-                  ? null
-                  : () => w.older(thread: widget.thread),
-              initialScrollToEndMode: InitialScrollToEndMode.none,
-              // No animated or inertial travel: every automatic move to the
-              // end is a jump (an animation across lazily estimated extents
-              // overshoots the real end and springs back with a blank gap).
-              scrollToEndAnimationDuration: Duration.zero,
-              // The reading anchor keeps the row on screen in place when an
-              // older page lands; the list's own multi-frame re-anchor must
-              // not move it again.
-              anchorOlderPages: false,
-              // The app positions and publishes a replacement window atomically.
-              // An arrival in its hidden preparation cannot race that positioning
-              // with Flyer's independent scroll-to-end callback.
-              shouldScrollToEndWhenSendingMessage: !focusStaging,
-              shouldScrollToEndWhenAtBottom: !focusStaging && atBottom,
-            ),
+        chatAnimatedListBuilder: (context, _) => RaftMessageTimeline(
+          key: ValueKey('chat-list-${widget.thread ? 'thread' : 'channel'}'),
+          controller: viewport,
+          messages: messages,
+          centerIndex: centerIndex(),
+          epoch: centerEpoch,
+          indexOfId: windowIndexOf,
+          rowBuilder: (context, index) => datedTile(source(messages[index])),
+          estimateRow: (index) => estimateRow(measuredRows, messages, index),
+          slivers: (history, forward) => recipe.centeredSlivers(
+            header: header,
+            history: history,
+            forward: forward,
+            footer: const RaftTimelineFooter(),
           ),
-        ),
-        emptyChatListBuilder: (_) => widget.thread
-            ? const SizedBox.shrink()
-            : loading
-            ? Center(
-                child: Text(
-                  raftText(context, 'Loading...'),
-                  style: RaftTypography.mono(
-                    RaftTokens.of(context),
-                    size: 14,
-                    line: 20,
+          hasOlder: widget.thread ? w.threadHasMore : w.hasMore,
+          loadingOlder: w.loadingOlder,
+          onLoadOlder: presentationActive
+              ? () => w.older(thread: widget.thread)
+              : null,
+          empty: widget.thread
+              ? null
+              : loading
+              ? Center(
+                  child: Text(
+                    raftText(context, 'Loading...'),
+                    style: RaftTypography.mono(
+                      RaftTokens.of(context),
+                      size: 14,
+                      line: 20,
+                    ),
                   ),
+                )
+              : RaftEmptyState(
+                  title: raftText(context, 'Start the conversation'),
+                  detail: raftText(context, 'Send a message to this channel.'),
                 ),
-              )
-            : RaftEmptyState(
-                title: raftText(context, 'Start the conversation'),
-                detail: raftText(context, 'Send a message to this channel.'),
-              ),
+        ),
       ),
     );
   }
@@ -2501,12 +2287,7 @@ class _RaftChatViewState extends State<RaftChatView>
         ? widget.threadParentSlot == null
               ? loadingBody
               : taskLoadingBody(loadingBody)
-        : buildTimeline(adapter, viewport, listRevision);
-    // Task properties belong to the active discussion, including while a new
-    // reply window is being positioned. Retaining a second properties tree
-    // would paint a disabled History row and hide the interactive replacement.
-    final preserveTimeline = focusStaging && widget.threadParentSlot == null;
-    if (!preserveTimeline) displayedTimeline = currentTimeline;
+        : buildTimeline();
     final bottomCount = w.hasNewer
         ? (w.unread[w.channel?.id] ?? 0)
         : newMessageCount;
@@ -2573,25 +2354,11 @@ class _RaftChatViewState extends State<RaftChatView>
             child: Stack(
               fit: StackFit.expand,
               children: [
-                // Keys keep the staged timeline's element when the retained
-                // copy above it is removed. Without them the staged list moves
-                // to a new Stack slot, remounts at its end offset and lays out
-                // every message from the top in one frame.
-                if (preserveTimeline && retainedTimeline != null)
-                  IgnorePointer(
-                    key: const ValueKey('retained-timeline'),
-                    child: ExcludeSemantics(child: retainedTimeline!),
-                  ),
-                IgnorePointer(
+                KeyedSubtree(
                   key: const ValueKey('current-timeline'),
-                  ignoring: preserveTimeline,
-                  child: Opacity(
-                    opacity: preserveTimeline ? 0 : 1,
-                    child: currentTimeline,
-                  ),
+                  child: currentTimeline,
                 ),
                 if (!widget.thread &&
-                    !focusStaging &&
                     (w.hasNewer || !atBottom || newMessageCount > 0))
                   RaftTimelineBottomButton(
                     label: bottomCount > 0

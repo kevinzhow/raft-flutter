@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart' show Chat;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/chat_view.dart';
@@ -59,21 +59,11 @@ void main() {
             ),
           );
           await t.pumpAndSettle();
-          final list = t.widget<ChatAnimatedList>(
-            find.byType(ChatAnimatedList),
-          );
-          expect(list.topPadding, 0);
-          expect(list.bottomPadding, 0);
-          expect(list.handleSafeArea, false);
-          if (thread) {
-            final sparse = t.renderObject<RenderRaftSparseTimelineSliver>(
-              find.byType(RaftSparseTimelineSliver),
-            );
-            expect(sparse.leadingExtent, 0);
-          } else {
-            // Bottom-anchored channel: the reversed timeline needs no measured
-            // spacer; the history state fills the space above short content.
-            expect(find.byType(RaftSparseTimelineSliver), findsNothing);
+          // The two-sided timeline needs no measured tail spacer: a short
+          // thread rests at its top, a short channel at its latest end with
+          // the history state filling the space above.
+          expect(find.byType(RaftSparseTimelineSliver), findsNothing);
+          if (!thread) {
             final chat = t.getRect(find.byType(Chat));
             final beginning = t.getRect(find.text('Beginning of messages'));
             expect(beginning.top - chat.top, lessThan(48));

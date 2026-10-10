@@ -31,6 +31,26 @@ class RaftTimelineCompositionRecipe {
       const EdgeInsets.only(left: 12, right: 12, bottom: 12);
   double get footerTailExtent => 12;
 
+  /// The same column for a two-sided timeline whose scroll view centers on
+  /// [forward] (`CustomScrollView.center`): [header] (top to bottom), the
+  /// leading sentinel, [history] (rows before the center, laid out upward),
+  /// [forward] (the center and newer rows), the trailing sentinel and
+  /// [footer]. Everything above [forward] grows away from the center, so
+  /// history and header changes never move the rows below them.
+  List<Widget> centeredSlivers({
+    List<Widget> header = const [],
+    required Widget history,
+    required Widget forward,
+    Widget? footer,
+  }) => [
+    ...header,
+    SliverToBoxAdapter(child: SizedBox(height: sentinelExtent)),
+    history,
+    forward,
+    SliverToBoxAdapter(child: SizedBox(height: sentinelExtent)),
+    if (footer != null) SliverToBoxAdapter(child: footer),
+  ];
+
   double leadingSpace({
     required RaftTimelineSparseAnchor anchor,
     required double viewportExtent,

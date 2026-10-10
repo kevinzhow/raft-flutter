@@ -108,7 +108,15 @@ void main() {
               );
             }
             expect(older, isNotEmpty);
-            for (var i = 0; i < 20; i++) {
+            // Let the drag's fling come to rest (history is requested well
+            // before the top edge, so the fling is usually still coasting).
+            final dynamic chatState = tester.state(find.byType(RaftChatView));
+            final ScrollController scroll = chatState.viewport;
+            for (
+              var i = 0;
+              i < 20 || (i < 400 && scroll.position.isScrollingNotifier.value);
+              i++
+            ) {
               await tester.pump(const Duration(milliseconds: 16));
             }
             // A row currently on screen.
@@ -137,7 +145,6 @@ void main() {
                 '$i $reading ${now?.top} (was ${before!.top}) '
                 'px=${vc.hasClients ? vc.offset.toStringAsFixed(0) : '-'} '
                 'max=${vc.hasClients ? vc.position.maxScrollExtent.toStringAsFixed(0) : '-'} '
-                'staging=${st.focusStaging} anchor=${st.readingAnchor.pending} '
                 'n=${st.adapter.messages.length} atBottom=${st.atBottom}',
               );
               if (now == null || (now.top - before.top).abs() > .5) moved++;

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as core;
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:raft_flutter/features/message_timeline.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -74,87 +74,69 @@ List<core.Message> _messages(int rotation) => List.generate(
 );
 
 Widget _host(
-  core.InMemoryChatController chat,
-  ScrollController viewport,
-  _Mounts stats,
-  InitialScrollToEndMode mode, {
+  List<core.Message> messages,
+  RaftTimelineScrollController viewport,
+  _Mounts stats, {
   required bool rich,
   double? cacheExtent,
   bool sourceComposition = false,
-}) => MaterialApp(
-  theme: raftTheme(RaftFamily.elegant),
-  home: Scaffold(
-    body: Center(
-      child: SizedBox(
-        width: 360,
-        height: 500,
-        child: Chat(
-          currentUserId: 'fixture',
-          resolveUser: (id) async => core.User(id: id),
-          chatController: chat,
-          builders: core.Builders(
-            composerBuilder: (_) => const SizedBox.shrink(),
-            chatMessageBuilder: (
-              context,
-              message,
-              index,
-              animation,
-              child, {
-              isRemoved,
-              required isSentByMe,
-              groupStatus,
-            }) => child,
-            customMessageBuilder:
-                (context, message, index, {required isSentByMe, groupStatus}) =>
-                    _MountProbe(
-                      key: ValueKey('probe-${message.id}'),
-                      id: message.id,
-                      stats: stats,
-                      child: RaftMessageTile(
-                        key: ValueKey('tile-${message.id}'),
-                        author: 'Fixture ${message.id}',
-                        timestamp: '12:00',
-                        content: rich
-                            ? _markdown(index)
-                            : 'Deterministic geometry fixture',
-                        body: rich
-                            ? RaftMessageBody(content: _markdown(index))
-                            : SizedBox(
-                                height: (message.metadata!['height'] as num)
-                                    .toDouble(),
-                                child: Text('Natural ${message.id}'),
-                              ),
-                      ),
-                    ),
-            chatAnimatedListBuilder: (context, item) => RaftInitialEndAnchor(
-              controller: viewport,
-              enabled: mode == InitialScrollToEndMode.jump,
-              child: ChatAnimatedList(
-                itemBuilder: item,
-                topPadding: sourceComposition ? 0 : 8,
-                bottomPadding: sourceComposition ? 0 : 20,
-                handleSafeArea: !sourceComposition,
-                messageSliverWrapper: sourceComposition
-                    ? (context, messageSliver) => RaftTimelineCompositionSliver(
-                        anchor: RaftTimelineSparseAnchor.bottom,
-                        messagesSliver: messageSliver,
+}) {
+  final index = {for (var i = 0; i < messages.length; i++) messages[i].id: i};
+  Widget row(BuildContext context, int i) {
+    final message = messages[i];
+    return _MountProbe(
+      key: ValueKey('probe-${message.id}'),
+      id: message.id,
+      stats: stats,
+      child: RaftMessageTile(
+        key: ValueKey('tile-${message.id}'),
+        author: 'Fixture ${message.id}',
+        timestamp: '12:00',
+        content: rich ? _markdown(i) : 'Deterministic geometry fixture',
+        body: rich
+            ? RaftMessageBody(content: _markdown(i))
+            : SizedBox(
+                height: (message.metadata!['height'] as num).toDouble(),
+                child: Text('Natural ${message.id}'),
+              ),
+      ),
+    );
+  }
+
+  const header = SliverToBoxAdapter(
+    child: SizedBox(height: 32, child: Text('Load earlier')),
+  );
+  return MaterialApp(
+    theme: raftTheme(RaftFamily.elegant),
+    home: Scaffold(
+      body: Center(
+        child: SizedBox(
+          width: 360,
+          height: 500,
+          child: RaftMessageTimeline(
+            controller: viewport,
+            messages: messages,
+            // Opened at its latest end: every row is history.
+            centerIndex: messages.length,
+            epoch: 0,
+            indexOfId: (id) => index[id],
+            rowBuilder: row,
+            cacheExtent: cacheExtent,
+            slivers: sourceComposition
+                ? (history, forward) =>
+                      const RaftTimelineCompositionRecipe().centeredSlivers(
+                        header: [header],
+                        history: history,
+                        forward: forward,
                         footer: const RaftTimelineFooter(),
                       )
-                    : null,
-                scrollController: viewport,
-                initialScrollToEndMode: InitialScrollToEndMode.none,
-                cacheExtent: cacheExtent,
-                topSliver: const SliverToBoxAdapter(
-                  child: SizedBox(height: 32, child: Text('Load earlier')),
-                ),
-              ),
-            ),
+                : (history, forward) => [header, history, forward],
           ),
         ),
       ),
     ),
-  ),
-);
+  );
+}
 
 Map<String, Object?> _receipt(ScrollController viewport, _Mounts stats) => {
   'pixels': viewport.hasClients ? viewport.position.pixels : null,
@@ -170,7 +152,6 @@ Future<List<Map<String, Object?>>> _settle(
   _Mounts stats,
 ) async {
   final trace = <Map<String, Object?>>[];
-  // Real ChatAnimatedList schedules a250ms affordance delay then a250ms reveal.
   // A first frame-free gap is not idle. Within the unchanged180-frame budget,
   // require20 consecutive frame-free, geometrically unchanged observations.
   await tester.pump(const Duration(milliseconds: 300));
@@ -194,7 +175,7 @@ Future<List<Map<String, Object?>>> _settle(
     quietFrames,
     20,
     reason:
-        'Actual ChatAnimatedList must reach20 consecutive idle frames within180 observed frames: $diagnostic',
+        'The timeline must reach 20 consecutive idle frames within 180 observed frames: $diagnostic',
   );
   expect(tester.binding.hasScheduledFrame, isFalse);
   expect(tester.takeException(), isNull);
@@ -203,29 +184,32 @@ Future<List<Map<String, Object?>>> _settle(
 
 void main() {
   for (final sourceComposition in [false, true]) {
-    for (final (mode, rich, rotation, largeCache) in [
-      (InitialScrollToEndMode.jump, false, 0, false),
-      (InitialScrollToEndMode.jump, false, 2, false),
-      (InitialScrollToEndMode.jump, false, 4, false),
-      (InitialScrollToEndMode.none, false, 0, false),
-      (InitialScrollToEndMode.jump, true, 0, false),
-      (InitialScrollToEndMode.none, true, 0, false),
+    for (final (atEnd, rich, rotation, largeCache) in [
+      (true, false, 0, false),
+      (true, false, 2, false),
+      (true, false, 4, false),
+      (false, false, 0, false),
+      (true, true, 0, false),
+      (false, true, 0, false),
       // Diagnostic control only: never use expanded cache as the product repair.
-      (InitialScrollToEndMode.jump, false, 0, true),
+      (true, false, 0, true),
     ]) {
       testWidgets(
-        'actual mixed ChatAnimatedList settles $mode rich=$rich rotation=$rotation largeCache=$largeCache composition=$sourceComposition',
+        'actual mixed timeline settles atEnd=$atEnd rich=$rich rotation=$rotation largeCache=$largeCache composition=$sourceComposition',
         (tester) async {
           final original = _messages(rotation);
-          final chat = core.InMemoryChatController(messages: original);
-          final viewport = ScrollController();
+          final viewport = RaftTimelineScrollController(
+            bottomAnchored: true,
+            initial: atEnd
+                ? RaftTimelineAlignment.end
+                : RaftTimelineAlignment.start,
+          );
           final stats = _Mounts();
           await tester.pumpWidget(
             _host(
-              chat,
+              original,
               viewport,
               stats,
-              mode,
               rich: rich,
               sourceComposition: sourceComposition,
               cacheExtent: largeCache ? 100000 : null,
@@ -250,10 +234,6 @@ void main() {
               )
               .toList();
           await _settle(tester, viewport, stats);
-          expect(
-            chat.messages.map((message) => message.id),
-            original.map((message) => message.id),
-          );
           expect(viewport.position.pixels.isFinite, isTrue);
           expect(
             viewport.position.pixels,
@@ -262,10 +242,10 @@ void main() {
               viewport.position.maxScrollExtent,
             ),
           );
-          if (mode == InitialScrollToEndMode.jump) {
+          if (atEnd) {
             expect(find.text('Fixture row-47').hitTestable(), findsOneWidget);
           } else {
-            expect(viewport.position.pixels, 0);
+            expect(viewport.position.pixels, viewport.position.minScrollExtent);
             expect(find.text('Fixture row-0').hitTestable(), findsOneWidget);
           }
           // A successful fixed-content settlement is not enough: source pending
@@ -279,8 +259,8 @@ void main() {
           if (!largeCache) {
             final before = Set<String>.of(stats.live);
             viewport.jumpTo(
-              mode == InitialScrollToEndMode.jump
-                  ? 0
+              atEnd
+                  ? viewport.position.minScrollExtent
                   : viewport.position.maxScrollExtent,
             );
             await _settle(tester, viewport, stats);
@@ -293,7 +273,7 @@ void main() {
             );
             final scrollable = find
                 .descendant(
-                  of: find.byType(ChatAnimatedList),
+                  of: find.byType(RaftMessageTimeline),
                   matching: find.byType(Scrollable),
                 )
                 .first;
@@ -305,16 +285,11 @@ void main() {
             );
             await _settle(tester, viewport, stats);
             expect(find.text('Fixture row-47').hitTestable(), findsOneWidget);
-            expect(
-              chat.messages.map((message) => message.id),
-              original.map((message) => message.id),
-            );
           }
           await tester.pumpWidget(const SizedBox());
           await tester.pump(const Duration(milliseconds: 300));
           expect(stats.live, isEmpty);
           viewport.dispose();
-          chat.dispose();
           expect(tester.takeException(), isNull);
         },
       );

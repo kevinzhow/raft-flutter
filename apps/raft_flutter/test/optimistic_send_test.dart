@@ -423,7 +423,7 @@ void main() {
       await _mount(t, w);
       final dynamic state = t.state(find.byType(RaftChatView));
       final ScrollController viewport = state.viewport;
-      viewport.jumpTo(viewport.offset + 1500);
+      viewport.jumpTo(viewport.offset - 1500);
       await t.pumpAndSettle();
       await t.enterText(_editor(), 'Sent while reading');
       await t.pump();
@@ -436,7 +436,7 @@ void main() {
       final rect = paintedMessage(t, key);
       expect(rect, isNotNull);
       void unchanged() {
-        expect(viewport.offset, viewport.position.minScrollExtent);
+        expect(viewport.offset, viewport.position.maxScrollExtent);
         expect(paintedMessage(t, key), rect);
       }
 

@@ -1516,6 +1516,12 @@ class WorkspaceController extends ChangeNotifier {
   /// Summaries held for [channelId] (selected or not).
   Map<String, dynamic> threadSummariesFor(String channelId) =>
       Map.unmodifiable(_summariesByChannel[channelId] ?? const {});
+  // Ledger rows are replaced, never mutated, on every change: one wrapper per
+  // row version lets presenters reuse work for unchanged rows (identity).
+  final _presentedRows = Expando<RaftMessage>('presented rows');
+  RaftMessage _presented(Map<String, dynamic> row) =>
+      _presentedRows[row] ??= RaftMessage(row);
+
   List<RaftMessage> get messages =>
       channel == null ||
           (pendingMessageContextChannelId == channel!.id &&
@@ -1524,7 +1530,7 @@ class WorkspaceController extends ChangeNotifier {
       : ledger
             .messages(channel!.id)
             .where((m) => visibleIds[channel!.id]?.contains(m['id']) ?? false)
-            .map(RaftMessage.new)
+            .map(_presented)
             .toList();
 
   /// Same membership as [messages], in constant time (no list projection).
@@ -1554,7 +1560,7 @@ class WorkspaceController extends ChangeNotifier {
             .where(
               (m) => visibleIds[threadChannelId!]?.contains(m['id']) ?? false,
             )
-            .map(RaftMessage.new)
+            .map(_presented)
             .toList();
 
   /// The presented timeline: [messages] or [replies] followed by this
@@ -1579,7 +1585,7 @@ class WorkspaceController extends ChangeNotifier {
     return [
       ...rows,
       for (final send in pending)
-        if (!confirmed.contains(send.randomId)) RaftMessage(send.row),
+        if (!confirmed.contains(send.randomId)) _presented(send.row),
     ];
   }
 

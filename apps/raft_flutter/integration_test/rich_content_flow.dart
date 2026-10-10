@@ -1,7 +1,9 @@
 import 'native_control.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:raft_flutter/features/message_timeline.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -45,10 +47,10 @@ Future<void> verifyRichContent(
         .evaluate()
         .map((e) => e.widget as Chat)
         .toList();
-    final slivers = find.byType(SliverAnimatedList).evaluate().toList();
-    final lists = find.byType(ChatAnimatedList).evaluate().length;
+    final slivers = find.byType(SliverList).evaluate().toList();
+    final lists = find.byType(RaftMessageTimeline).evaluate().length;
     final positions = find
-        .byType(CustomScrollView)
+        .byWidgetPredicate((widget) => widget is CustomScrollView)
         .evaluate()
         .expand((e) {
           final controller = (e.widget as CustomScrollView).controller;

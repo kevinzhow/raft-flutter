@@ -12,6 +12,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/message_timeline.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -299,21 +300,14 @@ void main() {
             for (final element in find.byType(RaftChatView).evaluate()) {
               if (!Visibility.of(element)) continue;
               final view = find.byWidget(element.widget);
-              final sparseFinder = find.descendant(
+              final timelineFinder = find.descendant(
                 of: view,
-                matching: find.byType(RaftSparseTimelineSliver),
+                matching: find.byType(RaftMessageTimeline),
               );
-              if (sparseFinder.evaluate().isEmpty) continue;
-              final sparse = t.renderObject<RenderRaftSparseTimelineSliver>(
-                sparseFinder,
-              );
+              if (timelineFinder.evaluate().isEmpty) continue;
               final thread = (element.widget as RaftChatView).thread;
-              final list = t.widget<chat_ui.ChatAnimatedList>(
-                find.descendant(
-                  of: view,
-                  matching: find.byType(chat_ui.ChatAnimatedList),
-                ),
-              );
+              final timeline = t.widget<RaftMessageTimeline>(timelineFinder);
+              final position = timeline.controller.position;
               final chatRect = t.getRect(
                 find.descendant(of: view, matching: find.byType(chat_ui.Chat)),
               );
@@ -324,13 +318,6 @@ void main() {
                 ),
               );
               if (item == 'timeline') {
-                expect(
-                  sparse.anchor,
-                  thread
-                      ? RaftTimelineSparseAnchor.top
-                      : RaftTimelineSparseAnchor.bottom,
-                );
-                expect(sparse.leadingExtent, thread ? 0 : greaterThan(0));
                 expect(
                   find.descendant(
                     of: view,
@@ -344,17 +331,13 @@ void main() {
               }
               timelineLayouts.add({
                 'host': thread ? 'threadPanel' : 'chatPanel',
-                'anchor': sparse.anchor.name,
-                'leadingExtent': sparse.leadingExtent,
-                'viewportExtent': sparse.constraints.viewportMainAxisExtent,
-                'precedingExtent': sparse.constraints.precedingScrollExtent,
-                'tailExtent': sparse.child?.geometry?.scrollExtent,
+                'anchor': thread ? 'top' : 'bottom',
                 'footerHeight': footerRect.height,
                 'footerBottom': footerRect.bottom,
                 'viewportBottom': chatRect.bottom,
-                'scrollPixels': list.scrollController?.position.pixels,
-                'maxScrollExtent':
-                    list.scrollController?.position.maxScrollExtent,
+                'scrollPixels': position.pixels,
+                'minScrollExtent': position.minScrollExtent,
+                'maxScrollExtent': position.maxScrollExtent,
                 'dateDividers': find
                     .descendant(
                       of: view,

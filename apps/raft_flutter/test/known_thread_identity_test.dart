@@ -160,8 +160,9 @@ void main() {
                         .first,
                   )
                   .position;
-              expect(scroll.maxScrollExtent, 0);
-              expect(scroll.pixels, 0);
+              // A short thread rests at its top and does not scroll.
+              expect(scroll.maxScrollExtent, scroll.minScrollExtent);
+              expect(scroll.pixels, scroll.minScrollExtent);
             }
             expect(w.presentedThreadParent?.id, 'parent');
           }

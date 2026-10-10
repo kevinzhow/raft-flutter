@@ -65,11 +65,8 @@ void main() {
           }
           expect(w.channelLoading, false);
         });
-        // The response has laid out its bounded measurement, but its replacement
-        // has not painted. A native socket event can arrive between these frames.
-        await tester.pump();
-        expect(paintedMessage(tester, 'target-40'), isNull);
-        expect(paintedMessage(tester, 'old-7'), oldPaint);
+        // The accepted context is positioned inside its first layout. A native
+        // socket event arriving before that first frame must not disturb it.
         await tester.runAsync(() async {
           w.ledger.ingest([
             {

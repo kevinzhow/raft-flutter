@@ -111,7 +111,7 @@ void main() {
           firstTarget,
           isNotNull,
           reason:
-              '${w.messages.length} rows, ${w.error}, highlight ${w.highlightedMessageId}, staging ${diagnostic.focusStaging}, queued ${diagnostic.positionQueued}',
+              '${w.messages.length} rows, ${w.error}, highlight ${w.highlightedMessageId}, revealing ${diagnostic.revealPending}',
         );
         expect(w.messages.length, 500);
         int mountedRows() =>

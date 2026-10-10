@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/features/chat_view.dart';
+import 'package:raft_flutter/features/message_timeline.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -218,7 +218,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(find.byKey(const ValueKey('message-variable-98')), findsOneWidget);
-      await tester.drag(find.byType(ChatAnimatedList), const Offset(0, 450));
+      await tester.drag(find.byType(RaftMessageTimeline), const Offset(0, 450));
       await tester.pump(const Duration(milliseconds: 50));
       Future<void>? jumping;
       await tester.runAsync(() async {
@@ -289,24 +289,20 @@ void main() {
       for (var i = 0; i < 15; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      final list = tester.state(find.byType(ChatAnimatedList));
-      var viewport = tester
-          .widget<CustomScrollView>(
-            find.descendant(
-              of: find.byType(ChatAnimatedList),
-              matching: find.byType(CustomScrollView),
-            ),
-          )
-          .controller!;
-      expect(viewport.position.maxScrollExtent, greaterThan(5364));
-      viewport.jumpTo(5364);
+      final list = tester.state(find.byType(RaftMessageTimeline));
+      var viewport =
+          (tester.state(find.byType(RaftChatView)) as dynamic).viewport
+              as ScrollController;
+      final range =
+          viewport.position.maxScrollExtent - viewport.position.minScrollExtent;
+      expect(range, greaterThan(5364));
+      // 5364px up into history.
+      final far = viewport.position.maxScrollExtent - 5364;
+      viewport.jumpTo(far);
       await tester.pump();
-      expect(viewport.offset, 5364);
+      expect(viewport.offset, far);
       await tester.runAsync(() => w.jumpToMessage('c1', 'offset-94'));
-      // The accepted 16-row context stages behind the real retained timeline.
-      // Source keeps the old reading position until the new target is centered.
       expect(w.messages, hasLength(16));
-      expect(viewport.offset, 5364);
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -323,7 +319,7 @@ void main() {
         find.byKey(const ValueKey('message-offset-94')).hitTestable(),
         findsOneWidget,
       );
-      expect(tester.state(find.byType(ChatAnimatedList)), isNot(same(list)));
+      expect(tester.state(find.byType(RaftMessageTimeline)), isNot(same(list)));
       final anchor = viewport.offset;
       w.setError(null);
       await tester.pump();
@@ -361,7 +357,7 @@ void main() {
       for (var i = 0; i < 12; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      final list = tester.state(find.byType(ChatAnimatedList));
+      final list = tester.state(find.byType(RaftMessageTimeline));
       final next = [
         for (var i = 0; i < 20; i++)
           {
@@ -378,7 +374,7 @@ void main() {
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
-      final replacementList = tester.state(find.byType(ChatAnimatedList));
+      final replacementList = tester.state(find.byType(RaftMessageTimeline));
       expect(replacementList, isNot(same(list)));
       final target = find.byKey(const ValueKey('message-context-16'));
       expect(target, findsOneWidget);
@@ -395,7 +391,7 @@ void main() {
       w.setError(null);
       await tester.pump(const Duration(milliseconds: 300));
       expect(
-        tester.state(find.byType(ChatAnimatedList)),
+        tester.state(find.byType(RaftMessageTimeline)),
         same(replacementList),
       );
       expect(tester.takeException(), isNull);
