@@ -70,9 +70,13 @@ class RaftRuntimeChip extends StatelessWidget {
     super.key,
     required this.label,
     required this.detected,
+    this.trailing,
   });
   final String label;
   final bool detected;
+
+  /// RuntimeAccountUsageChip health Status after the label.
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -91,23 +95,26 @@ class RaftRuntimeChip extends StatelessWidget {
     final ink = detected
         ? (t.brutal ? Colors.black : t.colors['info-strong']!)
         : t.colors['foreground-muted']!;
+    final text = RaftCssText(
+      label,
+      maxLines: 1,
+      style: raftCssText.merge(
+        RaftTypography.body(
+          t,
+          size: 10,
+          line: 10,
+        ).merge(s.textStyle(rt)).copyWith(color: ink),
+      ),
+    );
     return Container(
       height: s.height,
       padding: s.padding,
       decoration: s.decoration(rt).copyWith(color: fill),
       child: Center(
         widthFactor: 1,
-        child: RaftCssText(
-          label,
-          maxLines: 1,
-          style: raftCssText.merge(
-            RaftTypography.body(
-              t,
-              size: 10,
-              line: 10,
-            ).merge(s.textStyle(rt)).copyWith(color: ink),
-          ),
-        ),
+        child: trailing == null
+            ? text
+            : Row(mainAxisSize: MainAxisSize.min, children: [text, trailing!]),
       ),
     );
   }

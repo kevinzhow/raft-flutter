@@ -86,12 +86,16 @@ class RaftRecipeBadge extends StatelessWidget {
     this.variant,
     this.uppercase = false,
     this.background,
+    this.trailing,
   });
   final String label;
   final RaftBadgeRecipeAppearance appearance;
   final RaftBadgeRecipeVariant? variant;
   final bool uppercase;
   final Color? background;
+
+  /// Inline content after the label (a runtime usage health Status).
+  final Widget? trailing;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -105,6 +109,14 @@ class RaftRecipeBadge extends StatelessWidget {
       tokens: rt,
     ).root;
     final decoration = s.decoration(rt);
+    final text = RaftCssText(
+      uppercase ? label.toUpperCase() : label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: raftCssText.merge(
+        RaftTypography.body(t, size: 10, line: 10).merge(s.textStyle(rt)),
+      ),
+    );
     return Container(
       height: s.height,
       padding: s.padding,
@@ -113,14 +125,9 @@ class RaftRecipeBadge extends StatelessWidget {
           : decoration.copyWith(color: background),
       child: Center(
         widthFactor: 1,
-        child: RaftCssText(
-          uppercase ? label.toUpperCase() : label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: raftCssText.merge(
-            RaftTypography.body(t, size: 10, line: 10).merge(s.textStyle(rt)),
-          ),
-        ),
+        child: trailing == null
+            ? text
+            : Row(mainAxisSize: MainAxisSize.min, children: [text, trailing!]),
       ),
     );
   }
@@ -134,7 +141,7 @@ class RaftInlineBadge extends StatelessWidget {
     required this.badge,
     this.bodyLine = false,
   });
-  final RaftRecipeBadge badge;
+  final Widget badge;
   final bool bodyLine;
   @override
   Widget build(BuildContext context) {
@@ -159,6 +166,8 @@ class RaftInlineBadge extends StatelessWidget {
 /// Web AvatarSlot contexts (components/ui/AvatarSlot.tsx RAFT_AVATAR_SPEC).
 enum RaftAvatarSlotContext {
   profileTile(64, 2),
+  // AvatarSlot `mention-card`: `!size-12 !border-2` (hover cards).
+  mentionCard(48, 2),
   panelHeader(36, 2),
   surfaceList(32, 2),
   creatorLink(22, 1),

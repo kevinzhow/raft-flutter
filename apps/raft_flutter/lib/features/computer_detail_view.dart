@@ -14,6 +14,8 @@ import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show sourceRuntimeDisplayNames;
 import 'agent_metadata_catalog.dart';
 import 'computer_setup_commands.dart';
+import 'runtime_usage_chip.dart';
+import '../data/runtime_account_usage.dart';
 
 // ------------------------------------------------------------------ model
 
@@ -565,6 +567,29 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       bulk: _bulk,
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,
+      runtimeChip: _runtimeChip,
     ),
   );
+
+  /// MachineDetailPanel RuntimeAccountUsageGateChip: detected usage
+  /// runtimes open the usage card for viewers allowed to inspect it.
+  Widget? _runtimeChip(int index) {
+    if (index >= computerRuntimeOptions.length) return null;
+    final (rid, name, _) = computerRuntimeOptions[index];
+    final detected = [
+      for (final r in (m['runtimes'] as List? ?? const [])) '$r',
+    ].contains(rid);
+    if (!detected || runtimeUsageProvider(rid) == null) return null;
+    final versions = m['runtimeVersions'];
+    return runtimeUsageGateChip(
+      controller: w,
+      enabled: canViewRuntimeUsage(w, m),
+      runtimeId: rid,
+      machineId: id,
+      label: name,
+      runtimeVersion: versions is Map ? versions[rid] as String? : null,
+      chip: (status) =>
+          RaftRuntimeChip(label: name, detected: true, trailing: status),
+    );
+  }
 }

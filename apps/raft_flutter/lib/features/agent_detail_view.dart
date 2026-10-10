@@ -17,6 +17,7 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_apps_view.dart';
 import 'agent_trajectory_log.dart';
+import 'runtime_usage_chip.dart';
 import 'agent_metadata_catalog.dart';
 import 'mcp_views.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
@@ -567,10 +568,23 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
               RaftInfoRow(
                 label: raftText(context, 'Runtime'),
                 child: RaftInlineBadge(
-                  badge: RaftRecipeBadge(
-                    sourceRuntimeDisplayNames[runtime] ?? runtime,
-                    appearance: RaftBadgeRecipeAppearance.solid,
-                    variant: RaftBadgeRecipeVariant.information,
+                  // RuntimeAccountUsageGateChip: the agent's Computer usage.
+                  badge: runtimeUsageGateChip(
+                    controller: widget.controller,
+                    enabled: canViewRuntimeUsage(widget.controller, machine),
+                    runtimeId: runtime,
+                    machineId: '${machine?['id'] ?? ''}',
+                    label: sourceRuntimeDisplayNames[runtime] ?? runtime,
+                    runtimeVersion: machine?['runtimeVersions'] is Map
+                        ? (machine!['runtimeVersions'] as Map)[runtime]
+                              as String?
+                        : null,
+                    chip: (status) => RaftRecipeBadge(
+                      sourceRuntimeDisplayNames[runtime] ?? runtime,
+                      appearance: RaftBadgeRecipeAppearance.solid,
+                      variant: RaftBadgeRecipeVariant.information,
+                      trailing: status,
+                    ),
                   ),
                 ),
               ),

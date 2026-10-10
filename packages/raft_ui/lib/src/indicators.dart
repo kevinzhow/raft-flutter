@@ -24,6 +24,9 @@ export 'recipes/progress.g.dart'
 /// Tailwind default-palette colours used by Web JSX classes (not raft-ui
 /// tokens). Values are Tailwind v4 oklch → sRGB (tool/recipes/css-of.mjs).
 abstract final class RaftWebPalette {
+  /// `bg-gray-50` = oklch(98.5% 0.002 247.839).
+  static const gray50 = Color(0xFFF9FAFB);
+
   /// `bg-gray-300` = oklch(87.2% 0.01 258.338), message departure badge.
   static const gray300 = Color(0xFFD1D5DC);
 

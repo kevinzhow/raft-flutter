@@ -7,6 +7,7 @@
 // raft-ui recipes.
 import 'package:flutter/material.dart';
 
+import 'hover_card.dart';
 import 'mounted_task_chip.dart';
 import 'panel_layout.dart' show raftCssBaseline;
 import 'recipes/badge.g.dart';
@@ -41,9 +42,12 @@ enum RaftReferenceKind {
 
 @immutable
 class RaftReferenceAppearance {
-  const RaftReferenceAppearance(this.kind, {this.taskStatus});
+  const RaftReferenceAppearance(this.kind, {this.taskStatus, this.hoverCard});
   final RaftReferenceKind kind;
   final RaftMessageTaskStatus? taskStatus;
+
+  /// MentionLink PreviewCard content (delay 200, closeDelay 120, 280 wide).
+  final WidgetBuilder? hoverCard;
 }
 
 RaftRecipeTheme _theme(RaftTokens t) =>
@@ -99,10 +103,19 @@ InlineSpan raftReferenceSpan(
       fontFamilyFallback: base.fontFamilyFallback,
     );
   }
+  Widget link = _ReferenceLink(
+    label: label,
+    href: href,
+    onTap: onTap,
+    child: child,
+  );
+  if (appearance?.hoverCard case final card?) {
+    link = RaftHoverCard(card: card, child: link);
+  }
   return WidgetSpan(
     alignment: PlaceholderAlignment.baseline,
     baseline: TextBaseline.alphabetic,
-    child: _ReferenceLink(label: label, href: href, onTap: onTap, child: child),
+    child: link,
   );
 }
 

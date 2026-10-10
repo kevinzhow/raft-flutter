@@ -11,6 +11,7 @@ import 'message_action_card.dart';
 import 'attachment_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
+import 'profile_preview.dart';
 
 /// Full MessageDTO uses `user`; legacy/native human rows use `human`.
 /// Presentation consumers use one identity kind without altering transport data.
@@ -584,10 +585,24 @@ class MessagePresentation extends StatelessWidget {
     final parts = uri.pathSegments;
     switch (uri.host) {
       case 'mention' when parts.length == 2:
+        String? handle;
+        for (final m
+            in (message.json['mentions'] as List? ?? []).whereType<Map>()) {
+          if (m['id'] == parts[1] && m['name'] is String) handle = m['name'];
+        }
         return RaftReferenceAppearance(
           parts[0] == 'user' && parts[1] == controller.client.user?.id
               ? RaftReferenceKind.selfMention
               : RaftReferenceKind.mention,
+          // Web MentionLink PreviewCard; export renders no popups.
+          hoverCard: exportMode
+              ? null
+              : (_) => ProfilePreviewContent(
+                  controller: controller,
+                  agent: parts[0] == 'agent',
+                  id: parts[1],
+                  fallbackLabel: handle,
+                ),
         );
       case 'channel':
         return const RaftReferenceAppearance(RaftReferenceKind.channel);

@@ -153,6 +153,7 @@ class RaftComputerDetailActions {
     this.upgrade,
     this.openAgent,
     this.createAgent,
+    this.runtimeChip,
   });
   final Future<void> Function(String name) rename;
   final Future<void> Function(String? description) describe;
@@ -168,6 +169,10 @@ class RaftComputerDetailActions {
   final Future<int> Function(RaftComputerBulk mode, List<String> agentIds) bulk;
   final ValueChanged<String>? openAgent;
   final VoidCallback? createAgent;
+
+  /// Detected Runtimes chip [index] with its usage hover card
+  /// (RuntimeAccountUsageGateChip); null keeps the plain chip.
+  final Widget? Function(int index)? runtimeChip;
 }
 
 /// Text helpers for the Tailwind classes this page writes in JSX.
@@ -998,8 +1003,9 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              for (final (label, detected) in d.runtimes)
-                RaftRuntimeChip(label: label, detected: detected),
+              for (final (i, (label, detected)) in d.runtimes.indexed)
+                widget.actions.runtimeChip?.call(i) ??
+                    RaftRuntimeChip(label: label, detected: detected),
             ],
           ),
         ),

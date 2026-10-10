@@ -116,7 +116,15 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     with SingleTickerProviderStateMixin {
   final anchor = GlobalKey();
   final portal = OverlayPortalController();
-  late final AnimationController motion;
+  // Created on first open and the Escape handler is registered only while
+  // open: a long list of triggers costs no tickers or global handlers.
+  AnimationController? _motion;
+  AnimationController get motion => _motion ??= AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+    reverseDuration: const Duration(milliseconds: 150),
+  );
+  bool listeningKeys = false;
   Timer? openTimer, closeTimer;
   ScrollPosition? scroll;
   bool triggerHovered = false, cardHovered = false, focused = false;
@@ -130,13 +138,7 @@ class _RaftHoverCardState extends State<RaftHoverCard>
   @override
   void initState() {
     super.initState();
-    motion = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-      reverseDuration: const Duration(milliseconds: 150),
-    );
     widget.controller?._state = this;
-    HardwareKeyboard.instance.addHandler(_key);
     RaftPointerIntent.install();
   }
 
@@ -167,9 +169,9 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     openTimer?.cancel();
     closeTimer?.cancel();
     scroll?.removeListener(_scrolled);
-    HardwareKeyboard.instance.removeHandler(_key);
+    if (listeningKeys) HardwareKeyboard.instance.removeHandler(_key);
     if (widget.controller?._state == this) widget.controller?._state = null;
-    motion.dispose();
+    _motion?.dispose();
     super.dispose();
   }
 
@@ -219,7 +221,8 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     if (focused && widget.openOnKeyboardFocus && _keyboardMode) return;
     closeTimer?.cancel();
     if (!widget.interactive || widget.closeDelay == Duration.zero) {
-      if (!triggerHovered) _hide();
+      // An informational popup (`pointer-events-none`) unmounts at once.
+      if (!triggerHovered) _hide(immediate: !widget.interactive);
       return;
     }
     final ticket = epoch;
@@ -266,6 +269,10 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     }
     closing = false;
     final opening = !portal.isShowing;
+    if (!listeningKeys) {
+      listeningKeys = true;
+      HardwareKeyboard.instance.addHandler(_key);
+    }
     portal.show();
     if (reduced) {
       motion.value = 1;
@@ -287,6 +294,10 @@ class _RaftHoverCardState extends State<RaftHoverCard>
     if (!portal.isShowing) return;
     void done() {
       portal.hide();
+      if (listeningKeys) {
+        listeningKeys = false;
+        HardwareKeyboard.instance.removeHandler(_key);
+      }
       widget.onOpenChanged?.call(false);
       widget.controller?._changed();
     }

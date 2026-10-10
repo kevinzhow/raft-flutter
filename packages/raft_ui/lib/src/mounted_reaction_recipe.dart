@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'hover_card.dart';
+import 'localization.dart';
+import 'panel_layout.dart' show raftPanelInk;
+import 'popover_surface.dart';
+import 'recipe_surface.dart' show raftCssText;
 import 'tokens/tokens.dart';
 import 'theme.dart';
 import 'icons.dart';
@@ -247,4 +252,164 @@ class _ReactionAddRecipe extends RaftMountedReactionRecipe {
     bool hovered = false,
     bool pressed = false,
   }) => backgroundFor(hovered: hovered || pressed);
+}
+
+/// MessageItem `showReactionPopover` names: legacy rosters (`reactorIds` +
+/// `reactorNames`) or canonical `previewK` actors; the viewer reads "You"
+/// first when they reacted; at most five names, the rest as "+N more".
+({List<String> names, int hidden}) raftReactionReactors(
+  BuildContext context,
+  Map<String, dynamic> reaction, {
+  String? viewerId,
+  bool reacted = false,
+}) {
+  final actors = <(String?, String)>[];
+  final ids = reaction['reactorIds'], names = reaction['reactorNames'];
+  if (ids is List && names is List) {
+    for (final (i, id) in ids.indexed) {
+      final name = i < names.length ? names[i] : null;
+      actors.add(('$id', name is String ? name : raftText(context, 'Unknown')));
+    }
+  } else if (reaction['previewK'] is List) {
+    for (final actor in (reaction['previewK'] as List).whereType<Map>()) {
+      final name = actor['displayName'] ?? actor['name'];
+      if (name is String) actors.add((actor['id'] as String?, name));
+    }
+  }
+  final all = reacted && viewerId != null
+      ? [
+          raftText(context, 'You'),
+          for (final (id, name) in actors)
+            if (id != viewerId) name,
+        ]
+      : [for (final (_, name) in actors) name];
+  final visible = all.take(5).toList();
+  final count = reaction['count'] is int ? reaction['count'] as int : 0;
+  return (names: visible, hidden: (count - visible.length).clamp(0, count));
+}
+
+/// MessageItem `reaction-reactors-popover`: PopoverPopup `role="tooltip"`,
+/// `pointer-events-none max-w-[280px] px-2 py-1.5 text-xs font-bold`, names
+/// in a `max-w-60` wrap, each `max-w-28 truncate`, ", " separators in the
+/// placeholder ink and "+N more" muted; no names shows the emoji itself.
+class RaftReactionReactors extends StatelessWidget {
+  const RaftReactionReactors({
+    super.key,
+    required this.emoji,
+    required this.names,
+    this.hiddenCount = 0,
+  });
+  final String emoji;
+  final List<String> names;
+  final int hiddenCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final style = raftCssText.merge(
+      RaftTypography.body(
+        t,
+        size: 12,
+        line: 20,
+        weight: FontWeight.w700,
+        color: t.brutal ? Colors.black : t.colors['foreground-strong']!,
+      ),
+    );
+    final Widget body;
+    if (names.isEmpty) {
+      body = Text(emoji, style: style);
+    } else {
+      body = ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 240),
+        child: Wrap(
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final (i, name) in names.indexed)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 112),
+                    child: Text(
+                      name,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: style,
+                    ),
+                  ),
+                  if (i < names.length - 1 || hiddenCount > 0)
+                    Text(
+                      ', ',
+                      style: style.copyWith(
+                        color: raftPanelInk(
+                          t,
+                          .45,
+                          t.colors['foreground-placeholder']!,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            if (hiddenCount > 0)
+              Text(
+                raftFormat(context, '+{count} more', {'count': hiddenCount}),
+                style: style.copyWith(
+                  color: raftPanelInk(t, .5, t.colors['foreground-muted']!),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+    return Semantics(
+      container: true,
+      liveRegion: true,
+      child: RaftPopoverSurface(
+        key: const ValueKey('reaction-reactors-popover'),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 280),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: body,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A reaction chip with its reactor names on hover / keyboard focus
+/// (MessageItem `onMouseEnter` / `onFocus` → `showReactionPopover`): opens at
+/// once below the chip's left edge (`rect.bottom + 4`), closes on leave or
+/// click, never from a list scrolling under the pointer.
+class RaftReactionReactorsHover extends StatelessWidget {
+  const RaftReactionReactorsHover({
+    super.key,
+    required this.emoji,
+    required this.names,
+    required this.hiddenCount,
+    required this.child,
+  });
+  final String emoji;
+  final List<String> names;
+  final int hiddenCount;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => RaftHoverCard(
+    delay: Duration.zero,
+    closeDelay: Duration.zero,
+    interactive: false,
+    surface: false,
+    width: null,
+    sideOffset: 4,
+    collisionPadding: 0,
+    card: (_) => RaftReactionReactors(
+      emoji: emoji,
+      names: names,
+      hiddenCount: hiddenCount,
+    ),
+    child: child,
+  );
 }

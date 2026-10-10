@@ -22,6 +22,16 @@ String raftFormat(
 }
 
 const raftChinese = <String, String>{
+  // Hover cards (ExternalIdentityPreviewCard, reaction reactors, runtime usage).
+  "From {workspace}": "来自 {workspace}",
+  "+{count} more": "等 {count} 人",
+  "{provider} usage": "{provider} 用量",
+  "Version {version}": "版本 {version}",
+  "Account-wide · updated {updated}": "整个账户 · {updated}更新",
+  "{percent}% used · resets {reset}": "已用 {percent}% · {reset}后重置",
+  "{percent}% used · reset time unavailable": "已用 {percent}% · 重置时间暂不可用",
+  "{provider} runtime account usage": "{provider} 运行时账户用量",
+  "Refresh again in ~{seconds}s": "约 {seconds} 秒后可再刷新",
   "Notification settings could not be loaded.": "无法加载通知设置。",
   "Stops web push notifications from {serverName} for your account. Other servers are unchanged.":
       "停止向你的账户推送来自 {serverName} 的网页通知。其他服务器不受影响。",

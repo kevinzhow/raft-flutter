@@ -36,6 +36,7 @@ import 'message_reaction_projection.dart';
 import 'message_agent_presentation.dart';
 import 'agent_metadata_projection.dart';
 import 'agent_avatar_projection.dart';
+import 'profile_preview.dart';
 import 'message_task_projection.dart';
 import 'saved_sidebar_entry.dart';
 
@@ -1856,11 +1857,21 @@ class _RaftChatViewState extends State<RaftChatView>
       );
     }
 
-    if (message.string('senderType') != 'agent') return avatar();
-    return ListenableBuilder(
-      listenable: presentation.presenceOf(message.senderId),
-      builder: (context, _) => avatar(),
-    );
+    final Widget sender = message.string('senderType') != 'agent'
+        ? avatar()
+        : ListenableBuilder(
+            listenable: presentation.presenceOf(message.senderId),
+            builder: (context, _) => avatar(),
+          );
+    // Web SenderAvatar PreviewCard (profile / external identity on hover).
+    return compact
+        ? sender
+        : senderProfileHoverCard(
+            controller: w,
+            message: message,
+            content: avatarContent,
+            child: sender,
+          );
   }
 
   Widget? taskReference(RaftMessage message) {
@@ -2182,6 +2193,7 @@ class _RaftChatViewState extends State<RaftChatView>
       failedReactionEmojis: reactionFailures[m.id] == null
           ? const {}
           : {reactionFailures[m.id]!},
+      reactionViewerId: w.client.user?.id,
       onReaction: canReact
           ? (emoji) {
               if (!pending) react(m, emoji);

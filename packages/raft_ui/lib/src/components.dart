@@ -1279,6 +1279,7 @@ class RaftMessageTile extends StatelessWidget {
     this.reactions = const [],
     this.reactedEmojis = const {},
     this.failedReactionEmojis = const {},
+    this.reactionViewerId,
     this.onReaction,
     this.onReact,
     this.onReactionAdd,
@@ -1337,6 +1338,9 @@ class RaftMessageTile extends StatelessWidget {
   final void Function(String href)? onLink;
   final List<Map<String, dynamic>> attachments, reactions;
   final Set<String> reactedEmojis, failedReactionEmojis;
+
+  /// The viewer, listed as "You" first in a reaction's reactor names.
+  final String? reactionViewerId;
   final void Function(Map<String, dynamic>)? onAttachment;
   final Widget Function(Map<String, dynamic>)? attachmentBuilder;
   final Widget? attachmentGallery;
@@ -1543,21 +1547,34 @@ class RaftMessageTile extends StatelessWidget {
                                 r['count'] is int &&
                                 r['count'] > 0,
                           )
-                          .map(
-                            (r) => RaftMountedReaction(
-                              key: ValueKey('reaction-${r['emoji']}'),
-                              label: '${r['emoji']}: ${r['count']}',
-                              glyph: RaftReactionGlyph(r['emoji']),
-                              count: r['count'],
-                              reacted: reactedEmojis.contains(r['emoji']),
-                              failure: failedReactionEmojis.contains(
-                                r['emoji'],
+                          .map((r) {
+                            final reacted = reactedEmojis.contains(r['emoji']);
+                            final reactors = raftReactionReactors(
+                              context,
+                              r,
+                              viewerId: reactionViewerId,
+                              reacted: reacted,
+                            );
+                            return RaftReactionReactorsHover(
+                              key: ValueKey('reaction-reactors-${r['emoji']}'),
+                              emoji: r['emoji'],
+                              names: reactors.names,
+                              hiddenCount: reactors.hidden,
+                              child: RaftMountedReaction(
+                                key: ValueKey('reaction-${r['emoji']}'),
+                                label: '${r['emoji']}: ${r['count']}',
+                                glyph: RaftReactionGlyph(r['emoji']),
+                                count: r['count'],
+                                reacted: reacted,
+                                failure: failedReactionEmojis.contains(
+                                  r['emoji'],
+                                ),
+                                onPressed: onReaction == null
+                                    ? null
+                                    : () => onReaction!(r['emoji']),
                               ),
-                              onPressed: onReaction == null
-                                  ? null
-                                  : () => onReaction!(r['emoji']),
-                            ),
-                          )
+                            );
+                          })
                           .toList(),
                       if (MediaQuery.sizeOf(context).width < 768 &&
                           reactions.any(
