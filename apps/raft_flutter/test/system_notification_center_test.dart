@@ -161,6 +161,64 @@ void main() {
       await t.binding.setSurfaceSize(null);
     },
   );
+  testWidgets(
+    'joining channels and agent events keep dismissals and accepted rows without refetching the bell',
+    (t) async {
+      final client = _Client();
+      final w = WorkspaceController(client)
+        ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
+        ..channels = [
+          RaftChannel({'id': 'c1', 'name': 'design', 'joined': true}),
+        ]
+        ..section = 'home';
+      await frame(t, w);
+      await t.tap(find.byType(RaftMobileNotificationButton));
+      await t.pump(const Duration(milliseconds: 200));
+      expect(find.text('Computers need attention'), findsOneWidget);
+      await t.tap(find.text('Dismiss'));
+      await t.pump();
+      expect(find.text('No notifications right now'), findsOneWidget);
+      int reads(String path) => client.calls.where((p) => p == path).length;
+      final feedback = reads('/product-feedback/tickets');
+      final machines = reads('/servers/s/machines');
+
+      // Join/create a channel and receive capability changes.
+      w.channels = [
+        ...w.channels,
+        RaftChannel({
+          'id': 'c2',
+          'name': 'release',
+          'joined': true,
+          'channelCapabilities': {'manage': true},
+        }),
+      ];
+      w.notifyListeners();
+      for (var frame = 0; frame < 6; frame++) {
+        await t.pump(const Duration(milliseconds: 50));
+        expect(find.byType(RaftNotificationCenter), findsOneWidget);
+        expect(find.text('No notifications right now'), findsOneWidget);
+        expect(find.text('Computers need attention'), findsNothing);
+      }
+      expect(reads('/product-feedback/tickets'), feedback);
+
+      // Agent events revalidate the shared directory once; the bell does not
+      // issue its own machines/agents/feedback reads.
+      for (final name in ['agent:updated', 'agent:activity', 'agent:created']) {
+        client.stream.add(RaftEvent(name, {'agentId': 'a'}));
+      }
+      for (var frame = 0; frame < 6; frame++) {
+        await t.pump(const Duration(milliseconds: 50));
+        expect(find.text('No notifications right now'), findsOneWidget);
+      }
+      expect(reads('/product-feedback/tickets'), feedback);
+      expect(reads('/servers/s/machines'), lessThanOrEqualTo(machines + 1));
+
+      await t.pumpWidget(const SizedBox.shrink());
+      w.dispose();
+      await client.dispose();
+      await t.binding.setSurfaceSize(null);
+    },
+  );
   testWidgets('system popup handles Back and Escape without leaving Home', (
     t,
   ) async {

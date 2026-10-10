@@ -141,6 +141,55 @@ void main() {
       expect(t.takeException(), isNull);
     });
   }
+  testWidgets(
+    'server projection seeds the first frame; channel switches keep it without reloading',
+    (t) async {
+      final (w, a, s) = (await t.runAsync(fixture))!;
+      addTearDown(w.dispose);
+      addTearDown(s.dispose);
+      w.server = RaftRecord({
+        ...w.server!.json,
+        'serverPushMuted': true,
+        'notificationPrefsVersion': 4,
+      });
+      w.channel = RaftChannel({'id': 'c1', 'name': 'design', 'joined': true});
+      final gate = Completer<Map<String, dynamic>>();
+      a.settings = (_) => gate.future;
+      await t.pumpWidget(host(w, s));
+      // First frame: final value, editable, no loading state.
+      expect(card(t).muted, true);
+      expect(card(t).status, isNot('Checking…'));
+      expect(card(t).onMutedChanged, isNotNull);
+      int reads() => a.calls
+          .where((o) => o.path.endsWith('/notification-settings'))
+          .length;
+      final before = reads();
+      for (var i = 0; i < 3; i++) {
+        w.channel = RaftChannel({'id': 'c$i', 'name': 'c$i', 'joined': true});
+        w.channelGeneration++;
+        w.threadGeneration++;
+        w.notifyListeners();
+        await t.pump();
+        expect(card(t).muted, true, reason: 'switch $i');
+        expect(card(t).status, isNot('Checking…'), reason: 'switch $i');
+      }
+      expect(reads(), before);
+      gate.complete({'serverPushMuted': true, 'prefsVersion': 4});
+      await t.pumpAndSettle();
+      expect(card(t).muted, true);
+      // An identity change still clears before the new read lands.
+      w.server = RaftRecord({'id': 's1', 'name': 'Fixture', 'role': 'member'});
+      final next = Completer<Map<String, dynamic>>();
+      a.settings = (_) => next.future;
+      w.notifyListeners();
+      await t.pump();
+      expect(card(t).muted, false);
+      expect(card(t).onMutedChanged, isNull);
+      next.complete({'serverPushMuted': false, 'prefsVersion': 1});
+      await t.pumpAndSettle();
+      await t.pumpWidget(const SizedBox());
+    },
+  );
   testWidgets('late GET cannot undo accepted newer realtime preference', (
     t,
   ) async {

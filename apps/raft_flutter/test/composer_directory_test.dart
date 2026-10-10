@@ -112,7 +112,7 @@ void main() {
       },
     );
   }
-  test('private roster is lazy, member-scoped, and false flag never requests resource directories', () async {
+  test('private roster is read when the channel opens, member-scoped, and false flag never requests resource directories', () async {
     final (w, a) = await fixture('owner');
     addTearDown(w.dispose);
     w.channel = RaftChannel({'id': 'c1', 'type': 'private', 'joined': true});
@@ -131,16 +131,23 @@ void main() {
     };
     final directory = ComposerDirectory(w);
     addTearDown(directory.dispose);
+    // Nothing on the construction frame; Source reads the roster as a
+    // secondary load once the channel is open, not on the first `@`.
     expect(a.calls.where((r) => r.path.contains('/members')), isEmpty);
-    directory.request('#');
-    await settled();
     expect(directory.people, isEmpty);
-    directory.request('@');
+    directory.request('#');
     await settled();
     expect(directory.people.map((p) => '${p.type}:${p.id}'), [
       'user:human',
       'agent:agent',
     ]);
+    expect(directory.people.every((p) => p.inChannel), isTrue);
+    directory.request('@');
+    await settled();
+    expect(
+      a.calls.where((r) => r.path == '/channels/c1/members'),
+      hasLength(1),
+    );
     expect(
       a.calls.any(
         (r) => r.path == '/servers/s1/members' || r.path == '/agents',

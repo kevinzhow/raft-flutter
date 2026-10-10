@@ -6,10 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'search_memory.dart';
 import 'system_notification_projection.dart';
 
-typedef SystemNotificationGet = Future<dynamic> Function(
-  String path, {
-  Map<String, dynamic>? query,
-});
+typedef SystemNotificationGet =
+    Future<dynamic> Function(String path, {Map<String, dynamic>? query});
 
 class SystemNotificationContext {
   const SystemNotificationContext({
@@ -31,6 +29,19 @@ class SystemNotificationContext {
       : 'raft:notification-center:dismissed:${jsonEncode([origin, principal, server!['id']])}';
 }
 
+/// Machines/agents read from a shared, server-scoped directory instead of
+/// per-store requests. [ready] mirrors a settled read of every allowed list.
+@immutable
+class SystemNotificationEntities {
+  const SystemNotificationEntities({
+    required this.machines,
+    required this.agents,
+    required this.ready,
+  });
+  final List<Map<String, dynamic>> machines, agents;
+  final bool ready;
+}
+
 /// Authenticated projections in memory. Persistent data is limited to the last
 /// 100 dismissal fingerprints, never server copy, credentials or machine rows.
 class SystemNotificationStore extends ChangeNotifier {
@@ -38,16 +49,25 @@ class SystemNotificationStore extends ChangeNotifier {
     required this.get,
     SearchMemoryStorage? storage,
     DateTime Function()? clock,
+    this.entities,
   }) : storage = storage ?? PreferencesSearchMemoryStorage(),
        clock = clock ?? DateTime.now;
   final SystemNotificationGet get;
   final SearchMemoryStorage storage;
   final DateTime Function() clock;
+
+  /// When set, machines/agents come from the shared directory (which owns
+  /// their revalidation) and [refresh] reads only the feedback count.
+  final SystemNotificationEntities Function()? entities;
   SystemNotificationContext? context;
   final dismissed = <String>{};
-  List<Map<String, dynamic>> machines = [], agents = [];
+  List<Map<String, dynamic>> _machines = [], _agents = [];
+  List<Map<String, dynamic>> get machines =>
+      entities?.call().machines ?? _machines;
+  List<Map<String, dynamic>> get agents => entities?.call().agents ?? _agents;
+  bool get machineReady => entities?.call().ready ?? _machineReady;
   int feedbackUnread = 0;
-  bool machineReady = false, loading = false, failed = false, closed = false;
+  bool _machineReady = false, loading = false, failed = false, closed = false;
   int revision = 0, dismissRevision = 0, feedbackRevision = 0;
   Future<void> writes = Future.value();
   bool accepts(String scope, int ticket) =>
@@ -55,12 +75,13 @@ class SystemNotificationStore extends ChangeNotifier {
   List<SystemNotice> get entries {
     final c = context;
     if (c == null) return const [];
+    final shared = entities?.call();
     return projectSystemNotifications(
           server: c.server,
           channels: c.channels,
-          machines: machines,
-          agents: agents,
-          machinesReady: machineReady,
+          machines: shared?.machines ?? _machines,
+          agents: shared?.agents ?? _agents,
+          machinesReady: shared?.ready ?? _machineReady,
           canViewMachines: c.canViewMachines,
           mobile: c.mobile,
           feedbackUnread: feedbackUnread,
@@ -83,9 +104,9 @@ class SystemNotificationStore extends ChangeNotifier {
     ++revision;
     ++feedbackRevision;
     final localTicket = ++dismissRevision;
-    machines = [];
-    agents = [];
-    machineReady = false;
+    _machines = [];
+    _agents = [];
+    _machineReady = false;
     feedbackUnread = 0;
     failed = false;
     loading = false;
@@ -134,6 +155,21 @@ class SystemNotificationStore extends ChangeNotifier {
       }
     }
 
+    final shared = entities;
+    if (shared != null) {
+      final feedback = await safeRead(
+        '/product-feedback/tickets',
+        query: {'limit': 1},
+      );
+      if (!accepts(current.scope, ticket)) return;
+      final unread = feedback is Map ? feedback['unread_total'] : null;
+      final valid = unread is int && unread >= 0 && unread <= 9007199254740991;
+      if (valid && readTicket == feedbackRevision) feedbackUnread = unread;
+      failed = !shared().ready || !valid;
+      loading = false;
+      notifyListeners();
+      return;
+    }
     final results = await Future.wait([
       if (current.canViewMachines)
         safeRead('/servers/${current.server!['id']}/machines')
@@ -151,8 +187,8 @@ class SystemNotificationStore extends ChangeNotifier {
           machineResult is Map ? machineResult['machines'] : machineResult,
         ),
         agentRows = _rows(results[1]);
-    machineReady = machineRows != null && agentRows != null;
-    machines = machineRows == null
+    _machineReady = machineRows != null && agentRows != null;
+    _machines = machineRows == null
         ? []
         : [
             for (final raw in machineRows)
@@ -178,7 +214,7 @@ class SystemNotificationStore extends ChangeNotifier {
                   },
               },
           ];
-    agents = agentRows == null
+    _agents = agentRows == null
         ? []
         : [
             for (final raw in agentRows)
@@ -196,7 +232,7 @@ class SystemNotificationStore extends ChangeNotifier {
     }
     final unread = feedback is Map ? feedback['unread_total'] : null;
     failed =
-        !machineReady ||
+        !_machineReady ||
         unread is! int ||
         unread < 0 ||
         unread > 9007199254740991;

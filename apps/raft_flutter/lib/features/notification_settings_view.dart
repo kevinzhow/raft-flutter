@@ -29,6 +29,9 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
   bool verified = false;
   String? error, message, nativeBusyLabel;
   WorkspaceController? get w => widget.controller;
+
+  /// Server-level identity only: switching channels or opening a thread keeps
+  /// the accepted settings (Source useServerStore notification prefs).
   Object get authority => (
     w,
     w?.client.origin,
@@ -37,7 +40,6 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
     w?.client.serverId,
     w?.server?.id,
     w?.server?.string('role'),
-    w?.channelGeneration,
   );
   bool get hasServer =>
       w?.client.user != null &&
@@ -52,6 +54,7 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
     widget.service.addListener(serviceChanged);
     w?.addListener(workspaceChanged);
     scope = authority;
+    seed();
     unawaited(load());
   }
 
@@ -94,11 +97,24 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
     error = message = nativeBusyLabel = null;
   }
 
+  /// First frame from the server projection when it carries the prefs; the
+  /// GET then revalidates in place without a loading state.
+  void seed() {
+    final row = hasServer ? w?.server?.json : null;
+    final incoming = row?['notificationPrefsVersion'];
+    if (incoming is int && row?['serverPushMuted'] is bool) {
+      version = incoming;
+      muted = savedMuted = row!['serverPushMuted'] as bool;
+      verified = true;
+    }
+  }
+
   void workspaceChanged() {
     if (!mounted) return;
     if (scope != authority) {
       scope = authority;
       clear();
+      seed();
       setState(() {});
       unawaited(load());
       return;
@@ -151,22 +167,32 @@ class _NotificationSettingsState extends State<NotificationSettingsView> {
   Future<void> load() async {
     if (!hasServer) return;
     final request = ++ticket, original = authority, controller = w!;
-    setState(() => loading = true);
+    // A seeded/accepted value revalidates silently and stays editable.
+    final background = verified;
+    if (!background) setState(() => loading = true);
     try {
       final response = await controller.client.get(
         '/servers/${controller.server!.id}/notification-settings',
       );
       if (!current(request, original)) return;
       setState(() {
+        final edit = muted != savedMuted ? muted : null;
         accept(response);
+        if (edit != null && edit != savedMuted) muted = edit;
         loading = false;
         error = null;
       });
-    } catch (_) {
+    } catch (failure) {
       if (!current(request, original)) return;
       setState(() {
         loading = false;
+        if (background &&
+            !(failure is RaftApiException &&
+                [401, 403, 404].contains(failure.status))) {
+          return;
+        }
         verified = false;
+        muted = savedMuted = false;
         error = 'Notification settings could not be loaded.';
       });
     }

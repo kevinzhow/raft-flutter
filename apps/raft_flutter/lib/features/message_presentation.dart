@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import '../platform/attachment_files.dart';
 import 'message_action_card.dart';
 import 'attachment_view.dart';
@@ -264,7 +265,11 @@ class MessagePresentation extends StatelessWidget {
         return;
       }
       Map<String, dynamic> data;
-      String title;
+      String heading;
+      // A mention reads the shared, server-scoped directory: the dialog opens
+      // at once and follows in-place directory updates. Only an entity the
+      // directory does not hold (remote agent, unsettled list) is fetched.
+      Map<String, dynamic>? Function()? live;
       if (uri.host == 'task' &&
           parts.length == 1 &&
           message.channelId.isNotEmpty) {
@@ -274,98 +279,134 @@ class MessagePresentation extends StatelessWidget {
         if (carrier == null) return;
         final out = await w.query('/tasks/channel/$carrier/number/$number');
         data = Map<String, dynamic>.from(out['task']);
-        title = 'task #$number · ${data['title'] ?? ''}';
+        heading = 'task #$number · ${data['title'] ?? ''}';
       } else if (uri.host == 'mention' &&
           parts.length == 2 &&
           ['agent', 'user'].contains(parts[0])) {
         // The selected entity supplies its ID; no directory guess changes it.
+        final directory = w.entityDirectory, id = parts[1];
         if (parts[0] == 'agent') {
           if (!w.can('viewAgents')) return;
-          final out = await w.query('/agents/${parts[1]}');
-          data = Map<String, dynamic>.from(
-            out['agent'] is Map ? out['agent'] : out,
-          );
+          live = () => directory.agent(id);
+          final cached = live();
+          if (cached != null) {
+            data = cached;
+          } else {
+            final out = await w.query('/agents/$id');
+            data = Map<String, dynamic>.from(
+              out['agent'] is Map ? out['agent'] : out,
+            );
+          }
         } else {
           if (!w.can('viewMembers')) return;
-          final out = await w.query('/servers/${w.server!.id}/members');
-          final members = out is List ? out : out['members'] as List;
-          final row = members
-              .whereType<Map>()
-              .where((p) => (p['userId'] ?? p['id']) == parts[1])
-              .firstOrNull;
-          if (row == null) {
+          live = () => directory.member(id);
+          var cached = live();
+          if (cached == null &&
+              !directory.state(WorkspaceEntityKind.members).loaded) {
+            await directory.refresh(WorkspaceEntityKind.members);
+            if (!context.mounted || !current()) return;
+            cached = live();
+          }
+          if (cached == null) {
             throw const RaftApiException('This member is no longer available.');
           }
-          data = Map<String, dynamic>.from(row);
+          data = cached;
         }
-        title = '${data['displayName'] ?? data['name'] ?? ''}';
+        heading = '${data['displayName'] ?? data['name'] ?? ''}';
       } else {
         return;
       }
       if (!context.mounted || !current()) return;
+      final opened = directoryAuthority(w), initial = data;
       await showDialog<void>(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(title),
-          content: SizedBox(
-            width: 560,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (data['description'] is String)
-                    RaftMessageBody(
-                      content: data['description'],
-                      onLink: onExternalLink,
-                    ),
-                  if (data['status'] is String)
-                    Text(
-                      raftFormat(ctx, 'Status: {status}', {
-                        'status': raftText(
-                          ctx,
-                          raftTaskStatuses.contains(data['status'])
-                              ? raftTaskStatusLabel(data['status'])
-                              : data['status'],
-                        ),
-                      }),
-                    ),
-                  if (data['claimedByName'] is String)
-                    Text(
-                      raftFormat(ctx, 'Assignee: {name}', {
-                        'name': data['claimedByName'],
-                      }),
-                    ),
-                  if (data['role'] is String)
-                    Text(raftText(ctx, '${data['role']}')),
-                  if (data['taskNumber'] != null && data['messageId'] is String)
-                    RaftButton(
-                      label: 'Open message',
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        if (current()) {
-                          await w.jumpToMessage(
-                            data['channelId'],
-                            data['messageId'],
-                          );
-                        }
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text(raftText(ctx, 'Close')),
-            ),
-          ],
+        builder: (ctx) => ListenableBuilder(
+          listenable: w,
+          builder: (ctx, _) {
+            if (live != null && directoryAuthority(w) != opened) {
+              // A server-level identity change revokes the projection.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (ctx.mounted) Navigator.of(ctx).maybePop();
+              });
+              return const SizedBox.shrink();
+            }
+            final data = live?.call() ?? initial;
+            final title = live == null
+                ? heading
+                : '${data['displayName'] ?? data['name'] ?? ''}';
+            return mentionDialog(ctx, title, data, current);
+          },
         ),
       );
     } catch (e) {
       if (current()) w.setError('$e');
     }
+  }
+
+  Widget mentionDialog(
+    BuildContext ctx,
+    String title,
+    Map<String, dynamic> data,
+    bool Function() current,
+  ) {
+    final w = controller;
+    return AlertDialog(
+      title: Text(title),
+      content: SizedBox(
+        width: 560,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (data['description'] is String)
+                RaftMessageBody(
+                  content: data['description'],
+                  onLink: onExternalLink,
+                ),
+              if (data['status'] is String)
+                Text(
+                  raftFormat(ctx, 'Status: {status}', {
+                    'status': raftText(
+                      ctx,
+                      raftTaskStatuses.contains(data['status'])
+                          ? raftTaskStatusLabel(data['status'])
+                          : data['status'],
+                    ),
+                  }),
+                ),
+              if (data['claimedByName'] is String)
+                Text(
+                  raftFormat(ctx, 'Assignee: {name}', {
+                    'name': data['claimedByName'],
+                  }),
+                ),
+              if (data['role'] is String)
+                Text(raftText(ctx, '${data['role']}')),
+              if (data['taskNumber'] != null && data['messageId'] is String)
+                RaftButton(
+                  label: 'Open message',
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    if (current()) {
+                      await w.jumpToMessage(
+                        data['channelId'],
+                        data['messageId'],
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text(raftText(ctx, 'Close')),
+        ),
+      ],
+    );
   }
 
   Future<void> saveDiagram(

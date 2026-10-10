@@ -27,6 +27,9 @@ class SourceFeedbackView extends StatefulWidget {
 class _SourceFeedbackViewState extends State<SourceFeedbackView> {
   late SourceFeedbackStore store;
   StreamSubscription<RaftEvent>? session;
+
+  /// Account/server identity only: the inbox survives channel switches and
+  /// thread opens (Source feedback store is account-owned).
   String? authority() {
     final w = widget.controller;
     final user = w.client.user;
@@ -38,8 +41,6 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
       w.server?.id,
       w.server?.string('role'),
       w.client.generation,
-      w.channelGeneration,
-      w.threadGeneration,
     ]);
   }
 

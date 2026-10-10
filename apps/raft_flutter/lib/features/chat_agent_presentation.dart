@@ -16,6 +16,9 @@ class LiveAgentWork {
 /// Source liveAgentActivity.ts: only real working/thinking signals, terminal
 /// clear, heartbeat refresh in place, bounded20 items and90s safety expiry.
 /// Directory authority and sender IDs come from current permission-checked GET.
+/// Like Source useClearLiveAgentActivityOnServerChange, items are server-level:
+/// they clear only on a server-level identity change ([directoryAuthority]),
+/// never on a channel switch, thread open or channel capability refresh.
 class ChatAgentPresentation extends ChangeNotifier {
   ChatAgentPresentation(this.w, this.directory, {DateTime Function()? clock})
     : clock = clock ?? DateTime.now {
@@ -52,7 +55,7 @@ class ChatAgentPresentation extends ChangeNotifier {
       .firstOrNull;
   void changed() {
     if (ended) return;
-    final next = workspaceAuthority(w);
+    final next = directoryAuthority(w);
     if (scope != next) {
       scope = next;
       items = [];
@@ -73,7 +76,7 @@ class ChatAgentPresentation extends ChangeNotifier {
     if (ended ||
         event.name != 'agent:activity' ||
         event.payload is! Map ||
-        scope != workspaceAuthority(w) ||
+        scope != directoryAuthority(w) ||
         directory.scope != directoryAuthority(w) ||
         !w.can('viewAgents')) {
       return;

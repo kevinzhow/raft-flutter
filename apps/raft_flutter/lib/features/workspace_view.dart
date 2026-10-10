@@ -313,10 +313,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   double sidebarWidth = 240, threadWidth = 400;
   double masterWideWidth = 560, masterCompactWidth = 320;
   Timer? persistPanels;
-  String? sidebarAgentScope;
-  List<Map<String, dynamic>> sidebarAgents = [];
   bool joiningCommunityFromHelp = false;
-  int sidebarAgentRequest = 0;
   VoidCallback? removeShareReceiver;
   bool sharingReady = false,
       reviewingIncoming = false,
@@ -511,7 +508,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       w.addListener(syncBridgeFlag);
       bridgeScope = null;
       syncBridgeFlag();
-      sidebarAgentScope = null;
       syncSidebarAgents();
     }
     if (!identical(oldWidget.controller, w) ||
@@ -608,7 +604,6 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.removeListener(syncBridgeFlag);
     bridgeRequest++;
     removeShareReceiver?.call();
-    sidebarAgentRequest++;
     super.dispose();
   }
 
@@ -1140,8 +1135,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                       threadResizeLabel: tr('Resize thread'),
                       sidebarVisible:
                           gridActive ||
-                          DesktopNavigationPolicy.forSection(route)
-                              .usesConversationSidebar,
+                          DesktopNavigationPolicy.forSection(
+                            route,
+                          ).usesConversationSidebar,
                       sidebar: sidebar(),
                       rail: workspaceRail(),
                       mobileNavigationFloating: !t.brutal,
@@ -1361,8 +1357,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                     t,
                     MediaQuery.sizeOf(context).height,
                   ) +
-                  (DesktopNavigationPolicy.forSection(route)
-                          .usesConversationSidebar
+                  (DesktopNavigationPolicy.forSection(
+                        route,
+                      ).usesConversationSidebar
                       ? sidebarWidth
                       : 0)
             : 0,
@@ -2307,47 +2304,30 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           ],
         );
 
+  /// Pinned/placed agent rows come from the shared, server-scoped entity
+  /// directory: they are present at the first frame after a channel switch or
+  /// a pin change and are cleared only by a server-level identity change.
   void syncSidebarAgents() {
-    final ids = [
-      for (final r in [
-        ...(w.sidebarOrder['pinned'] as List? ?? []),
-        ...(w.sidebarOrder['sectionPlacements'] as List? ?? []),
-      ])
-        if (r is Map && r['kind'] == 'agent') '${r['id']}',
-    ]..sort();
-    final scope = jsonEncode([
-      w.client.generation,
-      w.client.user?.id,
-      w.server?.id,
-      w.server?.string('role'),
-      w.can('viewAgents'),
-      ids,
-    ]);
-    if (sidebarAgentScope == scope) return;
-    sidebarAgentScope = scope;
-    sidebarAgents = [];
-    final ticket = ++sidebarAgentRequest;
-    if (ids.isEmpty || w.server == null || !w.can('viewAgents')) return;
-    () async {
-      try {
-        final result = await w.query('/agents');
-        if (!mounted || ticket != sidebarAgentRequest) return;
-        final rows = result is List
-            ? result
-            : result is Map
-            ? result['agents']
-            : null;
-        setState(() {
-          sidebarAgents = (rows as List? ?? [])
-              .whereType<Map>()
-              .map((r) => Map<String, dynamic>.from(r))
-              .toList();
-        });
-      } catch (_) {
-        // A missing directory does not manufacture an identity. Existing DMs
-        // remain usable; refreshing the workspace retries a changed authority.
-      }
-    }();
+    if (!w.can('viewAgents') || w.server == null) return;
+    final pinnedAgent = [
+      ...(w.sidebarOrder['pinned'] as List? ?? []),
+      ...(w.sidebarOrder['sectionPlacements'] as List? ?? []),
+    ].any((r) => r is Map && r['kind'] == 'agent');
+    if (pinnedAgent) w.entityDirectory.ensureAuthors();
+  }
+
+  List<Map<String, dynamic>>? sidebarAgentSource;
+  List<Map<String, dynamic>> sidebarAgentRows = const [];
+  List<Map<String, dynamic>> get sidebarAgents {
+    final source = w.entityDirectory.authorAgents;
+    if (!identical(source, sidebarAgentSource)) {
+      sidebarAgentSource = source;
+      sidebarAgentRows = [
+        for (final row in source)
+          if (row['deletedAt'] == null) row,
+      ];
+    }
+    return sidebarAgentRows;
   }
 
   List<SidebarGroup> get sidebarGroups {

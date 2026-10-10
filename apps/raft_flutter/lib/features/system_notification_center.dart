@@ -10,6 +10,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import 'fleet_views.dart';
 import 'source_feedback_view.dart';
 import 'system_notification_copy.dart';
@@ -45,6 +46,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   final anchor = GlobalKey();
   final focus = FocusNode();
   bool disposed = false;
+
+  /// Server-level identity only (Source NotificationCenter is server-scoped):
+  /// joining/creating channels or capability refreshes keep the machines,
+  /// agents, feedback count and dismissals. Channels re-project in place.
   String get authority => jsonEncode([
     identityHashCode(w),
     w.client.origin,
@@ -56,8 +61,6 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     w.can('viewMachines'),
     w.can('viewAgents'),
     w.can('viewBilling'),
-    for (final c in w.channels)
-      [c.id, c.joined, c.archived, c.json['channelCapabilities']],
   ]);
   bool current(String scope) =>
       !disposed && mounted && authority == scope && w.client.user != null;
@@ -69,14 +72,18 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   }
 
   void attach() {
-    store = widget.store ?? SystemNotificationStore(get: w.query);
+    store =
+        widget.store ??
+        SystemNotificationStore(get: w.query, entities: directoryEntities);
     unawaited(bind());
     store.addListener(updated);
     w.addListener(changed);
     events = w.client.events.listen((e) {
       changed();
-      if (e.name.startsWith('machine:') ||
-          e.name.startsWith('agent:') ||
+      // agent:*/machine:* revalidate the shared directory in place; only a
+      // directory-less store reads them itself.
+      if ((store.entities == null &&
+              (e.name.startsWith('machine:') || e.name.startsWith('agent:'))) ||
           e.name.startsWith('server:member')) {
         coalesce?.cancel();
         coalesce = Timer(const Duration(milliseconds: 150), store.refresh);
@@ -98,6 +105,36 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       mobile: widget.mobile,
     ),
   );
+
+  /// Machines and agents from the workspace's shared entity directory, which
+  /// is itself fenced by server-level identity.
+  SystemNotificationEntities directoryEntities() {
+    final directory = w.entityDirectory;
+    final machinesAllowed = w.can('viewMachines'),
+        agentsAllowed = machinesAllowed && w.can('viewAgents');
+    for (final (kind, allowed) in [
+      (WorkspaceEntityKind.computers, machinesAllowed),
+      (WorkspaceEntityKind.agents, agentsAllowed),
+    ]) {
+      final state = directory.state(kind);
+      if (allowed && !state.loaded && !state.loading && state.error == null) {
+        scheduleMicrotask(() {
+          if (!disposed) unawaited(directory.refresh(kind));
+        });
+      }
+    }
+    return SystemNotificationEntities(
+      machines: machinesAllowed
+          ? directory.rows(WorkspaceEntityKind.computers)
+          : const [],
+      agents: agentsAllowed ? directory.authorAgents : const [],
+      ready:
+          (!machinesAllowed ||
+              directory.state(WorkspaceEntityKind.computers).loaded) &&
+          (!agentsAllowed ||
+              directory.state(WorkspaceEntityKind.agents).loaded),
+    );
+  }
 
   void changed() {
     final old = store.context?.scope;
