@@ -1,0 +1,53 @@
+[
+  {
+    "id": "P01",
+    "group": "性能",
+    "title_zh": "长中文 Markdown、代码、图片与反应的消息列表保持流畅：频道滚动、动态定位后的列表及真实 Linux 窗口缩放均按 profile 帧耗时与 CPU 实测验收。",
+    "web_source": "packages/web/src/components/message/MessageTimeline.tsx；Kevin a9e9041c / 1c85a3dd；Cindy 762babff",
+    "audit_note": "2026-10-10 用户反馈最新 Linux 版 CPU 跑满和严重掉帧。新增独立性能条目；旧 47 项审计、K10–K13、视觉判定和失败证据保持不变。组件挂载数量只能证明回收策略，不能替代原生 profile 帧耗时验收。",
+    "checks": [
+      {
+        "id": "P01a",
+        "minimum_layer": "native",
+        "minimum_passes": 2,
+        "proof_file": "message_scroll_performance_test.dart",
+        "title_zh": "三主题长消息频道连续滚动 10 秒（语义关闭与开启）",
+        "required_name_fragments": [
+          "brutal-light",
+          "elegant-light",
+          "elegant-dark",
+          "semantics=false",
+          "semantics=true"
+        ]
+      },
+      {
+        "id": "P01b",
+        "minimum_layer": "native",
+        "minimum_passes": 2,
+        "proof_file": "message_scroll_performance_test.dart",
+        "title_zh": "三主题消息定位后连续滚动 10 秒（语义关闭与开启）",
+        "required_name_fragments": [
+          "brutal-light",
+          "elegant-light",
+          "elegant-dark",
+          "semantics=false",
+          "semantics=true"
+        ]
+      },
+      {
+        "id": "P01c",
+        "minimum_layer": "native",
+        "minimum_passes": 2,
+        "proof_file": "message_scroll_performance_test.dart",
+        "title_zh": "三主题真实 Linux 窗口连续缩放 10 秒（语义关闭与开启）",
+        "required_name_fragments": [
+          "brutal-light",
+          "elegant-light",
+          "elegant-dark",
+          "semantics=false",
+          "semantics=true"
+        ]
+      }
+    ]
+  }
+]
