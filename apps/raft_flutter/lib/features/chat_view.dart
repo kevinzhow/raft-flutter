@@ -527,12 +527,18 @@ class _RaftChatViewState extends State<RaftChatView> {
     retiredAdapters.add(oldAdapter);
     retiredViewports.add(oldViewport);
     adapter = chat.InMemoryChatController(messages: messages);
-    viewport = ScrollController()..addListener(timelineScrolled);
-    listRevision++;
     initialEndPending = w.highlightedMessageId == null;
+    viewport =
+        (initialEndPending
+              ? RaftInitialEndScrollController()
+              : ScrollController())
+          ..addListener(timelineScrolled);
+    listRevision++;
     positionQueued = false;
     focusStaging = messages.isNotEmpty;
-    measuredContext = focusStaging;
+    // Latest windows start at the actual lazy end in layout. Only an explicit
+    // context anchor needs the finite window's complete measurement.
+    measuredContext = focusStaging && !initialEndPending;
     measuredWindowKey = GlobalKey();
     measuredWindowExtent = null;
     preservedContextTarget = preserveTarget;
