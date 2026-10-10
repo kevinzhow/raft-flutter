@@ -293,6 +293,7 @@ class _ResourceViewState extends State<ResourceView> {
   /// The list request currently owning [rows]; a realtime reconcile queues one
   /// trailing request behind it rather than superseding its ready response.
   int? activeLoad;
+  bool activeAppend = false;
   bool trailingReconcile = false;
 
   /// Request shape (path and filters, without the window) of accepted [rows].
@@ -532,6 +533,11 @@ class _ResourceViewState extends State<ResourceView> {
     if (lost.isEmpty) return;
     bool keep(Map row) => !rowChannelIds(row).any(lost.contains);
     rows = rows.where(keep).toList();
+    if (selectedSearchKey case final key?
+        when key.startsWith('message:') &&
+            !rows.any((row) => 'message:${row['id']}' == key)) {
+      selectedSearchKey = null;
+    }
     acceptedActivityItems = acceptedActivityItems.where(keep).toList();
     savedActivityItems = savedActivityItems.where(keep).toList();
     doneActivityItems = doneActivityItems.where(keep).toList();
@@ -628,19 +634,26 @@ class _ResourceViewState extends State<ResourceView> {
     final identity = identityAuthority, access = channelAccess;
     final sameIdentity = identity == acceptedIdentity;
     final previousAccess = acceptedAccess;
+    // A replacement window in flight under the previous facts is retired
+    // below; it is reissued where its view is still wanted.
+    final replacing = activeLoad != null && !activeAppend;
     acceptedAuthority = authority;
     acceptedIdentity = identity;
     acceptedAccess = access;
     requestGeneration++;
     refreshTimer?.cancel();
     closeDialogs();
-    if (sameIdentity && ['activity', 'saved'].contains(widget.section)) {
+    if (sameIdentity &&
+        ['activity', 'saved', 'search'].contains(widget.section)) {
       // Channel facts changed under the same principal and role. Only rows of
-      // a channel that is actually no longer visible leave; the rest stay on
-      // screen while the window reconciles in the background.
-      setState(() {
-        refilterRows({...revoked, ...lostChannels(previousAccess, access)});
-      });
+      // a channel that is actually no longer visible leave; the rest (and the
+      // query, filters, loaded pages and scroll position) stay on screen.
+      final lost = {...revoked, ...lostChannels(previousAccess, access)};
+      if (widget.section == 'search') {
+        searchAuthorityChanged(lost, replacing: replacing);
+        return;
+      }
+      setState(() => refilterRows(lost));
       // A first window still in flight keeps its skeleton until this
       // replacement request settles.
       unawaited(load(keep: true, quietErrors: rows.isNotEmpty));
@@ -656,6 +669,26 @@ class _ResourceViewState extends State<ResourceView> {
     });
     unawaited(activateSearchMemory(restore: false));
     load();
+  }
+
+  /// Source MessageSearchPage keeps its query, filters and results across
+  /// channel directory changes (they are not inputs of its search request).
+  /// Only hits in channels that can no longer be seen leave.
+  void searchAuthorityChanged(Set<String> lost, {required bool replacing}) {
+    final filtered = advanced.channelId;
+    final filterLost = filtered != null && lost.contains(filtered);
+    setState(() {
+      refilterRows(lost);
+      if (filterLost && widget.initialSearchChannelId == filtered) {
+        // An explicit channel search never falls back to a global one.
+        initialSearchUnavailable = true;
+      }
+    });
+    if (filterLost || replacing) {
+      unawaited(load(keep: rows.isNotEmpty, quietErrors: rows.isNotEmpty));
+    } else if (searchDebounce?.isActive ?? false) {
+      scheduleSearch();
+    }
   }
 
   Future<V?> scopedDialog<V>(
@@ -1148,6 +1181,7 @@ class _ResourceViewState extends State<ResourceView> {
       });
     }
     activeLoad = request;
+    activeAppend = append;
     if (enabledActivity && ['saved', 'done'].contains(filter) && !append) {
       unawaited(loadActivityFacets(scope));
     }
@@ -1822,6 +1856,11 @@ class _ResourceViewState extends State<ResourceView> {
     saveSearchState();
     lastPublishedQuery = text.trim();
     widget.onSearchQueryCommitted?.call(lastPublishedQuery!);
+    scheduleSearch();
+  }
+
+  void scheduleSearch() {
+    searchDebounce?.cancel();
     final scope = authority;
     searchDebounce = Timer(const Duration(milliseconds: 200), () {
       if (accepts(scope)) load();
