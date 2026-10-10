@@ -2011,6 +2011,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       );
     }
     final thread = target.kind == DesktopContentKind.thread;
+    // The destination is still being resolved: like Source ChannelById, hold a
+    // neutral "Loading channel" body instead of the previous channel's name
+    // above a bare "Loading...".
+    final resolving =
+        pendingDesktopSelection && w.channel?.id != target.channelId;
     final content = Column(
       key: key,
       children: [
@@ -2018,7 +2023,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           sourceThreadHeader(onClose: closeDesktopDetail)
         else
           RaftPageHeader(
-            title: w.channel?.name ?? '',
+            title: resolving ? '' : w.channel?.name ?? '',
             height: raftPageHeaderHeight(context),
             actions: [
               RaftIconButton(
@@ -2029,8 +2034,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             ],
           ),
         Expanded(
-          child: pendingDesktopSelection && w.channel?.id != target.channelId
-              ? Center(child: Text(tr('Loading...')))
+          child: resolving
+              ? thread
+                    ? Center(child: Text(tr('Loading...')))
+                    : RaftChannelResolutionBody(label: tr('Loading channel'))
               : ServerSetupGate(
                   controller: w,
                   onSwitchServer: showWorkspaceSwitcher,

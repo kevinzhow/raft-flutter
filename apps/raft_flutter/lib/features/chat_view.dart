@@ -182,6 +182,12 @@ class _RaftChatViewState extends State<RaftChatView>
   /// fresh center at the end (never laying out the distance in between).
   void showLatest() {
     if (!viewport.hasClients || viewport.positions.length != 1) return;
+    // The end is pinned again during the next layout (a tall new row, a fresh
+    // center), which does not notify; re-read the reader's state afterwards so
+    // the "N new messages" button cannot outlive the jump.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) timelineScrolled();
+    });
     final position = viewport.position;
     if (position.hasContentDimensions &&
         distanceFromLatest(position) <= position.viewportDimension * 2) {
@@ -555,8 +561,10 @@ class _RaftChatViewState extends State<RaftChatView>
 
   Future<void> returnToBottom() async {
     newMessageCount = 0;
-    returningLatest = w.hasNewer;
-    await w.returnToLatest(navigate: w.section == 'chat');
+    // A thread has no history window; its button only scrolls to the end and
+    // must never reload the outer channel.
+    returningLatest = !widget.thread && w.hasNewer;
+    if (!widget.thread) await w.returnToLatest(navigate: w.section == 'chat');
     if (!mounted || returningLatest) return;
     showLatest();
     timelineScrolled();
@@ -2508,7 +2516,8 @@ class _RaftChatViewState extends State<RaftChatView>
               ? loadingBody
               : taskLoadingBody(loadingBody)
         : buildTimeline();
-    final bottomCount = w.hasNewer
+    final historyWindow = !widget.thread && w.hasNewer;
+    final bottomCount = historyWindow
         ? (w.unread[w.channel?.id] ?? 0)
         : newMessageCount;
     final composeScope = w.draftScope(thread: widget.thread),
@@ -2578,13 +2587,17 @@ class _RaftChatViewState extends State<RaftChatView>
                   key: const ValueKey('current-timeline'),
                   child: currentTimeline,
                 ),
-                if (!widget.thread &&
-                    (w.hasNewer || !atBottom || newMessageCount > 0))
+                if (historyWindow || !atBottom || newMessageCount > 0)
                   RaftTimelineBottomButton(
                     label: bottomCount > 0
-                        ? raftFormat(context, '{count} new messages', {
-                            'count': bottomCount,
-                          })
+                        ? raftFormat(
+                            context,
+                            // ThreadPanel.tsx:2619 uses its own shorter copy.
+                            widget.thread
+                                ? '{count} new'
+                                : '{count} new messages',
+                            {'count': bottomCount},
+                          )
                         : raftText(context, 'Back to bottom'),
                     onPressed: returnToBottom,
                   ),
