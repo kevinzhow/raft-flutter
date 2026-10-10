@@ -33,6 +33,20 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
   }
 
   @override
+  String get snapshotKey => 'im-bridges';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'projection': projection,
+    'enabled': enabled,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    projection = fields['projection'] as SlackBridgeProjection?;
+    enabled = fields['enabled'] as bool;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     final flags = managementMap(
       await w.client.post(

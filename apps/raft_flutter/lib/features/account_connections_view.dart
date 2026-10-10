@@ -49,6 +49,24 @@ class _AccountConnectionsState extends ManagementState<AccountConnectionsView> {
   }
 
   @override
+  String get snapshotKey => 'account-connections';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'providers': providers,
+    'identities': identities,
+    'passwordConfigured': passwordConfigured,
+    'passwordStateKnown': passwordStateKnown,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    providers = fields['providers'] as List<Map<String, dynamic>>;
+    identities = fields['identities'] as List<Map<String, dynamic>>;
+    passwordConfigured = fields['passwordConfigured'] as bool;
+    passwordStateKnown = fields['passwordStateKnown'] as bool;
+    return true;
+  }
+
+  @override
   void dispose() {
     unawaited(broker?.cancel() ?? Future<void>.value());
     super.dispose();

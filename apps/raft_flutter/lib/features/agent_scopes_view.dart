@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'management_support.dart'
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
 
 /// Whole-set scope updates. Default mode remains distinct from a custom set
 /// that happens to contain all currently known scopes.
@@ -43,22 +45,46 @@ class _AgentScopesViewState extends State<AgentScopesView> {
   Set<String> scopes = {};
   String mode = 'default';
   bool loading = true, busy = false;
+
+  /// Unsaved checkbox edits; a background revalidation never overwrites them.
+  bool edited = false;
   String? error;
   String get path => '/agents/${widget.agentId}/scopes';
+  String get snapshotKey => 'agent-scopes:${widget.agentId}';
   @override
   void initState() {
     super.initState();
     generation = widget.controller.client.generation;
+    // Revisit: the accepted permissions render at once and revalidate quietly.
+    final snapshot = readPageSnapshot(widget.controller, snapshotKey);
+    if (snapshot != null) {
+      scopes = Set.of(snapshot['scopes'] as Set<String>);
+      mode = snapshot['mode'] as String;
+      loading = false;
+    }
     load();
   }
 
   Future<void> load() async {
+    final identity = pageIdentity(widget.controller);
     try {
       final value = await widget.controller.query(path);
-      if (!mounted || generation != widget.controller.client.generation) return;
+      if (generation != widget.controller.client.generation ||
+          identity != pageIdentity(widget.controller)) {
+        return;
+      }
+      final granted = (value['granted'] as List).cast<String>().toSet();
+      final String nextMode = value['mode'];
+      writePageSnapshot(widget.controller, snapshotKey, identity, {
+        'scopes': Set<String>.unmodifiable(granted),
+        'mode': nextMode,
+      });
+      if (!mounted) return;
       setState(() {
-        scopes = (value['granted'] as List).cast<String>().toSet();
-        mode = value['mode'];
+        if (!edited) {
+          scopes = granted;
+          mode = nextMode;
+        }
         loading = false;
         error = null;
       });
@@ -86,6 +112,7 @@ class _AgentScopesViewState extends State<AgentScopesView> {
             ? {'mode': 'default'}
             : {'scopes': scopes.toList()..sort()},
       );
+      edited = false;
       await load();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -138,6 +165,7 @@ class _AgentScopesViewState extends State<AgentScopesView> {
                   onChanged: busy
                       ? null
                       : (value) => setState(() {
+                          edited = true;
                           if (value == true) {
                             scopes.add(scope);
                           } else {

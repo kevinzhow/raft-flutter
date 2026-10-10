@@ -36,6 +36,22 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
   }
 
   @override
+  String get snapshotKey => 'mcp:${widget.agentId ?? ''}';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'servers': servers,
+    'recommendations': recommendations,
+    'agent': agent,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    servers = fields['servers'] as List<Map<String, dynamic>>;
+    recommendations = fields['recommendations'] as List<Map<String, dynamic>>;
+    agent = fields['agent'] as Map<String, dynamic>;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     final results = await Future.wait([
       w.client.get(

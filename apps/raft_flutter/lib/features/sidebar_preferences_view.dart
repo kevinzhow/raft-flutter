@@ -40,6 +40,17 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
   }
 
   @override
+  String get snapshotKey => 'sidebar-preferences';
+  @override
+  Map<String, Object?> captureSnapshot() => {'prefs': prefs, 'agents': agents};
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    prefs = fields['prefs'] as Map<String, dynamic>;
+    agents = fields['agents'] as List<Map<String, dynamic>>;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     if (w.server == null) return;
     final responses = await Future.wait([
@@ -67,6 +78,7 @@ class _SidebarPreferencesState extends ManagementState<SidebarPreferencesView> {
       );
       if (!accepts(generation) || scope != authority) return;
       prefs = managementMap(updated);
+      saveSnapshot();
       await w.loadSidebar();
       if (mounted) setState(() {});
     } on RaftApiException catch (e) {

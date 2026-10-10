@@ -47,6 +47,34 @@ class _AdministrationState extends ManagementState<AdministrationView> {
   }
 
   @override
+  String get snapshotKey => 'administration';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'analytics': analytics,
+    'translation': translation,
+    'agreement': agreement,
+    'labs': labs,
+    'onboarding': onboarding,
+    'setup': setup,
+    'public': public,
+    'publicEnabled': publicEnabled,
+    'guestEnabled': guestEnabled,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    analytics = fields['analytics'] as Map<String, dynamic>;
+    translation = fields['translation'] as Map<String, dynamic>;
+    agreement = fields['agreement'] as Map<String, dynamic>;
+    labs = fields['labs'] as Map<String, dynamic>;
+    onboarding = fields['onboarding'] as Map<String, dynamic>;
+    setup = fields['setup'] as Map<String, dynamic>;
+    public = fields['public'] as Map<String, dynamic>;
+    publicEnabled = fields['publicEnabled'] as bool;
+    guestEnabled = fields['guestEnabled'] as bool;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     final flags = managementMap(
       await w.client.post(
@@ -428,6 +456,16 @@ class _BillingState extends ManagementState<BillingView> {
   void clearData() {
     summary = {};
     notice = null;
+  }
+
+  @override
+  String get snapshotKey => 'billing';
+  @override
+  Map<String, Object?> captureSnapshot() => {'summary': summary};
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    summary = fields['summary'] as Map<String, dynamic>;
+    return true;
   }
 
   @override

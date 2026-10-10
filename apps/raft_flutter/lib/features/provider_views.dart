@@ -33,6 +33,22 @@ class _ProviderConnectionsState
   }
 
   @override
+  String get snapshotKey => 'provider-connections';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'connections': connections,
+    'options': options,
+    'enabled': enabled,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    connections = fields['connections'] as List<Map<String, dynamic>>;
+    options = fields['options'] as List<Map<String, dynamic>>;
+    enabled = fields['enabled'] as bool;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     final flags = managementMap(
       await w.client.post(

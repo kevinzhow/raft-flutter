@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-
+import '../data/resource_snapshot_cache.dart' show stableValue;
 import '../data/workspace_controller.dart';
+import 'management_support.dart'
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
 
 class WorkspaceActions {
   static Future<void> create(
@@ -503,9 +505,19 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
   String? error;
   StreamSubscription<RaftEvent>? events;
   Timer? refresh;
+  static const snapshotKey = 'workspace-access';
   @override
   void initState() {
     super.initState();
+    // Revisit: the accepted settings render at once and revalidate quietly.
+    final snapshot = readPageSnapshot(w, snapshotKey);
+    if (snapshot != null) {
+      profile = snapshot['profile'] as Map<String, dynamic>;
+      prefs = snapshot['prefs'] as Map<String, dynamic>;
+      invites = snapshot['invites'] as List<Map<String, dynamic>>;
+      links = snapshot['links'] as List<Map<String, dynamic>>;
+      loading = false;
+    }
     load();
     events = w.client.events.listen((event) {
       if (event.name == 'notification_prefs:updated' ||
@@ -529,6 +541,7 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
   Future<void> load() async {
     final ticket = ++request;
     final id = w.server?.id, generation = w.client.generation;
+    final identity = pageIdentity(w);
     if (id == null) return;
     try {
       final values = await Future.wait([
@@ -540,16 +553,26 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
       if (!mounted || ticket != request || generation != w.client.generation) {
         return;
       }
+      // Unchanged rows keep their accepted objects.
+      T stable<T>(T old, T next) => stableValue(old, next) as T;
       setState(() {
-        profile = Map<String, dynamic>.from(values[0]);
-        prefs = Map<String, dynamic>.from(values[1]);
+        profile = stable(profile, Map<String, dynamic>.from(values[0]));
+        prefs = stable(prefs, Map<String, dynamic>.from(values[1]));
         if (values.length > 2) {
-          invites = [
+          invites = stable(invites, [
             for (final row in values[2]) Map<String, dynamic>.from(row),
-          ];
-          links = [for (final row in values[3]) Map<String, dynamic>.from(row)];
+          ]);
+          links = stable(links, [
+            for (final row in values[3]) Map<String, dynamic>.from(row),
+          ]);
         }
         error = null;
+      });
+      writePageSnapshot(w, snapshotKey, identity, {
+        'profile': profile,
+        'prefs': prefs,
+        'invites': invites,
+        'links': links,
       });
     } catch (e) {
       if (mounted) setState(() => error = '$e');
@@ -685,6 +708,8 @@ class _WorkspaceAccessSettingsState extends State<WorkspaceAccessSettings> {
             ),
             const SizedBox(height: RaftSpace.x3),
             DropdownButtonFormField<String>(
+              // A background refresh that changes the mode replaces the field.
+              key: ValueKey('push-mode-${prefs['serverPushMode'] ?? 'all'}'),
               initialValue: '${prefs['serverPushMode'] ?? 'all'}',
               decoration: InputDecoration(
                 labelText: raftText(context, 'Workspace push notifications'),

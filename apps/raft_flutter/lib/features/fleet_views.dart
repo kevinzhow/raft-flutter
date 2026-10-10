@@ -15,6 +15,9 @@ import 'agent_migration_view.dart';
 import 'agent_apps_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_avatar_dialog.dart';
+import 'management_support.dart'
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
+import '../data/resource_snapshot_cache.dart' show stableValue;
 
 import 'package:raft_ui/recipes.dart';
 
@@ -1363,6 +1366,7 @@ class _FleetInspectionState extends State<FleetInspection> {
     ++fileRequest;
     setState(() {
       rows = [];
+      shownDir = null;
       error = null;
     });
     final route = inspectionRoute;
@@ -1386,33 +1390,56 @@ class _FleetInspectionState extends State<FleetInspection> {
   String? error;
   bool loading = true;
   String dir = '';
+
+  /// The folder [rows] were accepted for; null before the first result.
+  String? shownDir;
+  String get snapshotKey => 'fleet:${widget.base}/${widget.kind}';
   @override
   void initState() {
     super.initState();
     scope = _FleetScope(w);
     w.addListener(authorityChanged);
+    // Revisit: the accepted listing renders at once and revalidates quietly.
+    final snapshot = readPageSnapshot(w, snapshotKey);
+    if (snapshot != null) {
+      rows = snapshot['rows'] as List<Map<String, dynamic>>;
+      dir = shownDir = snapshot['dir'] as String;
+      loading = false;
+    }
     load();
   }
 
   Future<void> load() async {
     if (!current) return;
-    final ticket = ++request;
+    final ticket = ++request, identity = pageIdentity(w), target = dir;
     ++fileRequest;
-    setState(() {
-      loading = true;
-      error = null;
-    });
+    // Only a folder without accepted rows shows the loading state.
+    if (shownDir != target) {
+      setState(() {
+        loading = true;
+        error = null;
+      });
+    }
     try {
       final result = await widget.controller.query(
         '${widget.base}/${widget.kind}',
-        query: widget.kind == 'workspace-files' ? {'dirPath': dir} : null,
+        query: widget.kind == 'workspace-files' ? {'dirPath': target} : null,
       );
       if (!current || ticket != request) return;
+      final next = <Map<String, dynamic>>[
+        for (final r in (result is List ? result : result['files']) as List)
+          Map<String, dynamic>.from(r),
+      ];
       setState(() {
-        rows = [
-          for (final r in (result is List ? result : result['files']) as List)
-            Map<String, dynamic>.from(r),
-        ];
+        rows = shownDir == target
+            ? stableValue(rows, next) as List<Map<String, dynamic>>
+            : next;
+        shownDir = target;
+        error = null;
+      });
+      writePageSnapshot(w, snapshotKey, identity, {
+        'rows': rows,
+        'dir': target,
       });
     } catch (e) {
       if (current && ticket == request) setState(() => error = '$e');
@@ -1486,7 +1513,7 @@ class _FleetInspectionState extends State<FleetInspection> {
     ),
     body: loading
         ? Center(child: CircularProgressIndicator())
-        : error != null
+        : error != null && shownDir != dir
         ? Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -1502,13 +1529,19 @@ class _FleetInspectionState extends State<FleetInspection> {
               ),
             ),
           )
-        : rows.isEmpty
+        : rows.isEmpty && error == null
         ? RaftEmptyState(
             title: 'No entries',
             detail: 'There are no entries to show.',
           )
         : ListView(
             children: [
+              // A failed revalidation keeps the accepted rows.
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.all(RaftSpace.x4),
+                  child: RaftWarningBanner(error!),
+                ),
               if (dir.isNotEmpty)
                 ListTile(
                   title: Text(raftText(context, 'Root folder')),

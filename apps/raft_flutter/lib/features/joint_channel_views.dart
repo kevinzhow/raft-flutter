@@ -51,6 +51,29 @@ abstract class _JointState<T extends StatefulWidget>
   };
   @override
   String get authority => '${super.authority}|$_channelRevision';
+
+  /// Snapshots outlive the mount-local revision; [restoreSnapshot] instead
+  /// rejects one accepted before any channel's access changed.
+  @override
+  String get snapshotIdentity => pageIdentity(w);
+  Map<String, Object?> captureJoint();
+  void restoreJoint(Map<String, Object?> fields);
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    ...captureJoint(),
+    'access': Map<String, String>.of(_access),
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    final accepted = fields['access'] as Map<String, String>;
+    final now = accessSnapshot();
+    if (accepted.entries.any((entry) => now[entry.key] != entry.value)) {
+      return false;
+    }
+    restoreJoint(fields);
+    return true;
+  }
+
   bool get manager => w.can('federateChannels') && _deniedScope != authority;
   void _workspaceAccessChanged() {
     final next = accessSnapshot();
@@ -193,6 +216,19 @@ class _JointChannelsState extends _JointState<JointChannelsView> {
   void clearData() {
     invites = [];
     channels = [];
+  }
+
+  @override
+  String get snapshotKey => 'joint-channels';
+  @override
+  Map<String, Object?> captureJoint() => {
+    'invites': invites,
+    'channels': channels,
+  };
+  @override
+  void restoreJoint(Map<String, Object?> fields) {
+    invites = fields['invites'] as List<Map<String, dynamic>>;
+    channels = fields['channels'] as List<Map<String, dynamic>>;
   }
 
   @override
@@ -382,6 +418,15 @@ class _JointManagementState extends _JointState<JointChannelManagementView> {
   @override
   void clearData() {
     channel = {};
+  }
+
+  @override
+  String get snapshotKey => 'joint-channel:${widget.channelId}';
+  @override
+  Map<String, Object?> captureJoint() => {'channel': channel};
+  @override
+  void restoreJoint(Map<String, Object?> fields) {
+    channel = fields['channel'] as Map<String, dynamic>;
   }
 
   @override

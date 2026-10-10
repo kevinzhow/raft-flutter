@@ -47,6 +47,28 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
   }
 
   @override
+  String get snapshotKey => 'agent-apps:${widget.agentId}';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'access': access,
+    'apps': apps,
+    'events': events,
+    'agent': agent,
+    'nextCursor': nextCursor,
+    'filter': filter,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    access = fields['access'] as List<Map<String, dynamic>>;
+    apps = fields['apps'] as List<Map<String, dynamic>>;
+    events = fields['events'] as List<Map<String, dynamic>>;
+    agent = fields['agent'] as Map<String, dynamic>;
+    nextCursor = fields['nextCursor'] as String?;
+    filter = fields['filter'] as String?;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     final agentData = managementMap(
       await w.client.get('/agents/${widget.agentId}'),

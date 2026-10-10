@@ -3,6 +3,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/personal_presentation.dart';
+import '../data/resource_snapshot_cache.dart' show stableValue;
 import '../data/workspace_controller.dart';
 import '../platform/native_notifications.dart';
 import 'account_settings.dart';
@@ -12,6 +13,8 @@ import 'fleet_views.dart';
 import 'im_bridges_view.dart';
 import 'integrations_views.dart';
 import 'locale_settings_page.dart';
+import 'management_support.dart'
+    show pageIdentity, readPageSnapshot, writePageSnapshot;
 import 'mcp_views.dart';
 import 'notification_settings_view.dart';
 import 'provider_views.dart';
@@ -285,13 +288,19 @@ class ReleaseNotesView extends StatefulWidget {
 class _ReleaseNotesViewState extends State<ReleaseNotesView> {
   List<Map<String, dynamic>>? releases;
   String? error;
+  static const snapshotKey = 'release-notes';
   @override
   void initState() {
     super.initState();
+    // Revisit: the accepted list renders at once and revalidates quietly.
+    releases =
+        readPageSnapshot(widget.controller, snapshotKey)?['releases']
+            as List<Map<String, dynamic>>?;
     load();
   }
 
   Future<void> load() async {
+    final identity = pageIdentity(widget.controller);
     try {
       final page = await widget.controller.client.get(
         '/release-notes',
@@ -303,7 +312,18 @@ class _ReleaseNotesViewState extends State<ReleaseNotesView> {
                 if (item is Map) Map<String, dynamic>.from(item),
             ]
           : <Map<String, dynamic>>[];
-      if (mounted) setState(() => releases = items);
+      if (identity != pageIdentity(widget.controller)) return;
+      // Unchanged releases keep their accepted objects.
+      final next = stableValue(releases, items) as List<Map<String, dynamic>>;
+      writePageSnapshot(widget.controller, snapshotKey, identity, {
+        'releases': next,
+      });
+      if (mounted) {
+        setState(() {
+          releases = next;
+          error = null;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => error = '$e');
     }
@@ -312,15 +332,17 @@ class _ReleaseNotesViewState extends State<ReleaseNotesView> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (error != null) {
-      return Text(error!, style: RaftTypography.body(t, size: 14, line: 20));
-    }
+    final failure = error == null
+        ? null
+        : Text(error!, style: RaftTypography.body(t, size: 14, line: 20));
     if (releases == null) {
-      return const Center(child: RaftSpinner());
+      return failure ?? const Center(child: RaftSpinner());
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // A failed revalidation keeps the accepted list.
+        ?failure,
         for (final release in releases!)
           Padding(
             padding: const EdgeInsets.only(bottom: RaftSpace.x3),

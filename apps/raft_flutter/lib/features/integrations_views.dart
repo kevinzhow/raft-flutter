@@ -57,6 +57,22 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
   }
 
   @override
+  String get snapshotKey => 'integrations';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'apps': apps,
+    'marketplace': marketplace,
+    'access': access,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    apps = fields['apps'] as List<Map<String, dynamic>>;
+    marketplace = fields['marketplace'] as List<Map<String, dynamic>>;
+    access = fields['access'] as List<Map<String, dynamic>>;
+    return true;
+  }
+
+  @override
   Future<void> loadData(int request, int generation) async {
     final data = await Future.wait(
       [
@@ -504,6 +520,22 @@ class _AppManagementState extends ManagementState<AppManagementView> {
     app = {};
     notifications = {};
     share = {};
+  }
+
+  @override
+  String get snapshotKey => 'integration-app:${widget.appId}';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'app': app,
+    'notifications': notifications,
+    'share': share,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    app = fields['app'] as Map<String, dynamic>;
+    notifications = fields['notifications'] as Map<String, dynamic>;
+    share = fields['share'] as Map<String, dynamic>;
+    return true;
   }
 
   String get base => '/integrations/clients/${widget.appId}';

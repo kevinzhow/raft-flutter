@@ -32,7 +32,34 @@ class _ConversionSectionState
   bool get manager => w.can('federateChannels') && currentChannel != null;
   @override
   String get authority =>
-      '${super.authority}|$authorityRevision|${widget.channelId}|$manager|${w.can('federateChannels', resource: currentChannel)}|${currentChannel?.joined}|${currentChannel?.archived}';
+      '${super.authority}|$authorityRevision|$_channelScope';
+  String get _channelScope =>
+      '${widget.channelId}|$manager|${w.can('federateChannels', resource: currentChannel)}|${currentChannel?.joined}|${currentChannel?.archived}';
+
+  /// The mount-local [authorityRevision] retires requests and dialogs; the
+  /// snapshot is bound to the stable channel scope only.
+  @override
+  String get snapshotIdentity => '${pageIdentity(w)}|$_channelScope';
+  @override
+  String get snapshotKey => 'channel-conversion:${widget.channelId}';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'enabled': enabled,
+    'uncertain': uncertain,
+    'channel': channel,
+    'uploads': uploads,
+    'snapshot': snapshot,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    enabled = fields['enabled'] as bool;
+    uncertain = fields['uncertain'] as bool;
+    channel = fields['channel'] as Map<String, dynamic>;
+    uploads = fields['uploads'] as List<Map<String, dynamic>>;
+    snapshot = fields['snapshot'] as ChannelConversionSnapshot;
+    return true;
+  }
+
   String get scopeKey =>
       '${w.client.generation}|${w.client.user?.id}|${w.server?.id}|${w.server?.string('role')}|${widget.channelId}';
   Map<String, ConversionObservation> get observations =>
@@ -56,6 +83,16 @@ class _ConversionSectionState
   void initState() {
     super.initState();
     startManagement();
+    // First visit to this channel's section: a flag already evaluated for
+    // this server renders the idle section from the channel row at once.
+    final row = currentChannel;
+    if (loading &&
+        manager &&
+        row != null &&
+        cachedServerFlag(w, channelConversionFlag) == true) {
+      enabled = true;
+      channel = Map<String, dynamic>.of(row.json);
+    }
     events = w.client.events.listen((event) {
       if (!{
         'channel:updated',
@@ -87,7 +124,13 @@ class _ConversionSectionState
             Navigator.of(routeContext).removeRoute(route);
           }
         }
-        refreshAuthority();
+        // A roster change keeps the section while it revalidates; a real
+        // access change reaches the channel row and the authority itself.
+        if (event.name == 'channel:members-updated') {
+          revalidateAuthority();
+        } else {
+          refreshAuthority();
+        }
       } else {
         reload();
       }
@@ -142,8 +185,10 @@ class _ConversionSectionState
     }
     final source = authority, sequence = revision;
     bool allowed;
+    final flagScope = pageIdentity(w);
     try {
       allowed = await evaluate();
+      rememberServerFlag(w, channelConversionFlag, allowed, flagScope);
     } catch (e) {
       if (same(source) && sequence == revision) clearData();
       rethrow;

@@ -22,10 +22,15 @@ class RaftSheetSwitchRow {
     required this.description,
     required this.value,
     this.onChanged,
+    this.pending = false,
   });
   final String title, description;
   final bool value;
   final ValueChanged<bool>? onChanged;
+
+  /// The value is still loading: the row keeps its final geometry and the
+  /// switch's space is reserved, but nothing is shown or operable there.
+  final bool pending;
 }
 
 /// `<section className="mt-5">` with an `h3 text-base font-bold` title and
@@ -122,13 +127,19 @@ class RaftChannelSettingsSheet extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        RaftSwitch(
-          value: row.value,
-          size: RaftSwitchSize.md,
-          semanticLabel: raftText(context, row.title),
-          // The row keeps CSS geometry; the switch is its own tap target.
-          minimumTargetSize: 0,
-          onChanged: busy ? null : row.onChanged,
+        Visibility(
+          visible: !row.pending,
+          maintainSize: true,
+          maintainAnimation: true,
+          maintainState: true,
+          child: RaftSwitch(
+            value: row.value,
+            size: RaftSwitchSize.md,
+            semanticLabel: raftText(context, row.title),
+            // The row keeps CSS geometry; the switch is its own tap target.
+            minimumTargetSize: 0,
+            onChanged: busy || row.pending ? null : row.onChanged,
+          ),
         ),
       ],
     ),

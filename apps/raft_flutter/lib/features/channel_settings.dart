@@ -4,8 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/resource_snapshot_cache.dart' show stableValue;
 import '../data/workspace_controller.dart';
 import 'channel_conversion_section.dart';
+import 'management_support.dart'
+    show
+        cachedServerFlag,
+        pageIdentity,
+        readPageSnapshot,
+        rememberServerFlag,
+        writePageSnapshot;
 
 class ChannelSettings extends StatefulWidget {
   const ChannelSettings({
@@ -40,24 +48,65 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       widget.channel;
   List<Map<String, dynamic>> members = [];
   Map<String, dynamic> sidebar = {}, notification = {}, display = {};
-  bool loading = true, busy = false;
+
+  /// Parts of [load] accepted for this channel (from its snapshot or a
+  /// response). A row whose part is unknown reserves its final geometry.
+  final known = <String>{};
+  bool busy = false;
   String? error;
   StreamSubscription<RaftEvent>? events;
   Timer? refresh;
+  final _queued = <String>{};
+  String get snapshotKey => 'channel-settings:${widget.channel.id}';
+  static const _parts = {'members', 'sidebar', 'display', 'notification'};
+  static const guestFlag = 'server_guest_v0';
+
+  /// Server flags that decide which sections exist. Unknown only on the
+  /// first settings visit under this server identity (true cold load).
+  bool flagsKnown = false;
+
   @override
   void initState() {
     super.initState();
+    // Revisit: this channel's accepted preferences render at once and
+    // revalidate quietly. The pin state is also on the workspace sidebar.
+    final snapshot = readPageSnapshot(w, snapshotKey);
+    if (snapshot != null) {
+      sidebar = snapshot['sidebar'] as Map<String, dynamic>;
+      display = snapshot['display'] as Map<String, dynamic>;
+      notification = snapshot['notification'] as Map<String, dynamic>;
+      known.addAll(snapshot['known'] as Set<String>);
+    } else if (w.sidebarOrder.isNotEmpty) {
+      sidebar = w.sidebarOrder;
+      known.add('sidebar');
+    }
+    final guest = cachedServerFlag(w, guestFlag);
+    flagsKnown =
+        guest != null && cachedServerFlag(w, channelConversionFlag) != null;
+    guestFeature = guest ?? false;
     load();
-    loadGuestFlag();
+    loadFlags();
     events = w.client.events.listen((event) {
-      if (event.name == 'channel:members-updated' ||
-          event.name == 'notification_prefs:updated' ||
-          event.name == 'message_display_prefs:updated') {
-        refresh?.cancel();
-        refresh = Timer(const Duration(milliseconds: 150), () {
-          if (mounted) load();
-        });
+      // Each event refreshes only the part it can change, in place.
+      final part = switch (event.name) {
+        'channel:members-updated' => 'members',
+        'notification_prefs:updated' => 'notification',
+        'message_display_prefs:updated' => 'display',
+        _ => null,
+      };
+      if (part == null) return;
+      final payload = event.payload;
+      final id = payload is Map ? payload['channelId'] : null;
+      if (part == 'members' && id is String && id != widget.channel.id) {
+        return;
       }
+      _queued.add(part);
+      refresh?.cancel();
+      refresh = Timer(const Duration(milliseconds: 150), () {
+        final parts = Set.of(_queued);
+        _queued.clear();
+        if (mounted) load(parts);
+      });
     });
   }
 
@@ -70,44 +119,73 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     super.dispose();
   }
 
-  int request = 0;
-  Future<void> load() async {
-    final ticket = ++request,
-        generation = w.client.generation,
-        serverId = w.server?.id;
+  final _tickets = <String, int>{};
+  int _ticket = 0;
+
+  /// Fetch [parts] (all by default) and replace them in place. Older
+  /// responses for a part never overwrite a newer one; failures keep the
+  /// accepted values.
+  Future<void> load([Set<String> parts = _parts]) async {
+    final generation = w.client.generation,
+        serverId = w.server?.id,
+        identity = pageIdentity(w);
     if (serverId == null) return;
+    final id = widget.channel.id;
+    final wanted = [
+      for (final part in parts)
+        if (part != 'notification' || channel.flag('activityMuteSupported'))
+          part,
+    ];
+    final tickets = {
+      for (final part in wanted) part: _tickets[part] = ++_ticket,
+    };
+    Future<dynamic> fetch(String part) => switch (part) {
+      'members' => w.query('/channels/$id/members'),
+      'sidebar' => w.query('/servers/$serverId/sidebar-order'),
+      'display' => w.query('/channels/$id/message-display-settings'),
+      _ => w.query('/channels/$id/notification-settings'),
+    };
     try {
-      final values = await Future.wait([
-        w.query('/channels/${widget.channel.id}/members'),
-        w.query('/servers/$serverId/sidebar-order'),
-        w.query('/channels/${widget.channel.id}/message-display-settings'),
-        if (channel.flag('activityMuteSupported'))
-          w.query('/channels/${widget.channel.id}/notification-settings'),
-      ]);
-      if (!mounted || ticket != request || generation != w.client.generation) {
-        return;
-      }
-      final roster = values[0];
+      final values = await Future.wait(wanted.map(fetch));
+      if (!mounted || generation != w.client.generation) return;
+      T stable<T>(T old, T next) => stableValue(old, next) as T;
       setState(() {
-        members = [
-          for (final row in roster['humans'] as List)
-            {...Map<String, dynamic>.from(row), 'actorType': 'user'},
-          for (final row in roster['agents'] as List)
-            {...Map<String, dynamic>.from(row), 'actorType': 'agent'},
-        ];
-        sidebar = Map<String, dynamic>.from(values[1]);
-        display = Map<String, dynamic>.from(values[2]);
-        notification = values.length > 3
-            ? Map<String, dynamic>.from(values[3])
-            : {};
+        for (var i = 0; i < wanted.length; i++) {
+          final part = wanted[i], value = values[i];
+          if (_tickets[part] != tickets[part]) continue;
+          switch (part) {
+            case 'members':
+              members = stable(members, [
+                for (final row in value['humans'] as List)
+                  {...Map<String, dynamic>.from(row), 'actorType': 'user'},
+                for (final row in value['agents'] as List)
+                  {...Map<String, dynamic>.from(row), 'actorType': 'agent'},
+              ]);
+            case 'sidebar':
+              sidebar = stable(sidebar, Map<String, dynamic>.from(value));
+            case 'display':
+              display = stable(display, Map<String, dynamic>.from(value));
+            case 'notification':
+              notification = stable(
+                notification,
+                Map<String, dynamic>.from(value),
+              );
+          }
+          known.add(part);
+        }
         error = null;
       });
+      // The member roster is not shown here and is never cached.
+      writePageSnapshot(w, snapshotKey, identity, {
+        'sidebar': sidebar,
+        'display': display,
+        'notification': notification,
+        'known': Set<String>.unmodifiable(known.difference({'members'})),
+      });
     } catch (e) {
-      if (mounted && ticket == request && generation == w.client.generation) {
+      if (mounted && generation == w.client.generation) {
         setState(() => error = '$e');
       }
-    } finally {
-      if (mounted && ticket == request) setState(() => loading = false);
     }
   }
 
@@ -159,8 +237,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   );
   bool guestFeature = false;
 
-  Future<void> loadGuestFlag() async {
-    final serverId = w.server?.id;
+  /// The guest and joint-conversion flags in one evaluation, remembered for
+  /// this server identity so later visits render their sections at once.
+  Future<void> loadFlags() async {
+    final serverId = w.server?.id, identity = pageIdentity(w);
     if (serverId == null) return;
     try {
       // useServerFeatureFlag(SERVER_GUEST_FEATURE_FLAG_KEY).
@@ -168,17 +248,33 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         'POST',
         '/feature-flags/evaluate',
         data: {
-          'keys': ['server_guest_v0'],
+          'keys': [guestFlag, channelConversionFlag],
           'serverId': serverId,
+          'platform': 'web',
         },
       );
-      final enabled =
+      bool enabled(String key) =>
           result is Map &&
           (result['evaluations'] as List? ?? []).whereType<Map>().any(
-            (f) => f['key'] == 'server_guest_v0' && f['enabled'] == true,
+            (f) => f['key'] == key && f['enabled'] == true,
           );
-      if (mounted) setState(() => guestFeature = enabled);
-    } catch (_) {}
+      rememberServerFlag(w, guestFlag, enabled(guestFlag), identity);
+      rememberServerFlag(
+        w,
+        channelConversionFlag,
+        enabled(channelConversionFlag),
+        identity,
+      );
+      if (mounted && identity == pageIdentity(w)) {
+        setState(() {
+          guestFeature = enabled(guestFlag);
+          flagsKnown = true;
+        });
+      }
+    } catch (_) {
+      // Unknown flags never enable a section; the page still opens.
+      if (mounted) setState(() => flagsKnown = true);
+    }
   }
 
   Future<void> save() async {
@@ -259,7 +355,9 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       channelName: widget.channel.name,
       title: dm ? 'Conversation settings' : 'Settings',
       onClose: () => Navigator.of(context).maybePop(),
-      loading: loading,
+      // Only a true cold load (no flags for this server yet) waits; otherwise
+      // the panel opens final, reserving rows whose values are in flight.
+      loading: !flagsKnown,
       busy: busy,
       error: error,
       // ChannelConversionSection hides itself unless conversion applies.
@@ -312,18 +410,21 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             title: 'Pin channel',
             description: 'Keep this channel pinned to the top of your sidebar.',
             value: pinned,
+            pending: !known.contains('sidebar'),
             onChanged: pin,
           ),
           if (widget.isPanel &&
               !dm &&
               c.joined &&
               c.flag('activityMuteSupported') &&
-              notification['activityMuted'] is bool)
+              (!known.contains('notification') ||
+                  notification['activityMuted'] is bool))
             RaftSheetSwitchRow(
               title: 'Mute activity',
               description:
                   'Mute ordinary activity from this channel. Only affects you.',
               value: notification['activityMuted'] == true,
+              pending: !known.contains('notification'),
               onChanged: (value) => run(() async {
                 final fresh = [
                   ...w.channels,
@@ -347,11 +448,13 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               }),
             ),
           if (widget.collapseLongMessages &&
-              display.containsKey('collapseLongMessages'))
+              (!known.contains('display') ||
+                  display.containsKey('collapseLongMessages')))
             RaftSheetSwitchRow(
               title: 'Collapse long messages',
               description: 'Fold messages taller than the preview height behind a Show more toggle. Turn off to always show full messages in this channel.',
               value: display['collapseLongMessages'] != false,
+              pending: !known.contains('display'),
               onChanged: (v) => run(() async {
                 await w.command(
                   'PATCH',
