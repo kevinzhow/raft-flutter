@@ -114,9 +114,8 @@ class _RaftChatViewState extends State<RaftChatView> {
   int presentationRevision = 0;
   final timelineKeys = <int, GlobalKey>{};
   Widget? displayedTimeline, retainedTimeline;
-  bool focusStaging = false, measuredContext = false;
-  GlobalKey measuredWindowKey = GlobalKey();
-  double? measuredWindowExtent;
+  bool focusStaging = false;
+  int focusSeekAttempts = 0;
   bool atBottom = true, returningLatest = false;
   int newMessageCount = 0;
   Timer? highlightTimer;
@@ -532,9 +531,7 @@ class _RaftChatViewState extends State<RaftChatView> {
     initialEndPending = w.highlightedMessageId == null;
     positionQueued = false;
     focusStaging = messages.isNotEmpty;
-    measuredContext = focusStaging;
-    measuredWindowKey = GlobalKey();
-    measuredWindowExtent = null;
+    focusSeekAttempts = 0;
     preservedContextTarget = preserveTarget;
     preservedContextTop = preserveTop;
     setState(() {});
@@ -732,12 +729,6 @@ class _RaftChatViewState extends State<RaftChatView> {
         if (target != null && !focusReceiptVisible(target)) return;
         setState(() {
           focusStaging = false;
-          // The full measured window is only needed to resolve an exact
-          // context anchor before publication. Retaining it as cache extent
-          // keeps every message mounted and laid out on scroll and resize.
-          // The accepted target remains in the viewport when the normal
-          // animated-list cache takes over, preserving its mounted state.
-          measuredWindowExtent = null;
           returningLatest = false;
           scrolledHighlight = target;
           scrolledWindow = window;
@@ -776,6 +767,11 @@ class _RaftChatViewState extends State<RaftChatView> {
     }
 
     void center() {
+      void again() {
+        WidgetsBinding.instance.addPostFrameCallback((_) => center());
+        WidgetsBinding.instance.ensureVisualUpdate();
+      }
+
       if (!current() || scroll.positions.length != 1) {
         positionQueued = false;
         return;
@@ -783,12 +779,37 @@ class _RaftChatViewState extends State<RaftChatView> {
       final position = scroll.position;
       double offset;
       if (target == null) {
+        // A lazy list estimates its extent from the rows it has built.
+        // Jumping to the end builds the last rows and corrects the extent,
+        // so repeat until the end is stable before publishing.
+        if ((position.pixels - position.maxScrollExtent).abs() > .5 &&
+            focusSeekAttempts < 12) {
+          focusSeekAttempts++;
+          scroll.jumpTo(position.maxScrollExtent);
+          again();
+          return;
+        }
         offset = position.maxScrollExtent;
       } else {
         final row = focusAnchors[target]?.currentContext?.findRenderObject();
         final view = row == null ? null : RenderAbstractViewport.maybeOf(row);
         if (row == null || !row.attached || view == null) {
-          positionQueued = false;
+          // Only rows near the viewport are built. While the staged list is
+          // hidden, estimate the target position from the built rows and
+          // refine it on the next frame.
+          final seek = seekOffset(owner, scroll, target);
+          if (focusSeekAttempts >= 16) {
+            positionQueued = false;
+            return;
+          }
+          focusSeekAttempts++;
+          // No rows yet: the list builds its first rows on the next frame.
+          if (seek != null) {
+            scroll.jumpTo(
+              seek.clamp(position.minScrollExtent, position.maxScrollExtent),
+            );
+          }
+          again();
           return;
         }
         // Source scrollIntoView({block: "center"}); actual laid-out geometry.
@@ -796,9 +817,19 @@ class _RaftChatViewState extends State<RaftChatView> {
             ? view.getOffsetToReveal(row, .5).offset
             : view.getOffsetToReveal(row, 0).offset - preservedContextTop!;
       }
-      scroll.jumpTo(
-        offset.clamp(position.minScrollExtent, position.maxScrollExtent),
+      final clamped = offset.clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
       );
+      if ((position.pixels - clamped).abs() > .5) {
+        scroll.jumpTo(clamped);
+        // Rows above the target may correct their estimated extent once built.
+        if (focusSeekAttempts < 12) {
+          focusSeekAttempts++;
+          again();
+          return;
+        }
+      }
       reveal();
     }
 
@@ -807,25 +838,49 @@ class _RaftChatViewState extends State<RaftChatView> {
         positionQueued = false;
         return;
       }
-      if (measuredContext) {
-        final box = measuredWindowKey.currentContext?.findRenderObject();
-        if (box is! RenderBox || !box.hasSize || !box.size.height.isFinite) {
-          positionQueued = false;
-          return;
-        }
-        setState(() {
-          measuredWindowExtent = box.size.height;
-          measuredContext = false;
-        });
-        // Restore the real animated sliver while the old accepted list still
-        // paints. Its whole finite window can now be laid out without guesses.
-        WidgetsBinding.instance.addPostFrameCallback((_) => center());
-        WidgetsBinding.instance.ensureVisualUpdate();
-      } else {
-        center();
-      }
+      center();
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  /// Estimated scroll offset of [target], from the rows the lazy message
+  /// sliver has currently built. Refined on each frame until the row exists.
+  double? seekOffset(
+    chat.InMemoryChatController owner,
+    ScrollController scroll,
+    String target,
+  ) {
+    final index = owner.messages.indexWhere((m) => m.id == target);
+    if (index < 0) return null;
+    final root = scroll.position.context.storageContext.findRenderObject();
+    // The message list is the lazy sliver with the largest scroll extent;
+    // header and footer slivers are small.
+    RenderSliverMultiBoxAdaptor? list;
+    void visit(RenderObject node) {
+      if (node is RenderSliverMultiBoxAdaptor &&
+          (list == null ||
+              (node.geometry?.scrollExtent ?? 0) >
+                  (list!.geometry?.scrollExtent ?? 0))) {
+        list = node;
+      }
+      node.visitChildren(visit);
+    }
+
+    if (root == null) return null;
+    visit(root);
+    final sliver = list;
+    final first = sliver?.firstChild, last = sliver?.lastChild;
+    if (sliver == null || first == null || last == null) return null;
+    final lo = sliver.indexOf(first), hi = sliver.indexOf(last);
+    final loTop = sliver.childScrollOffset(first), hiTop = sliver.childScrollOffset(last);
+    if (loTop == null || hiTop == null) return null;
+    final base = sliver.constraints.precedingScrollExtent;
+    final perRow = hi > lo ? (hiTop - loTop) / (hi - lo) : last.size.height;
+    final top = index < lo
+        ? loTop - (lo - index) * perRow
+        : hiTop + (index - hi) * perRow;
+    // Center the estimated row like the final scrollIntoView step.
+    return base + top - scroll.position.viewportDimension / 2;
   }
 
   bool focusReceiptVisible(String target) {
@@ -1929,9 +1984,6 @@ class _RaftChatViewState extends State<RaftChatView> {
             scrollController: timelineViewport,
             key: ValueKey('chat-list-${widget.thread ? 'thread' : 'channel'}'),
             itemBuilder: item,
-            cacheExtent: identical(timelineAdapter, adapter)
-                ? measuredWindowExtent
-                : null,
             // Mounted MessageTimeline owns its two sentinels and natural
             // footer. Generic Flyer padding/safe-area must not duplicate
             // that spacing or the external composer's OS inset.
@@ -1945,37 +1997,7 @@ class _RaftChatViewState extends State<RaftChatView> {
                         ? RaftTimelineHost.threadPanel
                         : RaftTimelineHost.chatPanel,
                   ),
-                  // Keep Flyer's subscribed animated sliver mounted while the
-                  // hidden bounded window is measured. Real arrivals can insert
-                  // between measurement and reveal; removing the sliver leaves
-                  // its operation subscriber with no animated-list state.
-                  messagesSliver: SliverMainAxisGroup(
-                    slivers: [
-                      SliverOffstage(
-                        offstage:
-                            identical(timelineAdapter, adapter) &&
-                            measuredContext,
-                        sliver: messageSliver,
-                      ),
-                      if (identical(timelineAdapter, adapter) &&
-                          measuredContext)
-                        SliverToBoxAdapter(
-                          child: Column(
-                            key: measuredWindowKey,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              for (final message in timelineAdapter.messages)
-                                datedTile(
-                                  RaftMessage(message.metadata!),
-                                  // Only the persistent animated list owns
-                                  // focus anchors; measurement needs height.
-                                  captureFocus: false,
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
+                  messagesSliver: messageSliver,
                   footer: const RaftTimelineFooter(),
                 ),
             topSliver: widget.thread
@@ -2168,11 +2190,17 @@ class _RaftChatViewState extends State<RaftChatView> {
           child: Stack(
             fit: StackFit.expand,
             children: [
+              // Keys keep the staged timeline's element when the retained
+              // copy above it is removed. Without them the staged list moves
+              // to a new Stack slot, remounts at its end offset and lays out
+              // every message from the top in one frame.
               if (preserveTimeline && retainedTimeline != null)
                 IgnorePointer(
+                  key: const ValueKey('retained-timeline'),
                   child: ExcludeSemantics(child: retainedTimeline!),
                 ),
               IgnorePointer(
+                key: const ValueKey('current-timeline'),
                 ignoring: preserveTimeline,
                 child: Opacity(
                   opacity: preserveTimeline ? 0 : 1,

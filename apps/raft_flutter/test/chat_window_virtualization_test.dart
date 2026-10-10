@@ -83,6 +83,13 @@ void main() {
         Rect? firstTarget;
         for (var i = 0; i < 12; i++) {
           await tester.pump(const Duration(milliseconds: 16));
+          // Positioning the accepted target must stay lazy in every frame,
+          // including the hidden staging frames before publication.
+          expect(
+            find.byType(RaftMessageTile, skipOffstage: false).evaluate().length,
+            lessThan(80),
+            reason: 'Focus staging cannot lay out the whole context window',
+          );
           final target = paintedMessage(tester, 'target-300');
           if (target == null) continue;
           final dynamic state = tester.state(find.byType(RaftChatView));
@@ -104,7 +111,7 @@ void main() {
           firstTarget,
           isNotNull,
           reason:
-              '${w.messages.length} rows, ${w.error}, highlight ${w.highlightedMessageId}, staging ${diagnostic.focusStaging}, measured ${diagnostic.measuredContext}, queued ${diagnostic.positionQueued}',
+              '${w.messages.length} rows, ${w.error}, highlight ${w.highlightedMessageId}, staging ${diagnostic.focusStaging}, queued ${diagnostic.positionQueued}',
         );
         expect(w.messages.length, 500);
         int mountedRows() =>
