@@ -56,15 +56,25 @@ class MessagePresentation extends StatelessWidget {
           message.json['sourceServerId'] == controller.server?.id);
   List<RaftTextReference> get references {
     if (!localAuthority) return [];
-    final refs = {for (final ref in directoryReferences) ref.text: ref};
+    final content = message.content;
+    // Only references whose text occurs in this message can match; building
+    // one per channel/member for every row made each new row cost ~1ms.
+    final refs = {
+      for (final ref in directoryReferences)
+        if (content.contains(ref.text)) ref.text: ref,
+    };
     final channels = controller.channels.where((c) => !c.archived).toList();
     String href(String kind, List<String> parts) =>
         Uri(scheme: 'raft-ref', host: kind, pathSegments: parts).toString();
-    for (final c in channels) {
-      refs['#${c.string('name')}'] = RaftTextReference(
-        text: '#${c.string('name')}',
-        href: href('channel', [c.id]),
-      );
+    if (content.contains('#')) {
+      for (final c in channels) {
+        final text = '#${c.string('name')}';
+        if (!content.contains(text)) continue;
+        refs[text] = RaftTextReference(
+          text: text,
+          href: href('channel', [c.id]),
+        );
+      }
     }
     RaftChannel? dm(String token) {
       final parts = token.split('~');

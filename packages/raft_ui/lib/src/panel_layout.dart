@@ -670,7 +670,21 @@ class RaftPanelIconButton extends StatelessWidget {
 /// out: the font's ascent and descent are rounded to whole pixels and the
 /// half-leading `(line-height - (ascent + descent)) / 2` is floored onto the
 /// ascent. [style] must carry fontSize and height (line-height / size).
-double raftCssBaseline(TextStyle style) {
+double raftCssBaseline(TextStyle style) =>
+    _cssBaselineCache.putIfAbsent(style, () => _measureCssBaseline(style));
+
+// Measured once per text style; message rows ask on every build/layout.
+final _cssBaselineCache = raftTextMetricsCache<TextStyle, double>();
+
+/// A text-metrics memo cleared whenever the engine's fonts change, so a
+/// measurement taken before a font loaded is never reused afterwards.
+Map<K, V> raftTextMetricsCache<K, V>() {
+  final cache = <K, V>{};
+  PaintingBinding.instance.systemFonts.addListener(cache.clear);
+  return cache;
+}
+
+double _measureCssBaseline(TextStyle style) {
   final size = style.fontSize ?? 14;
   final lineHeight = (style.height ?? 1.2) * size;
   final probe = TextPainter(
@@ -827,7 +841,8 @@ class RaftCssLineBox extends SingleChildRenderObjectWidget {
 class _BlinkMetrics {
   const _BlinkMetrics(this.lineHeight, this.baseline);
   final double lineHeight, baseline;
-  static final _cache = <(TextStyle, TextScaler), _BlinkMetrics>{};
+  static final _cache =
+      raftTextMetricsCache<(TextStyle, TextScaler), _BlinkMetrics>();
   static _BlinkMetrics of(TextStyle style, TextScaler scaler) =>
       _cache.putIfAbsent((style, scaler), () {
         final size = scaler.scale(style.fontSize ?? 14);

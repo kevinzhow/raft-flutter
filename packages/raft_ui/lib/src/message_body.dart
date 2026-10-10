@@ -13,6 +13,7 @@ import 'package:mermaid_flutter/mermaid_flutter.dart';
 import 'package:mermaid_core/mermaid_core.dart' as core;
 
 import 'package:re_highlight/re_highlight.dart';
+import 'panel_layout.dart' show raftTextMetricsCache;
 import 'viewport_breakpoints.dart';
 import 'package:re_highlight/styles/github.dart';
 import 'package:re_highlight/styles/github-dark.dart';
@@ -881,14 +882,11 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
     final style = (parentStyle ?? DefaultTextStyle.of(context).style).merge(
       preferredStyle,
     );
-    final painter = TextPainter(
-      text: TextSpan(text: ' ', style: style),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-    )..layout();
-    final metrics = painter.computeLineMetrics().single;
-    final height = painter.height;
-    painter.dispose();
+    final (metrics, height) = _inlineCodeMetrics(
+      style,
+      Directionality.of(context),
+      MediaQuery.textScalerOf(context),
+    );
     InlineSpan padding() => WidgetSpan(
       alignment: PlaceholderAlignment.baseline,
       baseline: TextBaseline.alphabetic,
@@ -1319,3 +1317,25 @@ Map<String, TextStyle> raftCodeTokenTheme({required bool dark}) {
             ),
   };
 }
+
+// Space-glyph metrics per style/direction/scale, shared by every inline code
+// span instead of measured again on each build.
+final _inlineCodeMetricsCache =
+    raftTextMetricsCache<
+      (TextStyle, TextDirection, TextScaler),
+      (LineMetrics, double)
+    >();
+(LineMetrics, double) _inlineCodeMetrics(
+  TextStyle style,
+  TextDirection direction,
+  TextScaler scaler,
+) => _inlineCodeMetricsCache.putIfAbsent((style, direction, scaler), () {
+  final painter = TextPainter(
+    text: TextSpan(text: ' ', style: style),
+    textDirection: direction,
+    textScaler: scaler,
+  )..layout();
+  final result = (painter.computeLineMetrics().single, painter.height);
+  painter.dispose();
+  return result;
+});

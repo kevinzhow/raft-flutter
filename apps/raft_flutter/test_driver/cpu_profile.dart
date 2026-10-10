@@ -58,7 +58,7 @@ Future<void> main(List<String> args) async {
   }
   List<Map<String, Object>> top(Map<String, int> m) => (m.entries.toList()
         ..sort((a, b) => b.value.compareTo(a.value)))
-      .take(60)
+      .take(400)
       .map((e) => {'samples': e.value, 'name': e.key})
       .toList();
   File('${out.path}/$theme-cpu-profile.json').writeAsStringSync(

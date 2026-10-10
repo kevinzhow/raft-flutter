@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'panel_layout.dart' show raftTextMetricsCache;
+
 /// CSS outside-list marker metrics used by the original Chromium renderer.
 /// Provenance: Blink ListMarker::InlineMarginsForOutside and
 /// RelativeSymbolMarkerRect (list_marker.cc), plus pinned Web list-disc / pl-5.
@@ -50,19 +52,16 @@ class RaftMarkdownListMarker extends StatelessWidget {
         overflow: TextOverflow.visible,
       );
     }
-    final painter = TextPainter(
-      text: TextSpan(text: 'M', style: style),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 1,
-    )..layout();
-    final metrics = painter.computeLineMetrics().single;
+    final metrics = _markerMetrics(
+      style,
+      Directionality.of(context),
+      MediaQuery.textScalerOf(context),
+    );
     final rect = MessageListMarkerPrimitive.disc(
       indent: indent,
       ascent: metrics.unscaledAscent,
       baseline: metrics.baseline,
     );
-    painter.dispose();
     return Semantics(
       label: '•',
       child: ExcludeSemantics(
@@ -84,3 +83,23 @@ class _DiscPainter extends CustomPainter {
   @override
   bool shouldRepaint(_DiscPainter oldDelegate) => oldDelegate.rect != rect || oldDelegate.color != color;
 }
+
+// One glyph measurement per style/direction/scale instead of one per bullet
+// per build.
+final _markerMetricsCache =
+    raftTextMetricsCache<(TextStyle, TextDirection, TextScaler), LineMetrics>();
+LineMetrics _markerMetrics(
+  TextStyle style,
+  TextDirection direction,
+  TextScaler scaler,
+) => _markerMetricsCache.putIfAbsent((style, direction, scaler), () {
+  final painter = TextPainter(
+    text: TextSpan(text: 'M', style: style),
+    textDirection: direction,
+    textScaler: scaler,
+    maxLines: 1,
+  )..layout();
+  final metrics = painter.computeLineMetrics().single;
+  painter.dispose();
+  return metrics;
+});
