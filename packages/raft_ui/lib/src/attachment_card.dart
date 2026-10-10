@@ -5,6 +5,7 @@ import 'icons.dart';
 import 'design_primitives.dart';
 import 'attachment_tokens.dart';
 import 'localization.dart';
+import 'tooltip.dart';
 
 class RaftAttachmentCard extends StatelessWidget {
   const RaftAttachmentCard({
@@ -172,7 +173,8 @@ class RaftAttachmentCard extends StatelessWidget {
           return SizedBox(
             width: size.width,
             height: size.height,
-            child: Tooltip(
+            // RaftTooltip: rows scrolled under a resting pointer stay quiet.
+            child: RaftTooltip(
               message: '${raftText(context, 'Preview')} $filename',
               child: Material(
                 color: t.panel,

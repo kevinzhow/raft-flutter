@@ -495,6 +495,7 @@ class _CandidateRowState extends State<_CandidateRow> {
                         if (description != null && description.isNotEmpty)
                           RaftTooltip(
                             message: description,
+                            onlyWhenTruncated: true,
                             child: SizedBox(
                               width: double.infinity,
                               child: Text(

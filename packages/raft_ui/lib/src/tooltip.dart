@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'theme.dart';
@@ -171,6 +172,12 @@ class _TooltipGroup {
     });
   }
 
+  /// Ends adjacent instant opening at once (e.g. the list scrolled).
+  void settle() {
+    reset?.cancel();
+    instant = false;
+  }
+
   void dispose() {
     reset?.cancel();
     owner = null;
@@ -192,6 +199,7 @@ class RaftTooltip extends Tooltip {
     this.keyboardFocused = false,
     this.delay,
     this.closeDelay,
+    this.onlyWhenTruncated = false,
     bool excludeFromSemantics = false,
   }) : excludeDescription = excludeFromSemantics,
        super(
@@ -206,8 +214,31 @@ class RaftTooltip extends Tooltip {
   final Widget child;
   final bool enabled, keyboardFocused, excludeDescription;
   final Duration? delay, closeDelay;
+
+  /// For a tooltip that repeats its child's own text: it opens only while
+  /// that text is cut off (a single-line ellipsis), never when fully shown.
+  final bool onlyWhenTruncated;
   @override
   State<RaftTooltip> createState() => _RaftTooltipState();
+}
+
+/// Pointer movement versus list scrolling. A list scrolled under a resting
+/// pointer moves rows under it and Flutter reports enter events for them;
+/// those are not hover intent. A tooltip only opens after the pointer itself
+/// moved since the last scroll (native desktop behaviour).
+class _PointerIntent {
+  static bool _installed = false;
+  static int moves = 0, scrolledAtMove = -1;
+  static void install() {
+    if (_installed) return;
+    _installed = true;
+    GestureBinding.instance.pointerRouter.addGlobalRoute((event) {
+      if (event is PointerHoverEvent && event.delta != Offset.zero) moves++;
+    });
+  }
+
+  static void scrolled() => scrolledAtMove = moves;
+  static bool get movedSinceScroll => moves != scrolledAtMove;
 }
 
 class _RaftTooltipState extends State<RaftTooltip>
@@ -221,6 +252,10 @@ class _RaftTooltipState extends State<RaftTooltip>
   Offset? pointer;
   bool hovered = false, closing = false, instant = false, tracking = false;
   bool hoverBlocked = false, focusBlocked = false;
+
+  /// Entered by scrolling rather than by moving the pointer; opening waits
+  /// for a real pointer move.
+  bool awaitingMove = false;
   int epoch = 0;
   bool get allowed => widget.enabled && widget.message.isNotEmpty;
   bool get reduced => MediaQuery.disableAnimationsOf(context);
@@ -232,6 +267,7 @@ class _RaftTooltipState extends State<RaftTooltip>
       duration: const Duration(milliseconds: 150),
     );
     HardwareKeyboard.instance.addHandler(_key);
+    _PointerIntent.install();
   }
 
   @override
@@ -294,10 +330,12 @@ class _RaftTooltipState extends State<RaftTooltip>
             event.kind != PointerDeviceKind.stylus)) {
       return;
     }
+    if (widget.onlyWhenTruncated && !_truncated()) return;
     pointer = event.position;
     hovered = true;
     hoverBlocked = false;
-    _scheduleHover();
+    awaitingMove = !_PointerIntent.movedSinceScroll;
+    if (!awaitingMove) _scheduleHover();
   }
 
   void _scheduleHover() {
@@ -328,6 +366,10 @@ class _RaftTooltipState extends State<RaftTooltip>
         widget.keyboardFocused) {
       return;
     }
+    if (awaitingMove) {
+      if (event.delta == Offset.zero) return;
+      awaitingMove = false;
+    }
     if (openTimer?.isActive == true &&
         previous != null &&
         (previous - event.position).distanceSquared < 2) {
@@ -341,6 +383,7 @@ class _RaftTooltipState extends State<RaftTooltip>
     pointer = null;
     hoverBlocked = false;
     focusBlocked = false;
+    awaitingMove = false;
     openTimer?.cancel();
     epoch++;
     if (widget.keyboardFocused && allowed) {
@@ -415,6 +458,23 @@ class _RaftTooltipState extends State<RaftTooltip>
     });
   }
 
+  /// Whether a paragraph under the anchor is cut off.
+  bool _truncated() {
+    var found = false;
+    void visit(RenderObject node) {
+      if (found) return;
+      if (node is RenderParagraph && node.didExceedMaxLines) {
+        found = true;
+        return;
+      }
+      node.visitChildren(visit);
+    }
+
+    final root = anchor.currentContext?.findRenderObject();
+    if (root != null) visit(root);
+    return found;
+  }
+
   Rect? _anchorRect() {
     final box = anchor.currentContext?.findRenderObject();
     if (box is! RenderBox || !box.attached || !box.hasSize) {
@@ -424,7 +484,21 @@ class _RaftTooltipState extends State<RaftTooltip>
   }
 
   void _trackAnchor() {
-    if (tracking || (!portal.isShowing && openTimer?.isActive != true)) {
+    _PointerIntent.scrolled();
+    // Scrolling is not hover intent: a pending open waits for a pointer move
+    // and an open tooltip closes without arming adjacent instant opens.
+    if (openTimer?.isActive == true && !widget.keyboardFocused) {
+      openTimer!.cancel();
+      epoch++;
+      awaitingMove = true;
+    }
+    if (portal.isShowing && !widget.keyboardFocused) {
+      awaitingMove = hovered;
+      _hide(immediate: true);
+      scope?.group.settle();
+      return;
+    }
+    if (tracking || !portal.isShowing) {
       return;
     }
     tracking = true;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
 import 'theme.dart';
+import 'tooltip.dart';
 
 /// Mounted SystemMessage (raft-ui0.5.27). The adapter supplies formatted receipt
 /// text/time; system rows have no author/avatar, reactions or message toolbar.
@@ -57,8 +58,10 @@ class RaftSystemMessage extends StatelessWidget {
             Text(timestamp, style: recipe.clock),
             const SizedBox(width: 8),
             Flexible(
-              child: Tooltip(
+              // The line already says it; the full text only helps when cut.
+              child: RaftTooltip(
                 message: tooltip ?? content,
+                onlyWhenTruncated: tooltip == null,
                 child: Text(
                   content,
                   maxLines: 1,

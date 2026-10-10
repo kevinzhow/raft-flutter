@@ -75,8 +75,9 @@ class NativeLiveAgentActivityBar extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Tooltip(
+                child: RaftTooltip(
                   message: raftText(context, latest.text),
+                  onlyWhenTruncated: true,
                   child: Text(
                     raftText(context, latest.text),
                     maxLines: 1,

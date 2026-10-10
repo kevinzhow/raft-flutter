@@ -141,7 +141,7 @@ class RaftTaskStatusEditor extends StatelessWidget {
     final (bg, fg) = raftTaskStatusBadgeColors(t, status);
     final editor = RaftInlineBadgeEditor(
       label: raftText(context, raftTaskStatusLabel(status)),
-      tooltip: raftText(context, 'Task status'),
+      // The badge reads its status; a "Task status" tooltip adds nothing.
       selectedId: status,
       options: [
         for (final s in options)
