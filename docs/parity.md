@@ -476,11 +476,46 @@ and Chromium's pixel snapping of borders at fractional layout positions
 keep text-dense crops near 86–95% even when geometry matches. The
 remaining delta>24 mismatch per case is 0.5–11%; the highest are the
 small row/agent crops (one row of text over a 50px crop) and the bulk bar.
-Remaining channel deltas of 1 (e.g. `brutal-cyan/15`, `info-muted` tints)
-are oklch→sRGB rounding. Side-by-side review of the list, every detail
-section, the state variants and the dialogs found no remaining layout,
-copy, control or state difference beyond sub-pixel offsets (<=0.5px) of a
-few text runs.
+Remaining channel deltas of 1-2 on flat translucent fills are Chromium's
+blend arithmetic, not token values: Chromium quantises the colour to 8-bit
+RGBA before compositing and its 8-bit pipeline truncates, while Flutter
+blends in float and rounds. Checked numerically: brutal `bg-brutal-orange/10`
+over white is (254,245,240) in Chromium = alpha 26/255 then truncation,
+(254,246,241) in Flutter = alpha 0.1 rounded; elegant-dark `bg-info-soft`
+over `layer-panel` is 29.53/46.58/49.78 exactly, Chromium (29,46,49), Flutter
+(30,47,50).
+
+### Outlier review (select-all, bulk-restart, workspace-scan)
+
+The official `pixelPerfectSimilarity` (visual-testing
+`src/sharp-image-diff.mjs`) flattens both PNGs on white, pads them to the
+larger size and counts pixels whose RGBA is exactly equal; no threshold, no
+alpha effect here (both captures are opaque, same size). An earlier
+diagnostic here reported higher equality (76% vs 35.7% for select-all
+elegant-dark) because it measured the luminance of the difference image,
+which rounds single-channel 1-level differences to 0. Per-channel max delta
+(after the fixes below):
+
+| case | equal | delta 1-2 | delta 3-24 | delta >24 |
+| --- | --- | --- | --- | --- |
+| detail.select-all.elegant-dark | 35.7% | 51.4% | 9.0% | 3.8% |
+| dialog.bulk-restart.elegant-dark | 71.4% | 21.3% | 3.9% | 3.5% |
+| detail.workspaces-scanned.brutal | 74.2% | 16.6% | 3.9% | 5.3% |
+
+* delta 1-2: the large selected/tinted fills (blend arithmetic above).
+* delta 3-24: full-width single-pixel rows at border and fill edges. Total
+  coverage is equal, distributed differently: Flutter paints the edge at the
+  layout's .75 position (anti-aliased), Chromium snaps border and background
+  edges to whole pixels. Same offset on every edge of a crop, so no layout
+  drift.
+* Real differences found and fixed: (1) elegant Avatar is `border-2
+  border-transparent bg-clip-padding`; `RaftAvatarSlot` painted `fill-muted`
+  under the transparent border, a visible ring on tinted rows (no official
+  case changes: all 99 official values are identical with and without it);
+  (2) the bulk-restart option cards (`Card` root `border-[0.5px] ...
+  dark:border-transparent`) drew a 1px `line-muted` ring in elegant-dark and
+  dropped the `shadow-raft-xs` inset top light. The card edge profiles now
+  match Chromium to within 1 level.
 
 ## Known harness limitations
 

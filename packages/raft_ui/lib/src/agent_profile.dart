@@ -209,35 +209,50 @@ class RaftAvatarSlot extends StatelessWidget {
         ? 18.0
         : 12.0;
     final key = pixelKey(avatarUrl);
+    final base = s.root.decoration(rt);
+    // Elegant `border-2 border-transparent bg-clip-padding`: the fill stops
+    // at the padding box, so the transparent border shows the surface behind
+    // (a BoxDecoration colour would also paint under the border).
+    final clipPadding =
+        s.root.properties['background-clip']?.toString() == 'padding-box';
+    Widget child =
+        content ??
+        RaftAvatarContent(
+          name: name,
+          kind: agent
+              ? RaftAvatarContentKind.agent
+              : RaftAvatarContentKind.human,
+          pixelKey: key,
+          uploadedUrl: key == null ? avatarUrl : null,
+          fallback: Center(
+            child: RaftIcon(
+              agent ? RaftGlyph.bot : RaftGlyph.user,
+              size: icon,
+              color: s.fallback.color?.resolve(rt),
+            ),
+          ),
+        );
+    if (clipPadding && base.color != null) {
+      child = DecoratedBox(
+        decoration: BoxDecoration(
+          color: base.color,
+          borderRadius: base.borderRadius,
+        ),
+        child: child,
+      );
+    }
     return Container(
       width: sizeOverride ?? slot.size,
       height: sizeOverride ?? slot.size,
       clipBehavior: Clip.antiAlias,
-      decoration: s.root
-          .decoration(rt)
-          .copyWith(
-            border: Border.all(
-              color: s.root.borderColor?.resolve(rt) ?? Colors.black,
-              width: slot.border,
-            ),
-          ),
-      child:
-          content ??
-          RaftAvatarContent(
-            name: name,
-            kind: agent
-                ? RaftAvatarContentKind.agent
-                : RaftAvatarContentKind.human,
-            pixelKey: key,
-            uploadedUrl: key == null ? avatarUrl : null,
-            fallback: Center(
-              child: RaftIcon(
-                agent ? RaftGlyph.bot : RaftGlyph.user,
-                size: icon,
-                color: s.fallback.color?.resolve(rt),
-              ),
-            ),
-          ),
+      decoration: base.copyWith(
+        color: clipPadding ? Colors.transparent : null,
+        border: Border.all(
+          color: s.root.borderColor?.resolve(rt) ?? Colors.black,
+          width: slot.border,
+        ),
+      ),
+      child: child,
     );
   }
 }

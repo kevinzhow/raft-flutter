@@ -10,7 +10,7 @@ import 'dialog_card.dart';
 import 'icons.dart';
 import 'indicators.dart' show RaftSkeletonRow;
 import 'panel_layout.dart' show raftRecipeTheme, raftPanelInk, RaftCssText;
-import 'recipe_surface.dart' show raftCssText;
+import 'recipe_surface.dart' show raftCssText, RaftRecipeBox;
 import 'recipes/badge.g.dart';
 import 'recipes/card.g.dart';
 import 'recipes/panel_header.g.dart';
@@ -168,21 +168,29 @@ class RaftOptionCard extends StatelessWidget {
         states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}),
         tokens: rt,
       ).root;
-      final border = selected
+      // Elegant Card root `border-[0.5px] … dark:border-transparent`: the
+      // callsite `border-line-muted` / `hover:border-line-strong` do not
+      // override the `dark:` variant.
+      final border = !t.brutal && t.dark
+          ? Colors.transparent
+          : selected
           ? (t.brutal ? Colors.black : t.colors['line-muted']!)
           : state.hovered
           ? (t.brutal ? Colors.black : t.colors['line-strong']!)
           : (t.brutal
                 ? Colors.black.withValues(alpha: .3)
                 : t.colors['line-muted']!);
-      final base = root.decoration(rt);
-      return Container(
+      // RaftRecipeBox keeps the recipe's inset layers (elegant dark
+      // `shadow-raft-xs` top light, `inset 0 1px 0`) above the fill.
+      return RaftRecipeBox(
+        style: root,
+        tokens: rt,
         width: double.infinity,
         padding: const EdgeInsets.all(16),
-        decoration: base.copyWith(
+        applyText: false,
+        decorationOverride: (base) => base.copyWith(
           // A translucent tint (`bg-brutal-cyan/20`) composites over the
-          // dialog surface; painted alone it would show the box shadow
-          // through it (CSS never paints a shadow under its own box).
+          // dialog surface.
           color: selected
               ? Color.alphaBlend(
                   selectedFill,
