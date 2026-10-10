@@ -15,6 +15,9 @@ class _Client extends RaftClient {
   }
   final pending = <Completer<dynamic>>[];
   final flags = <dynamic>[];
+  final ingress = StreamController<RaftEvent>.broadcast(sync: true);
+  @override
+  Stream<RaftEvent> get events => ingress.stream;
   @override
   Future<dynamic> post(String path, {dynamic data}) {
     expect(path, '/feature-flags/evaluate');
@@ -94,4 +97,37 @@ void main() {
     await flush();
     expect(flag.masterDetail(900), false);
   });
+  test(
+    'server:updated re-evaluates without flipping the accepted presentation',
+    () async {
+      final client = _Client();
+      final w = WorkspaceController(client)
+        ..server = RaftRecord({'id': 's', 'role': 'owner'});
+      final flag = DesktopActivityFlag(w);
+      var notifications = 0;
+      flag.addListener(() => notifications++);
+      addTearDown(() {
+        flag.dispose();
+        w.dispose();
+      });
+      client.pending.single.complete(value(true));
+      await flush();
+      expect(flag.enabled, isTrue);
+      notifications = 0;
+      client.ingress.add(const RaftEvent('server:updated', {'id': 's'}));
+      expect(client.pending, hasLength(2));
+      // The Activity page is not switched to the legacy layout and back.
+      expect(flag.enabled, isTrue);
+      expect(notifications, 0);
+      client.pending[1].complete(value(true));
+      await flush();
+      expect(flag.enabled, isTrue);
+      expect(notifications, 0);
+      client.ingress.add(const RaftEvent('server:updated', {'id': 's'}));
+      client.pending[2].complete(value(false));
+      await flush();
+      expect(flag.enabled, isFalse);
+      expect(notifications, 1);
+    },
+  );
 }

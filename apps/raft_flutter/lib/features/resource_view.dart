@@ -13,6 +13,7 @@ import '../data/search_memory.dart';
 import '../data/activity_follow_state.dart';
 import '../data/activity_done_state.dart';
 import '../data/source_read_all_transport.dart';
+import '../data/resource_row_reconcile.dart';
 import 'search_home.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -285,6 +286,17 @@ class _ResourceViewState extends State<ResourceView> {
   String? cursor;
   bool hasMore = false;
   int requestGeneration = 0;
+
+  /// The list request currently owning [rows]; a realtime reconcile queues one
+  /// trailing request behind it rather than superseding its ready response.
+  int? activeLoad;
+  bool trailingReconcile = false;
+
+  /// Request shape (path and filters, without the window) of accepted [rows].
+  String? rowsView;
+
+  /// Activity rows advanced by live messages beyond their accepted window.
+  final activityLocalFrontiers = <String, BigInt>{};
   StreamSubscription<RaftEvent>? events;
   Timer? refreshTimer;
   WorkspaceController get w => widget.controller;
@@ -304,6 +316,40 @@ class _ResourceViewState extends State<ResourceView> {
   final Set<ModalRoute<dynamic>> dialogs = {};
   final Set<MenuController> filterMenus = {};
   final dragFeedbackRevision = ValueNotifier<int>(0);
+  static const channelAccessKeys = [
+    'isPrivate',
+    'visibility',
+    'accessLevel',
+    'membership',
+    'capabilities',
+    'channelCapabilities',
+    'guestAccessEnabled',
+    'readOnlyReason',
+    'parentChannelId',
+    'serverId',
+    'role',
+  ];
+  Map<String, dynamic> channelAccessFacts(RaftChannel c) => {
+    'id': c.id,
+    'type': c.type,
+    'joined': c.joined,
+    'archived': c.archived,
+    for (final key in channelAccessKeys)
+      if (c.json.containsKey(key)) key: c.json[key],
+  };
+
+  /// Principal, server, role and page identity. A change here retires every
+  /// accepted row; a channel-only change re-filters rows in place instead.
+  String get identityAuthority => jsonEncode([
+    w.client.origin,
+    w.client.generation,
+    w.client.user?.id,
+    w.client.serverId,
+    w.server?.id,
+    w.server?.string('role'),
+    widget.section,
+    widget.channelId,
+  ]);
   String get authority {
     final channels = [...w.channels, ...w.dms]
       ..sort((a, b) => a.id.compareTo(b.id));
@@ -317,28 +363,62 @@ class _ResourceViewState extends State<ResourceView> {
       widget.section,
       widget.channelId,
       authorityRevision,
-      for (final c in channels)
-        {
-          'id': c.id,
-          'type': c.type,
-          'joined': c.joined,
-          'archived': c.archived,
-          for (final key in [
-            'isPrivate',
-            'visibility',
-            'accessLevel',
-            'membership',
-            'capabilities',
-            'channelCapabilities',
-            'guestAccessEnabled',
-            'readOnlyReason',
-            'parentChannelId',
-            'serverId',
-            'role',
-          ])
-            if (c.json.containsKey(key)) key: c.json[key],
-        },
+      for (final c in channels) channelAccessFacts(c),
     ]);
+  }
+
+  String? acceptedIdentity;
+  Map<String, Map<String, dynamic>> acceptedAccess = {};
+  Map<String, Map<String, dynamic>> get channelAccess => {
+    for (final c in [...w.channels, ...w.dms]) c.id: channelAccessFacts(c),
+  };
+
+  bool privateLike(Map<String, dynamic>? facts) =>
+      facts == null ||
+      facts['isPrivate'] == true ||
+      facts['visibility'] == 'private' ||
+      ['private', 'dm', 'joint', 'thread'].contains(facts['type']);
+
+  /// Channels whose rows can no longer be shown: removed from the directory,
+  /// denied by capability, or a private conversation the principal left.
+  Set<String> lostChannels(
+    Map<String, Map<String, dynamic>> previous,
+    Map<String, Map<String, dynamic>> next,
+  ) {
+    final all = [...w.channels, ...w.dms];
+    final lost = <String>{};
+    for (final MapEntry(key: id, value: before) in previous.entries) {
+      final after = next[id];
+      if (after == null) {
+        lost.add(id);
+      } else if (!rowDeepEquals(before, after) &&
+          (!w.can(
+                'viewChannel',
+                resource: all.where((c) => c.id == id).firstOrNull,
+              ) ||
+              privateLike(after) &&
+                  before['joined'] == true &&
+                  after['joined'] != true)) {
+        lost.add(id);
+      }
+    }
+    return lost;
+  }
+
+  /// Drop exactly the rows that disclose a lost channel; keep every other row
+  /// object (and the scroll position, loaded pages and open row state).
+  void refilterRows(Set<String> lost) {
+    if (lost.isEmpty) return;
+    bool keep(Map row) => !rowChannelIds(row).any(lost.contains);
+    rows = rows.where(keep).toList();
+    acceptedActivityItems = acceptedActivityItems.where(keep).toList();
+    savedActivityItems = savedActivityItems.where(keep).toList();
+    doneActivityItems = doneActivityItems.where(keep).toList();
+    activityGroups = activityGroups
+        .where((g) => !lost.contains(g['channelId']))
+        .toList();
+    if (lost.contains(advanced.channelId)) advanced.channelId = null;
+    dragFeedbackRevision.value++;
   }
 
   bool accepts(String scope, [int? request]) =>
@@ -352,6 +432,9 @@ class _ResourceViewState extends State<ResourceView> {
     activityActivation?.cancel();
     dragFeedbackRevision.value++;
     rows = [];
+    rowsView = null;
+    trailingReconcile = false;
+    activityLocalFrontiers.clear();
     lanes.clear();
     laneCursors.clear();
     laneBusy.clear();
@@ -401,6 +484,8 @@ class _ResourceViewState extends State<ResourceView> {
     if (cause is RaftApiException && [401, 403].contains(cause.status)) {
       authorityRevision++;
       acceptedAuthority = authority;
+      acceptedIdentity = identityAuthority;
+      acceptedAccess = channelAccess;
       requestGeneration++;
       refreshTimer?.cancel();
       closeDialogs();
@@ -417,12 +502,29 @@ class _ResourceViewState extends State<ResourceView> {
     });
   }
 
-  void authorityChanged() {
+  void authorityChanged({Set<String> revoked = const {}}) {
     if (!mounted || acceptedAuthority == authority) return;
+    final identity = identityAuthority, access = channelAccess;
+    final sameIdentity = identity == acceptedIdentity;
+    final previousAccess = acceptedAccess;
     acceptedAuthority = authority;
+    acceptedIdentity = identity;
+    acceptedAccess = access;
     requestGeneration++;
     refreshTimer?.cancel();
     closeDialogs();
+    if (sameIdentity && ['activity', 'saved'].contains(widget.section)) {
+      // Channel facts changed under the same principal and role. Only rows of
+      // a channel that is actually no longer visible leave; the rest stay on
+      // screen while the window reconciles in the background.
+      setState(() {
+        refilterRows({...revoked, ...lostChannels(previousAccess, access)});
+      });
+      // A first window still in flight keeps its skeleton until this
+      // replacement request settles.
+      unawaited(load(keep: true, quietErrors: rows.isNotEmpty));
+      return;
+    }
     setState(() {
       clearRows();
       resetAdvanced();
@@ -481,8 +583,22 @@ class _ResourceViewState extends State<ResourceView> {
         'channel:members-updated',
         'channel:authority-updated',
       ].contains(event.name)) {
+        final payload = event.payload;
+        final id = payload is Map
+            ? payload['channelId'] ?? payload['id']
+            : null;
+        var revoked = const <String>{};
+        if (event.name != 'channel:updated') {
+          if (id is String) {
+            // Fail closed before the directory refresh lands, but only for a
+            // conversation whose visibility depends on membership.
+            if (privateLike(acceptedAccess[id])) revoked = {id};
+          } else {
+            acceptedIdentity = null;
+          }
+        }
         authorityRevision++;
-        authorityChanged();
+        authorityChanged(revoked: revoked);
         return;
       }
       if (['search', 'saved'].contains(widget.section) &&
@@ -518,19 +634,172 @@ class _ResourceViewState extends State<ResourceView> {
         _ => false,
       };
       if (relevant) {
+        if (widget.section == 'activity') patchActivity(event);
         final scope = authority;
         refreshTimer?.cancel();
         refreshTimer = Timer(const Duration(milliseconds: 150), () {
-          if (accepts(scope)) load();
+          if (accepts(scope)) unawaited(reconcile());
         });
       }
     });
   }
 
+  /// Source socketBridge background reset: never blanks accepted rows and
+  /// never supersedes a list request in flight; one trailing reconcile runs
+  /// after it with the then-loaded window width.
+  Future<void> reconcile() {
+    if (activeLoad != null) {
+      trailingReconcile = true;
+      return Future.value();
+    }
+    return load(keep: true, quietErrors: true);
+  }
+
+  bool get activityRowsLive =>
+      widget.section == 'activity' &&
+      !['saved', 'done'].contains(filter) &&
+      rows.isNotEmpty;
+
+  /// Apply live socket facts to the accepted Activity rows before the
+  /// debounced canonical reconcile (Source receiveThreadReply and
+  /// applyReadStateProjection).
+  void patchActivity(RaftEvent event) {
+    final payload = event.payload;
+    if (!activityRowsLive || payload is! Map) return;
+    if (payload['serverId'] is String &&
+        payload['serverId'] != w.client.serverId) {
+      return;
+    }
+    if (event.name == 'message:new') {
+      advanceActivity(payload);
+    } else if (event.name == 'thread:updated' &&
+        payload['latestReply'] is Map) {
+      advanceActivity(payload['latestReply'] as Map);
+    } else if (event.name.startsWith('read_state:')) {
+      // The ledger may not have folded this frame yet; the frame itself is
+      // the newest read fact for its scopes.
+      final facts = <String, int>{
+        for (final update in [
+          if (payload['scopes'] is List) ...payload['scopes'] as List,
+          if (payload['scopeId'] is String) payload,
+        ])
+          if (update is Map &&
+              update['scopeId'] is String &&
+              update['maxReadSeq'] is int)
+            update['scopeId'] as String: update['maxReadSeq'] as int,
+      };
+      final known = applyKnownReads(rows, facts: facts);
+      if (identical(known.rows, rows)) return;
+      setState(() {
+        rows = known.rows;
+        acceptedActivityItems = applyKnownReads(
+          acceptedActivityItems,
+          facts: facts,
+        ).rows;
+        if (totalUnreadCount != null) {
+          totalUnreadCount = (totalUnreadCount! - known.cleared).clamp(
+            0,
+            1 << 53,
+          );
+        }
+        if (totalCount != null && known.removed > 0) {
+          totalCount = (totalCount! - known.removed).clamp(0, 1 << 53);
+        }
+      });
+    }
+  }
+
+  bool activityMuted(Map<String, dynamic> row) {
+    final id = row['kind'] == 'thread'
+        ? row['parentChannelId']
+        : row['channelId'];
+    return [
+      ...w.channels,
+      ...w.dms,
+    ].any((c) => c.id == id && c.json['activityMuted'] == true);
+  }
+
+  void advanceActivity(Map message) {
+    for (var i = 0; i < rows.length; i++) {
+      final next = advanceActivityRow(rows[i], message);
+      if (next == null) continue;
+      if (activityMuted(rows[i])) return;
+      final key = rowKey(next), frontier = activityFrontier(next);
+      if (key != null && frontier != null) {
+        activityLocalFrontiers[key] = frontier;
+      }
+      setState(() {
+        final rest = [...rows]..removeAt(i);
+        // Newest-first windows move the advanced conversation to the top.
+        rows = advanced.direction == 'asc'
+            ? ([...rows]..[i] = next)
+            : [next, ...rest];
+        acceptedActivityItems = [
+          for (final row in acceptedActivityItems)
+            rowKey(row) == key ? next : row,
+        ];
+      });
+      return;
+    }
+  }
+
+  /// Known read frontiers (Source applyKnownReadStateProjectionsToItems):
+  /// rows fully read by this principal present no unread; the Unread view
+  /// drops them.
+  ({List<Map<String, dynamic>> rows, int cleared, int removed})
+  applyKnownReads(
+    List<Map<String, dynamic>> source, {
+    Map<String, int> facts = const {},
+  }) {
+    final server = w.client.serverId, user = w.client.user?.id;
+    if (server == null || user == null) {
+      return (rows: source, cleared: 0, removed: 0);
+    }
+    var cleared = 0, removed = 0, changed = false;
+    final next = <Map<String, dynamic>>[];
+    for (final row in source) {
+      final scope = activityScopeId(row);
+      final state = scope == null
+          ? null
+          : w.readState.state(server, user, scope);
+      final ledger = state?['maxReadSeq'], frame = facts[scope];
+      final read = [
+        if (ledger is int) ledger,
+        ?frame,
+      ].fold<int?>(null, (a, b) => a == null || b > a ? b : a);
+      final projected = projectFullyRead(
+        row,
+        read == null ? null : BigInt.from(read),
+      );
+      if (!identical(projected, row)) {
+        changed = true;
+        cleared += (row['unreadCount'] as num? ?? 0).toInt();
+        if (filter == 'unread') {
+          removed++;
+          continue;
+        }
+      }
+      next.add(projected);
+    }
+    return (rows: changed ? next : source, cleared: cleared, removed: removed);
+  }
+
+  /// Stable per-view item identity used to merge windows and keep row objects.
+  String? rowKey(Map row) => switch (widget.section) {
+    'activity' when enabledActivity && filter == 'saved' =>
+      row['savedMessageId'] is String ? 'saved:${row['savedMessageId']}' : null,
+    'activity' => activityItemKey(row),
+    'saved' => row['messageId'] is String ? 'saved:${row['messageId']}' : null,
+    'search' => row['id'] is String ? 'message:${row['id']}' : null,
+    _ => row['id'] is String ? '${widget.section}:${row['id']}' : null,
+  };
+
   @override
   void initState() {
     super.initState();
     acceptedAuthority = authority;
+    acceptedIdentity = identityAuthority;
+    acceptedAccess = channelAccess;
     query.text = widget.initialQuery ?? '';
     lastPublishedQuery = widget.initialQuery ?? '';
     lastSearchEditingValue = query.value;
@@ -589,7 +858,9 @@ class _ResourceViewState extends State<ResourceView> {
         filter = activeActivityFilter;
         advanced.channelId = null;
       }
-      unawaited(load());
+      // The presentation gate changed, not the data authority: keep rows
+      // visible until the replacement window is accepted.
+      unawaited(load(keep: true));
     }
     if (widget.section == 'search' &&
         oldWidget.initialQuery != widget.initialQuery &&
@@ -638,10 +909,19 @@ class _ResourceViewState extends State<ResourceView> {
     super.dispose();
   }
 
-  Future<void> load({bool append = false}) async {
+  /// [keep] revalidates in place: accepted rows stay on screen (no loading
+  /// skeleton), the request spans the loaded window and the response merges
+  /// by item key. [quietErrors] retains the accepted window on a transient
+  /// failure, as Source's background reset does.
+  Future<void> load({
+    bool append = false,
+    bool keep = false,
+    bool quietErrors = false,
+  }) async {
     final acceptActivityWindow = widget.onActivityWindowAccepted;
     saveSearchState();
     final request = ++requestGeneration, scope = authority;
+    keep = keep && !append;
     ++activityFacetRequest;
     if (widget.section == 'tasks' && !acceptsTaskChannel) {
       if (accepts(scope, request)) {
@@ -683,19 +963,22 @@ class _ResourceViewState extends State<ResourceView> {
       });
       return;
     }
-    setState(() {
-      loading = true;
-      error = null;
-      laneBusy.clear();
-      if (!append &&
-          ['search', 'saved', 'activity'].contains(widget.section) &&
-          !enabledActivity &&
-          !(widget.section == 'activity' && activityFollowState.busy)) {
-        rows = [];
-        cursor = null;
-        hasMore = false;
-      }
-    });
+    if (!keep) {
+      setState(() {
+        loading = true;
+        error = null;
+        laneBusy.clear();
+        if (!append &&
+            ['search', 'saved', 'activity'].contains(widget.section) &&
+            !enabledActivity &&
+            !(widget.section == 'activity' && activityFollowState.busy)) {
+          rows = [];
+          cursor = null;
+          hasMore = false;
+        }
+      });
+    }
+    activeLoad = request;
     if (enabledActivity && ['saved', 'done'].contains(filter) && !append) {
       unawaited(loadActivityFacets(scope));
     }
@@ -738,19 +1021,21 @@ class _ResourceViewState extends State<ResourceView> {
         'members' => '/servers/${w.server!.id}/members',
         _ => throw const RaftApiException('This page is not available.'),
       };
-      var value = await w.query(
-        path,
-        query: widget.section == 'search'
+      final pageSize =
+          widget.section == 'saved' || enabledActivity && filter == 'saved'
+          ? 20
+          : 30;
+      // Source requestLimit: a background reset spans the loaded window.
+      final windowSize = keep
+          ? rows.length.clamp(pageSize, 100).toInt()
+          : pageSize;
+      final params = widget.section == 'search'
             ? advanced.search(query.text, offset: append ? rows.length : 0)
             : ['saved', 'activity'].contains(widget.section)
             ? advanced.list(
                 query.text,
                 offset: append ? rows.length : 0,
-                limit:
-                    widget.section == 'saved' ||
-                        enabledActivity && filter == 'saved'
-                    ? 20
-                    : 30,
+                limit: windowSize,
                 filter:
                     widget.section == 'activity' &&
                         !['saved', 'done', 'unfollowed'].contains(filter)
@@ -768,8 +1053,16 @@ class _ResourceViewState extends State<ResourceView> {
                   'cursor': cursor,
                 if (widget.section != 'tasks')
                   'offset': append ? rows.length : 0,
-              },
-      );
+              };
+      final view = jsonEncode([
+        path,
+        {
+          for (final entry in (params ?? const {}).entries)
+            if (!['limit', 'offset', 'cursor'].contains(entry.key))
+              entry.key: entry.value,
+        },
+      ]);
+      var value = await w.query(path, query: params);
       if (!accepts(scope, request)) return;
       if (widget.section == 'activity' && filter != 'saved' && value is Map) {
         value = activityFollowState.window(value);
@@ -790,14 +1083,63 @@ class _ResourceViewState extends State<ResourceView> {
                 value['machines'] ??
                 [];
       if (accepts(scope, request)) {
+        final fetched = (list as List)
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+        var accepted = enabledActivity && filter == 'saved'
+            ? fetched.map(savedActivityItem).toList()
+            : fetched;
+        final activityWindow =
+            widget.section == 'activity' &&
+            !['saved', 'done'].contains(filter);
+        var unreadDelta = 0;
+        if (activityWindow) {
+          final known = applyKnownReads(accepted);
+          accepted = known.rows;
+          unreadDelta -= known.cleared;
+        }
+        final List<Map<String, dynamic>> nextRows;
+        if (append) {
+          nextRows = [...rows, ...accepted];
+        } else if (keep &&
+            view == rowsView &&
+            ['activity', 'saved'].contains(widget.section)) {
+          final merged = reconcileActivityWindow(
+            incoming: accepted,
+            current: rows,
+            hasMore: value is Map && value['hasMore'] == true,
+            // Source preserveLoadedInboxTail: unfiltered newest-first only.
+            preserveTail:
+                rows.length > windowSize &&
+                (widget.section == 'saved' ||
+                    filter == 'all' &&
+                        advanced.channelId == null &&
+                        advanced.direction == 'desc' &&
+                        query.text.trim().isEmpty),
+            localFrontiers: activityWindow ? activityLocalFrontiers : {},
+            keyOf: rowKey,
+            newestFirst: advanced.direction != 'asc',
+          );
+          nextRows = merged.rows;
+          unreadDelta += merged.unreadDelta;
+        } else {
+          nextRows = stabilizeRows(accepted, rows, rowKey);
+        }
+        if (unreadDelta != 0 &&
+            value is Map &&
+            value['totalUnreadCount'] is num) {
+          // Every consumer of this window sees the locally known reads.
+          value = {
+            ...value,
+            'totalUnreadCount':
+                ((value['totalUnreadCount'] as num).toInt() + unreadDelta)
+                    .clamp(0, 1 << 53),
+          };
+        }
         setState(() {
-          final fetched = (list as List)
-              .map((e) => Map<String, dynamic>.from(e))
-              .toList();
-          final accepted = enabledActivity && filter == 'saved'
-              ? fetched.map(savedActivityItem).toList()
-              : fetched;
-          rows = append ? [...rows, ...accepted] : accepted;
+          rows = nextRows;
+          rowsView = view;
+          if (keep) error = null;
           if (enabledActivity && filter == 'saved') {
             savedActivityItems = List.of(rows);
           }
@@ -842,10 +1184,18 @@ class _ResourceViewState extends State<ResourceView> {
         }
       }
     } catch (e) {
-      fail(e, scope, request: request);
+      final denied = e is RaftApiException && [401, 403].contains(e.status);
+      if (!quietErrors || denied) fail(e, scope, request: request);
     } finally {
-      if (accepts(scope, request)) {
+      if (accepts(scope, request) && loading) {
         setState(() => loading = false);
+      }
+      if (activeLoad == request) {
+        activeLoad = null;
+        if (trailingReconcile && accepts(scope)) {
+          trailingReconcile = false;
+          unawaited(reconcile());
+        }
       }
     }
   }
@@ -862,7 +1212,9 @@ class _ResourceViewState extends State<ResourceView> {
       await w.client.request(method, path, data: data);
       if (!accepts(scope)) return;
       await w.refreshUnread();
-      if (accepts(scope)) await load();
+      // Revalidate in place: an accepted list never blanks behind its own
+      // mutation (Mark all read, Remove saved message, task status).
+      if (accepts(scope)) await load(keep: rows.isNotEmpty);
     } catch (e) {
       fail(e, scope);
     }
@@ -2867,10 +3219,19 @@ class _ResourceViewState extends State<ResourceView> {
     String action,
     String scope,
   ) async {
-    if (!accepts(scope) ||
-        !rows.any((candidate) => identical(candidate, row))) {
-      return;
-    }
+    if (!accepts(scope)) return;
+    // A menu opened on a row that was since advanced or reconciled acts on the
+    // row currently accepted for the same conversation.
+    final itemKey = rowKey(row);
+    final current = rows
+        .where(
+          (candidate) =>
+              identical(candidate, row) ||
+              itemKey != null && rowKey(candidate) == itemKey,
+        )
+        .firstOrNull;
+    if (current == null) return;
+    row = current;
     final mutation = activityMutation(row, action);
     if (mutation == null) {
       if (action == 'done') {
@@ -2948,7 +3309,7 @@ class _ResourceViewState extends State<ResourceView> {
         }
         // Refresh first while suppression remains armed, then retire it.
         // A genuinely newer authority marker is exempt during this refresh.
-        await load();
+        await load(keep: true);
         if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) return;
         activityDoneState.finish(key, ticket);
       } catch (e) {
@@ -2957,7 +3318,7 @@ class _ResourceViewState extends State<ResourceView> {
         if (e is RaftApiException && [401, 403].contains(e.status)) {
           fail(e, scope);
         } else {
-          await load();
+          await load(keep: true);
           if (!accepts(scope) || !activityDoneState.accepts(key, ticket)) {
             return;
           }
@@ -3023,7 +3384,7 @@ class _ResourceViewState extends State<ResourceView> {
           fail(e, scope);
         } else {
           // Source preserves the previous follow state and reconciles failure.
-          await load();
+          await load(keep: true);
         }
       } finally {
         activityFollowState.finish(id, ticket);

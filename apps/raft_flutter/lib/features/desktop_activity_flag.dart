@@ -12,10 +12,7 @@ class DesktopActivityFlag extends ChangeNotifier {
   DesktopActivityFlag(this.w) {
     w.addListener(changed);
     events = w.client.events.listen((event) {
-      if (event.name == 'server:updated') {
-        scope = null;
-        changed();
-      }
+      if (event.name == 'server:updated') changed(reevaluate: true);
     });
     changed();
   }
@@ -32,13 +29,20 @@ class DesktopActivityFlag extends ChangeNotifier {
     w.server?.string('role'),
   ]);
   bool masterDetail(double width) => width >= (enabled ? 768 : 1024);
-  void changed() {
+  /// A new principal/server/role retires the evaluated presentation at once.
+  /// [reevaluate] (server:updated under the same authority) keeps the
+  /// accepted value until the fresh evaluation lands, so the Activity page is
+  /// not flipped to the legacy layout and back.
+  void changed({bool reevaluate = false}) {
     final next = authority;
-    if (scope == next || ended) return;
+    if (ended || scope == next && !reevaluate) return;
+    final same = scope == next;
     scope = next;
-    enabled = false;
     final ticket = ++request;
-    notifyListeners();
+    if (!same) {
+      enabled = false;
+      notifyListeners();
+    }
     if (w.server != null && w.client.user != null) {
       load(next, ticket, w.server!.id);
     }
@@ -65,16 +69,28 @@ class DesktopActivityFlag extends ChangeNotifier {
         return;
       }
       final rows = value is Map ? value['evaluations'] : null;
-      enabled =
+      final next =
           rows is List &&
           rows.whereType<Map>().any(
             (row) =>
                 row['key'] == 'activity_sidebar_inbox_v0' &&
                 row['enabled'] == true,
           );
+      if (next == enabled) return;
+      enabled = next;
       notifyListeners();
-    } catch (_) {
-      // A denied/unavailable flag is not permission to use the experimental opener.
+    } catch (error) {
+      // A denied/unavailable flag is not permission to use the experimental
+      // opener; a transient re-evaluation failure keeps the accepted value.
+      if (!ended &&
+          scope == sourceAuthority &&
+          request == ticket &&
+          enabled &&
+          error is RaftApiException &&
+          [401, 403].contains(error.status)) {
+        enabled = false;
+        notifyListeners();
+      }
     }
   }
 
