@@ -25,11 +25,22 @@ class SourceChannelImageLease {
   final Future<void> Function() release;
 }
 
-typedef SourceChannelImageAcquire = Future<SourceChannelImageLease?> Function(
-  SourceChannelFileEntry file,
-  bool Function() authorized,
-  SourceChannelImageRendition rendition,
-);
+typedef SourceChannelImageAcquire =
+    Future<SourceChannelImageLease?> Function(
+      SourceChannelFileEntry file,
+      bool Function() authorized,
+      SourceChannelImageRendition rendition,
+    );
+
+/// Synchronous counterpart of [SourceChannelImageAcquire]: a lease on an image
+/// the host already holds decoded, or null. Lets a recycled or revisited row
+/// paint its thumbnail in the first frame.
+typedef SourceChannelImagePeek =
+    SourceChannelImageLease? Function(
+      SourceChannelFileEntry file,
+      bool Function() authorized,
+      SourceChannelImageRendition rendition,
+    );
 
 enum SourceChannelImageRendition { thumbnail, original }
 
@@ -122,8 +133,9 @@ class SourceChannelFilesActions {
   void _error(String message) {
     final c = context();
     if (!_disposed && c.mounted) {
-      ScaffoldMessenger.maybeOf(c)
-          ?.showSnackBar(SnackBar(content: Text(raftText(c, message))));
+      ScaffoldMessenger.maybeOf(
+        c,
+      )?.showSnackBar(SnackBar(content: Text(raftText(c, message))));
     }
   }
 

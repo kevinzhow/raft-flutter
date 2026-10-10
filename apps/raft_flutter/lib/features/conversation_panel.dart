@@ -73,25 +73,60 @@ class _ConversationPanelState extends State<ConversationPanel> {
         : null,
   );
 
+  bool _usesThumbnail(
+    SourceChannelFileEntry file,
+    SourceChannelImageRendition rendition,
+  ) {
+    final thumbnail = file.metadata['thumbnailUrl'];
+    return thumbnail is String &&
+        thumbnail.isNotEmpty &&
+        (rendition == SourceChannelImageRendition.thumbnail ||
+            file.mimeType.toLowerCase().split(';').first.trim() ==
+                'image/svg+xml');
+  }
+
+  AttachmentImageKey _imageKey(
+    SourceChannelFileEntry file,
+    SourceChannelImageRendition rendition,
+  ) => AttachmentImageKey.fromMetadata(
+    scope: w.attachmentImageScope,
+    channelId: file.channelId,
+    metadata: file.metadata,
+    rendition: _usesThumbnail(file, rendition) ? 'thumbnail' : 'original',
+  );
+
+  /// Already decoded Files images (tab revisit) paint in the first frame.
+  SourceChannelImageLease? peekImage(
+    SourceChannelFileEntry file,
+    bool Function() authorized,
+    SourceChannelImageRendition rendition,
+  ) {
+    if (!authorized()) return null;
+    final lease = w.peekAttachmentImage(
+      _imageKey(file, rendition),
+      authorized: authorized,
+    );
+    final provider = lease?.lease.value;
+    if (lease == null) return null;
+    if (provider == null) {
+      lease.release();
+      return null;
+    }
+    return SourceChannelImageLease(
+      provider: provider,
+      release: () async => lease.release(),
+    );
+  }
+
   Future<SourceChannelImageLease?> acquireImage(
     SourceChannelFileEntry file,
     bool Function() authorized,
     SourceChannelImageRendition rendition,
   ) async {
     if (!authorized()) return null;
+    final usesThumbnail = _usesThumbnail(file, rendition);
     final thumbnail = file.metadata['thumbnailUrl'];
-    final usesThumbnail =
-        thumbnail is String &&
-        thumbnail.isNotEmpty &&
-        (rendition == SourceChannelImageRendition.thumbnail ||
-            file.mimeType.toLowerCase().split(';').first.trim() ==
-                'image/svg+xml');
-    final key = AttachmentImageKey.fromMetadata(
-      scope: w.attachmentImageScope,
-      channelId: file.channelId,
-      metadata: file.metadata,
-      rendition: usesThumbnail ? 'thumbnail' : 'original',
-    );
+    final key = _imageKey(file, rendition);
     final lease = w.acquireAttachmentImage(
       key,
       authorized: authorized,
@@ -221,6 +256,7 @@ class _ConversationPanelState extends State<ConversationPanel> {
                   channelId: channel.id,
                   formatCreatedAt: formatter(context).shortDateTime,
                   acquireImage: acquireImage,
+                  peekImage: peekImage,
                   onOpenSource: (file) async {
                     setState(() => tab = RaftConversationTabId.chat);
                     w.setChatTabPresentation(this, true);

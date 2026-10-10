@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-typedef ChannelFilesGet = Future<dynamic> Function(
-  String path, {
-  Map<String, dynamic>? query,
-});
+typedef ChannelFilesGet =
+    Future<dynamic> Function(String path, {Map<String, dynamic>? query});
 
 @immutable
 class SourceChannelFileEntry {
@@ -19,6 +17,14 @@ class SourceChannelFileEntry {
   final Map<String, dynamic> metadata;
   final String messageId, channelId, sourceChannelId, sourceType, createdAt;
   final String? parentMessageId;
+  bool sameAs(SourceChannelFileEntry other) =>
+      messageId == other.messageId &&
+      channelId == other.channelId &&
+      sourceChannelId == other.sourceChannelId &&
+      parentMessageId == other.parentMessageId &&
+      sourceType == other.sourceType &&
+      createdAt == other.createdAt &&
+      mapEquals(metadata, other.metadata);
   String get id => metadata['id'] as String;
   String get filename => metadata['filename'] as String;
   String get mimeType => metadata['mimeType'] as String;
@@ -85,8 +91,14 @@ class ChannelFilesRequestFailure implements Exception {
   final ChannelFilesFailure failure;
 }
 
-/// Account/window-owned in-memory projection. No disk persistence or resolved
-/// signed capabilities; backend thumbnail projection stays in this live view only.
+/// Server/channel-access-owned in-memory projection. No disk persistence or
+/// resolved signed capabilities; backend thumbnail projection stays in this
+/// live view only.
+///
+/// The controller keeps one store per channel across Files tab visits. A reload
+/// of an already loaded list keeps the rows on screen and replaces them in
+/// place; only an authority change (identity, role, channel access) or a 403
+/// empties it.
 class SourceChannelFilesStore extends ChangeNotifier {
   SourceChannelFilesStore({
     required this.channelId,
@@ -100,6 +112,13 @@ class SourceChannelFilesStore extends ChangeNotifier {
   int _epoch = 0, _request = 0;
   bool _disposed = false;
   bool loading = false, loadingMore = false;
+
+  /// A first page was accepted under the current authority. While true the
+  /// rows are shown even when a refresh is in flight or fails.
+  bool loaded = false;
+
+  /// First read with nothing to show yet (the only "Loading files" state).
+  bool get initialLoading => loading && !loaded;
   ChannelFilesFailure? error;
   String? nextCursor;
   List<SourceChannelFileEntry> _files = const [];
@@ -115,18 +134,34 @@ class SourceChannelFilesStore extends ChangeNotifier {
     _authority = current;
     _epoch++;
     _request++;
+    _wipe();
+    notifyListeners();
+    return true;
+  }
+
+  void _wipe() {
     _files = const [];
     nextCursor = null;
     error = null;
     loading = false;
     loadingMore = false;
+    loaded = false;
+  }
+
+  /// Evicted from the controller cache: drop rows and refuse every request.
+  void retire() {
+    if (_disposed) return;
+    _authority = null;
+    _epoch++;
+    _request++;
+    _wipe();
     notifyListeners();
-    return true;
   }
 
   Future<void> load({bool more = false}) async {
     syncAuthority();
-    if (!authorized || (more && (loading || loadingMore || nextCursor == null))) {
+    if (!authorized ||
+        (more && (loading || loadingMore || nextCursor == null))) {
       return;
     }
     final epoch = _epoch, request = ++_request, owner = _authority;
@@ -135,8 +170,6 @@ class SourceChannelFilesStore extends ChangeNotifier {
       loadingMore = true;
     } else {
       loading = true;
-      nextCursor = null;
-      _files = const [];
     }
     error = null;
     notifyListeners();
@@ -161,9 +194,14 @@ class SourceChannelFilesStore extends ChangeNotifier {
       if (next is String && (next.isEmpty || (more && next == cursor))) {
         throw const FormatException('Invalid files cursor.');
       }
-      final page = (data['files'] as List)
-          .map(SourceChannelFileEntry.parse)
-          .toList();
+      // A refreshed row identical to the one on screen keeps its instance, so
+      // mounted rows (and their thumbnails) are not rebuilt or reloaded.
+      final known = {for (final file in _files) file.id: file};
+      final page = (data['files'] as List).map((raw) {
+        final file = SourceChannelFileEntry.parse(raw);
+        final old = known[file.id];
+        return old != null && old.sameAs(file) ? old : file;
+      }).toList();
       // Direct rows must belong to the requested channel; thread rows require
       // the backend-projected parent/thread source metadata, not guessed IDs.
       if (page.any(
@@ -173,25 +211,42 @@ class SourceChannelFilesStore extends ChangeNotifier {
       )) {
         throw const FormatException('Invalid files source.');
       }
-      final byId = {
-        if (more)
+      if (more) {
+        final byId = {
           for (final file in _files) file.id: file,
-        for (final file in page) file.id: file,
-      };
-      _files = List.unmodifiable(byId.values);
-      nextCursor = data['nextCursor'] as String?;
+          for (final file in page) file.id: file,
+        };
+        _files = List.unmodifiable(byId.values);
+        nextCursor = data['nextCursor'] as String?;
+      } else {
+        _replaceFirstPage(page, data['nextCursor'] as String?);
+      }
+      loaded = true;
     } on ChannelFilesRequestFailure catch (failure) {
       if (current()) {
-        error = failure.failure;
         if (failure.failure == ChannelFilesFailure.unauthorized) {
           _files = const [];
           nextCursor = null;
+          loaded = false;
+          error = failure.failure;
+        } else if (!loaded || more) {
+          error = failure.failure;
         }
       }
     } on FormatException {
-      if (current()) error = ChannelFilesFailure.malformed;
+      if (current()) {
+        // A page that fails validation is never merged into accepted rows.
+        if (!more) {
+          _files = const [];
+          nextCursor = null;
+          loaded = false;
+        }
+        error = ChannelFilesFailure.malformed;
+      }
     } catch (_) {
-      if (current()) error = ChannelFilesFailure.unavailable;
+      if (current() && (!loaded || more)) {
+        error = ChannelFilesFailure.unavailable;
+      }
     } finally {
       if (current()) {
         loading = false;
@@ -199,6 +254,30 @@ class SourceChannelFilesStore extends ChangeNotifier {
         notifyListeners();
       }
     }
+  }
+
+  /// A refreshed first page replaces the rows it covers in place. Rows the
+  /// member already paged in beyond it stay (with their cursor) so a refresh
+  /// never shortens or jumps the list.
+  void _replaceFirstPage(
+    List<SourceChannelFileEntry> page,
+    String? pageCursor,
+  ) {
+    final tail = <SourceChannelFileEntry>[];
+    var cursor = pageCursor;
+    if (_files.length > page.length && page.isNotEmpty && pageCursor != null) {
+      final ids = {for (final file in page) file.id};
+      final last = page.last.id;
+      final at = _files.indexWhere((file) => file.id == last);
+      if (at >= 0) {
+        for (final file in _files.skip(at + 1)) {
+          if (!ids.contains(file.id)) tail.add(file);
+        }
+        if (tail.isNotEmpty) cursor = nextCursor;
+      }
+    }
+    _files = List.unmodifiable([...page, ...tail]);
+    nextCursor = cursor;
   }
 
   @override
@@ -210,6 +289,7 @@ class SourceChannelFilesStore extends ChangeNotifier {
     _files = const [];
     nextCursor = null;
     error = null;
+    loaded = false;
     super.dispose();
   }
 }

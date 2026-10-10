@@ -557,4 +557,119 @@ void main() {
       }
     },
   );
+
+  testWidgets(
+    'revisit paints an already decoded inline image in the first frame; identity change drops it',
+    (tester) async {
+      final client = _RasterClient()..user = RaftRecord({'id': 'alice'});
+      client.selectServer('server');
+      final w = WorkspaceController(client)
+        ..server = RaftRecord({'id': 'server', 'role': 'owner'})
+        ..channel = RaftChannel({'id': 'channel', 'joined': true});
+      w.channels = [w.channel!];
+      w.ledger.switchServer('server');
+      const metadata = {
+        'id': 'file',
+        'filename': 'fixture.png',
+        'mimeType': 'image/png',
+        'width': 16,
+        'height': 16,
+      };
+      w.ledger.ingest([
+        {
+          'id': 'host',
+          'channelId': 'channel',
+          'seq': '1',
+          'content': 'public diagnostic',
+          'attachments': [metadata],
+        },
+      ], expectedGeneration: w.ledger.generation);
+      w.visibleIds['channel'] = {'host'};
+      final files = _RasterFiles();
+      Widget mountedView() => MaterialApp(
+        theme: raftTheme(RaftFamily.elegant),
+        home: Scaffold(
+          body: AttachmentView(
+            controller: w,
+            files: files,
+            messageId: 'host',
+            metadata: metadata,
+          ),
+        ),
+      );
+      Future<void> waitImage() async {
+        for (var i = 0; i < 30 && find.byType(Image).evaluate().isEmpty; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump();
+        }
+        expect(find.byType(Image), findsOneWidget);
+      }
+
+      try {
+        await tester.pumpWidget(mountedView());
+        // Cold first visit: reserved box with a busy indicator, no image yet.
+        expect(find.byType(Image), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(
+          tester
+              .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
+              .busy,
+          isTrue,
+        );
+        await waitImage();
+        await tester.pump();
+        final settled = tester.getRect(find.byType(RaftAttachmentCard));
+        final provider = tester.widget<Image>(find.byType(Image)).image;
+        await tester.pumpWidget(const SizedBox());
+
+        // Revisit: the very first frame already has the decoded image, no
+        // loading indicator, no new request, and the same box.
+        await tester.pumpWidget(mountedView());
+        expect(find.byType(Image), findsOneWidget);
+        expect(tester.widget<Image>(find.byType(Image)).image, same(provider));
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(
+          tester
+              .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
+              .busy,
+          isFalse,
+        );
+        expect(tester.getRect(find.byType(RaftAttachmentCard)), settled);
+        for (var i = 0; i < 3; i++) {
+          await tester.pump(const Duration(milliseconds: 16));
+          expect(tester.getRect(find.byType(RaftAttachmentCard)), settled);
+          expect(find.byType(CircularProgressIndicator), findsNothing);
+          expect(
+            tester
+                .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
+                .busy,
+            isFalse,
+          );
+        }
+        expect(files.downloads, 1);
+        expect(client.resolutions, 1);
+        await tester.pumpWidget(const SizedBox());
+
+        // Another account must not see the previous principal's image.
+        client.user = RaftRecord({'id': 'bob'});
+        w.notifyListeners();
+        await tester.pumpWidget(mountedView());
+        expect(find.byType(Image), findsNothing);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(
+          tester
+              .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
+              .busy,
+          isTrue,
+        );
+        await tester.pumpWidget(const SizedBox());
+      } finally {
+        w.dispose();
+        await client.dispose();
+        await tester.pump();
+      }
+    },
+  );
 }

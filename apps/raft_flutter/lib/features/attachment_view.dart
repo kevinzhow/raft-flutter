@@ -136,9 +136,48 @@ class _AttachmentViewState extends State<AttachmentView> {
     role = w.server?.string('role');
   }
 
+  AttachmentImageKey get imageKey {
+    final ownerChannel =
+        '${widget.metadata['channelId'] ?? (w.presentsReply(widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
+    return AttachmentImageKey.fromMetadata(
+      scope: w.attachmentImageScope,
+      channelId: ownerChannel,
+      metadata: widget.metadata,
+    );
+  }
+
+  /// A decoded image the controller still retains (channel revisit, row
+  /// recycling) is adopted in the first frame; no loading state, no bytes GET.
+  bool adoptReadyImage() {
+    if (!authorized) return false;
+    final WorkspaceAttachmentImageLease? lease;
+    try {
+      lease = w.peekAttachmentImage(imageKey, authorized: () => authorized);
+    } catch (_) {
+      return false;
+    }
+    final provider = lease?.lease.value;
+    if (lease == null) return false;
+    if (provider == null) {
+      lease.release();
+      return false;
+    }
+    imageLease?.release();
+    imageLease = lease;
+    image = provider.bytes;
+    imageProvider = provider;
+    error = null;
+    return true;
+  }
+
   void beginImage() {
     if (isImage &&
         (widget.metadata['sizeBytes'] as num? ?? 0) <= 50 * 1024 * 1024) {
+      if (adoptReadyImage()) {
+        imagePresentation.value++;
+        exportReady();
+        return;
+      }
       loadImage();
     } else {
       exportReady();
@@ -266,13 +305,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     });
     try {
       imageLease?.release();
-      final ownerChannel =
-          '${widget.metadata['channelId'] ?? (w.presentsReply(widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
-      final key = AttachmentImageKey.fromMetadata(
-        scope: w.attachmentImageScope,
-        channelId: ownerChannel,
-        metadata: widget.metadata,
-      );
+      final key = imageKey;
       final lease = w.acquireAttachmentImage(
         key,
         authorized: current,

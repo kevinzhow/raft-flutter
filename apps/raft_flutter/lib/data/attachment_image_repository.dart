@@ -107,9 +107,8 @@ class DecodedAttachmentImage {
 }
 
 typedef AttachmentImageLoader = Future<Uint8List> Function(CancelToken cancel);
-typedef AttachmentImageDecoder = Future<DecodedAttachmentImage> Function(
-  Uint8List bytes,
-);
+typedef AttachmentImageDecoder =
+    Future<DecodedAttachmentImage> Function(Uint8List bytes);
 
 /// Returns its owner-held completer even after Flutter's global LRU evicts its
 /// key. Keeping bytes or a MemoryImage alone would not prevent a new codec.
@@ -120,7 +119,10 @@ class AttachmentMemoryImage extends MemoryImage {
   @override
   ImageStreamCompleter loadImage(MemoryImage key, ImageDecoderCallback decode) {
     if (_lifetime.retired) throw const StaleAttachmentImage();
-    return _lifetime.completer ??= super.loadImage(key, (buffer, {getTargetSize}) {
+    return _lifetime.completer ??= super.loadImage(key, (
+      buffer, {
+      getTargetSize,
+    }) {
       _lifetime.codecCreations++;
       return decode(buffer, getTargetSize: getTargetSize);
     });
@@ -196,6 +198,10 @@ class AttachmentImageLease {
   bool _released = false;
   AttachmentImageKey get key => _entry.key;
   bool get active => !_released && _owner._live(_entry) && _authorized();
+
+  /// Synchronous read of the decoded image; null while it is still loading,
+  /// and once the lease or its authority is gone.
+  MemoryImage? get value => active ? _entry.value?.provider : null;
   Future<MemoryImage> get ready async {
     final value = await _entry.ready.future;
     if (!active) throw const StaleAttachmentImage();
@@ -323,6 +329,23 @@ class AttachmentImageRepository {
   }
 
   bool _liveDetached(_ImageEntry e) => !e.retired && canRead(e.key);
+
+  /// A lease on an already decoded image, or null when [key] is not ready.
+  /// Never starts a load; lets a row paint a cached image in its first frame.
+  AttachmentImageLease? acquireReady(
+    AttachmentImageKey key, {
+    required bool Function() authorized,
+  }) {
+    if (!canRead(key) || !authorized()) return null;
+    final e = _entries[key];
+    if (e == null || e.value == null || !_liveDetached(e)) return null;
+    _entries
+      ..remove(key)
+      ..[key] = e;
+    final lease = AttachmentImageLease._(this, e, authorized);
+    e.leases.add(lease);
+    return lease;
+  }
 
   void _makeRoom({int entries = 0, int encoded = 0, int decoded = 0}) {
     while (_entries.length + entries > maxEntries ||

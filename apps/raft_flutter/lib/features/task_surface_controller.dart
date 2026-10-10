@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/panel_caches.dart';
 import '../data/workspace_controller.dart';
 
 /// Source taskModal owns a separate discussion identity, never the main or
@@ -18,6 +19,7 @@ class TaskSurfaceController extends ChangeNotifier {
     this.resolveTask,
     this.hydrateParent = false,
   }) : task = {...row} {
+    seedKnown();
     events = parent.client.events.listen((event) {
       final data = event.payload;
       if (hydrateParent &&
@@ -79,6 +81,9 @@ class TaskSurfaceController extends ChangeNotifier {
   List<Map<String, dynamic>> history = [], assignees = [];
   Object? error, historyError;
   bool loading = true, historyLoading = true, busy = false, closed = false;
+
+  /// History for this task is on screen (cached or read); reloads keep it.
+  bool historyKnown = false;
   int revision = 0, historyRevision = 0;
   WorkspaceController? discussion;
   late final StreamSubscription<RaftEvent> events;
@@ -140,6 +145,30 @@ class TaskSurfaceController extends ChangeNotifier {
     if (current) notifyListeners();
   }
 
+  /// First frame: an accepted task row is shown at once (no skeleton) and the
+  /// last history read for it, when still authorized, replaces the history
+  /// skeleton. [start] / [refresh] then revalidate both in place.
+  void seedKnown() {
+    if (hydrated) loading = false;
+    if (legacy || !hydrated) return;
+    final cached = parent.taskHistoryCache.peek('${task['id']}');
+    if (cached == null) return;
+    final channel = parentChannel;
+    // Cold URL: the parent is not resolved yet; judge the cache on a later open.
+    if (channel == null && hydrateParent) return;
+    if (cached.channelId != task['channelId'] ||
+        channel == null ||
+        cleanup ||
+        parentRemoved ||
+        !parent.can('viewChannel', resource: channel)) {
+      parent.taskHistoryCache.remove('${task['id']}');
+      return;
+    }
+    history = cached.events;
+    historyLoading = false;
+    historyKnown = true;
+  }
+
   void retireResolvedParent(Object? failure) {
     ++parentRevision;
     ++startRevision;
@@ -147,6 +176,10 @@ class TaskSurfaceController extends ChangeNotifier {
     ++historyRevision;
     resolvedParent = null;
     parentError = failure;
+    historyKnown = false;
+    parent.taskHistoryCache.removeWhere(
+      (_, value) => value.channelId == task['channelId'],
+    );
     loading = historyLoading = true;
     final child = discussion;
     discussion = null;
@@ -285,7 +318,8 @@ class TaskSurfaceController extends ChangeNotifier {
     if (!parentReady) return;
     final request = ++revision;
     bool accepts() => current && request == revision;
-    loading = true;
+    // A known row stays on screen while the full read replaces it in place.
+    loading = !hydrated;
     error = null;
     changed();
     try {
@@ -319,7 +353,7 @@ class TaskSurfaceController extends ChangeNotifier {
 
   Future<void> loadHistory() async {
     final request = ++historyRevision;
-    historyLoading = true;
+    historyLoading = !historyKnown;
     historyError = null;
     changed();
     try {
@@ -330,8 +364,19 @@ class TaskSurfaceController extends ChangeNotifier {
           if (event is Map && event['eventType'] != 'resource_receipt_recorded')
             Map<String, dynamic>.from(event),
       ];
+      historyKnown = true;
+      if (!cleanup && task['id'] is String && task['channelId'] is String) {
+        parent.taskHistoryCache.put(
+          '${task['id']}',
+          TaskHistorySnapshot('${task['channelId']}', history),
+        );
+      }
     } catch (e) {
       if (!current || request != historyRevision) return;
+      historyKnown = false;
+      if (task['id'] is String) {
+        parent.taskHistoryCache.remove('${task['id']}');
+      }
       historyError = e;
       onFailure?.call(e);
       if (cleanup) error = e; // Cleanup is never admitted by failed history.

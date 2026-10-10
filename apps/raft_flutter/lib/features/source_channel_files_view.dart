@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,10 +11,8 @@ import '../data/workspace_controller.dart';
 import 'source_channel_file_glyph.dart';
 import 'source_channel_files_actions.dart';
 
-typedef ChannelFileThumbnailBuilder = Widget Function(
-  SourceChannelFileEntry file,
-  bool Function() authorized,
-);
+typedef ChannelFileThumbnailBuilder =
+    Widget Function(SourceChannelFileEntry file, bool Function() authorized);
 
 class SourceChannelFilesView extends StatefulWidget {
   const SourceChannelFilesView({
@@ -26,6 +23,7 @@ class SourceChannelFilesView extends StatefulWidget {
     this.onOpenSource,
     this.thumbnailBuilder,
     this.acquireImage,
+    this.peekImage,
   });
   final WorkspaceController controller;
   final String channelId;
@@ -35,6 +33,7 @@ class SourceChannelFilesView extends StatefulWidget {
   final Future<void> Function(SourceChannelFileEntry)? onOpenSource;
   final ChannelFileThumbnailBuilder? thumbnailBuilder;
   final SourceChannelImageAcquire? acquireImage;
+  final SourceChannelImagePeek? peekImage;
   @override
   State<SourceChannelFilesView> createState() => _SourceChannelFilesState();
 }
@@ -43,60 +42,36 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
   late SourceChannelFilesStore store;
   late SourceChannelFilesActions actions;
   StreamSubscription<RaftEvent>? session;
-  String? authority() {
-    final w = widget.controller;
-    if (w.client.user == null ||
-        w.client.serverId == null ||
-        w.server?.id != w.client.serverId ||
-        w.channel?.id != widget.channelId) {
-      return null;
-    }
-    return jsonEncode([
-      w.client.origin,
-      w.client.user!.id,
-      w.client.serverId,
-      w.server?.id,
-      w.server?.string('role'),
-      w.client.generation,
-      w.channelGeneration,
-      w.threadGeneration,
-      w.channel?.id,
-      w.channel?.json['channelCapabilities'],
-    ]);
-  }
 
-  Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
-    try {
-      return await widget.controller.client.get(path, query: query);
-    } on RaftApiException catch (error) {
-      throw ChannelFilesRequestFailure(
-        [401, 403].contains(error.status)
-            ? ChannelFilesFailure.unauthorized
-            : ChannelFilesFailure.unavailable,
-      );
-    }
-  }
-
+  /// The controller-owned per-channel store outlives this view; this view only
+  /// listens to it and asks for a background refresh on every open.
   void bind() {
-    store = SourceChannelFilesStore(
-      channelId: widget.channelId,
-      get: get,
-      authority: authority,
-    );
+    store = widget.controller.channelFilesStore(widget.channelId);
     actions = SourceChannelFilesActions(
       controller: widget.controller,
       authorized: store.contains,
       context: () => context,
       acquireImage: widget.acquireImage,
     );
-    store.addListener(actions.sync);
+    store.addListener(storeChanged);
     widget.controller.addListener(changed);
     session = widget.controller.client.events.listen((_) => changed());
     unawaited(store.load());
   }
 
+  // The projection listens to the store itself; only revoke open actions here.
+  void storeChanged() => actions.sync();
+
   void changed() {
     if (!mounted) return;
+    final owned = widget.controller.channelFilesStore(widget.channelId);
+    if (!identical(owned, store)) {
+      // The cache dropped this store (identity change): follow its successor.
+      release(widget.controller);
+      bind();
+      setState(() {});
+      return;
+    }
     final rebound = store.syncAuthority();
     actions.sync();
     if (rebound && store.authorized) unawaited(store.load());
@@ -107,9 +82,8 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
     oldController.removeListener(changed);
     unawaited(session?.cancel());
     session = null;
-    store.removeListener(actions.sync);
+    store.removeListener(storeChanged);
     actions.dispose();
-    store.dispose();
   }
 
   @override
@@ -146,20 +120,24 @@ class _SourceChannelFilesState extends State<SourceChannelFilesView> {
   }
 
   @override
-  Widget build(BuildContext context) => SourceChannelFilesProjectionView(
-    store: store,
-    formatCreatedAt: widget.formatCreatedAt,
-    onPreview: actions.preview,
-    onDownload: actions.download,
-    onOpenSource: openSource,
-    thumbnailBuilder:
-        widget.thumbnailBuilder ??
-        (file, authorized) => SourceChannelFileThumbnail(
-          file: file,
-          authorized: authorized,
-          acquireImage: widget.acquireImage,
-        ),
-  );
+  Widget build(BuildContext context) =>
+      // Visible only for the open channel; never reuse a list for another one.
+      widget.controller.channel?.id != widget.channelId
+      ? const SizedBox.shrink()
+      : SourceChannelFilesProjectionView(
+          store: store,
+          formatCreatedAt: widget.formatCreatedAt,
+          onPreview: actions.preview,
+          onDownload: actions.download,
+          onOpenSource: openSource,
+          thumbnailBuilder:
+              widget.thumbnailBuilder ??
+              (file, authorized) => SourceChannelFileThumbnail(
+                file: file,
+                authorized: authorized,
+                acquireImage: widget.acquireImage,
+              ),
+        );
 }
 
 String sourceChannelFileSize(int bytes) {
@@ -332,7 +310,7 @@ class SourceChannelFilesProjectionView extends StatelessWidget {
       listenable: store,
       builder: (context, _) {
         if (!store.authorized) return const SizedBox.shrink();
-        if (store.loading) {
+        if (store.initialLoading) {
           return Center(
             child: Text(
               raftText(context, 'Loading files…'),
@@ -843,10 +821,12 @@ class SourceChannelFileThumbnail extends StatefulWidget {
     required this.file,
     required this.authorized,
     this.acquireImage,
+    this.peekImage,
   });
   final SourceChannelFileEntry file;
   final bool Function() authorized;
   final SourceChannelImageAcquire? acquireImage;
+  final SourceChannelImagePeek? peekImage;
   @override
   State<SourceChannelFileThumbnail> createState() => _FileThumbnailState();
 }
@@ -859,7 +839,24 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
   @override
   void initState() {
     super.initState();
-    unawaited(load());
+    if (!adoptReady()) unawaited(load());
+  }
+
+  /// A thumbnail the host already holds decoded is in the first frame.
+  bool adoptReady() {
+    final peek = widget.peekImage;
+    if (peek == null) return false;
+    final type = widget.file.mimeType.toLowerCase().split(';').first.trim();
+    if (!type.startsWith('image/') || type == 'image/svg+xml') return false;
+    final attempt = ++ticket;
+    final ready = peek(
+      widget.file,
+      () => current && ticket == attempt,
+      SourceChannelImageRendition.thumbnail,
+    );
+    if (ready == null) return false;
+    lease = ready;
+    return true;
   }
 
   @override
@@ -872,7 +869,7 @@ class _FileThumbnailState extends State<SourceChannelFileThumbnail> {
       lease = null;
       inlineSvg = null;
       if (old != null) unawaited(old.release());
-      unawaited(load());
+      if (!adoptReady()) unawaited(load());
     }
   }
 

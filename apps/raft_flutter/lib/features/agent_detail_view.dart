@@ -329,17 +329,24 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     return switch (id) {
       AgentDetailTab.profile => _profile(context),
       AgentDetailTab.activity => AgentActivityTab(
+        key: ValueKey('agent-activity-$agentId'),
         controller: w,
         agentId: agentId,
         initialEntries: widget.initialTrajectoryLog,
       ),
-      AgentDetailTab.chat => AgentChatTab(controller: w, agentId: agentId),
+      AgentDetailTab.chat => AgentChatTab(
+        key: ValueKey('agent-chat-$agentId'),
+        controller: w,
+        agentId: agentId,
+      ),
       AgentDetailTab.reminders => AgentRemindersTab(
+        key: ValueKey('agent-reminders-$agentId'),
         controller: w,
         agentId: agentId,
         clock: widget.clock,
       ),
       AgentDetailTab.workspace => AgentWorkspaceTab(
+        key: ValueKey('agent-workspace-$agentId'),
         controller: w,
         agentId: agentId,
       ),
@@ -373,8 +380,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     final raw = a['createdAt'];
     final date = raw is String ? DateTime.tryParse(raw) : null;
     if (date == null) return '';
-    return DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
-        .format(agentTimeFormatter(context, widget.controller).wallTime(date));
+    return DateFormat.yMMMd(
+      Localizations.localeOf(context).toLanguageTag(),
+    ).format(agentTimeFormatter(context, widget.controller).wallTime(date));
   }
 
   Widget _profile(BuildContext context) {
@@ -653,16 +661,48 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
 
 // ---------------------------------------------------------------- tabs
 
+/// Last accepted data of one agent tab, kept in the controller's
+/// server-identity-bound cache. A tab opens with it at its first frame, a
+/// reload replaces it in place, and view state (expanded folders, the open
+/// file) survives tab switches and leaving the agent.
+abstract class _AgentTabSnapshot {
+  bool loaded = false;
+}
+
+class _ActivitySnapshot extends _AgentTabSnapshot {
+  List<Map<String, dynamic>> entries = [];
+}
+
+class _ChatSnapshot extends _AgentTabSnapshot {
+  List<Map<String, dynamic>> channels = [], dms = [];
+}
+
+class _RemindersSnapshot extends _AgentTabSnapshot {
+  List<Map<String, dynamic>> reminders = [];
+}
+
+class _WorkspaceSnapshot extends _AgentTabSnapshot {
+  final children = <String, List<Map<String, dynamic>>>{};
+  final expanded = <String>{};
+  bool showHidden = false;
+  String? openFile, openContent;
+}
+
 mixin _AgentTabLoader<T extends StatefulWidget> on State<T> {
   WorkspaceController get w;
   int _ticket = 0;
+
+  /// Skeleton/"Loading…" only while there is nothing to show yet.
   bool loading = true;
   String? loadError;
+
+  /// An earlier accepted result is on screen; reloads keep it.
+  bool get hasContent;
   Future<void> fetch();
   Future<void> reload() async {
     final ticket = ++_ticket;
     setState(() {
-      loading = true;
+      loading = !hasContent;
       loadError = null;
     });
     try {
@@ -673,7 +713,8 @@ mixin _AgentTabLoader<T extends StatefulWidget> on State<T> {
       if (!mounted || ticket != _ticket) return;
       setState(() {
         loading = false;
-        loadError = '$e';
+        // A failed background refresh never replaces rows already shown.
+        loadError = hasContent ? null : '$e';
       });
     }
   }
@@ -704,16 +745,26 @@ class _AgentActivityTabState extends State<AgentActivityTab>
   Timer? reloadTimer;
   int readRevision = 0;
   late String openingScope;
+  late _ActivitySnapshot snapshot;
+  @override
+  bool get hasContent => snapshot.loaded;
   String get scope =>
       '${w.client.origin}|${w.client.generation}|${w.client.user?.id}|${w.client.serverId}|${w.server?.id}|${w.server?.string('role')}|${widget.agentId}';
   @override
   void initState() {
     super.initState();
     openingScope = scope;
+    snapshot =
+        w.agentTabCache.putIfAbsent(
+              'activity/${widget.agentId}',
+              _ActivitySnapshot.new,
+            )
+            as _ActivitySnapshot;
     entries = mergeAgentTrajectoryLog(
-      [],
+      snapshot.entries,
       admittedAgentTrajectoryRows(widget.initialEntries),
     );
+    snapshot.entries = entries;
     w.addListener(scopeChanged);
     listenEvents();
     reload();
@@ -754,7 +805,10 @@ class _AgentActivityTabState extends State<AgentActivityTab>
             },
         ]);
         if (mounted && openingScope == scope) {
-          setState(() => entries = mergeAgentTrajectoryLog(entries, rows));
+          setState(() {
+            entries = mergeAgentTrajectoryLog(entries, rows);
+            snapshot.entries = entries;
+          });
         }
       } else {
         scheduleReload();
@@ -774,7 +828,13 @@ class _AgentActivityTabState extends State<AgentActivityTab>
     openingScope = scope;
     readRevision++;
     reloadTimer?.cancel();
-    setState(() => entries = []);
+    snapshot =
+        w.agentTabCache.putIfAbsent(
+              'activity/${widget.agentId}',
+              _ActivitySnapshot.new,
+            )
+            as _ActivitySnapshot;
+    setState(() => entries = snapshot.entries);
     reload();
   }
 
@@ -789,7 +849,13 @@ class _AgentActivityTabState extends State<AgentActivityTab>
       openingScope = scope;
       readRevision++;
       reloadTimer?.cancel();
-      entries = [];
+      snapshot =
+          w.agentTabCache.putIfAbsent(
+                'activity/${widget.agentId}',
+                _ActivitySnapshot.new,
+              )
+              as _ActivitySnapshot;
+      entries = snapshot.entries;
       listenEvents();
       reload();
     }
@@ -821,6 +887,9 @@ class _AgentActivityTabState extends State<AgentActivityTab>
       entries,
       admittedAgentTrajectoryRows(result),
     );
+    snapshot
+      ..entries = entries
+      ..loaded = true;
   }
 
   static String _toolLabel(String name) => switch (name) {
@@ -891,8 +960,9 @@ class _AgentActivityTabState extends State<AgentActivityTab>
       emptyLabel: loading ? raftText(context, 'Loading…') : loadError,
       onCopy: () => Clipboard.setData(
         ClipboardData(
-          text: [for (final e in entries) '${e['timestamp']} ${e['entry']}']
-              .join('\n'),
+          text: [
+            for (final e in entries) '${e['timestamp']} ${e['entry']}',
+          ].join('\n'),
         ),
       ),
     );
@@ -916,7 +986,13 @@ class AgentChatTab extends StatefulWidget {
 class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
   @override
   WorkspaceController get w => widget.controller;
-  List<Map<String, dynamic>> channels = [], dms = [];
+  late final _ChatSnapshot snapshot =
+      w.agentTabCache.putIfAbsent('chat/${widget.agentId}', _ChatSnapshot.new)
+          as _ChatSnapshot;
+  List<Map<String, dynamic>> get channels => snapshot.channels;
+  List<Map<String, dynamic>> get dms => snapshot.dms;
+  @override
+  bool get hasContent => snapshot.loaded;
   @override
   void initState() {
     super.initState();
@@ -939,8 +1015,10 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
       w.query('/agents/${widget.agentId}/channels'),
       w.query('/agents/${widget.agentId}/agent-dms'),
     ]);
-    channels = _rows(results[0], 'channels');
-    dms = _rows(results[1], 'dms');
+    snapshot
+      ..channels = _rows(results[0], 'channels')
+      ..dms = _rows(results[1], 'dms')
+      ..loaded = true;
   }
 
   List<Widget> _section(String title, List<Map<String, dynamic>> rows) => [
@@ -950,12 +1028,23 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
   ];
 
   @override
-  Widget build(BuildContext context) => RaftPanelGroups(
-    groups: [
-      _section(raftText(context, 'Channels'), channels),
-      _section(raftText(context, 'Direct messages'), dms),
-    ],
-  );
+  Widget build(BuildContext context) {
+    // Nothing accepted yet: no "Channels 0" counts that would then fill in.
+    if (!hasContent) {
+      return RaftPanelMessage(
+        loadError ?? raftText(context, 'Loading…'),
+        action: loadError == null
+            ? null
+            : RaftButton(label: raftText(context, 'Retry'), onPressed: reload),
+      );
+    }
+    return RaftPanelGroups(
+      groups: [
+        _section(raftText(context, 'Channels'), channels),
+        _section(raftText(context, 'Direct messages'), dms),
+      ],
+    );
+  }
 }
 
 /// AgentRemindersSection variant="tab": `GET /reminders?ownerAgentId=&status=
@@ -978,7 +1067,16 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
     with _AgentTabLoader {
   @override
   WorkspaceController get w => widget.controller;
-  List<Map<String, dynamic>> reminders = [];
+  late final _RemindersSnapshot snapshot =
+      w.agentTabCache.putIfAbsent(
+            'reminders/${widget.agentId}',
+            _RemindersSnapshot.new,
+          )
+          as _RemindersSnapshot;
+  List<Map<String, dynamic>> get reminders => snapshot.reminders;
+  set reminders(List<Map<String, dynamic>> value) => snapshot.reminders = value;
+  @override
+  bool get hasContent => snapshot.loaded;
   StreamSubscription<RaftEvent>? events;
 
   @override
@@ -1047,6 +1145,7 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
       for (final r in (rows is List ? rows : const []))
         if (r is Map) Map<String, dynamic>.from(r),
     ];
+    snapshot.loaded = true;
   }
 
   @override
@@ -1093,10 +1192,22 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
     with _AgentTabLoader {
   @override
   WorkspaceController get w => widget.controller;
-  final children = <String, List<Map<String, dynamic>>>{};
-  final expanded = <String>{};
-  bool showHidden = false;
-  String? openFile, openContent;
+  late final _WorkspaceSnapshot snapshot =
+      w.agentTabCache.putIfAbsent(
+            'workspace/${widget.agentId}',
+            _WorkspaceSnapshot.new,
+          )
+          as _WorkspaceSnapshot;
+  Map<String, List<Map<String, dynamic>>> get children => snapshot.children;
+  Set<String> get expanded => snapshot.expanded;
+  bool get showHidden => snapshot.showHidden;
+  set showHidden(bool value) => snapshot.showHidden = value;
+  String? get openFile => snapshot.openFile;
+  set openFile(String? value) => snapshot.openFile = value;
+  String? get openContent => snapshot.openContent;
+  set openContent(String? value) => snapshot.openContent = value;
+  @override
+  bool get hasContent => snapshot.loaded;
 
   @override
   void initState() {
@@ -1118,11 +1229,23 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
 
   @override
   Future<void> fetch() async {
+    // Refresh in place: the tree and the folders the member opened stay
+    // exactly as shown until each listing is replaced.
     final root = await list('');
-    children
-      ..clear()
-      ..[''] = root;
-    expanded.clear();
+    final open = expanded.toList();
+    final refreshed = await Future.wait([
+      for (final dir in open)
+        list(dir).then<List<Map<String, dynamic>>?>(
+          (rows) => rows,
+          onError: (Object _) => null,
+        ),
+    ]);
+    children[''] = root;
+    for (var i = 0; i < open.length; i++) {
+      final rows = refreshed[i];
+      if (rows != null) children[open[i]] = rows;
+    }
+    snapshot.loaded = true;
   }
 
   Future<void> toggle(String path) async {
@@ -1131,9 +1254,12 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
       return;
     }
     setState(() => expanded.add(path));
-    if (!children.containsKey(path)) {
+    // A remembered listing shows at once; the read refreshes it in place.
+    try {
       final rows = await list(path);
       if (mounted) setState(() => children[path] = rows);
+    } catch (_) {
+      // Keep whatever listing is already shown for this folder.
     }
   }
 

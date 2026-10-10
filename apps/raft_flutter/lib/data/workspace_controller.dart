@@ -6,6 +6,8 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'message_task_cache.dart';
+import 'panel_caches.dart';
+import 'source_channel_files_store.dart';
 import 'reaction_toggle.dart';
 import 'workspace_cache.dart';
 import 'resource_snapshot_cache.dart';
@@ -177,6 +179,82 @@ class WorkspaceController extends ChangeNotifier {
     role: server?.string('role') ?? '',
   );
 
+  /// Server-identity key for panel caches (account, origin, server, role and
+  /// authentication generation). Channel switches, threads and tab changes do
+  /// not change it; null while no signed-in server is selected.
+  String? _panelCacheIdentity() {
+    final principal = client.user?.id;
+    final serverId = client.serverId;
+    if (_disposed ||
+        principal == null ||
+        serverId == null ||
+        server?.id != serverId) {
+      return null;
+    }
+    return jsonEncode([
+      client.origin,
+      principal,
+      serverId,
+      client.generation,
+      server?.string('role'),
+    ]);
+  }
+
+  late final agentTabCache = ServerBoundCache<String, Object>(
+    _panelCacheIdentity,
+  );
+  late final taskHistoryCache = ServerBoundCache<String, TaskHistorySnapshot>(
+    _panelCacheIdentity,
+    limit: 128,
+  );
+  late final _channelFilesStores =
+      ServerBoundCache<String, SourceChannelFilesStore>(
+        _panelCacheIdentity,
+        limit: 24,
+        onEvict: (store) => store.retire(),
+      );
+
+  /// Channel access behind a cached Files list: the server identity plus the
+  /// member's current capabilities for that channel. null (nothing shown, list
+  /// dropped on the next synchronization) once the channel is gone, revoked or
+  /// no longer viewable. Channel switches and thread windows are not part of it.
+  String? _channelFilesAuthority(String channelId) {
+    final identity = _panelCacheIdentity();
+    if (identity == null || _revokedChannels.contains(channelId)) return null;
+    final current = channel?.id == channelId ? channel : null;
+    final row =
+        current ??
+        [...channels, ...dms].where((c) => c.id == channelId).firstOrNull;
+    if (row == null || !can('viewChannel', resource: row)) return null;
+    return jsonEncode([identity, row.id, row.json['channelCapabilities']]);
+  }
+
+  /// The controller-owned Files projection of [channelId]. The same store is
+  /// returned on every visit, so a revisit paints the last list immediately
+  /// and a refresh replaces it in place.
+  SourceChannelFilesStore channelFilesStore(String channelId) {
+    final store = _channelFilesStores.putIfAbsent(
+      channelId,
+      () => SourceChannelFilesStore(
+        channelId: channelId,
+        authority: () => _channelFilesAuthority(channelId),
+        get: (path, {query}) async {
+          try {
+            return await client.get(path, query: query);
+          } on RaftApiException catch (error) {
+            throw ChannelFilesRequestFailure(
+              [401, 403].contains(error.status)
+                  ? ChannelFilesFailure.unauthorized
+                  : ChannelFilesFailure.unavailable,
+            );
+          }
+        },
+      ),
+    );
+    store.syncAuthority();
+    return store;
+  }
+
   bool _retainsAttachment(AttachmentImageKey key) {
     if (_disposed ||
         key.scope != attachmentImageScope ||
@@ -249,20 +327,26 @@ class WorkspaceController extends ChangeNotifier {
     return _retainedIndex = index;
   }
 
+  VoidCallback _registerImageAuthority(
+    AttachmentImageKey key,
+    bool Function() authorized,
+  ) {
+    final owner = Object();
+    _imageAuthorities.putIfAbsent(key, () => {})[owner] = authorized;
+    return () {
+      final owners = _imageAuthorities[key];
+      owners?.remove(owner);
+      if (owners?.isEmpty == true) _imageAuthorities.remove(key);
+      _attachmentImages?.synchronize(attachmentImageScope);
+    };
+  }
+
   WorkspaceAttachmentImageLease acquireAttachmentImage(
     AttachmentImageKey key, {
     required AttachmentImageLoader load,
     required bool Function() authorized,
   }) {
-    final owner = Object();
-    _imageAuthorities.putIfAbsent(key, () => {})[owner] = authorized;
-    void releaseAuthority() {
-      final owners = _imageAuthorities[key];
-      owners?.remove(owner);
-      if (owners?.isEmpty == true) _imageAuthorities.remove(key);
-      _attachmentImages?.synchronize(attachmentImageScope);
-    }
-
+    final releaseAuthority = _registerImageAuthority(key, authorized);
     try {
       final repository = _attachmentImages ??= AttachmentImageRepository(
         scope: attachmentImageScope,
@@ -277,6 +361,24 @@ class WorkspaceController extends ChangeNotifier {
       releaseAuthority();
       rethrow;
     }
+  }
+
+  /// Synchronous lookup: a lease on the already decoded image for [key], or
+  /// null when it is not retained (or no longer authorized). Never loads.
+  WorkspaceAttachmentImageLease? peekAttachmentImage(
+    AttachmentImageKey key, {
+    required bool Function() authorized,
+  }) {
+    final repository = _attachmentImages;
+    if (repository == null || _disposed) return null;
+    repository.synchronize(attachmentImageScope);
+    final releaseAuthority = _registerImageAuthority(key, authorized);
+    final lease = repository.acquireReady(key, authorized: authorized);
+    if (lease == null) {
+      releaseAuthority();
+      return null;
+    }
+    return WorkspaceAttachmentImageLease(lease, releaseAuthority);
   }
 
   /// Set by the host from its actual logical width before bootstrap. Home
@@ -4246,6 +4348,7 @@ class WorkspaceController extends ChangeNotifier {
     if (_ownsFollowedThreads) followedThreads.dispose();
     _imageAuthorities.clear();
     _attachmentImages?.dispose();
+    _channelFilesStores.clear();
     for (final drafts in _uploads.values) {
       for (final draft in drafts) {
         draft.cancel.cancel();

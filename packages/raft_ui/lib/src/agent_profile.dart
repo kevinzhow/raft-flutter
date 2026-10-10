@@ -1003,7 +1003,9 @@ class RaftReminderListView extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          if (loading)
+          // Only an empty list waits on a first read; a refresh of rows already
+          // shown never inserts a line above them.
+          if (loading && reminders.isEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: RaftCssText(raftText(context, 'Loading…'), style: bold),
@@ -1217,7 +1219,7 @@ class RaftWorkspaceTreeView extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: loading
+            child: loading && nodes.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: RaftCssText(
