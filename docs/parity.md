@@ -71,8 +71,9 @@ Remaining causes, all measured from the side-by-side images:
    positions match exactly, so text-dense captures stay at about 93–95%
    pixel-perfect after their layout matches.
 
-Per-row classification of the 17 remaining `different` rows (run
-`20261010T112612Z`, `.local/parity-final/classify*.py`). Each mismatched
+Per-row classification of the 17 remaining `different` rows at that time
+(run `20261010T112612Z`, `.local/parity-final/classify*.py`; superseded by
+"Official-suite root causes (2026-10-11)" below). Each mismatched
 pixel was put into one of four buckets:
 
 - **AA**: another-image pixel within 1 device px differs by <= 40/255.
@@ -102,6 +103,67 @@ React used production fonts and `--disable-lcd-text --font-render-hinting=none`
 | settings.notifications.page | 6.79 | 1.08 | 0.44 | 5.27 | 6.21 | Android copy instead of Web push copy (platform content); panel left border height |
 | message-share.selection | 5.81 | 1.31 | 0.04 | 4.46 | 6.63 | bottom-anchored real chat with date divider; square vs circular select checkbox; no Owner badge |
 | message-row.md-wrap-status606 | 16.63 | 7.96 | 1.92 | 6.76 | 9.61 | long inline code breaks on the current line instead of moving down (`wrap-anywhere`); break after `/` |
+
+## Official-suite root causes (2026-10-11)
+
+Starting point: integration 80769ee, official run `20261010T144652Z`
+(published as `raft_flutter_parity/latest`): 83/99. Branch
+`cindy/parity-official` fixes, each verified with a full 99-case run
+(no case got worse in any step):
+
+| fix | cause class | cases |
+| --- | --- | --- |
+| Composer Send no longer requests editor focus (Source only prevents the Send pointer-down blur) | missing state | composer.pending-mention-actions 95.85 -> 96.83 (pass) |
+| `RaftCssText` aligns the glyph baseline SkParagraph actually paints (`round(reported)`, e.g. 12/20 Hanken reports 14.182, paints 14) | layout metric | 34 cases up, 0 down; create-agent.dialog-onboarding 95.66 -> 95.97 |
+| CSS `font-black` renders the served 700 face (`RaftTypography.black`); w900 + `wght 700` was also synthetically emboldened (+29% ink) | font | dialog-onboarding -> 96.01 (pass) |
+| Brutal departure badge keeps the 20px sender line (inherited 20/14 ratio at 10px grew the header by 1/3px) | layout metric | message-row.deleted-human 95.73 -> 96.57 (pass) |
+| Message task chip label uses the Blink line box (13px on 16.25px: Blink baseline 12, Flutter rounded 12.63 -> 13) | layout metric | message.row +0.32, md-link-ref +0.20, rich-content +0.14, long-inline-code +0.07 |
+
+Result on the branch: **86/99** (9+1 strict pass).
+
+### Why the remaining 13 rows stay below 96%
+
+Measured with a 1-device-px tolerance (`aa` = mismatches that disappear when
+a pixel may match a neighbour within 40/255; `ifAA` = pixelPerfect if those
+were equal):
+
+* **Text rasterisation (dominant, not fixable in app code).** Flutter's
+  SkParagraph shapes every run with FreeType *slight* (vertical) hinting:
+  a 36px `C` (Hanken Grotesk) covers rows 75..99 for a baseline at 100,
+  i.e. the overshoot is snapped away; Chromium with
+  `--font-render-hinting=none` draws it unhinted (rows 74..100, partial
+  coverage). Chromium also applies its A8 gamma/contrast, ~7% more ink.
+  Glyph advances match to 0.01px, so the difference is pure coverage: 4-10%
+  of all pixels in text-dense captures. No Dart API changes hinting.
+* **Blink pixel snapping of box edges.** Blink paints borders/backgrounds at
+  whole CSS px; Flutter paints fractional rects anti-aliased (e.g. 18.25px
+  task chips, 0.5px-offset chip rows). Owned by the ext-suite border
+  primitive work, not changed here.
+* **Line breaking (markdown rows).** Inline-code padding placeholders
+  (U+FFFC) are ICU break opportunities, ICU breaks after `/` before a
+  letter (Blink's ASCII table does not), SkParagraph force-breaks an
+  over-long code token on the current line instead of moving it down first
+  (`overflow-wrap: anywhere`), and Chrome's default `text-spacing-trim`
+  halves adjacent CJK punctuation (`），`). A word-joiner fix needs a
+  copy-stripping selection delegate; not done in this pass.
+* **Host fallback fonts:** Chromium draws `→`/`。` from Liberation/Noto
+  Sans Mongolian on this host.
+
+| row | pixelPerfect | ifAA | aa | remaining difference |
+| --- | --- | --- | --- | --- |
+| members.avatar-management | 95.14 | 99.77 | 4.63 | text raster; chip/env rows behind the scrim sit 0.5px off (Blink snaps) |
+| thread.message-row.rich-content | 94.94 | 99.06 | 4.12 | text raster; chip borders at fractional y (snap); link underline thickness |
+| thread.message.row | 94.64 | 99.24 | 4.60 | text raster; 18.25px task chip border snap; `+` icon stroke |
+| thread.message-row.long-inline-code | 94.32 | 98.90 | 4.58 | text raster; unknown-task line box does not grow (strut); code break position |
+| thread.message-row.md-wrap-adjacent | 93.69 | 98.73 | 5.04 | text raster; `。` host fallback font |
+| settings.notifications.page | 93.21 | 94.73 | 1.52 | platform copy: Android notification text instead of Web push copy (by design: no fabricated browser permission); panel left border height |
+| thread.message-row.md-link-ref | 93.20 | 98.07 | 4.86 | text raster; link underline 2px at baseline+2 vs font metric |
+| ui.card.states.elegant | 93.17 | 99.94 | 6.78 | shadow blur and gradient dither +-1 level (4.3% of pixels differ by exactly 1); text raster |
+| thread.message-row.md-wrap-task607 | 92.66 | 98.19 | 5.53 | text raster; `→`/`。` fallback fonts |
+| thread.message-row.md-latest-release | 91.31 | 98.12 | 6.80 | ICU breaks inside `/share/<token>` after `/` |
+| thread.message-row.md-wrap-slice1 | 90.92 | 98.13 | 7.21 | list item gap 4px vs `li mb-0.5`; `），` punctuation trim; fallback `。`/`→` |
+| thread.message-row.md-wrap-clarify | 88.86 | 96.07 | 7.21 | inline-code padding placeholder lets `（` + code break apart; cascades |
+| thread.message-row.md-wrap-status606 | 83.37 | 93.24 | 9.87 | long inline code force-broken on the current line; break after `/` |
 
 ## One command
 
