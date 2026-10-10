@@ -18,7 +18,10 @@ class RaftSystemBars extends StatefulWidget {
   State<RaftSystemBars> createState() => _RaftSystemBarsState();
 }
 
-SystemUiOverlayStyle raftSystemOverlayStyle(Brightness background) {
+SystemUiOverlayStyle raftSystemOverlayStyle(
+  Brightness background, {
+  Brightness? navigationBackground,
+}) {
   final icons = background == Brightness.dark
       ? Brightness.light
       : Brightness.dark;
@@ -28,10 +31,69 @@ SystemUiOverlayStyle raftSystemOverlayStyle(Brightness background) {
     statusBarIconBrightness: icons,
     systemNavigationBarColor: Colors.transparent,
     systemNavigationBarDividerColor: Colors.transparent,
-    systemNavigationBarIconBrightness: icons,
+    systemNavigationBarIconBrightness:
+        (navigationBackground ?? background) == Brightness.dark
+        ? Brightness.light
+        : Brightness.dark,
     systemStatusBarContrastEnforced: false,
     systemNavigationBarContrastEnforced: false,
   );
+}
+
+/// Extends a page's actual surfaces under transparent Android system bars.
+/// The page keeps ownership of safe bounds; this only paints their background.
+class RaftSystemBarSurface extends StatelessWidget {
+  const RaftSystemBarSurface({
+    super.key,
+    required this.statusBarBackground,
+    required this.child,
+    this.navigationBarBackground,
+  });
+
+  final Color statusBarBackground;
+  final Color? navigationBarBackground;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return child;
+    final padding = MediaQuery.paddingOf(context);
+    final theme = Theme.of(context);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: raftSystemOverlayStyle(
+        ThemeData.estimateBrightnessForColor(statusBarBackground),
+        navigationBackground: ThemeData.estimateBrightnessForColor(
+          navigationBarBackground ?? theme.scaffoldBackgroundColor,
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (padding.top > 0)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: padding.top,
+              child: IgnorePointer(
+                child: ColoredBox(color: statusBarBackground),
+              ),
+            ),
+          if (padding.bottom > 0 && navigationBarBackground != null)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: padding.bottom,
+              child: IgnorePointer(
+                child: ColoredBox(color: navigationBarBackground!),
+              ),
+            ),
+          child,
+        ],
+      ),
+    );
+  }
 }
 
 class _RaftSystemBarsState extends State<RaftSystemBars> {

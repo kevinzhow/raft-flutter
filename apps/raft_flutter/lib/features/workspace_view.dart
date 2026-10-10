@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_ui/recipes.dart' as recipes;
 
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
@@ -68,6 +69,7 @@ import 'management_support.dart' show managementLaunch;
 import 'sender_avatar_projection.dart';
 import '../platform/native_sharing.dart';
 import '../platform/native_notifications.dart';
+import '../platform/system_bars.dart';
 
 class WorkspaceView extends StatefulWidget {
   const WorkspaceView({
@@ -874,6 +876,45 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           location.thread != null &&
           !(wide &&
               desktopNavigation.target?.kind == DesktopContentKind.thread);
+      final androidMobile =
+          !wide && !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      final rootTab = mobileWorkspaceRootTabForLocation(location);
+      final immersiveNavigation =
+          androidMobile && rootTab != null && w.server != null;
+      final viewport = MediaQuery.sizeOf(context);
+      final headerBackground = thread
+          ? RaftThreadCompositionRecipe(
+              t,
+              viewportWidth: viewport.width,
+              viewportHeight: viewport.height,
+              presentation: RaftThreadPresentation.side,
+            ).headerBackground
+          : rootTab != null && route != 'tasks'
+          ? RaftMobileRootHeaderRecipe(
+              t,
+              viewportHeight: viewport.height,
+            ).background
+          : route == 'chat' &&
+                !unresolvedChannelRoute &&
+                ['channel', 'private', 'joint'].contains(w.channel?.type)
+          ? recipes.RaftPanelHeaderRecipe.resolve(
+                  theme: t.recipeTheme,
+                  tokens: t.recipeTokens,
+                  states: recipes.RaftRecipeStates(
+                    {if (t.dark) recipes.RaftRecipeStates.dark},
+                    viewport.width,
+                    viewport.height,
+                  ),
+                ).header.backgroundColor?.resolve(t.recipeTokens) ??
+                t.panel
+          : RaftPanelHeaderRecipe(
+              t,
+              viewportHeight: viewport.height,
+              mobile: !wide,
+              variant: route == 'tasks'
+                  ? RaftPanelHeaderVariant.tasks
+                  : RaftPanelHeaderVariant.canonical,
+            ).background;
       final title = route == 'chat' || route == 'home'
           ? (w.channel?.name ?? tr('Workspace'))
           : tr(switch (route) {
@@ -1155,257 +1196,269 @@ class _WorkspaceViewState extends State<WorkspaceView> {
           child: Scaffold(
             key: scaffold,
             drawer: wide ? null : Drawer(child: sidebar()),
-            body: SafeArea(
-              child: Column(
-                children: [
-                  if (!wide &&
-                      (thread ||
-                          ![
-                            'home',
-                            'tasks',
-                            'saved',
-                            'activity',
-                            'search',
-                            'members',
-                            'settings',
-                          ].contains(route)))
-                    if (thread || !unresolvedChannelRoute)
-                      mobilePageHeader(title, thread),
-                  if (w.error != null)
-                    MaterialBanner(
-                      content: Text(w.error!),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            w.setError(null);
-                          },
-                          child: Text(tr('Dismiss')),
-                        ),
-                      ],
-                    ),
-                  Expanded(
-                    child: RaftAdaptiveWorkspace(
-                      onPresentationChanged: (main, thread) =>
-                          w.setConversationPresentation(
-                            this,
-                            main: main && !gridActive,
-                            thread: thread && !gridActive,
+            body: RaftSystemBarSurface(
+              statusBarBackground: wide ? t.canvas : headerBackground,
+              navigationBarBackground: immersiveNavigation ? null : t.panel,
+              child: SafeArea(
+                bottom: !immersiveNavigation,
+                child: Column(
+                  children: [
+                    if (!wide &&
+                        (thread ||
+                            ![
+                              'home',
+                              'tasks',
+                              'saved',
+                              'activity',
+                              'search',
+                              'members',
+                              'settings',
+                            ].contains(route)))
+                      if (thread || !unresolvedChannelRoute)
+                        mobilePageHeader(title, thread),
+                    if (w.error != null)
+                      MaterialBanner(
+                        content: Text(w.error!),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              w.setError(null);
+                            },
+                            child: Text(tr('Dismiss')),
                           ),
-                      sidebarWidth: sidebarWidth,
-                      trailingExtent: legacyDockWidth,
-                      threadWidth: threadWidth,
-                      onPanelWidthsChanged: savePanels,
-                      sidebarResizeLabel: tr('Resize sidebar'),
-                      threadResizeLabel: tr('Resize thread'),
-                      sidebarVisible:
-                          gridActive ||
-                          DesktopNavigationPolicy.forSection(
-                            route,
-                          ).usesConversationSidebar,
-                      sidebar: sidebar(),
-                      rail: workspaceRail(),
-                      mobileNavigationFloating: !t.brutal,
-                      mobileNavigation:
-                          mobileWorkspaceRootTabForLocation(location) == null ||
-                              w.server == null
-                          ? null
-                          : Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [liveActivityBar(), mobileNavigation()],
+                        ],
+                      ),
+                    Expanded(
+                      child: RaftAdaptiveWorkspace(
+                        onPresentationChanged: (main, thread) =>
+                            w.setConversationPresentation(
+                              this,
+                              main: main && !gridActive,
+                              thread: thread && !gridActive,
                             ),
-                      content: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Offstage(
-                            offstage: gridActive,
-                            child: ExcludeFocus(
-                              excluding: gridActive,
-                              child: TickerMode(
-                                enabled: !gridActive,
-                                child: Column(
-                                  children: [
-                                    // Settings composes its own sidebar and
-                                    // content headers in the shared top row.
-                                    if (wide &&
-                                        !unresolvedChannelRoute &&
-                                        ![
-                                          'settings',
-                                          'home',
-                                          'tasks',
-                                          'saved',
-                                          'activity',
-                                          'search',
-                                          'members',
-                                          'computers',
-                                        ].contains(route))
-                                      route == 'chat' &&
-                                              w.channel != null &&
-                                              [
-                                                'channel',
-                                                'private',
-                                                'joint',
-                                              ].contains(w.channel!.type)
-                                          ? channelHeader()
-                                          : RaftPageHeader(
-                                              title: route == 'home'
-                                                  ? (w.channel?.name ?? title)
-                                                  : title,
-                                              height: raftPageHeaderHeight(
-                                                context,
-                                              ),
-                                              icon: RaftIcon(
-                                                sectionGlyph(route),
-                                              ),
-                                              subtitle: route == 'chat'
-                                                  ? w.channel?.string(
-                                                      'description',
-                                                    )
-                                                  : null,
-                                              actions: [
-                                                Tooltip(
-                                                  message: w.connected
-                                                      ? tr('Connected')
-                                                      : tr('Reconnecting'),
-                                                  child: Icon(
-                                                    Icons.circle,
-                                                    size: 8,
-                                                    color: w.connected
-                                                        ? t.colors['success']
-                                                        : t.muted,
-                                                  ),
+                        sidebarWidth: sidebarWidth,
+                        trailingExtent: legacyDockWidth,
+                        threadWidth: threadWidth,
+                        onPanelWidthsChanged: savePanels,
+                        sidebarResizeLabel: tr('Resize sidebar'),
+                        threadResizeLabel: tr('Resize thread'),
+                        sidebarVisible:
+                            gridActive ||
+                            DesktopNavigationPolicy.forSection(route)
+                                .usesConversationSidebar,
+                        sidebar: sidebar(),
+                        rail: workspaceRail(),
+                        mobileNavigationFloating: !t.brutal,
+                        mobileNavigation:
+                            mobileWorkspaceRootTabForLocation(location) ==
+                                    null ||
+                                w.server == null
+                            ? null
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  liveActivityBar(),
+                                  mobileNavigation(),
+                                ],
+                              ),
+                        content: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Offstage(
+                              offstage: gridActive,
+                              child: ExcludeFocus(
+                                excluding: gridActive,
+                                child: TickerMode(
+                                  enabled: !gridActive,
+                                  child: Column(
+                                    children: [
+                                      // Settings composes its own sidebar and
+                                      // content headers in the shared top row.
+                                      if (wide &&
+                                          !unresolvedChannelRoute &&
+                                          ![
+                                            'settings',
+                                            'home',
+                                            'tasks',
+                                            'saved',
+                                            'activity',
+                                            'search',
+                                            'members',
+                                            'computers',
+                                          ].contains(route))
+                                        route == 'chat' &&
+                                                w.channel != null &&
+                                                [
+                                                  'channel',
+                                                  'private',
+                                                  'joint',
+                                                ].contains(w.channel!.type)
+                                            ? channelHeader()
+                                            : RaftPageHeader(
+                                                title: route == 'home'
+                                                    ? (w.channel?.name ?? title)
+                                                    : title,
+                                                height: raftPageHeaderHeight(
+                                                  context,
                                                 ),
-                                                if (route == 'chat' &&
-                                                    w.channel != null)
+                                                icon: RaftIcon(
+                                                  sectionGlyph(route),
+                                                ),
+                                                subtitle: route == 'chat'
+                                                    ? w.channel?.string(
+                                                        'description',
+                                                      )
+                                                    : null,
+                                                actions: [
+                                                  Tooltip(
+                                                    message: w.connected
+                                                        ? tr('Connected')
+                                                        : tr('Reconnecting'),
+                                                    child: Icon(
+                                                      Icons.circle,
+                                                      size: 8,
+                                                      color: w.connected
+                                                          ? t.colors['success']
+                                                          : t.muted,
+                                                    ),
+                                                  ),
+                                                  if (route == 'chat' &&
+                                                      w.channel != null)
+                                                    RaftIconButton(
+                                                      tooltip:
+                                                          'Channel settings',
+                                                      onPressed: () =>
+                                                          channelSettings(),
+                                                      glyph: RaftGlyph
+                                                          .slidersHorizontal,
+                                                    ),
                                                   RaftIconButton(
-                                                    tooltip: 'Channel settings',
+                                                    tooltip: 'Refresh',
                                                     onPressed: () =>
-                                                        channelSettings(),
-                                                    glyph: RaftGlyph
-                                                        .slidersHorizontal,
+                                                        w.channel == null
+                                                        ? w.bootstrap()
+                                                        : w.selectChannel(
+                                                            w.channel!,
+                                                          ),
+                                                    glyph: RaftGlyph.refreshCw,
                                                   ),
-                                                RaftIconButton(
-                                                  tooltip: 'Refresh',
-                                                  onPressed: () =>
-                                                      w.channel == null
-                                                      ? w.bootstrap()
-                                                      : w.selectChannel(
-                                                          w.channel!,
-                                                        ),
-                                                  glyph: RaftGlyph.refreshCw,
-                                                ),
-                                              ],
-                                            ),
-                                    if (route == 'chat' &&
-                                        w.channel != null &&
-                                        !w.channel!.joined &&
-                                        !w.channel!.archived)
-                                      Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: RaftButton(
-                                          label: tr('Join channel'),
-                                          onPressed: () => joinChannel(),
-                                        ),
-                                      ),
-                                    if (route == 'chat' &&
-                                        w.channel?.archived == true)
-                                      Padding(
-                                        padding: EdgeInsets.all(12),
-                                        child: Text(
-                                          tr(
-                                            'This channel is archived. History is available.',
+                                                ],
+                                              ),
+                                      if (route == 'chat' &&
+                                          w.channel != null &&
+                                          !w.channel!.joined &&
+                                          !w.channel!.archived)
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: RaftButton(
+                                            label: tr('Join channel'),
+                                            onPressed: () => joinChannel(),
                                           ),
                                         ),
-                                      ),
-                                    Expanded(
-                                      child: KeyedSubtree(
-                                        key: ValueKey(
-                                          'classic-editor-$classicEditorRevision',
+                                      if (route == 'chat' &&
+                                          w.channel?.archived == true)
+                                        Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: Text(
+                                            tr(
+                                              'This channel is archived. History is available.',
+                                            ),
+                                          ),
                                         ),
-                                        child: content,
+                                      Expanded(
+                                        child: KeyedSubtree(
+                                          key: ValueKey(
+                                            'classic-editor-$classicEditorRevision',
+                                          ),
+                                          child: content,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (gridEntered)
+                              Positioned.fill(
+                                child: Offstage(
+                                  offstage: !gridActive,
+                                  child: ExcludeFocus(
+                                    excluding: !gridActive,
+                                    child: TickerMode(
+                                      enabled: gridActive,
+                                      child: LayoutBuilder(
+                                        builder: (context, bounds) {
+                                          if (gridActive) {
+                                            retainedGridSize = bounds.biggest;
+                                          }
+                                          final capturedAuthority =
+                                              workspaceMode.authority;
+                                          final size =
+                                              retainedGridSize ??
+                                              bounds.biggest;
+                                          // Hidden grid editors retain their last admitted
+                                          // layout; shrinking the classic mobile host must
+                                          // not lay out two desktop tabsets at phone width.
+                                          return OverflowBox(
+                                            alignment: Alignment.topLeft,
+                                            minWidth: size.width,
+                                            maxWidth: size.width,
+                                            minHeight: size.height,
+                                            maxHeight: size.height,
+                                            child: WorkspaceGridView(
+                                              key: gridKey,
+                                              controller: w,
+                                              route: route,
+                                              routeBody: content,
+                                              active: gridActive,
+                                              onRouteSelected: (next) {
+                                                if (!mounted ||
+                                                    !gridActive ||
+                                                    capturedAuthority !=
+                                                        workspaceMode
+                                                            .authority) {
+                                                  return;
+                                                }
+                                                select(next);
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        thread: thread && !gridActive
+                            ? RaftConversationSurface(
+                                role:
+                                    RaftConversationSurfaceRole.threadTimeline,
+                                child: Column(
+                                  children: [
+                                    if (wide) sourceThreadHeader(),
+                                    Expanded(
+                                      child: ServerSetupGate(
+                                        controller: w,
+                                        onSwitchServer: showWorkspaceSwitcher,
+                                        child: RaftChatView(
+                                          controller: w,
+                                          thread: true,
+                                          viewportHandle: threadViewport,
+                                          selectionHandle: threadSelection,
+                                          onTask: openMessageTaskSurface,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-                          ),
-                          if (gridEntered)
-                            Positioned.fill(
-                              child: Offstage(
-                                offstage: !gridActive,
-                                child: ExcludeFocus(
-                                  excluding: !gridActive,
-                                  child: TickerMode(
-                                    enabled: gridActive,
-                                    child: LayoutBuilder(
-                                      builder: (context, bounds) {
-                                        if (gridActive) {
-                                          retainedGridSize = bounds.biggest;
-                                        }
-                                        final capturedAuthority =
-                                            workspaceMode.authority;
-                                        final size =
-                                            retainedGridSize ?? bounds.biggest;
-                                        // Hidden grid editors retain their last admitted
-                                        // layout; shrinking the classic mobile host must
-                                        // not lay out two desktop tabsets at phone width.
-                                        return OverflowBox(
-                                          alignment: Alignment.topLeft,
-                                          minWidth: size.width,
-                                          maxWidth: size.width,
-                                          minHeight: size.height,
-                                          maxHeight: size.height,
-                                          child: WorkspaceGridView(
-                                            key: gridKey,
-                                            controller: w,
-                                            route: route,
-                                            routeBody: content,
-                                            active: gridActive,
-                                            onRouteSelected: (next) {
-                                              if (!mounted ||
-                                                  !gridActive ||
-                                                  capturedAuthority !=
-                                                      workspaceMode.authority) {
-                                                return;
-                                              }
-                                              select(next);
-                                            },
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
+                              )
+                            : null,
                       ),
-                      thread: thread && !gridActive
-                          ? RaftConversationSurface(
-                              role: RaftConversationSurfaceRole.threadTimeline,
-                              child: Column(
-                                children: [
-                                  if (wide) sourceThreadHeader(),
-                                  Expanded(
-                                    child: ServerSetupGate(
-                                      controller: w,
-                                      onSwitchServer: showWorkspaceSwitcher,
-                                      child: RaftChatView(
-                                        controller: w,
-                                        thread: true,
-                                        viewportHandle: threadViewport,
-                                        selectionHandle: threadSelection,
-                                        onTask: openMessageTaskSurface,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : null,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1421,9 +1474,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                     t,
                     MediaQuery.sizeOf(context).height,
                   ) +
-                  (DesktopNavigationPolicy.forSection(
-                        route,
-                      ).usesConversationSidebar
+                  (DesktopNavigationPolicy.forSection(route)
+                          .usesConversationSidebar
                       ? sidebarWidth
                       : 0)
             : 0,
@@ -2308,7 +2360,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     return WorkspaceMobileTabBar(
       controller: w,
       selectedId: mobileWorkspaceRootTabForLocation(w.location) ?? 'chat',
-      // The enclosing SafeArea consumed this inset exactly once.
+      // Android's tab bar consumes this inset; other hosts retain shell padding.
       bottomInset: 0,
       onSelected: (tab) => selectMobileTab(tab, scope),
     );
@@ -2601,6 +2653,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   }
 
   Widget sidebar({bool mobileHome = false}) {
+    final edgeToEdgeHome =
+        mobileHome &&
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android;
     final recipe = RaftSidebarRecipe(
       RaftTokens.of(context),
       viewportWidth: MediaQuery.sizeOf(context).width,
@@ -2615,6 +2671,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     return ColoredBox(
       color: recipe.bodyBackground,
       child: SafeArea(
+        // The list paints behind the floating bar through the gesture area.
+        // Reserve that space in scroll padding, rather than clipping its viewport.
+        bottom: !edgeToEdgeHome,
         child: Column(
           children: [
             if (mobileHome)
@@ -2635,7 +2694,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 padding: recipe.contentInset(
                   headerInFlow: true,
                   liveActivity: mobileHome && liveActivityVisible,
-                  bottomInset: 0,
+                  bottomInset: edgeToEdgeHome
+                      ? MediaQuery.viewPaddingOf(context).bottom
+                      : 0,
                 ),
                 children: [
                   if (mobileHome)

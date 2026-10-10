@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
@@ -58,7 +59,9 @@ class WorkspaceMobileTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
     final w = controller;
-    return RaftMobileNav(
+    final android = !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    final t = RaftTokens.of(context);
+    Widget navigation = RaftMobileNav(
       key: const Key('workspace-mobile-navigation'),
       selectedId: selectedId,
       bottomInset: bottomInset,
@@ -91,6 +94,26 @@ class WorkspaceMobileTabBar extends StatelessWidget {
         ),
       ],
     );
+    if (android) {
+      navigation = SafeArea(
+        top: false,
+        left: false,
+        right: false,
+        child: navigation,
+      );
+      // The in-flow bar owns the bottom inset and paints beneath Android's
+      // transparent navigation bar; the floating capsule has no strip fill.
+      if (t.brutal) {
+        navigation = ColoredBox(
+          color: RaftMobileNavRecipe(
+            t,
+            viewportHeight: MediaQuery.sizeOf(context).height,
+          ).background,
+          child: navigation,
+        );
+      }
+    }
+    return navigation;
   }
 }
 
