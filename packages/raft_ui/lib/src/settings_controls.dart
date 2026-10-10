@@ -171,6 +171,8 @@ class RaftSettingsField extends StatelessWidget {
     final t = RaftTokens.of(context);
     final f = RaftFieldRecipe.resolve(
       theme: raftRecipeTheme(t),
+      // `dark:text-foreground-hint` on the elegant label.
+      states: t.recipeStates(),
       tokens: RaftRecipeTokens(t),
     );
     // tailwind-merge: the callsite `text-xs` replaces the recipe `text-sm`
@@ -793,6 +795,40 @@ class RaftServerProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (!t.brutal) {
+      // Elegant Avatar (human recipe): `border-2 border-transparent
+      // bg-clip-padding`, the `rounded-full bg-fill-muted` fallback whose
+      // `text-sm text-foreground-placeholder/70` wins over the slot's
+      // text-2xl (font-display bold carries through).
+      return SizedBox.square(
+        dimension: 64,
+        child: Padding(
+          padding: const EdgeInsets.all(2),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: t.colors['fill-muted'],
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                initial,
+                style:
+                    RaftTypography.heading(
+                      t,
+                      size: 14,
+                      line: 20,
+                      weight: FontWeight.w700,
+                    ).copyWith(
+                      color: t.colors['foreground-placeholder']!.withValues(
+                        alpha: t.colors['foreground-placeholder']!.a * .7,
+                      ),
+                    ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       width: 64,
       height: 64,
