@@ -144,6 +144,8 @@ Future<WorkspaceController> _fixture(_Transport t) async {
     ..channels = [
       RaftChannel({'id': 'channel', 'type': 'private', 'joined': true}),
     ];
+  // Summaries are held per parent channel; the selected one is projected.
+  w.channel = w.channels.single;
   w.ledger.switchServer('server');
   return w;
 }
@@ -184,34 +186,34 @@ void main() {
     );
     expect(t.snapshotReads, 0);
   });
-  test('accepted thread summary refreshes unread without duplicate or pending refresh', () async {
-    final t = _Transport()..snapshot = Completer<void>();
-    final w = await _fixture(t);
-    addTearDown(w.dispose);
-    int unreadReads() =>
-        t.requests.where((o) => o.path == '/channels/unread').length;
-    _emit(w, _frame(90));
-    await _settle();
-    expect(unreadReads(), 1);
-    _emit(w, _frame(90));
-    _emit(w, _frame(9));
-    await _settle();
-    expect(unreadReads(), 1);
-    _emit(w, _frame(5, epoch: 'two'));
-    await t.snapshotStarted.future;
-    _emit(w, _frame(7, epoch: 'two'));
-    await _settle();
-    expect(unreadReads(), 1);
-    t.snapshot!.complete();
-    await _settle();
-    expect(unreadReads(), 2);
-    expect(
-      t.requests
-          .where((o) => o.path == '/channels/unread')
-          .every((o) => o.queryParameters['summary'] == 1),
-      true,
-    );
-  });
+  test(
+    'accepted thread summaries update locally without an unread snapshot',
+    () async {
+      final t = _Transport()..snapshot = Completer<void>();
+      final w = await _fixture(t);
+      addTearDown(w.dispose);
+      int unreadReads() =>
+          t.requests.where((o) => o.path == '/channels/unread').length;
+      // A tracked followed thread takes the server's own per-thread count.
+      w.unread = {'thread': 5};
+      _emit(w, {..._frame(90), 'unreadCount': 2});
+      await _settle();
+      expect(w.threadSummaries['parent']['replyCount'], 90);
+      expect(w.unread['thread'], 2);
+      _emit(w, _frame(90));
+      _emit(w, _frame(9));
+      await _settle();
+      _emit(w, _frame(5, epoch: 'two'));
+      await t.snapshotStarted.future;
+      _emit(w, _frame(7, epoch: 'two'));
+      await _settle();
+      t.snapshot!.complete();
+      await _settle();
+      // Rebaselined snapshot (6) plus the replayed pending frame (7).
+      expect(w.threadSummaries['parent']['replyCount'], 7);
+      expect(unreadReads(), 0);
+    },
+  );
   test('epoch rebaseline uses mounted snapshot pair and replays newest pending frame', () async {
     final t = _Transport()..snapshot = Completer<void>();
     final w = await _fixture(t);
