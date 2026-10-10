@@ -143,32 +143,64 @@ class WorkspaceController extends ChangeNotifier {
     if (_imageAuthorities[key]?.values.any((admitted) => admitted()) == true) {
       return true;
     }
+    final candidates =
+        _retainedAttachmentIndex()[key.channelId]?[key.attachmentId] ??
+        const <Map<String, dynamic>>[];
+    for (final metadata in candidates) {
+      final canonical = AttachmentImageKey.fromMetadata(
+        scope: key.scope,
+        channelId: key.channelId,
+        metadata: metadata,
+        rendition: key.rendition,
+      );
+      if (canonical == key) return true;
+    }
+    return false;
+  }
+
+  // Attachments in channels the member can currently view, keyed by channel
+  // then attachment id. Rebuilt whenever messages, channel lists, revocations,
+  // permissions or the image scope change; never reused across them.
+  Object? _retainedIndexStamp;
+  Map<String, Map<String, List<Map<String, dynamic>>>> _retainedIndex = {};
+
+  Map<String, Map<String, List<Map<String, dynamic>>>>
+  _retainedAttachmentIndex() {
+    final stamp = (
+      ledger.revision,
+      _stateStamp,
+      attachmentImageScope,
+      identityHashCode(channels),
+      channels.length,
+      identityHashCode(dms),
+      dms.length,
+      _revokedChannels.length,
+    );
+    if (stamp == _retainedIndexStamp) return _retainedIndex;
+    final index = <String, Map<String, List<Map<String, dynamic>>>>{};
     for (final channel in [...channels, ...dms]) {
       if (_revokedChannels.contains(channel.id) ||
           !can('viewChannel', resource: channel)) {
         continue;
       }
-      final roots = ledger.messages(channel.id);
       final channelIds = <String>{channel.id};
-      for (final message in roots) {
+      for (final message in ledger.messages(channel.id)) {
         final thread = RaftMessage(message).threadId;
         if (thread != null) channelIds.add(thread);
       }
-      if (!channelIds.contains(key.channelId)) continue;
-      for (final message in ledger.messages(key.channelId)) {
-        for (final metadata in RaftMessage(message).attachments) {
-          if (metadata['id'] != key.attachmentId) continue;
-          final canonical = AttachmentImageKey.fromMetadata(
-            scope: key.scope,
-            channelId: key.channelId,
-            metadata: metadata,
-            rendition: key.rendition,
-          );
-          if (canonical == key) return true;
+      for (final channelId in channelIds) {
+        if (index.containsKey(channelId)) continue;
+        final byAttachment = index[channelId] = {};
+        for (final message in ledger.messages(channelId)) {
+          for (final metadata in RaftMessage(message).attachments) {
+            final id = metadata['id'];
+            if (id is String) (byAttachment[id] ??= []).add(metadata);
+          }
         }
       }
     }
-    return false;
+    _retainedIndexStamp = stamp;
+    return _retainedIndex = index;
   }
 
   WorkspaceAttachmentImageLease acquireAttachmentImage(
@@ -691,8 +723,10 @@ class WorkspaceController extends ChangeNotifier {
   bool _disposed = false;
   Future<String?>? _creatingThread;
   int? _creatingThreadWindow;
+  int _stateStamp = 0;
   @override
   void notifyListeners() {
+    _stateStamp++;
     _attachmentImages?.synchronize(attachmentImageScope);
     if (!_disposed) {
       _ensureSyncIdentity();
