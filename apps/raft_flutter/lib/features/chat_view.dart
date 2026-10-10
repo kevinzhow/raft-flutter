@@ -1791,9 +1791,10 @@ class _RaftChatViewState extends State<RaftChatView>
   }
 
   Widget? taskReference(RaftMessage message) {
-    final task = taskProjection.taskFor(message);
-    if (task == null) return null;
-    final status = switch (task['status']) {
+    final presented = taskProjection.presentFor(message);
+    if (presented == null) return null;
+    final task = presented.task;
+    RaftMessageTaskStatus? statusOf(Object? value) => switch (value) {
       'todo' => RaftMessageTaskStatus.todo,
       'in_progress' => RaftMessageTaskStatus.inProgress,
       'in_review' => RaftMessageTaskStatus.inReview,
@@ -1801,6 +1802,24 @@ class _RaftChatViewState extends State<RaftChatView>
       'closed' => RaftMessageTaskStatus.closed,
       _ => null,
     };
+    if (presented.presence == MessageTaskPresence.reserved) {
+      // A message known to be a task whose details are pending keeps the
+      // chip's footer space from the first frame; the row never grows later.
+      return Visibility(
+        key: ValueKey('message-task-reserved-${message.id}'),
+        visible: false,
+        maintainSize: true,
+        maintainAnimation: true,
+        maintainState: true,
+        child: RaftMountedMessageTaskChip(
+          number: task?['taskNumber'] as int? ?? 0,
+          status: RaftMessageTaskStatus.todo,
+          title: '',
+          openLabel: '',
+        ),
+      );
+    }
+    final status = statusOf(task!['status']);
     if (status == null) return null;
     final claimant = task['claimedByName'] as String?;
     final number = task['taskNumber'] as int;
@@ -1815,15 +1834,18 @@ class _RaftChatViewState extends State<RaftChatView>
         'number': number,
         'title': task['title'],
       }),
-      tooltipLabel: 'task #$number${claimant == null ? '' : ' @$claimant'}',
       onOpen: presentationActive
           ? () {
+              // Open the accepted task current at tap time; a chip built from
+              // the message's own fields waits for the channel's task rows.
+              final current = taskProjection.taskFor(message);
               if (authority == workspaceAuthority(w) &&
-                  identical(taskProjection.taskFor(message), task)) {
+                  current != null &&
+                  current['id'] == task['id']) {
                 // Source MessageItem3685–3700: the footer task chip opens the
                 // independent task slot; the replies action keeps side intent.
                 if (widget.onTask case final open?) {
-                  open(task, () async {
+                  open(current, () async {
                     if (mounted && authority == workspaceAuthority(w)) {
                       taskProjection.refresh();
                     }

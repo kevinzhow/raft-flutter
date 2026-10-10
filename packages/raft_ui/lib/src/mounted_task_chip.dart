@@ -143,7 +143,9 @@ class _TaskChipButtonRecipe extends RaftMessageTaskChipRecipe {
 
 /// Controlled footer reference: #number and optional @claimant are painted;
 /// [title] is accessible metadata, not an additional visible task title.
-/// [openLabel] and [tooltipLabel] must come from the app's localized projection.
+/// [openLabel] must come from the app's localized projection. There is no
+/// tooltip by default: one repeating the painted #number/@claimant adds
+/// nothing; pass [tooltipLabel] only for text that is not visible elsewhere.
 /// The app owns permission checks and task intent routing; this never edits a
 /// task, reads a store, opens a menu, or requests a network resource.
 class RaftMountedMessageTaskChip extends StatefulWidget {
@@ -153,7 +155,7 @@ class RaftMountedMessageTaskChip extends StatefulWidget {
     required this.status,
     required this.title,
     required this.openLabel,
-    required this.tooltipLabel,
+    this.tooltipLabel,
     this.claimant,
     this.onOpen,
     this.loading = false,
@@ -161,8 +163,8 @@ class RaftMountedMessageTaskChip extends StatefulWidget {
   });
   final int number;
   final RaftMessageTaskStatus status;
-  final String title, openLabel, tooltipLabel;
-  final String? claimant;
+  final String title, openLabel;
+  final String? tooltipLabel, claimant;
   final VoidCallback? onOpen;
   final bool loading;
   final FocusNode? focusNode;

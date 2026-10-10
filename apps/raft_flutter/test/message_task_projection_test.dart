@@ -81,4 +81,59 @@ void main() {
       expect(projection.byMessage, isEmpty);
     },
   );
+  test(
+    'channel switches keep accepted buckets; authority changes revalidate in place',
+    () async {
+      final (w, transport) = await fixture('owner');
+      addTearDown(w.dispose);
+      final c2 = RaftChannel({'id': 'c2', 'name': 'two', 'joined': true});
+      w.channels = [w.channel!, c2];
+      transport.routes['GET /tasks/channel/c2'] = (_) => {'tasks': []};
+      var reads = 0;
+      transport.routes['GET /tasks/channel/c1'] = (_) {
+        reads++;
+        return {
+          'tasks': [task],
+        };
+      };
+      final projection = MessageTaskProjection(w);
+      addTearDown(projection.dispose);
+      await drain();
+      expect(projection.byMessage.keys, ['parent']);
+      final accepted = projection.byMessage['parent'];
+      final c1 = w.channel!;
+      w.channel = c2;
+      w.notifyListeners();
+      expect(projection.byMessage, isEmpty);
+      await drain();
+      w.channel = c1;
+      w.notifyListeners();
+      // Present at once, same object, no refetch of a fresh bucket.
+      expect(identical(projection.byMessage['parent'], accepted), isTrue);
+      await drain();
+      expect(reads, 1);
+      // A non-reducing authority change keeps the bucket while it
+      // revalidates in the background.
+      final pending = Completer<dynamic>();
+      transport.routes['GET /tasks/channel/c1'] = (_) {
+        reads++;
+        return pending.future;
+      };
+      w.channel = RaftChannel({
+        ...c1.json,
+        'archivedAt': '2026-10-10T00:00:00Z',
+      });
+      w.notifyListeners();
+      await drain();
+      expect(reads, 2);
+      expect(identical(projection.byMessage['parent'], accepted), isTrue);
+      pending.complete({
+        'tasks': [
+          {...task, 'status': 'done'},
+        ],
+      });
+      await drain();
+      expect(projection.byMessage['parent']?['status'], 'done');
+    },
+  );
 }

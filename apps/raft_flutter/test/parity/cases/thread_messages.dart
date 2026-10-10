@@ -780,7 +780,6 @@ final _linkedTaskCase = ParityCase(
                 claimant: 'Cindy',
                 title: task['title'],
                 openLabel: 'Open task',
-                tooltipLabel: task['title'],
                 onOpen: () {},
               ),
             ),

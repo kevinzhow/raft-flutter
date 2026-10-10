@@ -43,7 +43,6 @@ void main() {
       status: RaftMessageTaskStatus.inProgress,
       title: 'Actual public task 中文 日本語',
       openLabel: 'Open task #10: Actual public task 中文 日本語',
-      tooltipLabel: claimant == null ? 'task #10' : 'task #10 @$claimant',
       claimant: claimant,
       focusNode: focus,
       loading: loading,
