@@ -107,6 +107,8 @@ All channels come from the product's own network-page path, through a mock dio a
 | `fling` | Six ballistic flings at 6000 px/s through the list's own physics (`goBallistic`), alternating direction. | fling |
 | `image-scroll` | Steady 1200 px/s through 240 photo rows (1–3 large PNGs each). The in-memory image cache churns. | continuous |
 | `older-drag` | Touch drag at 1800 px/s, held for 8 s, starting from the newest 50 rows of a 300-row channel. The older page (250 ms latency) lands mid-drag. | continuous |
+| `scrollbar-drag` | Desktop only. A mouse holds the timeline's scrollbar thumb in the 600-row channel and drags it from the latest end to the top of the track and back, each way over half the scenario. Records `thumbErrorMaxPx` (sampled distance between the thumb and the pointer; must stay within 2 px) and `olderPagesServed`. | continuous |
+| `scrollbar-sweep` | As `scrollbar-drag`, but full-track sweeps of 500 ms each way for the whole scenario: every frame jumps several screens. | continuous |
 | `arrival-scrolled-up` | The reader drags 2.5k px up. Then 4 `message:new` events per second from teammates arrive for 8 s. Records `anchorDriftPx` of the row being read, which must be 0. | events |
 | `resize` | Drives the engine view's size every frame, 700–940 px wide. This measures app relayout only; see the platform notes. | continuous |
 | `open-cold` | First visits to two channels. The page arrives after 150 ms. Records time-to-visible of the newest row and that open's worst frame. | transitions |

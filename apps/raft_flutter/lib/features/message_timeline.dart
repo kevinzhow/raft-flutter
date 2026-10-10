@@ -1,8 +1,11 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
+
+import 'timeline_scrollbar.dart';
 
 /// A two-sided message timeline: older history grows away from a fixed
 /// center, so loading it never moves the rows on screen.
@@ -29,6 +32,7 @@ class RaftMessageTimeline extends StatefulWidget {
     this.hasOlder = false,
     this.loadingOlder = false,
     this.onLoadOlder,
+    this.onRecenter,
     this.cacheExtent,
   });
 
@@ -49,51 +53,90 @@ class RaftMessageTimeline extends StatefulWidget {
   final Widget? empty;
   final bool hasOlder, loadingOlder;
   final VoidCallback? onLoadOlder;
+
+  /// Re-centers the timeline on row [index] and positions the next layout at
+  /// [alignment] (the host owns the center). A scrollbar drag to a distant
+  /// target uses it so only the rows around the target are built.
+  final void Function(int index, RaftTimelineAlignment alignment)? onRecenter;
   final double? cacheExtent;
 
   /// Older history is requested within this many viewports of the top.
   static const double prefetchViewports = 2;
 
+  /// Rows built so far (tests measure per-frame layout work).
+  @visibleForTesting
+  static int debugRowBuilds = 0;
+
   @override
   State<RaftMessageTimeline> createState() => _RaftMessageTimelineState();
 }
 
-class _RaftMessageTimelineState extends State<RaftMessageTimeline> {
+class _RaftMessageTimelineState extends State<RaftMessageTimeline>
+    implements RaftTimelineThumbDriver {
   final edges = _TimelineEdges();
-  bool armed = false;
+
+  /// The user's scroll direction ([UserScrollNotification]); programmatic
+  /// moves (jumps, alignments, animations) leave it idle.
+  ScrollDirection userDirection = ScrollDirection.idle;
+
+  /// A page was requested in this reach of the top region. The next request
+  /// needs the reader to leave the region, or the page to land and the user
+  /// to move toward older history again (Web: one page per top-sentinel
+  /// intersection). A page landing, a layout or a metrics change never
+  /// requests one by itself.
+  bool spent = false;
 
   @override
   void didUpdateWidget(RaftMessageTimeline oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.controller, widget.controller)) armed = false;
-    if (oldWidget.loadingOlder && !widget.loadingOlder) {
-      // The page has landed; prefetch the next one if still near the top.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) maybeLoadOlder();
-      });
+    if (!identical(oldWidget.controller, widget.controller)) {
+      spent = false;
+      userDirection = ScrollDirection.idle;
+      thumb = null;
     }
+    // Landed (or failed): the next user move toward older may request again.
+    if (oldWidget.loadingOlder && !widget.loadingOlder) spent = false;
   }
 
-  void maybeLoadOlder() {
-    final load = widget.onLoadOlder, controller = widget.controller;
-    if (!armed ||
+  ScrollPosition? get singlePosition {
+    final controller = widget.controller;
+    if (controller.positions.length != 1) return null;
+    final position = controller.position;
+    return position.hasContentDimensions && position.hasViewportDimension
+        ? position
+        : null;
+  }
+
+  bool nearTop(ScrollPosition position) =>
+      position.extentBefore <=
+      math.max(
+        200.0,
+        position.viewportDimension * RaftMessageTimeline.prefetchViewports,
+      );
+
+  /// The user moved toward older history.
+  void userMovedOlder() {
+    final load = widget.onLoadOlder, position = singlePosition;
+    if (position == null || !nearTop(position)) return;
+    if (spent ||
         load == null ||
         !widget.hasOlder ||
         widget.loadingOlder ||
-        controller.positions.length != 1) {
+        widget.controller.pending != null) {
       return;
     }
-    final position = controller.position;
-    if (!position.hasContentDimensions ||
-        !position.hasViewportDimension ||
-        controller.pending != null) {
-      return;
+    spent = true;
+    load();
+  }
+
+  void rearmOutsideTop() {
+    final position = singlePosition;
+    if (spent &&
+        !widget.loadingOlder &&
+        position != null &&
+        !nearTop(position)) {
+      spent = false;
     }
-    final threshold = math.max(
-      200.0,
-      position.viewportDimension * RaftMessageTimeline.prefetchViewports,
-    );
-    if (position.extentBefore <= threshold) load();
   }
 
   bool onNotification(Notification notification) {
@@ -104,17 +147,149 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline> {
       // stretch or glow there (it would move the rows as history lands).
       notification.disallowIndicator();
     }
-    if (notification is UserScrollNotification &&
-        notification.direction == ScrollDirection.forward) {
-      // Toward the top (older history).
-      armed = true;
+    // Only the timeline itself, not scrollables inside rows.
+    if (notification is ScrollNotification && notification.depth != 0) {
+      return false;
     }
-    if (notification is ScrollUpdateNotification ||
-        notification is ScrollEndNotification ||
-        notification is ScrollMetricsNotification) {
-      maybeLoadOlder();
+    if (notification is UserScrollNotification) {
+      userDirection = notification.direction;
+    } else if (notification is ScrollUpdateNotification) {
+      // Forward = toward the top (older history).
+      if ((notification.scrollDelta ?? 0) < 0 &&
+          userDirection == ScrollDirection.forward) {
+        userMovedOlder();
+      } else {
+        rearmOutsideTop();
+      }
+    } else if (notification is OverscrollNotification) {
+      // Pulling at the temporary top (e.g. after a failed page).
+      if (notification.overscroll < 0 &&
+          userDirection == ScrollDirection.forward) {
+        userMovedOlder();
+      }
+    } else if (notification is ScrollMetricsNotification) {
+      rearmOutsideTop();
     }
     return false;
+  }
+
+  // Scrollbar thumb drags: the thumb maps to a model of the content frozen
+  // at the press (row extents, scroll range), so the content moves exactly
+  // with the pointer and nothing that lands or is measured meanwhile moves
+  // the thumb under it. Corrections apply after release.
+  _ThumbModel? thumb;
+
+  @override
+  double? beginThumbDrag() {
+    final position = singlePosition;
+    final messages = widget.messages;
+    if (position == null || messages.isEmpty) return thumb = null;
+    final n = messages.length;
+    final estimate = widget.estimateRow ?? (_) => 96.0;
+    final cum = Float64List(n + 1);
+    for (var i = 0; i < n; i++) {
+      cum[i + 1] = cum[i] + estimate(i);
+    }
+    final base =
+        cum[widget.centerIndex.clamp(0, n)] -
+        widget.controller.anchor * position.viewportDimension;
+    final lo = base + position.minScrollExtent;
+    final hi = base + position.maxScrollExtent;
+    if (hi - lo < 1) return thumb = null;
+    thumb = _ThumbModel(messages.first.id, cum, lo, hi);
+    return ((base + position.pixels - lo) / (hi - lo)).clamp(0.0, 1.0);
+  }
+
+  @override
+  void moveThumb(double fraction) {
+    final model = thumb, position = singlePosition;
+    if (model == null || position is! RaftTimelinePosition) return;
+    final f = fraction.clamp(0.0, 1.0);
+    // Rows prepended since the press shift every index (counted in the
+    // built list: the host's window may already be ahead of this build).
+    final messages = widget.messages;
+    var shift = 0;
+    while (shift < messages.length && messages[shift].id != model.firstId) {
+      shift++;
+    }
+    if (shift == messages.length) return;
+    final rows = model.cum.length - 1;
+    final pending = widget.controller.pending != null;
+    final center = widget.centerIndex.clamp(0, messages.length) - shift;
+    final extent = position.viewportDimension;
+    final anchor = widget.controller.anchor;
+    // The model's y of the viewport top now (null while a re-center lays
+    // out or the center row is not in the model).
+    final current = !pending && center >= 0 && center <= rows
+        ? model.cum[center] + position.pixels - anchor * extent
+        : null;
+    final top = f <= 0, bottom = f >= 1;
+    if (top || bottom) {
+      // The track's ends are the content's real ends (estimates measured
+      // during the drag moved them) ...
+      final real = top ? shift == 0 : shift + rows == messages.length;
+      // ... unless rows landed there since the press: those stay beyond
+      // the thumb until it is released, and the content stays put.
+      if (!real || pending) return;
+      model.edge = top ? -1 : 1;
+      final edge = top ? position.minScrollExtent : position.maxScrollExtent;
+      if ((edge - position.pixels).abs() <= extent * 3 ||
+          widget.onRecenter == null) {
+        position.thumbTo(edge);
+      } else {
+        widget.onRecenter!(
+          top ? 0 : messages.length - 1,
+          top ? RaftTimelineAlignment.start : RaftTimelineAlignment.end,
+        );
+      }
+      // Holding the thumb at the top keeps reaching for older history.
+      if (top) userMovedOlder();
+      return;
+    }
+    if (model.edge != 0) {
+      // Leaving an end the content snapped to: continue from where it is,
+      // so the estimate error at that end is not jumped over.
+      if (current == null) return;
+      if (model.edge < 0) {
+        model.lo = (current - f * model.hi) / (1 - f);
+      } else {
+        model.hi = model.lo + (current - model.lo) / f;
+      }
+      model.edge = 0;
+    }
+    final y = model.lo + f * (model.hi - model.lo);
+    if (current != null) {
+      final delta = y - current;
+      // Near targets lay out only the rows in between: up to a few screens
+      // that costs less than building a fresh center (a screen plus both
+      // cache extents, every row mounted anew).
+      if (delta.abs() <= extent * 3 || widget.onRecenter == null) {
+        position.thumbTo(position.pixels + delta);
+        return;
+      }
+    }
+    // Far targets: build only the rows around the target (a new center)
+    // instead of laying out the whole distance in one frame.
+    var low = 0, high = rows - 1;
+    while (low < high) {
+      final mid = (low + high + 1) >> 1;
+      if (model.cum[mid] <= y) {
+        low = mid;
+      } else {
+        high = mid - 1;
+      }
+    }
+    widget.onRecenter!(
+      low + shift,
+      RaftTimelineAlignment.row(leading: model.cum[low] - y),
+    );
+  }
+
+  @override
+  void endThumbDrag() {
+    thumb = null;
+    final position = singlePosition;
+    if (position is RaftTimelinePosition) position.endThumb();
   }
 
   @override
@@ -123,10 +298,14 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline> {
     final messages = widget.messages;
     final center = widget.centerIndex.clamp(0, messages.length);
     final estimate = widget.estimateRow;
-    Widget row(BuildContext context, int index) => KeyedSubtree(
-      key: ValueKey<String>(messages[index].id),
-      child: widget.rowBuilder(context, index),
-    );
+    Widget row(BuildContext context, int index) {
+      RaftMessageTimeline.debugRowBuilds++;
+      return KeyedSubtree(
+        key: ValueKey<String>(messages[index].id),
+        child: widget.rowBuilder(context, index),
+      );
+    }
+
     final history = SliverList(
       key: ValueKey('timeline-history-${widget.epoch}'),
       delegate: _EstimatingChildDelegate(
@@ -155,10 +334,19 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline> {
       ),
     );
     final slivers = widget.slivers(history, forward);
-    final list = NotificationListener<Notification>(
+    final behavior = ScrollConfiguration.of(context);
+    final scrollbar = switch (behavior.getPlatform(context)) {
+      TargetPlatform.linux ||
+      TargetPlatform.macOS ||
+      TargetPlatform.windows => true,
+      _ => false,
+    };
+    Widget list = NotificationListener<Notification>(
       onNotification: onNotification,
       child: _TimelineScrollView(
         controller: widget.controller,
+        // The timeline's own scrollbar replaces the platform default.
+        scrollBehavior: scrollbar ? behavior.copyWith(scrollbars: false) : null,
         center: forwardKey,
         anchor: widget.controller.anchor,
         physics: _TimelinePhysics(edges),
@@ -170,6 +358,13 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline> {
         slivers: slivers,
       ),
     );
+    if (scrollbar) {
+      list = RaftTimelineScrollbar(
+        controller: widget.controller,
+        driver: this,
+        child: list,
+      );
+    }
     final empty = widget.empty;
     if (empty == null || messages.isNotEmpty) return list;
     return Stack(
@@ -324,6 +519,25 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
     _trackEnd();
   }
 
+  /// Moves to [value] for a scrollbar thumb drag, as a user scroll (load
+  /// triggers see the user's direction).
+  void thumbTo(double value) {
+    final target = value.clamp(minScrollExtent, maxScrollExtent);
+    if ((target - pixels).abs() < .01) return;
+    if (activity is! _ThumbScrollActivity) {
+      beginActivity(_ThumbScrollActivity(this));
+    }
+    updateUserScrollDirection(
+      target < pixels ? ScrollDirection.forward : ScrollDirection.reverse,
+    );
+    setPixels(target);
+  }
+
+  /// The thumb was released.
+  void endThumb() {
+    if (activity is _ThumbScrollActivity) goBallistic(0);
+  }
+
   double? _rowTarget(_RowAlignment align, RaftTimelineRenderViewport view) =>
       view.measure(() {
         final box = align.find?.call() ?? view.centerLeadingRow();
@@ -359,7 +573,8 @@ class RaftTimelinePosition extends ScrollPositionWithSingleContext {
       }
     }
     final pending = owner._pending;
-    final dragging = activity is DragScrollActivity;
+    final dragging =
+        activity is DragScrollActivity || activity is _ThumbScrollActivity;
     double? target;
     if (pending != null && view != null) {
       target = switch (pending) {
@@ -400,6 +615,7 @@ class _TimelineScrollView extends CustomScrollView {
     super.anchor,
     super.keyboardDismissBehavior,
     super.semanticChildCount,
+    super.scrollBehavior,
     super.scrollCacheExtent,
     super.slivers,
   });
@@ -608,6 +824,33 @@ class _RenderSparseFill extends RenderSliverSingleBoxAdapter {
     );
     if (box != null) setChildParentData(box, c, geometry!);
   }
+}
+
+/// A scrollbar thumb holds the position (no ballistic or alignment moves it).
+class _ThumbScrollActivity extends ScrollActivity {
+  _ThumbScrollActivity(super.delegate);
+  @override
+  bool get shouldIgnorePointer => false;
+  @override
+  bool get isScrolling => true;
+  @override
+  double get velocity => 0;
+}
+
+class _ThumbModel {
+  _ThumbModel(this.firstId, this.cum, this.lo, this.hi);
+
+  /// The first row at the press; rows prepended later shift indices.
+  final String firstId;
+
+  /// `cum[i]`: the top of row `i` from the first row's top.
+  final Float64List cum;
+
+  /// The viewport top's range in that model.
+  double lo, hi;
+
+  /// The content snapped to the real top (-1) or latest end (1).
+  int edge = 0;
 }
 
 class _TimelineEdges {

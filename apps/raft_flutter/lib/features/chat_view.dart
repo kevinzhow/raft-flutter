@@ -2423,6 +2423,8 @@ class _RaftChatViewState extends State<RaftChatView>
           onLoadOlder: presentationActive
               ? () => w.older(thread: widget.thread)
               : null,
+          onRecenter: (index, alignment) =>
+              recenter(first: messages[index].id, alignment: alignment),
           empty: widget.thread
               ? null
               : loading

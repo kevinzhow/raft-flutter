@@ -385,3 +385,27 @@ double percentile(List<num> values, double q) {
   final s = [...values]..sort();
   return s[math.min(s.length - 1, ((s.length - 1) * q).ceil())].toDouble();
 }
+
+/// The timeline scrollbar's thumb rect (global), found through its painter's
+/// own hit test, so it works for any scrollbar built on [ScrollbarPainter].
+Rect? scrollbarThumb(WidgetTester t) {
+  final view = timelineScrollable(t).context.findRenderObject()! as RenderBox;
+  final viewport = view.localToGlobal(Offset.zero) & view.size;
+  for (final e in find.byType(CustomPaint).evaluate()) {
+    final painter = (e.widget as CustomPaint).foregroundPainter;
+    final box = e.renderObject;
+    if (painter is! ScrollbarPainter || box is! RenderBox || !box.attached) continue;
+    final origin = box.localToGlobal(Offset.zero);
+    if (!(origin & box.size).contains(viewport.center)) continue;
+    double? top, bottom;
+    for (var y = 0.0; y < box.size.height; y += 1) {
+      if (painter.hitTestOnlyThumbInteractive(Offset(box.size.width - 4, y), ui.PointerDeviceKind.mouse)) {
+        top ??= y;
+        bottom = y;
+      }
+    }
+    if (top == null) continue;
+    return Rect.fromLTRB(origin.dx + box.size.width - 8, origin.dy + top, origin.dx + box.size.width, origin.dy + bottom! + 1);
+  }
+  return null;
+}

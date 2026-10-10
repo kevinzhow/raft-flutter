@@ -10,7 +10,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart' show PointerDeviceKind;
+import 'package:flutter/gestures.dart' show PointerDeviceKind, PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -295,6 +295,55 @@ void main() {
         await idle(const Duration(milliseconds: 300));
         return {...moved(p, from), 'pxPerSecond': 1800, 'olderPagesServed': hist.olderPagesServed - servedBefore, 'rowsBefore': rowsBefore, 'rowsAfter': w.messages.length};
       });
+
+      // Desktop scrollbar: a mouse holds the timeline's thumb and sweeps it
+      // between the latest end and the top of the track. Records how far the
+      // thumb strayed from the pointer (sampled) and history pages requested.
+      Future<Map<String, Object?>> thumbDrag(Duration sweep) async {
+        final p = position(), from = p.pixels, served = mix.olderPagesServed;
+        final center = t.getCenter(find.byType(RaftChatView).first);
+        // Show the bar with a small wheel scroll, then let it fade in.
+        await t.sendEventToBinding(PointerScrollEvent(position: center, scrollDelta: const Offset(0, -4)));
+        await idle(const Duration(milliseconds: 400));
+        final start = scrollbarThumb(t);
+        if (start == null) throw StateError('no scrollbar thumb on this platform');
+        const grab = 6.0;
+        final x = start.center.dx, y0 = start.top + grab, y1 = grab + 2;
+        final gesture = await t.startGesture(Offset(x, y0), kind: PointerDeviceKind.mouse);
+        final clock = Stopwatch()..start();
+        final half = sweep.inMicroseconds.toDouble();
+        var frames = 0, maxError = 0.0, sampled = 0;
+        final total = seconds * 1e6;
+        while (clock.elapsedMicroseconds < total) {
+          await nextFrame();
+          final now = clock.elapsedMicroseconds;
+          // Triangle wave: up the track over [sweep], back down over [sweep].
+          final phase = (now % (2 * half)) / half;
+          final k = phase < 1 ? phase : 2 - phase;
+          final y = y0 + (y1 - y0) * k.clamp(0.0, 1.0);
+          await gesture.moveTo(Offset(x, y), timeStamp: Duration(microseconds: now));
+          if (++frames % 15 == 0) {
+            await nextFrame();
+            final thumb = scrollbarThumb(t);
+            if (thumb != null) {
+              sampled++;
+              maxError = math.max(maxError, (thumb.top + grab - y).abs());
+            }
+          }
+        }
+        await gesture.up(timeStamp: Duration(microseconds: clock.elapsedMicroseconds));
+        await idle(const Duration(milliseconds: 300));
+        return {...moved(p, from), 'thumbErrorMaxPx': maxError, 'thumbSamples': sampled, 'trackPx': y0 - y1,
+          'sweepMs': sweep.inMilliseconds, 'olderPagesServed': mix.olderPagesServed - served};
+      }
+
+      // Reading pace: one sweep up the track and one back, each over half the
+      // scenario. Fast: full-track sweeps of 500 ms each way (jumps of
+      // several screens per frame).
+      await run('scrollbar-drag', prepare: () => show(mix, latest: true),
+          () => thumbDrag(Duration(microseconds: seconds * 500000)));
+      await run('scrollbar-sweep', prepare: () => show(mix, latest: true),
+          () => thumbDrag(const Duration(milliseconds: 500)));
 
       // Four live arrivals per second while the reader is 2500 px up the
       // history; the row being read must not move.

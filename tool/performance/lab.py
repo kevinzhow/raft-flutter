@@ -27,7 +27,7 @@ TARGET = 'integration_test/perf_lab_test.dart'
 DRIVER = 'test_driver/perf_lab_driver.dart'
 BUDGET_120 = 1e6 / 120  # 8333 us
 BUDGET_60 = 1e6 / 60    # 16667 us
-SCENARIO_ORDER = ['steady-scroll', 'fling', 'image-scroll', 'older-drag', 'arrival-scrolled-up', 'resize',
+SCENARIO_ORDER = ['steady-scroll', 'fling', 'image-scroll', 'older-drag', 'scrollbar-drag', 'scrollbar-sweep', 'arrival-scrolled-up', 'resize',
                   'open-cold', 'open-warm', 'channel-switch', 'thread-open']
 ROW_KINDS = ['plain', 'markdown', 'code', 'image', 'attachments', 'reactions', 'thread-summary', 'task']
 
