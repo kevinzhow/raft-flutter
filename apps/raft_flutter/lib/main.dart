@@ -667,8 +667,9 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           uri.pathSegments.length >= 2 &&
           uri.pathSegments[1] == selected.string('slug')) {
         w.bindNavigation();
+        // MainLayout useRailLegacyRedirect: legacy shapes REPLACE in place.
         w.navigation.navigate(
-          RaftLocation.fromUri(uri),
+          RaftLocation.fromUri(RaftLocation.canonicalLegacy(uri)),
           kind: RaftNavigationKind.replace,
         );
       }

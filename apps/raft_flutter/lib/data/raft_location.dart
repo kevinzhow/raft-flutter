@@ -119,6 +119,41 @@ class RaftLocation {
   factory RaftLocation.parse(String path) =>
       RaftLocation.fromUri(Uri.parse(path));
 
+  /// useRailLegacyRedirect.ts:29–64. Folds the older rail-mode shapes
+  /// (`/machine/:id`, `?sidebarTab=`, `?tab=machines|messages`) into the canonical
+  /// path; every other query key and the fragment are preserved.
+  static Uri canonicalLegacy(Uri uri) {
+    final sidebarTab = uri.queryParametersAll['sidebarTab']?.first;
+    final legacyTab = uri.queryParametersAll['tab']?.first;
+    final dropTab = legacyTab == 'machines' || legacyTab == 'messages';
+    var path = uri.path, changed = sidebarTab != null || dropTab;
+    final machine = RegExp(r'^(/s/[^/]+)/machine/([^/?#]+)$').firstMatch(path);
+    if (machine != null) {
+      path = '${machine[1]}/computer/${machine[2]}';
+      changed = true;
+    }
+    final root = RegExp(r'^(/s/[^/]+)/?$').firstMatch(path);
+    final mode = root == null
+        ? null
+        : sidebarTab == 'members'
+        ? 'members'
+        : sidebarTab == 'computers' || legacyTab == 'machines'
+        ? 'computers'
+        : null;
+    if (mode != null) path = '${root![1]}/$mode';
+    if (!changed) return uri;
+    final query = {
+      for (final entry in uri.queryParametersAll.entries)
+        if (entry.key != 'sidebarTab' && !(dropTab && entry.key == 'tab'))
+          entry.key: entry.value,
+    };
+    return Uri(
+      path: path,
+      queryParameters: query.isEmpty ? null : query,
+      fragment: uri.hasFragment ? uri.fragment : null,
+    );
+  }
+
   factory RaftLocation.fromUri(Uri uri) {
     if (uri.hasScheme || uri.hasAuthority || !uri.path.startsWith('/')) {
       throw const FormatException('Expected a local workspace path');
