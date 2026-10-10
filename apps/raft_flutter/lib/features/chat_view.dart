@@ -164,10 +164,90 @@ class _RaftChatViewState extends State<RaftChatView>
       if (offset != null &&
           offset >= low &&
           offset + child.size.height <= high) {
-        readingAnchor.capture(child, position);
+        final id = rowIdOf(child);
+        if (id == null) {
+          readingAnchor.capture(child, position);
+        } else {
+          // By identity: rows inserted before it re-index the list and its
+          // render box may be rebuilt or collected in the same layout.
+          readingAnchor.captureResolved(
+            offset,
+            () => resolveRowOffset(id),
+            position,
+          );
+        }
         return;
       }
     }
+  }
+
+  RenderSliverMultiBoxAdaptor? messageSliver() {
+    final host = readingAnchor.host;
+    if (host == null || !host.attached) return null;
+    RenderSliverMultiBoxAdaptor? list;
+    void visit(RenderObject node) {
+      if (node is RenderSliverMultiBoxAdaptor &&
+          (list == null ||
+              (node.geometry?.scrollExtent ?? 0) >
+                  (list!.geometry?.scrollExtent ?? 0))) {
+        list = node;
+      }
+      node.visitChildren(visit);
+    }
+
+    host.visitChildren(visit);
+    return list;
+  }
+
+  static String? rowIdOf(RenderObject child) {
+    String? found;
+    void visit(RenderObject node) {
+      if (found != null) return;
+      if (node is RaftRowIdentity) {
+        found = (node as RaftRowIdentity).rowId;
+        return;
+      }
+      node.visitChildren(visit);
+    }
+
+    visit(child);
+    return found;
+  }
+
+  /// Current scroll offset of the row [id]: exact when its box is laid out,
+  /// otherwise estimated from the built rows by index. Reads only layout
+  /// offsets, so it is safe inside the viewport's layout.
+  ({double offset, bool exact})? resolveRowOffset(String id) {
+    final sliver = messageSliver();
+    final first = sliver?.firstChild, last = sliver?.lastChild;
+    if (sliver == null || first == null || last == null) return null;
+    for (
+      RenderBox? child = first;
+      child != null;
+      child = sliver.childAfter(child)
+    ) {
+      if (rowIdOf(child) == id) {
+        final offset = RaftReadingAnchorController.scrollOffsetOf(child);
+        if (offset != null) return (offset: offset, exact: true);
+      }
+    }
+    final found = windowIndexOf(id);
+    if (found == null) return null;
+    final index = bottomAnchored ? adapter.messages.length - 1 - found : found;
+    final lo = sliver.indexOf(first), hi = sliver.indexOf(last);
+    final loTop = sliver.childScrollOffset(first),
+        hiTop = sliver.childScrollOffset(last);
+    if (loTop == null || hiTop == null) return null;
+    final perRow = hi > lo ? (hiTop - loTop) / (hi - lo) : 120.0;
+    final top = index < lo
+        ? loTop - (lo - index) * perRow
+        : index > hi
+        ? hiTop + (index - hi) * perRow
+        : loTop + (index - lo) * perRow;
+    return (
+      offset: sliver.constraints.precedingScrollExtent + top,
+      exact: false,
+    );
   }
 
   double latestOffset(ScrollPosition p) =>
@@ -233,7 +313,7 @@ class _RaftChatViewState extends State<RaftChatView>
       viewport =
           (bottomAnchored
                 ? RaftAnchoredScrollController(readingAnchor)
-                : RaftInitialEndScrollController())
+                : RaftAnchoredScrollController(readingAnchor, startAtEnd: true))
             ..addListener(timelineScrolled);
     }
     widget.viewportHandle?.bind(this, jumpToBeginning);
@@ -751,10 +831,10 @@ class _RaftChatViewState extends State<RaftChatView>
           currentBinding() &&
           identical(adapter, ownedAdapter) &&
           identical(viewport, ownedViewport);
-      if (bottomAnchored &&
-          !atBottom &&
-          !focusStaging &&
-          identical(adapter, ownedAdapter)) {
+      // Either direction: an older page prepended above a thread's reader
+      // (top-anchored) or rows arriving below a channel's reader keep the
+      // row on screen exactly in place.
+      if (!atBottom && !focusStaging && identical(adapter, ownedAdapter)) {
         captureReadingAnchor();
       }
       final wanted = projected.map((m) => m.id).toSet();
@@ -2320,6 +2400,10 @@ class _RaftChatViewState extends State<RaftChatView>
               // end is a jump (an animation across lazily estimated extents
               // overshoots the real end and springs back with a blank gap).
               scrollToEndAnimationDuration: Duration.zero,
+              // The reading anchor keeps the row on screen in place when an
+              // older page lands; the list's own multi-frame re-anchor must
+              // not move it again.
+              anchorOlderPages: false,
               // The app positions and publishes a replacement window atomically.
               // An arrival in its hidden preparation cannot race that positioning
               // with Flyer's independent scroll-to-end callback.

@@ -106,6 +106,12 @@ class ChatAnimatedList extends StatefulWidget {
   /// Callback triggered when the user scrolls near the top, requesting older messages.
   final PaginationCallback? onEndReached;
 
+  /// Whether the list re-anchors its first visible item after an older page
+  /// lands (non-reversed lists). Off when the host keeps the reading
+  /// position itself inside layout: this re-anchor travels to the item over
+  /// several frames and aligns it to the top edge, a visible jump.
+  final bool anchorOlderPages;
+
   /// Callback triggered when the user scrolls near the bottom, requesting newer messages.
   final PaginationCallback? onStartReached;
 
@@ -167,6 +173,7 @@ class ChatAnimatedList extends StatefulWidget {
     this.shouldScrollToEndWhenSendingMessage = true,
     this.shouldScrollToEndWhenAtBottom = true,
     this.onEndReached,
+    this.anchorOlderPages = true,
     this.onStartReached,
     // Threshold for triggering pagination, represented as a value between 0 (top)
     // and 1 (bottom).
@@ -866,7 +873,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
         int? initialMessagesCount;
 
         // --- Scroll Anchoring Setup: Only for non-reversed lists ---
-        if (!widget.reversed) {
+        if (!widget.reversed && widget.anchorOlderPages) {
           try {
             // We can only anchor the scroll position if the list is actually
             // in the widget tree and has a context.
@@ -916,7 +923,7 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
           final notifier = context.read<LoadMoreNotifier>();
 
           // --- Scroll Anchoring Action: Only for non-reversed lists ---
-          if (!widget.reversed) {
+          if (!widget.reversed && widget.anchorOlderPages) {
             // initialMessageCount will be non-null here if !widget.reversed
             final didAddMessages = _oldList.length > initialMessagesCount!;
             if (didAddMessages && anchorMessageId != null) {

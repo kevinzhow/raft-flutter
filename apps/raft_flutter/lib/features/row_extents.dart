@@ -65,9 +65,17 @@ class RaftRowExtentRecorder extends SingleChildRenderObjectWidget {
         ..id = id;
 }
 
-class _RenderRowExtentRecorder extends RenderProxyBox {
+/// A row whose message identity can be read from its render object.
+abstract interface class RaftRowIdentity {
+  String get rowId;
+}
+
+class _RenderRowExtentRecorder extends RenderProxyBox
+    implements RaftRowIdentity {
   _RenderRowExtentRecorder(this.scope, this.id);
   String scope, id;
+  @override
+  String get rowId => id;
   @override
   void performLayout() {
     super.performLayout();

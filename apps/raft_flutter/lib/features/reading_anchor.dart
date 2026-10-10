@@ -18,7 +18,26 @@ class RaftReadingAnchorController {
   /// The mounted anchor box (set when it attaches).
   RenderBox? host;
 
-  bool get pending => _row != null;
+  bool get pending => _row != null || _resolve != null;
+
+  /// Identity-based anchor: resolves the anchored row's current scroll
+  /// offset by identity (exact when it is laid out, otherwise estimated from
+  /// the rows that are), so the hold survives the row's render box being
+  /// rebuilt or collected (e.g. rows inserted before it re-index the list).
+  ({double offset, bool exact})? Function()? _resolve;
+
+  void captureResolved(
+    double offset,
+    ({double offset, bool exact})? Function() resolve,
+    ScrollPosition position,
+  ) {
+    _row = null;
+    _resolve = resolve;
+    _offset = offset - position.pixels;
+    _position = position;
+    _layouts = 0;
+    host?.markNeedsLayout();
+  }
 
   static double? scrollOffsetOf(RenderBox row) {
     final data = row.parentData;
@@ -47,6 +66,7 @@ class RaftReadingAnchorController {
 
   void clear() {
     _row = null;
+    _resolve = null;
     _offset = null;
     _position = null;
   }
@@ -62,8 +82,14 @@ class RaftAnchoredScrollController extends ScrollController {
     this.anchor, {
     super.initialScrollOffset,
     super.debugLabel,
-  });
+    this.startAtEnd = false,
+  }) : super(keepScrollOffset: !startAtEnd);
   final RaftReadingAnchorController anchor;
+
+  /// Begins at the actual end in layout (a freshly mounted top-anchored
+  /// window, cf. RaftInitialEndScrollController) and keeps the reading
+  /// anchor afterwards.
+  final bool startAtEnd;
 
   @override
   ScrollPosition createScrollPosition(
@@ -72,6 +98,7 @@ class RaftAnchoredScrollController extends ScrollController {
     ScrollPosition? oldPosition,
   ) => _AnchoredScrollPosition(
     anchor: anchor,
+    startAtEnd: startAtEnd,
     physics: physics,
     context: context,
     initialPixels: initialScrollOffset,
@@ -84,6 +111,7 @@ class RaftAnchoredScrollController extends ScrollController {
 class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
   _AnchoredScrollPosition({
     required this.anchor,
+    this.startAtEnd = false,
     required super.physics,
     required super.context,
     super.initialPixels,
@@ -92,6 +120,7 @@ class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
     super.debugLabel,
   });
   final RaftReadingAnchorController anchor;
+  bool startAtEnd;
   int _rounds = 0;
 
   /// Any real scroll (drag, fling, animation via [setPixels]; jumps via
@@ -112,6 +141,37 @@ class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
 
   @override
   bool applyContentDimensions(double minScrollExtent, double maxScrollExtent) {
+    final resolve = anchor._resolve, held = anchor._offset;
+    if (resolve != null &&
+        held != null &&
+        identical(anchor._position, this) &&
+        hasPixels) {
+      final at = resolve();
+      if (at != null) {
+        final delta = (at.offset - pixels) - held;
+        if (delta.abs() >= .5 && _rounds < 8) {
+          // Estimate first if the row is not built here; the next round
+          // lays out around it and reads its real offset.
+          _rounds++;
+          correctPixels(pixels + delta);
+          return false;
+        }
+      }
+      _rounds = 0;
+      return super.applyContentDimensions(minScrollExtent, maxScrollExtent);
+    }
+    if (startAtEnd) {
+      if (maxScrollExtent.isFinite && pixels != maxScrollExtent) {
+        correctPixels(maxScrollExtent);
+        return false;
+      }
+      final accepted = super.applyContentDimensions(
+        minScrollExtent,
+        maxScrollExtent,
+      );
+      if (accepted) startAtEnd = false;
+      return accepted;
+    }
     final row = anchor._row, gap = anchor._offset;
     if (row != null &&
         gap != null &&
@@ -173,6 +233,19 @@ class _RenderReadingAnchor extends RenderProxyBox {
     super.performLayout();
     final c = controller, row = c._row, before = c._offset;
     final position = c._position;
+    if (c._resolve != null) {
+      // Resolved anchors correct inside the anchored position; this box only
+      // keeps them for a few frames of late extent changes, then releases.
+      if (position == null || !position.hasPixels || ++c._layouts > 8) {
+        c.clear();
+        return;
+      }
+      final resolve = c._resolve;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (identical(c._resolve, resolve) && attached) markNeedsLayout();
+      });
+      return;
+    }
     if (row == null || before == null || position == null) return;
     if (!row.attached || !position.hasPixels || ++c._layouts > 8) {
       c.clear();
