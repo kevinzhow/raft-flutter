@@ -1,4 +1,5 @@
 // P01: real Linux profile engine, deterministic mixed messages, unchanged across revisions.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:developer' as developer;
@@ -10,6 +11,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -340,6 +342,55 @@ void main() {
         expect(resize.exitCode, 0, reason: resize.stderr.toString());
         expect(int.parse(resize.stdout.toString().trim()), greaterThan(seconds * 50));
       });
+      // [P04] Open a channel end to end: from selectChannel until its newest
+      // message is visibly painted. Cold open waits on a 300 ms network page
+      // (no local window yet); switching back and revisiting use the
+      // in-memory window and must not wait for the network.
+      {
+        final two = RaftChannel({'id': 'c2', 'name': 'perf-two', 'joined': true});
+        w.channels = [...w.channels, two];
+        final rowsTwo = <Map<String, dynamic>>[
+          for (var i = 0; i < 50; i++) {
+            'id': 'two-$i', 'channelId': 'c2', 'seq': '${1000 + i}',
+            'senderId': i.isEven ? 'alice' : 'bob', 'senderType': 'user',
+            'senderName': i.isEven ? 'Alice' : 'Bob', 'messageType': 'chat',
+            'createdAt': DateTime.utc(2026, 10, 2).add(Duration(minutes: i)).toIso8601String(),
+            'content': longMessage(i),
+          },
+        ];
+        api.routes['GET /messages/channel/c2'] = (_) async {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          return {'messages': rowsTwo, 'hasMore': false};
+        };
+        api.routes['GET /messages/channel/c1'] = (_) async {
+          await Future<void>.delayed(const Duration(milliseconds: 300));
+          return {'messages': rows.sublist(450), 'hasMore': true};
+        };
+        api.routes['POST /channels/c2/read'] = (_) => {};
+        final c1 = w.channels.firstWhere((c) => c.id == 'c1');
+        Future<double> open(RaftChannel channel, String newest) async {
+          final visible = find.descendant(of: find.byKey(ValueKey('message-$newest')), matching: find.byType(RichText)).hitTestable();
+          final clock = Stopwatch()..start();
+          unawaited(w.selectChannel(channel));
+          while (clock.elapsedMilliseconds < 5000) {
+            await t.pump();
+            if (visible.evaluate().isNotEmpty) break;
+          }
+          final ms = clock.elapsedMicroseconds / 1000;
+          // Let the network page settle before the next open.
+          for (var i = 0; i < 40; i++) {
+            await t.pump(const Duration(milliseconds: 16));
+          }
+          return visible.evaluate().isNotEmpty ? ms : -1;
+        }
+        final cold = await open(two, 'two-49');
+        final back = await open(c1, 'perf-499');
+        final revisit = await open(two, 'two-49');
+        File('$out/$name-open.json').writeAsStringSync(jsonEncode({
+          'coldNetworkMs': cold, 'switchBackMs': back, 'revisitMs': revisit,
+          'networkDelayMs': 300,
+        }));
+      }
       if (trace) {
         debugProfileBuildsEnabled = true;
         debugProfileLayoutsEnabled = true;

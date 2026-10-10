@@ -758,8 +758,13 @@ class _RaftChatViewState extends State<RaftChatView>
         }
         if (!currentContext()) return;
       }
+      // A plain channel switch publishes its retained/cached window at once
+      // (Web shows the channel's cached bucket, then refetches); the latest
+      // end is offset 0, and the network page updates rows in place.
+      final showCachedLatest =
+          bottomAnchored && target == null && adapter.messages.isNotEmpty;
       if (presentationActive &&
-          (!loading || pendingAcceptedMount) &&
+          (!loading || pendingAcceptedMount || showCachedLatest) &&
           (focusStaging ||
               (target != null &&
                   (target != scrolledHighlight || window != scrolledWindow)))) {
