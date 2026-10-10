@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'panel_layout.dart' show RaftCssText;
 import 'theme.dart';
 
 /// The status vocabulary is intentionally closed. The app must omit unknown
@@ -244,10 +245,13 @@ class _RaftMountedMessageTaskChipState
                     color: recipe.iconForeground,
                     inverse: tokens.colors['foreground-inverse']!,
                   ),
-                  Text('#${widget.number}'),
+                  // Blink line boxes: rounded ascent + floored half-leading
+                  // (13px at a 16.25px line sits a whole px above Flutter's
+                  // fractional even-leading baseline).
+                  RaftCssText('#${widget.number}'),
                   if (widget.claimant != null && widget.claimant!.isNotEmpty)
                     Flexible(
-                      child: Text(
+                      child: RaftCssText(
                         '@${widget.claimant}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
