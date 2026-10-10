@@ -53,23 +53,38 @@ class ChatAgentPresentation extends ChangeNotifier {
             agent(i.agentId) != null,
       )
       .firstOrNull;
+
+  /// The directory facts the presented items were last checked against.
+  Object? checked;
+
+  /// Runs on every workspace and directory notification; notifies only when
+  /// the presented items or the identities they render actually change.
   void changed() {
     if (ended) return;
     final next = directoryAuthority(w);
+    var dirty = false;
     if (scope != next) {
       scope = next;
       items = [];
       sequences.clear();
       expiry?.cancel();
+      dirty = true;
     }
-    items = items
+    final facts = (next, directory.scope, directory.revision);
+    if (facts != checked) {
+      checked = facts;
+      dirty = true;
+    }
+    final kept = items
         .where(
           (i) =>
               directory.scope == directoryAuthority(w) &&
               agent(i.agentId) != null,
         )
         .toList();
-    notifyListeners();
+    if (kept.length != items.length) dirty = true;
+    items = kept;
+    if (dirty) notifyListeners();
   }
 
   void event(RaftEvent event) {

@@ -10,6 +10,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/workspace_entity_directory.dart';
 import '../data/source_activity_unread_store.dart';
 import '../data/source_mobile_app_badge.dart';
 import '../data/raft_location.dart';
@@ -298,6 +299,21 @@ class _WorkspaceViewState extends State<WorkspaceView> {
 
   late MessageReferenceDirectory activityDirectory;
   late ChatAgentPresentation liveActivities;
+
+  /// The shell rebuilds only when the live activity bar appears or leaves
+  /// (the mobile home inset); the bar itself follows every activity change.
+  final liveActivityShown = ValueNotifier(false);
+  void syncLiveActivityShown() {
+    final latest = liveActivities.latest;
+    liveActivityShown.value =
+        latest != null && liveActivities.agent(latest.agentId) != null;
+  }
+
+  /// Sidebar agent rows and DM peers render identity fields only; agent
+  /// presence patches never rebuild the shell.
+  late WorkspaceEntitySelection shellIdentities;
+  WorkspaceEntitySelection bindShellIdentities() =>
+      WorkspaceEntitySelection(w.entityDirectory, (d) => d.authorRevision);
   void syncPresentation() {
     unawaited(
       presentation.bind(
@@ -343,7 +359,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     workspaceMode = WorkspaceModeStore(w);
     activityFlag = DesktopActivityFlag(w)..addListener(activityFlagChanged);
     activityDirectory = MessageReferenceDirectory(w);
-    liveActivities = ChatAgentPresentation(w, activityDirectory);
+    liveActivities = ChatAgentPresentation(w, activityDirectory)
+      ..addListener(syncLiveActivityShown);
+    syncLiveActivityShown();
+    shellIdentities = bindShellIdentities();
     w.addListener(syncChannelSearch);
     w.addListener(syncPresentation);
     syncPresentation();
@@ -519,7 +538,11 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       workspaceMode = WorkspaceModeStore(w);
       activityFlag = DesktopActivityFlag(w)..addListener(activityFlagChanged);
       activityDirectory = MessageReferenceDirectory(w);
-      liveActivities = ChatAgentPresentation(w, activityDirectory);
+      liveActivities = ChatAgentPresentation(w, activityDirectory)
+        ..addListener(syncLiveActivityShown);
+      syncLiveActivityShown();
+      shellIdentities.dispose();
+      shellIdentities = bindShellIdentities();
       w.addListener(syncPresentation);
       syncPresentation();
       w.addListener(syncSidebarDisclosure);
@@ -631,6 +654,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.removeListener(syncSavedIds);
     sidebarDisclosure.dispose();
     liveActivities.dispose();
+    liveActivityShown.dispose();
+    shellIdentities.dispose();
     activityDirectory.dispose();
     activityFlag.removeListener(activityFlagChanged);
     activityFlag.dispose();
@@ -743,7 +768,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     listenable: Listenable.merge([
       w,
       presentation,
-      liveActivities,
+      liveActivityShown,
+      shellIdentities,
       sidebarDisclosure,
       workspaceMode,
     ]),

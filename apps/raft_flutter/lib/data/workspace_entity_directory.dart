@@ -119,6 +119,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   /// Kinds that settled (accepted or failed) at least once in this scope.
   final _settled = <WorkspaceEntityKind>{};
   int _authorRevision = 0, _agentRevision = 0, _agentRequests = 0;
+  int _computerRevision = 0;
   List<Map<String, dynamic>>? _authorAgents, _authorMembers;
   int _epoch = 0;
   bool _disposed = false;
@@ -148,6 +149,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _authorAgents = _authorMembers = null;
     _authorRevision++;
     _agentRevision++;
+    _computerRevision++;
     _refresh?.cancel();
     _refresh = null;
     _dirty.clear();
@@ -202,6 +204,13 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
 
   /// Changes whenever an agents request starts.
   int get agentRequestRevision => _agentRequests;
+
+  /// Changes whenever a computer row is accepted, patched (status,
+  /// capabilities) or cleared. Agent presence patches never change it.
+  int get computerRevision {
+    synchronize();
+    return _computerRevision;
+  }
 
   /// True only while the current scope has no settled author data yet. A
   /// revalidation of accepted lists never reports loading.
@@ -262,7 +271,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   }
 
   void _authorsChanged(WorkspaceEntityKind kind) {
-    if (kind == WorkspaceEntityKind.agents) {
+    if (kind == WorkspaceEntityKind.computers) {
+      _computerRevision++;
+    } else if (kind == WorkspaceEntityKind.agents) {
       _authorAgents = null;
       _agentRevision++;
       _authorRevision++;
@@ -440,7 +451,13 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         };
         _activityVersions[id] = (_activityVersions[id] ?? 0) + 1;
         _activity[id] = patch;
-        _rows[WorkspaceEntityKind.agents]?[id]?.addAll(patch);
+        // A heartbeat repeating the accepted activity changes nothing.
+        final row = _rows[WorkspaceEntityKind.agents]?[id];
+        if (row == null ||
+            patch.entries.every((entry) => row[entry.key] == entry.value)) {
+          return;
+        }
+        row.addAll(patch);
         notifyListeners();
       // Source agentStore.applyAgentSeen: monotonic, no request.
       case 'agent:seen' when agents:
@@ -535,6 +552,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         }
         row['status'] = status;
         if (version is int) row['statusVersion'] = version;
+        _computerRevision++;
         notifyListeners();
         _scheduleReload(const {
           WorkspaceEntityKind.computers,
@@ -564,6 +582,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           return;
         }
         row.addAll(patch);
+        _computerRevision++;
         notifyListeners();
       // Source machine:updated / machine:upgrade-request / successful restart:
       // re-read the machine list only.
@@ -663,6 +682,38 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _dirty.clear();
     _queued.clear();
     _subscription?.cancel();
+    super.dispose();
+  }
+}
+
+/// Follows one facet of a [WorkspaceEntityDirectory] (for example the
+/// identity lists through [WorkspaceEntityDirectory.authorRevision]) and
+/// notifies only when [select] returns a different value. Presence patches
+/// (agent:activity/seen/session) then never reach a surface that does not
+/// render them.
+class WorkspaceEntitySelection extends ChangeNotifier {
+  WorkspaceEntitySelection(this.directory, this.select)
+    : _value = select(directory) {
+    directory.addListener(_changed);
+  }
+  final WorkspaceEntityDirectory directory;
+  final Object? Function(WorkspaceEntityDirectory directory) select;
+  Object? _value;
+  bool _disposed = false;
+
+  void _changed() {
+    if (_disposed) return;
+    final next = select(directory);
+    if (next == _value) return;
+    _value = next;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    directory.removeListener(_changed);
     super.dispose();
   }
 }

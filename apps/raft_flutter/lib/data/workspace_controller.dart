@@ -85,6 +85,15 @@ String _mergeFailedSendIntoDraft(String failed, String current) {
 }
 
 class WorkspaceController extends ChangeNotifier {
+  /// High-frequency socket events that never change workspace state.
+  static const presenceEvents = {
+    'agent:activity',
+    'agent:seen',
+    'agent:session',
+    'machine:status',
+    'machine:capabilities',
+  };
+
   WorkspaceController(
     this.client, {
     this.cache,
@@ -112,10 +121,11 @@ class WorkspaceController extends ChangeNotifier {
           query: (path) => query(path),
           events: client.events,
         );
-    if (_ownsEntityDirectory) {
-      addListener(_entityAuthorityChanged);
-      this.entityDirectory.addListener(_entityDirectoryChanged);
-    }
+    // Directory changes are not forwarded to this notifier: agent heartbeats,
+    // last-seen and machine status patches would rebuild every workspace
+    // listener. Surfaces that render entities listen to [entityDirectory]
+    // (or a [WorkspaceEntitySelection] of it) directly.
+    if (_ownsEntityDirectory) addListener(_entityAuthorityChanged);
     subscription = client.events.listen(_event);
   }
 
@@ -151,10 +161,6 @@ class WorkspaceController extends ChangeNotifier {
         if (can('viewMembers')) WorkspaceEntityKind.members,
       },
     );
-  }
-
-  void _entityDirectoryChanged() {
-    if (!_disposed) notifyListeners();
   }
 
   void _entityAuthorityChanged() {
@@ -4176,6 +4182,9 @@ class WorkspaceController extends ChangeNotifier {
       return;
     }
     _lastServerEvent = DateTime.now();
+    // Presence patches are owned by the entity directory and the agent
+    // presentations; no workspace state changes, so nothing is notified.
+    if (presenceEvents.contains(event.name)) return;
     if (event.name == 'connected') {
       connected = true;
       // Source socketBridge reconnectSnapshot: server-level reads only. The
@@ -4194,7 +4203,13 @@ class WorkspaceController extends ChangeNotifier {
       _connectedBefore = true;
     }
     if (event.name == 'rooms:joined') _roomsJoined();
-    if (event.name == 'heartbeat') _heartbeat(event.payload);
+    if (event.name == 'heartbeat') {
+      final joining = _roomsJoinedPending;
+      _heartbeat(event.payload);
+      // A heartbeat only records liveness; a missed-push gap sync notifies
+      // when its rows arrive.
+      if (!joining) return;
+    }
     if (event.name == 'disconnected' || event.name == 'connection:error') {
       connected = false;
     }
@@ -4342,7 +4357,6 @@ class WorkspaceController extends ChangeNotifier {
     _disposed = true;
     if (_ownsEntityDirectory) {
       removeListener(_entityAuthorityChanged);
-      entityDirectory.removeListener(_entityDirectoryChanged);
       entityDirectory.dispose();
     }
     if (_ownsFollowedThreads) followedThreads.dispose();

@@ -1791,18 +1791,31 @@ class _RaftChatViewState extends State<RaftChatView>
         },
       ),
     );
-    return RaftAvatar(
-      key: ValueKey(
-        'message-avatar-${w.messageKey(message)}-${source.identity}',
-      ),
-      name: message.author,
-      kind: kind,
-      content: avatarContent,
-      mountedContext: avatarContext,
-      deactivated: senderAgent(message)?.deleted ?? false,
-      presence: compact || senderAgent(message) == null
-          ? null
-          : agentAvatarPresence(agentPresentation.display(message.senderId)),
+    // Only this avatar follows the sender's live presence: an agent heartbeat
+    // rebuilds the avatars showing that agent, not the row or the timeline.
+    // Human rows (a fixed property of the message) never subscribe.
+    final presentation = agentPresentation;
+    Widget avatar() {
+      final agent = senderAgent(message);
+      return RaftAvatar(
+        key: ValueKey(
+          'message-avatar-${w.messageKey(message)}-${source.identity}',
+        ),
+        name: message.author,
+        kind: kind,
+        content: avatarContent,
+        mountedContext: avatarContext,
+        deactivated: agent?.deleted ?? false,
+        presence: compact || agent == null
+            ? null
+            : agentAvatarPresence(presentation.display(message.senderId)),
+      );
+    }
+
+    if (message.string('senderType') != 'agent') return avatar();
+    return ListenableBuilder(
+      listenable: presentation.presenceOf(message.senderId),
+      builder: (context, _) => avatar(),
     );
   }
 

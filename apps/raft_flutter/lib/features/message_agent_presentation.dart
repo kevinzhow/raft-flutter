@@ -31,6 +31,37 @@ class MessageAgentPresentation extends ChangeNotifier {
   Timer? externalExpiry;
   String? authority;
   final identities = <String, AgentPresentationIdentity>{};
+
+  /// Facts behind the last whole-presentation notification.
+  Object? notified;
+
+  /// Per-agent presence signals. Live activity and last-seen events notify
+  /// only the agent they concern, so a heartbeat rebuilds the avatars that
+  /// show that agent instead of every row of every mounted chat.
+  final _presence = <String, _PresenceSignal>{};
+
+  /// Notifies when [display] (or the last-seen part of [identity]) of agent
+  /// [id] changes through a realtime event. Whole-directory changes notify
+  /// this presentation itself.
+  Listenable presenceOf(String id) =>
+      _presence.putIfAbsent(id, _PresenceSignal.new);
+  void _presenceChanged(String id) => _presence[id]?.ping();
+
+  /// Notifies listeners only when the presented facts changed. Runs on every
+  /// workspace notification.
+  void _notifyIfChanged() {
+    final facts = (
+      authority,
+      authorityCurrent,
+      directory.loading,
+      requestRevision,
+      acceptedRevision,
+    );
+    if (facts == notified) return;
+    notified = facts;
+    notifyListeners();
+  }
+
   AgentPresentationScope get currentScope => (
     origin: w.client.origin,
     principal: w.client.user?.id ?? '',
@@ -64,7 +95,7 @@ class MessageAgentPresentation extends ChangeNotifier {
       externalExpiry = null;
       identities.clear();
       projection.replaceAuthorizedDirectory(currentScope, const []);
-      notifyListeners();
+      _notifyIfChanged();
       return;
     }
     if (requestRevision != directory.requestRevision) {
@@ -116,7 +147,7 @@ class MessageAgentPresentation extends ChangeNotifier {
       projection.hydrate(snapshot ?? projection.beginSnapshot(), activities);
     }
     scheduleExternalExpiry();
-    notifyListeners();
+    _notifyIfChanged();
   }
 
   void scheduleExternalExpiry() {
@@ -132,7 +163,9 @@ class MessageAgentPresentation extends ChangeNotifier {
     if (ends.isEmpty) return;
     externalExpiry = Timer(ends.first.difference(now), () {
       if (!ended && authorityCurrent) {
-        notifyListeners();
+        for (final row in identities.values) {
+          if (row.external) _presenceChanged(row.id);
+        }
         scheduleExternalExpiry();
       }
     });
@@ -179,7 +212,7 @@ class MessageAgentPresentation extends ChangeNotifier {
       );
       projection.replaceAuthorizedDirectory(currentScope, identities.values);
       scheduleExternalExpiry();
-      notifyListeners();
+      _presenceChanged(id);
       return;
     }
     final result = projection.apply(
@@ -192,7 +225,7 @@ class MessageAgentPresentation extends ChangeNotifier {
       serverSeq: int.tryParse('${value['serverSeq']}'),
       launchId: value['launchId'] as String?,
     );
-    if (result == AgentAmbientApply.applied) notifyListeners();
+    if (result == AgentAmbientApply.applied) _presenceChanged(id);
     if (result == AgentAmbientApply.conflict) {
       // The shared directory revalidation owns the reconcile and its fence.
       directory.refresh();
@@ -213,6 +246,14 @@ class MessageAgentPresentation extends ChangeNotifier {
     directory.removeListener(changed);
     w.removeListener(changed);
     identities.clear();
+    for (final signal in _presence.values) {
+      signal.dispose();
+    }
+    _presence.clear();
     super.dispose();
   }
+}
+
+class _PresenceSignal extends ChangeNotifier {
+  void ping() => notifyListeners();
 }

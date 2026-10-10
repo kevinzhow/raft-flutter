@@ -321,7 +321,8 @@ class MessagePresentation extends StatelessWidget {
       await showDialog<void>(
         context: context,
         builder: (ctx) => ListenableBuilder(
-          listenable: w,
+          // The live entity row follows directory updates in place.
+          listenable: Listenable.merge([w, w.entityDirectory]),
           builder: (ctx, _) {
             if (live != null && directoryAuthority(w) != opened) {
               // A server-level identity change revokes the projection.

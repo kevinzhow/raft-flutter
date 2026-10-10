@@ -38,6 +38,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   WorkspaceController get w => widget.controller;
   late SystemNotificationStore store;
   StreamSubscription<RaftEvent>? events;
+
+  /// Machines and agents the notices project from. Agent presence patches
+  /// (activity, last seen) do not change them.
+  WorkspaceEntitySelection? entities;
   Timer? poll, coalesce, closeDelay;
   OverlayEntry? popup;
   bool popupKeyboard = false;
@@ -78,8 +82,19 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     unawaited(bind());
     store.addListener(updated);
     w.addListener(changed);
+    entities = WorkspaceEntitySelection(
+      w.entityDirectory,
+      (d) => (
+        d.authorRevision,
+        d.computerRevision,
+        d.state(WorkspaceEntityKind.computers).loaded,
+        d.state(WorkspaceEntityKind.agents).loaded,
+      ),
+    )..addListener(changed);
     events = w.client.events.listen((e) {
-      changed();
+      // High-frequency presence events reach the shared-directory notices
+      // only through the directory facts above.
+      if (!WorkspaceController.presenceEvents.contains(e.name)) changed();
       // agent:*/machine:* revalidate the shared directory in place; only a
       // directory-less store reads them itself.
       if ((store.entities == null &&
@@ -164,6 +179,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
 
   void detach(SystemNotificationBell owner) {
     owner.controller.removeListener(changed);
+    entities?.dispose();
+    entities = null;
     store.removeListener(updated);
     events?.cancel();
     poll?.cancel();

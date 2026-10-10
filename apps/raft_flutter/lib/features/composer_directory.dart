@@ -217,7 +217,7 @@ class ComposerDirectory extends ChangeNotifier {
   /// Borrow the chat's existing authorized activity adapter; never owns it.
   final MessageAgentPresentation? agentPresentation;
   String? scope, channelId;
-  Object? stamp;
+  Object? stamp, checked;
   bool ended = false;
   List<RaftComposerSuggestion> people = [];
   List<RaftComposerSuggestion> get suggestions => [
@@ -252,6 +252,21 @@ class ComposerDirectory extends ChangeNotifier {
       }
     }
     final resources = _shared.resources == true;
+    // Agent presence patches leave every input below unchanged; skip copying
+    // the computer rows for them.
+    final inputs = (
+      authority,
+      channel?.id,
+      channel?.type,
+      w.client.user?.json['name'],
+      w.entityDirectory.authorRevision,
+      w.entityDirectory.computerRevision,
+      _shared.revision,
+      resources,
+      w.can('viewMachines'),
+    );
+    if (inputs == checked) return;
+    checked = inputs;
     final computers = resources && w.can('viewMachines')
         ? w.entityDirectory.rows(WorkspaceEntityKind.computers)
         : const <Map<String, dynamic>>[];
@@ -479,7 +494,16 @@ class _ComposerCandidateAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
-    listenable: directory.agentPresentation ?? directory,
+    // Live presence is signalled per agent; the presentation itself notifies
+    // only whole-directory changes.
+    listenable: switch (directory.agentPresentation) {
+      final presentation? when type == 'agent' => Listenable.merge([
+        presentation,
+        presentation.presenceOf(row['id'] as String),
+      ]),
+      final presentation? => presentation,
+      null => directory,
+    },
     builder: (context, _) {
       if (directory.ended ||
           directory.scope != authority ||

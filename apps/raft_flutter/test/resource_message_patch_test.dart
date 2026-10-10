@@ -60,6 +60,18 @@ void main() {
     await tester.pump();
     expect(find.text('Edited saved body'), findsOneWidget);
     expect(state.rows, hasLength(20));
+    // Saved lists no computers: machine events never re-read its senders.
+    final catalogs = w.agentQueries;
+    for (final name in ['machine:status', 'machine:updated']) {
+      client.emit(name, {
+        'machineId': 'm1',
+        'status': 'offline',
+        'statusVersion': 2,
+      });
+    }
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(w.agentQueries, catalogs);
+    expect(w.savedQueries, hasLength(requests));
   });
 
   testWidgets(
@@ -78,6 +90,16 @@ void main() {
       expect(w.searchQueries, hasLength(searches));
 
       client.emit('agent:activity', {'agentId': 'a1', 'activity': 'typing'});
+      client.emit('agent:seen', {
+        'agentId': 'a1',
+        'lastSeenAt': '2026-10-08T00:00:00Z',
+      });
+      // Machine status is not part of the computer catalog (name/hostname/OS).
+      client.emit('machine:status', {
+        'machineId': 'm1',
+        'status': 'offline',
+        'statusVersion': 2,
+      });
       await tester.pump(const Duration(milliseconds: 500));
       expect(w.agentQueries, catalogs);
 

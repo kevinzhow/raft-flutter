@@ -935,7 +935,7 @@ class _ResourceViewState extends State<ResourceView> {
         return;
       }
       if (['search', 'saved'].contains(widget.section) &&
-          catalogEvent(event.name)) {
+          catalogEvent(event.name, machines: widget.section == 'search')) {
         // Refresh the identity directory without clearing it or the user's
         // sender filter; high-frequency presence events do not touch it.
         final scope = authority;
@@ -984,11 +984,16 @@ class _ResourceViewState extends State<ResourceView> {
     'agent:session',
     'agent:seen',
     'agent:read',
+    'machine:status',
   };
-  bool catalogEvent(String name) =>
+
+  /// Events that can change the sender catalog: agent and member identities,
+  /// and (Search only, whose catalog lists computers by name, hostname and
+  /// OS) the machine list. Presence and machine status never change them.
+  bool catalogEvent(String name, {required bool machines}) =>
       !presenceEvents.contains(name) &&
       (name.startsWith('agent:') ||
-          name.startsWith('machine:') ||
+          (machines && name.startsWith('machine:')) ||
           name.startsWith('server:member'));
 
   /// message:updated is merge-only: patch the matching saved/search row by
@@ -2915,8 +2920,7 @@ class _ResourceViewState extends State<ResourceView> {
     'done' => 'Items you mark done appear here and can be restored.',
     _ when advanced.channelId != null =>
       'Try another channel or clear the channel filter.',
-    'mentions' =>
-      'Channels, DMs, and threads where someone @mentions you will appear here.',
+    'mentions' => 'Channels, DMs, and threads where someone @mentions you will appear here.',
     _ => 'Channels, DMs, and followed threads stay here until they are done.',
   };
 
