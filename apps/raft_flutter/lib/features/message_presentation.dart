@@ -46,7 +46,7 @@ final _referencesMemo = RaftLruCache<_ReferenceInputs, List<RaftTextReference>>(
 class _ReferenceInputs {
   _ReferenceInputs(MessagePresentation p)
     : messageId = p.message.id,
-      content = p.message.content,
+      content = p.text,
       mentions = p.message.json['mentions'],
       localAuthority = p.localAuthority,
       directory = p.directoryReferences,
@@ -100,7 +100,15 @@ class MessagePresentation extends StatelessWidget {
     this.exportAttachmentBuilder,
     this.taskByNumber,
     this.knownTaskNumber,
+    this.content,
+    this.foregroundColor,
   });
+
+  /// Markdown shown instead of the message's own content (a translation, or
+  /// the bilingual view's original under it).
+  final String? content;
+  final Color? foregroundColor;
+  String get text => content ?? message.content;
 
   /// Loaded task for an in-body `#N` reference (Web `taskByNumber`); null
   /// when unknown.
@@ -129,7 +137,7 @@ class MessagePresentation extends StatelessWidget {
 
   List<RaftTextReference> get _references {
     if (!localAuthority) return [];
-    final content = message.content;
+    final content = text;
     // Only references whose text occurs in this message can match; building
     // one per channel/member for every row made each new row cost ~1ms.
     final refs = {
@@ -546,7 +554,8 @@ class MessagePresentation extends StatelessWidget {
       mountedMessage: true,
       // A compact timeline row already announces this text in its label.
       compactSemantics: RaftMessageSemanticsScope.maybeOf(context) != null,
-      content: message.content,
+      content: text,
+      foregroundColor: foregroundColor,
       exportMode: exportMode,
       fontSize: fontSize,
       onExportDiagram: exportMode

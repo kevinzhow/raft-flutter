@@ -1272,6 +1272,7 @@ class RaftMessageTile extends StatelessWidget {
     this.subtitle,
     this.avatar,
     this.attachments = const [],
+    this.translation,
     this.onAttachment,
     this.attachmentBuilder,
     this.attachmentGallery,
@@ -1328,6 +1329,9 @@ class RaftMessageTile extends StatelessWidget {
   /// Web MessageItem footer `ThreadRepliesBadge`, after the task badge and
   /// before reactions (hidden when the inline reply surface replaces it).
   final Widget? threadRepliesBadge;
+
+  /// Message translation status line, between attachments and footer.
+  final Widget? translation;
   final VoidCallback? onThread, onActions, onReact;
   final ValueChanged<Offset>? onActionsAt;
   final void Function(String href)? onLink;
@@ -1508,6 +1512,7 @@ class RaftMessageTile extends StatelessWidget {
                       )
                       .toList(),
                 ),
+      translation: translation,
       inlineReplies: threadPreview,
       footer:
           taskReference == null &&

@@ -180,6 +180,7 @@ class RaftMessageRow extends StatefulWidget {
     this.metadata,
     this.subtitle,
     this.attachments,
+    this.translation,
     this.footer,
     this.inlineReplies,
     this.toolbar,
@@ -210,6 +211,10 @@ class RaftMessageRow extends StatefulWidget {
   final List<RaftMessageSemanticsAction> semanticsActions;
   final Widget content;
   final Widget? avatar, metadata, attachments, footer, inlineReplies, toolbar;
+
+  /// Web MessageItem translation status (`mt-0`): after the attachments,
+  /// before the footer.
+  final Widget? translation;
 
   /// Web MessageItem multi-select checkbox: first flex child of the row
   /// (`self-start mt-1.5`, `gap` before the avatar gutter).
@@ -683,12 +688,15 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                       ),
                                       child: widget.attachments!,
                                     ),
+                                  ?widget.translation,
                                   if (widget.footer != null)
                                     Padding(
                                       padding: EdgeInsets.only(
                                         // Source block margins collapse: body
                                         // bottom6 + footer top6 paint one6 gap.
-                                        top: widget.attachments == null
+                                        top:
+                                            widget.attachments == null &&
+                                                widget.translation == null
                                             ? (recipe.footerGap -
                                                       recipe.bodyGap)
                                                   .clamp(0.0, double.infinity)

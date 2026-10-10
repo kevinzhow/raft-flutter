@@ -815,3 +815,71 @@ class RaftServerProfileTile extends StatelessWidget {
     );
   }
 }
+
+/// SettingsPanel.tsx preference block (`space-y-3`): a `text-sm font-bold`
+/// title, a `text-xs` muted description (`mt-0.5`), an optional notice
+/// (`mt-1 text-xs font-bold text-warning-strong
+/// theme-brutal:text-brutal-orange`), then the control 12px below and an
+/// optional error under it.
+class RaftSettingsPreference extends StatelessWidget {
+  const RaftSettingsPreference({
+    super.key,
+    required this.title,
+    required this.child,
+    this.description,
+    this.notice,
+    this.error,
+    this.gapBefore = 0,
+  });
+  final String title;
+  final String? description, notice, error;
+  final Widget child;
+
+  /// Space above the block (the form's `space-y-4` between blocks).
+  final double gapBefore;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), text = RaftSettingsText(t);
+    return Padding(
+      padding: EdgeInsets.only(top: gapBefore),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(raftText(context, title), style: text.title),
+          if (description case final description?)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                raftText(context, description),
+                style: text.description,
+              ),
+            ),
+          if (notice case final notice?)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                raftText(context, notice),
+                style: text.description.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: t.brutal
+                      ? t.colors['color-brutal-orange']
+                      : t.colors['warning-strong'],
+                ),
+              ),
+            ),
+          const SizedBox(height: 12),
+          child,
+          if (error case final error?)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(error, style: text.alert),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}

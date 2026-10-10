@@ -235,10 +235,13 @@ class _AdministrationState extends ManagementState<AdministrationView> {
               translation['translationAvailable'] != true
           ? null
           : (v) => run(() async {
-              await w.client.patch(
+              final accepted = await w.client.patch(
                 '$base/translation-settings',
                 data: {'translationEnabled': v},
               );
+              // Web `updateServerTranslationEnabled`: message rows follow
+              // the accepted gate without a reload.
+              w.translations.adoptServerSettings(accepted);
             }),
     ),
     if (edit) ...[

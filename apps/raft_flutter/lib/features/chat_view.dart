@@ -15,6 +15,7 @@ import 'message_timeline.dart';
 import 'row_extents.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/message_translation_store.dart';
 import '../data/source_time_formatter.dart';
 import '../data/personal_presentation.dart';
 import '../platform/file_selection.dart';
@@ -261,6 +262,7 @@ class _RaftChatViewState extends State<RaftChatView>
     taskProjection = MessageTaskProjection(w)..addListener(referencesChanged);
     selection = MessageSelection(w, thread: widget.thread)
       ..addListener(selectionChanged);
+    w.translations.addListener(referencesChanged);
     w.addListener(sync);
     sync();
   }
@@ -285,6 +287,8 @@ class _RaftChatViewState extends State<RaftChatView>
       selection.dispose();
       if (controllerChanged) {
         oldWidget.controller.removeListener(sync);
+        oldWidget.controller.translations.removeListener(referencesChanged);
+        w.translations.addListener(referencesChanged);
         taskProjection.dispose();
         composerDirectory.dispose();
         agentPresentation.dispose();
@@ -604,6 +608,7 @@ class _RaftChatViewState extends State<RaftChatView>
     composerDirectory.dispose();
     agentPresentation.dispose();
     referenceDirectory.dispose();
+    w.translations.removeListener(referencesChanged);
     w.removeListener(sync);
     adapter.dispose();
     viewport.dispose();
@@ -755,6 +760,9 @@ class _RaftChatViewState extends State<RaftChatView>
     if (reactionPicker != null && pickerAuthority != workspaceAuthority(w)) {
       closeReactionPicker();
     }
+    // Web useTranslationBatch: the panel loads the server's translation
+    // settings once per server.
+    w.translations.ensureSettings();
     // Upload drafts and composer authority are independent of the chat
     // adapter's message diff. Rebuild them on this view's own listener even
     // when an adaptive/setup parent retains the same child instance.
@@ -1081,6 +1089,7 @@ class _RaftChatViewState extends State<RaftChatView>
     final guest = w.server?.string('role') == 'guest';
     final supportsTasks = w.channel?.type != 'thread';
     final saved = SavedCountStore.of(w).isSaved(message.id);
+    final translation = w.translations.present(message);
     String? result;
     void pick(BuildContext menuContext, String value) {
       result = value;
@@ -1145,6 +1154,20 @@ class _RaftChatViewState extends State<RaftChatView>
                 'Copy Markdown',
                 raftMessageMenuIcon(RaftGlyph.copy),
               ),
+              // Web: manual mode offers Translate (Translating… while the
+              // request is pending) after Copy Markdown.
+              if (translation.manualAction)
+                RaftMessageContextMenuItem(
+                  key: const ValueKey('message-menu-translate'),
+                  label: raftText(
+                    menuContext,
+                    translation.manualPending ? 'Translating…' : 'Translate',
+                  ),
+                  icon: raftMessageMenuIcon(RaftGlyph.languages),
+                  onPressed: translation.manualPending
+                      ? null
+                      : () => pick(menuContext, 'translate'),
+                ),
               if (!guest)
                 item(
                   'select',
@@ -1201,6 +1224,7 @@ class _RaftChatViewState extends State<RaftChatView>
       if (choice == 'copy-markdown') {
         await Clipboard.setData(ClipboardData(text: message.content));
       }
+      if (choice == 'translate') unawaited(w.translations.translate(message));
       if (choice == 'select') selection.enter(message.id);
       if (choice == 'thread') await w.openThread(message);
       if (choice == 'save') await saveMessage(message);
@@ -1736,6 +1760,7 @@ class _RaftChatViewState extends State<RaftChatView>
         raftText(context, 'Copy Markdown'),
         (_) => Clipboard.setData(ClipboardData(text: message.content)),
       ),
+      ...translationSemanticsActions(message),
       RaftMessageSemanticsAction(raftText(context, 'Message actions'), (row) {
         final box = row.findRenderObject();
         actions(
@@ -1915,6 +1940,125 @@ class _RaftChatViewState extends State<RaftChatView>
     child: Opacity(opacity: pending ? .7 : 1, child: child),
   );
 
+  /// Web MessageItem body: the pending skeleton (auto mode), the
+  /// translation or the original, and the bilingual view's original below.
+  Widget translatedBody(
+    RaftMessage m,
+    MessageTranslationPresentation translation,
+    double fontSize,
+  ) {
+    if (translation.skeleton) {
+      return RaftMessageTranslationSkeleton(
+        key: ValueKey('message-translation-placeholder-${m.id}'),
+        fontSize: fontSize,
+      );
+    }
+    final body = MessagePresentation(
+      controller: w,
+      message: m,
+      content: translation.translatedContent,
+      taskByNumber: taskProjection.taskByNumber,
+      onExternalLink: link,
+      directoryReferences: referenceDirectory.references,
+      fontSize: fontSize,
+    );
+    if (!translation.bilingual) return body;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        body,
+        RaftMessageTranslationOriginal(
+          key: ValueKey('message-translation-bilingual-original-${m.id}'),
+          label: raftText(context, 'Original'),
+          child: MessagePresentation(
+            controller: w,
+            message: m,
+            taskByNumber: taskProjection.taskByNumber,
+            onExternalLink: link,
+            directoryReferences: referenceDirectory.references,
+            fontSize: fontSize,
+            foregroundColor: RaftMessageTranslationOriginal.foreground(context),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Web MessageItem `TranslationIndicator`.
+  Widget? translationStatus(
+    RaftMessage m,
+    MessageTranslationPresentation translation,
+  ) {
+    final entry = translation.entry;
+    if (entry == null || !entry.indicated) return null;
+    final RaftMessageTranslationStatus status;
+    if (entry.hasContent) {
+      final original = translation.showingOriginal;
+      status = RaftMessageTranslationStatus(
+        tone: RaftMessageTranslationTone.normal,
+        actionLabel: raftText(
+          context,
+          original ? 'Show translation' : 'Show original',
+        ),
+        tooltip: raftText(
+          context,
+          original
+              ? 'Original shown. Show translation'
+              : 'Translated. Show original',
+        ),
+        onAction: () => w.translations.setShowOriginal(m.id, !original),
+      );
+    } else if (entry.status == MessageTranslationStatus.pending) {
+      status = RaftMessageTranslationStatus(
+        tone: RaftMessageTranslationTone.pending,
+        message: raftText(context, 'Translating…'),
+        tooltip: raftText(context, 'Translating'),
+      );
+    } else {
+      final unavailable = raftText(context, 'Translation unavailable');
+      status = RaftMessageTranslationStatus(
+        tone: RaftMessageTranslationTone.failed,
+        message: unavailable,
+        actionLabel: raftText(context, 'Retry'),
+        tooltip: unavailable,
+        onAction: () => unawaited(w.translations.translate(m)),
+      );
+    }
+    return KeyedSubtree(
+      key: ValueKey('message-translation-indicator-${m.id}'),
+      child: status,
+    );
+  }
+
+  List<RaftMessageSemanticsAction> translationSemanticsActions(RaftMessage m) {
+    final translation = w.translations.present(m);
+    final entry = translation.entry;
+    return [
+      if (translation.manualAction && !translation.manualPending)
+        RaftMessageSemanticsAction(
+          raftText(context, 'Translate'),
+          (_) => unawaited(w.translations.translate(m)),
+        ),
+      if (entry != null && entry.hasContent)
+        RaftMessageSemanticsAction(
+          raftText(
+            context,
+            translation.showingOriginal ? 'Show translation' : 'Show original',
+          ),
+          (_) => w.translations.setShowOriginal(
+            m.id,
+            !translation.showingOriginal,
+          ),
+        )
+      else if (entry?.status == MessageTranslationStatus.failed)
+        RaftMessageSemanticsAction(
+          raftText(context, 'Retry'),
+          (_) => unawaited(w.translations.translate(m)),
+        ),
+    ];
+  }
+
   Widget messageTile(
     RaftMessage m, {
     bool parent = false,
@@ -1931,6 +2075,16 @@ class _RaftChatViewState extends State<RaftChatView>
         timestamp: m.createdAt == null ? '' : clock(m.createdAt!),
       );
     }
+    final fontSize = PersonalPresentationScope.bodyFontSize(
+      context,
+      w.client.user?.string('preferredMessageBodyFontSize'),
+    );
+    final translation = w.translations.present(m);
+    // Web useTranslationBatch: auto mode asks for the rows in the built
+    // window; the store batches them and skips cached / in-flight rows.
+    if (translation.needsRequest && presentationActive) {
+      w.translations.want(m);
+    }
     return RaftMessageTile(
       key: ValueKey('message-$key'),
       rowContext: widget.thread
@@ -1939,22 +2093,10 @@ class _RaftChatViewState extends State<RaftChatView>
       author: m.author,
       avatar: senderAvatar(m),
       selectionLeading: selectionLeading,
-      content: m.content,
-      body: MessagePresentation(
-        controller: w,
-        message: m,
-        taskByNumber: taskProjection.taskByNumber,
-        onExternalLink: link,
-        directoryReferences: referenceDirectory.references,
-        fontSize: PersonalPresentationScope.bodyFontSize(
-          context,
-          w.client.user?.string('preferredMessageBodyFontSize'),
-        ),
-      ),
-      bodyFontSize: PersonalPresentationScope.bodyFontSize(
-        context,
-        w.client.user?.string('preferredMessageBodyFontSize'),
-      ),
+      content: translation.translatedContent ?? m.content,
+      body: translatedBody(m, translation, fontSize),
+      bodyFontSize: fontSize,
+      translation: translationStatus(m, translation),
       modelLabel: currentAgentModel(m),
       subtitle: senderSubtitle(m),
       onAuthor: senderMention(m),

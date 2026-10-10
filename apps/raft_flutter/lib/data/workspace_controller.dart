@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
 import 'message_task_cache.dart';
+import 'message_translation_store.dart';
 import 'panel_caches.dart';
 import 'source_channel_files_store.dart';
 import 'reaction_toggle.dart';
@@ -145,6 +146,12 @@ class WorkspaceController extends ChangeNotifier {
   /// Server-scoped followed threads, shared with borrowed controllers.
   late final FollowedThreadsStore followedThreads;
   late final bool _ownsFollowedThreads;
+
+  /// Web `useTranslationStore`: translation settings and the in-memory
+  /// translation cache, created on first use.
+  MessageTranslationStore get translations =>
+      _translations ??= MessageTranslationStore(this);
+  MessageTranslationStore? _translations;
   WorkspaceEntityScope? _entityScope() {
     final principal = client.user?.id;
     final serverId = client.serverId;
@@ -4749,6 +4756,7 @@ class WorkspaceController extends ChangeNotifier {
       entityDirectory.dispose();
     }
     if (_ownsFollowedThreads) followedThreads.dispose();
+    _translations?.dispose();
     _imageAuthorities.clear();
     _attachmentImages?.dispose();
     _channelFilesStores.clear();

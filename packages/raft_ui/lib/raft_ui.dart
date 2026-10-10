@@ -78,6 +78,7 @@ export 'src/sos_dialog.dart';
 export 'src/avatar_content.dart';
 
 export 'src/message_row_recipe.dart';
+export 'src/message_translation.dart';
 export 'src/message_semantics.dart';
 export 'src/tooltip.dart';
 
