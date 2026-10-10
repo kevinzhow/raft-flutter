@@ -9,7 +9,8 @@ import 'tokens/tokens.dart';
 /// Pinned BASE/DOCUMENT_MARKDOWN_COMPONENTS and ShowMoreToggle primitives.
 /// Source: Web 26f77ef, MarkdownContent.tsx and ui/ShowMoreToggle.tsx.
 abstract final class MessageContentPrimitive {
-  static const linkLight = Color(0xff1d4ed8), linkDark = Color(0xff93c5fd);
+  // Tailwind 4 `text-blue-700` / `dark:text-blue-300` (oklch, sRGB-clamped).
+  static const linkLight = Color(0xff1447e6), linkDark = Color(0xff8ec5ff);
   static const compactGap = 4.0, documentGap = 12.0;
   static const compactListIndent = 20.0, documentListIndent = 24.0;
   static const tableInset = EdgeInsets.symmetric(horizontal: 8, vertical: 4);
@@ -248,15 +249,17 @@ class MessageContentRecipe {
           decorationThickness: 2,
           decorationColor: semantic.link,
         ),
+        // raft-ui InlineCode appearance="message": brutal `bg-black/5
+        // text-black`, elegant `bg-fill-muted text-foreground-strong`.
         code:
             RaftTypography.mono(
               tokens,
               size: fontSize * MessageContentPrimitive.inlineCodeScale,
               line: fontSize * MessageContentPrimitive.inlineCodeScale * 1.3,
-              color: tokens.ink,
+              color: tokens.brutal ? RaftPrimitiveColors.black : tokens.strong,
             ).copyWith(
               backgroundColor: tokens.brutal
-                  ? tokens.strong.withValues(alpha: .05)
+                  ? RaftPrimitiveColors.black.withValues(alpha: .05)
                   : tokens.colors['fill-muted'],
             ),
       );

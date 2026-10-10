@@ -8,6 +8,7 @@
 import 'package:flutter/material.dart';
 
 import 'mounted_task_chip.dart';
+import 'panel_layout.dart' show raftCssBaseline;
 import 'recipes/badge.g.dart';
 import 'recipes/message_reference.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -286,19 +287,31 @@ class RaftReferenceChip extends StatelessWidget {
             // RenderParagraph rounds its natural height to whole pixels.
             child: SizedBox(
               height: size * (text.height ?? lineHeight),
-              child: Text(
-                label,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                style: text,
-                // CSS line-height fixes the line box even when a CJK fallback
-                // glyph has taller font metrics than the surrounding face.
-                strutStyle: StrutStyle.fromTextStyle(
-                  text,
-                  leading: 0,
-                  leadingDistribution: TextLeadingDistribution.even,
-                  forceStrutHeight: true,
+              // Blink places the label's baseline at its rounded ascent plus
+              // the floored half-leading; Flutter's even leading keeps the
+              // fractional metrics, which moved every chip up to 1px against
+              // the sentence it is baseline-aligned with.
+              child: Baseline(
+                baseline: raftCssBaseline(
+                  text.copyWith(
+                    fontSize: MediaQuery.textScalerOf(context).scale(size),
+                  ),
+                ),
+                baselineType: TextBaseline.alphabetic,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: text,
+                  // CSS line-height fixes the line box even when a CJK fallback
+                  // glyph has taller font metrics than the surrounding face.
+                  strutStyle: StrutStyle.fromTextStyle(
+                    text,
+                    leading: 0,
+                    leadingDistribution: TextLeadingDistribution.even,
+                    forceStrutHeight: true,
+                  ),
                 ),
               ),
             ),
