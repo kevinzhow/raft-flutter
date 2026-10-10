@@ -127,10 +127,19 @@ class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
   /// [forcePixels]) ends the hold; only [correctPixels] keeps it.
   @override
   double setPixels(double newPixels) {
-    if (newPixels != pixels && identical(anchor._position, this)) {
-      anchor.clear();
+    final before = pixels;
+    final overscroll = super.setPixels(newPixels);
+    // A drag or fling keeps the hold: the held row moves with the user's
+    // scroll, so its gap follows the applied delta and only content shifts
+    // (rows inserted before it) are corrected. Programmatic jumps
+    // ([forcePixels]) end it.
+    final applied = pixels - before;
+    if (applied != 0 &&
+        identical(anchor._position, this) &&
+        anchor._offset != null) {
+      anchor._offset = anchor._offset! - applied;
     }
-    return super.setPixels(newPixels);
+    return overscroll;
   }
 
   @override
@@ -149,11 +158,14 @@ class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
       final at = resolve();
       if (at != null) {
         final delta = (at.offset - pixels) - held;
-        if (delta.abs() >= .5 && _rounds < 8) {
+        // Never hold the list outside its scroll range (a held row near an
+        // edge cannot be kept exactly where it was).
+        final target = (pixels + delta).clamp(minScrollExtent, maxScrollExtent);
+        if ((target - pixels).abs() >= .5 && _rounds < 8) {
           // Estimate first if the row is not built here; the next round
           // lays out around it and reads its real offset.
           _rounds++;
-          correctPixels(pixels + delta);
+          correctPixels(target);
           return false;
         }
       }
@@ -182,9 +194,10 @@ class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
       final offset = RaftReadingAnchorController.scrollOffsetOf(row);
       if (offset != null) {
         final delta = (offset - pixels) - gap;
-        if (delta.abs() >= .5) {
+        final target = (pixels + delta).clamp(minScrollExtent, maxScrollExtent);
+        if ((target - pixels).abs() >= .5) {
           _rounds++;
-          correctPixels(pixels + delta);
+          correctPixels(target);
           return false; // The viewport lays out again in this pass.
         }
       }
