@@ -10,6 +10,7 @@ import '../data/device_preferences.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
+import '../data/message_task_cache.dart';
 import '../data/source_task_bucket.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
@@ -164,7 +165,19 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
             ? seed?.row['id'] == anchor.itemId && seed?.row['isLegacy'] == true
             : seed?.row['messageId'] == anchor.itemId &&
                   seed?.row['isLegacy'] != true);
-    final accepted = seeded ? seed!.row : null;
+    // A task URL for a task whose message chip is already known (the channel's
+    // accepted task bucket) shows it at the first frame like a seeded row; the
+    // full read then revalidates it in place.
+    final known = seeded || legacy || knownChannel == null
+        ? null
+        : MessageTaskCache.of(
+            w.client,
+          ).tasks(w, anchor.channelId)?[anchor.itemId];
+    final accepted = seeded
+        ? seed!.row
+        : known == null
+        ? null
+        : <String, dynamic>{...known};
     owner = TaskSurfaceController(
       parent: w,
       hydrateParent: !legacy && knownChannel == null,
