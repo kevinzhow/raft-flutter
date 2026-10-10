@@ -33,7 +33,7 @@ enum RaftGlyph {
   /// Web: components/search/MessageSearchPage.tsx:8 (+1 more).
   arrowDownUp(_arrowDownUpV0_575_0, 'arrow-down-up', '0.575.0'),
   /// lucide `arrow-left` 0.575.0.
-  /// Web: components/agent/AgentWorkspace.tsx:10 (+11 more).
+  /// Web: components/agent/AgentWorkspace.tsx:10 (+12 more).
   arrowLeft(_arrowLeftV0_575_0, 'arrow-left', '0.575.0'),
   /// lucide `arrow-right-left` 0.575.0.
   /// Web: components/layout/Sidebar.tsx:9.
@@ -54,7 +54,7 @@ enum RaftGlyph {
   /// Web: components/layout/Sidebar.tsx:9 (+2 more).
   badgeInfo(_badgeInfoV0_575_0, 'badge-info', '0.575.0'),
   /// lucide `ban` 0.575.0.
-  /// Web: components/task/taskStatusUi.ts:1.
+  /// Web: components/task/taskStatusUi.ts:1 (+1 more).
   ban(_banV0_575_0, 'ban', '0.575.0'),
   /// lucide `chart-column` 0.575.0.
   /// Web: components/settings/UsageDataSettings.tsx:12.
@@ -88,7 +88,7 @@ enum RaftGlyph {
   /// Web: components/agent/AgentDetailPanel.tsx:40 (+5 more).
   bot(_botV0_575_0, 'bot', '0.575.0'),
   /// lucide `bug` 0.575.0.
-  /// Web: components/agent/AgentDetailPanel.tsx:29 (+1 more).
+  /// Web: components/agent/AgentDetailPanel.tsx:29 (+2 more).
   bug(_bugV0_575_0, 'bug', '0.575.0'),
   /// lucide `building-2` 0.575.0.
   /// Web: components/layout/Sidebar.tsx:9 (+2 more).
@@ -103,14 +103,14 @@ enum RaftGlyph {
   /// Web: components/auth/AccountIdentitySetupPage.tsx:7.
   camera(_cameraV0_575_0, 'camera', '0.575.0'),
   /// lucide `check` 0.575.0.
-  /// Web: components/InlineBadgeEditor.tsx:7 (+30 more).
+  /// Web: components/InlineBadgeEditor.tsx:7 (+31 more).
   /// raft-ui: raft-ui@0.5.27/dist/index.mjs:2578 (+3 more).
   check(_checkV0_575_0, 'check', '0.575.0'),
   /// lucide `check-check` 0.575.0.
   /// Legacy Flutter name; no Web import uses it.
   checkCheck(_checkCheckV0_575_0, 'check-check', '0.575.0'),
   /// lucide `circle-check-big` 0.575.0.
-  /// Web: components/agent/ReportIssueDialog.tsx:3 (+4 more).
+  /// Web: components/agent/ReportIssueDialog.tsx:3 (+5 more).
   checkCircle(_circleCheckBigV0_575_0, 'circle-check-big', '0.575.0'),
   /// lucide `circle-check` 0.575.0.
   /// Web: components/LocalizedToastProvider.tsx:2 (+4 more).
@@ -122,7 +122,7 @@ enum RaftGlyph {
   /// Web: components/layout/LeftRail.tsx:11 (+5 more).
   checkSquare(_squareCheckBigV0_575_0, 'square-check-big', '0.575.0'),
   /// lucide `chevron-down` 0.575.0.
-  /// Web: components/agent/AgentMcpTab.tsx:17 (+10 more).
+  /// Web: components/agent/AgentMcpTab.tsx:17 (+11 more).
   /// raft-ui: raft-ui@0.5.27/dist/index.mjs:7382 (+2 more).
   chevronDown(_chevronDownV0_575_0, 'chevron-down', '0.575.0'),
   /// lucide `chevron-left` 0.575.0.
@@ -140,7 +140,7 @@ enum RaftGlyph {
   /// Web: components/agent/AgentMcpTab.tsx:17 (+3 more).
   chevronUp(_chevronUpV0_575_0, 'chevron-up', '0.575.0'),
   /// lucide `circle` 0.575.0.
-  /// Web: components/task/taskStatusUi.ts:1.
+  /// Web: components/task/taskStatusUi.ts:1 (+1 more).
   circle(_circleV0_575_0, 'circle', '0.575.0'),
   /// lucide `circle-alert` 0.575.0.
   /// Web: components/channel/JointConversionSection.tsx:1 (+1 more).
@@ -164,7 +164,7 @@ enum RaftGlyph {
   /// Web: components/message/MessageItem.tsx:7.
   clipboardCheck(_clipboardCheckV0_575_0, 'clipboard-check', '0.575.0'),
   /// lucide `clock` 0.575.0.
-  /// Web: components/settings/SettingsPanel.tsx:39.
+  /// Web: components/settings/SettingsPanel.tsx:39 (+1 more).
   clock(_clockV0_575_0, 'clock', '0.575.0'),
   /// lucide `clock-3` 0.575.0.
   /// Web: components/agent/AgentRemindersSection.tsx:2 (+2 more).
@@ -272,7 +272,7 @@ enum RaftGlyph {
   /// Web: components/ImageLightbox.tsx:5 (+1 more).
   imageOff(_imageOffV0_575_0, 'image-off', '0.575.0'),
   /// lucide `image-plus` 0.575.0.
-  /// Web: components/message/MessageInput.tsx:4.
+  /// Web: components/message/MessageInput.tsx:4 (+1 more).
   imagePlus(_imagePlusV0_575_0, 'image-plus', '0.575.0'),
   /// lucide `inbox` 0.575.0.
   /// Web: components/thread/ThreadsInbox.tsx:8.
@@ -296,6 +296,9 @@ enum RaftGlyph {
   /// lucide `layout-list` 0.575.0.
   /// Web: components/task/TasksPanel.tsx:31.
   layoutList(_layoutListV0_575_0, 'layout-list', '0.575.0'),
+  /// lucide `lightbulb` 0.575.0.
+  /// Web: @botiverse/hands-feedback-react@0.4.1/src/components.tsx:25.
+  lightbulb(_lightbulbV0_575_0, 'lightbulb', '0.575.0'),
   /// lucide `link` 0.575.0.
   /// Web: components/message/MessageItem.tsx:7 (+2 more).
   link(_linkV0_575_0, 'link', '0.575.0'),
@@ -351,7 +354,7 @@ enum RaftGlyph {
   /// Web: components/message/MessageItem.tsx:7 (+1 more).
   messageCirclePlus(_messageCirclePlusV0_575_0, 'message-circle-plus', '0.575.0'),
   /// lucide `message-square` 0.575.0.
-  /// Web: components/layout/LeftRail.tsx:13 (+13 more).
+  /// Web: components/layout/LeftRail.tsx:13 (+14 more).
   messageSquare(_messageSquareV0_575_0, 'message-square', '0.575.0'),
   /// lucide `message-square-check` 0.575.0.
   /// Web: components/layout/Sidebar.tsx:9 (+1 more).
@@ -393,7 +396,7 @@ enum RaftGlyph {
   /// Legacy Flutter name; no Web import uses it.
   palette(_paletteV0_575_0, 'palette', '0.575.0'),
   /// lucide `paperclip` 0.575.0.
-  /// Web: components/message/ChannelFilesPanel.tsx:1 (+2 more).
+  /// Web: components/message/ChannelFilesPanel.tsx:1 (+3 more).
   paperclip(_paperclipV0_575_0, 'paperclip', '0.575.0'),
   /// lucide `pause` 0.575.0.
   /// Web: components/message/MessageItem.tsx:7.
@@ -408,7 +411,7 @@ enum RaftGlyph {
   /// Web: components/channel/ChannelPinMenuItem.tsx:1 (+1 more).
   pinOff(_pinOffV0_575_0, 'pin-off', '0.575.0'),
   /// lucide `play` 0.575.0.
-  /// Web: components/agent/AgentDetailPanel.tsx:26 (+5 more).
+  /// Web: components/agent/AgentDetailPanel.tsx:26 (+6 more).
   play(_playV0_575_0, 'play', '0.575.0'),
   /// lucide `plus` 0.575.0.
   /// Web: components/agent/AgentDetailPanel.tsx:41 (+17 more).
@@ -435,7 +438,7 @@ enum RaftGlyph {
   /// Web: components/agent/ChannelMembers.tsx:15 (+14 more).
   search(_searchV0_575_0, 'search', '0.575.0'),
   /// lucide `send` 0.575.0.
-  /// Web: components/message/MessageInput.tsx:4 (+2 more).
+  /// Web: components/message/MessageInput.tsx:4 (+3 more).
   send(_sendV0_575_0, 'send', '0.575.0'),
   /// lucide `settings` 0.575.0.
   /// Web: components/channel/ChannelOverflowMenu.tsx:4 (+6 more).
@@ -535,7 +538,7 @@ enum RaftGlyph {
   /// Web: components/layout/useSystemNotifications.tsx:4.
   wifiOff(_wifiOffV0_575_0, 'wifi-off', '0.575.0'),
   /// lucide `x` 0.575.0.
-  /// Web: App.tsx:93 (+48 more).
+  /// Web: App.tsx:93 (+49 more).
   /// raft-ui: raft-ui@0.5.27/dist/index.mjs:749 (+4 more).
   x(_xV0_575_0, 'x', '0.575.0'),
   /// lucide `circle-x` 0.575.0.
@@ -1077,6 +1080,12 @@ const _layoutListV0_575_0 = <_LucideNode>[
   _LucideNode.path('M14 9h7'),
   _LucideNode.path('M14 15h7'),
   _LucideNode.path('M14 20h7'),
+];
+// lightbulb.js lucide-react 0.575.0 sha256 6f4a2b25845c0fd8
+const _lightbulbV0_575_0 = <_LucideNode>[
+  _LucideNode.path('M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5'),
+  _LucideNode.path('M9 18h6'),
+  _LucideNode.path('M10 22h4'),
 ];
 // link-2-off.js lucide-react 0.575.0 sha256 3ec62c40e8381ac1
 const _link2OffV0_575_0 = <_LucideNode>[

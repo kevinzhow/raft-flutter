@@ -272,6 +272,8 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             group: WorkspaceSettings.resources,
             scroll: false,
             attention: feedbackUnread > 0,
+            ownHeader: true,
+            contentColor: RaftSettingsPanelFrame.feedbackSurface,
           ),
         RaftSettingsDestination(
           'release-notes',

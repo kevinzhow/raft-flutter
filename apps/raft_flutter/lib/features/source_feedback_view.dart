@@ -9,7 +9,6 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_feedback_store.dart';
 import '../data/workspace_controller.dart';
-import 'page_layout.dart';
 
 /// GET-only account-owned inbox and conversation. No creation/reply/close action.
 class SourceFeedbackView extends StatefulWidget {
@@ -175,12 +174,19 @@ String _date(BuildContext context, int milliseconds) {
     unawaited(initializeDateFormatting());
     _dateSymbolsReady = true;
   }
-  return DateFormat.yMMMd(
-    Localizations.localeOf(context).languageCode == 'zh' ? 'zh_CN' : 'en',
-  ).add_jm().format(DateTime.fromMillisecondsSinceEpoch(milliseconds));
+  final zh = Localizations.localeOf(context).languageCode == 'zh';
+  final value = DateTime.fromMillisecondsSinceEpoch(milliseconds);
+  // Intl.DateTimeFormat(dateStyle medium, timeStyle short): en joins the
+  // date and time with ", " ("Oct 3, 2026, 10:00 AM").
+  return zh
+      ? DateFormat.yMMMd('zh_CN').add_jm().format(value)
+      : '${DateFormat.yMMMd('en').format(value)}, '
+            '${DateFormat.jm('en').format(value)}';
 }
 
 /// Transport-independent presentation seam used for delayed-GET widget tests.
+/// The inbox is raft_ui's RaftFeedbackInbox (hands-feedback FeedbackInbox);
+/// the Settings host supplies the "Feedback" panel header above it.
 class SourceFeedbackProjectionView extends StatelessWidget {
   const SourceFeedbackProjectionView({super.key, required this.store});
   final SourceFeedbackStore store;
@@ -188,60 +194,116 @@ class SourceFeedbackProjectionView extends StatelessWidget {
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: store,
     builder: (context, _) {
-      final t = RaftTokens.of(context),
-          recipe = _FeedbackRecipe(RaftTokens.of(context));
+      final recipe = _FeedbackRecipe(RaftTokens.of(context));
       final detail = store.selectedId != null;
+      final refresh = RaftIconButton(
+        glyph: RaftGlyph.refreshCw,
+        tooltip: _copy(context, 'Refresh', '刷新'),
+        onPressed:
+            !store.authorized ||
+                (detail ? store.detailLoading : store.listLoading)
+            ? null
+            : () => unawaited(detail ? store.loadDetail() : store.loadList()),
+      );
       return PopScope(
         canPop: !detail,
         onPopInvokedWithResult: (didPop, _) {
           if (!didPop && detail) store.back();
         },
-        child: Material(
-          color: t.canvas,
-          child: Column(
-            children: [
-              RaftPageHeader(
-                title: detail
-                    ? _copy(context, 'Feedback ticket', '反馈工单')
-                    : _copy(context, 'Feedback', '反馈'),
-                height: raftPageHeaderHeight(context),
-                mobile:
-                    MediaQuery.sizeOf(context).width <
-                    RaftLayoutMetrics.desktopBreakpoint,
-                icon: const RaftIcon(RaftGlyph.messageSquare, size: 18),
-                leading: detail ? RaftBackButton(onPressed: store.back) : null,
-                actions: [
-                  RaftIconButton(
-                    glyph: RaftGlyph.refreshCw,
-                    tooltip: _copy(context, 'Refresh', '刷新'),
-                    onPressed:
-                        !store.authorized ||
-                            (detail ? store.detailLoading : store.listLoading)
-                        ? null
-                        : () => unawaited(
-                            detail ? store.loadDetail() : store.loadList(),
+        child: !store.authorized
+            ? Center(
+                child: Text(
+                  _errorCopy(context, SourceFeedbackError.unauthorized),
+                  style: recipe.body,
+                ),
+              )
+            : detail
+            ? Material(
+                color: RaftTokens.of(context).colors['layer-canvas'],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    RaftFeedbackHeaderBand(
+                      leading: Row(
+                        children: [
+                          RaftBackButton(onPressed: store.back),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              _copy(context, 'Feedback ticket', '反馈工单'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: recipe.title,
+                            ),
                           ),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: !store.authorized
-                    ? Center(
-                        child: Text(
-                          _errorCopy(context, SourceFeedbackError.unauthorized),
-                          style: recipe.body,
-                        ),
-                      )
-                    : detail
-                    ? _detail(context, recipe)
-                    : _inbox(context, recipe),
-              ),
-            ],
-          ),
-        ),
+                        ],
+                      ),
+                      trailing: refresh,
+                    ),
+                    Expanded(child: _detail(context, recipe)),
+                  ],
+                ),
+              )
+            : _inbox(context, refresh),
       );
     },
   );
+
+  Widget _inbox(BuildContext context, Widget refresh) {
+    final rows = store.visibleTickets;
+    return RaftFeedbackInbox(
+      // GET-only projection: the header slot that holds Web's "New
+      // feedback" carries Refresh (desktop has no pull-to-refresh).
+      headerAction: refresh,
+      anyTickets: store.tickets.isNotEmpty,
+      filter: switch (store.filter) {
+        SourceFeedbackFilter.all => RaftFeedbackFilter.all,
+        SourceFeedbackFilter.open => RaftFeedbackFilter.active,
+        SourceFeedbackFilter.resolved => RaftFeedbackFilter.ended,
+      },
+      onFilter: (value) => store.setFilter(switch (value) {
+        RaftFeedbackFilter.all => SourceFeedbackFilter.all,
+        RaftFeedbackFilter.active => SourceFeedbackFilter.open,
+        RaftFeedbackFilter.ended => SourceFeedbackFilter.resolved,
+      }),
+      loading: store.listLoading,
+      error: store.listError == null
+          ? null
+          : _errorCopy(context, store.listError!),
+      onRetry: () => unawaited(store.loadList(retry: true)),
+      onOpen: (id) => unawaited(store.openTicket(id)),
+      onLoadMore: store.nextCursor != null && !store.listLoading
+          ? () => unawaited(store.loadList(more: true))
+          : null,
+      tickets: [
+        for (final ticket in rows)
+          RaftFeedbackTicketRow(
+            id: ticket.id,
+            // User content: first line only, never a dictionary lookup.
+            title: ticket.title,
+            date: _date(context, ticket.updatedAt),
+            problem: ticket.kind != 'feedback',
+            status: switch (ticket.status) {
+              'in_progress' => RaftFeedbackStatus.inProgress,
+              'resolved' => RaftFeedbackStatus.resolved,
+              // FeedbackStatusChip: closed as completed reads Resolved.
+              'closed' when ticket.closureReason == 'completed' =>
+                RaftFeedbackStatus.resolved,
+              'closed' => RaftFeedbackStatus.closed,
+              _ => RaftFeedbackStatus.open,
+            },
+            unreadLabel: ticket.unread ? ticket.badgeLabel : null,
+            unreadSemantics: ticket.unread
+                ? _copy(
+                    context,
+                    '${ticket.badgeCount} unread',
+                    '${ticket.badgeCount} 条未读',
+                  )
+                : null,
+          ),
+      ],
+    );
+  }
 
   Widget _error(
     BuildContext context,
@@ -249,134 +311,24 @@ class SourceFeedbackProjectionView extends StatelessWidget {
     VoidCallback retry,
   ) => Semantics(
     liveRegion: true,
-    child: RaftPanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(_errorCopy(context, error)),
-          const SizedBox(height: 12),
-          RaftTextButton(
-            label: _copy(context, 'Try again', '重试'),
-            onPressed: retry,
-          ),
-        ],
+    child: RaftBanner(
+      status: RaftBannerRecipeStatus.destructive,
+      size: RaftBannerRecipeSize.sm,
+      description: _errorCopy(context, error),
+      action: RaftButton(
+        label: _copy(context, 'Try again', '重试'),
+        variant: RaftControlVariant.outline,
+        size: RaftButtonRecipeSize.sm,
+        onPressed: retry,
       ),
     ),
   );
 
   Widget _loading(BuildContext context) => Semantics(
     liveRegion: true,
-    child: Text(_copy(context, 'Loading feedback', '正在加载反馈')),
+    label: _copy(context, 'Loading feedback', '正在加载反馈'),
+    child: const RaftSkeleton(height: 160),
   );
-
-  Widget _inbox(BuildContext context, _FeedbackRecipe recipe) {
-    final rows = store.visibleTickets;
-    final empty = switch (store.filter) {
-      SourceFeedbackFilter.all => _copy(context, 'No feedback yet', '还没有反馈'),
-      SourceFeedbackFilter.open => _copy(
-        context,
-        'Nothing in progress',
-        '没有进行中的反馈',
-      ),
-      SourceFeedbackFilter.resolved => _copy(
-        context,
-        'Nothing ended yet',
-        '还没有已结束的反馈',
-      ),
-    };
-    return ListView(
-      key: const Key('feedback-inbox'),
-      padding: recipe.inset,
-      children: [
-        RaftSegmentedControl<SourceFeedbackFilter>(
-          value: store.filter,
-          label: _copy(context, 'Status filter', '状态筛选'),
-          style: RaftSegmentedStyle.tabs,
-          items: [
-            RaftSegmentedOption(
-              value: SourceFeedbackFilter.all,
-              label: _copy(context, 'All', '全部'),
-            ),
-            RaftSegmentedOption(
-              value: SourceFeedbackFilter.open,
-              label: _copy(context, 'Active', '活跃'),
-            ),
-            RaftSegmentedOption(
-              value: SourceFeedbackFilter.resolved,
-              label: _copy(context, 'Ended', '已结束'),
-            ),
-          ],
-          onChanged: store.setFilter,
-        ),
-        SizedBox(height: recipe.gap),
-        if (store.listLoading) _loading(context),
-        if (store.listError != null)
-          _error(
-            context,
-            store.listError!,
-            () => unawaited(store.loadList(retry: true)),
-          ),
-        if (!store.listLoading && store.listError == null && rows.isEmpty)
-          Text(empty, key: const Key('feedback-empty'), style: recipe.body),
-        for (final ticket in rows) ...[
-          RaftPanel(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // User content uses the raw-control child, never dictionary lookup.
-                RaftControl(
-                  key: ValueKey('feedback-ticket-${ticket.id}'),
-                  variant: RaftControlVariant.ghost,
-                  semanticLabel: ticket.title,
-                  onPressed: () => unawaited(store.openTicket(ticket.id)),
-                  child: Text(
-                    ticket.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: recipe.title,
-                  ),
-                ),
-                Text(_date(context, ticket.updatedAt), style: recipe.meta),
-                Wrap(
-                  spacing: 5,
-                  runSpacing: 5,
-                  children: [
-                    Text(_status(context, ticket.status), style: recipe.meta),
-                    Text(
-                      _copy(
-                        context,
-                        ticket.kind == 'feedback' ? 'Idea' : 'Bug',
-                        ticket.kind == 'feedback' ? '想法' : '问题',
-                      ),
-                      style: recipe.meta,
-                    ),
-                    if (ticket.unread)
-                      Semantics(
-                        key: ValueKey('feedback-unread-${ticket.id}'),
-                        container: true,
-                        label: _copy(
-                          context,
-                          '${ticket.badgeCount} unread',
-                          '${ticket.badgeCount} 条未读',
-                        ),
-                        excludeSemantics: true,
-                        child: Text(ticket.badgeLabel, style: recipe.meta),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-        ],
-        if (store.nextCursor != null && !store.listLoading)
-          RaftTextButton(
-            label: _copy(context, 'Load more', '加载更多'),
-            onPressed: () => unawaited(store.loadList(more: true)),
-          ),
-      ],
-    );
-  }
 
   Widget _detail(BuildContext context, _FeedbackRecipe recipe) {
     final ticket = store.detail;

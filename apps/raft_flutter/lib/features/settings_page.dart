@@ -18,6 +18,7 @@ class RaftSettingsDestination {
     this.attention = false,
     this.attached = true,
     this.ownHeader = false,
+    this.contentColor,
   }) : assert(builder != null || onOpen != null);
 
   /// A row that leaves the Settings page (external link or another route),
@@ -34,7 +35,8 @@ class RaftSettingsDestination {
        scroll = false,
        title = null,
        attached = true,
-       ownHeader = false;
+       ownHeader = false,
+       contentColor = null;
   final String id, label, group;
 
   /// Listed only in the mobile Settings root (Sidebar.tsx adds Computers to
@@ -48,8 +50,11 @@ class RaftSettingsDestination {
   /// /release-notes route, which is a plain column).
   final bool attached;
 
-  /// The page draws its own panel header (My Feedback).
+  /// The panel header sits inside the content surface (AboutFeedbackPanel).
   final bool ownHeader;
+
+  /// Content surface override (RaftSettingsPanelFrame.contentColor).
+  final Color Function(RaftTokens)? contentColor;
 
   /// Panel title (SETTINGS_TAB_TITLE_ID) when it differs from the nav label.
   final String? title;
@@ -198,6 +203,7 @@ class _RaftSettingsPageState extends State<RaftSettingsPage> {
     // Panel's header slot (AboutFeedbackPanel), so no frame divider.
     Widget content() => RaftSettingsPanelFrame(
       attached: active.attached,
+      contentColor: active.contentColor?.call(t),
       header: active.ownHeader ? null : header(),
       child: active.ownHeader
           ? Column(

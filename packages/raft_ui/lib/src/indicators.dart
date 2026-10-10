@@ -47,7 +47,20 @@ class RaftBadge extends StatefulWidget {
     this.uppercase = false,
     this.leading,
     this.onPressed,
+    this.foreground,
+    this.radius,
+    this.center = false,
+    this.fontFamily,
   });
+
+  /// Inherited face where the host overrides the document font (the
+  /// hands-feedback root's `system-ui`).
+  final String? fontFamily;
+
+  /// Callsite overrides (`text-*`, `rounded-[*]`, `justify-center`).
+  final Color? foreground;
+  final double? radius;
+  final bool center;
 
   final String label;
   final RaftBadgeRecipeAppearance appearance;
@@ -86,8 +99,15 @@ class _RaftBadgeState extends State<RaftBadge> {
     Widget badge = RaftRecipeBox(
       style: s,
       tokens: rt,
+      decorationOverride: widget.radius == null
+          ? null
+          : (d) =>
+                d.copyWith(borderRadius: BorderRadius.circular(widget.radius!)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: widget.center
+            ? MainAxisAlignment.center
+            : MainAxisAlignment.start,
         children: [
           if (widget.leading != null) ...[
             widget.leading!,
@@ -99,6 +119,12 @@ class _RaftBadgeState extends State<RaftBadge> {
               maxLines: 1,
               softWrap: false,
               overflow: TextOverflow.clip,
+              style: widget.foreground == null && widget.fontFamily == null
+                  ? null
+                  : TextStyle(
+                      color: widget.foreground,
+                      fontFamily: widget.fontFamily,
+                    ),
             ),
           ),
         ],

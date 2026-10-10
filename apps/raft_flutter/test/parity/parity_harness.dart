@@ -216,6 +216,14 @@ Future<List<String>> loadParityFonts() async {
       '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
     ],
     'Noto Color Emoji': ['/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf'],
+    // `ui-sans-serif, system-ui` (the hands-feedback Feedback workspace):
+    // Chromium resolves it through fontconfig, which is Noto Sans on the
+    // capture host; product code names `system-ui` (raftSystemUiFont), which
+    // a device resolves to its own UI face.
+    'system-ui': [
+      '/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf',
+      '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf',
+    ],
     // flutter_test has no OS fallback chain. On Android the system resolves
     // emoji through its own fallback; here the theme's trailing `sans-serif`
     // fallback family stands in for it so emoji do not render as tofu.

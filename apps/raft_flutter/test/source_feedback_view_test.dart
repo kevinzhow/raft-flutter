@@ -32,15 +32,18 @@ void main() {
             home: Scaffold(body: SourceFeedbackProjectionView(store: store)),
           ),
         );
-        final format = DateFormat.yMMMd('en').add_jm();
-        expect(find.text(format.format(updated)), findsOneWidget);
-        expect(find.text(format.format(created)), findsNothing);
+        String format(DateTime value) =>
+            '${DateFormat.yMMMd('en').format(value)}, '
+            '${DateFormat.jm('en').format(value)}';
+        expect(find.text(format(updated)), findsOneWidget);
+        expect(find.text(format(created)), findsNothing);
         expect(find.text('First line 中文'), findsOneWidget);
         expect(find.text('First line 中文\nSecond line 日本語'), findsNothing);
-        final action = tester.widget<RaftControl>(
+        final card = tester.widget<RaftFeedbackTicketCard>(
           find.byKey(const ValueKey('feedback-ticket-${fixture.first}')),
         );
-        expect(action.semanticLabel, 'First line 中文');
+        expect(card.ticket.title, 'First line 中文');
+        expect(find.bySemanticsLabel('First line 中文'), findsOneWidget);
         expect(find.bySemanticsLabel('1 unread'), findsOneWidget);
         expect(find.text('1'), findsOneWidget);
         await tester.pumpWidget(const SizedBox());

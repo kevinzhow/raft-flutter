@@ -227,6 +227,14 @@ def import_sources(raft_source: Path, raft_ui: Path | None):
         if path.suffix in ('.ts', '.tsx') and path.is_file():
             for name, where in scan_imports(path, str(path.relative_to(raft_source))):
                 usages['web'].setdefault(name, []).append(where)
+    # @botiverse/hands-feedback-react renders the Settings > Feedback workspace
+    # on the Web screen; its lucide-react peer resolves to the Web build.
+    feedback = Path(os.path.realpath(web / 'node_modules/@botiverse/hands-feedback-react'))
+    if (feedback / 'src').is_dir():
+        label = f'@botiverse/hands-feedback-react@{pkg_version(feedback)}'
+        for path in sorted((feedback / 'src').rglob('*.tsx')):
+            for name, where in scan_imports(path, f'{label}/{path.relative_to(feedback)}'):
+                usages['web'].setdefault(name, []).append(where)
     entry = raft_ui / RAFT_UI_ENTRY
     entry_lines = entry.read_text().split('\n')
     for name, where in scan_imports(entry, f'raft-ui@{RAFT_UI_VERSION}/{RAFT_UI_ENTRY}'):

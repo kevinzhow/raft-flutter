@@ -358,7 +358,20 @@ class RaftSettingsPanelFrame extends StatelessWidget {
     required this.header,
     required this.child,
     this.attached = true,
+    this.contentColor,
   });
+
+  /// The content surface; defaults to `bg-layer-panel
+  /// theme-brutal:bg-white` (see [feedbackSurface]).
+  final Color? contentColor;
+
+  /// SettingsPanel's content div for the Feedback tab: `bg-layer-panel
+  /// dark:bg-layer-card theme-brutal:bg-white`.
+  static Color feedbackSurface(RaftTokens t) => t.brutal
+      ? Colors.white
+      : t.dark
+      ? t.colors['layer-card']!
+      : t.panel;
 
   /// Null when the page brings its own header inside the content
   /// (AboutFeedbackPanel's PanelHeader sits in SettingsPanel's content div).
@@ -408,7 +421,7 @@ class RaftSettingsPanelFrame extends StatelessWidget {
                 ),
             Expanded(
               child: Material(
-                color: t.brutal ? Colors.white : t.panel,
+                color: contentColor ?? (t.brutal ? Colors.white : t.panel),
                 child: child,
               ),
             ),
