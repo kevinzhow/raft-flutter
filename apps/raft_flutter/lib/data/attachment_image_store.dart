@@ -153,6 +153,21 @@ class AttachmentImageDiskCache implements AttachmentImageByteStore {
   @override
   Future<void> purgeIdentity(String identity) => _purge(_hash(identity));
 
+  /// Deletes an account's cached images on every listed server (sign-out,
+  /// rejected session, account switch).
+  static Future<void> purgeAccount(
+    String origin,
+    String principal,
+    Iterable<String> servers,
+  ) async {
+    final store = installed;
+    if (store == null) return;
+    for (final server in servers) {
+      // Same identity as AttachmentImageKey.identityOf.
+      await store.purgeIdentity(jsonEncode([origin, principal, server]));
+    }
+  }
+
   Future<void> _purge(String relative) async {
     final index = await _open();
     if (index == null) return;

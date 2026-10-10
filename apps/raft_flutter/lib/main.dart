@@ -816,7 +816,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         rootRequest++;
         sharing.onIncoming = null;
         final flushed = workspace?.flushCache() ?? Future<void>.value();
+        final servers = <String>[
+          for (final s in workspace?.servers ?? const <RaftRecord>[]) s.id,
+        ];
         flushed.then((_) => cache?.clearAccount(c.origin, principal));
+        unawaited(
+          AttachmentImageDiskCache.purgeAccount(c.origin, principal, servers),
+        );
         content.bindWorkspace(null);
         workspace?.removeListener(workspaceChanged);
         workspace?.dispose();
@@ -855,6 +861,10 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     await oldWorkspace?.flushCache();
     if (c != null && principal != null) {
       await cache?.clearAccount(c.origin, principal);
+      // Cached image bytes of this account go with its other cached data.
+      await AttachmentImageDiskCache.purgeAccount(c.origin, principal, [
+        for (final s in oldWorkspace?.servers ?? const <RaftRecord>[]) s.id,
+      ]);
     }
     await c?.logout();
     await clearSession;

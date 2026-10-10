@@ -96,7 +96,11 @@ class AttachmentImageKey {
     entry: jsonEncode([attachmentId, revision, rendition]),
   );
   static String storeIdentity(AttachmentImageScope scope) =>
-      jsonEncode([scope.origin, scope.principal, scope.server]);
+      identityOf(scope.origin, scope.principal, scope.server);
+
+  /// Disk identity of one account on one server (see [storeKey]).
+  static String identityOf(String origin, String principal, String server) =>
+      jsonEncode([origin, principal, server]);
 
   @override
   bool operator ==(Object other) =>
@@ -197,10 +201,11 @@ class DecodedAttachmentImage {
 }
 
 typedef AttachmentImageLoader = Future<Uint8List> Function(CancelToken cancel);
-typedef AttachmentImageDecoder = Future<DecodedAttachmentImage> Function(
-  Uint8List bytes,
-  AttachmentDecodeTarget? target,
-);
+typedef AttachmentImageDecoder =
+    Future<DecodedAttachmentImage> Function(
+      Uint8List bytes,
+      AttachmentDecodeTarget? target,
+    );
 
 /// Returns its owner-held completer even after Flutter's global LRU evicts its
 /// key. Keeping bytes or a MemoryImage alone would not prevent a new codec.
