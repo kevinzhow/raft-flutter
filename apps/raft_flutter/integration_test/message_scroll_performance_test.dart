@@ -150,6 +150,12 @@ void main() {
       for (var i = 0; i < 100 && (scroll.position.maxScrollExtent - scroll.offset).abs() > 1; i++) {
         await t.pump(const Duration(milliseconds: 20));
       }
+      // Load ends when the channel is actually published (visible, hit-testable
+      // text), not when the hidden staged list reaches its end offset.
+      final published = find.descendant(of: find.byType(RaftMessageTile), matching: find.byType(RichText)).hitTestable();
+      for (var i = 0; i < 1500 && published.evaluate().isEmpty; i++) {
+        await t.pump(const Duration(milliseconds: 20));
+      }
       File('$out/$name-load.json').writeAsStringSync(jsonEncode({'elapsedSeconds': setupClock.elapsedMicroseconds / 1e6, 'mountedRows': find.byType(RaftMessageTile, skipOffstage: false).evaluate().length, 'rssBytes': ProcessInfo.currentRss}));
       Future<void> initialPublicationDiagnostic() async {
         final visibleText = find.descendant(of: find.byType(RaftMessageTile), matching: find.byType(RichText)).hitTestable();

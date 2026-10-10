@@ -24,13 +24,15 @@ def assess(samples, reference=None):
             return invalid('Reference theme/action coverage differs')
         if any(not isinstance(s.get('frames'),list) or not s['frames'] for s in reference):return invalid('Reference frames cannot be empty')
         if any(not isinstance(f,dict) or any(not isinstance(f.get(k),(int,float)) or not math.isfinite(f[k]) or f[k]<0 for k in ['buildStartUs','buildUs','rasterUs']) for s in reference for f in s['frames']):return invalid('Reference contains invalid raw FrameTiming values')
+    if reference is not None and not assess(reference)['passed']:
+        return invalid('Reference must itself pass every actual profile measurement gate')
     keys=[(s['theme'],s['action']) for s in samples]
     if set(keys)!={(t,a) for t in THEMES for a in ACTIONS} or len(keys)!=9:
         failures.append('Expected exactly nine distinct theme/action samples')
     previous={} if reference is None else {(s['theme'],s['action']):s for s in reference}
     for s in samples:
         key=(s['theme'],s['action']); frames=s['frames']; label='/'.join(key)
-        if any(not isinstance(s.get(k),(int,float)) or not math.isfinite(s[k]) or s[k]<0 for k in ['actionElapsedSeconds','cpuPercentOneCore','displayRefreshRate','rssBytes']):
+        if any(not isinstance(s.get(k),(int,float)) or not math.isfinite(s[k]) or (s[k]<0 and k not in ['startOffset','endOffset']) for k in ['actionElapsedSeconds','cpuPercentOneCore','displayRefreshRate','rssBytes','startOffset','endOffset']):
             failures.append(label+': finite, nonnegative timing/CPU/display measurements required');continue
         if not isinstance(frames,list) or any(not isinstance(f,dict) or any(not isinstance(f.get(k),(int,float)) or not math.isfinite(f[k]) or f[k]<0 for k in ['buildStartUs','buildUs','rasterUs']) for f in frames):
             failures.append(label+': valid raw FrameTiming records required');continue
@@ -50,6 +52,8 @@ def assess(samples, reference=None):
             failures.append(label+': mounted content did not scroll at least 1000 pixels')
         if s['action']=='native-resize':
             sizes=s.get('nativeSizeChanges',[])
+            if not isinstance(sizes,list) or any(not isinstance(v,dict) or any(not isinstance(v.get(k),(int,float)) or not math.isfinite(v[k]) or v[k]<=0 for k in ['width','height']) for v in sizes):
+                failures.append(label+': valid native physical dimensions required');continue
             if len(sizes)<10 or len({v['width'] for v in sizes})<6:
                 failures.append(label+': actual native engine dimensions did not change')
         row={'theme':s['theme'],'action':s['action'],'frames':len(frames),'frameSpanSeconds':frame_span,'cpuPercentOneCore':s['cpuPercentOneCore'],'mountedBefore':s['mountedBefore'],'mountedAfter':s['mountedAfter'],'rssBytes':s['rssBytes']}
