@@ -307,15 +307,18 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
             },
             onHorizontalDragEnd: (_) => dragValue = null,
             onHorizontalDragCancel: () => dragValue = null,
-            child: Container(
+            // Web's panel resizers (MainLayout thread/sidebar/search,
+            // LegacyTaskPanel, ProfilePanel) paint nothing: hover and drag
+            // only change the cursor. Keyboard focus, which Web lacks, keeps
+            // a 1px foreground rule so the focused handle is findable.
+            child: SizedBox(
               width: 8,
-              color: focused || hovering
-                  ? t.accent.withValues(alpha: .2)
-                  : Colors.transparent,
               child: Center(
                 child: Container(
-                  width: focused || hovering ? 3 : 1,
-                  color: focused || hovering ? t.accent : Colors.transparent,
+                  width: 1,
+                  color: focused && !hovering && dragValue == null
+                      ? (t.brutal ? Colors.black : t.colors['foreground']!)
+                      : Colors.transparent,
                 ),
               ),
             ),

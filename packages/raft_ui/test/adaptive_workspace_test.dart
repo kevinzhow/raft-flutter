@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -80,6 +81,34 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('resize handles paint nothing on hover or drag, like Web', (
+    tester,
+  ) async {
+    await viewport(tester, 1440);
+    await tester.pumpWidget(shell(thread: const Text('Thread')));
+    for (final key in ['sidebar-resize-handle', 'thread-resize-handle']) {
+      final handle = find.byKey(Key(key));
+      Iterable<Color?> painted() => tester
+          .widgetList<Container>(
+            find.descendant(of: handle, matching: find.byType(Container)),
+          )
+          .map((c) => c.color ?? (c.decoration as BoxDecoration?)?.color)
+          .where((c) => c != null && c.a > 0);
+      expect(painted(), isEmpty, reason: '$key idle');
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+      await mouse.addPointer(location: tester.getCenter(handle));
+      await tester.pump();
+      expect(painted(), isEmpty, reason: '$key hover');
+      await mouse.down(tester.getCenter(handle));
+      await mouse.moveBy(const Offset(-24, 0));
+      await tester.pump();
+      expect(painted(), isEmpty, reason: '$key drag');
+      await mouse.up();
+      await mouse.removePointer();
+      await tester.pump();
+    }
+  });
 
   testWidgets('sidebar pointer and keyboard resizing respects Web bounds', (
     tester,
