@@ -339,17 +339,8 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
                   value: slug,
                   readOnly: true,
                   flat: true,
-                  // `dark:bg-layer-card` outranks the callsite bg-layer-inset.
-                  rootColor: !t.brutal && t.dark
-                      ? t.colors['layer-card']
-                      : RaftSettingsText(t).insetFill,
-                  // Elegant dark: InputGroup's `dark:not-has-[invalid]:
-                  // border-transparent` outranks the callsite border.
-                  rootBorderColor: t.brutal
-                      ? RaftSettingsText(t).softEdge
-                      : t.dark
-                      ? Colors.transparent
-                      : t.colors['line-strong'],
+                  rootColor: RaftSettingsText(t).readonlyGroupFill,
+                  rootBorderColor: RaftSettingsText(t).readonlyGroupBorder,
                   textColor: RaftSettingsText(t).muted,
                 ),
               ),

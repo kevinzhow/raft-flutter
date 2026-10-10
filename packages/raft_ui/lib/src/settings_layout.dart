@@ -586,6 +586,18 @@ class RaftSettingsText {
   /// `bg-layer-panel theme-brutal:bg-white`
   Color get panel => t.brutal ? Colors.white : t.panel;
 
+  /// Read-only SlugInput group (`border-line-strong bg-layer-inset
+  /// theme-brutal:border-black/30 theme-brutal:bg-gray-50`); in elegant dark
+  /// InputGroup's `dark:bg-layer-card` and `dark:not-has-[invalid]:
+  /// border-transparent` outrank the callsite classes.
+  Color get readonlyGroupBorder => t.brutal
+      ? softEdge
+      : t.dark
+      ? Colors.transparent
+      : t.colors['line-strong']!;
+  Color get readonlyGroupFill =>
+      !t.brutal && t.dark ? t.colors['layer-card']! : insetFill;
+
   /// `text-sm font-bold`
   TextStyle get title => RaftTypography.body(
     t,

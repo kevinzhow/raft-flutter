@@ -401,16 +401,18 @@ void main() {
       WidgetTester t,
       _Adapter a,
       Widget Function() page,
-      Finder content,
-    ) async {
+      Finder content, {
+      Finder? loading,
+    }) async {
+      final cold = loading ?? _anySpinner;
       await t.pumpWidget(_host(page()));
-      expect(_anySpinner, findsOneWidget, reason: 'true cold load');
+      expect(cold, findsOneWidget, reason: 'true cold load');
       await t.pumpAndSettle();
       expect(content, findsWidgets);
       await _leave(t);
       a.gate = Completer<void>();
       await t.pumpWidget(_host(page()));
-      expect(_anySpinner, findsNothing);
+      expect(cold, findsNothing);
       expect(content, findsWidgets);
       await _settleStable(t, a, _rects(t, [content.first]), done: () => true);
     }
@@ -420,20 +422,37 @@ void main() {
       addTearDown(w.dispose);
       a.routes['GET /release-notes'] = (_) => {
         'items': [
+          // The published-release contract ReleaseNotesPanel validates.
           {
+            'releaseId': 'rel-120',
+            'releaseKey': 'web-1.2.0',
             'version': '1.2.0',
+            'tag': 'v1.2.0',
             'date': '2026-10-01',
+            'revision': 1,
+            'snapshotHash': 'ab' * 32,
+            'publishedAt': '2026-10-01T00:00:00.000Z',
+            'state': 'published',
             'entries': [
-              {'text': 'Faster revisits'},
+              {
+                'entryId': 'e1',
+                'type': 'improvement',
+                'text': 'Faster revisits',
+                'emphasis': false,
+                'ordinal': 0,
+              },
             ],
           },
         ],
+        'nextCursor': null,
       };
       await revisit(
         t,
         a,
         () => SingleChildScrollView(child: ReleaseNotesView(controller: w)),
         find.text('Faster revisits'),
+        // ReleaseNotesPanel's loading state is a status line, not a spinner.
+        loading: find.text('Loading release notes…'),
       );
     });
 
