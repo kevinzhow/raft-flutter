@@ -1,12 +1,13 @@
 """Derive checklist progress from unchanged-source test receipts."""
 import hashlib
+import importlib.util
 import json
 import re
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 LAYERS = {'model': 0, 'controller': 1, 'mounted': 2, 'native': 3}
-LABEL = re.compile(r'\[([NLK]\d{2}[a-z]?)\]')
+LABEL = re.compile(r'\[([NLKP]\d{2}[a-z]?)\]')
 
 
 def actual_layer(test, declared):
@@ -72,6 +73,9 @@ def read_runs(paths, source_hash):
         run = json.loads(path.read_text())
         if run.get('sourceHash') != source_hash:
             continue
+        if run.get('format') == 'raft-native-performance-v1':
+            runs.append(read_performance_run(path, run))
+            continue
         log = path.parent / run['machineLog']
         if hashlib.sha256(log.read_bytes()).hexdigest() != run['machineLogSha']:
             raise ValueError(f'Changed test log: {log}')
@@ -84,6 +88,66 @@ def read_runs(paths, source_hash):
         run['path'] = str(path)
         runs.append(run)
     return runs
+
+
+def read_performance_run(path, run):
+    """Read actual Flutter Driver results and recompute the native frame gate."""
+    artifacts = []
+
+    def read_artifact(base, entry):
+        if entry is None:
+            return {}
+        if not isinstance(entry, dict):
+            raise ValueError('Invalid native performance artifact')
+        source = base / entry['path']
+        if hashlib.sha256(source.read_bytes()).hexdigest() != entry['sha256']:
+            raise ValueError(f'Changed native performance artifact: {source}')
+        artifacts.append(source)
+        return json.loads(source.read_text())
+
+    base = path.parent
+    samples = [read_artifact(base, entry) for entry in run.get('samples', [])]
+    driver = read_artifact(base, run.get('driverResult'))
+    gate = read_artifact(base, run.get('gateResult'))
+    reference = None
+    reference_valid = False
+    if run.get('referenceReceipt'):
+        reference_entry = run['referenceReceipt']
+        receipt = read_artifact(base, reference_entry)
+        reference_base = (base / reference_entry['path']).parent
+        reference = [read_artifact(reference_base, entry)
+                     for entry in receipt.get('samples', [])]
+        reference_driver = read_artifact(reference_base, receipt.get('driverResult'))
+        reference_valid = (
+            receipt.get('completed') is True and receipt.get('sourceUnchanged') is True
+            and receipt.get('nativeExitCode') == 0
+            and reference_driver.get('result') == 'true'
+            and receipt.get('commit') == 'e210562a80e403986d0fc44090245657906277a0'
+            and receipt.get('harnessSha256') == run.get('harnessSha256')
+            and receipt.get('semanticsEnabled') == run.get('semanticsEnabled')
+            and not receipt.get('diagnosticOnly') and len(reference) == 9
+        )
+    comparator = Path(__file__).resolve().parents[1] / 'performance' / 'compare.py'
+    spec = importlib.util.spec_from_file_location('native_performance_gate', comparator)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    recomputed = module.assess(samples, reference)
+    recorded_mode = run.get('semanticsEnabled')
+    modes_match = isinstance(recorded_mode, bool) and all(
+        sample.get('semanticsEnabled') is recorded_mode for sample in samples)
+    valid = (run.get('sourceUnchanged') is True and run.get('completed') is True
+             and run.get('nativeExitCode') == 0 and run.get('exitCode') == 0
+             and not run.get('diagnosticOnly') and driver.get('result') == 'true'
+             and gate.get('passed') is True and recomputed['passed']
+             and reference_valid and modes_match)
+    name = f"{run['name']} · semantics={str(recorded_mode).lower()}"
+    suite = run['suite']
+    return {**run, 'path': str(path), 'valid': valid,
+            'artifactPaths': [str(source) for source in artifacts],
+            'suiteLayers': {suite: 'native'},
+            'tests': [{'labels': LABEL.findall(name), 'name': name,
+                       'suite': suite, 'layer': 'native', 'skipped': False,
+                       'result': 'success' if valid else 'failure'}]}
 
 
 def evaluate_check(check, runs):

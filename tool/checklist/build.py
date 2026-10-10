@@ -21,6 +21,36 @@ esc = lambda value: html.escape(str(value or ''))
 STATUS = {**visual.STATUS, 'missing_evidence': ('缺测试证明', '#78716c', 0.0)}
 
 
+def export_performance_receipt(source, target):
+    """Make a portable evidence bundle without publishing driver capability logs."""
+    receipt = json.loads(source.read_text())
+    target.mkdir(parents=True, exist_ok=True)
+
+    def copy(entry):
+        if entry is None:
+            return None
+        artifact = source.parent / entry['path']
+        destination = target / artifact.name
+        shutil.copy2(artifact, destination)
+        return {**entry, 'path': destination.name}
+
+    receipt['samples'] = [copy(entry) for entry in receipt.get('samples', [])]
+    for field in ('driverResult', 'gateResult'):
+        receipt[field] = copy(receipt.get(field))
+    if receipt.get('referenceReceipt'):
+        reference = source.parent / receipt['referenceReceipt']['path']
+        exported = export_performance_receipt(reference, target / 'reference')
+        receipt['referenceReceipt'] = {
+            'path': 'reference/receipt.json',
+            'sha256': hashlib.sha256(exported.read_bytes()).hexdigest(),
+        }
+        receipt['reference'] = 'reference'
+    receipt['originalReceiptSha256'] = hashlib.sha256(source.read_bytes()).hexdigest()
+    destination = target / 'receipt.json'
+    destination.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n')
+    return destination
+
+
 def render_item(item):
     label, color, _ = STATUS[item['status']]
     details = []
@@ -53,10 +83,14 @@ def main():
     args.out.mkdir(parents=True, exist_ok=True)
     for run in runs:
         source = Path(run['path'])
-        target = args.out / 'evidence' / run['machineLogSha'][:16]
+        bundle_sha = run.get('machineLogSha') or hashlib.sha256(source.read_bytes()).hexdigest()
+        target = args.out / 'evidence' / bundle_sha[:16]
         target.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, target / 'receipt.json')
-        shutil.copy2(source.parent / run['machineLog'], target / run['machineLog'])
+        if run.get('format') == 'raft-native-performance-v1':
+            export_performance_receipt(source, target)
+        else:
+            shutil.copy2(source, target / 'receipt.json')
+            shutil.copy2(source.parent / run['machineLog'], target / run['machineLog'])
         run['path'] = str((target / 'receipt.json').relative_to(args.out))
     baseline = json.loads((HERE / 'data' / 'baseline-audit.json').read_text())
     audited = {item['id']: item for item in baseline['items']}
@@ -67,12 +101,12 @@ def main():
             raise ValueError('Discovery must not replace a historical audit item')
         audited[item['id']] = item
     groups = []
-    for name in ('nav', 'loading'):
+    for name in ('nav', 'loading', 'performance'):
         for item in json.loads((HERE / 'data' / f'{name}.json').read_text()):
             groups.append(evaluate_item(item, runs, audited.get(item['id'])))
     counts = Counter(item['status'] for item in groups)
     sections = []
-    for title in ('导航', '加载', 'Kevin 反馈'):
+    for title in ('导航', '加载', 'Kevin 反馈', '性能'):
         items = [item for item in groups if item.get('group', '导航') == title]
         sections.append(f'<h2>{title} · 已验证 {sum(i["status"] == "verified" for i in items)}/{len(items)}</h2>'
                         '<table><tr><th>编号</th><th>状态</th><th>要对齐的行为和当前证明</th></tr>'

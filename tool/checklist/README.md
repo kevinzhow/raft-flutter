@@ -1,6 +1,6 @@
 # Behavior checklist
 
-Canonical `data/nav.json` and `data/loading.json` describe the current parent items (the original 47 plus separately recorded discoveries),
+Canonical `data/nav.json`, `data/loading.json` and `data/performance.json` describe the current parent items (the original 47 plus separately recorded discoveries),
 their independently required checks and Source references. They do not contain
 completion states. `data/baseline-audit.json` retains Cindy's initial human audit
 as historical evidence. It cannot verify the current code.
@@ -52,3 +52,5 @@ After validated direct pushes to `cindy/integration`, publish the generated
 `index.html`, `progress.json` and copied evidence to the existing report hub's
 `raft_flutter_checklist/` directory. Keep prior generated pages in a timestamped
 history directory and browser-check the fixed URL and proof links.
+
+P01 is a separate performance contract. Its three children require native profile evidence in each actual theme for channel scroll, post-context scroll and native window resize. Mounted-row boundedness tests are supplementary and cannot verify a native frame-time contract. Original visual and historical audit thresholds remain unchanged.

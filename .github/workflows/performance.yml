@@ -1,0 +1,82 @@
+name: Message performance
+
+on:
+  pull_request:
+    paths:
+      - 'apps/raft_flutter/**'
+      - 'packages/raft_ui/**'
+      - 'packages/flutter_chat_ui/**'
+      - 'tool/performance/**'
+      - 'tool/checklist/**'
+      - '.github/workflows/performance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: raft-native-performance
+  cancel-in-progress: false
+
+jobs:
+  measurement-guards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tool/performance -p 'test_*.py' -v
+      - run: python3 -m unittest discover -s tool/checklist -p 'test_*.py' -v
+
+  linux-profile:
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: [self-hosted, linux, x64, raft-performance]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Prepare the immutable reference with the identical benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          benchmark_reference="$RUNNER_TEMP/p01-reference-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          git worktree add --detach "$benchmark_reference" e210562a80e403986d0fc44090245657906277a0
+          mkdir -p "$benchmark_reference/tool/performance" "$benchmark_reference/apps/raft_flutter/test_driver"
+          cp tool/performance/*.py "$benchmark_reference/tool/performance/"
+          cp apps/raft_flutter/integration_test/message_scroll_performance_test.dart "$benchmark_reference/apps/raft_flutter/integration_test/"
+          cp apps/raft_flutter/test_driver/performance_driver.dart "$benchmark_reference/apps/raft_flutter/test_driver/"
+          python3 - "$benchmark_reference" <<'PY'
+          from pathlib import Path
+          import sys
+          p = Path(sys.argv[1]) / 'apps/raft_flutter/pubspec.yaml'
+          p.write_text(p.read_text().replace('dev_dependencies:\n', 'dev_dependencies:\n  flutter_driver:\n    sdk: flutter\n'))
+          PY
+          ./tool/flutter pub get
+          (cd "$benchmark_reference" && ./tool/flutter pub get)
+          printf 'P01_REFERENCE=%s\n' "$benchmark_reference" >> "$GITHUB_ENV"
+      - name: Run all three themes with semantics off and on
+        shell: bash
+        run: |
+          set -euo pipefail
+          for semantics in off on; do
+            options=()
+            if [ "$semantics" = on ]; then options+=(--semantics); fi
+            baseline="$GITHUB_WORKSPACE/.local/performance-ci/$semantics/reference"
+            candidate="$GITHUB_WORKSPACE/.local/performance-ci/$semantics/candidate"
+            (cd "$P01_REFERENCE" && python3 tool/performance/run.py --out "$baseline" "${options[@]}") || baseline_exit=$?
+            python3 - "$baseline/receipt.json" <<'PY'
+          import json, sys
+          r = json.load(open(sys.argv[1]))
+          assert r['nativeExitCode'] == 0 and r['sourceUnchanged'] and r['completed'] and r['driverAllTestsPassed'], 'Reference execution failed; preserve its first failure'
+          PY
+            python3 tool/performance/run.py --out "$candidate" --reference "$baseline" "${options[@]}"
+          done
+      - name: Retain raw frames and receipts without driver capability logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p01-linux-profile-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .local/performance-ci/**/*.json
+            .local/performance-ci/**/harness.dart
+            .local/performance-ci/**/*.png
+          if-no-files-found: warn
