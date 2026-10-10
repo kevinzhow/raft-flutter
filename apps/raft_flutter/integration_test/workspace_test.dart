@@ -551,7 +551,8 @@ Future<void> openAccountSettings(WidgetTester tester) async {
 
 Finder field(String label) => find.descendant(
   of: find.byWidgetPredicate(
-    (w) => w is Semantics && w.properties.label == label,
+    (w) => (w is Semantics && w.properties.label == label) ||
+        (w is RaftProductFormField && w.label == label),
   ),
   matching: find.byType(TextField),
 );
@@ -1490,16 +1491,16 @@ void main() {
       await tester.tap(find.byTooltip('Create channel'));
       await tester.pumpAndSettle();
       final createdName = 'native-ui-${DateTime.now().millisecondsSinceEpoch}';
-      await tester.enterText(field('Channel name'), createdName);
+      await tester.enterText(field('Name'), createdName);
       await tester.enterText(
         field('Description'),
         'Native channel settings verification',
       );
-      await tester.tap(find.widgetWithText(RaftButton, 'Create'));
+      await tester.tap(find.widgetWithText(RaftRecipeButton, 'Create Channel'));
       await until(
         tester,
         () =>
-            find.byType(RaftFormDialog).evaluate().isEmpty &&
+            find.byType(RaftCreateChannelDialogView).evaluate().isEmpty &&
             w.channel?.name == createdName &&
             !w.channelLoading,
       );
@@ -1511,52 +1512,38 @@ void main() {
         await tester.pumpAndSettle();
         await until(
           tester,
-          () => find.text('Pin conversation').evaluate().isNotEmpty,
+          () => find.text('Pin channel').evaluate().isNotEmpty,
         );
       }
 
       Future<void> setting(String title) async {
-        final scroll = find
-            .descendant(
-              of: find.byType(Dialog),
-              matching: find.byType(Scrollable),
-            )
-            .first;
-        final state = tester.state<ScrollableState>(scroll);
-        state.position.jumpTo(0);
+        final sheet = find.byType(RaftChannelSettingsSheet);
+        final scroll = find.descendant(of: sheet, matching: find.byType(Scrollable)).first;
+        final toggle = find.byWidgetPredicate((widget) => widget is RaftSwitch && widget.semanticLabel == title);
+        final action = toggle.evaluate().isNotEmpty ? toggle : find.text(title);
+        await tester.scrollUntilVisible(action, 150, scrollable: scroll);
+        await tester.ensureVisible(action);
         await tester.pumpAndSettle();
-        await tester.scrollUntilVisible(
-          find.text(title),
-          150,
-          scrollable: scroll,
-        );
-        await tester.ensureVisible(find.text(title));
-        await tester.pumpAndSettle();
-        final toggle = find.widgetWithText(SwitchListTile, title);
         if (toggle.evaluate().isNotEmpty) {
-          await until(
-            tester,
-            () => tester.widget<SwitchListTile>(toggle).onChanged != null,
-          );
+          await until(tester, () => tester.widget<RaftSwitch>(toggle).onChanged != null);
         }
-        await tester.tap(find.text(title));
+        await tester.tap(action);
         await tester.pumpAndSettle();
         if (toggle.evaluate().isNotEmpty) {
-          await until(
-            tester,
-            () => tester.widget<SwitchListTile>(toggle).onChanged != null,
-          );
+          await until(tester, () => tester.widget<RaftSwitch>(toggle).onChanged != null);
         }
       }
 
       await openSettings();
-      await setting('Pin conversation');
+      await setting('Pin channel');
       await until(
         tester,
         () => (w.sidebarOrder['pinned'] as List? ?? []).any(
           (p) => p['id'] == createdId,
         ),
       );
+      final priorMute = (await w.query('/channels/$createdId/notification-settings'))['activityMuted'];
+      expect(priorMute, false);
       await setting('Mute activity');
       expect(
         (await w.query(
@@ -1564,6 +1551,9 @@ void main() {
         ))['activityMuted'],
         true,
       );
+      await screenshot(tester, 'linux-channel-activity-muted');
+      await setting('Mute activity');
+      expect((await w.query('/channels/$createdId/notification-settings'))['activityMuted'], priorMute);
       await setting('Collapse long messages');
       expect(
         (await w.query(
@@ -1571,21 +1561,21 @@ void main() {
         ))['collapseLongMessages'],
         false,
       );
-      await setting('Edit channel');
       await tester.enterText(
         field('Description'),
         'Updated from native UI 中文 日本語',
       );
-      await tester.tap(find.widgetWithText(RaftButton, 'Save'));
+      await tester.tap(find.widgetWithText(RaftRecipeButton, 'Save'));
       await until(
         tester,
         () =>
-            find.byType(RaftFormDialog).evaluate().isEmpty &&
+            find.byType(RaftChannelSettingsSheet).evaluate().isEmpty &&
             w.channel?.description == 'Updated from native UI 中文 日本語',
       );
       await tester.pumpAndSettle();
       await screenshot(tester, 'linux-channel-settings');
-      await setting('Archive channel');
+      await openSettings();
+      await setting('Archive Channel');
       await tester.tap(find.widgetWithText(RaftButton, 'Confirm'));
       await until(
         tester,
@@ -1603,8 +1593,7 @@ void main() {
         false,
       );
       await openSettings();
-      await setting('Unarchive channel');
-      await tester.tap(find.widgetWithText(RaftButton, 'Confirm'));
+      await setting('Unarchive Channel');
       await until(
         tester,
         () =>
@@ -1612,7 +1601,7 @@ void main() {
             w.channel?.archived == false,
       );
       await tester.pumpAndSettle();
-      await setting('Delete channel');
+      await setting('Delete Channel');
       await tester.tap(find.widgetWithText(RaftButton, 'Delete'));
       await until(
         tester,

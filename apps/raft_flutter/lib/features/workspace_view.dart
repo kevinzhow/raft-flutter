@@ -1990,7 +1990,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     if (w.channel == null) return;
     await showDialog(
       context: context,
-      builder: (_) => ChannelSettings(controller: w, channel: w.channel!),
+      builder: (_) => ChannelSettings(controller: w, channel: w.channel!, isPanel: true),
     );
   }
 

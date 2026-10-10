@@ -14,6 +14,7 @@ class ChannelSettings extends StatefulWidget {
     required this.channel,
     this.leave = true,
     this.collapseLongMessages = true,
+    this.isPanel = false,
   });
   final WorkspaceController controller;
   final RaftChannel channel;
@@ -21,6 +22,9 @@ class ChannelSettings extends StatefulWidget {
   /// Web `onLeaveChannel` / `collapseLongMessages` props: hosts that do not
   /// offer Leave or the collapse preference in this sheet pass false.
   final bool leave, collapseLongMessages;
+  /// Source ChannelPreferencesSection: activity mute is a panel-only preference,
+  /// omitted in standalone EditChannelDialog and for one-to-one DMs.
+  final bool isPanel;
   @override
   State<ChannelSettings> createState() => _ChannelSettingsState();
 }
@@ -308,6 +312,25 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             value: pinned,
             onChanged: pin,
           ),
+          if (widget.isPanel && !dm && c.joined &&
+              c.flag('activityMuteSupported') &&
+              notification['activityMuted'] is bool)
+            RaftSheetSwitchRow(
+              title: 'Mute activity',
+              description: 'Mute ordinary activity from this channel. Only affects you.',
+              value: notification['activityMuted'] == true,
+              onChanged: (value) => run(() async {
+                final fresh = [...w.channels, ...w.dms]
+                    .where((next) => next.id == c.id).firstOrNull;
+                if (fresh == null || !fresh.joined ||
+                    !fresh.flag('activityMuteSupported') ||
+                    !w.can('viewChannel', resource: fresh)) {
+                  throw StateError('Channel activity preference is no longer available.');
+                }
+                await w.command('PATCH', '/channels/${c.id}/notification-settings',
+                  data: {'activityMuted': value});
+              }),
+            ),
           if (widget.collapseLongMessages &&
               display.containsKey('collapseLongMessages'))
             RaftSheetSwitchRow(
