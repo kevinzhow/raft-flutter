@@ -102,7 +102,7 @@ class _RaftChatViewState extends State<RaftChatView>
   final Map<String, Timer> reactionFailureTimers = {};
   String? selectionError;
   var adapter = chat.InMemoryChatController();
-  var viewport = ScrollController();
+  late ScrollController viewport = RaftAnchoredScrollController(readingAnchor);
   final retiredAdapters = <chat.InMemoryChatController>{};
   final retiredViewports = <ScrollController>{};
   int listRevision = 0;
@@ -231,7 +231,7 @@ class _RaftChatViewState extends State<RaftChatView>
       // A bottom-anchored timeline starts at its latest end (offset 0).
       viewport =
           (bottomAnchored
-                ? ScrollController()
+                ? RaftAnchoredScrollController(readingAnchor)
                 : RaftInitialEndScrollController())
             ..addListener(timelineScrolled);
     }
@@ -595,7 +595,8 @@ class _RaftChatViewState extends State<RaftChatView>
     retiredAdapters.add(oldAdapter);
     retiredViewports.add(oldViewport);
     adapter = chat.InMemoryChatController(messages: messages);
-    viewport = ScrollController()..addListener(timelineScrolled);
+    viewport = RaftAnchoredScrollController(readingAnchor)
+      ..addListener(timelineScrolled);
     listRevision++;
     initialEndPending = !bottomAnchored && w.highlightedMessageId == null;
     positionQueued = false;
@@ -1041,8 +1042,9 @@ class _RaftChatViewState extends State<RaftChatView>
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1248,8 +1250,9 @@ class _RaftChatViewState extends State<RaftChatView>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1288,8 +1291,9 @@ class _RaftChatViewState extends State<RaftChatView>
             if (current()) setState(() => reactionFailures.remove(m.id));
           },
         );
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -1711,8 +1715,9 @@ class _RaftChatViewState extends State<RaftChatView>
       );
     } catch (e) {
       if (mounted && authority == workspaceAuthority(w)) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     }
   }
@@ -2092,16 +2097,17 @@ class _RaftChatViewState extends State<RaftChatView>
         scrollToBottomBuilder: (_, animation, callback) =>
             const SizedBox.shrink(),
         composerBuilder: (_) => const SizedBox.shrink(),
-        chatMessageBuilder: (
-          context,
-          message,
-          index,
-          animation,
-          child, {
-          isRemoved,
-          required isSentByMe,
-          groupStatus,
-        }) => child,
+        chatMessageBuilder:
+            (
+              context,
+              message,
+              index,
+              animation,
+              child, {
+              isRemoved,
+              required isSentByMe,
+              groupStatus,
+            }) => child,
         customMessageBuilder:
             (context, message, index, {required isSentByMe, groupStatus}) =>
                 datedTile(

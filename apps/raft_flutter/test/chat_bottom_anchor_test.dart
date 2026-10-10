@@ -104,14 +104,9 @@ void main() {
         });
         for (var i = 0; i < 10; i++) {
           await tester.pump(const Duration(milliseconds: 16));
-          final now = paintedMessage(tester, anchor!)!;
-          if (i == 0) {
-            // The inserted row is absorbed in its own frame; a neighbour that
-            // regroups under the same author settles one frame later.
-            expect((now.top - before!.top).abs(), lessThanOrEqualTo(24));
-          } else {
-            expect(now, before);
-          }
+          // The inserted row is absorbed in the same frame, including when
+          // the list replaces an estimated extent with the real one.
+          expect(paintedMessage(tester, anchor!), before);
         }
         expect(find.textContaining('new message'), findsOneWidget);
         expect(tester.takeException(), isNull);

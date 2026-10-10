@@ -345,17 +345,20 @@ class _ResourceViewState extends State<ResourceView> {
         snapshot != null && snapshot.enabledActivity == enabledActivity;
     listOffset = usable ? snapshot.scrollOffset : 0;
     // Children unmount before this state disposes; track the offset live.
-    listScroll = ScrollController(initialScrollOffset: listOffset)
-      ..addListener(() {
-        final scroll = listScroll;
-        if (scroll == null || !scroll.hasClients) return;
-        listOffset = scroll.offset;
-        if (scroll.positions.length == 1 &&
-            listUpdates.scrolled(scroll.position) &&
-            mounted) {
-          setState(() {});
-        }
-      });
+    listScroll =
+        RaftAnchoredScrollController(
+          listUpdates.anchor,
+          initialScrollOffset: listOffset,
+        )..addListener(() {
+          final scroll = listScroll;
+          if (scroll == null || !scroll.hasClients) return;
+          listOffset = scroll.offset;
+          if (scroll.positions.length == 1 &&
+              listUpdates.scrolled(scroll.position) &&
+              mounted) {
+            setState(() {});
+          }
+        });
     if (!usable) return false;
     rows = snapshot.rows;
     rowsView = snapshot.view;
@@ -414,6 +417,7 @@ class _ResourceViewState extends State<ResourceView> {
       ),
     );
   }
+
   StreamSubscription<RaftEvent>? events;
   Timer? refreshTimer, catalogTimer;
   WorkspaceController get w => widget.controller;
@@ -904,8 +908,7 @@ class _ResourceViewState extends State<ResourceView> {
   /// Known read frontiers (Source applyKnownReadStateProjectionsToItems):
   /// rows fully read by this principal present no unread; the Unread view
   /// drops them.
-  ({List<Map<String, dynamic>> rows, int cleared, int removed})
-  applyKnownReads(
+  ({List<Map<String, dynamic>> rows, int cleared, int removed}) applyKnownReads(
     List<Map<String, dynamic>> source, {
     Map<String, int> facts = const {},
   }) {
@@ -1196,30 +1199,29 @@ class _ResourceViewState extends State<ResourceView> {
           ? rows.length.clamp(pageSize, 100).toInt()
           : pageSize;
       final params = widget.section == 'search'
-            ? advanced.search(query.text, offset: append ? rows.length : 0)
-            : ['saved', 'activity'].contains(widget.section)
-            ? advanced.list(
-                query.text,
-                offset: append ? rows.length : 0,
-                limit: windowSize,
-                filter:
-                    widget.section == 'activity' &&
-                        !['saved', 'done', 'unfollowed'].contains(filter)
-                    ? filter
-                    : null,
-              )
-            : {
-                if (widget.section == 'tasks' && filter != 'all')
-                  'status': filter,
-                if (widget.section == 'tasks') 'detail': 'summary',
-                if (query.text.trim().isNotEmpty && widget.section != 'tasks')
-                  'q': query.text.trim(),
-                'limit': 50,
-                if (append && widget.section == 'tasks' && cursor != null)
-                  'cursor': cursor,
-                if (widget.section != 'tasks')
-                  'offset': append ? rows.length : 0,
-              };
+          ? advanced.search(query.text, offset: append ? rows.length : 0)
+          : ['saved', 'activity'].contains(widget.section)
+          ? advanced.list(
+              query.text,
+              offset: append ? rows.length : 0,
+              limit: windowSize,
+              filter:
+                  widget.section == 'activity' &&
+                      !['saved', 'done', 'unfollowed'].contains(filter)
+                  ? filter
+                  : null,
+            )
+          : {
+              if (widget.section == 'tasks' && filter != 'all')
+                'status': filter,
+              if (widget.section == 'tasks') 'detail': 'summary',
+              if (query.text.trim().isNotEmpty && widget.section != 'tasks')
+                'q': query.text.trim(),
+              'limit': 50,
+              if (append && widget.section == 'tasks' && cursor != null)
+                'cursor': cursor,
+              if (widget.section != 'tasks') 'offset': append ? rows.length : 0,
+            };
       final view = jsonEncode([
         path,
         {
@@ -1258,8 +1260,7 @@ class _ResourceViewState extends State<ResourceView> {
             ? fetched.map(savedActivityItem).toList()
             : fetched;
         final activityWindow =
-            widget.section == 'activity' &&
-            !['saved', 'done'].contains(filter);
+            widget.section == 'activity' && !['saved', 'done'].contains(filter);
         var unreadDelta = 0;
         if (activityWindow) {
           final known = applyKnownReads(accepted);
@@ -2405,7 +2406,8 @@ class _ResourceViewState extends State<ResourceView> {
     'done' => 'Items you mark done appear here and can be restored.',
     _ when advanced.channelId != null =>
       'Try another channel or clear the channel filter.',
-    'mentions' => 'Channels, DMs, and threads where someone @mentions you will appear here.',
+    'mentions' =>
+      'Channels, DMs, and threads where someone @mentions you will appear here.',
     _ => 'Channels, DMs, and followed threads stay here until they are done.',
   };
 
@@ -3170,8 +3172,7 @@ class _ResourceViewState extends State<ResourceView> {
         // A refreshed directory keeps the user's sender filter (with the
         // current label when that sender is still listed).
         if (advanced.sender case final selected?) {
-          advanced.sender =
-              options[selected.key] ?? advanced.sender;
+          advanced.sender = options[selected.key] ?? advanced.sender;
         }
         resolveRestoredSender();
       });

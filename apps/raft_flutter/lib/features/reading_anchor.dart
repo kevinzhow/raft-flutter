@@ -36,7 +36,8 @@ class RaftReadingAnchorController {
     final offset = scrollOffsetOf(row);
     if (offset == null) return;
     _row = row;
-    _offset = offset;
+    // The row stays put while (its offset in the list - scroll pixels) holds.
+    _offset = offset - position.pixels;
     _position = position;
     _layouts = 0;
     // The scroll view is a relayout boundary; make the next frame lay out the
@@ -48,6 +49,88 @@ class RaftReadingAnchorController {
     _row = null;
     _offset = null;
     _position = null;
+  }
+}
+
+/// A scroll controller whose positions keep a captured [RaftReadingAnchor]
+/// row in place inside the viewport's own layout: the correction is applied
+/// in [ScrollPosition.applyContentDimensions] and the viewport lays out again
+/// in the same pass, so estimated-then-real extents never show a displaced
+/// frame.
+class RaftAnchoredScrollController extends ScrollController {
+  RaftAnchoredScrollController(
+    this.anchor, {
+    super.initialScrollOffset,
+    super.debugLabel,
+  });
+  final RaftReadingAnchorController anchor;
+
+  @override
+  ScrollPosition createScrollPosition(
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) => _AnchoredScrollPosition(
+    anchor: anchor,
+    physics: physics,
+    context: context,
+    initialPixels: initialScrollOffset,
+    keepScrollOffset: keepScrollOffset,
+    oldPosition: oldPosition,
+    debugLabel: debugLabel,
+  );
+}
+
+class _AnchoredScrollPosition extends ScrollPositionWithSingleContext {
+  _AnchoredScrollPosition({
+    required this.anchor,
+    required super.physics,
+    required super.context,
+    super.initialPixels,
+    super.keepScrollOffset,
+    super.oldPosition,
+    super.debugLabel,
+  });
+  final RaftReadingAnchorController anchor;
+  int _rounds = 0;
+
+  /// Any real scroll (drag, fling, animation via [setPixels]; jumps via
+  /// [forcePixels]) ends the hold; only [correctPixels] keeps it.
+  @override
+  double setPixels(double newPixels) {
+    if (newPixels != pixels && identical(anchor._position, this)) {
+      anchor.clear();
+    }
+    return super.setPixels(newPixels);
+  }
+
+  @override
+  void forcePixels(double value) {
+    if (value != pixels && identical(anchor._position, this)) anchor.clear();
+    super.forcePixels(value);
+  }
+
+  @override
+  bool applyContentDimensions(double minScrollExtent, double maxScrollExtent) {
+    final row = anchor._row, gap = anchor._offset;
+    if (row != null &&
+        gap != null &&
+        identical(anchor._position, this) &&
+        row.attached &&
+        hasPixels &&
+        _rounds < 4) {
+      final offset = RaftReadingAnchorController.scrollOffsetOf(row);
+      if (offset != null) {
+        final delta = (offset - pixels) - gap;
+        if (delta.abs() >= .5) {
+          _rounds++;
+          correctPixels(pixels + delta);
+          return false; // The viewport lays out again in this pass.
+        }
+      }
+    }
+    _rounds = 0;
+    return super.applyContentDimensions(minScrollExtent, maxScrollExtent);
   }
 }
 
@@ -95,9 +178,19 @@ class _RenderReadingAnchor extends RenderProxyBox {
       c.clear();
       return;
     }
-    final after = RaftReadingAnchorController.scrollOffsetOf(row);
-    if (after != null && (after - before).abs() >= .5) {
-      position.correctBy(after - before);
+    // Anchored positions correct inside the viewport's own layout; this box
+    // only counts frames. Plain controllers fall back to correcting here,
+    // which can leave a late extent change for the next frame.
+    for (
+      var round = 0;
+      round < 3 && position is! _AnchoredScrollPosition;
+      round++
+    ) {
+      final offset = RaftReadingAnchorController.scrollOffsetOf(row);
+      if (offset == null) break;
+      final delta = (offset - position.pixels) - before;
+      if (delta.abs() < .5) break;
+      position.correctBy(delta);
       final viewport = RenderAbstractViewport.maybeOf(row);
       if (viewport is RenderObject) {
         invokeLayoutCallback<BoxConstraints>((_) {
@@ -105,7 +198,6 @@ class _RenderReadingAnchor extends RenderProxyBox {
         });
       }
       super.performLayout();
-      c._offset = RaftReadingAnchorController.scrollOffsetOf(row) ?? after;
     }
     // Rows below the anchor can settle their height a frame later (grouping,
     // measured content). Keep checking for a few frames, then release.
