@@ -170,11 +170,17 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     if (section != null) w.resourceSnapshots.remove(section);
   }
 
+  /// The snapshot section the page last bound to. A page whose key follows
+  /// its inputs (a member id) moves to another section when they change; the
+  /// section it left keeps its snapshot for a revisit.
+  String? _sectionInUse;
+
   void startManagement() {
     _authority = authority;
     WidgetsBinding.instance.addObserver(this);
     _listenedController = w;
     w.addListener(_workspaceChanged);
+    _sectionInUse = _snapshotSection;
     _restoreSnapshot();
     reload();
   }
@@ -188,12 +194,16 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     if (_authority == authority) return;
     _authority = authority;
     _request++;
-    _dropSnapshot();
+    final moved = _snapshotSection != _sectionInUse;
+    _sectionInUse = _snapshotSection;
+    if (!moved) _dropSnapshot();
     clearData();
+    _accepted = false;
+    final restored = moved && _restoreSnapshot();
     if (mounted) {
       setState(() {
         error = null;
-        loading = true;
+        loading = !restored;
       });
       reload();
     }
@@ -212,6 +222,7 @@ abstract class ManagementState<T extends StatefulWidget> extends State<T>
     clearData();
     loading = true;
     error = null;
+    _sectionInUse = _snapshotSection;
     _restoreSnapshot();
     reload();
   }

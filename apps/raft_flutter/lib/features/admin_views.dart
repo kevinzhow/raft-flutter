@@ -400,7 +400,7 @@ class _AdministrationState extends ManagementState<AdministrationView> {
         'Let’s go',
         () => run(() async {
           await w.client.post('$base/setup-handoff');
-          refreshServerSetup();
+          refreshServerSetup(w);
         }),
       ),
     if (managementMap(setup['sideEffectState'])['transitions'] == 'enabled' &&
@@ -412,7 +412,7 @@ class _AdministrationState extends ManagementState<AdministrationView> {
             '$base/setup-transition',
             data: {'action': 'start'},
           );
-          refreshServerSetup();
+          refreshServerSetup(w);
         }),
       ),
     if (managementStrings(setup['allowedExits']).contains('reset'))
@@ -424,7 +424,7 @@ class _AdministrationState extends ManagementState<AdministrationView> {
             'Revoke the computers connected during unfinished setup. Their old credentials will stop working. This is only available before an agent has existed.',
             () async {
               await w.client.post('$base/setup-reset');
-              refreshServerSetup();
+              refreshServerSetup(w);
             },
             submit: 'Start over',
             destructive: true,

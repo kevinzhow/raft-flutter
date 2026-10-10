@@ -11,9 +11,13 @@ import 'management_support.dart';
 import 'create_agent_dialog.dart';
 import 'computer_setup_commands.dart';
 
-/// Settings and the setup surface share one invalidation signal, never a verdict.
-final serverSetupRevision = ValueNotifier<int>(0);
-void refreshServerSetup() => serverSetupRevision.value++;
+/// Settings and the setup surface of one workspace share an invalidation
+/// signal, never a verdict. It belongs to the controller (account / server
+/// session) it was raised on, so another controller's gate does not reload.
+final _setupSignals = Expando<ValueNotifier<int>>('serverSetupSignal');
+ValueNotifier<int> _setupSignal(WorkspaceController w) =>
+    _setupSignals[w] ??= ValueNotifier<int>(0);
+void refreshServerSetup(WorkspaceController w) => _setupSignal(w).value++;
 
 const setupSurveyRoles = {
   'software_engineer': 'Software engineer',
@@ -74,7 +78,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   void initState() {
     super.initState();
     startManagement();
-    serverSetupRevision.addListener(reload);
+    _signal = _setupSignal(w)..addListener(reload);
     listenEvents();
     poll = Timer.periodic(const Duration(seconds: 10), (_) {
       if (blocked && !busy) reload();
@@ -93,6 +97,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       }
     });
     _directory = w.entityDirectory..addListener(directoryChanged);
+    _seenRevisions = directoryRevisions();
     _signature = setupSignature();
   }
 
@@ -102,7 +107,16 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   }
 
   WorkspaceEntityDirectory? _directory;
+  ValueNotifier<int>? _signal;
   String? _signature;
+  (int, int)? _seenRevisions;
+
+  /// The directory's scoped counters for what setup reads: computers and
+  /// agents. Members, presence and activity never move them.
+  (int, int) directoryRevisions() => (
+    w.entityDirectory.computerRevision,
+    w.entityDirectory.agentRevision,
+  );
 
   /// Source ServerSetupProjectionGate re-reads the projection when the
   /// machines' id/status/runtimes change. Agent creation moves the
@@ -122,6 +136,11 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   }
 
   void directoryChanged() {
+    // Cheap fence first: the signature is only recomputed when a computer or
+    // agent list actually moved.
+    final revisions = directoryRevisions();
+    if (revisions == _seenRevisions) return;
+    _seenRevisions = revisions;
     final next = setupSignature();
     if (next == _signature) return;
     _signature = next;
@@ -135,14 +154,16 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       events?.cancel();
       debounce?.cancel();
       _directory?.removeListener(directoryChanged);
+      _signal?.removeListener(reload);
       rebindManagementController();
+      _signal = _setupSignal(w)..addListener(reload);
       listenEvents();
     }
   }
 
   @override
   void dispose() {
-    serverSetupRevision.removeListener(reload);
+    _signal?.removeListener(reload);
     events?.cancel();
     _directory?.removeListener(directoryChanged);
     poll?.cancel();
@@ -153,6 +174,20 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) reload();
+  }
+
+  @override
+  String get snapshotKey => 'server-setup';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'projection': projection,
+    'setupMachines': setupMachines,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    projection = fields['projection'] as Map<String, dynamic>?;
+    setupMachines = fields['setupMachines'] as List<Map<String, dynamic>>?;
+    return true;
   }
 
   @override
@@ -334,6 +369,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       destructive: true,
     );
     if (mounted) setState(() {});
+    saveSnapshot();
   }
 
   bool windowsCommands = false;

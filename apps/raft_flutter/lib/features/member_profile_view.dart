@@ -41,6 +41,20 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
   String get authority =>
       '${super.authority}|${identityHashCode(w)}|${w.client.origin}|${widget.userId}|${w.can('viewMembers')}';
   @override
+  String get snapshotKey => 'member-profile:${widget.userId}';
+  @override
+  Map<String, Object?> captureSnapshot() => {'profile': profile};
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    // Accepted live membership still wins over the last detail projection.
+    profile = {
+      ...fields['profile'] as Map<String, dynamic>,
+      ...?w.entityDirectory.member(widget.userId),
+    };
+    return true;
+  }
+
+  @override
   void initState() {
     super.initState();
     profile = w.entityDirectory.member(widget.userId) ?? {};
@@ -55,10 +69,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       oldWidget.controller.entityDirectory.removeListener(directoryChanged);
       w.entityDirectory.addListener(directoryChanged);
       rebindManagementController();
-      profile = w.entityDirectory.member(widget.userId) ?? {};
+      profile = {...profile, ...?w.entityDirectory.member(widget.userId)};
     } else if (oldWidget.userId != widget.userId) {
       refreshAuthority();
-      profile = w.entityDirectory.member(widget.userId) ?? {};
+      profile = {...profile, ...?w.entityDirectory.member(widget.userId)};
     }
   }
 
@@ -74,7 +88,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       return;
     }
     final live = w.entityDirectory.member(widget.userId);
-    if (live != null) setState(() => profile = {...profile, ...live});
+    if (live != null) {
+      setState(() => profile = {...profile, ...live});
+      saveSnapshot();
+    }
   }
 
   @override

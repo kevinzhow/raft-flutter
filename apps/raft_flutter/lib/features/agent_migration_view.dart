@@ -47,6 +47,22 @@ class _AgentMigrationState extends ManagementState<AgentMigrationView> {
   }
 
   @override
+  String get snapshotKey => 'agent-migration:${widget.agentId}';
+  @override
+  Map<String, Object?> captureSnapshot() => {
+    'agent': agent,
+    'migration': migration,
+    'machines': machines,
+  };
+  @override
+  bool restoreSnapshot(Map<String, Object?> fields) {
+    agent = fields['agent'] as Map<String, dynamic>;
+    migration = fields['migration'] as Map<String, dynamic>;
+    machines = fields['machines'] as List<Map<String, dynamic>>;
+    return true;
+  }
+
+  @override
   void clearData() {
     agent = {};
     migration = {};
