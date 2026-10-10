@@ -405,7 +405,19 @@ ParityCase _channelSettings({required bool addPanel}) => addPanel
         settle: const Duration(milliseconds: 600),
         build: (ctx) {
           final fixture = MsFixture(ctx);
-          final channel = fixture.channel('design');
+          // React mounts EditChannelDialog without `stopAgentsRow` (Web
+          // ChatPanel passes it only when the viewer may control agent
+          // runtime), so the fixture viewer has no agent-runtime control.
+          // In the shared role model only a guest lacks it; the channel's
+          // own management capabilities keep the actions React renders
+          // (Make Private, Archive, Delete).
+          final channel = Map<String, dynamic>.from(fixture.channel('design'))
+            ..['channelCapabilities'] = {
+              'editChannelMetadata': true,
+              'changeChannelVisibility': true,
+              'archiveChannels': true,
+              'deleteChannels': true,
+            };
           final (w, _) = fixture.workspace({
             'GET /channels/${channel['id']}/members': (_) => {
               'agents': [],
@@ -413,6 +425,10 @@ ParityCase _channelSettings({required bool addPanel}) => addPanel
               'externalMembers': [],
             },
           });
+          w
+            ..server = RaftRecord({...w.server!.json, 'role': 'guest'})
+            ..channels = [RaftChannel(channel)];
+          assert(!w.can('controlAgentRuntime'));
           return _Host(
             page: const Scaffold(),
             open: (context) => showDialog(
