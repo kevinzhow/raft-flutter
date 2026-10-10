@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/recent_conversations.dart';
 import 'package:raft_flutter/features/quick_switcher.dart';
 import 'package:raft_flutter/features/quick_switcher_model.dart';
-import 'package:raft_flutter/features/resource_search.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 Map<String, dynamic> channel(
@@ -75,7 +74,7 @@ QuickSwitcherData data({
   excludeChannelId: exclude,
 );
 
-class _Opened {
+class Opened {
   final entities = <String>[];
   final queries = <String>[];
   final messages = <String>[];
@@ -84,7 +83,7 @@ class _Opened {
 
 Widget host(
   QuickSwitcherData Function() read,
-  _Opened log, {
+  Opened log, {
   Future<List<Map<String, dynamic>>> Function(String)? messages,
   ValueNotifier<int>? changes,
   RaftFamily family = RaftFamily.elegant,
@@ -132,7 +131,7 @@ void main() {
       '[N26] ${theme.name} recent conversations are in the first frame, newest visit first, current excluded',
       (t) async {
         size(t);
-        final log = _Opened();
+        final log = Opened();
         await t.pumpWidget(
           host(
             () => data(
@@ -175,7 +174,7 @@ void main() {
     '[N26] a short history is padded with recently active conversations; hidden, archived and computers never appear',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       await t.pumpWidget(
         host(() => data(visited: ['dm-bob'], hidden: {'dm-bob'}), log),
       );
@@ -201,7 +200,7 @@ void main() {
 
   testWidgets('empty workspace shows the empty state', (t) async {
     size(t);
-    final log = _Opened();
+    final log = Opened();
     await t.pumpWidget(
       host(
         () => data(
@@ -223,7 +222,7 @@ void main() {
     '[N26] keyboard: arrows move the cursor without wrapping, Return opens, Escape closes',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       await t.pumpWidget(
         host(() => data(visited: ['c-ops', 'dm-cindy', 'c-design']), log),
       );
@@ -248,7 +247,7 @@ void main() {
     '[N26] typing: exact destination first, then Search for, then fuzzy and pinyin-free ranking',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       await t.pumpWidget(host(() => data(visited: ['c-ops']), log));
       await t.pump();
       await t.enterText(find.byType(TextField), 'design');
@@ -292,7 +291,7 @@ void main() {
     '[N26] without an exact destination Return opens the full results page with the query',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       await t.pumpWidget(host(() => data(), log));
       await t.pump();
       await t.enterText(find.byType(TextField), 'dsgn');
@@ -312,7 +311,7 @@ void main() {
     '# and @ prefixes narrow the destinations and a handle is an exact match',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       await t.pumpWidget(host(() => data(), log));
       await t.pump();
       await t.enterText(find.byType(TextField), '#design');
@@ -334,7 +333,7 @@ void main() {
 
   testWidgets('clicking a row opens it exactly like Return', (t) async {
     size(t);
-    final log = _Opened();
+    final log = Opened();
     await t.pumpWidget(host(() => data(visited: ['c-ops', 'c-design']), log));
     await t.pump();
     await t.tap(find.byKey(const ValueKey('quick-switcher-channel:c-design')));
@@ -346,7 +345,7 @@ void main() {
     t,
   ) async {
     size(t);
-    final log = _Opened();
+    final log = Opened();
     await t.pumpWidget(host(() => data(), log));
     await t.pump();
     await t.enterText(find.byType(TextField), 'zzzzqq');
@@ -359,7 +358,7 @@ void main() {
     'message preview is debounced, capped, fenced against stale answers and opens on Return',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       final calls = <String>[];
       final pending = <String, Completer<List<Map<String, dynamic>>>>{};
       await t.pumpWidget(
@@ -405,7 +404,7 @@ void main() {
 
   testWidgets('a late answer for an earlier query is dropped', (t) async {
     size(t);
-    final log = _Opened();
+    final log = Opened();
     final pending = <String, Completer<List<Map<String, dynamic>>>>{};
     await t.pumpWidget(
       host(
@@ -439,7 +438,7 @@ void main() {
     'workspace updates refresh rows in place without losing the typed query',
     (t) async {
       size(t);
-      final log = _Opened();
+      final log = Opened();
       final changes = ValueNotifier(0);
       var channels = ['design'];
       await t.pumpWidget(
@@ -480,7 +479,7 @@ void main() {
 
   testWidgets('Ctrl/Cmd+K inside the switcher keeps it open', (t) async {
     size(t);
-    final log = _Opened();
+    final log = Opened();
     await t.pumpWidget(host(() => data(), log));
     await t.pump();
     await t.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
