@@ -679,6 +679,11 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   bool syncCoreMessagesEnabled = false;
+
+  /// Web serverFeatureFlags `remote_computer_upgrade_v2`: whether the
+  /// Computer detail may offer the one-click upgrade (fail-closed).
+  static const remoteComputerUpgradeFlag = 'remote_computer_upgrade_v2';
+  bool remoteComputerUpgradeEnabled = false;
   int _messageFlagRequest = 0;
 
   Future<void> refreshMessageSyncFlag() async {
@@ -692,7 +697,11 @@ class WorkspaceController extends ChangeNotifier {
       final result = await client.post(
         '/feature-flags/evaluate',
         data: {
-          'keys': ['sync_core_messages_v0', notificationPrefsFlag],
+          'keys': [
+            'sync_core_messages_v0',
+            notificationPrefsFlag,
+            remoteComputerUpgradeFlag,
+          ],
           'serverId': id,
           'platform': defaultTargetPlatform == TargetPlatform.android
               ? 'mobile'
@@ -723,6 +732,12 @@ class WorkspaceController extends ChangeNotifier {
         notificationPrefsSync.reset();
       }
       syncCoreNotificationPrefsEnabled = prefsEnabled;
+      remoteComputerUpgradeEnabled =
+          result is Map &&
+          (result['evaluations'] as List? ?? []).whereType<Map>().any(
+            (f) =>
+                f['key'] == remoteComputerUpgradeFlag && f['enabled'] == true,
+          );
     } catch (_) {
       if (!_disposed &&
           request == _messageFlagRequest &&

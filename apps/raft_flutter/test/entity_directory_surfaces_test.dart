@@ -173,7 +173,7 @@ void main() {
           computers: computers,
           onSelected: (_) {},
         );
-        final rows = find.byType(RaftNavItem);
+        final rows = find.byType(computers ? RaftComputerRow : RaftNavItem);
         for (var visit = 0; visit < 2; visit++) {
           await t.pumpWidget(host(view()));
           // First frame: final rows, no loading shell, no request.

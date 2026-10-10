@@ -139,8 +139,11 @@ function ParityExtCaseView({ props }: { props: ParityExtProps }) {
   return (
     <main className="min-h-screen bg-white p-0 font-display text-black">
       {/* Desktop detail column: 1280 - 64 rail - 240 sidebar. */}
+      {/* MainLayout's content column paints `bg-layer-canvas-muted` behind the
+          panel (its PanelHeader is transparent in Elegant). */}
       <div
         data-visual-case={caseId}
+        className="bg-layer-canvas-muted theme-brutal:bg-white"
         style={{ width: 976, height: window.innerHeight, display: "flex", flexDirection: "column", overflow: "hidden" }}
       >
         {machine ? <ParityExtMachineDetailPanel machine={machine} /> : null}

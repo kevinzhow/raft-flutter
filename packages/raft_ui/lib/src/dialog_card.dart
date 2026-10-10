@@ -77,7 +77,11 @@ class RaftRecipeButton extends StatelessWidget {
     this.brutalSurface,
     this.foreground,
     this.gap,
+    this.fontWeight,
   });
+
+  /// Callsite `font-bold` etc.
+  final FontWeight? fontWeight;
   final String? label;
   final RaftGlyph? glyph;
   final double? glyphSize;
@@ -126,6 +130,7 @@ class RaftRecipeButton extends StatelessWidget {
     final step = textStep;
     final text = base.copyWith(
       color: color,
+      fontWeight: fontWeight ?? base.fontWeight,
       fontSize: step?.$1 ?? base.fontSize,
       height: step == null ? base.height : step.$2 / step.$1,
       leadingDistribution: TextLeadingDistribution.even,

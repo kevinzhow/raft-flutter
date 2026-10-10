@@ -3,6 +3,7 @@
 // [parityCases] counts as NOT COVERED in the parity percentage; cases listed
 // in [parityUncovered] carry the reason, everything else defaults to
 // "harnessTodo".
+import 'cases/ext_computers.dart';
 import 'cases/home_tasks.dart';
 import 'cases/members_settings.dart';
 import 'cases/screens.dart';
@@ -18,6 +19,8 @@ final Map<String, ParityCase> parityCases = {
   ...homeTaskCases,
   ...membersSettingsCases,
   ...screenCases,
+  // Extension suite (tool/parity-ext/cases.json), not official cases.
+  ...extComputerCases,
 };
 
 final Map<String, ParityUncovered> parityUncovered = {

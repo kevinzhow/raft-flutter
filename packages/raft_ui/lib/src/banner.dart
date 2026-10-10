@@ -20,7 +20,19 @@ class RaftBanner extends StatelessWidget {
     this.title,
     this.status = RaftBannerRecipeStatus.warning,
     this.size = RaftBannerRecipeSize.md,
+    this.strongPrefix,
+    this.leading,
+    this.descriptionWeight,
   });
+
+  /// Icon / Status node before the copy (Web Banner `icon`, `gap-x-2`).
+  final Widget? leading;
+
+  /// Callsite weight of the description content (e.g. a `font-bold` span).
+  final FontWeight? descriptionWeight;
+
+  /// Leading part of [description] rendered `<strong>` (rich catalog copy).
+  final String? strongPrefix;
   final String description;
   final String? title;
   final RaftBannerRecipeStatus status;
@@ -51,25 +63,55 @@ class RaftBanner extends StatelessWidget {
       child: RaftRecipeBox(
         style: recipe.root,
         tokens: tokens,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (title != null)
-              Padding(
-                padding: recipe.title.margin,
-                child: Text(
-                  raftText(context, title!),
-                  style: recipe.title.text(tokens, base: base),
+        child: _withLeading(
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (title != null)
+                Padding(
+                  padding: recipe.title.margin,
+                  child: Text(
+                    raftText(context, title!),
+                    style: recipe.title.text(tokens, base: base),
+                  ),
                 ),
-              ),
-            Text(
-              raftText(context, description),
-              style: recipe.description.text(tokens, base: base),
-            ),
-          ],
+              if (strongPrefix != null && description.startsWith(strongPrefix!))
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: strongPrefix,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(
+                        text: description.substring(strongPrefix!.length),
+                      ),
+                    ],
+                  ),
+                  style: recipe.description.text(tokens, base: base),
+                )
+              else
+                Text(
+                  raftText(context, description),
+                  style: recipe.description
+                      .text(tokens, base: base)
+                      .copyWith(fontWeight: descriptionWeight),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _withLeading(Widget content) => leading == null
+      ? content
+      : Row(
+          children: [
+            leading!,
+            const SizedBox(width: 8),
+            Expanded(child: content),
+          ],
+        );
 }

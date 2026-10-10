@@ -187,17 +187,21 @@ add('add-dialog.connect', 'Add Computer dialog: connect step', kind='add', viewp
     android=[{'type': 'tap', 'key': 'add-computer-next'}])
 
 # Computer detail (MachineDetailPanel in the 976-wide desktop detail column).
+# Plain CSS (the provider also queries these through CDP for its font and
+# text-run probes, so Playwright-only pseudo classes are not allowed).
 SECTIONS = {
     'header': '[data-slot="panel-header"]',
     'identity': 'div.px-5.py-5',
-    'name': 'div.px-5.py-4:has(> div > div:text-is("Name"))',
-    'description': 'div.px-5.py-4:has(> div > div:text-is("Description"))',
-    'info': 'div.px-5.py-4:has(> div:text-is("Info"))',
-    'agents': 'div.space-y-6 > div:has(> div > div > div:text-is("Agents on this computer"))',
-    'workspaces': 'div.mt-2.border-t:has(div:text-is("Agent Workspaces"))',
+    'name': ('div.px-5.py-4:has(> div > button[aria-label="Edit computer name"]), '
+             'div.px-5.py-4:has(input[placeholder="Computer name"])'),
+    'description': ('div.px-5.py-4:has(> div > button[aria-label="Edit computer description"]), '
+                    'div.px-5.py-4:has(textarea)'),
+    'info': 'div.px-5.py-4.border-b:has(.gap-x-8)',
+    'agents': 'div.space-y-6 > div:has(> div.flex-wrap.gap-y-2)',
+    'workspaces': 'div.mt-2.border-t:has(svg.lucide-folder-open)',
     'service': '[data-testid="computer-service-actions"]',
     'recovery-guide': '[data-testid="computer-recovery-guide"]',
-    'delete': 'div.mt-2.border-t:has(> div:text-is("Actions")) > div.p-4:last-child',
+    'delete': 'div.mt-2.border-t > div.p-4:last-child',
     'recovery-card': '[data-testid="computer-recovery-card"]',
 }
 

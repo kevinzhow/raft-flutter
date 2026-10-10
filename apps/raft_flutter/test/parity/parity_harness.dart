@@ -446,12 +446,24 @@ Future<void> _androidInteractions(
   for (final raw in steps.cast<Map>()) {
     final key = raw['key'] as String?;
     final target = key == null ? null : find.byKey(ValueKey(key));
+    // Like Playwright's actionability wait: the target may appear after the
+    // fixture reads settle (up to 2s of fake time).
+    for (
+      var i = 0;
+      i < 40 && target != null && target.evaluate().isEmpty;
+      i++
+    ) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
     if (target != null && target.evaluate().isEmpty) {
       throw StateError('androidInteractions target $key missing');
     }
     switch (raw['type']) {
       case 'tap':
-        await t.tap(target!.first, warnIfMissed: false);
+        // Playwright scrolls a click target into view first.
+        await t.ensureVisible(target!.first);
+        await t.pump();
+        await t.tap(target.first, warnIfMissed: false);
       case 'hover':
         mouse ??= await t.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: Offset.zero);

@@ -4,6 +4,9 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'desktop_navigation_policy.dart';
+import 'add_computer_dialog.dart';
+import 'computer_detail_view.dart'
+    show computerAvailableVersion, computerDiskLow, computerRunLabel;
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
 import 'sender_avatar_projection.dart';
@@ -252,6 +255,120 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     );
   }
 
+  /// Sidebar.tsx `ComputerRow` for one machine (status dot, run label,
+  /// `→ vX`, Low disk), selected when it is the open detail.
+  Widget computerRow(Map<String, dynamic> m) {
+    final id = m['id'];
+    if (id is! String) return const SizedBox.shrink();
+    final latest = w.entityDirectory.latestComputerVersion;
+    final available = computerAvailableVersion(m, latest);
+    final (label, offline) = computerRunLabel(m);
+    final target = DesktopContentTarget(DesktopContentKind.computer, id);
+    final sourceAuthority = authority;
+    return RaftComputerRow(
+      key: ValueKey('desktop-directory-computer-$id'),
+      name: '${m['name'] ?? ''}',
+      description: '${m['description'] ?? ''}',
+      runLabel: label,
+      offline: offline,
+      availableVersion: available,
+      diskLow: computerDiskLow(m) != null,
+      dot: available != null
+          ? RaftComputerDot.upgrade
+          : m['status'] == 'online'
+          ? RaftComputerDot.online
+          : RaftComputerDot.offline,
+      selected:
+          widget.selected?.kind == DesktopContentKind.computer &&
+          widget.selected?.id == id,
+      onTap: () {
+        if (sourceAuthority == authority && mounted) widget.onSelected(target);
+      },
+    );
+  }
+
+  /// Sidebar.tsx computers mode: heading (`COMPUTERS n` + Add computer),
+  /// rows (attached-by-me first, like sidebarMachineOrder.ts), and the
+  /// skeleton / "No computers yet" states.
+  Widget computersList(RaftTokens t, List<Map<String, dynamic>> rows) {
+    final loading = !w.entityDirectory.settled(WorkspaceEntityKind.computers);
+    final error =
+        w.entityDirectory.state(WorkspaceEntityKind.computers).error != null;
+    final ordered = [
+      ...rows.where((m) => m['computerAttachedByCurrentUser'] == true),
+      ...rows.where((m) => m['computerAttachedByCurrentUser'] != true),
+    ];
+    // Elegant rows bleed 6px past the column (`-mx-(--sidebar-row-inset-x)`).
+    final bleed = t.brutal ? 0.0 : 6.0;
+    final description = RaftTypography.mono(
+      t,
+      size: 12,
+      line: 16.5,
+      color: t.brutal
+          ? Colors.black.withValues(alpha: .5)
+          : t.colors['foreground-muted'],
+    );
+    return ListView(
+      key: const Key('desktop-directory-list'),
+      padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+      children: [
+        Padding(
+          padding: EdgeInsets.zero,
+          child: RaftComputerSidebarHeading(
+            label: raftText(context, 'Computers'),
+            count: rows.length,
+            addKey: const ValueKey('desktop-directory-add-computer'),
+            addLabel: raftText(context, 'Add computer'),
+            onAdd: w.can('registerMachines')
+                ? () => showAddComputerDialog(context, w)
+                : null,
+          ),
+        ),
+        if (error)
+          Semantics(
+            liveRegion: true,
+            child: Text(raftText(context, 'Directory could not be loaded.')),
+          ),
+        for (final m in ordered)
+          Padding(
+            // `mb-1.5`; elegant `-mx-(--sidebar-row-inset-x,6px)` with the
+            // callsite `w-full`: shifted 6px left at the column width.
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Transform.translate(
+              offset: Offset(-bleed, 0),
+              child: computerRow(m),
+            ),
+          ),
+        if (rows.isEmpty)
+          loading
+              ? Column(
+                  children: [
+                    for (var i = 0; i < 2; i++)
+                      Padding(
+                        // SkeletonRow `gap-1.5 px-2 py-2`, avatar size-[18px].
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        child: const RaftSkeletonRow(
+                          avatar: true,
+                          gap: 6,
+                          lineFractions: [.6],
+                        ),
+                      ),
+                  ],
+                )
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    raftText(context, 'No computers yet'),
+                    style: description,
+                  ),
+                ),
+      ],
+    );
+  }
+
   List<Widget> agentMachineGroups(
     List<Map<String, dynamic>> rows,
     List<Map<String, dynamic>> computers,
@@ -350,7 +467,9 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
       viewportHeight: size.height,
       variant: RaftSidebarVariant.mountedProduct,
     );
-    return RaftMountedSidebarFrame(
+    // SidebarRoot: `border-r border-line-muted theme-brutal:border-r-2
+    // theme-brutal:border-black` inside the 240px column (desktop only).
+    final frame = RaftMountedSidebarFrame(
       header: widget.mobileRoot
           ? RaftMobileRootHeader(
               title: widget.computers ? 'Computers' : 'Members',
@@ -358,7 +477,9 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
           : RaftChatSidebarHeading(
               label: widget.computers ? 'Computers' : 'Members',
             ),
-      body: loading
+      body: widget.computers
+          ? computersList(t, computers)
+          : loading
           ? Center(
               child: Text(
                 raftText(context, 'Loading...'),
@@ -386,6 +507,22 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
                 ],
               ],
             ),
+    );
+    if (widget.mobileRoot) return frame;
+    return DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        border: Border(
+          right: BorderSide(
+            color: t.brutal ? Colors.black : t.colors['line-muted']!,
+            width: t.brutal ? 2 : 1,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(right: t.brutal ? 2 : 1),
+        child: frame,
+      ),
     );
   }
 }

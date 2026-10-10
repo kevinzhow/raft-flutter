@@ -146,6 +146,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _activity.clear();
     _tombstones.clear();
     _settled.clear();
+    _latestComputerVersion = null;
     _authorAgents = _authorMembers = null;
     _authorRevision++;
     _agentRevision++;
@@ -294,6 +295,18 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
       _lookup(WorkspaceEntityKind.agents, id);
   Map<String, dynamic>? computer(String id) =>
       _lookup(WorkspaceEntityKind.computers, id);
+
+  /// Latest published Computer version from the machines read
+  /// (`{machines, latestComputerVersion}`, Web machineStore.ts:280); the
+  /// Computers rail and detail compare each row against it.
+  String? get latestComputerVersion {
+    synchronize();
+    return _scope?.allows(WorkspaceEntityKind.computers) == true
+        ? _latestComputerVersion
+        : null;
+  }
+
+  String? _latestComputerVersion;
   Map<String, dynamic>? member(String userId) =>
       _lookup(WorkspaceEntityKind.members, userId);
   List<Map<String, dynamic>> rows(WorkspaceEntityKind kind) {
@@ -393,6 +406,10 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           accepted[id] = _copy(row);
         }
         _rows[kind] = accepted;
+        if (kind == WorkspaceEntityKind.computers) {
+          final latest = value is Map ? value['latestComputerVersion'] : null;
+          _latestComputerVersion = latest is String ? latest : null;
+        }
         if (kind == WorkspaceEntityKind.agents) {
           _tombstones
             ..clear()
@@ -622,9 +639,8 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   static bool _sameValue(dynamic a, dynamic b) {
     if (a is List && b is List) {
       return a.length == b.length &&
-          [
-            for (var i = 0; i < a.length; i++) i,
-          ].every((i) => _sameValue(a[i], b[i]));
+          [for (var i = 0; i < a.length; i++) i]
+              .every((i) => _sameValue(a[i], b[i]));
     }
     if (a is Map && b is Map) {
       return a.length == b.length &&

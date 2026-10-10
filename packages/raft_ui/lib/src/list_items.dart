@@ -53,10 +53,15 @@ class RaftSurfaceListItem extends StatefulWidget {
     this.onTap,
     this.interactive,
     this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    this.background,
   });
 
   final Widget child;
   final bool selected;
+
+  /// Callsite `bg-*` override of the unselected, unhovered surface (e.g.
+  /// MachineAgentList `bg-layer-canvas-muted theme-brutal:bg-gray-100`).
+  final Color? background;
   final VoidCallback? onTap;
 
   /// Hover affordance; defaults to `onTap != null`.
@@ -122,15 +127,18 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
             spreadRadius: l.spread,
           ),
     ];
-    BoxDecoration brutalDecoration(BoxDecoration decoration) => decoration.copyWith(
-      color: widget.selected
-          ? t.product.brutalCyan.withValues(alpha: .15)
-          : RaftPrimitiveColors.white,
-      border: Border.all(color: RaftPrimitiveColors.black, width: 2),
-      boxShadow: widget.selected || hover
-          ? shadow(RaftProductShadows.shadowBrutalSm)
-          : null,
-    );
+    BoxDecoration brutalDecoration(BoxDecoration decoration) =>
+        decoration.copyWith(
+          color: widget.selected
+              ? t.product.brutalCyan.withValues(alpha: .15)
+              : hover || widget.background == null
+              ? RaftPrimitiveColors.white
+              : widget.background,
+          border: Border.all(color: RaftPrimitiveColors.black, width: 2),
+          boxShadow: widget.selected || hover
+              ? shadow(RaftProductShadows.shadowBrutalSm)
+              : null,
+        );
 
     Widget item = RaftRecipeBox(
       style: card,
@@ -138,7 +146,14 @@ class _RaftSurfaceListItemState extends State<RaftSurfaceListItem> {
       width: double.infinity,
       padding: widget.padding,
       clip: true,
-      decorationOverride: t.brutal ? brutalDecoration : null,
+      decorationOverride: t.brutal
+          ? brutalDecoration
+          : widget.background != null && !widget.selected
+          // `hover:bg-layer-panel` replaces the callsite fill on hover.
+          ? (d) => d.copyWith(
+              color: hover ? t.colors['layer-panel'] : widget.background,
+            )
+          : null,
       child: widget.child,
     );
     if (interactive) {
@@ -175,8 +190,11 @@ class RaftAvatarListRow extends StatelessWidget {
     this.actionContent = const [],
     this.onTap,
     this.selected = false,
+    this.background,
   });
 
+  /// Callsite surface fill (see [RaftSurfaceListItem.background]).
+  final Color? background;
   final Widget avatar;
   final String name;
   final String? subtitle;
@@ -237,7 +255,9 @@ class RaftAvatarListRow extends StatelessWidget {
                 maxLines: 1,
               )..layout()).width;
               final fits =
-                  widthOf(name, nameStyle) + 8 + widthOf(subtitle!, subtitleStyle) <=
+                  widthOf(name, nameStyle) +
+                      8 +
+                      widthOf(subtitle!, subtitleStyle) <=
                   constraints.maxWidth;
               final sub = Text(subtitle!, style: subtitleStyle);
               return fits
@@ -255,6 +275,7 @@ class RaftAvatarListRow extends StatelessWidget {
     return RaftSurfaceListItem(
       selected: selected,
       onTap: onTap,
+      background: background,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
@@ -267,7 +288,10 @@ class RaftAvatarListRow extends StatelessWidget {
           ],
           if (actionContent.isNotEmpty) ...[
             const SizedBox(width: 12),
-            Row(mainAxisSize: MainAxisSize.min, children: gapped(actionContent)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: gapped(actionContent),
+            ),
           ],
         ],
       ),
@@ -436,14 +460,16 @@ class RaftMenuButtonItem extends StatelessWidget {
               ? (t.brutal
                     ? RaftPrimitiveColors.black.withValues(alpha: .3)
                     : t.semantic.foregroundMuted)
-              : (t.brutal ? RaftPrimitiveColors.black : t.semantic.foregroundStrong);
+              : (t.brutal
+                    ? RaftPrimitiveColors.black
+                    : t.semantic.foregroundStrong);
           final side = (s.border(rt) ?? const Border()).top;
           final dividerColor = RaftPrimitiveColors.black.withValues(alpha: .1);
           return RaftRecipeBox(
             style: s,
             tokens: rt,
             overflowCenter: true,
-          width: double.infinity,
+            width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decorationOverride: (d) {
               final color = topDivider ? dividerColor : Colors.transparent;
@@ -626,7 +652,8 @@ class RaftSelectionPopover extends StatelessWidget {
             // actual ancestor/recipe font metrics rather than a theme offset.
             child: RaftCssInlineBox(
               lineText: card.text(
-                t.recipeTokens, base: DefaultTextStyle.of(context).style,
+                t.recipeTokens,
+                base: DefaultTextStyle.of(context).style,
               ),
               childText: inputText,
               height: 16 + 8 + (t.brutal ? 4 : 2),
@@ -757,7 +784,11 @@ class _SelectionFocusScopeState extends State<_SelectionFocusScope> {
 }
 
 class _ClearAction extends StatelessWidget {
-  const _ClearAction({required this.label, required this.style, required this.onTap});
+  const _ClearAction({
+    required this.label,
+    required this.style,
+    required this.onTap,
+  });
   final String label;
   final TextStyle style;
   final VoidCallback onTap;
@@ -848,41 +879,41 @@ class _SelectionRowState extends State<_SelectionRow> {
           ? _SelectionFocusOutline(s.lineStrong)
           : null,
       child: Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: bg,
-        border: widget.last
-            ? null
-            : Border(
-                bottom: BorderSide(
-                  color: t.brutal ? black.withAlpha(26) : s.lineMuted,
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: bg,
+          border: widget.last
+              ? null
+              : Border(
+                  bottom: BorderSide(
+                    color: t.brutal ? black.withAlpha(26) : s.lineMuted,
+                  ),
                 ),
+        ),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(
+            fontSize: 12,
+            height: 16 / 12,
+            fontWeight: FontWeight.w700,
+            color: ink,
+          ),
+          child: Row(
+            children: [
+              if (o.reserveLeadingSlot || leading != null) ...[
+                SizedBox.square(dimension: 20, child: Center(child: leading)),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Align(alignment: Alignment.centerLeft, child: label),
               ),
-      ),
-      child: DefaultTextStyle.merge(
-        style: TextStyle(
-          fontSize: 12,
-          height: 16 / 12,
-          fontWeight: FontWeight.w700,
-          color: ink,
-        ),
-        child: Row(
-          children: [
-            if (o.reserveLeadingSlot || leading != null) ...[
-              SizedBox.square(dimension: 20, child: Center(child: leading)),
-              const SizedBox(width: 8),
+              if (o.checked) ...[
+                const SizedBox(width: 8),
+                RaftIcon(RaftGlyph.check, size: 12, color: ink),
+              ],
             ],
-            Expanded(
-              child: Align(alignment: Alignment.centerLeft, child: label),
-            ),
-            if (o.checked) ...[
-              const SizedBox(width: 8),
-              RaftIcon(RaftGlyph.check, size: 12, color: ink),
-            ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }

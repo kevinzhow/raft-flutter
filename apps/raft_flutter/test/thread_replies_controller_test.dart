@@ -328,6 +328,7 @@ void main() {
     expect(t.requests.last.data['keys'], [
       'sync_core_messages_v0',
       notificationPrefsFlag,
+      WorkspaceController.remoteComputerUpgradeFlag,
     ]);
     final c = w.client as _Client;
     c.stream.add(RaftEvent('notification_prefs:updated', _prefs(2)));

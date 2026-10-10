@@ -147,12 +147,25 @@ void main() {
             }
             return null;
           });
-      await detail(t);
-      await t.ensureVisible(find.text('Rotate computer key'));
-      await t.tap(find.text('Rotate computer key'));
+      // The Web Computer page no longer offers key rotation; the one-time
+      // credential now comes from registering a computer.
+      await detail(
+        t,
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showFleetRegistration(context, w, computers: true),
+              child: const Text('Start registration'),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('Start registration'));
       await t.pumpAndSettle();
       final form = t.widget<RaftFormDialog>(find.byType(RaftFormDialog));
-      await t.tap(find.text('Continue'));
+      await t.enterText(find.byType(TextField).first, 'Lab');
+      await t.tap(find.text('Register'));
       await t.pump(const Duration(milliseconds: 500));
       await t.pump();
       expect(find.text('Save this credential'), findsOneWidget);
@@ -163,7 +176,8 @@ void main() {
       await t.pumpAndSettle();
       expect(c.generation, generation);
       expect(find.text('Save this credential'), findsNothing);
-      expect(find.text('Preserved workspace'), findsOneWidget);
+      // The page that opened the flow stays; only the private dialogs close.
+      expect(find.text('Start registration'), findsOneWidget);
       await copy('TEST_ONLY_NOT_A_CREDENTIAL');
       expect(clipboard, isEmpty);
       await expectLater(form.onSubmit({}), throwsA(isA<RaftApiException>()));
@@ -176,11 +190,22 @@ void main() {
     'same-role account adoption drops a delayed private credential reply',
     (t) async {
       w.pendingCommand = Completer<dynamic>();
-      await detail(t);
-      await t.ensureVisible(find.text('Rotate computer key'));
-      await t.tap(find.text('Rotate computer key'));
+      await detail(
+        t,
+        child: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () =>
+                  showFleetRegistration(context, w, computers: true),
+              child: const Text('Start registration'),
+            ),
+          ),
+        ),
+      );
+      await t.tap(find.text('Start registration'));
       await t.pumpAndSettle();
-      await t.tap(find.text('Continue'));
+      await t.enterText(find.byType(TextField).first, 'Lab');
+      await t.tap(find.text('Register'));
       await t.pump();
       final generation = c.generation;
       c.user = RaftRecord({'id': 'bob'});
@@ -191,7 +216,8 @@ void main() {
       expect(c.generation, generation);
       expect(find.text('Save this credential'), findsNothing);
       expect(find.byType(RaftSecretView), findsNothing);
-      expect(find.text('Preserved workspace'), findsOneWidget);
+      // The page that opened the flow stays; only the private dialogs close.
+      expect(find.text('Start registration'), findsOneWidget);
       expect(t.takeException(), isNull);
     },
   );
@@ -200,10 +226,16 @@ void main() {
     (t) async {
       w.pendingCommand = Completer<dynamic>();
       await detail(t);
-      await t.ensureVisible(find.text('Delete computer'));
-      await t.tap(find.text('Delete computer'));
+      await t.ensureVisible(find.byKey(const ValueKey('computer-delete')));
       await t.pumpAndSettle();
-      await t.tap(find.text('Delete'));
+      await t.tap(find.byKey(const ValueKey('computer-delete')));
+      await t.pumpAndSettle();
+      await t.tap(
+        find.descendant(
+          of: find.byType(RaftConfirmDialog),
+          matching: find.text('Delete Computer'),
+        ),
+      );
       await t.pump();
       expect(w.commands, 1);
       w.missing = true;

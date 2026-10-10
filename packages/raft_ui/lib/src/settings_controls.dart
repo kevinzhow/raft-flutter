@@ -41,10 +41,7 @@ TextStyle _slotText(RaftTokens t, RaftSlotStyle s, {TextStyle? base}) {
             weight: FontWeight.w400,
           ))
       .merge(style)
-      .copyWith(
-        fontVariations: const [],
-        fontFamilyFallback: t.fontFallback,
-      );
+      .copyWith(fontVariations: const [], fontFamilyFallback: t.fontFallback);
 }
 
 /// Tailwind preflight `::placeholder { color: color-mix(in oklab,
@@ -201,6 +198,7 @@ class RaftRecipeInput extends StatefulWidget {
     this.onSubmitted,
     this.mono = false,
     this.padding,
+    this.autofocus = false,
   });
 
   /// Key for the inner [TextField] (tests and focus lookups).
@@ -209,6 +207,9 @@ class RaftRecipeInput extends StatefulWidget {
   final String? placeholder;
   final ValueChanged<String>? onChanged, onSubmitted;
   final bool mono;
+
+  /// JSX `autoFocus`.
+  final bool autofocus;
 
   /// Callsite padding override (`theme-brutal:p-2` on the account name).
   final EdgeInsets? padding;
@@ -251,10 +252,89 @@ class _RaftRecipeInputState extends State<RaftRecipeInput> {
         key: widget.fieldKey,
         controller: widget.controller,
         focusNode: focus,
+        autofocus: widget.autofocus,
         style: text,
         cursorColor: text.color ?? t.strong,
         onChanged: widget.onChanged,
         onSubmitted: widget.onSubmitted,
+        decoration: _bare(
+          hint: widget.placeholder,
+          hintStyle: text.copyWith(color: _placeholder(text.color ?? t.strong)),
+        ),
+      ),
+    );
+  }
+}
+
+/// raft-ui `Textarea` (`textarea` recipe) with the callsite `text-sm
+/// leading-relaxed` and a `min-h-*` box (MachineDetailPanel description).
+class RaftRecipeTextarea extends StatefulWidget {
+  const RaftRecipeTextarea({
+    super.key,
+    this.fieldKey,
+    this.controller,
+    this.placeholder,
+    this.onChanged,
+    this.minHeight = 64,
+    this.maxLength,
+    this.autofocus = false,
+  });
+  final Key? fieldKey;
+  final TextEditingController? controller;
+  final String? placeholder;
+  final ValueChanged<String>? onChanged;
+  final double minHeight;
+  final int? maxLength;
+  final bool autofocus;
+  @override
+  State<RaftRecipeTextarea> createState() => _RaftRecipeTextareaState();
+}
+
+class _RaftRecipeTextareaState extends State<RaftRecipeTextarea> {
+  final focus = FocusNode();
+  @override
+  void initState() {
+    super.initState();
+    focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), tokens = RaftRecipeTokens(t);
+    final s = RaftTextareaRecipe.resolve(
+      theme: raftRecipeTheme(t),
+      states: _states(t, focused: focus.hasFocus),
+      tokens: tokens,
+    ).root;
+    // Callsite `text-sm leading-relaxed`.
+    final text = _slotText(t, s).copyWith(fontSize: 14, height: 1.625);
+    return Container(
+      constraints: BoxConstraints(minHeight: widget.minHeight),
+      decoration: s.decoration(tokens),
+      padding: s.padding,
+      child: TextField(
+        key: widget.fieldKey,
+        controller: widget.controller,
+        focusNode: focus,
+        autofocus: widget.autofocus,
+        style: text,
+        minLines: 1,
+        maxLines: null,
+        maxLength: widget.maxLength,
+        buildCounter: (
+          _, {
+          required currentLength,
+          required isFocused,
+          maxLength,
+        }) => null,
+        cursorColor: text.color ?? t.strong,
+        onChanged: widget.onChanged,
         decoration: _bare(
           hint: widget.placeholder,
           hintStyle: text.copyWith(color: _placeholder(text.color ?? t.strong)),
@@ -417,7 +497,15 @@ class RaftConfirmDialog extends StatelessWidget {
     this.confirmEnabled,
     this.confirmKey,
     this.maxWidth = 384,
+    this.surfaceKey,
+    this.showCancel = true,
   });
+
+  /// Key of the dialog surface itself (`dialog-content`).
+  final Key? surfaceKey;
+
+  /// ConfirmDialog `hideCancel` inverse.
+  final bool showCancel;
   final String title;
 
   /// Plain copy rendered in `text-sm leading-relaxed text-foreground-muted`.
@@ -468,6 +556,7 @@ class RaftConfirmDialog extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: Container(
+          key: surfaceKey,
           width: (size.width - 32).clamp(0, maxWidth).toDouble(),
           constraints: BoxConstraints(maxHeight: size.height - 32),
           padding: d.content.padding,
@@ -510,12 +599,13 @@ class RaftConfirmDialog extends StatelessWidget {
                 spacing: d.footer.columnGap ?? 12,
                 runSpacing: d.footer.rowGap ?? 12,
                 children: [
-                  RaftSettingsRecipeButton(
-                    label: cancelLabel,
-                    size: RaftButtonRecipeSize.sm,
-                    disabledOpacity: .3,
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
+                  if (showCancel)
+                    RaftSettingsRecipeButton(
+                      label: cancelLabel,
+                      size: RaftButtonRecipeSize.sm,
+                      disabledOpacity: .3,
+                      onPressed: () => Navigator.of(context).pop(false),
+                    ),
                   ValueListenableBuilder<bool>(
                     valueListenable:
                         confirmEnabled ?? const AlwaysStoppedAnimation(true),

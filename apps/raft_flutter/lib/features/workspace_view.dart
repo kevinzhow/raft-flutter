@@ -1884,6 +1884,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                 : w.entityDirectory.agent(target.id)) ??
             {'id': target.id},
         onClose: closeDesktopDetail,
+        onOpenAgent: (id) => desktopNavigation.selectTarget(
+          DesktopContentTarget(DesktopContentKind.agent, id),
+        ),
       );
     }
     final thread = target.kind == DesktopContentKind.thread;

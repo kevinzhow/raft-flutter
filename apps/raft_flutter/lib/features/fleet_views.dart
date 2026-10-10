@@ -9,12 +9,11 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'runtime_form_dialog.dart';
 import 'managed_agent_launcher.dart';
-import 'mcp_views.dart';
 import 'agent_scopes_view.dart';
 import 'agent_migration_view.dart';
-import 'agent_apps_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_avatar_dialog.dart';
+import 'computer_detail_view.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
 import '../data/resource_snapshot_cache.dart' show stableValue;
@@ -434,8 +433,12 @@ class FleetDetail extends StatefulWidget {
     this.initialTab = AgentDetailTab.profile,
     this.clock,
     this.initialTrajectoryLog = const [],
+    this.onOpenAgent,
   });
   final List<Map<String, dynamic>> initialTrajectoryLog;
+
+  /// Computers: open an agent row of "Agents on this computer".
+  final ValueChanged<String>? onOpenAgent;
   final WorkspaceController controller;
   final bool computers;
   final Map<String, dynamic> initial;
@@ -1049,287 +1052,18 @@ class _FleetDetailState extends State<FleetDetail> {
         )
       : !widget.computers
       ? agentPanel(context)
-      : Scaffold(
-    appBar: AppBar(
-      title: Text('${row['displayName'] ?? row['name'] ?? ''}'),
-      automaticallyImplyLeading: widget.onClose == null,
-      actions: [
-        if (widget.onClose != null)
-          RaftIconButton(
-            glyph: RaftGlyph.x,
-            tooltip: 'Close profile',
-            onPressed: widget.onClose,
-          ),
-      ],
-    ),
-    body: ListView(
-      key: const Key('fleet-detail'),
-      padding: const EdgeInsets.all(24),
-      children: [
-        if (error != null)
-          Semantics(
-            liveRegion: true,
-            child: Text(
-              error!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        Text(
-          '${row['displayName'] ?? row['name']}',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 12),
-        SelectableText('${row['description'] ?? ''}'),
-        ListTile(
-          title: Text(raftText(context, 'Status')),
-          subtitle: Text('${row['activity'] ?? row['status'] ?? 'Unknown'}'),
-        ),
-        if (row['activityDetail'] != null)
-          ListTile(
-            title: Text(raftText(context, 'Current activity')),
-            subtitle: Text('${row['activityDetail']}'),
-          ),
-        if (widget.computers) ...[
-          if (row['hostname'] != null)
-            ListTile(
-              title: Text(raftText(context, 'Hostname')),
-              subtitle: Text('${row['hostname']}'),
-            ),
-          if (row['os'] != null)
-            ListTile(
-              title: Text(raftText(context, 'Operating system')),
-              subtitle: Text('${row['os']}'),
-            ),
-          if (row['computerVersion'] != null)
-            ListTile(
-              title: Text(raftText(context, 'Computer version')),
-              subtitle: Text('${row['computerVersion']}'),
-            ),
-        ] else ...[
-          ListTile(
-            title: Text(raftText(context, 'Runtime')),
-            subtitle: Text(external ? 'External agent' : '${row['runtime']}'),
-          ),
-          if (row['model'] != null)
-            ListTile(
-              title: Text(raftText(context, 'Model')),
-              subtitle: Text('${row['model']}'),
-            ),
-          if (row['serverRole'] != null)
-            ListTile(
-              title: Text(raftText(context, 'Workspace role')),
-              subtitle: Text('${row['serverRole']}'),
-            ),
-        ],
-        if (allowed(widget.computers ? 'editMachines' : 'editAgents'))
-          ListTile(
-            title: Text(
-              raftText(
-                context,
-                widget.computers ? 'Edit computer' : 'Edit agent',
-              ),
-            ),
-            leading: const RaftIcon(RaftGlyph.pencil, size: 14),
-            onTap: busy ? null : edit,
-          ),
-        if (!widget.computers &&
-            !external &&
-            row['machineId'] is String &&
-            allowed('editAgents'))
-          ListTile(
-            title: Text(raftText(context, 'Edit runtime configuration')),
-            leading: const RaftIcon(RaftGlyph.pencil, size: 12),
-            onTap: busy
-                ? null
-                : () async {
-                    if (!allowed('editAgents')) return;
-                    await showDialog(
-                      context: context,
-                      builder: (_) => RuntimeFormDialog(
-                        controller: w,
-                        machineId: row['machineId'],
-                        runtimeId: row['runtime'],
-                        agentId: id,
-                      ),
-                    );
-                    await load();
-                  },
-          ),
-        if (allowed(
-              widget.computers ? 'rotateMachineKeys' : 'issueAgentCredentials',
-            ) &&
-            (widget.computers || external))
-          ListTile(
-            title: Text(
-              raftText(
-                context,
-                widget.computers
-                    ? 'Rotate computer key'
-                    : 'Connect external agent',
-              ),
-            ),
-            leading: const Icon(Icons.key),
-            onTap: busy ? null : () => action(credential),
-          ),
-        if (allowed(
-              widget.computers ? 'controlComputers' : 'controlAgentRuntime',
-            ) &&
-            ((widget.computers && row['isComputer'] == true) ||
-                (!widget.computers && !external)))
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final cmd
-                  in widget.computers
-                      ? [
-                          'restart',
-                          if (row['remoteUpgradeSupported'] == true &&
-                              row['computerUpgradeAvailable'] == true &&
-                              row['computerBroadcastPolicy']?['targetVersion']
-                                  is String)
-                            'upgrade',
-                        ]
-                      : ['start', 'stop'])
-                TextButton(
-                  onPressed: busy
-                      ? null
-                      : () => action(() => runtimeCommand(cmd)),
-                  child: Text(
-                    raftText(
-                      context,
-                      '${cmd[0].toUpperCase()}${cmd.substring(1)}',
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        if (!widget.computers && !external) ...[
-          for (final mode in ['restart', 'session', 'full'])
-            if (allowed(
-              mode == 'full' ? 'resetAgentWorkspace' : 'controlAgentRuntime',
-            ))
-              ListTile(
-                leading: const RaftIcon(RaftGlyph.rotateCcw, size: 14),
-                title: Text(
-                  raftText(
-                    context,
-                    mode == 'full'
-                        ? 'Reset workspace'
-                        : mode == 'session'
-                        ? 'Reset session'
-                        : 'Restart runtime',
-                  ),
-                ),
-                onTap: busy ? null : () => action(() => resetRuntime(mode)),
-              ),
-          if (allowed('migrateAgents'))
-            ListTile(
-              leading: const RaftIcon(RaftGlyph.moveRight, size: 14),
-              title: Text(raftText(context, 'Agent migration')),
-              onTap: busy
-                  ? null
-                  : () {
-                      if (!allowed('migrateAgents')) return;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              AgentMigrationView(controller: w, agentId: id),
-                        ),
-                      );
-                    },
-            ),
-        ],
-        if (allowed(widget.computers ? 'editMachines' : 'editAgents')) ...[
-          if (widget.computers)
-            ListTile(
-              title: Text(raftText(context, 'Workspaces')),
-              leading: const RaftIcon(RaftGlyph.folderOpen, size: 14),
-              onTap: () => inspect('workspaces'),
-            )
-          else ...[
-            ListTile(
-              title: Text(raftText(context, 'Agent permissions')),
-              leading: const Icon(Icons.security),
-              onTap: () async {
-                if (!allowed('editAgents')) return;
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AgentScopesView(controller: w, agentId: id),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              title: Text(raftText(context, 'Skills')),
-              leading: const Icon(Icons.psychology),
-              onTap: () => inspect('skills'),
-            ),
-            ListTile(
-              title: Text(raftText(context, 'App access')),
-              leading: const RaftIcon(RaftGlyph.link2, size: 12),
-              onTap: () async {
-                if (!allowed('editAgents')) return;
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        AgentAppAccessView(controller: w, agentId: id),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              title: Text(raftText(context, 'MCP servers')),
-              leading: const RaftIcon(RaftGlyph.blocks, size: 12),
-              onTap: () async {
-                if (!allowed('editAgents')) return;
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AgentMcpView(controller: w, agentId: id),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              title: Text(raftText(context, 'Activity log')),
-              leading: const RaftIcon(RaftGlyph.activity, size: 12),
-              onTap: () => inspect('activity-log'),
-            ),
-            ListTile(
-              title: Text(raftText(context, 'Agent channels')),
-              leading: const Icon(Icons.tag),
-              onTap: () => inspect('channels'),
-            ),
-            ListTile(
-              title: Text(raftText(context, 'Agent conversations')),
-              leading: const Icon(Icons.forum),
-              onTap: () => inspect('agent-dms'),
-            ),
-            ListTile(
-              title: Text(raftText(context, 'Workspace files')),
-              leading: const RaftIcon(RaftGlyph.folderOpen, size: 12),
-              onTap: () => inspect('workspace-files'),
-            ),
-          ],
-        ],
-        if (allowed(widget.computers ? 'removeMachines' : 'deleteAgents'))
-          ListTile(
-            title: Text(
-              raftText(
-                context,
-                widget.computers ? 'Delete computer' : 'Delete agent',
-              ),
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-            leading: const RaftIcon(RaftGlyph.trash2, size: 14),
-            onTap: busy ? null : remove,
-          ),
-      ],
-    ),
-  );
+      // Web MachineDetailPanel (computer_detail_view.dart); the desktop
+      // detail column has no close action, like the Web route.
+      : ComputerDetailPanel(
+          controller: w,
+          machine: row,
+          onClose: widget.onClose,
+          onOpenAgent: widget.onOpenAgent,
+          onCreateAgent: () async {
+            if (!allowed('createAgents')) return;
+            await showManagedAgentForm(context, w, suggestedComputer: id);
+          },
+        );
 }
 
 class FleetInspection extends StatefulWidget {

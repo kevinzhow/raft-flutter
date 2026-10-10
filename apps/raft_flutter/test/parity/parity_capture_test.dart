@@ -147,24 +147,27 @@ void main() {
     final id = visualCase['id'] as String;
     final mapping = parityCases[id];
     if (mapping == null) continue;
-    testWidgets('parity $id', (t) async {
-      final meta = await captureParityCase(
-        t,
-        visualCase: visualCase,
-        mapping: mapping,
-        fixtures: fixtures,
-        outputDir: outputDir,
-        runInfo: runInfo,
-      );
-      captured[id] = meta;
-      // Extension desktop cases render with desktop (pointer) density, like
-      // the Linux/macOS/Windows app; every official case is Android.
-    },
-        variant: TargetPlatformVariant.only(
-          ((visualCase['variants'] as List).first as Map)['props']?['platform'] ==
-                  'desktop'
-              ? TargetPlatform.linux
-              : TargetPlatform.android,
-        ));
+    testWidgets(
+      'parity $id',
+      (t) async {
+        final meta = await captureParityCase(
+          t,
+          visualCase: visualCase,
+          mapping: mapping,
+          fixtures: fixtures,
+          outputDir: outputDir,
+          runInfo: runInfo,
+        );
+        captured[id] = meta;
+        // Extension desktop cases render with desktop (pointer) density, like
+        // the Linux/macOS/Windows app; every official case is Android.
+      },
+      variant: TargetPlatformVariant.only(
+        ((visualCase['variants'] as List).first as Map)['props']?['platform'] ==
+                'desktop'
+            ? TargetPlatform.linux
+            : TargetPlatform.android,
+      ),
+    );
   }
 }

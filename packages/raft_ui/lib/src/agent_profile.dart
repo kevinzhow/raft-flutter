@@ -392,21 +392,22 @@ class RaftPanelSection extends StatelessWidget {
       ),
     );
     if (!topBorder) return content;
-    final rt = RaftRecipeTokens(t);
-    // The product JSX's border-black/10 literal uses the generated CSS
-    // composite colour; do not replace it with a separately rounded alpha.
-    final compiled = raftRecipeEngine.resolveSlot(
-      [raftRecipeUtilities.indexWhere((u) => u.name == 'border-black/10')],
-      RaftRecipeStates.none,
-      rt,
-    );
-    return RaftCssTopBorder(
-      color: t.brutal
-          ? compiled.borderColor!.resolve(rt)
-          : t.colors['line-muted']!,
-      child: content,
-    );
+    return RaftCssTopBorder(color: raftPanelRuleColor(t), child: content);
   }
+}
+
+/// Panel section rule: `border-line-muted theme-brutal:border-black/10`.
+/// The product JSX's border-black/10 literal uses the generated CSS composite
+/// colour; do not replace it with a separately rounded alpha.
+Color raftPanelRuleColor(RaftTokens t) {
+  if (!t.brutal) return t.colors['line-muted']!;
+  final rt = RaftRecipeTokens(t);
+  final compiled = raftRecipeEngine.resolveSlot(
+    [raftRecipeUtilities.indexWhere((u) => u.name == 'border-black/10')],
+    RaftRecipeStates.none,
+    rt,
+  );
+  return compiled.borderColor!.resolve(rt);
 }
 
 /// Eyebrow followed by optional inline edit pencil (`flex items-center
