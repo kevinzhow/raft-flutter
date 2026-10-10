@@ -363,6 +363,10 @@ class _ResourceViewState extends State<ResourceView> {
   /// Activity rows advanced by live messages beyond their accepted window.
   final activityLocalFrontiers = <String, BigInt>{};
 
+  /// Source inboxStore inboxLocalReadSuppressedMarkers: rows this principal
+  /// just opened present read against any response that predates the read.
+  final activityReadMarkers = <String, ({BigInt frontier, DateTime until})>{};
+
   /// Activity and Saved keep their accepted list in the workspace across
   /// navigation, including where the list was scrolled.
   bool get snapshotted =>
@@ -720,6 +724,7 @@ class _ResourceViewState extends State<ResourceView> {
     rowsView = null;
     trailingReconcile = false;
     activityLocalFrontiers.clear();
+    activityReadMarkers.clear();
     lanes.clear();
     laneCursors.clear();
     laneBusy.clear();
@@ -1282,8 +1287,11 @@ class _ResourceViewState extends State<ResourceView> {
     }
     var cleared = 0, removed = 0, changed = false;
     final next = <Map<String, dynamic>>[];
+    final now = widget.clock?.call() ?? DateTime.now();
+    activityReadMarkers.removeWhere((_, marker) => now.isAfter(marker.until));
     for (final row in source) {
       final scope = activityScopeId(row);
+      final marker = activityReadMarkers[rowKey(row)]?.frontier;
       final state = scope == null
           ? null
           : w.readState.state(server, user, scope);
@@ -1292,9 +1300,12 @@ class _ResourceViewState extends State<ResourceView> {
         if (ledger is int) ledger,
         ?frame,
       ].fold<int?>(null, (a, b) => a == null || b > a ? b : a);
+      final readSeq = read == null ? null : BigInt.from(read);
       final projected = projectFullyRead(
         row,
-        read == null ? null : BigInt.from(read),
+        marker != null && (readSeq == null || marker > readSeq)
+            ? marker
+            : readSeq,
       );
       if (!identical(projected, row)) {
         changed = true;
@@ -2920,7 +2931,8 @@ class _ResourceViewState extends State<ResourceView> {
     'done' => 'Items you mark done appear here and can be restored.',
     _ when advanced.channelId != null =>
       'Try another channel or clear the channel filter.',
-    'mentions' => 'Channels, DMs, and threads where someone @mentions you will appear here.',
+    'mentions' =>
+      'Channels, DMs, and threads where someone @mentions you will appear here.',
     _ => 'Channels, DMs, and followed threads stay here until they are done.',
   };
 
@@ -3135,6 +3147,7 @@ class _ResourceViewState extends State<ResourceView> {
       return;
     }
     if (detail >= 2) {
+      markActivityRead(row, scope);
       unawaited(canonical(Map<String, dynamic>.from(row)));
       return;
     }
@@ -3147,8 +3160,107 @@ class _ResourceViewState extends State<ResourceView> {
     });
   }
 
+  /// Source ThreadsInbox handleOpen / double-click: opening an unread row
+  /// marks its scope read. The row presents read at once; the persisted
+  /// read-all and its ledger receipt follow.
+  void markActivityRead(Map<String, dynamic> row, String scope) {
+    if (widget.section != 'activity' ||
+        !accepts(scope) ||
+        ['saved', 'done'].contains(filter)) {
+      return;
+    }
+    final key = rowKey(row);
+    if (key == null) return;
+    final current =
+        rows.where((candidate) => rowKey(candidate) == key).firstOrNull ?? row;
+    final scopeId = activityScopeId(current);
+    final unread = (current['unreadCount'] as num? ?? 0).toInt();
+    if (scopeId == null || unread <= 0) return;
+    final frontier = activityFrontier(current);
+    if (frontier != null) {
+      activityReadMarkers[key] = (
+        frontier: frontier,
+        until: (widget.clock?.call() ?? DateTime.now()).add(
+          const Duration(seconds: 3),
+        ),
+      );
+    }
+    Map<String, dynamic> read(Map<String, dynamic> item) => {
+      ...item,
+      'unreadCount': 0,
+      'firstUnreadMessageId': null,
+      'hasMention': false,
+    };
+    final unreadView = filter == 'unread';
+    final acceptWindow = widget.onActivityWindowAccepted;
+    final acceptUnread = widget.onActivityUnreadAccepted;
+    // The read marker above keeps a response that predates this read from
+    // re-presenting the row; in-flight windows stay valid.
+    setState(() {
+      rows = unreadView
+          ? rows.where((item) => rowKey(item) != key).toList()
+          : [for (final item in rows) rowKey(item) == key ? read(item) : item];
+      acceptedActivityItems = [
+        for (final item in acceptedActivityItems)
+          rowKey(item) == key ? read(item) : item,
+      ];
+      if (unreadView) {
+        activityGroups = ActivityDoneState.groups(activityGroups, [
+          current,
+        ], advanced.channelId);
+        if (totalCount != null) {
+          totalCount = (totalCount! - 1).clamp(0, 1 << 53);
+        }
+      }
+      if (totalUnreadCount != null) {
+        totalUnreadCount = (totalUnreadCount! - unread).clamp(0, 1 << 53);
+      }
+    });
+    if ((w.unread[scopeId] ?? 0) != 0) {
+      w.unread = {...w.unread, scopeId: 0};
+      w.notifyListeners();
+    }
+    if (totalUnreadCount != null) {
+      acceptUnread?.call(totalUnreadCount);
+      acceptWindow?.call({
+        'items': acceptedActivityItems.isEmpty ? rows : acceptedActivityItems,
+        'totalUnreadCount': totalUnreadCount,
+      });
+    }
+    unawaited(persistActivityRead(key, scopeId, scope));
+  }
+
+  Future<void> persistActivityRead(
+    String key,
+    String scopeId,
+    String scope,
+  ) async {
+    final controller = w;
+    final identity = SourceReadAllIdentity.capture(controller.client);
+    try {
+      final receipt = await SourceReadAllTransport.of(
+        controller.client,
+      ).readAll(scopeId, identity: identity);
+      if (identity.current(controller.client)) {
+        controller.acceptReadAllAck(
+          scopeId,
+          receipt,
+          serverId: identity.serverId!,
+          principalId: identity.principalId!,
+        );
+      }
+    } catch (_) {
+      if (!identity.current(controller.client)) return;
+      // Source forgets the suppression and refreshes the inbox in background.
+      if (mounted) activityReadMarkers.remove(key);
+      await controller.refreshUnread();
+      if (mounted && accepts(scope)) await load(keep: true, quietErrors: true);
+    }
+  }
+
   Future<void> openConversation(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope)) return;
+    markActivityRead(row, scope);
     if (widget.section == 'activity' && widget.onActivityItem != null) {
       await widget.onActivityItem!(Map<String, dynamic>.from(row));
       return;

@@ -3079,6 +3079,37 @@ class WorkspaceController extends ChangeNotifier {
     } catch (_) {}
   }
 
+  /// Source acceptActivityReadAllAck: an Activity row's persisted read-all
+  /// receipt is a read-state fact for [scopeId]. Folding it into the ledger is
+  /// what keeps a stale inbox response from re-presenting the row as unread.
+  /// Returns false for an invalid receipt or a changed identity.
+  bool acceptReadAllAck(
+    String scopeId,
+    dynamic receipt, {
+    required String serverId,
+    required String principalId,
+  }) {
+    if (client.serverId != serverId || client.user?.id != principalId) {
+      return false;
+    }
+    if (receipt is! Map) return false;
+    final outcome = readState.consumeUpdate(
+      {
+        'serverId': serverId,
+        'scopeId': scopeId,
+        'maxReadSeq': receipt['maxReadSeq'] ?? receipt['seq'],
+        'readStateVersion': receipt['readStateVersion'],
+      },
+      serverId: serverId,
+      principalId: principalId,
+    );
+    if (outcome == 'corrupt') return false;
+    if ((unread[scopeId] ?? 0) != 0) unread = {...unread, scopeId: 0};
+    _persistReadState();
+    notifyListeners();
+    return true;
+  }
+
   Future<bool> send(
     String text, {
     bool thread = false,

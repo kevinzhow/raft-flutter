@@ -282,7 +282,8 @@ void main() {
       await t.tap(finder);
       await t.pumpAndSettle();
       expect(calls, ['channel-design:msg-visual-activity-reply']);
-      expect(find.text('3 active · 3 unread'), findsOneWidget);
+      // Source markRead: the opened row's 2 unread leave the header total.
+      expect(find.text('3 active · 1 unread'), findsOneWidget);
       w.server = RaftRecord({'id': 's', 'role': 'guest'});
       w.notifyListeners();
       await t.pumpAndSettle();

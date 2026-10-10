@@ -51,7 +51,9 @@ class SourceReadAllTransport {
               request.path == flight.path &&
               request.headers['X-Server-Id'] == flight.identity.serverId &&
               request.data == null) {
-            request.extra[sourceDoneOwnsReadRefresh] = true;
+            if (flight.doneOwnsRefresh) {
+              request.extra[sourceDoneOwnsReadRefresh] = true;
+            }
           }
           next.next(request);
         },
@@ -68,6 +70,20 @@ class SourceReadAllTransport {
   Future<dynamic> threadDone(
     String channelId, {
     required SourceReadAllIdentity identity,
+  }) => _post(channelId, identity, doneOwnsRefresh: true);
+
+  /// Source inboxStore.markRead: opening an Activity row persists a human-self
+  /// read-all for its scope. Unlike thread Done, the persisted read publishes
+  /// the normal read-write refresh to the Activity attention owner.
+  Future<dynamic> readAll(
+    String channelId, {
+    required SourceReadAllIdentity identity,
+  }) => _post(channelId, identity, doneOwnsRefresh: false);
+
+  Future<dynamic> _post(
+    String channelId,
+    SourceReadAllIdentity identity, {
+    required bool doneOwnsRefresh,
   }) {
     if (channelId.isEmpty || !identity.current(client)) {
       return Future.error(
@@ -81,6 +97,7 @@ class SourceReadAllTransport {
       key,
       '/channels/$channelId/read-all',
       identity,
+      doneOwnsRefresh,
     );
     _inFlight[key] = flight;
     // Zone ownership reaches Dio's asynchronous request interceptors without
@@ -102,8 +119,9 @@ class SourceReadAllTransport {
 }
 
 class _ReadAllFlight {
-  _ReadAllFlight(this.key, this.path, this.identity);
+  _ReadAllFlight(this.key, this.path, this.identity, this.doneOwnsRefresh);
   final String key, path;
+  final bool doneOwnsRefresh;
   final SourceReadAllIdentity identity;
   late Future<dynamic> response;
 }
