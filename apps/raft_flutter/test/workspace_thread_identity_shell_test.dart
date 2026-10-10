@@ -94,7 +94,13 @@ void main() {
           }
           await tester.runAsync(() async {
             resolution.complete({'threadChannelId': 'thread-1'});
-            await Future<void>.delayed(const Duration(milliseconds: 30));
+            // Wait for the resolution to be applied, not a fixed wall-clock
+            // slice: a loaded host can take longer than one short delay.
+            final deadline = DateTime.now().add(const Duration(seconds: 5));
+            while (w.presentedThreadParent == null &&
+                DateTime.now().isBefore(deadline)) {
+              await Future<void>.delayed(const Duration(milliseconds: 10));
+            }
           });
           for (var frame = 0; frame < 4; ++frame) {
             await tester.pump(const Duration(milliseconds: 16));
