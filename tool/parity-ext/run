@@ -1,0 +1,308 @@
+#!/usr/bin/env python3
+"""raft-flutter parity EXTENSION suite on the official visual-testing framework.
+
+  tool/parity-ext/run run [--cases <id|glob>[,...]] [--refresh-react] [--shards N] [--skip-flutter]
+  tool/parity-ext/run summary
+  tool/parity-ext/run publish [--no-verify]
+
+Same pipeline as tool/parity (official React provider spec + Playwright config
+as generated copies, Flutter provider test/parity/parity_capture_test.dart,
+official `cli.mjs diff` + `site`), pointed at the extension manifest
+tool/parity-ext/cases.json (sharedCases.json schema, ids
+components.computers.*) instead of the official case set, which stays
+untouched. Differences from tool/parity, all generated, never edits to the
+Source checkout:
+  * render host: tool/parity-ext-web.mjs (official host + appended
+    tool/parity-ext/host/*.tsx + parityTheme root override);
+  * provider spec: answers tool/parity-ext/fixtures/*.json `routes`, supports a
+    `hover` interaction, and parks the pointer after click interactions
+    (Flutter taps leave no hover);
+  * deviceScaleFactor follows each case's viewport.density (desktop cases 1);
+  * output build/parity-ext/ (PARITY_EXT_OUT); publish to
+    <reports>/raft_flutter_parity_ext/<stamp> + latest (never the official
+    raft_flutter_parity/).
+"""
+import argparse
+import datetime as dt
+import importlib.machinery
+import importlib.util
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+import urllib.request
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'tool'))  # tool/parity's sibling modules
+loader = importlib.machinery.SourceFileLoader('parity_ext_official_adapter', str(ROOT / 'tool/parity'))
+spec = importlib.util.spec_from_loader(loader.name, loader)
+parity = importlib.util.module_from_spec(spec)
+loader.exec_module(parity)
+
+EXT = ROOT / 'tool/parity-ext'
+MANIFEST = EXT / 'cases.json'
+FIXTURES = EXT / 'fixtures'
+OUT = pathlib.Path(os.environ.get('PARITY_EXT_OUT', ROOT / 'build/parity-ext'))
+PUBLISH_DIR = parity.REPORTS / 'raft_flutter_parity_ext'
+WEB_PORT = os.environ.get('PARITY_EXT_WEB_PORT', '4396')
+TEXT_RENDER = 'android'  # grayscale AA + unhinted advances: see docs/parity.md "Text rendering"
+
+# Point the official adapter at the extension output and manifest.
+parity.OUT = OUT
+parity.RESULTS = OUT / 'visual-testing-results'
+parity.SITE = OUT / 'site'
+parity.REACT_GEN = OUT / 'react-provider'
+parity.WEB_PORT = WEB_PORT
+
+
+def ext_cases():
+    return json.loads(MANIFEST.read_text())['cases']
+
+
+parity.manifest_cases = ext_cases
+
+
+def cli(*args, log=None):
+    """Official CLI, unmodified, with the extension manifest."""
+    cmd = ['node', str(parity.VT / 'src/cli.mjs'), *args, '--manifest', str(MANIFEST)]
+    print('+', ' '.join(cmd), flush=True)
+    with (open(log, 'a') if log else open(os.devnull, 'w')) as sink:
+        result = subprocess.run(cmd, cwd=parity.VT, env=parity.node_env(),
+                                stdout=sink if log else None, stderr=subprocess.STDOUT if log else None)
+    if result.returncode != 0:
+        sys.exit(f'official CLI failed: {" ".join(args)} (exit {result.returncode})' + (f'; see {log}' if log else ''))
+
+
+SPEC_EXT_PATCHES = [
+    ('    await page.goto(caseUrl(visualCase));',
+     '    await parityExtRoutes(page, visualCase);\n    await page.goto(caseUrl(visualCase));'),
+    ('    } else if (interaction.type === "fill" && interaction.target) {',
+     '    } else if ((interaction.type as string) === "hover" && interaction.target) {\n'
+     '      await page.locator(interaction.target).first().hover();\n'
+     '    } else if (interaction.type === "fill" && interaction.target) {'),
+    ('    await applyInteractions(page, visualCase);',
+     '    await applyInteractions(page, visualCase);\n'
+     '    // Extension: Flutter taps leave no hover; park the pointer off the\n'
+     '    // captured surfaces unless the case asked for a hover state.\n'
+     '    const parityExtSteps = [...(visualCase.capture?.interactions || [])];\n'
+     '    if (!parityExtSteps.some((s) => (s.type as string) === "hover")) {\n'
+     '      await page.mouse.move(viewport.width - 1, viewport.height - 1);\n'
+     '    }'),
+]
+SPEC_EXT_APPENDIX = r'''
+
+// raft-flutter parity extension: endpoints the mounted components call after
+// the first render, answered from tool/parity-ext/fixtures/*.json `routes`
+// ("METHOD /path" -> JSON body), the same data the Flutter fixture client serves.
+async function parityExtRoutes(page: Page, visualCase: VisualCase) {
+  const dir = process.env.PARITY_EXT_FIXTURES!;
+  const { readdirSync } = await import("node:fs");
+  const props = (visualCase.variants?.[0]?.props || {}) as Record<string, string>;
+  for (const file of readdirSync(dir).filter((f: string) => f.endsWith(".json"))) {
+    const fixture = JSON.parse(readFileSync(resolve(dir, file), "utf8"));
+    // The machine list the case's page loaded (the Sidebar re-reads it on
+    // mount): fixture `lists[props.list]`, the detail variant replacing its
+    // row; `loading` keeps the read in flight like the Flutter side.
+    if (fixture.lists && props.list) {
+      const detail = props.machine ? fixture.machines[props.machine] : null;
+      const machines = fixture.lists[props.list].map((id: string) =>
+        detail && detail.id === id ? detail : fixture.machines[id]);
+      await page.route((url: URL) => /^\/api\/servers\/[^/]+\/machines$/.test(url.pathname), (route: any) => {
+        if (route.request().method() !== "GET") return route.fallback();
+        if (String(props.loading) === "true") return;
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+          machines, latestComputerVersion: fixture.latestComputerVersion, latestComputerReleaseNotes: null }) });
+      });
+    }
+    const routes = fixture.routes || {};
+    for (const [key, body] of Object.entries(routes)) {
+      const [method, path] = key.split(" ");
+      await page.route((url: URL) => url.pathname === `/api${path}`, (route: any) => {
+        if (route.request().method() !== method) return route.fallback();
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+      });
+    }
+  }
+}
+'''
+CONFIG_EXT_PATCHES = [
+    ('    deviceScaleFactor: 3,', '    deviceScaleFactor: Number(process.env.PARITY_EXT_DSF || 3),'),
+    ('    command: ' + json.dumps('node ' + str(ROOT / 'tool/parity-baseline-web.mjs')) + ',',
+     '    command: ' + json.dumps('node ' + str(ROOT / 'tool/parity-ext-web.mjs')) + ','),
+    ('    reuseExistingServer: !process.env.CI,', '    reuseExistingServer: false,'),
+]
+
+
+def react_capture(cases, refresh):
+    react_dir = parity.RESULTS / 'react'
+    need = [c for c in cases if refresh or not (react_dir / f"{c['id']}.png").is_file()]
+    if not need:
+        print(f'react: cached captures for all {len(cases)} selected cases ({react_dir})')
+        return
+    parity.cmd_fonts(argparse.Namespace(refresh=False))
+    config = parity.prepare_react_provider()
+    spec_file = parity.REACT_GEN / 'react-provider.spec.ts'
+    code = spec_file.read_text()
+    for old, new in SPEC_EXT_PATCHES:
+        code = parity.patch_exactly_once(code, old, new, 'react-provider.spec.ts (extension)')
+    spec_file.write_text(code + SPEC_EXT_APPENDIX)
+    conf = config.read_text()
+    for old, new in CONFIG_EXT_PATCHES:
+        conf = parity.patch_exactly_once(conf, old, new, 'playwright.visual-testing.config.ts (extension)')
+    config.write_text(conf)
+    log = OUT / 'react-capture.log'
+    log.write_text('')
+    densities = sorted({(c.get('viewport') or {}).get('density', 1) for c in need})
+    failed = 0
+    for density in densities:
+        ids = [c['id'] for c in need if (c.get('viewport') or {}).get('density', 1) == density]
+        env = parity.node_env()
+        env.update({
+            'SLOCK_VISUAL_PROVIDER': 'react',
+            'SLOCK_VISUAL_CASE_IDS': ','.join(ids),
+            'SLOCK_VISUAL_CASE_MANIFEST': str(MANIFEST),
+            'SLOCK_VISUAL_RESULT_ROOT': str(parity.RESULTS),
+            'SLOCK_ANDROID_REPO_ROOT': str(OUT),
+            'PARITY_VT_ROOT': str(parity.VT),
+            'PARITY_FONT_CACHE': str(parity.FONT_CACHE),
+            'PARITY_CHROMIUM_ARGS': json.dumps(parity.CHROMIUM_TEXT_ARGS[TEXT_RENDER]),
+            'PARITY_BASELINE_HOST_OUT': str(parity.REACT_GEN),
+            'PARITY_EXT_DSF': str(density),
+            'PARITY_EXT_FIXTURES': str(FIXTURES),
+            'PARITY_EXT_HOST_OUT': str(OUT / 'host'),
+            'PARITY_RAFT_SOURCE': str(parity.RAFT_SOURCE),
+        })
+        cmd = ['pnpm', 'exec', 'playwright', 'test', '--config', str(config), '--reporter=line']
+        print('+', ' '.join(cmd), f'({len(ids)} case(s) at {density}x)', flush=True)
+        with open(log, 'a') as sink:
+            r = subprocess.run(cmd, cwd=parity.RAFT_SOURCE / 'packages/web', env=env,
+                               stdout=sink, stderr=subprocess.STDOUT)
+        failed += r.returncode != 0
+    (OUT / 'react-source.json').write_text(json.dumps({
+        'fonts': 'production', 'textRender': TEXT_RENDER, 'raftSource': str(parity.RAFT_SOURCE),
+        'commit': parity.git(parity.RAFT_SOURCE, 'rev-parse', 'HEAD'),
+        'dirtyFiles': parity.git(parity.RAFT_SOURCE, 'status', '--short').splitlines(),
+        'capturedAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+    }, indent=2))
+    if failed:
+        print(f'react: some captures failed; see {log}')
+
+
+def summarize():
+    summary = parity.summarize()
+    by_id = {c['id']: c for c in ext_cases()}
+    themes = {}
+    for row in summary['cases']:
+        row['theme'] = by_id[row['id']]['theme']
+        t = themes.setdefault(row['theme'], {'total': 0, 'passing': 0})
+        t['total'] += 1
+        t['passing'] += row['verdict'] == 'passing'
+    summary.update({
+        'suite': 'raft-flutter extension (NOT the official case set)',
+        'manifest': str(MANIFEST.relative_to(ROOT)),
+        'byTheme': themes, 'themesWithoutOfficialCases': [],
+    })
+    summary['definition']['unit'] = 'extension case (one theme each; theme is the id suffix)'
+    summary['definition']['total'] = 'every case in tool/parity-ext/cases.json'
+    (OUT / 'summary.json').write_text(json.dumps(summary, indent=2))
+    (OUT / 'summary.md').write_text(parity.summary_markdown(summary).replace(
+        '; elegant-dark: 0 official cases.', '.'))
+    return summary
+
+
+def cmd_run(a):
+    OUT.mkdir(parents=True, exist_ok=True)
+    chosen = parity.select(ext_cases(), a.cases)
+    if not chosen:
+        sys.exit(f'no extension cases match {a.cases!r}')
+    react_capture(chosen, a.refresh_react)
+    if not a.skip_flutter:
+        os.environ['PARITY_MANIFEST'] = str(MANIFEST)
+        os.environ['PARITY_EXT_FIXTURES'] = str(FIXTURES)
+        parity.flutter_capture(chosen, a.cases, a.shards)
+    log = OUT / 'cli.log'
+    log.write_text('')
+    cli('diff', '--pairs', parity.PAIR, log=log)
+    stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    shutil.rmtree(parity.SITE, ignore_errors=True)
+    cli('site', '--pairs', parity.PAIR, '--skip-analysis', '--site-dir', str(parity.SITE),
+        '--run-id', f'{stamp}-flutter-ext-{parity.git(ROOT, "rev-parse", "--short", "HEAD") or "local"}',
+        '--commit-subject', 'raft-flutter parity EXTENSION suite (not the official case set)', log=log)
+    (OUT / 'site-stamp.txt').write_text(stamp)
+    summary = summarize()
+    shutil.copy(OUT / 'summary.json', parity.SITE / 'flutter-parity-summary.json')
+    shutil.copy(OUT / 'summary.md', parity.SITE / 'flutter-parity-summary.md')
+    t = summary['totals']
+    print(f"extension {parity.PAIR}: {t['passing']}/{t['total']} passing = {t['percentage']}%")
+
+
+def cmd_publish(a):
+    if not (parity.SITE / 'index.html').is_file():
+        sys.exit('no site; run `tool/parity-ext/run run` first')
+    stamp = (OUT / 'site-stamp.txt').read_text().strip()
+    PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
+    dest = PUBLISH_DIR / stamp
+    if dest.exists():
+        sys.exit(f'{dest} exists; runs are immutable')
+    shutil.copytree(parity.SITE, dest)
+    latest = PUBLISH_DIR / 'latest'
+    if latest.is_symlink():
+        latest.unlink()
+    elif latest.exists():
+        sys.exit(f'{latest} is not a symlink; refusing to replace it')
+    latest.symlink_to(stamp)
+    runs = sorted((p.name for p in PUBLISH_DIR.iterdir() if p.is_dir() and not p.is_symlink()), reverse=True)
+    totals = json.loads((OUT / 'summary.json').read_text())['totals']
+    items = '\n'.join(f'<li><a href="{r}/">{r}</a></li>' for r in runs)
+    (PUBLISH_DIR / 'index.html').write_text(
+        '<!doctype html><meta charset="utf-8"><title>raft-flutter parity extension suite</title>'
+        '<meta http-equiv="refresh" content="0; url=latest/">'
+        '<p>raft-flutter EXTENSION suite (not the official case set; official report: '
+        '<a href="../raft_flutter_parity/latest/">raft_flutter_parity</a>).</p>'
+        f'<p>Latest: <a href="latest/">latest/</a> ({totals["passing"]}/{totals["total"]} = '
+        f'{totals["percentage"]}% passing)</p><ul>{items}</ul>')
+    print(f'published {dest} (latest -> {stamp})')
+    if a.no_verify:
+        return
+    base = f'{parity.BASE_URL}/raft_flutter_parity_ext'
+    for rel in [f'{stamp}/', 'latest/', 'latest/flutter-parity-summary.json', 'latest/latest/home-cases.json']:
+        parity.verify(f'{base}/{rel}')
+    home = json.loads(urllib.request.urlopen(f'{base}/latest/latest/home-cases.json').read())
+    images = [img for case in home.get('cases', [])
+              for img in [*(p.get('image') for p in (case.get('providers') or {}).values()),
+                          *(p.get('sideBySideImage') for p in (case.get('pairs') or {}).values())] if img]
+    bad = 0
+    for img in images:
+        try:
+            urllib.request.urlopen(f'{base}/latest/{img.lstrip("./")}').read(16)
+        except Exception as exc:  # noqa: BLE001
+            bad += 1
+            print(f'  image FAIL {img}: {exc}')
+    print(f'images: {len(images) - bad}/{len(images)} resolve; URL: {base}/latest/')
+    if bad:
+        sys.exit(1)
+
+
+def main():
+    p = argparse.ArgumentParser(prog='tool/parity-ext/run', description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = p.add_subparsers(dest='cmd', required=True)
+    r = sub.add_parser('run')
+    r.add_argument('--cases', help='comma list of extension case ids or globs (default: all)')
+    r.add_argument('--refresh-react', action='store_true')
+    r.add_argument('--shards', type=int, default=int(os.environ.get('PARITY_SHARDS', '4')))
+    r.add_argument('--skip-flutter', action='store_true')
+    r.set_defaults(fn=cmd_run)
+    s = sub.add_parser('summary')
+    s.set_defaults(fn=lambda a: summarize())
+    pub = sub.add_parser('publish')
+    pub.add_argument('--no-verify', action='store_true')
+    pub.set_defaults(fn=cmd_publish)
+    a = p.parse_args()
+    a.fn(a)
+
+
+if __name__ == '__main__':
+    main()

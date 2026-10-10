@@ -9,6 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -161,9 +162,13 @@ class ParityContext {
     };
   }
   final id = visualCase['id'] as String;
-  final propsTheme =
-      (((visualCase['variants'] as List?)?.firstOrNull as Map?)?['props']
-          as Map?)?['theme'];
+  final props =
+      ((visualCase['variants'] as List?)?.firstOrNull as Map?)?['props']
+          as Map?;
+  // Extension suite cases name their theme explicitly (tool/parity-ext).
+  final extTheme = props?['parityTheme'];
+  if (extTheme is String) return parityThemeFor(visualCase, override: extTheme);
+  final propsTheme = props?['theme'];
   if (id.endsWith('.elegant') || propsTheme == 'elegant') {
     return (RaftFamily.elegant, false);
   }
@@ -290,6 +295,7 @@ Future<Map<String, dynamic>> captureParityCase(
     ),
   );
   await t.pump(const Duration(milliseconds: 50));
+  await _androidInteractions(t, visualCase);
   if (mapping.interact != null) await mapping.interact!(t, ctx);
   await t.pump(mapping.settle);
   await t.pump(const Duration(milliseconds: 16));
@@ -320,8 +326,18 @@ Future<Map<String, dynamic>> captureParityCase(
   await t.pump();
   Rect rect = Offset.zero & size;
   String? targetNote;
-  if (ctx.targetUsed && ctx.targetKey.currentContext != null) {
-    final box = ctx.targetKey.currentContext!.findRenderObject()! as RenderBox;
+  // Extension cases name the Flutter widget that corresponds to the React
+  // capture.selector (`capture.androidKey`, a ValueKey<String>).
+  final androidKey = (visualCase['capture'] as Map?)?['androidKey'] as String?;
+  final keyed = androidKey == null
+      ? null
+      : find.byKey(ValueKey(androidKey)).evaluate().firstOrNull;
+  if (androidKey != null && keyed == null) {
+    throw StateError('case ${ctx.id}: capture.androidKey $androidKey missing');
+  }
+  final targetContext = keyed ?? ctx.targetKey.currentContext;
+  if ((keyed != null || ctx.targetUsed) && targetContext != null) {
+    final box = targetContext.findRenderObject()! as RenderBox;
     final origin = box.localToGlobal(Offset.zero, ancestor: rootBox);
     final raw = origin & box.size;
     rect = raw.intersect(Offset.zero & size);
@@ -415,6 +431,41 @@ Future<Map<String, dynamic>> captureParityCase(
     }
   });
   return metadata;
+}
+
+/// Generic `capture.androidInteractions` of extension cases, the Flutter
+/// counterpart of the React `capture.interactions` (tap/hover a keyed widget,
+/// enter text, wait).
+Future<void> _androidInteractions(
+  WidgetTester t,
+  Map<String, dynamic> visualCase,
+) async {
+  final steps = (visualCase['capture'] as Map?)?['androidInteractions'];
+  if (steps is! List) return;
+  TestGesture? mouse;
+  for (final raw in steps.cast<Map>()) {
+    final key = raw['key'] as String?;
+    final target = key == null ? null : find.byKey(ValueKey(key));
+    if (target != null && target.evaluate().isEmpty) {
+      throw StateError('androidInteractions target $key missing');
+    }
+    switch (raw['type']) {
+      case 'tap':
+        await t.tap(target!.first, warnIfMissed: false);
+      case 'hover':
+        mouse ??= await t.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: Offset.zero);
+        await mouse.moveTo(t.getCenter(target!.first));
+      case 'enter':
+        await t.enterText(target!.first, raw['value'] as String);
+      case 'wait':
+        await t.pump(Duration(milliseconds: (raw['ms'] as num).toInt()));
+      default:
+        throw StateError('unknown androidInteraction $raw');
+    }
+    await t.pump(const Duration(milliseconds: 50));
+    await t.pump(const Duration(milliseconds: 300));
+  }
 }
 
 String _hex(Color? c) {

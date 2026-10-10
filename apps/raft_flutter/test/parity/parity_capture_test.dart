@@ -6,6 +6,11 @@
 //   PARITY_RESULT_ROOT  <out>/visual-testing-results (writes android/)
 //   PARITY_CASES        optional comma list of ids / globs (`components.ui.*`)
 //   PARITY_RUN_INFO     optional JSON merged into metadata.flutter
+//   PARITY_MANIFEST     optional case manifest (default: the official
+//                       sharedCases.json); tool/parity-ext points it at the
+//                       extension suite tool/parity-ext/cases.json
+//   PARITY_EXT_FIXTURES optional dir of extension fixture JSON, loaded by stem
+//                       (tool/parity-ext/fixtures)
 import 'dart:convert';
 import 'dart:io';
 
@@ -37,7 +42,8 @@ void main() {
     return;
   }
   final manifest = json.decode(
-    File('$sharedDir/sharedCases.json').readAsStringSync(),
+    File(env['PARITY_MANIFEST'] ?? '$sharedDir/sharedCases.json')
+        .readAsStringSync(),
   ) as Map<String, dynamic>;
   final fixtures = <String, dynamic>{};
   for (final file in Directory(sharedDir).listSync().whereType<File>()) {
@@ -46,6 +52,16 @@ void main() {
     fixtures[name.substring(0, name.length - 5)] = json.decode(
       file.readAsStringSync(),
     );
+  }
+  final extFixtures = env['PARITY_EXT_FIXTURES'];
+  if (extFixtures != null) {
+    for (final file in Directory(extFixtures).listSync().whereType<File>()) {
+      final name = file.uri.pathSegments.last;
+      if (!name.endsWith('.json')) continue;
+      fixtures['ext:${name.substring(0, name.length - 5)}'] = json.decode(
+        file.readAsStringSync(),
+      );
+    }
   }
   // Owner-authorized complete task projection shared with the generated
   // React fixture host. Message content and official manifest stay pinned.
@@ -141,6 +157,14 @@ void main() {
         runInfo: runInfo,
       );
       captured[id] = meta;
-    }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+      // Extension desktop cases render with desktop (pointer) density, like
+      // the Linux/macOS/Windows app; every official case is Android.
+    },
+        variant: TargetPlatformVariant.only(
+          ((visualCase['variants'] as List).first as Map)['props']?['platform'] ==
+                  'desktop'
+              ? TargetPlatform.linux
+              : TargetPlatform.android,
+        ));
   }
 }
