@@ -49,6 +49,7 @@ import 'desktop_master_detail.dart';
 import 'desktop_directory_view.dart';
 import 'desktop_activity_flag.dart';
 import 'resource_search.dart';
+import 'quick_switcher_host.dart';
 import 'member_profile_view.dart';
 import 'fleet_views.dart';
 import 'integrations_views.dart';
@@ -243,6 +244,19 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   PersonalPresentationStore get presentation =>
       widget.presentation ?? ownedPresentation;
   final sidebarDisclosure = SidebarDisclosureStore();
+
+  /// Cmd/Ctrl+K quick switcher: visit history, shared search memory and the
+  /// dialog route live across openings.
+  late final QuickSwitcherHost quickSwitcher = QuickSwitcherHost(
+    controller: w,
+    actions: QuickSwitcherActions(
+      openConversation: openQuickSwitcherConversation,
+      openDirectory: openQuickSwitcherDirectory,
+      openThread: openQuickSwitcherThread,
+      openMessage: openQuickSwitcherMessage,
+      searchAll: (query) => select('search', searchQuery: query),
+    ),
+  );
   final sortAnchors = <String, GlobalKey>{};
   final sortingGroups = <String>{};
   void syncSidebarDisclosure() {
@@ -350,6 +364,8 @@ class _WorkspaceViewState extends State<WorkspaceView> {
   void initState() {
     super.initState();
     mobileAppBadge = SourceMobileAppBadge()..addListener(chatSelectionChanged);
+    // Starts recording visits to conversations from the first frame.
+    quickSwitcher.changed();
     w.addListener(syncMobileAppBadge);
     syncMobileAppBadge();
     activityUnread = SourceActivityUnreadStore(w)
@@ -532,6 +548,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
       w.addListener(syncChannelSearch);
       oldWidget.controller.removeListener(syncPresentation);
       oldWidget.controller.removeListener(syncSidebarDisclosure);
+      quickSwitcher.rebind(w);
       liveActivities.dispose();
       activityDirectory.dispose();
       activityFlag.removeListener(activityFlagChanged);
@@ -654,6 +671,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.removeListener(syncPresentation);
     w.removeListener(syncSidebarDisclosure);
     w.removeListener(syncSavedIds);
+    quickSwitcher.dispose();
     sidebarDisclosure.dispose();
     liveActivities.dispose();
     liveActivityShown.dispose();
@@ -709,7 +727,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     setState(() {});
   }
 
-  void select(String section, {String? searchChannelId}) {
+  void select(String section, {String? searchChannelId, String? searchQuery}) {
     if (!w.canVisitSection(section)) return;
     desktopNavigation.bind(desktopAuthority);
     pendingDesktopSelection = false;
@@ -734,6 +752,13 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     if (section == 'search' && searchChannelId != null) {
       w.navigation.navigate(
         w.location.withQuery({'channelId': searchChannelId, 'defer': '1'}),
+        kind: RaftNavigationKind.replace,
+      );
+      w.notifyListeners();
+    } else if (section == 'search' && searchQuery?.trim().isNotEmpty == true) {
+      // The switcher's "Search for" row hands its query to the full page.
+      w.navigation.navigate(
+        w.location.withQuery({'q': searchQuery!.trim()}),
         kind: RaftNavigationKind.replace,
       );
       w.notifyListeners();
@@ -1094,6 +1119,7 @@ class _WorkspaceViewState extends State<WorkspaceView> {
                     }
                   : null,
               initialQuery: route == 'search' ? location.query('q') : null,
+              searchMemory: quickSwitcher.searchMemory,
               restoreSearchState: searchEntryRevision == 0,
               initialSearchDeferUntilQuery:
                   route == 'search' && channelSearchSeed != null,
@@ -1171,10 +1197,10 @@ class _WorkspaceViewState extends State<WorkspaceView> {
         VoidCallback? onLegacyEscape,
       ) => CallbackShortcuts(
         bindings: {
-          const SingleActivator(LogicalKeyboardKey.keyK, control: true): () =>
-              select('search'),
-          const SingleActivator(LogicalKeyboardKey.keyK, meta: true): () =>
-              select('search'),
+          const SingleActivator(LogicalKeyboardKey.keyK, control: true):
+              openSearchShortcut,
+          const SingleActivator(LogicalKeyboardKey.keyK, meta: true):
+              openSearchShortcut,
           const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
               select('settings'),
           const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
@@ -1770,6 +1796,54 @@ class _WorkspaceViewState extends State<WorkspaceView> {
     w.closeThread(navigate: false);
     w.notifyListeners();
     setState(() {});
+  }
+
+  /// Cmd/Ctrl+K. A desktop window floats the quick switcher over the current
+  /// page (Source SearchOverlay); a narrow window keeps the full Search page.
+  void openSearchShortcut() {
+    if (!w.canVisitSection('search')) return;
+    if (!wide) {
+      select('search');
+      return;
+    }
+    quickSwitcher.open(context);
+  }
+
+  Future<void> openQuickSwitcherConversation(RaftChannel channel) async {
+    if (!mounted) return;
+    await chooseChannel(channel);
+  }
+
+  void openQuickSwitcherDirectory(RaftRoute route, String id) {
+    if (!mounted) return;
+    desktopNavigation.clear();
+    openDirectoryLocation(route, id);
+  }
+
+  Future<void> openQuickSwitcherMessage(
+    String channelId,
+    String? messageId,
+  ) async {
+    if (!mounted) return;
+    scaffold.currentState?.closeDrawer();
+    desktopNavigation.clear();
+    await w.jumpToMessage(channelId, messageId);
+  }
+
+  Future<void> openQuickSwitcherThread({
+    required String parentChannelId,
+    required String parentMessageId,
+    required String messageId,
+    required String threadChannelId,
+  }) async {
+    if (!mounted) return;
+    desktopNavigation.clear();
+    await w.openThreadIdentity(
+      parentChannelId: parentChannelId,
+      parentMessageId: parentMessageId,
+      focusedMessageId: messageId,
+      initialThreadChannelId: threadChannelId,
+    );
   }
 
   Future<void> openDesktopEntity(SearchEntity entity) async {

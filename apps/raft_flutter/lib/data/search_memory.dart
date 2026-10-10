@@ -198,6 +198,24 @@ class SearchMemoryStore {
   final Map<String, Future<void>> _writes = {};
   SearchMemoryData current(SearchMemoryScope scope) =>
       _data[scope.key] ?? const SearchMemoryData();
+
+  /// Adopts the stored record in the same frame when the storage can answer
+  /// synchronously (preloaded device preferences); otherwise it is a no-op
+  /// and [load] stays the only path. A newer local edit is never replaced.
+  SearchMemoryData loadSync(SearchMemoryScope scope) {
+    if (_data.containsKey(scope.key)) return current(scope);
+    final Object sync = storage;
+    if (sync is SynchronousSearchMemoryStorage && sync.ready) {
+      String? encoded;
+      try {
+        encoded = sync.readSync(scope.key);
+      } catch (_) {
+        /* local convenience */
+      }
+      _data[scope.key] = SearchMemoryData.decode(encoded, clock());
+    }
+    return current(scope);
+  }
   Future<SearchMemoryData> load(SearchMemoryScope scope) {
     if (_data.containsKey(scope.key)) return Future.value(current(scope));
     return _loads

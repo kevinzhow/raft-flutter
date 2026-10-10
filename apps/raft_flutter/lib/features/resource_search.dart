@@ -24,6 +24,27 @@ List<SearchEntity> searchEntities(
   bool includeAll = false,
 }) {
   if (query.trim().isEmpty && !includeAll) return [];
+  return rankSearchEntities(
+    query,
+    searchEntityEntries(
+      channels: channels,
+      computers: computers,
+      agents: agents,
+      people: people,
+      principal: principal,
+    ),
+  );
+}
+
+/// The searchable destination universe in source order (type, then title).
+/// Callers that rank on every keystroke build it once and reuse it.
+List<SearchRankEntry<SearchEntity>> searchEntityEntries({
+  required List<Map<String, dynamic>> channels,
+  required List<Map<String, dynamic>> computers,
+  required List<Map<String, dynamic>> agents,
+  required List<Map<String, dynamic>> people,
+  String? principal,
+}) {
   final entries = <SearchRankEntry<SearchEntity>>[];
   void add(
     String kind,
@@ -110,6 +131,14 @@ List<SearchEntity> searchEntities(
     );
     return title != 0 ? title : a.value.key.compareTo(b.value.key);
   });
+  return entries;
+}
+
+/// Source `filterSearchEntityEntriesForQuery` + ranking over [entries].
+List<SearchEntity> rankSearchEntities(
+  String query,
+  List<SearchRankEntry<SearchEntity>> entries,
+) {
   if (query.trim().isEmpty) return entries.map((e) => e.value).toList();
   final prefix = query.trim()[0];
   return rankSearchEntries(
