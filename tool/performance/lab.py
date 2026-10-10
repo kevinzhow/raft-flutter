@@ -200,6 +200,8 @@ def markdown(summary):
     out.append(f"- Commit: `{env.get('commit', '?')}`{' (dirty)' if env.get('dirty') else ''}; fixture `{hello.get('fixtureVersion', '?')}`")
     out.append(f"- Engine: Flutter {env.get('flutter', {}).get('frameworkVersion', '?')} (engine `{str(env.get('flutter', {}).get('engineRevision', '?'))[:10]}`), renderer: {env.get('renderer', '?')}")
     out.append(f"- Host: {env.get('os', '?')}; CPU: {env.get('cpu', '?')}; GPU: {env.get('gpu', '?')}")
+    load = lambda key: ', '.join(f'{v:.1f}' for v in env.get(key) or []) or '?'
+    out.append(f"- Host load (1/5/15 min) at start: {load('loadavg')}; at end: {load('loadavgEnd')}" + (' — **NOISY HOST: other work was running; do not use these numbers as a baseline**' if env.get('noisyHost') else ''))
     first = summary['scenarios'][0] if summary['scenarios'] else {}
     out.append(f"- Display: {hello.get('displayRefreshRate', '?')} Hz, DPR {hello.get('devicePixelRatio', '?')}, view {first.get('view', '?')} physical px; semantics mode `{hello.get('semantics', '?')}` (embedder requested: {hello.get('platformSemanticsEnabled', '?')}); phase collection {'on' if hello.get('phases') else 'off'}")
     out.append(f"- Gate (60 Hz: no UI or raster frame over 16.7 ms, no stutter): **{'PASS' if summary['gate60Passed'] else 'FAIL'}**. Target: every frame within 8.33 ms (120 Hz).")
@@ -255,6 +257,9 @@ def compare(base, cand, threshold=0.10, floor_us=500):
     views = lambda s: sorted({r.get('view') for r in s['scenarios']})
     if views(base) != views(cand):
         problems.append(f'view sizes differ: {views(base)} vs {views(cand)} (layout cost scales with width)')
+    for name, run in (('base', base), ('candidate', cand)):
+        if run.get('env', {}).get('noisyHost'):
+            problems.append(f'{name} run was taken on a noisy host (load above limit)')
     for key in ('cpu', 'gpu', 'renderer', 'os'):
         if base.get('env', {}).get(key) != cand.get('env', {}).get(key):
             problems.append(f'environment differs: {key}')
@@ -370,6 +375,24 @@ def wait_for_display(args):
             sys.exit('Timed out waiting for the other raft_flutter instance to exit')
 
 
+def max_load(args):
+    return args.max_load if args.max_load is not None else (os.cpu_count() or 4) * 0.35
+
+
+def wait_for_quiet_host(args):
+    """Frame times scale with host contention (other builds/test suites on
+    the same machine). Wait for the 1-minute load to drop below the limit."""
+    waited = 0
+    while os.getloadavg()[0] > max_load(args):
+        if waited >= args.wait_quiet:
+            if args.allow_noisy:
+                print(f'WARNING: host load {os.getloadavg()[0]:.1f} exceeds {max_load(args):.1f}; results will be marked noisy', flush=True)
+                return
+            sys.exit(f'Host load {os.getloadavg()[0]:.1f} exceeds {max_load(args):.1f}; wait (--wait-quiet) or pass --allow-noisy')
+        time.sleep(15)
+        waited += 15
+
+
 def run(args):
     out = args.out.resolve()
     if out.exists():
@@ -378,6 +401,7 @@ def run(args):
     if device == 'linux' and not os.environ.get('DISPLAY'):
         sys.exit('DISPLAY must name the real X11 display (see docs/performance-lab.md)')
     wait_for_display(args)
+    wait_for_quiet_host(args)
     out.mkdir(parents=True)
     env = environment(device)
     (out / 'env.json').write_text(json.dumps(env, indent=1) + '\n')
@@ -404,6 +428,9 @@ def run(args):
     env['renderer'] = f'Impeller ({impeller.group(1)})' if impeller else 'unknown (derived from raster events in summarize)'
     env['exitCode'] = status
     env['endedAt'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    env['loadavgEnd'] = os.getloadavg()
+    env['maxLoad'] = max_load(args)
+    env['noisyHost'] = max(env['loadavg'][0], env['loadavgEnd'][0]) > env['maxLoad']
     (out / 'env.json').write_text(json.dumps(env, indent=1) + '\n')
     summary = summarize(out)
     print((out / 'summary.md').read_text())
@@ -438,6 +465,9 @@ def main(argv=None):
     r.add_argument('--no-trace', action='store_true', help='disable framework phase collection and engine timeline (cleanest timings, no phase/raster attribution)')
     r.add_argument('--device', help='flutter device id (default: linux or macos)')
     r.add_argument('--reference', type=Path, help='compare against this earlier run directory')
+    r.add_argument('--max-load', type=float, help='1-minute load average above which the host counts as noisy (default 0.35 x CPUs)')
+    r.add_argument('--wait-quiet', type=int, default=1800, help='seconds to wait for a quiet host before giving up')
+    r.add_argument('--allow-noisy', action='store_true', help='run anyway on a loaded host (summary is marked noisy)')
     r.add_argument('--wait', type=int, default=0, help='seconds to wait for another raft_flutter instance to exit (Linux)')
     r.add_argument('flutter_args', nargs='*', help='extra flutter drive arguments after --, e.g. -- --no-enable-impeller')
     s = sub.add_parser('summarize', help='rebuild summary.json/summary.md for a run')
