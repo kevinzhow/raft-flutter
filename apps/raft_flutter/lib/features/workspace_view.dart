@@ -1565,7 +1565,9 @@ class _WorkspaceViewState extends State<WorkspaceView> {
             onSearch: () => select('search'),
             onViewChannel: () {
               w.closeThread(navigate: false);
-              w.jumpToMessage(parentChannelId, parentId);
+              // Web openThreadParentMessageRoute: desktop pushes, phone
+              // replaces the thread entry.
+              w.jumpToMessage(parentChannelId, parentId, replaceEntry: !wide);
             },
           ),
       ],
