@@ -258,7 +258,6 @@ void main() {
         final gesture = await t.startGesture(t.getCenter(find.byType(RaftChatView).first), kind: PointerDeviceKind.touch);
         final clock = Stopwatch()..start();
         var last = 0;
-        final trail = <double>[];
         while (clock.elapsedMilliseconds < seconds * 1000) {
           await nextFrame();
           final now = clock.elapsedMicroseconds;
@@ -266,11 +265,10 @@ void main() {
           // timestamps follow real time so velocity tracking is realistic.
           await gesture.moveBy(Offset(0, 1800 * (now - last) / 1e6), timeStamp: Duration(microseconds: now));
           last = now;
-          if (trail.length < 400) trail.add(position().pixels);
         }
         await gesture.up(timeStamp: Duration(microseconds: clock.elapsedMicroseconds));
         await idle(const Duration(milliseconds: 300));
-        return {...moved(position(), from), 'trail': [for (var i = 0; i < trail.length; i += 20) trail[i]],  'pxPerSecond': 1800, 'olderPagesServed': hist.olderPagesServed - servedBefore, 'rowsBefore': rowsBefore, 'rowsAfter': w.messages.length};
+        return {...moved(p, from), 'pxPerSecond': 1800, 'olderPagesServed': hist.olderPagesServed - servedBefore, 'rowsBefore': rowsBefore, 'rowsAfter': w.messages.length};
       });
 
       // Four live arrivals per second while the reader is 2500 px up the
