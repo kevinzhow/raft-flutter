@@ -43,6 +43,17 @@ class _AttachmentPreviewState extends State<_AttachmentPreview> {
             onRetry: () => setState(() => result = 'Preview retried'),
           ),
           const SizedBox(height: 12),
+          // Cold image preview: the reserved box is final and stays neutral.
+          RaftAttachmentCard(
+            filename: 'loading-photo.jpg',
+            mimeType: 'image/jpeg',
+            imageWidth: 4000,
+            imageHeight: 3000,
+            previewPending: true,
+            onOpen: () => setState(() => result = 'Image preview opened'),
+            onDownload: () => setState(() => result = 'Download requested'),
+          ),
+          const SizedBox(height: 12),
           const RaftAttachmentCard(
             filename: 'reviewed-export.png',
             mimeType: 'image/png',

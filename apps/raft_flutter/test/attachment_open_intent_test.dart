@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/data/attachment_image_repository.dart';
 import 'package:raft_flutter/features/attachment_view.dart';
 import 'package:raft_flutter/platform/attachment_files.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -39,14 +40,37 @@ final png = base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
 );
 
+/// Stands in for the persistent store the app installs at startup.
+class _MemoryStore implements AttachmentImageByteStore {
+  final entries = <String, Uint8List>{};
+  String _id(AttachmentImageStoreKey key) =>
+      '${key.identity}|${key.channelId}|${key.entry}';
+  @override
+  Future<Uint8List?> read(AttachmentImageStoreKey key) async =>
+      entries[_id(key)];
+  @override
+  Future<void> write(AttachmentImageStoreKey key, Uint8List bytes) async =>
+      entries[_id(key)] = bytes;
+  @override
+  Future<void> remove(AttachmentImageStoreKey key) async =>
+      entries.remove(_id(key));
+  @override
+  Future<void> purgeChannel(String identity, String channelId) async =>
+      entries.removeWhere((k, _) => k.startsWith('$identity|$channelId|'));
+  @override
+  Future<void> purgeIdentity(String identity) async =>
+      entries.removeWhere((k, _) => k.startsWith('$identity|'));
+}
+
 Future<(_Client, WorkspaceController, _Files)> mountImage(
   WidgetTester tester,
   RaftFamily family,
-  bool dark,
-) async {
+  bool dark, {
+  AttachmentImageByteStore? store,
+}) async {
   final client = _Client()..user = RaftRecord({'id': 'alice'});
   client.selectServer('server');
-  final w = WorkspaceController(client)
+  final w = WorkspaceController(client, attachmentImageStore: store)
     ..server = RaftRecord({'id': 'server', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'channel', 'joined': true});
   w.channels = [w.channel!];
@@ -83,7 +107,7 @@ Future<void> decodeWithoutPainting(WidgetTester tester) async {
       () => Future<void>.delayed(const Duration(milliseconds: 10)),
     );
   }
-  expect(state.imageProvider, isA<MemoryImage>());
+  expect(state.imageProvider, isA<ImageProvider>());
 }
 
 void main() {
@@ -152,7 +176,12 @@ void main() {
     testWidgets(
       '[K11c] $family/$dark real pointer survives decoded-before-paint handoff',
       (tester) async {
-        final (client, _, files) = await mountImage(tester, family, dark);
+        final (client, _, files) = await mountImage(
+          tester,
+          family,
+          dark,
+          store: _MemoryStore(),
+        );
         await tester.pump();
         final action = find.byTooltip('Preview image.png');
         expect(action.hitTestable(), findsOneWidget);
@@ -163,6 +192,15 @@ void main() {
         await tester.tapAt(paintedCenter);
         await tester.pump();
         expect(find.byTooltip('Close preview'), findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('attachment-image-image')),
+          findsOneWidget,
+        );
+        // The lightbox decodes the full original from the persisted bytes.
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump();
         expect(
           find.byKey(const ValueKey('attachment-image-image')),
           findsOneWidget,

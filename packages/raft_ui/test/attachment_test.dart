@@ -43,6 +43,35 @@ void main() {
       },
     );
   }
+  testWidgets(
+    'pending image preview reserves its final box without a spinner',
+    (tester) async {
+      Widget card(Widget? preview) => MaterialApp(
+        theme: raftTheme(RaftFamily.elegant),
+        home: Scaffold(
+          body: Align(
+            alignment: Alignment.topLeft,
+            child: RaftAttachmentCard(
+              filename: 'photo.jpg',
+              mimeType: 'image/jpeg',
+              imageWidth: 4000,
+              imageHeight: 3000,
+              previewPending: preview == null,
+              preview: preview,
+              onOpen: () {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpWidget(card(null));
+      final pending = tester.getRect(find.byType(RaftAttachmentCard));
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('photo.jpg'), findsNothing);
+      expect(pending.size, const Size(384, 288));
+      await tester.pumpWidget(card(const ColoredBox(color: Colors.black)));
+      expect(tester.getRect(find.byType(RaftAttachmentCard)), pending);
+    },
+  );
   testWidgets('export retains metadata while hiding every interaction', (
     tester,
   ) async {

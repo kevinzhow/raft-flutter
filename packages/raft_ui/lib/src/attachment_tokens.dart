@@ -21,6 +21,10 @@ abstract final class AttachmentPrimitive {
   static const singleImageMaxWidth = 416.0, singleImageMaxHeight = 288.0;
   static const mobileGalleryMaxWidth = 352.0, desktopGalleryMaxWidth = 448.0;
   static const mobileGalleryReserve = 112.0;
+
+  /// One short fade for an image preview that arrives from the network;
+  /// cached previews appear without it.
+  static const previewFade = Duration(milliseconds: 120);
   static const light = <String, Color>{
     'rose': Color(0xffed3e51),
     'blue': Color(0xff0077cd),
@@ -107,9 +111,14 @@ class AttachmentComponentRecipe {
   Border? get badgeBorder => tokens.brutal
       ? Border.all(color: RaftPrimitiveColors.black, width: 2)
       : null;
-  TextStyle get metadata => RaftTypography.body(tokens, size: 10, line: 20,
-      color: tokens.brutal ? RaftPrimitiveColors.black.withValues(alpha: .45)
-          : tokens.colors['foreground-placeholder']);
+  TextStyle get metadata => RaftTypography.body(
+    tokens,
+    size: 10,
+    line: 20,
+    color: tokens.brutal
+        ? RaftPrimitiveColors.black.withValues(alpha: .45)
+        : tokens.colors['foreground-placeholder'],
+  );
   Color get actionForeground => tokens.brutal
       ? RaftPrimitiveColors.black.withValues(alpha: .6)
       : tokens.colors['foreground-icon']!;
@@ -147,7 +156,9 @@ class AttachmentComponentRecipe {
         AttachmentPrimitive.singleImageMaxHeight / height,
       ),
     );
-    final reserved = math.min((width * scale).roundToDouble(), maxWidth).toDouble();
+    final reserved = math
+        .min((width * scale).roundToDouble(), maxWidth)
+        .toDouble();
     return Size(reserved, reserved * height / width);
   }
 }

@@ -45,7 +45,7 @@ class _Harness {
       maxEncodedBytes: maxEncodedBytes,
       maxDecodedBytes: maxDecodedBytes,
       maxConcurrentLoads: maxConcurrentLoads,
-      decoder: (bytes) async {
+      decoder: (bytes, _) async {
         decodes++;
         return DecodedAttachmentImage(
           provider: MemoryImage(bytes),
@@ -247,7 +247,7 @@ void main() {
       final repository = AttachmentImageRepository(
         scope: scope(),
         retainedAuthority: (_) => allowed,
-        decoder: (_) => decoded.future,
+        decoder: (_, _) => decoded.future,
       );
       addTearDown(repository.dispose);
       final lease = repository.acquire(
@@ -408,7 +408,7 @@ void main() {
       final repository = AttachmentImageRepository(
         scope: scope(),
         retainedAuthority: (_) => true,
-        decoder: (bytes) {
+        decoder: (bytes, _) {
           preparations++;
           return decodeAttachmentImage(bytes);
         },
@@ -458,8 +458,10 @@ void main() {
         await tester.pump();
         expect(loads, 1);
         expect(preparations, 1);
-        expect((provider as AttachmentMemoryImage).codecCreations, 1);
+        // A still image keeps only its owned bitmap; no encoded bytes.
+        expect(provider, isA<AttachmentBitmapImage>());
         expect(repository.decodedByteCount, 16 * 16 * 4);
+        expect(repository.encodedByteCount, 0);
         remount.release();
         await tester.pumpWidget(const SizedBox());
       } finally {
@@ -530,15 +532,13 @@ void main() {
         await waitImage();
         final provider =
             tester.widget<Image>(find.byType(Image)).image
-                as AttachmentMemoryImage;
-        expect(provider.codecCreations, 1);
+                as AttachmentBitmapImage;
         await tester.pumpWidget(const SizedBox());
         await tester.pumpWidget(mountedView());
         await waitImage();
         expect(tester.widget<Image>(find.byType(Image)).image, same(provider));
         expect(client.resolutions, 1);
         expect(files.downloads, 1);
-        expect(provider.codecCreations, 1);
         w.revokeServer('server');
         await tester.pump();
         expect(
@@ -609,18 +609,20 @@ void main() {
 
       try {
         await tester.pumpWidget(mountedView());
-        // Cold first visit: reserved box with a busy indicator, no image yet.
+        // Cold first visit: neutral reserved box, no spinner, no image yet.
         expect(find.byType(Image), findsNothing);
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
         expect(
           tester
               .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
-              .busy,
+              .previewPending,
           isTrue,
         );
+        final cold = tester.getRect(find.byType(RaftAttachmentCard));
         await waitImage();
         await tester.pump();
         final settled = tester.getRect(find.byType(RaftAttachmentCard));
+        expect(settled, cold);
         final provider = tester.widget<Image>(find.byType(Image)).image;
         await tester.pumpWidget(const SizedBox());
 
@@ -657,11 +659,10 @@ void main() {
         w.notifyListeners();
         await tester.pumpWidget(mountedView());
         expect(find.byType(Image), findsNothing);
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
         expect(
           tester
               .widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard))
-              .busy,
+              .previewPending,
           isTrue,
         );
         await tester.pumpWidget(const SizedBox());

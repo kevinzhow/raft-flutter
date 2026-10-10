@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -46,12 +46,18 @@ class _AttachmentViewState extends State<AttachmentView> {
   final sharing = NativeSharing();
   SharedFileLease? sharedLease;
   CancelToken imageCancel = CancelToken(), downloadCancel = CancelToken();
-  Uint8List? image;
-  MemoryImage? imageProvider;
+
+  /// The list preview: thumbnail or original decoded at the reserved box.
+  ImageProvider? imageProvider;
   final imagePresentation = ValueNotifier<int>(0);
   WorkspaceAttachmentImageLease? imageLease;
   String? error;
   bool loading = false, saving = false, invalidated = false;
+
+  /// A cold network load fades in once; cached images appear directly.
+  bool fadeIn = false;
+  bool begun = false;
+  double devicePixelRatio = 1;
   bool exportReadyReported = false, opening = false;
   DialogRoute<void>? previewRoute, progressRoute;
   late int generation;
@@ -98,6 +104,14 @@ class _AttachmentViewState extends State<AttachmentView> {
     metadataFingerprint = fingerprint();
     captureAuthority();
     w.addListener(scopeChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    devicePixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1;
+    if (begun) return;
+    begun = true;
     beginImage();
   }
 
@@ -136,14 +150,72 @@ class _AttachmentViewState extends State<AttachmentView> {
     role = w.server?.string('role');
   }
 
-  AttachmentImageKey get imageKey {
+  /// Server-generated 320px WebP (Web's inline `thumbnailUrl` source).
+  String? get thumbnailUrl {
+    final value = widget.metadata['thumbnailUrl'];
+    return value is String &&
+            (value.startsWith('https://') || value.startsWith('http://'))
+        ? value
+        : null;
+  }
+
+  /// Logical box the list preview is displayed in: the gallery's extent, or
+  /// the single-image reservation (Web reserveSingleImage) at its largest.
+  Size get previewBox {
+    final extent = widget.imageExtent;
+    if (extent != null && extent.width > 0 && extent.height > 0) return extent;
+    final width = (widget.metadata['width'] as num?)?.toDouble();
+    final height = (widget.metadata['height'] as num?)?.toDouble();
+    const maxWidth = AttachmentPrimitive.singleImageMaxWidth,
+        maxHeight = AttachmentPrimitive.singleImageMaxHeight;
+    if (width == null ||
+        height == null ||
+        !(width > 0 && height > 0 && width.isFinite && height.isFinite)) {
+      return const Size(maxWidth, maxHeight);
+    }
+    final scale = math.min(1.0, math.min(maxWidth / width, maxHeight / height));
+    return Size(width * scale, height * scale);
+  }
+
+  AttachmentImageKey keyFor({required bool preview}) {
     final ownerChannel =
         '${widget.metadata['channelId'] ?? (w.presentsReply(widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
+    final box = previewBox;
     return AttachmentImageKey.fromMetadata(
       scope: w.attachmentImageScope,
       channelId: ownerChannel,
       metadata: widget.metadata,
+      rendition: preview && thumbnailUrl != null ? 'thumbnail' : 'original',
+      target: preview
+          ? AttachmentDecodeTarget.box(
+              box.width,
+              box.height,
+              devicePixelRatio: devicePixelRatio,
+              cover: widget.imageFit == BoxFit.cover,
+            )
+          : null,
     );
+  }
+
+  /// List rows never decode the full original; only the lightbox does.
+  AttachmentImageKey get imageKey => keyFor(preview: true);
+  AttachmentImageKey get fullImageKey => keyFor(preview: false);
+
+  /// Fetches the key's source bytes. Capability URLs live only in this call.
+  AttachmentImageLoader loaderFor(AttachmentImageKey key) {
+    final controller = w, transfer = files;
+    final id = widget.metadata['id'];
+    final thumbnail = key.rendition == 'thumbnail' ? thumbnailUrl : null;
+    return (cancel) async {
+      if (thumbnail != null) return transfer.image(thumbnail, cancel: cancel);
+      final value = await controller.query(
+        '/attachments/$id/url',
+        query: {'disposition': 'inline'},
+      );
+      final url = value['url'] as String;
+      if (cancel.isCancelled) throw const StaleAttachmentImage();
+      return transfer.image(url, cancel: cancel);
+    };
   }
 
   /// A decoded image the controller still retains (channel revisit, row
@@ -164,7 +236,6 @@ class _AttachmentViewState extends State<AttachmentView> {
     }
     imageLease?.release();
     imageLease = lease;
-    image = provider.bytes;
     imageProvider = provider;
     error = null;
     return true;
@@ -220,10 +291,10 @@ class _AttachmentViewState extends State<AttachmentView> {
     downloadCancel = CancelToken();
     files = widget.files ?? files;
     metadataFingerprint = nextFingerprint;
-    image = null;
     imageProvider = null;
     error = null;
     loading = saving = opening = invalidated = exportReadyReported = false;
+    fadeIn = false;
     captureAuthority();
     w.addListener(scopeChanged);
     beginImage();
@@ -253,11 +324,8 @@ class _AttachmentViewState extends State<AttachmentView> {
       }
       imageLease?.release();
       imageLease = null;
-      if (image != null && mounted) {
-        setState(() {
-          image = null;
-          imageProvider = null;
-        });
+      if (imageProvider != null && mounted) {
+        setState(() => imageProvider = null);
       }
     }
   }
@@ -279,7 +347,6 @@ class _AttachmentViewState extends State<AttachmentView> {
         });
       }
     }
-    image = null;
     imageProvider = null;
     imagePresentation.dispose();
     super.dispose();
@@ -295,9 +362,7 @@ class _AttachmentViewState extends State<AttachmentView> {
 
   Future<void> loadImage() async {
     if (!authorized || loading) return;
-    final revision = bindingRevision, controller = w;
-    final metadata = Map<String, dynamic>.from(widget.metadata);
-    final transfer = files;
+    final revision = bindingRevision;
     bool current() => revision == bindingRevision && authorized;
     setState(() {
       loading = true;
@@ -309,22 +374,14 @@ class _AttachmentViewState extends State<AttachmentView> {
       final lease = w.acquireAttachmentImage(
         key,
         authorized: current,
-        load: (cancel) async {
-          final value = await controller.query(
-            '/attachments/${metadata['id']}/url',
-            query: {'disposition': 'inline'},
-          );
-          final url = value['url'] as String;
-          if (cancel.isCancelled) throw const StaleAttachmentImage();
-          return transfer.image(url, cancel: cancel);
-        },
+        load: loaderFor(key),
       );
       imageLease = lease;
       final provider = await lease.lease.ready;
       if (current() && identical(imageLease, lease)) {
         setState(() {
-          image = provider.bytes;
           imageProvider = provider;
+          fadeIn = !widget.exportMode && !lease.lease.fromStore;
         });
       }
     } catch (_) {
@@ -336,7 +393,8 @@ class _AttachmentViewState extends State<AttachmentView> {
         setState(() => loading = false);
         imagePresentation.value++;
       }
-      if (revision == bindingRevision && (image != null || error != null)) {
+      if (revision == bindingRevision &&
+          (imageProvider != null || error != null)) {
         exportReady();
       }
     }
@@ -566,7 +624,8 @@ class _AttachmentViewState extends State<AttachmentView> {
     if (!mounted || !current()) return;
     // Source opens the image lightbox at intent, independently of thumbnail
     // readiness. A pending thumbnail load must not consume the user's click.
-    if (image == null && !loading) unawaited(loadImage());
+    if (imageProvider == null && !loading) unawaited(loadImage());
+    final fullKey = fullImageKey;
     late final DialogRoute<void> operationRoute;
     operationRoute = DialogRoute<void>(
       context: context,
@@ -589,25 +648,15 @@ class _AttachmentViewState extends State<AttachmentView> {
           valueListenable: imagePresentation,
           builder: (_, _, _) {
             if (!current()) return const SizedBox.shrink();
-            return Center(
-              child: imageProvider == null
-                  ? error == null
-                        ? const RaftSpinner(inverse: true)
-                        : const Text(
-                            'Preview unavailable. Download the original file.',
-                          )
-                  : InteractiveViewer(
-                      child: Image(
-                        image: imageProvider!,
-                        key: ValueKey(
-                          'attachment-image-${widget.metadata['id']}',
-                        ),
-                        fit: BoxFit.contain,
-                        errorBuilder: (_, _, _) => const Text(
-                          'Preview unavailable. Download the original file.',
-                        ),
-                      ),
-                    ),
+            return _FullAttachmentImage(
+              imageKey: ValueKey('attachment-image-${widget.metadata['id']}'),
+              acquire: () => w.acquireAttachmentImage(
+                fullKey,
+                authorized: current,
+                load: loaderFor(fullKey),
+              ),
+              placeholder: imageProvider,
+              previewFailed: error != null,
             );
           },
         ),
@@ -676,22 +725,117 @@ class _AttachmentViewState extends State<AttachmentView> {
     imageWidth: (widget.metadata['width'] as num?)?.toDouble(),
     imageHeight: (widget.metadata['height'] as num?)?.toDouble(),
     sizeBytes: (widget.metadata['sizeBytes'] as num?)?.toInt(),
-    busy: loading || saving,
+    // Image previews load behind a neutral reserved box, not a spinner.
+    busy: saving,
+    previewPending: loading,
     error: error,
     onRetry: loadImage,
     onOpen: open,
     onDownload: download,
     onShare: sharing.supported ? shareAttachment : null,
     onCancel: saving ? downloadCancel.cancel : null,
-    preview: image == null
-        ? null
-        : Image(
-            image: imageProvider!,
-            fit: widget.imageFit,
-            errorBuilder: (_, _, _) => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Preview unavailable. Download the original file.'),
-            ),
-          ),
+    preview: imageProvider == null ? null : previewImage(imageProvider!),
   );
+
+  Widget previewImage(ImageProvider provider) {
+    final image = Image(
+      image: provider,
+      fit: widget.imageFit,
+      gaplessPlayback: true,
+      errorBuilder: (_, _, _) => const Padding(
+        padding: EdgeInsets.all(16),
+        child: Text('Preview unavailable. Download the original file.'),
+      ),
+    );
+    if (!fadeIn) return image;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: AttachmentPrimitive.previewFade,
+      builder: (_, opacity, child) => Opacity(opacity: opacity, child: child),
+      child: image,
+    );
+  }
+}
+
+/// Lightbox body: the full-resolution original, decoded only while open.
+/// The list preview stands in until it is ready (Web shows the thumbnail).
+class _FullAttachmentImage extends StatefulWidget {
+  const _FullAttachmentImage({
+    required this.imageKey,
+    required this.acquire,
+    required this.placeholder,
+    required this.previewFailed,
+  });
+  final Key imageKey;
+  final WorkspaceAttachmentImageLease Function() acquire;
+  final ImageProvider? placeholder;
+  final bool previewFailed;
+  @override
+  State<_FullAttachmentImage> createState() => _FullAttachmentImageState();
+}
+
+class _FullAttachmentImageState extends State<_FullAttachmentImage> {
+  WorkspaceAttachmentImageLease? lease;
+  ImageProvider? full;
+  bool failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(load());
+  }
+
+  Future<void> load() async {
+    final WorkspaceAttachmentImageLease next;
+    try {
+      next = widget.acquire();
+    } catch (_) {
+      failed = true;
+      return;
+    }
+    lease = next;
+    final ready = next.lease.value;
+    if (ready != null) {
+      full = ready;
+      return;
+    }
+    try {
+      final provider = await next.lease.ready;
+      if (mounted && identical(lease, next)) setState(() => full = provider);
+    } catch (_) {
+      if (mounted && identical(lease, next)) setState(() => failed = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    // The full-resolution bitmap is not kept once the lightbox closes; its
+    // bytes stay in the persistent store for the next open.
+    lease?.release(discard: true);
+    lease = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = full ?? widget.placeholder;
+    const unavailable = Text(
+      'Preview unavailable. Download the original file.',
+    );
+    return Center(
+      child: provider == null
+          ? failed || widget.previewFailed
+                ? unavailable
+                : const RaftSpinner(inverse: true)
+          : InteractiveViewer(
+              child: Image(
+                image: provider,
+                key: widget.imageKey,
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                errorBuilder: (_, _, _) => unavailable,
+              ),
+            ),
+    );
+  }
 }

@@ -28,6 +28,7 @@ class RaftAttachmentCard extends StatelessWidget {
     this.summary,
     this.metaLabel,
     this.previewAffordance = false,
+    this.previewPending = false,
   });
   final String filename, mimeType;
 
@@ -40,6 +41,10 @@ class RaftAttachmentCard extends StatelessWidget {
   /// download button.
   final String? metaLabel;
   final bool previewAffordance;
+
+  /// Image cards only: the preview is still being fetched/decoded. The
+  /// reserved box stays a neutral surface (no spinner, no filename flash).
+  final bool previewPending;
   final int? sizeBytes;
   final double? imageWidth, imageHeight;
   final Size? imageExtent;
@@ -196,6 +201,9 @@ class RaftAttachmentCard extends StatelessWidget {
                         onTap: exportMode ? null : onOpen,
                         child:
                             preview ??
+                            (previewPending && error == null
+                                ? const SizedBox.expand()
+                                : null) ??
                             Center(
                               child: busy
                                   ? const CircularProgressIndicator(

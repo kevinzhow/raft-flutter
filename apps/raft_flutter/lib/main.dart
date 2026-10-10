@@ -5,9 +5,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/attachment_image_store.dart';
 import 'data/device_preferences.dart';
 import 'data/workspace_controller.dart';
 import 'data/source_time_formatter.dart';
@@ -35,6 +37,10 @@ Future<void> main([List<String> args = const []]) async {
   await initializeSourceTimeFormatting();
   // First frames read saved layout choices synchronously from this.
   await DevicePreferences.load();
+  // Inline image previews survive restarts; reads stay authority-gated.
+  AttachmentImageDiskCache.installed ??= AttachmentImageDiskCache(
+    getApplicationCacheDirectory,
+  );
   runApp(ProviderScope(child: RaftApp(initialArguments: args)));
 }
 

@@ -24,10 +24,10 @@ class WorkspaceAttachmentImageLease {
   final AttachmentImageLease lease;
   final VoidCallback _releaseAuthority;
   bool _released = false;
-  void release() {
+  void release({bool discard = false}) {
     if (_released) return;
     _released = true;
-    lease.release();
+    discard ? lease.discard() : lease.release();
     _releaseAuthority();
   }
 }
@@ -101,7 +101,9 @@ class WorkspaceController extends ChangeNotifier {
     this.ownsClient = true,
     WorkspaceEntityDirectory? entityDirectory,
     FollowedThreadsStore? followedThreads,
-  }) {
+    AttachmentImageByteStore? attachmentImageStore,
+  }) : attachmentImageStore =
+           attachmentImageStore ?? AttachmentImageDiskCache.installed {
     _ownsFollowedThreads = followedThreads == null;
     this.followedThreads =
         followedThreads ??
@@ -173,6 +175,10 @@ class WorkspaceController extends ChangeNotifier {
   }
 
   AttachmentImageRepository? _attachmentImages;
+
+  /// Persistent bytes for inline/list image previews (null: memory only).
+  final AttachmentImageByteStore? attachmentImageStore;
+  int get retainedImageDecodedBytes => _attachmentImages?.decodedByteCount ?? 0;
   int get retainedImageCount => _attachmentImages?.entryCount ?? 0;
   int get retainedImageEncodedBytes => _attachmentImages?.encodedByteCount ?? 0;
   final _imageAuthorities =
@@ -282,6 +288,7 @@ class WorkspaceController extends ChangeNotifier {
         channelId: key.channelId,
         metadata: metadata,
         rendition: key.rendition,
+        target: key.target,
       );
       if (canonical == key) return true;
     }
@@ -357,6 +364,7 @@ class WorkspaceController extends ChangeNotifier {
       final repository = _attachmentImages ??= AttachmentImageRepository(
         scope: attachmentImageScope,
         retainedAuthority: _retainsAttachment,
+        store: attachmentImageStore,
       );
       repository.synchronize(attachmentImageScope);
       return WorkspaceAttachmentImageLease(
@@ -2065,6 +2073,9 @@ class WorkspaceController extends ChangeNotifier {
     };
     for (final scope in {id, ...threadIds}) {
       _revokedChannels.add(scope);
+      _attachmentImages
+        ?..synchronize(attachmentImageScope)
+        ..invalidateChannel(scope);
       ledger.revokeChannel(scope);
       messageSync.revokeChannel(scope);
       threadRepliesSync.revokeChannel(scope);

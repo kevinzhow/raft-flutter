@@ -93,6 +93,11 @@ class _ConversationPanelState extends State<ConversationPanel> {
     channelId: file.channelId,
     metadata: file.metadata,
     rendition: _usesThumbnail(file, rendition) ? 'thumbnail' : 'original',
+    // The Files row tile is 56px: never decode the original for it (bounded
+    // for the densest displays, 3x). Previews decode at full size.
+    target: rendition == SourceChannelImageRendition.thumbnail
+        ? AttachmentDecodeTarget.box(56, 56, devicePixelRatio: 3, cover: true)
+        : null,
   );
 
   /// Already decoded Files images (tab revisit) paint in the first frame.
