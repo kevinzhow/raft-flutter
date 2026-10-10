@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 
 import 'design_primitives.dart';
+import 'font_warm_up.dart';
 import 'viewport_breakpoints.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
@@ -215,6 +217,17 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   bool secondaryDown = false;
   final portal = OverlayPortalController();
   final toolbarKey = GlobalKey();
+
+  /// Idle rows do not build their action strip. This node holds the strip's
+  /// place in keyboard traversal; focusing it reveals the strip and hands
+  /// focus to its first (Tab) or last (Shift+Tab) action.
+  late final toolbarProxy = FocusNode(debugLabel: 'message toolbar')
+    ..addListener(toolbarProxyChanged);
+  final toolbarGroup = FocusNode(
+    debugLabel: 'message toolbar actions',
+    canRequestFocus: false,
+    skipTraversal: true,
+  );
   ScrollPosition? position, listeningPosition;
   bool overlayUpdateQueued = false, portalSyncQueued = false;
   bool tickerEnabled = true, portalMounted = false;
@@ -233,6 +246,8 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Resolve the list's remaining font combinations while it is idle.
+    RaftFontWarmUp.schedule(context);
     position = Scrollable.maybeOf(context)?.position;
     tickerEnabled = TickerMode.valuesOf(context).enabled;
     syncPortal();
@@ -292,7 +307,27 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   @override
   void dispose() {
     listeningPosition?.removeListener(scrollChanged);
+    toolbarProxy.dispose();
+    toolbarGroup.dispose();
     super.dispose(); // OverlayPortal removes its owned overlay on unmount.
+  }
+
+  void toolbarProxyChanged() {
+    if (!toolbarProxy.hasPrimaryFocus) return;
+    final backward = HardwareKeyboard.instance.isShiftPressed;
+    // The row's focus listener has already revealed the strip; its actions
+    // exist after the next frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !toolbarProxy.hasPrimaryFocus) return;
+      final actions = toolbarGroup.traversalDescendants.toList();
+      if (actions.isNotEmpty) {
+        (backward ? actions.last : actions.first).requestFocus();
+      } else if (backward) {
+        toolbarProxy.previousFocus(); // Every action is inert (pending row).
+      } else {
+        toolbarProxy.nextFocus();
+      }
+    });
   }
 
   Widget overlay(
@@ -346,9 +381,12 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                     ignoring: !recipe.toolbarVisible,
                     child: Opacity(
                       opacity: recipe.toolbarVisible ? 1 : 0,
-                      child: KeyedSubtree(
-                        key: toolbarKey,
-                        child: widget.toolbar!,
+                      child: Focus(
+                        focusNode: toolbarGroup,
+                        child: KeyedSubtree(
+                          key: toolbarKey,
+                          child: widget.toolbar!,
+                        ),
                       ),
                     ),
                   ),
@@ -385,15 +423,19 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
         clipBehavior: Clip.none,
         children: [
           child,
-          // CSS opacity hides paint, not keyboard traversal. Retain the owned
-          // action nodes offstage while idle, and move the same subtree into
-          // the portal when its keyboard focus reveals the strip.
-          if (!toolbarActive)
-            ExcludeSemantics(
-              child: Offstage(
-                child: KeyedSubtree(key: toolbarKey, child: widget.toolbar!),
+          // CSS opacity hides paint, not keyboard traversal. An idle row keeps
+          // only a focus stop where its actions sit in traversal order; the
+          // strip itself is built in the portal once hover or focus reveals
+          // it, so mounting a row never builds hidden controls.
+          ExcludeSemantics(
+            child: Offstage(
+              child: Focus(
+                focusNode: toolbarProxy,
+                skipTraversal: toolbarActive,
+                child: const SizedBox.shrink(),
               ),
             ),
+          ),
         ],
       ),
     );

@@ -61,7 +61,7 @@ void main() {
           );
           expect(after.top - before.bottom, closeTo(4, .1));
           final markdown = tester.widget<MarkdownBody>(
-            find.byType(MarkdownBody),
+            find.byWidgetPredicate((w) => w is MarkdownBody),
           );
           final sheet = markdown.styleSheet!;
           expect(sheet.blockSpacing, 4); // Ordinary paragraph/heading contract.

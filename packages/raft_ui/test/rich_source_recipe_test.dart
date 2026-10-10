@@ -111,7 +111,8 @@ void main() {
               body: SizedBox(
                 width: 640,
                 child: RaftMessageBody(
-                  content: '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
+                  content:
+                      '| Status | Count |\n|---|---|\n|Ready|3|\n\n[link](https://example.com)',
                 ),
               ),
             ),
@@ -119,7 +120,9 @@ void main() {
         );
         final table = tester.widget<Table>(find.byType(Table));
         expect(table.defaultColumnWidth, isA<IntrinsicColumnWidth>());
-        final body = tester.widget<MarkdownBody>(find.byType(MarkdownBody));
+        final body = tester.widget<MarkdownBody>(
+          find.byWidgetPredicate((w) => w is MarkdownBody),
+        );
         double textWidth(String value) {
           final painter = TextPainter(
             text: TextSpan(text: value, style: body.styleSheet!.tableHead),

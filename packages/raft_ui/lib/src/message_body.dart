@@ -4,6 +4,7 @@ import 'message_reference_chip.dart';
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -49,6 +50,7 @@ import 'package:re_highlight/languages/xml.dart';
 import 'package:re_highlight/languages/yaml.dart';
 
 import 'icons.dart';
+import 'lru_cache.dart';
 import 'message_list_marker.dart';
 import 'message_content_tokens.dart';
 import 'attachment_lightbox.dart';
@@ -191,6 +193,180 @@ String raftMessageReferences(
   return out.toString();
 }
 
+/// Inputs of [raftMessageReferences] that change its output. Task closures
+/// are reduced to their answers for the numbers this text can reference.
+@immutable
+class _ReferencesKey {
+  _ReferencesKey(
+    this.source,
+    List<RaftTextReference> references,
+    String Function(int number)? taskHref,
+    bool Function(int number)? knownTaskNumber,
+  ) : references = [
+        for (final r in references) (r.text, r.href, r.identityBacked),
+      ],
+      tasks = taskHref == null
+          ? null
+          : [
+              for (final n in {
+                for (final m in _taskNumberPattern.allMatches(source))
+                  int.parse(m[1]!),
+              })
+                (n, taskHref(n), knownTaskNumber?.call(n) ?? false),
+            ];
+  static final _taskNumberPattern = RegExp(r'#([1-9][0-9]*)');
+  final String source;
+  final List<(String, String, bool)> references;
+  final List<(int, String, bool)>? tasks;
+  @override
+  bool operator ==(Object other) =>
+      other is _ReferencesKey &&
+      other.source == source &&
+      listEquals(other.references, references) &&
+      listEquals(other.tasks, tasks);
+  @override
+  int get hashCode => Object.hash(
+    source,
+    Object.hashAll(references),
+    tasks == null ? null : Object.hashAll(tasks!),
+  );
+}
+
+/// One rendered block of a message body: a Markdown run, or a fenced code or
+/// Mermaid block that the Markdown renderer does not own.
+@immutable
+class _BodyChunk {
+  const _BodyChunk.markdown(this.text) : language = null, mermaid = false;
+  const _BodyChunk.code(this.text, this.language, {required this.mermaid});
+  final String text;
+  final String? language;
+  final bool mermaid;
+  bool get markdown => language == null && !mermaid;
+}
+
+final _fenceStart = RegExp(r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$');
+
+List<_BodyChunk> _splitBody(String prepared) {
+  final chunks = <_BodyChunk>[];
+  final lines = prepared.split('\n');
+  final markdown = StringBuffer();
+  void flush() {
+    if (markdown.isEmpty) return;
+    chunks.add(_BodyChunk.markdown(markdown.toString()));
+    markdown.clear();
+  }
+
+  for (var i = 0; i < lines.length; i++) {
+    final start = _fenceStart.firstMatch(lines[i]);
+    if (start == null) {
+      markdown.writeln(lines[i]);
+      continue;
+    }
+    final fence = start[1]!;
+    final close = RegExp(
+      '^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$',
+    );
+    var end = i + 1;
+    while (end < lines.length && !close.hasMatch(lines[end])) {
+      end++;
+    }
+    if (end == lines.length) {
+      markdown.writeln(lines[i]);
+      continue;
+    }
+    flush();
+    chunks.add(
+      _BodyChunk.code(
+        lines.sublist(i + 1, end).join('\n'),
+        start[2],
+        mermaid: start[2]!.toLowerCase() == 'mermaid',
+      ),
+    );
+    i = end;
+  }
+  flush();
+  return chunks;
+}
+
+/// Reference preparation and block splitting are pure functions of the
+/// message text and its reference projection, so a row that is scrolled away
+/// and back (or rebuilt by an unrelated update) does not redo them.
+final _bodyChunkCache = RaftLruCache<_ReferencesKey, List<_BodyChunk>>(512);
+
+/// Parsed Markdown trees keyed by their exact source. Every message body uses
+/// the same parser configuration (GitHub flavoured, reference sentinels).
+/// A tree is shared only when MarkdownBuilder cannot change it: the builder
+/// appends a placeholder to an empty list item after visiting it, which
+/// would alter a second build, so such sources are parsed per build.
+@visibleForTesting
+final raftMarkdownAstCache = RaftLruCache<String, List<md.Node>?>(512);
+
+List<md.Node> _parseMarkdownSource(String data) => md.Document(
+  inlineSyntaxes: [_ReferenceSentinelSyntax()],
+  extensionSet: md.ExtensionSet.gitHubFlavored,
+  encodeHtml: false,
+).parseLines(const LineSplitter().convert(data));
+
+bool _hasEmptyListItem(List<md.Node>? nodes) =>
+    nodes != null &&
+    nodes.any(
+      (n) =>
+          n is md.Element &&
+          ((n.tag == 'li' && (n.children?.isEmpty ?? false)) ||
+              _hasEmptyListItem(n.children)),
+    );
+
+List<md.Node> _parseMarkdown(String data) =>
+    raftMarkdownAstCache.putIfAbsent(data, () {
+      final nodes = _parseMarkdownSource(data);
+      return _hasEmptyListItem(nodes) ? null : nodes;
+    }) ??
+    _parseMarkdownSource(data);
+
+/// Exactly the style sheet MarkdownBody resolves (its Material fallback
+/// merged with the message recipe), computed once per theme and text scale.
+@immutable
+class _StyleSheetKey {
+  const _StyleSheetKey(
+    this.theme,
+    this.scaler,
+    this.fontSize,
+    this.lineHeight,
+    this.document,
+    this.mountedMessage,
+    this.foreground,
+  );
+  final ThemeData theme;
+  final TextScaler scaler;
+  final double fontSize;
+  final double? lineHeight;
+  final bool document, mountedMessage;
+  final Color? foreground;
+  @override
+  bool operator ==(Object other) =>
+      other is _StyleSheetKey &&
+      identical(other.theme, theme) &&
+      other.scaler == scaler &&
+      other.fontSize == fontSize &&
+      other.lineHeight == lineHeight &&
+      other.document == document &&
+      other.mountedMessage == mountedMessage &&
+      other.foreground == foreground;
+  @override
+  int get hashCode => Object.hash(
+    identityHashCode(theme),
+    scaler,
+    fontSize,
+    lineHeight,
+    document,
+    mountedMessage,
+    foreground,
+  );
+}
+
+final _styleSheetCache =
+    RaftLruCache<_StyleSheetKey, (MarkdownStyleSheet, MarkdownStyleSheet)>(32);
+
 /// Markdown and native Mermaid rendering. HTML is kept as text by the Markdown
 /// parser. Diagram callbacks, scripts and remote resources are never executed.
 class RaftMessageBody extends StatelessWidget {
@@ -241,120 +417,219 @@ class RaftMessageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final prepared = raftMessageReferences(
-      content,
-      references: references,
-      taskHref: taskHref,
-      knownTaskNumber: knownTaskNumber,
-    );
-    final blocks = <Widget>[];
-    final lines = prepared.split('\n');
-    final markdown = StringBuffer();
-    void flush() {
-      if (markdown.isEmpty) return;
-      final body = MarkdownBody(
-        builders: {
-          'a': _MessageLinkBuilder(onLink, referenceAppearance),
-          'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
-          'code': _MessageInlineCodeBuilder(),
-        },
-        inlineSyntaxes: [_ReferenceSentinelSyntax()],
-        paddingBuilders: MessageContentRecipe(
-          t,
-          fontSize: fontSize,
-          lineHeight: lineHeight,
-          document: documentMode,
-          mountedMessage: mountedMessage,
-          foreground: foregroundColor,
-        ).headingPadding(markdown.toString()),
-        data: markdown.toString(),
-        softLineBreak: true,
-        onTapLink: (_, href, _) {
-          if (href != null) onLink?.call(href);
-        },
-        bulletBuilder: (parameters) => RaftMarkdownListMarker(
-          orderedIndex: parameters.style == BulletStyle.orderedList
-              ? parameters.index
-              : null,
-          indent: documentMode
-              ? MessageContentPrimitive.documentListIndent
-              : MessageContentPrimitive.compactListIndent,
-          style: MessageContentRecipe(
-            t,
-            fontSize: fontSize,
-            lineHeight: lineHeight,
-            document: documentMode,
-            mountedMessage: mountedMessage,
-            foreground: foregroundColor,
-          ).body,
+    final key = _ReferencesKey(content, references, taskHref, knownTaskNumber);
+    final chunks = _bodyChunkCache.putIfAbsent(
+      key,
+      () => _splitBody(
+        raftMessageReferences(
+          content,
+          references: references,
+          taskHref: taskHref,
+          knownTaskNumber: knownTaskNumber,
         ),
-        styleSheet: MessageContentRecipe(
-          t,
-          fontSize: fontSize,
-          lineHeight: lineHeight,
-          document: documentMode,
-          mountedMessage: mountedMessage,
-          foreground: foregroundColor,
-        ).stylesheet(context),
-      );
-      blocks.add(
-        enableProseSelection
-            ? SelectionArea(
-                // Message context menus belong to the message host.
-                contextMenuBuilder: (_, _) => const SizedBox.shrink(),
-                child: body,
-              )
-            : body,
-      );
-      markdown.clear();
-    }
-
-    for (var i = 0; i < lines.length; i++) {
-      final start = RegExp(r'^ {0,3}(`{3,}|~{3,})\s*([^\s`]*)\s*$')
-          .firstMatch(lines[i]);
-      if (start == null) {
-        markdown.writeln(lines[i]);
-        continue;
-      }
-      final fence = start[1]!;
-      var end = i + 1;
-      while (end < lines.length &&
-          !RegExp('^ {0,3}${RegExp.escape(fence[0])}{${fence.length},}\\s*\$')
-              .hasMatch(lines[end])) {
-        end++;
-      }
-      if (end == lines.length) {
-        markdown.writeln(lines[i]);
-        continue;
-      }
-      flush();
-      final code = lines.sublist(i + 1, end).join('\n');
-      blocks.add(
-        start[2]!.toLowerCase() == 'mermaid'
-            ? RaftMermaidBlock(
-                source: code,
-                onCopy: onCopyCode,
-                onExport: onExportDiagram,
-                exportMode: exportMode,
-              )
-            : RaftCodeBlock(
-                code: code,
-                language: start[2],
-                onCopy: onCopyCode,
-                exportMode: exportMode,
-                fontSize: fontSize,
-              ),
-      );
-      i = end;
-    }
-    flush();
-    return Column(
+      ),
+    );
+    final recipe = MessageContentRecipe(
+      t,
+      fontSize: fontSize,
+      lineHeight: lineHeight,
+      document: documentMode,
+      mountedMessage: mountedMessage,
+      foreground: foregroundColor,
+    );
+    (MarkdownStyleSheet, MarkdownStyleSheet)? styleSheets;
+    (MarkdownStyleSheet, MarkdownStyleSheet) resolveStyleSheets() =>
+        styleSheets ??= _styleSheetCache.putIfAbsent(
+          _StyleSheetKey(
+            Theme.of(context),
+            MediaQuery.textScalerOf(context),
+            fontSize,
+            lineHeight,
+            documentMode,
+            mountedMessage,
+            foregroundColor,
+          ),
+          () {
+            final own = recipe.stylesheet(context);
+            // MarkdownBody: kFallbackStyle(context).merge(styleSheet).
+            return (
+              own,
+              MarkdownStyleSheet.fromTheme(Theme.of(context))
+                  .copyWith(textScaler: MediaQuery.textScalerOf(context))
+                  .merge(own),
+            );
+          },
+        );
+    final builders = <String, MarkdownElementBuilder>{
+      'a': _MessageLinkBuilder(onLink, referenceAppearance),
+      'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
+      'code': _MessageInlineCodeBuilder(),
+    };
+    final bulletStyle = recipe.body;
+    final indent = documentMode
+        ? MessageContentPrimitive.documentListIndent
+        : MessageContentPrimitive.compactListIndent;
+    final proseSelection =
+        enableProseSelection && chunks.any((c) => c.markdown);
+    Widget selectable(Widget block) =>
+        proseSelection ? SelectionContainer.disabled(child: block) : block;
+    final blocks = <Widget>[
+      for (final chunk in chunks)
+        if (chunk.markdown)
+          _RaftMarkdown(
+            data: chunk.text,
+            styleSheet: resolveStyleSheets().$1,
+            resolvedStyleSheet: resolveStyleSheets().$2,
+            builders: builders,
+            paddingBuilderFactory: () => recipe.headingPadding(chunk.text),
+            onTapLink: (_, href, _) {
+              if (href != null) onLink?.call(href);
+            },
+            bulletBuilder: (parameters) => RaftMarkdownListMarker(
+              orderedIndex: parameters.style == BulletStyle.orderedList
+                  ? parameters.index
+                  : null,
+              indent: indent,
+              style: bulletStyle,
+            ),
+          )
+        else
+          // Code and diagram blocks keep their own selection and controls;
+          // their labels never join the prose selection.
+          selectable(
+            chunk.mermaid
+                ? RaftMermaidBlock(
+                    source: chunk.text,
+                    onCopy: onCopyCode,
+                    onExport: onExportDiagram,
+                    exportMode: exportMode,
+                  )
+                : RaftCodeBlock(
+                    code: chunk.text,
+                    language: chunk.language,
+                    onCopy: onCopyCode,
+                    exportMode: exportMode,
+                    fontSize: fontSize,
+                  ),
+          ),
+    ];
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: blocks
-          .map((b) => Padding(padding: EdgeInsets.zero, child: b))
-          .toList(),
+      children: blocks,
+    );
+    if (!proseSelection) return body;
+    // One selection region per message: prose blocks before and after a
+    // code block share it, and a row mounts one region instead of several.
+    return SelectionArea(
+      // Message context menus belong to the message host.
+      contextMenuBuilder: (_, _) => const SizedBox.shrink(),
+      child: body,
     );
   }
+}
+
+/// MarkdownBody with the parse step memoised: same builder, style sheet,
+/// defaults and widget output; only [md.Document.parseLines] is shared.
+class _RaftMarkdown extends MarkdownBody {
+  const _RaftMarkdown({
+    required super.data,
+    required MarkdownStyleSheet super.styleSheet,
+    required this.resolvedStyleSheet,
+    required Map<String, MarkdownElementBuilder> super.builders,
+    required this.paddingBuilderFactory,
+    required MarkdownTapLinkCallback super.onTapLink,
+    required MarkdownBulletBuilder super.bulletBuilder,
+  }) : super(softLineBreak: true);
+
+  /// MarkdownBody's effective sheet: Material fallback merged with
+  /// [styleSheet].
+  final MarkdownStyleSheet resolvedStyleSheet;
+
+  /// Heading padding builders carry per-build state, so each build gets
+  /// fresh ones.
+  final Map<String, MarkdownPaddingBuilder> Function() paddingBuilderFactory;
+
+  @override
+  State<MarkdownWidget> createState() => _RaftMarkdownState();
+}
+
+class _RaftMarkdownState extends State<MarkdownWidget>
+    implements MarkdownBuilderDelegate {
+  _RaftMarkdown get markdown => widget as _RaftMarkdown;
+  List<Widget>? children;
+  final recognizers = <GestureRecognizer>[];
+
+  @override
+  void didChangeDependencies() {
+    rebuildChildren();
+    super.didChangeDependencies();
+  }
+
+  @override
+  void didUpdateWidget(MarkdownWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.data != oldWidget.data ||
+        widget.styleSheet != oldWidget.styleSheet) {
+      rebuildChildren();
+    }
+  }
+
+  @override
+  void dispose() {
+    disposeRecognizers();
+    super.dispose();
+  }
+
+  void disposeRecognizers() {
+    final current = List<GestureRecognizer>.of(recognizers);
+    recognizers.clear();
+    for (final recognizer in current) {
+      recognizer.dispose();
+    }
+  }
+
+  void rebuildChildren() {
+    disposeRecognizers();
+    children = MarkdownBuilder(
+      delegate: this,
+      selectable: false,
+      styleSheet: markdown.resolvedStyleSheet,
+      imageDirectory: null,
+      imageBuilder: null,
+      checkboxBuilder: null,
+      bulletBuilder: widget.bulletBuilder,
+      builders: widget.builders,
+      paddingBuilders: markdown.paddingBuilderFactory(),
+      fitContent: true,
+      listItemCrossAxisAlignment: MarkdownListItemCrossAxisAlignment.baseline,
+      onSelectionChanged: null,
+      onTapText: null,
+      softLineBreak: true,
+    ).build(_parseMarkdown(widget.data));
+  }
+
+  @override
+  GestureRecognizer createLink(String text, String? href, String title) {
+    final recognizer = TapGestureRecognizer()
+      ..onTap = () => widget.onTapLink?.call(text, href, title);
+    recognizers.add(recognizer);
+    return recognizer;
+  }
+
+  @override
+  TextSpan formatText(MarkdownStyleSheet styleSheet, String code) => TextSpan(
+    style: styleSheet.code,
+    text: code.replaceAll(RegExp(r'\n$'), ''),
+  );
+
+  @override
+  Widget build(BuildContext context) => children!.length == 1
+      ? children!.single
+      : Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children!,
+        );
 }
 
 class RaftMermaidBlock extends StatefulWidget {
@@ -1059,7 +1334,24 @@ final _codeLanguageAliases = <String, String>{
   'shellscript': 'bash',
 };
 
+/// Highlighted code spans are immutable and depend only on these inputs, so
+/// a row that remounts, rebuilds or changes hover state reuses its tokens.
+final raftCodeSpanCache =
+    RaftLruCache<(String, String?, TextStyle, bool), TextSpan>(256);
+
 TextSpan raftCodeSpan(
+  String code,
+  String? language,
+  TextStyle style, {
+  required bool dark,
+}) => raftCodeSpanCache.putIfAbsent((
+  code,
+  language,
+  style,
+  dark,
+), () => _highlightCode(code, language, style, dark: dark));
+
+TextSpan _highlightCode(
   String code,
   String? language,
   TextStyle style, {
@@ -1077,7 +1369,10 @@ TextSpan raftCodeSpan(
   }
   try {
     _codeHighlighter.registerLanguage(name, _nativeCodeLanguages[name]!);
-    final renderer = _ScopedCodeRenderer(style, raftCodeTokenTheme(dark: dark));
+    final renderer = _ScopedCodeRenderer(
+      style,
+      dark ? _darkCodeTokenTheme : _lightCodeTokenTheme,
+    );
     _codeHighlighter.highlight(code: code, language: name).render(renderer);
     return renderer.span;
   } catch (_) {
@@ -1195,20 +1490,53 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
+  // The highlighted text box depends only on the code, language and theme.
+  // Hover, focus and copy feedback rebuild the copy control, never re-run
+  // tokenization or replace the selectable text widget.
+  Widget? codeBox;
+  Object? codeBoxKey;
+  Widget buildCodeBox(RaftTokens t) {
     final recipe = RaftCodeRecipe(t);
     final textStyle = recipe.textStyle.copyWith(
       fontSize: widget.fontSize,
       color: recipe.foreground,
     );
+    final key = (widget.code, widget.language, textStyle, t);
+    if (codeBox != null && key == codeBoxKey) return codeBox!;
+    codeBoxKey = key;
     final span = raftCodeSpan(
       widget.code,
       widget.language,
       textStyle,
       dark: t.dark,
     );
+    return codeBox = Container(
+      key: const ValueKey('code-container'),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: recipe.background,
+        border: Border.all(color: recipe.border, width: t.border),
+        borderRadius: recipe.radius,
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Semantics(
+          label: widget.code,
+          excludeSemantics: true,
+          child: SelectableText.rich(
+            span,
+            style: textStyle,
+            textAlign: TextAlign.left,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: MouseRegion(
@@ -1221,28 +1549,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
             children: [
               Stack(
                 children: [
-                  Container(
-                    key: const ValueKey('code-container'),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: recipe.background,
-                      border: Border.all(color: recipe.border, width: t.border),
-                      borderRadius: recipe.radius,
-                    ),
-                    padding: const EdgeInsets.fromLTRB(12, 12, 48, 12),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Semantics(
-                        label: widget.code,
-                        excludeSemantics: true,
-                        child: SelectableText.rich(
-                          span,
-                          style: textStyle,
-                          textAlign: TextAlign.left,
-                        ),
-                      ),
-                    ),
-                  ),
+                  buildCodeBox(t),
                   if (!widget.exportMode)
                     Positioned(
                       right: 8,
@@ -1254,8 +1561,7 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
                           tooltip: copied ? 'Copied' : 'Copy code',
                           onPressed: widget.code.isEmpty ? null : copy,
                           visualSize: RaftMetrics.buttonXs,
-                          minimumTargetSize:
-                              raftBreakpointWidth(context) < 768
+                          minimumTargetSize: raftBreakpointWidth(context) < 768
                               ? RaftMetrics.touchTarget
                               : RaftMetrics.buttonXs,
                           glyphSize: RaftMetrics.iconSm,
@@ -1277,6 +1583,9 @@ class _RaftCodeBlockState extends State<RaftCodeBlock> {
     );
   }
 }
+
+final _lightCodeTokenTheme = raftCodeTokenTheme(dark: false);
+final _darkCodeTokenTheme = raftCodeTokenTheme(dark: true);
 
 /// The source Shiki Github high contrast primitives mapped to the native
 /// tokenizer's semantic scopes. Scope boundaries are independently compared.
