@@ -6,6 +6,7 @@ import io.flutter.plugin.common.MethodChannel
 import android.app.Activity
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +14,7 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
     private var sharing: NativeSharingBridge? = null
+    private var systemFonts: NativeSystemFontsBridge? = null
     private var saveResult: MethodChannel.Result? = null
     private val saveRequest = 45071
     private val localNetworkRequest = 45072
@@ -21,6 +23,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         sharing = NativeSharingBridge(this, flutterEngine)
+        systemFonts = NativeSystemFontsBridge(this, flutterEngine)
         NativePdfPreviewBridge(this, flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "app.raft/local-network")
             .setMethodCallHandler { call, result ->
@@ -102,6 +105,11 @@ class MainActivity : FlutterActivity() {
         sharing?.receive(intent)
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        systemFonts?.configurationChanged()
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == localNetworkRequest) {
@@ -113,6 +121,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        systemFonts?.dispose()
         localNetworkResults.forEach { it.success(false) }
         localNetworkResults.clear()
         super.onDestroy()

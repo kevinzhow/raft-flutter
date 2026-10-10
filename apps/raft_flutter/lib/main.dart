@@ -29,12 +29,14 @@ import 'platform/native_sharing.dart';
 import 'platform/content_coordinator.dart';
 import 'platform/workspace_cache.dart';
 import 'platform/system_bars.dart';
+import 'platform/system_fonts.dart';
 import 'platform/background_notifications.dart';
 
 final raftScreenshotKey = GlobalKey();
 
 Future<void> main([List<String> args = const []]) async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NativeSystemFonts.instance.initialize();
   await initializeSourceTimeFormatting();
   // First frames read saved layout choices synchronously from this.
   await DevicePreferences.load();
@@ -142,6 +144,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       widget.sessionStore ?? SecureSessionStore(),
     );
     WidgetsBinding.instance.addObserver(this);
+    NativeSystemFonts.instance.addListener(systemFontsChanged);
     unawaited(sharing.init());
     unawaited(content.init(initialArguments: widget.initialArguments));
     restore();
@@ -896,11 +899,16 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           serverSwitchLocation == null,
     );
     if (state == AppLifecycleState.resumed) {
+      unawaited(NativeSystemFonts.instance.refresh());
       unawaited(content.notifications.refreshPermission());
       final w = workspace;
       if (w == null) return;
       w.resumeLiveSession();
     }
+  }
+
+  void systemFontsChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -909,6 +917,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     rootRequest++;
     unawaited(sharing.dispose());
     WidgetsBinding.instance.removeObserver(this);
+    NativeSystemFonts.instance.removeListener(systemFontsChanged);
     unawaited(content.dispose());
     sessionEvents?.cancel();
     final flushed = workspace?.flushCache() ?? Future<void>.value();
@@ -955,11 +964,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
       theme: raftTheme(
         appearance.light,
         systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+        systemFontFamilies: NativeSystemFonts.instance.value,
       ),
       darkTheme: raftTheme(
         RaftFamily.elegant,
         dark: true,
         systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+        systemFontFamilies: NativeSystemFonts.instance.value,
       ),
       themeMode: appearance.mode,
     );

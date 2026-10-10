@@ -46,6 +46,7 @@ class RaftInlineThreadRecipe {
   Color get muted => tokens.muted;
   TextStyle get summary => TextStyle(
     fontFamily: tokens.bodyFont,
+    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: 12.5,
     height: tokens.brutal ? 20 / 14 : 21 / 12.5,
     fontWeight: FontWeight.w700,
@@ -53,6 +54,7 @@ class RaftInlineThreadRecipe {
   );
   TextStyle get sender => TextStyle(
     fontFamily: tokens.bodyFont,
+    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: 12.5,
     height: 1.25,
     fontWeight: FontWeight.w600,

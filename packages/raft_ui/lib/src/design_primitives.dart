@@ -591,6 +591,7 @@ class RaftControlRecipe {
       : 16;
   TextStyle get textStyle => TextStyle(
     fontFamily: tokens.brutal ? tokens.headingFont : tokens.bodyFont,
+    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: kind == RaftControlKind.segmentedButton
         ? 12
         : kind == RaftControlKind.tab
@@ -2534,6 +2535,7 @@ class RaftTaskSectionRecipe {
   /// MainLayout.tsx2255 AppShellRoot font-display, inherited by task cards.
   TextStyle get documentStyle => TextStyle(
     fontFamily: tokens.headingFont,
+    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: 16,
     height: 1.5,
     leadingDistribution: TextLeadingDistribution.even,

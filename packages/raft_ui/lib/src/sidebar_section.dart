@@ -31,6 +31,7 @@ class RaftSidebarSectionRecipe {
       tokens.brutal ? Colors.black.withValues(alpha: .7) : tokens.muted;
   TextStyle get title => TextStyle(
     fontFamily: tokens.bodyFont,
+    fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
     fontSize: 12,
     height: 16 / 12,
     fontWeight: FontWeight.w700,

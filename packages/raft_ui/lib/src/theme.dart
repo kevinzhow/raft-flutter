@@ -40,6 +40,19 @@ Map<String, Color> raftColorMap(RaftTokenSet set) => _colorMaps.putIfAbsent(
 );
 
 @immutable
+class RaftFontFamilies {
+  const RaftFontFamilies({
+    this.body = 'sans-serif',
+    this.heading = 'sans-serif',
+    this.mono = 'monospace',
+    this.fallback = const [],
+  });
+
+  final String body, heading, mono;
+  final List<String> fallback;
+}
+
+@immutable
 class RaftTokens extends ThemeExtension<RaftTokens> {
   /// [colors] is the string-keyed view; [tokens] defaults to the generated
   /// set for [family]/[dark].
@@ -49,6 +62,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     this.colors, {
     RaftTokenSet? tokens,
     this.systemFonts = false,
+    this.systemFontFamilies = const RaftFontFamilies(),
   }) : _tokens = tokens;
 
   /// Tokens generated from raft-ui CSS for a theme (dark forces elegant).
@@ -56,6 +70,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     RaftFamily family, {
     bool dark = false,
     bool systemFonts = false,
+    RaftFontFamilies systemFontFamilies = const RaftFontFamilies(),
   }) {
     final set = RaftTokenSet.of(raftThemeId(family, dark: dark));
     return RaftTokens(
@@ -64,11 +79,13 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
       raftColorMap(set),
       tokens: set,
       systemFonts: systemFonts,
+      systemFontFamilies: systemFontFamilies,
     );
   }
   final RaftFamily family;
   final bool dark;
   final bool systemFonts;
+  final RaftFontFamilies systemFontFamilies;
   final Map<String, Color> colors;
   final RaftTokenSet? _tokens;
 
@@ -96,11 +113,14 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   Color get accentSoft => colors['accent-soft']!;
   Color get accentFill => colors['accent']!;
   Color get primaryFill => colors['primary']!;
-  String get bodyFont => systemFonts ? 'sans-serif' : metrics.sansFont;
-  String get headingFont => systemFonts ? 'sans-serif' : metrics.headingFont;
-  String get monoFont => systemFonts ? 'monospace' : metrics.monoFont;
+  String get bodyFont =>
+      systemFonts ? systemFontFamilies.body : metrics.sansFont;
+  String get headingFont =>
+      systemFonts ? systemFontFamilies.heading : metrics.headingFont;
+  String get monoFont =>
+      systemFonts ? systemFontFamilies.mono : metrics.monoFont;
   List<String> get fontFallback => systemFonts
-      ? const []
+      ? systemFontFamilies.fallback
       : const ['Noto Sans CJK JP', 'Noto Sans CJK SC', 'sans-serif'];
   double get radius => brutal ? 0 : 8;
   double get fieldRadius => brutal ? 0 : 6;
@@ -147,6 +167,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
           colors ?? this.colors,
           tokens: _tokens,
           systemFonts: systemFonts,
+          systemFontFamilies: systemFontFamilies,
         )
       : RaftTokens(
           family ?? this.family,
@@ -158,6 +179,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
                 ),
               ),
           systemFonts: systemFonts,
+          systemFontFamilies: systemFontFamilies,
         );
   @override
   RaftTokens lerp(covariant RaftTokens? other, double t) =>
@@ -342,9 +364,15 @@ ThemeData raftTheme(
   RaftFamily family, {
   bool dark = false,
   bool systemFonts = false,
+  RaftFontFamilies systemFontFamilies = const RaftFontFamilies(),
 }) {
   if (dark) family = RaftFamily.elegant;
-  final t = RaftTokens.theme(family, dark: dark, systemFonts: systemFonts);
+  final t = RaftTokens.theme(
+    family,
+    dark: dark,
+    systemFonts: systemFonts,
+    systemFontFamilies: systemFontFamilies,
+  );
   RoundedRectangleBorder shape(
     double radius, {
     BorderSide side = BorderSide.none,
