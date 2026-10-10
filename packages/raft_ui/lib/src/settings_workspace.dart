@@ -10,7 +10,8 @@ import 'components.dart' show RaftButton;
 import 'design_primitives.dart' show RaftSpinner, RaftTypography;
 import 'feedback_inbox.dart' show RaftDashedBorderPainter, RaftUiSkeleton;
 import 'icons.dart';
-import 'list_items.dart' show RaftSectionEyebrow;
+import 'list_items.dart' show RaftSectionEyebrow, RaftSurfaceListItem;
+import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'localization.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
@@ -488,6 +489,571 @@ class RaftMessagingBridgesSection extends StatelessWidget {
         else
           ?child,
       ],
+    );
+  }
+}
+
+/// One icon action on an MCP server row (`Button size="icon-sm"`).
+@immutable
+class RaftMcpAction {
+  const RaftMcpAction({
+    required this.glyph,
+    required this.tooltip,
+    this.variant = RaftButtonRecipeVariant.default_,
+    this.onPressed,
+  });
+  final RaftGlyph glyph;
+  final String tooltip;
+  final RaftButtonRecipeVariant variant;
+
+  /// Null renders the disabled button.
+  final VoidCallback? onPressed;
+}
+
+@immutable
+class RaftMcpTool {
+  const RaftMcpTool(this.label, [this.description]);
+  final String label;
+  final String? description;
+}
+
+@immutable
+class RaftMcpServerRow {
+  const RaftMcpServerRow({
+    required this.id,
+    required this.name,
+    required this.provider,
+    required this.endpointUrl,
+    this.enabled = true,
+    this.authMode = 'none',
+    this.oauthStatus,
+    this.hasCredentials = false,
+    this.description,
+    this.lastCheckError,
+    this.tools = const [],
+    this.actions = const [],
+  });
+  final String id, name, provider, endpointUrl, authMode;
+  final bool enabled, hasCredentials;
+  final String? oauthStatus, description, lastCheckError;
+  final List<RaftMcpTool> tools;
+  final List<RaftMcpAction> actions;
+}
+
+@immutable
+class RaftMcpRecommendation {
+  const RaftMcpRecommendation({
+    required this.id,
+    required this.name,
+    required this.description,
+    this.added = false,
+    this.onAdd,
+  });
+  final String id, name, description;
+  final bool added;
+  final VoidCallback? onAdd;
+}
+
+/// AgentMcpTab (scope="server"): `space-y-6` of the warning banner, the
+/// "MCP servers" section (SectionHeader with count and the outline `sm` Add
+/// server button, description, loading line, server cards or the Blocks
+/// EmptyState) and the Recommended section.
+class RaftMcpServersSection extends StatefulWidget {
+  const RaftMcpServersSection({
+    super.key,
+    required this.servers,
+    this.recommendations = const [],
+    this.loading = false,
+    this.error,
+    this.onAddServer,
+  });
+  final List<RaftMcpServerRow> servers;
+  final List<RaftMcpRecommendation> recommendations;
+  final bool loading;
+  final String? error;
+
+  /// Null hides Add server (no manageIntegrations).
+  final VoidCallback? onAddServer;
+
+  @override
+  State<RaftMcpServersSection> createState() => _RaftMcpServersSectionState();
+}
+
+class _RaftMcpServersSectionState extends State<RaftMcpServersSection> {
+  final expanded = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final text = RaftSettingsText(t);
+    final description = RaftTypography.body(
+      t,
+      size: 12,
+      line: 16,
+      color: text.muted,
+    );
+    Widget header(String label, int count, {Widget? action, String? detail}) =>
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RaftSettingsSectionHeader(
+              label: label,
+              count: count,
+              bottom: 0,
+              action: action,
+            ),
+            if (detail != null) ...[
+              const SizedBox(height: 4),
+              Text(raftText(context, detail), style: description),
+            ],
+          ],
+        );
+    Widget addButton({bool primary = false}) => RaftButton(
+      key: ValueKey(primary ? 'mcp-empty-add' : 'mcp-add-server'),
+      label: 'Add server',
+      glyph: RaftGlyph.plus,
+      tone: primary
+          ? RaftButtonRecipeVariant.default_
+          : RaftButtonRecipeVariant.outline,
+      size: primary ? RaftButtonRecipeSize.md : RaftButtonRecipeSize.sm,
+      onPressed: widget.onAddServer,
+    );
+    final children = <Widget>[
+      if (widget.error != null)
+        RaftBanner(
+          status: RaftBannerRecipeStatus.warning,
+          size: RaftBannerRecipeSize.sm,
+          description: widget.error!,
+          descriptionWeight: FontWeight.w700,
+        ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          header(
+            'MCP servers',
+            widget.servers.length,
+            action: widget.onAddServer == null ? null : addButton(),
+            detail: 'Configure the MCP catalog, credentials, and provider connections for this Raft Server.',
+          ),
+          const SizedBox(height: 12),
+          if (widget.loading)
+            Text(
+              raftText(context, 'Loading MCP servers…'),
+              style: RaftTypography.mono(
+                t,
+                size: 12,
+                line: 16,
+                color: t.brutal
+                    ? Colors.black.withValues(alpha: .4)
+                    : t.colors['foreground-placeholder'],
+              ),
+            )
+          else if (widget.servers.isEmpty)
+            _McpEmptyState(
+              action: widget.onAddServer == null
+                  ? null
+                  : addButton(primary: true),
+            )
+          else
+            for (final (i, server) in widget.servers.indexed) ...[
+              if (i > 0) const SizedBox(height: 12),
+              _McpServerCard(
+                key: ValueKey('mcp-server-${server.id}'),
+                server: server,
+                toolsOpen: expanded.contains(server.id),
+                onToggleTools: () => setState(() {
+                  if (!expanded.remove(server.id)) expanded.add(server.id);
+                }),
+              ),
+            ],
+        ],
+      ),
+      if (widget.recommendations.isNotEmpty)
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            header(
+              'Recommended',
+              widget.recommendations.length,
+              detail: 'Common MCP servers with connection details prefilled.',
+            ),
+            const SizedBox(height: 12),
+            for (final (i, r) in widget.recommendations.indexed) ...[
+              if (i > 0) const SizedBox(height: 12),
+              RaftSurfaceListItem(
+                key: ValueKey('mcp-recommendation-${r.id}'),
+                interactive: false,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(r.name, style: text.title),
+                          const SizedBox(height: 4),
+                          Text(r.description, style: text.bodyMuted),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    RaftButton(
+                      label: r.added ? 'Added' : 'Add',
+                      glyph: r.added ? RaftGlyph.check : RaftGlyph.plus,
+                      tone: RaftButtonRecipeVariant.outline,
+                      size: RaftButtonRecipeSize.sm,
+                      onPressed: r.added ? null : r.onAdd,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, child) in children.indexed) ...[
+          if (i > 0) const SizedBox(height: 24),
+          child,
+        ],
+      ],
+    );
+  }
+}
+
+class _McpServerCard extends StatelessWidget {
+  const _McpServerCard({
+    super.key,
+    required this.server,
+    required this.toolsOpen,
+    required this.onToggleTools,
+  });
+  final RaftMcpServerRow server;
+  final bool toolsOpen;
+  final VoidCallback onToggleTools;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final text = RaftSettingsText(t);
+    final line = t.brutal ? Colors.black : t.colors['line-muted']!;
+    // `border px-1.5 py-0.5 text-[10px] font-bold uppercase`.
+    Widget badge(String label, Color fill, {Color? color}) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: fill,
+        border: Border.all(color: line),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: RaftTypography.body(
+          t,
+          size: 10,
+          line: 15,
+          weight: FontWeight.w700,
+          color: color ?? text.strong,
+        ),
+      ),
+    );
+    final oauth = server.oauthStatus ?? 'disconnected';
+    final (oauthFill, oauthInk) = switch (oauth) {
+      'connected' =>
+        t.brutal
+            ? (t.product.brutalLime, Colors.black)
+            : (t.colors['success-soft']!, t.colors['success-strong']!),
+      'error' =>
+        t.brutal
+            ? (t.product.brutalRed.withValues(alpha: .3), Colors.black)
+            : (t.colors['danger-soft']!, t.colors['danger-strong']!),
+      _ =>
+        t.brutal
+            ? (t.product.brutalLavender.withValues(alpha: .4), Colors.black)
+            : (t.colors['accent-soft']!, t.colors['accent-strong']!),
+    };
+    final muted = RaftTypography.body(
+      t,
+      size: 14,
+      line: 20,
+      color: t.brutal ? Colors.black.withValues(alpha: .7) : t.muted,
+    );
+    final placeholder = t.brutal
+        ? Colors.black.withValues(alpha: .5)
+        : t.colors['foreground-placeholder']!;
+    return RaftSurfaceListItem(
+      interactive: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(server.name, style: text.title),
+                        if (!server.enabled)
+                          badge(
+                            raftText(context, 'Disabled'),
+                            t.brutal
+                                ? const Color(0xFFE5E7EB)
+                                : t.colors['fill-muted']!,
+                          ),
+                        badge(server.provider, text.panel),
+                        if (server.authMode == 'oauth')
+                          badge('OAuth $oauth', oauthFill, color: oauthInk)
+                        else if (server.hasCredentials)
+                          badge(
+                            raftText(context, 'Credentials stored'),
+                            t.brutal
+                                ? t.product.brutalLavender.withValues(alpha: .4)
+                                : t.colors['accent-soft']!,
+                            color: t.brutal
+                                ? Colors.black
+                                : t.colors['accent-strong'],
+                          ),
+                      ],
+                    ),
+                    if (server.description != null &&
+                        server.description!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(server.description!, style: muted),
+                    ],
+                    const SizedBox(height: 4),
+                    Text(
+                      server.endpointUrl,
+                      style: RaftTypography.mono(
+                        t,
+                        size: 12,
+                        line: 16,
+                        color: placeholder,
+                      ),
+                    ),
+                    if (server.lastCheckError != null) ...[
+                      const SizedBox(height: 12),
+                      RaftBanner(
+                        status: RaftBannerRecipeStatus.warning,
+                        size: RaftBannerRecipeSize.sm,
+                        description: server.lastCheckError!,
+                        descriptionWeight: FontWeight.w700,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (server.actions.isNotEmpty) ...[
+                const SizedBox(width: 12),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 4,
+                  children: [
+                    for (final action in server.actions)
+                      Tooltip(
+                        message: raftText(context, action.tooltip),
+                        child: Semantics(
+                          label: raftText(context, action.tooltip),
+                          child: RaftSettingsRecipeButton(
+                            label: '',
+                            glyph: action.glyph,
+                            glyphSize: 14,
+                            variant: action.variant,
+                            size: RaftButtonRecipeSize.iconSm,
+                            onPressed: action.onPressed,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              key: ValueKey('mcp-tools-toggle-${server.id}'),
+              behavior: HitTestBehavior.opaque,
+              onTap: onToggleTools,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 4,
+                children: [
+                  RaftIcon(
+                    toolsOpen ? RaftGlyph.chevronUp : RaftGlyph.chevronDown,
+                    size: 13,
+                    color: text.muted,
+                  ),
+                  Text(
+                    '${server.tools.length} ${server.tools.length == 1 ? 'tool' : 'tools'}',
+                    style: RaftTypography.body(
+                      t,
+                      size: 12,
+                      line: 16,
+                      weight: FontWeight.w700,
+                      color: t.brutal
+                          ? Colors.black.withValues(alpha: .7)
+                          : t.muted,
+                    ).copyWith(decoration: TextDecoration.underline),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (toolsOpen) ...[
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 320),
+              decoration: BoxDecoration(
+                color: t.colors['fill-muted']!.withValues(alpha: .4),
+                border: Border.symmetric(
+                  horizontal: BorderSide(color: t.colors['line-muted']!),
+                ),
+              ),
+              child: server.tools.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 12,
+                      ),
+                      child: Text(
+                        raftText(
+                          context,
+                          'Test this server to discover tools.',
+                        ),
+                        style: text.description,
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      child: Wrap(
+                        children: [
+                          for (final tool in server.tools)
+                            FractionallySizedBox(
+                              widthFactor: .5,
+                              child: Container(
+                                constraints: const BoxConstraints(
+                                  minHeight: 64,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: t.colors['line-muted']!,
+                                    ),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      tool.label,
+                                      style: RaftTypography.body(
+                                        t,
+                                        size: 14,
+                                        line: 20,
+                                        weight: FontWeight.w700,
+                                        color: text.strong,
+                                      ),
+                                    ),
+                                    if (tool.description != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        tool.description!,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: text.description,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// raft-ui EmptyState with the Blocks icon (36px; elegant `size-4.5` inside
+/// the `rounded-md bg-fill-muted p-2` tile), title, description and action.
+class _McpEmptyState extends StatelessWidget {
+  const _McpEmptyState({this.action});
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final text = RaftSettingsText(t);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      child: Column(
+        children: [
+          if (t.brutal)
+            RaftIcon(RaftGlyph.blocks, size: 36, color: t.muted)
+          else
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: t.dark
+                    ? t.colors['layer-inset']
+                    : t.colors['fill-muted'],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: RaftIcon(
+                RaftGlyph.blocks,
+                size: 18,
+                color: t.colors['foreground-placeholder'],
+              ),
+            ),
+          const SizedBox(height: 8),
+          Text(
+            raftText(context, 'No managed MCP servers yet'),
+            textAlign: TextAlign.center,
+            style: t.brutal
+                ? RaftTypography.heading(
+                    t,
+                    size: 18,
+                    line: 28,
+                    weight: FontWeight.w600,
+                  ).copyWith(color: t.strong.withValues(alpha: .6))
+                : RaftTypography.heading(
+                    t,
+                    size: 14,
+                    line: 20,
+                    weight: FontWeight.w500,
+                  ).copyWith(color: t.dark ? t.muted : t.colors['foreground']),
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 260),
+            child: Text(
+              raftText(
+                context,
+                'Add a Streamable HTTP server or start from a recommended integration.',
+              ),
+              textAlign: TextAlign.center,
+              style: text.bodyMuted.copyWith(
+                height: 1.625,
+                color: t.brutal ? t.strong.withValues(alpha: .6) : null,
+              ),
+            ),
+          ),
+          if (action != null) ...[const SizedBox(height: 20), action!],
+        ],
+      ),
     );
   }
 }

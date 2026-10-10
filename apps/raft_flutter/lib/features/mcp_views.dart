@@ -130,6 +130,21 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
           trim: false,
           help: 'Leave empty when editing to keep existing credentials.',
         ),
+        // The Web editor lists stored headers with a remove control.
+        if (!creating &&
+            managementStrings(server['credentialHeaderNames']).isNotEmpty)
+          RaftFormField(
+            'removeHeader',
+            'Remove a stored header',
+            initial: '',
+            choices: {
+              '': 'Keep all stored headers',
+              for (final name in managementStrings(
+                server['credentialHeaderNames'],
+              ))
+                name: name,
+            },
+          ),
       ],
       (v) async {
         if ((v['headerName']!.isEmpty) != (v['headerValue']!.isEmpty)) {
@@ -149,14 +164,20 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
             'authMode',
           ])
             f: v[f],
-          if (v['headerValue']!.isNotEmpty)
-            if (creating)
-              'headers': {v['headerName']: v['headerValue']}
-            else
-              'credentialPatch': {
-                'upsertHeaders': {v['headerName']: v['headerValue']},
-                'removeHeaderNames': <String>[],
+          if (creating && v['headerValue']!.isNotEmpty)
+            'headers': {v['headerName']: v['headerValue']}
+          else if (!creating &&
+              (v['headerValue']!.isNotEmpty ||
+                  (v['removeHeader'] ?? '').isNotEmpty))
+            'credentialPatch': {
+              'upsertHeaders': {
+                if (v['headerValue']!.isNotEmpty)
+                  v['headerName']: v['headerValue'],
               },
+              'removeHeaderNames': [
+                if ((v['removeHeader'] ?? '').isNotEmpty) v['removeHeader'],
+              ],
+            },
         };
         if (creating) {
           await w.client.post('/mcp/servers', data: data);
@@ -345,177 +366,321 @@ class _AgentMcpState extends ManagementState<AgentMcpView> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) => page(
-    widget.agentId == null ? 'MCP connections' : 'Agent MCP connections',
-    [
-      if (servers.isEmpty && !loading)
-        const Text(
-          'Add an MCP connection to make its tools available to agents.',
-        ),
-      if (recommendations.isNotEmpty) heading('Recommended connections'),
-      for (final recommendation in recommendations)
-        ListTile(
-          title: Text('${recommendation['name']}'),
-          subtitle: Text('${recommendation['description'] ?? ''}'),
-          trailing: w.can('manageIntegrations')
-              ? action(
-                  'Add ${recommendation['name']}',
-                  () => run(() => edit({...recommendation, 'id': null})),
-                )
-              : null,
-        ),
-      for (final server in servers)
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${server['name']}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                if (server['description'] != null)
-                  Text('${server['description']}'),
-                SelectableText('${server['endpointUrl']}'),
-                Text(
-                  '${server['enabled'] == true ? 'Enabled' : 'Disabled'} · ${server['authMode']} ${server['authMode'] == 'oauth' ? '· ${server['oauthStatus']}' : ''}',
-                ),
-                if (server['hasCredentials'] == true)
-                  Text(
-                    'Credential headers: ${managementStrings(server['credentialHeaderNames']).join(', ')}',
-                  ),
-                if (server['lastCheckError'] != null)
-                  Text(
-                    'Connection check failed. Test the connection after reviewing its configuration.',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                if (server['lastCheckedAt'] != null)
-                  Text('Last checked: ${server['lastCheckedAt']}'),
-                if (widget.agentId != null)
-                  Text(
-                    'Agent access: ${managementMap(server['assignment'])['enabled'] == true ? 'Enabled' : 'Disabled'}',
-                  ),
-                if (server['usage'] is Map)
-                  Text(
-                    '${managementMap(server['usage'])['invocationCount']} admitted tool calls',
-                  ),
-                for (final tool in managementRows(server['toolCatalog']))
-                  ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.handyman_outlined),
-                    title: Text('${tool['name']}'),
-                    subtitle: Text('${tool['description'] ?? ''}'),
-                  ),
-                Wrap(
-                  children: [
-                    if (canAssign)
-                      action(
-                        'Tool access',
-                        () => run(() => assignment(server)),
+  /// Settings > MCP Servers (AgentMcpTab scope="server").
+  Widget serverCatalog(BuildContext context) {
+    final manage = w.can('manageIntegrations');
+    return ListView(
+      primary: false,
+      padding: RaftSettingsPanelFrame.contentInset,
+      children: [
+        RaftMcpServersSection(
+          loading: loading && servers.isEmpty,
+          error: error == null
+              ? null
+              : raftText(context, 'Managed MCP request failed'),
+          onAddServer: manage ? () => run(() => edit()) : null,
+          servers: [
+            for (final server in servers)
+              () {
+                final oauth = server['authMode'] == 'oauth';
+                final connected = server['oauthStatus'] == 'connected';
+                final ready = !oauth || connected;
+                final name = '${server['name']}';
+                return RaftMcpServerRow(
+                  id: '${server['id']}',
+                  name: name,
+                  provider: '${server['provider'] ?? 'custom'}',
+                  endpointUrl: '${server['endpointUrl'] ?? ''}',
+                  enabled: server['enabled'] != false,
+                  authMode: '${server['authMode'] ?? 'none'}',
+                  oauthStatus: server['oauthStatus'] as String?,
+                  hasCredentials: server['hasCredentials'] == true,
+                  description: server['description'] as String?,
+                  lastCheckError: server['lastCheckError'] as String?,
+                  tools: [
+                    for (final tool in managementRows(server['toolCatalog']))
+                      RaftMcpTool(
+                        '${tool['title'] ?? tool['name']}',
+                        tool['description'] as String?,
                       ),
-                    if (w.can('manageIntegrations')) ...[
-                      action('Edit connection', () => run(() => edit(server))),
-                      if (managementStrings(server['credentialHeaderNames'])
-                          .isNotEmpty)
-                        action(
-                          'Remove credential header',
-                          () => run(() => removeHeader(server)),
-                        ),
-                      if (server['authMode'] != 'oauth')
-                        action(
-                          'Test configuration',
-                          () => run(
-                            () => testConfiguration(server),
-                            refresh: false,
+                  ],
+                  actions: !manage
+                      ? const []
+                      : [
+                          if (oauth && !connected)
+                            RaftMcpAction(
+                              glyph: RaftGlyph.link2,
+                              tooltip: 'Connect $name',
+                              variant: RaftButtonRecipeVariant.success,
+                              onPressed: busy
+                                  ? null
+                                  : () => run(() async {
+                                      final result = await w.client.post(
+                                        '/mcp/servers/${server['id']}/oauth/start',
+                                      );
+                                      await launchManaged(
+                                        result['authorizationUrl'],
+                                      );
+                                    }, refresh: false),
+                            ),
+                          if (oauth && connected)
+                            RaftMcpAction(
+                              glyph: RaftGlyph.unplug,
+                              tooltip: 'Disconnect $name',
+                              onPressed: busy
+                                  ? null
+                                  : () => run(() async {
+                                      await confirm(
+                                        'Disconnect account?',
+                                        'This connection will no longer be authorized to access the provider account.',
+                                        () async {
+                                          await w.client.delete(
+                                            '/mcp/servers/${server['id']}/oauth',
+                                          );
+                                        },
+                                        submit: 'Disconnect',
+                                        destructive: true,
+                                      );
+                                    }),
+                            ),
+                          RaftMcpAction(
+                            glyph: RaftGlyph.flaskConical,
+                            tooltip: 'Test and refresh tools',
+                            onPressed: busy || !ready
+                                ? null
+                                : () => run(() async {
+                                    await w.client.post(
+                                      '/mcp/servers/${server['id']}/test',
+                                    );
+                                  }),
                           ),
-                        ),
-                      action(
-                        'Test connection',
-                        () => run(() async {
-                          await w.client.post(
-                            '/mcp/servers/${server['id']}/test',
-                          );
-                        }),
+                          RaftMcpAction(
+                            glyph: RaftGlyph.pencil,
+                            tooltip: 'Edit server',
+                            onPressed: busy
+                                ? null
+                                : () => run(() => edit(server)),
+                          ),
+                          RaftMcpAction(
+                            glyph: RaftGlyph.trash2,
+                            tooltip: 'Delete server',
+                            variant: RaftButtonRecipeVariant.danger,
+                            onPressed: busy
+                                ? null
+                                : () => run(() async {
+                                    await confirm(
+                                      'Delete $name?',
+                                      'Remove this connection and its agent tool assignments.',
+                                      () async {
+                                        await w.client.delete(
+                                          '/mcp/servers/${server['id']}',
+                                        );
+                                      },
+                                      submit: 'Delete',
+                                      destructive: true,
+                                    );
+                                  }),
+                          ),
+                        ],
+                );
+              }(),
+          ],
+          recommendations: !manage
+              ? const []
+              : [
+                  for (final r in recommendations)
+                    RaftMcpRecommendation(
+                      id: '${r['id']}',
+                      name: '${r['name']}',
+                      description: '${r['description'] ?? ''}',
+                      added: servers.any((s) => s['provider'] == r['provider']),
+                      onAdd: busy
+                          ? null
+                          : () => run(() => edit({...r, 'id': null})),
+                    ),
+                ],
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.agentId == null
+      ? serverCatalog(context)
+      : page(
+          'Agent MCP connections',
+          [
+            if (servers.isEmpty && !loading)
+              const Text(
+                'Add an MCP connection to make its tools available to agents.',
+              ),
+            if (recommendations.isNotEmpty) heading('Recommended connections'),
+            for (final recommendation in recommendations)
+              ListTile(
+                title: Text('${recommendation['name']}'),
+                subtitle: Text('${recommendation['description'] ?? ''}'),
+                trailing: w.can('manageIntegrations')
+                    ? action(
+                        'Add ${recommendation['name']}',
+                        () => run(() => edit({...recommendation, 'id': null})),
+                      )
+                    : null,
+              ),
+            for (final server in servers)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${server['name']}',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      action(
-                        server['enabled'] == true ? 'Disable' : 'Enable',
-                        () => run(() async {
-                          await w.client.patch(
-                            '/mcp/servers/${server['id']}',
-                            data: {'enabled': server['enabled'] != true},
-                          );
-                        }),
-                      ),
-                      action(
-                        'Delete connection',
-                        () => run(() async {
-                          await confirm(
-                            'Delete ${server['name']}?',
-                            'Remove this connection and its agent tool assignments.',
-                            () async {
-                              await w.client.delete(
-                                '/mcp/servers/${server['id']}',
-                              );
-                            },
-                            submit: 'Delete',
-                            destructive: true,
-                          );
-                        }),
-                      ),
-                    ],
-                    if (server['authMode'] == 'oauth' &&
-                        w.can('manageExternalAuth')) ...[
-                      action(
-                        'Connect account',
-                        () => run(() async {
-                          final result = await w.client.post(
-                            '/mcp/servers/${server['id']}/oauth/start',
-                          );
-                          await launchManaged(result['authorizationUrl']);
-                        }, refresh: false),
+                      if (server['description'] != null)
+                        Text('${server['description']}'),
+                      SelectableText('${server['endpointUrl']}'),
+                      Text(
+                        '${server['enabled'] == true ? 'Enabled' : 'Disabled'} · ${server['authMode']} ${server['authMode'] == 'oauth' ? '· ${server['oauthStatus']}' : ''}',
                       ),
                       if (server['hasCredentials'] == true)
-                        action(
-                          'Disconnect account',
-                          () => run(() async {
-                            await confirm(
-                              'Disconnect account?',
-                              'This connection will no longer be authorized to access the provider account.',
-                              () async {
-                                await w.client.delete(
-                                  '/mcp/servers/${server['id']}/oauth',
-                                );
-                              },
-                              submit: 'Disconnect',
-                              destructive: true,
-                            );
-                          }),
+                        Text(
+                          'Credential headers: ${managementStrings(server['credentialHeaderNames']).join(', ')}',
                         ),
+                      if (server['lastCheckError'] != null)
+                        Text(
+                          'Connection check failed. Test the connection after reviewing its configuration.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      if (server['lastCheckedAt'] != null)
+                        Text('Last checked: ${server['lastCheckedAt']}'),
+                      if (widget.agentId != null)
+                        Text(
+                          'Agent access: ${managementMap(server['assignment'])['enabled'] == true ? 'Enabled' : 'Disabled'}',
+                        ),
+                      if (server['usage'] is Map)
+                        Text(
+                          '${managementMap(server['usage'])['invocationCount']} admitted tool calls',
+                        ),
+                      for (final tool in managementRows(server['toolCatalog']))
+                        ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.handyman_outlined),
+                          title: Text('${tool['name']}'),
+                          subtitle: Text('${tool['description'] ?? ''}'),
+                        ),
+                      Wrap(
+                        children: [
+                          if (canAssign)
+                            action(
+                              'Tool access',
+                              () => run(() => assignment(server)),
+                            ),
+                          if (w.can('manageIntegrations')) ...[
+                            action(
+                              'Edit connection',
+                              () => run(() => edit(server)),
+                            ),
+                            if (managementStrings(
+                              server['credentialHeaderNames'],
+                            ).isNotEmpty)
+                              action(
+                                'Remove credential header',
+                                () => run(() => removeHeader(server)),
+                              ),
+                            if (server['authMode'] != 'oauth')
+                              action(
+                                'Test configuration',
+                                () => run(
+                                  () => testConfiguration(server),
+                                  refresh: false,
+                                ),
+                              ),
+                            action(
+                              'Test connection',
+                              () => run(() async {
+                                await w.client.post(
+                                  '/mcp/servers/${server['id']}/test',
+                                );
+                              }),
+                            ),
+                            action(
+                              server['enabled'] == true ? 'Disable' : 'Enable',
+                              () => run(() async {
+                                await w.client.patch(
+                                  '/mcp/servers/${server['id']}',
+                                  data: {'enabled': server['enabled'] != true},
+                                );
+                              }),
+                            ),
+                            action(
+                              'Delete connection',
+                              () => run(() async {
+                                await confirm(
+                                  'Delete ${server['name']}?',
+                                  'Remove this connection and its agent tool assignments.',
+                                  () async {
+                                    await w.client.delete(
+                                      '/mcp/servers/${server['id']}',
+                                    );
+                                  },
+                                  submit: 'Delete',
+                                  destructive: true,
+                                );
+                              }),
+                            ),
+                          ],
+                          if (server['authMode'] == 'oauth' &&
+                              w.can('manageExternalAuth')) ...[
+                            action(
+                              'Connect account',
+                              () => run(() async {
+                                final result = await w.client.post(
+                                  '/mcp/servers/${server['id']}/oauth/start',
+                                );
+                                await launchManaged(result['authorizationUrl']);
+                              }, refresh: false),
+                            ),
+                            if (server['hasCredentials'] == true)
+                              action(
+                                'Disconnect account',
+                                () => run(() async {
+                                  await confirm(
+                                    'Disconnect account?',
+                                    'This connection will no longer be authorized to access the provider account.',
+                                    () async {
+                                      await w.client.delete(
+                                        '/mcp/servers/${server['id']}/oauth',
+                                      );
+                                    },
+                                    submit: 'Disconnect',
+                                    destructive: true,
+                                  );
+                                }),
+                              ),
+                          ],
+                        ],
+                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ),
-    ],
-    actions: [
-      if (w.can('manageIntegrations'))
-        action(
-          'Test unsaved connection',
-          () => run(() => testConfiguration(), refresh: false),
-        ),
-      if (w.can('manageIntegrations'))
-        action(
-          'Add connection',
-          () => run(() => edit()),
-          glyph: RaftGlyph.plus,
-          glyphSize: 13,
-        ),
-    ],
-  );
+              ),
+          ],
+          actions: [
+            if (w.can('manageIntegrations'))
+              action(
+                'Test unsaved connection',
+                () => run(() => testConfiguration(), refresh: false),
+              ),
+            if (w.can('manageIntegrations'))
+              action(
+                'Add connection',
+                () => run(() => edit()),
+                glyph: RaftGlyph.plus,
+                glyphSize: 13,
+              ),
+          ],
+        );
 }
