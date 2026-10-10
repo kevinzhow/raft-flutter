@@ -24,6 +24,8 @@ import 'resource_cards.dart';
 import 'task_selection_filter.dart';
 import 'sender_avatar_projection.dart';
 import 'resource_search.dart';
+import 'resource_list_updates.dart';
+import 'reading_anchor.dart';
 import '../platform/content_links.dart';
 
 class ResourceView extends StatefulWidget {
@@ -307,6 +309,32 @@ class _ResourceViewState extends State<ResourceView> {
   ScrollController? listScroll;
   double listOffset = 0;
 
+  /// Reading position and "N new updates" pill of the Activity/Saved list.
+  final listUpdates = ResourceListUpdates();
+
+  void observeListUpdates() {
+    final scroll = listScroll;
+    listUpdates.observe(
+      view: (widget.section, filter, rowsView, advanced.groupByChannel),
+      keys: [for (final row in visibleRows) rowKey(row)],
+      position:
+          scroll != null && scroll.hasClients && scroll.positions.length == 1
+          ? scroll.position
+          : null,
+    );
+  }
+
+  void revealListUpdates() {
+    final scroll = listScroll;
+    if (scroll == null || !scroll.hasClients) return;
+    setState(
+      () => listUpdates.reveal(
+        scroll.position,
+        animate: !MediaQuery.disableAnimationsOf(context),
+      ),
+    );
+  }
+
   bool restoreSnapshot() {
     if (!snapshotted) return false;
     final snapshot = w.resourceSnapshots.read(
@@ -319,7 +347,14 @@ class _ResourceViewState extends State<ResourceView> {
     // Children unmount before this state disposes; track the offset live.
     listScroll = ScrollController(initialScrollOffset: listOffset)
       ..addListener(() {
-        if (listScroll?.hasClients == true) listOffset = listScroll!.offset;
+        final scroll = listScroll;
+        if (scroll == null || !scroll.hasClients) return;
+        listOffset = scroll.offset;
+        if (scroll.positions.length == 1 &&
+            listUpdates.scrolled(scroll.position) &&
+            mounted) {
+          setState(() {});
+        }
       });
     if (!usable) return false;
     rows = snapshot.rows;
@@ -1356,6 +1391,7 @@ class _ResourceViewState extends State<ResourceView> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (snapshotted) observeListUpdates();
     // ThreadsInbox mounts ActivityInboxPanel with `theme-brutal:!border-l`.
     final activityEdge = widget.section == 'activity';
     final body = Container(
@@ -1638,30 +1674,59 @@ class _ResourceViewState extends State<ResourceView> {
                   color: RaftTokens.of(context).brutal
                       ? RaftTokens.of(context).panel
                       : RaftTokens.of(context).sidebar,
-                  child: ListView.separated(
-                    controller: listScroll,
-                    padding: const EdgeInsets.all(16),
-                    // SavedPanel loads the next page when its sentinel comes
-                    // within `rootMargin: 240px` of the scroller.
-                    scrollCacheExtent: widget.section == 'saved'
-                        ? const ScrollCacheExtent.pixels(240)
-                        : null,
-                    itemCount: visibleRows.length + (hasMore ? 1 : 0),
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(height: RaftConversationCardRecipe.gap),
-                    itemBuilder: (context, index) => index == visibleRows.length
-                        ? widget.section == 'saved'
-                              ? savedSentinel()
-                              : TextButton(
-                                  onPressed: () => load(append: true),
-                                  child: Text(raftText(context, 'Load more')),
-                                )
-                        : item(visibleRows[index]),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: resourceList()),
+                      if (snapshotted && listUpdates.count > 0)
+                        RaftNewUpdatesButton(
+                          label: raftFormat(
+                            context,
+                            listUpdates.count == 1
+                                ? '{count} new update'
+                                : '{count} new updates',
+                            {'count': listUpdates.count},
+                          ),
+                          onPressed: revealListUpdates,
+                        ),
+                    ],
                   ),
                 ),
         ),
       ],
     );
+  }
+
+  /// Activity/Saved rows newest first. Rows keep their element when rows land
+  /// above them, and the reading anchor keeps the reader's row in place.
+  Widget resourceList() {
+    final shown = visibleRows;
+    final list = ListView.separated(
+      controller: listScroll,
+      padding: const EdgeInsets.all(16),
+      // SavedPanel loads the next page when its sentinel comes
+      // within `rootMargin: 240px` of the scroller.
+      scrollCacheExtent: widget.section == 'saved'
+          ? const ScrollCacheExtent.pixels(240)
+          : null,
+      itemCount: shown.length + (hasMore ? 1 : 0),
+      separatorBuilder: (_, _) =>
+          const SizedBox(height: RaftConversationCardRecipe.gap),
+      itemBuilder: (context, index) => index == shown.length
+          ? widget.section == 'saved'
+                ? savedSentinel()
+                : TextButton(
+                    onPressed: () => load(append: true),
+                    child: Text(raftText(context, 'Load more')),
+                  )
+          : KeyedSubtree(
+              key: listUpdates.keyOf(rowKey(shown[index])),
+              child: item(shown[index]),
+            ),
+      findItemIndexCallback: listUpdates.indexOf,
+    );
+    return snapshotted
+        ? RaftReadingAnchor(controller: listUpdates.anchor, child: list)
+        : list;
   }
 
   List<SearchEntity> get currentSearchEntities => searchEntities(
