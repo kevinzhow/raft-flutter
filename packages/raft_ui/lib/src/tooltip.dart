@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
+import 'pointer_intent.dart';
 import 'theme.dart';
 
 /// RUI tooltip1392 and foundation361/489; product timing is provider-owned.
@@ -218,25 +219,6 @@ class RaftTooltip extends Tooltip {
   State<RaftTooltip> createState() => _RaftTooltipState();
 }
 
-/// Pointer movement versus list scrolling. A list scrolled under a resting
-/// pointer moves rows under it and Flutter reports enter events for them;
-/// those are not hover intent. A tooltip only opens after the pointer itself
-/// moved since the last scroll (native desktop behaviour).
-class _PointerIntent {
-  static bool _installed = false;
-  static int moves = 0, scrolledAtMove = -1;
-  static void install() {
-    if (_installed) return;
-    _installed = true;
-    GestureBinding.instance.pointerRouter.addGlobalRoute((event) {
-      if (event is PointerHoverEvent && event.delta != Offset.zero) moves++;
-    });
-  }
-
-  static void scrolled() => scrolledAtMove = moves;
-  static bool get movedSinceScroll => moves != scrolledAtMove;
-}
-
 class _RaftTooltipState extends State<RaftTooltip>
     with SingleTickerProviderStateMixin {
   final anchor = GlobalKey();
@@ -263,7 +245,7 @@ class _RaftTooltipState extends State<RaftTooltip>
       duration: const Duration(milliseconds: 150),
     );
     HardwareKeyboard.instance.addHandler(_key);
-    _PointerIntent.install();
+    RaftPointerIntent.install();
   }
 
   @override
@@ -330,7 +312,7 @@ class _RaftTooltipState extends State<RaftTooltip>
     pointer = event.position;
     hovered = true;
     hoverBlocked = false;
-    awaitingMove = !_PointerIntent.movedSinceScroll;
+    awaitingMove = !RaftPointerIntent.movedSinceScroll;
     if (!awaitingMove) _scheduleHover();
   }
 
@@ -480,7 +462,7 @@ class _RaftTooltipState extends State<RaftTooltip>
   }
 
   void _trackAnchor() {
-    _PointerIntent.scrolled();
+    RaftPointerIntent.scrolled();
     // Scrolling is not hover intent: a pending open waits for a pointer move
     // and an open tooltip closes without arming adjacent instant opens.
     if (openTimer?.isActive == true && !widget.keyboardFocused) {

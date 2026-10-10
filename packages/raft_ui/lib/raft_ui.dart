@@ -82,6 +82,7 @@ export 'src/message_row_recipe.dart';
 export 'src/message_translation.dart';
 export 'src/message_semantics.dart';
 export 'src/tooltip.dart';
+export 'src/hover_card.dart';
 
 export 'src/message_toolbar_glyphs.dart';
 export 'src/mounted_reaction_recipe.dart';
