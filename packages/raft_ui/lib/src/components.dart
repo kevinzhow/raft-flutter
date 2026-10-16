@@ -896,6 +896,7 @@ class RaftNavItem extends StatelessWidget {
     this.mention = false,
     this.wrap = false,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
     this.menuOpen = false,
   }) : assert(icon != null || glyph != null || leading != null),
        assert(conversationKind == null || role == RaftNavItemRole.generic);
@@ -938,6 +939,10 @@ class RaftNavItem extends StatelessWidget {
   /// Right click / long press at the global pointer position (Sidebar.tsx
   /// row `onContextMenu` + long-press handlers).
   final ValueChanged<Offset>? onContextMenu;
+
+  /// False when a long press belongs to the host instead (a reorderable row
+  /// lifts on long press); right click still opens [onContextMenu].
+  final bool contextMenuOnLongPress;
 
   /// This row's context menu is open (keeps the muted fill).
   final bool menuOpen;
@@ -1287,7 +1292,9 @@ class RaftNavItem extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onSecondaryTapDown: (d) => onContextMenu!(d.globalPosition),
-      onLongPressStart: (d) => onContextMenu!(d.globalPosition),
+      onLongPressStart: contextMenuOnLongPress
+          ? (d) => onContextMenu!(d.globalPosition)
+          : null,
       child: item,
     );
   }

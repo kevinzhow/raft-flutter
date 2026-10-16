@@ -85,8 +85,11 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.disclosureKey,
     this.headerKey,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
+    this.wrapHeader,
   }) : itemBuilder = null,
-       findChildIndexCallback = null;
+       findChildIndexCallback = null,
+       onReorderItem = null;
 
   /// A group in a scroll viewport whose offscreen rows are built on demand.
   const RaftChatSidebarGroup.sliver({
@@ -99,6 +102,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
     required this.onExpandedChanged,
     required IndexedWidgetBuilder this.itemBuilder,
     this.findChildIndexCallback,
+    this.onReorderItem,
     this.loading = false,
     this.dragActive = false,
     this.dragSource = false,
@@ -109,11 +113,24 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.disclosureKey,
     this.headerKey,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
+    this.wrapHeader,
   }) : children = const [];
 
   final IndexedWidgetBuilder? itemBuilder;
   final ChildIndexGetter? findChildIndexCallback;
+
+  /// Non-null makes the rows a [SliverReorderableList] (indexes as
+  /// [SliverReorderableList.onReorderItem] reports them). Each row must then
+  /// carry its own key and drag start listener (long press lifts it).
+  final ReorderCallback? onReorderItem;
   final ValueChanged<Offset>? onContextMenu;
+
+  /// See [RaftSidebarSectionHeader.contextMenuOnLongPress].
+  final bool contextMenuOnLongPress;
+
+  /// Wraps the built header (the host makes it a drag handle or drop target).
+  final Widget Function(Widget header)? wrapHeader;
   final RaftChatSidebarGroupKind kind;
   final String label, emptyLabel;
   final int count;
@@ -158,7 +175,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
         );
       }
     }
-    final header = RaftSidebarSectionHeader(
+    final built = RaftSidebarSectionHeader(
       key: headerKey,
       label: label,
       count: count,
@@ -168,7 +185,9 @@ class RaftChatSidebarGroup extends StatelessWidget {
       actions: actions,
       attention: attention,
       onContextMenu: onContextMenu,
+      contextMenuOnLongPress: contextMenuOnLongPress,
     );
+    final header = wrapHeader?.call(built) ?? built;
     final emptyRegion = empty == null
         ? null
         : ConstrainedBox(
@@ -181,13 +200,21 @@ class RaftChatSidebarGroup extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(child: header),
           if (expanded) ...[
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                builder,
-                childCount: count,
-                findChildIndexCallback: findChildIndexCallback,
+            if (onReorderItem case final reorder?)
+              SliverReorderableList(
+                itemCount: count,
+                itemBuilder: builder,
+                onReorderItem: reorder,
+                proxyDecorator: raftSidebarReorderProxy,
+              )
+            else
+              SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  builder,
+                  childCount: count,
+                  findChildIndexCallback: findChildIndexCallback,
+                ),
               ),
-            ),
             if (emptyRegion != null) SliverToBoxAdapter(child: emptyRegion),
           ],
         ],
@@ -203,6 +230,27 @@ class RaftChatSidebarGroup extends StatelessWidget {
     );
   }
 }
+
+/// The lifted row of a reorderable sidebar list. Rows are ghost controls, so
+/// the proxy carries the sidebar canvas to stay legible over the rows below.
+Widget raftSidebarReorderProxy(
+  Widget child,
+  int index,
+  Animation<double> animation,
+) => Builder(
+  builder: (context) {
+    final size = MediaQuery.sizeOf(context);
+    return ColoredBox(
+      color: RaftSidebarRecipe(
+        RaftTokens.of(context),
+        viewportWidth: size.width,
+        viewportHeight: size.height,
+        variant: RaftSidebarVariant.mountedProduct,
+      ).bodyBackground,
+      child: child,
+    );
+  },
+);
 
 /// Product Skeleton.tsx (not RUI Skeleton): px8/py8/gap6,
 /// 18px bordered avatar and a 60%-width, 12px line in all three themes.

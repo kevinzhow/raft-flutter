@@ -82,12 +82,17 @@ class RaftSidebarSectionHeader extends StatelessWidget {
     this.actions = const [],
     this.trailing,
     this.onContextMenu,
+    this.contextMenuOnLongPress = true,
     this.topInset,
   });
 
   /// Sidebar.tsx `SidebarSectionHeader onContextMenu`: right click / long press
   /// anywhere on the header row, at the global pointer position.
   final ValueChanged<Offset>? onContextMenu;
+
+  /// False when a long press belongs to the host instead (a draggable header
+  /// lifts on long press); right click still opens [onContextMenu].
+  final bool contextMenuOnLongPress;
   final String label;
 
   /// Overrides the `mt-3` top inset when the row's margin collapses with the
@@ -190,7 +195,9 @@ class RaftSidebarSectionHeader extends StatelessWidget {
       // Sidebar.tsx SidebarSectionHeader `onContextMenu`: right click, and on
       // touch the browser's long-press `contextmenu`.
       onSecondaryTapDown: (d) => onContextMenu!(d.globalPosition),
-      onLongPressStart: (d) => onContextMenu!(d.globalPosition),
+      onLongPressStart: contextMenuOnLongPress
+          ? (d) => onContextMenu!(d.globalPosition)
+          : null,
       child: header,
     );
   }
