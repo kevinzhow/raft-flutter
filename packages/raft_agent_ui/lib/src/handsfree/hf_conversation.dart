@@ -47,7 +47,8 @@ class HfAttachmentData {
   String? get sizeLabel {
     final b = bytes;
     if (b == null || b < 0) return null;
-    String one(double v) => v < 10 ? v.toStringAsFixed(1) : v.toStringAsFixed(0);
+    String one(double v) =>
+        v < 10 ? v.toStringAsFixed(1) : v.toStringAsFixed(0);
     if (b < 1024) return '$b B';
     if (b < 1024 * 1024) return '${one(b / 1024)} KB';
     return '${one(b / (1024 * 1024))} MB';
@@ -237,7 +238,9 @@ class HfMessageData {
     senderName: '${j['senderName'] ?? ''}',
     isMine: j['isMine'] == true,
     isAgent: j['isAgent'] == true,
-    time: DateTime.tryParse('${j['time']}') ?? DateTime.fromMillisecondsSinceEpoch(0),
+    time:
+        DateTime.tryParse('${j['time']}') ??
+        DateTime.fromMillisecondsSinceEpoch(0),
     text: '${j['text'] ?? ''}',
     attachments: _list(j['attachments'], HfAttachmentData.fromJson),
     reactions: _list(j['reactions'], HfReactionData.fromJson),
@@ -354,7 +357,8 @@ class HfMessagePart extends HfConversationPart {
         ],
         if (!m.deleted && m.reactions.isNotEmpty)
           '回应：${[for (final r in m.reactions) '${r.emoji} ${r.count}${r.mine ? '（含我）' : ''}'].join('、')}',
-        if (!m.deleted && m.replyCount > 0) HfConversation.repliesLabel(m.replyCount),
+        if (!m.deleted && m.replyCount > 0)
+          HfConversation.repliesLabel(m.replyCount),
         if (m.edited) HfConversation.editedText,
       ],
       index: n,
@@ -442,13 +446,19 @@ List<String> _attachmentLines(HfMessageData m) => [
   for (final a in m.attachments)
     a.isImage
         ? '图片：${a.name}'
-        : hfKept(['文件：${a.name}', a.sizeLabel == null ? null : '（${a.sizeLabel}）']).join(),
+        : hfKept([
+            '文件：${a.name}',
+            a.sizeLabel == null ? null : '（${a.sizeLabel}）',
+          ]).join(),
 ];
 
 /// Draws the picture of an image attachment in a box of [size]; the app
 /// supplies the real one (the component loads nothing itself).
-typedef HfImageBuilder =
-    Widget Function(BuildContext context, HfAttachmentData image, Size size);
+typedef HfImageBuilder = Widget Function(
+  BuildContext context,
+  HfAttachmentData image,
+  Size size,
+);
 
 /// Puts something around a numbered message (the app's pointer tag).
 typedef HfMessageWrapper = Widget Function(String focusId, Widget child);
@@ -761,7 +771,9 @@ class _HfConversationState extends State<HfConversation> {
   };
 
   Widget _numbered(HfMessagePart p) {
-    final id = widget.focusPrefix == null ? null : '${widget.focusPrefix}#${p.n}';
+    final id = widget.focusPrefix == null
+        ? null
+        : '${widget.focusPrefix}#${p.n}';
     Widget w = _MessageRow(
       part: p,
       onTap: widget.onTapMessage,
@@ -872,7 +884,10 @@ class _TaskChip extends StatelessWidget {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           borderRadius: radius,
-          border: Border.all(color: HfColors.ink, width: hf.sp(current ? 5 : 2.5)),
+          border: Border.all(
+            color: HfColors.ink,
+            width: hf.sp(current ? 5 : 2.5),
+          ),
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -1031,9 +1046,7 @@ class _MessageRow extends StatelessWidget {
     Widget content = LayoutBuilder(
       builder: (context, box) {
         final room =
-            box.maxWidth -
-            (mine ? 0 : hf.sp(_avatar + 10)) -
-            hf.sp(30 + 8);
+            box.maxWidth - (mine ? 0 : hf.sp(_avatar + 10)) - hf.sp(30 + 8);
         final bubbleMax = room * (hf.phone ? .96 : .72);
         return Row(
           mainAxisAlignment: mine
@@ -1101,7 +1114,11 @@ class _Header extends StatelessWidget {
       style: hf.type(HfType.meta, color: HfColors.inkMuted),
     );
     return Padding(
-      padding: EdgeInsets.only(bottom: hf.sp(5), left: hf.sp(4), right: hf.sp(4)),
+      padding: EdgeInsets.only(
+        bottom: hf.sp(5),
+        left: hf.sp(4),
+        right: hf.sp(4),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1182,11 +1199,7 @@ class _Bubble extends StatelessWidget {
         });
       }
       for (final a in m.attachments) {
-        body.add(
-          a.isImage
-              ? _ImageTile(a, imageBuilder)
-              : _FileChip(a),
-        );
+        body.add(a.isImage ? _ImageTile(a, imageBuilder) : _FileChip(a));
       }
       if (m.task != null) body.add(_TaskChip(m.task!));
       if (m.reactions.isNotEmpty) {
@@ -1217,7 +1230,10 @@ class _Bubble extends StatelessWidget {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           borderRadius: radius,
-          border: Border.all(color: HfColors.ink, width: hf.sp(current ? 5.5 : 3)),
+          border: Border.all(
+            color: HfColors.ink,
+            width: hf.sp(current ? 5.5 : 3),
+          ),
         ),
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -1351,7 +1367,10 @@ class _FileChip extends StatelessWidget {
         border: Border.all(color: HfColors.ink, width: hf.sp(2.5)),
       ),
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: hf.sp(10), vertical: hf.sp(6)),
+        padding: EdgeInsets.symmetric(
+          horizontal: hf.sp(10),
+          vertical: hf.sp(6),
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1395,9 +1414,7 @@ class _ReactionChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final hf = HandsFree.of(context);
     return Container(
-      key: ValueKey(
-        reaction.mine ? 'hf-reaction-mine' : 'hf-reaction',
-      ),
+      key: ValueKey(reaction.mine ? 'hf-reaction-mine' : 'hf-reaction'),
       padding: EdgeInsets.symmetric(horizontal: hf.sp(8), vertical: hf.sp(2)),
       decoration: BoxDecoration(
         color: reaction.mine ? HfColors.sticker : HfColors.card,

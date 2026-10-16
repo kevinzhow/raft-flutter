@@ -16,17 +16,18 @@ void _size(WidgetTester t, Size size) {
   addTearDown(t.view.reset);
 }
 
-Widget _app(Widget child, {HfSurface? surface, bool page = true}) => MaterialApp(
-  theme: raftTheme(RaftFamily.brutal),
-  home: Scaffold(
-    body: HandsFree(
-      surface: surface,
-      child: page
-          ? HfPage(child: child)
-          : SingleChildScrollView(child: child),
-    ),
-  ),
-);
+Widget _app(Widget child, {HfSurface? surface, bool page = true}) =>
+    MaterialApp(
+      theme: raftTheme(RaftFamily.brutal),
+      home: Scaffold(
+        body: HandsFree(
+          surface: surface,
+          child: page
+              ? HfPage(child: child)
+              : SingleChildScrollView(child: child),
+        ),
+      ),
+    );
 
 HfMessageData _chat(
   String id,
@@ -55,9 +56,10 @@ bool _isIcon(String s) =>
 /// no icon glyphs, no avatar letter, no number on a bubble's tag.
 List<String> _shown(WidgetTester t, Finder root) {
   final out = <String>{};
-  for (final e in find
-      .descendant(of: root, matching: find.byType(RichText))
-      .evaluate()) {
+  for (final e
+      in find
+          .descendant(of: root, matching: find.byType(RichText))
+          .evaluate()) {
     var skip = false;
     e.visitAncestorElements((a) {
       final w = a.widget;
@@ -87,15 +89,22 @@ void main() {
     test('only real messages are numbered, from 1, top to bottom', () {
       final parts = HfConversation.partsOf(sample, now: now);
       final numbered = parts.whereType<HfMessagePart>().toList();
-      expect([for (final p in numbered) p.n], [for (var i = 1; i <= numbered.length; i++) i]);
+      expect(
+        [for (final p in numbered) p.n],
+        [for (var i = 1; i <= numbered.length; i++) i],
+      );
       expect(numbered.length, sample.where((m) => m.isChat).length);
-      expect([for (final p in numbered) p.message.id], [
-        for (final m in sample)
-          if (m.isChat) m.id,
-      ]);
+      expect(
+        [for (final p in numbered) p.message.id],
+        [
+          for (final m in sample)
+            if (m.isChat) m.id,
+        ],
+      );
       // Notes and task events carry no number.
       for (final p in parts) {
-        if (p is! HfMessagePart) expect(p.describe(const HfDescribeEnv()).index, isNull);
+        if (p is! HfMessagePart)
+          expect(p.describe(const HfDescribeEnv()).index, isNull);
       }
     });
 
@@ -108,7 +117,10 @@ void main() {
         _chat('e', 'Bo', 5),
         _chat('f', 'Bo', 12),
       ], now: now).whereType<HfMessagePart>().toList();
-      expect([for (final p in parts) p.head], [true, false, false, true, true, true]);
+      expect(
+        [for (final p in parts) p.head],
+        [true, false, false, true, true, true],
+      );
     });
 
     test('a person and an Agent of one name are not one group', () {
@@ -120,7 +132,11 @@ void main() {
     });
 
     test('days and gaps get a separator, the first message always a day', () {
-      final parts = HfConversation.partsOf(sample, now: now, hasMoreAbove: true);
+      final parts = HfConversation.partsOf(
+        sample,
+        now: now,
+        hasMoreAbove: true,
+      );
       expect(parts.first, isA<HfMoreAbovePart>());
       final labels = [
         for (final p in parts.whereType<HfSeparatorPart>()) p.label,
@@ -133,27 +149,40 @@ void main() {
       expect(HfConversation.dayLabel(DateTime(2025, 3, 4), now), '2025年3月4日');
     });
 
-    test('adjacent system notes fold to one line, unless one is the highlight', () {
-      final folded = HfConversation.partsOf(sample, now: now);
-      final group = folded.whereType<HfNoteGroupPart>().single;
-      expect(group.summary, '3 条系统更新：2 条系统消息、1 条提醒');
-      expect(folded.whereType<HfNotePart>(), isEmpty);
-      final open = HfConversation.partsOf(sample, now: now, highlightId: 'n2');
-      expect(open.whereType<HfNoteGroupPart>(), isEmpty);
-      expect(open.whereType<HfNotePart>().length, 3);
-      expect(open.whereType<HfNotePart>().where((p) => p.highlighted).single.message.id, 'n2');
-    });
+    test(
+      'adjacent system notes fold to one line, unless one is the highlight',
+      () {
+        final folded = HfConversation.partsOf(sample, now: now);
+        final group = folded.whereType<HfNoteGroupPart>().single;
+        expect(group.summary, '3 条系统更新：2 条系统消息、1 条提醒');
+        expect(folded.whereType<HfNotePart>(), isEmpty);
+        final open = HfConversation.partsOf(
+          sample,
+          now: now,
+          highlightId: 'n2',
+        );
+        expect(open.whereType<HfNoteGroupPart>(), isEmpty);
+        expect(open.whereType<HfNotePart>().length, 3);
+        expect(
+          open
+              .whereType<HfNotePart>()
+              .where((p) => p.highlighted)
+              .single
+              .message
+              .id,
+          'n2',
+        );
+      },
+    );
 
     test('the body is cut into text, quotes and code', () {
       final s = HfConversation.bodyOf(
         '看这里\n```dart\nvoid main() {}\n```\n> 引用一\n> 引用二\n完了',
       );
-      expect([for (final x in s) x.kind], [
-        HfBodyKind.text,
-        HfBodyKind.code,
-        HfBodyKind.quote,
-        HfBodyKind.text,
-      ]);
+      expect(
+        [for (final x in s) x.kind],
+        [HfBodyKind.text, HfBodyKind.code, HfBodyKind.quote, HfBodyKind.text],
+      );
       expect(s[1].title, 'dart');
       expect(s[1].text, 'void main() {}');
       expect(s[2].text, '引用一\n引用二');
@@ -175,14 +204,19 @@ void main() {
         expect(again.toJson(), m.toJson());
       }
       final all = [
-        for (final m in jsonDecode(jsonEncode([for (final m in sample) m.toJson()])) as List)
+        for (final m in jsonDecode(
+          jsonEncode([for (final m in sample) m.toJson()]),
+        ) as List)
           HfMessageData.fromJson(Map<String, Object?>.from(m as Map)),
       ];
       expect(all, sample);
     });
 
     test('a message from nothing but an id and a time is a plain bubble', () {
-      final m = HfMessageData.fromJson({'id': 'x', 'time': '2026-10-17T09:00:00.000'});
+      final m = HfMessageData.fromJson({
+        'id': 'x',
+        'time': '2026-10-17T09:00:00.000',
+      });
       expect(m.kind, HfMessageKind.chat);
       expect(m.attachments, isEmpty);
       expect(m.isMine, isFalse);
@@ -190,12 +224,28 @@ void main() {
   });
 
   group('drawn', () {
-    testWidgets('the conversation is a plain column: nothing scrolls inside', (t) async {
+    testWidgets('the conversation is a plain column: nothing scrolls inside', (
+      t,
+    ) async {
       _size(t, _phone);
-      await t.pumpWidget(_app(HfConversationSample(highlightId: 'n1'), page: false));
+      await t.pumpWidget(
+        _app(HfConversationSample(highlightId: 'n1'), page: false),
+      );
       await t.pumpAndSettle();
-      expect(find.descendant(of: find.byType(HfConversation), matching: find.byType(Scrollable)), findsNothing);
-      expect(find.descendant(of: find.byType(HfConversation), matching: find.byType(ListView)), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(HfConversation),
+          matching: find.byType(Scrollable),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(HfConversation),
+          matching: find.byType(ListView),
+        ),
+        findsNothing,
+      );
       // The page around it is the only one.
       expect(find.byType(Scrollable), findsOneWidget);
     });
@@ -212,17 +262,23 @@ void main() {
       expect(theirs.left, lessThan(1440 * .15));
     });
 
-    testWidgets('an avatar and a name once per group; mine has none', (t) async {
+    testWidgets('an avatar and a name once per group; mine has none', (
+      t,
+    ) async {
       _size(t, _phone);
-      await t.pumpWidget(_app(HfConversation(
-        messages: [
-          _chat('a', 'Bo', 1),
-          _chat('b', 'Bo', 2),
-          _chat('c', 'Mia', 3),
-          _chat('d', 'Kevin', 4, mine: true),
-        ],
-        now: now,
-      )));
+      await t.pumpWidget(
+        _app(
+          HfConversation(
+            messages: [
+              _chat('a', 'Bo', 1),
+              _chat('b', 'Bo', 2),
+              _chat('c', 'Mia', 3),
+              _chat('d', 'Kevin', 4, mine: true),
+            ],
+            now: now,
+          ),
+        ),
+      );
       await t.pumpAndSettle();
       expect(find.byType(HfAvatar), findsNWidgets(2));
       expect(find.text('Bo'), findsOneWidget);
@@ -233,10 +289,17 @@ void main() {
 
     testWidgets('an Agent wears the badge and its name', (t) async {
       _size(t, _phone);
-      await t.pumpWidget(_app(HfConversation(
-        messages: [_chat('a', 'Cindy', 1, agent: true), _chat('b', 'Bo', 40)],
-        now: now,
-      )));
+      await t.pumpWidget(
+        _app(
+          HfConversation(
+            messages: [
+              _chat('a', 'Cindy', 1, agent: true),
+              _chat('b', 'Bo', 40),
+            ],
+            now: now,
+          ),
+        ),
+      );
       await t.pumpAndSettle();
       expect(find.text('Agent'), findsOneWidget);
       expect(find.text('Cindy'), findsOneWidget);
@@ -249,11 +312,19 @@ void main() {
       final chats = sample.where((m) => m.isChat).length;
       expect(find.byKey(const ValueKey('hf-row-bar')), findsNWidgets(chats));
       for (var n = 1; n <= chats; n++) {
-        expect(find.descendant(of: find.byKey(const ValueKey('hf-row-bar')), matching: find.text('$n')), findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('hf-row-bar')),
+            matching: find.text('$n'),
+          ),
+          findsOneWidget,
+        );
       }
     });
 
-    testWidgets('the highlighted message is cream with a thicker border', (t) async {
+    testWidgets('the highlighted message is cream with a thicker border', (
+      t,
+    ) async {
       _size(t, _phone);
       await t.pumpWidget(_app(const HfConversationSample(highlightId: 'm5')));
       await t.pumpAndSettle();
@@ -261,9 +332,16 @@ void main() {
       expect(_decoration(t, 'm4').color, isNot(const Color(0xfffff7d6)));
       double border(String id) {
         final inner = t.widget<DecoratedBox>(
-          find.descendant(of: find.byKey(ValueKey('hf-bubble-$id')), matching: find.byType(DecoratedBox)).at(0),
+          find
+              .descendant(
+                of: find.byKey(ValueKey('hf-bubble-$id')),
+                matching: find.byType(DecoratedBox),
+              )
+              .at(0),
         );
-        return ((inner.decoration as BoxDecoration).border! as Border).top.width;
+        return ((inner.decoration as BoxDecoration).border! as Border)
+            .top
+            .width;
       }
 
       expect(border('m5'), greaterThan(border('m4')));
@@ -281,7 +359,9 @@ void main() {
       }
     });
 
-    testWidgets('with nothing highlighted the page shows the newest message', (t) async {
+    testWidgets('with nothing highlighted the page shows the newest message', (
+      t,
+    ) async {
       _size(t, _phone);
       await t.pumpWidget(_app(const HfConversationSample()));
       await t.pumpAndSettle();
@@ -294,14 +374,24 @@ void main() {
       _size(t, _phone);
       final spot = AgentSpotlightController();
       addTearDown(spot.dispose);
-      await t.pumpWidget(_app(
-        AgentSpotlight(
-          controller: spot,
-          child: const HfConversationSample(focusPrefix: 'chan', highlightId: 'm1'),
+      await t.pumpWidget(
+        _app(
+          AgentSpotlight(
+            controller: spot,
+            child: const HfConversationSample(
+              focusPrefix: 'chan',
+              highlightId: 'm1',
+            ),
+          ),
         ),
-      ));
+      );
       await t.pumpAndSettle();
-      final ids = [for (final f in t.widgetList<AgentFocusable>(find.byType(AgentFocusable))) f.id];
+      final ids = [
+        for (final f in t.widgetList<AgentFocusable>(
+          find.byType(AgentFocusable),
+        ))
+          f.id,
+      ];
       expect(ids, [for (var n = 1; n <= 11; n++) 'chan#$n']);
       spot.focus('chan#11');
       await t.pumpAndSettle();
@@ -329,24 +419,38 @@ void main() {
       expect(find.text('Mia 加入了频道'), findsNothing);
     });
 
-    testWidgets('tasks are chips: events inline, and a message that is a task', (t) async {
-      _size(t, _desktop);
-      await t.pumpWidget(_app(const HfConversationSample()));
-      await t.pumpAndSettle();
-      expect(find.byKey(const ValueKey('hf-task-chip')), findsNWidgets(3));
-      expect(find.text('#12'), findsNWidgets(3));
-      expect(find.text('待办'), findsOneWidget);
-      expect(find.text('进行中'), findsOneWidget);
-      expect(find.text('等验收'), findsOneWidget);
-      expect(find.text('Cindy 负责'), findsNWidgets(2));
-      expect(find.text('Bo 把消息转成了任务'), findsOneWidget);
-      // The one inside a bubble is under it.
-      final inBubble = find.descendant(of: find.byKey(const ValueKey('hf-bubble-m5')), matching: find.byKey(const ValueKey('hf-task-chip')));
-      expect(inBubble, findsOneWidget);
-      expect(find.descendant(of: find.byKey(const ValueKey('hf-bubble-m1')), matching: find.byKey(const ValueKey('hf-task-chip'))), findsNothing);
-    });
+    testWidgets(
+      'tasks are chips: events inline, and a message that is a task',
+      (t) async {
+        _size(t, _desktop);
+        await t.pumpWidget(_app(const HfConversationSample()));
+        await t.pumpAndSettle();
+        expect(find.byKey(const ValueKey('hf-task-chip')), findsNWidgets(3));
+        expect(find.text('#12'), findsNWidgets(3));
+        expect(find.text('待办'), findsOneWidget);
+        expect(find.text('进行中'), findsOneWidget);
+        expect(find.text('等验收'), findsOneWidget);
+        expect(find.text('Cindy 负责'), findsNWidgets(2));
+        expect(find.text('Bo 把消息转成了任务'), findsOneWidget);
+        // The one inside a bubble is under it.
+        final inBubble = find.descendant(
+          of: find.byKey(const ValueKey('hf-bubble-m5')),
+          matching: find.byKey(const ValueKey('hf-task-chip')),
+        );
+        expect(inBubble, findsOneWidget);
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('hf-bubble-m1')),
+            matching: find.byKey(const ValueKey('hf-task-chip')),
+          ),
+          findsNothing,
+        );
+      },
+    );
 
-    testWidgets('attachments: a picture tile, files with name and size', (t) async {
+    testWidgets('attachments: a picture tile, files with name and size', (
+      t,
+    ) async {
       _size(t, _phone);
       await t.pumpWidget(_app(const HfConversationSample()));
       await t.pumpAndSettle();
@@ -362,13 +466,20 @@ void main() {
       _size(t, _phone);
       HfAttachmentData? asked;
       Size? sized;
-      await t.pumpWidget(_app(HfConversationSample(
-        imageBuilder: (context, image, size) {
-          asked = image;
-          sized = size;
-          return const ColoredBox(key: ValueKey('real-image'), color: Colors.green);
-        },
-      )));
+      await t.pumpWidget(
+        _app(
+          HfConversationSample(
+            imageBuilder: (context, image, size) {
+              asked = image;
+              sized = size;
+              return const ColoredBox(
+                key: ValueKey('real-image'),
+                color: Colors.green,
+              );
+            },
+          ),
+        ),
+      );
       await t.pumpAndSettle();
       expect(find.byKey(const ValueKey('real-image')), findsOneWidget);
       expect(asked!.name, 'login-v3.png');
@@ -406,29 +517,46 @@ void main() {
       expect(find.text('已编辑'), findsOneWidget);
       expect(find.text('此消息已删除'), findsOneWidget);
       expect(find.text('发错了'), findsNothing);
-      expect(find.descendant(of: find.byKey(const ValueKey('hf-bubble-m7')), matching: find.text('此消息已删除')), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('hf-bubble-m7')),
+          matching: find.text('此消息已删除'),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('a tap gives the number and the message; a TV has no taps', (t) async {
+    testWidgets('a tap gives the number and the message; a TV has no taps', (
+      t,
+    ) async {
       final taps = <String>[];
-      Widget conv() => HfConversationSample(onTapMessage: (n, m) => taps.add('$n:${m.id}'));
+      Widget conv() =>
+          HfConversationSample(onTapMessage: (n, m) => taps.add('$n:${m.id}'));
       _size(t, _desktop);
       await t.pumpWidget(_app(conv(), surface: HfSurface.desktop));
       await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('hf-bubble-m8')), warnIfMissed: false);
+      await t.tap(
+        find.byKey(const ValueKey('hf-bubble-m8')),
+        warnIfMissed: false,
+      );
       expect(taps, ['8:m8']);
       taps.clear();
       _size(t, _tv);
       await t.pumpWidget(_app(conv(), surface: HfSurface.tv));
       await t.pumpAndSettle();
-      await t.tap(find.byKey(const ValueKey('hf-bubble-m8')), warnIfMissed: false);
+      await t.tap(
+        find.byKey(const ValueKey('hf-bubble-m8')),
+        warnIfMissed: false,
+      );
       expect(taps, isEmpty);
       expect(find.byType(GestureDetector), findsNothing);
     });
 
     testWidgets('an empty conversation and the note on top', (t) async {
       _size(t, _phone);
-      await t.pumpWidget(_app(const HfConversation(messages: [], hasMoreAbove: true)));
+      await t.pumpWidget(
+        _app(const HfConversation(messages: [], hasMoreAbove: true)),
+      );
       await t.pumpAndSettle();
       expect(find.text('更早的消息未显示'), findsOneWidget);
       expect(find.text('这里还没有消息'), findsOneWidget);
@@ -442,30 +570,50 @@ void main() {
       testWidgets('$name: every kind, no overflow', (t) async {
         _size(t, size);
         for (final h in [null, 'n2', 'e2', 'm4', 'm7']) {
-          await t.pumpWidget(_app(HfConversationSample(highlightId: h, focusPrefix: 'c'), surface: surface));
+          await t.pumpWidget(
+            _app(
+              HfConversationSample(highlightId: h, focusPrefix: 'c'),
+              surface: surface,
+            ),
+          );
           await t.pumpAndSettle();
           expect(t.takeException(), isNull, reason: '$name $h');
         }
       });
     }
 
-    testWidgets('a long unbroken word and a long file name do not overflow', (t) async {
+    testWidgets('a long unbroken word and a long file name do not overflow', (
+      t,
+    ) async {
       _size(t, _phone);
-      await t.pumpWidget(_app(HfConversation(
-        messages: [
-          HfMessageData(
-            id: 'x',
-            senderId: 'u',
-            senderName: 'Bo' * 30,
-            time: DateTime(2026, 10, 17, 10),
-            text: 'a' * 300,
-            attachments: [HfAttachmentData(name: 'very-long-file-name' * 8, bytes: 5)],
-            task: HfTaskChipData(number: 123456, title: '很长的标题' * 20, status: 'done', claimant: '负责人' * 10),
-            reactions: [for (var i = 0; i < 12; i++) HfReactionData('😀', i + 1)],
+      await t.pumpWidget(
+        _app(
+          HfConversation(
+            messages: [
+              HfMessageData(
+                id: 'x',
+                senderId: 'u',
+                senderName: 'Bo' * 30,
+                time: DateTime(2026, 10, 17, 10),
+                text: 'a' * 300,
+                attachments: [
+                  HfAttachmentData(name: 'very-long-file-name' * 8, bytes: 5),
+                ],
+                task: HfTaskChipData(
+                  number: 123456,
+                  title: '很长的标题' * 20,
+                  status: 'done',
+                  claimant: '负责人' * 10,
+                ),
+                reactions: [
+                  for (var i = 0; i < 12; i++) HfReactionData('😀', i + 1),
+                ],
+              ),
+            ],
+            now: now,
           ),
-        ],
-        now: now,
-      )));
+        ),
+      );
       await t.pumpAndSettle();
       expect(t.takeException(), isNull);
     });
@@ -477,17 +625,31 @@ void main() {
       ('tv', _tv, HfSurface.tv),
     ]) {
       for (final h in [null, 'n1']) {
-        testWidgets('$name ${h ?? 'folded'}: all drawn text is in the description', (t) async {
-          _size(t, size);
-          await t.pumpWidget(_app(HfConversationSample(highlightId: h), surface: surface));
-          await t.pumpAndSettle();
-          final root = find.byType(HfConversation);
-          final conv = t.widget<HfConversation>(root);
-          final seen = _norm(conv.describe(const HfDescribeEnv()).lines.join('\n'));
-          final shown = _shown(t, root);
-          expect(shown, isNotEmpty);
-          expect([for (final s in shown) if (!seen.contains(s)) s], isEmpty, reason: seen);
-        });
+        testWidgets(
+          '$name ${h ?? 'folded'}: all drawn text is in the description',
+          (t) async {
+            _size(t, size);
+            await t.pumpWidget(
+              _app(HfConversationSample(highlightId: h), surface: surface),
+            );
+            await t.pumpAndSettle();
+            final root = find.byType(HfConversation);
+            final conv = t.widget<HfConversation>(root);
+            final seen = _norm(
+              conv.describe(const HfDescribeEnv()).lines.join('\n'),
+            );
+            final shown = _shown(t, root);
+            expect(shown, isNotEmpty);
+            expect(
+              [
+                for (final s in shown)
+                  if (!seen.contains(s)) s,
+              ],
+              isEmpty,
+              reason: seen,
+            );
+          },
+        );
       }
     }
 
@@ -516,21 +678,35 @@ void main() {
       expect(line('m6'), contains('已编辑'));
       expect(line('m7'), contains('此消息已删除'));
       expect(line('m7'), isNot(contains('发错了')));
-      final event = parts.whereType<HfTaskEventPart>().first.describe(env).lines.join('\n');
+      final event = parts
+          .whereType<HfTaskEventPart>()
+          .first
+          .describe(env)
+          .lines
+          .join('\n');
       expect(event, contains('任务事件'));
       expect(event, contains('Bo 把消息转成了任务'));
-      final group = parts.whereType<HfNoteGroupPart>().single.describe(env).lines.join('\n');
+      final group = parts
+          .whereType<HfNoteGroupPart>()
+          .single
+          .describe(env)
+          .lines
+          .join('\n');
       expect(group, contains('Mia 加入了频道'));
       expect(group, contains('明天 10:00 设计评审'));
       expect(parts.whereType<HfMessagePart>().first.describe(env).index, 1);
     });
 
     test('the whole conversation numbers its messages in the lines', () {
-      final said = HfConversation(messages: sample, now: now)
-          .describe(const HfDescribeEnv())
-          .lines;
+      final said = HfConversation(
+        messages: sample,
+        now: now,
+      ).describe(const HfDescribeEnv()).lines;
       expect(said.where((l) => l.startsWith('第 1 条 ')).length, 1);
-      expect(said.where((l) => RegExp(r'^第 \d+ 条 ').hasMatch(l)).length, sample.where((m) => m.isChat).length);
+      expect(
+        said.where((l) => RegExp(r'^第 \d+ 条 ').hasMatch(l)).length,
+        sample.where((m) => m.isChat).length,
+      );
       expect(said.any((l) => l.contains('系统消息')), isTrue);
     });
   });

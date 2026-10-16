@@ -43,8 +43,11 @@ HfMessageData _one(
   Map<String, dynamic> row, {
   String? me = 'u-kevin',
   List<Map<String, dynamic>> others = const [],
-}) => hfMessagesFrom([...others, row], myUserId: me, now: _now)
-    .firstWhere((m) => m.id == row['id']);
+}) => hfMessagesFrom(
+  [...others, row],
+  myUserId: me,
+  now: _now,
+).firstWhere((m) => m.id == row['id']);
 
 void main() {
   test('rows are sorted old to new by seq, as numbers, not text', () {
@@ -66,16 +69,29 @@ void main() {
     expect(mine.isMine, isTrue);
     expect(mine.isAgent, isFalse);
     expect(_one(_row('m', '1')).isMine, isFalse);
-    final agent = _one(_row('m', '1', senderType: 'agent', senderId: 'u-kevin', name: 'Cindy'));
+    final agent = _one(
+      _row('m', '1', senderType: 'agent', senderId: 'u-kevin', name: 'Cindy'),
+    );
     expect(agent.isAgent, isTrue);
     expect(agent.isMine, isFalse);
     expect(_one(_row('m', '1', senderId: 'u-kevin'), me: null).isMine, isFalse);
     // The legacy "human" sender type counts as a person.
-    expect(_one(_row('m', '1', senderType: 'human', senderId: 'u-kevin')).isMine, isTrue);
+    expect(
+      _one(_row('m', '1', senderType: 'human', senderId: 'u-kevin')).isMine,
+      isTrue,
+    );
   });
 
   test('a bubble has its name, words and local time', () {
-    final m = _one(_row('m', '1', name: 'Bo', content: '周五评审', more: {'senderDisplayName': 'Bo Li'}));
+    final m = _one(
+      _row(
+        'm',
+        '1',
+        name: 'Bo',
+        content: '周五评审',
+        more: {'senderDisplayName': 'Bo Li'},
+      ),
+    );
     expect(m.kind, HfMessageKind.chat);
     expect(m.senderName, 'Bo Li');
     expect(m.text, '周五评审');
@@ -99,35 +115,89 @@ void main() {
   });
 
   test('a row without a time takes the given now', () {
-    final m = hfMessagesFrom([
-      {'id': 'x', 'seq': '1', 'senderType': 'user', 'content': 'hi'},
-    ], myUserId: null, now: _now).single;
+    final m = hfMessagesFrom(
+      [
+        {'id': 'x', 'seq': '1', 'senderType': 'user', 'content': 'hi'},
+      ],
+      myUserId: null,
+      now: _now,
+    ).single;
     expect(m.time, _now);
   });
 
   test('attachments: a picture, a file with its size', () {
-    final m = _one(_row('m', '1', more: {
-      'attachments': [
-        {'id': 'a1', 'filename': 'shot.png', 'mimeType': 'image/png', 'sizeBytes': 2048},
-        {'id': 'a2', 'filename': 'spec.pdf', 'mimeType': 'application/pdf', 'sizeBytes': 1572864},
-        {'id': 'a3', 'mimeType': 'text/plain'},
-      ],
-    }));
+    final m = _one(
+      _row(
+        'm',
+        '1',
+        more: {
+          'attachments': [
+            {
+              'id': 'a1',
+              'filename': 'shot.png',
+              'mimeType': 'image/png',
+              'sizeBytes': 2048,
+            },
+            {
+              'id': 'a2',
+              'filename': 'spec.pdf',
+              'mimeType': 'application/pdf',
+              'sizeBytes': 1572864,
+            },
+            {'id': 'a3', 'mimeType': 'text/plain'},
+          ],
+        },
+      ),
+    );
     expect(m.attachments.map((a) => a.name), ['shot.png', 'spec.pdf', '附件']);
     expect(m.attachments.map((a) => a.isImage), [true, false, false]);
     expect(m.attachments.map((a) => a.sizeLabel), ['2.0 KB', '1.5 MB', null]);
   });
 
   test('reactions: counts, and mine from the reactor ids', () {
-    final m = _one(_row('m', '1', more: {
-      'reactions': [
-        {'emoji': '👍', 'count': 3, 'reactorIds': ['u-bo', 'u-mia', 'u-kevin']},
-        {'emoji': '🎉', 'reactorIds': ['u-bo']},
-        {'emoji': '👀', 'count': 0, 'reactorIds': []},
-      ],
-    }));
-    expect(m.reactions.map((r) => '${r.emoji}${r.count}${r.mine}'), ['👍3true', '🎉1false']);
-    expect(_one(_row('m', '1', more: {'reactions': [{'emoji': '👍', 'count': 1, 'reactorIds': ['u-kevin']}]}), me: null).reactions.single.mine, isFalse);
+    final m = _one(
+      _row(
+        'm',
+        '1',
+        more: {
+          'reactions': [
+            {
+              'emoji': '👍',
+              'count': 3,
+              'reactorIds': ['u-bo', 'u-mia', 'u-kevin'],
+            },
+            {
+              'emoji': '🎉',
+              'reactorIds': ['u-bo'],
+            },
+            {'emoji': '👀', 'count': 0, 'reactorIds': []},
+          ],
+        },
+      ),
+    );
+    expect(m.reactions.map((r) => '${r.emoji}${r.count}${r.mine}'), [
+      '👍3true',
+      '🎉1false',
+    ]);
+    expect(
+      _one(
+        _row(
+          'm',
+          '1',
+          more: {
+            'reactions': [
+              {
+                'emoji': '👍',
+                'count': 1,
+                'reactorIds': ['u-kevin'],
+              },
+            ],
+          },
+        ),
+        me: null,
+      ).reactions.single.mine,
+      isFalse,
+    );
   });
 
   test('a thread count', () {
@@ -137,12 +207,19 @@ void main() {
   });
 
   test('a message that is a task carries the chip', () {
-    final m = _one(_row('m', '1', content: '把登录页改了', more: {
-      'taskNumber': 12,
-      'taskStatus': 'in_review',
-      'taskAssigneeName': 'Cindy',
-      'taskCurrentProjection': {'title': '登录页改版'},
-    }));
+    final m = _one(
+      _row(
+        'm',
+        '1',
+        content: '把登录页改了',
+        more: {
+          'taskNumber': 12,
+          'taskStatus': 'in_review',
+          'taskAssigneeName': 'Cindy',
+          'taskCurrentProjection': {'title': '登录页改版'},
+        },
+      ),
+    );
     expect(m.kind, HfMessageKind.chat);
     expect(m.task!.number, 12);
     expect(m.task!.title, '登录页改版');
@@ -150,19 +227,33 @@ void main() {
     expect(m.task!.statusLabel, '等验收');
     expect(m.task!.claimant, 'Cindy');
     // Without a known status there is no chip.
-    expect(_one(_row('m', '1', more: {'taskNumber': 3, 'taskStatus': 'nope'})).task, isNull);
+    expect(
+      _one(_row('m', '1', more: {'taskNumber': 3, 'taskStatus': 'nope'})).task,
+      isNull,
+    );
   });
 
   test('edited and deleted; a deleted message keeps no words', () {
     final e = _one(_row('m', '1', more: {'editedAt': '2026-10-17T09:05:00Z'}));
     expect(e.edited, isTrue);
     expect(e.deleted, isFalse);
-    final d = _one(_row('m', '1', content: '秘密', more: {
-      'deletedAt': '2026-10-17T09:05:00Z',
-      'editedAt': '2026-10-17T09:04:00Z',
-      'attachments': [{'id': 'a', 'filename': 'x.png', 'mimeType': 'image/png'}],
-      'reactions': [{'emoji': '👍', 'count': 1}],
-    }));
+    final d = _one(
+      _row(
+        'm',
+        '1',
+        content: '秘密',
+        more: {
+          'deletedAt': '2026-10-17T09:05:00Z',
+          'editedAt': '2026-10-17T09:04:00Z',
+          'attachments': [
+            {'id': 'a', 'filename': 'x.png', 'mimeType': 'image/png'},
+          ],
+          'reactions': [
+            {'emoji': '👍', 'count': 1},
+          ],
+        },
+      ),
+    );
     expect(d.deleted, isTrue);
     expect(d.text, '');
     expect(d.attachments, isEmpty);
@@ -170,28 +261,48 @@ void main() {
     expect(d.edited, isFalse);
   });
 
-  test('a permalink to a message of the list is a quote, and leaves the text', () {
-    final target = _row('t1', '1', name: 'Bo', content: '周五前把登录页看完\n第二行');
-    final reply = _row('r1', '2',
+  test(
+    'a permalink to a message of the list is a quote, and leaves the text',
+    () {
+      final target = _row('t1', '1', name: 'Bo', content: '周五前把登录页看完\n第二行');
+      final reply = _row(
+        'r1',
+        '2',
         senderId: 'u-kevin',
         name: 'Kevin',
-        content: 'https://app.raft.build/s/acme/channel/c1?msg=t1 好的');
-    final out = hfMessagesFrom([reply, target], myUserId: 'u-kevin', now: _now);
-    final m = out.last;
-    expect(m.quote!.author, 'Bo');
-    expect(m.quote!.text, '周五前把登录页看完');
-    expect(m.quote!.id, 't1');
-    expect(m.text, '好的');
-    // A link to a message that is not in the list stays as written.
-    final lost = _one(_row('r2', '3', content: 'https://app.raft.build/s/acme/channel/c1?msg=zzz 看这个'));
-    expect(lost.quote, isNull);
-    expect(lost.text, contains('https://'));
-  });
+        content: 'https://app.raft.build/s/acme/channel/c1?msg=t1 好的',
+      );
+      final out = hfMessagesFrom(
+        [reply, target],
+        myUserId: 'u-kevin',
+        now: _now,
+      );
+      final m = out.last;
+      expect(m.quote!.author, 'Bo');
+      expect(m.quote!.text, '周五前把登录页看完');
+      expect(m.quote!.id, 't1');
+      expect(m.text, '好的');
+      // A link to a message that is not in the list stays as written.
+      final lost = _one(
+        _row(
+          'r2',
+          '3',
+          content: 'https://app.raft.build/s/acme/channel/c1?msg=zzz 看这个',
+        ),
+      );
+      expect(lost.quote, isNull);
+      expect(lost.text, contains('https://'));
+    },
+  );
 
   test('code and "> " lines stay in the text for the view to draw', () {
     final m = _one(_row('m', '1', content: '看:\n```dart\nrun();\n```\n> 注意'));
     expect(m.text, contains('```dart'));
-    expect(HfConversation.bodyOf(m.text).map((s) => s.kind), [HfBodyKind.text, HfBodyKind.code, HfBodyKind.quote]);
+    expect(HfConversation.bodyOf(m.text).map((s) => s.kind), [
+      HfBodyKind.text,
+      HfBodyKind.code,
+      HfBodyKind.quote,
+    ]);
   });
 
   group('system messages', () {
@@ -204,12 +315,20 @@ void main() {
     });
 
     test('a reminder is a reminder', () {
-      expect(_one(_sys('s', 1, 'Reminder #ab12: 周五评审')).kind, HfMessageKind.reminder);
-      expect(_one(_sys('s', 1, 'Bo scheduled a reminder for 10:00')).kind, HfMessageKind.reminder);
+      expect(
+        _one(_sys('s', 1, 'Reminder #ab12: 周五评审')).kind,
+        HfMessageKind.reminder,
+      );
+      expect(
+        _one(_sys('s', 1, 'Bo scheduled a reminder for 10:00')).kind,
+        HfMessageKind.reminder,
+      );
     });
 
     test('a task converted from a message', () {
-      final m = _one(_sys('s', 1, 'Bo converted a message to task #12 "登录页改版"'));
+      final m = _one(
+        _sys('s', 1, 'Bo converted a message to task #12 "登录页改版"'),
+      );
       expect(m.kind, HfMessageKind.taskEvent);
       expect(m.text, 'Bo 把消息转成了任务');
       expect(m.task!.number, 12);
@@ -221,7 +340,10 @@ void main() {
       final c = _one(_sys('s', 1, 'Cindy claimed #12 "登录页改版"'));
       expect(c.text, 'Cindy 认领了任务');
       expect(c.task!.claimant, 'Cindy');
-      expect(_one(_sys('s', 1, 'Cindy released #12 "登录页改版"')).text, 'Cindy 放下了任务');
+      expect(
+        _one(_sys('s', 1, 'Cindy released #12 "登录页改版"')).text,
+        'Cindy 放下了任务',
+      );
       expect(_one(_sys('s', 1, 'Bo deleted #12 "登录页改版"')).text, 'Bo 删除了任务');
     });
 
@@ -251,26 +373,38 @@ void main() {
     });
 
     test('a system sender without a system message type is a note too', () {
-      final m = _one({'id': 'q', 'seq': '1', 'senderType': 'system', 'content': 'Cleanup done', 'createdAt': '2026-10-17T09:00:00Z'});
+      final m = _one({
+        'id': 'q',
+        'seq': '1',
+        'senderType': 'system',
+        'content': 'Cleanup done',
+        'createdAt': '2026-10-17T09:00:00Z',
+      });
       expect(m.kind, HfMessageKind.system);
     });
   });
 
-  test('a whole channel makes a view that round trips and parts that number', () {
-    final rows = [
-      _row('m3', '3', senderId: 'u-kevin', name: 'Kevin', content: '好'),
-      _sys('s1', 2, 'Cindy claimed #12 "登录页改版"'),
-      _row('m1', '1', content: '开始吧'),
-      _sys('s2', 4, 'Mia joined the channel'),
-      _sys('s3', 5, 'Reminder #1: 开会'),
-    ];
-    final out = hfMessagesFrom(rows, myUserId: 'u-kevin', now: _now);
-    expect([for (final m in out) m.id], ['m1', 's1', 'm3', 's2', 's3']);
-    final again = [for (final m in out) HfMessageData.fromJson(m.toJson())];
-    expect(again, out);
-    final parts = HfConversation.partsOf(out, now: _now);
-    expect(parts.whereType<HfMessagePart>().map((p) => p.n), [1, 2]);
-    expect(parts.whereType<HfTaskEventPart>(), hasLength(1));
-    expect(parts.whereType<HfNoteGroupPart>().single.summary, '2 条系统更新：1 条系统消息、1 条提醒');
-  });
+  test(
+    'a whole channel makes a view that round trips and parts that number',
+    () {
+      final rows = [
+        _row('m3', '3', senderId: 'u-kevin', name: 'Kevin', content: '好'),
+        _sys('s1', 2, 'Cindy claimed #12 "登录页改版"'),
+        _row('m1', '1', content: '开始吧'),
+        _sys('s2', 4, 'Mia joined the channel'),
+        _sys('s3', 5, 'Reminder #1: 开会'),
+      ];
+      final out = hfMessagesFrom(rows, myUserId: 'u-kevin', now: _now);
+      expect([for (final m in out) m.id], ['m1', 's1', 'm3', 's2', 's3']);
+      final again = [for (final m in out) HfMessageData.fromJson(m.toJson())];
+      expect(again, out);
+      final parts = HfConversation.partsOf(out, now: _now);
+      expect(parts.whereType<HfMessagePart>().map((p) => p.n), [1, 2]);
+      expect(parts.whereType<HfTaskEventPart>(), hasLength(1));
+      expect(
+        parts.whereType<HfNoteGroupPart>().single.summary,
+        '2 条系统更新：1 条系统消息、1 条提醒',
+      );
+    },
+  );
 }

@@ -67,7 +67,12 @@ class HfConversationSample extends StatelessWidget {
       time: _at(1, 17, 40),
       text: '明天前把登录页的新设计过一遍，附件是最新稿。',
       attachments: const [
-        HfAttachmentData(id: 'a1', name: 'login-v3.png', isImage: true, bytes: 482113),
+        HfAttachmentData(
+          id: 'a1',
+          name: 'login-v3.png',
+          isImage: true,
+          bytes: 482113,
+        ),
         HfAttachmentData(id: 'a2', name: 'login-spec.pdf', bytes: 1288490),
       ],
       reactions: const [HfReactionData('👍', 3, mine: true)],

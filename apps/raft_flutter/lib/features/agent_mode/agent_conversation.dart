@@ -32,7 +32,8 @@ List<HfMessageData> hfMessagesFrom(
       if (_id(r).isNotEmpty) _id(r): r,
   };
   return [
-    for (final r in sorted) _message(r, byId, myUserId: myUserId, fallback: fallback),
+    for (final r in sorted)
+      _message(r, byId, myUserId: myUserId, fallback: fallback),
   ];
 }
 
@@ -157,12 +158,10 @@ String _fileName(Map<String, dynamic> a) {
 
 String _senderName(Map<String, dynamic> row) {
   final external = row['externalAuthor'];
-  final fromExternal = external is Map ? external['name'] ?? external['displayName'] : null;
-  for (final v in [
-    row['senderDisplayName'],
-    row['senderName'],
-    fromExternal,
-  ]) {
+  final fromExternal = external is Map
+      ? external['name'] ?? external['displayName']
+      : null;
+  for (final v in [row['senderDisplayName'], row['senderName'], fromExternal]) {
     if (v is String && v.trim().isNotEmpty) return v.trim();
   }
   return '未知';
@@ -223,7 +222,10 @@ final _moved = RegExp(
   r'^(.+?) moved #(\d+)\s+"([^"]*)" to (.+)$',
   unicode: true,
 );
-final _deletedTask = RegExp(r'^(.+?) deleted #(\d+)\s+"([^"]*)"', unicode: true);
+final _deletedTask = RegExp(
+  r'^(.+?) deleted #(\d+)\s+"([^"]*)"',
+  unicode: true,
+);
 final _created = RegExp(
   r'new tasks? created',
   caseSensitive: false,
