@@ -19,8 +19,12 @@ import 'support/app_services_fixture.dart';
 /// `channelOrder` or `dmOrder`. A long press on a section header lifts the
 /// whole section (`SortableSidebarSection`) and persists `sectionOrder`.
 void main() {
-  RaftChannel channel(String id, String name, {String type = 'channel'}) =>
-      RaftChannel({'id': id, 'name': name, 'type': type, 'joined': true});
+  RaftChannel channel(
+    String id,
+    String name, {
+    String type = 'channel',
+    bool joined = true,
+  }) => RaftChannel({'id': id, 'name': name, 'type': type, 'joined': joined});
   RaftChannel dm(String id, String peer, String name, {bool agent = false}) =>
       RaftChannel({
         'id': id,
@@ -421,8 +425,9 @@ void main() {
   group('mounted sidebar', () {
     Future<(WorkspaceController, List<Object?>)> setup(
       WidgetTester tester,
-      Map<String, dynamic> prefs,
-    ) async {
+      Map<String, dynamic> prefs, {
+      List<RaftChannel>? rowChannels,
+    }) async {
       SharedPreferences.setMockInitialValues({});
       tester.view.physicalSize = const Size(1440, 900);
       tester.view.devicePixelRatio = 1;
@@ -431,7 +436,8 @@ void main() {
       addTearDown(w.dispose);
       w.loading = false;
       w.ledger.switchServer('s1');
-      w.channels = [channel('c1', 'general'), channel('c2', 'random')];
+      w.channels =
+          rowChannels ?? [channel('c1', 'general'), channel('c2', 'random')];
       w.dms = [dm('d1', 'u2', 'Alice'), dm('d2', 'u3', 'Bob')];
       w.section = 'chat';
       w.sidebarOrder = prefs;
@@ -722,6 +728,95 @@ void main() {
       await tester.pumpAndSettle();
       expect(w.location.entityId, 'c2');
       expect(find.text('Move to section'), findsNothing);
+      expect(patches, isEmpty);
+    });
+
+    Future<void> nudge(WidgetTester tester, Finder target) async {
+      final start = tester.getCenter(target);
+      final gesture = await tester.startGesture(start);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      await gesture.moveTo(start + const Offset(0, 8));
+      await tester.pump(const Duration(milliseconds: 16));
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a short move of a row opens the menu and does not reorder', (
+      tester,
+    ) async {
+      final (_, patches) = await setup(tester, sectionPrefs);
+      await nudge(tester, row('c2'));
+      expect(patches, isEmpty);
+      expect(find.text('Move to section'), findsOneWidget);
+    });
+
+    testWidgets(
+      'a short move of a section header opens the menu and does not reorder',
+      (tester) async {
+        final (_, patches) = await setup(tester, {'sectionsVersion': 3});
+        await nudge(tester, header('system:channels'));
+        expect(patches, isEmpty);
+        expect(find.text('Hide empty sections'), findsOneWidget);
+      },
+    );
+
+    testWidgets('the lifted section card counts the rows on screen', (
+      tester,
+    ) async {
+      final (_, patches) = await setup(
+        tester,
+        {'sectionsVersion': 3},
+        rowChannels: [
+          channel('c1', 'general'),
+          channel('c2', 'random', joined: false),
+        ],
+      );
+      await tester.tapAt(
+        tester.getCenter(header('system:channels')),
+        kind: PointerDeviceKind.mouse,
+        buttons: kSecondaryMouseButton,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Show joined channels only'));
+      await tester.pumpAndSettle();
+      expect(row('c2'), findsNothing);
+      final start = tester.getCenter(header('system:channels'));
+      final gesture = await tester.startGesture(start);
+      try {
+        await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+        await gesture.moveTo(start + const Offset(0, -40));
+        await tester.pump(const Duration(milliseconds: 16));
+        String? countBeside(Element label) {
+          String? count;
+          label.visitAncestorElements((ancestor) {
+            if (ancestor.widget is! Row) return true;
+            ancestor.visitChildElements((child) {
+              void walk(Element node) {
+                final widget = node.widget;
+                if (widget is Text &&
+                    widget.data != null &&
+                    widget.data != 'CHANNELS') {
+                  count = widget.data;
+                }
+                node.visitChildElements(walk);
+              }
+
+              walk(child);
+            });
+            return false;
+          });
+          return count;
+        }
+
+        final labels = find.text('CHANNELS').evaluate().toList();
+        expect(labels, hasLength(2));
+        expect(labels.map(countBeside), ['1', '1']);
+      } finally {
+        await gesture.moveTo(start);
+        await tester.pump(const Duration(milliseconds: 16));
+        await gesture.up();
+        await tester.pumpAndSettle();
+      }
       expect(patches, isEmpty);
     });
   });

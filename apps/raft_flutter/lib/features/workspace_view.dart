@@ -3632,6 +3632,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         w: w,
         label: tr(group.label),
         header: header,
+        count: entries.length,
         onHeldInPlace: (at) => openSectionMenu(at, group),
       ),
       itemBuilder: (context, index) => sidebarListRow(

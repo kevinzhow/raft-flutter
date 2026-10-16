@@ -203,18 +203,21 @@ RaftGlyph sidebarSectionGlyph(SidebarGroup group) => switch (group.id) {
 /// persists the new `sectionOrder` through the optimistic
 /// [WorkspaceController.updateSidebarOrder]. [onHeldInPlace] (the header's
 /// menu) opens when the press is released without the pointer travelling.
+/// [count] is the number painted on the header; the Channels section can hide
+/// rows that [SidebarGroup.entries] still contains.
 Widget sidebarSectionDragHeader({
   required SidebarGroup group,
   required WorkspaceController w,
   required String label,
   required Widget header,
+  int? count,
   ValueChanged<Offset>? onHeldInPlace,
 }) => SidebarSectionDragHeader(
   key: ValueKey('sidebar-section-drag-${group.id}'),
   id: group.id,
   order: sidebarSectionOrder(w.sidebarOrder),
   label: label,
-  count: group.entries.length,
+  count: count ?? group.entries.length,
   glyph: sidebarSectionGlyph(group),
   onHeldInPlace: onHeldInPlace,
   onMove: (from, to) {
@@ -520,8 +523,14 @@ class _HeldDrag implements Drag {
 
   @override
   void end(DragEndDetails details) {
+    // A short release is the menu, not a drop. Cancelling keeps the list and
+    // the section target from committing a move the pointer barely started.
+    if (travel < kTouchSlop) {
+      drag.cancel();
+      onHeldInPlace?.call(origin);
+      return;
+    }
     drag.end(details);
-    if (travel < kTouchSlop) onHeldInPlace?.call(origin);
   }
 
   @override
