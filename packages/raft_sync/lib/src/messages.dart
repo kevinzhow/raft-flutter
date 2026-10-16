@@ -8,6 +8,15 @@ import 'read_state.dart';
 class MessageSync {
   MessageSync() : core = _create();
   SyncCore core;
+  Iterable<String> get channelIds => core.scopeIds('messages');
+  Iterable<Map<String, dynamic>> messages(String channel) =>
+      (core.state('messages', channel) as Map?)?.values
+          .cast<Map<String, dynamic>>() ?? const [];
+
+  void releaseBodies(String channel, Set<String> ids) =>
+      core.projectState('messages', channel, (state) =>
+          Map<String, Map<String, dynamic>>.from(state as Map)
+            ..removeWhere((id, _) => ids.contains(id)));
   static SyncCore _create() => SyncCore(
     domains: [
       SyncDomain(

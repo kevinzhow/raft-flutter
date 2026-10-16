@@ -22,6 +22,7 @@ class MessageLedger {
   final Map<String, List<Map<String, dynamic>>> _sorted = {};
   final Map<String, DateTime?> _latestCreatedAt = {};
   String? get serverId => _serverId;
+  Iterable<String> get channelIds => List.unmodifiable(_channels.keys);
   void switchServer(String? id) {
     if (_serverId == id) return;
     _serverId = id;
@@ -129,6 +130,18 @@ class MessageLedger {
   void remove(String channelId, String messageId) {
     _channels[channelId]?.remove(messageId);
     _changed(channelId);
+  }
+
+  /// Drops reconstructable bodies without moving the receiver's generation,
+  /// sequence watermark or last known channel timestamp.
+  void releaseBodies(String channelId, Set<String> ids) {
+    final rows = _channels[channelId];
+    if (rows == null || !ids.any(rows.containsKey)) return;
+    latestCreatedAt(channelId);
+    rows.removeWhere((id, _) => ids.contains(id));
+    if (rows.isEmpty) _channels.remove(channelId);
+    _sorted.remove(channelId);
+    revision++;
   }
 
   void revokeChannel(String id) {
