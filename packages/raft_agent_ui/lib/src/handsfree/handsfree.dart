@@ -9,6 +9,8 @@ export 'hf_action.dart';
 export 'hf_basics.dart';
 export 'hf_blocks.dart';
 export 'hf_cards.dart';
+export 'hf_conversation.dart';
+export 'hf_conversation_sample.dart';
 export 'hf_describe.dart';
 export 'hf_detail.dart';
 export 'hf_entity.dart';
