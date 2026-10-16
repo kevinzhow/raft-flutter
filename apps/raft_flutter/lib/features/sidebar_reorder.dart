@@ -473,6 +473,86 @@ Widget sidebarRowsSliver(
         proxyDecorator: raftSidebarReorderProxy,
       );
 
+/// The rows of a custom section, reordered when the section sorts manually.
+Widget sidebarCustomRows(
+  SidebarGroup group,
+  WorkspaceController w,
+  RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
+) => sidebarRowsSliver(
+  group.entries,
+  onReorder: sidebarReorderCallback(group, group.entries, w),
+  row: row,
+);
+
+/// [header] wrapped as a draggable section when [group] is present. A header
+/// with no group stays as the shell built it.
+Widget sidebarDragSectionHeader({
+  required SidebarGroup? group,
+  required WorkspaceController w,
+  required String label,
+  required Widget header,
+  required Future<void> Function(Offset at, SidebarGroup group) onOpenMenu,
+}) {
+  if (group == null) return header;
+  return sidebarSectionDragHeader(
+    group: group,
+    w: w,
+    label: label,
+    header: header,
+    onHeldInPlace: (at) => onOpenMenu(at, group),
+  );
+}
+
+/// A system group in the scrolling sidebar. The shell still chooses the kind,
+/// copy, disclosure and row; this owner attaches the section and row drags.
+Widget sidebarSystemGroupSliver({
+  required SidebarGroup group,
+  required List<SidebarEntry> entries,
+  required WorkspaceController w,
+  required String label,
+  required RaftChatSidebarGroupKind kind,
+  required bool expanded,
+  required bool hideEmpty,
+  required bool loading,
+  required String emptyLabel,
+  required ValueChanged<bool> onExpandedChanged,
+  required Widget? attention,
+  required List<RaftSidebarSectionAction> actions,
+  required ValueChanged<Offset> onOpenMenu,
+  required RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
+}) {
+  final reorder = sidebarReorderCallback(group, entries, w);
+  return RaftChatSidebarGroup.sliver(
+    key: ValueKey('sidebar-group-${group.id}'),
+    headerKey: ValueKey('sidebar-section-${group.id}'),
+    disclosureKey: ValueKey('sidebar-disclosure-${group.id}'),
+    kind: kind,
+    label: label,
+    count: entries.length,
+    expanded: expanded,
+    hideEmpty: hideEmpty,
+    loading: loading,
+    emptyLabel: emptyLabel,
+    onExpandedChanged: onExpandedChanged,
+    attention: attention,
+    actions: actions,
+    onContextMenu: onOpenMenu,
+    contextMenuOnLongPress: false,
+    wrapHeader: (header) => sidebarSectionDragHeader(
+      group: group,
+      w: w,
+      label: label,
+      header: header,
+      count: entries.length,
+      onHeldInPlace: onOpenMenu,
+    ),
+    itemBuilder: (context, index) =>
+        sidebarListRow(entries, index, reorder, row),
+    findChildIndexCallback: (key) => sidebarEntryIndex(entries, key),
+    onReorderItem: reorder,
+  );
+}
+
 /// A reorderable sidebar row: a long press (press and hold with a mouse)
 /// lifts it. The row's own long-press menu ([RaftNavItem.onContextMenu]
 /// with `contextMenuOnLongPress: false`) opens when it is released without

@@ -3568,12 +3568,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 child: sectionLabel(group.label, group: group),
               ),
               if (sidebarDisclosure.collapsed[group.id] != true)
-                sidebarRowsSliver(
-                  group.entries,
-                  onReorder: sidebarReorderCallback(group, group.entries, w),
-                  row: (e, reorderable) =>
-                      sidebarEntry(e, custom: true, reorderable: reorderable),
-                ),
+                sidebarCustomRows(group, w, (e, reorderable) =>
+                    sidebarEntry(e, custom: true, reorderable: reorderable)),
               if (sidebarDisclosure.collapsed[group.id] != true &&
                   group.entries.isEmpty)
                 SliverToBoxAdapter(
@@ -3599,20 +3595,17 @@ class _WorkspaceViewState extends State<WorkspaceView>
 
   Widget sidebarGroupSliver(SidebarGroup group) {
     final entries = _shownEntries(group);
-    final reorder = sidebarReorderCallback(group, entries, w);
-    final pinned = group.id == 'system:pinned';
-    return RaftChatSidebarGroup.sliver(
-      key: ValueKey('sidebar-group-${group.id}'),
-      headerKey: ValueKey('sidebar-section-${group.id}'),
-      disclosureKey: ValueKey('sidebar-disclosure-${group.id}'),
+    return sidebarSystemGroupSliver(
+      group: group,
+      entries: entries,
+      w: w,
+      label: tr(group.label),
       kind: switch (group.id) {
         'system:pinned' => RaftChatSidebarGroupKind.pinned,
         'system:joint' => RaftChatSidebarGroupKind.joint,
         'system:dms' => RaftChatSidebarGroupKind.directMessages,
         _ => RaftChatSidebarGroupKind.channels,
       },
-      label: tr(group.label),
-      count: entries.length,
       expanded: sidebarDisclosure.collapsed[group.id] != true,
       hideEmpty: presentation.value.hideEmptySections,
       loading: w.loading,
@@ -3625,25 +3618,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
           sidebarDisclosure.setExpanded(mobileAuthority, group.id, expanded),
       attention: groupAttention(group, entries),
       actions: sidebarGroupActions(group),
-      onContextMenu: (at) => openSectionMenu(at, group),
-      contextMenuOnLongPress: false,
-      wrapHeader: (header) => sidebarSectionDragHeader(
-        group: group,
-        w: w,
-        label: tr(group.label),
-        header: header,
-        count: entries.length,
-        onHeldInPlace: (at) => openSectionMenu(at, group),
+      onOpenMenu: (at) => openSectionMenu(at, group),
+      row: (entry, reorderable) => sidebarEntry(
+        entry,
+        pinned: group.id == 'system:pinned',
+        reorderable: reorderable,
       ),
-      itemBuilder: (context, index) => sidebarListRow(
-        entries,
-        index,
-        reorder,
-        (e, reorderable) =>
-            sidebarEntry(e, pinned: pinned, reorderable: reorderable),
-      ),
-      findChildIndexCallback: (key) => sidebarEntryIndex(entries, key),
-      onReorderItem: reorder,
     );
   }
 
@@ -3955,15 +3935,13 @@ class _WorkspaceViewState extends State<WorkspaceView>
       onContextMenu: group == null ? null : (at) => openSectionMenu(at, group),
       contextMenuOnLongPress: group == null,
     );
-    return group == null
-        ? header
-        : sidebarSectionDragHeader(
-            group: group,
-            w: w,
-            label: label,
-            header: header,
-            onHeldInPlace: (at) => openSectionMenu(at, group),
-          );
+    return sidebarDragSectionHeader(
+      group: group,
+      w: w,
+      label: label,
+      header: header,
+      onOpenMenu: openSectionMenu,
+    );
   }
 
   List<RaftSidebarSectionAction> sidebarGroupActions(SidebarGroup group) {
