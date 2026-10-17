@@ -17,9 +17,9 @@ import 'video_frame_probe.dart';
 /// window, no GL, no Xvfb needed), decodes the first frame while paused, and
 /// mpv's `screenshot-to-file` writes it as a JPEG (mpv encodes, at
 /// `screenshot-jpeg-quality`). The longest edge is limited by an mpv video
-/// filter (`vf=scale`), so a 1080p frame is scaled before it is encoded; the
-/// container rotation is applied by the screenshot itself, so the JPEG is
-/// upright. Nothing is decoded or encoded in Dart.
+/// filter, so a 1080p frame is scaled before it is encoded. The screenshot
+/// applies the container rotation on Linux; Windows carries it in EXIF
+/// orientation. Nothing is decoded or encoded in Dart.
 ///
 /// Only the byte ranges libmpv needs are read: the demuxer buffer is tiny
 /// (`demuxer-max-bytes`, no read-ahead, no cache), so a moov-first file costs
@@ -88,7 +88,10 @@ class MpvVideoFrameProbe implements VideoFrameProbe {
       throw const VideoFrameException(VideoFrameFailure.cancelled);
     }
     if (url.scheme != 'http' && url.scheme != 'https') {
-      throw const VideoFrameException(VideoFrameFailure.failed, 'not a network URL');
+      throw const VideoFrameException(
+        VideoFrameFailure.failed,
+        'not a network URL',
+      );
     }
     final clock = Stopwatch()..start();
     MpvFrameSession? session;
@@ -104,12 +107,16 @@ class MpvVideoFrameProbe implements VideoFrameProbe {
       final gate = Completer<T>();
       final timer = Timer(left, () {
         if (!gate.isCompleted) {
-          gate.completeError(const VideoFrameException(VideoFrameFailure.failed, 'timeout'));
+          gate.completeError(
+            const VideoFrameException(VideoFrameFailure.failed, 'timeout'),
+          );
         }
       });
       final unlisten = active.onCancel(() {
         if (!gate.isCompleted) {
-          gate.completeError(const VideoFrameException(VideoFrameFailure.cancelled));
+          gate.completeError(
+            const VideoFrameException(VideoFrameFailure.cancelled),
+          );
         }
       });
       work.then(
@@ -130,7 +137,12 @@ class MpvVideoFrameProbe implements VideoFrameProbe {
       session = _sessionFactory();
       await guarded(
         session.open(
-          MpvFrameRequest(url: url, headers: headers, maxEdge: maxEdge, maxBytes: maxBytes),
+          MpvFrameRequest(
+            url: url,
+            headers: headers,
+            maxEdge: maxEdge,
+            maxBytes: maxBytes,
+          ),
         ),
       );
       while (true) {
@@ -204,7 +216,10 @@ class MpvVideoFrameProbe implements VideoFrameProbe {
       return const VideoFrameException(VideoFrameFailure.cancelled);
     }
     if (session.noVideo) {
-      return const VideoFrameException(VideoFrameFailure.failed, 'no video stream');
+      return const VideoFrameException(
+        VideoFrameFailure.failed,
+        'no video stream',
+      );
     }
     final MediaFailure found;
     try {
@@ -225,18 +240,21 @@ class MpvVideoFrameProbe implements VideoFrameProbe {
 
   /// Only 401, 403 and 410 (an expired signature) have a class of their own.
   @visibleForTesting
-  static VideoFrameException failureOf(MediaFailure found) => VideoFrameException(
-    found.kind == MediaFailureKind.expired
-        ? VideoFrameFailure.expired
-        : VideoFrameFailure.failed,
-    found.kind.name,
-  );
+  static VideoFrameException failureOf(MediaFailure found) =>
+      VideoFrameException(
+        found.kind == MediaFailureKind.expired
+            ? VideoFrameFailure.expired
+            : VideoFrameFailure.failed,
+        found.kind.name,
+      );
 
   /// The displayed size of a picture stored as [width] x [height] with the
   /// container asking for [rotation] degrees: 90 and 270 swap the sides.
   @visibleForTesting
   static (int, int) displaySize(int width, int height, int rotation) =>
-      normalizeRotation(rotation) % 180 == 0 ? (width, height) : (height, width);
+      normalizeRotation(rotation) % 180 == 0
+      ? (width, height)
+      : (height, width);
 
   /// [degrees] folded into 0, 90, 180 or 270 (the nearest right angle).
   @visibleForTesting
@@ -344,6 +362,7 @@ abstract interface class MpvFrameSession {
   /// The libmpv text since [open] that a failure is classified from.
   String get evidence;
   Future<void> open(MpvFrameRequest request);
+
   ///
   /// [settled]: the picture is out, so read the final values from libmpv
   /// itself (the state stream can lag behind it).
@@ -384,7 +403,9 @@ class LibmpvPlayerPool<T extends PooledPlayer> {
   });
 
   /// The pool of the app.
-  static final LibmpvPlayerPool<LibmpvPlayer> shared = LibmpvPlayerPool(LibmpvPlayer.new);
+  static final LibmpvPlayerPool<LibmpvPlayer> shared = LibmpvPlayerPool(
+    LibmpvPlayer.new,
+  );
 
   final T Function() _create;
   final int maxIdle;
@@ -526,7 +547,8 @@ class LibmpvPlayer implements PooledPlayer {
 
 /// The media_kit/libmpv [MpvFrameSession]: one lease of a [LibmpvPlayer].
 class LibmpvFrameSession implements MpvFrameSession {
-  LibmpvFrameSession([LibmpvPlayerPool<LibmpvPlayer>? pool]) : _pool = pool ?? LibmpvPlayerPool.shared;
+  LibmpvFrameSession([LibmpvPlayerPool<LibmpvPlayer>? pool])
+    : _pool = pool ?? LibmpvPlayerPool.shared;
 
   final LibmpvPlayerPool<LibmpvPlayer> _pool;
   LibmpvPlayer? _player;
@@ -534,6 +556,8 @@ class LibmpvFrameSession implements MpvFrameSession {
   final _recent = <String>[];
   Directory? _dir;
   bool _disposed = false;
+  int _maxEdge = 640;
+  (int, int)? _frameSize;
 
   @override
   bool failed = false;
@@ -563,7 +587,9 @@ class LibmpvFrameSession implements MpvFrameSession {
   /// One libmpv log line of this probe's player.
   void log(PlayerLog event) {
     if (_evidence(event.prefix)) _remember(event.text);
-    if (event.text.toLowerCase().contains('no video or audio streams selected')) {
+    if (event.text.toLowerCase().contains(
+      'no video or audio streams selected',
+    )) {
       noVideo = true;
       failed = true;
     } else if (isPlaybackFailure(event.level, event.prefix, event.text)) {
@@ -578,10 +604,13 @@ class LibmpvFrameSession implements MpvFrameSession {
     final player = _player = _pool.acquire();
     final native = player.native;
     final url = request.url;
+    _maxEdge = request.maxEdge < 16 ? 16 : request.maxEdge;
     // Small and read-ahead free: the first picture needs the container header
     // and the first key frame, not the file. The demuxer limit is soft (it
     // always reads what the first packet needs).
-    final buffer = request.maxBytes < 2 * 1024 * 1024 ? request.maxBytes : 2 * 1024 * 1024;
+    final buffer = request.maxBytes < 2 * 1024 * 1024
+        ? request.maxBytes
+        : 2 * 1024 * 1024;
     final properties = <(String, String)>[
       ('cache-on-disk', 'no'),
       ('access-references', 'no'),
@@ -607,7 +636,15 @@ class LibmpvFrameSession implements MpvFrameSession {
       ('hr-seek', 'yes'),
       ('screenshot-format', 'jpg'),
       ('screenshot-jpeg-quality', '80'),
-      ('vf', MpvVideoFrameProbe.scaleFilter(request.maxEdge)),
+      // The shipped Windows libmpv lacks scale and transpose filters. Clear
+      // the pooled player's size and suppress automatic pixel rotation;
+      // grab() bounds the picture and records its rotation in JPEG metadata.
+      (
+        'vf',
+        Platform.isWindows
+            ? 'format=rotate=0'
+            : MpvVideoFrameProbe.scaleFilter(request.maxEdge),
+      ),
       // ignore: invalid_use_of_visible_for_testing_member -- the one proxy decision of every libmpv player in the app
       ('http-proxy', NativeAttachmentPlayer.httpProxyFor(url)),
       // ignore: invalid_use_of_visible_for_testing_member -- same decision, FFmpeg side
@@ -647,7 +684,9 @@ class LibmpvFrameSession implements MpvFrameSession {
     // the state of its last probe in `player.state`.
     final width = int.tryParse(await _read('video-params/w')) ?? 0;
     if (width <= 0) {
-      return MpvFrameSnapshot(streamPosition: int.tryParse(await _read('stream-pos')) ?? 0);
+      return MpvFrameSnapshot(
+        streamPosition: int.tryParse(await _read('stream-pos')) ?? 0,
+      );
     }
     final seconds = double.tryParse(await _read('duration')) ?? 0;
     return MpvFrameSnapshot(
@@ -656,7 +695,9 @@ class LibmpvFrameSession implements MpvFrameSession {
       rotation: int.tryParse(await _read('video-params/rotate')) ?? 0,
       // ds-allow: the length of the video, not a motion duration
       duration: Duration(milliseconds: (seconds * 1000).round()),
-      streamPosition: settled ? 0 : int.tryParse(await _read('stream-pos')) ?? 0,
+      streamPosition: settled
+          ? 0
+          : int.tryParse(await _read('stream-pos')) ?? 0,
     );
   }
 
@@ -664,7 +705,10 @@ class LibmpvFrameSession implements MpvFrameSession {
     final player = _player;
     if (_disposed || player == null) return '';
     try {
-      return await player.native.getProperty(name, waitForInitialization: false);
+      return await player.native.getProperty(
+        name,
+        waitForInitialization: false,
+      );
     } on Object {
       return '';
     }
@@ -676,6 +720,7 @@ class LibmpvFrameSession implements MpvFrameSession {
     if (_disposed || dir == null || player == null) return null;
     final file = File('${dir.path}${Platform.pathSeparator}frame.jpg');
     try {
+      if (Platform.isWindows && !await _sizeFrame(player.native)) return null;
       if (file.existsSync()) file.deleteSync();
       // Fails (and is retried by the probe) until mpv has shown its first frame.
       await player.native.command(['screenshot-to-file', file.path, 'video']);
@@ -683,10 +728,68 @@ class LibmpvFrameSession implements MpvFrameSession {
       final bytes = await file.readAsBytes();
       // JPEG start-of-image marker.
       if (bytes.length < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8) return null;
-      return bytes;
+      if (!Platform.isWindows) return bytes;
+      final rotation = int.tryParse(await _read('video-params/rotate')) ?? 0;
+      return _orientJpeg(bytes, rotation);
     } on Object {
       return null;
     }
+  }
+
+  /// Uses libswscale through mpv itself, without an optional FFmpeg filter.
+  /// Do not encode until the output has changed size: a paused, reused
+  /// player can still expose its previous frame while reconfiguring.
+  Future<bool> _sizeFrame(NativePlayer native) async {
+    var width = int.tryParse(await _read('video-params/w')) ?? 0;
+    var height = int.tryParse(await _read('video-params/h')) ?? 0;
+    if (width <= 0 || height <= 0) return false;
+    final longest = width > height ? width : height;
+    if (longest > _maxEdge) {
+      if (width >= height) {
+        height = (height * _maxEdge / width / 2).round() * 2;
+        width = _maxEdge;
+      } else {
+        width = (width * _maxEdge / height / 2).round() * 2;
+        height = _maxEdge;
+      }
+      if (width < 2) width = 2;
+      if (height < 2) height = 2;
+    }
+    if (_frameSize != (width, height)) {
+      await native.setProperty(
+        'vf',
+        'format=w=$width:h=$height:convert=yes:rotate=0',
+      );
+      _frameSize = (width, height);
+    }
+    return int.tryParse(await _read('video-out-params/w')) == width &&
+        int.tryParse(await _read('video-out-params/h')) == height;
+  }
+
+  /// The Windows library also lacks the transpose filter used by vo=null.
+  /// EXIF orientation lets the image codec display the bounded JPEG upright,
+  /// without decoding, rotating or re-encoding its pixels in Dart.
+  static Uint8List _orientJpeg(Uint8List bytes, int rotation) {
+    final orientation = switch (MpvVideoFrameProbe.normalizeRotation(
+      rotation,
+    )) {
+      90 => 6,
+      180 => 3,
+      270 => 8,
+      _ => 1,
+    };
+    if (orientation == 1) return bytes;
+    // APP1 Exif, big-endian TIFF, one SHORT Orientation entry and no next IFD.
+    // dart format off
+    final exif = [
+      0xff, 0xd8, 0xff, 0xe1, 0, 34,
+      0x45, 0x78, 0x69, 0x66, 0, 0,
+      0x4d, 0x4d, 0, 42, 0, 0, 0, 8,
+      0, 1, 1, 0x12, 0, 3, 0, 0, 0, 1, 0, orientation, 0, 0,
+      0, 0, 0, 0,
+    ];
+    // dart format on
+    return Uint8List.fromList([...exif, ...bytes.sublist(2)]);
   }
 
   static Future<void> _deleteDir(Directory dir) async {
