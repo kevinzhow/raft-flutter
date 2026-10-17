@@ -1239,6 +1239,14 @@
       "reason": "D5 replaces six receiver-local editor states with one owner; Root fields 41 to 36. Approved by Cindy in Raft fa9cd784-0543-409b-bb0c-4789b4738c2d. The 38 temporary compatibility declarations (168 lines), static alias, root reference and this exception must be removed by 2026-10-30 through the agreed caller migration and composition cleanup.",
       "reviewer": "Cindy",
       "expires": "2026-10-30"
+    },
+    {
+      "module": "resource_view",
+      "metric": "field._ResourceViewState._authorityCache",
+      "limit": 1,
+      "reason": "task #197 holds one independent directory cache; sorting and serialization move out of row builds, no new permission decisions. Approved by Cindy in Raft 8870d8d9-b9c5-412c-8865-3fbfdf3faef1. By 2026-10-30 move the cache into the Activity repository/ViewModel with task #136, then remove this exception.",
+      "reviewer": "Cindy",
+      "expires": "2026-10-30"
     }
   ]
 }

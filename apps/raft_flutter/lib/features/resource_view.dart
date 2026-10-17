@@ -44,6 +44,7 @@ import 'search_snapshot.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
 import 'resource_filters.dart';
+import 'resource_authority_cache.dart';
 import 'activity_context_menu.dart';
 import 'page_layout.dart';
 import 'resource_cards.dart';
@@ -955,27 +956,7 @@ class _ResourceViewState extends State<ResourceView> {
   String? menuRowKey;
   final Set<MenuController> filterMenus = {};
   final dragFeedbackRevision = ValueNotifier<int>(0);
-  static const channelAccessKeys = [
-    'isPrivate',
-    'visibility',
-    'accessLevel',
-    'membership',
-    'capabilities',
-    'channelCapabilities',
-    'guestAccessEnabled',
-    'readOnlyReason',
-    'parentChannelId',
-    'serverId',
-    'role',
-  ];
-  Map<String, dynamic> channelAccessFacts(RaftChannel c) => {
-    'id': c.id,
-    'type': c.type,
-    'joined': c.joined,
-    'archived': c.archived,
-    for (final key in channelAccessKeys)
-      if (c.json.containsKey(key)) key: c.json[key],
-  };
+  final _authorityCache = ResourceAuthorityCache();
 
   /// Principal, server, role and page identity. A change here retires every
   /// accepted row; a channel-only change re-filters rows in place instead.
@@ -989,28 +970,25 @@ class _ResourceViewState extends State<ResourceView> {
     widget.section,
     widget.channelId,
   ]);
-  String get authority {
-    final channels = [...w.channels, ...w.dms]
-      ..sort((a, b) => a.id.compareTo(b.id));
-    return jsonEncode([
-      w.client.origin,
-      w.client.generation,
-      w.client.user?.id,
-      w.client.serverId,
-      w.server?.id,
-      w.server?.string('role'),
-      widget.section,
-      widget.channelId,
-      authorityRevision,
-      for (final c in channels) channelAccessFacts(c),
-    ]);
-  }
+  String get authority => _authorityCache.read(
+    identity: (
+      origin: w.client.origin,
+      generation: w.client.generation,
+      principal: w.client.user?.id,
+      clientServer: w.client.serverId,
+      server: w.server?.id,
+      role: w.server?.string('role'),
+      section: widget.section,
+      channel: widget.channelId,
+    ),
+    revision: authorityRevision,
+    channels: w.channels,
+    dms: w.dms,
+  );
 
   String? acceptedIdentity;
   Map<String, Map<String, dynamic>> acceptedAccess = {};
-  Map<String, Map<String, dynamic>> get channelAccess => {
-    for (final c in [...w.channels, ...w.dms]) c.id: channelAccessFacts(c),
-  };
+  Map<String, Map<String, dynamic>> get channelAccess => _authorityCache.access;
 
   bool privateLike(Map<String, dynamic>? facts) =>
       facts == null ||
@@ -1183,8 +1161,13 @@ class _ResourceViewState extends State<ResourceView> {
     });
   }
 
-  void authorityChanged({Set<String> revoked = const {}}) {
-    if (!mounted || acceptedAuthority == authority) return;
+  void authorityChanged({
+    Set<String> revoked = const {},
+    bool forceAccess = false,
+  }) {
+    if (!mounted) return;
+    _authorityCache.synchronize(w.channels, w.dms, force: forceAccess);
+    if (acceptedAuthority == authority) return;
     final identity = identityAuthority, access = channelAccess;
     final sameIdentity = identity == acceptedIdentity;
     final previousAccess = acceptedAccess;
@@ -1363,7 +1346,7 @@ class _ResourceViewState extends State<ResourceView> {
           }
         }
         authorityRevision++;
-        authorityChanged(revoked: revoked);
+        authorityChanged(revoked: revoked, forceAccess: true);
         return;
       }
       if (['search', 'saved'].contains(widget.section) &&
