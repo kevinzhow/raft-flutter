@@ -96,7 +96,7 @@ void main() {
         peerRows: (_) => [],
         selfId: () => throw StateError('no cached rows'),
         cachedChannelDirectory: (_) async {
-        if (failure != null) throw failure;
+          if (failure != null) throw failure;
           return null;
         },
       );
