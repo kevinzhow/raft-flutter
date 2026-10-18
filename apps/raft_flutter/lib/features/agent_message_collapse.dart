@@ -1,6 +1,7 @@
 import 'package:raft_client/raft_client.dart';
 
 import '../data/workspace_controller.dart';
+import '../data/resource_row_reconcile.dart' show activityScopeId;
 
 /// Remembers expand and collapse for one viewing of one chat.
 ///
@@ -13,6 +14,40 @@ import '../data/workspace_controller.dart';
 /// This hangs off the chat state instead of being one of its fields. The
 /// structure audit counts every new instance field on that state.
 final _sessions = Expando<AgentMessageCollapseSession>();
+
+typedef _Visit = (RaftClient, int, String?, String?, String?);
+typedef _Cursor = ({BigInt? maxReadSeq});
+final _opening = Expando<({_Visit visit, _Cursor cursor})>();
+
+_Visit _visit(WorkspaceController w, String? scope) => (
+  w.client,
+  w.client.generation,
+  w.client.serverId,
+  w.client.user?.id,
+  scope,
+);
+
+_Cursor _cursor(WorkspaceController w, String? scope) => (
+  maxReadSeq: scopeReadCursor(
+    state: w.readState.state,
+    serverId: w.client.serverId,
+    principalId: w.client.user?.id,
+    scopeId: scope,
+  ),
+);
+
+/// Keep the display rule from before Activity's read-all request. History may
+/// arrive after its receipt; this snapshot never changes the read ledger.
+void captureActivityAgentCollapse(
+  WorkspaceController w,
+  String section,
+  Map<String, dynamic> row,
+) {
+  if (section != 'activity') return;
+  final scope = activityScopeId(row);
+  if (scope == null) return;
+  _opening[w] = (visit: _visit(w, scope), cursor: _cursor(w, scope));
+}
 
 /// The collapse memory for this mounted chat.
 AgentMessageCollapseSession agentCollapseOf(Object chat) =>
@@ -29,8 +64,16 @@ void bindAgentCollapse(
   WorkspaceController workspace,
   bool thread,
 ) {
-  agentCollapseOf(chat)
-      .bind(thread ? workspace.threadChannelId : workspace.channel?.id);
+  final scope = thread ? workspace.threadChannelId : workspace.channel?.id;
+  final visit = _visit(workspace, scope);
+  final opening = _opening[workspace];
+  final captured = opening?.visit == visit ? opening : null;
+  if (captured != null) _opening[workspace] = null;
+  agentCollapseOf(chat).bind(
+    visit,
+    readAtOpen: captured?.cursor ?? _cursor(workspace, scope),
+    newVisit: captured != null,
+  );
 }
 
 /// Collapse setting for this row, and whether it starts open.
@@ -63,14 +106,16 @@ void bindAgentCollapse(
 }
 
 class AgentMessageCollapseSession {
-  String? _scope;
+  Object? _scope;
+  _Cursor? _readAtOpen;
   final _open = <String, bool>{};
 
   /// Clears remembered choices when [scope] changes. The same scope keeps
   /// them. Null is the gap between conversations.
-  void bind(String? scope) {
-    if (scope == _scope) return;
+  void bind(Object? scope, {_Cursor? readAtOpen, bool newVisit = false}) {
+    if (scope == _scope && !newVisit) return;
     _scope = scope;
+    _readAtOpen = readAtOpen;
     _open.clear();
   }
 
@@ -78,9 +123,9 @@ class AgentMessageCollapseSession {
   /// agent message. Other messages stay closed and are not remembered until
   /// the reader toggles one.
   ///
-  /// [maxReadSeq] is the accepted read cursor. Null means there is no cursor
-  /// yet, which the unread count also treats as unread. A message is unread
-  /// when its seq is greater than that cursor.
+  /// A mounted visit uses its entry cursor, before opening marks messages
+  /// read. Standalone callers can supply [maxReadSeq] per row. A null cursor
+  /// is unread, matching the unread-count rule.
   bool startsOpen({
     required String messageId,
     required bool agent,
@@ -90,7 +135,8 @@ class AgentMessageCollapseSession {
     final remembered = _open[messageId];
     if (remembered != null) return remembered;
     if (!agent) return false;
-    final open = maxReadSeq == null || seq > maxReadSeq;
+    final cursor = _readAtOpen == null ? maxReadSeq : _readAtOpen!.maxReadSeq;
+    final open = cursor == null || seq > cursor;
     _open[messageId] = open;
     return open;
   }

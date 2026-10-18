@@ -59,6 +59,7 @@ import 'resource_search.dart';
 import 'resource_list_updates.dart';
 import 'saved_sidebar_entry.dart';
 import 'reading_anchor.dart';
+import 'agent_message_collapse.dart' show captureActivityAgentCollapse;
 import '../platform/content_links.dart';
 import '../platform/interaction_timing.dart';
 
@@ -3894,6 +3895,7 @@ class _ResourceViewState extends State<ResourceView> {
 
   Future<void> openConversation(Map<String, dynamic> row, String scope) async {
     if (!accepts(scope)) return;
+    captureActivityAgentCollapse(w, widget.section, row);
     markActivityRead(row, scope);
     if (widget.section == 'activity' && widget.onActivityItem != null) {
       await widget.onActivityItem!(Map<String, dynamic>.from(row));

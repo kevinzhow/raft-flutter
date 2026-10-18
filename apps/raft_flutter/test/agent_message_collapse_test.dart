@@ -89,6 +89,48 @@ void main() {
     expect(open(restarted, 'read', seq: 1, maxRead: 9), isFalse);
   });
 
+  test(
+    'entry cursor preserves unread rows delivered after a read-all receipt',
+    () {
+      final session = AgentMessageCollapseSession()
+        ..bind('channel', readAtOpen: (maxReadSeq: BigInt.from(5)));
+      expect(open(session, 'late-first-page', seq: 8, maxRead: 8), isTrue);
+      expect(open(session, 'late-second-page', seq: 6, maxRead: 20), isTrue);
+      expect(open(session, 'old', seq: 5, maxRead: 20), isFalse);
+      session.choose('late-first-page', false);
+      expect(open(session, 'late-first-page', seq: 8, maxRead: 20), isFalse);
+    },
+  );
+
+  test('a missing entry cursor remains unread after its receipt arrives', () {
+    final session = AgentMessageCollapseSession()
+      ..bind('channel', readAtOpen: (maxReadSeq: null));
+    expect(open(session, 'first-history', seq: 8, maxRead: 20), isTrue);
+  });
+
+  test('returning to a conversation follows its new entry cursor', () {
+    final session = AgentMessageCollapseSession()
+      ..bind('channel', readAtOpen: (maxReadSeq: BigInt.from(5)));
+    expect(open(session, 'reply', seq: 8, maxRead: 8), isTrue);
+    session.bind('channel', readAtOpen: (maxReadSeq: BigInt.from(8)));
+    expect(open(session, 'reply', seq: 8, maxRead: 8), isTrue);
+    session.bind('other');
+    session.bind('channel', readAtOpen: (maxReadSeq: BigInt.from(8)));
+    expect(open(session, 'reply', seq: 8, maxRead: 8), isFalse);
+  });
+
+  test('an explicit new visit clears manual choices for the same scope', () {
+    final session = AgentMessageCollapseSession()
+      ..bind('channel', readAtOpen: (maxReadSeq: BigInt.from(5)));
+    session.choose('reply', true);
+    session.bind(
+      'channel',
+      readAtOpen: (maxReadSeq: BigInt.from(8)),
+      newVisit: true,
+    );
+    expect(open(session, 'reply', seq: 8, maxRead: 8), isFalse);
+  });
+
   test('long messages collapse unless the channel turns that off or the row is an action card', () {
     const agent = {'senderType': 'agent', 'content': 'hello'};
     expect(longMessagesCollapse(agent, null), isTrue);
