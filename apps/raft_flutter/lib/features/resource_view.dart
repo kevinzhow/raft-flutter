@@ -855,6 +855,7 @@ class _ResourceViewState extends State<ResourceView> {
     loading = false;
     // Channels lost while the page was away never reappear from the cache.
     refilterRows(lostChannels(snapshot.channelAccess, acceptedAccess));
+    patchKnownActivityReads();
     return true;
   }
 
@@ -1179,7 +1180,10 @@ class _ResourceViewState extends State<ResourceView> {
   }) {
     if (!mounted) return;
     _authorityCache.synchronize(w.channels, w.dms, force: forceAccess);
-    if (acceptedAuthority == authority) return;
+    if (acceptedAuthority == authority) {
+      patchKnownActivityReads();
+      return;
+    }
     final identity = identityAuthority, access = channelAccess;
     final sameIdentity = identity == acceptedIdentity;
     final previousAccess = acceptedAccess;
@@ -1535,9 +1539,7 @@ class _ResourceViewState extends State<ResourceView> {
       !['saved', 'done'].contains(filter) &&
       rows.isNotEmpty;
 
-  /// Apply live socket facts to the accepted Activity rows before the
-  /// debounced canonical reconcile (Source receiveThreadReply and
-  /// applyReadStateProjection).
+  /// Apply live Activity facts before the canonical reconcile.
   void patchActivity(RaftEvent event) {
     final payload = event.payload;
     if (!activityRowsLive || payload is! Map) return;
@@ -1551,37 +1553,31 @@ class _ResourceViewState extends State<ResourceView> {
         payload['latestReply'] is Map) {
       advanceActivity(payload['latestReply'] as Map);
     } else if (event.name.startsWith('read_state:')) {
-      // The ledger may not have folded this frame yet; the frame itself is
-      // the newest read fact for its scopes.
-      final facts = <String, int>{
-        for (final update in [
-          if (payload['scopes'] is List) ...payload['scopes'] as List,
-          if (payload['scopeId'] is String) payload,
-        ])
-          if (update is Map &&
-              update['scopeId'] is String &&
-              update['maxReadSeq'] is int)
-            update['scopeId'] as String: update['maxReadSeq'] as int,
-      };
-      final known = applyKnownReads(rows, facts: facts);
-      if (identical(known.rows, rows)) return;
-      setState(() {
-        rows = known.rows;
-        acceptedActivityItems = applyKnownReads(
-          acceptedActivityItems,
-          facts: facts,
-        ).rows;
-        if (totalUnreadCount != null) {
-          totalUnreadCount = (totalUnreadCount! - known.cleared).clamp(
-            0,
-            1 << 53,
-          );
-        }
-        if (totalCount != null && known.removed > 0) {
-          totalCount = (totalCount! - known.removed).clamp(0, 1 << 53);
-        }
-      });
+      patchKnownActivityReads(facts: activityReadFacts(payload));
     }
+  }
+
+  /// HTTP read receipts also advance the ledger, without a socket echo.
+  void patchKnownActivityReads({Map<String, int> facts = const {}}) {
+    if (!activityRowsLive) return;
+    final known = applyKnownReads(rows, facts: facts);
+    if (identical(known.rows, rows)) return;
+    setState(() {
+      rows = known.rows;
+      acceptedActivityItems = applyKnownReads(
+        acceptedActivityItems,
+        facts: facts,
+      ).rows;
+      if (totalUnreadCount != null) {
+        totalUnreadCount = (totalUnreadCount! - known.cleared).clamp(
+          0,
+          1 << 53,
+        );
+      }
+      if (totalCount != null && known.removed > 0) {
+        totalCount = (totalCount! - known.removed).clamp(0, 1 << 53);
+      }
+    });
   }
 
   /// Source applyTaskToInboxItems: a task fact overlays the thread rows whose
@@ -1986,6 +1982,7 @@ class _ResourceViewState extends State<ResourceView> {
         if (!activityScope.directMessages) {
           totalUnreadCount = cached.totalUnreadCount;
         }
+        patchKnownActivityReads();
         loading = false;
         error = null;
         laneBusy.clear();

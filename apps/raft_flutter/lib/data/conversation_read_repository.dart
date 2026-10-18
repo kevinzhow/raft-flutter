@@ -380,6 +380,7 @@ class ConversationReadRepository {
   void _acceptStaleReadReceipt(String id, dynamic receipt) {
     final serverId = client.serverId, principal = client.user?.id;
     if (_isDisposed() || serverId == null || principal == null) return;
+    final readGeneration = _readState().generation;
     if (receipt is Map) {
       _readState().consumeUpdate(
         {
@@ -394,7 +395,10 @@ class ConversationReadRepository {
     }
     final before = unread[id] ?? 0;
     projectReadState(id);
-    if ((unread[id] ?? 0) != before) {
+    // Activity is a separate projection: its row can still be unread even
+    // when this receiver's chat counter is already zero.
+    if (_readState().generation != readGeneration ||
+        (unread[id] ?? 0) != before) {
       persistReadState();
       _changed();
     }

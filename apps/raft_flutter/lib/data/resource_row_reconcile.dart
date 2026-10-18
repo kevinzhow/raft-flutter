@@ -32,7 +32,8 @@ bool rowDeepEquals(Object? a, Object? b) {
   if (a is Map && b is Map) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
-      if (!b.containsKey(entry.key) || !rowDeepEquals(entry.value, b[entry.key])) {
+      if (!b.containsKey(entry.key) ||
+          !rowDeepEquals(entry.value, b[entry.key])) {
         return false;
       }
     }
@@ -153,6 +154,18 @@ ActivityReconcile reconcileActivityWindow({
   return ActivityReconcile(stabilizeRows(merged, current, keyOf), unreadDelta);
 }
 
+/// Read-state socket facts can precede their ledger update.
+Map<String, int> activityReadFacts(Map payload) => {
+  for (final update in [
+    if (payload['scopes'] is List) ...payload['scopes'] as List,
+    if (payload['scopeId'] is String) payload,
+  ])
+    if (update is Map &&
+        update['scopeId'] is String &&
+        update['maxReadSeq'] is int)
+      update['scopeId'] as String: update['maxReadSeq'] as int,
+};
+
 /// Source applyReadStateProjection for a fully read scope: a read frontier at
 /// or beyond the row's newest known activity clears its unread presentation.
 /// Partial reads are left to the canonical reconcile.
@@ -181,7 +194,10 @@ String? _seqString(Object? value) => value is int && value >= 0
 /// Source receiveThreadReply, extended to channel/DM rows: a live message
 /// strictly newer than the row's frontier advances that row's preview. Returns
 /// null when the message does not advance any loaded row.
-Map<String, dynamic>? advanceActivityRow(Map<String, dynamic> row, Map message) {
+Map<String, dynamic>? advanceActivityRow(
+  Map<String, dynamic> row,
+  Map message,
+) {
   final kind = row['kind'];
   if (kind == 'mention_action') return null;
   final id = message['id'], channel = message['channelId'];
