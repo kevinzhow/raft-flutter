@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/painting.dart' show imageCache;
 import 'package:flutter/rendering.dart' show debugDisableShadows;
+import 'package:flutter/services.dart'
+    show MethodChannel, MissingPluginException;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leak_tracker_flutter_testing/leak_tracker_flutter_testing.dart';
 import 'package:raft_flutter/platform/video_frame_probe.dart'
@@ -160,6 +162,18 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   // that wants one passes its own to the card.
   VideoFrameProbe.debugOverride = () => null;
   final binding = RaftTestBinding();
+  // An unmocked native call can outlive a widget's fake clock and leave the
+  // send's timeout pending. Ordinary fixtures have no device timezone; tests
+  // of the native boundary install their own success/failure/stalled handler.
+  binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    const MethodChannel('flutter_timezone'),
+    (call) async {
+      if (call.method == 'getLocalTimezone') return 'Etc/Unknown';
+      throw MissingPluginException(
+        'Unexpected timezone method: ${call.method}',
+      );
+    },
+  );
   final seconds =
       int.tryParse(Platform.environment['RAFT_TEST_TIMEOUT_SECONDS'] ?? '') ??
       60;

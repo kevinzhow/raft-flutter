@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/platform/device_timezone.dart';
@@ -9,6 +10,27 @@ void main() {
   final messenger =
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  test('completed native results cancel the timeout immediately', () {
+    for (final fails in [false, true]) {
+      messenger.setMockMethodCallHandler(channel, (_) async {
+        if (fails) throw PlatformException(code: 'unavailable');
+        return 'Europe/Paris';
+      });
+      fakeAsync((clock) {
+        var completed = false;
+        String? timezone;
+        readDeviceTimezone().then((value) {
+          timezone = value;
+          completed = true;
+        });
+        clock.flushMicrotasks();
+        expect(completed, isTrue);
+        expect(timezone, fails ? null : 'Europe/Paris');
+        expect(clock.nonPeriodicTimerCount, 0);
+        expect(clock.periodicTimerCount, 0);
+      });
+    }
+  });
   test('OS names are read afresh; unavailable, malformed and empty values are omitted', () async {
     for (final value in [
       'Europe/Paris',
