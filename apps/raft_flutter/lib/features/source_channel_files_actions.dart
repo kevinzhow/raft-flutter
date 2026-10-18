@@ -60,7 +60,7 @@ class SourceChannelFilesActions {
   final AttachmentFiles files;
   final SourceChannelImageAcquire? acquireImage;
   final _transfers = <CancelToken, SourceChannelFileEntry>{};
-  final _routes = <DialogRoute<void>, SourceChannelFileEntry>{};
+  final _routes = <ModalRoute<void>, SourceChannelFileEntry>{};
   bool _disposed = false;
   bool current(SourceChannelFileEntry file) => !_disposed && authorized(file);
   void sync() {
@@ -162,11 +162,16 @@ class SourceChannelFilesActions {
           }
         }
         if (!current(file)) return;
-        late DialogRoute<void> route;
-        route = RaftFullBleedDialogRoute<void>(
-          context: context(),
-          builder: (_) => html
+        late ModalRoute<void> route;
+        final page = RaftAdaptiveWorkspace.compactOf(context());
+        // The page on a compact window (back button, swipe back), like the
+        // chat's attachments; the dialog on a wide one.
+        route = attachmentPreviewRoute(
+          context(),
+          page,
+          (_) => html
               ? HtmlAttachmentPreviewDialog(
+                  page: page,
                   controller: controller,
                   metadata: file.metadata,
                   authorized: () => current(file),
@@ -174,6 +179,7 @@ class SourceChannelFilesActions {
                   onDownload: () => download(file),
                 )
               : AttachmentPreviewDialog(
+                  page: page,
                   controller: controller,
                   metadata: file.metadata,
                   authorized: () => current(file),
@@ -307,7 +313,7 @@ class SourceChannelFilesActions {
   }
 
   Future<void> _show(
-    DialogRoute<void> route,
+    ModalRoute<void> route,
     SourceChannelFileEntry file,
   ) async {
     if (!current(file) || !context().mounted) return;
@@ -319,7 +325,7 @@ class SourceChannelFilesActions {
     }
   }
 
-  void _close(DialogRoute<void> route) {
+  void _close(ModalRoute<void> route) {
     if (route.isCurrent) route.navigator?.removeRoute(route);
   }
 }

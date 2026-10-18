@@ -24,6 +24,7 @@ import '../platform/attachment_preview_files.dart';
 import '../platform/attachment_stream.dart';
 import '../platform/mp4_hdr_probe.dart';
 import '../platform/native_sharing.dart';
+import '../platform/system_bars.dart';
 import '../data/attachment_transfer.dart';
 import 'attachment_comments_view.dart';
 import 'attachment_transfer_view.dart';
@@ -160,6 +161,31 @@ class HdrHandoff {
 
 @visibleForTesting
 HdrHandoff? debugLastHdrHandoff;
+
+/// The route every document / HTML preview opens in. A compact window gets the
+/// native page (back button, swipe back); a wide one the full-bleed dialog.
+/// [page] is `RaftAdaptiveWorkspace.compactOf` of the opener, so every entry
+/// point (chat, Files panel, ...) picks the same form.
+ModalRoute<void> attachmentPreviewRoute(
+  BuildContext context,
+  bool page,
+  WidgetBuilder builder,
+) => page
+    ? RaftPreviewPageRoute<void>(
+        settings: const RouteSettings(name: '/attachment-preview'),
+        builder: (context) {
+          final surface = RaftTokens.of(context).panel;
+          // ds-allow: Native route owns keyboard insets and system bars; raft_ui owns preview content.
+          return Scaffold(
+            backgroundColor: surface,
+            body: RaftSystemBarSurface(
+              statusBarFallback: surface,
+              child: builder(context),
+            ),
+          );
+        },
+      )
+    : RaftFullBleedDialogRoute<void>(context: context, builder: builder);
 
 class AttachmentPreviewDialog extends StatefulWidget {
   const AttachmentPreviewDialog({

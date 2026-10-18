@@ -16,7 +16,6 @@ import '../data/attachment_image_repository.dart';
 import '../platform/attachment_files.dart';
 import '../platform/native_sharing.dart';
 import '../platform/video_frame_probe.dart';
-import '../platform/system_bars.dart';
 import 'attachment_preview_dialog.dart';
 import 'attachment_html_preview.dart';
 import 'attachment_image_loader.dart';
@@ -634,22 +633,8 @@ class _AttachmentViewState extends State<AttachmentView> {
     return route;
   }
 
-  ModalRoute<void> _previewRoute(bool page, WidgetBuilder builder) => page
-      ? RaftPreviewPageRoute<void>(
-          settings: const RouteSettings(name: '/attachment-preview'),
-          builder: (context) {
-            final surface = RaftTokens.of(context).panel;
-            // ds-allow: Native route owns keyboard insets and system bars; raft_ui owns preview content.
-            return Scaffold(
-              backgroundColor: surface,
-              body: RaftSystemBarSurface(
-                statusBarFallback: surface,
-                child: builder(context),
-              ),
-            );
-          },
-        )
-      : RaftFullBleedDialogRoute<void>(context: context, builder: builder);
+  ModalRoute<void> _previewRoute(bool page, WidgetBuilder builder) =>
+      attachmentPreviewRoute(context, page, builder);
 
   Future<void> openCurrent() async {
     final revision = bindingRevision;
