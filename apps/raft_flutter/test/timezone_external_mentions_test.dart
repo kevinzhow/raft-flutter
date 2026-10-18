@@ -107,6 +107,55 @@ void main() {
     },
   );
 
+  test(
+    'native metadata cannot dispatch into a replacement client generation',
+    () async {
+      final (w, api) = await fixture('owner');
+      addTearDown(w.dispose);
+      final entered = Completer<void>(), zone = Completer<Object?>();
+      messenger.setMockMethodCallHandler(channel, (_) {
+        entered.complete();
+        return zone.future;
+      });
+      final sent = w.send('old server');
+      await Future.any([entered.future, sent.then((_) {})]);
+      w.client.selectServer('s2');
+      zone.complete('Asia/Shanghai');
+      expect(await sent, isFalse);
+      expect(api.calls.where((r) => r.path == '/v2/messages'), isEmpty);
+    },
+  );
+
+  test(
+    'attachment ids remain a private snapshot during native metadata reads',
+    () async {
+      final (w, api) = await fixture('owner');
+      addTearDown(w.dispose);
+      final entered = Completer<void>(), zone = Completer<Object?>();
+      messenger.setMockMethodCallHandler(channel, (_) {
+        entered.complete();
+        return zone.future;
+      });
+      api.routes['POST /v2/messages'] = (r) => {
+        'id': 'm',
+        'channelId': 'c1',
+        'content': r.data['content'],
+      };
+      final ids = ['original-attachment'];
+      final sent = w.send('', attachments: ids);
+      await Future.any([entered.future, sent.then((_) {})]);
+      ids[0] = 'changed-by-caller';
+      zone.complete('Asia/Shanghai');
+      expect(await sent, isTrue);
+      expect(
+        api.calls
+            .singleWhere((r) => r.path == '/v2/messages')
+            .data['attachmentIds'],
+        ['original-attachment'],
+      );
+    },
+  );
+
   test('native read keeps optimistic feedback immediate and fences a changed destination', () async {
     final (w, api) = await fixture('owner');
     addTearDown(w.dispose);

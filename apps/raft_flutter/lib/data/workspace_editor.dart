@@ -12,7 +12,6 @@ import 'user_error.dart';
 import 'workspace_composer.dart';
 import 'workspace_domain_ports.dart';
 import 'workspace_editor_entrypoints.dart';
-import '../platform/device_timezone.dart';
 import 'workspace_sends.dart';
 import 'workspace_session_context.dart';
 import 'workspace_uploads.dart';
@@ -510,7 +509,6 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
       mentions: selectedMentions,
       randomId: randomId,
       asTask: asTask,
-      readTimezone: thread ? null : readDeviceTimezone,
       attachmentsOnlyBody:
           attachmentsOnlyBody ??
           (count) => count == 1 ? '[1 attachment]' : '[$count attachments]',

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:raft_client/raft_client.dart';
 
+import 'composer_message_request.dart';
 import 'workspace_uploads.dart';
 
 typedef ComposerReceipt = ({RaftMessage message, Map<String, dynamic> receipt});
@@ -149,13 +150,10 @@ class WorkspaceSends {
     List<Map<String, dynamic>> mentions = const [],
     String? randomId,
     bool asTask = false,
-    Future<String?> Function()? readTimezone,
     required String Function(int) attachmentsOnlyBody,
   }) async {
     final scope = visit.scope, sessionCurrent = captureScope(visit.scope);
-    final selectedIds = attachments == null
-        ? null
-        : List<String>.unmodifiable(attachments);
+    final selectedIds = attachments?.toList(growable: false);
     bool current() => sessionCurrent() && visit.current();
     if (!current()) return false;
     final files = List<UploadDraft>.of(uploads.byScope[scope] ?? const []);
@@ -323,16 +321,14 @@ class WorkspaceSends {
         await persistAttempt(scope, attempt, channelId: visit.parentChannelId);
       }
       if (!current()) return failed();
-      final timezone = await readTimezone?.call();
-      if (!current()) return failed();
-      final result = await client.sendWithReceipt(
+      final result = await client.sendForVisit(
+        visit,
         id,
         body,
         attachments: ids,
         mentions: mentions.isEmpty ? null : mentions,
         randomId: attempt.randomId,
         asTask: asTask,
-        timezone: timezone,
       );
       send.confirmed = true;
       return await accepted((
