@@ -25,9 +25,10 @@ void expectVerticallyCentered(
     expect(
       finder,
       findsOneWidget,
-      reason: '${reason ?? 'row'}: ${finder.description} must match one widget',
+      reason:
+          '${reason ?? 'row'}: ${finder.describeMatch(Plurality.one)} must match one widget',
     );
-    rects[finder.description] = tester.getRect(finder);
+    rects[finder.describeMatch(Plurality.one)] = tester.getRect(finder);
   }
   expect(rects.length, greaterThanOrEqualTo(2), reason: 'need two children');
   final centres = {for (final e in rects.entries) e.key: e.value.center.dy};
@@ -59,14 +60,15 @@ void expectCenteredIn(
     expect(
       finder,
       findsOneWidget,
-      reason: '${reason ?? 'row'}: ${finder.description} must match one widget',
+      reason:
+          '${reason ?? 'row'}: ${finder.describeMatch(Plurality.one)} must match one widget',
     );
     final centre = tester.getRect(finder).center.dy;
     expect(
       (centre - rowCentre).abs(),
       lessThanOrEqualTo(tolerance),
       reason:
-          '${reason ?? 'row'}: ${finder.description} centre y $centre is '
+          '${reason ?? 'row'}: ${finder.describeMatch(Plurality.one)} centre y $centre is '
           '${(centre - rowCentre).toStringAsFixed(2)}px from the row centre '
           '$rowCentre (tolerance $tolerance)',
     );
