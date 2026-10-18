@@ -118,6 +118,7 @@ class RaftComputerDetailData {
     this.diskLowTitle,
     this.commands,
     this.service,
+    this.highlightedAgentIds = const {},
   });
   final String id, name, slug, createdLabel;
   final String? description, hostname, os, computerVersion, availableVersion;
@@ -132,6 +133,7 @@ class RaftComputerDetailData {
   final List<RaftComputerAgent> agents;
   final RaftComputerCommandSet? commands;
   final RaftComputerService? service;
+  final Set<String> highlightedAgentIds;
 }
 
 /// A failed request whose message the page shows as-is.
@@ -154,6 +156,7 @@ class RaftComputerDetailActions {
     this.openAgent,
     this.createAgent,
     this.runtimeChip,
+    this.changeModel,
   });
   final Future<void> Function(String name) rename;
   final Future<void> Function(String? description) describe;
@@ -173,6 +176,10 @@ class RaftComputerDetailActions {
   /// Detected Runtimes chip [index] with its usage hover card
   /// (RuntimeAccountUsageGateChip); null keeps the plain chip.
   final Widget? Function(int index)? runtimeChip;
+
+  /// Opens the two-step model chooser. True means it finished (including a
+  /// partial result), so the view leaves selection mode just like Web.
+  final Future<bool> Function(List<String> agentIds)? changeModel;
 }
 
 /// Text helpers for the Tailwind classes this page writes in JSX.
@@ -343,6 +350,7 @@ class RaftComputerDetailView extends StatefulWidget {
     this.onBack,
     this.backKey,
     this.headerKey,
+    this.agentNotice,
   });
   final RaftComputerDetailData data;
   final RaftComputerDetailActions actions;
@@ -350,6 +358,7 @@ class RaftComputerDetailView extends StatefulWidget {
   /// MachineDetailPanel `onMobileBack`: the boxed Back below md.
   final VoidCallback? onBack;
   final Key? backKey, headerKey;
+  final Widget? agentNotice;
   @override
   State<RaftComputerDetailView> createState() => _RaftComputerDetailViewState();
 }
@@ -371,6 +380,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
   bool selectionMode = false;
   final selected = <String>{};
   RaftComputerBulk? bulkAction;
+  bool changingModel = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when a bulk action starts, selection is cancelled or another computer is shown.
   String bulkError = '';
 
@@ -393,6 +403,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       // Errors and the in-flight bulk action belong to the previous computer.
       nameError = descriptionError = bulkError = '';
       bulkAction = null;
+      changingModel = false;
       selected.clear();
       scanned = false;
       workspaces = const [];
@@ -805,9 +816,11 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                         color: online ? t.product.brutalLime : raftGray400,
                       ),
                       const SizedBox(width: 8),
-                      RaftCssText(
-                        online ? 'Connected' : 'Offline',
-                        style: ink.mono(14, 20, color: ink.muted(.6)),
+                      Flexible(
+                        child: RaftCssText(
+                          online ? 'Connected' : 'Offline',
+                          style: ink.mono(14, 20, color: ink.muted(.6)),
+                        ),
                       ),
                     ],
                   ),
@@ -836,7 +849,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     required VoidCallback onEdit,
   }) => Row(
     children: [
-      RaftSectionEyebrow(label),
+      Flexible(child: RaftSectionEyebrow(label)),
       if (canEdit) ...[
         const SizedBox(width: 8),
         KeyedSubtree(
@@ -1377,7 +1390,9 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         rightContent: right,
         selected: selectionMode && manage && isSelected,
         // `bg-layer-canvas-muted theme-brutal:bg-gray-100` rows.
-        background: selectionMode && isSelected
+        background: d.highlightedAgentIds.contains(a.id)
+            ? t.colors['success-soft']
+            : selectionMode && isSelected
             ? null
             : t.brutal
             ? const Color(0xFFF3F4F6)
@@ -1410,6 +1425,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           )
         else
           _gapColumn(8, [
+            if (widget.agentNotice case final notice?) notice,
             if (manage && selected.isNotEmpty)
               RaftSurfaceListItem(
                 selected: true,
@@ -1468,6 +1484,30 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                               ? showResetOptions
                               : null,
                         ),
+                        if (widget.actions.changeModel != null)
+                          _smallButton(
+                            'Change model',
+                            key: const ValueKey('computer-bulk-change-model'),
+                            glyph: RaftGlyph.refreshCw,
+                            brutalDisabledFill: true,
+                            onPressed: bulkAction != null || changingModel
+                                ? null
+                                : () async {
+                                    final machineId = d.id;
+                                    setState(() => changingModel = true);
+                                    final finished = await widget
+                                        .actions
+                                        .changeModel!(selected.toList());
+                                    if (!mounted || d.id != machineId) return;
+                                    setState(() {
+                                      changingModel = false;
+                                      if (finished) {
+                                        selected.clear();
+                                        selectionMode = false;
+                                      }
+                                    });
+                                  },
+                          ),
                       ],
                     ),
                     if (bulkError.isNotEmpty) ...[

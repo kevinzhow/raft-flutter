@@ -148,6 +148,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   final _rows = <WorkspaceEntityKind, Map<String, Map<String, dynamic>>>{};
   final _states = <WorkspaceEntityKind, WorkspaceEntityLoadState>{};
   final _pending = <WorkspaceEntityKind, Future<void>>{};
+  // Command responses accepted during a list read win over that older read.
+  // Each buffer lives only as long as its request; later reads are authoritative.
+  final _agentReadUpdates = <Map<String, Map<String, dynamic>>>{};
   final _activityVersions = <String, int>{};
   final _activity = <String, Map<String, dynamic>>{};
 
@@ -197,6 +200,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _scope = next;
     ++_epoch;
     _pending.clear();
+    _agentReadUpdates.clear();
     _rows.clear();
     _states.clear();
     _activityVersions.clear();
@@ -565,6 +569,10 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     if (kind == WorkspaceEntityKind.agents) _agentRequests++;
     bool current() => _accepts(scope, epoch) && _tickets[kind] == ticket;
     final versions = Map<String, int>.of(_activityVersions);
+    final commandUpdates = <String, Map<String, dynamic>>{};
+    if (kind == WorkspaceEntityKind.agents) {
+      _agentReadUpdates.add(commandUpdates);
+    }
     _states[kind] = WorkspaceEntityLoadState(
       loading: true,
       loaded: _states[kind]?.loaded == true,
@@ -607,6 +615,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           final id = _id(kind, row);
           if (id == null) {
             throw const FormatException('Invalid workspace entity record.');
+          }
+          if (kind == WorkspaceEntityKind.agents) {
+            row.addAll(commandUpdates[id] ?? {});
           }
           if (kind == WorkspaceEntityKind.agents &&
               (_activityVersions[id] ?? 0) > (versions[id] ?? 0)) {
@@ -657,6 +668,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         );
         _settled.add(kind);
       } finally {
+        _agentReadUpdates.remove(commandUpdates);
         if (current() && identical(_pending[kind], pending)) {
           _pending.remove(kind);
           notifyListeners();
@@ -697,7 +709,8 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         final last = _activitySeq[id];
         if (seq != null && last != null && seq <= last) return;
         if (seq != null) _activitySeq[id] = seq;
-        final detailKind = sourceAgentDetailKinds.contains(payload['detailKind'])
+        final detailKind =
+            sourceAgentDetailKinds.contains(payload['detailKind'])
             ? payload['detailKind']
             : 'other';
         final patch = <String, dynamic>{
@@ -896,6 +909,35 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     }
   }
 
+  /// Accept a command response incrementally in the scope that issued it.
+  /// The captured epoch also rejects a response after leaving and returning
+  /// to an otherwise identical account/server/role.
+  void Function(Map<String, dynamic>) agentUpdateReceiver() {
+    synchronize();
+    final scope = _scope, epoch = _epoch;
+    final activityVersions = Map<String, int>.of(_activityVersions);
+    return (update) {
+      if (scope == null || !_accepts(scope, epoch)) return;
+      final id = update['id'];
+      final rows = _rows[WorkspaceEntityKind.agents];
+      final old = rows?[id];
+      if (old == null) return;
+      final patch = _copy(update);
+      if ((_activityVersions[id] ?? 0) > (activityVersions[id] ?? 0)) {
+        patch.addAll(_activity[id] ?? {});
+      }
+      for (final read in _agentReadUpdates) {
+        read[id as String] = {...?read[id], ...patch};
+      }
+      final next = {...old, ...patch};
+      if (_sameValue(old, next)) return;
+      rows![id as String] = next;
+      _authorsChanged(WorkspaceEntityKind.agents);
+      _persist(WorkspaceEntityKind.agents);
+      notifyListeners();
+    };
+  }
+
   static bool _sameValue(dynamic a, dynamic b) {
     if (a is List && b is List) {
       return a.length == b.length &&
@@ -960,6 +1002,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _tombstones.clear();
     _authorAgents = _authorMembers = null;
     _pending.clear();
+    _agentReadUpdates.clear();
     _refresh?.cancel();
     _dirty.clear();
     _queued.clear();

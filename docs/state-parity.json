@@ -3,6 +3,58 @@
  "_doc": "State parity inventory (loading / empty / error / partial) per screen and panel. Read by apps/raft_flutter/test/state_parity_guard_test.dart. screens[].states[]: state = loading|empty|error|partial; variant = optional short text; web = yes|no (does the Web component render a DISTINCT such state); flutter = yes|partial|missing; parityCase = case ids or globs without the theme suffix (e.g. components.list-pages.saved.phone-*); status = covered (needs >=1 parityCase that resolves) | gap (needs justification and size S|M|L) | intentional / na (need justification) | fixing (being fixed in the current branch: needs justification and parityCase; resolution is skipped until it is flipped to covered). Optional: gapKind = case-missing (Flutter has it, no case) | impl-diff (Flutter differs from Web) | invalid-case (case exists but the Web capture does not show the state); caseValidity = react-checked (the cached React capture was inspected and shows the state) | invalid | unchecked. navigationCoverage maps every NavigationRegistry section id and settings tab id to the screen ids that cover it (or a justification string). Add a screen entry (and its states) whenever a screen or panel is added; a registry id that is not mapped fails the guard.",
  "screens": [
   {
+   "id": "computers.bulk-model",
+   "title": "Computer bulk model chooser and receipt",
+   "webEntry": "packages/web/src/components/machine/BulkChangeModelDialog.tsx (v1.21.12-source.1)",
+   "flutterEntry": "apps/raft_flutter/lib/features/bulk_agent_model_dialog.dart",
+   "states": [
+    {
+     "state": "loading",
+     "variant": "models / runtime admission / applying",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "Targeted widget tests cover pending models, admission and per-agent saving; paired Web pixel captures are not yet present."
+    },
+    {
+     "state": "empty",
+     "variant": "no selectable runtime / no changes",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "The chooser disables Next without a runtime/model and disables Apply when every agent is skipped; no paired pixel capture yet."
+    },
+    {
+     "state": "error",
+     "variant": "all requests unfinished",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "Failed saves are read back and the receipt retries only unfinished agents; this state has behavior tests but no paired pixel capture."
+    },
+    {
+     "state": "partial",
+     "variant": "some requests unfinished / unsafe agents skipped",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "Review preserves skipped rows with reasons; partial receipts survive navigation and distinguish save failures from pending restarts. Pixel comparison remains unverified."
+    }
+   ]
+  },
+  {
    "id": "settings.windows-tray",
    "title": "Windows close-to-tray preference",
    "webEntry": "Native Windows shell only",

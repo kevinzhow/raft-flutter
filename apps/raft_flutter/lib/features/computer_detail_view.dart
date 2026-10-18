@@ -10,6 +10,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
+import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show sourceRuntimeDisplayNames;
@@ -17,6 +18,15 @@ import 'agent_metadata_catalog.dart';
 import 'agent_metadata_projection.dart';
 import 'computer_setup_commands.dart';
 import 'runtime_usage_chip.dart';
+import 'bulk_agent_model_change.dart';
+import 'bulk_agent_model_dialog.dart';
+import 'management_support.dart'
+    show
+        cachedServerFlag,
+        rememberServerFlag,
+        pageIdentity,
+        readPageSnapshot,
+        writePageSnapshot;
 import '../data/runtime_account_usage.dart';
 
 // ------------------------------------------------------------------ model
@@ -201,6 +211,7 @@ class ComputerDetailPanel extends StatefulWidget {
     this.onOpenAgent,
     this.onCreateAgent,
     this.remoteUpgradeV2,
+    this.now,
     this.deployment = const String.fromEnvironment(
       'RAFT_DEPLOYMENT_ENV',
       defaultValue: 'production',
@@ -215,6 +226,7 @@ class ComputerDetailPanel extends StatefulWidget {
 
   /// `remote_computer_upgrade_v2` override; null = the controller's flag.
   final bool? remoteUpgradeV2;
+  final DateTime Function()? now;
 
   /// VITE_DEPLOYMENT_ENV equivalent for the command bundle.
   final String deployment;
@@ -228,23 +240,48 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   Map<String, dynamic> get m => widget.machine;
   String get id => m['id'] as String;
   String get serverId => w.server?.id ?? '';
+  DateTime _now() => widget.now?.call() ?? DateTime.now();
   bool get online => m['status'] == 'online';
   bool get isComputer => m['isComputer'] == true;
 
   /// A refused one-click upgrade (Web upgradeRefusalFromCode), held until
   /// the machine changes.
   String? upgradeRefusal;
+  late String bulkScope;
+  bool bulkModelEnabled = false;
+  final receiptTimer = RaftIdleTimer(yieldToAnimation: false);
+  String get receiptKey => 'bulk-model-receipt:$id';
+  BulkModelReceipt? get receipt =>
+      readPageSnapshot(w, receiptKey)?['receipt'] as BulkModelReceipt?;
 
   @override
   void initState() {
     super.initState();
     w.services.entityDirectory.addListener(_changed);
+    w.addListener(_changed);
     w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+    bulkScope = pageIdentity(w);
+    bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
+    unawaited(_evaluateBulkModel());
+    _scheduleReceipt();
   }
 
   @override
   void didUpdateWidget(ComputerDetailPanel old) {
     super.didUpdateWidget(old);
+    if (!identical(old.controller, w)) {
+      old.controller.services.entityDirectory.removeListener(_changed);
+      old.controller.removeListener(_changed);
+      w.services.entityDirectory.addListener(_changed);
+      w.addListener(_changed);
+      w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+    }
+    if (pageIdentity(w) != bulkScope || !identical(old.controller, w)) {
+      bulkScope = pageIdentity(w);
+      bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
+      unawaited(_evaluateBulkModel());
+    }
+    _scheduleReceipt();
     if (old.machine['id'] != id ||
         old.machine['computerVersion'] != m['computerVersion']) {
       upgradeRefusal = null;
@@ -254,11 +291,154 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   @override
   void dispose() {
     w.services.entityDirectory.removeListener(_changed);
+    w.removeListener(_changed);
+    receiptTimer.cancel();
     super.dispose();
   }
 
   void _changed() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    if (bulkScope != pageIdentity(w)) {
+      bulkScope = pageIdentity(w);
+      bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
+      unawaited(_evaluateBulkModel());
+    }
+    _scheduleReceipt();
+    setState(() {});
+  }
+
+  Future<void> _evaluateBulkModel() async {
+    final identity = pageIdentity(w), controller = w;
+    try {
+      final value = await controller.client.post(
+        '/feature-flags/evaluate',
+        data: featureFlagEvaluateBody(
+          keys: [bulkModelFlag],
+          serverId: w.server?.id,
+        ),
+      );
+      if (!mounted ||
+          !identical(w, controller) ||
+          identity != pageIdentity(w)) {
+        return;
+      }
+      final evaluations = value is Map ? value['evaluations'] : null;
+      final enabled =
+          evaluations is List &&
+          evaluations.any(
+            (v) =>
+                v is Map && v['key'] == bulkModelFlag && v['enabled'] == true,
+          );
+      rememberServerFlag(w, bulkModelFlag, enabled, identity);
+      if (enabled != bulkModelEnabled) {
+        setState(() => bulkModelEnabled = enabled);
+      }
+    } catch (_) {
+      // A never-evaluated flag fails closed; an accepted cached value survives.
+    }
+  }
+
+  void _scheduleReceipt() {
+    receiptTimer.cancel();
+    final value = receipt;
+    if (value == null) return;
+    final now = _now();
+    final deadlines = [
+      if (value.highlightUntil.isAfter(now)) value.highlightUntil,
+      if (value.success && value.bannerUntil.isAfter(now)) value.bannerUntil,
+    ]..sort();
+    if (deadlines.isNotEmpty) {
+      receiptTimer.start(deadlines.first.difference(now), () {
+        if (mounted) {
+          setState(() {});
+          _scheduleReceipt();
+        }
+      });
+    }
+  }
+
+  Future<bool> _changeModels(
+    List<String> selected, {
+    BulkModelReceipt? retry,
+  }) async {
+    final controller = w, machineId = id, identity = pageIdentity(w);
+    bool authorized() =>
+        mounted &&
+        identical(w, controller) &&
+        id == machineId &&
+        identity == pageIdentity(w) &&
+        bulkModelEnabled &&
+        canManage;
+    if (!authorized()) return false;
+    final selectedIds = selected.toSet();
+    final targets = [
+      for (final agent in agents)
+        if (selectedIds.contains(agent['id'])) agent['id'] as String,
+    ];
+    if (targets.isEmpty) return false;
+    final result = await showBulkAgentModelDialog(
+      context,
+      controller: w,
+      machine: m,
+      agentIds: targets,
+      authorized: authorized,
+      onOpenAgent: widget.onOpenAgent,
+      retry: retry,
+      now: _now,
+    );
+    if (!authorized() || result == null) return false;
+    writePageSnapshot(w, receiptKey, identity, {'receipt': result});
+    _changed();
+    return true;
+  }
+
+  Widget? _modelNotice() {
+    final value = receipt;
+    if (!bulkModelEnabled || value == null || !value.visibleAt(_now())) {
+      return null;
+    }
+    final count = value.changed.length;
+    final description = value.success
+        ? '${raftFormat(context, count == 1 ? '{count} agent now uses {target}.' : '{count} agents now use {target}.', {'count': count, 'target': bulkModelLabel(value.target.runtime, value.target.model, withRuntime: true)})}${value.skipped.isEmpty ? '' : ' ${raftFormat(context, '{count} skipped.', {'count': value.skipped.length})}'}'
+        : raftFormat(context, "{failed} of {total} changes didn't finish.", {
+            'failed': value.unfinished.length,
+            'total': value.total,
+          });
+    return RaftBanner(
+      key: ValueKey(
+        value.success
+            ? 'bulk-model-success-banner'
+            : 'bulk-model-partial-banner',
+      ),
+      status: value.success
+          ? RaftBannerRecipeStatus.success
+          : RaftBannerRecipeStatus.warning,
+      size: RaftBannerRecipeSize.sm,
+      description: description,
+      descriptionWeight: FontWeight.w700,
+      action: Wrap(
+        spacing: RaftSpace.x1_5,
+        children: [
+          if (!value.success && canManage)
+            RaftAgentDialogButton(
+              key: const ValueKey('bulk-model-try-again'),
+              label: raftText(context, 'Try again'),
+              size: RaftButtonRecipeSize.sm,
+              onPressed: () =>
+                  _changeModels(value.unfinished.keys.toList(), retry: value),
+            ),
+          RaftAgentDialogButton(
+            key: const ValueKey('bulk-model-dismiss'),
+            label: raftText(context, 'Dismiss'),
+            size: RaftButtonRecipeSize.sm,
+            onPressed: () {
+              w.resourceSnapshots.remove('page:$receiptKey');
+              _changed();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   bool get canManage {
@@ -446,6 +626,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       canManage: canManage,
       commands: commands,
       service: isComputer && online ? service(fact) : null,
+      highlightedAgentIds: bulkModelEnabled
+          ? receipt?.highlightsAt(_now()) ?? const {}
+          : const {},
     );
   }
 
@@ -458,8 +641,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     ].where((s) => s.isNotEmpty).join(' · ');
   }
 
-  Future<void> _refreshComputers() =>
-      w.services.entityDirectory.refresh(WorkspaceEntityKind.computers, force: true);
+  Future<void> _refreshComputers() => w.services.entityDirectory.refresh(
+    WorkspaceEntityKind.computers,
+    force: true,
+  );
 
   Future<void> _patch(Map<String, dynamic> body) async {
     await w.command('PATCH', '/servers/$serverId/machines/$id', data: body);
@@ -567,6 +752,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
 
   @override
   Widget build(BuildContext context) => RaftComputerDetailView(
+    agentNotice: _modelNotice(),
     headerKey:
         MediaQuery.sizeOf(context).width < RaftLayoutMetrics.desktopBreakpoint
         ? const Key('computer-mobile-header')
@@ -592,6 +778,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       openAgent: widget.onOpenAgent,
       createAgent: widget.onCreateAgent,
       runtimeChip: _runtimeChip,
+      changeModel: bulkModelEnabled && canManage ? _changeModels : null,
     ),
   );
 
