@@ -58,13 +58,13 @@ void releaseAgentCollapse(Object chat) {
   _sessions[chat] = null;
 }
 
-/// Binds this chat's visit to the channel, or to the thread channel.
+/// Binds this chat to the conversation its own message window presents.
+/// The workspace may already point elsewhere while this page is leaving.
 void bindAgentCollapse(
   Object chat,
   WorkspaceController workspace,
-  bool thread,
+  String? scope,
 ) {
-  final scope = thread ? workspace.threadChannelId : workspace.channel?.id;
   final visit = _visit(workspace, scope);
   final opening = _opening[workspace];
   final captured = opening?.visit == visit ? opening : null;
@@ -85,7 +85,7 @@ void bindAgentCollapse(
   bool agent,
   RaftMessage message,
   WorkspaceController workspace,
-  bool thread,
+  String? scope,
 ) {
   final collapse = longMessagesCollapse(message.json, workspace.channel?.json);
   if (parent || !collapse) return (collapse: collapse, open: false);
@@ -99,7 +99,7 @@ void bindAgentCollapse(
         state: workspace.readState.state,
         serverId: workspace.client.serverId,
         principalId: workspace.client.user?.id,
-        scopeId: thread ? workspace.threadChannelId : workspace.channel?.id,
+        scopeId: scope,
       ),
     ),
   );

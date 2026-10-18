@@ -2705,7 +2705,7 @@ class _RaftChatViewState extends State<RaftChatView>
       senderIsAgent(m),
       m,
       w,
-      widget.thread,
+      scope,
     );
     return RaftMessageTile(
       key: ValueKey('message-$key'),
@@ -3404,7 +3404,7 @@ class _RaftChatViewState extends State<RaftChatView>
 
   @override
   Widget build(BuildContext context) {
-    bindAgentCollapse(this, w, widget.thread);
+    bindAgentCollapse(this, w, scope);
     final search = boundSearch;
     if (!widget.thread || search == null) return buildView(context);
     final apple =
