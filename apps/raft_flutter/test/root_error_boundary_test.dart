@@ -16,6 +16,15 @@ class _Bomb extends StatelessWidget {
 
 int _builds = 0;
 
+// The tail of the Android release report (v0.1.0+24).
+final _selectionSortStack = StackTrace.fromString(
+  '#0 RenderObject.constraints (package:flutter/src/rendering/object.dart:2596)\n'
+  '#2 RenderParagraph.getBoxesForSelection (package:flutter/src/rendering/paragraph.dart:1135)\n'
+  '#4 _SelectableTextContainerDelegate._compareScreenOrder (package:flutter/src/widgets/text.dart:1229)\n'
+  '#9 MultiSelectableSelectionContainerDelegate._flushAdditions (package:flutter/src/widgets/selectable_region.dart:2476)\n'
+  '#12 SchedulerBinding._invokeFrameCallback (package:flutter/src/scheduler/binding.dart:1430)',
+);
+
 class _Counter extends StatelessWidget {
   const _Counter();
   @override
@@ -117,6 +126,62 @@ void main() {
       await tester.pump();
       expect(find.text('Something went wrong'), findsOneWidget);
       expect(errors.current?.message, contains('lost state'));
+    });
+
+    // Pages built beneath an opaque route are not laid out, yet their
+    // Text.rich-with-WidgetSpan paragraphs register selectables; Flutter's
+    // post-frame sort then throws on the unlaid paragraph (Android release,
+    // reported from a scheduler callback). Only selection on that page is
+    // affected, so the app keeps running.
+    testWidgets('a selection sort on unlaid text does not end the app', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        RootErrorBoundary(errors: errors, child: const _Counter()),
+      );
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: StateError(
+            'A RenderObject does not have any constraints before it has been '
+            'laid out.',
+          ),
+          stack: _selectionSortStack,
+          library: 'scheduler library',
+          context: ErrorDescription('during a scheduler callback'),
+        ),
+      );
+      tester.binding.platformDispatcher.onError!(
+        StateError('unlaid'),
+        _selectionSortStack,
+      );
+      // The report is still logged.
+      expect(tester.takeException(), isA<StateError>());
+      await tester.pump();
+      await tester.pump();
+      expect(errors.current, isNull);
+      expect(find.text('app'), findsOneWidget);
+    });
+
+    test('only the selection sort failure is survived', () {
+      final sort = _selectionSortStack;
+      expect(
+        rootErrorIsFatal(
+          StateError('A RenderObject does not have any constraints'),
+          library: 'scheduler library',
+          stack: sort,
+        ),
+        isFalse,
+      );
+      expect(
+        rootErrorIsFatal(
+          StateError('x'),
+          library: 'scheduler library',
+          stack: StackTrace.fromString(
+            '#0 Other.thing (package:raft_flutter/features/x.dart:1)',
+          ),
+        ),
+        isTrue,
+      );
     });
 
     testWidgets('the first error stays on screen', (tester) async {

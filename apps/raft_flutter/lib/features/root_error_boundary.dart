@@ -42,7 +42,18 @@ class RootErrorReport {
 /// healthy app survives: a rejected request, a lost connection, a plugin that
 /// is unavailable or an image that cannot be decoded. Those keep the screen
 /// and are only logged.
-bool rootErrorIsFatal(Object error, {String? library, String? context}) {
+///
+/// Also survived: Flutter's post-frame sort of newly registered selectable
+/// text throwing because one paragraph has not been laid out yet ("does not
+/// have any constraints before it has been laid out"). Only text selection on
+/// that subtree is affected, and it sorts again with its next registration.
+bool rootErrorIsFatal(
+  Object error, {
+  String? library,
+  String? context,
+  StackTrace? stack,
+}) {
+  if (stack != null && _selectionSortFailure(stack)) return false;
   if (error is RaftApiException ||
       error is SocketException ||
       error is HttpException ||
@@ -62,6 +73,13 @@ bool rootErrorIsFatal(Object error, {String? library, String? context}) {
     return false;
   }
   return true;
+}
+
+bool _selectionSortFailure(StackTrace stack) {
+  final trace = stack.toString();
+  return trace.contains('selectable_region.dart') &&
+      (trace.contains('_flushAdditions') ||
+          trace.contains('_compareScreenOrder'));
 }
 
 /// Collects the first fatal error of this run and tells the boundary.
@@ -97,6 +115,7 @@ class RootErrors extends ChangeNotifier {
         details.exception,
         library: library,
         context: context,
+        stack: details.stack,
       )) {
         report(
           details.exception,
@@ -107,7 +126,7 @@ class RootErrors extends ChangeNotifier {
     };
     PlatformDispatcher.instance.onError = (error, stack) {
       debugPrint('Uncaught error: $error\n$stack');
-      if (rootErrorIsFatal(error)) report(error, stack);
+      if (rootErrorIsFatal(error, stack: stack)) report(error, stack);
       return true;
     };
     // A widget whose build throws: the framework would paint a grey box. The
