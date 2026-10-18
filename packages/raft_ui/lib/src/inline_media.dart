@@ -1,6 +1,8 @@
 // Web inline audio / video attachment cards (MessageItem.tsx
 // InlineVideoAttachmentCard, InlineAudioAttachmentCard, InlineAudioPlayer).
 // The app owns the media: URL, download, decoding, play state.
+import 'dart:math' as math;
+
 import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
@@ -867,95 +869,106 @@ class RaftAudioPreview extends StatelessWidget {
     final brutal = t.brutal;
     final line = brutal ? Colors.black : t.colors['line-muted']!;
     final strong = brutal ? Colors.black : t.strong;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Center(
+    // Centred when the card fits; scrolls when it does not (landscape, large
+    // text, a short window).
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 576),
-          child: Container(
-            key: const Key('audio-preview'),
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: brutal ? Colors.white : t.panel,
-              border: Border.all(color: line, width: brutal ? 2 : 1),
-              boxShadow: brutal
-                  ? RaftShadowSet.brutalSm
-                  : t.themeShadows.sm.outer,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    spacing: 12,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: brutal
-                              ? t.product.softSignal
-                              : t.colors['primary-soft'],
-                          border: Border.all(
-                            color: line,
-                            width: brutal ? 2 : 1,
+          constraints: BoxConstraints(
+            minHeight: constraints.hasBoundedHeight
+                ? math.max(0.0, constraints.maxHeight - 32)
+                : 0,
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 576),
+              child: Container(
+                key: const Key('audio-preview'),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: brutal ? Colors.white : t.panel,
+                  border: Border.all(color: line, width: brutal ? 2 : 1),
+                  boxShadow: brutal
+                      ? RaftShadowSet.brutalSm
+                      : t.themeShadows.sm.outer,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        spacing: 12,
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: brutal
+                                  ? t.product.softSignal
+                                  : t.colors['primary-soft'],
+                              border: Border.all(
+                                color: line,
+                                width: brutal ? 2 : 1,
+                              ),
+                            ),
+                            child: RaftIcon(
+                              RaftGlyph.music,
+                              size: 20,
+                              color: strong,
+                            ),
                           ),
-                        ),
-                        child: RaftIcon(
-                          RaftGlyph.music,
-                          size: 20,
-                          color: strong,
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              filename,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: t.headingFont,
-                                fontSize: 14,
-                                height: 20 / 14,
-                                fontWeight: FontWeight.w700,
-                                color: strong,
-                              ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  filename,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: t.headingFont,
+                                    fontSize: 14,
+                                    height: 20 / 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: strong,
+                                  ),
+                                ),
+                                Text(
+                                  raftText(context, 'Audio file'),
+                                  style: TextStyle(
+                                    fontFamily: t.headingFont,
+                                    fontSize: 12,
+                                    height: 16 / 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: brutal
+                                        ? Colors.black.withValues(alpha: .5)
+                                        : t.muted,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              raftText(context, 'Audio file'),
-                              style: TextStyle(
-                                fontFamily: t.headingFont,
-                                fontSize: 12,
-                                height: 16 / 12,
-                                fontWeight: FontWeight.w700,
-                                color: brutal
-                                    ? Colors.black.withValues(alpha: .5)
-                                    : t.muted,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    _AudioPlayer(
+                      filename: filename,
+                      playing: playing,
+                      position: position,
+                      duration: duration,
+                      volume: volume,
+                      onTogglePlay: onTogglePlay,
+                      onSeek: onSeek,
+                      onVolume: onVolume,
+                    ),
+                  ],
                 ),
-                _AudioPlayer(
-                  filename: filename,
-                  playing: playing,
-                  position: position,
-                  duration: duration,
-                  volume: volume,
-                  onTogglePlay: onTogglePlay,
-                  onSeek: onSeek,
-                  onVolume: onVolume,
-                ),
-              ],
+              ),
             ),
           ),
         ),

@@ -137,8 +137,11 @@ class RaftStatusBarHost extends StatelessWidget {
 /// runs edge to edge): the route is above the page's [RaftStatusBarHost], so it
 /// hosts its own strip. The strip is transparent, so the barrier still dims
 /// the page's band, and a header flush with the top publishes over it like
-/// anywhere else (`docs/status-bar.md`). The content keeps the default dialog
-/// safe area.
+/// anywhere else (`docs/status-bar.md`). The content keeps the top safe area
+/// only: the bottom system inset reaches the content, which paints its own
+/// background to the screen bottom (a surface above the system bar must not
+/// leave a strip of the dimmed page showing under it) and pads what must stay
+/// reachable by `raftBottomInset`.
 class RaftFullBleedDialogRoute<T> extends DialogRoute<T> {
   RaftFullBleedDialogRoute({
     required super.context,
@@ -147,7 +150,7 @@ class RaftFullBleedDialogRoute<T> extends DialogRoute<T> {
   }) : super(
          useSafeArea: false,
          builder: (context) => RaftStatusBarHost.overlay(
-           child: SafeArea(child: builder(context)),
+           child: SafeArea(bottom: false, child: builder(context)),
          ),
        );
 }

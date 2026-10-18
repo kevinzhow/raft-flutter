@@ -151,16 +151,26 @@ class _RaftAttachmentPreviewShellState
             actions: actions,
           );
     final rule = t.brutal ? 2.0 : 1.0;
-    // The body background runs under the system bar; with no bottom sheet the
-    // content itself clears it.
+    final inset = raftBottomInset(context);
+    // Collapsed, the sheet is exactly its header row (`py-2` around the 28px
+    // expand button or the scaled 12/16 title) plus the system inset: a fixed
+    // 40 left the header's bottom padding, and at larger text its title,
+    // inside the gesture / navigation bar. [rule] is the sheet's own top
+    // border.
+    final titleLine = 16 * MediaQuery.textScalerOf(context).scale(12) / 12;
+    final collapsedHeader = math.max(40.0, 16 + math.max(28.0, titleLine));
+    final collapsedBar = collapsedHeader + rule + inset;
+    final bottomSheet = comments != null && !wide;
+    // The body background runs under the system bar and the comments bar.
+    // The content itself ends above the collapsed bar (or, with no bar, above
+    // the system bar), so its last line and the card's border can scroll
+    // clear of it. The open sheet is an overlay: the body does not move.
     Widget body = ColoredBox(
       color: bodyColor,
-      child: comments != null && !wide
-          ? widget.child
-          : Padding(
-              padding: EdgeInsets.only(bottom: raftBottomInset(context)),
-              child: widget.child,
-            ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: bottomSheet ? collapsedBar : inset),
+        child: widget.child,
+      ),
     );
     if (comments != null && wide) {
       body = Row(
@@ -188,18 +198,10 @@ class _RaftAttachmentPreviewShellState
       );
     }
     Widget? sheet;
-    if (comments != null && !wide) {
+    if (bottomSheet) {
       // The sheet's own background reaches the screen bottom; collapsed it
       // grows by the system inset, open the composer pads itself.
-      final inset = raftBottomInset(context);
-      // Collapsed, the sheet is exactly its header row (`py-2` around the
-      // 28px expand button or the scaled 12/16 title) plus the system inset:
-      // a fixed 40 left the header's bottom padding, and at larger text its
-      // title, inside the gesture / navigation bar. [rule] is the sheet's own
-      // top border.
-      final titleLine = 16 * MediaQuery.textScalerOf(context).scale(12) / 12;
-      final collapsedHeader = math.max(40.0, 16 + math.max(28.0, titleLine));
-      final height = open ? size.height * .45 : collapsedHeader + rule + inset;
+      final height = open ? size.height * .45 : collapsedBar;
       sheet = Positioned(
         left: 0,
         right: 0,
@@ -207,6 +209,7 @@ class _RaftAttachmentPreviewShellState
         child: RaftNavigationBarStyle(
           background: t.brutal ? Colors.white : t.panel,
           child: AnimatedContainer(
+            key: const ValueKey('attachment-comments-sheet'),
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             height: height,
