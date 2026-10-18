@@ -734,6 +734,34 @@ void main() {
     },
   );
 
+  testWidgets(
+    'a live no-change update immediately before Apply keeps review dismissible',
+    (tester) async {
+      await panel(tester);
+      await open(tester);
+      await tap(tester, 'bulk-model-reasoning');
+      await tester.tap(find.text('Medium').last);
+      await tester.pumpAndSettle();
+      await tap(tester, 'bulk-model-next');
+      final fresh = client.agents['a1']!
+        ..['model'] = 'gpt-6-astra'
+        ..['reasoningEffort'] = 'medium';
+      workspace.services.entityDirectory.agentUpdateReceiver()(fresh);
+      // The old enabled callback must check the live plan before its next frame.
+      await tester.tap(find.byKey(const ValueKey('bulk-model-apply')));
+      await tester.pumpAndSettle();
+      expect(find.text('No change'), findsOneWidget);
+      expect(find.text('Saving…'), findsNothing);
+      expect(getWrites(), isEmpty);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('bulk-change-model-dialog')),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('Chinese phone dialog remains actionable at large text', (
     tester,
   ) async {

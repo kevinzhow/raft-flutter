@@ -299,6 +299,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
   Future<void> _apply() async {
     if (!current || step != _Step.review) return;
     final rows = plan, selectedTarget = target;
+    if (rows.every((row) => row.action == BulkModelAction.skip)) return;
     setState(() {
       applyingPlan = rows;
       step = _Step.applying;
