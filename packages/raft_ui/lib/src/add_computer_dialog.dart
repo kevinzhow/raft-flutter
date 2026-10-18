@@ -10,9 +10,14 @@ import 'package:flutter/material.dart';
 import '../raft_ui.dart';
 
 class RaftAddComputerConnection {
-  const RaftAddComputerConnection({required this.hostname, this.os});
+  const RaftAddComputerConnection({
+    required this.hostname,
+    this.os,
+    this.requiresConfirmation = false,
+  });
   final String hostname;
   final String? os;
+  final bool requiresConfirmation;
 }
 
 class RaftAddComputerDialog extends StatefulWidget {
@@ -82,18 +87,29 @@ class RaftAddComputerDialog extends StatefulWidget {
 
 class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   bool waiting = false, registering = false;
+  bool confirmedComputerMatch = false, saving = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next register attempt starts; the dialog state is dropped when it closes.
   String error = '';
   String platform = 'mac-linux';
   final name = TextEditingController();
 
   bool get connectedStep => widget.connected != null;
+  bool get canFinish =>
+      connectedStep &&
+      !(widget.connected!.requiresConfirmation && !confirmedComputerMatch);
+
+  @override
+  void initState() {
+    super.initState();
+    name.text = widget.connected?.hostname ?? '';
+  }
 
   @override
   void didUpdateWidget(RaftAddComputerDialog old) {
     super.didUpdateWidget(old);
     if (old.connected == null && widget.connected != null) {
       name.text = widget.connected!.hostname;
+      confirmedComputerMatch = false;
     }
   }
 
@@ -131,8 +147,14 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   }
 
   Future<void> done() async {
-    await widget.done(name.text.trim());
-    if (mounted) Navigator.of(context).pop();
+    if (!canFinish || saving) return;
+    setState(() => saving = true);
+    try {
+      await widget.done(name.text.trim());
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 
   @override
@@ -146,7 +168,10 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
     // Escape and the system back gesture leave through the same path as the
     // X: `cancel` releases an unconnected registration, `done` names the
     // connected Computer.
-    void leave() => unawaited(connectedStep ? done() : cancel());
+    void leave() {
+      if (!saving) unawaited(canFinish ? done() : cancel());
+    }
+
     return RaftDismissScope(
       onDismiss: leave,
       child: PopScope(
@@ -164,7 +189,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
                 title: title,
                 // Card `max-w-lg p-6`.
                 maxWidth: 512,
-                onClose: connectedStep ? done : cancel,
+                onClose: leave,
                 child: connectedStep
                     ? _connectedStep(t)
                     : waiting
@@ -318,16 +343,67 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           autofocus: true,
         ),
         const SizedBox(height: 16),
+        if (m?.requiresConfirmation == true) ...[
+          _confirmComputer(t, m!),
+          const SizedBox(height: 16),
+        ],
         Align(
           alignment: Alignment.centerRight,
           child: RaftRecipeButton(
-            label: 'Done',
+            label: saving ? 'Saving...' : 'Done',
             variant: RaftButtonRecipeVariant.success,
             size: RaftButtonRecipeSize.md,
+            disabled: saving || !canFinish,
             onPressed: done,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _confirmComputer(RaftTokens t, RaftAddComputerConnection computer) {
+    final label = raftFormat(
+      context,
+      'This is the computer I just set up{hostname}.',
+      {'hostname': computer.hostname.isEmpty ? '' : ' (${computer.hostname})'},
+    );
+    void change(bool value) => setState(() => confirmedComputerMatch = value);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => change(!confirmedComputerMatch),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: t.colors['layer-panel'],
+          border: Border.all(
+            color: t.brutal ? Colors.black : t.colors['line-muted']!,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            RaftCheckbox(
+              key: const ValueKey('add-computer-confirm-match'),
+              value: confirmedComputerMatch,
+              onChanged: change,
+              semanticLabel: label,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                style: RaftTypography.body(
+                  t,
+                  size: 14,
+                  line: 20,
+                  weight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

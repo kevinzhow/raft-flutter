@@ -22,6 +22,7 @@ import 'package:raft_ui/chat_composition_previews.dart';
 import 'package:raft_ui/combobox_previews.dart';
 import 'package:raft_ui/collapsible_section_previews.dart';
 import 'package:raft_ui/composer_expand_previews.dart';
+import 'package:raft_ui/computer_connection_previews.dart';
 import 'package:raft_ui/conversation_card_previews.dart';
 import 'package:raft_ui/css_recipe_radius_previews.dart';
 import 'package:raft_ui/desktop_title_bar_previews.dart';
@@ -92,6 +93,13 @@ class AuditSurface {
 }
 
 final auditSurfaces = <AuditSurface>[
+  AuditSurface(
+    'computerConnectionConfirmationPreview',
+    'Confirm the connected computer',
+    computerConnectionConfirmationPreview,
+    Size(390, 844),
+    representative: true,
+  ),
   AuditSurface(
     'dropdownViewportPreview',
     'Long dropdowns at the window edge',

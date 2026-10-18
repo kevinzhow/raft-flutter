@@ -3,6 +3,56 @@
  "_doc": "State parity inventory (loading / empty / error / partial) per screen and panel. Read by apps/raft_flutter/test/state_parity_guard_test.dart. screens[].states[]: state = loading|empty|error|partial; variant = optional short text; web = yes|no (does the Web component render a DISTINCT such state); flutter = yes|partial|missing; parityCase = case ids or globs without the theme suffix (e.g. components.list-pages.saved.phone-*); status = covered (needs >=1 parityCase that resolves) | gap (needs justification and size S|M|L) | intentional / na (need justification) | fixing (being fixed in the current branch: needs justification and parityCase; resolution is skipped until it is flipped to covered). Optional: gapKind = case-missing (Flutter has it, no case) | impl-diff (Flutter differs from Web) | invalid-case (case exists but the Web capture does not show the state); caseValidity = react-checked (the cached React capture was inspected and shows the state) | invalid | unchecked. navigationCoverage maps every NavigationRegistry section id and settings tab id to the screen ids that cover it (or a justification string). Add a screen entry (and its states) whenever a screen or panel is added; a registry id that is not mapped fails the guard.",
  "screens": [
   {
+   "id": "computers.add",
+   "title": "Add Computer registration and connection",
+   "webEntry": "packages/web/src/components/machine/AddMachineDialog.tsx (v1.21.12-source.1)",
+   "flutterEntry": "apps/raft_flutter/lib/features/add_computer_dialog.dart",
+   "states": [
+    {
+     "state": "loading",
+     "variant": "registration pending / waiting for an owned Computer",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "Registration and delayed/missing-event recovery have focused behavior tests; no paired Web capture of the pending states is registered."
+    },
+    {
+     "state": "empty",
+     "variant": "no connection candidate yet",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "na",
+     "justification": "The absence of a connected Computer is the waiting state, with install/setup commands, rather than a separate empty panel."
+    },
+    {
+     "state": "error",
+     "variant": "registration rejected, retry available",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "A failed registration can be retried; the error disappears and completion uses the real Computer identity. Behavior is tested; paired Web pixels remain unverified."
+    },
+    {
+     "state": "partial",
+     "variant": "resumed or ambiguous owned Computer requires confirmation",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "gapKind": "case-missing",
+     "size": "S",
+     "justification": "The confirmation checkbox prevents renaming an ambiguous or resumed Computer until acknowledged. SDK preview and behavior tests exist; no paired Web capture is registered."
+    }
+   ]
+  },
+  {
    "id": "computers.bulk-model",
    "title": "Computer bulk model chooser and receipt",
    "webEntry": "packages/web/src/components/machine/BulkChangeModelDialog.tsx (v1.21.12-source.1)",
