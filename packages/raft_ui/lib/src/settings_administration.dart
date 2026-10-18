@@ -1319,6 +1319,7 @@ class RaftAdminAgreementCard extends StatelessWidget {
                   ),
                   // `mt-1` plus the inline-block textarea's baseline gap
                   // (the 20px strut's descent) under it.
+                  // ds-allow: Web SettingsPanel.tsx agreement textarea `mt-1` plus inline-block baseline gap (computed, no class)
                   SizedBox(height: t.brutal ? 7 : 10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

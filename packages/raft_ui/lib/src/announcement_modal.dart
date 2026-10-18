@@ -790,6 +790,7 @@ class _MarkdownBlocks {
         // `px-1` (elegant keeps `py-[1.5px]`).
         padding: EdgeInsets.symmetric(
           horizontal: 4,
+          // ds-allow: Web raft-ui/inline-code.tsx py-[1.5px]
           vertical: elegant ? 1.5 : 0,
         ),
         decorationOverride: (d) => d.copyWith(
@@ -861,6 +862,7 @@ class _MarkdownBlocks {
           applyText: false,
           padding: EdgeInsets.symmetric(
             horizontal: 4,
+            // ds-allow: Web raft-ui/inline-code.tsx py-[1.5px]
             vertical: t.brutal ? 0 : 1.5,
           ),
           decorationOverride: (d) => d.copyWith(

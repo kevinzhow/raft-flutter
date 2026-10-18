@@ -1180,6 +1180,7 @@ class _Instructions extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
+                // ds-allow: Web ServerSetupComputerRuntimeStep.tsx step marker `mt-px`
                 padding: const EdgeInsets.only(top: 1),
                 // ignore: raft_lints/avoid_fixed_height_text -- a fixed 16px step marker: the digit is bounded by RaftChrome and always fits
                 child: Container(

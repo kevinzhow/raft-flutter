@@ -25,3 +25,4 @@ plugins:
       avoid_text_scale_factor: error
       avoid_fixed_height_text: error
       avoid_pixel_text_height: error
+      off_grid_spacing: error

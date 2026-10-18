@@ -524,7 +524,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         ColoredBox(color: t.brutal ? Colors.white : t.panel, child: section),
         ColoredBox(
           color: t.colors[t.brutal ? 'line-strong' : 'line-hairline']!,
-          child: SizedBox(height: t.brutal ? 2 : 1),
+          child: SizedBox(height: t.border),
         ),
       ],
     );

@@ -1409,6 +1409,7 @@ class RaftTextButton extends StatelessWidget {
       children: [
         if (glyph != null) ...[
           RaftIcon(glyph!, size: visualHeight <= 28 ? 14 : 16),
+          // ds-allow: Web raft-ui/button.tsx md `gap-[5.5px]`
           const SizedBox(width: 5.5),
         ],
         Flexible(

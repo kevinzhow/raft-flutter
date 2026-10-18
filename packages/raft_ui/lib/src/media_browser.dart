@@ -714,7 +714,7 @@ class _RaftMediaStripState extends State<RaftMediaStrip> {
                         filled: true,
                       ),
                       if (item.duration != null) ...[
-                        const SizedBox(width: 3),
+                        const SizedBox(width: 4),
                         Text(
                           raftMediaDuration(item.duration!),
                           style: const TextStyle(

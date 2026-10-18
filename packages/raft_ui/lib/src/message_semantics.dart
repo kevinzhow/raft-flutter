@@ -296,6 +296,7 @@ class RaftMessageProseSemantics extends StatelessWidget {
                       ? Uri.tryParse(link.href)
                       : null,
                   onTap: onLink == null ? null : () => onLink!(link.href),
+                  // ignore: raft_lints/off_grid_spacing -- invisible semantics node, not layout
                   child: const SizedBox(height: 1),
                 ),
             ],

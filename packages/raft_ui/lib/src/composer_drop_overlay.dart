@@ -42,7 +42,7 @@ class RaftComposerDropOverlay extends StatelessWidget {
     return IgnorePointer(
       child: ExcludeSemantics(
         child: Padding(
-          padding: EdgeInsets.only(top: t.brutal ? 2 : 1),
+          padding: EdgeInsets.only(top: t.border),
           child: CustomPaint(
             key: const ValueKey('composer-drop-overlay'),
             foregroundPainter: _DashedFramePainter(color: frame, width: 2),

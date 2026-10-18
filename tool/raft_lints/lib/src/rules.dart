@@ -9,6 +9,7 @@ import 'banned_apis.dart';
 import 'checks.dart';
 import 'error_leak.dart';
 import 'notice_state.dart';
+import 'off_grid_spacing.dart';
 import 'resource_release.dart';
 import 'text_scale.dart';
 
@@ -454,4 +455,51 @@ class _PixelHeightVisitor extends SimpleAstVisitor<void> {
   @override
   void visitNamedArgument(NamedArgument node) =>
       checkPixelTextHeight(node, (_, n) => rule.reportAtNode(n));
+}
+
+/// Spacing literals off the Web 2px grid.
+class OffGridSpacing extends AnalysisRule {
+  OffGridSpacing()
+    : super(
+        name: offGridSpacingRule,
+        description:
+            'EdgeInsets / spacer SizedBox / gap values are 0 or a multiple of '
+            '2; an exception cites its Web source with '
+            '`// ds-allow: Web <file> <class>`.',
+      );
+
+  static const LintCode code = LintCode(
+    offGridSpacingRule,
+    offGridSpacingMessage,
+    correctionMessage: offGridSpacingCorrection,
+  );
+
+  @override
+  LintCode get diagnosticCode => code;
+
+  @override
+  void registerNodeProcessors(
+    RuleVisitorRegistry registry,
+    RuleContext context,
+  ) {
+    if (!context.isInLibDir) return;
+    final visitor = _OffGridVisitor(this);
+    registry.addInstanceCreationExpression(this, visitor);
+    registry.addNamedArgument(this, visitor);
+  }
+}
+
+class _OffGridVisitor extends SimpleAstVisitor<void> {
+  _OffGridVisitor(this.rule);
+  final AnalysisRule rule;
+
+  void _report(String _, AstNode node) => rule.reportAtNode(node);
+
+  @override
+  void visitInstanceCreationExpression(InstanceCreationExpression node) =>
+      checkOffGridSpacing(node, _report);
+
+  @override
+  void visitNamedArgument(NamedArgument node) =>
+      checkOffGridSpacing(node, _report);
 }

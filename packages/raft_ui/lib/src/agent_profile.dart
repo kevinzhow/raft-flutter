@@ -2823,6 +2823,7 @@ class RaftInlineRoleEditor extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // The editor badge sits in an `inline-block` line box (1px lower).
+        // ds-allow: Web HumanDetailPanel.tsx InlineBadgeEditor inline-block line-box offset (browser baseline, no class)
         const SizedBox(height: 1),
         RaftInlineBadgeEditor(
           label: label,

@@ -233,7 +233,7 @@ class _ChannelButton extends StatelessWidget {
             );
           }
           return Container(
-            padding: inset.add(EdgeInsets.all(t.brutal ? 2 : 1)),
+            padding: inset.add(EdgeInsets.all(t.border)),
             decoration: BoxDecoration(color: fill, borderRadius: radius),
             child: content,
           );

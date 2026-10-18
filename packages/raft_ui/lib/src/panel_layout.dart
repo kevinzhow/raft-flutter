@@ -754,6 +754,7 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
             child: Stack(
               children: [
                 Padding(
+                  // ds-allow: Web AgentDetailPanel.tsx tabs-list `h-12` centring the `h-7` tab: (48 - 1 - 28) / 2
                   padding: const EdgeInsets.symmetric(vertical: 9.5),
                   child: Container(
                     height: grows ? null : 28,

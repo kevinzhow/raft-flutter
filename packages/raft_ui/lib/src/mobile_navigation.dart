@@ -783,7 +783,7 @@ class RaftMobileNotificationButton extends StatelessWidget {
             open ? t.themeShadows.sm.inset : const [],
             recipe.radius,
             null,
-            EdgeInsets.all(t.brutal ? 2 : 1),
+            EdgeInsets.all(t.border),
           ),
           child: RaftIcon(
             RaftGlyph.bell,

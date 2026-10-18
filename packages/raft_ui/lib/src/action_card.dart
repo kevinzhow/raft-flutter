@@ -5,6 +5,7 @@ import 'error_presentation.dart' show RaftErrorBanner;
 import 'dialog_card.dart' show RaftRecipeButton;
 import 'recipes/button_variants.g.dart';
 import 'localization.dart';
+import 'space.dart';
 import 'theme.dart';
 import 'icons.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
@@ -375,7 +376,8 @@ class RaftActionWarningBox extends StatelessWidget {
         border: Border.all(color: t.colors['line-hairline']!),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(7),
+        // `p-1.5` plus the 1px `border` (a DecoratedBox border takes no layout space).
+        padding: const EdgeInsets.all(RaftSpace.x1_5 + RaftSpace.hairline),
         child: RaftActionNote(text),
       ),
     );
@@ -416,7 +418,10 @@ class RaftActionScopeList extends StatelessWidget {
                 border: Border.all(color: t.colors['line-hairline']!),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(7),
+                // `p-1.5` plus the 1px `border` (a DecoratedBox border takes no layout space).
+                padding: const EdgeInsets.all(
+                  RaftSpace.x1_5 + RaftSpace.hairline,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,

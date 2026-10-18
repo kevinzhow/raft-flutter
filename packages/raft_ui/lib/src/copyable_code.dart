@@ -14,6 +14,7 @@ import 'recipes/button_variants.g.dart';
 import 'recipes/copyable_code.g.dart';
 import 'recipes/recipe_runtime.dart';
 import 'recipes/token_binding.dart';
+import 'space.dart';
 import 'theme.dart';
 
 class RaftCopyableCode extends StatefulWidget {
@@ -90,7 +91,10 @@ class _RaftCopyableCodeState extends State<RaftCopyableCode> {
               foregroundPainter: _DashedSides(dash),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: RaftSpace.x1 + RaftSpace.hairline,
+                  vertical: 8,
+                ),
                 color: inner.backgroundColor?.resolve(rt),
                 child: Text(_breakAll(widget.command), style: text),
               ),

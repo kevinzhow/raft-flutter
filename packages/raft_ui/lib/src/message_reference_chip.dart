@@ -319,6 +319,7 @@ class RaftReferenceChip extends StatelessWidget {
     final Widget? iconCell = icon != null && before != null
         ? Container(
             margin: EdgeInsets.zero,
+            // ds-allow: Web raft-ui/message-reference.recipe.ts `[&>svg]:mx-[3px]`
             padding: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
               color: before.backgroundColor?.resolve(resolver),

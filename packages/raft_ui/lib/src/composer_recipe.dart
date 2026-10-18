@@ -226,6 +226,7 @@ class _ComposerAttachRecipe extends RaftControlRecipe {
   @override
   BorderRadius get radius => BorderRadius.circular(tokens.brutal ? 0 : 6);
   @override
+  // ds-allow: Web raft-ui/composer.recipe.ts iconButton `p-[7px]` (elegant), `p-1` (brutal)
   EdgeInsets get padding => EdgeInsets.all(tokens.brutal ? 4 : 7);
   @override
   Gradient? get overlayGradient => null;

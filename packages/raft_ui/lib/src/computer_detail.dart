@@ -1236,6 +1236,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                     Container(
                       height: 24,
                       alignment: Alignment.topLeft,
+                      // ds-allow: Web MachineDetailPanel.tsx inline button in the parent 24px line box (browser baseline offset, no class)
                       padding: const EdgeInsets.only(top: 5),
                       child: RaftUnderlineTextButton(
                         key: const ValueKey('computer-recovery-setup-toggle'),

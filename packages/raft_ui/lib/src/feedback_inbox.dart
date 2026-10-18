@@ -546,9 +546,12 @@ class _RaftFeedbackTicketCardState extends State<RaftFeedbackTicketCard> {
                 ),
                 const SizedBox(height: 4),
                 _line(date, Text(ticket.date, maxLines: 1, style: date)),
+                // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `margin-top: 5px`
                 const SizedBox(height: 5),
                 Wrap(
+                  // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `gap: 5px`
                   spacing: 5,
+                  // ds-allow: Web hands-feedback/styles.css .hands-feedback-ticket-meta `gap: 5px`
                   runSpacing: 5,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [

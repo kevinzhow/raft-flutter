@@ -1646,6 +1646,7 @@ class RaftAppPermissionsSummary extends StatelessWidget {
             // A `text-xs` inline span inside a block: the line box keeps the
             // 16px / 24px parent strut, so the 12px text sits 5px lower.
             Padding(
+              // ds-allow: Web AppNotificationsControls.tsx scope column `text-xs` span in the 24px line box (5 + 16 + 3)
               padding: const EdgeInsets.only(top: 5, bottom: 3),
               child: Text(
                 c.$3,

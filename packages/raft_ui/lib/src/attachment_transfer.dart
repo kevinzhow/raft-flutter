@@ -10,6 +10,7 @@ import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
 import 'text_scaling.dart';
+import 'space.dart';
 import 'theme.dart';
 import 'tokens/tokens.dart';
 
@@ -399,7 +400,10 @@ class RaftTransferChip extends StatelessWidget {
         boxShadow: t.brutal && !danger ? t.themeShadows.xs.outer : null,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: RaftSpace.x2,
+          vertical: RaftSpace.x1,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

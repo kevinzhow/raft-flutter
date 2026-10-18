@@ -308,6 +308,7 @@ class DocumentAttachmentRecipe {
   );
   // Collapsed 1px borders add 0.5px to each side of a cell's row.
   EdgeInsets get cellInset =>
+      // ds-allow: Web MarkdownContent.tsx td `py-1` under border-collapse (4px + 0.25px measured row growth)
       const EdgeInsets.symmetric(horizontal: 8, vertical: 4.25);
 
   /// Inner cell grid: `border border-line-muted theme-brutal:border-black/40`.

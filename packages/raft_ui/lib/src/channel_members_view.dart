@@ -1168,7 +1168,7 @@ class _MemberSectionState extends State<_MemberSection> {
                     expanded: open,
                     child: Padding(
                       // `border-2 border-transparent` (brutal) / `border`
-                      padding: EdgeInsets.symmetric(horizontal: brutal ? 2 : 1),
+                      padding: EdgeInsets.symmetric(horizontal: t.border),
                       child: Row(
                         children: [
                           SizedBox.square(

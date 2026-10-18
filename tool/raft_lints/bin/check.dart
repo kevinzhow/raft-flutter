@@ -34,6 +34,7 @@ import 'package:raft_lints/src/banned_apis.dart';
 import 'package:raft_lints/src/checks.dart';
 import 'package:raft_lints/src/error_leak.dart';
 import 'package:raft_lints/src/notice_state.dart';
+import 'package:raft_lints/src/off_grid_spacing.dart';
 import 'package:raft_lints/src/resource_release.dart';
 import 'package:raft_lints/src/text_scale.dart';
 import 'package:raft_lints/src/ignores.dart';
@@ -63,6 +64,9 @@ Future<void> main(List<String> args) async {
   );
   final findings = <String>[];
   var files = 0;
+  // RAFT_LINTS_SPACING_STATS=1 also prints the spacing-literal inventory.
+  final stats = Platform.environment['RAFT_LINTS_SPACING_STATS'] == '1';
+  var offGrid = 0, citedOffGrid = 0, zero = 0, onGridRaw = 0;
   // Explicit files go straight to the context that owns them; directories are
   // enumerated through each context's analyzed files.
   final targets = <String, AnalysisContext>{};
@@ -92,14 +96,29 @@ Future<void> main(List<String> args) async {
     files++;
     final ignores = Ignores.of(result.unit, result.content);
     result.unit.accept(
-      AllChecksVisitor(path: path, (rule, node) {
-        final loc = result.lineInfo.getLocation(node.offset);
-        if (ignores.isIgnored(rule, loc.lineNumber)) return;
-        findings.add(
-          '${p.relative(path, from: repo)}:${loc.lineNumber}:${loc.columnNumber} '
-          '- ${_message(rule)} ($rule)',
-        );
-      }),
+      AllChecksVisitor(
+        path: path,
+        onSpacingValue: stats
+            ? (value, cited) {
+                if (!onGrid(value)) {
+                  offGrid++;
+                  if (cited) citedOffGrid++;
+                } else if (value == 0) {
+                  zero++;
+                } else {
+                  onGridRaw++;
+                }
+              }
+            : null,
+        (rule, node) {
+          final loc = result.lineInfo.getLocation(node.offset);
+          if (ignores.isIgnored(rule, loc.lineNumber)) return;
+          findings.add(
+            '${p.relative(path, from: repo)}:${loc.lineNumber}:${loc.columnNumber} '
+            '- ${_message(rule)} ($rule)',
+          );
+        },
+      ),
     );
   }
   findings.sort();
@@ -109,6 +128,12 @@ Future<void> main(List<String> args) async {
         ? 'raft_lints: no issues in $files files.'
         : 'raft_lints: ${findings.length} issues in $files files.',
   );
+  if (stats) {
+    stdout.writeln(
+      'spacing literals: off-grid $offGrid (cited $citedOffGrid), '
+      'on-grid raw $onGridRaw, zero $zero',
+    );
+  }
   exitCode = findings.isEmpty ? 0 : 1;
 }
 
@@ -117,7 +142,7 @@ final _mayMatch = RegExp(
   r'\]\s*\)*\s*!|\.single\b|\b(?:first|last|single)Where\b|'
   r'Controller|FocusNode|ValueNotifier|\.listen\b|Observer|addListener|Timer|[eE]rror|[nN]otice|[wW]arning|[fF]ailure|\bcatch\b|catchError|onError|SnackBar|MaterialBanner|ScaffoldMessenger|'
   r'Scheduler|Timer|Future|scheduleMicrotask|repeat|Ticker|addPostFrame|\bTimer\b|Client|Dio\b|HttpClient|WebSocket|\bio\b|findProxy|Image|Slider|underline|'
-  r'textScaleFactor|SizedBox|Container|ConstrainedBox|TextStyle',
+  r'textScaleFactor|SizedBox|Container|ConstrainedBox|TextStyle|EdgeInsets|[sS]pacing|\bgap\b|[rR]owGap|columnGap',
 );
 
 String _message(String rule) => switch (rule) {
@@ -130,5 +155,6 @@ String _message(String rule) => switch (rule) {
   textScaleFactorRule => textScaleFactorMessage,
   fixedHeightTextRule => fixedHeightTextMessage,
   pixelTextHeightRule => pixelTextHeightMessage,
+  offGridSpacingRule => offGridSpacingMessage,
   _ => bannedApis.firstWhere((a) => a.rule == rule).message,
 };

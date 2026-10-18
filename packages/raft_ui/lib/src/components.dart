@@ -3452,6 +3452,7 @@ class RaftActorTypeBadge extends StatelessWidget {
       // The recipe height is a minimum: a taller line box (Android Chinese
       // control profile, larger text) grows the badge instead of clipping.
       constraints: BoxConstraints(minHeight: style.height ?? 0),
+      // ds-allow: Web MessageInput.tsx mention option `px-1 py-px`
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
       decoration: style.decoration,
       alignment: Alignment.center,

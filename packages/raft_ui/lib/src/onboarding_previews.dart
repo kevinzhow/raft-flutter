@@ -144,6 +144,7 @@ class RaftServerCreatePreview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
+            // ds-allow: Web ServerCreatePreview.tsx `pl-px`
             padding: const EdgeInsets.only(left: 1),
             child: Row(
               children: [
@@ -380,6 +381,7 @@ class RaftServerCreatePreview extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Padding(
+                    // ds-allow: Web ServerCreatePreview.tsx MessageRow avatar `mt-px`
                     padding: EdgeInsets.only(top: 1),
                     child: RaftAvatarSlot(
                       name: 'Cindy',
@@ -627,6 +629,7 @@ class RaftIdentityImpactPreview extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
+                      // ds-allow: Web AccountIdentitySetupPage.tsx avatar `mt-px`
                       padding: const EdgeInsets.only(top: 1),
                       // ignore: raft_lints/avoid_fixed_height_text -- a fixed 28px avatar: the initial is bounded by RaftChrome and always fits
                       child: Container(
@@ -670,6 +673,7 @@ class RaftIdentityImpactPreview extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Padding(
+                      // ds-allow: Web AccountIdentitySetupPage.tsx avatar `mt-px`
                       padding: const EdgeInsets.only(top: 1),
                       child: SizedBox.square(
                         dimension: 28,

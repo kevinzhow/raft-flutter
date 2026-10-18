@@ -318,6 +318,7 @@ class _RaftReportIssueDialogState extends State<RaftReportIssueDialog> {
                   height: 24,
                   child: Padding(
                     // Baseline of the 16px strut: 5px below the box top.
+                    // ds-allow: Web ReportIssueDialog.tsx SectionEyebrow inline span in the 24px line box (browser baseline offset, no class)
                     padding: const EdgeInsets.only(top: 5),
                     child: RaftDialogSectionEyebrow(tr('Agent')),
                   ),

@@ -205,6 +205,7 @@ class _RaftEmojiPickerState extends State<RaftEmojiPicker> {
             // Header: `padding: 15px 10px`; the search box fills the row and the
             // 28px skin tone picker sits at its end (expanding leftwards over it).
             Padding(
+              // ds-allow: Web emoji-picker-react.js --epr-header-padding `15px 10px`
               padding: const EdgeInsets.fromLTRB(10, 15, 10, 15),
               child: SizedBox(
                 height: 40,
@@ -306,6 +307,7 @@ class _RaftEmojiPickerState extends State<RaftEmojiPicker> {
               child: IgnorePointer(
                 ignoring: searching,
                 child: Padding(
+                  // ds-allow: Web emoji-picker-react.js category navigation `padding: 15px 10px`
                   padding: const EdgeInsets.fromLTRB(10, 15, 10, 15),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -531,6 +533,7 @@ class _Swatch extends StatelessWidget {
           child: Container(
             width: 16,
             height: 16,
+            // ds-allow: Web emoji-picker-react.js .epr-tone `box-shadow: inset 0 0 0 1px`
             padding: const EdgeInsets.all(1),
             decoration: BoxDecoration(
               color: dark ? const Color(0xff222222) : Colors.white,

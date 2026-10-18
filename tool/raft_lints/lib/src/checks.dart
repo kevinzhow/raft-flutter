@@ -6,6 +6,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'banned_apis.dart';
 import 'error_leak.dart';
 import 'notice_state.dart';
+import 'off_grid_spacing.dart';
 import 'resource_release.dart';
 import 'render_scope.dart';
 import 'text_scale.dart';
@@ -91,10 +92,13 @@ void checkWhere(MethodInvocation node, Report report) {
 /// Runs every check over a resolved unit (used by the command-line runner;
 /// the plugin registers the same functions per node type instead).
 class AllChecksVisitor extends RecursiveAstVisitor<void> {
-  AllChecksVisitor(this.report, {required String path})
+  AllChecksVisitor(this.report, {required String path, this.onSpacingValue})
     : _errorLeakScope = errorLeakScope(path),
       _fixedHeightScope = !isLegacyFixedHeightTextFile(path);
   final Report report;
+
+  /// Sees every spacing literal (inventory counts in bin/check.dart).
+  final void Function(double value, bool cited)? onSpacingValue;
   final bool _errorLeakScope;
   final bool _fixedHeightScope;
 
@@ -130,6 +134,7 @@ class AllChecksVisitor extends RecursiveAstVisitor<void> {
   void visitInstanceCreationExpression(InstanceCreationExpression node) {
     checkBannedApi(node, node.constructorName.element, report);
     if (_fixedHeightScope) checkFixedHeightText(node, report);
+    checkOffGridSpacing(node, report, onValue: onSpacingValue);
     super.visitInstanceCreationExpression(node);
   }
 
@@ -174,6 +179,7 @@ class AllChecksVisitor extends RecursiveAstVisitor<void> {
     checkBannedNamedArgument(node, report);
     checkTextScaleFactorArgument(node, report);
     checkPixelTextHeight(node, report);
+    checkOffGridSpacing(node, report, onValue: onSpacingValue);
     super.visitNamedArgument(node);
   }
 }

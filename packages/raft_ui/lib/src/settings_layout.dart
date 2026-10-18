@@ -1,4 +1,6 @@
 import 'hover_region.dart';
+import 'space.dart';
+export 'space.dart';
 import 'panel_layout.dart' show RaftCssText, RaftPanelAction, raftRecipeTheme;
 import 'recipe_surface.dart' show RaftLayeredDecoration, RaftOuterShadowPainter;
 export 'panel_layout.dart' show raftRecipeTheme;
@@ -615,21 +617,12 @@ class RaftSettingsCard extends StatelessWidget {
           inset,
           radius ?? BorderRadius.zero,
           null,
-          const EdgeInsets.all(1),
+          const EdgeInsets.all(RaftSpace.hairline),
         ),
         child: child,
       ),
     );
   }
-}
-
-/// Tailwind spacing steps (`--spacing: 0.25rem`) used by the settings pages.
-abstract final class RaftSpace {
-  static const double half = 2, x1 = 4, x1_5 = 6, x2 = 8, x3 = 12, x4 = 16;
-  static const double x5 = 20, x6 = 24;
-
-  /// SocialProviderIcon `size-[18px]`.
-  static const double providerIcon = 18;
 }
 
 /// Text colours/styles repeated across SettingsPanel.tsx sections, each the

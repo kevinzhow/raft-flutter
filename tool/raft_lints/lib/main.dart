@@ -23,6 +23,7 @@ class RaftLintsPlugin extends Plugin {
     registry.registerLintRule(AvoidTextScaleFactor());
     registry.registerLintRule(AvoidFixedHeightText());
     registry.registerLintRule(AvoidPixelTextHeight());
+    registry.registerLintRule(OffGridSpacing());
     for (final api in bannedApis) {
       registry.registerLintRule(BannedApiRule(api));
     }
