@@ -96,6 +96,7 @@ class _Client extends RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+    String? timezone,
   }) {
     calls.add('send:$channelId');
     sendingId = randomId;

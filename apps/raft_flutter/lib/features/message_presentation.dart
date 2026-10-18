@@ -23,6 +23,8 @@ import 'attachment_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
 import 'profile_preview.dart';
+import 'composer_directory.dart' show cachedExternalMembers;
+import 'external_mentions.dart';
 import '../data/feature_flag_client_facts.dart';
 
 /// Full MessageDTO uses `user`; legacy/native human rows use `human`.
@@ -122,6 +124,7 @@ class _ReferenceInputs {
       content = p.text,
       mentions = p.message.json['mentions'],
       localAuthority = p.localAuthority,
+      externals = p.externalMembers,
       directory = p.directoryReferences,
       channels = p.controller.channels,
       channelCount = p.controller.channels.length,
@@ -129,6 +132,7 @@ class _ReferenceInputs {
       dmCount = p.controller.dms.length;
   final String messageId, content;
   final Object? mentions;
+  final List<Map<String, dynamic>> externals;
   final bool localAuthority;
   final List<RaftTextReference> directory;
   final List<RaftChannel> channels, dms;
@@ -140,6 +144,7 @@ class _ReferenceInputs {
       other.content == content &&
       identical(other.mentions, mentions) &&
       other.localAuthority == localAuthority &&
+      identical(other.externals, externals) &&
       identical(other.directory, directory) &&
       identical(other.channels, channels) &&
       other.channelCount == channelCount &&
@@ -151,6 +156,7 @@ class _ReferenceInputs {
     content,
     identityHashCode(mentions),
     localAuthority,
+    identityHashCode(externals),
     identityHashCode(directory),
     identityHashCode(channels),
     channelCount,
@@ -356,7 +362,9 @@ class MessagePresentation extends StatelessWidget {
         in (message.json['mentions'] as List? ?? []).whereType<Map>()) {
       if (m['name'] is String &&
           m['id'] is String &&
-          ['agent', 'user'].contains(m['type'])) {
+          (['agent', 'user'].contains(m['type']) ||
+              m['type'] == 'external' &&
+                  externalMember('${m['id']}') != null)) {
         refs['@${m['name']}'] = RaftTextReference(
           text: '@${m['name']}',
           identityBacked: true,
@@ -366,6 +374,16 @@ class MessagePresentation extends StatelessWidget {
     }
     return refs.values.toList();
   }
+
+  List<Map<String, dynamic>> get externalMembers =>
+      (message.json['mentions'] as List? ?? const []).whereType<Map>().any(
+        (m) => m['type'] == 'external',
+      )
+      ? cachedExternalMembers(controller, message.channelId)
+      : const [];
+
+  Map<String, dynamic>? externalMember(String id) =>
+      externalMembers.where((member) => member['id'] == id).firstOrNull;
 
   /// Prepares this message's text using only accepted local projections.
   void prepareCache(RaftTokens tokens) => RaftMessageBody.prepareCache(
@@ -504,6 +522,20 @@ class MessagePresentation extends StatelessWidget {
       }
       if (uri.host == 'message' && parts.length == 2) {
         await w.jumpToMessage(parts[0], parts[1]);
+        return;
+      }
+      if (uri.host == 'mention' &&
+          parts.length == 2 &&
+          parts[0] == 'external') {
+        final member = externalMember(parts[1]);
+        if (member != null) {
+          w.openProfile(
+            RaftProfileKind.external,
+            message.id,
+            channelId: message.channelId,
+            externalAuthor: {...member, 'projectionId': member['id']},
+          );
+        }
         return;
       }
       // Web MentionLink: the mention opens the member / agent profile panel.
@@ -873,6 +905,22 @@ class MessagePresentation extends StatelessWidget {
     final parts = uri.pathSegments;
     switch (uri.host) {
       case 'mention' when parts.length == 2:
+        if (parts[0] == 'external') {
+          final member = externalMember(parts[1]);
+          return member == null
+              ? null
+              : RaftReferenceAppearance(
+                  RaftReferenceKind.mention,
+                  hoverCard: exportMode
+                      ? null
+                      : (ctx) => externalMentionPreview(
+                          ctx,
+                          controller.client.origin,
+                          member,
+                        ),
+                );
+        }
+
         String? handle;
         for (final m
             in (message.json['mentions'] as List? ?? []).whereType<Map>()) {

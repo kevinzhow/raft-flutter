@@ -75,6 +75,7 @@ class _Client extends RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+    String? timezone,
   }) async {
     sent.add({
       'channelId': channelId,

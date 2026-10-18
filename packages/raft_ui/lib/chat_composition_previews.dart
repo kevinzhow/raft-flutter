@@ -51,6 +51,14 @@ Widget composerEditableLineBoxPreview() => SingleChildScrollView(
   reverse: true,
   child: RaftComposer(
     initialDraft: 'Review the Android composer crop before release.',
+    suggestions: const [
+      RaftComposerSuggestion(
+        type: 'external',
+        id: 'synthetic-slack',
+        name: 'ada-slack',
+        title: 'Ada Slack',
+      ),
+    ],
     onImagePick: () {},
     onAttach: () {},
     onSend: (_) async => false,

@@ -149,6 +149,7 @@ class WorkspaceSends {
     List<Map<String, dynamic>> mentions = const [],
     String? randomId,
     bool asTask = false,
+    Future<String?> Function()? readTimezone,
     required String Function(int) attachmentsOnlyBody,
   }) async {
     final scope = visit.scope, sessionCurrent = captureScope(visit.scope);
@@ -322,6 +323,8 @@ class WorkspaceSends {
         await persistAttempt(scope, attempt, channelId: visit.parentChannelId);
       }
       if (!current()) return failed();
+      final timezone = await readTimezone?.call();
+      if (!current()) return failed();
       final result = await client.sendWithReceipt(
         id,
         body,
@@ -329,6 +332,7 @@ class WorkspaceSends {
         mentions: mentions.isEmpty ? null : mentions,
         randomId: attempt.randomId,
         asTask: asTask,
+        timezone: timezone,
       );
       send.confirmed = true;
       return await accepted((

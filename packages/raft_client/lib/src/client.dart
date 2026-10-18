@@ -235,6 +235,7 @@ class RaftClient {
       http.interceptors.add(RequestMeter.instance.interceptor());
     }
   }
+
   /// Waits between background attempts to confirm a session the server could
   /// not be asked about (network down, 5xx, a proxy's 4xx). The last entry
   /// repeats. An empty list disables automatic retries.
@@ -434,9 +435,7 @@ class RaftClient {
       user = RaftRecord(Map<String, dynamic>.from(await get('/auth/me')));
       // A guest handoff may have replaced or removed the stored session.
       final s = _session;
-      if (s == null ||
-          _closed ||
-          authentication != _authenticationGeneration) {
+      if (s == null || _closed || authentication != _authenticationGeneration) {
         return false;
       }
       _session = Session(
@@ -463,7 +462,8 @@ class RaftClient {
         // Ended (a definitive rejection already signed out) or superseded.
         return false;
       }
-      if (e is RaftApiException && credentialVerdict(e) == SessionVerdict.endSession) {
+      if (e is RaftApiException &&
+          credentialVerdict(e) == SessionVerdict.endSession) {
         await _endSession(
           SessionEndReason.accountRejected,
           e,
@@ -643,7 +643,9 @@ class RaftClient {
     // spread each wait by +-20 %. A server that said how long to wait
     // (Retry-After on a 429) is not asked earlier than that.
     delay = Duration(
-      milliseconds: (delay.inMilliseconds * (0.8 + 0.4 * governor.random.nextDouble())).round(),
+      milliseconds:
+          (delay.inMilliseconds * (0.8 + 0.4 * governor.random.nextDouble()))
+              .round(),
     );
     final hint = _recoveryHint;
     _recoveryHint = null;
@@ -811,7 +813,11 @@ class RaftClient {
         // The credentials are already dead; a storage failure must not keep
         // the signed-out state from reaching the app.
         await _persist(null).catchError((Object e) {
-          _audit('store_error', 'clear_failed', detail: e.runtimeType.toString());
+          _audit(
+            'store_error',
+            'clear_failed',
+            detail: e.runtimeType.toString(),
+          );
         });
       }
     } else {
@@ -948,10 +954,8 @@ class RaftClient {
   /// prefetch, warming, periodic polls and post-reconnect refreshes. They
   /// yield to the user's own requests when a rate limit is near and are never
   /// retried after a 429. Subclasses and fakes of the client need no change.
-  static T runBackground<T>(T Function() body) => runZoned(
-    body,
-    zoneValues: {_priorityKey: RequestPriority.background},
-  );
+  static T runBackground<T>(T Function() body) =>
+      runZoned(body, zoneValues: {_priorityKey: RequestPriority.background});
 
   /// Admission, single-flight and the 429 wait around [_send].
   ///
@@ -1037,13 +1041,13 @@ class RaftClient {
     _singleFlight[key] = (flight: flight, at: governor.now());
     // Whoever started it observes the error; joiners get their own copy of it
     // through [pending.then] above, so the entry must never go unhandled.
-    flight.then<void>((_) {}, onError: (Object _, StackTrace _) {}).whenComplete(
-      () {
-        if (identical(_singleFlight[key]?.flight, flight)) {
-          _singleFlight.remove(key);
-        }
-      },
-    );
+    flight
+        .then<void>((_) {}, onError: (Object _, StackTrace _) {})
+        .whenComplete(() {
+          if (identical(_singleFlight[key]?.flight, flight)) {
+            _singleFlight.remove(key);
+          }
+        });
     return flight;
   }
 
@@ -1136,7 +1140,9 @@ class RaftClient {
           rethrow;
         }
         rateLimitRetriesSent++;
-        await _sleep(backoffDelay(attempt, hint: wait, random: governor.random));
+        await _sleep(
+          backoffDelay(attempt, hint: wait, random: governor.random),
+        );
         if (_closed ||
             authentication != _authenticationGeneration ||
             workspace != (workspaceScoped ? _generation : 0)) {
@@ -1201,13 +1207,14 @@ class RaftClient {
     try {
       // Evaluating this call hands a channel read to the adapter before the
       // await yields. Other requests keep Dio's own chain.
-      final Response<dynamic> response = _channelReadStaysOnThisTurn(
-        http,
-        method,
-        path,
-        data: data,
-        onSendProgress: onSendProgress,
-      )
+      final Response<dynamic> response =
+          _channelReadStaysOnThisTurn(
+            http,
+            method,
+            path,
+            data: data,
+            onSendProgress: onSendProgress,
+          )
           ? await _dispatchChannelRead(
               http,
               method: method,
@@ -1681,6 +1688,7 @@ class RaftClient {
       return null;
     }
   }
+
   Future<List<Map<String, dynamic>>> upload(
     String channelId,
     Uint8List bytes,
@@ -1747,6 +1755,7 @@ class RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+    String? timezone,
   }) async => (await sendWithReceipt(
     channelId,
     content,
@@ -1754,6 +1763,7 @@ class RaftClient {
     mentions: mentions,
     randomId: randomId,
     asTask: asTask,
+    timezone: timezone,
   )).message;
 
   /// [send] plus the wrapped receipt fields of `POST /v2/messages`
@@ -1766,12 +1776,14 @@ class RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+    String? timezone,
   }) async {
     final value = await post(
       '/v2/messages',
       data: {
         'channelId': channelId,
         'content': content,
+        if (timezone != null) 'timezone': timezone,
         if (asTask) 'asTask': true,
         'randomId': randomId ?? const Uuid().v4(),
         if (attachments != null) 'attachmentIds': attachments,

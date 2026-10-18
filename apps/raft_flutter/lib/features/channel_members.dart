@@ -358,7 +358,13 @@ class _ChannelMembersState extends State<ChannelMembers> {
         rosterKnown = true;
         loadError.clear();
       });
-      rememberChannelRoster(w, readUnder, humans: humans, agents: agents);
+      rememberChannelRoster(
+        w,
+        readUnder,
+        humans: humans,
+        agents: agents,
+        externalMembers: externalMembers,
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -578,7 +584,10 @@ class _ChannelMembersState extends State<ChannelMembers> {
         avatarUrl: m['avatarUrl'] as String?,
       );
       final display = kind == 'agent'
-          ? channelMemberAgentDisplay(m, directory: w.services.entityDirectory.agent(id))
+          ? channelMemberAgentDisplay(
+              m,
+              directory: w.services.entityDirectory.agent(id),
+            )
           : null;
       final presence = display == null
           ? null
@@ -599,9 +608,12 @@ class _ChannelMembersState extends State<ChannelMembers> {
         secondary: display != null
             ? agentDisplayText(
                 display,
-                lastSeenAt: w.services.entityDirectory.agent(id)?['lastSeenAt'] is String
+                lastSeenAt:
+                    w.services.entityDirectory.agent(id)?['lastSeenAt']
+                        is String
                     ? DateTime.tryParse(
-                        w.services.entityDirectory.agent(id)!['lastSeenAt'] as String,
+                        w.services.entityDirectory.agent(id)!['lastSeenAt']
+                            as String,
                       )
                     : m['lastSeenAt'] is String
                     ? DateTime.tryParse(m['lastSeenAt'] as String)

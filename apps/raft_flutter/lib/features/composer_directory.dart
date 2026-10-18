@@ -11,14 +11,15 @@ import 'agent_metadata_projection.dart';
 import 'message_agent_presentation.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
+import 'external_mentions.dart';
 import '../data/feature_flag_client_facts.dart';
 
 /// One channel roster as returned by `/channels/:id/members`, together with
 /// the channel authority it was read under.
 class _ComposerRoster {
-  const _ComposerRoster(this.channel, this.humans, this.agents);
+  const _ComposerRoster(this.channel, this.humans, this.agents, this.externals);
   final Map<String, dynamic> channel;
-  final List<Map<String, dynamic>> humans, agents;
+  final List<Map<String, dynamic>> humans, agents, externals;
 }
 
 Map<String, dynamic> _channelAuthority(RaftChannel channel) => {
@@ -114,6 +115,7 @@ class _ComposerShared extends ChangeNotifier {
           readUnder,
           rows(roster is Map ? roster['humans'] : null),
           rows(roster is Map ? roster['agents'] : null),
+          rows(roster is Map ? roster['externalMembers'] : null),
         );
         _changed();
       } catch (error) {
@@ -144,7 +146,10 @@ class _ComposerShared extends ChangeNotifier {
       try {
         final flags = await w.client.post(
           '/feature-flags/evaluate',
-          data: featureFlagEvaluateBody(keys: ['composer_resource_references_v0'], serverId: server.id),
+          data: featureFlagEvaluateBody(
+            keys: ['composer_resource_references_v0'],
+            serverId: server.id,
+          ),
         );
         if (!current()) return;
         final enabled =
@@ -165,7 +170,9 @@ class _ComposerShared extends ChangeNotifier {
             WorkspaceEntityKind.computers,
           );
           if (!computers.loaded) {
-            await w.services.entityDirectory.refresh(WorkspaceEntityKind.computers);
+            await w.services.entityDirectory.refresh(
+              WorkspaceEntityKind.computers,
+            );
             if (!current()) return;
           }
         }
@@ -194,8 +201,28 @@ final _sharedComposerData = Expando<_ComposerShared>('composer directory');
 /// first frame (the settings drawer's members strip). Null until read.
 ({List<Map<String, dynamic>> humans, List<Map<String, dynamic>> agents})?
 cachedChannelRoster(WorkspaceController w, String channelId) {
-  final roster = _sharedComposerData[w.services.entityDirectory]?.rosters[channelId];
+  final roster =
+      _sharedComposerData[w.services.entityDirectory]?.rosters[channelId];
   return roster == null ? null : (humans: roster.humans, agents: roster.agents);
+}
+
+/// Accepted channel-scoped provider members. Never uses the server directory.
+List<Map<String, dynamic>> cachedExternalMembers(
+  WorkspaceController w,
+  String id,
+) {
+  if (w.server == null || w.server!.string('role') == 'guest') return const [];
+  final shared = _sharedComposerData[w.services.entityDirectory];
+  if (shared == null || shared.authority != directoryAuthority(w)) {
+    return const [];
+  }
+  final source = w.threadChannelId == id ? w.threadSourceChannel?.id : id;
+  final channel = w.channel?.id == source
+      ? w.channel
+      : w.channels.where((c) => c.id == source).firstOrNull ??
+            w.dms.where((c) => c.id == source).firstOrNull;
+  if (channel == null || shared.validate(channel)) return const [];
+  return shared.rosters[channel.id]?.externals ?? const [];
 }
 
 /// Keeps a roster another surface just read (the channel members page) as the
@@ -207,13 +234,16 @@ void rememberChannelRoster(
   RaftChannel channel, {
   required List<Map<String, dynamic>> humans,
   required List<Map<String, dynamic>> agents,
+  List<Map<String, dynamic>> externalMembers = const [],
 }) {
-  final shared = _sharedComposerData[w.services.entityDirectory] ??= _ComposerShared();
+  final shared = _sharedComposerData[w.services.entityDirectory] ??=
+      _ComposerShared();
   shared.sync(directoryAuthority(w));
   shared.rosters[channel.id] = _ComposerRoster(
     _channelAuthority(channel),
     humans,
     agents,
+    externalMembers,
   );
   shared._changed();
 }
@@ -228,7 +258,8 @@ void rememberChannelRoster(
 /// the real server flag before either computers or installed apps are shown.
 class ComposerDirectory extends ChangeNotifier {
   ComposerDirectory(this.w, {this.agentPresentation, this.thread = false})
-    : _shared = _sharedComposerData[w.services.entityDirectory] ??= _ComposerShared() {
+    : _shared = _sharedComposerData[w.services.entityDirectory] ??=
+          _ComposerShared() {
     w.addListener(changed);
     w.services.entityDirectory.addListener(changed);
     _shared.addListener(changed);
@@ -474,6 +505,10 @@ class ComposerDirectory extends ChangeNotifier {
     if (roster != null) {
       add(roster.humans, 'user');
       add(roster.agents, 'agent');
+      for (final member in cachedExternalMembers(w, channel.id)) {
+        final candidate = externalMentionSuggestion(w.client.origin, member);
+        if (candidate != null) entries['external:${candidate.id}'] = candidate;
+      }
     }
     if (_shared.resources == true) {
       for (final row in computers) {

@@ -50,6 +50,7 @@ class DraftClient extends RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+    String? timezone,
   }) async {
     messages++;
     expect(attachments, ['attachment']);

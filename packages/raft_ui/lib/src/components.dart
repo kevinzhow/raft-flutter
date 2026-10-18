@@ -2104,13 +2104,15 @@ class _RaftComposerState extends State<RaftComposer> {
 
   int suggestionGroup(RaftComposerSuggestion s) => s.type == 'channel'
       ? 0
+      : s.type == 'external'
+      ? 1
       : s.type == 'computer'
-      ? 2
-      : s.type == 'app'
       ? 3
+      : s.type == 'app'
+      ? 4
       : s.inChannel
       ? 0
-      : 1;
+      : 2;
 
   void changed() {
     if (dismissedValue != null && dismissedValue != controller.text)
@@ -2633,15 +2635,19 @@ class _RaftComposerState extends State<RaftComposer> {
                           final group = suggestionGroup(s);
                           final startGroup =
                               index == 0 ||
-                              suggestionGroup(options[index - 1]) != group;
-                          final label = group == 1
+                              (suggestionGroup(options[index - 1]) == 1
+                                      ? 0
+                                      : suggestionGroup(options[index - 1])) !=
+                                  (group == 1 ? 0 : group);
+                          final label = group == 2
                               ? 'Not in this channel'
-                              : group == 2
-                              ? 'Computers'
                               : group == 3
+                              ? 'Computers'
+                              : group == 4
                               ? 'Apps'
                               : options.any(
-                                  (item) => suggestionGroup(item) == 1,
+                                  (item) =>
+                                      [1, 2].contains(suggestionGroup(item)),
                                 )
                               ? 'In this channel'
                               : null;
@@ -2666,7 +2672,7 @@ class _RaftComposerState extends State<RaftComposer> {
                               // `mt-1 pt-1`, brutal `border-t-2 border-black`;
                               // Not-in-channel / Computers / Apps carry it even
                               // as the first group (In-channel never does).
-                              if (startGroup && (index > 0 || group > 0))
+                              if (startGroup && group > 1)
                                 Container(
                                   margin: const EdgeInsets.only(top: 4),
                                   // Elegant has the spacing only (no rule).
@@ -3310,7 +3316,11 @@ class _MentionSuggestionBody extends StatelessWidget {
     final s = suggestion;
     final description = s.detail?.trim().replaceAll(RegExp(r'\s+'), ' ');
     final badge = RaftActorTypeBadge(
-      label: raftText(context, s.type == 'agent' ? 'Agent' : 'Human'),
+      label: raftText(context, switch (s.type) {
+        'agent' => 'Agent',
+        'external' => 'Slack',
+        _ => 'Human',
+      }),
     );
     final handle = Text(
       '@${s.name}',

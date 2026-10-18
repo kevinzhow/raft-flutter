@@ -32,7 +32,7 @@ class RaftComposerSuggestion {
 
   /// An archived channel option (Web `ch.archivedAt`): the `archived` Badge.
   final bool archived;
-  bool get isMention => type == 'user' || type == 'agent';
+  bool get isMention => type == 'user' || type == 'agent' || type == 'external';
   String get insertion =>
       referenceText ?? '${type == 'channel' ? '#' : '@'}$name';
   Map<String, dynamic> get mention => {'type': type, 'id': id, 'name': name};

@@ -72,6 +72,7 @@ class _Client extends RaftClient {
     List<Map<String, dynamic>>? mentions,
     String? randomId,
     bool asTask = false,
+    String? timezone,
   }) {
     final request = _Request(channelId, content, randomId!);
     requests.add(request);

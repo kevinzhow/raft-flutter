@@ -312,7 +312,9 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   }
 
   Map<String, dynamic>? get profile => widget.agent
-      ? w.services.entityDirectory.agent(widget.id) ?? fetched ?? widget.fallback
+      ? w.services.entityDirectory.agent(widget.id) ??
+            fetched ??
+            widget.fallback
       : w.services.entityDirectory.member(widget.id) ?? widget.fallback;
 
   /// canViewAgentPrivateSurfaces: agent editors, or the human creator.
@@ -346,9 +348,10 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
       }
     }
     if (!mounted || !private) return;
-    final cache =
-        w.agentTabCache.putIfAbsent('hover-activity/$id', _HoverActivity.new)
-            as _HoverActivity;
+    final cache = w.agentTabCache.putIfAbsent(
+      'hover-activity/$id',
+      _HoverActivity.new,
+    ) as _HoverActivity;
     setState(() => activity = cache);
     if (cache.requested) return;
     cache.requested = true;
@@ -459,7 +462,9 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
       translate: (source, values) => raftFormat(context, source, values),
     );
     final machineId = row['machineId'];
-    final computers = w.services.entityDirectory.state(WorkspaceEntityKind.computers);
+    final computers = w.services.entityDirectory.state(
+      WorkspaceEntityKind.computers,
+    );
     final machine = machineId is String
         ? w.services.entityDirectory.computer(machineId)
         : null;
@@ -536,30 +541,44 @@ class ExternalIdentityHoverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RaftHoverCard(
-    card: (context) {
-      final kind = raftText(context, switch (actorKind) {
-        'human' => 'Human',
-        'guest' => 'Guest',
-        'remote' => 'Remote participant',
-        'bot' => 'Bot',
-        _ => 'External participant',
-      });
-      final providerLabel = provider == 'slack' ? 'Slack' : null;
-      return RaftProfilePreviewCard(
-        key: const ValueKey('external-identity-preview'),
-        avatar: avatar,
-        name: displayName,
-        subtitle: providerLabel == null ? kind : '$providerLabel · $kind',
-        notes: [
-          if (workspaceName != null && workspaceName!.isNotEmpty)
-            raftFormat(context, 'From {workspace}', {
-              'workspace': workspaceName,
-            }),
-          raftText(context, 'External identity'),
-        ],
-      );
-    },
+    card: (context) => externalIdentityPreviewBody(
+      context,
+      displayName: displayName,
+      avatar: avatar,
+      provider: provider,
+      workspaceName: workspaceName,
+      actorKind: actorKind,
+    ),
     child: child,
+  );
+}
+
+/// Shared Web ExternalIdentityPreviewBody for authors and inline mentions.
+Widget externalIdentityPreviewBody(
+  BuildContext context, {
+  required String displayName,
+  required Widget avatar,
+  String? provider,
+  String? workspaceName,
+  String? actorKind,
+}) {
+  final kind = raftText(context, switch (actorKind) {
+    'human' => 'Human',
+    'guest' => 'Guest',
+    'remote' => 'Remote participant',
+    'bot' => 'Bot',
+    _ => 'External participant',
+  });
+  return RaftProfilePreviewCard(
+    key: const ValueKey('external-identity-preview'),
+    avatar: avatar,
+    name: displayName,
+    subtitle: provider == 'slack' ? 'Slack · $kind' : kind,
+    notes: [
+      if (workspaceName != null && workspaceName.isNotEmpty)
+        raftFormat(context, 'From {workspace}', {'workspace': workspaceName}),
+      raftText(context, 'External identity'),
+    ],
   );
 }
 
