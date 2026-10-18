@@ -258,7 +258,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   void initState() {
     super.initState();
     w.services.entityDirectory.addListener(_changed);
-    w.addListener(_changed);
+    w.addListener(_authorityChanged);
     w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
     bulkScope = pageIdentity(w);
     bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
@@ -271,9 +271,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     super.didUpdateWidget(old);
     if (!identical(old.controller, w)) {
       old.controller.services.entityDirectory.removeListener(_changed);
-      old.controller.removeListener(_changed);
+      old.controller.removeListener(_authorityChanged);
       w.services.entityDirectory.addListener(_changed);
-      w.addListener(_changed);
+      w.addListener(_authorityChanged);
       w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
     }
     if (pageIdentity(w) != bulkScope || !identical(old.controller, w)) {
@@ -291,7 +291,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   @override
   void dispose() {
     w.services.entityDirectory.removeListener(_changed);
-    w.removeListener(_changed);
+    w.removeListener(_authorityChanged);
     receiptTimer.cancel();
     super.dispose();
   }
@@ -305,6 +305,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     }
     _scheduleReceipt();
     setState(() {});
+  }
+
+  void _authorityChanged() {
+    if (mounted && bulkScope != pageIdentity(w)) _changed();
   }
 
   Future<void> _evaluateBulkModel() async {

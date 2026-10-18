@@ -20,6 +20,18 @@ class _Client extends RaftClient {
   @override
   Stream<RaftEvent> get events => stream.stream;
   @override
+  Future<dynamic> post(String path, {dynamic data}) async {
+    if (path == '/feature-flags/evaluate') {
+      return {
+        'evaluations': [
+          {'key': 'bulk_change_model_web_v0', 'enabled': false},
+        ],
+      };
+    }
+    throw StateError('Unexpected POST $path');
+  }
+
+  @override
   Future<void> dispose() async {
     disposed++;
     await super.dispose();

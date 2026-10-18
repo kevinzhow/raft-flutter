@@ -512,6 +512,27 @@ void main() {
     );
   });
 
+  testWidgets(
+    'unrelated workspace notifications do not rebuild computer detail',
+    (tester) async {
+      await panel(tester);
+      final before = tester.widget<RaftComputerDetailView>(
+        find.byType(RaftComputerDetailView),
+      );
+      workspace.notifyListeners();
+      await tester.pump();
+      expect(
+        identical(
+          tester.widget<RaftComputerDetailView>(
+            find.byType(RaftComputerDetailView),
+          ),
+          before,
+        ),
+        isTrue,
+      );
+    },
+  );
+
   testWidgets('a member cannot open bulk changes or read private usage', (
     tester,
   ) async {
