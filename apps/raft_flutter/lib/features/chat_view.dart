@@ -603,7 +603,11 @@ class _RaftChatViewState extends State<RaftChatView>
     }
     widget.selectionHandle?.update(selection.active, selection.exit);
     // A hidden retained page repaints nothing; it rebuilds when shown again.
-    if (mounted && presentationActive) setState(() {});
+    if (mounted &&
+        presentationActive &&
+        !RouteTransitionGate.defer(preparationRoute, selectionChanged)) {
+      setState(() {});
+    }
   }
 
   Widget selectionToolbar() {
@@ -909,7 +913,11 @@ class _RaftChatViewState extends State<RaftChatView>
       sources[message] ?? RaftMessage(message.metadata!);
 
   void referencesChanged() {
-    if (mounted && presentationActive) setState(() {});
+    if (mounted &&
+        presentationActive &&
+        !RouteTransitionGate.defer(preparationRoute, referencesChanged)) {
+      setState(() {});
+    }
   }
 
   @override
@@ -1106,7 +1114,11 @@ class _RaftChatViewState extends State<RaftChatView>
   int? revealingWindow;
 
   void sync() {
-    if (!mounted || MobileRouteGate.paused(context, w)) return;
+    if (!mounted ||
+        MobileRouteGate.paused(context, w) ||
+        RouteTransitionGate.defer(preparationRoute, sync)) {
+      return;
+    }
     if (reactionPicker != null && pickerAuthority != workspaceAuthority(w)) {
       closeReactionPicker();
     }
@@ -2308,7 +2320,7 @@ class _RaftChatViewState extends State<RaftChatView>
 
     final Widget sender = message.string('senderType') != 'agent'
         ? avatar()
-        : ListenableBuilder(
+        : QuietListenableBuilder(
             listenable: presentation.presenceOf(message.senderId),
             builder: (context, _) => avatar(),
           );

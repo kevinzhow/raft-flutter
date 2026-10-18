@@ -6,6 +6,7 @@ import '../data/phone_stack.dart';
 import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../data/workspace_navigation.dart';
+import 'route_transition_gate.dart';
 
 /// Focus/search edits stay on a page; task and channel-management identities
 /// own platform pages while retaining the workspace's existing data owners.
@@ -120,6 +121,8 @@ class MobileWorkspacePages extends StatefulWidget {
 
 class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
   final navigator = GlobalKey<NavigatorState>();
+  final transitions = RouteTransitionGate();
+  late final transitionObserver = RouteTransitionObserver(transitions);
   final pageStorage = PageStorageBucket();
   int nextInstance = 0;
   late List<_MobilePageEntry> entries = reconcile(const []);
@@ -192,6 +195,12 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
   );
 
   @override
+  void dispose() {
+    transitions.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (!widget.enabled) return page(context, widget.navigation.location);
     final parentCurrent = ModalRoute.isCurrentOf(context) ?? true;
@@ -201,6 +210,7 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
         excluding: mountedCovered,
         child: Navigator(
           key: navigator,
+          observers: [transitionObserver],
           // Pages pushed while a route covers the whole workspace must not take
           // the focus from that route.
           requestFocus: parentCurrent,

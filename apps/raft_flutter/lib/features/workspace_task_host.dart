@@ -14,6 +14,7 @@ import '../data/message_task_cache.dart';
 import '../data/source_task_bucket.dart';
 import '../platform/system_bars.dart';
 import 'chat_view.dart' show ChatTaskOpener;
+import 'route_transition_gate.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
 import 'mobile_workspace_pages.dart';
@@ -186,9 +187,8 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     // full read then revalidates it in place.
     final known = seeded || legacy || knownChannel == null
         ? null
-        : MessageTaskCache.of(
-            w.client,
-          ).tasks(w, anchor.channelId)?[anchor.itemId];
+        : MessageTaskCache.of(w.client)
+              .tasks(w, anchor.channelId)?[anchor.itemId];
     final accepted = seeded
         ? seed!.row
         : known == null
@@ -264,8 +264,8 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
   }
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: owner ?? w,
+  Widget build(BuildContext context) => QuietListenableBuilder(
+    listenable: owner ?? w,
     builder: (context, _) => layout(context, owner),
   );
 

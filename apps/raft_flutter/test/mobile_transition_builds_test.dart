@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -9,6 +10,7 @@ import 'package:raft_flutter/features/desktop_directory_view.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'support/app_services_fixture.dart';
 
 class _Client extends RaftClient {
@@ -250,6 +252,112 @@ void main() {
           find.byKey(const ValueKey('desktop-directory-agent-agent-3')),
           findsOneWidget,
         );
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  for (final commit in [false, true]) {
+    testWidgets(
+      'live events during a predictive back gesture wait for it to end (${commit ? 'commit' : 'cancel'})',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final c = _Client()..selectServer('s');
+        final w = WorkspaceController(c, mobileNavigation: true);
+        await tester.runAsync(w.bootstrap);
+        addTearDown(() async {
+          w.dispose();
+          await c.stream.close();
+        });
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.brutal),
+            home: withAppServices(
+              WorkspaceView(
+                controller: w,
+                appearance: const RaftAppearance(),
+                onAppearance: (_) async {},
+                onLogout: () async {},
+              ),
+            ),
+          ),
+        );
+        Future<void> settle() async {
+          for (var i = 0; i < 20; i++) {
+            await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+            await tester.pump(const Duration(milliseconds: 100));
+          }
+        }
+
+        Future<void> gesture(String method, [double? progress]) async {
+          await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+            'flutter/backgesture',
+            const StandardMethodCodec().encodeMethodCall(
+              MethodCall(
+                method,
+                progress == null
+                    ? null
+                    : <String, dynamic>{
+                        'touchOffset': <double>[100, 300],
+                        'progress': progress,
+                        'swipeEdge': 0,
+                      },
+              ),
+            ),
+            (_) {},
+          );
+          await tester.pump();
+        }
+
+        await settle();
+        await w.selectChannel(w.channels.single);
+        await settle();
+        expect(find.text('Public fixture'), findsOneWidget);
+
+        await gesture('startBackGesture', 0);
+        await gesture('updateBackGestureProgress', 0.3);
+        debugPrintScheduleBuildForStacks = true;
+        final during = await _rebuilds(tester, () async {
+          c.stream.add(
+            RaftEvent('message:new', {
+              ...c.message('m2'),
+              'content': 'Arrived mid gesture',
+            }),
+          );
+          c.stream.add(
+            RaftEvent('machine:status', {
+              'machineId': 'x',
+              'status': 'online',
+              'statusVersion': 3,
+            }),
+          );
+          c.stream.add(
+            RaftEvent('agent:activity', {
+              'agentId': 'agent-0',
+              'activity': 'working',
+            }),
+          );
+        });
+        // The data is accepted at once; the painted page is not touched.
+        expect(
+          w.ledger.contains('c', 'm2'),
+          isTrue,
+          reason: 'state is current while the page is held',
+        );
+        debugPrintScheduleBuildForStacks = false;
+        expect(find.text('Arrived mid gesture'), findsNothing);
+        expect(during['RaftChatView'] ?? 0, 0);
+        expect(during['RaftMessageRow'] ?? 0, 0);
+
+        await gesture(commit ? 'commitBackGesture' : 'cancelBackGesture');
+        await settle();
+        if (!commit) {
+          expect(find.text('Arrived mid gesture'), findsOneWidget);
+        }
+        expect(w.ledger.contains('c', 'm2'), isTrue);
         expect(tester.takeException(), isNull);
       },
     );

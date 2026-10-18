@@ -13,6 +13,7 @@ import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
 import 'external_mentions.dart';
 import '../data/feature_flag_client_facts.dart';
+import 'route_transition_gate.dart';
 
 /// One channel roster as returned by `/channels/:id/members`, together with
 /// the channel authority it was read under.
@@ -613,7 +614,7 @@ class _ComposerCandidateAvatar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
+  Widget build(BuildContext context) => QuietListenableBuilder(
     // Live presence is signalled per agent; the presentation itself notifies
     // only whole-directory changes.
     listenable: switch (directory.agentPresentation) {

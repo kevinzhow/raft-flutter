@@ -217,6 +217,8 @@ void main() {
 
     expect(await t.binding.handlePopRoute(), isTrue);
     await f.flush(t);
+    // The revealed page applies what arrived once the route transition ends.
+    await t.pumpAndSettle();
     expect(find.text('Fresh while covered'), findsOneWidget);
     expect(TickerMode.valuesOf(t.element(channelChat())).enabled, isTrue);
     expect(t.takeException(), isNull);

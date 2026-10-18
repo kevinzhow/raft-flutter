@@ -3,6 +3,9 @@ import 'package:flutter/widgets.dart';
 import '../data/raft_location.dart';
 import '../data/workspace_controller.dart';
 
+// The phone page stack's transition gate is read next to the route gate.
+export 'route_transition_gate.dart';
+
 /// Phone channel timeline and the thread opened from that page. Present only
 /// while that page is the direct-read visit. Desktop, grid, task discussion
 /// and agent chat do not wrap this.

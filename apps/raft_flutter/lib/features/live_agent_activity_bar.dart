@@ -4,6 +4,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/personal_presentation.dart';
 import 'chat_agent_presentation.dart';
 import 'sender_avatar_projection.dart';
+import 'route_transition_gate.dart';
 
 /// Source ConnectedLiveAgentActivityBar: shows the newest live work item of
 /// the (permission-scoped) [ChatAgentPresentation] when the personal
@@ -20,7 +21,7 @@ class NativeLiveAgentActivityBar extends StatelessWidget {
   final PersonalPresentationStore presentation;
   final String origin;
   @override
-  Widget build(BuildContext context) => ListenableBuilder(
+  Widget build(BuildContext context) => QuietListenableBuilder(
     listenable: Listenable.merge([activities, presentation]),
     builder: (context, _) {
       final latest = activities.latest;

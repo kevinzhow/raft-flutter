@@ -1341,7 +1341,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     );
   }
 
-  Widget buildWorkspace(BuildContext context) => ListenableBuilder(
+  Widget buildWorkspace(BuildContext context) => QuietListenableBuilder(
     listenable: Listenable.merge([
       w,
       presentation,

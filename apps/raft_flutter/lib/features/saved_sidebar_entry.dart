@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'route_transition_gate.dart';
 
 /// Server-scoped Saved state shared by every mounted Saved entry, message
 /// menu and Saved page of one workspace: the numeric global total and the
@@ -233,10 +234,20 @@ class _SavedSidebarEntryState extends State<SavedSidebarEntry> {
     if (mounted) setState(() {});
   }
 
+  Route<dynamic>? route;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    route = ModalRoute.of(context);
+  }
+
   void changed() {
     if (!mounted) return;
     saved.sync();
-    setState(() {});
+    if (!RouteTransitionGate.defer(route, changed)) {
+      setState(() {});
+    }
   }
 
   @override
