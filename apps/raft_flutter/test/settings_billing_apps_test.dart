@@ -91,7 +91,7 @@ void _surface(WidgetTester t, [double width = 1280]) {
 
 final _now = DateTime.utc(2026, 6, 19, 12, 30);
 
-Map<String, dynamic> _free({bool manage = true}) => {
+Map<String, dynamic> _free({bool manage = true, bool stripe = true}) => {
   'plan': 'free',
   'displayName': 'Free',
   'capacity': {'maxHumans': 1, 'maxAgents': 2, 'maxUniversalSeats': -1},
@@ -104,11 +104,14 @@ Map<String, dynamic> _free({bool manage = true}) => {
   },
   'price': null,
   'subscription': null,
-  'stripeConfigured': true,
+  'stripeConfigured': stripe,
   'permissions': {'canReadBillingSummary': true, 'canManageBilling': manage},
 };
 
-Map<String, dynamic> _pro({bool cancelAtPeriodEnd = false}) => {
+Map<String, dynamic> _pro({
+  bool cancelAtPeriodEnd = false,
+  String status = 'active',
+}) => {
   'plan': 'pro',
   'displayName': 'Pro',
   'capacity': {'maxHumans': -1, 'maxAgents': -1, 'maxUniversalSeats': 3},
@@ -120,7 +123,7 @@ Map<String, dynamic> _pro({bool cancelAtPeriodEnd = false}) => {
     'annualUsd': 316.8,
   },
   'subscription': {
-    'status': 'active',
+    'status': status,
     'billingInterval': 'annual',
     'cancelAtPeriodEnd': cancelAtPeriodEnd,
   },
@@ -135,6 +138,7 @@ void main() {
       Map<String, dynamic> billing, {
       String role = 'owner',
       double width = 1280,
+      Map<String, Object?> server = const {},
     }) async {
       final (w, a) = (await t.runAsync(() => _fixture(role)))!;
       addTearDown(w.dispose);
@@ -144,6 +148,17 @@ void main() {
         'machines': 1,
         'channels': 4,
       };
+      if (server.isNotEmpty) {
+        w.server = RaftRecord({
+          'id': 's1',
+          'name': 'Test workspace',
+          'slug': 'test',
+          'plan': 'free',
+          'role': role,
+          ...server,
+        });
+        w.servers = [w.server!];
+      }
       final opened = <Uri>[];
       _surface(t, width);
       await t.pumpWidget(
@@ -343,6 +358,91 @@ void main() {
     testWidgets('without canManageBilling the controls are inert', (t) async {
       final (_, a, _) = await mount(t, _free(manage: false), role: 'admin');
       expect(find.text('Only server owners can change billing.'), findsWidgets);
+      await t.tap(find.byKey(const ValueKey('billing-upgrade')));
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('billing-confirm-dialog')),
+        findsNothing,
+      );
+      expect(
+        a.calls.where(
+          (c) => c.method == 'POST' && c.path.startsWith('/billing'),
+        ),
+        isEmpty,
+      );
+    });
+
+    testWidgets('a downgrade inside the grace period matches the Web card', (
+      t,
+    ) async {
+      // Web DowngradeWarningCard: planDowngradedAt plus the 7-day grace.
+      // The frozen clock is 2026-06-19 12:30Z, so this stamp leaves 7 days.
+      await mount(
+        t,
+        _free(),
+        server: {'planDowngradedAt': '2026-06-19T12:30:00.000Z'},
+      );
+      expect(find.text('Plan Downgraded'), findsOneWidget);
+      expect(
+        find.text(
+          '7 days remaining in grace period. All resources are within free limits.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('over limit'), findsNothing);
+    });
+
+    testWidgets('an ended grace period matches the Web card', (t) async {
+      await mount(
+        t,
+        _free(),
+        server: {'planDowngradedAt': '2026-06-11T12:30:00.000Z'},
+      );
+      expect(find.text('Grace Period Expired'), findsOneWidget);
+      expect(
+        find.text(
+          'The grace period has ended. Excess agents have been stopped. Upgrade to reactivate them.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Plan Downgraded'), findsNothing);
+    });
+
+    test('past_due Pro keeps the active billing controls', () {
+      final pastDue = billingControls('pro', 'past_due');
+      expect(pastDue, billingControls('pro', 'active'));
+      expect(pastDue.canOpenPortal, isTrue);
+      expect(pastDue.canUpdatePacks, isTrue);
+      expect(pastDue.canCheckout, isFalse);
+    });
+
+    testWidgets('past_due Pro opens the portal and seat update, not checkout', (
+      t,
+    ) async {
+      final (_, a, opened) = await mount(t, _pro(status: 'past_due'));
+      expect(find.byKey(const ValueKey('billing-upgrade')), findsNothing);
+      expect(find.text('MANAGE SEATS'), findsOneWidget);
+      a.routes['POST /billing/portal'] = (_) => {
+        'url': 'https://billing.stripe.invalid/p',
+      };
+      await t.tap(find.byKey(const ValueKey('billing-portal')));
+      await t.pumpAndSettle();
+      expect(opened.single.host, 'billing.stripe.invalid');
+      await t.enterText(find.byKey(const ValueKey('billing-seat-input')), '4');
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('billing-update-seats')));
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('billing-confirm-dialog')),
+        findsOneWidget,
+      );
+      expect(a.posts('/billing/checkout'), isEmpty);
+    });
+
+    testWidgets('without Stripe the billing controls stay disabled', (t) async {
+      final (_, a, _) = await mount(t, _free(stripe: false));
+      expect(find.text('Paid plans are not available yet.'), findsWidgets);
+      expect(find.text('Stripe billing is not configured'), findsNothing);
       await t.tap(find.byKey(const ValueKey('billing-upgrade')));
       await t.pumpAndSettle();
       expect(
