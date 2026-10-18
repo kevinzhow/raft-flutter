@@ -6126,7 +6126,7 @@
    "status": "covered",
    "webEntry": "Sidebar Computers '+' > AddMachineDialog (type step: 'Your computer', 'Cloud computer' coming soon; waiting step with commands; connected step with name field)",
    "gate": "registerMachines capability; plan computer limit (upgrade link)",
-   "flutterEntry": "add_computer_dialog.dart AddComputerDialog (RaftAddComputerDialog)",
+   "flutterEntry": "add_computer_dialog.dart + computer_connection_match.dart (owned Computer connection, recovery and confirmation)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/add_computer_dialog.dart",
@@ -6134,7 +6134,11 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/add_computer_dialog.dart",
-     "needle": "useComputerConnectionWatch"
+     "needle": "_recoverConnection"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/computer_connection_match.dart",
+     "needle": "resolveComputerConnectionMatch"
     }
    ],
    "justification": "",
