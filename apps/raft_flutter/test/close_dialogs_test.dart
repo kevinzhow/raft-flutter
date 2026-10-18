@@ -32,6 +32,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'announcement_host_test.dart' as announcements;
 import 'source_feedback_store_test.dart' as fx;
 import 'support/close_history_settings.dart';
+import 'support/close_bulk_agent_model.dart';
 import 'support/close_registry_dialogs.dart';
 import 'support/close_runner.dart';
 import 'support/close_support.dart';
@@ -420,6 +421,8 @@ void main() {
         scrim: _corner,
       );
     },
+    'computer-bulk-model': (t, size) async =>
+        (await openBulkModelClose(t, size)).probe,
     'computer-bulk-reset': (t, size) async {
       // The bulk reset options dialog is private to the computer detail; it
       // is reached through the multi-select toolbar.

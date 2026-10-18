@@ -95,6 +95,17 @@ const dialogSurfaces = <CloseSurface>[
     fix: 'Esc / system back run the same cancel path as the X',
   ),
   CloseSurface(
+    'computer-bulk-model',
+    kind: SurfaceKind.dialog,
+    web: 'BulkChangeModelDialog.tsx:359 DialogCard: X + Esc + Cancel, no backdrop close; applying ignores close; review Back returns to choose',
+    phone: {_x, _esc, _sys, _drag},
+    fold: {_x, _esc, _sys},
+    desktop: {_x, _esc, _sys},
+    files: ['lib/features/bulk_agent_model_dialog.dart'],
+    status: 'approved',
+    fix: 'Approved form sheet on phone adds drag; no scrim close at any width. Applying blocks dismissal; Cancel closes, review Back only changes step.',
+  ),
+  CloseSurface(
     'computer-bulk-reset',
     kind: SurfaceKind.dialog,
     web: 'MachineDetailPanel.tsx:622 DialogCard (no closeOnBackdrop): X + Esc',
