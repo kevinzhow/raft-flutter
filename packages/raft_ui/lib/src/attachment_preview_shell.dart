@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -190,7 +192,14 @@ class _RaftAttachmentPreviewShellState
       // The sheet's own background reaches the screen bottom; collapsed it
       // grows by the system inset, open the composer pads itself.
       final inset = raftBottomInset(context);
-      final height = open ? size.height * .45 : 40.0 + inset;
+      // Collapsed, the sheet is exactly its header row (`py-2` around the
+      // 28px expand button or the scaled 12/16 title) plus the system inset:
+      // a fixed 40 left the header's bottom padding, and at larger text its
+      // title, inside the gesture / navigation bar. [rule] is the sheet's own
+      // top border.
+      final titleLine = 16 * MediaQuery.textScalerOf(context).scale(12) / 12;
+      final collapsedHeader = math.max(40.0, 16 + math.max(28.0, titleLine));
+      final height = open ? size.height * .45 : collapsedHeader + rule + inset;
       sheet = Positioned(
         left: 0,
         right: 0,
