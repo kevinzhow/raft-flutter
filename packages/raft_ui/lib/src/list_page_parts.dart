@@ -6,6 +6,9 @@ import 'hover_region.dart';
 import 'package:flutter/material.dart';
 
 import 'components.dart' show RaftAvatar, RaftAvatarKind;
+import 'control_typography.dart';
+import 'design_primitives.dart';
+import 'page_recipes.dart' show RaftSearchHomeRecipe;
 import 'dialog_card.dart' show RaftRecipeButton;
 import 'icons.dart';
 import 'indicators.dart';
@@ -241,4 +244,114 @@ class RaftSelectionPopoverAvatarSlot extends StatelessWidget {
             ),
           ),
   );
+}
+
+/// Search home history tag (Web `MessageSearchPage` `search-history-tag`): an
+/// outlined chip of a 12px clock, the query and a remove button that is
+/// revealed on hover / focus (pointer) or while editing (touch).
+///
+/// The label takes the Android Chinese control profile
+/// ([RaftControlTypography]) like every single-line control label, so the CJK
+/// ink sits on the chip centre. The chip is [RaftSearchHomeRecipe.tagHeight]
+/// at least; a taller line box grows it.
+class RaftSearchHistoryTag extends StatefulWidget {
+  const RaftSearchHistoryTag({
+    super.key,
+    required this.query,
+    required this.touch,
+    required this.editing,
+    required this.onPressed,
+    required this.onRemove,
+  });
+  final String query;
+
+  /// Touch layout: the remove button exists only while [editing].
+  final bool touch, editing;
+  final VoidCallback onPressed, onRemove;
+
+  @override
+  State<RaftSearchHistoryTag> createState() => _RaftSearchHistoryTagState();
+}
+
+class _RaftSearchHistoryTagState extends State<RaftSearchHistoryTag> {
+  bool hovering = false, focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final recipe = RaftSearchHomeRecipe(t);
+    final reveal = widget.editing || hovering || focused;
+    final showRemove = !widget.touch || widget.editing;
+    return RaftHoverRegion(
+      onEnter: (_) => setState(() => hovering = true),
+      onExit: (_) => setState(() => hovering = false),
+      child: Focus(
+        onFocusChange: (value) => setState(() => focused = value),
+        child: Container(
+          decoration: BoxDecoration(
+            color: reveal ? t.colors['fill-muted'] : recipe.tagBackground,
+            border: Border.all(color: reveal ? t.strong : recipe.tagBorder),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: RaftControl(
+                  semanticLabel: 'Search history: ${widget.query}',
+                  shadow: false,
+                  variant: RaftControlVariant.ghost,
+                  visualHeight: RaftSearchHomeRecipe.tagHeight,
+                  flexibleHeight: true,
+                  padding: RaftSearchHomeRecipe.tagInset,
+                  minimumTargetSize: RaftSearchHomeRecipe.tagHeight,
+                  onPressed: widget.onPressed,
+                  child: ExcludeSemantics(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        RaftIcon(RaftGlyph.clock3, size: 12, color: t.muted),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            widget.query,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: RaftControlTypography.of(
+                              context,
+                              recipe.historyLabel,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (showRemove)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: IgnorePointer(
+                    ignoring: !reveal,
+                    child: Opacity(
+                      opacity: reveal ? 1 : 0,
+                      child: RaftIconButton(
+                        glyph: RaftGlyph.x,
+                        glyphSize: 12,
+                        visualSize: 20,
+                        tooltip: raftFormat(
+                          context,
+                          'Remove "{query}" from search history',
+                          {'query': widget.query},
+                        ),
+                        onPressed: widget.onRemove,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

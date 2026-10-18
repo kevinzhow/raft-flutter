@@ -303,15 +303,21 @@ class _Step extends StatelessWidget {
                     // The digit fills a fixed-size indicator: it grows with
                     // the text size only up to the chrome bound.
                     textScaler: RaftChrome.boundedScalerOf(context),
-                    style: RaftTypography.body(
-                      t,
-                      size: 12,
-                      line: 12 * 20 / 14,
-                      weight: FontWeight.w500,
-                      color: status == MigrationStepStatus.process
-                          ? t.canvas
-                          : t.muted,
-                    ),
+                    style:
+                        RaftTypography.body(
+                          t,
+                          size: 12,
+                          // The line box is the font size so it always fits the 20px circle
+                          // (a taller one is clamped by the circle and slides down).
+                          line: 12,
+                          weight: FontWeight.w500,
+                          color: status == MigrationStepStatus.process
+                              ? t.canvas
+                              : t.muted,
+                        ).copyWith(
+                          // CSS half-leading, as the Web 20px line box does.
+                          leadingDistribution: TextLeadingDistribution.even,
+                        ),
                   )
                 : IconTheme(
                     data: IconThemeData(color: t.canvas),

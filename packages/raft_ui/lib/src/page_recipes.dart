@@ -292,7 +292,13 @@ class RaftSearchHomeRecipe {
   static const sectionGap = 24.0;
   static const tagGap = 8.0;
   static const headingInset = EdgeInsets.fromLTRB(4, 0, 4, 8);
-  static const tagInset = EdgeInsets.fromLTRB(10, 6, 4, 6);
+
+  /// Web `py-1.5 pl-2.5 pr-1` around a 16px line. The 28px [tagHeight] is a
+  /// minimum (CSS min-height) that centres the line; the vertical inset is the
+  /// breathing room that makes the tag grow once the line is taller than 16px
+  /// (larger text, the Android Chinese profile), not part of the 28px: with the
+  /// control's own border it would squeeze the line into a box shorter than it.
+  static const tagInset = EdgeInsets.fromLTRB(10, 2, 4, 2);
   static const tagHeight = 28.0;
   static const desktopColumnsBreakpoint = 640.0;
   static const touchHistoryBreakpoint = 768.0;

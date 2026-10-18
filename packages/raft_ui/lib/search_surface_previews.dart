@@ -60,6 +60,55 @@ class _SearchSurfacesState extends State<_SearchSurfaces> {
   );
 }
 
+@RaftPreviews('Search history tags')
+Widget searchHistoryTagsPreview() => const _SearchHistoryTags();
+
+/// Resting and hover-free history tags (pointer layout), then the touch layout
+/// while editing (remove button armed), with Latin and CJK queries.
+class _SearchHistoryTags extends StatelessWidget {
+  const _SearchHistoryTags();
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.all(16),
+    child: Wrap(
+      spacing: RaftSearchHomeRecipe.tagGap,
+      runSpacing: RaftSearchHomeRecipe.tagGap,
+      children: [
+        RaftSearchHistoryTag(
+          query: 'gpqy High',
+          touch: false,
+          editing: false,
+          onPressed: _noop,
+          onRemove: _noop,
+        ),
+        RaftSearchHistoryTag(
+          query: '对齐',
+          touch: false,
+          editing: false,
+          onPressed: _noop,
+          onRemove: _noop,
+        ),
+        RaftSearchHistoryTag(
+          query: 'gpqy High',
+          touch: true,
+          editing: true,
+          onPressed: _noop,
+          onRemove: _noop,
+        ),
+        RaftSearchHistoryTag(
+          query: '默认 设置',
+          touch: true,
+          editing: true,
+          onPressed: _noop,
+          onRemove: _noop,
+        ),
+      ],
+    ),
+  );
+}
+
+void _noop() {}
+
 @RaftPreviews('Search input focus and clear')
 Widget searchInputPreview() => const _SearchInputPreview();
 

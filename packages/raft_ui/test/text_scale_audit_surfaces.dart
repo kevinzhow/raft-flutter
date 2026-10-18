@@ -829,6 +829,13 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'searchHistoryTagsPreview',
+    'Search history tags',
+    searchHistoryTagsPreview,
+    Size(640, 440),
+    representative: true,
+  ),
+  AuditSurface(
     'searchInputPreview',
     'Search input focus and clear',
     searchInputPreview,

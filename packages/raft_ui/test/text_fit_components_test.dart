@@ -165,6 +165,16 @@ final _cases = <_Case>[
       variant: RaftBadgeRecipeVariant.information,
     ),
   ),
+  _Case(
+    'RaftSearchHistoryTag',
+    (l) => RaftSearchHistoryTag(
+      query: l,
+      touch: true,
+      editing: true,
+      onPressed: _noop,
+      onRemove: _noop,
+    ),
+  ),
   _Case('RaftRecipeBadge', (l) => RaftRecipeBadge(l)),
   _Case('RaftInlineBadge', (l) => RaftInlineBadge(badge: RaftRecipeBadge(l))),
   _Case('RaftActorTypeBadge', (l) => RaftActorTypeBadge(label: l)),

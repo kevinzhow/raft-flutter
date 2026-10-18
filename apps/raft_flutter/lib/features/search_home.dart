@@ -102,7 +102,9 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
         );
     final homeRecipe = RaftSearchHomeRecipe(t);
     final searchViewport = rui.RaftSearchRecipe.resolve(
-      theme: t.brutal ? rui.RaftRecipeTheme.brutal : rui.RaftRecipeTheme.elegant,
+      theme: t.brutal
+          ? rui.RaftRecipeTheme.brutal
+          : rui.RaftRecipeTheme.elegant,
       states: rui.RaftRecipeStates({
         if (t.dark) rui.RaftRecipeStates.dark,
       }, MediaQuery.sizeOf(context).width),
@@ -154,13 +156,12 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
             runSpacing: RaftSearchHomeRecipe.tagGap,
             children: [
               for (final query in widget.history)
-                _SearchHistoryTag(
+                RaftSearchHistoryTag(
                   key: ValueKey('search-history-$query'),
                   query: query,
                   touch: touch,
                   editing: editing,
-                  recipe: homeRecipe,
-                  onQuery: () => widget.onQuery(query),
+                  onPressed: () => widget.onQuery(query),
                   onRemove: () => widget.onRemove(query),
                 ),
             ],
@@ -182,11 +183,11 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
                 vertical: 16.0 + (t.brutal ? 2 : 1),
               ),
               child: Text(
-              raftText(
-                context,
-                'Channels and contacts you open from Search will appear here.',
-              ),
-              style: recipe.metadata,
+                raftText(
+                  context,
+                  'Channels and contacts you open from Search will appear here.',
+                ),
+                style: recipe.metadata,
               ),
             ),
           )
@@ -261,105 +262,6 @@ class _ResourceSearchHomeState extends State<ResourceSearchHome> {
             },
           ),
       ],
-    );
-  }
-}
-
-class _SearchHistoryTag extends StatefulWidget {
-  const _SearchHistoryTag({
-    super.key,
-    required this.query,
-    required this.touch,
-    required this.editing,
-    required this.recipe,
-    required this.onQuery,
-    required this.onRemove,
-  });
-  final String query;
-  final bool touch, editing;
-  final RaftSearchHomeRecipe recipe;
-  final VoidCallback onQuery, onRemove;
-  @override
-  State<_SearchHistoryTag> createState() => _SearchHistoryTagState();
-}
-
-class _SearchHistoryTagState extends State<_SearchHistoryTag> {
-  bool hovering = false, focused = false;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final reveal = widget.editing || hovering || focused;
-    final showRemove = !widget.touch || widget.editing;
-    return RaftHoverRegion(
-      onEnter: (_) => setState(() => hovering = true),
-      onExit: (_) => setState(() => hovering = false),
-      child: Focus(
-        onFocusChange: (value) => setState(() => focused = value),
-        child: Container(
-          decoration: BoxDecoration(
-            color: reveal
-                ? t.colors['fill-muted']
-                : widget.recipe.tagBackground,
-            border: Border.all(
-              color: reveal ? t.strong : widget.recipe.tagBorder,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: RaftControl(
-                  semanticLabel: 'Search history: ${widget.query}',
-                  shadow: false,
-                  variant: RaftControlVariant.ghost,
-                  visualHeight: RaftSearchHomeRecipe.tagHeight,
-                  padding: RaftSearchHomeRecipe.tagInset,
-                  minimumTargetSize: RaftSearchHomeRecipe.tagHeight,
-                  onPressed: widget.onQuery,
-                  child: ExcludeSemantics(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        RaftIcon(RaftGlyph.clock3, size: 12, color: t.muted),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            widget.query,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: widget.recipe.historyLabel,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              if (showRemove)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: IgnorePointer(
-                    ignoring: !reveal,
-                    child: Opacity(
-                      opacity: reveal ? 1 : 0,
-                      child: RaftIconButton(
-                        glyph: RaftGlyph.x,
-                        glyphSize: 12,
-                        visualSize: 20,
-                        tooltip: raftFormat(
-                          context,
-                          'Remove "{query}" from search history',
-                          {'query': widget.query},
-                        ),
-                        onPressed: widget.onRemove,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
