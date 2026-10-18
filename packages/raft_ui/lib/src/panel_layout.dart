@@ -1058,10 +1058,16 @@ class RaftCssInlineBox extends StatelessWidget {
     required this.childText,
     required this.height,
     required this.child,
+    this.minHeight = false,
   });
   final TextStyle lineText, childText;
   final double height;
   final Widget child;
+
+  /// [height] is the child's minimum (CSS `min-height` / `height: auto`): a
+  /// taller child (a larger text scale, a taller control line box) grows the
+  /// box instead of being squeezed into it.
+  final bool minHeight;
   @override
   Widget build(BuildContext context) {
     final lineHeight = (lineText.height ?? 1.2) * (lineText.fontSize ?? 14);
@@ -1069,19 +1075,28 @@ class RaftCssInlineBox extends StatelessWidget {
     final childBaseline = (height - childLine) / 2 + raftCssBaseline(childText);
     final top = raftCssBaseline(lineText) - childBaseline;
     final shift = top < 0 ? -top : 0.0;
-    return SizedBox(
-      height: [
-        lineHeight + shift,
-        top + shift + height,
-      ].reduce((a, b) => a > b ? a : b),
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: Padding(
-          padding: EdgeInsets.only(top: top + shift),
-          child: SizedBox(height: height, child: child),
-        ),
+    final boxHeight = [
+      lineHeight + shift,
+      top + shift + height,
+    ].reduce((a, b) => a > b ? a : b);
+    final inner = Align(
+      alignment: Alignment.topLeft,
+      child: Padding(
+        padding: EdgeInsets.only(top: top + shift),
+        child: minHeight
+            ? ConstrainedBox(
+                constraints: BoxConstraints(minHeight: height),
+                child: child,
+              )
+            : SizedBox(height: height, child: child),
       ),
     );
+    return minHeight
+        ? ConstrainedBox(
+            constraints: BoxConstraints(minHeight: boxHeight),
+            child: inner,
+          )
+        : SizedBox(height: boxHeight, child: inner);
   }
 }
 

@@ -14,7 +14,9 @@ import 'error_presentation.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
 import 'raft_selection_area.dart';
+
 import 'package:flutter/services.dart';
 
 import 'system_inset.dart';
@@ -34,7 +36,7 @@ import 'recipes/token_binding.dart';
 import 'list_items.dart';
 import 'product_empty_state.dart';
 import 'recipe_surface.dart'
-    show RaftCssBoxDecoration, RaftRecipeBox, raftCssText;
+    show RaftCssBoxDecoration, RaftCssOverflowY, RaftRecipeBox, raftCssText;
 import 'theme.dart';
 import 'tooltip.dart';
 import 'status_bar.dart';
@@ -168,17 +170,27 @@ class RaftRecipeBadge extends StatelessWidget {
             ),
       ),
     );
+    // The recipe height is a minimum: a label whose line box is taller than the
+    // box (Android Chinese control profile 1.3, or any text scale above 1) grows
+    // the capsule instead of being squeezed into it, which clipped descenders
+    // and, with the line box overflowing downwards, dropped the text low.
+    // RaftCssOverflowY keeps a label that still meets a tighter parent centred.
     return Container(
-      height: s.height,
+      constraints: BoxConstraints(minHeight: s.height ?? 0),
       padding: s.padding,
       decoration: background == null
           ? decoration
           : decoration.copyWith(color: background),
       child: Center(
         widthFactor: 1,
-        child: trailing == null
-            ? text
-            : Row(mainAxisSize: MainAxisSize.min, children: [text, trailing!]),
+        child: RaftCssOverflowY(
+          child: trailing == null
+              ? text
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [text, trailing!],
+                ),
+        ),
       ),
     );
   }
@@ -219,6 +231,8 @@ class RaftInlineBadge extends StatelessWidget {
       height:
           s.height ??
           (s.lineHeight ?? 1) * (s.fontSize ?? 10) + s.padding.vertical + 2,
+      // The badge height is a minimum: a taller capsule grows its line.
+      minHeight: true,
       child: Align(alignment: Alignment.centerLeft, child: badge),
     );
   }
@@ -935,12 +949,11 @@ class RaftKeyValueRow extends StatelessWidget {
 
 /// Text with inline references linkified (`RefText.tsx`): [style] is the base
 /// of the surrounding text, the result its spans.
-typedef RaftActivityLinkify =
-    List<InlineSpan> Function(
-      BuildContext context,
-      String text,
-      TextStyle style,
-    );
+typedef RaftActivityLinkify = List<InlineSpan> Function(
+  BuildContext context,
+  String text,
+  TextStyle style,
+);
 
 class RaftActivityLogEntry {
   const RaftActivityLogEntry({
