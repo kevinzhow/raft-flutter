@@ -112,7 +112,11 @@ class AgentMessageCollapseSession {
 
   /// Clears remembered choices when [scope] changes. The same scope keeps
   /// them. Null is the gap between conversations.
-  void bind(Object? scope, {_Cursor? readAtOpen, bool newVisit = false}) {
+  void bind(
+    Object? scope, {
+    ({BigInt? maxReadSeq})? readAtOpen,
+    bool newVisit = false,
+  }) {
     if (scope == _scope && !newVisit) return;
     _scope = scope;
     _readAtOpen = readAtOpen;

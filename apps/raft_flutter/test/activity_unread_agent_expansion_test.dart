@@ -45,7 +45,7 @@ void main() {
                   : kind == 'dm'
                   ? 'd1'
                   : 'c1';
-              if (kind == 'dm')
+              if (kind == 'dm') {
                 w.dms = [
                   RaftChannel({
                     'id': 'd1',
@@ -54,6 +54,7 @@ void main() {
                     'joined': true,
                   }),
                 ];
+              }
               w.loading = false;
               w.connected = true;
               w.ledger.switchServer('s1');
@@ -213,8 +214,9 @@ void main() {
                 );
                 expect(tester.takeException(), isNull);
               } finally {
-                if (!history.isCompleted)
+                if (!history.isCompleted) {
                   history.complete({'messages': <dynamic>[]});
+                }
                 await tester.pumpWidget(const SizedBox.shrink());
                 await drain(tester);
               }
