@@ -42,31 +42,71 @@ class ThreadAgentFollowersView extends StatefulWidget {
 
 class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
   WorkspaceController get w => widget.controller;
-  ThreadAgentFollowers get store => w.services.threadFollowers;
+  late ThreadAgentFollowers store;
   final toast = RaftToastController();
   StreamSubscription<RaftEvent>? events;
   String? removingId;
+  late Object _authority;
+  Object get authority => (
+    w.client,
+    w.client.generation,
+    w.client.user?.id,
+    w.client.serverId,
+    w.server?.id,
+    w.server?.string('role'),
+  );
 
   @override
   void initState() {
     super.initState();
+    bind();
+  }
+
+  void bind() {
+    store = w.services.threadFollowers;
+    _authority = authority;
     store.addListener(changed);
+    w.addListener(authorityChanged);
     events = w.client.events.listen(onEvent);
     store.request(widget.threadChannelId);
+  }
+
+  void unbind(WorkspaceController owner) {
+    store.removeListener(changed);
+    owner.removeListener(authorityChanged);
+    unawaited(events?.cancel());
+  }
+
+  void authorityChanged() {
+    if (authority == _authority) return;
+    _authority = authority;
+    toast.clear();
+    removingId = null;
+    store.request(widget.threadChannelId);
+    changed();
   }
 
   @override
   void didUpdateWidget(covariant ThreadAgentFollowersView old) {
     super.didUpdateWidget(old);
-    if (old.threadChannelId != widget.threadChannelId) {
+    if (old.controller != w) {
+      unbind(old.controller);
+      bind();
+    }
+    if (old.controller != w || old.threadChannelId != widget.threadChannelId) {
+      removingId = null;
+      final scope = authority, thread = widget.threadChannelId;
+      // The toast overlay is outside this subtree; retire it after this build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && current(scope, thread)) toast.clear();
+      });
       store.request(widget.threadChannelId);
     }
   }
 
   @override
   void dispose() {
-    store.removeListener(changed);
-    events?.cancel();
+    unbind(w);
     toast.dispose();
     super.dispose();
   }
@@ -87,36 +127,42 @@ class _ThreadAgentFollowersViewState extends State<ThreadAgentFollowersView> {
 
   Future<void> remove(ThreadAgentFollower agent) async {
     final id = widget.threadChannelId;
+    final scope = authority;
     setState(() => removingId = agent.id);
     try {
       final token = await store.remove(id, agent.id);
-      if (token == null || !mounted) return;
+      if (token == null || !mounted || !current(scope, id)) return;
       toast.show(
         raftFormat(context, "Removed {agent} from this thread's followers.", {
           'agent': agent.label,
         }),
         actionLabel: raftText(context, 'Undo'),
-        onAction: () => unawaited(restore(id, agent, token)),
+        onAction: () => unawaited(restore(id, agent, token, scope)),
       );
     } catch (_) {
-      if (mounted) {
+      if (mounted && current(scope, id)) {
         toast.show(
           raftText(context, "Couldn't remove this follower."),
           tone: RaftToastRecipeTone.error,
         );
       }
     } finally {
-      if (mounted) setState(() => removingId = null);
+      if (mounted && current(scope, id)) setState(() => removingId = null);
     }
   }
+
+  bool current(Object scope, String thread) =>
+      scope == authority && thread == widget.threadChannelId;
 
   Future<void> restore(
     String thread,
     ThreadAgentFollower agent,
     String token,
+    Object scope,
   ) async {
+    if (!mounted || !current(scope, thread)) return;
     final restored = await store.restore(thread, agent.id, token);
-    if (restored && mounted) {
+    if (restored && mounted && current(scope, thread)) {
       toast.show(
         raftFormat(context, 'Restored {agent} as a follower.', {
           'agent': agent.label,

@@ -66,24 +66,53 @@ class ThreadAgentFollowerRoster {
 }
 
 /// Web `threadAgentFollowerStore`: per thread-channel rosters of the agents
-/// following a thread, loaded in one bulk request and reset on a server switch.
+/// following a thread, shared across presentations of the current identity.
 class ThreadAgentFollowers extends ChangeNotifier {
-  ThreadAgentFollowers(this.w);
+  ThreadAgentFollowers(this.w) {
+    _events = w.client.events.listen(_event);
+  }
   final ThreadAgentFollowersAuthority w;
   final Map<String, ThreadAgentFollowerRoster> _rosters = {};
-  String? _serverId;
+  late final StreamSubscription<RaftEvent> _events;
+  Object? _identity;
+  int _epoch = 0, _serial = 0;
+  final Map<String, int> _reads = {};
   bool _disposed = false;
 
   // `requestThreadAgentFollowers`: coalesce the requests of one frame.
   final Map<String, bool> _queued = {};
   bool _flushing = false;
 
-  void _scope() {
-    final id = w.server?.id;
-    if (id != _serverId) {
-      _serverId = id;
+  int _scope() {
+    final identity = (
+      w.client.origin,
+      w.client.user?.id,
+      w.client.generation,
+      w.client.serverId,
+      w.server?.id,
+      w.server?.string('role'),
+    );
+    if (identity != _identity) {
+      _identity = identity;
+      _epoch++;
       _rosters.clear();
       _queued.clear();
+      _reads.clear();
+    }
+    return _epoch;
+  }
+
+  bool _current(int epoch) => !_disposed && _scope() == epoch;
+
+  void _event(RaftEvent event) {
+    if (_disposed || event.name != 'thread:followers-updated') return;
+    _scope();
+    final payload = event.payload;
+    final id = payload is Map ? payload['threadChannelId'] : null;
+    // SocketBridge refreshes rosters even with no mounted popover. Unopened
+    // threads need no cache entry: their first view loads the current roster.
+    if (id is String && (_rosters.containsKey(id) || _queued.containsKey(id))) {
+      request(id, force: true);
     }
   }
 
@@ -106,6 +135,7 @@ class ThreadAgentFollowers extends ChangeNotifier {
 
   /// Web `requestThreadAgentFollowers`.
   void request(String threadChannelId, {bool force = false}) {
+    if (_disposed) return;
     _scope();
     _queued[threadChannelId] = (_queued[threadChannelId] ?? false) || force;
     if (_flushing) return;
@@ -113,6 +143,8 @@ class ThreadAgentFollowers extends ChangeNotifier {
     // ignore: raft_lints/avoid_unreviewed_idle_work -- Coalesces requests into one flush; guarded by _flushing.
     scheduleMicrotask(() {
       _flushing = false;
+      if (_disposed) return;
+      _scope();
       final entries = Map.of(_queued);
       _queued.clear();
       final cached = [
@@ -129,7 +161,8 @@ class ThreadAgentFollowers extends ChangeNotifier {
   }
 
   Future<void> load(List<String> threadChannelIds, {bool force = false}) async {
-    _scope();
+    if (_disposed) return;
+    final epoch = _scope();
     final ids = {
       for (final id in threadChannelIds)
         if (force ||
@@ -138,23 +171,35 @@ class ThreadAgentFollowers extends ChangeNotifier {
           id,
     }.toList();
     if (ids.isEmpty) return;
-    final scope = _serverId;
+    // The mounted server route accepts at most 100 thread IDs per request.
+    // A burst may cover many rosters retained from earlier presentations.
+    if (ids.length > 100) {
+      for (var i = 0; i < ids.length && _current(epoch); i += 100) {
+        await load(ids.skip(i).take(100).toList(), force: force);
+      }
+      return;
+    }
+    final serial = ++_serial;
     for (final id in ids) {
+      _reads[id] = serial;
       _rosters[id] = (_rosters[id] ?? const ThreadAgentFollowerRoster())
           .copyWith(loading: true, error: false);
     }
     _emit();
+    var changed = false;
     try {
       final data = await w.client.get(
         '/channels/threads/followers',
         query: {'threadChannelIds': ids.join(',')},
       );
-      if (_disposed || scope != _serverId) return;
+      if (!_current(epoch)) return;
       final rows = <String, Map>{
         for (final row in (data['threads'] as List? ?? const []))
           if (row is Map) '${row['threadChannelId']}': row,
       };
       for (final id in ids) {
+        if (_reads[id] != serial) continue;
+        changed = true;
         final row = rows[id];
         _rosters[id] = ThreadAgentFollowerRoster(
           agents: [
@@ -167,29 +212,43 @@ class ThreadAgentFollowers extends ChangeNotifier {
         );
       }
     } catch (_) {
-      if (_disposed || scope != _serverId) return;
+      if (!_current(epoch)) return;
       for (final id in ids) {
+        if (_reads[id] != serial) continue;
+        changed = true;
         _rosters[id] = (_rosters[id] ?? const ThreadAgentFollowerRoster())
             .copyWith(loading: false, loaded: false, error: true);
       }
     }
-    _emit();
+    if (changed) _emit();
   }
 
   /// Web `remove`: the undo token, or null when the server did not remove.
   Future<String?> remove(String threadChannelId, String agentId) async {
-    final data = await w.client.request(
-      'DELETE',
-      '/channels/threads/$threadChannelId/followers/agents/$agentId',
-    );
-    if (data is! Map ||
+    if (_disposed) return null;
+    final epoch = _scope();
+    dynamic data;
+    try {
+      data = await w.client.request(
+        'DELETE',
+        '/channels/threads/$threadChannelId/followers/agents/$agentId',
+      );
+    } catch (_) {
+      if (!_current(epoch)) return null;
+      rethrow;
+    }
+    if (!_current(epoch) ||
+        data is! Map ||
         data['removed'] != true ||
         data['undoToken'] is! String) {
       return null;
     }
     final current =
         _rosters[threadChannelId] ?? const ThreadAgentFollowerRoster();
+    // An earlier read must not put a successfully removed agent back.
+    _reads[threadChannelId] = ++_serial;
     _rosters[threadChannelId] = current.copyWith(
+      loading: false,
       agents: [
         for (final agent in current.agents)
           if (agent.id != agentId) agent,
@@ -206,19 +265,31 @@ class ThreadAgentFollowers extends ChangeNotifier {
     String agentId,
     String undoToken,
   ) async {
-    final data = await w.client.request(
-      'POST',
-      '/channels/threads/$threadChannelId/followers/agents/$agentId/restore',
-      data: {'undoToken': undoToken},
-    );
-    if (data is! Map || data['restored'] != true) return false;
+    if (_disposed) return false;
+    final epoch = _scope();
+    dynamic data;
+    try {
+      data = await w.client.request(
+        'POST',
+        '/channels/threads/$threadChannelId/followers/agents/$agentId/restore',
+        data: {'undoToken': undoToken},
+      );
+    } catch (_) {
+      if (!_current(epoch)) return false;
+      rethrow;
+    }
+    if (!_current(epoch) || data is! Map || data['restored'] != true) {
+      return false;
+    }
     await load([threadChannelId], force: true);
-    return true;
+    return _current(epoch);
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _queued.clear();
+    unawaited(_events.cancel());
     super.dispose();
   }
 }
