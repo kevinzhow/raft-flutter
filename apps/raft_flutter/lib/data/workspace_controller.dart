@@ -296,7 +296,7 @@ class WorkspaceController extends ChangeNotifier
     if (presentationSource == null) {
       this.composer.sends.attach(this, _messages.sendChanged);
     }
-    _session.attachSubscription(_event);
+    _session.attachSubscription(services.withServiceEvents(_session.event));
     // A route-local presentation shares its source's layers, which register.
     if (presentationSource == null) {
       _removeCacheClear = CacheClear.instance.register(
@@ -1944,8 +1944,6 @@ class WorkspaceController extends ChangeNotifier
     pending?.remove(emoji);
     if (pending != null && pending.isEmpty) _pendingReactions.remove(messageId);
   }
-
-  void _event(RaftEvent event) => _session.event(event);
 
   @override
   void dispose() {

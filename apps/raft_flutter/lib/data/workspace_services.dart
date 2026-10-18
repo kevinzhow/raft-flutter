@@ -93,6 +93,17 @@ class WorkspaceServices {
       (_threadFollowers ??= ThreadAgentFollowers(authority));
   ThreadAgentFollowers? _threadFollowers;
 
+  /// Extends the owner's existing session ingress without subscribing or
+  /// constructing unused repositories. Borrowed presentations have no ingress.
+  void Function(RaftEvent) withServiceEvents(void Function(RaftEvent) next) =>
+      (event) {
+        if (isDisposed()) return;
+        if (event.name == 'thread:followers-updated') {
+          _threadFollowers?.consumeEvent(event);
+        }
+        next(event);
+      };
+
   AnnouncementStore get announcements =>
       source?.announcements ??
       (_announcements ??= AnnouncementStore(

@@ -58,6 +58,10 @@ class _Fixture implements ThreadAgentFollowersAuthority {
   RaftRecord? server = RaftRecord({'id': 's1', 'role': 'owner'});
   ThreadAgentFollowers? _store;
   ThreadAgentFollowers get store => _store ??= ThreadAgentFollowers(this);
+  // Pure-store tests drive owner-delivered events. Mounted tests use the
+  // actual workspace ingress through client.incoming instead.
+  void followersChanged(Object? payload) =>
+      store.consumeEvent(RaftEvent('thread:followers-updated', payload));
   int get reads => api.calls
       .where((o) => o.method == 'GET' && o.path.endsWith('/followers'))
       .length;
@@ -115,6 +119,58 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets(
+    'borrowed presentations refresh through their owner exactly once',
+    (tester) async {
+      final f = _Fixture();
+      final owner = await _mount(tester, f);
+      final page = WorkspaceController(
+        f.client,
+        presentationSource: owner,
+        ownsClient: false,
+      )..server = f.server;
+      final nested = WorkspaceController(
+        f.client,
+        presentationSource: page,
+        ownsClient: false,
+      )..server = f.server;
+      addTearDown(() {
+        nested.dispose();
+        page.dispose();
+      });
+      expect(
+        identical(
+          page.services.threadFollowers,
+          owner.services.threadFollowers,
+        ),
+        isTrue,
+      );
+      expect(
+        identical(
+          nested.services.threadFollowers,
+          owner.services.threadFollowers,
+        ),
+        isTrue,
+      );
+      final reads = f.reads;
+      f.api.routes['GET /channels/threads/followers'] = (_) =>
+          _result('Shared');
+      f.client.followersChanged({'threadChannelId': 't1'});
+      await settle(tester);
+      expect(find.text('Shared'), findsOneWidget);
+      expect(f.reads, reads + 1);
+
+      nested.dispose();
+      page.dispose();
+      f.api.routes['GET /channels/threads/followers'] = (_) =>
+          _result('Source only');
+      f.client.followersChanged({'threadChannelId': 't1'});
+      await settle(tester);
+      expect(find.text('Source only'), findsOneWidget);
+      expect(f.reads, reads + 2);
+    },
+  );
+
   test(
     'dedicated events refresh cached rosters and coalesce a burst',
     () async {
@@ -133,11 +189,11 @@ void main() {
       addTearDown(() => f.store.removeListener(accepted));
       f.api.routes['GET /channels/threads/followers'] = (_) => _result('After');
       for (var i = 0; i < 10; i++) {
-        f.client.followersChanged({'threadChannelId': 't1'});
+        f.followersChanged({'threadChannelId': 't1'});
       }
-      f.client.followersChanged({'threadChannelId': 'unopened'});
-      f.client.followersChanged({'threadChannelId': 42});
-      f.client.followersChanged(null);
+      f.followersChanged({'threadChannelId': 'unopened'});
+      f.followersChanged({'threadChannelId': 42});
+      f.followersChanged(null);
       await refreshed.future.timeout(const Duration(seconds: 5));
       expect(f.reads, 2);
       expect(f.store.roster('t1')!.agents.single.label, 'After');
@@ -204,7 +260,7 @@ void main() {
       f.store.addListener(changed);
       addTearDown(() => f.store.removeListener(changed));
       for (final id in ids) {
-        f.client.followersChanged({'threadChannelId': id});
+        f.followersChanged({'threadChannelId': id});
       }
       await accepted.future.timeout(const Duration(seconds: 5));
       expect(batches.map((batch) => batch.length), [100, 20]);
@@ -289,13 +345,16 @@ void main() {
     expect(f.store.roster('t1'), isNull);
   });
 
-  test('dispose cancels queued reads and the realtime subscription', () async {
+  test('dispose cancels queued reads and ignores later owner events', () async {
     final f = _Fixture();
-    f.store.request('t1');
-    f.store.dispose();
+    final store = f.store;
+    store.request('t1');
+    store.dispose();
     f._store = null;
     addTearDown(f.dispose);
-    f.client.followersChanged({'threadChannelId': 't1'});
+    store.consumeEvent(
+      RaftEvent('thread:followers-updated', {'threadChannelId': 't1'}),
+    );
     await _flush();
     expect(f.reads, 0);
     expect(f.client.followerReads, 0);

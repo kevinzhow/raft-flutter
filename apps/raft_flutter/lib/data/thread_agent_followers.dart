@@ -68,12 +68,9 @@ class ThreadAgentFollowerRoster {
 /// Web `threadAgentFollowerStore`: per thread-channel rosters of the agents
 /// following a thread, shared across presentations of the current identity.
 class ThreadAgentFollowers extends ChangeNotifier {
-  ThreadAgentFollowers(this.w) {
-    _events = w.client.events.listen(_event);
-  }
+  ThreadAgentFollowers(this.w);
   final ThreadAgentFollowersAuthority w;
   final Map<String, ThreadAgentFollowerRoster> _rosters = {};
-  late final StreamSubscription<RaftEvent> _events;
   Object? _identity;
   int _epoch = 0, _serial = 0;
   final Map<String, int> _reads = {};
@@ -104,7 +101,8 @@ class ThreadAgentFollowers extends ChangeNotifier {
 
   bool _current(int epoch) => !_disposed && _scope() == epoch;
 
-  void _event(RaftEvent event) {
+  /// Delivered by the owning workspace's existing session subscription.
+  void consumeEvent(RaftEvent event) {
     if (_disposed || event.name != 'thread:followers-updated') return;
     _scope();
     final payload = event.payload;
@@ -289,7 +287,6 @@ class ThreadAgentFollowers extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     _queued.clear();
-    unawaited(_events.cancel());
     super.dispose();
   }
 }
