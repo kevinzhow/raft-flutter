@@ -50,7 +50,7 @@ void main() {
       'font': 'lg',
       'liveActivity': false,
       'modelName': true,
-      'hideEmptySections': false,
+      'hideEmptySections': true,
     });
     final store = PersonalPresentationStore(storage: storage, desktop: true);
     var notified = 0;
@@ -58,7 +58,11 @@ void main() {
     // Not awaited: this is the state the first frame builds from.
     unawaited(store.bind('https://fixture.invalid', 'u'));
     expect(store.value.font, 'lg');
-    expect(store.value.hideEmptySections, isFalse, reason: 'desktop default is true');
+    expect(
+      store.value.hideEmptySections,
+      isTrue,
+      reason: 'stored choice overrides the off default',
+    );
     expect(store.value.liveActivity, isFalse);
     expect(notified, 1, reason: 'one notification, no defaults frame in between');
   });
@@ -68,21 +72,33 @@ void main() {
     final store = PersonalPresentationStore(storage: storage, desktop: true);
     await store.bind('https://fixture.invalid', 'u', profileFont: 'lg');
     expect(store.value.font, 'lg');
-    expect(store.value.hideEmptySections, isTrue);
+    expect(store.value.hideEmptySections, isFalse);
     final captured = store.key;
-    store.update(captured, font: 'sm', liveActivity: false);
+    store.update(
+      captured,
+      font: 'sm',
+      liveActivity: false,
+      hideEmptySections: true,
+    );
     await store.writes;
     final again = PersonalPresentationStore(storage: storage);
     await again.bind('https://fixture.invalid', 'u', profileFont: 'lg');
     expect(again.value.font, 'sm');
     expect(again.value.liveActivity, isFalse);
+    expect(again.value.hideEmptySections, isTrue);
     await again.bind('https://other.invalid', 'u');
     expect(again.value.font, 'md');
     expect(again.value.hideEmptySections, isFalse);
     storage.values[again.key!] = '{corrupt';
-    final corrupt = PersonalPresentationStore(storage: storage);
+    final corrupt = PersonalPresentationStore(storage: storage, desktop: true);
     await corrupt.bind('https://other.invalid', 'u');
     expect(corrupt.value.font, 'md');
+    expect(corrupt.value.hideEmptySections, isFalse);
+    final legacyKey = corrupt.scopeKey('https://fixture.invalid', 'legacy')!;
+    storage.values[legacyKey] = jsonEncode({'font': 'lg'});
+    await corrupt.bind('https://fixture.invalid', 'legacy');
+    expect(corrupt.value.font, 'lg');
+    expect(corrupt.value.hideEmptySections, isFalse);
     expect(jsonDecode(storage.values[captured!]!), isNot(contains('model')));
     store.dispose();
     again.dispose();

@@ -157,8 +157,7 @@ class _Host extends StatefulWidget {
 
 class _HostState extends State<_Host> {
   late final WorkspaceController w = _workspace(widget.ctx);
-  // The Web browser default (hide-empty off); the Linux desktop client turns
-  // it on like the Electron shell.
+  // Hide-empty defaults off in the browser and native clients.
   final presentation = PersonalPresentationStore();
 
   @override

@@ -1254,8 +1254,8 @@ What changed in Flutter (all measured against the Web DOM):
   The row whose menu is open keeps `bg-fill-muted`. Sort menu labels are Web's
   (Manual / Recent / A-Z).
 * Rail: server avatar fill / ink per theme, Brutal 2px header border,
-  other-server attention dot; agent presence dot on agent rows; the Web browser
-  default for hide-empty sections (Electron / the Linux client turn it on).
+  other-server attention dot; agent presence dot on agent rows; hide-empty
+  sections default off in the browser and native clients (Kevin, 2026-10-18).
 * `RaftBanner`: Brutal 2px / Elegant 4px title gap and the action dropping to
   its own end-aligned row at or below 24rem (container query). `RaftToast`: icon
   cell, close button and the two empty-track column gaps of the Web grid.

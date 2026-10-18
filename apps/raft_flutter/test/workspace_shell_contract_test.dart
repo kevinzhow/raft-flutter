@@ -223,7 +223,7 @@ void main() {
       variant: TargetPlatformVariant({TargetPlatform.linux}),
     );
     testWidgets(
-      '[K08d] $family/$dark browser/native empty-section defaults and persisted choice are separate',
+      '[K08d] $family/$dark browser/native empty-section defaults are off and persisted choice wins',
       (t) async {
         final (w, api) = await pageFixture(t, section: 'chat');
         api.routes['GET /agents'] = (_) => [];
@@ -243,12 +243,12 @@ void main() {
         await presentation.writes;
         final native = PersonalPresentationStore(desktop: true);
         addTearDown(native.dispose);
-        expect(native.value.hideEmptySections, isTrue);
+        expect(native.value.hideEmptySections, isFalse);
         await native.bind(w.client.origin, w.client.user!.id);
         expect(
           native.value.hideEmptySections,
           isFalse,
-          reason: 'the same persisted user choice overrides native default',
+          reason: 'the same saved user choice is restored on native clients',
         );
         await retire(t);
       },

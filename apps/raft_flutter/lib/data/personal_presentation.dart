@@ -39,7 +39,7 @@ class PersonalPresentationStore extends ChangeNotifier {
     SearchMemoryStorage? storage,
     this.desktop = false,
   }) : storage = storage ?? PreferencesSearchMemoryStorage() {
-    value = PersonalPresentation(hideEmptySections: desktop);
+    value = const PersonalPresentation();
   }
   final SearchMemoryStorage storage;
   final bool desktop;
@@ -71,7 +71,6 @@ class PersonalPresentationStore extends ChangeNotifier {
     fontChosen = ['sm', 'md', 'lg'].contains(profileFont);
     value = PersonalPresentation(
       font: ['sm', 'md', 'lg'].contains(profileFont) ? profileFont! : 'md',
-      hideEmptySections: desktop,
     );
     if (nextKey == null) {
       notifyListeners();
@@ -113,7 +112,7 @@ class PersonalPresentationStore extends ChangeNotifier {
           modelName: raw['modelName'] is bool ? raw['modelName'] : true,
           hideEmptySections: raw['hideEmptySections'] is bool
               ? raw['hideEmptySections']
-              : desktop,
+              : false,
         );
       }
     } catch (_) {
