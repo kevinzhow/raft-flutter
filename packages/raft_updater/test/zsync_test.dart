@@ -9,6 +9,16 @@ import 'package:raft_updater/src/appimage/zsync_matcher.dart';
 
 import 'zsync_support.dart';
 
+/// The gate runs package tests from `apps/raft_flutter`, a package's own
+/// `flutter test` from the package directory: find the fixture from either.
+Uint8List _deltaControl() => File(
+  [
+    'test/fixtures/delta_fixture_2048.zsync',
+    'packages/raft_updater/test/fixtures/delta_fixture_2048.zsync',
+    '../../packages/raft_updater/test/fixtures/delta_fixture_2048.zsync',
+  ].firstWhere((path) => File(path).existsSync()),
+).readAsBytesSync();
+
 String _hex(List<int> bytes) =>
     bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 
@@ -36,8 +46,7 @@ void main() {
   });
 
   group('control file', () {
-    final real = File('test/fixtures/delta_fixture_2048.zsync')
-        .readAsBytesSync();
+    final real = _deltaControl();
 
     test('reads what zsyncmake 0.6.2 wrote', () {
       final control = ZsyncControl.parse(real);
@@ -121,9 +130,7 @@ void main() {
 
     test('finds shifted blocks around an insertion and a replacement', () {
       final pair = fixturePair();
-      final control = ZsyncControl.parse(
-        File('test/fixtures/delta_fixture_2048.zsync').readAsBytesSync(),
-      );
+      final control = ZsyncControl.parse(_deltaControl());
       final watch = Stopwatch()..start();
       final match = run(pair.old, control);
       final matched = checkMatches(pair.old, pair.current, control, match);

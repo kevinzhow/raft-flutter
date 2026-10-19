@@ -54,7 +54,7 @@ RESULT_FILE = '.local/preflight.json'
 TAIL_LINES = 15
 
 # Same suites check-project runs (a unit test keeps the two lists equal).
-TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/flutter_dynamic_icon_plus/test']
+TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/flutter_dynamic_icon_plus/test', 'packages/raft_updater/test', 'packages/desktop_drop/test']
 
 # The Dart guard tests that read source or docs and need no device or rendering: each one fails
 # when a refactor moves something a document or rule pins. All are offline, well under a second

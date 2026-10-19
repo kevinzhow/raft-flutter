@@ -64,7 +64,7 @@ local = root / '.local'
 app_dir = root / 'apps/raft_flutter'
 # Same suites as the former single invocation. Everything runs from the app
 # directory so package tests keep the app's asset bundle and working directory.
-TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/flutter_dynamic_icon_plus/test']
+TEST_DIRS = ['apps/raft_flutter/test', 'packages/raft_client/test', 'packages/raft_sync/test', 'packages/raft_ui/test', 'packages/flutter_dynamic_icon_plus/test', 'packages/raft_updater/test', 'packages/desktop_drop/test']
 SLOWEST_TESTS = 20
 DEFAULT_SHARD_TIMEOUT_MINUTES = 60
 DEFAULT_MAX_FAILURES = 3
