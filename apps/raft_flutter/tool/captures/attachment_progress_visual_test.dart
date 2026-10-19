@@ -3,7 +3,7 @@
 // 390x844, for visual comparison with the approved mockup.
 //
 //   ATTACH_PROGRESS_OUT=/tmp/attach-progress-A/frames \
-//     tool/flutter test apps/raft_flutter/test/attachment_progress_visual_test.dart
+//     tool/flutter test apps/raft_flutter/tool/captures/attachment_progress_visual_test.dart
 //
 // Skipped unless ATTACH_PROGRESS_OUT is set (it writes PNG files).
 import 'dart:async';
@@ -26,7 +26,7 @@ import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_flutter/platform/system_bars.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'parity/parity_harness.dart' show loadParityFonts;
+import '../../test/parity/parity_harness.dart' show loadParityFonts;
 
 const _themes = [
   ('brutal-light', RaftFamily.brutal, false),
@@ -215,9 +215,8 @@ void main() {
         await tester.runAsync(() async {
           final image = await ro.toImage(pixelRatio: 3);
           final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-          File(
-            '$_outDir/$theme$state.png',
-          ).writeAsBytesSync(bytes!.buffer.asUint8List());
+          File('$_outDir/$theme$state.png')
+              .writeAsBytesSync(bytes!.buffer.asUint8List());
         });
       }
 

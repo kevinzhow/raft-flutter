@@ -1675,7 +1675,7 @@ cannot be read, so the chip shows "attachment.bin" and Continue ends with the "c
 
 Hand-off, staging limits, join confirmation, membership re-check and "no upload / send" are unchanged
 (docs/sharing-evidence.md). Contact sheet (Web | before | after, 3 themes): `tool/share-forward-sheet`;
-share-mode captures come from `apps/raft_flutter/test/share_forward_capture_test.dart` (set `SHARE_SHEET_OUT`).
+share-mode captures come from `apps/raft_flutter/tool/captures/share_forward_capture_test.dart` (set `SHARE_SHEET_OUT`).
 
 ## Navigation audit (cindy/nav-audit)
 

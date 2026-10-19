@@ -10,7 +10,7 @@ columns: Web | before | after.
   forward mode  Web = React ForwardComposerMobile (components.forward-mobile.page.<state>.<theme>.png in
                 --web), before / after = the Flutter forward page, same case ids in --forward-before / -after.
   share mode    Web = the React page of the closest state, before / after = the share picker captures of
-                apps/raft_flutter/test/share_forward_capture_test.dart (<theme>-en-files-<state>.png).
+                apps/raft_flutter/tool/captures/share_forward_capture_test.dart (<theme>-en-files-<state>.png).
 Needs Pillow.
 """
 import argparse

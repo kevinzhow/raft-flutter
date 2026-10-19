@@ -1,3 +1,5 @@
+// Run from apps/raft_flutter with RAFT_TABBAR_EVIDENCE_DIR set:
+//   ../../tool/flutter test tool/captures/mobile_tabbar_screenshots_test.dart
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -6,13 +8,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../../tool/testing/system_fonts.dart';
+import '../../../../tool/testing/system_fonts.dart';
 
 import 'package:raft_flutter/data/mobile_tabbar_preferences.dart';
 
-import '../../../packages/raft_ui/test/task_typography_test.dart'
+import '../../../../packages/raft_ui/test/task_typography_test.dart'
     show loadTaskFonts;
-import 'app_global_server_selector_test.dart' show RootFixture;
+import '../../test/app_global_server_selector_test.dart' show RootFixture;
 
 /// Evidence renders of the real app (zh, 390x844): written only when
 /// RAFT_TABBAR_EVIDENCE_DIR is set, otherwise a no-op.

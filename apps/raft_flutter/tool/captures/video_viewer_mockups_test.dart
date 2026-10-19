@@ -5,7 +5,7 @@
 // (p0.png p1.png l0.png l1.png: the first frame and a mid-clip frame).
 //
 //   VIEWER_MOCKUPS_OUT=/tmp/m VIEWER_MOCKUPS_FRAMES=/tmp/frames \
-//     tool/flutter test test/video_viewer_mockups_test.dart
+//     tool/flutter test tool/captures/video_viewer_mockups_test.dart
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -15,7 +15,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'parity/parity_harness.dart' show loadParityFonts;
+import '../../test/parity/parity_harness.dart' show loadParityFonts;
 
 void main() {
   final out = Platform.environment['VIEWER_MOCKUPS_OUT'];

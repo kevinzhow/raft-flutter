@@ -1,3 +1,4 @@
+// Run from apps/raft_flutter: tool/flutter test tool/captures/share_forward_capture_test.dart
 // Flutter-only captures of the incoming-share target picker (390x844 @3x) in
 // the three themes: tool/share-forward-sheet builds the Web | before | after
 // contact sheet from them. Skipped unless SHARE_SHEET_OUT names a directory.
@@ -14,8 +15,8 @@ import 'package:raft_flutter/platform/incoming_share_staging.dart';
 import 'package:raft_flutter/platform/native_sharing.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import 'flutter_test_config.dart' show RaftTestBinding;
-import 'parity/parity_harness.dart' show loadParityFonts;
+import '../../test/flutter_test_config.dart' show RaftTestBinding;
+import '../../test/parity/parity_harness.dart' show loadParityFonts;
 
 class _Client extends RaftClient {
   _Client()
