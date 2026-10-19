@@ -12,7 +12,7 @@ Exact icon geometry from the pinned Web dependency lucide-react 0.575.0 carries 
 
 Liberation Sans (diagram-only): unchanged fonts from fonts-liberation 1:2.1.5-3build1, copyright Google Corporation and Red Hat, Inc.; SIL OFL 1.1. See docs/licenses/LiberationSans-OFL.txt and docs/diagram-font-provenance.json.
 
-Design-token sources vendored for `tool/gen-tokens` live in `tool/design-source/` (hashes in `manifest.json`): raft-ui 0.5.52 `dist/foundation.css`, `dist/styles.css`, `dist/fonts.css` (MIT, per the npm package metadata), tailwindcss 4.3.3 `theme.css` (MIT, license copied beside it), and raft-source a98ae00 `packages/web/src/index.css` (covered by the raft-source license above). See docs/design-tokens.md.
+Design-token sources vendored for `tool/gen-tokens` live in `tool/design-source/` (hashes in `manifest.json`): raft-ui 0.5.52 `dist/foundation.css`, `dist/styles.css`, `dist/fonts.css` (MIT, per the npm package metadata), tailwindcss 4.3.3 `theme.css` (MIT, license copied beside it), and @botiverse/raft-ui 0.7.1 `dist/tokens.json`, `dist/styles.css`, `dist/foundation.css` in `raft-ui-0.7.1/` (MIT, copyright 2026 Botiverse; the unmodified [license](tool/design-source/raft-ui-0.7.1/LICENSE) is copied beside them), and raft-source a98ae00 `packages/web/src/index.css` (covered by the raft-source license above). See docs/design-tokens.md.
 
 Runtime alternate icons use a locally modified flutter_dynamic_icon_plus 1.4.1 (MIT), copyright 2024 chandrabezzo. The original [license](packages/flutter_dynamic_icon_plus/LICENSE), [upstream provenance](packages/flutter_dynamic_icon_plus/UPSTREAM.json) and [local changes](packages/flutter_dynamic_icon_plus/RAFT_PATCHES.md) are preserved with the vendored source.
 

@@ -19,6 +19,22 @@
     "raft-web-a98ae00/index.css": {
       "origin": "raft-source:packages/web/src/index.css",
       "sha256": "e3015311362c000b3354980cd03d59a3fd783f386243889c52c6defe3ce61fcb"
+    },
+    "raft-ui-0.7.1/tokens.json": {
+      "origin": "raft-ui@0.7.1:dist/tokens.json",
+      "sha256": "47e5ed2d0c4867db61f054940189db56010787b9353cbc1babfc048f6efd53fd"
+    },
+    "raft-ui-0.7.1/styles.css": {
+      "origin": "raft-ui@0.7.1:dist/styles.css",
+      "sha256": "03a09bc2cc12b8af610fc1af09d1ecc27144987baa8e19ff8cdcc776e59c1ce6"
+    },
+    "raft-ui-0.7.1/foundation.css": {
+      "origin": "raft-ui@0.7.1:dist/foundation.css",
+      "sha256": "8bea55d645010db8b5064594d1f0f454ed8e48e2a8d523c21946d4300d18c108"
+    },
+    "raft-ui-0.7.1/LICENSE": {
+      "origin": "raft-ui@0.7.1:LICENSE",
+      "sha256": "a1d02f0b3564fef2e7cbe7494377350e531429ef50f787bd824342402916e0e3"
     }
   }
 }

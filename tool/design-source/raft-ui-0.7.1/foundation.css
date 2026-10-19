@@ -1,0 +1,623 @@
+/* Generated from tokens.json by scripts/build-tokens.mjs. Do not edit this
+   file: change tokens.json, then run `vp run @botiverse/raft-ui#build:tokens`.
+
+   ─── Token grammar ──────────────────────────────────────────────────────────
+   Neutrals:  {role}(-{purpose})(-{intensity})
+     role      = foreground | layer | line | fill
+     purpose   = frame, sidebar, canvas, card, popover, code, hud, on-frame,
+                 on-hud, link, inverse, disabled, field, ...
+                 (unordered axis — names say where the token is used)
+     intensity = (bare default) > muted > hint for foreground;
+                 hairline < seam < strong for line
+     layer = places on the elevation ladder; fill = neutral interaction fills
+     (resting/hover/active/disabled surfaces): fill-muted and fill-strong are
+     opaque, the -pressed overlays are translucent ink laid over a surface.
+   Families:  {family}(-{slot})
+     family = brand | attention | info | success | warning | danger | inactive
+     slot   = -strong (deep shade: readable text, rings) > bare (solid fill)
+              > -muted (strong wash) > -soft (soft wash)
+              | -foreground (text on the solid)
+              | -hover / -active (derived interaction pair, opt-in per family;
+                an opted-in family always gets both)
+   Washes:    ink-{alpha%} (2..40) — neutral overlays, hairlines, hover fills.
+   Opacity rule: layer tokens are opaque in every theme, except -backdrop (an
+   overlay by contract); among fills only the -pressed overlays are translucent.
+   Interaction fills: transparent resting → ink-N directly; solid family fill →
+   the family's -hover/-active pair; neutral or tinted surface → step up its ladder.
+   Escape hatches: ink ramp for one-off washes; inline oklch() literals for
+   one-off precision values (tokenize on the third repeat). */
+
+/* Raw brand ramps (the website palette) — variables only, no utility registration. Consumed by the
+   Tailwind aliases in styles.css, the brand ramps, and state families below. */
+:where(:root) {
+  --palette-yellow-50: oklch(0.984 0.017 84.56);
+  --palette-yellow-100: oklch(0.975 0.027 85.64);
+  --palette-yellow-200: oklch(0.94 0.066 86.23);
+  --palette-yellow-300: oklch(0.913 0.103 88.02);
+  --palette-yellow-400: oklch(0.883 0.162 91.89);
+  --palette-yellow-500: oklch(0.759 0.155 92.93);
+  --palette-yellow-600: oklch(0.637 0.13 92.64);
+  --palette-yellow-700: oklch(0.508 0.104 92.9);
+  --palette-yellow-800: oklch(0.388 0.08 93.41);
+  --palette-yellow-900: oklch(0.26 0.053 92.86);
+  --palette-yellow-950: oklch(0.199 0.041 93.21);
+  --palette-lavender-50: oklch(0.976 0.008 294.09);
+  --palette-lavender-100: oklch(0.949 0.018 296.72);
+  --palette-lavender-200: oklch(0.891 0.037 294.17);
+  --palette-lavender-300: oklch(0.84 0.056 294.36);
+  --palette-lavender-400: oklch(0.783 0.078 294.55);
+  --palette-lavender-500: oklch(0.682 0.117 294);
+  --palette-lavender-600: oklch(0.575 0.157 293.61);
+  --palette-lavender-700: oklch(0.475 0.168 293);
+  --palette-lavender-800: oklch(0.367 0.131 293.06);
+  --palette-lavender-900: oklch(0.25 0.09 293.19);
+  --palette-lavender-950: oklch(0.195 0.07 292.41);
+  --palette-pink-50: oklch(0.968 0.017 359.4);
+  --palette-pink-100: oklch(0.936 0.034 2.02);
+  --palette-pink-200: oklch(0.871 0.073 0.34);
+  --palette-pink-300: oklch(0.808 0.116 0.76);
+  --palette-pink-400: oklch(0.749 0.162 0.71);
+  --palette-pink-500: oklch(0.662 0.244 0.59);
+  --palette-pink-600: oklch(0.565 0.226 0.56);
+  --palette-pink-700: oklch(0.456 0.182 0.91);
+  --palette-pink-800: oklch(0.354 0.142 0.38);
+  --palette-pink-900: oklch(0.246 0.098 0.96);
+  --palette-pink-950: oklch(0.198 0.08 359.99);
+  --palette-cyan-50: oklch(0.974 0.016 226.9);
+  --palette-cyan-100: oklch(0.945 0.033 226.27);
+  --palette-cyan-200: oklch(0.892 0.07 224.23);
+  --palette-cyan-300: oklch(0.835 0.114 220.86);
+  --palette-cyan-400: oklch(0.783 0.135 219.2);
+  --palette-cyan-500: oklch(0.672 0.116 219.07);
+  --palette-cyan-600: oklch(0.569 0.099 219.95);
+  --palette-cyan-700: oklch(0.46 0.079 219.13);
+  --palette-cyan-800: oklch(0.348 0.06 219.02);
+  --palette-cyan-900: oklch(0.246 0.043 221.18);
+  --palette-cyan-950: oklch(0.185 0.032 217.82);
+  --palette-orange-50: oklch(0.976 0.011 45.81);
+  --palette-orange-100: oklch(0.941 0.028 40.23);
+  --palette-orange-200: oklch(0.892 0.053 43.23);
+  --palette-orange-300: oklch(0.835 0.087 46.56);
+  --palette-orange-400: oklch(0.785 0.123 50.11);
+  --palette-orange-500: oklch(0.685 0.145 54.68);
+  --palette-orange-600: oklch(0.57 0.121 54.53);
+  --palette-orange-700: oklch(0.465 0.099 54.58);
+  --palette-orange-800: oklch(0.361 0.076 55.55);
+  --palette-orange-900: oklch(0.246 0.052 55.54);
+  --palette-orange-950: oklch(0.191 0.042 54.31);
+  --palette-lime-50: oklch(0.98 0.029 132.52);
+  --palette-lime-100: oklch(0.949 0.081 130.41);
+  --palette-lime-200: oklch(0.91 0.149 130.12);
+  --palette-lime-300: oklch(0.867 0.142 130.1);
+  --palette-lime-400: oklch(0.827 0.135 130.07);
+  --palette-lime-500: oklch(0.715 0.118 130.4);
+  --palette-lime-600: oklch(0.596 0.099 130.36);
+  --palette-lime-700: oklch(0.485 0.08 129.92);
+  --palette-lime-800: oklch(0.366 0.06 130.11);
+  --palette-lime-900: oklch(0.256 0.041 130.57);
+  --palette-lime-950: oklch(0.196 0.032 130.49);
+  --palette-red-50: oklch(0.968 0.014 22.88);
+  --palette-red-100: oklch(0.926 0.034 20.05);
+  --palette-red-200: oklch(0.854 0.072 22.92);
+  --palette-red-300: oklch(0.781 0.118 25.18);
+  --palette-red-400: oklch(0.711 0.168 28.04);
+  --palette-red-500: oklch(0.627 0.209 32.98);
+  --palette-red-600: oklch(0.528 0.176 33.04);
+  --palette-red-700: oklch(0.431 0.144 33.03);
+  --palette-red-800: oklch(0.331 0.11 33.1);
+  --palette-red-900: oklch(0.243 0.081 33.19);
+  --palette-red-950: oklch(0.185 0.061 34.2);
+  --palette-stone-50: oklch(0.974 0.002 67.9);
+  --palette-stone-100: oklch(0.947 0.003 67.83);
+  --palette-stone-200: oklch(0.896 0.008 73.73);
+  --palette-stone-300: oklch(0.845 0.014 71.31);
+  --palette-stone-400: oklch(0.789 0.014 71.29);
+  --palette-stone-500: oklch(0.682 0.012 76.55);
+  --palette-stone-600: oklch(0.569 0.01 67.63);
+  --palette-stone-700: oklch(0.466 0.008 67.63);
+  --palette-stone-800: oklch(0.354 0.007 67.62);
+  --palette-stone-900: oklch(0.249 0.005 67.61);
+  --palette-stone-950: oklch(0.187 0.003 67.68);
+  --palette-cream-50: oklch(0.995 0.006 87.5);
+  --palette-cream-100: oklch(0.991 0.01 87.41);
+  --palette-cream-200: oklch(0.986 0.015 86.39);
+  --palette-cream-300: oklch(0.946 0.041 88);
+  --palette-cream-400: oklch(0.871 0.09 91);
+  --palette-cream-500: oklch(0.766 0.158 95.1);
+  --palette-cream-600: oklch(0.646 0.133 95);
+  --palette-cream-700: oklch(0.521 0.107 95.2);
+  --palette-cream-800: oklch(0.396 0.082 95);
+  --palette-cream-900: oklch(0.276 0.057 95.1);
+  --palette-cream-950: oklch(0.19 0.039 94.7);
+}
+
+/* Raft Design System, light: yellow frame -> cream sidebar -> white paper; ink
+   lines say "control", seams split regions, hairlines sit inside content; every
+   colour block is a sticker with an ink edge and ink type. Values are the
+   system's tokens re-authored in oklch. A `.light` element is a light island
+   inside a dark page (a preview, a portal from a light scope). */
+:where(:root),
+.light {
+  color-scheme: light;
+
+  --foreground: oklch(0.1813 0.005 17.62);
+  --foreground-muted: oklch(0.1813 0.005 17.62 / 0.678);
+  --foreground-hint: oklch(0.1813 0.005 17.62 / 0.62);
+  --foreground-disabled: oklch(0.1813 0.005 17.62 / 0.302);
+  --foreground-inverse: oklch(1 0 0);
+  --foreground-on-hud: oklch(0.9647 0.0027 286.35);
+  /* Secondary text on the HUD: the shortcut in a tooltip, the detail line of a
+     toast. */
+  --foreground-on-hud-muted: oklch(0.9647 0.0027 286.35 / 0.7);
+  --foreground-on-frame: var(--sticker-ink);
+  --foreground-on-frame-muted: oklch(0.4082 0.0679 93.96);
+  --foreground-on-frame-active: var(--sticker-ink);
+  --foreground-link: oklch(0.4878 0.2432 264.4);
+  --layer-canvas: oklch(1 0 0);
+  --layer-sidebar: oklch(0.986 0.0154 86.42);
+  --layer-popover: oklch(1 0 0);
+  --layer-backdrop: oklch(0 0 0 / 0.651);
+  --layer-card: oklch(1 0 0);
+  --layer-hud: oklch(0.2634 0.0093 294.92);
+  --layer-frame: oklch(0.8829 0.1623 91.9);
+  --layer-frame-active: oklch(1 0 0);
+  --layer-code: oklch(1 0 0);
+  --fill-muted: oklch(0.9642 0 0);
+  --fill-strong: oklch(0.936 0.0006 17.62);
+  --fill-frame-pressed: oklch(0.1813 0.005 17.62 / 0.122);
+  --fill-pressed: oklch(0.1813 0.005 17.62 / 0.078);
+  --line-strong: oklch(0.1813 0.005 17.62);
+  --line-seam: oklch(0.1813 0.005 17.62 / 0.451);
+  --line-hairline: oklch(0.1813 0.005 17.62 / 0.149);
+  --line-frame-active: var(--sticker-ink);
+  --ink-2: oklch(0.1813 0.005 17.62 / 0.02);
+  --ink-4: oklch(0.1813 0.005 17.62 / 0.04);
+  --ink-6: oklch(0.1813 0.005 17.62 / 0.06);
+  --ink-8: oklch(0.1813 0.005 17.62 / 0.08);
+  --ink-10: oklch(0.1813 0.005 17.62 / 0.1);
+  --ink-16: oklch(0.1813 0.005 17.62 / 0.16);
+  --ink-20: oklch(0.1813 0.005 17.62 / 0.2);
+  --ink-30: oklch(0.1813 0.005 17.62 / 0.3);
+  --ink-40: oklch(0.1813 0.005 17.62 / 0.4);
+  --ink: oklch(0.1813 0.005 17.62);
+  --brand-50: var(--palette-yellow-50);
+  --brand-100: var(--palette-yellow-100);
+  --brand-200: var(--palette-yellow-200);
+  --brand-300: var(--palette-yellow-300);
+  --brand-400: oklch(0.8829 0.1623 91.9);
+  --brand-500: var(--palette-yellow-500);
+  --brand-600: var(--palette-yellow-600);
+  --brand-700: var(--palette-yellow-700);
+  --brand-800: var(--palette-yellow-800);
+  --brand-900: var(--palette-yellow-900);
+  --brand-950: var(--palette-yellow-950);
+  --brand-strong: oklch(0.4082 0.0679 93.96);
+  --brand-soft: oklch(0.9547 0.0674 93.62);
+  --brand-edge: var(--sticker-ink);
+  --brand-glow: oklch(0.8829 0.1623 91.9);
+  /* Pressing a sticker lays sticker-pressed (12% ink) over its colour. */
+  --brand-hover: color-mix(in srgb, var(--brand-400) 88%, var(--sticker-ink));
+  --brand-active: var(--brand-hover);
+  --attention-50: var(--palette-pink-50);
+  --attention-100: var(--palette-pink-100);
+  --attention-200: var(--palette-pink-200);
+  --attention-300: var(--palette-pink-300);
+  --attention-400: oklch(0.7999 0.1308 354.26);
+  --attention-500: var(--palette-pink-400);
+  --attention-600: var(--palette-pink-600);
+  --attention-700: var(--palette-pink-700);
+  --attention-800: var(--palette-pink-800);
+  --attention-900: var(--palette-pink-900);
+  --attention-950: var(--palette-pink-950);
+  --attention-strong: oklch(0.52 0.215 359.77);
+  --attention-soft: oklch(0.9141 0.0482 358.59);
+  --attention-hover: color-mix(in srgb, var(--attention-400) 88%, var(--sticker-ink));
+  --attention-active: var(--attention-hover);
+  /* Every solid is a sticker: ink type on the colour in both modes. */
+  --info: oklch(0.7833 0.1353 219.21);
+  --info-strong: var(--palette-cyan-800);
+  --info-muted: var(--palette-cyan-200);
+  --info-soft: oklch(0.9452 0.0326 226.3);
+  --info-hover: color-mix(in srgb, var(--info) 88%, var(--sticker-ink));
+  --info-active: var(--info-hover);
+  --success: oklch(0.8272 0.1354 130.07);
+  --success-foreground: var(--sticker-ink);
+  --success-strong: var(--palette-lime-800);
+  --success-muted: var(--palette-lime-200);
+  --success-soft: oklch(0.9492 0.0809 130.43);
+  --warning: oklch(0.7855 0.1227 50.11);
+  --warning-foreground: var(--sticker-ink);
+  --warning-strong: var(--palette-orange-800);
+  --warning-muted: var(--palette-orange-200);
+  --warning-soft: oklch(0.9413 0.0275 40.2);
+  --warning-hover: color-mix(in srgb, var(--warning) 88%, var(--sticker-ink));
+  --warning-active: var(--warning-hover);
+  /* danger = the destructive sticker (red fill, ink type); danger-strong is the
+     error ink for invalid fields and destructive menu items. */
+  --danger: oklch(0.711 0.1682 28.04);
+  --danger-foreground: var(--sticker-ink);
+  --danger-strong: oklch(0.5154 0.1715 32.56);
+  --danger-muted: var(--palette-red-200);
+  --danger-soft: oklch(0.9259 0.0344 20);
+  --danger-hover: color-mix(in srgb, var(--danger) 88%, var(--sticker-ink));
+  --danger-active: var(--danger-hover);
+  --inactive: oklch(0.7892 0.0137 71.29);
+  --inactive-foreground: var(--sticker-ink);
+  --inactive-soft: oklch(0.8962 0.0081 73.74);
+  --task-status-todo: oklch(0.7855 0.1227 50.11);
+  --task-status-todo-soft: oklch(0.9413 0.0275 40.2);
+  --task-status-todo-strong: var(--palette-orange-800);
+  --task-status-in-progress: oklch(0.7833 0.1353 219.21);
+  --task-status-in-progress-soft: oklch(0.9452 0.0326 226.3);
+  --task-status-in-progress-strong: var(--palette-cyan-800);
+  --task-status-in-review: oklch(0.783 0.0783 294.53);
+  --task-status-in-review-soft: oklch(0.9492 0.0176 296.63);
+  --task-status-in-review-strong: var(--palette-lavender-800);
+  --task-status-done: oklch(0.8272 0.1354 130.07);
+  --task-status-done-soft: oklch(0.9492 0.0809 130.43);
+  --task-status-done-strong: var(--palette-lime-800);
+  --task-status-closed: oklch(0.7892 0.0137 71.29);
+  --task-status-closed-soft: oklch(0.8962 0.0081 73.74);
+  --task-status-closed-strong: var(--palette-stone-800);
+  /* Controls never cast a shadow; only overlays float. */
+  --elevation-float:
+    0 1px 0 oklch(0.1813 0.005 17.62 / 0.039), 0 12px 32px -12px oklch(0.1813 0.005 17.62 / 0.322);
+  --elevation-sticker: 4px 4px 0 oklch(0.1813 0.005 17.62);
+  --focus-ring: 0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.1813 0.005 17.62);
+  --field-font-size: 16px;
+  --field-font-weight: 400;
+  --field-line-height: 24px;
+  --card-title-font-size: 16px;
+  --card-title-font-weight: 600;
+  --card-title-line-height: 24px;
+  --sticker-ink: oklch(0.1813 0.005 17.62);
+  --sticker-paper: oklch(1 0 0);
+  --sticker-edge: oklch(0.1813 0.005 17.62 / 0);
+  --sticker-pressed: oklch(0.1813 0.005 17.62 / 0.122);
+  --presence-online: oklch(0.8272 0.1354 130.07);
+  --presence-busy: oklch(0.8829 0.1623 91.9);
+  --presence-error: oklch(0.7855 0.1227 50.11);
+  --presence-offline: oklch(0.7892 0.0137 71.29);
+  --presence-external: oklch(0.7833 0.1353 219.21);
+}
+
+/* Raft Design System, dark: content stays lighter than the frame and sidebar
+   (#0d0d0b); stickers keep their colours and ink type and gain a die-cut edge. */
+.dark {
+  color-scheme: dark;
+
+  --foreground: oklch(0.9211 0.004 106.48);
+  --foreground-muted: oklch(0.8195 0.0041 106.49);
+  --foreground-hint: oklch(0.6984 0.0043 106.51);
+  --foreground-disabled: oklch(0.4987 0.0047 106.57);
+  --foreground-inverse: oklch(0.2213 0.0038 106.71);
+  --foreground-on-hud: oklch(0.9211 0.004 106.48);
+  --foreground-on-hud-muted: var(--foreground-muted);
+  --foreground-on-frame: oklch(0.9211 0.004 106.48);
+  --foreground-on-frame-muted: oklch(0.6984 0.0043 106.51);
+  --foreground-link: oklch(0.8071 0.1007 250.45);
+  --layer-canvas: oklch(0.2213 0.0038 106.71);
+  --layer-sidebar: oklch(0.1582 0.0041 106.86);
+  --layer-popover: oklch(0.2802 0.0036 106.63);
+  --layer-backdrop: oklch(0 0 0 / 0.6);
+  --layer-card: oklch(0.2596 0.0037 106.65);
+  --layer-hud: oklch(0.2802 0.0036 106.63);
+  --layer-frame: oklch(0.1582 0.0041 106.86);
+  --layer-frame-active: oklch(0.8829 0.1623 91.9);
+  --layer-code: oklch(0.154 0.0092 264.28);
+  --fill-muted: oklch(0.3161 0.0052 106.7);
+  --fill-strong: oklch(0.3474 0.0051 106.66);
+  --fill-frame-pressed: oklch(0.9843 0.004 106.47 / 0.078);
+  --fill-pressed: oklch(0.9843 0.004 106.47 / 0.078);
+  --line-strong: oklch(0.9211 0.004 106.48);
+  --line-seam: oklch(0.9843 0.004 106.47 / 0.259);
+  --line-hairline: oklch(0.9843 0.004 106.47 / 0.102);
+  --ink-2: oklch(0.9843 0.004 106.47 / 0.02);
+  --ink-4: oklch(0.9843 0.004 106.47 / 0.04);
+  --ink-6: oklch(0.9843 0.004 106.47 / 0.06);
+  --ink-8: oklch(0.9843 0.004 106.47 / 0.08);
+  --ink-10: oklch(0.9843 0.004 106.47 / 0.1);
+  --ink-16: oklch(0.9843 0.004 106.47 / 0.16);
+  --ink-20: oklch(0.9843 0.004 106.47 / 0.2);
+  --ink-30: oklch(0.9843 0.004 106.47 / 0.3);
+  --ink-40: oklch(0.9843 0.004 106.47 / 0.4);
+  --ink: oklch(0.9843 0.004 106.47);
+  --brand-strong: oklch(0.8829 0.1623 91.9);
+  --brand-soft: oklch(0.5501 0.0999 91.5 / 0.161);
+  --attention-strong: oklch(0.84 0.11 0);
+  --attention-soft: oklch(0.5997 0.1805 359.83 / 0.161);
+  --info-strong: oklch(0.8 0.1 220);
+  --info-muted: oklch(0.52 0.1 222 / 0.28);
+  --info-soft: oklch(0.452 0.0862 225.67 / 0.18);
+  --success-strong: oklch(0.86 0.12 130);
+  --success-muted: oklch(0.52 0.13 153 / 0.28);
+  --success-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+  --warning-strong: oklch(0.82 0.12 55);
+  --warning-muted: oklch(0.55 0.13 50 / 0.28);
+  --warning-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+  --danger-strong: oklch(0.7996 0.1009 24.79);
+  --danger-muted: oklch(0.58 0.19 29 / 0.3);
+  --danger-soft: oklch(0.5509 0.1903 29.01 / 0.18);
+  --inactive-soft: oklch(0.3161 0.0052 106.7);
+  --task-status-todo: oklch(0.6996 0.202 44.44);
+  --task-status-todo-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+  --task-status-todo-strong: oklch(0.82 0.12 55);
+  --task-status-in-progress-soft: oklch(0.452 0.0862 225.67 / 0.18);
+  --task-status-in-progress-strong: oklch(0.8 0.1 220);
+  --task-status-in-review: oklch(0.682 0.117 293.99);
+  --task-status-in-review-soft: oklch(0.4995 0.1202 294.19 / 0.239);
+  --task-status-in-review-strong: var(--palette-lavender-300);
+  --task-status-done: oklch(0.714 0.176 153.03);
+  --task-status-done-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+  --task-status-done-strong: oklch(0.8 0.14 153);
+  --task-status-closed: oklch(0.6494 0.0029 106.48);
+  --task-status-closed-soft: oklch(0.3161 0.0052 106.7);
+  --task-status-closed-strong: oklch(0.6984 0.0043 106.51);
+  --elevation-float:
+    0 0 0 1px oklch(0.9843 0.004 106.47 / 0.078), 0 16px 40px -12px oklch(0 0 0 / 0.8);
+  --elevation-sticker: 4px 4px 0 oklch(0 0 0);
+  --focus-ring: 0 0 0 2px oklch(0.2213 0.0038 106.71), 0 0 0 4px oklch(0.9211 0.004 106.48);
+  --sticker-edge: oklch(0.9843 0.004 106.47 / 0.349);
+}
+
+/* Pre-hydration system fallback; explicit mode classes opt out. Generated from
+   the same list as the explicit dark block above. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    color-scheme: dark;
+
+    --foreground: oklch(0.9211 0.004 106.48);
+    --foreground-muted: oklch(0.8195 0.0041 106.49);
+    --foreground-hint: oklch(0.6984 0.0043 106.51);
+    --foreground-disabled: oklch(0.4987 0.0047 106.57);
+    --foreground-inverse: oklch(0.2213 0.0038 106.71);
+    --foreground-on-hud: oklch(0.9211 0.004 106.48);
+    --foreground-on-hud-muted: var(--foreground-muted);
+    --foreground-on-frame: oklch(0.9211 0.004 106.48);
+    --foreground-on-frame-muted: oklch(0.6984 0.0043 106.51);
+    --foreground-link: oklch(0.8071 0.1007 250.45);
+    --layer-canvas: oklch(0.2213 0.0038 106.71);
+    --layer-sidebar: oklch(0.1582 0.0041 106.86);
+    --layer-popover: oklch(0.2802 0.0036 106.63);
+    --layer-backdrop: oklch(0 0 0 / 0.6);
+    --layer-card: oklch(0.2596 0.0037 106.65);
+    --layer-hud: oklch(0.2802 0.0036 106.63);
+    --layer-frame: oklch(0.1582 0.0041 106.86);
+    --layer-frame-active: oklch(0.8829 0.1623 91.9);
+    --layer-code: oklch(0.154 0.0092 264.28);
+    --fill-muted: oklch(0.3161 0.0052 106.7);
+    --fill-strong: oklch(0.3474 0.0051 106.66);
+    --fill-frame-pressed: oklch(0.9843 0.004 106.47 / 0.078);
+    --fill-pressed: oklch(0.9843 0.004 106.47 / 0.078);
+    --line-strong: oklch(0.9211 0.004 106.48);
+    --line-seam: oklch(0.9843 0.004 106.47 / 0.259);
+    --line-hairline: oklch(0.9843 0.004 106.47 / 0.102);
+    --ink-2: oklch(0.9843 0.004 106.47 / 0.02);
+    --ink-4: oklch(0.9843 0.004 106.47 / 0.04);
+    --ink-6: oklch(0.9843 0.004 106.47 / 0.06);
+    --ink-8: oklch(0.9843 0.004 106.47 / 0.08);
+    --ink-10: oklch(0.9843 0.004 106.47 / 0.1);
+    --ink-16: oklch(0.9843 0.004 106.47 / 0.16);
+    --ink-20: oklch(0.9843 0.004 106.47 / 0.2);
+    --ink-30: oklch(0.9843 0.004 106.47 / 0.3);
+    --ink-40: oklch(0.9843 0.004 106.47 / 0.4);
+    --ink: oklch(0.9843 0.004 106.47);
+    --brand-strong: oklch(0.8829 0.1623 91.9);
+    --brand-soft: oklch(0.5501 0.0999 91.5 / 0.161);
+    --attention-strong: oklch(0.84 0.11 0);
+    --attention-soft: oklch(0.5997 0.1805 359.83 / 0.161);
+    --info-strong: oklch(0.8 0.1 220);
+    --info-muted: oklch(0.52 0.1 222 / 0.28);
+    --info-soft: oklch(0.452 0.0862 225.67 / 0.18);
+    --success-strong: oklch(0.86 0.12 130);
+    --success-muted: oklch(0.52 0.13 153 / 0.28);
+    --success-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+    --warning-strong: oklch(0.82 0.12 55);
+    --warning-muted: oklch(0.55 0.13 50 / 0.28);
+    --warning-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+    --danger-strong: oklch(0.7996 0.1009 24.79);
+    --danger-muted: oklch(0.58 0.19 29 / 0.3);
+    --danger-soft: oklch(0.5509 0.1903 29.01 / 0.18);
+    --inactive-soft: oklch(0.3161 0.0052 106.7);
+    --task-status-todo: oklch(0.6996 0.202 44.44);
+    --task-status-todo-soft: oklch(0.5204 0.1197 50.16 / 0.18);
+    --task-status-todo-strong: oklch(0.82 0.12 55);
+    --task-status-in-progress-soft: oklch(0.452 0.0862 225.67 / 0.18);
+    --task-status-in-progress-strong: oklch(0.8 0.1 220);
+    --task-status-in-review: oklch(0.682 0.117 293.99);
+    --task-status-in-review-soft: oklch(0.4995 0.1202 294.19 / 0.239);
+    --task-status-in-review-strong: var(--palette-lavender-300);
+    --task-status-done: oklch(0.714 0.176 153.03);
+    --task-status-done-soft: oklch(0.4997 0.1193 153.22 / 0.18);
+    --task-status-done-strong: oklch(0.8 0.14 153);
+    --task-status-closed: oklch(0.6494 0.0029 106.48);
+    --task-status-closed-soft: oklch(0.3161 0.0052 106.7);
+    --task-status-closed-strong: oklch(0.6984 0.0043 106.51);
+    --elevation-float:
+      0 0 0 1px oklch(0.9843 0.004 106.47 / 0.078), 0 16px 40px -12px oklch(0 0 0 / 0.8);
+    --elevation-sticker: 4px 4px 0 oklch(0 0 0);
+    --focus-ring: 0 0 0 2px oklch(0.2213 0.0038 106.71), 0 0 0 4px oklch(0.9211 0.004 106.48);
+    --sticker-edge: oklch(0.9843 0.004 106.47 / 0.349);
+  }
+}
+
+/* Aliases of tokens that change with the mode. A custom property resolves
+   var() where it is declared, so each mode scope declares them again to
+   resolve against its own values (a `.dark` island under a light root would
+   otherwise inherit the light ones). */
+:where(:root),
+.light,
+.dark {
+  --foreground-active: var(--foreground);
+  --foreground-hover: var(--foreground);
+  --line-field: var(--line-strong);
+  --line-field-hover: var(--line-strong);
+
+  /* Deprecated names, kept until raft-ui 1.0. Run
+     `node node_modules/@botiverse/raft-ui/codemods/token-names.mjs <src>` to move to the
+     current names. */
+  --layer-panel: var(--layer-canvas);
+  --layer-inset: var(--fill-muted);
+  --layer-canvas-muted: var(--layer-sidebar);
+  --layer-hud-foreground: var(--foreground-on-hud);
+  --foreground-strong: var(--foreground);
+  --foreground-icon: var(--foreground-muted);
+  --foreground-placeholder: var(--foreground-hint);
+  --line: var(--line-seam);
+  --line-muted: var(--line-hairline);
+  --primary-50: var(--brand-50);
+  --primary-100: var(--brand-100);
+  --primary-200: var(--brand-200);
+  --primary-300: var(--brand-300);
+  --primary-400: var(--brand-400);
+  --primary-500: var(--brand-500);
+  --primary-600: var(--brand-600);
+  --primary-700: var(--brand-700);
+  --primary-800: var(--brand-800);
+  --primary-900: var(--brand-900);
+  --primary-950: var(--brand-950);
+  --primary-strong: var(--brand-strong);
+  --primary-soft: var(--brand-soft);
+  --primary-edge: var(--brand-edge);
+  --primary-glow: var(--brand-glow);
+  --primary-hover: var(--brand-hover);
+  --primary-active: var(--brand-active);
+  --accent-50: var(--attention-50);
+  --accent-100: var(--attention-100);
+  --accent-200: var(--attention-200);
+  --accent-300: var(--attention-300);
+  --accent-400: var(--attention-400);
+  --accent-500: var(--attention-500);
+  --accent-600: var(--attention-600);
+  --accent-700: var(--attention-700);
+  --accent-800: var(--attention-800);
+  --accent-900: var(--attention-900);
+  --accent-950: var(--attention-950);
+  --accent-strong: var(--attention-strong);
+  --accent-soft: var(--attention-soft);
+  --accent-hover: var(--attention-hover);
+  --accent-active: var(--attention-active);
+  --theme-shadow-xs: 0 0 #0000;
+  --theme-shadow-sm: 0 0 #0000;
+  --theme-shadow-md: 0 0 #0000;
+  --theme-shadow-lg: var(--elevation-float);
+  --theme-shadow-xl: var(--elevation-float);
+  --theme-shadow-float: var(--elevation-float);
+  --theme-shadow-sticker: var(--elevation-sticker);
+  --theme-focus-ring: var(--focus-ring);
+}
+
+/* Deprecated palette names (the `brutal` theme family no longer exists) and the
+   `secondary` ramp, kept until raft-ui 1.0. */
+:where(:root) {
+  --color-brutal-yellow-50: var(--palette-yellow-50);
+  --color-brutal-yellow-100: var(--palette-yellow-100);
+  --color-brutal-yellow-200: var(--palette-yellow-200);
+  --color-brutal-yellow-300: var(--palette-yellow-300);
+  --color-brutal-yellow-400: var(--palette-yellow-400);
+  --color-brutal-yellow-500: var(--palette-yellow-500);
+  --color-brutal-yellow-600: var(--palette-yellow-600);
+  --color-brutal-yellow-700: var(--palette-yellow-700);
+  --color-brutal-yellow-800: var(--palette-yellow-800);
+  --color-brutal-yellow-900: var(--palette-yellow-900);
+  --color-brutal-yellow-950: var(--palette-yellow-950);
+  --color-brutal-purple-50: var(--palette-lavender-50);
+  --color-brutal-purple-100: var(--palette-lavender-100);
+  --color-brutal-purple-200: var(--palette-lavender-200);
+  --color-brutal-purple-300: var(--palette-lavender-300);
+  --color-brutal-purple-400: var(--palette-lavender-400);
+  --color-brutal-purple-500: var(--palette-lavender-500);
+  --color-brutal-purple-600: var(--palette-lavender-600);
+  --color-brutal-purple-700: var(--palette-lavender-700);
+  --color-brutal-purple-800: var(--palette-lavender-800);
+  --color-brutal-purple-900: var(--palette-lavender-900);
+  --color-brutal-purple-950: var(--palette-lavender-950);
+  --color-brutal-pink-50: var(--palette-pink-50);
+  --color-brutal-pink-100: var(--palette-pink-100);
+  --color-brutal-pink-200: var(--palette-pink-200);
+  --color-brutal-pink-300: var(--palette-pink-300);
+  --color-brutal-pink-400: var(--palette-pink-400);
+  --color-brutal-pink-500: var(--palette-pink-500);
+  --color-brutal-pink-600: var(--palette-pink-600);
+  --color-brutal-pink-700: var(--palette-pink-700);
+  --color-brutal-pink-800: var(--palette-pink-800);
+  --color-brutal-pink-900: var(--palette-pink-900);
+  --color-brutal-pink-950: var(--palette-pink-950);
+  --color-brutal-cyan-50: var(--palette-cyan-50);
+  --color-brutal-cyan-100: var(--palette-cyan-100);
+  --color-brutal-cyan-200: var(--palette-cyan-200);
+  --color-brutal-cyan-300: var(--palette-cyan-300);
+  --color-brutal-cyan-400: var(--palette-cyan-400);
+  --color-brutal-cyan-500: var(--palette-cyan-500);
+  --color-brutal-cyan-600: var(--palette-cyan-600);
+  --color-brutal-cyan-700: var(--palette-cyan-700);
+  --color-brutal-cyan-800: var(--palette-cyan-800);
+  --color-brutal-cyan-900: var(--palette-cyan-900);
+  --color-brutal-cyan-950: var(--palette-cyan-950);
+  --color-brutal-orange-50: var(--palette-orange-50);
+  --color-brutal-orange-100: var(--palette-orange-100);
+  --color-brutal-orange-200: var(--palette-orange-200);
+  --color-brutal-orange-300: var(--palette-orange-300);
+  --color-brutal-orange-400: var(--palette-orange-400);
+  --color-brutal-orange-500: var(--palette-orange-500);
+  --color-brutal-orange-600: var(--palette-orange-600);
+  --color-brutal-orange-700: var(--palette-orange-700);
+  --color-brutal-orange-800: var(--palette-orange-800);
+  --color-brutal-orange-900: var(--palette-orange-900);
+  --color-brutal-orange-950: var(--palette-orange-950);
+  --color-brutal-lime-50: var(--palette-lime-50);
+  --color-brutal-lime-100: var(--palette-lime-100);
+  --color-brutal-lime-200: var(--palette-lime-200);
+  --color-brutal-lime-300: var(--palette-lime-300);
+  --color-brutal-lime-400: var(--palette-lime-400);
+  --color-brutal-lime-500: var(--palette-lime-500);
+  --color-brutal-lime-600: var(--palette-lime-600);
+  --color-brutal-lime-700: var(--palette-lime-700);
+  --color-brutal-lime-800: var(--palette-lime-800);
+  --color-brutal-lime-900: var(--palette-lime-900);
+  --color-brutal-lime-950: var(--palette-lime-950);
+  --color-brutal-red-50: var(--palette-red-50);
+  --color-brutal-red-100: var(--palette-red-100);
+  --color-brutal-red-200: var(--palette-red-200);
+  --color-brutal-red-300: var(--palette-red-300);
+  --color-brutal-red-400: var(--palette-red-400);
+  --color-brutal-red-500: var(--palette-red-500);
+  --color-brutal-red-600: var(--palette-red-600);
+  --color-brutal-red-700: var(--palette-red-700);
+  --color-brutal-red-800: var(--palette-red-800);
+  --color-brutal-red-900: var(--palette-red-900);
+  --color-brutal-red-950: var(--palette-red-950);
+  --color-brutal-stone-50: var(--palette-stone-50);
+  --color-brutal-stone-100: var(--palette-stone-100);
+  --color-brutal-stone-200: var(--palette-stone-200);
+  --color-brutal-stone-300: var(--palette-stone-300);
+  --color-brutal-stone-400: var(--palette-stone-400);
+  --color-brutal-stone-500: var(--palette-stone-500);
+  --color-brutal-stone-600: var(--palette-stone-600);
+  --color-brutal-stone-700: var(--palette-stone-700);
+  --color-brutal-stone-800: var(--palette-stone-800);
+  --color-brutal-stone-900: var(--palette-stone-900);
+  --color-brutal-stone-950: var(--palette-stone-950);
+  --color-brutal-cream-50: var(--palette-cream-50);
+  --color-brutal-cream-100: var(--palette-cream-100);
+  --color-brutal-cream-200: var(--palette-cream-200);
+  --color-brutal-cream-300: var(--palette-cream-300);
+  --color-brutal-cream-400: var(--palette-cream-400);
+  --color-brutal-cream-500: var(--palette-cream-500);
+  --color-brutal-cream-600: var(--palette-cream-600);
+  --color-brutal-cream-700: var(--palette-cream-700);
+  --color-brutal-cream-800: var(--palette-cream-800);
+  --color-brutal-cream-900: var(--palette-cream-900);
+  --color-brutal-cream-950: var(--palette-cream-950);
+  --secondary-50: var(--palette-stone-50);
+  --secondary-100: var(--palette-stone-100);
+  --secondary-200: var(--palette-stone-200);
+  --secondary-300: var(--palette-stone-300);
+  --secondary-400: var(--palette-stone-400);
+  --secondary-500: var(--palette-stone-500);
+  --secondary-600: var(--palette-stone-600);
+  --secondary-700: var(--palette-stone-700);
+  --secondary-800: var(--palette-stone-800);
+  --secondary-900: var(--palette-stone-900);
+  --secondary-950: var(--palette-stone-950);
+}
