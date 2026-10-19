@@ -220,15 +220,22 @@ def parse_test_events(lines, to_repo_path=lambda p: p):
         else:
             status = 'passed' if record['result'] == 'success' else 'failed'
         message = (errors.get(test_id) or [''])[0].splitlines()
-        results.append({'name': record['name'], 'file': file, 'loading': loading, 'status': status,
+        results.append({'name': record['name'], 'file': file, 'loading': loading, 'hidden': record['hidden'], 'status': status,
                         'seconds': round(((record['done'] or record['start']) - record['start']) / 1000, 3),
                         'error': message[0] if message else ''})
     return results
 
 
 def summarize_shard(results):
-    real = [r for r in results if not r['loading']]
+    """Counts of real tests plus the failures.
+
+    The runner reports bookkeeping entries (`(setUpAll)`, `(tearDownAll)`, ...) with `hidden: true`; they
+    are not tests, so they are counted apart in `hidden` and never in `passed` or `skipped`. A hidden
+    entry that fails is still a failure.
+    """
+    real = [r for r in results if not r['loading'] and not r.get('hidden')]
     return {'passed': sum(r['status'] == 'passed' for r in real), 'skipped': sum(r['status'] == 'skipped' for r in real),
+            'hidden': sum(r.get('hidden', False) and not r['loading'] and r['status'] in ('passed', 'skipped') for r in results),
             'failed': [r for r in results if r['status'] in ('failed', 'incomplete')]}
 
 
@@ -264,7 +271,7 @@ def file_durations(results, shard=None):
         entry['seconds'] = round(entry['seconds'] + r['seconds'], 3)
         if r['loading']:
             entry['loadSeconds'] = round(entry['loadSeconds'] + r['seconds'], 3)
-        else:
+        elif not r.get('hidden'):
             entry['tests'] += 1
         if shard is not None:
             entry['shard'] = shard
@@ -279,6 +286,8 @@ def slowest_tests(results, count=SLOWEST_TESTS):
 def format_summary(shards, failures, totals, slowest, limit=None, themes=None, stop=None, flaky=(), retry_failed=()):
     """Human-readable gate summary; failures are listed by test name (first `limit` if given)."""
     lines = [f"Dart tests: {totals['passed']} passed, {totals['skipped']} skipped, {len(failures)} failed across {len(shards)} shard(s)" + (f' (themes: {themes}).' if themes else '.')]
+    if totals.get('hidden'):
+        lines.append(f"  ({totals['hidden']} hidden setUpAll/tearDownAll entries are not counted as tests.)")
     if stop:
         lines.append(f"Run stopped early: {stop['message']}")
         lines.extend(f'  {line}' for line in stop['lines'])
@@ -983,7 +992,7 @@ def run_gate(check_env, emit, started):
         results['analyze-all.txt'] = analyze_future.result()
         results['raft-lints.txt'] = lints_future.result()
 
-    all_results, failures, totals, durations = [], [], {'passed': 0, 'skipped': 0}, {}
+    all_results, failures, totals, durations = [], [], {'passed': 0, 'skipped': 0, 'hidden': 0}, {}
     for shard in shards:
         parsed = collect_shard(shard)
         summary = summarize_shard(parsed)
@@ -997,6 +1006,7 @@ def run_gate(check_env, emit, started):
         results[f"test-shard-{shard['index']}.txt"] = shard['passed']
         totals['passed'] += summary['passed']
         totals['skipped'] += summary['skipped']
+        totals['hidden'] += summary['hidden']
         failures += [{**f, 'shard': shard['index']} for f in summary['failed']]
         failures += [{'name': '(file never ran)', 'file': f, 'status': 'incomplete', 'error': '', 'shard': shard['index']} for f in never_ran]
         if not shard['passed'] and not summary['failed'] and not never_ran and not stop:

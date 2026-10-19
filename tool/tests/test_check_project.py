@@ -132,6 +132,29 @@ class EventTests(unittest.TestCase):
         files = check.file_durations(results, shard=2)
         self.assertEqual(files['apps/raft_flutter/test/a_test.dart'], {'seconds': 6.5, 'loadSeconds': 4.0, 'tests': 3, 'shard': 2})
 
+    def test_hidden_bookkeeping_entries_are_not_counted_as_tests(self):
+        results = self.parse(
+            SUITE,
+            started(1, 'loading /repo/apps/raft_flutter/test/a_test.dart', 0), done(1, 4000, hidden=True),
+            started(2, 'ok', 4000), done(2, 4500),
+            started(3, '(setUpAll)', 4500), done(3, 4600, hidden=True),
+            started(4, '(tearDownAll)', 4600), done(4, 4700, hidden=True),
+            started(5, 'skip me', 4700), done(5, 4700, skipped=True))
+        summary = check.summarize_shard(results)
+        self.assertEqual((summary['passed'], summary['skipped'], summary['hidden']), (1, 1, 2))
+        self.assertEqual(summary['failed'], [])
+        self.assertEqual(check.file_durations(results)['apps/raft_flutter/test/a_test.dart']['tests'], 2)
+
+    def test_a_failing_hidden_entry_is_still_a_failure(self):
+        results = self.parse(
+            SUITE,
+            started(1, 'ok', 0), done(1, 10),
+            started(2, '(tearDownAll)', 10), {'type': 'error', 'testID': 2, 'error': 'Leaked: 1 object', 'stackTrace': '', 'isFailure': True, 'time': 20},
+            done(2, 20, result='failure', hidden=True))
+        summary = check.summarize_shard(results)
+        self.assertEqual((summary['passed'], summary['hidden']), (1, 0))
+        self.assertEqual([f['name'] for f in summary['failed']], ['(tearDownAll)'])
+
     def test_load_failure_and_timeout_are_failures(self):
         results = self.parse(SUITE, started(1, 'loading /repo/x', 0), {'type': 'error', 'testID': 1, 'error': 'Compilation failed', 'stackTrace': '', 'isFailure': False, 'time': 10},
                              done(1, 20, result='error', hidden=True),
@@ -189,6 +212,12 @@ class SummaryTests(unittest.TestCase):
         self.assertIn('[0] apps/raft_flutter/test/a_test.dart: group hangs -- Test timed out after 60 seconds.', text)
         self.assertIn('cut off -- did not finish', text)
         self.assertIn('12.3s  f: slow one', text)
+
+    def test_hidden_entries_are_reported_apart_from_the_test_count(self):
+        text = check.format_summary([], [], {'passed': 9, 'skipped': 1, 'hidden': 4}, [])
+        self.assertIn('9 passed, 1 skipped, 0 failed', text)
+        self.assertIn('4 hidden setUpAll/tearDownAll entries are not counted as tests', text)
+        self.assertNotIn('hidden', check.format_summary([], [], {'passed': 9, 'skipped': 1}, []))
 
     def test_limit_truncates_the_listing_not_the_count(self):
         failures = [{'name': f't{i}', 'file': 'f', 'status': 'failed', 'error': 'e', 'shard': 0} for i in range(5)]
