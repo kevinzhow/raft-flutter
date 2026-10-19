@@ -8,6 +8,11 @@ Source of truth (vendored, hashed in tool/design-source/manifest.json):
   tailwindcss 4.3.3 theme.css          default scale (spacing, radius, text, weights, ...)
   raft-source a98ae00 web index.css    product @theme overrides (+ :root.dark code colours)
 
+Second source, parallel and not yet wired into RaftTokens (the Raft single look):
+  raft-ui 0.7.1 dist/tokens.json      DTCG tokens, light + dark (no theme axis) -> raft_tokens.g.dart
+  raft-ui 0.7.1 dist/styles.css       radii, type scale and easing that live only in CSS
+  raft-ui 0.7.1 dist/foundation.css   generated from tokens.json; cross-check in tool/tests
+
 Output: packages/raft_ui/lib/src/tokens/*.g.dart (GENERATED — do not edit).
 
 Usage:
@@ -16,6 +21,9 @@ Usage:
   tool/gen-tokens --oracle        compare against docs/theme-tokens/*.json (browser readback)
   tool/gen-tokens --import-sources --raft-ui DIR --raft-source DIR [--tailwind DIR]
                                   refresh the vendored CSS copies and manifest hashes
+  tool/gen-tokens --import-raft-ui-071 DIR
+                                  refresh tool/design-source/raft-ui-0.7.1 (tokens.json, styles.css,
+                                  foundation.css, LICENSE) from an unpacked @botiverse/raft-ui@0.7.1
 
 Stdlib only. The colour pipeline follows CSS Color 4 + Chrome:
   oklch -> OKLab -> LMS (cubed) -> XYZ-D65 -> linear sRGB (unclamped)
@@ -1261,6 +1269,275 @@ def emit_token_set():
     return '\n'.join(lines) + '\n'
 
 
+# ─── raft-ui 0.7.1 token set (tokens.json) ───────────────────────────────────
+# A second, parallel source: the official DTCG file of the Raft Design System
+# single look (light + dark, no theme axis). It is emitted as raft_tokens.g.dart
+# (RaftLight / RaftDark) and is NOT yet wired into RaftTokens / theme.dart.
+# Token names are the official 0.7.1 names in lowerCamel (`--layer-canvas` ->
+# layerCanvas). They are never mapped from the 0.5.52 names: `layer-canvas`
+# means the old `layer-panel` now, and the old `layer-canvas` has no successor.
+RAFT_UI_071 = {
+    'tokens': 'raft-ui-0.7.1/tokens.json',
+    'styles': 'raft-ui-0.7.1/styles.css',
+    'foundation': 'raft-ui-0.7.1/foundation.css',
+    'license': 'raft-ui-0.7.1/LICENSE',
+}
+RAFT_UI_071_ORIGINS = {'tokens': 'dist/tokens.json', 'styles': 'dist/styles.css',
+                       'foundation': 'dist/foundation.css', 'license': 'LICENSE'}
+RAFT_TOKENS_FILE = 'raft_tokens.g.dart'
+MODE_EXT = 'build.botiverse.raft'
+MODES = ('light', 'dark')
+
+
+@dataclass
+class RaftToken:
+    name: str          # CSS custom property name without `--`
+    kind: str          # color | shadow | dimension | fontWeight
+    light: object      # raw $value (colour object, '{ref}', CSS string, number, dimension)
+    dark: object       # raw modes.dark value, or the light value when the mode does not differ
+    desc: str = ''
+
+    def raw(self, mode):
+        return self.light if mode == 'light' else self.dark
+
+
+def ref_css(ref):
+    """`{foreground.$root}` -> `foreground`, `{task-status.todo}` -> `task-status-todo`."""
+    path = [p for p in ref[1:-1].split('.') if p != '$root']
+    return '-'.join(path)
+
+
+def oklch_css(value):
+    if value.get('colorSpace') != 'oklch':
+        raise SystemExit(f"gen-tokens: tokens.json colour space {value.get('colorSpace')!r} is not oklch")
+    l, c, h = value['components']
+    alpha = f" / {value['alpha']!r}" if 'alpha' in value else ''
+    return f'oklch({l!r} {c!r} {h!r}{alpha})'
+
+
+class RaftUiModel:
+    def __init__(self):
+        doc = json.loads((SRC / RAFT_UI_071['tokens']).read_text())
+        self.tokens = {}      # css name -> RaftToken (current names)
+        self.deprecated = {}  # css name -> {'to': css name | None, 'note': str}
+        for group, node in doc.items():
+            if group.startswith('$'):
+                continue
+            if group == 'deprecated':
+                self.read_deprecated(node)
+            else:
+                self.walk(node, (group,), None)
+        camels = {}
+        for n in self.tokens:
+            camels.setdefault(camel(n), []).append(n)
+        clash = {k: v for k, v in camels.items() if len(v) > 1}
+        if clash:
+            raise SystemExit(f'gen-tokens: tokens.json names collide after camelCase: {clash}')
+        self.scopes = {mode: Scope(self.scope_decls(mode)) for mode in MODES}
+        self.styles = declarations(find_rule(parse_rules(strip_comments(
+            (SRC / RAFT_UI_071['styles']).read_text())), '@theme').body)
+
+    def walk(self, node, path, inherited):
+        kind_here = node.get('$type', inherited)
+        for key, value in node.items():
+            if key.startswith('$') and key != '$root':
+                continue
+            if key == '$root':
+                self.add(path, node['$root'], kind_here)
+            elif isinstance(value, dict) and '$value' in value:
+                self.add(path + (key,), value, kind_here)
+            elif isinstance(value, dict):
+                self.walk(value, path + (key,), kind_here)
+
+    def add(self, path, token, kind):
+        name = '-'.join(path)
+        kind = token.get('$type', kind) or 'color'
+        ext = token.get('$extensions', {}).get(MODE_EXT, {})
+        light = token['$value']
+        dark = ext.get('modes', {}).get('dark', light)
+        if kind not in ('color', 'shadow', 'dimension', 'fontWeight'):
+            raise SystemExit(f'gen-tokens: {name}: unsupported tokens.json type {kind!r}')
+        if name in self.tokens:
+            raise SystemExit(f'gen-tokens: duplicate token {name}')
+        self.tokens[name] = RaftToken(name, kind, light, dark, token.get('$description', ''))
+
+    def read_deprecated(self, node):
+        for name, token in node.items():
+            if name.startswith('$'):
+                continue
+            value = token['$value']
+            target = ref_css(value) if value.startswith('{') else None
+            self.deprecated[name] = {'to': target, 'note': token.get('$deprecated', '')}
+
+    def css_text(self, raw):
+        if isinstance(raw, dict):
+            return oklch_css(raw)
+        if isinstance(raw, str) and raw.startswith('{'):
+            return f'var(--{ref_css(raw)})'
+        return raw
+
+    def scope_decls(self, mode):
+        """var() declarations of one mode scope; colours only (the CSS cascade of foundation.css)."""
+        decls = {}
+        for t in self.tokens.values():
+            if t.kind == 'color':
+                decls[f'--{t.name}'] = self.css_text(t.raw(mode))
+        for name, d in self.deprecated.items():
+            if d['to']:
+                decls[f'--{name}'] = f"var(--{d['to']})"
+        return decls
+
+    def color(self, mode, name):
+        return parse_color(self.scopes[mode].resolve(f'--{name}'))
+
+    def names(self, kind):
+        return [n for n, t in self.tokens.items() if t.kind == kind]
+
+    # CSS-only metrics (styles.css @theme): radii, type styles, easing.
+    def radii(self):
+        return {n[9:]: parse_length(v) for n, v in self.styles.items() if n.startswith('--radius-')}
+
+    def type_styles(self):
+        out = {}
+        for n, v in self.styles.items():
+            m = re.fullmatch(r'--text-([a-z]+(?:-[a-z]+)*)', n)
+            if not m or 'var(' in v:
+                continue
+            key = m.group(1)
+            line = self.styles.get(f'{n}--line-height')
+            weight = self.styles.get(f'{n}--font-weight')
+            tracking = self.styles.get(f'{n}--letter-spacing')
+            out[key] = (parse_length(v), parse_length(line), int(weight) if weight else None,
+                        parse_length(tracking) if tracking else None, (v, line, weight, tracking))
+        return out
+
+    def eases(self):
+        out = {}
+        for n, v in self.styles.items():
+            if n.startswith('--ease-'):
+                mm = re.fullmatch(r'cubic-bezier\(([^)]*)\)', v)
+                out[n[7:]] = ([float(x) for x in mm.group(1).split(',')], v)
+        return out
+
+
+def raw_doc(model, raw):
+    if isinstance(raw, dict) and 'components' in raw:
+        return oklch_css(raw)
+    if isinstance(raw, dict):
+        return f"{fmt_num(raw['value'])}{raw['unit']}"
+    return str(raw)
+
+
+def dimension_px(raw):
+    if raw.get('unit') != 'px':
+        raise SystemExit(f'gen-tokens: dimension unit {raw.get("unit")!r} is not px')
+    return float(raw['value'])
+
+
+def emit_raft_tokens():
+    m = RaftUiModel()
+    lines = ['// GENERATED — do not edit. Regenerate with `tool/gen-tokens`.',
+             f"// Source: {RAFT_UI_071['tokens']}, {RAFT_UI_071['styles']} (@botiverse/raft-ui 0.7.1, MIT)",
+             '// dart format off', '// ignore_for_file: constant_identifier_names, lines_longer_than_80_chars', '',
+             "import 'package:flutter/animation.dart';", "import 'package:flutter/foundation.dart';", '',
+             "import 'shadows.g.dart';", '']
+    colors, shadows = m.names('color'), m.names('shadow')
+    metrics = [*m.names('dimension'), *m.names('fontWeight')]
+    for mode, cls, what in (('light', 'RaftLight', 'light'), ('dark', 'RaftDark', 'dark')):
+        lines += [f'/// Every raft-ui 0.7.1 token resolved for the {what} mode (`tokens.json`).',
+                  '///',
+                  '/// Names are the official token names in lowerCamel (`--layer-canvas` ->',
+                  '/// [layerCanvas]), not the 0.5.52 names; see [RaftDeprecatedTokenNames]. Opaque colours',
+                  "/// use the Chromium-exact oklch conversion of `tool/gen-tokens` (docs/design-tokens.md).",
+                  '/// Translucent colours keep the authored alpha exactly and are not yet fitted to a',
+                  '/// Chrome oracle. Not wired into `RaftTokens` yet.',
+                  f'abstract final class {cls} {{']
+        for n in colors:
+            t = m.tokens[n]
+            src = raw_doc(m, t.raw(mode))
+            lines.append(f'  /// `--{n}`: `{src}`' + (f' — {" ".join(t.desc.split())}' if t.desc else ''))
+            lines.append(f'  static const Color {camel(n)} = {dart_color(m.color(mode, n))};')
+        for n in shadows:
+            t = m.tokens[n]
+            lines.append(f'  /// `--{n}`: `{doc_css(t.raw(mode), 140)}`' + (f' — {" ".join(t.desc.split())}' if t.desc else ''))
+            lines.append(f'  static const RaftShadow {camel(n)} = RaftShadow([')
+            lines += [f'    {dart_shadow(s)},' for s in parse_shadows(t.raw(mode))]
+            lines.append('  ]);')
+        for n in metrics:
+            t = m.tokens[n]
+            raw = t.raw(mode)
+            if t.kind == 'dimension':
+                lines.append(f'  /// `--{n}`: `{raw_doc(m, raw)}`')
+                lines.append(f'  static const double {camel(n)} = {fmt_double(dimension_px(raw))};')
+            else:
+                lines.append(f'  /// `--{n}`: `{raw}` (CSS weight)')
+                lines.append(f'  static const double {camel(n)} = {fmt_double(float(raw))};')
+        lines.append('')
+        lines.append('  /// Every colour keyed by its CSS custom-property name (without `--`).')
+        lines.append('  static const Map<String, Color> colors = {')
+        lines += [f"    '{n}': {camel(n)}," for n in colors]
+        lines.append('  };')
+        lines.append('')
+        lines.append('  /// Every shadow (`elevation-*`, `focus-ring`) keyed by CSS name.')
+        lines.append('  static const Map<String, RaftShadow> shadows = {')
+        lines += [f"    '{n}': {camel(n)}," for n in shadows]
+        lines.append('  };')
+        lines.append('')
+        lines.append('  /// Every dimension / font-weight token keyed by CSS name (px or CSS weight).')
+        lines.append('  static const Map<String, double> metrics = {')
+        lines += [f"    '{n}': {camel(n)}," for n in metrics]
+        lines.append('  };')
+        lines += ['}', '']
+
+    lines += ['/// Former token names that raft-ui 0.7.x keeps as aliases until 1.0 (`tokens.json`',
+              '/// `deprecated`), keyed by CSS name without `--` -> the current name. Resolve through',
+              '/// this table; never rename by hand: `layer-panel` is now `layer-canvas`, while the old',
+              '/// `layer-canvas` has no successor.',
+              'abstract final class RaftDeprecatedTokenNames {',
+              '  static const Map<String, String> byCssName = {']
+    lines += [f"    '{n}': '{d['to']}'," for n, d in m.deprecated.items() if d['to']]
+    lines += ['  };', '',
+              '  /// Former names that were dropped without a successor (controls cast no shadow).',
+              '  static const Set<String> removed = {']
+    lines += [f"    '{n}'," for n, d in m.deprecated.items() if not d['to']]
+    lines += ['  };', '}', '']
+
+    lines += ['/// `--radius-*` of styles.css @theme: pixels are hard, containers are soft.',
+              'abstract final class RaftRadius {']
+    for n, v in m.radii().items():
+        lines.append(f'  /// `--radius-{n}: {fmt_num(v)}px`')
+        lines.append(f'  static const double {camel(n)} = {fmt_double(v)};')
+    lines.append('  static const Map<String, double> byName = {')
+    lines += [f"    '{n}': {camel(n)}," for n in m.radii()]
+    lines += ['  };', '}', '']
+
+    lines += ['/// One `--text-*` style of styles.css @theme. Line height is absolute px; weight and',
+              '/// letter spacing (em, multiply by the font size) are null when the style does not set them.',
+              '@immutable', 'class RaftTypeStyle {',
+              '  const RaftTypeStyle(this.fontSize, this.lineHeight, {this.fontWeight, this.letterSpacingEm});',
+              '  final double fontSize;', '  final double lineHeight;', '  final int? fontWeight;',
+              '  final double? letterSpacingEm;', '  /// Flutter `TextStyle.height` factor.',
+              '  double get height => lineHeight / fontSize;', '}', '',
+              '/// The Raft type scale (`--text-hero` ... `--text-mono-code`).',
+              'abstract final class RaftTypeScale {']
+    styles = m.type_styles()
+    for n, (size, lh, weight, tracking, _) in styles.items():
+        extra = ''.join([f', fontWeight: {weight}' if weight is not None else '',
+                         f', letterSpacingEm: {fmt_double(tracking)}' if tracking is not None else ''])
+        lines.append(f'  /// `--text-{n}`')
+        lines.append(f'  static const RaftTypeStyle {camel(n)} = RaftTypeStyle({fmt_double(size)}, {fmt_double(lh)}{extra});')
+    lines.append('  static const Map<String, RaftTypeStyle> byName = {')
+    lines += [f"    '{n}': {camel(n)}," for n in styles]
+    lines += ['  };', '}', '']
+
+    lines += ['/// `--ease-*` of styles.css @theme.', 'abstract final class RaftEase {']
+    for n, (pts, css) in m.eases().items():
+        lines.append(f'  /// `--ease-{n}: {css}`')
+        lines.append(f"  static const Cubic {camel(n)} = Cubic({', '.join(fmt_double(x) for x in pts)});")
+    lines.append('}')
+    return '\n'.join(lines) + '\n'
+
+
 def render():
     m = Model()
     return {
@@ -1273,6 +1550,7 @@ def render():
         'typography.g.dart': emit_typography(),
         'media_motion.g.dart': emit_media_motion(),
         'token_set.g.dart': emit_token_set(),
+        RAFT_TOKENS_FILE: emit_raft_tokens(),
     }
 
 
@@ -1308,6 +1586,19 @@ def import_sources(args):
         entry.update({'origin': f'{base}:{sub}', 'sha256': sha256(SRC / rel)})
     (SRC / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     print('imported', ', '.join(SOURCES.values()))
+
+
+def import_raft_ui_071(package_dir):
+    """Refresh tool/design-source/raft-ui-0.7.1 from an unpacked @botiverse/raft-ui@0.7.1 package."""
+    manifest = json.loads((SRC / 'manifest.json').read_text())
+    for key, rel in RAFT_UI_071.items():
+        src = Path(package_dir) / RAFT_UI_071_ORIGINS[key]
+        (SRC / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, SRC / rel)
+        manifest['files'].setdefault(rel, {}).update({'origin': f'raft-ui@0.7.1:{RAFT_UI_071_ORIGINS[key]}',
+                                                      'sha256': sha256(SRC / rel)})
+    (SRC / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    print('imported', ', '.join(RAFT_UI_071.values()))
 
 
 # ─── Chrome oracle sampling ──────────────────────────────────────────────────
@@ -1470,6 +1761,8 @@ def main(argv=None):
     p.add_argument('--oracle', action='store_true', help='print the browser-oracle comparison')
     p.add_argument('--import-sources', action='store_true')
     p.add_argument('--raft-ui')
+    p.add_argument('--import-raft-ui-071', metavar='DIR',
+                   help='refresh tool/design-source/raft-ui-0.7.1 from an unpacked @botiverse/raft-ui@0.7.1 package')
     p.add_argument('--raft-source')
     p.add_argument('--tailwind')
     p.add_argument('--sample-chrome', action='store_true',
@@ -1477,6 +1770,8 @@ def main(argv=None):
     args = p.parse_args(argv)
     if args.import_sources:
         import_sources(args)
+    if args.import_raft_ui_071:
+        import_raft_ui_071(args.import_raft_ui_071)
     verify_manifest()
     if args.sample_chrome:
         sample_chrome(args.raft_source or RAFT_SOURCE_DEFAULT)

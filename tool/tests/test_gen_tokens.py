@@ -205,6 +205,84 @@ class LegacyReadbackOracle(unittest.TestCase):
                 self.assertEqual(r['readbackDelta'], 0)
 
 
+class RaftUi071Tokens(unittest.TestCase):
+    """tokens.json of @botiverse/raft-ui 0.7.1 -> raft_tokens.g.dart (RaftLight / RaftDark)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.m = gen.RaftUiModel()
+        cls.text = gen.emit_raft_tokens()
+        rules = gen.parse_rules(gen.strip_comments((gen.SRC / gen.RAFT_UI_071['foundation']).read_text()))
+        blocks = {}
+        for r in rules:  # `:where(:root)` appears twice (ramps, deprecated palette names): merge
+            blocks.setdefault(gen.norm_sel(r.prelude), {}).update(gen.declarations(r.body))
+        root = {**blocks[':where(:root)'], **blocks[':where(:root), .light']}
+        cls.css = {'light': {**root, **blocks[':where(:root), .light, .dark']},
+                   'dark': {**root, **blocks['.dark'], **blocks[':where(:root), .light, .dark']}}
+
+    def test_token_counts(self):
+        # 393 tokens in the file: 225 colours, 3 shadows, 6 metrics, 159 former names.
+        self.assertEqual(len(self.m.names('color')), 225)
+        self.assertEqual(self.m.names('shadow'), ['elevation-float', 'elevation-sticker', 'focus-ring'])
+        self.assertEqual(len(self.m.names('dimension')) + len(self.m.names('fontWeight')), 6)
+        self.assertEqual(len(self.m.deprecated), 159)
+
+    def test_every_token_is_emitted_for_both_modes(self):
+        for cls in ('RaftLight', 'RaftDark'):
+            body = self.text.split(f'abstract final class {cls} {{')[1].split('\n}\n')[0]
+            for name in self.m.tokens:
+                self.assertIn(f"    '{name}': {gen.camel(name)},", body, f'{cls} {name}')
+
+    def test_foundation_css_agrees_with_tokens_json(self):
+        """foundation.css is generated from tokens.json by upstream; the cascade must give the same bytes."""
+        for mode in gen.MODES:
+            scope = gen.Scope(self.css[mode])
+            for name in self.m.names('color'):
+                with self.subTest(mode=mode, token=name):
+                    want, got = self.m.color(mode, name), gen.parse_color(scope.resolve(f'--{name}'))
+                    self.assertEqual(want.bytes(), got.bytes())
+                    self.assertAlmostEqual(want.alpha, got.alpha, places=9)
+            for old, d in self.m.deprecated.items():
+                if d['to'] and self.m.tokens[d['to']].kind == 'color':
+                    with self.subTest(mode=mode, deprecated=old):
+                        self.assertEqual(gen.parse_color(scope.resolve(f'--{old}')).bytes(),
+                                         self.m.color(mode, d['to']).bytes())
+
+    def test_names_are_not_mapped_from_0552(self):
+        # layer-canvas is the old layer-panel; the old layer-canvas has no successor.
+        self.assertEqual(self.m.deprecated['layer-panel']['to'], 'layer-canvas')
+        self.assertNotIn('layer-canvas', self.m.deprecated)
+        self.assertEqual(self.m.color('light', 'layer-canvas').bytes(), (255, 255, 255))
+        self.assertEqual(self.m.color('dark', 'layer-canvas').bytes(), (0x1b, 0x1b, 0x19))
+
+    def test_resolution_of_aliases_and_color_mix(self):
+        # {sticker.ink} follows the mode of the token that points to it.
+        self.assertEqual(self.m.color('dark', 'foreground-on-hud-muted').bytes(), self.m.color('dark', 'foreground-muted').bytes())
+        self.assertEqual(self.m.color('light', 'foreground-on-frame').bytes(), self.m.color('light', 'sticker-ink').bytes())
+        self.assertEqual(self.m.color('dark', 'foreground-on-frame').bytes(), (0xe5, 0xe5, 0xe2))
+        # brand-hover = color-mix(in srgb, brand-400 88%, sticker-ink); brand-active aliases it.
+        self.assertEqual(self.m.color('light', 'brand-hover').bytes(), (0xe3, 0xbd, 0x3a))
+        self.assertEqual(self.m.color('light', 'brand-active').bytes(), self.m.color('light', 'brand-hover').bytes())
+
+    def test_translucent_colours_keep_the_authored_alpha(self):
+        self.assertEqual(self.m.color('light', 'foreground-muted').alpha, 0.678)
+        self.assertIn('static const Color foregroundMuted = Color.fromRGBO(20, 17, 17, 0.678);', self.text)
+        self.assertIn('static const Color stickerEdge = Color(0x00141111);', self.text)
+
+    def test_metrics_and_css_only_scales(self):
+        self.assertIn('static const double fieldFontSize = 16.0;', self.text)
+        self.assertIn('static const double cardTitleFontWeight = 600.0;', self.text)
+        self.assertEqual(self.m.radii(), {'sticker': 4.0, 'chip': 6.0, 'control': 8.0, 'container': 10.0, 'dialog': 16.0})
+        self.assertEqual(self.m.type_styles()['hero'][:4], (40.0, 44.0, 700, -0.03))
+        self.assertEqual(self.m.eases()['slide'][0], [0.32, 0.72, 0.0, 1.0])
+
+    def test_vendored_license_is_pinned(self):
+        manifest = json.loads((gen.SRC / 'manifest.json').read_text())['files']
+        for rel in gen.RAFT_UI_071.values():
+            self.assertIn(rel, manifest)
+        self.assertTrue((gen.SRC / gen.RAFT_UI_071['license']).read_text().startswith('MIT License'))
+
+
 class Freshness(unittest.TestCase):
     def test_vendored_sources_match_manifest(self):
         gen.verify_manifest()

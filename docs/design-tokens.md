@@ -54,6 +54,48 @@ RaftTokens (ThemeExtension, theme.dart) ── RaftTokens.of(context)
 `RaftPrimitiveColors`, `RaftScale` and `RaftProductShadows` are theme-invariant
 static classes.
 
+## raft-ui 0.7.1 single look (parallel, not wired yet)
+
+The Raft Design System 0.7.x has no theme axis: one look, light and dark. Its
+official token file is vendored in `tool/design-source/raft-ui-0.7.1/`
+(`tokens.json`, `styles.css`, `foundation.css`, MIT `LICENSE`; sha256-pinned in
+`manifest.json`) and `tool/gen-tokens` emits it as
+`packages/raft_ui/lib/src/tokens/raft_tokens.g.dart`, next to the 0.5.52 files
+above. `RaftTokens`, `theme.dart` and every existing `.g.dart` are untouched, so
+nothing renders differently until a later change switches over.
+
+| Generated | Content |
+| --- | --- |
+| `RaftLight`, `RaftDark` | every colour (225), shadow (`elevation-float`, `elevation-sticker`, `focus-ring`) and metric (`field-*`, `card-title-*`) token, as `static const` plus `colors` / `shadows` / `metrics` maps keyed by CSS name |
+| `RaftDeprecatedTokenNames` | the 159 former names `tokens.json` keeps until raft-ui 1.0 (old CSS name to current name; `removed` for the three `theme-shadow-xs/sm/md`) |
+| `RaftRadius`, `RaftTypeScale`, `RaftEase` | metrics that live only in `styles.css` `@theme`: radii, the type styles, `ease-slide` |
+
+Rules:
+
+- **Names are the official 0.7.1 names**, camelCased like the older tiers
+  (`--layer-canvas` becomes `layerCanvas`, `--task-status-in-progress-soft`
+  becomes `taskStatusInProgressSoft`, `--palette-yellow-50` becomes
+  `paletteYellow50`). Never map by name alone from 0.5.52: today's
+  `layer-canvas` is the old `layer-panel`, and the old `layer-canvas` has no
+  successor. Go through `RaftDeprecatedTokenNames`.
+- **Modes.** A token without `modes.dark` has the same value in both modes.
+  `{aliases}` and `color-mix(in srgb, ...)` resolve inside the mode of the token
+  that holds them (as the CSS cascade does), so `foreground-on-frame` is the
+  light ink in light mode and its own literal in dark mode.
+- **Colour conversion** is the Chromium-exact rule above. Translucent colours
+  are emitted with the authored alpha and 8-bit channels. They are **not** yet
+  fitted against a Chrome oracle: `chrome-oracle.json` was sampled for the
+  0.5.52 CSS. Re-sample once the single look is wired in.
+- Refresh: `tool/gen-tokens --import-raft-ui-071 <unpacked @botiverse/raft-ui dir>`,
+  then `tool/gen-tokens`.
+- Checks: `packages/raft_ui/test/raft_tokens_test.dart` recomputes every value
+  from the vendored `tokens.json` with its own port of the conversion and compares
+  it with the generated constants in both modes (plus shadows, metrics, the
+  former-name table and the `styles.css` scales). `tool/tests/test_gen_tokens.py`
+  (`RaftUi071Tokens`) also checks that the generated cascade gives the same bytes
+  as upstream's generated `foundation.css` for all 450 colour resolutions, and
+  that the generated file is current.
+
 ## Typography policy token
 
 `tool/design-source/control-typography.json` (authored, Flutter-only; no Web CSS
