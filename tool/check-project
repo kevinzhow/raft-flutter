@@ -323,8 +323,15 @@ def read_json(path):
         return {}
 
 
+def app_relative_weights(weights, repo=None, base=None):
+    """`history_weights` keys (repo-relative, as check-durations.json stores them) as the app-relative
+    paths `discover_tests` returns and `flutter test` receives; without this no file ever matched a weight."""
+    repo, base = repo or root, base or app_dir
+    return {pathlib.Path(os.path.relpath(repo / name, base)).as_posix(): seconds for name, seconds in weights.items()}
+
+
 def history_weights(repo):
-    """Per-file seconds from the previous run here, else the main checkout's."""
+    """Per-file seconds (keyed by repo-relative path) from the previous run here, else the main checkout's."""
     candidates = [repo / '.local/check-durations.json']
     try:
         common = subprocess.check_output(['git', 'rev-parse', '--git-common-dir'], cwd=repo, text=True, stderr=subprocess.DEVNULL).strip()
@@ -907,7 +914,7 @@ def run_gate(check_env, emit, started):
     files = discover_tests(root)
     sizes = {f: (app_dir / f).stat().st_size for f in files if (app_dir / f).is_file()}
     shard_count, jobs = plan_parallelism(cpu, load)
-    plan = partition(files, history_weights(root), shard_count, sizes)
+    plan = partition(files, app_relative_weights(history_weights(root)), shard_count, sizes)
     timeout_override = os.environ.get('RAFT_CHECK_SHARD_TIMEOUT_MINUTES')
     max_failures = int(env_number('RAFT_CHECK_MAX_FAILURES', DEFAULT_MAX_FAILURES))
     stall_minutes = env_number('RAFT_CHECK_STALL_MINUTES', DEFAULT_STALL_MINUTES)
@@ -1052,7 +1059,7 @@ def run_gate(check_env, emit, started):
     (local / 'check-summary.txt').write_text(summary_text, encoding='utf-8')
     write_aggregate_log(shards, summary_text, tests_passed)
     previous = read_json(local / 'check-durations.json').get('files', {})
-    merged = {name: entry for name, entry in previous.items() if (app_dir / name).is_file() and name not in durations}
+    merged = {name: entry for name, entry in previous.items() if (root / name).is_file() and name not in durations}
     merged.update(durations)
     (local / 'check-durations.json').write_text(json.dumps({
         'sourceHash': source_hash, 'wallSeconds': round(time.monotonic() - started, 1), 'shards': len(shards), 'jobsPerShard': jobs,

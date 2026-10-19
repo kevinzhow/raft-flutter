@@ -62,6 +62,26 @@ class PartitionTests(unittest.TestCase):
         self.assertEqual(check.partition([], {}, 4), [{'files': [], 'weight': 0.0}])
 
 
+class HistoryWeightTests(unittest.TestCase):
+    """check-durations.json is keyed by repo-relative path; `flutter test` and discover_tests use app-relative paths."""
+
+    def test_weights_are_rekeyed_to_the_paths_the_shards_receive(self):
+        weights = {'apps/raft_flutter/test/a_test.dart': 90.0, 'packages/raft_ui/test/b_test.dart': 30.0}
+        self.assertEqual(check.app_relative_weights(weights, Path('/repo'), Path('/repo/apps/raft_flutter')),
+                         {'test/a_test.dart': 90.0, '../../packages/raft_ui/test/b_test.dart': 30.0})
+
+    def test_recorded_durations_balance_the_shards_instead_of_splitting_by_count(self):
+        heavy_files = {f'test/f{i:02}_test.dart' for i in (0, 4, 8, 12)}  # equal-count splitting puts them in one shard
+        files = [f'test/f{i:02}_test.dart' for i in range(20)]
+        recorded = {f'apps/raft_flutter/{f}': 100.0 if f in heavy_files else 1.0 for f in files}
+        rekeyed = check.app_relative_weights(recorded, Path('/repo'), Path('/repo/apps/raft_flutter'))
+        heavy_per_shard = lambda plan: sorted(len(heavy_files & set(p['files'])) for p in plan)
+        self.assertEqual(heavy_per_shard(check.partition(files, recorded, 4)), [0, 0, 0, 4])  # the former call: no key matched
+        balanced = check.partition(files, rekeyed, 4)
+        self.assertEqual(heavy_per_shard(balanced), [1, 1, 1, 1])
+        self.assertEqual(max(p['weight'] for p in balanced), 104.0)
+
+
 class StructurePreflightTests(unittest.TestCase):
     def test_growth_stops_before_assets_or_tests_and_records_a_failed_run(self):
         with tempfile.TemporaryDirectory() as temp:
