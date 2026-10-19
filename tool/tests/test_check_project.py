@@ -42,6 +42,11 @@ class PartitionTests(unittest.TestCase):
         self.assertEqual(sorted(sum((p['files'] for p in plan), [])), sorted(weights))
         self.assertLessEqual(max(p['weight'] for p in plan), 140)  # optimum 130
 
+    def test_each_shard_starts_with_its_heaviest_file(self):
+        weights = {'a': 5, 'b': 100, 'c': 7, 'd': 60, 'e': 1, 'f': 30}
+        for shard in check.partition(list(weights), weights, 2):
+            self.assertEqual(shard['files'], sorted(shard['files'], key=lambda f: (-weights[f], f)))
+
     def test_is_deterministic(self):
         weights = {f'f{i}': 1 + i % 7 for i in range(40)}
         self.assertEqual(check.partition(list(weights), weights, 4), check.partition(list(reversed(list(weights))), weights, 4))

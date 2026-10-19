@@ -161,6 +161,9 @@ def shard_timeout_seconds(weight, jobs, override=None):
 def partition(files, weights, shards, fallback=None):
     """Greedy longest-first split into `shards` lists of near-equal total weight.
 
+    Each shard lists its files longest first, so `flutter test` starts the heavy files early and a big
+    file never begins when the shard is nearly done.
+
     `weights` maps file to measured seconds; a file without history gets the mean
     of the known weights scaled by its `fallback` size when present, so a new or
     renamed file is neither free nor assumed huge. Deterministic for equal input.
@@ -183,7 +186,7 @@ def partition(files, weights, shards, fallback=None):
         target = min(bins, key=lambda b: (b[0], b[1]))
         target[0] += weight(name)
         target[2].append(name)
-    return [{'files': sorted(b[2]), 'weight': round(b[0], 2)} for b in sorted(bins, key=lambda b: b[1])]
+    return [{'files': b[2], 'weight': round(b[0], 2)} for b in sorted(bins, key=lambda b: b[1])]  # longest first: the heavy files start early and the shard has no long tail
 
 
 def parse_test_events(lines, to_repo_path=lambda p: p):
