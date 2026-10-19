@@ -70,7 +70,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final unrelated = RaftChannel({
             'id': 'unrelated',
             'name': 'retained main channel',
@@ -86,10 +86,10 @@ void main() {
               'joined': true,
             }),
           ];
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             message('old-main', 'unrelated'),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['unrelated'] = {'old-main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['unrelated'] = {'old-main'};
           w.section = 'activity';
           final parent = Completer<Map<String, dynamic>>();
           final replies = Completer<Map<String, dynamic>>();
@@ -167,7 +167,7 @@ void main() {
             expect(w.location.thread?.itemId, 'parent');
             expect(w.location.messageId, 'reply');
             expect(w.channel?.id, 'unrelated');
-            expect(w.messages.map((row) => row.id), ['old-main']);
+            expect(w.messageDomain.messages.map((row) => row.id), ['old-main']);
             expect(w.presentedThreadParent, isNull);
             expect(find.byType(RaftThreadHeader), findsOneWidget);
             expect(
@@ -255,10 +255,12 @@ void main() {
               w.location.content?.kind,
               dm ? RaftContentKind.dm : RaftContentKind.channel,
             );
-            expect(w.messages.map((row) => row.id), [channelTarget]);
+            expect(w.messageDomain.messages.map((row) => row.id), [
+              channelTarget,
+            ]);
           } else {
             expect(w.presentedThreadParent?.id, 'parent');
-            expect(w.messages.map((row) => row.id), ['old-main']);
+            expect(w.messageDomain.messages.map((row) => row.id), ['old-main']);
           }
           for (var frame = 0; frame < 5; ++frame) {
             await tester.pump(const Duration(milliseconds: 16));
@@ -280,7 +282,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           w.section = 'activity';
           final parent = Completer<Map<String, dynamic>>(),
               resolution = Completer<Map<String, dynamic>>(),

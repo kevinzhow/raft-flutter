@@ -244,13 +244,13 @@ void main() {
       await c.stream.close();
     });
     await w.bootstrap();
-    w.threadParent = RaftMessage(c.message('m'));
+    w.messageDomain.state.threadParent = RaftMessage(c.message('m'));
     w.threadChannelId = 'thread';
     w.navigation.navigate(w.location.withQuery({'thread': 'c:m'}));
-    w.ledger.ingest([
+    w.messageDomain.ledger.ingest([
       {...c.message('reply'), 'channelId': 'thread'},
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['thread'] = {'reply'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['thread'] = {'reply'};
     final owner = Object();
     w.setConversationPresentation(owner, main: false, thread: true);
     c.calls.clear();
@@ -259,7 +259,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     await w.markRead('c');
     await w.markRead('thread');
-    expect(w.messages.map((m) => m.id), contains('new'));
+    expect(w.messageDomain.messages.map((m) => m.id), contains('new'));
     expect(c.calls, isNot(contains('POST:/channels/c/read')));
     expect(c.calls, contains('POST:/channels/thread/read'));
     w.releaseConversationPresentation(Object());

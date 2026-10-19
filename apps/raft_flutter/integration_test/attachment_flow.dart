@@ -73,7 +73,7 @@ Future<void> verifyAttachmentFlow(
     if (find.text('Tap to retry').evaluate().isEmpty) {
       await capture('linux-attachment-retry-failure');
       debugPrint(
-        'Attachment retry checkpoint: section=${w.section} loading=${w.loading} channelLoading=${w.channelLoading} uploadCount=${w.uploads().length} composerCount=${find.byType(RaftComposer).evaluate().length} chipCount=${find.byType(RaftComposerAttachments).evaluate().length} language=${w.client.user?.json['displayLanguage']} retryIconCount=${find.byIcon(Icons.refresh).evaluate().length} scaffoldCount=${find.byType(Scaffold).evaluate().length} setupText=${find.text('Set up your workspace').evaluate().length} chatWidgets=${find.byType(Chat).evaluate().length}',
+        'Attachment retry checkpoint: section=${w.section} loading=${w.loading} channelLoading=${w.messageDomain.state.channelLoading} uploadCount=${w.uploads().length} composerCount=${find.byType(RaftComposer).evaluate().length} chipCount=${find.byType(RaftComposerAttachments).evaluate().length} language=${w.client.user?.json['displayLanguage']} retryIconCount=${find.byIcon(Icons.refresh).evaluate().length} scaffoldCount=${find.byType(Scaffold).evaluate().length} setupText=${find.text('Set up your workspace').evaluate().length} chatWidgets=${find.byType(Chat).evaluate().length}',
       );
     }
     expect(find.text('Tap to retry'), findsOneWidget);
@@ -92,7 +92,7 @@ Future<void> verifyAttachmentFlow(
     final ids = w.uploads().map((u) => u.id).toSet();
     imageId = failed.id;
     expect(await w.send('Native attachment delivery $suffix'), true);
-    final message = w.messages.singleWhere(
+    final message = w.messageDomain.messages.singleWhere(
       (m) => m.content == 'Native attachment delivery $suffix',
     );
     expect(message.attachments.map((m) => m['id']).toSet(), ids);

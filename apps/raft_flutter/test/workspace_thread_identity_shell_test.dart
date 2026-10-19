@@ -13,10 +13,12 @@ import 'message_presentation_test.dart' show fixture;
 import 'support/app_services_fixture.dart';
 
 Future<void> _parentSettled(WorkspaceController w) async {
-  if (!w.threadParentLoading) return;
+  if (!w.messageDomain.threadParentLoading) return;
   final completed = Completer<void>();
   void changed() {
-    if (!w.threadParentLoading && !completed.isCompleted) completed.complete();
+    if (!w.messageDomain.threadParentLoading && !completed.isCompleted) {
+      completed.complete();
+    }
   }
 
   w.addListener(changed);
@@ -34,7 +36,7 @@ void main() {
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final requested = Completer<void>(), delivery = Completer<void>();
       api.routes['GET /channels/c1/threads/parent'] = (_) => {
         'threadChannelId': 'thread-1',
@@ -59,7 +61,7 @@ void main() {
       late Future<void> opening;
       final accepted = Completer<void>();
       void changed() {
-        if (!w.threadParentLoading && !accepted.isCompleted) {
+        if (!w.messageDomain.threadParentLoading && !accepted.isCompleted) {
           accepted.complete();
         }
       }
@@ -79,13 +81,13 @@ void main() {
         // Exercise the former 20ms boundary in fake time while actual response
         // delivery is still gated. Completion must follow the controller event.
         await tester.pump(const Duration(milliseconds: 20));
-        expect(w.threadParentLoading, isTrue);
+        expect(w.messageDomain.threadParentLoading, isTrue);
         expect(w.presentedThreadParent, isNull);
         expect(ready, isFalse);
         delivery.complete();
         await drainIo(tester, settled);
         expect(ready, isTrue);
-        expect(w.threadParentLoading, isFalse);
+        expect(w.messageDomain.threadParentLoading, isFalse);
         expect(w.presentedThreadParent?.id, 'parent');
       } finally {
         if (!delivery.isCompleted) delivery.complete();
@@ -115,7 +117,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final resolution = Completer<Map<String, dynamic>>(),
               parent = Completer<Map<String, dynamic>>();
           final resolutionStarted = Completer<void>(),
@@ -213,7 +215,7 @@ void main() {
           }
           for (var frame = 0; frame < 4; ++frame) {
             await tester.pump(const Duration(milliseconds: 16));
-            expect(w.threadParentLoading, isTrue);
+            expect(w.messageDomain.threadParentLoading, isTrue);
             final header = tester.widget<RaftThreadHeader>(headerFinder);
             expect(header.parentLabel, '#test');
             expect(header.interactiveTitle, isTrue);

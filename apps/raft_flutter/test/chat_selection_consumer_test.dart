@@ -54,12 +54,12 @@ void main() {
             'messageType': 'chat',
           },
         ];
-        w.ledger.switchServer('s1');
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'parent', 'later'};
-        w.visibleIds['t1'] = {'reply'};
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
+        w.messageDomain.visibleIds['t1'] = {'reply'};
         if (thread) {
-          w.threadParent = w.messages.first;
+          w.messageDomain.state.threadParent = w.messageDomain.messages.first;
           w.threadChannelId = 't1';
         }
         a.routes['GET /servers/s1/setup-projection'] = (_) => {

@@ -378,7 +378,7 @@ Future<void> openForward(WidgetTester t, RootFixture f) async {
   await openChannel(t, f);
   final w = f.workspace(t);
   final ctx = t.element(find.byType(WorkspaceView));
-  final messages = w.messages.take(1).toList();
+  final messages = w.messageDomain.messages.take(1).toList();
   unawaited(showForwardComposerPage(ctx, w, messages));
   await f.flush(t);
   await settle(t);

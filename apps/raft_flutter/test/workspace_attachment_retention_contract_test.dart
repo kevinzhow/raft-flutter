@@ -53,7 +53,7 @@ class _Fixture {
       ..server = RaftRecord({'id': 'server', 'role': 'owner'})
       ..channel = row('channel');
     w.channels = [w.channel!];
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     ingest('channel', 'host', '1', attachments: [_metadata]);
     addTearDown(() async {
       w.dispose();
@@ -70,7 +70,7 @@ class _Fixture {
     String seq, {
     String? thread,
     List<Map<String, dynamic>> attachments = const [],
-  }) => w.ledger.ingest([
+  }) => w.messageDomain.ledger.ingest([
     {
       'id': id,
       'channelId': channel,
@@ -79,7 +79,7 @@ class _Fixture {
       'threadId': thread,
       'attachments': attachments,
     },
-  ], expectedGeneration: w.ledger.generation);
+  ], expectedGeneration: w.messageDomain.ledger.generation);
 
   AttachmentImageKey key({
     String channel = 'channel',
@@ -243,7 +243,7 @@ void main() {
       ..server = f.w.server
       ..channels = [_Fixture.row('channel')];
     addTearDown(editor.dispose);
-    editor.ledger.switchServer('server');
+    editor.messageDomain.ledger.switchServer('server');
     expect(editor.attachmentMedia, isNot(same(f.w.attachmentMedia)));
     await f.load(f.key(), through: editor);
     expect(editor.attachmentMedia.retainedImageCount, 0);

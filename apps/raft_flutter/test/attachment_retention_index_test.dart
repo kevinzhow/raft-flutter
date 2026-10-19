@@ -41,7 +41,7 @@ class _Fixture {
       ..server = RaftRecord({'id': 'server', 'role': 'owner'})
       ..channel = RaftChannel({'id': 'channel', 'joined': true});
     w.channels = [w.channel!];
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     ingest(_metadata, '1');
     imageKey = AttachmentImageKey.fromMetadata(
       scope: w.attachmentImageScope,
@@ -57,15 +57,16 @@ class _Fixture {
   late final WorkspaceController w;
   late final AttachmentImageKey imageKey;
   int loads = 0;
-  void ingest(Map<String, dynamic> metadata, String seq) => w.ledger.ingest([
-    {
-      'id': 'host',
-      'channelId': 'channel',
-      'seq': seq,
-      'content': 'fixture',
-      'attachments': [metadata],
-    },
-  ], expectedGeneration: w.ledger.generation);
+  void ingest(Map<String, dynamic> metadata, String seq) =>
+      w.messageDomain.ledger.ingest([
+        {
+          'id': 'host',
+          'channelId': 'channel',
+          'seq': seq,
+          'content': 'fixture',
+          'attachments': [metadata],
+        },
+      ], expectedGeneration: w.messageDomain.ledger.generation);
 
   Future<Object> retain() async {
     final lease = w.attachmentMedia.acquireImage(
@@ -218,14 +219,14 @@ void main() {
       final image = await f.retain();
       final builds = f.w.debugRetainedAttachmentIndexBuilds;
       for (var i = 0; i < 20; i++) {
-        f.w.ledger.ingest([
+        f.w.messageDomain.ledger.ingest([
           {
             'id': 'plain-$i',
             'channelId': 'channel',
             'seq': '${i + 2}',
             'content': 'An ordinary message without attachments.',
           },
-        ], expectedGeneration: f.w.ledger.generation);
+        ], expectedGeneration: f.w.messageDomain.ledger.generation);
         f.w.notifyListeners();
         final lease = f.w.attachmentMedia.peekImage(
           f.imageKey,
@@ -251,14 +252,14 @@ void main() {
       await f.retain();
       final builds = f.w.debugRetainedAttachmentIndexBuilds;
       final extra = {..._metadata, 'id': 'extra'};
-      f.w.ledger.ingest([
+      f.w.messageDomain.ledger.ingest([
         {
           'id': 'other',
           'channelId': 'channel',
           'seq': '2',
           'attachments': [extra],
         },
-      ], expectedGeneration: f.w.ledger.generation);
+      ], expectedGeneration: f.w.messageDomain.ledger.generation);
       final key = AttachmentImageKey.fromMetadata(
         scope: f.w.attachmentImageScope,
         channelId: 'channel',
@@ -298,14 +299,14 @@ void main() {
         final image = await f.retain();
         final builds = f.w.debugRetainedAttachmentIndexBuilds;
         for (var i = 0; i < history; i++) {
-          f.w.ledger.ingest([
+          f.w.messageDomain.ledger.ingest([
             {
               'id': 'bulk-$i',
               'channelId': 'channel',
               'seq': '${i + 2}',
               'content': 'bulk',
             },
-          ], expectedGeneration: f.w.ledger.generation);
+          ], expectedGeneration: f.w.messageDomain.ledger.generation);
           if ((i + 1) % MessageLedger.incrementalChangeLimit == 0) {
             final drained = f.w.attachmentMedia.peekImage(
               f.imageKey,
@@ -326,14 +327,14 @@ void main() {
         final micros = <int>[];
         for (var i = 0; i < 21; i++) {
           final watch = Stopwatch()..start();
-          f.w.ledger.ingest([
+          f.w.messageDomain.ledger.ingest([
             {
               'id': 'timed-$history-$i',
               'channelId': 'channel',
               'seq': '${history + i + 3}',
               'content': 'timed',
             },
-          ], expectedGeneration: f.w.ledger.generation);
+          ], expectedGeneration: f.w.messageDomain.ledger.generation);
           final lease = f.w.attachmentMedia.peekImage(
             f.imageKey,
             authorized: () => true,
@@ -365,25 +366,25 @@ void main() {
     final builds = f.w.debugRetainedAttachmentIndexBuilds;
     final limit = MessageLedger.incrementalChangeLimit;
     for (var i = 0; i < limit; i++) {
-      f.w.ledger.ingest([
+      f.w.messageDomain.ledger.ingest([
         {
           'id': 'unread-$i',
           'channelId': 'channel',
           'seq': '${i + 2}',
           'content': 'unread',
         },
-      ], expectedGeneration: f.w.ledger.generation);
+      ], expectedGeneration: f.w.messageDomain.ledger.generation);
     }
     final extra = {..._metadata, 'id': 'extra'};
-    f.w.ledger.ingest([
+    f.w.messageDomain.ledger.ingest([
       {
         'id': 'extra-host',
         'channelId': 'channel',
         'seq': '${limit + 2}',
         'attachments': [extra],
       },
-    ], expectedGeneration: f.w.ledger.generation);
-    expect(f.w.ledger.debugChangeCount, lessThanOrEqualTo(limit));
+    ], expectedGeneration: f.w.messageDomain.ledger.generation);
+    expect(f.w.messageDomain.ledger.debugChangeCount, lessThanOrEqualTo(limit));
     final kept = f.w.attachmentMedia.peekImage(
       f.imageKey,
       authorized: () => true,
@@ -422,7 +423,7 @@ void main() {
       final f = _Fixture();
       await f.retain();
       final builds = f.w.debugRetainedAttachmentIndexBuilds;
-      f.w.ledger.remove('channel', 'host');
+      f.w.messageDomain.ledger.remove('channel', 'host');
       f.w.notifyListeners();
       expect(
         f.w.attachmentMedia.peekImage(f.imageKey, authorized: () => true),

@@ -135,8 +135,8 @@ void main() {
       RaftChannel({'id': channelId, 'name': 'product', 'joined': true}),
     ];
     w.channel = w.channels.first;
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       {
         'id': 'quoter',
         'channelId': channelId,
@@ -148,8 +148,8 @@ void main() {
         'content': 'Context: ${link()}',
         'createdAt': '2026-06-22T02:30:00.000Z',
       },
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds[channelId] = {'quoter'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds[channelId] = {'quoter'};
     api.routes['GET /messages/context/$targetId'] = (_) => context();
     api.routes['GET /servers/s1/setup-projection'] = (_) => {
       'phase': 'complete',

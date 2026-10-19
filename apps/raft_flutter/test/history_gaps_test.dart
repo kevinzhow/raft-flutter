@@ -63,9 +63,9 @@ void main() {
     try {
       await seedGap(cache, scope);
       await w.selectChannel(w.channels.single, autoRead: false);
-      await w.older();
+      await w.messageDomain.older();
       final gate = client.gate = Completer<void>();
-      final pending = w.loadHistoryGap(BigInt.from(901));
+      final pending = w.messageDomain.loadHistoryGap(BigInt.from(901));
       await client.beforeArrived.future;
       final other = RaftChannel({
         'id': 'other',
@@ -77,7 +77,10 @@ void main() {
       gate.complete();
       await pending;
       expect(w.channel!.id, 'other');
-      expect(w.messages.every((row) => row.channelId == 'other'), isTrue);
+      expect(
+        w.messageDomain.messages.every((row) => row.channelId == 'other'),
+        isTrue,
+      );
       expect(
         await cache.messageHistory.readContext(scope, 'chat-851', radius: 0),
         isNull,
@@ -146,29 +149,32 @@ void main() {
       final scope = MessageHistoryPages.scope(w, 'chat')!;
       await seedGap(cache, scope);
       await w.selectChannel(w.channels.single, autoRead: false);
-      await w.older();
-      expect(w.messages.first.seq, BigInt.one);
-      expect(w.messages.last.seq, BigInt.from(950));
-      expect(w.hasMore, isFalse);
+      await w.messageDomain.older();
+      expect(w.messageDomain.messages.first.seq, BigInt.one);
+      expect(w.messageDomain.messages.last.seq, BigInt.from(950));
+      expect(w.messageDomain.state.hasMore, isFalse);
       final gaps = await cache.messageHistory.gaps.read(scope, [
-        for (final row in w.messages) (row.id, row.seq),
+        for (final row in w.messageDomain.messages) (row.id, row.seq),
       ]);
       expect(gaps, hasLength(1));
       expect(gaps.single.before, BigInt.from(901));
       expect(client.beforeReads, isEmpty);
       final gate = client.gate = Completer<void>();
-      final pending = w.loadHistoryGap(gaps.single.before);
+      final pending = w.messageDomain.loadHistoryGap(gaps.single.before);
       await client.beforeArrived.future;
-      expect(w.loadingOlder, isTrue);
-      await w.loadHistoryGap(gaps.single.before);
+      expect(w.messageDomain.state.loadingOlder, isTrue);
+      await w.messageDomain.loadHistoryGap(gaps.single.before);
       expect(client.beforeReads, [BigInt.from(901)]);
       gate.complete();
       await pending;
-      expect(w.hasMore, isFalse);
-      expect(w.messages.first.seq, BigInt.one);
-      expect(w.messages.map((row) => row.seq), contains(BigInt.from(851)));
+      expect(w.messageDomain.state.hasMore, isFalse);
+      expect(w.messageDomain.messages.first.seq, BigInt.one);
+      expect(
+        w.messageDomain.messages.map((row) => row.seq),
+        contains(BigInt.from(851)),
+      );
       final remaining = await cache.messageHistory.gaps.read(scope, [
-        for (final row in w.messages) (row.id, row.seq),
+        for (final row in w.messageDomain.messages) (row.id, row.seq),
       ]);
       expect(remaining, hasLength(1));
       expect(remaining.single.before, BigInt.from(851));

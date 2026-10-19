@@ -1054,7 +1054,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
         threadSelection.active ||
         mainSelection.active ||
         scaffold.currentState?.isDrawerOpen == true ||
-        w.threadParent != null && w.section == 'chat';
+        w.messageDomain.state.threadParent != null && w.section == 'chat';
     if (layer) dismissPanel();
   }
 
@@ -1096,7 +1096,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       }
       return;
     }
-    if (w.threadParent != null &&
+    if (w.messageDomain.state.threadParent != null &&
         w.location.thread == null &&
         w.section == 'chat') {
       w.closeThread();
@@ -2081,12 +2081,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
   Widget sourceThreadHeader({bool mobile = false, VoidCallback? onClose}) {
     final unresolved =
         w.threadChannelId == null &&
-        (w.threadResolutionLoading || w.threadResolutionError != null);
+        (w.messageDomain.threadResolutionLoading || w.messageDomain.threadResolutionError != null);
     // The menu needs only the thread identity, never the loaded parent row,
     // so the header's actions are present at its first frame.
-    final parentId = w.threadParentMessageId,
-        parentChannelId = w.threadParentChannelId;
-    final sourceChannel = w.threadSourceChannel;
+    final parentId = w.messageDomain.threadParentMessageId,
+        parentChannelId = w.messageDomain.threadParentChannelId;
+    final sourceChannel = w.messageDomain.threadSourceChannel;
     final threadId = w.threadChannelId;
     return ListenableBuilder(
       listenable: w.services.threadFollowers,
@@ -2193,14 +2193,14 @@ class _WorkspaceViewState extends State<WorkspaceView>
           scope != desktopAuthority) {
         return false;
       }
-      if (w.threadParent != null) {
+      if (w.messageDomain.state.threadParent != null) {
         ticket = desktopNavigation.selectTarget(
           DesktopContentTarget(
             DesktopContentKind.thread,
-            w.threadChannelId ?? w.threadParent!.id,
+            w.threadChannelId ?? w.messageDomain.state.threadParent!.id,
             channelId: channelId,
             messageId: messageId,
-            parentMessageId: w.threadParent!.id,
+            parentMessageId: w.messageDomain.state.threadParent!.id,
           ),
         );
       }
@@ -3296,7 +3296,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   List<SidebarGroup> get sidebarGroups {
     final activity = <String, DateTime>{};
     for (final c in [...w.channels, ...w.dms]) {
-      final stamp = w.ledger.latestCreatedAt(c.id);
+      final stamp = w.messageDomain.ledger.latestCreatedAt(c.id);
       if (stamp != null) activity[c.id] = stamp;
     }
     return projectSidebar(

@@ -38,10 +38,13 @@ void main() {
             );
           }
           for (var n = 0; n < 19; n++) {
-            await first.older(thread: thread);
+            await first.messageDomain.older(thread: thread);
           }
           final id = thread ? 'thread' : 'chat';
-          first.saveReadingAnchor(id, ReadingAnchor('$id-43', -13));
+          first.messageDomain.saveReadingAnchor(
+            id,
+            ReadingAnchor('$id-43', -13),
+          );
           await first.flushCache();
           first.dispose();
           await client.arrivals.close();
@@ -71,7 +74,12 @@ void main() {
             parent: thread ? 'chat' : id,
             parentMessage: thread ? 'chat-1000' : null,
           )!;
-          expect(thread ? w.threadWindow!.hasNewer : w.hasNewer, isTrue);
+          expect(
+            thread
+                ? w.messageDomain.threadWindow!.hasNewer
+                : w.messageDomain.state.hasNewer,
+            isTrue,
+          );
           expect(
             (await tester.runAsync(
               () => db.messageHistory.readPosition(scope),

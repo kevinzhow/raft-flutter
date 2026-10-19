@@ -83,7 +83,7 @@ void main() {
         final w = WorkspaceController(client, cache: cache)
           ..server = RaftRecord({'id': 'server', 'role': 'owner'})
           ..channels = [alpha, beta];
-        w.ledger.switchServer('server');
+        w.messageDomain.ledger.switchServer('server');
         addTearDown(() async {
           w.dispose();
           await client.eventsController.close();
@@ -92,12 +92,12 @@ void main() {
         await w.selectChannel(alpha, navigate: false, autoRead: false);
         await w.flushCache();
         await w.jumpToMessage('alpha', 'alpha-6', navigate: false);
-        expect(w.messages.map((m) => m.id), ['alpha-6']);
-        expect(w.hasNewer, isTrue);
+        expect(w.messageDomain.messages.map((m) => m.id), ['alpha-6']);
+        expect(w.messageDomain.state.hasNewer, isTrue);
 
         final late = Completer<Map<String, dynamic>>();
         client.holdTail = late;
-        final returning = w.returnToLatest(navigate: false);
+        final returning = w.messageDomain.returnToLatest(navigate: false);
         await client.tailStarted.future;
         if (live) {
           client.alphaEnd = 77;
@@ -111,21 +111,21 @@ void main() {
         late.complete(client.page('alpha'));
         await returning;
         expect(w.channel?.id, 'beta');
-        expect(w.messages.map((m) => m.id), [
+        expect(w.messageDomain.messages.map((m) => m.id), [
           for (var n = 1; n <= 4; n++) 'beta-$n',
         ]);
 
         await w.selectChannel(alpha, navigate: false, autoRead: false);
-        final reopened = w.messages.map((m) => m.id).toList();
-        await w.older();
+        final reopened = w.messageDomain.messages.map((m) => m.id).toList();
+        await w.messageDomain.older();
         await w.flushCache();
         expect(
-          w.messages.map((m) => m.id),
+          w.messageDomain.messages.map((m) => m.id),
           [for (var n = 1; n < client.alphaEnd; n++) 'alpha-$n'],
           reason:
               'A cancelled latest request left this reopened window: $reopened',
         );
-        expect(w.hasMore, isFalse);
+        expect(w.messageDomain.state.hasMore, isFalse);
       },
     );
   }

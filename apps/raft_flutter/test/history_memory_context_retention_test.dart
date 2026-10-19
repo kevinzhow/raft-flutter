@@ -32,9 +32,12 @@ void main() {
               );
             }
             for (var n = 0; n < 19; n++) {
-              await first.older(thread: thread);
+              await first.messageDomain.older(thread: thread);
             }
-            first.saveReadingAnchor(id, ReadingAnchor('$id-43', -13));
+            first.messageDomain.saveReadingAnchor(
+              id,
+              ReadingAnchor('$id-43', -13),
+            );
             await first.flushCache();
           } finally {
             first.dispose();
@@ -46,9 +49,9 @@ void main() {
           try {
             // Startup/server return can already retain the latest 500 bodies
             // when the durable reading context replaces visible membership.
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               for (var n = 501; n <= 1000; n++) row(id, n),
-            ], expectedGeneration: w.ledger.generation);
+            ], expectedGeneration: w.messageDomain.ledger.generation);
             await w.selectChannel(w.channels.single, autoRead: false);
             if (thread) {
               await w.openThreadIdentity(
@@ -58,14 +61,22 @@ void main() {
                 navigate: false,
               );
             }
-            final shown = (thread ? w.replies : w.messages)
+            final shown = (thread ? w.replies : w.messageDomain.messages)
                 .map((m) => m.id)
                 .toSet();
             expect(shown, contains('$id-43'));
             expect(shown.length, lessThan(100));
-            expect(w.ledger.messages(id).length, greaterThan(500));
+            expect(
+              w.messageDomain.ledger.messages(id).length,
+              greaterThan(500),
+            );
             expect(w.foreground, isTrue);
-            expect(thread ? w.threadWindow!.hasNewer : w.hasNewer, isTrue);
+            expect(
+              thread
+                  ? w.messageDomain.threadWindow!.hasNewer
+                  : w.messageDomain.state.hasNewer,
+              isTrue,
+            );
             if (anchor == 'missing') {
               w.messageWindows.clearReadingAnchor(id);
             } else if (anchor == 'stale-tail') {
@@ -76,14 +87,17 @@ void main() {
             }
             MessageHistoryMemory.attach(w, db.messageHistory);
             await db.messageHistory.memory.maintain();
-            final kept = thread ? w.replies : w.messages;
+            final kept = thread ? w.replies : w.messageDomain.messages;
             expect(
               kept.map((m) => m.id),
               containsAll(shown),
               reason:
                   'Trimming a retained tail must not empty the active context',
             );
-            expect(w.ledger.messages(id).length, lessThanOrEqualTo(500));
+            expect(
+              w.messageDomain.ledger.messages(id).length,
+              lessThanOrEqualTo(500),
+            );
             final scope = MessageHistoryPages.scope(
               w,
               id,

@@ -63,7 +63,7 @@ void main() {
           expect(find.text('Load this gap'), findsNothing);
           final loaded = Completer<void>();
           void finished() {
-            if (!w.loadingOlder &&
+            if (!w.messageDomain.state.loadingOlder &&
                 client.beforeReads.isNotEmpty &&
                 !loaded.isCompleted) {
               loaded.complete();
@@ -90,11 +90,14 @@ void main() {
             expect(client.beforeReads, [BigInt.from(900)]);
             expect(w.error, isNull);
             expect(
-              w.messages.map((m) => m.id),
+              w.messageDomain.messages.map((m) => m.id),
               containsAll(['chat-500', 'chat-900']),
             );
             if (empty) {
-              expect(w.messages.map((m) => m.id), ['chat-500', 'chat-900']);
+              expect(w.messageDomain.messages.map((m) => m.id), [
+                'chat-500',
+                'chat-900',
+              ]);
             }
             expect(
               find.byKey(const ValueKey('message-history-gap')),
@@ -116,7 +119,7 @@ void main() {
           opened = true;
           await mount();
           expect(
-            w.messages.map((m) => m.id),
+            w.messageDomain.messages.map((m) => m.id),
             containsAll(['chat-500', 'chat-900']),
           );
           expect(

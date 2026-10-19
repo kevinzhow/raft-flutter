@@ -57,11 +57,11 @@ Future<WorkspaceController> mount(
     'collapseLongMessages': true,
   });
   w.channels = [w.channel!];
-  w.ledger.switchServer('s1');
-  w.ledger.ingest([
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.ledger.ingest([
     longRow(seq: seq, agent: agent),
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'m1'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'m1'};
   tester.view.physicalSize = Size(width, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);

@@ -21,7 +21,7 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
         api.routes['POST /channels/c1/read'] = (_) => {};
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = [
           for (final row in contextRows('extent-projected', count: 600))
             {
@@ -32,8 +32,13 @@ void main() {
               ).join('\n'),
             },
         ];
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((row) => row['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((row) => row['id'] as String)
+            .toSet();
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(RaftFamily.elegant),

@@ -296,7 +296,7 @@ class TaskSurfaceController extends ChangeNotifier {
       ...c.channels,
       ...c.dms,
     ].where((row) => row.id == task['channelId']).firstOrNull;
-    c.ledger.switchServer(parent.server!.id);
+    c.messageDomain.ledger.switchServer(parent.server!.id);
     c.foreground = false;
     c.setConversationPresentation(
       presentationOwner,

@@ -62,7 +62,7 @@ void main() {
       await w.selectChannel(owned);
       await until(
         () =>
-            !w.channelLoading &&
+            !w.messageDomain.state.channelLoading &&
             find.byType(RaftChatView).evaluate().isNotEmpty,
       );
       await verifyNativeMediaPreviewFlow(tester, w, (name) async {

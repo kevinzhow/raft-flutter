@@ -49,9 +49,9 @@ Future<(WorkspaceController, MessageAdapter)> _fixture({
 }
 
 void _ingest(WorkspaceController w, List<(String, String, String)> rows) {
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   var seq = 0;
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     for (final (id, sender, content) in rows)
       {
         'id': id,
@@ -63,8 +63,8 @@ void _ingest(WorkspaceController w, List<(String, String, String)> rows) {
         'content': content,
         'createdAt': '2026-06-22T02:30:00Z',
       },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {for (final (id, _, _) in rows) id};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {for (final (id, _, _) in rows) id};
 }
 
 /// Translates every requested id to `EN <id>`.

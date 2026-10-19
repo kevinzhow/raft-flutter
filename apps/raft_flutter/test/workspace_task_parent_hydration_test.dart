@@ -72,7 +72,7 @@ Future<(WorkspaceController, ParentAdapter)> parentFixture(
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'tasks';
   api.routes['POST /feature-flags/evaluate'] = (_) => {'evaluations': []};
   api.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
@@ -132,10 +132,10 @@ void main() {
               lookup.future;
           api.routes['GET /messages/channel/task-thread'] = (_) =>
               replies.future;
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('accepted-main', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'accepted-main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'accepted-main'};
           w.drafts[w.draftScope()!] = 'Retained real main draft';
           w.navigation.navigateTask(
             w.location.withQuery({
@@ -208,7 +208,7 @@ void main() {
           expect(owner.canAssign, isTrue);
           expect(owner.cleanup, isFalse);
           expect(w.channel!.id, 'c1');
-          expect(w.messages.single.id, 'accepted-main');
+          expect(w.messageDomain.messages.single.id, 'accepted-main');
           await t.sendKeyEvent(LogicalKeyboardKey.escape);
           await flush(t);
           // The closed task page stays live for the platform pop transition.
@@ -225,7 +225,7 @@ void main() {
             'messages': [row('remote-reply', 'task-thread', 3)],
           });
           await flush(t);
-          expect(w.messages.single.id, 'accepted-main');
+          expect(w.messageDomain.messages.single.id, 'accepted-main');
           expect(w.drafts[w.draftScope()], 'Retained real main draft');
           expect(
             api.calls.where((r) => r.path == '/channels/task-thread/read'),
@@ -376,8 +376,8 @@ void main() {
           );
           expect(w.location.query('task'), 'c1:task-parent');
           expect(w.navigationRevision, revision);
-          expect(w.highlightedMessageId, 'pending-main');
-          expect(w.messages.single.id, 'pending-main');
+          expect(w.messageDomain.state.highlightedMessageId, 'pending-main');
+          expect(w.messageDomain.messages.single.id, 'pending-main');
           expect(
             api.calls.where(
               (r) =>

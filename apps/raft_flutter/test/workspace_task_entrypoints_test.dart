@@ -44,14 +44,16 @@ void main() {
             };
             final detail = Completer<Map>();
             api.routes['GET /tasks/channel/c1/number/8'] = (_) => detail.future;
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               row('task-parent', 'c1', 1),
-            ], expectedGeneration: w.ledger.generation);
-            w.visibleIds['c1'] = {'task-parent'};
+            ], expectedGeneration: w.messageDomain.ledger.generation);
+            w.messageDomain.visibleIds['c1'] = {'task-parent'};
             if (width >= 768) {
-              w.threadParent = RaftMessage(row('ordinary-parent', 'c1', 2));
+              w.messageDomain.state.threadParent = RaftMessage(
+                row('ordinary-parent', 'c1', 2),
+              );
               w.threadChannelId = 'ordinary-side';
-              w.threadLoading = false;
+              w.messageDomain.state.threadLoading = false;
               w.drafts[w.draftScope(thread: true)!] = 'Retained side draft';
             }
             w.navigation.navigate(

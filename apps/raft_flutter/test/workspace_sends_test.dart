@@ -89,7 +89,7 @@ WorkspaceController _editor(_Client client, {WorkspaceController? root}) {
   w.server = RaftRecord({'id': client.serverId, 'role': 'owner'});
   w.channel = RaftChannel({'id': 'c1', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer(client.serverId);
+  w.messageDomain.ledger.switchServer(client.serverId);
   return w;
 }
 
@@ -129,11 +129,11 @@ void main() {
       addTearDown(other.dispose);
       futures.add(root.send('shared send'));
       await _entered(client, 1);
-      expect(root.timeline().single.content, 'shared send');
-      expect(other.timeline().single.content, 'shared send');
+      expect(root.messageDomain.timeline().single.content, 'shared send');
+      expect(other.messageDomain.timeline().single.content, 'shared send');
       expect(
-        other.messageKey(other.timeline().single),
-        root.messageKey(root.timeline().single),
+        other.messageDomain.messageKey(other.messageDomain.timeline().single),
+        root.messageDomain.messageKey(root.messageDomain.timeline().single),
       );
     },
   );
@@ -149,7 +149,7 @@ void main() {
       client.requests.single.reject();
       expect(await futures.single, false);
       expect(root.drafts['c1'], 'failed text\nnewer text');
-      expect(root.timeline(), isEmpty);
+      expect(root.messageDomain.timeline(), isEmpty);
     },
   );
 
@@ -162,8 +162,11 @@ void main() {
       other.dispose();
       client.requests.single.accept(1);
       expect(await futures.single, true);
-      expect(root.timeline().single.id, 'accepted-1');
-      expect(WorkspaceController.isPendingSend(root.timeline().single), false);
+      expect(root.messageDomain.timeline().single.id, 'accepted-1');
+      expect(
+        WorkspaceController.isPendingSend(root.messageDomain.timeline().single),
+        false,
+      );
     },
   );
 
@@ -189,7 +192,7 @@ void main() {
       await _entered(client, 1);
       client.selectServer('s2');
       root.server = RaftRecord({'id': 's2', 'role': 'owner'});
-      root.ledger.switchServer('s2');
+      root.messageDomain.ledger.switchServer('s2');
       root.composer.clearOwnedBy(root);
       futures.add(root.send('new text', randomId: 'same-local-id'));
       await _entered(client, 2);
@@ -200,7 +203,10 @@ void main() {
       futures.add(root.send('new text'));
       await _entered(client, 3);
       expect(client.requests.last.randomId, 'same-local-id');
-      expect(root.timeline().every((row) => row.content != 'old text'), true);
+      expect(
+        root.messageDomain.timeline().every((row) => row.content != 'old text'),
+        true,
+      );
     },
   );
 
@@ -218,13 +224,16 @@ void main() {
       client.requests[2].accept(10);
       client.requests[0].accept(11);
       await Future.wait(futures);
-      expect(root.timeline().map((row) => row.content), ['three', 'one']);
+      expect(root.messageDomain.timeline().map((row) => row.content), [
+        'three',
+        'one',
+      ]);
       futures.add(root.send('two'));
       await _entered(client, 4);
       expect(client.requests[3].randomId, client.requests[1].randomId);
       client.requests[3].accept(12);
       expect(await futures[3], true);
-      expect(root.timeline().map((row) => row.content), [
+      expect(root.messageDomain.timeline().map((row) => row.content), [
         'three',
         'one',
         'two',
@@ -268,23 +277,32 @@ void main() {
         futures.add(root.send(text));
       }
       await _entered(client, 3);
-      final keys = root.timeline().map(root.messageKey).toList();
+      final keys = root.messageDomain
+          .timeline()
+          .map(root.messageDomain.messageKey)
+          .toList();
       client.requests[0].accept(1);
       await futures[0];
-      expect(root.timeline().map((row) => row.content), [
+      expect(root.messageDomain.timeline().map((row) => row.content), [
         'one',
         'two',
         'three',
       ]);
-      expect(root.timeline().map(root.messageKey), keys);
+      expect(
+        root.messageDomain.timeline().map(root.messageDomain.messageKey),
+        keys,
+      );
       client.requests[2].accept(3);
       await futures[2];
-      expect(root.timeline().map((row) => row.content), [
+      expect(root.messageDomain.timeline().map((row) => row.content), [
         'one',
         'two',
         'three',
       ]);
-      expect(root.timeline().map(root.messageKey), keys);
+      expect(
+        root.messageDomain.timeline().map(root.messageDomain.messageKey),
+        keys,
+      );
     },
   );
 
@@ -296,7 +314,7 @@ void main() {
       root.server = RaftRecord({'id': 's1', 'role': 'guest'});
       client.requests.single.accept(1);
       await futures.single;
-      expect(root.ledger.messages('c1'), isEmpty);
+      expect(root.messageDomain.ledger.messages('c1'), isEmpty);
     },
   );
   test(
@@ -320,7 +338,7 @@ void main() {
       expect(client.limits, hasLength(1));
       client.selectServer('s2');
       root.server = RaftRecord({'id': 's2', 'role': 'owner'});
-      root.ledger.switchServer('s2');
+      root.messageDomain.ledger.switchServer('s2');
       root.composer.clearOwnedBy(root);
       await root.stageSharedDraft('new queued', [file('new.txt')]);
       root.saveDraft('');
@@ -351,7 +369,7 @@ void main() {
     client.requests.single.accept(1);
     await futures.single;
     expect(changes, 0);
-    expect(other.timeline(), isEmpty);
+    expect(other.messageDomain.timeline(), isEmpty);
   });
 
   test(

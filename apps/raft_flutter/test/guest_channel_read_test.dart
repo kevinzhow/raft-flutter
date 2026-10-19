@@ -18,13 +18,13 @@ void main() {
   test('a guest loads a joined channel\'s messages', () async {
     final (w, api) = await fixture('guest');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     api.routes['GET /messages/channel/c1'] = (_) => {
       'messages': [row('m1', 'c1', 1), row('m2', 'c1', 2)],
     };
     api.routes['POST /channels/c1/read'] = (_) => {};
     await w.selectChannel(w.channel!);
-    expect(w.messages.map((m) => m.id), ['m1', 'm2']);
+    expect(w.messageDomain.messages.map((m) => m.id), ['m1', 'm2']);
     expect(
       api.calls.where((c) => c.path == '/messages/channel/c1'),
       isNotEmpty,
@@ -34,7 +34,7 @@ void main() {
   test('a guest opens a thread of a channel it can read', () async {
     final (w, api) = await fixture('guest');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     api.routes['GET /messages/context/parent'] = (_) => {
       'messages': [row('parent', 'c1', 1)],
     };
@@ -62,11 +62,11 @@ void main() {
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('guest')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       row('m1', 'c1', 1),
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'m1'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'m1'};
     api.routes['GET /servers/s1/setup-projection'] = (_) => {
       'phase': 'complete',
       'surface': 'complete',

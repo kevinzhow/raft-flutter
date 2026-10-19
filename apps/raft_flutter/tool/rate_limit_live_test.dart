@@ -55,7 +55,7 @@ void main() {
       // What a timeline does for an image tile without a thumbnail: sign it
       // when it is visible (no speculative prefetch).
       final ids = <String>[
-        for (final m in w.messages)
+        for (final m in w.messageDomain.messages)
           for (final a in (m.json['attachments'] as List? ?? const []))
             if (a is Map && a['id'] is String) a['id'] as String,
       ];

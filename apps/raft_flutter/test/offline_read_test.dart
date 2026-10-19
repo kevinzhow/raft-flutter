@@ -82,11 +82,11 @@ void main() {
     w.server = server;
     w.channel = channel;
     w.channels = [channel];
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       {'id': 'm1', 'channelId': 'c1', 'content': 'cached', 'seq': '5'},
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'m1'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'m1'};
     await db.write(client.origin, 'alice', 's1', 'channels', '', {
       'channels': [channel.json],
       'dms': [],

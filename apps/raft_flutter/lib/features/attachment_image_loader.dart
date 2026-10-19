@@ -28,7 +28,7 @@ String attachmentOwnerChannel(
   Map<String, dynamic> metadata,
   String? messageId,
 ) =>
-    '${metadata['channelId'] ?? (w.presentsReply(messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
+    '${metadata['channelId'] ?? (w.messageDomain.presentsReply(messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
 
 /// Key of the full-resolution original (the thumbnail for an SVG, whose
 /// bytes are never decoded).

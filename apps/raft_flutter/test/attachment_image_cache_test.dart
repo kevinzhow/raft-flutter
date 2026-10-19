@@ -117,8 +117,8 @@ const metadata = <String, dynamic>{
     ..server = RaftRecord({'id': 'server', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'channel', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('server');
-  w.ledger.ingest([
+  w.messageDomain.ledger.switchServer('server');
+  w.messageDomain.ledger.ingest([
     {
       'id': 'host',
       'channelId': 'channel',
@@ -126,8 +126,8 @@ const metadata = <String, dynamic>{
       'content': 'photo',
       'attachments': [metadata],
     },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['channel'] = {'host'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['channel'] = {'host'};
   return (client, w);
 }
 

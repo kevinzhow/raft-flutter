@@ -22,10 +22,10 @@ void main() {
           addTearDown(w.dispose);
           await t.binding.setSurfaceSize(const Size(390, 720));
           addTearDown(() => t.binding.setSurfaceSize(null));
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final channelId = thread ? 'thread-c1' : 'c1';
           if (thread) {
-            w.threadParent = RaftMessage({
+            w.messageDomain.state.threadParent = RaftMessage({
               'id': 'parent',
               'channelId': 'c1',
               'seq': 1,
@@ -35,7 +35,7 @@ void main() {
             });
             w.threadChannelId = channelId;
           }
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             for (var i = 1; i <= 2; i++)
               {
                 'id': 'row-$i',
@@ -46,8 +46,8 @@ void main() {
                 'content': 'Public row $i',
                 'createdAt': '2026-06-22T02:30:00Z',
               },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds[channelId] = {'row-1', 'row-2'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds[channelId] = {'row-1', 'row-2'};
           await t.pumpWidget(
             MaterialApp(
               theme: raftTheme(family, dark: dark),

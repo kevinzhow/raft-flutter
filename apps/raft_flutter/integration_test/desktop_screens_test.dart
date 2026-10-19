@@ -300,7 +300,7 @@ void main() {
             await waitText('On it. Desktop tasks');
           case 'thread-open':
             await tap(find.byKey(const ValueKey('inline-thread-msg-agent-reply')));
-            await until(() => w.threadParent != null && !w.threadLoading, 'thread');
+            await until(() => w.messageDomain.state.threadParent != null && !w.messageDomain.state.threadLoading, 'thread');
             await frames(30);
           case 'channel-tasks-tab':
             await tap(find.byKey(const ValueKey('panel-tab-tasks')));

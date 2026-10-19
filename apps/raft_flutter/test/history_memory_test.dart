@@ -70,7 +70,7 @@ WorkspaceController receiver(HistoryClient client, DriftWorkspaceCache db) {
     ..channels = [
       RaftChannel({'id': 'chat', 'type': 'private', 'joined': true}),
     ];
-  w.ledger.switchServer('server');
+  w.messageDomain.ledger.switchServer('server');
   return w;
 }
 
@@ -82,12 +82,15 @@ void main() {
     try {
       await w.selectChannel(w.channels.single, autoRead: false);
       for (var n = 0; n < 19; n++) {
-        await w.older();
+        await w.messageDomain.older();
       }
       await w.flushCache();
       await Future<void>.delayed(const Duration(milliseconds: 1800));
-      expect(w.ledger.messages('chat').length, lessThanOrEqualTo(500));
-      expect(w.messages.length, lessThanOrEqualTo(500));
+      expect(
+        w.messageDomain.ledger.messages('chat').length,
+        lessThanOrEqualTo(500),
+      );
+      expect(w.messageDomain.messages.length, lessThanOrEqualTo(500));
       final saved = await db.messageHistory.readContext(
         MessageHistoryPages.scope(w, 'chat')!,
         'chat-1',
@@ -99,15 +102,15 @@ void main() {
         'Saved message 1 中文',
       );
       client.offline = true;
-      expect(w.hasNewer, isTrue);
-      final last = w.messages.last.seq;
-      await w.newer();
-      expect(w.messages.last.seq, greaterThan(last));
+      expect(w.messageDomain.state.hasNewer, isTrue);
+      final last = w.messageDomain.messages.last.seq;
+      await w.messageDomain.newer();
+      expect(w.messageDomain.messages.last.seq, greaterThan(last));
       await db.messageHistory.memory.maintain();
-      expect(w.messages, hasLength(500));
-      final first = w.messages.first.seq;
-      await w.older();
-      expect(w.messages.first.seq, lessThan(first));
+      expect(w.messageDomain.messages, hasLength(500));
+      final first = w.messageDomain.messages.first.seq;
+      await w.messageDomain.older();
+      expect(w.messageDomain.messages.first.seq, lessThan(first));
       expect(client.oldReads, 0);
     } finally {
       await w.flushCache();
@@ -131,24 +134,24 @@ void main() {
           navigate: false,
         );
         for (var n = 0; n < 19; n++) {
-          await w.older(thread: true);
+          await w.messageDomain.older(thread: true);
         }
         await w.flushCache();
         await db.messageHistory.memory.maintain();
         expect(w.replies.length, lessThanOrEqualTo(500));
-        expect(w.threadWindow!.hasNewer, isTrue);
+        expect(w.messageDomain.threadWindow!.hasNewer, isTrue);
         client.offline = true;
         final last = w.replies.last.seq;
-        await w.newer(thread: true);
+        await w.messageDomain.newer(thread: true);
         expect(w.replies.last.seq, greaterThan(last));
         await db.messageHistory.memory.maintain();
         expect(w.replies.length, lessThanOrEqualTo(500));
         final first = w.replies.first.seq;
-        await w.older(thread: true);
+        await w.messageDomain.older(thread: true);
         expect(w.replies.first.seq, lessThan(first));
         expect(client.oldReads, 0);
-        await w.returnToLatest(thread: true, navigate: false);
-        expect(w.threadWindow!.hasNewer, isFalse);
+        await w.messageDomain.returnToLatest(thread: true, navigate: false);
+        expect(w.messageDomain.threadWindow!.hasNewer, isFalse);
         expect(w.replies.last.seq, BigInt.from(1000));
         expect(w.channel!.id, 'chat');
       } finally {

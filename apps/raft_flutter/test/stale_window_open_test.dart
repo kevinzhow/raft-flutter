@@ -72,7 +72,7 @@ _login() async {
   w.channels = [_c1];
   w.dms = [_dm];
   w.channel = _c1;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, a, client, server);
 }
 
@@ -106,7 +106,7 @@ void main() {
         2,
         reason: 'a retained window is revalidated on open',
       );
-      expect(w.messages.map((m) => m.id), [for (var i = 1; i <= 8; i++) 'm$i']);
+      expect(w.messageDomain.messages.map((m) => m.id), [for (var i = 1; i <= 8; i++) 'm$i']);
     },
   );
 
@@ -120,7 +120,7 @@ void main() {
       await w.selectChannel(_c1, autoRead: false);
       client.emit('message:new', _row('m2', 'dm1', 11));
       client.emit('message:new', _row('m3', 'dm1', 12));
-      expect(w.visibleIds['dm1'], {'m1', 'm2', 'm3'});
+      expect(w.messageDomain.visibleIds['dm1'], {'m1', 'm2', 'm3'});
       server.rows['dm1'] = [
         _row('m1', 'dm1', 10),
         _row('m2', 'dm1', 11),
@@ -128,7 +128,7 @@ void main() {
       ];
       await w.jumpToMessage('dm1', 'm1', navigate: false);
       await _drain();
-      expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3']);
+      expect(w.messageDomain.messages.map((m) => m.id), ['m1', 'm2', 'm3']);
     },
   );
 
@@ -139,10 +139,10 @@ void main() {
     await w.selectChannel(_c1, autoRead: false);
     // Rows 11 and 12 reached the ledger (e.g. a resume or another surface)
     // but not this window; row 13 arrives live.
-    w.ledger.ingest([
+    w.messageDomain.ledger.ingest([
       _row('g1', 'c1', 11),
       _row('g2', 'c1', 12),
-    ], expectedGeneration: w.ledger.generation);
+    ], expectedGeneration: w.messageDomain.ledger.generation);
     server.rows['c1'] = [
       for (final (i, id) in ['p', 'g1', 'g2', 'live'].indexed)
         _row(id, 'c1', 10 + i),
@@ -150,7 +150,7 @@ void main() {
     final before = server.pages(a, 'c1');
     client.emit('message:new', _row('live', 'c1', 13));
     await _drain();
-    expect(w.messages.map((m) => m.id), ['p', 'g1', 'g2', 'live']);
+    expect(w.messageDomain.messages.map((m) => m.id), ['p', 'g1', 'g2', 'live']);
     expect(server.pages(a, 'c1'), before + 1, reason: 'one tail refresh');
   });
 
@@ -168,14 +168,14 @@ void main() {
     await w.jumpToMessage('dm1', 'm1', navigate: false);
     await _drain();
     expect(server.pages(a, 'dm1'), 2);
-    expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3']);
+    expect(w.messageDomain.messages.map((m) => m.id), ['m1', 'm2', 'm3']);
     client.emit('message:new', _row('m3', 'dm1', 12));
     await _drain();
-    final ids = w.messages.map((m) => m.id).toList();
+    final ids = w.messageDomain.messages.map((m) => m.id).toList();
     expect(ids, ['m1', 'm2', 'm3']);
     expect(ids.toSet().length, ids.length);
     expect(w.unread['dm1'], unread, reason: 'a redelivery counts once');
-    expect(w.highlightedMessageId, 'm1', reason: 'the target stays focused');
+    expect(w.messageDomain.state.highlightedMessageId, 'm1', reason: 'the target stays focused');
   });
 
   test(
@@ -201,7 +201,7 @@ void main() {
         throw const RaftApiException('offline');
     await w.jumpToMessage('dm1', 'm1', navigate: false);
     await _drain();
-    expect(w.messages.map((m) => m.id), ['m1']);
+    expect(w.messageDomain.messages.map((m) => m.id), ['m1']);
     expect(w.error, isNull);
   });
 }

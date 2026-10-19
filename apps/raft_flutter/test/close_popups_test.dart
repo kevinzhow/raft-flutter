@@ -113,7 +113,7 @@ Offset corner(Size size) => Offset(size.width - 6, size.height - 6);
 
 Future<void> openThreadPanel(WidgetTester t, WorkspaceController w) async {
   await t.runAsync(
-    () => w.openThread(
+    () => w.messageDomain.threads.openThread(
       RaftMessage(closeRows().firstWhere((r) => r['id'] == 'mt')),
     ),
   );
@@ -342,8 +342,8 @@ void main() {
           ],
         }),
       ];
-      w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {...?w.visibleIds['c1'], 'mr'};
+      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {...?w.messageDomain.visibleIds['c1'], 'mr'};
       w.notifyListeners();
       await frames(t, 20);
       if (size.width < 768) {

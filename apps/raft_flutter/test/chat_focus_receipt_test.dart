@@ -60,10 +60,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final old = contextRows('old'), next = contextRows('target');
-        w.ledger.ingest(old, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = old.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          old,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = old
+            .map((r) => r['id'] as String)
+            .toSet();
         final requested = Completer<void>.sync();
         final response = Completer<Map<String, dynamic>>.sync();
         api.routes['GET /messages/context/target-40'] = (_) {
@@ -91,7 +96,10 @@ void main() {
           await tester.pump(const Duration(milliseconds: 16));
           expect(paintedMessage(tester, 'old-79'), oldRect);
           expect(paintedMessage(tester, 'target-40'), isNull);
-          expect(w.messages.map((r) => r.id), old.map((r) => r['id']));
+          expect(
+            w.messageDomain.messages.map((r) => r.id),
+            old.map((r) => r['id']),
+          );
         }
         w.unread['c1'] = 3;
         await tester.runAsync(() async {
@@ -100,10 +108,10 @@ void main() {
             'hasOlder': true,
             'hasNewer': true,
           });
-          for (var i = 0; i < 40 && w.channelLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.channelLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
-          expect(w.channelLoading, false);
+          expect(w.messageDomain.state.channelLoading, false);
         });
         var published = false;
         Rect? firstTarget;
@@ -136,7 +144,7 @@ void main() {
           }
         }
         expect(published, true);
-        expect(w.highlightedMessageId, 'target-40');
+        expect(w.messageDomain.state.highlightedMessageId, 'target-40');
         expect(
           tester
               .widget<RaftMessageTile>(
@@ -147,9 +155,9 @@ void main() {
         );
         expect(find.text('3 new messages'), findsOneWidget);
         await tester.pump(const Duration(milliseconds: 1700));
-        expect(w.highlightedMessageId, 'target-40');
+        expect(w.messageDomain.state.highlightedMessageId, 'target-40');
         await tester.pump(const Duration(milliseconds: 400));
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         expect(
           tester
               .widget<RaftMessageTile>(
@@ -174,7 +182,7 @@ void main() {
         expect(latestRequested.isCompleted, true);
         await tester.pump(const Duration(milliseconds: 16));
         expect(paintedMessage(tester, 'target-40'), firstTarget);
-        expect(w.channelLoading, true);
+        expect(w.messageDomain.state.channelLoading, true);
         await tester.runAsync(() async {
           latestResponse.complete({
             'messages': contextRows('latest', count: 8),
@@ -182,7 +190,7 @@ void main() {
           await Future<void>.delayed(Duration.zero);
         });
         await tester.pumpAndSettle();
-        expect(w.hasNewer, false);
+        expect(w.messageDomain.state.hasNewer, false);
         expect(paintedMessage(tester, 'latest-7'), isNotNull);
         final dynamic state = tester.state(find.byType(RaftChatView));
         expect(state.distanceFromLatest(state.viewport.position), 0);

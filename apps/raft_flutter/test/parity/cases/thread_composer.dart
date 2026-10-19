@@ -431,7 +431,7 @@ class _HeaderHostState extends State<_HeaderHost> {
   @override
   void initState() {
     super.initState();
-    w.ledger.switchServer('visual-server');
+    w.messageDomain.ledger.switchServer('visual-server');
   }
 
   @override

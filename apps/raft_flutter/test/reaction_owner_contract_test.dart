@@ -83,9 +83,11 @@ Future<(WorkspaceController, MessageAdapter)> _fixture({
   w.server = RaftRecord({'id': 's1', 'role': 'owner'});
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('s1');
-  w.ledger.ingest([_row()], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'m1'};
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.ledger.ingest([
+    _row(),
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'m1'};
   addTearDown(() async {
     w.dispose();
     await client.dispose();
@@ -167,7 +169,7 @@ void main() {
     };
     final pending = w.hydrateReactionViewer(RaftMessage(_row()));
     await started.future.timeout(const Duration(seconds: 3));
-    w.ledger.switchServer('replacement');
+    w.messageDomain.ledger.switchServer('replacement');
     response.complete(_viewer(1, ['👍']));
     await pending;
     expect(w.reactionViewer.reacted('m1'), isNull);
@@ -198,7 +200,7 @@ void main() {
     });
     await Future.wait([first, duplicate]);
     expect(w.pendingReactionTargets('m1'), {'🔥': true});
-    expect(w.ledger.message('c1', 'm1')?['reactions'], [
+    expect(w.messageDomain.ledger.message('c1', 'm1')?['reactions'], [
       _thumbs(mine: true),
       _fire(),
     ]);
@@ -223,18 +225,20 @@ void main() {
     final pending = w.toggleReaction(RaftMessage(_row()), '👍');
     final failed = expectLater(pending, throwsA(anything));
     await started.future.timeout(const Duration(seconds: 3));
-    w.ledger.switchServer('replacement');
+    w.messageDomain.ledger.switchServer('replacement');
     final replacement = _row(
       reactions: [
         {..._thumbs(), 'count': 42},
       ],
     );
-    w.ledger.ingest([replacement], expectedGeneration: w.ledger.generation);
+    w.messageDomain.ledger.ingest([
+      replacement,
+    ], expectedGeneration: w.messageDomain.ledger.generation);
     response.completeError(const RaftApiException('Frozen write failure'));
     await failed;
     expect(w.pendingReactionTargets('m1'), isNull);
     expect(
-      w.ledger.message('c1', 'm1')?['reactions'],
+      w.messageDomain.ledger.message('c1', 'm1')?['reactions'],
       replacement['reactions'],
     );
   });

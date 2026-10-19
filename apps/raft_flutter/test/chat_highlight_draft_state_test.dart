@@ -23,8 +23,8 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'target',
             'channelId': 'c1',
@@ -35,9 +35,9 @@ void main() {
             'content': 'Visible highlighted message',
             'messageType': 'chat',
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'target'};
-        w.highlightedMessageId = 'target';
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'target'};
+        w.messageDomain.state.highlightedMessageId = 'target';
         api.routes['GET /servers/s1/setup-projection'] = (_) => {
           'phase': 'complete',
           'surface': 'complete',
@@ -61,7 +61,7 @@ void main() {
         for (var i = 0; i < 12; i++) {
           await tester.pump(const Duration(milliseconds: 16));
         }
-        expect(w.highlightedMessageId, 'target');
+        expect(w.messageDomain.state.highlightedMessageId, 'target');
         const draft = '中文 draft 日本語';
         final input = find.descendant(
           of: find.byType(RaftComposer),
@@ -81,7 +81,7 @@ void main() {
         expect(w.drafts[w.draftScope()], draft);
         await tester.pump(const Duration(milliseconds: 2200));
         await tester.pump();
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         final after = tester.widget<EditableText>(input);
         expect(after.controller.text, draft);
         expect(after.controller.selection, selection);

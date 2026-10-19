@@ -54,7 +54,7 @@ Future<(WorkspaceController, MessageAdapter)> pageFixture(
   SharedPreferences.setMockInitialValues({});
   final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'chat';
   api.routes['GET /servers/s1/setup-projection'] = (_) => {
     'phase': 'complete',
@@ -120,9 +120,12 @@ void main() {
         (tester) async {
           final (w, api) = await pageFixture(tester);
           final p1 = row('p1', 'c1', 1), p2 = row('p2', 'c1', 2);
-          w.ledger.ingest([p1, p2], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'p1', 'p2'};
-          w.threadSummaries = {
+          w.messageDomain.ledger.ingest([
+            p1,
+            p2,
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'p1', 'p2'};
+          w.messageDomain.threadSummaries = {
             'p1': {'replyCount': 1},
             'p2': {'replyCount': 1},
           };
@@ -167,7 +170,11 @@ void main() {
             find.byKey(const ValueKey('thread-replies-badge-p1')),
           );
           await tester.runAsync(() async {
-            for (var i = 0; i < 40 && w.threadLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.state.threadLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
           });
@@ -200,7 +207,11 @@ void main() {
               pending.complete({
                 'messages': [row('r2', 't2', 1)],
               });
-              for (var i = 0; i < 40 && w.threadLoading; i++) {
+              for (
+                var i = 0;
+                i < 40 && w.messageDomain.state.threadLoading;
+                i++
+              ) {
                 await Future<void>.delayed(const Duration(milliseconds: 5));
               }
             });
@@ -234,10 +245,10 @@ void main() {
         '[N09] $family/$dark mounted ${back ? 'Back' : 'new route'} rejects held old parent and replies',
         (tester) async {
           final (w, api) = await pageFixture(tester);
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('main', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'main'};
           final parent = Completer<Map<String, dynamic>>.sync(),
               replies = Completer<Map<String, dynamic>>.sync();
           api.routes['GET /messages/context/parent'] = (_) => parent.future;
@@ -309,7 +320,9 @@ void main() {
             expect(paintedMessage(tester, 'reply'), isNull);
             expect(w.presentedThreadParent, isNull);
             expect(
-              w.ledger.messages('c1').any((m) => m['id'] == 'parent'),
+              w.messageDomain.ledger
+                  .messages('c1')
+                  .any((m) => m['id'] == 'parent'),
               false,
             );
             if (back) expect(paintedMessage(tester, 'main'), isNotNull);
@@ -328,10 +341,10 @@ void main() {
           w.channels.add(
             RaftChannel({'id': 'c2', 'name': 'second', 'joined': true}),
           );
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('old', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'old'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'old'};
           w.section = 'activity';
           final (first, second, latest) = (await tester.runAsync(
             () async => (
@@ -422,7 +435,11 @@ void main() {
               second.complete({
                 'messages': [row('second', 'c2', 20)],
               });
-              for (var i = 0; i < 40 && w.channelLoading; i++) {
+              for (
+                var i = 0;
+                i < 40 && w.messageDomain.state.channelLoading;
+                i++
+              ) {
                 await Future<void>.delayed(const Duration(milliseconds: 5));
               }
             });
@@ -444,16 +461,23 @@ void main() {
               latest.complete({
                 'messages': [row('latest', 'c2', 30)],
               });
-              for (var i = 0; i < 40 && w.channelLoading; i++) {
+              for (
+                var i = 0;
+                i < 40 && w.messageDomain.state.channelLoading;
+                i++
+              ) {
                 await Future<void>.delayed(const Duration(milliseconds: 5));
               }
             });
             await pageFrames(tester, () {});
             expect(paintedMessage(tester, 'latest'), isNotNull);
-            expect(w.highlightedMessageId, isNull);
+            expect(w.messageDomain.state.highlightedMessageId, isNull);
             // The failed context load leaves the latest window with the
             // "Message not found" state (no workspace banner).
-            expect(w.contextLoadError, MessageContextLoadError.notFound);
+            expect(
+              w.messageDomain.contextLoadError,
+              MessageContextLoadError.notFound,
+            );
           } else {
             expect(paintedMessage(tester, 'second'), isNotNull);
           }

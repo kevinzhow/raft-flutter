@@ -61,7 +61,7 @@ Future<(WorkspaceController, MessageAdapter, List<String>)> _fixture(
     RaftChannel({'id': 'c2', 'name': 'two', 'joined': true}),
   ];
   w.channel = w.channels.first;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final reads = <String>[];
   api.routes['GET /messages/channel/c1'] = (_) => {'messages': []};
   api.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};
@@ -220,7 +220,7 @@ void main() {
         'tasks': [_task('n1', 7)],
       });
       await _spin(t);
-      expect(w.messages.map((m) => m.id), ['n1']);
+      expect(w.messageDomain.messages.map((m) => m.id), ['n1']);
       await _mount(t, w);
       await _firstFrameWithRow(t, 'n1');
       await t.pumpWidget(const SizedBox());

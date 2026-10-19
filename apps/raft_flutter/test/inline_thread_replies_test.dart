@@ -14,7 +14,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final parent = {
         'id': 'parent',
         'channelId': 'c1',
@@ -22,9 +22,11 @@ void main() {
         'senderId': 'alice',
         'content': 'Parent conversation',
       };
-      w.ledger.ingest([parent], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'parent'};
-      w.threadSummaries['parent'] = {
+      w.messageDomain.ledger.ingest([
+        parent,
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'parent'};
+      w.messageDomain.threadSummaries['parent'] = {
         'replyCount': 2,
         'latestReplies': [
           {
@@ -66,18 +68,18 @@ void main() {
       final callback = tester.widget<RaftInlineThreadSurface>(row).onOpen!;
       await tester.runAsync(() async {
         callback();
-        for (var i = 0; i < 50 && w.threadLoading; i++) {
+        for (var i = 0; i < 50 && w.messageDomain.state.threadLoading; i++) {
           await Future<void>.delayed(const Duration(milliseconds: 10));
         }
       });
-      expect(w.threadParent?.id, 'parent');
-      expect(w.highlightedMessageId, isNull);
+      expect(w.messageDomain.state.threadParent?.id, 'parent');
+      expect(w.messageDomain.state.highlightedMessageId, isNull);
       expect(w.replies.any((m) => m.id == 'reply'), isTrue);
       w.closeThread();
       w.server = RaftRecord({'id': 's1', 'role': 'guest'});
       // The captured row still exists before this frame rebuild; no stale navigation.
       callback();
-      expect(w.threadParent, isNull);
+      expect(w.messageDomain.state.threadParent, isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 1));
       expect(tester.takeException(), isNull);
@@ -89,8 +91,8 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
-      w.threadParent = RaftMessage({
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.state.threadParent = RaftMessage({
         'id': 'parent',
         'channelId': 'c1',
         'content': 'Parent',
@@ -103,10 +105,12 @@ void main() {
         'content': 'Reply',
         'senderId': 'alice',
       };
-      w.ledger.ingest([reply], expectedGeneration: w.ledger.generation);
-      w.visibleIds['thread'] = {'reply'};
+      w.messageDomain.ledger.ingest([
+        reply,
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['thread'] = {'reply'};
       for (final id in ['parent', 'reply']) {
-        w.threadSummaries[id] = {
+        w.messageDomain.threadSummaries[id] = {
           'replyCount': 1,
           'latestReplies': [
             {

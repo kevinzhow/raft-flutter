@@ -24,10 +24,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, _) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = contextRows('initial', count: 500);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((row) => row['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((row) => row['id'] as String)
+            .toSet();
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),
@@ -62,10 +67,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final old = contextRows('old', count: 8);
-        w.ledger.ingest(old, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = old.map((row) => row['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          old,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = old
+            .map((row) => row['id'] as String)
+            .toSet();
         final next = contextRows('target', count: 500);
         api.routes['GET /messages/context/target-300'] = (_) => {
           'messages': next,
@@ -112,9 +122,9 @@ void main() {
           firstTarget,
           isNotNull,
           reason:
-              '${w.messages.length} rows, ${w.error}, highlight ${w.highlightedMessageId}, revealing ${diagnostic.revealPending}',
+              '${w.messageDomain.messages.length} rows, ${w.error}, highlight ${w.messageDomain.state.highlightedMessageId}, revealing ${diagnostic.revealPending}',
         );
-        expect(w.messages.length, 500);
+        expect(w.messageDomain.messages.length, 500);
         int mountedRows() =>
             find.byType(RaftMessageTile, skipOffstage: false).evaluate().length;
         expect(
@@ -127,7 +137,7 @@ void main() {
         );
         await tester.pump(const Duration(milliseconds: 2200));
         await tester.pump();
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         expect(paintedMessage(tester, 'target-300'), firstTarget);
         expect(
           tester.element(find.byKey(const ValueKey('message-target-300'))),

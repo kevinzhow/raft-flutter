@@ -16,8 +16,8 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetViewInsets);
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'm',
           'channelId': 'c1',
@@ -26,8 +26,8 @@ void main() {
           'content': 'Actions',
           'senderName': 'Alice',
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'m'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'m'};
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),

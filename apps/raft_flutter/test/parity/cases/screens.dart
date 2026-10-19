@@ -118,7 +118,7 @@ WorkspaceController _workspace(
     w
       ..servers = [server]
       ..server = server;
-    w.ledger.switchServer(_serverId);
+    w.messageDomain.ledger.switchServer(_serverId);
   }
   return w;
 }
@@ -237,7 +237,7 @@ ParityCase agentDetailParityCase(
         w
           ..servers = [server]
           ..server = server;
-        w.ledger.switchServer(_serverId);
+        w.messageDomain.ledger.switchServer(_serverId);
         return w;
       },
       builder: (context, w) => _agentStack(

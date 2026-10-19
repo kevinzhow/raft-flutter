@@ -69,7 +69,7 @@ WorkspaceController _workspace(ParityContext ctx) {
   w
     ..servers = [server]
     ..server = server;
-  w.ledger.switchServer(_serverId);
+  w.messageDomain.ledger.switchServer(_serverId);
   return w;
 }
 
@@ -163,7 +163,7 @@ Widget _resource(ParityContext ctx) {
     ..servers = [server]
     ..server = server
     ..section = panel;
-  w.ledger.switchServer(_serverId);
+  w.messageDomain.ledger.switchServer(_serverId);
   final now = DateTime.fromMillisecondsSinceEpoch(
     (ctx.fixtureData['locale']['nowEpochMillis'] as num).toInt(),
   );

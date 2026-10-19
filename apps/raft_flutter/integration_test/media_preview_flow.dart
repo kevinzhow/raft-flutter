@@ -54,7 +54,7 @@ Future<void> verifyNativeMediaPreviewFlow(
         for (final view in find.byType(RaftChatView).evaluate()) {
           final dynamic state = (view as StatefulElement).state;
           debugPrint(
-            'Media context diagnostic: loading=${w.channelLoading} rows=${w.messages.length} role=${(view.widget as RaftChatView).thread} adapter=${state.adapter.messages.length} target=${state.adapter.messages.any((dynamic m) => m.id == w.highlightedMessageId)} visible=${w.highlightedMessageId != null && state.focusReceiptVisible(w.highlightedMessageId!)} attached=${state.viewport.hasClients} offset=${state.viewport.hasClients ? state.viewport.offset : null} max=${state.viewport.hasClients ? state.viewport.position.maxScrollExtent : null}',
+            'Media context diagnostic: loading=${w.messageDomain.state.channelLoading} rows=${w.messageDomain.messages.length} role=${(view.widget as RaftChatView).thread} adapter=${state.adapter.messages.length} target=${state.adapter.messages.any((dynamic m) => m.id == w.messageDomain.state.highlightedMessageId)} visible=${w.messageDomain.state.highlightedMessageId != null && state.focusReceiptVisible(w.messageDomain.state.highlightedMessageId!)} attached=${state.viewport.hasClients} offset=${state.viewport.hasClients ? state.viewport.offset : null} max=${state.viewport.hasClients ? state.viewport.position.maxScrollExtent : null}',
           );
         }
         await capture('failure-media-context');
@@ -77,7 +77,7 @@ Future<void> verifyNativeMediaPreviewFlow(
   }
   expect(w.uploadsReady(), true);
   expect(await w.send('Native media previews $suffix'), true);
-  final message = w.messages.singleWhere(
+  final message = w.messageDomain.messages.singleWhere(
     (m) => m.content == 'Native media previews $suffix',
   );
   expect(message.attachments, hasLength(4));

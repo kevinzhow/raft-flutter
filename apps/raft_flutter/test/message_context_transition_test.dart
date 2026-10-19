@@ -28,11 +28,11 @@ void main() {
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         row('old', 'c1', 1),
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'old'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'old'};
       final started = Completer<void>(),
           response = Completer<Map<String, dynamic>>();
       api.routes['GET /messages/context/requested'] = (_) {
@@ -42,24 +42,27 @@ void main() {
       final receipts = <(List<String>, bool, bool, bool, String?)>[];
       w.addListener(() {
         receipts.add((
-          w.messages.map((r) => r.id).toList(),
-          w.channelLoading,
-          w.hasMore,
-          w.hasNewer,
-          w.highlightedMessageId,
+          w.messageDomain.messages.map((r) => r.id).toList(),
+          w.messageDomain.state.channelLoading,
+          w.messageDomain.state.hasMore,
+          w.messageDomain.state.hasNewer,
+          w.messageDomain.state.highlightedMessageId,
         ));
-        if (w.messages.any((r) => r.id == 'canonical')) {
-          expect(w.channelLoading, false);
-          expect(w.hasMore, true);
-          expect(w.hasNewer, true);
-          expect(w.highlightedMessageId, 'canonical');
-          expect(w.threadSummaries.containsKey('canonical'), true);
+        if (w.messageDomain.messages.any((r) => r.id == 'canonical')) {
+          expect(w.messageDomain.state.channelLoading, false);
+          expect(w.messageDomain.state.hasMore, true);
+          expect(w.messageDomain.state.hasNewer, true);
+          expect(w.messageDomain.state.highlightedMessageId, 'canonical');
+          expect(
+            w.messageDomain.threadSummaries.containsKey('canonical'),
+            true,
+          );
         }
       });
       final request = w.jumpToMessage('c1', 'requested');
       await started.future;
-      expect(w.pendingMessageContextChannelId, 'c1');
-      expect(w.messages.map((r) => r.id), ['old']);
+      expect(w.messageDomain.pendingMessageContextChannelId, 'c1');
+      expect(w.messageDomain.messages.map((r) => r.id), ['old']);
       response.complete({
         'messages': [row('canonical', 'c1', 20)],
         'targetMessageId': 'canonical',
@@ -70,7 +73,7 @@ void main() {
         },
       });
       await request;
-      expect(w.pendingMessageContextChannelId, isNull);
+      expect(w.messageDomain.pendingMessageContextChannelId, isNull);
       expect(receipts.first.$1, ['old']);
       expect(receipts.last.$1, ['canonical']);
     },
@@ -79,15 +82,15 @@ void main() {
   test('cross-channel unknown context suppresses cached latest and accepts only its window', () async {
     final (w, api) = await fixture('member');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final next = RaftChannel({'id': 'c2', 'name': 'next', 'joined': true});
     w.channels.add(next);
-    w.ledger.ingest([
+    w.messageDomain.ledger.ingest([
       row('private-old', 'c1', 1),
       row('cached-tail', 'c2', 30),
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'private-old'};
-    w.visibleIds['c2'] = {'cached-tail'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'private-old'};
+    w.messageDomain.visibleIds['c2'] = {'cached-tail'};
     final started = Completer<void>(),
         response = Completer<Map<String, dynamic>>();
     api.routes['GET /messages/context/target'] = (_) {
@@ -97,29 +100,29 @@ void main() {
     final request = w.jumpToMessage('c2', 'target');
     await started.future;
     expect(w.channel!.id, 'c2');
-    expect(w.messages, isEmpty);
-    expect(w.channelLoading, true);
+    expect(w.messageDomain.messages, isEmpty);
+    expect(w.messageDomain.state.channelLoading, true);
     response.complete({
       'messages': [row('target', 'c2', 10)],
       'hasNewer': true,
     });
     await request;
-    expect(w.messages.map((r) => r.id), ['target']);
+    expect(w.messageDomain.messages.map((r) => r.id), ['target']);
   });
 
   test('compatible accepted cached target skips context GET and retains pagination', () async {
     final (w, api) = await fixture('member');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     api.routes['GET /messages/channel/c1'] = (_) => {
       'messages': [row('cached', 'c1', 1)],
     };
     api.routes['POST /channels/c1/read'] = (_) => {};
     await w.selectChannel(w.channel!);
     await w.jumpToMessage('c1', 'cached');
-    expect(w.highlightedMessageId, 'cached');
-    expect(w.channelLoading, false);
-    expect(w.hasNewer, false);
+    expect(w.messageDomain.state.highlightedMessageId, 'cached');
+    expect(w.messageDomain.state.channelLoading, false);
+    expect(w.messageDomain.state.hasNewer, false);
     expect(
       api.calls.where((c) => c.path == '/messages/context/cached'),
       isEmpty,
@@ -135,7 +138,7 @@ void main() {
     test('[L04] late context cannot accept after $invalidate', () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final started = Completer<void>(),
           response = Completer<Map<String, dynamic>>();
       api.routes['GET /messages/context/late'] = (_) {
@@ -165,11 +168,14 @@ void main() {
         'hasNewer': true,
       });
       await request;
-      expect(w.ledger.messages('c1').where((m) => m['id'] == 'late'), isEmpty);
-      expect(w.threadSummaries.containsKey('late'), false);
+      expect(
+        w.messageDomain.ledger.messages('c1').where((m) => m['id'] == 'late'),
+        isEmpty,
+      );
+      expect(w.messageDomain.threadSummaries.containsKey('late'), false);
       if (invalidate == 'later-context') {
-        expect(w.messages.map((r) => r.id), ['current']);
-        expect(w.highlightedMessageId, 'current');
+        expect(w.messageDomain.messages.map((r) => r.id), ['current']);
+        expect(w.messageDomain.state.highlightedMessageId, 'current');
       }
     });
   }
@@ -179,18 +185,21 @@ void main() {
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       // Unregistered context route produces the fixture transport's actual 404.
       api.routes['GET /messages/channel/c1'] = (_) => {
         'messages': [row('latest', 'c1', 60)],
       };
       api.routes['POST /channels/c1/read'] = (_) => {};
       await w.jumpToMessage('c1', 'missing');
-      expect(w.messages.map((r) => r.id), ['latest']);
-      expect(w.highlightedMessageId, isNull);
-      expect(w.channelLoading, false);
-      expect(w.pendingMessageContextChannelId, isNull);
-      expect(w.contextLoadError, MessageContextLoadError.notFound);
+      expect(w.messageDomain.messages.map((r) => r.id), ['latest']);
+      expect(w.messageDomain.state.highlightedMessageId, isNull);
+      expect(w.messageDomain.state.channelLoading, false);
+      expect(w.messageDomain.pendingMessageContextChannelId, isNull);
+      expect(
+        w.messageDomain.contextLoadError,
+        MessageContextLoadError.notFound,
+      );
     },
   );
 
@@ -218,7 +227,10 @@ void main() {
     });
     await jump;
     expect(w.location.route, RaftRoute.search);
-    expect(w.ledger.messages('c1').where((r) => r['id'] == 'target'), isEmpty);
+    expect(
+      w.messageDomain.ledger.messages('c1').where((r) => r['id'] == 'target'),
+      isEmpty,
+    );
   });
 
   test(
@@ -226,7 +238,7 @@ void main() {
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final started = Completer<void>(),
           response = Completer<Map<String, dynamic>>();
       api.routes['GET /messages/context/late'] = (_) {
@@ -245,7 +257,7 @@ void main() {
       );
       await jump;
       expect(w.error, isNull);
-      expect(w.messages.map((r) => r.id), ['current']);
+      expect(w.messageDomain.messages.map((r) => r.id), ['current']);
       expect(api.calls.where((c) => c.path == '/messages/channel/c1'), isEmpty);
     },
   );
@@ -256,11 +268,11 @@ void main() {
       () async {
         final (w, api) = await fixture('member');
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           row('old', 'c1', 1),
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'old'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'old'};
         api.routes['GET /messages/context/requested'] = (_) => {
           'canonicalTarget': {
             'kind': 'thread',
@@ -289,17 +301,19 @@ void main() {
         };
         final jump = w.jumpToMessage('c1', 'requested');
         await started.future;
-        expect(w.threadParent?.id, 'parent');
+        expect(w.messageDomain.state.threadParent?.id, 'parent');
         expect(w.threadChannelId, 'thread-1');
         expect(w.replies.map((r) => r.id), ['reply']);
-        expect(w.messages.map((r) => r.id), ['old']);
+        expect(w.messageDomain.messages.map((r) => r.id), ['old']);
         expect(
-          w.ledger.messages('c1').where((r) => r['id'] == 'parent'),
+          w.messageDomain.ledger
+              .messages('c1')
+              .where((r) => r['id'] == 'parent'),
           isEmpty,
         );
-        expect(w.highlightedMessageId, 'reply');
-        expect(w.channelLoading, true);
-        expect(w.threadLoading, false);
+        expect(w.messageDomain.state.highlightedMessageId, 'reply');
+        expect(w.messageDomain.state.channelLoading, true);
+        expect(w.messageDomain.state.threadLoading, false);
         expect(w.location.thread?.itemId, 'parent');
         expect(w.location.threadFocusedMessageId, 'reply');
         if (outcome == 'late') {
@@ -320,21 +334,23 @@ void main() {
         }
         await jump;
         if (outcome == 'late') {
-          expect(w.messages.map((r) => r.id), ['newer']);
-          expect(w.highlightedMessageId, 'newer');
+          expect(w.messageDomain.messages.map((r) => r.id), ['newer']);
+          expect(w.messageDomain.state.highlightedMessageId, 'newer');
           expect(
-            w.ledger.messages('c1').where((r) => r['id'] == 'tail'),
+            w.messageDomain.ledger
+                .messages('c1')
+                .where((r) => r['id'] == 'tail'),
             isEmpty,
           );
-          expect(w.threadParent, isNull);
+          expect(w.messageDomain.state.threadParent, isNull);
         } else {
-          expect(w.messages.map((r) => r.id), [
+          expect(w.messageDomain.messages.map((r) => r.id), [
             outcome == 'accept' ? 'tail' : 'old',
           ]);
-          expect(w.highlightedMessageId, 'reply');
-          expect(w.threadParent?.id, 'parent');
+          expect(w.messageDomain.state.highlightedMessageId, 'reply');
+          expect(w.messageDomain.state.threadParent?.id, 'parent');
           expect(w.threadChannelId, 'thread-1');
-          expect(w.channelLoading, false);
+          expect(w.messageDomain.state.channelLoading, false);
           expect(w.error, outcome == 'failure' ? isNotNull : isNull);
         }
       },
@@ -346,7 +362,7 @@ void main() {
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       api.routes['GET /messages/context/requested'] = (_) => {
         'canonicalTarget': {
           'kind': 'thread',
@@ -368,13 +384,15 @@ void main() {
       };
       api.routes['POST /channels/c1/read'] = (_) => {};
       await w.jumpToMessage('c1', 'requested');
-      expect(w.messages.map((r) => r.id), ['latest']);
+      expect(w.messageDomain.messages.map((r) => r.id), ['latest']);
       expect(
-        w.ledger.messages('c1').where((r) => r['id'] == 'unrelated'),
+        w.messageDomain.ledger
+            .messages('c1')
+            .where((r) => r['id'] == 'unrelated'),
         isEmpty,
       );
-      expect(w.threadParent, isNull);
-      expect(w.highlightedMessageId, 'reply');
+      expect(w.messageDomain.state.threadParent, isNull);
+      expect(w.messageDomain.state.highlightedMessageId, 'reply');
       expect(w.threadIdentity?.parentMessageId, 'missing');
       expect(w.replies.map((r) => r.id), ['reply']);
     },
@@ -385,11 +403,11 @@ void main() {
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         row('visible', 'c1', 1),
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'visible'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'visible'};
       api.routes['POST /channels/c1/read'] = (_) => {};
       w.setSection('activity');
       await w.markRead('c1');
@@ -429,7 +447,7 @@ void main() {
     test('[N09] late parent never accepts after $invalidation', () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final started = Completer<void>(),
           response = Completer<Map<String, dynamic>>();
       api.routes['GET /channels/c1/threads/parent'] = (_) => {
@@ -448,7 +466,7 @@ void main() {
       );
       await started.future;
       expect(w.threadIdentity?.parentMessageId, 'parent');
-      expect(w.threadParentLoading, true);
+      expect(w.messageDomain.threadParentLoading, true);
       expect(w.presentedThreadParent, isNull);
       switch (invalidation) {
         case 'Back':
@@ -476,7 +494,7 @@ void main() {
       expect(w.presentedThreadParent, isNull);
       expect(w.threadIdentity, isNull);
       expect(
-        w.ledger.messages('c1').where((r) => r['id'] == 'parent'),
+        w.messageDomain.ledger.messages('c1').where((r) => r['id'] == 'parent'),
         isEmpty,
       );
     });
@@ -514,7 +532,7 @@ void main() {
       expect(w.location.uri.queryParameters['msg'], 'reply');
       expect(w.navigation.entries.length, count);
       expect(w.threadIdentity, isNull);
-      expect(w.threadParent, isNull);
+      expect(w.messageDomain.state.threadParent, isNull);
     },
   );
 
@@ -523,11 +541,11 @@ void main() {
     () async {
       final (w, api) = await fixture('member');
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         row('cached', 'c1', 1),
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'cached'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'cached'};
       api.routes['POST /channels/c1/read'] = (_) => {};
       for (final section in ['tasks', 'settings', 'members']) {
         w.setSection(section);

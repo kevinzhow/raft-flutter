@@ -43,7 +43,7 @@ void main() {
     (t) async {
       final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final ack = Completer<Map<String, dynamic>>();
       transport.routes['POST /v2/messages'] = (_) => ack.future;
       await t.pumpWidget(
@@ -118,8 +118,8 @@ void main() {
         'preferredTimezone': 'Asia/Shanghai',
         'preferredTimeFormat': '24h',
       });
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         for (final entry in [
           ('one', '2026-06-21T15:30:00Z'),
           ('two', '2026-06-21T16:30:00Z'),
@@ -138,8 +138,8 @@ void main() {
             'content': 'Public ${entry.$1}',
             'createdAt': entry.$2,
           },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'one', 'two', 'three'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'one', 'two', 'three'};
       transport.routes['POST /v2/messages'] = (_) => {
         'message': {
           'id': 'sent',

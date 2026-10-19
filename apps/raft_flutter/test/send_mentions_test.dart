@@ -74,7 +74,7 @@ Future<WorkspaceController> _fixture(_Transport transport) async {
   final w = WorkspaceController(c)
     ..server = RaftRecord({'id': 's1', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'c1', 'name': 'general', 'joined': true});
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return w;
 }
 
@@ -140,7 +140,7 @@ void main() {
       final t = _Transport()..pagePending = Completer<void>();
       final w = await _fixture(t);
       addTearDown(w.dispose);
-      w.hasNewer = true;
+      w.messageDomain.state.hasNewer = true;
       final sending = w.send('retained draft');
       while (!t.requestedPage) {
         await Future<void>.delayed(Duration.zero);
@@ -213,18 +213,18 @@ void main() {
     }
     w.channel = null;
     w.messageWindows.channelGeneration++;
-    w.ledger.revokeChannel('c1');
-    w.visibleIds.remove('c1');
+    w.messageDomain.ledger.revokeChannel('c1');
+    w.messageDomain.visibleIds.remove('c1');
     t.pending!.complete();
     expect(await sending, true);
-    expect(w.ledger.messages('c1'), isEmpty);
-    expect(w.visibleIds.containsKey('c1'), false);
+    expect(w.messageDomain.ledger.messages('c1'), isEmpty);
+    expect(w.messageDomain.visibleIds.containsKey('c1'), false);
   });
   test('navigation during latest-history refresh cannot send an old draft to the new channel', () async {
     final t = _Transport()..pagePending = Completer<void>();
     final w = await _fixture(t);
     addTearDown(w.dispose);
-    w.hasNewer = true;
+    w.messageDomain.state.hasNewer = true;
     final refreshed = <int>[];
     final sending = w.send(
       'old private draft',
@@ -262,13 +262,13 @@ void main() {
     final t = _Transport()..fail = false;
     final w = await _fixture(t);
     addTearDown(w.dispose);
-    w.hasNewer = true;
+    w.messageDomain.state.hasNewer = true;
     final refreshed = <int>[];
     expect(
       await w.send('current draft', onWindowRefreshed: refreshed.add),
       true,
     );
-    expect(refreshed, [w.channelGeneration]);
+    expect(refreshed, [w.messageDomain.channelGeneration]);
     expect(t.writes.single['channelId'], 'c1');
   });
   test('plain sends omit mentions and preserve retry identity', () async {

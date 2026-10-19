@@ -17,7 +17,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final old = {
         'id': 'old',
         'channelId': 'c1',
@@ -32,9 +32,9 @@ void main() {
         'senderId': 'alice',
         'content': 'Latest message',
       };
-      w.ledger.ingest([old], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'old'};
-      w.hasNewer = true;
+      w.messageDomain.ledger.ingest([old], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'old'};
+      w.messageDomain.state.hasNewer = true;
       a.routes['GET /messages/channel/c1'] = (_) => {
         'messages': [fresh],
       };
@@ -62,7 +62,7 @@ void main() {
       final editor = tester
           .widget<EditableText>(find.byType(EditableText))
           .controller;
-      final before = w.channelGeneration;
+      final before = w.messageDomain.channelGeneration;
       final button = tester.widget<RaftComposerAction>(
         find.byWidgetPredicate(
           (widget) =>
@@ -75,14 +75,14 @@ void main() {
         // The editor clears on submit (Web MessageInput); wait for the ACK.
         for (
           var i = 0;
-          i < 100 && !w.messages.any((m) => m.id == 'sent');
+          i < 100 && !w.messageDomain.messages.any((m) => m.id == 'sent');
           i++
         ) {
           await Future<void>.delayed(const Duration(milliseconds: 10));
         }
       });
-      expect(w.channelGeneration, before + 1);
-      expect(w.messages.any((m) => m.id == 'sent'), isTrue);
+      expect(w.messageDomain.channelGeneration, before + 1);
+      expect(w.messageDomain.messages.any((m) => m.id == 'sent'), isTrue);
       expect(editor.text, isEmpty);
       expect(w.drafts[w.draftScope()], '');
       await tester.pumpWidget(const SizedBox());
@@ -161,7 +161,7 @@ void main() {
       // restores it nor touches the next channel's draft.
       expect(oldController.text, isEmpty);
       expect(w.drafts[w.draftScope()], 'New scope draft');
-      expect(w.messages.any((m) => m.id == 'ack'), isFalse);
+      expect(w.messageDomain.messages.any((m) => m.id == 'ack'), isFalse);
       await tester.pumpWidget(const SizedBox());
       expect(tester.takeException(), isNull);
     },
@@ -176,7 +176,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       Map<String, dynamic> row(int i, {String? id, String? content}) => {
         'id': id ?? 'variable-$i',
         'channelId': 'c1',
@@ -188,8 +188,8 @@ void main() {
             List.filled(i % 7 + 1, 'Variable-height message $i').join('\n'),
       };
       final initial = [for (var i = 1; i <= 100; i++) row(i)];
-      w.ledger.ingest(initial, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = initial.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(initial, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = initial.map((r) => r['id'] as String).toSet();
       a.routes['POST /channels/c1/read'] = (_) => {};
       a.routes['GET /messages/context/variable-98'] = (_) => {
         'messages': initial.skip(60).toList(),
@@ -238,7 +238,7 @@ void main() {
       // A row sent from this session keeps its optimistic presentation key.
       final target = find.byKey(
         ValueKey(
-          'message-${w.messageKey(w.messages.singleWhere((m) => m.id == 'rich-next'))}',
+          'message-${w.messageDomain.messageKey(w.messageDomain.messages.singleWhere((m) => m.id == 'rich-next'))}',
         ),
       );
       expect(target, findsOneWidget);
@@ -261,7 +261,7 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       Map<String, dynamic> row(int i) => {
         'id': 'offset-$i',
         'channelId': 'c1',
@@ -271,8 +271,8 @@ void main() {
         'content': 'Context row $i',
       };
       final initial = [for (var i = 1; i <= 100; i++) row(i)];
-      w.ledger.ingest(initial, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = initial.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(initial, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = initial.map((r) => r['id'] as String).toSet();
       a.routes['POST /channels/c1/read'] = (_) => {};
       a.routes['GET /messages/context/offset-94'] = (_) => {
         'messages': initial.skip(84).toList(),
@@ -302,7 +302,7 @@ void main() {
       await tester.pump();
       expect(viewport.offset, far);
       await tester.runAsync(() => w.jumpToMessage('c1', 'offset-94'));
-      expect(w.messages, hasLength(16));
+      expect(w.messageDomain.messages, hasLength(16));
       for (var i = 0; i < 20; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -334,7 +334,7 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final (w, a) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final first = [
         for (var i = 0; i < 60; i++)
           {
@@ -346,8 +346,8 @@ void main() {
             'content': 'Old message $i',
           },
       ];
-      w.ledger.ingest(first, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = first.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(first, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = first.map((r) => r['id'] as String).toSet();
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),
@@ -379,15 +379,15 @@ void main() {
       final target = find.byKey(const ValueKey('message-context-16'));
       expect(target, findsOneWidget);
       expect(target.hitTestable(), findsOneWidget);
-      w.ledger.ingest([
+      w.messageDomain.ledger.ingest([
         {
           'id': 'older',
           'channelId': 'c1',
           'seq': '90',
           'content': 'Older history',
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1']!.add('older');
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1']!.add('older');
       w.setError(null);
       await tester.pump(const Duration(milliseconds: 300));
       expect(

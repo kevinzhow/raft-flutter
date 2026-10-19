@@ -31,7 +31,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = [
           for (final r in contextRows('t', count: 200))
             {
@@ -66,7 +66,11 @@ void main() {
         Future<void> open() async {
           await tester.runAsync(() async {
             unawaited(w.jumpToMessage('c1', 't-150'));
-            for (var i = 0; i < 60 && (w.channelLoading || i < 4); i++) {
+            for (
+              var i = 0;
+              i < 60 && (w.messageDomain.state.channelLoading || i < 4);
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
           });
@@ -91,7 +95,7 @@ void main() {
           await tester.pump(const Duration(milliseconds: 16));
         }
         await tester.pumpAndSettle();
-        expect(w.messages.length, greaterThan(60));
+        expect(w.messageDomain.messages.length, greaterThan(60));
         expect(paintedMessage(tester, 't-150'), isNull);
 
         await open();
@@ -143,7 +147,7 @@ void main() {
       addTearDown(tester.view.reset);
       final (w, api) = (await tester.runAsync(() => fixture('member')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final replies = [
         for (final r in contextRows('r', count: 200)) {...r, 'channelId': 'th'},
       ];
@@ -185,7 +189,11 @@ void main() {
             navigate: false,
           ),
         );
-        for (var i = 0; i < 60 && (w.threadLoading || i < 4); i++) {
+        for (
+          var i = 0;
+          i < 60 && (w.messageDomain.state.threadLoading || i < 4);
+          i++
+        ) {
           await Future<void>.delayed(const Duration(milliseconds: 5));
         }
       });
@@ -253,7 +261,7 @@ void main() {
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('member')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final replies = [
       for (final r in contextRows('r', count: 120)) {...r, 'channelId': 'th'},
     ];
@@ -312,8 +320,10 @@ void main() {
       'senderType': 'user',
       'content': 'my reply',
     };
-    w.ledger.ingest([own], expectedGeneration: w.ledger.generation);
-    w.visibleIds['th']!.add('mine');
+    w.messageDomain.ledger.ingest([
+      own,
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['th']!.add('mine');
     w.notifyListeners();
     final log = <String>[];
     var bad = 0, framesToEnd = -1;

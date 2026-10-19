@@ -82,11 +82,11 @@ void main() {
       ..server = RaftRecord({'id': 'server', 'role': 'owner'})
       ..channel = RaftChannel({'id': 'channel', 'joined': true});
     w.channels = [w.channel!];
-    w.ledger.switchServer('server');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('server');
+    w.messageDomain.ledger.ingest([
       {'id': 'host', 'channelId': 'channel', 'seq': '1', 'content': 'x'},
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['channel'] = {'host'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['channel'] = {'host'};
     final files = _Files();
     addTearDown(() async {
       await tester.pumpWidget(const SizedBox());

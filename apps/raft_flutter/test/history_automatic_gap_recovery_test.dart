@@ -44,11 +44,11 @@ void main() {
         var started = false, released = false, observedAbsent = false;
         void releaseFrontier() {
           if (!released &&
-              !w.loadingOlder &&
-              w.ledger.message('chat', 'chat-851') != null) {
+              !w.messageDomain.state.loadingOlder &&
+              w.messageDomain.ledger.message('chat', 'chat-851') != null) {
             released = true;
-            w.ledger.remove('chat', 'chat-851');
-            w.visibleIds['chat']?.remove('chat-851');
+            w.messageDomain.ledger.remove('chat', 'chat-851');
+            w.messageDomain.visibleIds['chat']?.remove('chat-851');
           }
         }
 
@@ -56,12 +56,13 @@ void main() {
           final scope = MessageHistoryPages.scope(w, 'chat')!;
           await seedGap(db, scope);
           await w.selectChannel(w.channels.single, autoRead: false);
-          await w.older();
-          expect(w.messageWindow?.visible, isTrue);
+          await w.messageDomain.older();
+          expect(w.messageDomain.messageWindow?.visible, isTrue);
           if (hard) free = 512 << 20;
           client.beforeRequest = (before) {
             if (before == BigInt.from(851)) {
-              observedAbsent = w.ledger.message('chat', 'chat-851') == null;
+              observedAbsent =
+                  w.messageDomain.ledger.message('chat', 'chat-851') == null;
             }
           };
           w.addListener(releaseFrontier);

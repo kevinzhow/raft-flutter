@@ -44,7 +44,7 @@ List<String> _uploaded(MessageAdapter api) => [
 Future<(WorkspaceController, MessageAdapter)> _chat(WidgetTester tester) async {
   final (w, api) = (await tester.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   api.routes['GET /attachments/upload-capabilities'] = (_) => {
     'maxBytes': 1 << 20,
   };

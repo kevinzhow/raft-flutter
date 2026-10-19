@@ -163,9 +163,11 @@ void main() {
 
       final sending = source.send('Pending B', randomId: 'route-owner-send');
       await f.flush(tester);
-      expect(source.timeline().last.content, 'Pending B');
+      expect(source.messageDomain.timeline().last.content, 'Pending B');
       expect(pageShows(tester, 'cb', 'Pending B'), isTrue);
-      final key = source.messageKey(source.timeline().last);
+      final key = source.messageDomain.messageKey(
+        source.messageDomain.timeline().last,
+      );
       accepted.complete({
         'message': {
           'id': 'accepted-b',
@@ -180,8 +182,11 @@ void main() {
       });
       await f.flush(tester);
       expect(await tester.runAsync(() => sending), isTrue);
-      expect(source.timeline().last.id, 'accepted-b');
-      expect(source.messageKey(source.timeline().last), key);
+      expect(source.messageDomain.timeline().last.id, 'accepted-b');
+      expect(
+        source.messageDomain.messageKey(source.messageDomain.timeline().last),
+        key,
+      );
       expect(f.client.disposalCount, 0);
       // The first Back frame paints retained A while the source may still be
       // resolving B. It must not paint B on the active page.

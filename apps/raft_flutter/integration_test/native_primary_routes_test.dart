@@ -149,7 +149,7 @@ void main() {
           ..channels = (fixture['context']['channels'] as List)
               .map((e) => RaftChannel(Map<String, dynamic>.from(e)))
               .toList();
-        w.ledger.switchServer('visual-server');
+        w.messageDomain.ledger.switchServer('visual-server');
         final selection = viewport.width < 768
             ? null
             : w.selectChannel(w.channels.first, autoRead: false);
@@ -447,7 +447,7 @@ void main() {
           await t.tap(homeChannel);
         }
         await until(() => find.byType(RaftComposer).evaluate().isNotEmpty);
-        expect(w.channelLoading, isTrue);
+        expect(w.messageDomain.state.channelLoading, isTrue);
         expect(find.byType(CircularProgressIndicator), findsNothing);
         await capture('loading-before-ack');
         client.loading!.complete();
@@ -489,9 +489,9 @@ void main() {
             identical(t.state(find.byType(RaftComposer)), composerState),
             true,
           );
-          expect(w.threadParent, isNull);
+          expect(w.messageDomain.state.threadParent, isNull);
           expect(
-            w.messages
+            w.messageDomain.messages
                 .firstWhere((message) => message.json['senderName'] == 'artin')
                 .string('senderType'),
             'user',
@@ -612,8 +612,8 @@ void main() {
         await t.tap(replies);
         await until(
           () =>
-              w.threadParent != null &&
-              !w.threadLoading &&
+              w.messageDomain.state.threadParent != null &&
+              !w.messageDomain.state.threadLoading &&
               w.replies.length == 2,
         );
         await until(
@@ -648,7 +648,7 @@ void main() {
         await t.tap(find.byTooltip('Close thread').first);
         await until(
           () =>
-              w.threadParent == null &&
+              w.messageDomain.state.threadParent == null &&
               find.byType(RaftComposer).evaluate().length == 1 &&
               find
                   .byWidgetPredicate(

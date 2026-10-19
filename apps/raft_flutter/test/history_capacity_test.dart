@@ -376,7 +376,7 @@ void main() {
       'name': 'General',
       'type': 'channel',
     });
-    w.ledger.switchServer('one');
+    w.messageDomain.ledger.switchServer('one');
     w.messageWindows.acceptRows(liveWindowWrite, 'chat', rows('chat', 1, 100));
     final db = cache.messageHistory;
     await store(cache, scope('chat'), rows('chat', 1, 100));

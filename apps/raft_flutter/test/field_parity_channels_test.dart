@@ -103,7 +103,7 @@ Future<(WorkspaceController, _Api, _Client)> _controller({
   final w = WorkspaceController(client)
     ..server = RaftRecord({'id': _server, 'role': 'owner', 'plan': 'free'});
   w.channels = [for (final c in channels) RaftChannel(c)];
-  w.ledger.switchServer(_server);
+  w.messageDomain.ledger.switchServer(_server);
   return (w, api, client);
 }
 
@@ -198,7 +198,7 @@ void main() {
           parentMessageId: 'm1000000-0000-4000-8000-0000000000f1',
         );
         await _drain();
-        expect(w.threadResolutionError != null, error);
+        expect(w.messageDomain.threadResolutionError != null, error);
         expect(w.threadChannelId, isNull);
       });
     }
@@ -479,7 +479,7 @@ void main() {
       addTearDown(w.dispose);
       w.channel = w.channels.first;
       final channelId = w.channel!.id;
-      w.ledger.ingest([
+      w.messageDomain.ledger.ingest([
         {
           'id': 'm0',
           'channelId': channelId,
@@ -490,13 +490,15 @@ void main() {
           'content': 'Earlier',
           'createdAt': '2026-10-10T08:00:00.000Z',
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds[channelId] = {'m0'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds[channelId] = {'m0'};
       final hold = Completer<(int, dynamic)>();
       api.routes['POST /v2/messages'] = (_) => hold.future;
       unawaited(w.send('hello'));
       await _drain();
-      final pending = w.timeline().where(WorkspaceController.isPendingSend);
+      final pending = w.messageDomain.timeline().where(
+        WorkspaceController.isPendingSend,
+      );
       expect(pending, hasLength(1), reason: 'displayName=$displayName');
       expect(pending.single.json['senderName'], expected);
       hold.complete((500, {'error': 'x'}));

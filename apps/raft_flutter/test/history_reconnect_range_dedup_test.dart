@@ -61,11 +61,11 @@ void main() {
       final scope = MessageHistoryPages.scope(w, 'chat')!;
       await seedGap(db, scope);
       await w.selectChannel(w.channels.single, autoRead: false);
-      await w.older();
+      await w.messageDomain.older();
       await settle();
       client.beforeReads.clear();
       client.disconnected = true;
-      expect(w.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
       recovery.start(view);
       attached = true;
       await client.beforeArrived.future;
@@ -84,7 +84,7 @@ void main() {
         ]),
         isEmpty,
       );
-      expect(w.messages.map((m) => m.id), contains('chat-151'));
+      expect(w.messageDomain.messages.map((m) => m.id), contains('chat-151'));
       expect(
         client.beforeReads,
         [

@@ -206,7 +206,7 @@ Future<(_Client, WorkspaceController)> mount(
     ..dms = client.dmRows
     ..channel = client.channelRows.first
     ..section = section;
-  w.ledger.switchServer('s');
+  w.messageDomain.ledger.switchServer('s');
   addTearDown(() async {
     w.dispose();
     await client.stream.close();

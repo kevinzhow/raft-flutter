@@ -75,7 +75,7 @@ Future<WorkspaceController> _fixture(_Transport t) async {
   c.selectServer('s1');
   final w = WorkspaceController(c)
     ..server = RaftRecord({'id': 's1', 'role': 'owner'});
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return w;
 }
 
@@ -116,15 +116,24 @@ void main() {
           'taskStatus': 'done',
         }),
       );
-      expect(w.ledger.messages('c1').map((m) => m['id']), ['a', 'late', 'b']);
-      expect(w.ledger.messages('c1').first['content'], 'loaded 中文');
-      expect(w.ledger.messages('c1').first['commentRef'], {'id': 'comment'});
-      expect(w.ledger.messages('c1').first['taskStatus'], 'done');
+      expect(w.messageDomain.ledger.messages('c1').map((m) => m['id']), [
+        'a',
+        'late',
+        'b',
+      ]);
+      expect(
+        w.messageDomain.ledger.messages('c1').first['content'],
+        'loaded 中文',
+      );
+      expect(w.messageDomain.ledger.messages('c1').first['commentRef'], {
+        'id': 'comment',
+      });
+      expect(w.messageDomain.ledger.messages('c1').first['taskStatus'], 'done');
       c.stream.add(RaftEvent('channel:removed', {'channelId': 'c1'}));
-      expect(w.ledger.messages('c1'), isEmpty);
+      expect(w.messageDomain.ledger.messages('c1'), isEmpty);
       expect(w.messageSync.core.state('messages', 'c1'), isNull);
       c.stream.add(RaftEvent('message:new', message('private', 100)));
-      expect(w.ledger.messages('c1'), isEmpty);
+      expect(w.messageDomain.ledger.messages('c1'), isEmpty);
     },
   );
   test(
@@ -141,7 +150,10 @@ void main() {
       final c = w.client as _Client;
       c.stream.add(RaftEvent('message:new', message('new', 99)));
       c.stream.add(RaftEvent('message:new', message('late', 10)));
-      expect(w.ledger.messages('c1').map((m) => m['id']), ['late', 'new']);
+      expect(w.messageDomain.ledger.messages('c1').map((m) => m['id']), [
+        'late',
+        'new',
+      ]);
     },
   );
   for (final signOut in [false, true]) {

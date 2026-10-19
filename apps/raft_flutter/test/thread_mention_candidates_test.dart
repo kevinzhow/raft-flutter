@@ -71,8 +71,8 @@ Future<void> _mountThread(
   });
   w.channels = [parent, main];
   w.channel = main;
-  w.ledger.switchServer('s1');
-  w.threadParent = RaftMessage({
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.state.threadParent = RaftMessage({
     'id': 'parent',
     'channelId': 'c1',
     'seq': 1,
@@ -81,7 +81,7 @@ Future<void> _mountThread(
     'content': 'Parent',
   });
   w.threadChannelId = 'thread-c1';
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     // Oldest to newest: cindy, then codexmac, then kevin spoke last.
     for (final (i, s) in [
       (1, ('agent', 'cindy')),
@@ -97,8 +97,8 @@ Future<void> _mountThread(
         'content': 'reply $i',
         'createdAt': '2026-06-22T02:30:0$i.000Z',
       },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['thread-c1'] = {'r1', 'r2', 'r3'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['thread-c1'] = {'r1', 'r2', 'r3'};
   await t.pumpWidget(
     MaterialApp(
       theme: raftTheme(RaftFamily.elegant),

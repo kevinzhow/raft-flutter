@@ -87,7 +87,7 @@ void main() {
             ];
             w.loading = false;
             w.connected = true;
-            w.ledger.switchServer('s1');
+            w.messageDomain.ledger.switchServer('s1');
             w.section = 'activity';
             var row = activityRow('thread');
             row['firstUnreadMessageId'] = 'm5';

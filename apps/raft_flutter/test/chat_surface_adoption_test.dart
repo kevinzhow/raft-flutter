@@ -26,8 +26,8 @@ void main() {
         addTearDown(() => t.binding.setSurfaceSize(null));
         final (w, _) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.threadParent = RaftMessage({
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.state.threadParent = RaftMessage({
           'id': 'parent',
           'channelId': 'c1',
           'seq': 1,
@@ -78,9 +78,9 @@ void main() {
         ) async {
           final (w, _) = (await t.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           if (thread) {
-            w.threadParent = RaftMessage({
+            w.messageDomain.state.threadParent = RaftMessage({
               'id': 'parent',
               'channelId': 'c1',
               'seq': 1,
@@ -89,13 +89,13 @@ void main() {
               'content': 'Public parent body',
             });
             w.threadChannelId = 'thread-c1';
-            w.threadLoading = state == 'loading';
+            w.messageDomain.state.threadLoading = state == 'loading';
           } else {
             w.loading = state == 'loading';
           }
           final channelId = thread ? 'thread-c1' : 'c1';
           if (state == 'loaded') {
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               {
                 'id': 'message',
                 'channelId': channelId,
@@ -104,8 +104,8 @@ void main() {
                 'senderName': 'Public author',
                 'content': 'Public loaded body',
               },
-            ], expectedGeneration: w.ledger.generation);
-            w.visibleIds[channelId] = {'message'};
+            ], expectedGeneration: w.messageDomain.ledger.generation);
+            w.messageDomain.visibleIds[channelId] = {'message'};
           }
           await t.pumpWidget(
             MaterialApp(

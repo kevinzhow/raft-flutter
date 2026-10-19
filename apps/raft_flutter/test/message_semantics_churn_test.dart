@@ -265,10 +265,15 @@ void main() {
       final handle = t.ensureSemantics();
       final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       final rows = [for (var i = 0; i < 60; i++) benchmarkRow(i)];
-      w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {for (final row in rows) row['id'] as String};
+      w.messageDomain.ledger.ingest(
+        rows,
+        expectedGeneration: w.messageDomain.ledger.generation,
+      );
+      w.messageDomain.visibleIds['c1'] = {
+        for (final row in rows) row['id'] as String,
+      };
       transport.routes['GET /agents'] = (_) => [];
       transport.routes['GET /servers/s1/members'] = (_) => [];
       transport.routes['GET /tasks'] = (_) => [];
@@ -443,10 +448,15 @@ void main() {
     final handle = t.ensureSemantics();
     final (w, transport) = (await t.runAsync(() => fixture('member')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final rows = [for (var i = 0; i < 60; i++) benchmarkRow(i)];
-    w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+    w.messageDomain.ledger.ingest(
+      rows,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {
+      for (final r in rows) r['id'] as String,
+    };
     transport.routes['GET /agents'] = (_) => [];
     transport.routes['GET /servers/s1/members'] = (_) => [];
     transport.routes['GET /tasks'] = (_) => [];

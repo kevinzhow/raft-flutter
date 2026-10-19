@@ -171,7 +171,7 @@ Future<(WorkspaceController, _Client)> _mount(
     ..channels = client.channelRows
     ..channel = client.channelRows.first
     ..section = 'chat';
-  w.ledger.switchServer('s');
+  w.messageDomain.ledger.switchServer('s');
   addTearDown(() async {
     w.dispose();
     await client.stream.close();

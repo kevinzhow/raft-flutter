@@ -76,7 +76,7 @@ WorkspaceController _workspace(ParityContext ctx) {
     ..server = RaftRecord(base.serverRecord)
     ..channels = channels
     ..dms = dms;
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   return w;
 }
 

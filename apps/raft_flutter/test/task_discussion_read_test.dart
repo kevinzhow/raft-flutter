@@ -139,13 +139,13 @@ openTaskDiscussion() async {
   final deadline = DateTime.now().add(const Duration(seconds: 5));
   while (DateTime.now().isBefore(deadline)) {
     if (discussion!.threadChannelId == 'task-thread' &&
-        !discussion.threadLoading) {
+        !discussion.messageDomain.state.threadLoading) {
       break;
     }
     await Future<void>.delayed(const Duration(milliseconds: 20));
   }
   expect(discussion!.threadChannelId, 'task-thread');
-  expect(discussion.threadLoading, isFalse);
+  expect(discussion.messageDomain.state.threadLoading, isFalse);
   expect(
     parent.location.thread,
     isNull,

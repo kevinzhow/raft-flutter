@@ -286,12 +286,12 @@ void main() {
           await w.selectChannel(w.channels.single, autoRead: false);
           await w.flushCache();
           final scope = MessageHistoryPages.scope(w, 'chat')!;
-          final held = w.ledger.message('chat', 'chat-1000');
+          final held = w.messageDomain.ledger.message('chat', 'chat-1000');
           final page = await MessageHistoryPages.load(
             cache: cache,
             scope: scope,
             current: () => true,
-            held: () => w.ledger.messages('chat'),
+            held: () => w.messageDomain.ledger.messages('chat'),
             localFirst: false,
             focused: true,
             target: 'chat-1000',
@@ -310,7 +310,7 @@ void main() {
             replace: true,
           );
           expect(
-            w.ledger.message('chat', 'chat-1000')!['content'],
+            w.messageDomain.ledger.message('chat', 'chat-1000')!['content'],
             'unproven response 1000',
           );
           await cache.customStatement(
@@ -327,17 +327,20 @@ void main() {
             ]);
           }
           expect(await recording, isFalse);
-          expect(w.ledger.message('chat', 'chat-1000'), held);
-          expect(w.visibleIds['chat'], contains('chat-1000'));
+          expect(w.messageDomain.ledger.message('chat', 'chat-1000'), held);
+          expect(w.messageDomain.visibleIds['chat'], contains('chat-1000'));
           if (laterLiveEdit) {
             expect(
-              w.ledger.message('chat', 'chat-1020')!['content'],
+              w.messageDomain.ledger.message('chat', 'chat-1020')!['content'],
               'later live edit',
             );
-            expect(w.visibleIds['chat'], contains('chat-1020'));
+            expect(w.messageDomain.visibleIds['chat'], contains('chat-1020'));
           } else {
-            expect(w.ledger.message('chat', 'chat-1020'), isNull);
-            expect(w.visibleIds['chat'], isNot(contains('chat-1020')));
+            expect(w.messageDomain.ledger.message('chat', 'chat-1020'), isNull);
+            expect(
+              w.messageDomain.visibleIds['chat'],
+              isNot(contains('chat-1020')),
+            );
           }
         } finally {
           await w.flushCache();

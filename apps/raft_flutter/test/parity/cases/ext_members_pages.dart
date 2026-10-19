@@ -94,7 +94,7 @@ WorkspaceController _workspace(ParityContext ctx, {bool mobile = false}) {
   w
     ..servers = [server]
     ..server = server;
-  w.ledger.switchServer(_serverId);
+  w.messageDomain.ledger.switchServer(_serverId);
   // The app always holds the channel lists; the Activity tab's reference pills
   // resolve against them.
   if ('${ctx.props['routeSet']}'.startsWith('act-')) {

@@ -193,16 +193,16 @@ class _Fixture {
         RaftChannel({'id': id, 'type': 'private', 'joined': true}),
     ];
     w.channel = w.channels.first;
-    if (source == null) w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    if (source == null) w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       _row('c1', 5),
       _row('c2', 5),
       _row('thread', 5),
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'c1-5'};
-    w.visibleIds['c2'] = {'c2-5'};
-    w.visibleIds['thread'] = {'thread-5'};
-    w.threadParent = RaftMessage(_row('c1', 5));
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'c1-5'};
+    w.messageDomain.visibleIds['c2'] = {'c2-5'};
+    w.messageDomain.visibleIds['thread'] = {'thread-5'};
+    w.messageDomain.state.threadParent = RaftMessage(_row('c1', 5));
     w.threadChannelId = 'thread';
     w.section = 'chat';
     w.navigation.navigate(w.location.withQuery({'thread': 'c1:c1-5'}));
@@ -221,16 +221,16 @@ void main() {
     () async {
       final f = _Fixture(), w = f.root;
       final before = List.of(f.client.calls), owner = Object();
-      expect(w.messageWindow!.visible, isTrue);
-      expect(w.threadWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.threadWindow!.visible, isTrue);
       expect(w.presentationActive, isTrue);
       w.setChatTabPresentation(owner, false);
       w.setConversationPresentation(owner, main: false, thread: false);
       w.releaseConversationPresentation(owner);
       w.releaseChatTabPresentation(owner);
       await w.flushCache();
-      expect(w.messageWindow!.visible, isTrue);
-      expect(w.threadWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.threadWindow!.visible, isTrue);
       expect(w.notifications, 0);
       expect(f.client.calls, before);
       expect(f.cache.writes, isEmpty);
@@ -244,8 +244,8 @@ void main() {
         () async {
           final f = _Fixture(), w = f.root;
           w.setConversationPresentation(Object(), main: main, thread: thread);
-          expect(w.messageWindow!.visible, main);
-          expect(w.threadWindow!.visible, thread);
+          expect(w.messageDomain.messageWindow!.visible, main);
+          expect(w.messageDomain.threadWindow!.visible, thread);
           await w.markRead('c1');
           await w.markRead('thread');
           expect(f.client.receipts, [
@@ -265,12 +265,12 @@ void main() {
     w.setChatTabPresentation(owner, false);
     f.client.bus.add(RaftEvent('message:new', _row('c1', 6)));
     await w.markRead('c1');
-    expect(w.messages.map((m) => m.id), contains('c1-6'));
-    expect(w.messageWindow!.visible, isFalse);
-    expect(w.threadWindow!.visible, isFalse);
+    expect(w.messageDomain.messages.map((m) => m.id), contains('c1-6'));
+    expect(w.messageDomain.messageWindow!.visible, isFalse);
+    expect(w.messageDomain.threadWindow!.visible, isFalse);
     expect(f.client.receipts, isEmpty);
     w.releaseChatTabPresentation(owner);
-    expect(w.messageWindow!.visible, isTrue);
+    expect(w.messageDomain.messageWindow!.visible, isTrue);
     await w.markRead('c1');
     expect(f.client.receipts, ['/channels/c1/read']);
   });
@@ -293,14 +293,14 @@ void main() {
         expect(identical(current, equal), isFalse);
         for (final stale in [old, equal, Object()]) {
           release(stale);
-          expect(w.messageWindow!.visible, isFalse);
-          expect(w.threadWindow!.visible, isFalse);
+          expect(w.messageDomain.messageWindow!.visible, isFalse);
+          expect(w.messageDomain.threadWindow!.visible, isFalse);
         }
         release(current);
         release(current);
         release(old);
-        expect(w.messageWindow!.visible, isTrue);
-        expect(w.threadWindow!.visible, isTrue);
+        expect(w.messageDomain.messageWindow!.visible, isTrue);
+        expect(w.messageDomain.threadWindow!.visible, isTrue);
         expect(f.client.receipts, isEmpty);
         expect(w.notifications, 0);
       },
@@ -313,12 +313,12 @@ void main() {
       final f = _Fixture(), w = f.root, owner = Object();
       w.setConversationPresentation(owner, main: false, thread: true);
       w.releaseConversationPresentation(owner);
-      expect(w.messageWindow!.visible, isTrue);
-      expect(w.threadWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.threadWindow!.visible, isTrue);
       w.setConversationPresentation(owner, main: true, thread: false);
       w.releaseConversationPresentation(owner);
-      expect(w.messageWindow!.visible, isTrue);
-      expect(w.threadWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.threadWindow!.visible, isTrue);
       expect(w.notifications, 0);
     },
   );
@@ -330,15 +330,15 @@ void main() {
       w.setChatTabPresentation(owner, false);
       w.setConversationPresentation(owner, main: false, thread: false);
       w.releaseConversationPresentation(owner);
-      expect(w.messageWindow!.visible, isFalse);
+      expect(w.messageDomain.messageWindow!.visible, isFalse);
       w.releaseChatTabPresentation(owner);
-      expect(w.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
       w.setConversationPresentation(owner, main: false, thread: false);
       w.setChatTabPresentation(owner, false);
       w.releaseChatTabPresentation(owner);
-      expect(w.messageWindow!.visible, isFalse);
+      expect(w.messageDomain.messageWindow!.visible, isFalse);
       w.releaseConversationPresentation(owner);
-      expect(w.messageWindow!.visible, isTrue);
+      expect(w.messageDomain.messageWindow!.visible, isTrue);
     },
   );
 
@@ -376,7 +376,7 @@ void main() {
     await page.conversationReads.markRead('c1');
     expect(f.client.receipts, isEmpty);
     expect(source.dispatch, isEmpty);
-    expect(source.messageWindow!.visible, isTrue);
+    expect(source.messageDomain.messageWindow!.visible, isTrue);
     await page.markRead('c1');
     expect(f.client.receipts, ['/channels/c1/read']);
     page.presentationActive = true;
@@ -410,7 +410,7 @@ void main() {
           during.add(f.client.receipts.length - before);
         };
         release(sourceOwner); // Wrong locally, correct on the source.
-        expect(source.messageWindow!.visible, isTrue);
+        expect(source.messageDomain.messageWindow!.visible, isTrue);
         await page.conversationReads.markRead('c1');
         expect(f.client.receipts, isEmpty);
         release(localOwner); // Source is called before the local owner clears.
@@ -440,8 +440,8 @@ void main() {
         main: false,
         thread: false,
       );
-      expect(source.messageWindow!.visible, isTrue);
-      expect(independent.messageWindow!.visible, isFalse);
+      expect(source.messageDomain.messageWindow!.visible, isTrue);
+      expect(independent.messageDomain.messageWindow!.visible, isFalse);
       await a.conversationReads.markRead('c1');
       expect(f.client.receipts, isEmpty);
       await b.conversationReads.markRead('c1');
@@ -470,9 +470,9 @@ void main() {
           case 'background':
             w.foreground = false;
           case 'newer':
-            w.hasNewer = true;
+            w.messageDomain.state.hasNewer = true;
           case 'loading':
-            w.channelLoading = true;
+            w.messageDomain.state.channelLoading = true;
           case 'noncurrent':
             id = 'c2';
           case 'mobile-thread':
@@ -515,7 +515,7 @@ void main() {
     w.setChatTabPresentation(owner, false);
     w.setConversationPresentation(owner, main: false, thread: false);
     await w.selectChannel(w.channels.last, autoRead: false);
-    expect(w.messageWindow!.visible, isFalse);
+    expect(w.messageDomain.messageWindow!.visible, isFalse);
     w.resetServerProjection();
     w.server = RaftRecord({'id': 's1', 'slug': 'test', 'role': 'owner'});
     w.channels = [
@@ -526,12 +526,12 @@ void main() {
     w.foreground = true;
     w.releaseConversationPresentation(owner);
     expect(
-      w.messageWindow!.visible,
+      w.messageDomain.messageWindow!.visible,
       isFalse,
       reason: 'The tab owner survived the reset.',
     );
     w.releaseChatTabPresentation(owner);
-    expect(w.messageWindow!.visible, isTrue);
+    expect(w.messageDomain.messageWindow!.visible, isTrue);
   });
 
   test(

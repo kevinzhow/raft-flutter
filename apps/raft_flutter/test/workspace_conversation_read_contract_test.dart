@@ -176,7 +176,7 @@ class _Fixture {
     ];
     w.dms = [_channel('dm', type: 'dm')];
     w.channel = w.channels.first;
-    if (source == null) w.ledger.switchServer('s1');
+    if (source == null) w.messageDomain.ledger.switchServer('s1');
     w.notifyListeners();
     w.notifications = 0;
     return w;
@@ -377,9 +377,9 @@ void main() {
     final f = _Fixture(), w = f.root;
     w.unread = {'c2': 4};
     f.client.emit('message:new', _message('own', 'c2', 10, sender: 'alice'));
-    w.ledger.switchServer('temporary');
-    w.ledger.switchServer('s1');
-    expect(w.ledger.messages('c2'), isEmpty);
+    w.messageDomain.ledger.switchServer('temporary');
+    w.messageDomain.ledger.switchServer('s1');
+    expect(w.messageDomain.ledger.messages('c2'), isEmpty);
     f.client.emit('read_state:updated', {
       'serverId': 's1',
       'scopeId': 'c2',

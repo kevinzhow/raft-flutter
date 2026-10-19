@@ -162,7 +162,13 @@ void main() {
       identical(page.messageWindows, f.workspace(t).messageWindows),
       isTrue,
     );
-    expect(identical(page.messageWindow, f.workspace(t).messageWindow), isTrue);
+    expect(
+      identical(
+        page.messageDomain.messageWindow,
+        f.workspace(t).messageDomain.messageWindow,
+      ),
+      isTrue,
+    );
 
     final field = find.descendant(
       of: channelChat(),
@@ -257,7 +263,7 @@ void main() {
       );
       expect(find.text('Row 50'), findsWidgets);
       final outer = f.workspace(t);
-      final paging = outer.older();
+      final paging = outer.messageDomain.older();
       await f.flush(t);
       final jumping = outer.jumpToMessage('ca', 'missing-jump');
       await f.flush(t);

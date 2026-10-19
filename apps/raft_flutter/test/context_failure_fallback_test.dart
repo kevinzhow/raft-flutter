@@ -29,10 +29,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final old = contextRows('old');
-        w.ledger.ingest(old, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = old.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          old,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = old
+            .map((r) => r['id'] as String)
+            .toSet();
         // The unregistered context route answers the fixture's real 404.
         final latestRequested = Completer<void>.sync();
         final latest = Completer<Map<String, dynamic>>.sync();
@@ -65,18 +70,21 @@ void main() {
           expect(paintedMessage(tester, 'old-79'), oldRect);
           expect(find.text('Loading...'), findsNothing);
           expect(find.text('Start the conversation'), findsNothing);
-          expect(w.messages.map((r) => r.id), old.map((r) => r['id']));
-          expect(w.highlightedMessageId, isNull);
+          expect(
+            w.messageDomain.messages.map((r) => r.id),
+            old.map((r) => r['id']),
+          );
+          expect(w.messageDomain.state.highlightedMessageId, isNull);
         }
         await tester.runAsync(() async {
           latest.complete({'messages': contextRows('latest', count: 8)});
-          for (var i = 0; i < 40 && w.channelLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.channelLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });
         await tester.pumpAndSettle();
-        expect(w.channelLoading, false);
-        expect(w.hasNewer, false);
+        expect(w.messageDomain.state.channelLoading, false);
+        expect(w.messageDomain.state.hasNewer, false);
         expect(paintedMessage(tester, 'latest-7'), isNotNull);
         expect(find.text('Back to bottom'), findsNothing);
         expect(tester.takeException(), isNull);

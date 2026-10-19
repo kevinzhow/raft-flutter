@@ -156,11 +156,11 @@ class _Workspace extends WorkspaceController {
 class _Fixture {
   _Fixture({bool mobile = true, Object seq = '5'}) {
     root = make(mobile: mobile);
-    root.ledger.ingest([
+    root.messageDomain.ledger.ingest([
       _row('m5', seq),
       _row('retained-but-hidden', 99),
-    ], expectedGeneration: root.ledger.generation);
-    root.visibleIds['c1'] = {'m5'};
+    ], expectedGeneration: root.messageDomain.ledger.generation);
+    root.messageDomain.visibleIds['c1'] = {'m5'};
     root.unread = {'c1': 3};
     root.mentions = {'c1'};
     root.newFlags = {'c1'};
@@ -188,7 +188,7 @@ class _Fixture {
     w.server = RaftRecord({'id': 's1', 'role': 'owner'});
     w.channels = [_channel('c1'), _channel('c2')];
     w.channel = w.channels.first;
-    if (source == null) w.ledger.switchServer('s1');
+    if (source == null) w.messageDomain.ledger.switchServer('s1');
     w.section = 'chat';
     w.notifications = 0;
     return w;
@@ -232,7 +232,7 @@ void main() {
         case 'outside-scope':
           id = 'c2';
         case 'context':
-          w.hasNewer = true;
+          w.messageDomain.state.hasNewer = true;
       }
       await w.markRead(id);
       await w.flushCache();
@@ -272,7 +272,7 @@ void main() {
 
   test('B2 an empty visible window has no receipt despite held rows', () async {
     final f = _Fixture(), w = f.root;
-    w.visibleIds['c1'] = {};
+    w.messageDomain.visibleIds['c1'] = {};
     await w.markRead('c1');
     expect(f.client.reads, 0);
     expect(w.unread['c1'], 3);
@@ -314,8 +314,10 @@ void main() {
   test('B4 an ACK after leaving clears only the covered old scope', () async {
     final f = _Fixture(), w = f.root;
     // This case's held scope ends at the receipt, unlike the hidden row in B2.
-    w.ledger.revokeChannel('c1');
-    w.ledger.ingest([_row('m5', 5)], expectedGeneration: w.ledger.generation);
+    w.messageDomain.ledger.revokeChannel('c1');
+    w.messageDomain.ledger.ingest([
+      _row('m5', 5),
+    ], expectedGeneration: w.messageDomain.ledger.generation);
     f.client.pendingRead = Completer<dynamic>();
     final read = w.markRead('c1');
     f.leave();
@@ -334,12 +336,16 @@ void main() {
     'B4 a later message survives the old ACK and requests one reconcile',
     () async {
       final f = _Fixture(), w = f.root;
-      w.ledger.revokeChannel('c1');
-      w.ledger.ingest([_row('m5', 5)], expectedGeneration: w.ledger.generation);
+      w.messageDomain.ledger.revokeChannel('c1');
+      w.messageDomain.ledger.ingest([
+        _row('m5', 5),
+      ], expectedGeneration: w.messageDomain.ledger.generation);
       f.client.pendingRead = Completer<dynamic>();
       final read = w.markRead('c1');
       f.leave();
-      w.ledger.ingest([_row('m6', 6)], expectedGeneration: w.ledger.generation);
+      w.messageDomain.ledger.ingest([
+        _row('m6', 6),
+      ], expectedGeneration: w.messageDomain.ledger.generation);
       w.conversationReads.latestActivity['c1'] = BigInt.from(6);
       f.client.unreadValue = {
         'channels': {'c1': 1},
@@ -368,7 +374,7 @@ void main() {
         case 'server':
           f.client.selectServer('s2');
         case 'generation':
-          w.ledger.switchServer('s2');
+          w.messageDomain.ledger.switchServer('s2');
         case 'revocation':
           w.sessionScope.revokeChannel('c1');
       }

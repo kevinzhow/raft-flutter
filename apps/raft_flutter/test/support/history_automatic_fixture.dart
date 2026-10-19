@@ -141,32 +141,32 @@ class HistoryAuditCase {
     automaticHistoryMaintenance: false,
   );
   late final WorkspaceController w = WorkspaceController(client, cache: cache)
-    ..ledger.switchServer('server')
+    ..messageDomain.ledger.switchServer('server')
     ..server = RaftRecord({'id': 'server', 'role': 'owner'})
     ..channels = [
       RaftChannel({'id': 'chat', 'type': 'private', 'joined': true}),
     ];
   Future<void> seed() async {
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     await w.selectChannel(w.channels.single, autoRead: false);
-    await w.older();
+    await w.messageDomain.older();
     await w.flushCache();
     await cache.messageHistory.reads.settled;
-    expect(w.messages.length, 100);
+    expect(w.messageDomain.messages.length, 100);
     client.calls.clear();
   }
 
   void forgetOlder() {
     for (var i = 1; i <= 50; i++) {
-      w.ledger.remove('chat', 'm$i');
-      w.visibleIds['chat']?.remove('m$i');
+      w.messageDomain.ledger.remove('chat', 'm$i');
+      w.messageDomain.visibleIds['chat']?.remove('m$i');
     }
-    w.hasMore = true;
+    w.messageDomain.state.hasMore = true;
   }
 
   Future<void> reconnect() async {
     client.incoming.add(const RaftEvent('rooms:joined', {}));
-    await w.syncVisibleScopes();
+    await w.messageDomain.navigation.syncVisibleScopes();
     await cache.messageHistory.receiver.settled;
     await cache.messageHistory.reads.settled;
     await w.flushCache();

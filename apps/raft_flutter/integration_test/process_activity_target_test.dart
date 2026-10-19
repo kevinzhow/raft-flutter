@@ -270,7 +270,7 @@ void main() {
           'focusRect': focus == null ? null : rect(focus),
           'view': view == null ? null : rect(view),
           'inView': view?.overlaps(card) == true,
-          'highlighted': w.highlightedMessageId == id,
+          'highlighted': w.messageDomain.state.highlightedMessageId == id,
         };
       }
 
@@ -281,12 +281,12 @@ void main() {
         'stage': stageName,
         'url': '${w.location.uri}',
         'channelId': w.channel?.id,
-        'loading': w.channelLoading,
-        'pendingChannelId': w.pendingMessageContextChannelId,
+        'loading': w.messageDomain.state.channelLoading,
+        'pendingChannelId': w.messageDomain.pendingMessageContextChannelId,
         'threadChannelId': w.threadChannelId,
-        'threadParentId': w.threadParentMessageId,
-        'threadParentLoading': w.threadParentLoading,
-        'threadLoading': w.threadLoading,
+        'threadParentId': w.messageDomain.threadParentMessageId,
+        'threadParentLoading': w.messageDomain.threadParentLoading,
+        'threadLoading': w.messageDomain.state.threadLoading,
         'replyIds': w.replies.map((row) => row.id).toList(),
         'threadParentAccepted': w.presentedThreadParent?.id,
         'channelScroller':
@@ -294,10 +294,10 @@ void main() {
             null,
         'threadScroller':
             visibleRect(find.byKey(const ValueKey('chat-list-thread'))) != null,
-        'acceptedIds': w.messages.map((row) => row.id).toList(),
-        'highlight': w.highlightedMessageId,
-        'older': w.hasMore,
-        'newer': w.hasNewer,
+        'acceptedIds': w.messageDomain.messages.map((row) => row.id).toList(),
+        'highlight': w.messageDomain.state.highlightedMessageId,
+        'older': w.messageDomain.state.hasMore,
+        'newer': w.messageDomain.state.hasNewer,
         'headers': [
           find.byType(RaftChannelHeader),
           find.byType(RaftPageHeader),
@@ -643,7 +643,7 @@ void main() {
           await t.pump(const Duration(milliseconds: 2100));
           await snapshot('thread-highlight-expired');
           check(
-            w.highlightedMessageId,
+            w.messageDomain.state.highlightedMessageId,
             isNull,
             'thread highlight expires after two seconds',
           );
@@ -687,15 +687,16 @@ void main() {
           }
           await until(
             () =>
-                w.channelLoading &&
-                w.pendingMessageContextChannelId == flow['channelId'],
+                w.messageDomain.state.channelLoading &&
+                w.messageDomain.pendingMessageContextChannelId ==
+                    flow['channelId'],
             'owned pending context',
           );
           await snapshot('pending-context');
           final pending = stages.last['frame'] as Map;
           if (flow['threadChannelId'] != null) {
             check(
-              w.threadParentMessageId,
+              w.messageDomain.threadParentMessageId,
               isNull,
               'channel selection closes previous thread identity',
             );
@@ -759,7 +760,7 @@ void main() {
           await t.pump(const Duration(milliseconds: 2100));
           await snapshot('highlight-expired');
           check(
-            w.highlightedMessageId,
+            w.messageDomain.state.highlightedMessageId,
             isNull,
             'highlight expires after two seconds',
           );

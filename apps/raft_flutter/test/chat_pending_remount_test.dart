@@ -27,11 +27,14 @@ void main() {
           addTearDown(tester.view.reset);
           final (w, api) = (await tester.runAsync(() => fixture('member')))!;
           addTearDown(w.dispose);
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           final accepted = contextRows('accepted', count: count),
               next = contextRows('target');
-          w.ledger.ingest(accepted, expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = accepted
+          w.messageDomain.ledger.ingest(
+            accepted,
+            expectedGeneration: w.messageDomain.ledger.generation,
+          );
+          w.messageDomain.visibleIds['c1'] = accepted
               .map((row) => row['id'] as String)
               .toSet();
           w.setSection('activity');
@@ -48,9 +51,9 @@ void main() {
             unawaited(w.jumpToMessage('c1', 'target-40', navigate: false));
             await started.future;
           });
-          expect(w.channelLoading, true);
+          expect(w.messageDomain.state.channelLoading, true);
           expect(
-            w.messages.map((row) => row.id),
+            w.messageDomain.messages.map((row) => row.id),
             accepted.map((row) => row['id']),
           );
           await tester.pumpWidget(
@@ -93,7 +96,7 @@ void main() {
             expect(paintedMessage(tester, 'target-40'), isNull);
           }
           expect(acceptedRect, isNotNull);
-          expect(w.channelLoading, true);
+          expect(w.messageDomain.state.channelLoading, true);
           expect(find.text('Loading...'), findsNothing);
           await tester.runAsync(() async {
             response.complete({
@@ -101,10 +104,14 @@ void main() {
               'hasOlder': true,
               'hasNewer': true,
             });
-            for (var i = 0; i < 40 && w.channelLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.state.channelLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
-            expect(w.channelLoading, false);
+            expect(w.messageDomain.state.channelLoading, false);
           });
           Rect? targetRect;
           for (var i = 0; i < 12; i++) {

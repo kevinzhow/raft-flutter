@@ -58,7 +58,7 @@ void main() {
       final client = _client();
       final w = _FailingFollow(client)
         ..server = RaftRecord({'id': 's', 'role': 'owner'})
-        ..threadParent = RaftMessage({
+        ..messageDomain.state.threadParent = RaftMessage({
           'id': 'm1',
           'channelId': 'c',
           'content': 'one',
@@ -79,7 +79,7 @@ void main() {
       );
 
       // Same State, another thread (the panel re-parents instead of rebuilding).
-      w.threadParent = RaftMessage({
+      w.messageDomain.state.threadParent = RaftMessage({
         'id': 'm2',
         'channelId': 'c',
         'content': 'two',
@@ -417,8 +417,8 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     final (w, a) = (await t.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       for (final (id, seq) in [('parent', 1), ('later', 2)])
         {
           'id': id,
@@ -430,8 +430,8 @@ void main() {
           'content': 'Row $id',
           'messageType': 'chat',
         },
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent', 'later'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'parent', 'later'};
     a.routes['GET /servers/s1/setup-projection'] = (_) => {
       'phase': 'complete',
       'surface': 'complete',

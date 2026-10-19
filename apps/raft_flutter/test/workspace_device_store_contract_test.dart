@@ -134,7 +134,7 @@ class _Fixture {
           ..server = RaftRecord({'id': 'server', 'role': 'owner'})
           ..channel = RaftChannel({'id': 'channel', 'joined': true});
     w.channels = [w.channel!];
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     addTearDown(() async {
       if (!release.isCompleted) release.complete();
       await w.flushCache();

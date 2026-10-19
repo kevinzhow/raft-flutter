@@ -123,7 +123,7 @@ void main() {
         for (final id in ['alpha', 'beta'])
           RaftChannel({'id': id, 'type': 'private', 'joined': true}),
       ];
-    w.ledger.switchServer('s');
+    w.messageDomain.ledger.switchServer('s');
     await w.selectChannel(w.channels.last, autoRead: false, navigate: false);
     await w.selectChannel(w.channels.first, autoRead: false, navigate: false);
   });
@@ -136,25 +136,28 @@ void main() {
     'reads reuse row versions and stable scoped objects without requests',
     () {
       final before = List.of(client.calls);
-      final window = w.messageWindow!;
-      expect(identical(window, w.messageWindow), isTrue);
+      final window = w.messageDomain.messageWindow!;
+      expect(identical(window, w.messageDomain.messageWindow), isTrue);
       expect(identical(window, w.messageWindows.channel('alpha')), isTrue);
-      expect(window.rows, w.messages);
-      expect(window.timeline, w.timeline());
-      expect(identical(window.rows.first, w.messages.first), isTrue);
+      expect(window.rows, w.messageDomain.messages);
+      expect(window.timeline, w.messageDomain.timeline());
+      expect(
+        identical(window.rows.first, w.messageDomain.messages.first),
+        isTrue,
+      );
       expect(() => window.rows.clear(), throwsUnsupportedError);
       expect(window.channelId, 'alpha');
       expect(window.scope.channelId, 'alpha');
-      expect(window.loading, w.channelLoading);
-      expect(window.hasMore, w.hasMore);
-      expect(window.historyLimited, w.historyLimited);
+      expect(window.loading, w.messageDomain.state.channelLoading);
+      expect(window.hasMore, w.messageDomain.state.hasMore);
+      expect(window.historyLimited, w.messageDomain.state.historyLimited);
       expect(client.calls, before);
     },
   );
 
   test('directory, sidebar and another channel produce zero current-window changes', () async {
     await w.entityDirectory.preload();
-    final window = w.messageWindow!;
+    final window = w.messageDomain.messageWindow!;
     final beta = w.messageWindows.channel('beta')!;
     final rows = window.rows;
     var changes = 0, betaChanges = 0, workspaceChanges = 0;
@@ -185,7 +188,7 @@ void main() {
       reason: 'The accepted sidebar update is not a window change.',
     );
     client.emit('message:new', _row('beta', 3));
-    expect(w.ledger.contains('beta', 'beta-3'), isTrue);
+    expect(w.messageDomain.ledger.contains('beta', 'beta-3'), isTrue);
     expect(beta.rows.last.id, 'beta-3');
     expect(betaChanges, 1);
     expect(changes, 0, reason: 'The other channel must stay isolated.');
@@ -203,7 +206,7 @@ void main() {
   test(
     'load and boundary changes notify, unrelated windows stay quiet',
     () async {
-      final window = w.messageWindow!;
+      final window = w.messageDomain.messageWindow!;
       final beta = w.messageWindows.channel('beta')!;
       var changes = 0, betaChanges = 0;
       window.changes.addListener(() => changes++);
@@ -223,7 +226,7 @@ void main() {
       await opening;
       expect(window.loading, isFalse);
       expect(window.historyLimited, isTrue);
-      expect(window.rows, w.messages);
+      expect(window.rows, w.messageDomain.messages);
       expect(changes, greaterThan(1));
       expect(betaChanges, 0);
     },
@@ -232,12 +235,15 @@ void main() {
   test(
     'pending and accepted projections use the same rows as the legacy API',
     () async {
-      final window = w.messageWindow!;
+      final window = w.messageDomain.messageWindow!;
       final sending = w.send('Pending window', randomId: 'window-send');
       await _until(() => client.sending != null);
       expect(window.timeline.last.content, 'Pending window');
-      expect(identical(window.timeline.last, w.timeline().last), isTrue);
-      final key = w.messageKey(window.timeline.last);
+      expect(
+        identical(window.timeline.last, w.messageDomain.timeline().last),
+        isTrue,
+      );
+      final key = w.messageDomain.messageKey(window.timeline.last);
       final row = {
         ..._row('alpha', 3),
         'content': 'Pending window',
@@ -253,20 +259,23 @@ void main() {
         receipt: <String, dynamic>{},
       ));
       expect(await sending, isTrue);
-      expect(identical(window.timeline.last, w.timeline().last), isTrue);
-      expect(w.messageKey(window.timeline.last), key);
+      expect(
+        identical(window.timeline.last, w.messageDomain.timeline().last),
+        isTrue,
+      );
+      expect(w.messageDomain.messageKey(window.timeline.last), key);
     },
   );
 
   test(
     'a retained channel window keeps its rows after the source moves',
     () async {
-      final alpha = w.messageWindow!;
+      final alpha = w.messageDomain.messageWindow!;
       expect(identical(alpha, w.messageWindows.channel('alpha')), isTrue);
       await w.selectChannel(w.channels.last, autoRead: false, navigate: false);
       expect(identical(w.messageWindows.channel('alpha'), alpha), isTrue);
       expect(alpha.rows.every((row) => row.channelId == 'alpha'), isTrue);
-      expect(w.messageWindow!.channelId, 'beta');
+      expect(w.messageDomain.messageWindow!.channelId, 'beta');
       expect(alpha.visible, isFalse);
     },
   );
@@ -279,11 +288,11 @@ void main() {
         parentMessageId: 'alpha-2',
         navigate: false,
       );
-      final window = w.threadWindow!;
+      final window = w.messageDomain.threadWindow!;
       expect(window.scope.parentMessageId, 'alpha-2');
       expect(window.channelId, 'thread-alpha');
       expect(window.rows, w.replies);
-      expect(window.timeline, w.timeline(thread: true));
+      expect(window.timeline, w.messageDomain.timeline(thread: true));
       final reads = client.calls.where((call) => call.endsWith('/read')).length;
       final presentation = Object();
       w.setChatTabPresentation(presentation, false);
@@ -305,7 +314,7 @@ void main() {
         parentMessageId: 'alpha-2',
         navigate: false,
       );
-      expect(identical(window, w.threadWindow), isTrue);
+      expect(identical(window, w.messageDomain.threadWindow), isTrue);
       expect(
         client.calls.where((call) => call.endsWith('/read')).length,
         reads,
@@ -325,7 +334,7 @@ void main() {
       await _until(
         () => client.calls.contains('GET:/channels/alpha/threads/alpha-2'),
       );
-      final window = w.threadWindow!;
+      final window = w.messageDomain.threadWindow!;
       expect(window.channelId, isNull);
       expect(window.loading, isTrue);
       expect(window.resolving, isTrue);
@@ -343,7 +352,7 @@ void main() {
         parentMessageId: 'alpha-2',
         navigate: false,
       );
-      expect(identical(window, w.threadWindow), isTrue);
+      expect(identical(window, w.messageDomain.threadWindow), isTrue);
       expect(window.channelId, 'thread-alpha');
       expect(window.error, isNull);
       expect(window.rows, w.replies);
@@ -351,7 +360,7 @@ void main() {
   );
 
   test('old references retire on channel revocation, account replacement and disposal', () async {
-    final alpha = w.messageWindow!;
+    final alpha = w.messageDomain.messageWindow!;
     final beta = w.messageWindows.channel('beta')!;
     client.emit('channel:removed', {'channelId': 'beta'});
     expect(beta.retired, isTrue);
@@ -364,14 +373,14 @@ void main() {
     expect(alpha.retired, isTrue);
     expect(alpha.rows, isEmpty);
     expect(
-      w.messageWindow,
+      w.messageDomain.messageWindow,
       isNull,
       reason: 'Old accepted rows do not admit a new identity.',
     );
     w.notifyListeners();
     await w.selectChannel(w.channel!, autoRead: false, navigate: false);
-    expect(w.messageWindow, isNotNull);
-    expect(identical(w.messageWindow, alpha), isFalse);
+    expect(w.messageDomain.messageWindow, isNotNull);
+    expect(identical(w.messageDomain.messageWindow, alpha), isFalse);
     w.dispose();
     expect(w.messageWindows.channel('alpha'), isNull);
     expect(alpha.rows, isEmpty);

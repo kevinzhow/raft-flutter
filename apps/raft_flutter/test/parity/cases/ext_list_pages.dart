@@ -337,7 +337,7 @@ WorkspaceController _cWorkspace(ParityContext ctx) {
   w
     ..servers = [server]
     ..server = server;
-  w.ledger.switchServer(_serverId);
+  w.messageDomain.ledger.switchServer(_serverId);
   final now = parityNow(ctx);
   w.agentTabCache.put(
     'runtime-account-usage',

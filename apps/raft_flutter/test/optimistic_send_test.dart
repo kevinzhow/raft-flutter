@@ -87,10 +87,10 @@ Future<(WorkspaceController, _Api, _Client)> _fixture() async {
     ..server = RaftRecord({'id': 's1', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'c1', 'name': 'general', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final rows = [for (var i = 1; i <= 3; i++) _row('m$i', i, 'Earlier $i')];
-  w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+  w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
   return (w, api, client);
 }
 
@@ -198,22 +198,22 @@ void main() {
         await t.pump();
 
         // First frame: the row, authored by the current user, and an empty editor.
-        final pending = w.timeline().last;
+        final pending = w.messageDomain.timeline().last;
         expect(WorkspaceController.isPendingSend(pending), isTrue);
         expect(pending.content, 'Hello optimistic');
         expect(pending.author, 'Alice');
-        final key = 'message-${w.messageKey(pending)}';
-        final rect = paintedMessage(t, w.messageKey(pending));
+        final key = 'message-${w.messageDomain.messageKey(pending)}';
+        final rect = paintedMessage(t, w.messageDomain.messageKey(pending));
         expect(rect, isNotNull);
         expect(t.widget<TextField>(_editor()).controller!.text, isEmpty);
         final element = t.element(find.byKey(ValueKey(key)));
 
         void unchanged() {
-          expect(paintedMessage(t, w.messageKey(pending)), rect);
+          expect(paintedMessage(t, w.messageDomain.messageKey(pending)), rect);
           expect(find.byKey(ValueKey(key)), findsOneWidget);
           expect(t.element(find.byKey(ValueKey(key))), same(element));
           expect(
-            w.timeline().where((m) => m.content == 'Hello optimistic'),
+            w.messageDomain.timeline().where((m) => m.content == 'Hello optimistic'),
             hasLength(1),
           );
           expect(find.byKey(const ValueKey('message-sent-1')), findsNothing);
@@ -225,26 +225,26 @@ void main() {
           client.event('message:new', accepted);
           await _frames(
             t,
-            () => w.messages.any((m) => m.id == 'sent-1'),
+            () => w.messageDomain.messages.any((m) => m.id == 'sent-1'),
             unchanged,
           );
-          expect(WorkspaceController.isPendingSend(w.timeline().last), false);
+          expect(WorkspaceController.isPendingSend(w.messageDomain.timeline().last), false);
         }
         ack.complete((200, {'message': accepted}));
         await _frames(
           t,
-          () => w.messages.any((m) => m.id == 'sent-1'),
+          () => w.messageDomain.messages.any((m) => m.id == 'sent-1'),
           unchanged,
         );
         if (!socketFirst) {
           client.event('message:new', accepted);
           await _frames(t, () => true, unchanged);
         }
-        final confirmed = w.timeline().last;
+        final confirmed = w.messageDomain.timeline().last;
         expect(confirmed.id, 'sent-1');
         expect(WorkspaceController.isPendingSend(confirmed), isFalse);
-        expect(w.messageKey(confirmed), w.messageKey(pending));
-        expect(w.timeline().map((m) => m.id), ['m1', 'm2', 'm3', 'sent-1']);
+        expect(w.messageDomain.messageKey(confirmed), w.messageDomain.messageKey(pending));
+        expect(w.messageDomain.timeline().map((m) => m.id), ['m1', 'm2', 'm3', 'sent-1']);
         expect(t.takeException(), isNull);
         await t.pumpWidget(const SizedBox());
         await t.pump(const Duration(seconds: 1));
@@ -282,18 +282,18 @@ void main() {
           'Fast C',
         ]);
         final pending = {
-          for (final row in w.timeline())
+          for (final row in w.messageDomain.timeline())
             if (WorkspaceController.isPendingSend(row)) row.content: row,
         };
-        final aKey = w.messageKey(pending['Slow A']!);
-        final cKey = w.messageKey(pending['Fast C']!);
+        final aKey = w.messageDomain.messageKey(pending['Slow A']!);
+        final cKey = w.messageDomain.messageKey(pending['Fast C']!);
         final aElement = t.element(find.byKey(ValueKey('message-$aKey')));
         final cElement = t.element(find.byKey(ValueKey('message-$cKey')));
         await t.enterText(_editor(), 'Later draft');
         replies[1].complete((503, {'error': 'Fixture offline'}));
         await _frames(
           t,
-          () => w.timeline().every((row) => row.content != 'Failed B'),
+          () => w.messageDomain.timeline().every((row) => row.content != 'Failed B'),
         );
 
         Future<void> accept(int index, String id, int seq) async {
@@ -309,10 +309,10 @@ void main() {
 
           if (socketFirst) {
             await deliver(() => client.event('message:new', row));
-            await _frames(t, () => w.messages.any((m) => m.id == id));
+            await _frames(t, () => w.messageDomain.messages.any((m) => m.id == id));
           }
           await deliver(() => replies[index].complete((200, {'message': row})));
-          await _frames(t, () => w.messages.any((m) => m.id == id));
+          await _frames(t, () => w.messageDomain.messages.any((m) => m.id == id));
           if (!socketFirst) {
             await deliver(() => client.event('message:new', row));
             await _frames(t, () => true);
@@ -328,7 +328,7 @@ void main() {
               .messages
               .any((m) => m.metadata?['id'] == 'accepted-a'),
         );
-        expect(w.timeline().map((row) => row.content), [
+        expect(w.messageDomain.timeline().map((row) => row.content), [
           'Earlier 1',
           'Earlier 2',
           'Earlier 3',
@@ -382,14 +382,14 @@ void main() {
       await t.pump();
       await _tapSend(t);
       await t.pump();
-      final pending = w.timeline().last;
+      final pending = w.messageDomain.timeline().last;
       expect(WorkspaceController.isPendingSend(pending), isTrue);
-      expect(paintedMessage(t, w.messageKey(pending)), isNotNull);
+      expect(paintedMessage(t, w.messageDomain.messageKey(pending)), isNotNull);
 
       await _frames(t, () => w.error != null);
       // Web MessageInput: the optimistic row leaves, the text comes back.
       expect(find.byKey(ValueKey('message-${pending.id}')), findsNothing);
-      expect(w.timeline().map((m) => m.id), ['m1', 'm2', 'm3']);
+      expect(w.messageDomain.timeline().map((m) => m.id), ['m1', 'm2', 'm3']);
       expect(t.widget<TextField>(_editor()).controller!.text, 'Retry me');
       expect(w.drafts['c1'], 'Retry me');
       expect(w.error, contains('Offline'));
@@ -397,12 +397,12 @@ void main() {
       fail = false;
       await _tapSend(t);
       await t.pump();
-      expect(paintedMessage(t, w.messageKey(pending)), isNotNull);
-      await _frames(t, () => w.messages.any((m) => m.id == 'sent-2'));
+      expect(paintedMessage(t, w.messageDomain.messageKey(pending)), isNotNull);
+      await _frames(t, () => w.messageDomain.messages.any((m) => m.id == 'sent-2'));
       expect(requests, hasLength(2));
       expect(requests[1].data['randomId'], requests[0].data['randomId']);
-      expect(w.timeline().map((m) => m.id), ['m1', 'm2', 'm3', 'sent-2']);
-      expect(paintedMessage(t, w.messageKey(pending)), isNotNull);
+      expect(w.messageDomain.timeline().map((m) => m.id), ['m1', 'm2', 'm3', 'sent-2']);
+      expect(paintedMessage(t, w.messageDomain.messageKey(pending)), isNotNull);
       expect(t.widget<TextField>(_editor()).controller!.text, isEmpty);
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
@@ -479,20 +479,20 @@ void main() {
       await t.pump();
       await _tapSend(t);
       await t.pump();
-      final pending = w.timeline().last;
+      final pending = w.messageDomain.timeline().last;
       expect(WorkspaceController.isPendingSend(pending), isTrue);
       expect(w.uploads(), isEmpty);
       final card = find.descendant(
-        of: find.byKey(ValueKey('message-${w.messageKey(pending)}')),
+        of: find.byKey(ValueKey('message-${w.messageDomain.messageKey(pending)}')),
         matching: find.byKey(const ValueKey('attachment-att-1')),
       );
       expect(card, findsOneWidget);
       final cardElement = t.element(card);
       final cardRect = t.getRect(card);
-      final rowRect = paintedMessage(t, w.messageKey(pending));
+      final rowRect = paintedMessage(t, w.messageDomain.messageKey(pending));
 
       void cardUnchanged() {
-        expect(paintedMessage(t, w.messageKey(pending)), rowRect);
+        expect(paintedMessage(t, w.messageDomain.messageKey(pending)), rowRect);
         expect(t.element(card), same(cardElement));
         expect(t.getRect(card), cardRect);
       }
@@ -507,10 +507,10 @@ void main() {
       ));
       await _frames(
         t,
-        () => w.messages.any((m) => m.id == 'sent-3'),
+        () => w.messageDomain.messages.any((m) => m.id == 'sent-3'),
         cardUnchanged,
       );
-      expect(w.timeline().last.id, 'sent-3');
+      expect(w.messageDomain.timeline().last.id, 'sent-3');
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(seconds: 1));
@@ -522,7 +522,7 @@ void main() {
     (t) async {
       final (w, api, _) = (await t.runAsync(_fixture))!;
       addTearDown(w.dispose);
-      w.threadParent = RaftMessage(_row('m3', 3, 'Earlier 3'));
+      w.messageDomain.state.threadParent = RaftMessage(_row('m3', 3, 'Earlier 3'));
       final created = Completer<(int, dynamic)>();
       final ack = Completer<(int, dynamic)>();
       RequestOptions? request;
@@ -537,9 +537,9 @@ void main() {
       await t.pump();
       await _tapSend(t);
       await t.pump();
-      final pending = w.timeline(thread: true).single;
+      final pending = w.messageDomain.timeline(thread: true).single;
       expect(WorkspaceController.isPendingSend(pending), isTrue);
-      final key = w.messageKey(pending);
+      final key = w.messageDomain.messageKey(pending);
       final rect = paintedMessage(t, key);
       expect(rect, isNotNull);
       expect(find.text('No replies yet'), findsNothing);
@@ -547,7 +547,7 @@ void main() {
       void unchanged() {
         expect(paintedMessage(t, key), rect);
         expect(t.element(find.byKey(ValueKey('message-$key'))), same(element));
-        expect(w.timeline(thread: true), hasLength(1));
+        expect(w.messageDomain.timeline(thread: true), hasLength(1));
       }
 
       created.complete((200, {'threadChannelId': 't1'}));
@@ -558,7 +558,7 @@ void main() {
         {'message': _accepted(request!, 'reply-1', channelId: 't1')},
       ));
       await _frames(t, () => w.replies.isNotEmpty, unchanged);
-      expect(w.timeline(thread: true).single.id, 'reply-1');
+      expect(w.messageDomain.timeline(thread: true).single.id, 'reply-1');
       expect(t.takeException(), isNull);
       await t.pumpWidget(const SizedBox());
       await t.pump(const Duration(seconds: 1));
@@ -577,8 +577,8 @@ void main() {
             'createdAt': '2026-10-10T08:00:00.000Z',
           },
       ];
-      w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1']!.addAll(rows.map((r) => r['id'] as String));
+      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1']!.addAll(rows.map((r) => r['id'] as String));
       final ack = Completer<(int, dynamic)>();
       RequestOptions? request;
       api.routes['POST /v2/messages'] = (o) {
@@ -597,7 +597,7 @@ void main() {
       // latest end as an own send always has.
       await t.pumpAndSettle();
       expect(state.distanceFromLatest(viewport.position), 0);
-      final key = w.messageKey(w.timeline().last);
+      final key = w.messageDomain.messageKey(w.messageDomain.timeline().last);
       final rect = paintedMessage(t, key);
       expect(rect, isNotNull);
       void unchanged() {
@@ -615,7 +615,7 @@ void main() {
       ));
       await _frames(
         t,
-        () => w.messages.any((m) => m.id == 'sent-4'),
+        () => w.messageDomain.messages.any((m) => m.id == 'sent-4'),
         unchanged,
       );
       expect(t.takeException(), isNull);
@@ -679,7 +679,7 @@ void main() {
           expect(request.data['attachmentIds'], hasLength(1));
           expect(request.data['channelId'], 'c1');
           // The optimistic row shows the same body as the server copy.
-          expect(w.timeline().last.content, '[1 attachment]');
+          expect(w.messageDomain.timeline().last.content, '[1 attachment]');
           await t.pumpWidget(const SizedBox());
           await t.pump(const Duration(seconds: 1));
         },

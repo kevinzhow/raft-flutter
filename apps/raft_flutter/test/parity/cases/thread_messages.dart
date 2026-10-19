@@ -418,7 +418,7 @@ final ParityCase _forward = ParityCase(
     final stage = stageFor(ctx, () => _forwardStage(ctx));
     await stage.settle(t, rows: 2);
     final context = t.element(find.byType(RaftChatView));
-    forwardMessages(context, stage.w, stage.w.messages);
+    forwardMessages(context, stage.w, stage.w.messageDomain.messages);
     for (var i = 0; i < 12; i++) {
       await t.pump(const Duration(milliseconds: 50));
     }

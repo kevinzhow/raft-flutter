@@ -113,9 +113,14 @@ void main() {
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest(
+      rows,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {
+      for (final r in rows) r['id'] as String,
+    };
     api.routes['GET /servers/s1/setup-projection'] = (_) => {
       'phase': 'complete',
       'surface': 'complete',

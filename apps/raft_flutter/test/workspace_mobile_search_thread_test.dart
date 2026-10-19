@@ -132,10 +132,10 @@ void main() {
               revision = w.navigationRevision,
               before = Map<String, String>.from(w.location.uri.queryParameters);
           expect(tester.widget<RaftMessageTile>(focus).highlighted, isTrue);
-          expect(w.threadParentLoading, isTrue);
+          expect(w.messageDomain.threadParentLoading, isTrue);
           await tester.pump(const Duration(milliseconds: 2100));
           await frames(tester, () {
-            expect(w.highlightedMessageId, isNull);
+            expect(w.messageDomain.state.highlightedMessageId, isNull);
             expect(
               tester
                   .widgetList<RaftMessageTile>(focus)
@@ -144,7 +144,7 @@ void main() {
             );
             expect(w.location.uri.queryParameters, before);
             expect(w.navigationRevision, revision);
-            expect(w.threadParentLoading, isTrue);
+            expect(w.messageDomain.threadParentLoading, isTrue);
           });
           await tester.runAsync(() async {
             parent.complete({
@@ -154,7 +154,7 @@ void main() {
           });
           await frames(tester, () {
             expect(w.presentedThreadParent?.id, 'parent');
-            expect(w.threadParentLoading, isFalse);
+            expect(w.messageDomain.threadParentLoading, isFalse);
             expect(w.location.messageId, 'reply');
             expect(
               tester

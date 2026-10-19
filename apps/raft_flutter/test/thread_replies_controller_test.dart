@@ -146,7 +146,7 @@ Future<WorkspaceController> _fixture(_Transport t) async {
     ];
   // Summaries are held per parent channel; the selected one is projected.
   w.channel = w.channels.single;
-  w.ledger.switchServer('server');
+  w.messageDomain.ledger.switchServer('server');
   return w;
 }
 
@@ -178,11 +178,10 @@ void main() {
       _emit(w, _frame(3));
       _emit(w, _frame(10));
       _emit(w, _frame(4));
-      expect(w.threadSummaries['parent']['replyCount'], 10);
+      expect(w.messageDomain.threadSummaries['parent']['replyCount'], 10);
       expect(
-        (w.threadSummaries['parent']['latestReplies'] as List).map(
-          (dynamic r) => r['seq'],
-        ),
+        (w.messageDomain.threadSummaries['parent']['latestReplies'] as List)
+            .map((dynamic r) => r['seq']),
         [3, 10],
       );
       expect(t.snapshotReads, 0);
@@ -200,7 +199,7 @@ void main() {
       w.unread = {'thread': 5};
       _emit(w, {..._frame(90), 'unreadCount': 2});
       await _settle();
-      expect(w.threadSummaries['parent']['replyCount'], 90);
+      expect(w.messageDomain.threadSummaries['parent']['replyCount'], 90);
       expect(w.unread['thread'], 2);
       _emit(w, _frame(90));
       _emit(w, _frame(9));
@@ -212,7 +211,7 @@ void main() {
       t.snapshot!.complete();
       await _settle();
       // Rebaselined snapshot (6) plus the replayed pending frame (7).
-      expect(w.threadSummaries['parent']['replyCount'], 7);
+      expect(w.messageDomain.threadSummaries['parent']['replyCount'], 7);
       expect(unreadReads(), 0);
     },
   );
@@ -226,7 +225,7 @@ void main() {
     _emit(w, _frame(7, epoch: 'two'));
     _emit(w, _frame(7, epoch: 'two'));
     expect(t.snapshotReads, 2);
-    expect(w.threadSummaries['parent']['replyCount'], 90);
+    expect(w.messageDomain.threadSummaries['parent']['replyCount'], 90);
     expect(
       t.requests
           .singleWhere((o) => o.path == '/messages/channel/thread')
@@ -235,7 +234,7 @@ void main() {
     );
     t.snapshot!.complete();
     await _settle();
-    final summary = w.threadSummaries['parent'];
+    final summary = w.messageDomain.threadSummaries['parent'];
     expect(summary['replyCount'], 7);
     final previews = summary['latestReplies'] as List;
     expect(previews.map((dynamic r) => r['seq']), [4, 6, 7]);
@@ -287,7 +286,7 @@ void main() {
           'thread',
         );
         expect(w.threadRepliesSync.scope(id), isNull);
-        expect(w.threadSummaries['parent'], isNull);
+        expect(w.messageDomain.threadSummaries['parent'], isNull);
       },
     );
   }
@@ -314,13 +313,13 @@ void main() {
     addTearDown(w.dispose);
     await w.selectChannel(w.channels.single, autoRead: false);
     _emit(w, _frame(2));
-    expect(w.threadSummaries['parent']['replyCount'], 3);
+    expect(w.messageDomain.threadSummaries['parent']['replyCount'], 3);
     _emit(w, {
       'parentMessageId': 'parent',
       'threadChannelId': 'thread',
       'replyCount': 4,
     });
-    expect(w.threadSummaries['parent']['replyCount'], 4);
+    expect(w.messageDomain.threadSummaries['parent']['replyCount'], 4);
   });
   test('real preference flag/query and socket projection reject regression and wrong server', () async {
     final t = _Transport(), w = await _fixture(t);

@@ -24,7 +24,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final scopeId = thread ? 'th' : 'c1';
         final rows = [
           for (final r in contextRows('h', count: 200))

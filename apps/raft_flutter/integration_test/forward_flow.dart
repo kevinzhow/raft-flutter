@@ -41,7 +41,7 @@ Future<void> verifyForwardFlow(
     await w.refreshChannels();
     await w.selectChannel(owned.first);
     expect(await w.send('Native forwarded text 中文 日本語 $marker'), true);
-    final source = w.messages.singleWhere((m) => m.content.contains(marker));
+    final source = w.messageDomain.messages.singleWhere((m) => m.content.contains(marker));
     expect(source.string('messageType'), 'chat');
     await tester.pump(const Duration(milliseconds: 500));
     var done = false, accepted = false;
@@ -102,7 +102,7 @@ Future<void> verifyForwardFlow(
     }
     await w.selectChannel(owned[1]);
     await wait(
-      () => w.messages.any(
+      () => w.messageDomain.messages.any(
         (m) =>
             m.json['actionMetadata'] is Map &&
             m.json['actionMetadata']['kind'] == 'forwarded-bundle',

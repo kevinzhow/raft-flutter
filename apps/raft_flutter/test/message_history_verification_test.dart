@@ -120,21 +120,21 @@ class _Case {
       RaftChannel({'id': 'chat', 'type': 'private', 'joined': true}),
     ];
   Future<void> seed() async {
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     await w.selectChannel(w.channels.single, autoRead: false);
-    await w.older();
+    await w.messageDomain.older();
     await w.flushCache();
     await cache.messageHistory.reads.settled;
-    expect(w.messages.length, 100);
+    expect(w.messageDomain.messages.length, 100);
     client.calls.clear();
   }
 
   void forgetOlder() {
     for (var i = 1; i <= 50; i++) {
-      w.ledger.remove('chat', 'm$i');
-      w.visibleIds['chat']?.remove('m$i');
+      w.messageDomain.ledger.remove('chat', 'm$i');
+      w.messageDomain.visibleIds['chat']?.remove('m$i');
     }
-    w.hasMore = true;
+    w.messageDomain.state.hasMore = true;
   }
 
   Future<void> close() async {
@@ -159,19 +159,22 @@ void main() {
     c.client.deleted.add(20);
     c.client.gate = Completer<void>();
     c.client.started = Completer<void>();
-    await c.w.older().timeout(const Duration(seconds: 2));
-    expect(c.w.ledger.message('chat', 'm25')!['content'], 'Body 25');
-    expect(c.w.ledger.contains('chat', 'm20'), isTrue);
-    expect(c.w.loadingOlder, isFalse);
+    await c.w.messageDomain.older().timeout(const Duration(seconds: 2));
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
+      'Body 25',
+    );
+    expect(c.w.messageDomain.ledger.contains('chat', 'm20'), isTrue);
+    expect(c.w.messageDomain.state.loadingOlder, isFalse);
     await c.client.started!.future.timeout(const Duration(seconds: 2));
     c.client.gate!.complete();
     await c.cache.messageHistory.reads.settled;
     expect(
-      c.w.ledger.message('chat', 'm25')!['content'],
+      c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
       'Changed while closed',
     );
-    expect(c.w.ledger.contains('chat', 'm20'), isFalse);
-    expect(c.w.hasMore, isFalse);
+    expect(c.w.messageDomain.ledger.contains('chat', 'm20'), isFalse);
+    expect(c.w.messageDomain.state.hasMore, isFalse);
     final scope = MessageHistoryPages.scope(c.w, 'chat')!;
     expect(
       await c.cache.messageHistory.readContext(scope, 'm20', radius: 0),
@@ -186,9 +189,9 @@ void main() {
     await c.seed();
     c.forgetOlder();
     c.now = c.now.add(const Duration(hours: 23));
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.cache.messageHistory.reads.settled;
-    expect(c.w.messages.length, 100);
+    expect(c.w.messageDomain.messages.length, 100);
     expect(c.client.calls, isEmpty);
   });
 
@@ -199,23 +202,26 @@ void main() {
     c.forgetOlder();
     c.now = c.now.add(const Duration(hours: 25));
     c.client.failure = const RaftApiException('Offline', status: 503);
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.cache.messageHistory.reads.settled;
-    expect(c.w.messages.length, 100);
+    expect(c.w.messageDomain.messages.length, 100);
     expect(c.w.error, isNull);
     expect(c.client.calls.length, 1);
     c.forgetOlder();
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.cache.messageHistory.reads.settled;
     expect(c.client.calls.length, 1);
     c.client.failure = null;
     c.client.edits[25] = 'Reconnected';
     c.w.resumes.value++;
     c.forgetOlder();
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.cache.messageHistory.reads.settled;
     expect(c.client.calls.length, 2);
-    expect(c.w.ledger.message('chat', 'm25')!['content'], 'Reconnected');
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
+      'Reconnected',
+    );
   });
 
   test(
@@ -230,9 +236,12 @@ void main() {
       await c.w.jumpToMessage('chat', 'm25', navigate: false);
       await c.cache.messageHistory.reads.settled;
       expect(c.client.calls, contains('context:25'));
-      expect(c.w.ledger.message('chat', 'm25')!['content'], 'New target');
-      expect(c.w.ledger.contains('chat', 'm20'), isFalse);
-      expect(c.w.ledger.contains('chat', 'm100'), isTrue);
+      expect(
+        c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
+        'New target',
+      );
+      expect(c.w.messageDomain.ledger.contains('chat', 'm20'), isFalse);
+      expect(c.w.messageDomain.ledger.contains('chat', 'm100'), isTrue);
     },
   );
 
@@ -248,10 +257,10 @@ void main() {
       await c.w.selectChannel(c.w.channels.single, autoRead: false);
       await c.cache.messageHistory.reads.settled;
       expect(
-        c.w.ledger.message('chat', 'm25')!['content'],
+        c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
         'Changed before reopening',
       );
-      expect(c.w.messages.any((m) => m.id == 'm20'), isFalse);
+      expect(c.w.messageDomain.messages.any((m) => m.id == 'm20'), isFalse);
       expect(
         c.client.calls.where((key) => key.startsWith('page:51:')).length,
         1,
@@ -269,10 +278,10 @@ void main() {
       c.client.deleted.add(25);
       await c.w.jumpToMessage('chat', 'm25', navigate: false);
       await c.cache.messageHistory.reads.settled;
-      expect(c.w.ledger.contains('chat', 'm25'), isFalse);
+      expect(c.w.messageDomain.ledger.contains('chat', 'm25'), isFalse);
       expect(c.w.channel!.id, 'chat');
       expect(c.w.messageWindows.notRevoked('chat'), isTrue);
-      expect(c.w.ledger.contains('chat', 'm100'), isTrue);
+      expect(c.w.messageDomain.ledger.contains('chat', 'm100'), isTrue);
     },
   );
 
@@ -283,9 +292,12 @@ void main() {
     c.client.edits[25] = 'Manual edit';
     c.client.deleted.add(20);
     expect(await MessageHistoryVerification.refresh(c.w), isTrue);
-    expect(c.w.ledger.message('chat', 'm25')!['content'], 'Manual edit');
-    expect(c.w.ledger.contains('chat', 'm20'), isFalse);
-    expect(c.w.ledger.contains('chat', 'm100'), isTrue);
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
+      'Manual edit',
+    );
+    expect(c.w.messageDomain.ledger.contains('chat', 'm20'), isFalse);
+    expect(c.w.messageDomain.ledger.contains('chat', 'm100'), isTrue);
     expect(
       c.cache.messageHistory.reads.counts[HistoryReadReason.manual],
       greaterThan(0),
@@ -300,7 +312,7 @@ void main() {
     c.now = c.now.add(const Duration(hours: 25));
     c.client.gate = Completer<void>();
     c.client.started = Completer<void>();
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.client.started!.future;
     c.client.incoming.add(
       RaftEvent('message:updated', {
@@ -312,7 +324,10 @@ void main() {
     await c.cache.messageHistory.receiver.settled;
     c.client.gate!.complete();
     await c.cache.messageHistory.reads.settled;
-    expect(c.w.ledger.message('chat', 'm25')!['content'], 'Live wins');
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm25')!['content'],
+      'Live wins',
+    );
     final scope = MessageHistoryPages.scope(c.w, 'chat')!;
     expect(
       ((await c.cache.messageHistory.readContext(
@@ -334,9 +349,9 @@ void main() {
     c.now = c.now.add(const Duration(hours: 25));
     final scope = MessageHistoryPages.scope(c.w, 'chat')!;
     c.client.failure = const RaftApiException('Denied', status: 403);
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.cache.messageHistory.reads.settled;
-    expect(c.w.messages, isEmpty);
+    expect(c.w.messageDomain.messages, isEmpty);
     expect(await c.cache.messageHistory.readPage(scope), isNull);
   });
 }

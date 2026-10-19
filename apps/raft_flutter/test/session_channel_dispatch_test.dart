@@ -33,7 +33,7 @@ void main() {
     for (final stage in ChannelRevocationStage.values.reversed) {
       w.sessionScope.onChannelRevoked(stage, (_) => trace.add(stage.name));
     }
-    w.rejectHistoryRead('c1');
+    w.messageDomain.rejectHistoryRead('c1');
     trace.add('returned');
     expect(trace, [
       'scopes',
@@ -55,8 +55,8 @@ void main() {
       ChannelRevocationStage.device,
       (_) => trace.add('device'),
     );
-    w.rejectHistoryRead('c1');
-    w.rejectHistoryRead('c1');
+    w.messageDomain.rejectHistoryRead('c1');
+    w.messageDomain.rejectHistoryRead('c1');
     expect(trace, ['device']);
   });
 
@@ -71,7 +71,7 @@ void main() {
       ChannelRevocationStage.device,
       (_) => device = true,
     );
-    expect(() => w.rejectHistoryRead('c1'), throwsA(same(error)));
+    expect(() => w.messageDomain.rejectHistoryRead('c1'), throwsA(same(error)));
     expect(device, isFalse);
   });
 
@@ -85,25 +85,25 @@ void main() {
           (origin, principal, server, channel),
           ('https://example.invalid', 'alice', 's1', 'c1'),
         );
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           {
             'id': 'late-parent',
             'channelId': 'c1',
             'seq': '1',
             'threadChannelId': 'late-thread',
           },
-        ], expectedGeneration: w.ledger.generation);
+        ], expectedGeneration: w.messageDomain.ledger.generation);
         w.client.user = RaftRecord({'id': 'bob'});
         w.client.selectServer('s2');
       },
     );
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     generation = w.client.generation;
     w.sessionScope.onChannelRevoked(
       ChannelRevocationStage.device,
       (event) => captured = event,
     );
-    w.rejectHistoryRead('c1');
+    w.messageDomain.rejectHistoryRead('c1');
     final event = captured!;
     expect(
       (event.origin, event.principal, event.serverId, event.generation),
@@ -129,7 +129,7 @@ void main() {
       ),
       throwsStateError,
     );
-    second.rejectHistoryRead('c1');
+    second.messageDomain.rejectHistoryRead('c1');
     expect(runs, 1);
   });
 }

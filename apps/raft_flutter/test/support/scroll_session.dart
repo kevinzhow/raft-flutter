@@ -449,9 +449,9 @@ Future<void> withScrollSession(
   w.server = RaftRecord({'id': 's1', 'role': 'member'});
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('s1');
-  w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
   await tester.pumpWidget(
     MaterialApp(
       theme: raftTheme(RaftFamily.elegant),

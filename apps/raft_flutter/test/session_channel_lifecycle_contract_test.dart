@@ -132,8 +132,8 @@ class _Fixture {
       RaftChannel({'id': 'other', 'joined': true}),
     ];
     if (seed) {
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'parent',
           'channelId': 'c1',
@@ -143,13 +143,13 @@ class _Fixture {
         },
         {'id': 'reply', 'channelId': 't1', 'seq': '1', 'content': 'private'},
         {'id': 'safe', 'channelId': 'other', 'seq': '1', 'content': 'safe'},
-      ], expectedGeneration: w.ledger.generation);
+      ], expectedGeneration: w.messageDomain.ledger.generation);
       for (final (scope, id) in [
         ('c1', 'parent'),
         ('t1', 'reply'),
         ('other', 'safe'),
       ]) {
-        w.visibleIds[scope] = {id};
+        w.messageDomain.visibleIds[scope] = {id};
         w.unread[scope] = 1;
         w.readState.consumeUpdate(
           {
@@ -186,9 +186,11 @@ void main() {
       () async {
         final f = _Fixture(), w = f.make();
         if (source != 'message') {
-          w.ledger.message('c1', 'parent')!.remove('threadChannelId');
+          w.messageDomain.ledger
+              .message('c1', 'parent')!
+              .remove('threadChannelId');
           if (source == 'other-summary') w.channel = w.channels.last;
-          w.threadSummaries = {
+          w.messageDomain.threadSummaries = {
             'parent': {'parentMessageId': 'parent', 'threadChannelId': 't1'},
           };
           w.channel = w.channels.first;
@@ -196,17 +198,17 @@ void main() {
         f.images.onPurge = (id) {
           expect(w.sessionScope.revokedChannels, contains(id));
           expect(
-            w.ledger.messages(id),
+            w.messageDomain.ledger.messages(id),
             isNotEmpty,
             reason: 'media revocation precedes the scope ledger clear',
           );
           expect(w.readState.state('s1', 'alice', id), isNotNull);
         };
-        w.rejectHistoryRead('c1');
+        w.messageDomain.rejectHistoryRead('c1');
         expect(f.images.purged, ['c1', 't1']);
-        expect(w.ledger.messages('c1'), isEmpty);
-        expect(w.ledger.messages('t1'), isEmpty);
-        expect(w.ledger.messages('other').single['id'], 'safe');
+        expect(w.messageDomain.ledger.messages('c1'), isEmpty);
+        expect(w.messageDomain.ledger.messages('t1'), isEmpty);
+        expect(w.messageDomain.ledger.messages('other').single['id'], 'safe');
         expect(w.unread, {'other': 1});
         expect(w.readState.state('s1', 'alice', 't1'), isNull);
         expect(w.readState.state('s1', 'alice', 'other'), isNotNull);
@@ -223,20 +225,22 @@ void main() {
     'thread closure follows retirement and precedes queued draft snapshot',
     () async {
       final f = _Fixture(), w = f.make();
-      w.threadParent = RaftMessage(w.ledger.message('c1', 'parent')!);
+      w.messageDomain.state.threadParent = RaftMessage(
+        w.messageDomain.ledger.message('c1', 'parent')!,
+      );
       w.threadChannelId = 't1';
       w.composer.drafts['thread:parent'] = 'author text';
       final upload = UploadDraft('private.txt', Uint8List(1), key: 1);
       w.composer.uploads.byScope['thread:parent'] = [upload];
       w.onClose = () {
         expect(upload.cancel.cancelled, isTrue);
-        expect(w.ledger.messages('t1'), isEmpty);
+        expect(w.messageDomain.ledger.messages('t1'), isEmpty);
         expect(w.readState.state('s1', 'alice', 't1'), isNull);
         w.composer.drafts['thread:parent'] = 'text at closure';
         expect(f.cache.trace.where((x) => x.startsWith('purge:')), isEmpty);
       };
-      w.rejectHistoryRead('c1');
-      expect(w.threadParent, isNull);
+      w.messageDomain.rejectHistoryRead('c1');
+      expect(w.messageDomain.state.threadParent, isNull);
       expect(w.threadChannelId, isNull);
       await w.flushCache();
       expect(
@@ -272,7 +276,7 @@ void main() {
       f.cache.barrier = Completer<void>();
       w.deviceStore.write('barrier', '', true);
       await f.cache.entered.future;
-      w.rejectHistoryRead('c1');
+      w.messageDomain.rejectHistoryRead('c1');
       expect(upload.cancel.cancelled, isTrue);
       expect(w.composer.uploads.byScope['c1'], isNull);
       f.client.user = RaftRecord({'id': 'bob'});
@@ -314,7 +318,7 @@ void main() {
         'draft',
         'c1',
       );
-      w.rejectHistoryRead('c1');
+      w.messageDomain.rejectHistoryRead('c1');
       expect(w.channel?.id, 'c1');
       expect(w.sharedBlocked(), isTrue);
       expect(
@@ -323,7 +327,7 @@ void main() {
       );
       expect(w.drafts['c1'], 'share text');
       expect(w.uploads().single.local, isNotNull);
-      expect(w.ledger.messages('c1'), isEmpty);
+      expect(w.messageDomain.ledger.messages('c1'), isEmpty);
       await w.flushCache();
       expect(
         await f.cache.read(f.client.origin, 'alice', 's1', 'draft', 'c1'),
@@ -338,11 +342,11 @@ void main() {
       final f = _Fixture(),
           root = f.make(),
           borrowed = f.make(source: root, seed: false);
-      borrowed.rejectHistoryRead('c1');
+      borrowed.messageDomain.rejectHistoryRead('c1');
       expect(f.images.purged, ['c1', 't1']);
       expect(root.sessionScope.revokedChannels, {'c1', 't1'});
       expect(borrowed.sessionScope.revokedChannels, isEmpty);
-      expect(borrowed.ledger.messages('t1'), isEmpty);
+      expect(borrowed.messageDomain.ledger.messages('t1'), isEmpty);
     },
   );
 
@@ -355,11 +359,11 @@ void main() {
       expect(f.images.purged, ['c1', 't1', 'c1', 't1']);
       for (final w in [first, second]) {
         expect(w.sessionScope.revokedChannels, {'c1', 't1'});
-        expect(w.ledger.messages('t1'), isEmpty);
-        expect(w.ledger.messages('other').single['id'], 'safe');
+        expect(w.messageDomain.ledger.messages('t1'), isEmpty);
+        expect(w.messageDomain.ledger.messages('other').single['id'], 'safe');
       }
       first.dispose();
-      second.rejectHistoryRead('other');
+      second.messageDomain.rejectHistoryRead('other');
       expect(f.images.purged.last, 'other');
       expect(second.sessionScope.revokedChannels, contains('other'));
     },

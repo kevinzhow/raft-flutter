@@ -132,7 +132,7 @@ void main() {
             })
             ..channels = [...c.channelRows, gone]
             ..channel = c.channelRows.first;
-          w.ledger.switchServer('s');
+          w.messageDomain.ledger.switchServer('s');
           addTearDown(() async {
             w.dispose();
             await c.stream.close();
@@ -194,7 +194,7 @@ void main() {
             expect(find.byType(RaftComposer), findsOneWidget);
             expect(find.byKey(const Key('conversation-tabs')), findsOneWidget);
             expect(w.channel?.id, 'gone');
-            expect(w.messages.map((m) => m.id), ['m-gone']);
+            expect(w.messageDomain.messages.map((m) => m.id), ['m-gone']);
             expect(
               find.byKey(const ValueKey('message-m-gone')),
               findsOneWidget,

@@ -64,9 +64,9 @@ void main() {
                   ? [legacyTask]
                   : [],
             };
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               row('accepted-main', 'c1', 1),
-            ], expectedGeneration: w.ledger.generation);
+            ], expectedGeneration: w.messageDomain.ledger.generation);
             w.drafts[w.draftScope()!] = 'Existing accepted main draft';
             await t.pumpWidget(
               MaterialApp(
@@ -201,9 +201,9 @@ void main() {
               ? [legacyTask]
               : [],
         };
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           row('accepted-main', 'c1', 1),
-        ], expectedGeneration: w.ledger.generation);
+        ], expectedGeneration: w.messageDomain.ledger.generation);
         await t.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),

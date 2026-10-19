@@ -112,7 +112,7 @@ void main() {
             }
             final id = thread ? 'thread' : 'chat';
             for (var n = 0; n < 19; n++) {
-              await w.older(thread: thread);
+              await w.messageDomain.older(thread: thread);
             }
             await w.flushCache();
             MessageHistoryMemory.attach(w, db.messageHistory);
@@ -125,11 +125,16 @@ void main() {
               w.notifyListeners();
             }
             await db.messageHistory.memory.maintain();
-            final held = w.ledger.messages(id);
+            final held = w.messageDomain.ledger.messages(id);
             expect(held.length, lessThanOrEqualTo(active ? 500 : 50));
             expect(held.last['id'], '$id-1000');
             if (active) {
-              expect(thread ? w.threadWindow!.hasNewer : w.hasNewer, isFalse);
+              expect(
+                thread
+                    ? w.messageDomain.threadWindow!.hasNewer
+                    : w.messageDomain.state.hasNewer,
+                isFalse,
+              );
             }
           } finally {
             await w.flushCache();
@@ -159,7 +164,7 @@ void main() {
         db.messageHistory.memory.unregister(w);
         await w.selectChannel(w.channels.single, autoRead: false);
         for (var n = 0; n < 19; n++) {
-          await w.older();
+          await w.messageDomain.older();
         }
         await w.flushCache();
         return (db, client, w);
@@ -189,8 +194,8 @@ void main() {
         final before = tester.getRect(row);
         await drainIo(tester, db.messageHistory.memory.maintain());
         await tester.pumpAndSettle();
-        expect(w.messages.last.id, 'chat-1000');
-        expect(w.hasNewer, isFalse);
+        expect(w.messageDomain.messages.last.id, 'chat-1000');
+        expect(w.messageDomain.state.hasNewer, isFalse);
         expect(tester.getRect(row).top, closeTo(before.top, 1));
         expect(tester.takeException(), isNull);
       } finally {

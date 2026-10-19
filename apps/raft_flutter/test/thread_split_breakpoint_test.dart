@@ -24,10 +24,10 @@ void main() {
       '[N23] $family/$dark thread splits only at portrait>=1280 or landscape with container>=680; resize keeps location and msg focus',
       (tester) async {
         final (w, api) = await pageFixture(tester);
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           row('main', 'c1', 1),
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'main'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'main'};
         w.navigation.navigate(
           w.location.withQuery({
             'thread': 'c1:parent',
@@ -129,7 +129,7 @@ void main() {
             reason: '$size',
           );
           expect(tester.widget<RaftMessageTile>(focus).highlighted, true);
-          expect(w.highlightedMessageId, 'reply-40');
+          expect(w.messageDomain.state.highlightedMessageId, 'reply-40');
           expect(tester.state(threadView), same(threadState));
           expect(tester.takeException(), isNull);
         }

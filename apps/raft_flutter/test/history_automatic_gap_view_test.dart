@@ -74,7 +74,7 @@ void main() {
           final scope = MessageHistoryPages.scope(w, 'chat')!;
           await seedGap(db, scope);
           await w.selectChannel(w.channels.single, autoRead: false);
-          await w.older();
+          await w.messageDomain.older();
           client.disconnected = offline;
           if (limited) free = 512 << 20;
           return (db, client, w, scope);
@@ -89,7 +89,7 @@ void main() {
           await drainIo(
             t,
             db.messageHistory.gaps.read(scope, [
-              for (final row in w.messages) (row.id, row.seq),
+              for (final row in w.messageDomain.messages) (row.id, row.seq),
             ]),
           );
           await t.pumpAndSettle();
@@ -131,7 +131,7 @@ void main() {
           await t.pumpAndSettle();
           final gaps = (await t.runAsync(
             () => db.messageHistory.gaps.read(scope, [
-              for (final row in w.messages) (row.id, row.seq),
+              for (final row in w.messageDomain.messages) (row.id, row.seq),
             ]),
           ))!;
           if (!limited) expect(gaps, isEmpty);

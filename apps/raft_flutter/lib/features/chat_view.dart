@@ -27,6 +27,7 @@ import '../data/raft_permalink.dart';
 import '../data/thread_search.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
+import '../data/workspace_messages.dart';
 import '../data/message_translation_store.dart';
 import '../data/source_time_formatter.dart';
 import '../platform/content_links.dart';
@@ -439,6 +440,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   final focusAnchors = <String, GlobalKey>{};
   Future<void> updates = Future.value();
   WorkspaceController get w => widget.controller;
+  WorkspaceMessages get _messages => w.messageDomain;
 
   /// Latched once the phone direct scope is visible, so the first dependencies
   /// pass reads the shared window before paint. Later dependency changes do
@@ -471,10 +473,12 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       direct: _directTimeline,
       visible: presentationActive,
     )) {
-      final window = widget.thread ? w.threadWindow : w.messageWindow;
+      final window = widget.thread
+          ? _messages.threadWindow
+          : _messages.messageWindow;
       if (window != null && !window.retired) return window.timeline;
     }
-    return w.timeline(thread: widget.thread);
+    return _messages.timeline(thread: widget.thread);
   }
 
   @override
@@ -486,8 +490,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     WidgetsBinding.instance.addObserver(this);
     viewport.addListener(timelineScrolled);
     if (!widget.thread &&
-        w.channelLoading &&
-        w.pendingMessageContextChannelId == w.channel?.id &&
+        _messages.state.channelLoading &&
+        _messages.pendingMessageContextChannelId == w.channel?.id &&
         rows.isNotEmpty) {
       // The accepted bucket is available before the first preview layout.
       // Seed its real Flyer adapter synchronously: there is no earlier view
@@ -878,9 +882,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   Future<void> returnToBottom() async {
     newMessageCount = 0;
     returningLatest = widget.thread
-        ? w.threadWindow?.hasNewer == true
-        : w.hasNewer;
-    await w.returnToLatest(
+        ? _messages.threadWindow?.hasNewer == true
+        : _messages.state.hasNewer;
+    await _messages.returnToLatest(
       thread: widget.thread,
       navigate: w.section == 'chat',
     );
@@ -894,7 +898,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   final projections = Expando<chat.Message>('chat projections');
   final sources = Expando<RaftMessage>('projected rows');
   chat.Message project(RaftMessage m) {
-    final key = w.messageKey(m);
+    final key = _messages.messageKey(m);
     final cached = projections[m];
     if (cached != null && cached.id == key) return cached;
     final projected = chat.Message.custom(
@@ -934,7 +938,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         id == null ||
         scope != id ||
         adapterWindow !=
-            (widget.thread ? w.threadGeneration : w.channelGeneration) ||
+            (widget.thread
+                ? _messages.threadGeneration
+                : _messages.channelGeneration) ||
         !viewport.hasClients ||
         viewport.positions.length != 1) {
       return;
@@ -942,11 +948,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     // A short restored context can end inside the viewport while newer rows
     // remain on disk. Only the conversation's latest end clears its anchor.
     if (atBottom &&
-        !(widget.thread ? w.threadWindow?.hasNewer == true : w.hasNewer)) {
+        !(widget.thread
+            ? _messages.threadWindow?.hasNewer == true
+            : _messages.state.hasNewer)) {
       w.messageWindows.clearReadingAnchor(id);
       MessageHistoryPositions.save(w, id, null);
     } else if (captureTimelineReadingAnchor(context) case final anchor?) {
-      w.saveReadingAnchor(id, anchor);
+      _messages.saveReadingAnchor(id, anchor);
     }
   }
 
@@ -1148,9 +1156,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         }
       }
       final projected = [for (final m in presented) project(m)];
-      final window = widget.thread ? w.threadGeneration : w.channelGeneration;
-      final loading = widget.thread ? w.threadLoading : w.channelLoading;
-      final target = w.highlightedMessageId;
+      final window = widget.thread
+          ? _messages.threadGeneration
+          : _messages.channelGeneration;
+      final loading = widget.thread
+          ? _messages.state.threadLoading
+          : _messages.state.channelLoading;
+      final target = _messages.state.highlightedMessageId;
       // A newly mounted preview can own a still-accepted same-channel window
       // while its permalink GET waits. Publish that accepted window at its
       // actual end; the pending target is not part of it. Cross-channel rows
@@ -1159,7 +1171,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           !widget.thread &&
           loading &&
           scope != id &&
-          w.pendingMessageContextChannelId == id &&
+          _messages.pendingMessageContextChannelId == id &&
           projected.isNotEmpty;
       if (loading && scope == id) return;
       focusAnchors.removeWhere(
@@ -1243,7 +1255,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   target == null &&
                   !pendingAcceptedMount &&
                   id != null
-              ? w.takeReadingAnchor(id) ?? w.messageWindows.readingAnchor(id)
+              ? _messages.takeReadingAnchor(id) ??
+                    w.messageWindows.readingAnchor(id)
               : null,
         );
         replaced = true;
@@ -1298,7 +1311,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         revision == presentationRevision &&
         identical(owner, adapter) &&
         identical(scroll, viewport) &&
-        window == (widget.thread ? w.threadGeneration : w.channelGeneration);
+        window ==
+            (widget.thread
+                ? _messages.threadGeneration
+                : _messages.channelGeneration);
     var attempts = 0;
     void check(Duration _) {
       if (!current()) {
@@ -1329,7 +1345,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       });
       if (preserving) return;
       highlightTimer?.cancel();
-      if (target != null && w.highlightedMessageId == target) {
+      if (target != null && _messages.state.highlightedMessageId == target) {
         final binding = bindingRevision,
             ownedScope = scope,
             authority = workspaceAuthority(w),
@@ -1340,8 +1356,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               scope == ownedScope &&
               authority == workspaceAuthority(w) &&
               window ==
-                  (widget.thread ? w.threadGeneration : w.channelGeneration)) {
-            w.clearHighlightedMessage(
+                  (widget.thread
+                      ? _messages.threadGeneration
+                      : _messages.channelGeneration)) {
+            _messages.clearHighlightedMessage(
               target,
               expectedNavigationRevision: navigationWindow,
             );
@@ -1446,11 +1464,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
   Future<void> attach({bool mediaOnly = false}) async {
     final scope = w.draftScope(thread: widget.thread),
-        generation = w.ledger.generation;
+        generation = _messages.ledger.generation;
     try {
       final files = await selectUploads(mediaOnly: mediaOnly);
       if (files.isEmpty || !mounted) return;
-      if (generation != w.ledger.generation ||
+      if (generation != _messages.ledger.generation ||
           scope != w.draftScope(thread: widget.thread)) {
         return;
       }
@@ -1458,7 +1476,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       for (final file in files) {
         picked.add((name: file.name, bytes: await file.readAsBytes()));
         if (!mounted ||
-            generation != w.ledger.generation ||
+            generation != _messages.ledger.generation ||
             scope != w.draftScope(thread: widget.thread)) {
           return;
         }
@@ -1498,7 +1516,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         (box == null
             ? Offset.zero
             : box.localToGlobal(box.size.center(Offset.zero)));
-    final summary = w.threadSummaries[message.id];
+    final summary = _messages.threadSummaries[message.id];
     // `hideThreadActions`: thread panel rows (parent and replies).
     final hideThreadActions = widget.thread || parentTile;
     final threadReply = widget.thread && !parentTile;
@@ -1657,7 +1675,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         unawaited(w.services.translations.translate(message));
       }
       if (choice == 'select') selection.enter(message.id);
-      if (choice == 'thread') await w.openThread(message);
+      if (choice == 'thread') await _messages.threads.openThread(message);
       if (choice == 'save') await saveMessage(message);
       // Optimistic in the shared store; it reverts before rethrowing.
       if (choice == 'follow') await followedThreads.follow(message.id);
@@ -1755,7 +1773,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   /// draft, unless the inline reply surface already replaces the badge.
   Widget? threadRepliesBadge(RaftMessage m, {required bool parentTile}) {
     if (parentTile || widget.thread) return null;
-    final summary = w.threadSummaries[m.id];
+    final summary = _messages.threadSummaries[m.id];
     final replies = summary is Map
         ? int.tryParse('${summary['replyCount']}') ?? 0
         : 0;
@@ -1770,7 +1788,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       replyCount: replies,
       unreadCount: unread,
       hasDraft: hasDraft,
-      onPressed: () => w.openThread(m),
+      onPressed: () => _messages.threads.openThread(m),
     );
   }
 
@@ -1781,7 +1799,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         !w.can('viewChannel', resource: w.channel)) {
       return null;
     }
-    final summary = w.threadSummaries[parent.id];
+    final summary = _messages.threadSummaries[parent.id];
     if (summary is! Map || summary['latestReplies'] is! List) return null;
     final count = int.tryParse('${summary['replyCount']}') ?? 0;
     final projected = <RaftInlineReply>[];
@@ -1833,17 +1851,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     void open() {
       if (!mounted ||
           authority != workspaceAuthority(w) ||
-          !w.presentsMessage(parent.id) ||
+          !_messages.presentsMessage(parent.id) ||
           !w.can('viewChannel', resource: w.channel)) {
         return;
       }
       // All previews are one parent-thread action. Focus an authoritative unread
       // target only; clicking a preview does not create a different route.
-      final live = w.threadSummaries[parent.id];
+      final live = _messages.threadSummaries[parent.id];
       final unread = live is Map && live['firstUnreadMessageId'] is String
           ? live['firstUnreadMessageId'] as String
           : null;
-      w.openThread(parent, focusedMessageId: unread);
+      _messages.threads.openThread(parent, focusedMessageId: unread);
     }
 
     final unread = int.tryParse('${summary['unreadCount']}') ?? 0;
@@ -2158,7 +2176,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             key: ValueKey('message-thread-${message.id}'),
             label: raftText(context, 'Reply in thread'),
             icon: const RaftMessageThreadGlyph(),
-            onPressed: presentationActive ? () => w.openThread(message) : null,
+            onPressed: presentationActive
+                ? () => _messages.threads.openThread(message)
+                : null,
           ),
         if (canReact)
           Builder(
@@ -2197,7 +2217,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       if (!parent && !widget.thread && presentationActive)
         RaftMessageSemanticsAction(
           raftText(context, 'Reply in thread'),
-          (_) => w.openThread(message),
+          (_) => _messages.threads.openThread(message),
         ),
       if (canReact)
         RaftMessageSemanticsAction(
@@ -2304,7 +2324,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       final agent = senderAgent(message);
       return RaftAvatar(
         key: ValueKey(
-          'message-avatar-${w.messageKey(message)}-${source.identity}',
+          'message-avatar-${_messages.messageKey(message)}-${source.identity}',
         ),
         name: message.author,
         kind: kind,
@@ -2332,7 +2352,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             message: message,
             content: avatarContent,
             child: RaftAvatarButton(
-              key: ValueKey('sender-avatar-${w.messageKey(message)}'),
+              key: ValueKey('sender-avatar-${_messages.messageKey(message)}'),
               semanticLabel: message.author,
               onPressed: senderProfileTarget(message) == null
                   ? null
@@ -2689,7 +2709,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   }) {
     // Optimistic rows share the final row's key and widget shape; only the
     // actions that need a server message id stay inert until it arrives.
-    final key = w.messageKey(m);
+    final key = _messages.messageKey(m);
     final pending = WorkspaceController.isPendingSend(m);
     if (m.string('messageType') == 'system') {
       return RaftSystemMessage(
@@ -2758,7 +2778,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ),
       coarsePointer: RaftDensityScope.of(context) == RaftDensity.touch,
       popupOpen: pickerMessageId == m.id || menuMessageId == m.id,
-      highlighted: w.highlightedMessageId == m.id || searchActive == m.id,
+      highlighted:
+          _messages.state.highlightedMessageId == m.id || searchActive == m.id,
       collapseLongMessages: choice.collapse,
       initiallyExpanded: choice.open,
       onMessageExpanded: (open) => session.choose(m.id, open),
@@ -2777,14 +2798,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       onThread: parent || widget.thread
           ? null
           : () {
-              if (!pending) w.openThread(m);
+              if (!pending) _messages.threads.openThread(m);
             },
       threadPreview: inlineThreadReplies(m, parentTile: parent),
       taskReference: taskReference(m),
       threadRepliesBadge: threadRepliesBadge(m, parentTile: parent),
-      threadLabel: w.threadSummaries[m.id] is Map
+      threadLabel: _messages.threadSummaries[m.id] is Map
           ? raftFormat(context, '{count} replies', {
-              'count': w.threadSummaries[m.id]['replyCount'] ?? 0,
+              'count': _messages.threadSummaries[m.id]['replyCount'] ?? 0,
             })
           : null,
       onLink: link,
@@ -2880,7 +2901,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       ),
       ChannelFooterKind.join => RaftChannelJoinFooter(
         channelName: channel.name,
-        onJoin: w.joinOpenChannel,
+        onJoin: _messages.joinOpenChannel,
         explanation: guest
             ? 'Joining adds this channel to your sidebar and follows its updates. It does not enable posting or reactions.'
             : null,
@@ -2892,7 +2913,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   /// Web ThreadPanel footer chain: guest read-only / joint locked banners and
   /// the "Join channel to reply" CTA replace the composer (null = composer).
   Widget? threadFooterWidget() {
-    final parent = w.threadSourceChannel;
+    final parent = _messages.threadSourceChannel;
     if (parent == null) return null;
     final guest = w.server?.string('role') == 'guest';
     final joined = parent.joined;
@@ -2914,7 +2935,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     return RaftChannelJoinFooter(
       channelName: parent.name,
       label: guest ? 'Join channel' : 'Join channel to reply',
-      onJoin: w.joinThreadParentChannel,
+      onJoin: _messages.joinThreadParentChannel,
       explanation: guest
           ? 'Joining follows the parent channel. Guest access remains read-only.'
           : null,
@@ -2924,7 +2945,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   /// ChatPanel `contextLoadError` banner above the history state: the jump
   /// target is missing ("Message not found") or hidden by the plan cutoff.
   Widget? contextLoadBanner() {
-    final error = w.contextLoadError;
+    final error = _messages.contextLoadError;
     if (error == null) return null;
     if (error == MessageContextLoadError.beyondHistory) {
       final limit = planHistoryLimit(w.server?.string('plan'));
@@ -2971,8 +2992,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
             ? null
             : tile(w.presentedThreadParent!, parent: true),
         hasMore: loading || w.threadHasMore,
-        historyLimited: w.threadHistoryLimited,
-        loadingOlder: loading || w.loadingOlder,
+        historyLimited: _messages.state.threadHistoryLimited,
+        loadingOlder: loading || _messages.state.loadingOlder,
         loadingOlderLabel: raftText(context, 'Loading older replies...'),
         historyLimitedLabel: raftText(
           context,
@@ -3027,7 +3048,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
 
   Widget datedTile(RaftMessage message, {bool captureFocus = true}) {
     final stamp = message.createdAt;
-    final key = w.messageKey(message);
+    final key = _messages.messageKey(message);
     final index = windowIndexOf(key);
     final systemState = index == null ? null : systemStateAt(index);
     if (systemState is SystemGroupHide) {
@@ -3069,7 +3090,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       previous = index > 0 ? adapter.messages[index - 1].createdAt : null;
     } else {
       final current = rows;
-      final at = current.indexWhere((row) => w.messageKey(row) == key);
+      final at = current.indexWhere((row) => _messages.messageKey(row) == key);
       previous = at > 0 ? current[at - 1].createdAt : null;
     }
     final showDay =
@@ -3125,7 +3146,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       );
     }
     final current = rows;
-    final at = current.indexWhere((row) => w.messageKey(row) == key);
+    final at = current.indexWhere((row) => _messages.messageKey(row) == key);
     return (
       at > 0 ? current[at - 1] : null,
       at >= 0 && at + 1 < current.length ? current[at + 1] : null,
@@ -3149,7 +3170,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       return false;
     }
     bool standalone(RaftMessage m) =>
-        w.threadSummaries[m.id] != null || taskProjection.presentFor(m) != null;
+        _messages.threadSummaries[m.id] != null ||
+        taskProjection.presentFor(m) != null;
     if (standalone(previous) || standalone(message)) return false;
     return previous.string('senderType') == message.string('senderType') &&
         previous.string('senderId') == message.string('senderId');
@@ -3213,7 +3235,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final child =
         captureFocus &&
             !parent &&
-            (m.id == w.highlightedMessageId ||
+            (m.id == _messages.state.highlightedMessageId ||
                 m.id == scrolledHighlight ||
                 m.id == searchActive)
         ? KeyedSubtree(
@@ -3236,7 +3258,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final timelineAdapter = adapter;
     final messages = timelineAdapter.messages;
     final measuredRows = raftRowExtents.scope(rowExtentScope(context));
-    final loading = widget.thread ? w.threadLoading : w.channelLoading;
+    final loading = widget.thread
+        ? _messages.state.threadLoading
+        : _messages.state.channelLoading;
     final empty = rows.isEmpty;
     const recipe = RaftTimelineCompositionRecipe();
     final List<Widget> header;
@@ -3247,7 +3271,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           RaftTimelineSparseFill(
             // Every reply sits behind the plan cutoff: the thread is hidden,
             // not empty (Web shows the banner instead of "No replies yet").
-            child: w.threadHistoryLimited
+            child: _messages.state.threadHistoryLimited
                 ? Center(child: historyLimitBanner(inset: true))
                 : RaftProductEmptyState(
                     title: raftText(context, 'No replies yet'),
@@ -3264,7 +3288,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         RaftTimelineSparseFill(
           child: Align(
             alignment: Alignment.topCenter,
-            child: empty && w.contextLoadError == null
+            child: empty && _messages.contextLoadError == null
                 ? const SizedBox.shrink()
                 : Padding(
                     padding: recipe.channelHeaderInset,
@@ -3273,12 +3297,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                       children: [
                         ?contextLoadBanner(),
                         if (!empty)
-                          !w.hasMore && w.historyLimited
+                          !_messages.state.hasMore &&
+                                  _messages.state.historyLimited
                               ? historyLimitBanner()
                               : RaftThreadHistoryTopState(
-                                  hasMore: w.hasMore,
-                                  historyLimited: w.historyLimited,
-                                  loadingOlder: w.loadingOlder,
+                                  hasMore: _messages.state.hasMore,
+                                  historyLimited:
+                                      _messages.state.historyLimited,
+                                  loadingOlder: _messages.state.loadingOlder,
                                   loadingOlderLabel: raftText(
                                     context,
                                     'Loading older messages...',
@@ -3364,16 +3390,18 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 forward: forward,
                 footer: const RaftTimelineFooter(),
               ),
-              hasOlder: widget.thread ? w.threadHasMore : w.hasMore,
-              loadingOlder: w.loadingOlder,
+              hasOlder: widget.thread
+                  ? w.threadHasMore
+                  : _messages.state.hasMore,
+              loadingOlder: _messages.state.loadingOlder,
               onLoadOlder: presentationActive
-                  ? () => w.older(thread: widget.thread)
+                  ? () => _messages.older(thread: widget.thread)
                   : null,
               hasNewer: widget.thread
-                  ? w.threadWindow?.hasNewer == true
-                  : w.hasNewer,
+                  ? _messages.threadWindow?.hasNewer == true
+                  : _messages.state.hasNewer,
               onLoadNewer: presentationActive
-                  ? () => w.newer(thread: widget.thread)
+                  ? () => _messages.newer(thread: widget.thread)
                   : null,
               onRecenter: (index, alignment) =>
                   recenter(first: messages[index].id, alignment: alignment),
@@ -3436,10 +3464,11 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     scheduleBodyPreparation(context);
     if (widget.thread &&
         w.threadChannelId == null &&
-        (w.threadResolutionLoading || w.threadResolutionError != null)) {
+        (_messages.threadResolutionLoading ||
+            _messages.threadResolutionError != null)) {
       final body = RaftThreadResolutionBody(
         loadingLabel: raftText(context, 'Loading...'),
-        errorTitle: w.threadResolutionError == null
+        errorTitle: _messages.threadResolutionError == null
             ? null
             : raftText(context, "Couldn't load this thread"),
         errorBody: raftText(
@@ -3467,26 +3496,29 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ? null
           : tile(w.presentedThreadParent!, parent: true),
     );
-    final currentTimeline = widget.thread && w.threadLoading
+    final currentTimeline = widget.thread && _messages.state.threadLoading
         ? widget.threadParentSlot == null
               ? loadingBody
               : taskLoadingBody(loadingBody)
         : buildTimeline();
     final historyWindow = widget.thread
-        ? w.threadWindow?.hasNewer == true
-        : w.hasNewer;
+        ? _messages.threadWindow?.hasNewer == true
+        : _messages.state.hasNewer;
     final bottomCount = historyWindow
         ? (w.unread[w.channel?.id] ?? 0)
         : newMessageCount;
     final thread = widget.thread;
     final composeScope = w.draftScope(thread: thread),
         composeAuthority = workspaceAuthority(w);
-    var composeWindow = thread ? w.threadGeneration : w.channelGeneration;
+    var composeWindow = thread
+        ? _messages.threadGeneration
+        : _messages.channelGeneration;
     bool currentComposer() =>
         mounted &&
         composeScope == w.draftScope(thread: thread) &&
         composeAuthority == workspaceAuthority(w) &&
-        composeWindow == (thread ? w.threadGeneration : w.channelGeneration);
+        composeWindow ==
+            (thread ? _messages.threadGeneration : _messages.channelGeneration);
     final onlyOne = raftFormat(context, '[{count} attachment]', {'count': 1});
     final manyBody = raftText(context, '[{count} attachments]');
     String attachmentsOnlyBody(int count) =>
@@ -3630,7 +3662,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   if (currentComposer()) w.saveDraft(text, thread: thread);
                 },
                 key: ValueKey(
-                  'compose-${thread ? w.threadParentMessageId : w.channel?.id}',
+                  'compose-${thread ? _messages.threadParentMessageId : w.channel?.id}',
                 ),
                 taskAction: !thread && w.channel?.type != 'thread'
                     ? RaftComposerTaskToggle(
@@ -3702,9 +3734,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                 enabled:
                     presentationActive &&
                     (thread
-                        ? w.threadParentMessageId != null &&
-                              w.threadSourceChannel?.archived != true &&
-                              w.threadSourceChannel?.joined == true
+                        ? _messages.threadParentMessageId != null &&
+                              _messages.threadSourceChannel?.archived != true &&
+                              _messages.threadSourceChannel?.joined == true
                         : w.channel?.archived != true),
                 canSend:
                     !w.conversationPaused &&

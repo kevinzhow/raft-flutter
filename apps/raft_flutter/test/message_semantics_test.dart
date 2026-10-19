@@ -50,9 +50,12 @@ Future<(WorkspaceController, MessageAdapter)> _mount(
 ) async {
   final (w, transport) = (await t.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
-  w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.ledger.ingest(
+    rows,
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
+  w.messageDomain.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
   transport.routes['GET /agents'] = (_) => [];
   transport.routes['GET /servers/s1/members'] = (_) => [
     {'userId': 'cody', 'name': 'cody', 'role': 'member'},

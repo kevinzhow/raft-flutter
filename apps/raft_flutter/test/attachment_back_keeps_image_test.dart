@@ -118,7 +118,7 @@ Future<(WorkspaceController, dynamic)> _openThreadWithImage(
   ];
   w.loading = false;
   w.connected = true;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'activity';
   final row = activityRow('thread', unread: 0, seq: '5');
   api.routes['GET /channels/inbox'] = (_) => {

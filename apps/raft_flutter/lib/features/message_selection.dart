@@ -36,13 +36,16 @@ class MessageSelection extends ChangeNotifier {
     w.server?.id,
     w.server?.string('role'),
     w.channel?.id,
-    if (thread) w.threadParent?.id,
+    if (thread) w.messageDomain.state.threadParent?.id,
     if (thread) w.threadChannelId,
   ]);
   List<SelectedMessageRow> get available {
     final roots = thread
-        ? [if (w.threadParent != null) w.threadParent!]
-        : w.messages;
+        ? [
+            if (w.messageDomain.state.threadParent != null)
+              w.messageDomain.state.threadParent!,
+          ]
+        : w.messageDomain.messages;
     final result = <SelectedMessageRow>[];
     for (final root in roots) {
       if (root.string('messageType') == 'system') continue;

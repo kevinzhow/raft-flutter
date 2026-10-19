@@ -323,9 +323,9 @@ Future<_Rig> _mount(
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('server');
+  w.messageDomain.ledger.switchServer('server');
   final items = _images(count, thumbnails: thumbnails, size: imageSize);
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     {
       'id': 'm1',
       'channelId': 'channel',
@@ -333,8 +333,8 @@ Future<_Rig> _mount(
       'content': 'photos',
       'attachments': items,
     },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['channel'] = {'m1'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['channel'] = {'m1'};
   final files = _Files(out, gallery: gallery)
     ..hold = hold
     ..tall = tall

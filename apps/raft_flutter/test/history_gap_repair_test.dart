@@ -98,7 +98,7 @@ void main() {
             ])).single.before,
             BigInt.from(900),
           );
-          final loading = w.loadHistoryGap(BigInt.from(900));
+          final loading = w.messageDomain.loadHistoryGap(BigInt.from(900));
           await client.beforeArrived.future;
           if (empty) {
             // A newer socket update must survive an empty older HTTP response.
@@ -115,14 +115,17 @@ void main() {
           await w.flushCache();
           expect(client.beforeReads, [BigInt.from(900)]);
           expect(
-            w.messages.map((m) => m.id),
+            w.messageDomain.messages.map((m) => m.id),
             containsAll(['chat-500', 'chat-900']),
           );
           if (empty) {
-            expect(w.messages.map((m) => m.id), ['chat-500', 'chat-900']);
+            expect(w.messageDomain.messages.map((m) => m.id), [
+              'chat-500',
+              'chat-900',
+            ]);
           }
           final repaired = await cache.messageHistory.gaps.read(scope, [
-            for (final m in w.messages) (m.id, m.seq),
+            for (final m in w.messageDomain.messages) (m.id, m.seq),
           ]);
           // Close and reopen before asserting, so the durable result is observed
           // even on the old implementation that still reports the repaired gap.
@@ -162,8 +165,8 @@ void main() {
     try {
       await seedImportedGap(cache, w);
       client.release.complete();
-      await w.loadHistoryGap(BigInt.from(900));
-      await w.loadHistoryGap(BigInt.from(900));
+      await w.messageDomain.loadHistoryGap(BigInt.from(900));
+      await w.messageDomain.loadHistoryGap(BigInt.from(900));
       expect(client.beforeReads, [BigInt.from(900), BigInt.from(900)]);
     } finally {
       if (!client.release.isCompleted) client.release.complete();

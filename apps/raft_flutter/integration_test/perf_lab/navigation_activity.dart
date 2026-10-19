@@ -87,7 +87,10 @@ class LabNavigationActivity {
             'status': 'todo',
           });
           emit('message:new', row);
-          check('messageCreate', workspace.ledger.contains(channel.id, liveId));
+          check(
+            'messageCreate',
+            workspace.messageDomain.ledger.contains(channel.id, liveId),
+          );
         }),
         at(80, () {
           final machine = machines.first;
@@ -126,7 +129,11 @@ class LabNavigationActivity {
           emit('message:updated', Map.of(edited));
           check(
             'messageEdit',
-            workspace.ledger.message(channel.id, liveId)?['content'] == content,
+            workspace.messageDomain.ledger.message(
+                  channel.id,
+                  liveId,
+                )?['content'] ==
+                content,
           );
         }),
         at(170, () {
@@ -150,7 +157,7 @@ class LabNavigationActivity {
           emit('message:new', row);
           check(
             'backgroundMessage',
-            workspace.ledger.contains(background.id, otherId),
+            workspace.messageDomain.ledger.contains(background.id, otherId),
           );
         }),
         at(260, () {
@@ -166,7 +173,10 @@ class LabNavigationActivity {
           emit('message:updated', Map.of(row));
           check(
             'messageTaskUpdate',
-            workspace.ledger.message(channel.id, liveId)?['taskStatus'] ==
+            workspace.messageDomain.ledger.message(
+                  channel.id,
+                  liveId,
+                )?['taskStatus'] ==
                 'in_progress',
           );
         }),
@@ -189,7 +199,11 @@ class LabNavigationActivity {
       );
       check(
         'editedMessageRetained',
-        workspace.ledger.message(channel.id, liveId)?['content'] == content,
+        workspace.messageDomain.ledger.message(
+              channel.id,
+              liveId,
+            )?['content'] ==
+            content,
       );
       return {
         'events': events,

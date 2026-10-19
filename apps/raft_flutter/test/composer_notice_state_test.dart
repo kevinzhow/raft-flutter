@@ -81,7 +81,7 @@ final _shotKey = GlobalKey();
 Future<_Chat> _open(WidgetTester tester) async {
   final (w, api) = (await tester.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final chat = _Chat(tester, w, api);
   api.routes['GET /attachments/upload-capabilities'] = (_) => {
     'maxBytes': 1 << 20,

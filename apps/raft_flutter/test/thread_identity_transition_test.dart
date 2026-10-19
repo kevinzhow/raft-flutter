@@ -27,8 +27,8 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.threadParent = RaftMessage({
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.state.threadParent = RaftMessage({
           'id': 'private-stale',
           'channelId': 'c2',
           'content': 'Private cached parent',
@@ -81,7 +81,7 @@ void main() {
           await tester.pump(const Duration(milliseconds: 16));
           expect(w.location.thread?.itemId, 'parent');
           expect(w.threadIdentity?.parentMessageId, 'parent');
-          expect(w.threadParent, isNull);
+          expect(w.messageDomain.state.threadParent, isNull);
           expect(find.text('Loading...'), findsOneWidget);
           expect(find.byType(RaftComposer), findsNothing);
           expect(find.text('Private cached parent'), findsNothing);
@@ -95,7 +95,7 @@ void main() {
         });
         for (var i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 16));
-          expect(w.threadParentLoading, true);
+          expect(w.messageDomain.threadParentLoading, true);
           expect(w.presentedThreadParent, isNull);
           expect(
             tester.widget<RaftComposer>(find.byType(RaftComposer)).enabled,
@@ -118,10 +118,10 @@ void main() {
             'hasOlder': true,
             'hasNewer': true,
           });
-          for (var i = 0; i < 40 && w.threadLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.threadLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
-          expect(w.threadLoading, false);
+          expect(w.messageDomain.state.threadLoading, false);
         });
         Rect? beforeParent;
         for (var i = 0; i < 8; i++) {
@@ -164,10 +164,10 @@ void main() {
               },
             ],
           });
-          for (var i = 0; i < 40 && w.threadParentLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.threadParentLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
-          expect(w.threadParentLoading, false);
+          expect(w.messageDomain.threadParentLoading, false);
         });
         for (var i = 0; i < 8; i++) {
           await tester.pump(const Duration(milliseconds: 16));
@@ -186,10 +186,10 @@ void main() {
           expect(w.presentedThreadParent?.content, 'Actual parent');
           expect(find.text('Private cached parent'), findsNothing);
         }
-        expect(w.highlightedMessageId, 'reply-40');
+        expect(w.messageDomain.state.highlightedMessageId, 'reply-40');
         await tester.pump(const Duration(milliseconds: 2100));
         await tester.pump();
-        expect(w.highlightedMessageId, isNull);
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         expect(paintedMessage(tester, 'reply-40'), beforeParent);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

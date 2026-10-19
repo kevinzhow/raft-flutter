@@ -99,7 +99,7 @@ void main() {
     final (w, api) = (await t.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
     w.loading = false;
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     w.section = 'activity';
     api.routes['GET /channels/inbox'] = (_) => {
       'items': [threadRow, channelRow],

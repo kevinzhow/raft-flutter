@@ -53,7 +53,7 @@ Future<(WorkspaceController, List<Completer<void>>, ScrollController)> _open(
   addTearDown(tester.view.reset);
   final (w, api) = (await tester.runAsync(() => fixture('member')))!;
   addTearDown(w.dispose);
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final scopeId = thread ? 'th' : 'c1';
   final rows = [
     for (final r in contextRows('h', count: count))
@@ -165,9 +165,9 @@ void main() {
       expect(
         landed,
         3,
-        reason: 'messages=${w.timeline(thread: thread).length}',
+        reason: 'messages=${w.messageDomain.timeline(thread: thread).length}',
       );
-      expect(w.timeline(thread: thread).length, 200);
+      expect(w.messageDomain.timeline(thread: thread).length, 200);
       expect(invariant.bad, 0, reason: invariant.log.take(30).join('\n'));
       expect(unfollowed, 0, reason: invariant.log.take(30).join('\n'));
       await tester.pumpWidget(const SizedBox());
@@ -211,7 +211,7 @@ void main() {
         expect(landedWhileFlinging, greaterThan(0));
         expect(invariant.bad, 0, reason: invariant.log.take(30).join('\n'));
         expect(
-          w.timeline(thread: thread).length,
+          w.messageDomain.timeline(thread: thread).length,
           greaterThan(100),
           reason: 'history kept loading while flinging',
         );
@@ -249,7 +249,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 16));
         invariant.check('landed $i');
       }
-      expect(w.timeline(thread: thread).length, 80);
+      expect(w.messageDomain.timeline(thread: thread).length, 80);
       expect(scroll.position.pixels, top);
       expect(scroll.position.minScrollExtent, lessThan(top));
       expect(invariant.bad, 0, reason: invariant.log.take(30).join('\n'));
@@ -263,7 +263,7 @@ void main() {
       final id = thread ? 'th' : 'c1';
       Future<void> arrive(String key, String content) =>
           tester.runAsync(() async {
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               {
                 'id': key,
                 'channelId': id,
@@ -271,8 +271,8 @@ void main() {
                 'senderId': 'bob',
                 'content': content,
               },
-            ], expectedGeneration: w.ledger.generation);
-            w.visibleIds[id]!.add(key);
+            ], expectedGeneration: w.messageDomain.ledger.generation);
+            w.messageDomain.visibleIds[id]!.add(key);
             w.notifyListeners();
             await Future<void>.delayed(Duration.zero);
           });
@@ -329,10 +329,15 @@ void main() {
     final (w, api) = (await tester.runAsync(() => fixture('member')))!;
     addTearDown(w.dispose);
     api.routes['POST /channels/c1/read'] = (_) => {};
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final rows = contextRows('bench', count: 500);
-    w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
+    w.messageDomain.ledger.ingest(
+      rows,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = rows
+        .map((r) => r['id'] as String)
+        .toSet();
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(RaftFamily.elegant),
@@ -360,7 +365,9 @@ void main() {
     );
     // A changed row is the only new projection.
     final changed = Map<String, dynamic>.of(rows[250])..['content'] = 'edited';
-    w.ledger.ingest([changed], expectedGeneration: w.ledger.generation);
+    w.messageDomain.ledger.ingest([
+      changed,
+    ], expectedGeneration: w.messageDomain.ledger.generation);
     state.sync();
     await (state.updates as Future<void>);
     final next = state.adapter.messages as List;

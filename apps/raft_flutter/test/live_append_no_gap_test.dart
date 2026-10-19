@@ -127,7 +127,7 @@ class _Case extends HistoryAuditCase {
     expect(client.wire, isEmpty, reason: 'no history/sync request');
     expect(_reads(), baseline, reason: 'no gap/verification read counted');
     expect(await cache.messageHistory.gaps.readSaved(scope), isEmpty);
-    for (final message in w.messages) {
+    for (final message in w.messageDomain.messages) {
       expect(recovery!.contains(message.id), isFalse, reason: message.id);
     }
     expect(w.error, isNull);
@@ -150,8 +150,8 @@ void main() {
         await c.start();
         c.live(101);
         await c.expectQuiet();
-        expect(c.w.messages.last.id, 'm101');
-        expect(c.w.messages, hasLength(101));
+        expect(c.w.messageDomain.messages.last.id, 'm101');
+        expect(c.w.messageDomain.messages, hasLength(101));
       });
 
       test('several live messages in a row cause no gap work', () async {
@@ -162,7 +162,7 @@ void main() {
           c.live(n);
         }
         await c.expectQuiet();
-        expect(c.w.messages.last.id, 'm106');
+        expect(c.w.messageDomain.messages.last.id, 'm106');
       });
 
       test('the person sending (echo first) causes no gap work', () async {
@@ -180,7 +180,7 @@ void main() {
         expect(await c.w.send('Hello'), isTrue);
         await c.expectQuiet();
         expect(
-          c.w.messages.where((m) => m.json['content'] == 'Hello'),
+          c.w.messageDomain.messages.where((m) => m.json['content'] == 'Hello'),
           hasLength(1),
         );
       });
@@ -202,7 +202,9 @@ void main() {
           );
           await c.expectQuiet();
           expect(
-            c.w.messages.where((m) => m.json['content'] == 'Hello'),
+            c.w.messageDomain.messages.where(
+              (m) => m.json['content'] == 'Hello',
+            ),
             hasLength(1),
           );
         },
@@ -263,7 +265,7 @@ void main() {
             );
           }
           await c.expectQuiet();
-          expect(c.w.messages.last.json['content'], 'abc');
+          expect(c.w.messageDomain.messages.last.json['content'], 'abc');
         },
       );
     });
@@ -281,7 +283,7 @@ void main() {
       await c.settle();
       expect(c.client.wire, isNotEmpty, reason: 'the jump asks the server');
       expect(
-        c.w.messages.map((m) => m.id),
+        c.w.messageDomain.messages.map((m) => m.id),
         containsAll(['m101', 'm102', 'm103', 'm104']),
       );
     });
@@ -306,7 +308,7 @@ void main() {
             reason: 'reconnect reads the server',
           );
           expect(
-            c.w.messages.map((m) => m.id),
+            c.w.messageDomain.messages.map((m) => m.id),
             containsAll(['m101', 'm102', 'm103', 'm104']),
           );
         },

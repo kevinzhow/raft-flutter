@@ -142,9 +142,9 @@ Future<WorkspaceController> openTask(
         ? [task]
         : [],
   };
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     row('accepted-main', 'c1', 1),
-  ], expectedGeneration: w.ledger.generation);
+  ], expectedGeneration: w.messageDomain.ledger.generation);
   await t.pumpWidget(
     MaterialApp(
       theme: raftTheme(RaftFamily.elegant),

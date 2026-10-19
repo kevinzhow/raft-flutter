@@ -88,7 +88,7 @@ void main() {
               entityId: 'c1',
             ),
           );
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               ...row('attachment-message', 'c1', 1),
               'attachments': [
@@ -99,8 +99,8 @@ void main() {
                 },
               ],
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'attachment-message'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'attachment-message'};
           api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
             'enabled': true,
           };
@@ -315,15 +315,15 @@ Future<(WorkspaceController, RaftAppRouter)> _desktopChat(
       entityId: 'c1',
     ),
   );
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     {
       ...row('attachment-message', 'c1', 1),
       'attachments': [
         {'id': 'preview-attachment', 'filename': filename, 'mimeType': mime},
       ],
     },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'attachment-message'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'attachment-message'};
   api.routes['GET /messages/attachment-preview/enabled'] = (_) => {
     'enabled': true,
   };

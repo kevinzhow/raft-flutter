@@ -365,7 +365,7 @@ Future<void> main() async {
     final c = chatController as dynamic;
     if (c == null) return {'error': 'no controller'};
     await c.selectChannel(c.channel);
-    return {'messages': c.messages.length};
+    return {'messages': c.messageDomain.messages.length};
   };
   lab.debug = () {
     Object? info;
@@ -375,9 +375,9 @@ Future<void> main() async {
         final c = (e.widget as dynamic).controller;
         info = {
           'channel': c.channel?.id,
-          'channelLoading': c.channelLoading,
+          'channelLoading': c.messageDomain.state.channelLoading,
           'error': c.error,
-          'messages': c.messages.length,
+          'messages': c.messageDomain.messages.length,
           'section': c.section,
           'canView': c.can('viewChannel', resource: c.channel),
           'role': c.server?.json['role'],

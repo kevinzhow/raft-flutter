@@ -12,10 +12,10 @@ Future<void> verifyContentNavigation(
   Future<void> Function(String) capture,
 ) async {
   final selected = w.channel;
-  if (selected == null || w.messages.isEmpty) {
+  if (selected == null || w.messageDomain.messages.isEmpty) {
     throw StateError('A real channel and message are required for link proof.');
   }
-  final message = w.messages.last;
+  final message = w.messageDomain.messages.last;
   final dynamic appState = tester.state(find.byType(RaftApp));
   final NativeContentCoordinator content = appState.content;
   final target = ContentTarget.parse(
@@ -27,8 +27,8 @@ Future<void> verifyContentNavigation(
   await content.navigate(target);
   await tester.pump(const Duration(milliseconds: 300));
   expect(w.channel?.id, selected.id);
-  expect(w.highlightedMessageId, message.id);
-  expect(w.messages.any((m) => m.id == message.id), true);
+  expect(w.messageDomain.state.highlightedMessageId, message.id);
+  expect(w.messageDomain.messages.any((m) => m.id == message.id), true);
   final scope = w.client.serverId, principal = w.client.user!.id;
   content.receiveLink(
     Uri.parse(
@@ -38,6 +38,6 @@ Future<void> verifyContentNavigation(
   await tester.pump(const Duration(milliseconds: 100));
   expect(w.client.serverId, scope);
   expect(w.client.user!.id, principal);
-  expect(w.highlightedMessageId, message.id);
+  expect(w.messageDomain.state.highlightedMessageId, message.id);
   await capture('linux-content-message-navigation');
 }

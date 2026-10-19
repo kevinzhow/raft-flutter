@@ -105,7 +105,7 @@ final _parent = RaftMessage({
 
 Future<void> _pumpThreadActions(WidgetTester t, WorkspaceController w) async {
   w
-    ..threadParent = _parent
+    ..messageDomain.state.threadParent = _parent
     ..threadChannelId = 't1';
   await t.pumpWidget(
     MaterialApp(
@@ -359,8 +359,8 @@ void main() {
       'agents': [],
     };
     await t.runAsync(w.followedThreads.refresh);
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       {
         'id': 'm',
         'channelId': 'c1',
@@ -372,8 +372,8 @@ void main() {
         'messageType': 'chat',
         'threadChannelId': 't1',
       },
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'m'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'m'};
     await t.pumpWidget(
       MaterialApp(
         theme: raftTheme(RaftFamily.elegant),

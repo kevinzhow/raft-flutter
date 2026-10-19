@@ -39,7 +39,7 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
         w.loading = false;
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final other = RaftChannel({'id': 'o', 'name': 'other', 'joined': true});
         w.channels = [w.channel!, other];
         w.channel = other;
@@ -152,8 +152,8 @@ void main() {
         await tester.pumpAndSettle();
         String diag() {
           final parts = <String>[
-            'threadLoading=${w.threadLoading} replies=${w.replies.length} '
-                'threadChannel=${w.threadChannelId} hl=${w.highlightedMessageId} '
+            'threadLoading=${w.messageDomain.state.threadLoading} replies=${w.replies.length} '
+                'threadChannel=${w.threadChannelId} hl=${w.messageDomain.state.highlightedMessageId} '
                 'calls=${api.calls.map((c) => c.path).toList()}',
           ];
           for (final scrollable
@@ -189,7 +189,7 @@ void main() {
         }
         await tester.pumpAndSettle();
         expect(paintedMessage(tester, target), isNull);
-        final log = <String>['messages=${w.messages.length}'];
+        final log = <String>['messages=${w.messageDomain.messages.length}'];
         var bad = 0;
         if (fling) {
           // Trackpad-style flick back, then activate while it still coasts.

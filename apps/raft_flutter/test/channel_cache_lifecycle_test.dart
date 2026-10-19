@@ -104,7 +104,7 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _login() async {
   w.server = RaftRecord({'id': 's1', 'role': 'member'});
   w.channels = [_c1, _c2, _c3, _lobby];
   w.channel = _c1;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, a, client);
 }
 
@@ -142,8 +142,8 @@ Future<void> _openThread(WorkspaceController w, MessageAdapter a) async {
       Completer<Map<String, dynamic>>().future;
   unawaited(w.selectChannel(channel, autoRead: false));
   return (
-    rows: w.messages.map((m) => m.id).toList(),
-    summary: w.threadSummaries['p-${channel.id}'] != null,
+    rows: w.messageDomain.messages.map((m) => m.id).toList(),
+    summary: w.messageDomain.threadSummaries['p-${channel.id}'] != null,
   );
 }
 
@@ -170,7 +170,7 @@ void main() {
         client.emit('channel:members-updated', {'channelId': 'c1'});
         await _drain();
         expect(w.threadIdentity?.parentMessageId, 'p-c1');
-        expect(w.threadSummaries['p-c1'], isNotNull);
+        expect(w.messageDomain.threadSummaries['p-c1'], isNotNull);
 
         // The open thread's cached window survives a close and reopen.
         w.closeThread();
@@ -183,7 +183,7 @@ void main() {
             initialThreadChannelId: 't-c1',
           ),
         );
-        expect(w.threadLoading, isFalse, reason: 'cached thread window');
+        expect(w.messageDomain.state.threadLoading, isFalse, reason: 'cached thread window');
         expect(w.replies.map((m) => m.id), ['t-c1-r']);
         w.closeThread();
 
@@ -250,9 +250,9 @@ void main() {
       await w.selectChannel(_c1, autoRead: false);
       client.emit('channel:removed', {'channelId': 'c2'});
       await _drain();
-      expect(w.threadSummariesFor('c2'), isEmpty);
-      expect(w.visibleIds['c2'], isNull);
-      expect(w.threadSummaries['p-c1'], isNotNull);
+      expect(w.messageDomain.threadSummariesFor('c2'), isEmpty);
+      expect(w.messageDomain.visibleIds['c2'], isNull);
+      expect(w.messageDomain.threadSummaries['p-c1'], isNotNull);
     });
   });
 
@@ -265,7 +265,7 @@ void main() {
         await w.selectChannel(_c1, autoRead: false);
         w.unread = {'c3': 2};
         await w.prefetchLikelyChannels();
-        expect(w.threadSummariesFor('c3')['p-c3'], isNotNull);
+        expect(w.messageDomain.threadSummariesFor('c3')['p-c3'], isNotNull);
 
         final first = _revisitHeld(w, a, _c3);
         expect(first.rows, ['p-c3']);
@@ -286,13 +286,13 @@ void main() {
             },
           },
         });
-        expect(w.threadSummaries['p-c1'], isNull);
-        expect(w.threadSummariesFor('c1')['p-c1']['replyCount'], 5);
+        expect(w.messageDomain.threadSummaries['p-c1'], isNull);
+        expect(w.messageDomain.threadSummariesFor('c1')['p-c1']['replyCount'], 5);
 
         a.routes['GET /messages/channel/c1'] = (_) =>
             Completer<Map<String, dynamic>>().future;
         unawaited(w.selectChannel(_c1, autoRead: false));
-        expect(w.threadSummaries['p-c1']['replyCount'], 5);
+        expect(w.messageDomain.threadSummaries['p-c1']['replyCount'], 5);
       },
     );
 
@@ -305,7 +305,7 @@ void main() {
         await w.selectChannel(_c1, autoRead: false);
         await w.jumpToMessage('c3', 'p-c3', navigate: false);
         expect(w.channel?.id, 'c3');
-        expect(w.threadSummaries['p-c3'], isNotNull);
+        expect(w.messageDomain.threadSummaries['p-c3'], isNotNull);
       },
     );
   });

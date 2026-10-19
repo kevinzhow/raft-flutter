@@ -88,7 +88,7 @@ void main() {
     'thread-panel': (t, size) async {
       final w = await mountAt(t, size);
       await t.runAsync(
-        () => w.openThread(
+        () => w.messageDomain.threads.openThread(
           RaftMessage(closeRows().firstWhere((r) => r['id'] == 'mt')),
         ),
       );

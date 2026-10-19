@@ -102,8 +102,13 @@ Future<(WorkspaceController, MessageAdapter)> mountWorkspace(
   };
   api.routes['GET /channels/threads/followers'] = (_) => {'threads': []};
   await t.runAsync(() => w.entityDirectory.preload());
-  w.ledger.ingest(closeRows(), expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {for (final r in closeRows()) r['id'] as String};
+  w.messageDomain.ledger.ingest(
+    closeRows(),
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
+  w.messageDomain.visibleIds['c1'] = {
+    for (final r in closeRows()) r['id'] as String,
+  };
   await t.pumpWidget(
     MaterialApp(
       theme: raftTheme(family).copyWith(platform: platform),

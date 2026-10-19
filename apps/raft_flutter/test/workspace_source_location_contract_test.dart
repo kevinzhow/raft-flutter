@@ -68,7 +68,7 @@ Future<(WorkspaceController, MessageAdapter)> pageFixture(
   w.channels = [w.channel!];
   addTearDown(w.dispose);
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.server = RaftRecord({
     'id': 's1',
     'slug': serverSlug,
@@ -235,7 +235,7 @@ void main() {
           });
           await frames(tester, () {});
           expect(paintedMessage(tester, focus), isNotNull);
-          expect(w.highlightedMessageId, focus);
+          expect(w.messageDomain.state.highlightedMessageId, focus);
           await tester.tap(find.byKey(const Key('mobile-detail-back')));
           await tester.pump();
           expect(w.location.route, RaftRoute.activity);
@@ -399,7 +399,7 @@ void main() {
             await Future<void>.delayed(const Duration(milliseconds: 20));
           });
           await waitForPainted(tester, focus);
-          expect(w.highlightedMessageId, focus);
+          expect(w.messageDomain.state.highlightedMessageId, focus);
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -479,7 +479,7 @@ void main() {
               );
             }
             expect(w.presentedThreadParent, isNull);
-            expect(w.threadParentLoading, isTrue);
+            expect(w.messageDomain.threadParentLoading, isTrue);
             expect(
               find.byKey(const Key('workspace-channel-header')),
               findsNothing,
@@ -523,7 +523,10 @@ void main() {
           await tester.pumpAndSettle();
           expect(w.presentedThreadParent?.id, 'parent');
           expect(w.replies.map((r) => r.id), ['reply']);
-          expect(w.messages.any((r) => r.id == 'parent'), isFalse);
+          expect(
+            w.messageDomain.messages.any((r) => r.id == 'parent'),
+            isFalse,
+          );
           await tester.pumpWidget(const SizedBox());
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
@@ -585,7 +588,7 @@ void main() {
           );
         });
         await waitForPainted(tester, 'parent');
-        expect(w.highlightedMessageId, 'parent');
+        expect(w.messageDomain.state.highlightedMessageId, 'parent');
         expect(
           api.calls.where(
             (r) =>
@@ -658,8 +661,8 @@ void main() {
           expect(w.threadIdentity?.parentMessageId, 'parent');
           expect(w.threadIdentity?.focusedMessageId, isNull);
           expect(w.location.messageId, 'parent');
-          expect(w.highlightedMessageId, isNot('parent'));
-          expect(w.threadResolutionLoading, isTrue);
+          expect(w.messageDomain.state.highlightedMessageId, isNot('parent'));
+          expect(w.messageDomain.threadResolutionLoading, isTrue);
         });
         await tester.runAsync(() async {
           resolution.complete({'threadChannelId': 't1'});
@@ -687,7 +690,7 @@ void main() {
         await frames(tester, () {});
         expect(paintedMessage(tester, 'reply'), isNotNull);
         expect(w.replies.map((row) => row.id), ['reply']);
-        expect(w.highlightedMessageId, isNot('parent'));
+        expect(w.messageDomain.state.highlightedMessageId, isNot('parent'));
         expect(w.location.messageId, 'parent');
         await tester.pumpWidget(const SizedBox());
         await tester.pumpAndSettle();
@@ -705,13 +708,13 @@ void main() {
             tester,
             section: activity ? 'activity' : 'search',
           );
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               ...message('hidden', 'c1'),
               'content': 'Hidden accepted channel message',
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'hidden'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'hidden'};
           await mountPage(tester, w, family, dark);
           for (final open in ['wrong:x', ':x', 'channel:', 'channel', null]) {
             w.navigation.navigate(

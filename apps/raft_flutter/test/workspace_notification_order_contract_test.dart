@@ -182,11 +182,11 @@ class _Fixture {
       ]
       ..channels = [_channel('c1'), _channel('c2')];
     w.channel = w.channels.first;
-    w.ledger.switchServer('server');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('server');
+    w.messageDomain.ledger.ingest([
       _row('parent', 'c1', 1),
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {'parent'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {'parent'};
     w.bindNavigation();
     w.addListener(() => trace.add('notify', _state()));
     addTearDown(() async {
@@ -203,12 +203,12 @@ class _Fixture {
     'channel': w.channel?.id,
     'thread': w.threadChannelId,
     'parent': w.threadIdentity?.parentMessageId,
-    'loading': w.channelLoading,
-    'threadLoading': w.threadLoading,
-    'resolving': w.threadResolutionLoading,
-    'parentLoading': w.threadParentLoading,
-    'newer': w.hasNewer,
-    'highlight': w.highlightedMessageId,
+    'loading': w.messageDomain.state.channelLoading,
+    'threadLoading': w.messageDomain.state.threadLoading,
+    'resolving': w.messageDomain.threadResolutionLoading,
+    'parentLoading': w.messageDomain.threadParentLoading,
+    'newer': w.messageDomain.state.hasNewer,
+    'highlight': w.messageDomain.state.highlightedMessageId,
     'unread': {
       for (final id in w.unread.keys.toList()..sort()) id: w.unread[id],
     },
@@ -219,8 +219,8 @@ class _Fixture {
     'holds': {
       for (final id in w.shareHolds.keys.toList()..sort()) id: w.shareHolds[id],
     },
-    'timeline': w.timeline().map((m) => m.id).toList(),
-    'messages': w.messages.map((m) => m.id).toList(),
+    'timeline': w.messageDomain.timeline().map((m) => m.id).toList(),
+    'messages': w.messageDomain.messages.map((m) => m.id).toList(),
     'replies': w.replies.map((m) => m.id).toList(),
     'error': w.error,
   };
@@ -265,8 +265,8 @@ void main() {
       w.mentions = {'c2'};
       await f.start();
       await w.selectChannel(w.channels.last);
-      expect(w.messages.map((m) => m.id), ['c2-row']);
-      expect(w.channelLoading, isFalse);
+      expect(w.messageDomain.messages.map((m) => m.id), ['c2-row']);
+      expect(w.messageDomain.state.channelLoading, isFalse);
       expect(w.error, isNull);
       expect(w.unread['c2'], 0);
       await f.finish('select-channel');
@@ -278,9 +278,9 @@ void main() {
       final f = _Fixture(), w = f.w;
       await f.start();
       await w.jumpToMessage('c2', 'target');
-      expect(w.messages.map((m) => m.id), ['target']);
-      expect(w.highlightedMessageId, 'target');
-      expect(w.hasNewer, isTrue);
+      expect(w.messageDomain.messages.map((m) => m.id), ['target']);
+      expect(w.messageDomain.state.highlightedMessageId, 'target');
+      expect(w.messageDomain.state.hasNewer, isTrue);
       expect(w.error, isNull);
       await f.finish('jump-message');
     },
@@ -289,12 +289,12 @@ void main() {
     'N03 thread open and close: resolving, reply and retirement notifications',
     () async {
       final f = _Fixture(), w = f.w;
-      final parent = w.messages.single;
+      final parent = w.messageDomain.messages.single;
       await f.start();
-      await w.openThread(parent);
+      await w.messageDomain.threads.openThread(parent);
       expect(w.threadChannelId, 'thread');
       expect(w.replies.map((m) => m.id), ['thread-row']);
-      expect(w.threadResolutionError, isNull);
+      expect(w.messageDomain.threadResolutionError, isNull);
       w.closeThread();
       expect(w.threadIdentity, isNull);
       await f.finish('thread-open-close');
@@ -354,7 +354,10 @@ void main() {
         receipt: <String, dynamic>{},
       ));
       expect(await sending, isTrue);
-      expect(w.timeline().map((m) => m.id), contains('accepted-send'));
+      expect(
+        w.messageDomain.timeline().map((m) => m.id),
+        contains('accepted-send'),
+      );
       expect(w.error, isNull);
       await f.finish('send-projection');
     },

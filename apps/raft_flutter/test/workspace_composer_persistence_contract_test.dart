@@ -95,7 +95,7 @@ void main() {
     final w = WorkspaceController(client, cache: cache)
       ..server = RaftRecord({'id': 'fixture-server', 'role': 'owner'})
       ..channel = RaftChannel({'id': 'fixture-channel', 'joined': true});
-    w.ledger.switchServer('fixture-server');
+    w.messageDomain.ledger.switchServer('fixture-server');
     final file = SharedDraftAttachment(
       reference: const {'token': 'fixture-share-reference', 'file': 'item-0'},
       filename: '照片-あ.png',

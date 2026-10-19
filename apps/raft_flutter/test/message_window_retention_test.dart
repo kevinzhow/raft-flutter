@@ -76,7 +76,7 @@ WorkspaceController _controller(_Client client, WorkspaceCache db) {
       RaftChannel({'id': 'a', 'type': 'private', 'joined': true}),
       RaftChannel({'id': 'b', 'type': 'private', 'joined': true}),
     ];
-  w.ledger.switchServer('server');
+  w.messageDomain.ledger.switchServer('server');
   return w;
 }
 
@@ -226,8 +226,8 @@ void main() {
       final receiver = _controller(client, db);
       try {
         await receiver.selectChannel(receiver.channels.last, autoRead: false);
-        await receiver.older();
-        receiver.ledger.remove('b', 'b-25');
+        await receiver.messageDomain.older();
+        receiver.messageDomain.ledger.remove('b', 'b-25');
         client.eventsController.add(
           RaftEvent('message:updated', {
             'id': 'b-25',
@@ -250,7 +250,7 @@ void main() {
         );
         expect(local!.rows.last['content'], 'edited while evicted');
         expect(local.rows.any((m) => m['id'] == 'unknown'), isFalse);
-        expect(receiver.ledger.contains('b', 'b-25'), isFalse);
+        expect(receiver.messageDomain.ledger.contains('b', 'b-25'), isFalse);
       } finally {
         await receiver.flushCache();
         receiver.dispose();
@@ -268,14 +268,14 @@ void main() {
       final w = _controller(client, db);
       try {
         await w.selectChannel(w.channels.last, autoRead: false);
-        await w.older();
-        w.ledger.remove('b', 'b-25');
+        await w.messageDomain.older();
+        w.messageDomain.ledger.remove('b', 'b-25');
         final request = w.messageWindows.request(allowed: () => true);
         final page = await MessageHistoryPages.load(
           cache: db,
           scope: MessageHistoryPages.scope(w, 'b'),
           current: () => request.current,
-          held: () => w.ledger.messages('b'),
+          held: () => w.messageDomain.ledger.messages('b'),
           before: BigInt.from(26),
           limit: 25,
           remote: () async =>
@@ -294,9 +294,9 @@ void main() {
           'b',
           (page['messages'] as List).cast<Map<String, dynamic>>(),
         );
-        expect(w.ledger.message('b', 'b-25')!['content'], 'Accepted 25 中文');
+        expect(w.messageDomain.ledger.message('b', 'b-25')!['content'], 'Accepted 25 中文');
         expect(await MessageHistoryPages.record(w, request, page), isTrue);
-        expect(w.ledger.message('b', 'b-25')!['content'], 'newer saved edit');
+        expect(w.messageDomain.ledger.message('b', 'b-25')!['content'], 'newer saved edit');
       } finally {
         await w.flushCache();
         w.dispose();
@@ -314,11 +314,11 @@ void main() {
       final w = _controller(client, db), gate = Completer<void>();
       try {
         await w.selectChannel(w.channels.last, autoRead: false);
-        await w.older();
+        await w.messageDomain.older();
         final projection = Map<String, dynamic>.from(
-          w.ledger.message('b', 'b-25')!,
+          w.messageDomain.ledger.message('b', 'b-25')!,
         );
-        w.ledger.remove('b', 'b-25');
+        w.messageDomain.ledger.remove('b', 'b-25');
         unawaited(db.messageHistory.receiver.run(() => gate.future));
         client.eventsController.add(
           RaftEvent('message:updated', {
@@ -338,13 +338,13 @@ void main() {
         );
         final seen = <String>[];
         void listen() =>
-            seen.add('${w.ledger.message('b', 'b-25')?['content']}');
+            seen.add('${w.messageDomain.ledger.message('b', 'b-25')?['content']}');
         w.addListener(listen);
         gate.complete();
         await db.messageHistory.receiver.settled;
         w.removeListener(listen);
         expect(seen, isNot(contains('older queued edit')));
-        expect(w.ledger.message('b', 'b-25')!['content'], 'newest live edit');
+        expect(w.messageDomain.ledger.message('b', 'b-25')!['content'], 'newest live edit');
         expect(
           (await db.messageHistory.readContext(
             MessageHistoryPages.scope(w, 'b')!,
@@ -368,7 +368,7 @@ void main() {
     final w = _controller(client, db), gate = Completer<void>();
     try {
       await w.selectChannel(w.channels.last, autoRead: false);
-      await w.older();
+      await w.messageDomain.older();
       await w.flushCache();
       unawaited(db.messageHistory.receiver.run(() => gate.future));
       client.eventsController.add(
@@ -388,7 +388,7 @@ void main() {
           cache: db,
           scope: MessageHistoryPages.scope(w, 'b'),
           current: () => request.current,
-          held: () => w.ledger.messages('b'),
+          held: () => w.messageDomain.ledger.messages('b'),
           before: focused ? null : BigInt.from(26),
           limit: 25,
           localFirst: localFirst,
@@ -413,7 +413,7 @@ void main() {
         );
         await MessageHistoryPages.record(w, request, page);
         expect(
-          w.ledger.message('b', 'b-25')!['content'],
+          w.messageDomain.ledger.message('b', 'b-25')!['content'],
           'accepted live edit awaiting disk',
         );
       }
@@ -650,7 +650,7 @@ void main() {
         initialThreadChannelId: 't',
         navigate: false,
       );
-      await w.older(thread: true);
+      await w.messageDomain.older(thread: true);
       expect(w.replies.length, 100);
       await body(w, client, db);
     } finally {
@@ -703,7 +703,7 @@ void main() {
         );
         expect(w.drafts['thread:b-100'], 'keep my draft');
         expect(w.channel!.id, 'b');
-        expect(w.messages, isNotEmpty);
+        expect(w.messageDomain.messages, isNotEmpty);
       }),
     );
   }
@@ -711,7 +711,7 @@ void main() {
   test(
     'thread tail refresh retains accepted older history and its disk window',
     () => historyCase((w, client, db) async {
-      await w.older(
+      await w.messageDomain.older(
         thread: true,
       ); // Empty page proves the beginning was reached.
       expect(w.threadHasMore, isFalse);
@@ -728,7 +728,7 @@ void main() {
         'b-100',
       ) as Map;
       expect((disk['messages'] as List).length, 100);
-      await w.older(thread: true);
+      await w.messageDomain.older(thread: true);
       expect(
         client.beforeReads.where((seq) => seq == BigInt.from(51)).length,
         1,
@@ -756,7 +756,7 @@ void main() {
       await reopen(w);
       expect(w.replies.length, 50);
       expect(w.replies.first.id, 't-51');
-      expect(w.threadHistoryLimited, isTrue);
+      expect(w.messageDomain.state.threadHistoryLimited, isTrue);
       expect(w.threadHasMore, isFalse);
     }),
   );
@@ -789,7 +789,7 @@ void main() {
       initialThreadChannelId: 't',
       navigate: false,
     );
-    await w.older(thread: true);
+    await w.messageDomain.older(thread: true);
     await w.flushCache();
     expect(w.replies.length, 100);
     w.dispose();
@@ -841,7 +841,7 @@ void main() {
         for (var i = 0; i <= 20; i++) {
           viewed.addAll(w.replies.map((m) => m.id));
           if (!w.threadHasMore) break;
-          await w.older(thread: true);
+          await w.messageDomain.older(thread: true);
         }
         expect(viewed.length, 1000);
         await w.flushCache();
@@ -863,7 +863,7 @@ void main() {
         for (var i = 0; i <= 20; i++) {
           restored.addAll(w.replies.map((m) => m.id));
           if (!w.threadHasMore) break;
-          await w.older(thread: true);
+          await w.messageDomain.older(thread: true);
         }
         expect(restored.length, 1000);
         expect(restored, viewed);
@@ -911,8 +911,8 @@ void main() {
     );
     await _until(() => w.replies.isNotEmpty);
     expect(w.replies.map((m) => m.id), ['t-1', 't-2']);
-    expect(w.threadLoading, isFalse);
-    expect(w.threadParent?.id, 'b-100');
+    expect(w.messageDomain.state.threadLoading, isFalse);
+    expect(w.messageDomain.state.threadParent?.id, 'b-100');
     client.hold!.complete();
     await opening;
     expect(w.replies.map((m) => m.id), ['t-1', 't-2']);
@@ -930,7 +930,7 @@ void main() {
     );
     await Future<void>.delayed(const Duration(milliseconds: 50));
     expect(w.replies, isEmpty);
-    expect(w.threadLoading, isTrue);
+    expect(w.messageDomain.state.threadLoading, isTrue);
     client.hold!.complete();
     await denied;
     w.dispose();
@@ -951,9 +951,9 @@ void main() {
     var client = _Client();
     var w = _controller(client, db);
     await w.selectChannel(w.channels.last, autoRead: false);
-    await w.older();
+    await w.messageDomain.older();
     await w.flushCache();
-    expect(w.messages.length, 100);
+    expect(w.messageDomain.messages.length, 100);
     w.dispose();
     await client.eventsController.close();
     await db.close();
@@ -962,25 +962,25 @@ void main() {
     w = _controller(client, db);
     final hydrated = Completer<void>();
     w.addListener(() {
-      if (w.messages.length == 100 && !hydrated.isCompleted) {
+      if (w.messageDomain.messages.length == 100 && !hydrated.isCompleted) {
         hydrated.complete();
       }
     });
     final loading = w.selectChannel(w.channels.last, autoRead: false);
     await hydrated.future.timeout(const Duration(seconds: 3));
     expect(
-      w.channelLoading,
+      w.messageDomain.state.channelLoading,
       false,
       reason: 'Accepted cached rows are ready while HTTP validates in the background.',
     );
-    expect(w.messages.first.id, 'b-1');
+    expect(w.messageDomain.messages.first.id, 'b-1');
     client.pending!.complete({
       'messages': [for (var i = 51; i <= 100; i++) row(i)],
       'threadSummariesByParentMessageId': {},
     });
     await loading;
-    expect(w.messages.length, 100);
-    expect(w.messages.first.id, 'b-1');
+    expect(w.messageDomain.messages.length, 100);
+    expect(w.messageDomain.messages.first.id, 'b-1');
     await w.flushCache();
     w.dispose();
     await client.eventsController.close();
@@ -1011,15 +1011,15 @@ void main() {
       final editor = w;
       await w.flushCache();
       expect(identical(editor.composer, w.composer), isTrue);
-      expect(editor.messages, isNotEmpty);
+      expect(editor.messageDomain.messages, isNotEmpty);
 
       client.failure = RaftApiException('No channel access', status: status);
       await editor.selectChannel(channel, autoRead: false);
       await editor.flushCache();
       await w.flushCache();
       expect(editor.channel, isNull);
-      expect(editor.messages, isEmpty);
-      expect(editor.ledger.messages(channel.id), isEmpty);
+      expect(editor.messageDomain.messages, isEmpty);
+      expect(editor.messageDomain.ledger.messages(channel.id), isEmpty);
       expect(w.composer.attempts.containsKey(channel.id), isFalse);
       expect(w.drafts[channel.id], 'My unsent words 草稿');
       expect(
@@ -1046,7 +1046,7 @@ void main() {
       final restored = WorkspaceController(client, cache: db, ownsClient: false)
         ..server = w.server
         ..channels = w.channels;
-      restored.ledger.switchServer('server');
+      restored.messageDomain.ledger.switchServer('server');
       try {
         await restored.selectChannel(channel, autoRead: false);
         expect(restored.drafts[channel.id], 'My unsent words 草稿');
@@ -1064,14 +1064,14 @@ void main() {
     final w = _controller(client, db);
     // Use the actual controller client; this helper keeps no authentication data.
     await w.selectChannel(w.channels.last, autoRead: false);
-    await w.older();
+    await w.messageDomain.older();
     client.failure = const RaftApiException('Unavailable', status: 503);
     await w.selectChannel(w.channels.last, autoRead: false);
-    expect(w.messages.length, 100);
+    expect(w.messageDomain.messages.length, 100);
     client.failure = const RaftApiException('Denied', status: 403);
     await w.selectChannel(w.channels.last, autoRead: false);
     await w.flushCache();
-    expect(w.messages, isEmpty);
+    expect(w.messageDomain.messages, isEmpty);
     expect(
       await db.read(client.origin, 'alice', 'server', 'window', 'b'),
       isNull,
@@ -1096,12 +1096,12 @@ void main() {
       'threadSummariesByParentMessageId': {},
     });
     await first;
-    expect(w.messages.any((m) => m.id == 'b-999'), false);
+    expect(w.messageDomain.messages.any((m) => m.id == 'b-999'), false);
     current.pending = null;
     current.failure = const RaftApiException('Unavailable', status: 503);
     await w.selectChannel(w.channels.last, autoRead: false);
     expect(
-      w.messages,
+      w.messageDomain.messages,
       isEmpty,
       reason: 'Owner cache is not adopted with a new role',
     );
@@ -1122,12 +1122,12 @@ void main() {
       await cache.entered.future.timeout(const Duration(seconds: 3));
       await w.selectChannel(w.channels.first, autoRead: false);
       expect(w.channel!.id, 'a');
-      expect(w.messages.every((m) => m.channelId == 'a'), true);
+      expect(w.messageDomain.messages.every((m) => m.channelId == 'a'), true);
       cache.gate!.complete();
       await old;
       expect(w.channel!.id, 'a');
-      expect(w.messages.every((m) => m.channelId == 'a'), true);
-      expect(w.channelLoading, false);
+      expect(w.messageDomain.messages.every((m) => m.channelId == 'a'), true);
+      expect(w.messageDomain.state.channelLoading, false);
       w.dispose();
       await c.eventsController.close();
       await db.close();
@@ -1138,12 +1138,12 @@ void main() {
     final c = _Client();
     final w = _controller(c, db);
     await w.selectChannel(w.channels.last, autoRead: false);
-    await w.older();
+    await w.messageDomain.older();
     c.limited = true;
     await w.selectChannel(w.channels.last, autoRead: false);
-    expect(w.messages.length, 50);
-    expect(w.messages.first.id, 'b-51');
-    expect(w.hasMore, false);
+    expect(w.messageDomain.messages.length, 50);
+    expect(w.messageDomain.messages.first.id, 'b-51');
+    expect(w.messageDomain.state.hasMore, false);
     w.dispose();
     await c.eventsController.close();
     await db.close();

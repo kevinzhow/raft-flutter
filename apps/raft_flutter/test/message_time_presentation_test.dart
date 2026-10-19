@@ -18,8 +18,8 @@ void main() {
         'preferredTimeFormat': '24h',
       };
       w.client.user = RaftRecord(user);
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'time',
           'channelId': 'c1',
@@ -29,8 +29,8 @@ void main() {
           'content': 'Public time fixture',
           'createdAt': '2026-06-22T02:30:00Z',
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'time'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'time'};
       await t.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),

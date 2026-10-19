@@ -70,16 +70,19 @@ Future<(WorkspaceController, _Client, MessageAdapter, List<String>)> _fixture(
   w.server = RaftRecord({'id': 's1', 'role': 'owner'});
   w.channels = [c1, c2];
   w.channel = c1;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   final one = [
     _message('m1', 'c1', 1),
     _message('m2', 'c1', 2),
     _message('m3', 'c1', 3),
   ];
   final two = [_message('n1', 'c2', 1)];
-  w.ledger.ingest([...one, ...two], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'m1', 'm2', 'm3'};
-  w.visibleIds['c2'] = {'n1'};
+  w.messageDomain.ledger.ingest([
+    ...one,
+    ...two,
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'m1', 'm2', 'm3'};
+  w.messageDomain.visibleIds['c2'] = {'n1'};
   final reads = <String>[];
   api.routes['GET /messages/channel/c1'] = (_) => {'messages': one};
   api.routes['GET /messages/channel/c2'] = (_) => {'messages': two};
@@ -311,10 +314,10 @@ void main() {
       addTearDown(w.dispose);
       final gate = Completer<dynamic>();
       api.routes['GET /tasks/channel/c1'] = (_) => gate.future;
-      w.ledger.ingest([
+      w.messageDomain.ledger.ingest([
         {..._message('m1', 'c1', 1), 'taskNumber': 10, 'taskStatus': 'todo'},
         {..._message('m3', 'c1', 3), 'taskNumber': 12},
-      ], expectedGeneration: w.ledger.generation);
+      ], expectedGeneration: w.messageDomain.ledger.generation);
       await t.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),

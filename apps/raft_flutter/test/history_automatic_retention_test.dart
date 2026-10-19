@@ -36,10 +36,10 @@ void main() {
         switch (fact) {
           case 'inflight page':
             c.w.channel = channel;
-            c.w.loadingOlder = true;
+            c.w.messageDomain.state.loadingOlder = true;
           case 'open window':
             c.w.channel = channel;
-            c.w.visibleIds['chat'] = {'chat-100'};
+            c.w.messageDomain.visibleIds['chat'] = {'chat-100'};
           case 'unread':
             c.w.unread = {'chat': 1};
           case 'mention':
@@ -172,7 +172,10 @@ void main() {
       );
       await c.w.jumpToMessage('chat', 'm1');
       await c.cache.messageHistory.reads.settled;
-      expect(c.w.ledger.message('chat', 'm1')?['content'], 'Body 1');
+      expect(
+        c.w.messageDomain.ledger.message('chat', 'm1')?['content'],
+        'Body 1',
+      );
       expect(c.w.error, isNull);
     },
   );

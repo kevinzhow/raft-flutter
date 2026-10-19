@@ -86,7 +86,7 @@ void main() {
       late Future<void> mainTransfer, threadTransfer, reading;
       late UploadDraft mainAttachment, threadAttachment;
       await (() async {
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         await w.selectChannel(main);
         w.saveDraft('Keep unrelated main draft');
         mainTransfer = w.attachUpload('main.txt', Uint8List.fromList([1]));
@@ -136,8 +136,8 @@ void main() {
         threadAttachment = w.uploads(thread: true).single;
         await w.flushCache();
         expect(w.presentedThreadParent, isNull);
-        expect(w.threadParentLoading, true);
-        expect(w.ledger.messages('c1'), isEmpty);
+        expect(w.messageDomain.threadParentLoading, true);
+        expect(w.messageDomain.ledger.messages('c1'), isEmpty);
         expect(w.replies.single.id, 'private-reply');
         expect(w.readState.state('s1', 'alice', 'thread-1')?['maxReadSeq'], 7);
         expect(
@@ -178,7 +178,7 @@ void main() {
         await w.flushCache();
         expect(w.channels.any((c) => c.id == removed), false);
         expect(w.channel?.id, 'c0');
-        expect(w.messages.single.id, 'main');
+        expect(w.messageDomain.messages.single.id, 'main');
         expect(w.drafts['c0'], 'Keep unrelated main draft');
         expect(mainAttachment.cancel.cancelled, false);
         expect(w.readState.state('s1', 'alice', 'c0')?['maxReadSeq'], 2);
@@ -199,8 +199,8 @@ void main() {
         if (revokeParent) {
           expect(w.threadIdentity, isNull);
           expect(w.replies, isEmpty);
-          expect(w.ledger.messages('thread-1'), isEmpty);
-          expect(w.visibleIds.containsKey('thread-1'), false);
+          expect(w.messageDomain.ledger.messages('thread-1'), isEmpty);
+          expect(w.messageDomain.visibleIds.containsKey('thread-1'), false);
           expect(w.drafts['thread:parent'], 'Private parent draft');
           expect(w.readState.state('s1', 'alice', 'thread-1'), isNull);
           expect(threadAttachment.cancel.cancelled, true);
@@ -322,11 +322,11 @@ void main() {
               });
           w.channels.addAll([main, other]);
           w.channel = main;
-          w.ledger.switchServer('s1');
-          w.ledger.ingest([
+          w.messageDomain.ledger.switchServer('s1');
+          w.messageDomain.ledger.ingest([
             row('main', 'c0', 2),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c0'] = {'main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c0'] = {'main'};
           w.setSection('activity');
           w.navigation.navigate(
             w.location.withQuery({
@@ -378,11 +378,11 @@ void main() {
           await tester.runAsync(w.refreshChannels);
           for (var frame = 0; frame < 6; frame++) {
             await tester.pump(const Duration(milliseconds: 16));
-            expect(w.messages.single.id, 'main');
+            expect(w.messageDomain.messages.single.id, 'main');
             expect(find.text('Message parent'), findsNothing);
             if (revokeParent) {
               expect(w.threadIdentity, isNull);
-              expect(w.ledger.messages('thread-1'), isEmpty);
+              expect(w.messageDomain.ledger.messages('thread-1'), isEmpty);
               expect(paintedMessage(tester, 'private-reply'), isNull);
             } else {
               expect(w.threadIdentity?.parentMessageId, 'parent');
@@ -393,7 +393,11 @@ void main() {
             parent.complete({
               'messages': [row('parent', 'c1', 1)],
             });
-            for (var i = 0; i < 40 && w.threadParentLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.threadParentLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
           });

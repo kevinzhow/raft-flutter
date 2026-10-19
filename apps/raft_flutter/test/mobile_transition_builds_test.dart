@@ -343,7 +343,7 @@ void main() {
         });
         // The data is accepted at once; the painted page is not touched.
         expect(
-          w.ledger.contains('c', 'm2'),
+          w.messageDomain.ledger.contains('c', 'm2'),
           isTrue,
           reason: 'state is current while the page is held',
         );
@@ -357,7 +357,7 @@ void main() {
         if (!commit) {
           expect(find.text('Arrived mid gesture'), findsOneWidget);
         }
-        expect(w.ledger.contains('c', 'm2'), isTrue);
+        expect(w.messageDomain.ledger.contains('c', 'm2'), isTrue);
         expect(tester.takeException(), isNull);
       },
     );

@@ -36,7 +36,7 @@ void main() {
         addTearDown(w.dispose);
         w.loading = false;
         w.section = 'activity';
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         w.channels = [
           w.channel!,
           RaftChannel({'id': 'c2', 'name': 'second', 'joined': true}),

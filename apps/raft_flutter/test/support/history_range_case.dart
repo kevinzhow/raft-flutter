@@ -71,7 +71,7 @@ class HistoryRangeCase {
   Future<void> open() async {
     await seedGap(db, scope);
     await w.selectChannel(w.channels.single, autoRead: false);
-    await w.older();
+    await w.messageDomain.older();
     await settle();
     client.beforeReads.clear();
   }
@@ -96,7 +96,8 @@ class HistoryRangeCase {
 
   Future<void> windowContains(int sequence) async {
     bool ready() =>
-        !w.loadingOlder && w.ledger.message('chat', 'chat-$sequence') != null;
+        !w.messageDomain.state.loadingOlder &&
+        w.messageDomain.ledger.message('chat', 'chat-$sequence') != null;
     final done = Completer<void>();
     void listener() {
       if (ready() && !done.isCompleted) done.complete();

@@ -77,7 +77,7 @@ WorkspaceController _workspace(ParityContext ctx) {
   w
     ..servers = [server]
     ..server = server;
-  w.ledger.switchServer(_serverId);
+  w.messageDomain.ledger.switchServer(_serverId);
   // Runtime usage relative times ("updated 5 minutes ago") read the fixture
   // instant the React provider freezes its clock at.
   final now = DateTime.fromMillisecondsSinceEpoch(

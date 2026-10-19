@@ -34,7 +34,9 @@ Future<void> verifyHtmlPreview(
   final attachmentId = attachments.single['id'] as String;
   final body = 'Native HTML attachment $marker';
   expect(await w.send(body, attachments: [attachmentId]), isTrue);
-  final message = w.messages.singleWhere((m) => m.content == body);
+  final message = w.messageDomain.messages.singleWhere(
+    (m) => m.content == body,
+  );
   await w.jumpToMessage(channelId, message.id);
   final tile = find.byKey(ValueKey('message-${message.id}'));
   final target = find.descendant(of: tile, matching: find.text(filename));

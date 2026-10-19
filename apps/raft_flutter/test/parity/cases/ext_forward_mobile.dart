@@ -99,7 +99,7 @@ class _HostState extends State<_Host> {
         for (final c in fx['dms'] as List)
           RaftChannel(Map<String, dynamic>.from(c as Map)),
       ];
-    controller.ledger.switchServer('visual-server');
+    controller.messageDomain.ledger.switchServer('visual-server');
     return controller;
   }();
 

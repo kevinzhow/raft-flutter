@@ -128,7 +128,7 @@ class _Fixture {
     w.channels = [_row('c1'), _row('c2')];
     w.dms = [_row('d1', type: 'dm')];
     w.channel = w.channels.first;
-    if (source == null) w.ledger.switchServer('s1');
+    if (source == null) w.messageDomain.ledger.switchServer('s1');
     w.notifyListeners(); // Establish sync identity before setting feature flags.
     w.notifications = w.unreadRefreshes = w.closes = 0;
     w.trace.clear();
@@ -196,7 +196,7 @@ void main() {
   test('list acceptance revokes against old rows, then publishes and queues the new directory', () async {
     final f = _Fixture(), w = f.root;
     w.channel = w.channels.last;
-    w.threadParent = RaftMessage({
+    w.messageDomain.state.threadParent = RaftMessage({
       'id': 'parent',
       'channelId': 'c2',
       'threadChannelId': 't2',

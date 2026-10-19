@@ -256,7 +256,7 @@ class ChatStage {
       ..server = RaftRecord(ids.server)
       ..channels = channels.map(RaftChannel.new).toList()
       ..dms = dms.map(RaftChannel.new).toList();
-    w.ledger.switchServer(ids.serverId);
+    w.messageDomain.ledger.switchServer(ids.serverId);
     unawaited(
       w.selectChannel(
         w.channels.firstWhere((c) => c.id == channelId),
@@ -387,7 +387,7 @@ class ChatStage {
     for (var i = 0; i < 80; i++) {
       await t.pump(const Duration(milliseconds: 50));
       if (find.byType(RaftMessageRow).evaluate().length >= rows &&
-          !w.channelLoading) {
+          !w.messageDomain.state.channelLoading) {
         break;
       }
     }

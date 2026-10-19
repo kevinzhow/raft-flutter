@@ -19,8 +19,8 @@ void main() {
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           for (final (id, type, status, seq) in [
             ('active', 'user', 'active', 1),
             ('removed', 'user', 'removed', 2),
@@ -40,8 +40,8 @@ void main() {
               'content': 'History $id',
               'createdAt': '2026-06-22T02:30:00Z',
             },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {
           'active',
           'removed',
           'left',
@@ -106,8 +106,8 @@ void main() {
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           for (final (id, name, server, seq) in [
             ('local', 'artin', 's1', 1),
             ('foreign', 'Foreign artin', 'other-server', 2),
@@ -127,8 +127,8 @@ void main() {
                   ? '2026-06-22T02:30:00Z'
                   : '2026-06-23T02:30:00Z',
             },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'local', 'foreign'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'local', 'foreign'};
         transport.routes['GET /agents'] = (_) => [];
         transport.routes['GET /servers/s1/members'] = (_) => [
           {'userId': 'owner-id', 'name': 'artin', 'role': 'owner'},
@@ -159,9 +159,11 @@ void main() {
         final field = t.widget<TextField>(editor);
         expect(field.controller!.text, '已有中文 @artin ');
         expect(field.focusNode!.hasFocus, true);
-        expect(w.threadParent, isNull);
+        expect(w.messageDomain.state.threadParent, isNull);
         expect(
-          w.messages.every((message) => message.string('senderType') == 'user'),
+          w.messageDomain.messages.every(
+            (message) => message.string('senderType') == 'user',
+          ),
           true,
         );
         await t.pumpWidget(const SizedBox());
@@ -174,8 +176,8 @@ void main() {
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'm1',
             'channelId': 'c1',
@@ -186,8 +188,8 @@ void main() {
             'content': 'Public body',
             'createdAt': '2026-06-22T02:30:00Z',
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'m1'};
         transport.routes['GET /agents'] = (_) => [
           {
             'id': 'agent',
@@ -215,7 +217,7 @@ void main() {
         };
         transport.routes['GET /channels/c1/threads/m1'] = (_) => {
           'threadChannelId': 'thread-m1',
-          'parentMessage': w.messages.first.json,
+          'parentMessage': w.messageDomain.messages.first.json,
         };
         transport.routes['GET /messages/channel/thread-m1'] = (_) => {
           'messages': [],
@@ -259,7 +261,7 @@ void main() {
         final field = t.widget<TextField>(editor);
         expect(field.controller!.text, '草案 @Cindy ');
         expect(field.focusNode!.hasFocus, true);
-        expect(w.threadParent, null);
+        expect(w.messageDomain.state.threadParent, null);
         final row = find.byType(RaftMessageRow);
         final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
         await mouse.addPointer(location: Offset.zero);
@@ -303,7 +305,7 @@ void main() {
         );
         await t.tap(find.byType(RaftMountedMessageTaskChip));
         await t.pump();
-        expect(w.threadParent, isNull);
+        expect(w.messageDomain.state.threadParent, isNull);
         await t.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 20)),
         );

@@ -78,7 +78,11 @@ void main() {
         // A dimmed unjoined row stays actionable, as in Source ChannelRow.
         await t.runAsync(() async {
           await t.tap(unjoined);
-          for (var frame = 0; frame < 40 && w.channelLoading; frame++) {
+          for (
+            var frame = 0;
+            frame < 40 && w.messageDomain.state.channelLoading;
+            frame++
+          ) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });

@@ -28,12 +28,12 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
         w.loading = false;
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         w.section = 'chat';
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           message('main-tail', 'c1'),
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'main-tail'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'main-tail'};
         api.routes['GET /servers/s1/setup-projection'] = (_) => {
           'phase': 'complete',
           'surface': 'complete',

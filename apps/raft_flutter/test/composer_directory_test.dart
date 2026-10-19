@@ -256,8 +256,8 @@ void main() {
       w.dms = type == 'dm' ? [source] : [];
       w.channel = thread ? main : source;
       if (thread) {
-        w.ledger.switchServer('s1');
-        w.threadParent = RaftMessage({
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.state.threadParent = RaftMessage({
           'id': 'parent',
           'channelId': 'c1',
           'seq': 1,
@@ -266,7 +266,7 @@ void main() {
           'content': 'Parent',
         });
         w.threadChannelId = 'thread-c1';
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           for (final (i, id) in ['m3', 'm5'].indexed)
             {
               'id': 'r$i',
@@ -276,7 +276,7 @@ void main() {
               'senderId': id,
               'content': 'reply',
             },
-        ], expectedGeneration: w.ledger.generation);
+        ], expectedGeneration: w.messageDomain.ledger.generation);
       }
       a.routes['POST /feature-flags/evaluate'] = (_) => {'evaluations': []};
       // The server directory also holds people outside the source channel.
@@ -368,7 +368,7 @@ void main() {
 
     test('thread with an unresolved source channel suggests nobody', () async {
       final (w, _) = await setup(type: 'channel', thread: true);
-      w.threadParent = RaftMessage({
+      w.messageDomain.state.threadParent = RaftMessage({
         'id': 'parent',
         'channelId': 'unknown',
         'seq': 1,

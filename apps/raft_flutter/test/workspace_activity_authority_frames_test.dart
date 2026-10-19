@@ -52,11 +52,11 @@ class _MountedActivity {
     });
     w.channels = [w.channel!, main];
     w.channel = main;
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       message('old-main', main.id),
-    ], expectedGeneration: w.ledger.generation);
-    w.visibleIds[main.id] = {'old-main'};
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds[main.id] = {'old-main'};
     w.loading = false;
     w.setSection('activity');
     final page = _MountedActivity(w, api, main);
@@ -112,7 +112,7 @@ class _MountedActivity {
     expect(workspace.threadIdentity?.parentMessageId, 'parent');
     expect(workspace.presentedThreadParent, isNull);
     expect(workspace.channel?.id, main.id);
-    expect(workspace.messages.map((row) => row.id), ['old-main']);
+    expect(workspace.messageDomain.messages.map((row) => row.id), ['old-main']);
     expect(find.byType(RaftThreadHeader), findsOneWidget);
     expect(
       tester
@@ -277,7 +277,7 @@ void main() {
             await tester.pump(const Duration(milliseconds: 16));
           }
           expect(paintedMessage(tester, 'reply'), isNotNull);
-          expect(page.workspace.threadParentLoading, true);
+          expect(page.workspace.messageDomain.threadParentLoading, true);
           expect(page.workspace.presentedThreadParent, isNull);
           final reads = page.oldReads;
           page.api.routes['GET /channels'] = (_) => [page.main.json];
@@ -299,8 +299,13 @@ void main() {
           await tester.pump();
           page.assertNoPrivatePaint(tester);
           expect(page.workspace.channel?.id, page.main.id);
-          expect(page.workspace.messages.map((row) => row.id), ['old-main']);
-          expect(page.workspace.ledger.messages('thread-1'), isEmpty);
+          expect(page.workspace.messageDomain.messages.map((row) => row.id), [
+            'old-main',
+          ]);
+          expect(
+            page.workspace.messageDomain.ledger.messages('thread-1'),
+            isEmpty,
+          );
           page.parent.complete({
             'messages': [
               {...message('parent', 'c1'), 'content': 'Private late parent'},

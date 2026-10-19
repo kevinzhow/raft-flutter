@@ -107,7 +107,7 @@ void main() {
           ..loading = false
           ..section = 'chat'
           ..channel = workspace.channels.first;
-        workspace.ledger.switchServer('s1');
+        workspace.messageDomain.ledger.switchServer('s1');
         final message = {
           'id': 'held-message',
           'channelId': workspace.channel!.id,
@@ -123,10 +123,12 @@ void main() {
           'hasMore': false,
         };
         void retainChat() {
-          workspace.ledger.ingest([
+          workspace.messageDomain.ledger.ingest([
             message,
-          ], expectedGeneration: workspace.ledger.generation);
-          workspace.visibleIds[workspace.channel!.id] = {'held-message'};
+          ], expectedGeneration: workspace.messageDomain.ledger.generation);
+          workspace.messageDomain.visibleIds[workspace.channel!.id] = {
+            'held-message',
+          };
         }
 
         retainChat();

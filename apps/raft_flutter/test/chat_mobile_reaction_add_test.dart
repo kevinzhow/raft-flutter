@@ -18,8 +18,8 @@ void main() {
       (t) async {
         final (w, transport) = (await t.runAsync(() => fixture('owner')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'm1',
             'channelId': 'c1',
@@ -38,8 +38,8 @@ void main() {
               },
             ],
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'m1'};
         transport.routes['GET /agents'] = (_) => [];
         transport.routes['GET /servers/s1/members'] = (_) => [];
         transport.routes['GET /tasks/channel/c1'] = (_) => {'tasks': []};

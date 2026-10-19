@@ -60,11 +60,11 @@ void main() {
         );
         switch (scenario) {
           case 'delete' || 'message moved':
-            expect(c.w.ledger.message('chat', 'm25'), isNull);
+            expect(c.w.messageDomain.ledger.message('chat', 'm25'), isNull);
             expect(saved, isNull);
           case 'reaction':
             expect(
-              c.w.ledger.message('chat', 'm25')?['reactions'],
+              c.w.messageDomain.ledger.message('chat', 'm25')?['reactions'],
               c.client.patches[25]!['reactions'],
             );
             expect(
@@ -72,10 +72,15 @@ void main() {
               c.client.patches[25]!['reactions'],
             );
           case 'thread reply count':
-            expect(c.w.threadSummariesFor('chat')['m25']?['replyCount'], 4);
+            expect(
+              c.w.messageDomain.threadSummariesFor(
+                'chat',
+              )['m25']?['replyCount'],
+              4,
+            );
           default:
             expect(
-              c.w.ledger.message('chat', 'm25')?['content'],
+              c.w.messageDomain.ledger.message('chat', 'm25')?['content'],
               'Changed by another session',
             );
             expect(
@@ -99,7 +104,7 @@ void main() {
       const RaftEvent('channel:removed', {'channelId': 'chat'}),
     );
     await c.w.flushCache();
-    expect(c.w.messages, isEmpty);
+    expect(c.w.messageDomain.messages, isEmpty);
     expect(
       await c.cache.messageHistory.readContext(scope, 'm25', radius: 0),
       isNull,
@@ -142,13 +147,16 @@ void main() {
       status: 503,
     );
     await c.reconnect();
-    expect(c.w.ledger.message('chat', 'm25')?['content'], 'Body 25');
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm25')?['content'],
+      'Body 25',
+    );
     c.client.failure = null;
     c.client.started = Completer<void>();
     await c.client.started!.future.timeout(const Duration(seconds: 6));
     await c.cache.messageHistory.reads.settled;
     expect(
-      c.w.ledger.message('chat', 'm25')?['content'],
+      c.w.messageDomain.ledger.message('chat', 'm25')?['content'],
       'Recovered automatically',
     );
     expect(c.w.error, isNull);
@@ -162,11 +170,14 @@ void main() {
     addTearDown(c.close);
     c.client.deleted.add(25);
     await c.w.selectChannel(c.w.channels.single, autoRead: false);
-    await c.w.older();
+    await c.w.messageDomain.older();
     await c.cache.messageHistory.reads.settled;
     c.client.deleted.remove(25);
     await c.reconnect();
-    expect(c.w.ledger.message('chat', 'm25')?['content'], 'Body 25');
-    expect(c.w.messages.length, 100);
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm25')?['content'],
+      'Body 25',
+    );
+    expect(c.w.messageDomain.messages.length, 100);
   });
 }

@@ -38,11 +38,11 @@ void main() {
           });
           w.channels.add(main);
           w.channel = main;
-          w.ledger.switchServer('s1');
-          w.ledger.ingest([
+          w.messageDomain.ledger.switchServer('s1');
+          w.messageDomain.ledger.ingest([
             row('old-main', 'c0', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c0'] = {'old-main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c0'] = {'old-main'};
           w.setSection('activity');
           final focusId = sparse ? 'reply' : 'reply-40';
           final target = w.location.withQuery({
@@ -75,9 +75,9 @@ void main() {
             );
             // These are synchronous projections of the accepted inbox DTO.
             expect(w.threadChannelId, 'thread-1');
-            expect(w.threadResolutionLoading, false);
-            expect(w.threadParentLoading, true);
-            expect(w.threadSourceChannel?.id, 'c1');
+            expect(w.messageDomain.threadResolutionLoading, false);
+            expect(w.messageDomain.threadParentLoading, true);
+            expect(w.messageDomain.threadSourceChannel?.id, 'c1');
             expect(w.channel?.id, 'c0');
             expect(w.location.toString(), target.toString());
             await Future.wait([parentStarted.future, replyStarted.future]);
@@ -126,7 +126,7 @@ void main() {
               expect(rect, first);
             }
             expect(w.presentedThreadParent, isNull);
-            expect(w.threadParentLoading, true);
+            expect(w.messageDomain.threadParentLoading, true);
             expect(w.location.toString(), target.toString());
             expect(find.text('Message old-main'), findsNothing);
           }
@@ -135,7 +135,11 @@ void main() {
             parent.complete({
               'messages': [row('parent', 'c1', 1)],
             });
-            for (var i = 0; i < 40 && w.threadParentLoading; i++) {
+            for (
+              var i = 0;
+              i < 40 && w.messageDomain.threadParentLoading;
+              i++
+            ) {
               await Future<void>.delayed(const Duration(milliseconds: 5));
             }
           });
@@ -168,8 +172,8 @@ void main() {
             expect(w.presentedThreadParent?.id, 'parent');
           }
           if (sparse) expect(afterParent, isNotNull);
-          expect(w.messages.map((m) => m.id), ['old-main']);
-          expect(w.ledger.messages('c1'), isEmpty);
+          expect(w.messageDomain.messages.map((m) => m.id), ['old-main']);
+          expect(w.messageDomain.ledger.messages('c1'), isEmpty);
           expect(tester.takeException(), isNull);
           await tester.pumpWidget(const SizedBox());
         },
@@ -188,7 +192,7 @@ void main() {
       () async {
         final (w, api) = await fixture('member');
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         w.setSection('activity');
         w.navigation.navigate(
           w.location.withQuery({
@@ -239,7 +243,7 @@ void main() {
         await Future<void>.delayed(Duration.zero);
         expect(w.threadIdentity, isNull);
         expect(w.presentedThreadParent, isNull);
-        expect(w.ledger.messages('thread-1'), isEmpty);
+        expect(w.messageDomain.ledger.messages('thread-1'), isEmpty);
       },
     );
   }

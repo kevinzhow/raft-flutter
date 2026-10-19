@@ -59,11 +59,11 @@ void main() {
         await tester.runAsync(() async {
           await w.selectChannel(w.channels.single, autoRead: false);
           for (var n = 0; n < 19; n++) {
-            await w.older();
+            await w.messageDomain.older();
           }
           await w.flushCache();
         });
-        expect(w.messages, hasLength(1000));
+        expect(w.messageDomain.messages, hasLength(1000));
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(RaftFamily.elegant),
@@ -94,7 +94,7 @@ void main() {
         MessageHistoryMemory.attach(w, db.messageHistory);
         await drainIo(tester, db.messageHistory.memory.maintain());
         await tester.pumpAndSettle();
-        expect(w.messages.length, lessThanOrEqualTo(500));
+        expect(w.messageDomain.messages.length, lessThanOrEqualTo(500));
         expect(tester.getRect(row).top, closeTo(before.top, 1));
         for (var n = 0; n < 6; n++) {
           await tester.pump(const Duration(milliseconds: 16));

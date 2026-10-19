@@ -530,7 +530,7 @@ Future<WorkspaceController> openNativeChat(
       () =>
           find.byType(RaftChatView).evaluate().isNotEmpty &&
           w.channel?.id == channel.id &&
-          !w.channelLoading,
+          !w.messageDomain.state.channelLoading,
     );
     expect(find.byKey(const Key('workspace-mobile-navigation')), findsNothing);
     expect(find.byKey(const Key('mobile-detail-back')), findsOneWidget);
@@ -545,7 +545,7 @@ Future<WorkspaceController> openNativeChat(
         tester,
         () =>
             w.section == 'chat' &&
-            !w.channelLoading &&
+            !w.messageDomain.state.channelLoading &&
             find.byType(RaftChatView).evaluate().isNotEmpty,
       );
     }
@@ -733,7 +733,7 @@ void main() {
       }
       await until(
         tester,
-        () => w.messages.isNotEmpty && !w.channelLoading && !w.loading,
+        () => w.messageDomain.messages.isNotEmpty && !w.messageDomain.state.channelLoading && !w.loading,
       );
       expect(w.client.user, isNotNull);
       final initialComposer = find.descendant(
@@ -754,7 +754,7 @@ void main() {
       w = await openNativeChat(tester);
       await until(
         tester,
-        () => w.messages.isNotEmpty && !w.channelLoading && !w.loading,
+        () => w.messageDomain.messages.isNotEmpty && !w.messageDomain.state.channelLoading && !w.loading,
       );
       expect(w.client.user!.id, principal);
       final restoredComposer = find.descendant(
@@ -905,9 +905,9 @@ void main() {
       await tester.tap(generalNavigation);
       await until(
         tester,
-        () => w.channel?.id == general.id && !w.channelLoading,
+        () => w.channel?.id == general.id && !w.messageDomain.state.channelLoading,
       );
-      expect(w.messages.length, greaterThanOrEqualTo(50));
+      expect(w.messageDomain.messages.length, greaterThanOrEqualTo(50));
       await screenshot(tester, 'linux-chat-history');
       final composer = find.descendant(
         of: find.byType(RaftComposer).first,
@@ -1020,20 +1020,20 @@ void main() {
       );
       await until(
         tester,
-        () => w.messages.any((m) => m.content == text) || w.error != null,
+        () => w.messageDomain.messages.any((m) => m.content == text) || w.error != null,
       );
       expect(w.error, isNull);
-      expect(w.messages.where((m) => m.content == text), hasLength(1));
-      final sent = w.messages.firstWhere((m) => m.content == text);
+      expect(w.messageDomain.messages.where((m) => m.content == text), hasLength(1));
+      final sent = w.messageDomain.messages.firstWhere((m) => m.content == text);
       final messageRow = find.byKey(ValueKey('message-${sent.id}'));
       final replyButton = find.byKey(const ValueKey('message-menu-thread'));
       await openNativeMessageMenu(tester, messageRow, entry: replyButton);
       await tester.tap(replyButton);
       await until(
         tester,
-        () => w.threadParent?.id == sent.id && !w.threadLoading,
+        () => w.messageDomain.state.threadParent?.id == sent.id && !w.messageDomain.state.threadLoading,
       );
-      expect(w.threadParent?.id, sent.id);
+      expect(w.messageDomain.state.threadParent?.id, sent.id);
       final replyText =
           'Thread from Flutter 中文 日本語 ${DateTime.now().millisecondsSinceEpoch}';
       final threadComposer = find.byType(RaftComposer).last;
@@ -1111,7 +1111,7 @@ void main() {
       await screenshot(tester, 'linux-thread');
       final nativeReply = w.replies.singleWhere((m) => m.content == replyText);
       await tester.tap(find.byTooltip('Close thread'));
-      await until(tester, () => w.threadParent == null);
+      await until(tester, () => w.messageDomain.state.threadParent == null);
       final inlineReply = find.byKey(
         ValueKey('inline-reply-${nativeReply.id}'),
       );
@@ -1125,7 +1125,7 @@ void main() {
       await screenshot(tester, 'linux-thread-inline-preview');
       // Source InlineThreadReplies is one parent-thread button. Its unread
       // projection selects the target; an individual preview is not a route.
-      final liveSummary = w.threadSummaries[sent.id];
+      final liveSummary = w.messageDomain.threadSummaries[sent.id];
       final expectedUnread = liveSummary is Map
           ? liveSummary['firstUnreadMessageId'] as String?
           : null;
@@ -1133,9 +1133,9 @@ void main() {
       await until(
         tester,
         () =>
-            w.threadParent?.id == sent.id &&
-            !w.threadLoading &&
-            w.highlightedMessageId == expectedUnread &&
+            w.messageDomain.state.threadParent?.id == sent.id &&
+            !w.messageDomain.state.threadLoading &&
+            w.messageDomain.state.highlightedMessageId == expectedUnread &&
             find
                 .byKey(ValueKey('message-${nativeReply.id}'))
                 .evaluate()
@@ -1189,13 +1189,13 @@ void main() {
       final offlineText =
           'Reconnect native ${DateTime.now().millisecondsSinceEpoch}';
       await author.send(syncChannel.id, offlineText);
-      expect(w.messages.where((m) => m.content == offlineText), isEmpty);
-      w.client.recoverConnection(w.ledger.watermark);
+      expect(w.messageDomain.messages.where((m) => m.content == offlineText), isEmpty);
+      w.client.recoverConnection(w.messageDomain.ledger.watermark);
       await until(
         tester,
-        () => w.connected && w.messages.any((m) => m.content == offlineText),
+        () => w.connected && w.messageDomain.messages.any((m) => m.content == offlineText),
       );
-      expect(w.messages.where((m) => m.content == offlineText), hasLength(1));
+      expect(w.messageDomain.messages.where((m) => m.content == offlineText), hasLength(1));
       w.closeThread();
       await w.markRead(syncChannel.id);
       final backgroundRead = w.readState.state(
@@ -1209,7 +1209,7 @@ void main() {
       await author.send(syncChannel.id, backgroundText);
       await until(
         tester,
-        () => w.messages.any((m) => m.content == backgroundText),
+        () => w.messageDomain.messages.any((m) => m.content == backgroundText),
       );
       await tester.pump(const Duration(milliseconds: 500));
       expect(
@@ -1571,8 +1571,8 @@ void main() {
         tester,
         () =>
             w.section == (mobileViewport(tester) ? 'chat' : 'search') &&
-            w.highlightedMessageId == sent.id &&
-            !w.channelLoading,
+            w.messageDomain.state.highlightedMessageId == sent.id &&
+            !w.messageDomain.state.channelLoading,
       );
       if (!mobileViewport(tester)) {
         expect(w.location.route, RaftRoute.search);
@@ -1595,7 +1595,7 @@ void main() {
             mainChat.evaluate().length == 1 &&
             (tester.state(mainChat) as dynamic).scrolledHighlight == sent.id &&
             (tester.state(mainChat) as dynamic).scrolledWindow ==
-                w.channelGeneration &&
+                w.messageDomain.channelGeneration &&
             (tester.state(mainChat) as dynamic).focusReceiptVisible(sent.id) ==
                 true,
       );
@@ -1627,7 +1627,7 @@ void main() {
         () =>
             w.section == (mobileViewport(tester) ? 'chat' : 'search') &&
             w.channel?.id == general.id &&
-            w.highlightedMessageId == sent.id &&
+            w.messageDomain.state.highlightedMessageId == sent.id &&
             mainChat.evaluate().length == 1 &&
             (tester.state(mainChat) as dynamic).focusReceiptVisible(sent.id) ==
                 true,
@@ -1643,7 +1643,7 @@ void main() {
       await tester.tap(find.text(text).first);
       await until(
         tester,
-        () => w.section == 'chat' && w.highlightedMessageId == sent.id,
+        () => w.section == 'chat' && w.messageDomain.state.highlightedMessageId == sent.id,
       );
       await verifyAdvancedResources(
         tester,
@@ -1684,7 +1684,7 @@ void main() {
         () =>
             find.byType(RaftCreateChannelDialogView).evaluate().isEmpty &&
             w.channel?.name == createdName &&
-            !w.channelLoading,
+            !w.messageDomain.state.channelLoading,
       );
       await tester.pumpAndSettle();
       final createdId = w.channel!.id;

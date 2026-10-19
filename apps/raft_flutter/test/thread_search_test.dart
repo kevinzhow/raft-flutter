@@ -36,7 +36,7 @@ void main() {
     addTearDown(tester.view.reset);
     final (w, api) = (await tester.runAsync(() => fixture('member')))!;
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final replies = [
       for (var i = 0; i < 3; i++) row('reply-$i', 'thread-1', i + 1),
     ];
@@ -51,7 +51,7 @@ void main() {
         initialThreadChannelId: 'thread-1',
         navigate: false,
       );
-      for (var i = 0; i < 40 && w.threadParentLoading; i++) {
+      for (var i = 0; i < 40 && w.messageDomain.threadParentLoading; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 5));
       }
     });

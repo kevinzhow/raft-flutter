@@ -60,7 +60,7 @@ void main() {
       final w = WorkspaceController(client, cache: db)
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channels = [channel];
-      w.ledger.switchServer('server');
+      w.messageDomain.ledger.switchServer('server');
       try {
         await w.refreshMessageSyncFlag();
         final stale = Completer<Map<String, dynamic>>();
@@ -91,14 +91,14 @@ void main() {
         });
         await opening;
         await w.flushCache();
-        expect(w.messages, isEmpty);
+        expect(w.messageDomain.messages, isEmpty);
         expect(
           await db.read(client.origin, 'alice', 'server', 'window', 'chat'),
           isNull,
         );
         client.pending = null;
         await w.selectChannel(channel, navigate: false, autoRead: false);
-        expect(w.messages.map((m) => m.id), ['fresh']);
+        expect(w.messageDomain.messages.map((m) => m.id), ['fresh']);
       } finally {
         await w.flushCache();
         w.dispose();

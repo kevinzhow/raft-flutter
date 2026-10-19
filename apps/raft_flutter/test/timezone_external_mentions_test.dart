@@ -92,7 +92,7 @@ void main() {
         'channelId': r.data['channelId'],
         'content': r.data['content'],
       };
-      w.threadParent = RaftMessage({
+      w.messageDomain.state.threadParent = RaftMessage({
         'id': 'parent',
         'channelId': 'c1',
         'content': 'Parent',
@@ -167,7 +167,7 @@ void main() {
     final sent = w.send('retained draft');
     await Future.any([entered.future, sent.then((_) {})]);
     expect(api.calls.where((r) => r.path == '/v2/messages'), isEmpty);
-    expect(w.timeline().single.json['pendingSend'], isTrue);
+    expect(w.messageDomain.timeline().single.json['pendingSend'], isTrue);
     w.channel = RaftChannel({'id': 'c2', 'joined': true});
     w.notifyListeners();
     zone.complete('Asia/Shanghai');

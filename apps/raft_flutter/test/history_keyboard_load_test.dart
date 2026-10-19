@@ -71,7 +71,7 @@ Future<List<Completer<void>>> _openFirstPage(WidgetTester tester) async {
   );
   await idle(tester, 30);
   expect(older, isEmpty);
-  final ids = w.messages.map((m) => m.id).toList();
+  final ids = w.messageDomain.messages.map((m) => m.id).toList();
   expect(ids, containsAll(['h-25', 'h-74']));
   expect(ids, isNot(contains('h-0')));
   addTearDown(() async {

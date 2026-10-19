@@ -274,7 +274,7 @@ class MsFixture {
       ..server = RaftRecord(server)
       ..servers = [RaftRecord(server)]
       ..channels = [for (final c in channels) RaftChannel(channel(c))];
-    w.ledger.switchServer('visual-server');
+    w.messageDomain.ledger.switchServer('visual-server');
     return (w, client);
   }
 }

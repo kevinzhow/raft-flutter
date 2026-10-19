@@ -577,8 +577,8 @@ void main() {
         failures.add('$name: mix channel never published its newest row');
         if (detection) {
           await sampler.send('note', {'theme': name, 'initialArrivalFailure': {
-            'channel': w.channel?.id, 'expectedMessage': newest(mix), 'acceptedRows': w.messages.length,
-            'loading': w.channelLoading, 'error': w.error?.toString(),
+            'channel': w.channel?.id, 'expectedMessage': newest(mix), 'acceptedRows': w.messageDomain.messages.length,
+            'loading': w.messageDomain.state.channelLoading, 'error': w.error?.toString(),
             'mountedTargetRows': messageRow(newest(mix)).evaluate().length,
             'fixtureHits': api.hits, 'fixtureMisses': api.misses,
           }});
@@ -764,7 +764,7 @@ void main() {
       // Drag (finger held) toward older history across the end of the first
       // page; the next page arrives 250 ms after the request, mid-drag.
       await run('older-drag', prepare: () => show(hist, latest: true), () async {
-        final p = position(), from = p.pixels, rowsBefore = w.messages.length;
+        final p = position(), from = p.pixels, rowsBefore = w.messageDomain.messages.length;
         final servedBefore = hist.olderPagesServed;
         var notifications = 0, dragNotifications = 0, overscrollCount = 0;
         var overscrollMin = 0.0, overscrollMax = 0.0;
@@ -798,7 +798,7 @@ void main() {
         }
         await gesture.up(timeStamp: Duration(microseconds: clock.elapsedMicroseconds));
         await idle(const Duration(milliseconds: 300));
-        return {...moved(p, from), 'pxPerSecond': 1800, 'olderPagesServed': hist.olderPagesServed - servedBefore, 'rowsBefore': rowsBefore, 'rowsAfter': w.messages.length,
+        return {...moved(p, from), 'pxPerSecond': 1800, 'olderPagesServed': hist.olderPagesServed - servedBefore, 'rowsBefore': rowsBefore, 'rowsAfter': w.messageDomain.messages.length,
           if (detection) 'scrollNotifications': {'collected': notifications > 0, 'input': 'simulated touch drag',
             'notifications': notifications, 'dragUpdates': dragNotifications,
             'overscrollCount': overscrollCount, 'overscrollMin': overscrollMin, 'overscrollMax': overscrollMax}};
@@ -936,13 +936,13 @@ void main() {
 
       // Thread pane: cold open (150 ms network) then four cached reopens.
       await run('thread-open', prepare: () => show(mix, latest: true), () async {
-        final parentMessage = w.messages.firstWhere((m) => m.id == parent['id']);
+        final parentMessage = w.messageDomain.messages.firstWhere((m) => m.id == parent['id']);
         final last = thread.rows.last['id'] as String;
         final threadView = find.byWidgetPredicate((x) => x is RaftChatView && x.thread);
         final opens = <Map<String, Object?>>[];
         for (var i = 0; i < 5; i++) {
           final t0 = developer.Timeline.now;
-          unawaited(w.openThread(parentMessage));
+          unawaited(w.messageDomain.threads.openThread(parentMessage));
           final ms = await waitUntil(() => find.descendant(of: threadView, matching: visibleText(last)).evaluate().isNotEmpty);
           final shownAt = developer.Timeline.now;
           await idle(const Duration(milliseconds: 500));
@@ -1105,7 +1105,7 @@ void main() {
             'decodedFileThumbnails': find.descendant(of: find.byType(SourceChannelFilesView, skipOffstage: false),
               matching: find.byWidgetPredicate((v) => v is RawImage && v.image != null, skipOffstage: false)).evaluate().length,
             'retainedTaskCards': find.byType(RaftTaskCard, skipOffstage: false).evaluate().length,
-            'chatRows': w.timeline().length,
+            'chatRows': w.messageDomain.timeline().length,
           };
         });
         await lab.settle(t, time: const Duration(seconds: 1));
@@ -1140,7 +1140,7 @@ void main() {
               'taskRows': tagged.tasks.length, 'visibleChatTags': visibleTags,
               'fileRows': w.channelFilesStore(tagged.id).files.length,
               'retainedTaskCards': find.byType(RaftTaskCard, skipOffstage: false).evaluate().length,
-              'chatRows': w.timeline().length};
+              'chatRows': w.messageDomain.timeline().length};
           });
           await t.tap(find.byKey(const ValueKey('panel-tab-chat')));
           await lab.settle(t, time: const Duration(seconds: 1));
@@ -1551,7 +1551,7 @@ void main() {
         bool chatShown(LabChannel c, {bool thread = false}) {
           final chat = find.byWidgetPredicate((widget) => widget is RaftChatView &&
               widget.thread == thread && (thread ? widget.controller.threadChannelId : widget.controller.channel?.id) == c.id &&
-              (thread ? widget.controller.replies : widget.controller.messages).isNotEmpty);
+              (thread ? widget.controller.replies : widget.controller.messageDomain.messages).isNotEmpty);
           return find.descendant(of: chat, matching: find.byWidgetPredicate((widget) =>
               widget.key is ValueKey<String> && (widget.key! as ValueKey<String>).value.startsWith('message-')))
               .hitTestable().evaluate().isNotEmpty;

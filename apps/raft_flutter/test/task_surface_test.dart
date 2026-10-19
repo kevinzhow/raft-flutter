@@ -278,17 +278,19 @@ void main() {
           addTearDown(t.view.reset);
           final (w, api) = (await t.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
-          w.ledger.switchServer('s1');
-          w.ledger.ingest([
+          w.messageDomain.ledger.switchServer('s1');
+          w.messageDomain.ledger.ingest([
             row('main-accepted', 'c1', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'main-accepted'};
-          w.threadParent = RaftMessage(row('side-parent', 'c1', 2));
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'main-accepted'};
+          w.messageDomain.state.threadParent = RaftMessage(
+            row('side-parent', 'c1', 2),
+          );
           w.threadChannelId = 'side-thread';
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             row('side-accepted', 'side-thread', 1),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['side-thread'] = {'side-accepted'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['side-thread'] = {'side-accepted'};
           w.drafts['c1'] = 'Main draft';
           w.drafts['thread:side-parent'] = 'Side draft';
           final before = w.location.toString(), revision = w.navigationRevision;
@@ -357,7 +359,7 @@ void main() {
             expect(t.getRect(find.byType(RaftComposer)), composer);
             expect(w.location.toString(), before);
             expect(w.navigationRevision, revision);
-            expect(w.messages.single.id, 'main-accepted');
+            expect(w.messageDomain.messages.single.id, 'main-accepted');
             expect(w.threadChannelId, 'side-thread');
             expect(w.replies.single.id, 'side-accepted');
           }
@@ -453,7 +455,7 @@ void main() {
           expect(surface, findsNothing);
           expect(owner.closed, true);
           expect(w.threadChannelId, 'side-thread');
-          expect(w.messages.single.id, 'main-accepted');
+          expect(w.messageDomain.messages.single.id, 'main-accepted');
           expect(w.client.user!.id, 'alice');
           expect(t.takeException(), isNull);
           // Flutter chat's deferred initial-scroll timer checks mounted after

@@ -29,8 +29,8 @@ void main() {
             'preferredTimezone': 'Asia/Shanghai',
             'preferredTimeFormat': format,
           });
-          w.ledger.switchServer('s1');
-          w.ledger.ingest([
+          w.messageDomain.ledger.switchServer('s1');
+          w.messageDomain.ledger.ingest([
             for (var i = 0; i < 2; i++)
               {
                 'id': 'old-$i',
@@ -41,8 +41,8 @@ void main() {
                 'content': 'Historical public message $i',
                 'createdAt': '2026-06-22T02:3${i}Z',
               },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'old-0', 'old-1'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'old-0', 'old-1'};
 
           Future<void> frame() async {
             await t.pumpWidget(

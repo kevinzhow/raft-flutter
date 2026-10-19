@@ -521,8 +521,8 @@ Future<void> openMenu(
   tester.view.physicalSize = const Size(800, 900);
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
-  workspace.ledger.switchServer('s1');
-  workspace.ledger.ingest([
+  workspace.messageDomain.ledger.switchServer('s1');
+  workspace.messageDomain.ledger.ingest([
     {
       'id': 'm',
       'channelId': 'c1',
@@ -532,8 +532,8 @@ Future<void> openMenu(
       'senderName': '八戒',
       'senderType': senderType,
     },
-  ], expectedGeneration: workspace.ledger.generation);
-  workspace.visibleIds['c1'] = {'m'};
+  ], expectedGeneration: workspace.messageDomain.ledger.generation);
+  workspace.messageDomain.visibleIds['c1'] = {'m'};
   await tester.pumpWidget(
     MaterialApp(
       theme: raftTheme(RaftFamily.elegant),

@@ -97,9 +97,12 @@ void main() {
           'joined': true,
         });
         w.channels = [w.channel!];
-        w.ledger.switchServer('s1');
-        w.ledger.ingest(messages(), expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1', 'm2'};
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest(
+          messages(),
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = {'m1', 'm2'};
         // The server directory holds this server's people only.
         transport.routes['GET /servers/s1/members'] = (_) => [
           {'userId': 'alice', 'name': 'alice', 'role': 'owner'},

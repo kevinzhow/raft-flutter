@@ -124,7 +124,10 @@ void main() {
     );
     await c.cache.messageHistory.receiver.settled;
     await c.w.flushCache();
-    expect(c.w.ledger.message('chat', 'm101')?['content'], 'Body 101');
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'm101')?['content'],
+      'Body 101',
+    );
     expect(
       await c.cache.messageHistory.readContext(scope, 'm101', radius: 0),
       isNull,

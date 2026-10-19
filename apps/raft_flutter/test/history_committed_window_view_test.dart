@@ -96,7 +96,7 @@ void main() {
         await t.runAsync(() async {
           opening = w.selectChannel(w.channels.single, autoRead: false);
           await cache.writing.future;
-          for (var n = 0; n < 100 && w.messages.isEmpty; n++) {
+          for (var n = 0; n < 100 && w.messageDomain.messages.isEmpty; n++) {
             await Future<void>.delayed(const Duration(milliseconds: 2));
           }
         });
@@ -157,7 +157,7 @@ void main() {
         });
         await drainIo(t, Future.wait([opening, retiring]));
         await t.pump();
-        expect(w.messages, isEmpty);
+        expect(w.messageDomain.messages, isEmpty);
         expect(find.text('Saved message 42 中文'), findsNothing);
       } finally {
         cache.release.complete();

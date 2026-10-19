@@ -129,7 +129,7 @@ void main() {
               })
               ..channels = [...c.channelRows]
               ..channel = c.channelRows.first;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         addTearDown(() async {
           w.dispose();
           await cache.close();

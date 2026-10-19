@@ -104,7 +104,7 @@ Future<void> main() async {
   w.server = RaftRecord({'id': 's1', 'role': 'owner'});
   w.channel = RaftChannel({'id': 'c1', 'name': 'Fixture', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.loading = false;
   w.setSection('activity');
   runApp(_Lab(w));
@@ -211,7 +211,9 @@ class _LabState extends State<_Lab> {
           child: Listener(
             onPointerUp: (_) {
               pointerTime = developer.Timeline.now;
-              warmAtPointer = widget.w.ledger.messages('thread-1').isNotEmpty;
+              warmAtPointer = widget.w.messageDomain.ledger
+                  .messages('thread-1')
+                  .isNotEmpty;
             },
             child: WorkspaceView(
               controller: widget.w,

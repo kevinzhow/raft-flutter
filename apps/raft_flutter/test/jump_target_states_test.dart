@@ -37,7 +37,7 @@ void main() {
             final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
             addTearDown(w.dispose);
             w.loading = false;
-            w.ledger.switchServer('s1');
+            w.messageDomain.ledger.switchServer('s1');
             final destination = known ? 'c1' : 'c9';
             final unrelated = RaftChannel({
               'id': 'unrelated',
@@ -46,12 +46,12 @@ void main() {
             });
             w.channels = [w.channel!, unrelated];
             w.channel = unrelated;
-            w.ledger.ingest([
+            w.messageDomain.ledger.ingest([
               message('old-main', 'unrelated'),
               // A cached, unaccepted tail of the destination: never shown.
               message('cached-tail', destination),
-            ], expectedGeneration: w.ledger.generation);
-            w.visibleIds['unrelated'] = {'old-main'};
+            ], expectedGeneration: w.messageDomain.ledger.generation);
+            w.messageDomain.visibleIds['unrelated'] = {'old-main'};
             w.section = source;
             final metadata = Completer<Map<String, dynamic>>();
             final context = Completer<Map<String, dynamic>>();

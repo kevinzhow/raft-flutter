@@ -142,7 +142,7 @@ class _Fixture {
     pages.add(w);
     w.server = RaftRecord({'id': 's1', 'role': 'member'});
     w.channels = [_channel('c1')];
-    if (source == null) w.ledger.switchServer('s1');
+    if (source == null) w.messageDomain.ledger.switchServer('s1');
     return w;
   }
 
@@ -370,7 +370,7 @@ void main() {
         case 'role':
           w.server = RaftRecord({'id': 's1', 'role': 'viewer'});
         case 'ledger':
-          w.ledger.switchServer('s2');
+          w.messageDomain.ledger.switchServer('s2');
       }
       f.client.rows.single.result.complete(_channel('c1', name: 'stale').json);
       await read;

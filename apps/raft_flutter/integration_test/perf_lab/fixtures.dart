@@ -395,6 +395,6 @@ Future<(WorkspaceController, LabAdapter, LabClient)> labWorkspace(List<LabChanne
   final w = WorkspaceController(client, mobileNavigation: mobile, ownsClient: ownsClient);
   w.server = RaftRecord({'id': 's1', 'name': 'Lab', 'role': mobile ? 'owner' : 'member'});
   w.channels = [for (final c in channels) c.record];
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, api, client);
 }

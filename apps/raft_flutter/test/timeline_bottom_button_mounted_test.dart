@@ -28,7 +28,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         api.routes['GET /messages/context/target-40'] = (_) => {
           'messages': contextRows('target'),
           'hasOlder': true,
@@ -36,7 +36,7 @@ void main() {
         };
         api.routes['POST /channels/c1/read'] = (_) => {};
         await tester.runAsync(() => w.jumpToMessage('c1', 'target-40'));
-        expect(w.hasNewer, true);
+        expect(w.messageDomain.state.hasNewer, true);
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),
@@ -75,7 +75,7 @@ void main() {
         await tester.runAsync(() => Future<void>.delayed(Duration.zero));
         await tester.pumpAndSettle();
         expect(latestRequests, hasLength(1));
-        expect(w.hasNewer, false);
+        expect(w.messageDomain.state.hasNewer, false);
         expect(paintedMessage(tester, 'latest-7'), isNotNull);
         expect(find.text('Back to bottom'), findsNothing);
         expect(find.byType(RaftTimelineBottomButton), findsNothing);
@@ -94,7 +94,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final replies = [
           for (var i = 0; i < 80; i++)
             {
@@ -116,7 +116,7 @@ void main() {
             initialThreadChannelId: 'thread-1',
             navigate: false,
           );
-          for (var i = 0; i < 40 && w.threadLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.state.threadLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
         });
@@ -152,10 +152,10 @@ void main() {
 
         // A reply arriving while scrolled away is counted, not followed.
         await tester.runAsync(() async {
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {...row('reply-new', 'thread-1', 999), 'senderId': 'bob'},
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['thread-1']!.add('reply-new');
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['thread-1']!.add('reply-new');
           w.notifyListeners();
           await Future<void>.delayed(Duration.zero);
         });

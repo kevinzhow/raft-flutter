@@ -36,7 +36,7 @@ void main() {
         await c.settle();
         expect(c.client.beforeReads, boundaries);
         expect(await c.db.messageHistory.gaps.readSaved(c.scope), isEmpty);
-        expect(c.w.ledger.message('chat', 'chat-151'), isNotNull);
+        expect(c.w.messageDomain.ledger.message('chat', 'chat-151'), isNotNull);
         expect(c.w.error, isNull);
       },
     );
@@ -62,11 +62,11 @@ void main() {
       await c.settle();
       expect(c.client.beforeReads, boundaries);
       expect(
-        c.w.ledger.message('chat', 'chat-25')?['content'],
+        c.w.messageDomain.ledger.message('chat', 'chat-25')?['content'],
         'Second connection',
       );
       expect(
-        c.w.ledger.message('chat', 'chat-151')?['content'],
+        c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
         'Changed in old gap',
       );
       final saved = await c.db.messageHistory.readContext(
@@ -89,7 +89,10 @@ void main() {
     await c.open();
     final shown = <String>[];
     void observe() {
-      final content = c.w.ledger.message('chat', 'chat-151')?['content'];
+      final content = c.w.messageDomain.ledger.message(
+        'chat',
+        'chat-151',
+      )?['content'];
       if (content != null) shown.add(content as String);
     }
 
@@ -112,7 +115,7 @@ void main() {
     expect(shown, isNotEmpty);
     expect(shown.every((content) => content == 'New connection wins'), isTrue);
     expect(
-      c.w.ledger.message('chat', 'chat-151')?['content'],
+      c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
       'New connection wins',
     );
     final saved = await c.db.messageHistory.readContext(
@@ -136,11 +139,11 @@ void main() {
     await c.settle();
     c.client.beforeReads.clear();
     c.client.edits[151] = 'Explicit verification';
-    await c.w.loadHistoryGap(BigInt.from(201));
-    await c.w.loadHistoryGap(BigInt.from(201));
+    await c.w.messageDomain.loadHistoryGap(BigInt.from(201));
+    await c.w.messageDomain.loadHistoryGap(BigInt.from(201));
     expect(c.client.beforeReads, [BigInt.from(201), BigInt.from(201)]);
     expect(
-      c.w.ledger.message('chat', 'chat-151')?['content'],
+      c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
       'Explicit verification',
     );
   });
@@ -171,7 +174,7 @@ void main() {
       expect(c.client.beforeReads, [
         for (final n in [201, 151, 151]) BigInt.from(n),
       ]);
-      expect(c.w.ledger.message('chat', 'chat-101'), isNotNull);
+      expect(c.w.messageDomain.ledger.message('chat', 'chat-101'), isNotNull);
     },
   );
 
@@ -186,7 +189,7 @@ void main() {
     c.reconnect();
     await c.settle();
     expect(c.client.beforeReads, boundaries);
-    expect(c.w.ledger.message('chat', 'chat-151'), isNotNull);
+    expect(c.w.messageDomain.ledger.message('chat', 'chat-151'), isNotNull);
     expect(
       await c.db.messageHistory.readContext(c.scope, 'chat-151', radius: 0),
       isNull,
@@ -194,8 +197,8 @@ void main() {
     expect(await c.db.messageHistory.gaps.readSaved(c.scope), isNotEmpty);
     c.detach();
     for (var n = 101; n <= 200; n++) {
-      c.w.ledger.remove('chat', 'chat-$n');
-      c.w.visibleIds['chat']?.remove('chat-$n');
+      c.w.messageDomain.ledger.remove('chat', 'chat-$n');
+      c.w.messageDomain.visibleIds['chat']?.remove('chat-$n');
     }
     c.client.beforeReads.clear();
     c.client.disconnected = true;
@@ -209,7 +212,7 @@ void main() {
       reason:
           'One failed attempt stays quiet while automatic recovery can retry.',
     );
-    expect(c.w.ledger.message('chat', 'chat-151'), isNull);
+    expect(c.w.messageDomain.ledger.message('chat', 'chat-151'), isNull);
   });
 
   test('revoking permission while a shared page is pending retires its proof', () async {
@@ -232,7 +235,7 @@ void main() {
     );
     gate.complete();
     await c.settle();
-    expect(c.w.messages, isEmpty);
+    expect(c.w.messageDomain.messages, isEmpty);
     expect(
       await c.db.messageHistory.readContext(c.scope, 'chat-151', radius: 0),
       isNull,
@@ -265,7 +268,7 @@ void main() {
       expect(c.client.beforeReads, [
         for (final n in [201, 151, 151, 101, 51]) BigInt.from(n),
       ]);
-      expect(c.w.ledger.message('chat', 'chat-101'), isNotNull);
+      expect(c.w.messageDomain.ledger.message('chat', 'chat-101'), isNotNull);
     },
   );
 
@@ -285,7 +288,7 @@ void main() {
     await c.settle();
     expect(c.client.beforeReads, boundaries);
     expect(
-      c.w.ledger.message('chat', 'chat-151')?['content'],
+      c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
       'Fresh online body',
     );
     expect(
@@ -315,7 +318,10 @@ void main() {
     c.client.edits[151] = 'After cleanup';
     expect(await read(), isNotNull);
     expect(c.client.beforeReads, [BigInt.from(201), BigInt.from(201)]);
-    expect(c.w.ledger.message('chat', 'chat-151')?['content'], 'After cleanup');
+    expect(
+      c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
+      'After cleanup',
+    );
   });
 
   test('a live edit wins over a late online-only page and later proof reuse', () async {
@@ -348,7 +354,7 @@ void main() {
     gate.complete();
     await c.settle();
     expect(
-      c.w.ledger.message('chat', 'chat-151')?['content'],
+      c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
       'Live edit wins',
     );
     final count = c.client.beforeReads.length;
@@ -364,7 +370,7 @@ void main() {
     );
     expect(c.client.beforeReads.length, count);
     expect(
-      c.w.ledger.message('chat', 'chat-151')?['content'],
+      c.w.messageDomain.ledger.message('chat', 'chat-151')?['content'],
       'Live edit wins',
     );
   });

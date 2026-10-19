@@ -96,13 +96,13 @@ void main() {
       c.failure = (method, path) => path == '/channels/c1/join'
           ? const RaftApiException.staleScope()
           : null;
-      await w.joinOpenChannel();
+      await w.messageDomain.joinOpenChannel();
       expect(w.error, isNull);
       // A real failure is still reported.
       c.failure = (method, path) => path == '/channels/c1/join'
           ? const RaftApiException('Nope', status: 500)
           : null;
-      await w.joinOpenChannel();
+      await w.messageDomain.joinOpenChannel();
       expect(w.error, isNotNull);
     });
 
@@ -110,7 +110,7 @@ void main() {
       'a parent-channel join fenced by a server switch reports nothing',
       () async {
         final (w, c) = await _controller();
-        w.threadParent = RaftMessage({
+        w.messageDomain.state.threadParent = RaftMessage({
           'id': 'm1',
           'channelId': 'c1',
           'content': 'x',
@@ -118,12 +118,12 @@ void main() {
         c.failure = (method, path) => path == '/channels/c1/join'
             ? const RaftApiException.staleScope()
             : null;
-        await w.joinThreadParentChannel();
+        await w.messageDomain.joinThreadParentChannel();
         expect(w.error, isNull);
         c.failure = (method, path) => path == '/channels/c1/join'
             ? const RaftApiException('Nope', status: 500)
             : null;
-        await w.joinThreadParentChannel();
+        await w.messageDomain.joinThreadParentChannel();
         expect(w.error, isNotNull);
       },
     );
@@ -144,13 +144,16 @@ void main() {
     test('another channel in the same window does not inherit it', () async {
       final (w, _) = await _controller();
       w.channel = RaftChannel({'id': 'c1', 'name': 'a', 'type': 'public'});
-      w.contextLoadError = MessageContextLoadError.notFound;
-      expect(w.contextLoadError, MessageContextLoadError.notFound);
+      w.messageDomain.contextLoadError = MessageContextLoadError.notFound;
+      expect(
+        w.messageDomain.contextLoadError,
+        MessageContextLoadError.notFound,
+      );
       w.channel = RaftChannel({'id': 'c2', 'name': 'b', 'type': 'public'});
-      expect(w.contextLoadError, isNull);
+      expect(w.messageDomain.contextLoadError, isNull);
       // Coming back to the first channel does not resurrect the message.
       w.channel = RaftChannel({'id': 'c1', 'name': 'a', 'type': 'public'});
-      expect(w.contextLoadError, isNull);
+      expect(w.messageDomain.contextLoadError, isNull);
     });
 
     test('a server switch drops it', () async {
@@ -158,9 +161,9 @@ void main() {
       final other = _server('t');
       w.servers = [_server('s'), other];
       w.channel = RaftChannel({'id': 'c1', 'name': 'a', 'type': 'public'});
-      w.contextLoadError = MessageContextLoadError.beyondHistory;
+      w.messageDomain.contextLoadError = MessageContextLoadError.beyondHistory;
       w.server = other;
-      expect(w.contextLoadError, isNull);
+      expect(w.messageDomain.contextLoadError, isNull);
     });
   });
 

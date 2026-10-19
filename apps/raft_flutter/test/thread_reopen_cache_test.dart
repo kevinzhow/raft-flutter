@@ -25,7 +25,7 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final replies = [
           for (var i = 0; i < 3; i++) row('reply-$i', 'thread-1', i + 1),
         ];
@@ -55,7 +55,7 @@ void main() {
         );
         await tester.runAsync(() async {
           await open('parent', 'thread-1');
-          for (var i = 0; i < 40 && w.threadParentLoading; i++) {
+          for (var i = 0; i < 40 && w.messageDomain.threadParentLoading; i++) {
             await Future<void>.delayed(const Duration(milliseconds: 5));
           }
           await open('other', 'thread-2');
@@ -69,8 +69,8 @@ void main() {
         api.routes['GET /messages/context/reply-1'] = (_) => pending.future;
         await tester.runAsync(() async {
           unawaited(open('parent', 'thread-1'));
-          expect(w.threadLoading, false);
-          expect(w.threadParentLoading, false);
+          expect(w.messageDomain.state.threadLoading, false);
+          expect(w.messageDomain.threadParentLoading, false);
           expect(w.presentedThreadParent?.id, 'parent');
           expect(w.replies.map((m) => m.id), ['reply-0', 'reply-1', 'reply-2']);
         });
@@ -95,7 +95,7 @@ void main() {
         await tester.pump();
         // The revalidated window replaces the cached one in place.
         expect(find.text('Loading...'), findsNothing);
-        expect(w.threadLoading, false);
+        expect(w.messageDomain.state.threadLoading, false);
         await tester.pumpWidget(const SizedBox());
         await tester.pump(const Duration(seconds: 5));
         expect(tester.takeException(), isNull);

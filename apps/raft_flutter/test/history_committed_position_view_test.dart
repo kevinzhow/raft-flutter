@@ -142,8 +142,8 @@ void main() {
         }
         await t.pump();
         expect(gate.release.isCompleted, isFalse);
-        expect(w.messages.map((m) => m.id), contains('chat-42'));
-        expect(w.channelLoading, isFalse);
+        expect(w.messageDomain.messages.map((m) => m.id), contains('chat-42'));
+        expect(w.messageDomain.state.channelLoading, isFalse);
         expect(find.text('Saved message 42 中文'), findsOneWidget);
       } finally {
         if (!gate.release.isCompleted) gate.release.complete();

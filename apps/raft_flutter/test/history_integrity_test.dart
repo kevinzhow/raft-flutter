@@ -180,10 +180,12 @@ void main() {
       expect(await refreshing, isTrue);
       await w.flushCache();
       expect(
-        w.ledger.message('chat', 'chat-1000')!.containsKey('attachments'),
+        w.messageDomain.ledger
+            .message('chat', 'chat-1000')!
+            .containsKey('attachments'),
         isFalse,
       );
-      expect(w.ledger.message('chat', 'chat-1000')!['task'], {
+      expect(w.messageDomain.ledger.message('chat', 'chat-1000')!['task'], {
         'status': 'done',
       });
       final rows = (await rawShadow(cache))['messages'] as List;
@@ -214,12 +216,17 @@ void main() {
       w.messageSync.consumeNew(incoming);
       client.arrivals.add(RaftEvent('message:new', incoming));
       await cache.messageHistory.receiver.settled;
-      expect(w.ledger.message('chat', 'chat-1000')!['attachments'], isNotEmpty);
+      expect(
+        w.messageDomain.ledger.message('chat', 'chat-1000')!['attachments'],
+        isNotEmpty,
+      );
       expect(w.messageSync.messages('chat'), hasLength(1));
       client.withAttachment = false;
       expect(await MessageHistoryVerification.refresh(w), isTrue);
       expect(
-        w.ledger.message('chat', 'chat-1000')!.containsKey('attachments'),
+        w.messageDomain.ledger
+            .message('chat', 'chat-1000')!
+            .containsKey('attachments'),
         isFalse,
       );
       expect(
@@ -435,7 +442,10 @@ void main() {
                 as List;
         expect(saved.single['content'], 'stream 99');
         expect(saved.single['task'], {'status': 'done'});
-        expect(w.ledger.message('chat', 'chat-1000')!['content'], 'stream 99');
+        expect(
+          w.messageDomain.ledger.message('chat', 'chat-1000')!['content'],
+          'stream 99',
+        );
         expect(
           (await cache.customSelect('SELECT n FROM body_writes').getSingle())
               .read<int>('n'),
@@ -544,7 +554,7 @@ void main() {
               });
             }
           } else if (boundary == 'channel') {
-            w.rejectHistoryRead('chat');
+            w.messageDomain.rejectHistoryRead('chat');
           } else if (boundary == 'server') {
             w.revokeServer('server');
           } else {

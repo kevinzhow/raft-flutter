@@ -20,7 +20,9 @@ Future<void> shareMessageLink(
       server = w.client.serverId;
   final channel = w.channel;
   if (channel == null || principal == null || server == null) return;
-  final parent = message.channelId == w.threadChannelId ? w.threadParent : null;
+  final parent = message.channelId == w.threadChannelId
+      ? w.messageDomain.state.threadParent
+      : null;
   final channelId = parent?.channelId ?? message.channelId;
   bool valid() =>
       context.mounted &&
@@ -28,9 +30,9 @@ Future<void> shareMessageLink(
       principal == w.client.user?.id &&
       server == w.client.serverId &&
       w.channel?.id == channel.id &&
-      (w.presentsMessage(message.id) ||
-          w.presentsReply(message.id) ||
-          w.threadParent?.id == message.id);
+      (w.messageDomain.presentsMessage(message.id) ||
+          w.messageDomain.presentsReply(message.id) ||
+          w.messageDomain.state.threadParent?.id == message.id);
   try {
     await NativeContentCoordinator.authorize(
       w,

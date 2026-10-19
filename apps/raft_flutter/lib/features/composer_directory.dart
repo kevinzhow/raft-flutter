@@ -217,7 +217,9 @@ List<Map<String, dynamic>> cachedExternalMembers(
   if (shared == null || shared.authority != directoryAuthority(w)) {
     return const [];
   }
-  final source = w.threadChannelId == id ? w.threadSourceChannel?.id : id;
+  final source = w.threadChannelId == id
+      ? w.messageDomain.threadSourceChannel?.id
+      : id;
   final channel = w.channel?.id == source
       ? w.channel
       : w.channels.where((c) => c.id == source).firstOrNull ??
@@ -278,7 +280,8 @@ class ComposerDirectory extends ChangeNotifier {
   final bool thread;
 
   /// The channel whose roster scopes these suggestions.
-  RaftChannel? get scopeChannel => thread ? w.threadSourceChannel : w.channel;
+  RaftChannel? get scopeChannel =>
+      thread ? w.messageDomain.threadSourceChannel : w.channel;
 
   /// Borrow the chat's existing authorized activity adapter; never owns it.
   final MessageAgentPresentation? agentPresentation;
@@ -371,11 +374,11 @@ class ComposerDirectory extends ChangeNotifier {
       _recent = const {};
       return null;
     }
-    final token = (id, w.ledger.revision);
+    final token = (id, w.messageDomain.ledger.revision);
     if (token == _recencyToken) return token;
     _recencyToken = token;
     final ranks = <String, int>{};
-    final rows = w.ledger.messages(id);
+    final rows = w.messageDomain.ledger.messages(id);
     for (var i = rows.length - 1; i >= 0; i--) {
       final sender = rows[i]['senderId'];
       if (sender is String && sender.isNotEmpty && !ranks.containsKey(sender)) {

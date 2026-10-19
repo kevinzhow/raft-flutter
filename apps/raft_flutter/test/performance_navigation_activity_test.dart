@@ -136,10 +136,16 @@ void main() {
         final events = result['events']! as List;
         expect(events, hasLength(9));
         expect(
-          workspace.ledger.message('one', 'nav-live-$n')?['taskStatus'],
+          workspace.messageDomain.ledger.message(
+            'one',
+            'nav-live-$n',
+          )?['taskStatus'],
           'in_progress',
         );
-        expect(workspace.ledger.contains('two', 'nav-background-$n'), isTrue);
+        expect(
+          workspace.messageDomain.ledger.contains('two', 'nav-background-$n'),
+          isTrue,
+        );
         expect(workspace.entityDirectory.agent('nav-agent-$n'), isNull);
       }
       expect(api.hits['GET /agents'], greaterThan(reads));

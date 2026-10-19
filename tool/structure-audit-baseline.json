@@ -231,8 +231,8 @@
         "field._ResourcePagePreviewState.receipt": 1,
         "field._ResourcePagePreviewState.workspace": 1,
         "field._VisualPresentationStorage.values": 1,
-        "lines": 3014,
-        "tokens": 16318,
+        "lines": 2919,
+        "tokens": 15592,
         "field.WorkspaceController._presentation": 0,
         "field.WorkspaceController.reactions": 0
       },
@@ -1267,8 +1267,8 @@
     {
       "module": "app_root",
       "metric": "tokens",
-      "limit": 11946,
-      "reason": "PR #216: one navigator-wide native hover policy wrapper (+7 tokens, no new fields); approved by Cindy in 1759c092-c736-4932-b550-e8337263704f.",
+      "limit": 11947,
+      "reason": "PR #216: one navigator-wide native hover policy wrapper (+7 tokens, no new fields); approved by Cindy in 1759c092-c736-4932-b550-e8337263704f. Message caller cleanup: two generation reads now use the existing message-domain owner (parent 11943 to 11947); replacement limit approved by Cindy in 4f9dceed-51de-4792-b6e1-b236560fd23d.",
       "reviewer": "Cindy",
       "expires": "2026-10-30"
     },
@@ -1309,6 +1309,22 @@
       "metric": "field.WorkspaceController.reactions",
       "limit": 1,
       "reason": "Cindy approved D6 on 2026-10-18 (d834986b-5093-4304-88d3-1adc7a30ddf6): one owner reference replaces four Root reaction state fields; old ceilings zero and Root totals lowered. Receiver/source and hydration overrides retain explicit dispatch; common context unchanged. Retire this and _presentation in caller/composition cleanup; no new forwards.",
+      "reviewer": "Cindy",
+      "expires": "2026-10-30"
+    },
+    {
+      "module": "chat_view",
+      "metric": "lines",
+      "limit": 3763,
+      "reason": "This mechanical message caller migration uses a live UI-local message-domain alias; no new state. Approved by Cindy in 09fa9961-2e3d-450e-b0d3-afd9280216d4. Revoke when page view models replace these receivers.",
+      "reviewer": "Cindy",
+      "expires": "2026-10-30"
+    },
+    {
+      "module": "chat_view",
+      "metric": "tokens",
+      "limit": 20620,
+      "reason": "This mechanical message caller migration uses a live UI-local message-domain alias; no new state. Approved by Cindy in 09fa9961-2e3d-450e-b0d3-afd9280216d4. Revoke when page view models replace these receivers.",
       "reviewer": "Cindy",
       "expires": "2026-10-30"
     }

@@ -551,8 +551,10 @@ class MessagePresentation extends StatelessWidget {
       if (uri.host == 'thread' && parts.length == 2) {
         // A message this device already holds in that channel is its own
         // canonical target: jump at once instead of resolving it first.
-        if (w.visibleIds[parts[0]]?.contains(parts[1]) == true &&
-            w.ledger.messages(parts[0]).any((row) => row['id'] == parts[1])) {
+        if (w.messageDomain.visibleIds[parts[0]]?.contains(parts[1]) == true &&
+            w.messageDomain.ledger
+                .messages(parts[0])
+                .any((row) => row['id'] == parts[1])) {
           await w.jumpToMessage(parts[0], parts[1]);
           return;
         }
@@ -748,9 +750,10 @@ class MessagePresentation extends StatelessWidget {
         return false;
       }
       final visible = <RaftMessage>[
-        ...w.messages,
+        ...w.messageDomain.messages,
         ...w.replies,
-        if (w.threadParent != null) w.threadParent!,
+        if (w.messageDomain.state.threadParent != null)
+          w.messageDomain.state.threadParent!,
       ];
       return visible.any(
         (m) => m.id == message.id && m.content == originalContent,

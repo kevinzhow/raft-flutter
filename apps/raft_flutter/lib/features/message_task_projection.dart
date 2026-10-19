@@ -138,7 +138,8 @@ class MessageTaskProjection extends ChangeNotifier {
 
   bool owns(RaftMessage message) =>
       permitted &&
-      (message.channelId == w.channel!.id || message.id == w.threadParent?.id);
+      (message.channelId == w.channel!.id ||
+          message.id == w.messageDomain.state.threadParent?.id);
 
   Map<String, dynamic>? taskFor(RaftMessage message) =>
       owns(message) ? byMessage[message.id] : null;

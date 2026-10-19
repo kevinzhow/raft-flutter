@@ -296,7 +296,7 @@ class AvatarLab {
     if (c == null) return {'error': 'no controller'};
     final channel = (c.channels as List).firstWhere((x) => x.id == id);
     await c.selectChannel(channel);
-    return {'channel': id, 'messages': c.messages.length};
+    return {'channel': id, 'messages': c.messageDomain.messages.length};
   }
 
   ScrollPosition? _position() {

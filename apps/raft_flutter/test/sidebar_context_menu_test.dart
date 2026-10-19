@@ -24,7 +24,7 @@ void main() {
     final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
     addTearDown(w.dispose);
     w.loading = false;
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     w.channels = [
       RaftChannel({'id': 'c1', 'name': 'general', 'joined': true}),
       RaftChannel({'id': 'c2', 'name': 'random', 'joined': true}),

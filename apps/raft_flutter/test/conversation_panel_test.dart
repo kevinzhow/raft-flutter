@@ -29,8 +29,8 @@ void main() {
         // isolate inside the widget test's fake clock. Native profile runs
         // keep the actual HTTP/image decoding path.
         w.client.http.transformer = SyncTransformer();
-        w.ledger.switchServer('s1');
-        w.ledger.ingest([
+        w.messageDomain.ledger.switchServer('s1');
+        w.messageDomain.ledger.ingest([
           {
             'id': 'm1',
             'channelId': 'c1',
@@ -44,8 +44,8 @@ void main() {
             'taskStatus': 'in_progress',
             'taskTitle': 'Public task',
           },
-        ], expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = {'m1'};
+        ], expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c1'] = {'m1'};
         transport.routes['GET /agents'] = (_) => [];
         transport.routes['GET /servers/s1/members'] = (_) => [];
         transport.routes['GET /tasks/channel/c1'] = (_) => {

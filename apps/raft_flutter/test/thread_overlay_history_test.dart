@@ -139,16 +139,21 @@ Future<Fixture> overlayFixture(
     ..channels = [general]
     ..channel = general
     ..loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'chat';
   final mainRows = [
     message('p1', 'c1', 1),
     message('task-parent', 'c1', 2),
     message('tail', 'c1', 3),
   ];
-  w.ledger.ingest(mainRows, expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {for (final row in mainRows) row['id'] as String};
-  w.threadSummaries = {
+  w.messageDomain.ledger.ingest(
+    mainRows,
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
+  w.messageDomain.visibleIds['c1'] = {
+    for (final row in mainRows) row['id'] as String,
+  };
+  w.messageDomain.threadSummaries = {
     'p1': summary ?? {'replyCount': replyCount, 'unreadCount': 0},
   };
   final replies = [
@@ -272,7 +277,7 @@ void main() {
               originIndex = w.navigation.index,
               originEntries = w.navigation.entries.length,
               timeline = t.state(threadTimeline()),
-              generation = w.threadGeneration,
+              generation = w.messageDomain.threadGeneration,
               lookups = f.client.count('GET /channels/c1/threads/p1'),
               tails = f.client.count('GET /messages/channel/t1');
           expect(origin.task, isNull);
@@ -286,8 +291,8 @@ void main() {
             check: () {
               // The thread is never retired or re-presented while the task
               // card opens over it.
-              expect(w.threadGeneration, generation);
-              expect(w.threadLoading, isFalse);
+              expect(w.messageDomain.threadGeneration, generation);
+              expect(w.messageDomain.state.threadLoading, isFalse);
               expect(
                 t.state(threadTimeline(includeHidden: true)),
                 same(timeline),
@@ -350,12 +355,12 @@ void main() {
         final anchor = visible[visible.length ~/ 2];
         final anchorRect = paintedMessage(t, anchor);
         final timeline = t.state(threadTimeline()),
-            generation = w.threadGeneration,
+            generation = w.messageDomain.threadGeneration,
             calls = f.client.calls.length;
         void unchanged() {
           expect(t.state(threadTimeline()), same(timeline));
-          expect(w.threadGeneration, generation);
-          expect(w.threadLoading, isFalse);
+          expect(w.messageDomain.threadGeneration, generation);
+          expect(w.messageDomain.state.threadLoading, isFalse);
           expect(w.threadChannelId, 't1');
           expect(threadScroll(t).pixels, scrolled);
           expect(paintedMessage(t, anchor), anchorRect);
@@ -412,7 +417,7 @@ void main() {
           final origin = w.location,
               originIndex = w.navigation.index,
               timeline = t.state(threadTimeline()),
-              generation = w.threadGeneration,
+              generation = w.messageDomain.threadGeneration,
               lookups = f.client.count('GET /channels/c1/threads/p1');
           await t.tap(
             find.byKey(const ValueKey('message-task-p1')).hitTestable(),
@@ -435,7 +440,7 @@ void main() {
           expect(w.navigation.entries[originIndex], origin);
           // The thread underneath is still the same mounted, loaded thread.
           expect(t.state(threadTimeline()), same(timeline));
-          expect(w.threadGeneration, generation);
+          expect(w.messageDomain.threadGeneration, generation);
           expect(w.threadChannelId, 't1');
           expect(paintedMessage(t, 'r1'), isNotNull);
           expect(f.client.count('GET /channels/c1/threads/p1'), lookups);

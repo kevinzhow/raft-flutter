@@ -29,7 +29,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           // The retained main channel is also an Activity row.
           w.dms = [
             RaftChannel({
@@ -132,7 +132,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.dms = [
         RaftChannel({'id': 'd1', 'name': 'Bob', 'type': 'dm', 'joined': true}),
       ];
@@ -207,7 +207,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.dms = [
         RaftChannel({'id': 'd1', 'name': 'Bob', 'type': 'dm', 'joined': true}),
       ];
@@ -293,7 +293,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.dms = [
         RaftChannel({'id': 'd1', 'name': 'Bob', 'type': 'dm', 'joined': true}),
       ];

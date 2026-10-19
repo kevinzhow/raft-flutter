@@ -78,7 +78,7 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _login() async {
   w.server = RaftRecord({'id': 's1', 'role': 'member'});
   w.channels = [_c1, _c2];
   w.channel = _c1;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, a, client);
 }
 
@@ -130,7 +130,7 @@ void main() {
       Future<(WorkspaceController, _EventClient)> opened() async {
         final (w, _, client) = await _login();
         await w.selectChannel(_c1, autoRead: false);
-        expect(w.threadSummaries['p-c1']['unreadCount'], 3);
+        expect(w.messageDomain.threadSummaries['p-c1']['unreadCount'], 3);
         return (w, client);
       }
 
@@ -144,13 +144,13 @@ void main() {
           'readStateVersion': 1,
           'unreadCount': 1,
         });
-        expect(w.threadSummaries['p-c1']['unreadCount'], 1);
+        expect(w.messageDomain.threadSummaries['p-c1']['unreadCount'], 1);
         expect(
-          w.threadSummaries['p-c1']['firstUnreadMessageId'],
+          w.messageDomain.threadSummaries['p-c1']['firstUnreadMessageId'],
           't-c1-r1',
           reason: 'the server sends a count, not a position',
         );
-        expect(w.threadSummaries['p-c1']['replyCount'], 3);
+        expect(w.messageDomain.threadSummaries['p-c1']['replyCount'], 3);
       });
 
       test('[BP-READ-079] zero drops the jump target; a count never raises the badge', () async {
@@ -170,7 +170,7 @@ void main() {
           'readStateVersion': 2,
           'unreadCount': 9,
         });
-        expect(w.threadSummaries['p-c1']['unreadCount'], 2);
+        expect(w.messageDomain.threadSummaries['p-c1']['unreadCount'], 2);
         client.emit('read_state:updated_bulk', {
           'serverId': 's1',
           'scopes': [
@@ -182,8 +182,11 @@ void main() {
             },
           ],
         });
-        expect(w.threadSummaries['p-c1']['unreadCount'], 0);
-        expect(w.threadSummaries['p-c1']['firstUnreadMessageId'], isNull);
+        expect(w.messageDomain.threadSummaries['p-c1']['unreadCount'], 0);
+        expect(
+          w.messageDomain.threadSummaries['p-c1']['firstUnreadMessageId'],
+          isNull,
+        );
       });
 
       test('[BP-READ-079] a frame without a usable count, or a stale one, leaves the badge alone', () async {
@@ -210,7 +213,7 @@ void main() {
           'readStateVersion': 6,
           'unreadCount': 0,
         });
-        expect(w.threadSummaries['p-c1']['unreadCount'], 3);
+        expect(w.messageDomain.threadSummaries['p-c1']['unreadCount'], 3);
       });
     },
   );

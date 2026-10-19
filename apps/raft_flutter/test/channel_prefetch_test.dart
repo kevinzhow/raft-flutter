@@ -10,7 +10,7 @@ void main() {
   test('[P04] unread channels are prefetched; a first open has rows before the network', () async {
     final (w, api) = await fixture('member');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final two = RaftChannel({'id': 'c2', 'name': 'two', 'joined': true});
     w.channels = [...w.channels, two];
     w.unread = {'c2': 3};
@@ -31,18 +31,18 @@ void main() {
 
     unawaited(w.selectChannel(two));
     // Before the open's own network page returns, the prefetched rows show.
-    for (var i = 0; i < 20 && w.messages.isEmpty; i++) {
+    for (var i = 0; i < 20 && w.messageDomain.messages.isEmpty; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 5));
     }
-    expect(w.messages.map((m) => m.id), rows.map((r) => r['id']));
-    expect(w.channelLoading, true);
+    expect(w.messageDomain.messages.map((m) => m.id), rows.map((r) => r['id']));
+    expect(w.messageDomain.state.channelLoading, true);
     slow.complete({'messages': rows, 'hasMore': false});
   });
 
   test('[P04] prefetch skips channels without unread, the open channel and repeats', () async {
     final (w, api) = await fixture('member');
     addTearDown(w.dispose);
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     final quiet = RaftChannel({'id': 'c3', 'name': 'quiet', 'joined': true});
     w.channels = [...w.channels, quiet];
     w.unread = {'c1': 5, 'c3': 0};

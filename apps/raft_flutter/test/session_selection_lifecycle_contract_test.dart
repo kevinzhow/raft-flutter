@@ -139,7 +139,7 @@ class _Workspace extends WorkspaceController {
   @override
   Future<void> refreshMessageSyncFlag() {
     trace.add('flags');
-    expect(ledger.messages('old'), isEmpty);
+    expect(messageDomain.ledger.messages('old'), isEmpty);
     expect(composer.drafts, isEmpty);
     return Future.value();
   }
@@ -225,10 +225,10 @@ void main() {
     expect(f.trace, [
       'client:s1',
     ], reason: 'construction does not start domain work');
-    w.ledger.switchServer('s1');
-    w.ledger.ingest([
+    w.messageDomain.ledger.switchServer('s1');
+    w.messageDomain.ledger.ingest([
       {'id': 'old-message', 'channelId': 'old', 'seq': '1'},
-    ], expectedGeneration: w.ledger.generation);
+    ], expectedGeneration: w.messageDomain.ledger.generation);
     w.composer.drafts['old'] = 'old draft';
     f.trace.clear();
     final selecting = w.selectServer(_server('s2'));
@@ -244,7 +244,7 @@ void main() {
       'sidebar',
       'notify',
     ]);
-    expect(w.ledger.serverId, 's2');
+    expect(w.messageDomain.ledger.serverId, 's2');
     await selecting;
     expect(
       f.trace.indexOf('cache:s2:channels'),
@@ -332,7 +332,7 @@ void main() {
       entities.complete();
       await a;
       expect(w.server?.id, 'b');
-      expect(w.ledger.serverId, 'b');
+      expect(w.messageDomain.ledger.serverId, 'b');
       expect(f.trace.where((s) => s.startsWith('http:a:')), isEmpty);
       expect(oldHydrated + oldMiss, 0);
       expect(f.client.connects, 1);

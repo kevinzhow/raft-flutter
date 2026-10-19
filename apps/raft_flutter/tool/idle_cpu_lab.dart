@@ -204,7 +204,7 @@ Future<void> _main() async {
         note = 'dialog: ${find(const Key('invite-dialog')) != null}';
       case 'thread':
         await tap(const ValueKey('inline-thread-msg-agent-reply'));
-        await until(() => w.threadParent != null && !w.threadLoading);
+        await until(() => w.messageDomain.state.threadParent != null && !w.messageDomain.state.threadLoading);
       case 'tasks':
         await tap(const ValueKey('rail-tasks'));
       case 'members':

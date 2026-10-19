@@ -44,7 +44,7 @@ void main() {
     api = made.$2;
     addTearDown(w.dispose);
     w.loading = false;
-    w.ledger.switchServer('s1');
+    w.messageDomain.ledger.switchServer('s1');
     w.channels =
         channels ??
         [

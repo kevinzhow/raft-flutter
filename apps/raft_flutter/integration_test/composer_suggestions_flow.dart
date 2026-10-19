@@ -30,10 +30,16 @@ Future<void> verifyComposerSuggestions(
   await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
   await tester.sendKeyEvent(LogicalKeyboardKey.enter);
   await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
-  for (var i = 0; i < 100 && !w.messages.any((m) => m.content == sent); i++) {
+  for (
+    var i = 0;
+    i < 100 && !w.messageDomain.messages.any((m) => m.content == sent);
+    i++
+  ) {
     await tester.pump(const Duration(milliseconds: 100));
   }
-  final message = w.messages.singleWhere((m) => m.content == sent);
+  final message = w.messageDomain.messages.singleWhere(
+    (m) => m.content == sent,
+  );
   final context = await w.query(
     '/messages/context/${message.id}',
     query: {'channelId': w.channel!.id},

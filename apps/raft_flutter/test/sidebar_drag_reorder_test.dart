@@ -435,7 +435,7 @@ void main() {
       final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
       addTearDown(w.dispose);
       w.loading = false;
-      w.ledger.switchServer('s1');
+      w.messageDomain.ledger.switchServer('s1');
       w.channels =
           rowChannels ?? [channel('c1', 'general'), channel('c2', 'random')];
       w.dms = [dm('d1', 'u2', 'Alice'), dm('d2', 'u3', 'Bob')];

@@ -39,7 +39,6 @@ import 'workspace_uploads.dart';
 import 'workspace_editor.dart';
 import 'workspace_editor_entrypoints.dart';
 import 'conversation_read_repository.dart';
-import 'conversation_window.dart';
 import 'workspace_message_windows.dart';
 
 export 'workspace_uploads.dart' show UploadDraft;
@@ -129,17 +128,17 @@ class WorkspaceController extends ChangeNotifier
       mayMarkRead: _mayMarkRead,
       markRead: (id) => markRead(id),
       channelRows: () => [...channels, ...dms],
-      messages: (id) => ledger.messages(id),
+      messages: (id) => _messages.ledger.messages(id),
       isContext: (id) => messageWindows.isContext(id),
-      hasNewer: () => hasNewer,
+      hasNewer: () => _messages.state.hasNewer,
       save: (kind, id, value) => _save(kind, id, value),
       changed: notifyListeners,
       prefetch: () => prefetchLikelyChannels(),
       isDiskOnly: (id) => messageWindows.isDiskOnly(id),
-      visibleIds: (id) => visibleIds[id],
-      generation: () => ledger.generation,
+      visibleIds: (id) => _messages.visibleIds[id],
+      generation: () => _messages.ledger.generation,
       windowGeneration: (thread) =>
-          thread ? threadGeneration : channelGeneration,
+          thread ? _messages.threadGeneration : _messages.channelGeneration,
       isDisposed: () => _disposed,
       refreshUnread: () => refreshUnread(),
     );
@@ -148,7 +147,7 @@ class WorkspaceController extends ChangeNotifier
       client,
       channels: () => channels,
       dms: () => dms,
-      generation: () => ledger.generation,
+      generation: () => _messages.ledger.generation,
       identity: _syncIdentity,
       isDisposed: () => _disposed,
       revokedChannels: () => _revokedChannels,
@@ -338,8 +337,6 @@ class WorkspaceController extends ChangeNotifier
   @override
   WorkspaceMessageWindows get messageWindows => _messages.messageWindows;
 
-  ConversationWindow? get messageWindow => _messages.messageWindow;
-  ConversationWindow? get threadWindow => _messages.threadWindow;
 
   /// "Clear cache": lets go of what this workspace keeps in memory and can
   /// rebuild: decoded attachment pictures nobody shows, signed attachment URLs
@@ -465,7 +462,7 @@ class WorkspaceController extends ChangeNotifier
   // Per receiver, even when its media owner is borrowed from another page.
   late final AttachmentRetentionIndex attachmentRetentionIndex =
       AttachmentRetentionIndex.forLedger(
-        ledger: ledger,
+        ledger: _messages.ledger,
         stateStamp: () => _stateStamp,
         scope: () => attachmentImageScope,
         channels: () => channels,
@@ -502,7 +499,6 @@ class WorkspaceController extends ChangeNotifier
 
   void _ensureSyncIdentity() => _session.ensureSyncIdentity();
 
-  void mergeThreadSummaries(String id, dynamic rows) => _messages.mergeThreadSummaries(id, rows);
 
   void _consumeNotificationPrefs(dynamic payload) => _channels.consumeNotificationPrefs(payload);
 
@@ -663,11 +659,8 @@ class WorkspaceController extends ChangeNotifier
   /// Device writes stop before logout purges are queued.
   bool get cacheWritable => deviceStore.writable;
   Object messageHistoryTicket(String id) => _messages.messageHistoryTicket(id);
-  void rejectHistoryRead(String id) => _messages.rejectHistoryRead(id);
-  Future<void> saveHistoryWindow(String id, {bool thread = false}) => _messages.saveHistoryWindow(id, thread: thread);
 
   StreamSubscription<RaftEvent> get subscription => _session.subscription;
-  MessageLedger get ledger => _messages.ledger;
   late final ReactionRepository reactions;
   @override
   ReactionViewerLedger get reactionViewer => reactions.reactionViewer;
@@ -854,21 +847,10 @@ class WorkspaceController extends ChangeNotifier
 
   @override
   ResourceSnapshotCache get resourceSnapshots => _messages.resourceSnapshots;
-  Map<String, Set<String>> get visibleIds => _messages.visibleIds;
-  bool get hasNewer => _messages.state.hasNewer;
-  set hasNewer(bool value) => _messages.state.hasNewer = value;
   @override
   bool get threadHasMore => _messages.state.threadHasMore;
   set threadHasMore(bool value) => _messages.state.threadHasMore = value;
-  bool get threadHistoryLimited => _messages.state.threadHistoryLimited;
-  set threadHistoryLimited(bool value) => _messages.state.threadHistoryLimited = value;
-  bool get historyLimited => _messages.state.historyLimited;
-  set historyLimited(bool value) => _messages.state.historyLimited = value;
-  String? get highlightedMessageId => _messages.state.highlightedMessageId;
-  set highlightedMessageId(String? value) => _messages.state.highlightedMessageId = value;
 
-  /// Pending unknown context; cross-channel cached tails are not that context.
-  String? get pendingMessageContextChannelId => _messages.pendingMessageContextChannelId;
   @override
   List<RaftRecord> get servers => _session.servers;
   set servers(List<RaftRecord> value) => _session.servers = value;
@@ -904,46 +886,22 @@ class WorkspaceController extends ChangeNotifier
 
   @override
   WorkspaceThreadIdentity? get threadIdentity => _messages.threadIdentity;
-  bool get threadResolutionLoading => _messages.threadResolutionLoading;
-  bool get threadParentLoading => _messages.threadParentLoading;
-  String? get threadResolutionError => _messages.threadResolutionError;
   @override
   RaftMessage? get presentedThreadParent => _messages.presentedThreadParent;
-  String? get threadParentMessageId => _messages.threadParentMessageId;
-  String? get threadParentChannelId => _messages.threadParentChannelId;
 
-  RaftChannel? get threadSourceChannel => _messages.threadSourceChannel;
 
-  RaftMessage? get threadParent => _messages.state.threadParent;
-  set threadParent(RaftMessage? value) => _messages.state.threadParent = value;
   @override
   String? get threadChannelId => _messages.state.threadChannelId;
   set threadChannelId(String? value) => _messages.state.threadChannelId = value;
   bool get loading => _presentation.loading;
   set loading(bool value) => _presentation.loading = value;
-  bool get channelLoading => _messages.state.channelLoading;
-  set channelLoading(bool value) => _messages.state.channelLoading = value;
-  bool get threadLoading => _messages.state.threadLoading;
-  set threadLoading(bool value) => _messages.state.threadLoading = value;
-  bool get loadingOlder => _messages.state.loadingOlder;
-  set loadingOlder(bool value) => _messages.state.loadingOlder = value;
-  bool get hasMore => _messages.state.hasMore;
-  set hasMore(bool value) => _messages.state.hasMore = value;
   bool get connected => _session.connected;
   set connected(bool value) => _session.connected = value;
   // ignore: raft_lints/avoid_imperative_notice_state -- One-shot toast consumed by WorkspaceView; cleared on channel open, jump, send start, server switch and server revoke.
   String? get error => _presentation.error;
   set error(String? value) => _presentation.error = value;
 
-  /// Source messageStore `contextLoadError` for the open channel: the jump
-  /// target's context failed to load and the latest window replaced it.
-  /// `notFound` -> ChatPanel's "Message not found" banner; `beyondHistory` ->
-  /// the plan history-limit banner. Cleared by the next channel open or jump.
-  /// Bound to the channel and server it was raised for: it reads as null in
-  /// any other one (a channel replaced without a re-open, a server switch).
-  MessageContextLoadError? get contextLoadError => _messages.contextLoadError;
 
-  set contextLoadError(MessageContextLoadError? value) => _messages.contextLoadError = value;
 
   WorkspaceNavigation get navigation => _presentation.navigation;
   @override
@@ -954,35 +912,16 @@ class WorkspaceController extends ChangeNotifier
   String get section => _presentation.section;
   set section(String value) => _presentation.section = value;
 
-  int get channelGeneration => _messages.channelGeneration;
-  int get threadGeneration => _messages.threadGeneration;
 
-  /// Summaries of the selected channel's messages.
-  Map<String, dynamic> get threadSummaries => _messages.threadSummaries;
 
-  set threadSummaries(Map<String, dynamic> value) => _messages.threadSummaries = value;
 
-  /// Summaries held for [channelId] (selected or not).
-  Map<String, dynamic> threadSummariesFor(String channelId) => _messages.threadSummariesFor(channelId);
-  List<RaftMessage> get messages => _messages.messages;
 
-  /// Same membership as [messages], in constant time (no list projection).
-  bool presentsMessage(String? id) => _messages.presentsMessage(id);
 
-  /// Same membership as [replies], in constant time.
-  bool presentsReply(String? id) => _messages.presentsReply(id);
 
   @override
   List<RaftMessage> get replies => _messages.replies;
 
-  /// Web display order uses server sequence, with a display-only coordinate
-  /// for pending rows. Context windows keep their existing admission policy.
-  List<RaftMessage> timeline({bool thread = false, List<RaftMessage>? rows}) => _messages.timeline(thread: thread, rows: rows);
 
-  /// Stable presentation identity: a row sent from this session keeps its
-  /// optimistic key after the server copy replaces it, so the timeline
-  /// updates that row in place instead of removing and inserting one.
-  String messageKey(RaftMessage message) => _messages.messageKey(message);
 
   /// Whether [message] is an optimistic row still waiting for the server.
   static bool isPendingSend(RaftMessage message) => WorkspaceMessages.isPendingSend(message);
@@ -1106,7 +1045,7 @@ class WorkspaceController extends ChangeNotifier
       _presentation.assignMissingConversationChannelId(id);
       messageWindows.channelGeneration++;
     }
-    if (threadParent?.channelId == id ||
+    if (_messages.state.threadParent?.channelId == id ||
         _messages.state.threadIdentity?.parentChannelId == id ||
         event.plan.threadIds.contains(threadChannelId) ||
         threadChannelId == id) {
@@ -1208,12 +1147,6 @@ class WorkspaceController extends ChangeNotifier
   /// resume and gap-sync on the live one; then refresh live counts.
   void resumeLiveSession() => _session.resumeLiveSession();
 
-  /// Focus flickers and quick app switches must not re-read the server list.
-
-  /// Source `syncVisibleScopes`: the open thread and the presented channel
-  /// tail each read the messages after their newest row and append them to
-  /// the held window. Nothing is cleared or reloaded.
-  Future<void> syncVisibleScopes({BigInt? through}) => _messages.navigation.syncVisibleScopes(through: through);
 
   bool canVisitSection(String name) => _presentation.canVisitSection(name);
 
@@ -1257,10 +1190,7 @@ class WorkspaceController extends ChangeNotifier
     VoidCallback? onDraftRestored,
   }) => _messages.selectChannel(next, autoRead: autoRead, navigate: navigate, retainContextUntilAccepted: retainContextUntilAccepted, preserveThread: preserveThread, onDraftRestored: onDraftRestored);
 
-  Future<void> older({bool thread = false}) => _messages.older(thread: thread);
 
-  Future<void> newer({bool thread = false}) => _messages.newer(thread: thread);
-  Future<void> loadHistoryGap(BigInt before, {bool thread = false}) => _messages.loadHistoryGap(before, thread: thread);
 
   bool _mayMarkRead(String id) => _channels.mayMarkRead(id);
 
@@ -1270,13 +1200,7 @@ class WorkspaceController extends ChangeNotifier
   void setTimelineAtBottom(String id, bool atBottom) =>
       _channels.setTimelineAtBottom(id, atBottom);
 
-  /// Where the reader was in a conversation when its timeline is about to be
-  /// rebuilt for another layout (fold / unfold). The next timeline that
-  /// mounts for [conversationId] shortly after resumes there; an anchor that
-  /// is not claimed promptly is a stale position and is ignored.
-  void saveReadingAnchor(String conversationId, ReadingAnchor anchor) => _messages.saveReadingAnchor(conversationId, anchor);
 
-  ReadingAnchor? takeReadingAnchor(String conversationId) => _messages.takeReadingAnchor(conversationId);
 
   Future<void> markRead(String id) => _messages.windowReceiver.channels.markRead(id);
 
@@ -1335,13 +1259,7 @@ class WorkspaceController extends ChangeNotifier
     );
   }
 
-  Future<String?> ensureThread() => _messages.threads.ensureThread();
 
-  Future<void> openThread(
-    RaftMessage parent, {
-    String? focusedMessageId,
-    bool navigate = true,
-  }) => _messages.threads.openThread(parent, focusedMessageId: focusedMessageId, navigate: navigate);
 
   /// Opens a real thread identity independently of its parent metadata.
   /// [initialThreadChannelId] is the accepted inbox row's existing channel;
@@ -1355,14 +1273,7 @@ class WorkspaceController extends ChangeNotifier
     bool navigate = true,
   }) => _messages.threads.openThreadIdentity(parentChannelId: parentChannelId, parentMessageId: parentMessageId, focusedMessageId: focusedMessageId, initialThreadChannelId: initialThreadChannelId, navigate: navigate);
 
-  /// Clears only the focus owned by the mounted timeline's highlight timer.
-  void clearHighlightedMessage(
-    String? expectedId, {
-    int? expectedNavigationRevision,
-  }) => _messages.clearHighlightedMessage(expectedId, expectedNavigationRevision: expectedNavigationRevision);
 
-  /// Source ChatPanel.handleBackToBottom reloads latest when newer is unloaded.
-  Future<void> returnToLatest({bool navigate = true, bool thread = false}) => _messages.returnToLatest(navigate: navigate, thread: thread);
 
   /// [replaceEntry] makes the destination take over the current history
   /// entry instead of pushing (Web openThreadParentMessageRoute, mobile).
@@ -1373,13 +1284,7 @@ class WorkspaceController extends ChangeNotifier
     bool replaceEntry = false,
   }) => _messages.jumpToMessage(channelId, messageId, navigate: navigate, replaceEntry: replaceEntry);
 
-  /// Web ChatPanel `joinChannel(channel.id)`: join the open channel, then
-  /// re-read the channel list so the sidebar and composer see the membership.
-  Future<void> joinOpenChannel() => _messages.joinOpenChannel();
 
-  /// Web ThreadPanel `handleJoinParentChannel`: join the thread's parent
-  /// channel (the CTA that replaces the composer for a non-member).
-  Future<void> joinThreadParentChannel() => _messages.joinThreadParentChannel();
 
   @override
   Map<String, dynamic>? externalProfile(String messageId) => _presentation.externalProfile(messageId);
@@ -1657,23 +1562,23 @@ class _WorkspaceSessionBindings
   void clearReplySummaries() => w._messages.summariesByChannel.clear();
   @override
   void resetHistoryLimits() =>
-      w.historyLimited = w.threadHistoryLimited = false;
+      w.messageDomain.state.historyLimited = w.messageDomain.state.threadHistoryLimited = false;
   @override
   void resetThreadProjection() {
-    w.threadParent = null;
+    w.messageDomain.state.threadParent = null;
     w.threadChannelId = null;
     w._messages.summariesByChannel.clear();
-    w.highlightedMessageId = null;
+    w.messageDomain.state.highlightedMessageId = null;
   }
 
   @override
   void closeServerLoading() {
-    w.channelLoading = false;
-    w.threadLoading = false;
+    w.messageDomain.state.channelLoading = false;
+    w.messageDomain.state.threadLoading = false;
   }
 
   @override
-  void resetNewer() => w.hasNewer = false;
+  void resetNewer() => w.messageDomain.state.hasNewer = false;
   @override
   void invalidateAllReplyAuthority() => w._messages.state.replyAuthority.invalidateAll();
   @override
@@ -1727,11 +1632,11 @@ class _WorkspaceSessionBindings
   ChannelRevocationPlan discoverRevocation(String id) =>
       ChannelRevocationPlan.discover(
         channelId: id,
-        messages: w.ledger.messages(id),
+        messages: w.messageDomain.ledger.messages(id),
         parentMessageIds: w.threadRepliesSync.parentMessageIdsForChannel(id),
         summaries: w._messages.summariesByChannel,
         identity: w._messages.state.threadIdentity,
-        parent: w.threadParent,
+        parent: w.messageDomain.state.threadParent,
         threadChannelId: w.threadChannelId,
       );
   @override
@@ -1742,7 +1647,7 @@ class _WorkspaceSessionBindings
     event,
     context: this,
     presentation: this,
-    ledger: w.ledger,
+    ledger: w.messageDomain.ledger,
     windows: w.messageWindows,
   );
   @override
@@ -1848,15 +1753,15 @@ class _WorkspaceSessionBindings
   // ignore: raft_lints/avoid_imperative_notice_state -- Forward only; the original public command and its channel/server reset clearing remain on the receiver.
   void setError(String? value) => w.setError(value);
   @override
-  MessageLedger get ledger => w.ledger;
+  MessageLedger get ledger => w.messageDomain.ledger;
   @override
   MessageSync get messageSync => w.messageSync;
   @override
   ThreadRepliesSync get threadRepliesSync => w.threadRepliesSync;
   @override
-  int get channelGeneration => w.channelGeneration;
+  int get channelGeneration => w.messageDomain.channelGeneration;
   @override
-  int get threadGeneration => w.threadGeneration;
+  int get threadGeneration => w.messageDomain.threadGeneration;
   @override
   Future<void> selectChannel(
     RaftChannel next, {
@@ -1877,7 +1782,7 @@ class _WorkspaceSessionBindings
   void closeThread({bool navigate = true}) => w.closeThread(navigate: navigate);
   @override
   Future<void> syncVisibleScopes({BigInt? through}) =>
-      w.syncVisibleScopes(through: through);
+      w.messageDomain.navigation.syncVisibleScopes(through: through);
   @override
   WorkspaceEntityDirectory get entityDirectory => w.entityDirectory;
   @override
@@ -1892,19 +1797,19 @@ class _WorkspaceSessionBindings
   @override
   String? get threadChannelId => w.threadChannelId;
   @override
-  bool get hasNewer => w.hasNewer;
+  bool get hasNewer => w.messageDomain.state.hasNewer;
 
   @override
-  BigInt get watermark => w.ledger.watermark;
+  BigInt get watermark => w.messageDomain.ledger.watermark;
   @override
-  int get generation => w.ledger.generation;
+  int get generation => w.messageDomain.ledger.generation;
   @override
-  List<Map<String, dynamic>> rows(String id) => w.ledger.messages(id);
+  List<Map<String, dynamic>> rows(String id) => w.messageDomain.ledger.messages(id);
   @override
   Map<String, dynamic>? message(String id, String messageId) =>
-      w.ledger.message(id, messageId);
+      w.messageDomain.ledger.message(id, messageId);
   @override
-  Set<String>? visibleIds(String id) => w.visibleIds[id];
+  Set<String>? visibleIds(String id) => w.messageDomain.visibleIds[id];
   @override
   bool isContext(String id) => w.messageWindows.isContext(id);
   @override
@@ -1915,17 +1820,17 @@ class _WorkspaceSessionBindings
   bool hasAcceptedWindow(String id) => w.messageWindows.accepted[id] != null;
   @override
   int windowGeneration(bool thread) =>
-      thread ? w.threadGeneration : w.channelGeneration;
+      thread ? w.messageDomain.threadGeneration : w.messageDomain.channelGeneration;
   @override
-  bool get channelLoading => w.channelLoading;
+  bool get channelLoading => w.messageDomain.state.channelLoading;
   @override
-  String? get threadParentChannelId => w.threadParentChannelId;
+  String? get threadParentChannelId => w.messageDomain.threadParentChannelId;
   @override
-  String? get threadParentMessageId => w.threadParentMessageId;
+  String? get threadParentMessageId => w.messageDomain.threadParentMessageId;
   @override
   WorkspaceThreadIdentity? get threadIdentity => w.threadIdentity;
   @override
-  RaftMessage? get threadParent => w.threadParent;
+  RaftMessage? get threadParent => w.messageDomain.state.threadParent;
   @override
   Object historyTicket(String id) => w.messageHistoryTicket(id);
   @override
@@ -1942,7 +1847,7 @@ class _WorkspaceSessionBindings
   ) => MessageHistoryPages.record(w, request, page);
   @override
   void mergeThreadSummaries(String id, dynamic rows) =>
-      w.mergeThreadSummaries(id, rows);
+      w.messageDomain.mergeThreadSummaries(id, rows);
   @override
   Future<void> prefetchAcceptedTail(
     RaftChannel candidate, {
@@ -1976,9 +1881,9 @@ class _WorkspaceMessageBindings extends _WorkspaceSessionBindings
 
   @override
   void acceptReactionResponse(Map<String, dynamic> row, {required int generation}) =>
-      w.ledger.ingest([row], expectedGeneration: generation);
+      w.messageDomain.ledger.ingest([row], expectedGeneration: generation);
   @override
-  set threadParent(RaftMessage? value) => w.threadParent = value;
+  set threadParent(RaftMessage? value) => w.messageDomain.state.threadParent = value;
   @override
   bool setMessageReactions(String channelId, String messageId, List<Map<String, dynamic>> reactions) =>
       w._messages.setMessageReactions(channelId, messageId, reactions);
@@ -2019,7 +1924,7 @@ class _WorkspaceMessageBindings extends _WorkspaceSessionBindings
     RaftMessage parent, {
     String? focusedMessageId,
     bool navigate = true,
-  }) => w.openThread(
+  }) => w.messageDomain.threads.openThread(
     parent,
     focusedMessageId: focusedMessageId,
     navigate: navigate,
@@ -2034,14 +1939,14 @@ class _WorkspaceMessageBindings extends _WorkspaceSessionBindings
       w._messages.adoptAcceptedChannelSelection(accessible);
   @override
   Future<void> returnToLatest({bool navigate = true, bool thread = false}) =>
-      w.returnToLatest(navigate: navigate, thread: thread);
+      w.messageDomain.returnToLatest(navigate: navigate, thread: thread);
 
   @override
   Future<void> syncVisibleScopes({BigInt? through}) =>
-      w.syncVisibleScopes(through: through);
+      w.messageDomain.navigation.syncVisibleScopes(through: through);
 
   @override
-  Future<String?> ensureThread() => w.ensureThread();
+  Future<String?> ensureThread() => w.messageDomain.threads.ensureThread();
 
   @override
   void setSection(String value) => w.setSection(value);
@@ -2094,7 +1999,7 @@ class _WorkspaceMessageBindings extends _WorkspaceSessionBindings
   void clearHighlightedMessage(
     String? expectedId, {
     int? expectedNavigationRevision,
-  }) => w.clearHighlightedMessage(
+  }) => w.messageDomain.clearHighlightedMessage(
     expectedId,
     expectedNavigationRevision: expectedNavigationRevision,
   );

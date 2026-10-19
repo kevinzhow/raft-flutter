@@ -155,7 +155,7 @@ void main() {
         final w = WorkspaceController(client)
           ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
           ..channels = client.channelRows;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         await w.selectChannel(client.channelRows.single);
         addTearDown(() async {
           w.dispose();
@@ -286,9 +286,9 @@ void main() {
           ..channels = client.channelRows
           ..channel = client.channelRows.single
           ..section = 'chat'
-          ..channelLoading = true
+          ..messageDomain.state.channelLoading = true
           ..loading = true;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         final uri = w.location;
         addTearDown(() async {
           w.dispose();
@@ -387,9 +387,9 @@ void main() {
           ..channels = client.channelRows
           ..channel = client.channelRows.single
           ..section = 'activity'
-          ..channelLoading = true
+          ..messageDomain.state.channelLoading = true
           ..loading = true;
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         w.navigation.navigate(
           w.location.withQuery({'open': 'channel:c', 'msg': 'm'}),
           kind: RaftNavigationKind.replace,
@@ -656,7 +656,7 @@ void main() {
         w.dispose();
         await client.stream.close();
       });
-      w.ledger.switchServer('s');
+      w.messageDomain.ledger.switchServer('s');
       final loading = w.selectChannel(client.channelRows.single);
       await t.pumpWidget(
         MaterialApp(
@@ -680,7 +680,7 @@ void main() {
       });
       await loading;
       expect(w.error, isNull);
-      expect(w.messages.length, 40);
+      expect(w.messageDomain.messages.length, 40);
       for (var i = 0; i < 180; i++) {
         await t.pump(const Duration(milliseconds: 16));
       }
@@ -707,7 +707,7 @@ void main() {
       ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'})
       ..channel = client.channelRows.single
       ..channels = client.channelRows
-      ..channelLoading = true;
+      ..messageDomain.state.channelLoading = true;
     addTearDown(() async {
       w.dispose();
       await client.stream.close();
@@ -723,7 +723,7 @@ void main() {
     expect(find.text('Loading...'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     final compose = t.state(find.byType(RaftComposer));
-    w.channelLoading = false;
+    w.messageDomain.state.channelLoading = false;
     w.notifyListeners();
     await t.pumpAndSettle();
     expect(find.text('Loading...'), findsNothing);

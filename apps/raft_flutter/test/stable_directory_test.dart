@@ -72,10 +72,10 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _fixture(
   final c2 = RaftChannel({'id': 'c2', 'name': 'release', 'joined': true});
   w.channel = c1;
   w.channels = [c1, c2];
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   // No senderDescription / senderAvatarUrl: the subtitle and the pixel avatar
   // can only come from the shared directory.
-  w.ledger.ingest([
+  w.messageDomain.ledger.ingest([
     for (final (id, channel, sender, seq) in [
       ('m1', 'c1', 'cindy', 1),
       ('m2', 'c1', 'retired', 2),
@@ -92,9 +92,9 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _fixture(
         'content': 'Body $id',
         'createdAt': '2026-06-22T02:30:00Z',
       },
-  ], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'m1', 'm2'};
-  w.visibleIds['c2'] = {'m3'};
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'m1', 'm2'};
+  w.messageDomain.visibleIds['c2'] = {'m3'};
   return (w, a, client);
 }
 

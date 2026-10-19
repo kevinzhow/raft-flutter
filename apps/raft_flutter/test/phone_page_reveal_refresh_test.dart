@@ -95,7 +95,7 @@ Future<(WorkspaceController, _Client, List<Map<String, dynamic>>)> _mount(
   ];
   w.loading = false;
   w.connected = true;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.section = 'activity';
   final replies = [_reply(5, 'The first reply')];
   final followers = <Map<String, dynamic>>[follower('a1', 'Cindy')];
@@ -206,8 +206,8 @@ void main() {
     followers.add(follower('a2', 'Product UX'));
     client.ingress.add(RaftEvent('message:new', _reply(6, 'A newer reply')));
     // The thread's parent message changes (an edit lands in the workspace).
-    final parent = w.threadParent!;
-    w.threadParent = RaftMessage({
+    final parent = w.messageDomain.state.threadParent!;
+    w.messageDomain.state.threadParent = RaftMessage({
       ...parent.json,
       'content': 'The parent message was edited',
     });
@@ -292,8 +292,13 @@ void main() {
     };
     api.routes['GET /channels/threads/followers'] = (_) => {'threads': []};
     await tester.runAsync(() => w.entityDirectory.preload());
-    w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {for (final r in rows) r['id'] as String};
+    w.messageDomain.ledger.ingest(
+      rows,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {
+      for (final r in rows) r['id'] as String,
+    };
     await tester.pumpWidget(
       MaterialApp(
         theme: raftTheme(RaftFamily.elegant),
@@ -310,14 +315,21 @@ void main() {
     await _settle(tester);
     expect(_seen('Filler message 3'), isTrue);
 
-    await tester.runAsync(() => w.openThread(RaftMessage(rows.last)));
+    await tester.runAsync(
+      () => w.messageDomain.threads.openThread(RaftMessage(rows.last)),
+    );
     await _settle(tester);
     expect(w.location.thread, isNotNull);
 
     // While the channel page is covered by the thread, a message arrives.
     final arrival = row('live1', 8, 'A message that arrived under the thread');
-    w.ledger.ingest([arrival], expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {...?w.visibleIds['c1'], 'live1'};
+    w.messageDomain.ledger.ingest([
+      arrival,
+    ], expectedGeneration: w.messageDomain.ledger.generation);
+    w.messageDomain.visibleIds['c1'] = {
+      ...?w.messageDomain.visibleIds['c1'],
+      'live1',
+    };
     w.notifyListeners();
     await _settle(tester);
 

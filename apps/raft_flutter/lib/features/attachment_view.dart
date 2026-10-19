@@ -155,10 +155,12 @@ class _AttachmentViewState extends State<AttachmentView> {
 
   bool get visibleExportDescendant =>
       widget.exportMode &&
-      w.messages.any((parent) {
+      w.messageDomain.messages.any((parent) {
         final thread = parent.threadId;
         return thread != null &&
-            w.ledger.messages(thread).any((m) => m['id'] == widget.messageId);
+            w.messageDomain.ledger
+                .messages(thread)
+                .any((m) => m['id'] == widget.messageId);
       });
   bool get authorized =>
       mounted &&
@@ -184,9 +186,9 @@ class _AttachmentViewState extends State<AttachmentView> {
       sourceChannel == w.channel?.id &&
       !channelAuthorityReduced(channelAuthority, w.channel?.json) &&
       (widget.messageId == null ||
-          w.presentsMessage(widget.messageId) ||
-          w.presentsReply(widget.messageId) ||
-          w.threadParent?.id == widget.messageId ||
+          w.messageDomain.presentsMessage(widget.messageId) ||
+          w.messageDomain.presentsReply(widget.messageId) ||
+          w.messageDomain.state.threadParent?.id == widget.messageId ||
           visibleExportDescendant);
 
   @override
@@ -394,7 +396,7 @@ class _AttachmentViewState extends State<AttachmentView> {
   }
 
   String get ownerChannel =>
-      '${widget.metadata['channelId'] ?? (w.presentsReply(widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
+      '${widget.metadata['channelId'] ?? (w.messageDomain.presentsReply(widget.messageId) ? w.threadChannelId : w.channel?.id) ?? ''}';
 
   AttachmentImageKey keyFor({required bool preview}) {
     final box = previewBox;

@@ -269,16 +269,16 @@ void main() {
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
       w.channels = [w.channel!];
-      w.ledger.switchServer('server');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('server');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'host',
           'channelId': 'channel',
           'seq': '1',
           'content': 'private',
         },
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['channel'] = {'host'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['channel'] = {'host'};
       final bytes = base64Decode(
         'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAGUlEQVR4nGP8V7uCgRTARJLqUQ2jGoaUBgC7qgJDBU0aZAAAAABJRU5ErkJggg==',
       );
@@ -305,7 +305,7 @@ void main() {
       await tester.tap(find.byTooltip('Preview private.png'));
       await tester.pumpAndSettle();
       expect(find.byTooltip('Close preview'), findsOneWidget);
-      w.visibleIds['channel'] = {};
+      w.messageDomain.visibleIds['channel'] = {};
       w.notifyListeners();
       await tester.pumpAndSettle();
       expect(find.byTooltip('Close preview'), findsNothing);
@@ -313,7 +313,7 @@ void main() {
         PaintingBinding.instance.imageCache.containsKey(MemoryImage(bytes)),
         false,
       );
-      w.visibleIds['channel'] = {'host'};
+      w.messageDomain.visibleIds['channel'] = {'host'};
       w.notifyListeners();
       await tester.pump();
       expect(
@@ -437,8 +437,8 @@ void main() {
         ..server = RaftRecord({'id': 'server', 'role': 'owner'})
         ..channel = RaftChannel({'id': 'channel', 'joined': true});
       w.channels = [w.channel!];
-      w.ledger.switchServer('server');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('server');
+      w.messageDomain.ledger.ingest([
         {
           'id': 'parent',
           'channelId': 'channel',
@@ -447,8 +447,8 @@ void main() {
           'content': 'parent',
         },
         {'id': 'reply', 'channelId': 'thread', 'seq': '1', 'content': 'reply'},
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['channel'] = {'parent'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['channel'] = {'parent'};
       expect(w.replies, isEmpty);
       final files = _Files();
       var ready = 0;
@@ -485,7 +485,7 @@ void main() {
         t.widget<RaftAttachmentCard>(find.byType(RaftAttachmentCard)).preview,
         isNotNull,
       );
-      w.visibleIds['channel'] = {};
+      w.messageDomain.visibleIds['channel'] = {};
       w.notifyListeners();
       await t.pumpAndSettle();
       expect(

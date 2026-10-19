@@ -23,10 +23,15 @@ void main() {
         addTearDown(tester.view.reset);
         final (w, _) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = contextRows('open', count: 500);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),
@@ -62,10 +67,15 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
         api.routes['POST /channels/c1/read'] = (_) => {};
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = contextRows('read', count: 60);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),
@@ -91,7 +101,7 @@ void main() {
         }
         expect(anchor, isNotNull);
         await tester.runAsync(() async {
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               'id': 'read-arrival',
               'channelId': 'c1',
@@ -99,8 +109,8 @@ void main() {
               'senderId': 'bob',
               'content': 'A new message while reading history',
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1']!.add('read-arrival');
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1']!.add('read-arrival');
           w.notifyListeners();
           await Future<void>.delayed(Duration.zero);
         });

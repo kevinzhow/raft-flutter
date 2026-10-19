@@ -197,7 +197,10 @@ void main() {
         );
         await settleIo();
         expect(notice, findsNothing);
-        expect(w.messages.map((row) => row.id), contains('chat-900'));
+        expect(
+          w.messageDomain.messages.map((row) => row.id),
+          contains('chat-900'),
+        );
         expect(
           await drainIo(
             t,

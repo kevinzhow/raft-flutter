@@ -103,9 +103,11 @@ Future<(WorkspaceController, _Api, _Client)> _fixture() async {
     ..server = RaftRecord({'id': 's1', 'role': 'owner'})
     ..channel = RaftChannel({'id': 'c1', 'name': 'general', 'joined': true});
   w.channels = [w.channel!];
-  w.ledger.switchServer('s1');
-  w.ledger.ingest([_row()], expectedGeneration: w.ledger.generation);
-  w.visibleIds['c1'] = {'m1'};
+  w.messageDomain.ledger.switchServer('s1');
+  w.messageDomain.ledger.ingest([
+    _row(),
+  ], expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.visibleIds['c1'] = {'m1'};
   api.routes['GET /messages/m1/reactions/viewer'] = (_) =>
       (200, _viewer(1, const []));
   api.routes['GET /tasks/channel/c1'] = (_) => (200, {'tasks': []});
@@ -215,7 +217,7 @@ void main() {
       final thumbsRect = t.getRect(_chip('👍'));
       expect(_chip('🔥'), findsNothing);
 
-      unawaited(w.toggleReaction(w.messages.single, '🔥'));
+      unawaited(w.toggleReaction(w.messageDomain.messages.single, '🔥'));
       await t.pump();
       expect(_chip('🔥'), findsOneWidget);
       expect(_reaction(t, '🔥').count, 1);
@@ -278,7 +280,7 @@ void main() {
     await _settle(t);
     expect(_reaction(t, '👍').count, 2);
     expect(_reaction(t, '👍').reacted, isFalse);
-    expect(w.messages.single.json['reactions'], [_thumbs()]);
+    expect(w.messageDomain.messages.single.json['reactions'], [_thumbs()]);
     expect(t.element(_chip('👍')), same(element));
     expect(t.getRect(_chip('👍')), rect);
     expect(t.takeException(), isNull);
@@ -293,14 +295,14 @@ void main() {
     final write = Completer<(int, dynamic)>();
     api.routes['POST /messages/m1/reactions'] = (_) => write.future;
     await _mount(t, w);
-    final result = w.toggleReaction(w.messages.single, '🔥');
+    final result = w.toggleReaction(w.messageDomain.messages.single, '🔥');
     unawaited(result.catchError((_) {}));
     await t.pump();
     expect(_chip('🔥'), findsOneWidget);
     write.complete((403, {'error': 'Forbidden'}));
     await _settle(t);
     expect(_chip('🔥'), findsNothing);
-    expect(w.messages.single.json['reactions'], [_thumbs()]);
+    expect(w.messageDomain.messages.single.json['reactions'], [_thumbs()]);
     await expectLater(result, throwsA(anything));
   });
 

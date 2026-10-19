@@ -208,9 +208,14 @@ Future<Ctx> mount(WidgetTester t, TapHost host) async {
   };
   if (section == 'chat') {
     // The chat route shows the accepted window of the open channel.
-    w.ledger.ingest(channelMessages, expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {for (final m in channelMessages) m['id'] as String};
-    w.threadSummaries = Map<String, dynamic>.from(
+    w.messageDomain.ledger.ingest(
+      channelMessages,
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {
+      for (final m in channelMessages) m['id'] as String,
+    };
+    w.messageDomain.threadSummaries = Map<String, dynamic>.from(
       channelPage['threadSummariesByParentMessageId'] as Map,
     );
     w.navigation.navigate(

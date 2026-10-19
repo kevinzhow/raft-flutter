@@ -121,7 +121,7 @@ class _Fixture {
     w.server = RaftRecord({'id': 's1', 'role': 'owner'});
     w.channel = RaftChannel({'id': 'c1', 'joined': true});
     w.channels = [w.channel!];
-    if (source == null) w.ledger.switchServer('s1');
+    if (source == null) w.messageDomain.ledger.switchServer('s1');
     return w;
   }
 }

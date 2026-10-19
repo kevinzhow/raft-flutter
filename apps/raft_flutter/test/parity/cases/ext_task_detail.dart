@@ -145,7 +145,7 @@ WorkspaceController _workspace(ParityContext ctx, {List<dynamic>? board}) {
     ]
     ..dms = const []
     ..section = 'tasks';
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   if (detail != null) {
     final task = detail['task'] as Map;
     w.navigation.navigateTask(

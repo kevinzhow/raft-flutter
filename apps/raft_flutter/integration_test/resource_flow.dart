@@ -107,7 +107,7 @@ Future<void> verifyAdvancedResources(
       () =>
           w.section == 'chat' &&
           w.channel?.id == channelId &&
-          w.highlightedMessageId == messageId,
+          w.messageDomain.state.highlightedMessageId == messageId,
     );
     await capture('native-saved-open-message');
 

@@ -83,7 +83,7 @@ class _ThreadActionsState extends State<ThreadActions> {
       mounted &&
       generation == w.client.generation &&
       authority == workspaceAuthority(w) &&
-      widget.parentMessageId == w.threadParentMessageId;
+      widget.parentMessageId == w.messageDomain.threadParentMessageId;
 
   /// Membership from the server-scoped followed list; null before its first
   /// accepted read for this identity.

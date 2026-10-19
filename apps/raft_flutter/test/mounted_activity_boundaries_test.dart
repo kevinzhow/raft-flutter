@@ -31,7 +31,7 @@ Future<void> mount(
 ) async {
   w.loading = false;
   w.section = 'activity';
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   await t.pumpWidget(
     MaterialApp(
       theme: raftTheme(family, dark: dark),
@@ -219,7 +219,7 @@ void main() {
           painted,
           findsOneWidget,
           reason:
-              'uri=${w.location} rows=${w.messages.map((row) => row.id).toList()} '
+              'uri=${w.location} rows=${w.messageDomain.messages.map((row) => row.id).toList()} '
               'error=${w.error} channel=${w.channel?.id}',
         );
         expect(w.threadIdentity, isNull);

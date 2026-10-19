@@ -130,7 +130,7 @@ void main() {
           client = _Client();
       final w = WorkspaceController(client, cache: cache)
         ..server = RaftRecord({'id': 'server', 'role': 'owner'});
-      w.ledger.switchServer('server');
+      w.messageDomain.ledger.switchServer('server');
       try {
         await _tail(cache.messageHistory);
         await cache.messageHistory.checkpoint(_scope, BigInt.from(50));
@@ -179,21 +179,25 @@ void main() {
       ..channels = [
         RaftChannel({'id': 'chat', 'type': 'private', 'joined': true}),
       ];
-    w.ledger.switchServer('server');
+    w.messageDomain.ledger.switchServer('server');
     try {
       await w.selectChannel(w.channels.single, autoRead: false);
-      await w.older();
+      await w.messageDomain.older();
       await w.flushCache();
       await cache.customStatement('UPDATE raft_history_ranges SET verified=0');
       await w.jumpToMessage('chat', 'm25', navigate: false);
       await client.contextStarted.future.timeout(const Duration(seconds: 2));
       final watch = Stopwatch()..start();
-      while (w.ledger.message('chat', 'm25')?['content'] != 'Edited offline' &&
+      while (w.messageDomain.ledger.message('chat', 'm25')?['content'] !=
+              'Edited offline' &&
           watch.elapsed < const Duration(seconds: 2)) {
         await Future<void>.delayed(const Duration(milliseconds: 2));
       }
-      expect(w.ledger.message('chat', 'm25')!['content'], 'Edited offline');
-      expect(w.ledger.contains('chat', 'm20'), isFalse);
+      expect(
+        w.messageDomain.ledger.message('chat', 'm25')!['content'],
+        'Edited offline',
+      );
+      expect(w.messageDomain.ledger.contains('chat', 'm20'), isFalse);
     } finally {
       await w.flushCache();
       w.dispose();
@@ -263,13 +267,15 @@ void main() {
             client = _Client();
         final w = WorkspaceController(client, cache: cache)
           ..server = RaftRecord({'id': 'server', 'role': 'owner'});
-        w.ledger.switchServer('server');
+        w.messageDomain.ledger.switchServer('server');
         try {
           if (saved) {
             await _tail(cache.messageHistory);
             await cache.messageHistory.checkpoint(_scope, BigInt.from(50));
           }
-          w.ledger.ingest([_row(100)], expectedGeneration: w.ledger.generation);
+          w.messageDomain.ledger.ingest([
+            _row(100),
+          ], expectedGeneration: w.messageDomain.ledger.generation);
           expect(w.channel, isNull);
           await MessageHistoryEvents.resume(w);
           expect(client.resumed, [BigInt.from(saved ? 50 : 100)]);

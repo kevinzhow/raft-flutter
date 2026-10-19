@@ -57,7 +57,7 @@ void main() {
       for (final editor in [root, borrowed]) {
         editor.server = RaftRecord({'id': 'fixture-server', 'role': 'owner'});
         editor.channel = RaftChannel({'id': 'a', 'joined': true});
-        editor.ledger.switchServer('fixture-server');
+        editor.messageDomain.ledger.switchServer('fixture-server');
       }
       final pending = <Future<bool>>[];
       try {

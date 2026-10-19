@@ -37,11 +37,11 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
-          w.ledger.ingest([
+          w.messageDomain.ledger.switchServer('s1');
+          w.messageDomain.ledger.ingest([
             message('old-main', 'c1'),
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1'] = {'old-main'};
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1'] = {'old-main'};
           w.section = 'activity';
           final parentChannel = Completer<Map<String, dynamic>>(),
               parentMessage = Completer<Map<String, dynamic>>(),
@@ -193,7 +193,7 @@ void main() {
             expect(find.byType(RaftThreadHeader), findsNothing);
           }
           final identity = w.threadIdentity;
-          final threadGeneration = w.threadGeneration;
+          final threadGeneration = w.messageDomain.threadGeneration;
           await tester.runAsync(() async {
             parentChannel.complete({
               'id': metadataDenied ? 'wrong-channel' : 'c2',
@@ -217,7 +217,7 @@ void main() {
             expect(w.channel?.id, 'c1');
             expect(w.channels.any((row) => row.id == 'c2'), isFalse);
             expect(w.missingConversationChannelId, 'c2');
-            expect(w.threadGeneration, threadGeneration);
+            expect(w.messageDomain.threadGeneration, threadGeneration);
             expect(w.threadIdentity, same(identity));
             expect(w.replies.map((row) => row.id), ['mention-reply']);
             expect(find.text('SELECT A CHANNEL'), findsOneWidget);
@@ -236,12 +236,12 @@ void main() {
               w.channels.where((row) => row.id == 'c2').single.name,
               'Real hydrated parent',
             );
-            expect(w.threadGeneration, threadGeneration);
+            expect(w.messageDomain.threadGeneration, threadGeneration);
             expect(w.threadIdentity, same(identity));
             expect(w.presentedThreadParent?.id, 'parent');
             expect(w.replies.map((row) => row.id), ['mention-reply']);
-            expect(w.messages, isEmpty);
-            expect(w.highlightedMessageId, 'mention-reply');
+            expect(w.messageDomain.messages, isEmpty);
+            expect(w.messageDomain.state.highlightedMessageId, 'mention-reply');
             expect(find.byType(RaftChannelResolutionBody), findsNothing);
             expect(
               find.byKey(const Key('workspace-channel-header')),
@@ -258,7 +258,9 @@ void main() {
           await tester.pumpAndSettle();
           expect(w.navigation.entries.length, before + 1);
           if (!backBeforeMetadata && !metadataDenied) {
-            expect(w.messages.map((row) => row.id), ['real-tail']);
+            expect(w.messageDomain.messages.map((row) => row.id), [
+              'real-tail',
+            ]);
             expect(w.replies.map((row) => row.id), ['mention-reply']);
             expect(
               api.calls.where(
@@ -293,7 +295,7 @@ void main() {
           final (w, api) = (await tester.runAsync(() => fixture('owner')))!;
           addTearDown(w.dispose);
           w.loading = false;
-          w.ledger.switchServer('s1');
+          w.messageDomain.ledger.switchServer('s1');
           w.section = 'activity';
           final parent = Completer<Map<String, dynamic>>(),
               resolution = Completer<Map<String, dynamic>>(),

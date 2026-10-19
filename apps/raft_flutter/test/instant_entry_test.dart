@@ -1125,7 +1125,7 @@ void main() {
       'latency 300 ms, notification warm: loaded and settled',
       await framesUntil(
         t,
-        () => !s.w.channelLoading && s.w.location.messageId == 'mcx',
+        () => !s.w.messageDomain.state.channelLoading && s.w.location.messageId == 'mcx',
       ),
     );
     await settle(t, s, 8);

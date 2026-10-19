@@ -92,7 +92,7 @@ Future<({int reads, int cached, int rows})> _measure(int extraWindows) async {
     ..server = RaftRecord({'id': 's', 'role': 'owner'})
     ..channels = channels;
   try {
-    w.ledger.switchServer('s');
+    w.messageDomain.ledger.switchServer('s');
     // Both controls start with exactly the same admitted bodies and catalog.
     // Creating more presentation windows below does not add ledger rows.
     for (final channel in channels) {
@@ -102,7 +102,7 @@ Future<({int reads, int cached, int rows})> _measure(int extraWindows) async {
       ], replace: true);
     }
     await w.selectChannel(channels.first, autoRead: false, navigate: false);
-    expect(w.messageWindow, isNotNull);
+    expect(w.messageDomain.messageWindow, isNotNull);
     for (final channel in channels.skip(1).take(extraWindows)) {
       final window = w.messageWindows.channel(channel.id);
       expect(window, isNotNull);
@@ -124,10 +124,10 @@ Future<({int reads, int cached, int rows})> _measure(int extraWindows) async {
     for (final channel in channels.skip(1)) {
       channel.counted.enabled = false;
     }
-    expect(w.messages.last.id, 'alpha-3');
-    final rows = w.ledger.channelIds.fold<int>(
+    expect(w.messageDomain.messages.last.id, 'alpha-3');
+    final rows = w.messageDomain.ledger.channelIds.fold<int>(
       0,
-      (sum, id) => sum + w.ledger.messages(id).length,
+      (sum, id) => sum + w.messageDomain.ledger.messages(id).length,
     );
     return (reads: reads, cached: cached, rows: rows);
   } finally {
@@ -163,7 +163,7 @@ Future<({int reads, int alphaReads, int cached})> _measureAttachmentGap(
     ..server = RaftRecord({'id': 's', 'role': 'owner'})
     ..channels = channels;
   try {
-    w.ledger.switchServer('s');
+    w.messageDomain.ledger.switchServer('s');
     for (final channel in channels) {
       w.messageWindows.acceptRows(liveWindowWrite, channel.id, [
         _row(channel.id, 1),
@@ -171,15 +171,15 @@ Future<({int reads, int alphaReads, int cached})> _measureAttachmentGap(
       ], replace: true);
     }
     await w.selectChannel(channels.first, autoRead: false, navigate: false);
-    expect(w.messageWindow, isNotNull);
+    expect(w.messageDomain.messageWindow, isNotNull);
     for (final channel in channels.skip(1).take(extraWindows)) {
       expect(w.messageWindows.channel(channel.id), isNotNull);
     }
     client.injected.add(RaftEvent('message:new', _row('alpha', 3)));
-    expect(w.messages.last.id, 'alpha-3');
-    w.ledger.ingest([
+    expect(w.messageDomain.messages.last.id, 'alpha-3');
+    w.messageDomain.ledger.ingest([
       _row('alpha', 4),
-    ], expectedGeneration: w.ledger.generation);
+    ], expectedGeneration: w.messageDomain.ledger.generation);
     _readAttachmentIndex(w);
     for (final channel in channels) {
       channel.counted
@@ -248,7 +248,7 @@ void main() {
       ..server = RaftRecord({'id': 's', 'role': 'owner'})
       ..channels = channels;
     try {
-      w.ledger.switchServer('s');
+      w.messageDomain.ledger.switchServer('s');
       for (final channel in channels) {
         w.messageWindows.acceptRows(liveWindowWrite, channel.id, [
           _row(channel.id, 1),
@@ -256,7 +256,7 @@ void main() {
         ], replace: true);
       }
       await w.selectChannel(channels.first, autoRead: false, navigate: false);
-      expect(w.messageWindow, isNotNull);
+      expect(w.messageDomain.messageWindow, isNotNull);
       for (final channel in channels.skip(1)) {
         expect(w.messageWindows.channel(channel.id), isNotNull);
       }

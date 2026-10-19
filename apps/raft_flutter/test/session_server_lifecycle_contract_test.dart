@@ -277,11 +277,11 @@ class _Fixture {
     w.channel = RaftChannel({'id': 'c1', 'joined': true});
     w.channels = [w.channel!];
     if (seed) {
-      w.ledger.switchServer('s1');
-      w.ledger.ingest([
+      w.messageDomain.ledger.switchServer('s1');
+      w.messageDomain.ledger.ingest([
         {'id': 'm1', 'channelId': 'c1', 'seq': '1', 'content': 'retained'},
-      ], expectedGeneration: w.ledger.generation);
-      w.visibleIds['c1'] = {'m1'};
+      ], expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {'m1'};
     }
     return w;
   }
@@ -300,7 +300,7 @@ void main() {
         trace.add('discard');
         expect(w.servers.map((r) => r.id), ['s2']);
         expect(w.channel?.id, 'c1');
-        expect(w.messages.single.id, 'm1');
+        expect(w.messageDomain.messages.single.id, 'm1');
       },
     );
     w.saveDraft('authored');
@@ -330,34 +330,40 @@ void main() {
     );
     w.resourceSnapshots.keepServerPage('saved', _Slot(), () {
       trace.add('pages');
-      expect(w.messages, isEmpty);
+      expect(w.messageDomain.messages, isEmpty);
       expect(w.readState.state('s1', 'alice', 'c1'), isNull);
       expect(w.reactionViewer.reacted('m1'), {'smile'});
     });
-    w.loading = w.channelLoading = w.threadLoading = true;
+    w.loading = w.messageDomain.state.channelLoading =
+        w.messageDomain.state.threadLoading = true;
     w.error = 'old error';
-    final channelVersion = w.channelGeneration;
-    final threadVersion = w.threadGeneration;
+    final channelVersion = w.messageDomain.channelGeneration;
+    final threadVersion = w.messageDomain.threadGeneration;
     f.images.onPurge = () {
       trace.add('media');
       expect(w.server?.id, 's1');
-      expect(w.messages.single.id, 'm1');
+      expect(w.messageDomain.messages.single.id, 'm1');
       expect(w.drafts['c1'], 'authored');
     };
     f.client.onSelect = (id) {
       trace.add('client:$id');
       expect(w.server, isNull);
       expect(w.channel, isNull);
-      expect(w.messages, isEmpty);
+      expect(w.messageDomain.messages, isEmpty);
       expect(w.drafts, isEmpty);
-      expect(w.channelGeneration, channelVersion + 1);
-      expect(w.threadGeneration, threadVersion + 1);
+      expect(w.messageDomain.channelGeneration, channelVersion + 1);
+      expect(w.messageDomain.threadGeneration, threadVersion + 1);
       expect(w.reactionViewer.reacted('m1'), isNull);
       expect(w.loading, isTrue);
     };
     w.onNotice = () {
       trace.add('notify');
-      expect(w.loading || w.channelLoading || w.threadLoading, isFalse);
+      expect(
+        w.loading ||
+            w.messageDomain.state.channelLoading ||
+            w.messageDomain.state.threadLoading,
+        isFalse,
+      );
     };
     w.revokeServer('s1');
     expect(trace, ['discard', 'media', 'pages', 'client:null', 'notify']);
@@ -373,11 +379,11 @@ void main() {
     w.saveDraft('authored');
     await w.flushCache();
     f.cache.trace.clear();
-    final generation = w.channelGeneration;
+    final generation = w.messageDomain.channelGeneration;
     w.revokeServer('s2');
     expect(w.server?.id, 's1');
-    expect(w.messages.single.id, 'm1');
-    expect(w.channelGeneration, generation);
+    expect(w.messageDomain.messages.single.id, 'm1');
+    expect(w.messageDomain.channelGeneration, generation);
     expect(w.drafts['c1'], 'authored');
     expect(w.servers.map((s) => s.id), ['s1']);
     expect(f.client.selections, isEmpty);
@@ -443,14 +449,14 @@ void main() {
       await root.flushCache();
       final localCache = _Cache();
       final page = f.make(source: root, device: localCache, seed: false);
-      final generation = root.channelGeneration;
+      final generation = root.messageDomain.channelGeneration;
       final rootNotices = root.notices, pageNotices = page.notices;
       page.revokeServer('s1');
       expect(page.server, isNull);
       expect(root.server?.id, 's1');
       expect(root.channel?.id, 'c1');
-      expect(root.channelGeneration, generation + 1);
-      expect(root.ledger.messages('c1'), isEmpty);
+      expect(root.messageDomain.channelGeneration, generation + 1);
+      expect(root.messageDomain.ledger.messages('c1'), isEmpty);
       expect(root.drafts['c1'], 'source draft');
       expect(root.notices, rootNotices);
       expect(page.notices, pageNotices + 1);
@@ -472,16 +478,16 @@ void main() {
       media: localImages,
       composer: root.composer,
     );
-    final rootGeneration = root.channelGeneration;
-    final editorGeneration = editor.channelGeneration;
+    final rootGeneration = root.messageDomain.channelGeneration;
+    final editorGeneration = editor.messageDomain.channelGeneration;
     final notices = editor.notices;
     editor.revokeServer('s1');
     expect(editor.server, isNull);
-    expect(editor.channelGeneration, editorGeneration + 1);
-    expect(editor.messages, isEmpty);
+    expect(editor.messageDomain.channelGeneration, editorGeneration + 1);
+    expect(editor.messageDomain.messages, isEmpty);
     expect(editor.notices, notices + 1);
-    expect(root.channelGeneration, rootGeneration);
-    expect(root.messages.single.id, 'm1');
+    expect(root.messageDomain.channelGeneration, rootGeneration);
+    expect(root.messageDomain.messages.single.id, 'm1');
     expect(root.drafts['c1'], 'source draft');
     expect(f.images.identities, isEmpty);
     expect(localImages.identities, hasLength(1));
@@ -504,7 +510,7 @@ void main() {
     expect(calls, 1);
     expect(root.selections, ['s2']);
     expect(f.client.selections, isEmpty);
-    expect(root.messages.single.id, 'm1');
+    expect(root.messageDomain.messages.single.id, 'm1');
   });
 
   test(
@@ -515,28 +521,33 @@ void main() {
       w.unread = {'c1': 4};
       w.mentions = {'c1'};
       w.newFlags = {'c1'};
-      w.historyLimited = w.threadHistoryLimited = true;
-      w.highlightedMessageId = 'm1';
+      w.messageDomain.state.historyLimited =
+          w.messageDomain.state.threadHistoryLimited = true;
+      w.messageDomain.state.highlightedMessageId = 'm1';
       w.messageSync.consumeNew({'id': 'm1', 'channelId': 'c1', 'seq': 1});
       w.resourceSnapshots.write(
         'saved',
         FieldSnapshot(identity: 'old', fields: {'value': 1}),
       );
-      final generation = w.channelGeneration;
+      final generation = w.messageDomain.channelGeneration;
       var checked = false;
       f.cache.onRead = (kind) {
         if (kind != 'channels') return;
         checked = true;
         expect(w.channel, isNull);
-        expect(w.messages, isEmpty);
+        expect(w.messageDomain.messages, isEmpty);
         expect(w.unread, isEmpty);
         expect(w.mentions, isEmpty);
         expect(w.newFlags, isEmpty);
-        expect(w.historyLimited || w.threadHistoryLimited, isFalse);
-        expect(w.highlightedMessageId, isNull);
+        expect(
+          w.messageDomain.state.historyLimited ||
+              w.messageDomain.state.threadHistoryLimited,
+          isFalse,
+        );
+        expect(w.messageDomain.state.highlightedMessageId, isNull);
         expect(w.messageSync.messages('c1'), isEmpty);
         expect(w.resourceSnapshots.read<FieldSnapshot>('saved', 'old'), isNull);
-        expect(w.channelGeneration, generation + 1);
+        expect(w.messageDomain.channelGeneration, generation + 1);
       };
       await w.selectServer(RaftRecord({'id': 's2', 'role': 'owner'}));
       expect(checked, isTrue);

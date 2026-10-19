@@ -155,8 +155,13 @@ void main() {
       'displayName': 'Bob',
     };
     await t.runAsync(() => w.entityDirectory.preload());
-    w.ledger.ingest(rows(), expectedGeneration: w.ledger.generation);
-    w.visibleIds['c1'] = {for (final r in rows()) r['id'] as String};
+    w.messageDomain.ledger.ingest(
+      rows(),
+      expectedGeneration: w.messageDomain.ledger.generation,
+    );
+    w.messageDomain.visibleIds['c1'] = {
+      for (final r in rows()) r['id'] as String,
+    };
     await t.pumpWidget(
       MaterialApp(
         theme: raftTheme(RaftFamily.elegant),
@@ -274,7 +279,7 @@ void main() {
 
         // A thread follower row opens the agent's profile over the thread.
         await t.runAsync(
-          () => w.openThread(
+          () => w.messageDomain.threads.openThread(
             RaftMessage(rows().firstWhere((r) => r['id'] == 'mt')),
           ),
         );

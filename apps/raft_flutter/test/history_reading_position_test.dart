@@ -35,9 +35,12 @@ void main() {
             );
           }
           for (var n = 0; n < 19; n++) {
-            await w.older(thread: thread);
+            await w.messageDomain.older(thread: thread);
           }
-          w.saveReadingAnchor(id, ReadingAnchor('$id-200', -12.25));
+          w.messageDomain.saveReadingAnchor(
+            id,
+            ReadingAnchor('$id-200', -12.25),
+          );
           await w.flushCache();
           final scope = MessageHistoryPages.scope(
             w,
@@ -71,21 +74,32 @@ void main() {
               navigate: false,
             );
           }
-          final rows = thread ? restored.replies : restored.messages;
+          final rows = thread
+              ? restored.replies
+              : restored.messageDomain.messages;
           expect(rows.map((row) => row.id), contains('$id-200'));
           expect(
-            thread ? restored.threadWindow!.hasNewer : restored.hasNewer,
+            thread
+                ? restored.messageDomain.threadWindow!.hasNewer
+                : restored.messageDomain.state.hasNewer,
             isTrue,
           );
           expect(restored.messageWindows.readingAnchor(id)!.top, -12.25);
           expect(offline.oldReads, 0);
-          await restored.returnToLatest(thread: thread, navigate: false);
+          await restored.messageDomain.returnToLatest(
+            thread: thread,
+            navigate: false,
+          );
           expect(
-            (thread ? restored.replies : restored.messages).last.seq,
+            (thread ? restored.replies : restored.messageDomain.messages)
+                .last
+                .seq,
             BigInt.from(1000),
           );
           expect(
-            thread ? restored.threadWindow!.hasNewer : restored.hasNewer,
+            thread
+                ? restored.messageDomain.threadWindow!.hasNewer
+                : restored.messageDomain.state.hasNewer,
             isFalse,
           );
           final scope = MessageHistoryPages.scope(

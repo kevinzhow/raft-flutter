@@ -41,9 +41,11 @@ void main() {
               parent.future;
           api.routes['GET /messages/channel/task-thread'] = (_) =>
               replies.future;
-          w.threadParent = RaftMessage(row('old-parent', 'c1', 1));
+          w.messageDomain.state.threadParent = RaftMessage(
+            row('old-parent', 'c1', 1),
+          );
           w.threadChannelId = 'old-side';
-          w.threadLoading = false;
+          w.messageDomain.state.threadLoading = false;
           w.drafts[w.draftScope()!] = 'Main draft survives';
           w.drafts[w.draftScope(thread: true)!] = 'Side draft survives';
           final origin = w.location.withQuery({
@@ -340,7 +342,10 @@ void main() {
           await t.runAsync(() => pending);
           await flush(t);
           expect(current.task['id'], 'task-2');
-          expect(w.messages.map((m) => m.id), contains('pending-main'));
+          expect(
+            w.messageDomain.messages.map((m) => m.id),
+            contains('pending-main'),
+          );
           expect(w.navigationRevision, mainRevision);
           await t.tap(find.byTooltip('Close task'));
           await flush(t);

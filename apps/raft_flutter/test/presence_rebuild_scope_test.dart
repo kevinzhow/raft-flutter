@@ -169,14 +169,14 @@ void main() {
         ..dms = client.dmRows
         ..channel = client.channelRows.single
         ..section = 'chat'
-        ..channelLoading = false
+        ..messageDomain.state.channelLoading = false
         ..loading = false;
-      w.ledger.switchServer('s');
-      w.ledger.ingest(
+      w.messageDomain.ledger.switchServer('s');
+      w.messageDomain.ledger.ingest(
         _Client.messages,
-        expectedGeneration: w.ledger.generation,
+        expectedGeneration: w.messageDomain.ledger.generation,
       );
-      w.visibleIds['c'] = {for (final m in _Client.messages) '${m['id']}'};
+      w.messageDomain.visibleIds['c'] = {for (final m in _Client.messages) '${m['id']}'};
       addTearDown(() async {
         w.dispose();
         await client.stream.close();

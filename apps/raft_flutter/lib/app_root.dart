@@ -492,7 +492,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
                   c.generation == generation &&
                   w.server?.string('role') == role &&
                   (channelWindow == null ||
-                      channelWindow == w.channelGeneration &&
+                      channelWindow == w.messageDomain.channelGeneration &&
                           w.channel?.id == targetChannelId &&
                           w.channel?.joined == true);
               final cachedRow = target.channel;
@@ -530,7 +530,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
                     if (!draftRestored.isCompleted) draftRestored.complete();
                   }),
                 );
-                channelWindow = w.channelGeneration;
+                channelWindow = w.messageDomain.channelGeneration;
                 targetChannelId = id;
                 await draftRestored.future;
                 if (!destinationCurrent() || w.channel?.id != id) {

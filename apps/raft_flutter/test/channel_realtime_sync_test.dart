@@ -144,7 +144,7 @@ Future<_Fixture> _login() async {
   w.server = RaftRecord({'id': 's1', 'role': 'member'});
   w.channels = [RaftChannel(_c1()), RaftChannel(_c2()), RaftChannel(_c3())];
   w.dms = [RaftChannel(_dm('d1')), RaftChannel(_dm('d2'))];
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   return (w, a, client, cache);
 }
 
@@ -293,7 +293,7 @@ void main() {
         await w.selectChannel(w.channels[2], autoRead: false); // c3
         await w.selectChannel(w.channels[1], autoRead: false); // c2
         await w.flushCache();
-        expect(w.visibleIds['c2'], isNotEmpty);
+        expect(w.messageDomain.visibleIds['c2'], isNotEmpty);
         expect(cache.values['window/c2'], isNotNull);
         // The adapter answers an unrouted read with 404 Channel not found.
         a.routes.remove('GET /channels/c2');
@@ -304,11 +304,11 @@ void main() {
         expect(_paths(a, calls), ['GET /channels/c2']);
         expect(w.channels.map((c) => c.id), ['c1', 'c3']);
         expect(w.channel, isNull);
-        expect(w.visibleIds['c2'], isNull);
-        expect(w.ledger.messages('c2'), isEmpty);
+        expect(w.messageDomain.visibleIds['c2'], isNull);
+        expect(w.messageDomain.ledger.messages('c2'), isEmpty);
         expect(cache.values['window/c2'], isNull);
         // The unrelated channel keeps its window.
-        expect(w.visibleIds['c3'], isNotEmpty);
+        expect(w.messageDomain.visibleIds['c3'], isNotEmpty);
         final saved = cache.values['channels/'] as Map;
         expect(
           [for (final r in saved['channels'] as List) r['id']],
@@ -396,7 +396,12 @@ void main() {
           'GET /channels/dm',
         });
         expect(_paths(a, calls), contains('GET /channels/unread'));
-        expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3', 'm4']);
+        expect(w.messageDomain.messages.map((m) => m.id), [
+          'm1',
+          'm2',
+          'm3',
+          'm4',
+        ]);
       },
     );
 
@@ -410,7 +415,12 @@ void main() {
       client.emit('heartbeat', {'seq': 40, 'ts': 2});
       await _drain();
       expect(syncs(), 1);
-      expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3', 'm4']);
+      expect(w.messageDomain.messages.map((m) => m.id), [
+        'm1',
+        'm2',
+        'm3',
+        'm4',
+      ]);
       // The server seq covers channels this window never shows.
       client.emit('heartbeat', {'seq': 40, 'ts': 3});
       await _drain();
@@ -426,7 +436,12 @@ void main() {
       expect(client.connects, 0);
       expect(client.resumes, [BigInt.from(12)]);
       expect(_listReads(a, calls), isEmpty);
-      expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3', 'm4']);
+      expect(w.messageDomain.messages.map((m) => m.id), [
+        'm1',
+        'm2',
+        'm3',
+        'm4',
+      ]);
       client.live = false;
       w.resumeLiveSession();
       expect(client.connects, 1, reason: 'rooms:joined will resume');
@@ -454,7 +469,12 @@ void main() {
       client.emit('rooms:joined');
       await _drain();
       expect(w.replies.map((m) => m.id), ['r1', 'r2']);
-      expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3', 'm4']);
+      expect(w.messageDomain.messages.map((m) => m.id), [
+        'm1',
+        'm2',
+        'm3',
+        'm4',
+      ]);
     });
 
     test('a 404 on the gap read revokes through the channel read', () async {
@@ -537,6 +557,6 @@ void main() {
       await t.pump(const Duration(milliseconds: 16));
       expect((t.getRect(m1), t.getRect(m2)), after);
     }
-    expect(w.messages.map((m) => m.id), ['m1', 'm2', 'm3']);
+    expect(w.messageDomain.messages.map((m) => m.id), ['m1', 'm2', 'm3']);
   });
 }

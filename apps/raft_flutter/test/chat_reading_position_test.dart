@@ -70,10 +70,15 @@ void main() {
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
         api.routes['POST /channels/c1/read'] = (_) => {};
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = _rows('read', 0, 60);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
         await _mount(tester, w, family, dark);
         final dynamic state = tester.state(find.byType(RaftChatView));
         final ScrollController viewport = state.viewport;
@@ -84,7 +89,7 @@ void main() {
         expect(find.text('Back to bottom'), findsOneWidget);
 
         Future<void> arrive(String id, int seq, String sender) async {
-          w.ledger.ingest([
+          w.messageDomain.ledger.ingest([
             {
               'id': id,
               'channelId': 'c1',
@@ -92,8 +97,8 @@ void main() {
               'senderId': sender,
               'content': 'Arrival $id',
             },
-          ], expectedGeneration: w.ledger.generation);
-          w.visibleIds['c1']!.add(id);
+          ], expectedGeneration: w.messageDomain.ledger.generation);
+          w.messageDomain.visibleIds['c1']!.add(id);
           w.notifyListeners();
           for (var i = 0; i < 6; i++) {
             await tester.pump(const Duration(milliseconds: 16));
@@ -152,11 +157,16 @@ void main() {
         SharedPreferences.setMockInitialValues({});
         final (w, api) = (await tester.runAsync(() => fixture('member')))!;
         addTearDown(w.dispose);
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         final rows = _rows('page', 50, 60);
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
-        w.hasMore = true;
+        w.messageDomain.ledger.ingest(
+          rows,
+          expectedGeneration: w.messageDomain.ledger.generation,
+        );
+        w.messageDomain.visibleIds['c1'] = rows
+            .map((r) => r['id'] as String)
+            .toSet();
+        w.messageDomain.state.hasMore = true;
         final requests = <Map<String, dynamic>>[];
         final page = Completer<Map<String, dynamic>>();
         api.routes['GET /messages/channel/c1'] = (o) {
@@ -187,8 +197,8 @@ void main() {
           expect(paintedMessage(tester, anchor), before);
         }
         await tester.pumpAndSettle();
-        expect(w.messages.first.id, 'older-0');
-        expect(w.messages.length, 110);
+        expect(w.messageDomain.messages.first.id, 'older-0');
+        expect(w.messageDomain.messages.length, 110);
         expect(paintedMessage(tester, anchor), before);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox());

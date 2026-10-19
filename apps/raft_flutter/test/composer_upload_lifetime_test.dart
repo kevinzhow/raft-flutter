@@ -139,8 +139,8 @@ WorkspaceController _workspace(_Client client, {RootCache? cache}) {
     ..channels = [..._Client.channelRows]
     ..channel = _Client.channelRows.first
     ..loading = false
-    ..channelLoading = false;
-  w.ledger.switchServer('s1');
+    ..messageDomain.state.channelLoading = false;
+  w.messageDomain.ledger.switchServer('s1');
   return w;
 }
 

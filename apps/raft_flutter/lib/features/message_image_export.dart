@@ -54,7 +54,7 @@ Future<bool?> previewMessageImage(
           : Map<String, dynamic>.from(
               jsonDecode(jsonEncode(w.channel!.json)) as Map,
             ),
-      parentId = w.threadParent?.id,
+      parentId = w.messageDomain.state.threadParent?.id,
       threadChannelId = w.threadChannelId;
   final snapshots = {
     for (final row in messages)
@@ -70,17 +70,19 @@ Future<bool?> previewMessageImage(
       return false;
     }
     if (thread &&
-        (parentId != w.threadParent?.id ||
+        (parentId != w.messageDomain.state.threadParent?.id ||
             threadChannelId != w.threadChannelId)) {
       return false;
     }
     final rows = <String, RaftMessage>{
-      for (final m in w.messages) m.id: m,
+      for (final m in w.messageDomain.messages) m.id: m,
       for (final m in w.replies) m.id: m,
-      if (w.threadParent != null) w.threadParent!.id: w.threadParent!,
-      for (final m in w.messages)
+      if (w.messageDomain.state.threadParent != null)
+        w.messageDomain.state.threadParent!.id:
+            w.messageDomain.state.threadParent!,
+      for (final m in w.messageDomain.messages)
         if (m.threadId != null)
-          for (final row in w.ledger.messages(m.threadId!))
+          for (final row in w.messageDomain.ledger.messages(m.threadId!))
             '${row['id']}': RaftMessage(row),
     };
     return snapshots.entries.every(

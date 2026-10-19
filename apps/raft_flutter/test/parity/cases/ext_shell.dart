@@ -144,7 +144,7 @@ WorkspaceController shellWorkspace(
   for (final e in (preset['drafts'] as Map).entries) {
     w.drafts['${e.key}'] = '${e.value}';
   }
-  w.ledger.switchServer('visual-server');
+  w.messageDomain.ledger.switchServer('visual-server');
   return w;
 }
 

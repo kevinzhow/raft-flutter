@@ -102,7 +102,7 @@ _Mounted _mount(ParityContext ctx) {
     ..server = server
     ..channels = [for (final c in channels) RaftChannel(c)]
     ..dms = [for (final c in dms) RaftChannel(c)];
-  w.ledger.switchServer(serverId);
+  w.messageDomain.ledger.switchServer(serverId);
   final store = RecentConversationStore();
   final scope = RecentConversationScope(
     client.origin,

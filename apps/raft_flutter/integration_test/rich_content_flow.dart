@@ -19,7 +19,9 @@ Future<void> verifyRichContent(
   final content =
       'Native rich message $marker\n\n**Markdown** and `code`\n\n```mermaid\n$source\n```';
   await w.send(content);
-  final message = w.messages.singleWhere((m) => m.content == content);
+  final message = w.messageDomain.messages.singleWhere(
+    (m) => m.content == content,
+  );
   await w.jumpToMessage(w.channel!.id, message.id);
   for (
     var i = 0;
@@ -76,10 +78,10 @@ Future<void> verifyRichContent(
           : <String, Object?>{};
     }).toList();
     debugPrint(
-      'Rich render diagnostic: workspaceRows=${w.messages.length} '
-      'workspaceTarget=${w.messages.any((m) => m.id == message.id)} '
-      'loading=${w.channelLoading} window=${w.channelGeneration} '
-      'highlightMatches=${w.highlightedMessageId == message.id} '
+      'Rich render diagnostic: workspaceRows=${w.messageDomain.messages.length} '
+      'workspaceTarget=${w.messageDomain.messages.any((m) => m.id == message.id)} '
+      'loading=${w.messageDomain.state.channelLoading} window=${w.messageDomain.channelGeneration} '
+      'highlightMatches=${w.messageDomain.state.highlightedMessageId == message.id} '
       'errorPresent=${w.error != null} lists=$lists '
       'adapterRows=${chats.map((c) => c.chatController.messages.length).toList()} '
       'adapterTargets=${chats.map((c) => c.chatController.messages.any((m) => m.id == message.id)).toList()} '

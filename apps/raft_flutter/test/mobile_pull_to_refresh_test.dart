@@ -98,7 +98,7 @@ void main() {
           ..channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true})
           ..loading = false;
         w.channels = [w.channel!];
-        w.ledger.switchServer('s1');
+        w.messageDomain.ledger.switchServer('s1');
         addTearDown(() async {
           w.dispose();
           await api.dispose();

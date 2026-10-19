@@ -94,7 +94,7 @@ void main() {
             }
             w.loading = false;
             w.section = 'activity';
-            w.ledger.switchServer('s1');
+            w.messageDomain.ledger.switchServer('s1');
             await t.pumpWidget(
               MaterialApp(
                 theme: raftTheme(RaftFamily.elegant),

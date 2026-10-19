@@ -21,7 +21,7 @@ void main() {
           RaftChannel({'id': 'activity-b', 'name': 'Later', 'joined': true}),
         ]);
         w.sidebarOrder = {'channelSortMode': 'recent'};
-        w.ledger.ingest([
+        w.messageDomain.ledger.ingest([
           for (var i = 0; i < 600; i++)
             {
               'id': 'activity-$i',
@@ -39,40 +39,43 @@ void main() {
             'seq': '2',
             'createdAt': '2026-10-02T00:00:00Z',
           },
-        ], expectedGeneration: w.ledger.generation);
+        ], expectedGeneration: w.messageDomain.ledger.generation);
         await mountPage(t, w, family, dark);
         final a = find.byKey(const ValueKey('sidebar-channel-activity-a'));
         final b = find.byKey(const ValueKey('sidebar-channel-activity-b'));
-        final accepted = w.ledger.latestCreatedAt('activity-a');
+        final accepted = w.messageDomain.ledger.latestCreatedAt('activity-a');
         for (var i = 0; i < 12; i++) {
           t.view.physicalSize = Size(i.isEven ? 1200 : 1440, 900);
           await t.pump();
           expect(t.getTopLeft(b).dy, lessThan(t.getTopLeft(a).dy));
           expect(
-            identical(w.ledger.latestCreatedAt('activity-a'), accepted),
+            identical(
+              w.messageDomain.ledger.latestCreatedAt('activity-a'),
+              accepted,
+            ),
             true,
           );
         }
         w.unread['activity-a'] = 3;
         w.drafts['activity-b'] = 'unsent draft';
-        w.ledger.ingestUpdate({
+        w.messageDomain.ledger.ingestUpdate({
           'id': 'activity-599',
           'channelId': 'activity-a',
           'createdAt': '2026-10-03T00:00:00Z',
-        }, expectedGeneration: w.ledger.generation);
+        }, expectedGeneration: w.messageDomain.ledger.generation);
         w.notifyListeners();
         await t.pump();
         expect(t.getTopLeft(a).dy, lessThan(t.getTopLeft(b).dy));
         expect(t.widget<RaftNavItem>(a).unread, 3);
         expect(t.widget<RaftNavItem>(b).hasDraft, true);
-        w.ledger.remove('activity-a', 'activity-599');
+        w.messageDomain.ledger.remove('activity-a', 'activity-599');
         w.notifyListeners();
         await t.pump();
         expect(t.getTopLeft(b).dy, lessThan(t.getTopLeft(a).dy));
-        w.ledger.revokeChannel('activity-b');
+        w.messageDomain.ledger.revokeChannel('activity-b');
         w.notifyListeners();
         await t.pump();
-        expect(w.ledger.latestCreatedAt('activity-b'), isNull);
+        expect(w.messageDomain.ledger.latestCreatedAt('activity-b'), isNull);
         expect(t.getTopLeft(a).dy, lessThan(t.getTopLeft(b).dy));
         expect(t.widget<RaftNavItem>(a).unread, 3);
         expect(t.widget<RaftNavItem>(b).hasDraft, true);

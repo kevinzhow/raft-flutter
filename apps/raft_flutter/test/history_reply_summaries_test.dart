@@ -131,7 +131,7 @@ class _Run {
         automaticHistoryMaintenance: false,
       ) {
     w = WorkspaceController(client, cache: cache)
-      ..ledger.switchServer('server')
+      ..messageDomain.ledger.switchServer('server')
       ..server = RaftRecord({'id': 'server', 'role': 'owner'})
       ..channels = [
         RaftChannel({'id': 'chat', 'type': 'private', 'joined': true}),
@@ -143,7 +143,8 @@ class _Run {
   final DriftWorkspaceCache cache;
   late final WorkspaceController w;
 
-  Map<String, dynamic> get summaries => w.threadSummariesFor('chat');
+  Map<String, dynamic> get summaries =>
+      w.messageDomain.threadSummariesFor('chat');
 
   /// Opens the channel; with [offline] the network never answers, so only
   /// what the device holds can be on screen.
@@ -151,7 +152,7 @@ class _Run {
     if (offline) client.gate = Completer<void>();
     final opening = w.selectChannel(w.channels.single, autoRead: false);
     pending.add(opening);
-    for (var i = 0; i < 400 && w.messages.isEmpty; i++) {
+    for (var i = 0; i < 400 && w.messageDomain.messages.isEmpty; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 5));
     }
     if (!offline) await opening;
@@ -235,9 +236,9 @@ void main() {
     final wire = {'m25': _summary('m25', 3), 'm100': _summary('m100', 5)};
     final run = _Run(file, wire);
     await run.open();
-    await run.w.older();
+    await run.w.messageDomain.older();
     await run.settle();
-    expect(run.w.messages.length, 100);
+    expect(run.w.messageDomain.messages.length, 100);
     expect(run.summaries.keys, containsAll(['m25', 'm100']));
     await before?.call(run);
     await run.close();
@@ -254,10 +255,13 @@ void main() {
       final run = _Run(file, wire);
       addTearDown(run.close);
       await run.open(offline: true);
-      expect(run.w.messages, isNotEmpty);
+      expect(run.w.messageDomain.messages, isNotEmpty);
       expect(run.client.gate?.isCompleted, isFalse, reason: 'no answer yet');
       expect(run.summaries['m100']?['replyCount'], 5);
-      expect(run.w.threadSummaries['m100']?['latestReplies'], hasLength(1));
+      expect(
+        run.w.messageDomain.threadSummaries['m100']?['latestReplies'],
+        hasLength(1),
+      );
     },
   );
 
@@ -271,25 +275,25 @@ void main() {
         // The device keeps all 100 rows but this run held only the latest 50
         // when it left (memory release), as on a long-lived session.
         for (var i = 1; i <= 50; i++) {
-          run.w.ledger.remove('chat', 'm$i');
-          run.w.visibleIds['chat']?.remove('m$i');
+          run.w.messageDomain.ledger.remove('chat', 'm$i');
+          run.w.messageDomain.visibleIds['chat']?.remove('m$i');
         }
-        run.w.hasMore = true;
-        await run.w.saveHistoryWindow('chat');
+        run.w.messageDomain.state.hasMore = true;
+        await run.w.messageDomain.saveHistoryWindow('chat');
       },
     );
     final run = _Run(file, wire);
     addTearDown(run.close);
     await run.open();
-    expect(run.w.messages.length, lessThanOrEqualTo(100));
+    expect(run.w.messageDomain.messages.length, lessThanOrEqualTo(100));
     for (var i = 1; i <= 50; i++) {
-      run.w.ledger.remove('chat', 'm$i');
-      run.w.visibleIds['chat']?.remove('m$i');
+      run.w.messageDomain.ledger.remove('chat', 'm$i');
+      run.w.messageDomain.visibleIds['chat']?.remove('m$i');
     }
-    run.w.hasMore = true;
+    run.w.messageDomain.state.hasMore = true;
     run.client.gate = Completer<void>();
-    await run.w.older();
-    expect(run.w.messages.any((m) => m.id == 'm25'), isTrue);
+    await run.w.messageDomain.older();
+    expect(run.w.messageDomain.messages.any((m) => m.id == 'm25'), isTrue);
     expect(
       run.client.calls.where((c) => c.startsWith('page:')).length,
       lessThan(2),
@@ -315,8 +319,8 @@ void main() {
       final run = _Run(file, wire);
       addTearDown(run.close);
       await run.open(offline: true);
-      expect(run.w.messages.any((m) => m.id == 'm25'), isTrue);
-      expect(run.w.messages.any((m) => m.id == 'm100'), isFalse);
+      expect(run.w.messageDomain.messages.any((m) => m.id == 'm25'), isTrue);
+      expect(run.w.messageDomain.messages.any((m) => m.id == 'm100'), isFalse);
       expect(run.summaries['m25']?['replyCount'], 3);
     },
   );

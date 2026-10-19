@@ -99,7 +99,7 @@ Future<(WorkspaceController, MessageAdapter, _EventClient)> _fixture(
   w.channel = c1;
   w.channels = [c1, c2];
   w.loading = false;
-  w.ledger.switchServer('s1');
+  w.messageDomain.ledger.switchServer('s1');
   w.server = RaftRecord({
     'id': 's1',
     'slug': 'demo',

@@ -118,15 +118,15 @@ class _Fixture {
           ..server = RaftRecord({'id': 'server', 'role': 'owner'})
           ..channel = RaftChannel({'id': 'channel', 'joined': true});
     source.channels = [source.channel!];
-    source.ledger.switchServer('server');
-    source.ledger.ingest([
+    source.messageDomain.ledger.switchServer('server');
+    source.messageDomain.ledger.ingest([
       {
         'id': 'message',
         'channelId': 'channel',
         'seq': '1',
         'attachments': [_metadata],
       },
-    ], expectedGeneration: source.ledger.generation);
+    ], expectedGeneration: source.messageDomain.ledger.generation);
     key = AttachmentImageKey.fromMetadata(
       scope: source.attachmentImageScope,
       channelId: 'channel',

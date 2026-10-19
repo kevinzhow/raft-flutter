@@ -352,9 +352,9 @@ void main() {
     final before = c.reads;
     w.setTimelineAtBottom('c', false);
     c.syncRows = [_Client.message('gap1', 2), _Client.message('gap2', 3)];
-    await w.syncVisibleScopes();
+    await w.messageDomain.navigation.syncVisibleScopes();
     await Future<void>.delayed(Duration.zero);
-    expect(w.messages.map((m) => m.id), containsAll(['gap1', 'gap2']));
+    expect(w.messageDomain.messages.map((m) => m.id), containsAll(['gap1', 'gap2']));
     expect(c.reads, before, reason: 'the reader never reached these rows');
     expect(w.unread['c'], 2);
   });
@@ -371,7 +371,7 @@ void main() {
     await w.selectChannel(w.channels.single);
     final before = c.reads;
     c.syncRows = [_Client.message('gap1', 2)];
-    await w.syncVisibleScopes();
+    await w.messageDomain.navigation.syncVisibleScopes();
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
     expect(c.reads, before + 1);
@@ -392,10 +392,10 @@ void main() {
       {..._Client.message('as-string', 2), 'seq': '2'},
       {..._Client.message('as-number', 3), 'seq': 3},
     ];
-    await w.syncVisibleScopes();
+    await w.messageDomain.navigation.syncVisibleScopes();
     await Future<void>.delayed(Duration.zero);
-    expect(w.messages.map((m) => m.id), ['m', 'as-string', 'as-number']);
-    expect(w.ledger.watermark, BigInt.from(3));
+    expect(w.messageDomain.messages.map((m) => m.id), ['m', 'as-string', 'as-number']);
+    expect(w.messageDomain.ledger.watermark, BigInt.from(3));
   });
 
   testWidgets(
@@ -415,12 +415,12 @@ void main() {
       w.channel = RaftChannel({'id': 'c', 'name': 'design', 'joined': true});
       w.channels = [w.channel!];
       w.setForeground(true);
-      w.ledger.switchServer('s');
+      w.messageDomain.ledger.switchServer('s');
       final rows = [
         for (final r in contextRows('row', count: 60)) {...r, 'channelId': 'c'},
       ];
-      w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-      w.visibleIds['c'] = rows.map((r) => r['id'] as String).toSet();
+      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c'] = rows.map((r) => r['id'] as String).toSet();
       await tester.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),
@@ -479,13 +479,13 @@ void main() {
         w.channel = RaftChannel({'id': 'c', 'name': 'design', 'joined': true});
         w.channels = [w.channel!];
         w.setForeground(true);
-        w.ledger.switchServer('s');
+        w.messageDomain.ledger.switchServer('s');
         final rows = [
           for (final r in contextRows('row', count: 60))
             {...r, 'channelId': 'c'},
         ];
-        w.ledger.ingest(rows, expectedGeneration: w.ledger.generation);
-        w.visibleIds['c'] = rows.map((r) => r['id'] as String).toSet();
+        w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+        w.messageDomain.visibleIds['c'] = rows.map((r) => r['id'] as String).toSet();
         await tester.pumpWidget(
           MaterialApp(
             theme: raftTheme(family, dark: dark),

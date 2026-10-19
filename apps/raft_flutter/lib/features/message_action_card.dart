@@ -86,9 +86,10 @@ class _MessageActionCardState extends State<MessageActionCard> {
   Route<dynamic>? ownedDialog;
   Map<String, dynamic> get metadata {
     final latest = [
-      ...w.messages,
+      ...w.messageDomain.messages,
       ...w.replies,
-      if (w.threadParent != null) w.threadParent!,
+      if (w.messageDomain.state.threadParent != null)
+        w.messageDomain.state.threadParent!,
     ].where((m) => m.id == widget.message.id).firstOrNull;
     if (latest != null &&
         jsonEncode(latest.json['actionMetadata']) !=

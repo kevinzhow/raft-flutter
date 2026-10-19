@@ -23,10 +23,11 @@ bool Function() _fence(
   bool thread,
   bool Function() active,
 ) {
-  final scope = w.draftScope(thread: thread), generation = w.ledger.generation;
+  final scope = w.draftScope(thread: thread),
+      generation = w.messageDomain.ledger.generation;
   return () =>
       active() &&
-      generation == w.ledger.generation &&
+      generation == w.messageDomain.ledger.generation &&
       scope == w.draftScope(thread: thread);
 }
 
