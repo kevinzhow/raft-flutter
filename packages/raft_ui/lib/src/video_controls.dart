@@ -621,7 +621,10 @@ class _RaftVideoControlBarState extends State<RaftVideoControlBar> {
                       onTap: widget.onTogglePlay,
                       filled: true,
                     ),
-                    Flexible(
+                    // Give the time the remaining width. A loose Flexible
+                    // plus Spacer leaves unused time allocation after the actions
+                    // with proportional fonts (especially short clips).
+                    Expanded(
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
@@ -641,7 +644,6 @@ class _RaftVideoControlBarState extends State<RaftVideoControlBar> {
                         ),
                       ),
                     ),
-                    const Spacer(),
                     if (showMute)
                       RaftHoverRegion(
                         onEnter: volumeEnter,

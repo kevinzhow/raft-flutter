@@ -20,6 +20,31 @@ Widget mediaBrowserPhoneNoCaptionPreview() =>
 @RaftPreviews('Media browser desktop', size: Size(1280, 800))
 Widget mediaBrowserDesktopPreview() => const _MediaBrowserDesktopPreview();
 
+// Mount the real player so these previews exercise the controls and shell together.
+@RaftPreviews('Video browser compact phone', size: Size(320, 640))
+Widget videoBrowserCompactPhonePreview() =>
+    const _MediaBrowserPreview(video: true);
+
+@RaftPreviews('Video browser phone', size: Size(390, 844))
+Widget videoBrowserPhonePreview() => const _MediaBrowserPreview(video: true);
+
+@RaftPreviews('Video browser phone landscape', size: Size(844, 390))
+Widget videoBrowserLandscapePreview() =>
+    const _MediaBrowserPreview(video: true);
+
+@RaftPreviews('Video browser tablet', size: Size(768, 1024))
+Widget videoBrowserTabletPreview() =>
+    const _MediaBrowserDesktopPreview(video: true);
+
+@RaftPreviews('Video browser desktop', size: Size(1280, 800))
+Widget videoBrowserDesktopPreview() =>
+    const _MediaBrowserDesktopPreview(video: true);
+
+@RaftPreviews('Video inline card', size: Size(320, 240))
+Widget videoInlineControlsPreview() => const Center(
+  child: SizedBox(width: 288, height: 180, child: _VideoScene(inline: true)),
+);
+
 const _items = [
   RaftMediaStripItem(label: 'Image 1 of 8'),
   RaftMediaStripItem(
@@ -55,8 +80,12 @@ class _Scene extends StatelessWidget {
 }
 
 class _MediaBrowserPreview extends StatefulWidget {
-  const _MediaBrowserPreview({this.chrome = true, this.caption = true});
-  final bool chrome, caption;
+  const _MediaBrowserPreview({
+    this.chrome = true,
+    this.caption = true,
+    this.video = false,
+  });
+  final bool chrome, caption, video;
   @override
   State<_MediaBrowserPreview> createState() => _MediaBrowserPreviewState();
 }
@@ -81,7 +110,7 @@ class _MediaBrowserPreviewState extends State<_MediaBrowserPreview> {
           ),
         )
       : RaftMediaImmersiveShell(
-          title: 'IMG_2041.jpg',
+          title: widget.video ? 'short-clip.mp4' : 'IMG_2041.jpg',
           subtitle: 'Alice Chen · Oct 13, 2:02 PM',
           chrome: chrome,
           onClose: () => setState(() => closed = true),
@@ -108,15 +137,25 @@ class _MediaBrowserPreviewState extends State<_MediaBrowserPreview> {
             index: index,
             onSelect: (i) => setState(() => index = i),
           ),
-          child: GestureDetector(
-            onTap: () => chrome.value = !chrome.value,
-            child: const _Scene(),
-          ),
+          child: widget.video
+              ? ValueListenableBuilder<bool>(
+                  valueListenable: chrome,
+                  builder: (context, shown, _) => _VideoScene(
+                    immersive: true,
+                    controlsVisible: shown,
+                    onSurfaceTap: () => chrome.value = !chrome.value,
+                  ),
+                )
+              : GestureDetector(
+                  onTap: () => chrome.value = !chrome.value,
+                  child: const _Scene(),
+                ),
         );
 }
 
 class _MediaBrowserDesktopPreview extends StatefulWidget {
-  const _MediaBrowserDesktopPreview();
+  const _MediaBrowserDesktopPreview({this.video = false});
+  final bool video;
   @override
   State<_MediaBrowserDesktopPreview> createState() =>
       _MediaBrowserDesktopPreviewState();
@@ -132,7 +171,9 @@ class _MediaBrowserDesktopPreviewState
     leading: const RaftIcon(RaftGlyph.video, size: 16),
     titleBold: true,
     onClose: () {},
-    meta: RaftLightboxCounter(index: index, count: _items.length),
+    meta: widget.video
+        ? null
+        : RaftLightboxCounter(index: index, count: _items.length),
     actions: [
       RaftLightboxIconAction(
         glyph: RaftGlyph.download,
@@ -140,12 +181,80 @@ class _MediaBrowserDesktopPreviewState
         onPressed: () {},
       ),
     ],
-    overlayInset: raftMediaDesktopStripBand,
-    overlay: RaftMediaStrip(
-      items: _items,
-      index: index,
-      onSelect: (i) => setState(() => index = i),
-    ),
-    child: const _Scene(),
+    // The video variant is the single-attachment desktop viewer.
+    overlayInset: widget.video ? 0 : raftMediaDesktopStripBand,
+    overlay: widget.video
+        ? null
+        : RaftMediaStrip(
+            items: _items,
+            index: index,
+            onSelect: (i) => setState(() => index = i),
+          ),
+    child: widget.video ? const _VideoScene() : const _Scene(),
   );
+}
+
+// Only the picture is synthetic; controls, visibility and action state are real.
+class _VideoScene extends StatefulWidget {
+  const _VideoScene({
+    this.immersive = false,
+    this.inline = false,
+    this.controlsVisible,
+    this.onSurfaceTap,
+  });
+  final bool immersive, inline;
+  final bool? controlsVisible;
+  final VoidCallback? onSurfaceTap;
+  @override
+  State<_VideoScene> createState() => _VideoSceneState();
+}
+
+class _VideoSceneState extends State<_VideoScene> {
+  bool playing = false;
+  double volume = 100;
+  Duration position = const Duration(seconds: 1);
+  @override
+  Widget build(BuildContext context) {
+    final duration = widget.inline
+        ? const Duration(hours: 2, minutes: 3, seconds: 4)
+        : const Duration(seconds: 2);
+    final insets = RaftMediaChromeInsets.maybeOf(context);
+    void toggle() => setState(() => playing = !playing);
+    void seek(Duration value) => setState(() => position = value);
+    void setVolume(double value) => setState(() => volume = value);
+    if (widget.inline) {
+      return RaftVideoOverlay(
+        filename: 'long-clip.mp4',
+        playing: playing,
+        position: position,
+        duration: duration,
+        volume: volume,
+        touch: true,
+        onTogglePlay: toggle,
+        onSeek: seek,
+        onVolume: setVolume,
+        onOpen: () {},
+        onDownload: () {},
+        child: const _Scene(),
+      );
+    }
+    return RaftVideoViewer(
+      filename: 'short-clip.mp4',
+      video: const _Scene(),
+      immersive: widget.immersive,
+      touch: widget.immersive,
+      videoSize: const Size(1920, 1080),
+      playing: playing,
+      position: position,
+      duration: duration,
+      volume: volume,
+      controlsVisible: widget.controlsVisible,
+      controlsInset: widget.immersive ? (insets?.bottom ?? 0) : 0,
+      onSurfaceTap: widget.onSurfaceTap,
+      onTogglePlay: toggle,
+      onSeek: seek,
+      onVolume: setVolume,
+      onDownload: widget.immersive ? null : () {},
+    );
+  }
 }
