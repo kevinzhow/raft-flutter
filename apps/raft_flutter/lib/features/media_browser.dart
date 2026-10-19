@@ -161,7 +161,9 @@ class MediaBrowserState extends State<MediaBrowser>
     chrome.addListener(_chromeChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadThumbnails();
-      if (items[index].isVideo) stageFor(index).enter(autoplay: widget.autoplay);
+      if (items[index].isVideo) {
+        stageFor(index).enter(autoplay: widget.autoplay);
+      }
       _watchStage();
     });
   }
@@ -353,7 +355,9 @@ class MediaBrowserState extends State<MediaBrowser>
   /// Once the current page shows its original, fetch each neighbour once at
   /// display size; release what is no longer adjacent.
   void _preloadNeighbours() {
-    if (!mounted || _disposed || _preloadSuppressed || !widget.authorized()) return;
+    if (!mounted || _disposed || _preloadSuppressed || !widget.authorized()) {
+      return;
+    }
     final wanted = {
       for (final n in [index - 1, index + 1])
         if (n >= 0 && n < items.length && !items[n].isVideo) n,
@@ -817,14 +821,14 @@ class MediaBrowserState extends State<MediaBrowser>
             // by the user, including the outgoing page during a swipe.
             _releasePreloads();
             return w.attachmentMedia.acquireImage(
-            original,
-            authorized: widget.authorized,
-            load: attachmentImageLoader(
-              controller: w,
-              files: widget.files,
-              metadata: pageMeta,
-              key: original,
-            ),
+              original,
+              authorized: widget.authorized,
+              load: attachmentImageLoader(
+                controller: w,
+                files: widget.files,
+                metadata: pageMeta,
+                key: original,
+              ),
               foreground: true,
             );
           },
@@ -892,7 +896,8 @@ class MediaBrowserState extends State<MediaBrowser>
   /// The size a video was read to have (its first-frame read), when the
   /// message does not say.
   Size? _rememberedSize(int i) {
-    final shape = w.attachmentMedia.playerSessions.shapes[attachmentMediaKey(item(i))];
+    final shape =
+        w.attachmentMedia.playerSessions.shapes[attachmentMediaKey(item(i))];
     return shape == null
         ? null
         : Size(shape.width.toDouble(), shape.height.toDouble());
@@ -904,9 +909,10 @@ class MediaBrowserState extends State<MediaBrowser>
     return Semantics(
       container: true,
       label: _pageLabel(context, i),
-      // The picture fills the stage (the strip's room is for images).
+      // Desktop pictures and controls share the gallery's reserved strip room.
+      // The immersive phone page uses its measured chrome inset instead.
       child: RaftLightboxStageInset(
-        vertical: 0,
+        vertical: widget.page ? 0 : RaftLightboxStageInset.of(context),
         child: ValueListenableBuilder<bool>(
           valueListenable: chrome,
           builder: (context, shown, _) => MediaVideoPage(

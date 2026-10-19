@@ -95,6 +95,11 @@ void main() {
       ('landscape', videoBrowserLandscapePreview, const Size(844, 390)),
       ('tablet', videoBrowserTabletPreview, const Size(768, 1024)),
       ('desktop', videoBrowserDesktopPreview, const Size(1280, 800)),
+      (
+        'single desktop',
+        videoBrowserSingleDesktopPreview,
+        const Size(1280, 800),
+      ),
       ('inline', videoInlineControlsPreview, const Size(320, 240)),
     ]) {
       testWidgets('real controls preview $name $family/$dark', (tester) async {

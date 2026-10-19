@@ -40,6 +40,10 @@ Widget videoBrowserTabletPreview() =>
 Widget videoBrowserDesktopPreview() =>
     const _MediaBrowserDesktopPreview(video: true);
 
+@RaftPreviews('Video browser desktop single attachment', size: Size(1280, 800))
+Widget videoBrowserSingleDesktopPreview() =>
+    const _MediaBrowserDesktopPreview(video: true, gallery: false);
+
 @RaftPreviews('Video inline card', size: Size(320, 240))
 Widget videoInlineControlsPreview() => const Center(
   child: SizedBox(width: 288, height: 180, child: _VideoScene(inline: true)),
@@ -92,7 +96,7 @@ class _MediaBrowserPreview extends StatefulWidget {
 
 class _MediaBrowserPreviewState extends State<_MediaBrowserPreview> {
   late final ValueNotifier<bool> chrome = ValueNotifier(widget.chrome);
-  int index = 2;
+  late int index = widget.video ? 1 : 2;
   bool closed = false;
 
   @override
@@ -154,8 +158,8 @@ class _MediaBrowserPreviewState extends State<_MediaBrowserPreview> {
 }
 
 class _MediaBrowserDesktopPreview extends StatefulWidget {
-  const _MediaBrowserDesktopPreview({this.video = false});
-  final bool video;
+  const _MediaBrowserDesktopPreview({this.video = false, this.gallery = true});
+  final bool video, gallery;
   @override
   State<_MediaBrowserDesktopPreview> createState() =>
       _MediaBrowserDesktopPreviewState();
@@ -171,9 +175,9 @@ class _MediaBrowserDesktopPreviewState
     leading: const RaftIcon(RaftGlyph.video, size: 16),
     titleBold: true,
     onClose: () {},
-    meta: widget.video
-        ? null
-        : RaftLightboxCounter(index: index, count: _items.length),
+    meta: widget.gallery
+        ? RaftLightboxCounter(index: index, count: _items.length)
+        : null,
     actions: [
       RaftLightboxIconAction(
         glyph: RaftGlyph.download,
@@ -181,9 +185,8 @@ class _MediaBrowserDesktopPreviewState
         onPressed: () {},
       ),
     ],
-    // The video variant is the single-attachment desktop viewer.
-    overlayInset: widget.video ? 0 : raftMediaDesktopStripBand,
-    overlay: widget.video
+    overlayInset: widget.gallery ? raftMediaDesktopStripBand : 0,
+    overlay: !widget.gallery
         ? null
         : RaftMediaStrip(
             items: _items,

@@ -456,6 +456,29 @@ void main() {
     });
   });
 
+  scenario('desktop gallery controls remain above the thumbnail strip', (
+    tester,
+  ) async {
+    final rig = await _mount(
+      tester,
+      kinds: 'vi',
+      page: false,
+      size: const Size(1280, 800),
+    );
+    await _rest(tester, 300);
+    final strip = tester.getRect(
+      find.byKey(const ValueKey('lightbox-thumbnails')),
+    );
+    final mute = tester.getRect(find.byKey(const Key('inline-video-mute')));
+    final seek = tester.getRect(find.byKey(const Key('inline-video-seek')));
+    expect(mute.bottom, lessThanOrEqualTo(strip.top));
+    expect(seek.bottom, lessThanOrEqualTo(strip.top));
+    await tester.tap(find.byKey(const Key('inline-video-mute')));
+    await _rest(tester, 20);
+    expect(rig.made.single.level, 0);
+    expect(rig.browser.index, 0);
+  });
+
   group('lifecycle', () {
     scenario('the app going to the background pauses and does not resume', (
       tester,

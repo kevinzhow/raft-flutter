@@ -5,6 +5,7 @@
 // control language as the message card ([RaftVideoOverlay]).
 import 'package:flutter/material.dart';
 
+import 'attachment_lightbox.dart' show RaftLightboxStageInset;
 import 'theme.dart';
 import 'video_controls.dart';
 
@@ -126,6 +127,14 @@ class _RaftVideoViewerState extends State<RaftVideoViewer> {
   Widget build(BuildContext context) => ColoredBox(
     key: const Key('video-viewer'),
     color: Colors.black,
-    child: LayoutBuilder(builder: stage),
+    // The gallery reserves its thumbnail band on both sides of the centre
+    // line. Fit the picture and its controls inside that room, just as images
+    // do, so the strip cannot intercept the seek rail or action targets.
+    child: Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: RaftLightboxStageInset.of(context),
+      ),
+      child: LayoutBuilder(builder: stage),
+    ),
   );
 }
