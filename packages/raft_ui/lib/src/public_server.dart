@@ -9,18 +9,19 @@ import 'package:flutter/rendering.dart';
 
 import 'banner.dart';
 import 'channel_header.dart' show raftCollapseWhitespace;
+import 'components.dart' show RaftConversationNavKind, RaftNavItem;
 import 'computer_surfaces.dart' show RaftPanelHeaderIconTile;
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'localization.dart';
-import 'panel_layout.dart'
-    show RaftCssText, RaftPanelHeaderBar, RaftPanelIconButton;
+import 'panel_layout.dart' show RaftCssText, RaftPanelHeaderBar;
 import 'recipe_surface.dart';
 import 'recipes/banner.g.dart';
 import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
+import 'tooltip.dart' show RaftTooltip;
 import 'adaptive_workspace.dart' show RaftRailDestination, RaftWorkspaceRail;
 import 'workspace_shell.dart'
     show RaftWorkspaceRailAction, RaftWorkspaceRailFooter;
@@ -28,12 +29,17 @@ import 'status_bar.dart';
 import 'theme.dart';
 import 'viewport_breakpoints.dart';
 
-/// `h-panel-header`: 62px on every theme (48px on short viewports).
+/// `h-panel-header`: the shell's `--shell-header-height` (AppShellRoot sets it
+/// since Web v1.21.12): 56px Elegant, 62px Brutal, 48px on short viewports.
 double _publicHeaderHeight(BuildContext context) =>
-    MediaQuery.sizeOf(context).height <= 600 ? 48 : 62;
+    RaftLayoutMetrics.shellHeaderHeight(
+      RaftTokens.of(context),
+      MediaQuery.sizeOf(context).height,
+    );
 
 /// `PublicServerPage` loading branch: `min-h-screen ... bg-layer-canvas-muted
-/// theme-brutal:bg-brutal-cream font-display font-bold`, the label centred.
+/// theme-brutal:bg-brutal-cream` with a large centred Spinner (Web v1.21.12;
+/// it was the bold word "Loading" before). [label] is the Spinner's name.
 class RaftPublicServerLoading extends StatelessWidget {
   const RaftPublicServerLoading({super.key, this.label = 'Loading…'});
   final String label;
@@ -43,15 +49,10 @@ class RaftPublicServerLoading extends StatelessWidget {
     return ColoredBox(
       color: t.brutal ? t.product.brutalCream : t.colors['layer-canvas-muted']!,
       child: Center(
-        child: Text(
-          raftText(context, label),
-          style: RaftTypography.inherited(
-            t,
-            size: 16,
-            line: 24,
-            weight: FontWeight.w700,
-            color: RaftSettingsText(t).strong,
-          ),
+        child: Semantics(
+          label: raftText(context, label),
+          liveRegion: true,
+          child: const RaftSpinner(size: 24),
         ),
       ),
     );
@@ -65,9 +66,83 @@ class RaftPublicServerChannel {
   final String id, name;
 }
 
-/// The `nav` column: `w-36 sm:w-[240px] border-r bg-layer-inset` (Brutal
-/// `border-r-2 border-black bg-brutal-cream`) with the server name header and
-/// the "Public channels" list.
+/// Frame shared by the two side columns of the public page (channels and
+/// settings): `PublicServerSidebarFrame`, a rui SidebarRoot (`border-r
+/// border-line-muted bg-layer-canvas-muted`, Brutal `border-r-2 border-black
+/// bg-brutal-cream`), an `h-panel-header` title row and a scroll surface
+/// (`px-2 py-3`).
+class _PublicSidebarFrame extends StatelessWidget {
+  const _PublicSidebarFrame({
+    required this.frameKey,
+    required this.title,
+    required this.width,
+    required this.child,
+    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+  });
+  final Key frameKey;
+  final String title;
+  final double width;
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final text = RaftSettingsText(t);
+    final fill = t.brutal
+        ? t.product.brutalCream
+        : t.colors['layer-canvas-muted']!;
+    final rule = BorderSide(
+      color: t.brutal ? Colors.black : t.colors['line-muted']!,
+      width: t.brutal ? 2 : 1,
+    );
+    return RaftStatusBarSource(
+      color: fill,
+      child: Container(
+        key: frameKey,
+        width: width,
+        decoration: BoxDecoration(
+          color: fill,
+          border: Border(right: rule),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              height: _publicHeaderHeight(context),
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
+              decoration: BoxDecoration(border: Border(bottom: rule)),
+              child: Semantics(
+                header: true,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  // `font-heading text-lg in-data-[theme=elegant]:text-[17px]`.
+                  style: RaftTypography.heading(
+                    t,
+                    size: t.brutal ? 18 : 17,
+                    line: t.brutal ? 28 : 25.5,
+                    weight: FontWeight.w700,
+                    color: text.strong,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(padding: padding, child: child),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The `nav` column of the channel list: `w-36 sm:w-[240px]`, built from the
+/// same rows as the signed-in Sidebar (accent SidebarItem, the channel icon at
+/// 18px) so the two read as one surface in every theme.
 class RaftPublicChannelSidebar extends StatelessWidget {
   const RaftPublicChannelSidebar({
     super.key,
@@ -91,153 +166,51 @@ class RaftPublicChannelSidebar extends StatelessWidget {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
     final sm = raftBreakpointWidth(context) >= 640;
-    final headerHeight = _publicHeaderHeight(context);
-    final edge = t.brutal ? Colors.black : t.colors['line-hairline'];
-    final rule = BorderSide(color: edge ?? text.edge, width: t.brutal ? 2 : 1);
     return Semantics(
       container: true,
       label: raftText(context, label),
-      child: RaftStatusBarSource(
-        color: t.brutal ? t.product.brutalCream : t.colors['layer-inset']!,
-        child: Container(
-          key: const ValueKey('public-server-channel-sidebar'),
-          width: sm ? (width ?? 240) : 144,
-          decoration: BoxDecoration(
-            color: t.brutal ? t.product.brutalCream : t.colors['layer-inset'],
-            border: Border(right: rule),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                height: headerHeight,
-                alignment: Alignment.centerLeft,
-                padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x4),
-                decoration: BoxDecoration(border: Border(bottom: rule)),
-                child: Semantics(
-                  header: true,
+      child: _PublicSidebarFrame(
+        frameKey: const ValueKey('public-server-channel-sidebar'),
+        title: serverName,
+        width: sm ? (width ?? 240) : 144,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // `mb-1 flex h-6 items-center px-2`; below sm the column is too
+            // narrow for one line at the signed-in metrics, so it wraps
+            // (`max-sm:h-auto max-sm:min-h-6 text-[11px] tracking-wider`).
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 24),
+                child: Align(
+                  alignment: Alignment.centerLeft,
                   child: Text(
-                    serverName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    raftText(context, label).toUpperCase(),
+                    maxLines: sm ? 1 : null,
+                    overflow: sm ? TextOverflow.ellipsis : TextOverflow.clip,
                     style: RaftTypography.inherited(
                       t,
-                      size: 16,
-                      line: 24,
+                      size: sm ? 12 : 11,
+                      line: sm ? 16 : 16.5,
                       weight: FontWeight.w700,
-                      color: text.strong,
-                    ),
+                      color: t.brutal ? Colors.black : text.strong,
+                    ).copyWith(letterSpacing: (sm ? 12 * .1 : 11 * .05)),
                   ),
                 ),
               ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(RaftSpace.x3),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        RaftSpace.x2,
-                        0,
-                        RaftSpace.x2,
-                        RaftSpace.x2,
-                      ),
-                      child: Text(
-                        raftText(context, label).toUpperCase(),
-                        style: RaftTypography.inherited(
-                          t,
-                          size: 11,
-                          line: 16.5,
-                          weight: FontWeight.w700,
-                          color: t.colors['foreground-hint'] ?? t.muted,
-                        ).copyWith(letterSpacing: 11 * .05),
-                      ),
-                    ),
-                    for (final channel in channels)
-                      _ChannelButton(
-                        channel: channel,
-                        selected: channel.id == selectedId,
-                        onPressed: () => onSelect(channel.id),
-                      ),
-                  ],
-                ),
+            ),
+            for (final channel in channels)
+              RaftNavItem(
+                key: ValueKey('public-channel-${channel.id}'),
+                label: channel.name,
+                glyph: RaftGlyph.hash,
+                conversationKind: RaftConversationNavKind.channel,
+                selected: channel.id == selectedId,
+                onTap: () => onSelect(channel.id),
               ),
-            ],
-          ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _ChannelButton extends StatelessWidget {
-  const _ChannelButton({
-    required this.channel,
-    required this.selected,
-    required this.onPressed,
-  });
-  final RaftPublicServerChannel channel;
-  final bool selected;
-  final VoidCallback onPressed;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    final radius = t.brutal ? BorderRadius.zero : BorderRadius.circular(6);
-    final color = selected
-        ? (t.brutal ? Colors.black : t.colors['accent-strong'])
-        : text.strong;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: RaftSpace.x1),
-      child: RaftInteractive(
-        key: ValueKey('public-channel-${channel.id}'),
-        semanticLabel: channel.name,
-        selected: selected,
-        onPressed: onPressed,
-        builder: (context, state) {
-          final fill = selected
-              ? (t.brutal ? t.product.brutalPink : t.colors['accent-soft'])
-              : (state.hovered
-                    ? (t.brutal ? Colors.white : t.panel)
-                    : Colors.transparent);
-          final content = Row(
-            spacing: 6,
-            children: [
-              RaftIcon(RaftGlyph.hash, size: 15, color: color),
-              Expanded(
-                child: Text(
-                  channel.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: RaftTypography.inherited(
-                    t,
-                    size: 14,
-                    line: 20,
-                    weight: selected ? FontWeight.w700 : FontWeight.w500,
-                    color: color,
-                  ),
-                ),
-              ),
-            ],
-          );
-          const inset = EdgeInsets.symmetric(
-            horizontal: RaftSpace.x2,
-            vertical: RaftSpace.x1,
-          );
-          if (selected || state.hovered) {
-            return RaftSettingsCard.box(
-              t,
-              color: fill,
-              radius: radius,
-              padding: inset,
-              child: content,
-            );
-          }
-          return Container(
-            padding: inset.add(EdgeInsets.all(t.border)),
-            decoration: BoxDecoration(color: fill, borderRadius: radius),
-            child: content,
-          );
-        },
       ),
     );
   }
@@ -393,33 +366,154 @@ class RaftPublicFloatingBanner extends StatelessWidget {
   );
 }
 
-/// A one-line `text-sm text-foreground-muted` centred message (empty channel
-/// list, empty timeline).
+/// A centred `text-sm text-foreground-muted` message (the thread's "No replies
+/// yet"). With a [glyph] it is the EmptyState of the public page: a 36px icon
+/// over the title, centred in the column (`flex h-full flex-col items-center
+/// justify-center`).
 class RaftPublicEmptyMessage extends StatelessWidget {
-  const RaftPublicEmptyMessage(this.message, {super.key, this.hint = true});
+  const RaftPublicEmptyMessage(
+    this.message, {
+    super.key,
+    this.hint = true,
+    this.glyph,
+    this.icon,
+  });
   final String message;
+
+  /// A custom icon (the thread glyph); wins over [glyph].
+  final Widget? icon;
 
   /// `text-foreground-hint` (empty messages) vs `text-foreground-muted`.
   final bool hint;
+  final RaftGlyph? glyph;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final color = glyph != null || icon != null
+        ? t.muted
+        : hint
+        ? (t.colors['foreground-hint'] ?? t.muted)
+        : t.muted;
+    final text = RaftCssText(
+      raftText(context, message),
+      textAlign: TextAlign.center,
+      style: RaftTypography.inherited(
+        t,
+        size: 14,
+        line: 20,
+        weight: glyph != null || icon != null
+            ? FontWeight.w500
+            : FontWeight.w400,
+        color: color,
+      ),
+    );
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(RaftSpace.x6),
-        child: RaftCssText(
-          raftText(context, message),
-          textAlign: TextAlign.center,
-          style: RaftTypography.inherited(
-            t,
-            size: 14,
-            line: 20,
-            color: hint ? (t.colors['foreground-hint'] ?? t.muted) : t.muted,
-          ),
-        ),
+        child: glyph == null
+            ? text
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [
+                  RaftIcon(glyph!, size: 36, color: color),
+                  text,
+                ],
+              ),
       ),
     );
   }
+}
+
+/// Loads the older page when the scroll view reaches its start (Web
+/// `MessageTimeline`'s top sentinel; the public page has had no "Load older
+/// messages" button since v1.21.12). It also fires when the content is shorter
+/// than the viewport, so a sparse first page keeps loading until it fills.
+/// [reverse] names a reversed scroll view, whose start is its far end.
+class RaftPublicAutoLoadOlder extends StatefulWidget {
+  const RaftPublicAutoLoadOlder({
+    super.key,
+    required this.enabled,
+    required this.onLoadOlder,
+    required this.controller,
+    required this.child,
+    this.reverse = false,
+  });
+  final bool enabled, reverse;
+  final VoidCallback onLoadOlder;
+
+  /// The scroll view's controller, read to see whether the content still
+  /// leaves the start in view after a page arrived.
+  final ScrollController controller;
+  final Widget child;
+
+  /// The top sentinel's root margin: start loading a little before the edge.
+  static const double margin = 120;
+
+  @override
+  State<RaftPublicAutoLoadOlder> createState() =>
+      _RaftPublicAutoLoadOlderState();
+}
+
+class _RaftPublicAutoLoadOlderState extends State<RaftPublicAutoLoadOlder> {
+  bool _atStart(ScrollMetrics m) =>
+      (widget.reverse ? m.extentAfter : m.extentBefore) <=
+      RaftPublicAutoLoadOlder.margin;
+
+  void _ask() {
+    if (mounted && widget.enabled) widget.onLoadOlder();
+  }
+
+  /// A page that does not fill the panel leaves the start in view without any
+  /// scrolling: look again after every layout while loading is possible.
+  void _recheck() {
+    if (!widget.enabled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.enabled || !widget.controller.hasClients) return;
+      if (_atStart(widget.controller.position)) _ask();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _recheck();
+  }
+
+  @override
+  void didUpdateWidget(RaftPublicAutoLoadOlder old) {
+    super.didUpdateWidget(old);
+    _recheck();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      NotificationListener<ScrollNotification>(
+        onNotification: (n) {
+          if (n.depth == 0 && _atStart(n.metrics)) _ask();
+          return false;
+        },
+        child: widget.child,
+      );
+}
+
+/// `<div className="flex justify-center p-6"><Spinner size="md" /></div>`:
+/// the public timeline while its first page loads.
+class RaftPublicLoadingSpinner extends StatelessWidget {
+  const RaftPublicLoadingSpinner({super.key, required this.label});
+  final String label;
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: Alignment.topCenter,
+    child: Padding(
+      padding: const EdgeInsets.all(RaftSpace.x6),
+      child: Semantics(
+        label: raftText(context, label),
+        liveRegion: true,
+        child: const RaftSpinner(size: 20),
+      ),
+    ),
+  );
 }
 
 /// `border-r/border-l border-line-hairline` (Brutal `border-2 border-black`).
@@ -429,6 +523,25 @@ BorderSide _publicRule(RaftTokens t) => BorderSide(
       : (t.colors['line-hairline'] ?? t.colors['line-muted']!),
   width: t.brutal ? 2 : 1,
 );
+
+/// The channel timeline's panel (ConversationPanelRoot): white, `layer-card` in
+/// Elegant dark.
+class RaftPublicConversationSurface extends StatelessWidget {
+  const RaftPublicConversationSurface({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return ColoredBox(
+      color: t.brutal
+          ? Colors.white
+          : t.dark
+          ? t.card
+          : t.colors['layer-canvas']!,
+      child: child,
+    );
+  }
+}
 
 /// The page canvas: `bg-layer-canvas theme-brutal:bg-white`.
 class RaftPublicSurface extends StatelessWidget {
@@ -444,35 +557,7 @@ class RaftPublicSurface extends StatelessWidget {
   }
 }
 
-/// `h-panel-header` title strip of a sidebar column ("Settings").
-class RaftPublicSidebarHeader extends StatelessWidget {
-  const RaftPublicSidebarHeader({super.key, required this.title});
-  final String title;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final height = _publicHeaderHeight(context);
-    return Container(
-      height: height,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x5),
-      decoration: BoxDecoration(border: Border(bottom: _publicRule(t))),
-      child: Text(
-        title,
-        style: RaftTypography.inherited(
-          t,
-          size: 18,
-          line: 28,
-          weight: FontWeight.w700,
-          color: RaftSettingsText(t).strong,
-        ),
-      ),
-    );
-  }
-}
-
-/// The settings surface sidebar (`aside`): same column chrome as the channel
-/// list.
+/// The settings surface sidebar (`aside`): same frame as the channel list.
 class RaftPublicSettingsSidebar extends StatelessWidget {
   const RaftPublicSettingsSidebar({
     super.key,
@@ -485,28 +570,12 @@ class RaftPublicSettingsSidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final sm = raftBreakpointWidth(context) >= 640;
-    return RaftStatusBarSource(
-      color: t.brutal ? t.product.brutalCream : t.colors['layer-inset']!,
-      child: Container(
-        key: const ValueKey('public-server-settings-sidebar'),
-        width: sm ? 240 : 144,
-        decoration: BoxDecoration(
-          color: t.brutal ? t.product.brutalCream : t.colors['layer-inset'],
-          border: Border(right: _publicRule(t)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            RaftPublicSidebarHeader(title: title),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: RaftSettingsSidebarList.inset(t),
-                child: child,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return _PublicSidebarFrame(
+      frameKey: const ValueKey('public-server-settings-sidebar'),
+      title: title,
+      width: sm ? 240 : 144,
+      padding: RaftSettingsSidebarList.inset(t),
+      child: child,
     );
   }
 }
@@ -544,13 +613,16 @@ class RaftPublicThreadPanel extends StatelessWidget {
     required this.replies,
     required this.loading,
     required this.emptyTitle,
-    required this.loadOlderLabel,
+    required this.scrollController,
     this.error,
     this.onLoadOlder,
   });
-  final String title, channelContext, closeLabel, emptyTitle, loadOlderLabel;
+  final String title, channelContext, closeLabel, emptyTitle;
   final VoidCallback onClose;
   final bool showClose, loading;
+
+  /// The replies' scroll controller (older replies load at the top).
+  final ScrollController scrollController;
   final Widget parent;
   final List<Widget> replies;
   final String? error;
@@ -560,13 +632,6 @@ class RaftPublicThreadPanel extends StatelessWidget {
     final t = RaftTokens.of(context);
     final text = RaftSettingsText(t);
     final narrow = raftBreakpointWidth(context) < 1024;
-    final head = RaftTypography.inherited(
-      t,
-      size: 16,
-      line: 24,
-      weight: FontWeight.w700,
-      color: text.strong,
-    );
     final parentBox = Container(
       key: const ValueKey('thread-panel-parent'),
       padding: const EdgeInsets.symmetric(
@@ -600,30 +665,31 @@ class RaftPublicThreadPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           parentBox,
-          Expanded(child: RaftPublicEmptyMessage(emptyTitle, hint: false)),
+          Expanded(
+            child: RaftPublicEmptyMessage(
+              emptyTitle,
+              hint: false,
+              icon: RaftThreadIcon(size: 36, color: t.muted),
+            ),
+          ),
         ],
       );
     } else {
-      body = ListView(
-        children: [
-          if (onLoadOlder != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: RaftSpace.x3),
-              child: Center(
-                child: RaftSettingsRecipeButton(
-                  label: loadOlderLabel,
-                  size: RaftButtonRecipeSize.xs,
-                  onPressed: loading ? null : onLoadOlder,
-                ),
+      body = RaftPublicAutoLoadOlder(
+        enabled: onLoadOlder != null && !loading,
+        onLoadOlder: () => onLoadOlder?.call(),
+        controller: scrollController,
+        child: ListView(
+          controller: scrollController,
+          children: [
+            parentBox,
+            for (final reply in replies)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x3),
+                child: RaftPublicMessageRow(child: reply),
               ),
-            ),
-          parentBox,
-          for (final reply in replies)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: RaftSpace.x3),
-              child: RaftPublicMessageRow(child: reply),
-            ),
-        ],
+          ],
+        ),
       );
     }
     return Container(
@@ -632,37 +698,59 @@ class RaftPublicThreadPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          RaftPanelHeaderBar(
-            title: '',
-            onBack: narrow ? onClose : null,
-            backKey: const ValueKey('thread-mobile-back'),
-            titleSlot: Text.rich(
-              TextSpan(
-                text: raftText(context, title),
-                children: [
-                  TextSpan(
-                    // Web: the gap is `ml-1`, not a leading space in the catalog text.
-                    text: ' $channelContext',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w400,
-                      color: t.colors['foreground-hint'] ?? t.muted,
+          // Web ReadOnlyThreadPanel: a PanelHeader whose title is "Thread"
+          // plus the muted channel (`ml-1 font-normal text-foreground-placeholder`,
+          // 15px in Elegant) and a plain ghost close button.
+          _publicHeaderStrip(
+            t,
+            RaftPanelHeaderBar(
+              title: '',
+              onBack: narrow ? onClose : null,
+              backKey: const ValueKey('thread-mobile-back'),
+              titleSlot: Text.rich(
+                TextSpan(
+                  text: raftText(context, title),
+                  children: [
+                    TextSpan(
+                      // The gap is `ml-1`, not a leading space in the catalog text.
+                      text: ' $channelContext',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w400,
+                        fontSize: t.brutal ? null : 15,
+                        color: t.brutal
+                            ? Colors.black.withValues(alpha: .5)
+                            : (t.colors['foreground-placeholder'] ?? t.muted),
+                      ),
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: RaftTypography.inherited(
+                  t,
+                  size: 16,
+                  line: 24,
+                  weight: FontWeight.w700,
+                  color: text.strong,
+                ),
+              ),
+              actions: [
+                if (showClose)
+                  RaftTooltip(
+                    message: raftText(context, closeLabel),
+                    child: RaftSettingsRecipeButton(
+                      key: const ValueKey('thread-close'),
+                      label: '',
+                      semanticLabel: raftText(context, closeLabel),
+                      glyph: RaftGlyph.x,
+                      glyphSize: 14,
+                      variant: RaftButtonRecipeVariant.ghost,
+                      size: RaftButtonRecipeSize.iconSm,
+                      onPressed: onClose,
                     ),
                   ),
-                ],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: head,
+              ],
             ),
-            actions: [
-              if (showClose)
-                RaftPanelIconButton(
-                  key: const ValueKey('thread-close'),
-                  glyph: RaftGlyph.x,
-                  tooltip: closeLabel,
-                  onPressed: onClose,
-                ),
-            ],
           ),
           Expanded(child: body),
         ],
@@ -754,7 +842,7 @@ class RaftPublicChannelHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final meta = raftCollapseWhitespace(description);
-    return RaftPanelHeaderBar(
+    final bar = RaftPanelHeaderBar(
       title: name,
       subtitle: meta.isEmpty ? null : meta,
       // AppPanelHeader `icon` with the default `bg-primary`.
@@ -766,7 +854,27 @@ class RaftPublicChannelHeader extends StatelessWidget {
         borderless: !t.brutal,
       ),
     );
+    return _publicHeaderStrip(t, bar);
   }
+}
+
+/// An attached panel header (ConversationPanelRoot `edge="attached"`, the
+/// read-only thread's `in-data-[theme=elegant]:bg-layer-canvas-muted`): on
+/// Elegant a `layer-canvas-muted` strip with a `border-line-muted` rule under
+/// it; Brutal's own rule comes from the header recipe.
+Widget _publicHeaderStrip(RaftTokens t, Widget bar) {
+  if (t.brutal) return bar;
+  final fill = t.colors['layer-canvas-muted']!;
+  return RaftStatusBarSource(
+    color: fill,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: fill,
+        border: Border(bottom: BorderSide(color: t.colors['line-muted']!)),
+      ),
+      child: bar,
+    ),
+  );
 }
 
 /// CSS margin collapsing between sibling message rows: the row's `mb-1` (4px)

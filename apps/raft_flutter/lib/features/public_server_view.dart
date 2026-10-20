@@ -173,6 +173,9 @@ class _PublicServerViewState extends State<PublicServerView> {
   bool selectionNotice = false;
   final menu = RaftMenuController();
 
+  // Scroll controllers: older pages load when their view reaches its start.
+  final timelineScroll = ScrollController(), threadScroll = ScrollController();
+
   // Thread panel.
   String? threadChannelId, threadParentId;
   List<PublicServerMessage> threadMessages = [];
@@ -208,6 +211,8 @@ class _PublicServerViewState extends State<PublicServerView> {
   void dispose() {
     menu.removeListener(menuChanged);
     menu.dispose();
+    timelineScroll.dispose();
+    threadScroll.dispose();
     super.dispose();
   }
 
@@ -341,7 +346,8 @@ class _PublicServerViewState extends State<PublicServerView> {
 
   Future<void> loadOlder() async {
     final id = selectedId;
-    if (id == null || messages.isEmpty) return;
+    // The scroll view asks on every notification at its start: one at a time.
+    if (id == null || messages.isEmpty || loadingMessages || !hasOlder) return;
     setState(() {
       loadingMessages = true;
       error = '';
@@ -746,8 +752,8 @@ class _PublicServerViewState extends State<PublicServerView> {
           loading: threadLoading,
           error: threadError.isEmpty ? null : threadError,
           emptyTitle: tr('No replies yet'),
+          scrollController: threadScroll,
           onLoadOlder: threadHasOlder ? loadOlderThread : null,
-          loadOlderLabel: tr('Load older messages'),
         ),
       ),
     );
@@ -759,58 +765,63 @@ class _PublicServerViewState extends State<PublicServerView> {
       return RaftPublicEmptyMessage(
         'This server has no public channels right now.',
         hint: false,
+        glyph: RaftGlyph.hash,
       );
     }
     final description = channel['description'] as String?;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RaftPublicChannelHeader(
-          name: '${channel['name']}',
-          description: description ?? '',
-        ),
-        if (error.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.all(RaftSpace.x3),
-            // `<Banner intent="warning" className="m-3 shrink-0">`
-            child: RaftErrorBanner(error),
+    return RaftPublicConversationSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RaftPublicChannelHeader(
+            name: '${channel['name']}',
+            description: description ?? '',
           ),
-        Expanded(
-          child: messages.isEmpty
-              ? loadingMessages
-                    ? RaftPublicEmptyMessage('Loading…', hint: false)
-                    : RaftPublicEmptyMessage(
-                        'No messages have been posted here yet.',
-                      )
-              : ListView(
-                  key: const ValueKey('public-server-message-timeline'),
-                  children: [
-                    if (hasOlder)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: RaftSpace.x3,
-                        ),
-                        child: Center(
-                          child: RaftSettingsRecipeButton(
-                            label: 'Load older messages',
-                            size: RaftButtonRecipeSize.xs,
-                            onPressed: loadingMessages ? null : loadOlder,
-                          ),
-                        ),
+          if (error.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(RaftSpace.x3),
+              // `<Banner intent="warning" className="m-3 shrink-0">`
+              child: RaftErrorBanner(error),
+            ),
+          Expanded(
+            child: messages.isEmpty
+                ? loadingMessages
+                      ? const RaftPublicLoadingSpinner(label: 'Loading…')
+                      : RaftPublicEmptyMessage(
+                          'No messages have been posted here yet.',
+                          glyph: RaftGlyph.messageSquare,
+                        )
+                // MessageTimeline sparseAnchor="bottom": a short history sits
+                // at the bottom of the panel and the view opens on the latest;
+                // older pages load when the top is reached (no button).
+                : RaftPublicAutoLoadOlder(
+                    reverse: true,
+                    controller: timelineScroll,
+                    enabled: hasOlder && !loadingMessages,
+                    onLoadOlder: loadOlder,
+                    child: SingleChildScrollView(
+                      key: const ValueKey('public-server-message-timeline'),
+                      controller: timelineScroll,
+                      reverse: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final m in messages)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: RaftSpace.x3,
+                              ),
+                              child: RaftPublicMessageRow(
+                                child: row(m, onThread: () => openThread(m)),
+                              ),
+                            ),
+                        ],
                       ),
-                    for (final m in messages)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: RaftSpace.x3,
-                        ),
-                        child: RaftPublicMessageRow(
-                          child: row(m, onThread: () => openThread(m)),
-                        ),
-                      ),
-                  ],
-                ),
-        ),
-      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

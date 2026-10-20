@@ -14495,7 +14495,7 @@
    "capability": "Read a public channel's messages and load older",
    "background": false,
    "status": "covered",
-   "webEntry": "PublicServerPage channel list + 'Load older messages'",
+   "webEntry": "PublicServerPage channel list + MessageTimeline top sentinel",
    "gate": "public server",
    "flutterEntry": "public_server_view.dart channel timeline",
    "flutterRefs": [
@@ -14505,7 +14505,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "Load older messages"
+     "needle": "RaftPublicAutoLoadOlder"
     }
    ],
    "justification": "",
@@ -14569,7 +14569,7 @@
    "status": "covered",
    "webEntry": "PublicServerPage thread panel",
    "gate": "",
-   "flutterEntry": "public_server_view.dart thread open + 'Load older messages'",
+   "flutterEntry": "public_server_view.dart thread open + RaftPublicAutoLoadOlder",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/public_server_view.dart",
@@ -14577,7 +14577,7 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "Load older messages"
+     "needle": "RaftPublicAutoLoadOlder"
     }
    ],
    "justification": "",

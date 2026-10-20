@@ -41,6 +41,10 @@ Object? _answer(ParityContext ctx, String method, String path) {
 }
 
 Widget _page(ParityContext ctx) {
+  // The page remembers servers and pages across visits (instant revisit). One
+  // process captures many cases, so every case starts from a cold page: the
+  // loading and error cases must not render an earlier case's data.
+  PublicServerMemory.clear();
   // The React provider pins its clock to the fixture instant; its locale
   // formats times 24-hour.
   final now = DateTime.fromMillisecondsSinceEpoch(
