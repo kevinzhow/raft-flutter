@@ -157,6 +157,9 @@ GEOMETRY_RAFT = {
     'size.control.sm': 32, 'size.control.md': 44, 'size.control.lg': 52,
     'size.control.onFrame': 36, 'size.field': 44, 'size.panelHeader': 56, 'size.rail': 56,
     'size.railGlyph': 16, 'size.navRow': 34, 'size.menuRow': 32, 'size.drawer': 380,
+    # Shorter rows on short viewports (contract §3.3). Raft keeps one row height
+    # and leaves these at the regular value; the family packs lower them.
+    'size.navRowCompact': 34, 'size.menuRowCompact': 32,
     'space.controlX': 12, 'space.itemX': 10, 'space.inset.panel': 16,
     # The six type metrics raft-ui carries; they size the field and the card
     # title, so they belong to the contract rather than to a constant.
