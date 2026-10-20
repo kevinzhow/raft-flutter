@@ -78,8 +78,10 @@ class FeatureFlagMemory {
   }
 }
 
-/// The key that held the retired theme family (`brutal` | `elegant`). The Raft
-/// Design System has one look in light and dark, so only `raft.mode` remains.
+/// The key that held the old theme family (`brutal` | `elegant`), retired when the
+/// app briefly had a single look. Theme choice is back, but under
+/// [appearanceThemeKey] with theme-pack ids, so this key is dropped rather than
+/// read: its values name families, not packs.
 const retiredAppearanceThemeKey = 'raft.light';
 
 /// The mode a stored `raft.mode` value means. Besides `light` | `dark` | `system`
