@@ -287,7 +287,8 @@ P2 基准确认后逐项落值。
       "shadows":  { "shadow.control": "0 0 0 1px #3d3d3a", "shadow.popup": "/* … */" },
       "options":  { "control.edge": "ring", "mobileNav.style": "floatingCapsule" }
     },
-    "dark": { /* 同结构。Brutal 没有深色：dark 必须给出，旧版等于 light 的取值 */ }
+    "dark": { /* 同结构。Brutal 没有深色：dark 必须给出，取 **Elegant dark** 的整套取值
+              （颜色、几何、结构选项都比照 Elegant dark），见 §2.1 */ }
   },
   "assets": { "logo": null, "mark": null }   // 可选，见 5.4
 }
@@ -342,7 +343,7 @@ Raft 包已经落地，生成器一次产出三份、由同一个 `--check` 守�
 | --- | --- | --- |
 | `raft.theme.json` | `tool/design-source/raft-ui-0.7.1/tokens.json` | 现有 `gen-tokens` 管线加一个导出步骤：把 159 个角色按 `raft_token_mapping.dart` 解析成具体值，调色板原样带上；几何/字级/阴影从 `styles.css @theme` 与 `tokens.json` 取 |
 | `elegant.theme.json` | `a57b9dab` 的 `*.g.dart` 生成的 `elegantLight/elegantDark` 静态值 | 值直接取；结构选项按 §4 表填；几何取 `inventory/G1…G5` 的 file:line |
-| `brutal.theme.json` | 同上的 `.brutal` | 同上；dark = light |
+| `brutal.theme.json` | 同上的 `.brutal` | 同上；**dark = Elegant dark**（旧版深色整套走 Elegant，见 §2.1） |
 
 三份包都进版本库，和代码一起评审。漂移检查由 `tool/tests/test_theme_values.py` 跑
 `dump_theme_values.py --check`：全量检查的 host tests 会带上它，`tool/preflight` 也单列一步，

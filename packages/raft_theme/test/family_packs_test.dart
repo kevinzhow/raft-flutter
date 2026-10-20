@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -107,14 +106,33 @@ void main() {
           greaterThan(brutalLight.geometry['radius.control']!));
     });
 
-    test('brutal has no dark variant of its own', () {
-      // The contract states Brutal dark equals its light; the generator writes
-      // the same column twice, so the two modes must be identical.
-      final brutal = RaftThemePack.parse(_readPack(_families['brutal']!),
-          origin: 'brutal');
-      expect(brutal.dark.colors, brutal.light.colors);
-      expect(brutal.dark.options, brutal.light.options);
-      expect(brutal.dark.geometry, brutal.light.geometry);
+    test('brutal dark is the whole Elegant dark look, not its light reskinned',
+        () {
+      // The old app forced the family to Elegant whenever dark was on
+      // (a57b9dab theme.dart:102), so Brutal at night was Elegant: colours,
+      // radii, strokes and options together. Rendering Brutal+dark on that
+      // commit returns exactly the Elegant+dark tokens, which is what this
+      // pins. A pack that merely darkened Brutal's light values would pass a
+      // colour-only check and fail here.
+      final registry = _registry();
+      final brutal = registry['brutal']!;
+      final elegant = registry['elegant']!;
+
+      final brutalDark = brutal.resolveIn(registry, dark: true);
+      final elegantDark = elegant.resolveIn(registry, dark: true);
+
+      expect(brutalDark.colors, elegantDark.colors);
+      expect(brutalDark.geometry, elegantDark.geometry);
+      expect(brutalDark.options, elegantDark.options);
+
+      // And it is genuinely not Brutal's light look.
+      final brutalLight = brutal.resolveIn(registry, dark: false);
+      expect(brutalDark.colors, isNot(brutalLight.colors));
+      expect(brutalDark.options, isNot(brutalLight.options));
+      // Radius is the clearest structural tell: Brutal light is square (0),
+      // Elegant dark is rounded (6).
+      expect(brutalLight.geometry['radius.control'], 0);
+      expect(brutalDark.geometry['radius.control'], 6);
     });
   });
 }

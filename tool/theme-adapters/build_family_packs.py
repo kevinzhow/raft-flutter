@@ -206,18 +206,22 @@ def geometry_with_type(geometry: dict, type_metrics: dict) -> dict:
 
 
 def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
-         geometry: dict, options: dict, case: dict, fonts: dict,
-         light_column: str, dark_column: str) -> dict:
-    light_colors, light_shadows, light_type = collect(values, light_column)
-    dark_colors, dark_shadows, dark_type = collect(values, dark_column)
+         light: dict, dark: dict) -> dict:
+    """Build one pack from its light and dark value sets.
 
-    def mode(colors, shadows, type_metrics):
+    `light` and `dark` each carry the column to read from plus the geometry,
+    options, case and fonts for that mode. They are separate because a theme's
+    dark look is not always its light look reskinned: Brutal, in the old app,
+    drops to the whole Elegant look at night, structure included.
+    """
+    def mode(spec: dict):
+        colors, shadows, type_metrics = collect(values, spec['column'])
         return {
             'colors': colors,
-            'geometry': geometry_with_type(geometry, type_metrics),
+            'geometry': geometry_with_type(spec['geometry'], type_metrics),
             'shadows': shadows,
-            'case': case,
-            'options': options,
+            'case': spec['case'],
+            'options': spec['options'],
         }
 
     return {
@@ -228,25 +232,37 @@ def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
         'extends': 'raft',
         'builtIn': True,
         'author': 'Raft Design System',
-        'fonts': fonts,
+        'fonts': light['fonts'],
         'modes': {
-            'light': mode(light_colors, light_shadows, light_type),
-            'dark': mode(dark_colors, dark_shadows, dark_type),
+            'light': mode(light),
+            'dark': mode(dark),
         },
     }
 
 
 def build() -> dict[str, dict]:
     values = load_values()
+    elegant_light = {
+        'column': 'elegantLight', 'geometry': GEOMETRY_ELEGANT,
+        'options': OPTIONS_ELEGANT, 'case': CASE_ELEGANT, 'fonts': FONTS_ELEGANT,
+    }
+    elegant_dark = dict(elegant_light, column='elegantDark')
+    brutal_light = {
+        'column': 'brutal', 'geometry': GEOMETRY_BRUTAL,
+        'options': OPTIONS_BRUTAL, 'case': CASE_BRUTAL, 'fonts': FONTS_BRUTAL,
+    }
     return {
         f'{THEMES}/elegant.theme.json': pack(
-            'elegant', 'Elegant', '雅致', values,
-            GEOMETRY_ELEGANT, OPTIONS_ELEGANT, CASE_ELEGANT, FONTS_ELEGANT,
-            'elegantLight', 'elegantDark'),
+            'elegant', 'Elegant', '雅致', values, elegant_light, elegant_dark),
+        # Brutal has no dark look of its own. The old app forced the family to
+        # Elegant whenever dark was on (a57b9dab theme.dart:102:
+        # `dark ? RaftFamily.elegant : family`), so dark was Elegant's colours,
+        # radii, strokes and options -- not Brutal's light values with a dark
+        # palette. Rendering Brutal+dark on a57b9dab returns exactly the
+        # Elegant+dark tokens, which is why dark reuses the whole elegant_dark
+        # spec rather than only the palette column.
         f'{THEMES}/brutal.theme.json': pack(
-            'brutal', 'Brutal', '粗野', values,
-            GEOMETRY_BRUTAL, OPTIONS_BRUTAL, CASE_BRUTAL, FONTS_BRUTAL,
-            'brutal', 'brutal'),
+            'brutal', 'Brutal', '粗野', values, brutal_light, elegant_dark),
     }
 
 
@@ -254,12 +270,53 @@ def render(pack_data: dict) -> str:
     return json.dumps(pack_data, indent=2, sort_keys=False) + '\n'
 
 
+def render_dart(pack_data: dict) -> str:
+    """The same pack as a compile-time constant.
+
+    The app declares no assets of its own, so a package asset does not reach its
+    bundle; more importantly the first frame must already be themed. Reading a
+    pack asynchronously would paint one frame in the previous look, which is the
+    flash docs/theme-flash.md exists to prevent. The Raft pack solves this the
+    same way, so the families do too.
+    """
+    name = pack_data['id']
+    header = (
+        '// GENERATED - do not edit. Regenerate with '
+        '`tool/theme-adapters/build_family_packs.py`.\n'
+        '//\n'
+        f'// The built-in {pack_data["name"]["en"]} theme as a compile-time constant, so the\n'
+        '// first frame can be themed synchronously (an async asset read would paint\n'
+        '// one frame in the previous look). The same bytes are written to\n'
+        f'// assets/themes/{name}.theme.json for tooling and for editing a copy.\n'
+        '//\n'
+        '// ignore_for_file: lines_longer_than_80_chars\n'
+        'library;\n\n'
+    )
+    body = render(pack_data)
+    quote = "'" * 3
+    if quote in body:
+        raise SystemExit(f'the {name} pack contains a triple quote')
+    variable = name[0].upper() + name[1:]
+    return (
+        header
+        + f"const String {name}ThemePackId = '{name}';\n\n"
+        + f'const String {name}ThemePackJson = r{quote}{body}{quote};\n'
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
 
-    outputs = {name: render(data) for name, data in build().items()}
+    packs = build()
+    outputs = {}
+    for name, data in packs.items():
+        outputs[name] = render(data)
+        # The Dart constant lives beside the Raft one so `built_in.dart` can
+        # expose every built-in pack from one place.
+        outputs[f'packages/raft_theme/lib/src/{data["id"]}_pack.g.dart'] = \
+            render_dart(data)
 
     if args.check:
         stale = [name for name, text in outputs.items()
@@ -268,7 +325,7 @@ def main() -> int:
             print('stale: ' + ', '.join(stale) +
                   '; run python3 tool/theme-adapters/build_family_packs.py')
             return 1
-        print('elegant and brutal theme packs are current')
+        print('elegant and brutal theme packs and their Dart constants are current')
         return 0
 
     for name, text in outputs.items():
