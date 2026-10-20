@@ -6,6 +6,30 @@
 root=$(git rev-parse --show-toplevel) || exit 0
 cd "$root" || exit 0
 
+python=python3
+command -v python3 >/dev/null 2>&1 || python=python
+
+# Refuse to add a throwaway probe test. Abandoned scratch kept reaching review and
+# nobody could tell it from a real test afterwards; the rule and its reasons live
+# in tool/probe_test_guard.py. Only NEW test files are checked, and only names
+# starting with `_`, so ordinary tests are never blocked.
+#
+# The guard is located relative to this hook, not to the repository: tests copy the
+# hook into a scratch repository that has no tool/ directory, and there the check
+# must step aside instead of failing the commit. Skipping is the same posture this
+# hook already takes when raft_lints is not set up.
+#
+# The `|| exit $?` keeps a real rejection fatal; running it first means a probe
+# commit fails immediately instead of after the slower lint pass.
+hook_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+guard="$hook_dir/../probe_test_guard.py"
+if [ -f "$guard" ]; then
+  "$python" "$guard" --root "$root" || exit $?
+fi
+# No guard next to the hook: this is a copied hook (the hook tests do that) or a
+# partial checkout. Stay silent and let the existing lint step decide, exactly as
+# this hook already does when raft_lints is not set up.
+
 git diff --cached --name-only --diff-filter=d | grep -Eq '^(apps/raft_flutter|packages/[^/]+)/lib/.+\.dart$' || exit 0
 
 if [ ! -f tool/raft_lints/.dart_tool/package_config.json ]; then
@@ -14,8 +38,6 @@ if [ ! -f tool/raft_lints/.dart_tool/package_config.json ]; then
   exit 0
 fi
 
-python=python3
-command -v python3 >/dev/null 2>&1 || python=python
 "$python" tool/raft-lints --staged
 status=$?
 if [ "$status" -ne 0 ]; then
