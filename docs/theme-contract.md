@@ -218,7 +218,35 @@ Raft 包把它填成 none，旧的两套各自保留自己的写法。三档分�
 † = 旧代码在两种主题下都大写 eyebrow（G3 第 3 条）；Elegant 的对话框标题与状态标签是正常大小写。
 P2 基准确认后逐项落值。
 
-### 3.6 阴影
+### 3.6 取值的权威来源与实测方法
+
+**每套外观只对自己的权威来源负责**，不要拿移植结果反推：
+
+| 外观 | 权威来源 |
+| --- | --- |
+| Raft | `@botiverse/raft-ui` 0.7.1 的源码（`dist` 里的 `button.tsx` 等），并用 `tool/parity-ui/run dom-dump` 在官方 React 样例上实测复核 |
+| Elegant / Brutal | `a57b9dab` 的生成 recipe 解析结果（`RaftButtonRecipe.resolve(theme:, size:)`）或该 commit 的基准渲染 |
+
+**旧版只有两套外观**（`enum RaftFamily { brutal, elegant }`，默认浅色是 Brutal）。
+不存在"旧版 Raft"，所以 Raft 永远不拿 `a57b9dab` 作基准。
+
+**为什么不能用移植结果反推**：Raft 的 `lg` 官方是 44，而我们的 Flutter recipe 写死 40。
+以移植为准会把偏差固化成"设计"。
+
+**实测方法**（新取一个值时照做，不猜）：
+1. Raft：读 raft-ui `dist` 源码里的 class（`h-8`/`h-11`/`h-13` = 32/44/52），再用
+   `tool/parity-ui/run dom-dump` 在官方样例上确认。DOM 节点的高度取 `rect.h`（不是 `height`）。
+2. Elegant/Brutal：在 `a57b9dab` 的 worktree 里写一次性测试调 recipe 解析，
+   读 `root['height']`、`root['padding-left']`、`root.classes`（看 `rounded-*`）。用完即删。
+3. 三套都有值后按 §3.3 的判据定性：相同即形态，不同即令牌。
+4. **禁止推导**：没有实测来源的值不能用相邻值算出来（例如"xl = lg + 8"）。
+   没有调用点可查时，先取 Raft 的值并在代码里注明"无数据"，不要发明中间值。
+
+**同一组件在不同位置取值不同时**（旧版常按用途各写一版），以使用位置为准：
+列出该组件在本分支的调用点，在 `a57b9dab` 找到同一位置原来用的那个 widget 取其值；
+位置之间不一致就用变体或参数表达。组件名相同不等于外观相同。
+
+### 3.7 阴影
 
 阴影是 Elegant 与 Brutal 最大的观感差别（G1 第 1 条），但**不需要结构选项**，因为它纯是数据。
 契约要求五级阶梯（`xs…xl`）+ 七个角色：
