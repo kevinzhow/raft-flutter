@@ -196,8 +196,6 @@ const Map<String, String> zhCatalogWeb4 = <String, String>{
   "Human": "人类成员",
   "Human Onboarding Agent": "人类引导 Agent",
   "Human not found": "未找到人类成员",
-  "Human panel": "人类面板",
-  "Human profile": "人类资料",
   "Human roles": "人类角色",
   "Humans": "人类",
   "Humans failed to load": "人类成员加载失败",

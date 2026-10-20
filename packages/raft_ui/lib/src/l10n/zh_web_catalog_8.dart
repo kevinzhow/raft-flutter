@@ -48,7 +48,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Update link": "更新链接",
   "Update official identity": "更新官方身份",
   "Updated task": "更新任务",
-  "Updates automatically.": "会自动更新。",
   "Updating": "正在更新",
   "Updating replaces the current link — the old one stops working.":
       "更新会替换当前链接，旧链接立即失效。",
@@ -238,7 +237,6 @@ const Map<String, String> zhCatalogWeb8 = <String, String>{
   "Workspace file view mode": "工作区文件查看模式",
   "Workspace mode": "工作空间模式",
   "Workspace settings": "工作空间设置",
-  "Workspace tabs": "工作区标签",
   "Write": "写入",
   "Write due reminders (official apps only)": "写入到期提醒（仅限官方应用）",
   "Write-only. Raft encrypts this value and will not return it.":

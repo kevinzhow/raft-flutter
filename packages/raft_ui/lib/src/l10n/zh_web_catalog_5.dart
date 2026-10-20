@@ -4,7 +4,6 @@
 const Map<String, String> zhCatalogWeb5 = <String, String>{
   "Maximum reasoning depth for the hardest problems": "针对最难的问题提供最大推理深度",
   "Maximum reasoning with automatic task delegation": "最大推理，并自动进行任务委派",
-  "May be replaced by explicit open-in-panel": "可能被显式的 open-in-panel 操作替换",
   "Maya": "Maya",
   "Me": "我",
   "Medium": "中",
@@ -81,7 +80,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "Most Connected Members": "连接最多的成员",
   "Upgrade to Pro to migrate agents": "升级至 Pro 以迁移 Agent",
   "Move to another computer": "迁移到另一台计算机",
-  "Move to other pane": "移到另一窗格",
   "Move to section": "移动到分区",
   "Mute": "静音",
   "Mute activity": "静音活动",
@@ -100,7 +98,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "Name and description shown across the workspace.": "在整个工作空间中显示的名称和描述。",
   "Name the server where your agents will work.": "为你的 Agent 将要工作的服务器命名。",
   "Name:": "名称：",
-  "Needs attention": "需要处理",
   "Needs details": "待补充",
   "Needs test": "待测试",
   "Never": "永久",
@@ -149,8 +146,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
       "此连接当前没有已记录的有效权限范围。",
   "No active invite links.": "暂无有效的邀请链接。",
   "No activity yet": "暂无活动",
-  "No agent profile is available in the current server yet.":
-      "当前服务器还没有可用的 Agent 资料。",
   "No agent-to-agent DMs yet": "暂无 Agent 间私信",
   "No agents are active on this computer right now — reconnect when you need it next.":
       "当前没有 Agent 在这台计算机上运行；需要时再重连即可。",
@@ -184,8 +179,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "No history yet.": "暂无历史记录",
   "No humans": "暂无成员",
   "No installed apps match this view.": "没有符合当前视图的已安装应用。",
-  "No joined channel is available in the current server yet.":
-      "当前服务器还没有已加入的频道。",
   "No joined channels": "没有已加入的频道",
   "No joint channels yet": "还没有联合频道",
   "No local Claude Code or Codex sessions found.":
@@ -195,7 +188,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "No matching agent record found.": "未找到对应的 Agent 记录。",
   "No matching members": "没有匹配的成员",
   "No matching messages": "没有匹配的消息",
-  "No matching tabs": "没有匹配的标签",
   "No members": "暂无成员",
   "No members available": "没有可选成员",
   "No members or channels to map yet.": "暂无可绘制的成员或频道。",
@@ -211,13 +203,11 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
       "没有在线且具备 Built-in runtime 的计算机。",
   "No other computers available": "没有其他可用的计算机",
   "No owners or admins yet.": "尚无所有者或管理员。",
-  "No panels open": "没有打开的面板",
   "No pending invites.": "暂无待处理邀请。",
   "No pending reminders.": "暂无待触发提醒。",
   "No people were added. ": "未添加任何人。",
   "No provider connections yet.": "还没有 Provider 连接。",
   "No recent conversations yet": "还没有最近访问的会话",
-  "No recently closed tabs": "没有最近关闭的标签",
   "No recognized Raft scopes were requested.": "本次请求没有包含可识别的 Raft scope。",
   "No registered apps match this view.": "没有符合此视图的已注册应用。",
   "No registered apps yet.": "尚无已注册的应用。",
@@ -353,7 +343,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "Open link": "打开链接",
   "Open settings": "打开设置",
   "Open source message": "打开源消息",
-  "Open tab overview": "打开标签总览",
   "Open the affected channel in Slack.": "在 Slack 中打开受影响的频道。",
   "Open the app": "打开 App",
   "Open the full results page with filters and context preview":
@@ -363,8 +352,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "Open this page in Safari, then add Raft to your Home Screen.":
       "请在 Safari 中打开此页面，然后将 Raft 添加到主屏幕。",
   "OpenAI-compatible": "OpenAI-compatible",
-  "Opened from a workspace-grid panel interaction into the default tab group.":
-      "从工作区网格面板交互打开，并放入默认标签组。",
   "Opening": "正在打开",
   "Opening preview…": "正在打开预览…",
   "Opening...": "正在打开…",
@@ -395,7 +382,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "Paid": "付费版",
   "Paid plans are not available yet.": "付费套餐暂不可用。",
   "Palette audit": "调色板审查",
-  "Panel kind": "面板类型",
   "Partner": "合作伙伴版",
   "Partner access for testing and sponsored use.": "用于测试和赞助协作的合作伙伴访问权限。",
   "Passed": "已通过",
@@ -432,8 +418,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
       "永久删除此服务器及其所有数据。此操作无法撤销。",
   "Permissions granted to this app on this Server are independent of user login and webhook delivery. Review and approve any additional access here.":
       "此应用在当前 Server 获得的权限独立于用户登录和 webhook 投递。在此查看并批准新增的数据访问。",
-  "Person": "个人",
-  "Person panel": "个人面板",
   "Personal": "个人",
   "Pick a different name, or ask an admin to unarchive it.":
       "请改用其他名称，或请管理员取消归档。",
@@ -468,8 +452,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
       "仅预览：创建 Cindy 会在这里创建 Cindy 并完成设置。",
   "Previous image": "上一张",
   "Previous match": "上一个匹配",
-  "Primary real channel surface. Sidebar channel clicks switch this workspace panel without leaving the grid.":
-      "主真实频道表面。侧栏频道点击会切换此工作区面板，而无需离开网格。",
   "Private": "私有",
   "Private app invite": "私有应用邀请",
   "Private app invite not found": "未找到私有应用邀请",

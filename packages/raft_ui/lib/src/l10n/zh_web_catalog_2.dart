@@ -264,7 +264,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Channel name": "频道名称",
   "Channel options": "频道选项",
   "Channel pairs must be complete and one-to-one.": "频道映射必须完整且保持一对一。",
-  "Channel panel": "频道面板",
   "Channel settings": "频道设置",
   "Channel visibility": "频道可见性",
   "Channel:": "频道：",
@@ -324,8 +323,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Choose Avatar": "选择头像",
   "Choose a Raft Server where this app is available.":
       "请选择一个可使用该 App 的 Raft Server。",
-  "Choose a channel from the sidebar to start a new workspace tab.":
-      "从侧栏选择一个频道以开始新的工作区标签。",
   "Choose a computer other than the agent's current computer.":
       "请选择该 Agent 当前所在计算机以外的另一台。",
   "Choose a connection": "选择一个连接",
@@ -404,8 +401,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Clipboard write blocked.": "剪贴板写入被阻止。",
   "Close": "关闭",
   "Close Chat": "关闭会话",
-  "Close Settings": "关闭设置",
-  "Close all": "全部关闭",
   "Close app detail": "关闭应用详情",
   "Close app form": "关闭应用表单",
   "Close channel details and settings": "关闭频道详情与设置",
@@ -419,7 +414,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Close installed app details": "关闭已安装应用详情",
   "Close members": "关闭成员页",
   "Close notification": "关闭通知",
-  "Close others": "关闭其他",
   "Close runtime usage": "关闭运行时用量",
   "Close task": "关闭任务",
   "Close this page": "关闭此页面",
@@ -466,7 +460,6 @@ const Map<String, String> zhCatalogWeb2 = <String, String>{
   "Computer offline": "计算机离线",
   "Computer online": "Computer 已上线",
   "Computer operation failed": "Computer 操作失败",
-  "Computer panel": "计算机面板",
   "Computer returned an invalid result": "Computer 返回非法结果",
   "Computer service is already on the latest version": "Computer 服务已是最新版本",
   "Computer status": "Computer 状态",

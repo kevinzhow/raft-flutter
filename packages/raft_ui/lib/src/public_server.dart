@@ -641,7 +641,8 @@ class RaftPublicThreadPanel extends StatelessWidget {
                 text: raftText(context, title),
                 children: [
                   TextSpan(
-                    text: channelContext,
+                    // Web: the gap is `ml-1`, not a leading space in the catalog text.
+                    text: ' $channelContext',
                     style: TextStyle(
                       fontWeight: FontWeight.w400,
                       color: t.colors['foreground-hint'] ?? t.muted,

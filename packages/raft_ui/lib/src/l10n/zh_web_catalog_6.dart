@@ -44,7 +44,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Ready to enable": "可启用",
   "Ready to save": "可保存",
   "Real components using": "使用以下颜色的真实组件：",
-  "Real panel unavailable": "真实面板不可用",
   "Reasoning": "推理强度",
   "Reasoning tokens": "推理",
   "Reauthorize Slack": "重新授权 Slack",
@@ -60,7 +59,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
       "最近的 Agent 间私信活动将显示在这里。",
   "Recent conversations": "最近的会话",
   "Recent live agent activity": "最近的 Agent 实时动态",
-  "Recently Closed": "最近关闭",
   "Recognized capabilities are shown below. Agent messaging requires Agent Login.":
       "下方列出已识别的能力。Agent 消息需要 Agent Login。",
   "Recognized capabilities are shown below. Review unrecognized requested scopes before continuing.":
@@ -142,7 +140,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Reopened task": "重新打开任务",
   "Repair the channel audience": "修复频道受众",
   "Repair the revoked binding": "修复已撤销的映射",
-  "Replacement rule": "替换规则",
   "Reply in thread": "在消息列中回复",
   "Reply with OK.": "请回复 OK。",
   "Report ID": "报告 ID",
@@ -181,8 +178,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Resetting…": "重置中…",
   "Resize sidebar": "调整侧栏宽度",
   "Resize thread": "调整话题宽度",
-  "Resolved from the current workspace when this layout is opened.":
-      "打开此布局时，从当前工作区解析。",
   "Resource": "资源",
   "Resources": "资源",
   "Restart": "重启",
@@ -300,7 +295,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
       "保存此连接后，在设置 → MCP 服务器中使用「连接」完成授权。OAuth token 永远不会离开 Raft Server。",
   "Save thread": "保存消息列",
   "Saved": "已保存",
-  "Saved message": "已保存消息",
   "Saved on this device.": "已保存到此设备。",
   "Saved providers": "已保存的提供方",
   "Saving creates a new version; previous accepted versions remain auditable.":
@@ -340,11 +334,8 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Search members...": "搜索成员…",
   "Search members…": "搜索成员…",
   "Search messages": "搜索消息",
-  "Search open tabs…": "搜索打开的标签…",
   "Search people and agents": "搜索人和 Agent",
-  "Search result": "搜索结果",
   "Search results failed to render": "搜索结果渲染失败",
-  "Search tabs": "搜索标签",
   "Search targets": "搜索目标",
   "Search this channel": "搜索此频道",
   "Search this thread": "搜索此消息列",
@@ -454,8 +445,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
       "服务器 slug 必须以小写字母开头，且只能包含小写字母、数字和连字符",
   "Server-settings permission is required to change onboarding settings.":
       "更改引导设置需要服务器设置权限。",
-  "Server-wide TasksPanel hosted inside the workspace primary navigation pane.":
-      "托管在工作区主导航窗格中的服务器级 TasksPanel。",
   "Service workers are disabled here (private browsing or a browser policy), so push notifications cannot be registered.":
       "此处 service worker 被禁用(隐私模式或浏览器策略),无法注册推送。",
   "Service:": "服务：",
@@ -471,7 +460,6 @@ const Map<String, String> zhCatalogWeb6 = <String, String>{
   "Setting up": "正在创建",
   "Setting up…": "设置中…",
   "Settings": "设置",
-  "Settings panel": "设置面板",
   "Settings sections": "设置分区",
   "Settings › Notifications": "设置 › 通知",
   "Setup": "待配置",

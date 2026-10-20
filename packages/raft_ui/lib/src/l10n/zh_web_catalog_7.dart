@@ -91,12 +91,10 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "跟随系统会随设备切换明暗，同时保留各自的主题选择。",
   "System updates can't be forwarded. They must stay with their original conversation.":
       "系统更新无法转发。它们必须留在原会话中。",
-  "Tab overview": "标签总览",
   "Take over a local session": "接手本机会话",
   "Take over this session": "接手这个会话",
   "Tap to retry": "点按以重试",
   "Target computer": "目标计算机",
-  "Task queue panel": "任务队列面板",
   "Task view": "任务视图",
   "Tasks": "任务",
   "Technical details": "技术详情",
@@ -255,8 +253,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "目标计算机发现了这个工作区之前已完成的副本，因此在替换它之前停止了。请确认哪个副本是当前版本，将旧副本移走或备份后重试。Raft 不会自动删除它。",
   "The target computer is offline. Start Raft Computer on it and try again.":
       "目标计算机已离线。请在它上面启动 Raft Computer 后重试。",
-  "The target workspace is committed. This migration version does not report source cleanup or temporary transfer residue.":
-      "目标工作区已提交。此迁移版本不会报告来源清理或临时传输残留。",
   "The test request failed. Check the model, credential, and provider access.":
       "测试请求失败，请检查模型、凭据和 Provider 访问权限。",
   "The thread couldn't be opened. If this channel just became public, retrying usually fixes it.":
@@ -302,8 +298,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "This Computer cannot list the options for this runtime.":
       "此 Computer 无法列出此运行时的可选项。",
   "This Computer could not list the options.": "此 Computer 无法列出可选项。",
-  "This Computer is no longer available in the current server.":
-      "此计算机在当前服务器中已不可用。",
   "This Computer is offline.": "此 Computer 已离线。",
   "This Computer is offline. Reconnect it, then retry.":
       "此 Computer 已离线。请重新连接后重试。",
@@ -386,8 +380,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "这份草稿在提交后发生了变化。请关闭表单、新建一份草稿后重试。",
   "This field is required.": "此项为必填。",
   "This gateway supports image input": "此网关支持图片输入",
-  "This human is no longer available in the current server.":
-      "此人类成员在当前服务器中已不可用。",
   "This in-app browser cannot complete secure sign-in. Continue in Safari, Chrome, or your system browser.":
       "应用内浏览器无法完成安全登录，请在 Safari、Chrome 或系统浏览器中继续。",
   "This invite link is invalid or has expired.": "此邀请链接无效或已过期。",
@@ -453,8 +445,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
       "此标签页运行的是较旧的应用版本。请刷新以加载当前版本；此标签页中未发送的文本或未保存的更改可能会丢失。",
   "This task predates the channel conversion. Only the source workspace can change it.":
       "这是频道转换前的历史任务，只能由来源工作空间修改。",
-  "This thread tab is missing its parent channel and root message identity.":
-      "此消息列标签缺少父频道与根消息标识。",
   "This username is already taken.": "该用户名已被占用。",
   "This video may use a codec this browser cannot preview.":
       "该视频使用的编解码器可能无法在当前浏览器中预览。",
@@ -468,7 +458,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Thread discussion": "消息列讨论",
   "Thread has an unsent draft": "消息列有未发送的草稿",
   "Thread is no longer in Activity": "该消息列已不在动态中",
-  "Thread panel": "消息列面板",
   "Threads": "消息列",
   "Three steps: tap Safari Share, choose Add to Home Screen, then tap Add.":
       "三步：点 Safari 分享，选择添加到主屏幕，再点添加。",
@@ -520,7 +509,6 @@ const Map<String, String> zhCatalogWeb7 = <String, String>{
   "Turn on notifications so you don't miss when they finish or need you.":
       "开启通知，不错过它们完成或需要你处理的时刻。",
   "Type ": "输入 ",
-  "Type a value": "输入一个值",
   "URL slug": "URL 短名",
   "Ultra": "Ultra",
   "Unable to load history.": "无法加载历史记录",

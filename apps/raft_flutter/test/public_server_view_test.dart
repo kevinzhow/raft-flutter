@@ -213,6 +213,11 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('public-server-thread-panel')), findsOneWidget);
     expect(find.text('Looks good to me'), findsOneWidget);
+    // Web ThreadPanel: "Thread" then the channel context, with a gap between.
+    expect(
+      find.textContaining('Thread — #', findRichText: true),
+      findsOneWidget,
+    );
     expect(client.calls, contains('GET $_base/threads/t1/messages'));
     await t.tap(find.byKey(const ValueKey('thread-close')));
     await t.pumpAndSettle();

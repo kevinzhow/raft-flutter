@@ -734,7 +734,7 @@ class _PublicServerViewState extends State<PublicServerView> {
         onDismiss: closeThread,
         child: RaftPublicThreadPanel(
           title: tr('Thread'),
-          channelContext: raftFormat(context, ' — #{name}', {
+          channelContext: raftFormat(context, '— #{name}', {
             'name': channel?['name'],
           }),
           closeLabel: tr('Close thread'),

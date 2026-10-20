@@ -266,7 +266,6 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
   "Direct conversations involving this agent.": "包含该 Agent 的直接对话。",
   "Direct message": "私信",
   "Direct setup": "直接配置",
-  "Direct-message panel": "私信面板",
   "Directory, profiles, and status": "名单、资料与状态",
   "Disable Push Notifications": "停用推送通知",
   "Disable connection": "禁用连接",
@@ -370,7 +369,6 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
       "启用后将为所选频道映射启动托管传递，并授权你当前的 Raft 身份向对应 Slack 频道发送消息。",
   "Enabling…": "启用中…",
   "Endpoint and signing secret.": "接收地址与签名密钥。",
-  "Enter Workspace": "进入工作空间",
   "Enter a code approved for existing seat updates.": "请输入可用于现有订阅席位更新的优惠码。",
   "Enter a different seat total.": "请输入不同的席位总数。",
   "Enter an endpoint to finish enabling delivery.": "请填写端点以完成投递的启用。",
@@ -403,12 +401,9 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
       "保留已有的 agent:read 登录授权；应用权限单独配置。",
   "Existing messages, files, reactions, and threads stay together.":
       "已有消息、附件、回应和消息列都会保留。",
-  "Existing migration status, cancellation, cleanup, and recovery stay available.":
-      "现有迁移的状态、取消、清理和恢复功能仍然可用。",
   "Existing tasks keep their identity and remain editable here; invited servers see that historical task work as read-only.":
       "已有任务会保留身份并可继续在这里编辑；受邀服务器只能只读查看这段历史任务。",
   "Existing tokens": "已有 token",
-  "Exit Workspace": "退出工作空间",
   "Expand comments": "展开评论",
   "Expired": "已过期",
   "Expires": "有效期",

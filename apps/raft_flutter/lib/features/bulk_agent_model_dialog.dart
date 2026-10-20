@@ -557,7 +557,8 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
                 children: [
                   if (step == _Step.review)
                     RaftAgentDialogButton(
-                      label: raftText(context, 'Back'),
+                      // Web machine.detail.bulkModel.back: 上一步 (the shared 'Back' says 返回).
+                      label: raftTextZh(context, 'Back', '上一步'),
                       size: RaftButtonRecipeSize.sm,
                       onPressed: () => setState(() {
                         reviewedTarget = null;
