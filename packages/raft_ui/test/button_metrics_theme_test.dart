@@ -50,13 +50,18 @@ void main() {
       expect(lg.values.toSet(), hasLength(3), reason: 'lg heights: $lg');
     });
 
-    test('xl exists only for Raft, and keeps its delta from lg elsewhere', () {
-      // raft-ui 0.7.1 added xl; the pre-theme looks never had it, so Elegant
-      // and Brutal have no measured value. They keep Raft's 8px step from lg
-      // rather than collapsing xl onto lg.
-      expect(_height(raftThemePackId, RaftButtonSize.xl), 52);
-      expect(_height(elegantThemePackId, RaftButtonSize.xl), 44);
-      expect(_height(brutalThemePackId, RaftButtonSize.xl), 48);
+    test('xl has no data and no call site, so every theme uses Raft\'s box', () {
+      // raft-ui 0.7.1 added xl; the pre-theme looks never had it and nothing
+      // calls it, so there is neither a measured family value nor a usage site
+      // to read one from. Deriving it from lg would invent a number, so it
+      // stays at Raft's 52 for every theme until a call site exists.
+      for (final id in [
+        raftThemePackId,
+        elegantThemePackId,
+        brutalThemePackId,
+      ]) {
+        expect(_height(id, RaftButtonSize.xl), 52, reason: id);
+      }
     });
 
     test('md is the same in every look, which is why it earns no token', () {

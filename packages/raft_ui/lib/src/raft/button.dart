@@ -232,11 +232,13 @@ class RaftButtonMetrics {
       RaftButtonSize.sm => sized(sm, _md),
       RaftButtonSize.md => onFrame ? sized(frame, _onFrame) : sized(md, _md),
       RaftButtonSize.lg => sized(lg, _lg),
-      // xl exists only in raft-ui 0.7.1 (52); the pre-theme looks never had it,
-      // so there is no Elegant/Brutal value to read. Keep Raft's box exactly
-      // and add the family delta relative to lg, which keeps xl consistent with
-      // whatever lg the theme chose instead of silently equalising them.
-      RaftButtonSize.xl => sized(lg + (_xl.height - 44), _xl),
+      // xl exists only in raft-ui 0.7.1 (52); the pre-theme looks never had it
+      // (RaftButtonRecipeSize has no xl at a57b9dab), so there is no measured
+      // Elegant/Brutal height. Nothing calls xl either, so there is no usage
+      // site to read an old size from. It therefore keeps Raft's box for every
+      // theme until a call site exists; then the value comes from whatever the
+      // old tree painted at that position. Deliberately NOT derived from lg.
+      RaftButtonSize.xl => _xl,
       RaftButtonSize.inline => _md,
       RaftButtonSize.iconXs ||
       RaftButtonSize.iconSm ||
