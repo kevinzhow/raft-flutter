@@ -246,6 +246,7 @@ const Set<String> raftGeometryTokens = {
   'size.control.md',
   'size.control.onFrame',
   'size.control.sm',
+  'size.control.xl',
   'size.drawer',
   'size.field',
   'size.menuRow',

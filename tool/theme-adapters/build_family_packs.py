@@ -64,7 +64,8 @@ GEOMETRY_ELEGANT = {
     'radius.item': 2, 'radius.pill': 999, 'radius.avatar': 999, 'radius.rail': 8,
     'radius.field': 6,
     'stroke.hairline': 0.5, 'stroke.control': 0, 'stroke.container': 1, 'stroke.rule': 1,
-    'size.control.sm': 28, 'size.control.md': 36, 'size.control.lg': 44,
+    # a57b9dab RaftButtonRecipe.resolve: sm 28, md 32, lg 36.
+    'size.control.sm': 28, 'size.control.md': 32, 'size.control.lg': 36,
     'size.control.onFrame': 32, 'size.field': 36, 'size.panelHeader': 56, 'size.rail': 56,
     'size.railGlyph': 16, 'size.navRow': 34, 'size.navRowCompact': 30,
     'size.menuRow': 31.5, 'size.menuRowCompact': 27.5, 'size.drawer': 380,
@@ -76,7 +77,8 @@ GEOMETRY_BRUTAL = {
     'radius.item': 0, 'radius.pill': 0, 'radius.avatar': 0, 'radius.rail': 0,
     'radius.field': 0,
     'stroke.hairline': 1, 'stroke.control': 2, 'stroke.container': 2, 'stroke.rule': 2,
-    'size.control.sm': 24, 'size.control.md': 36, 'size.control.lg': 44,
+    # a57b9dab RaftButtonRecipe.resolve: sm 28, md 32, lg 40.
+    'size.control.sm': 28, 'size.control.md': 32, 'size.control.lg': 40,
     'size.control.onFrame': 32, 'size.field': 40, 'size.panelHeader': 62, 'size.rail': 64,
     'size.railGlyph': 18, 'size.navRow': 40, 'size.navRowCompact': 32,
     'size.menuRow': 36, 'size.menuRowCompact': 28, 'size.drawer': 420,

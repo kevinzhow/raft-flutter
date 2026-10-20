@@ -154,7 +154,11 @@ GEOMETRY_RAFT = {
     # radius.control; this token keeps the older field recipe where it is.
     'radius.field': 6,
     'stroke.hairline': 1, 'stroke.control': 1.5, 'stroke.container': 1, 'stroke.rule': 1,
-    'size.control.sm': 32, 'size.control.md': 44, 'size.control.lg': 52,
+    # Measured from @botiverse/raft-ui 0.7.1 button.tsx: xs/sm/md share h-8=32,
+    # lg is h-11=44, xl is h-13=52. The contract keeps one token per size, so
+    # Raft's md token is 32 rather than the old 44 (which was a port artefact).
+    'size.control.sm': 32, 'size.control.md': 32, 'size.control.lg': 44,
+    'size.control.xl': 52,
     'size.control.onFrame': 36, 'size.field': 44, 'size.panelHeader': 56, 'size.rail': 56,
     'size.railGlyph': 16, 'size.navRow': 34, 'size.menuRow': 32, 'size.drawer': 380,
     # Shorter rows on short viewports (contract §3.3). Raft keeps one row height

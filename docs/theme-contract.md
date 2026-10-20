@@ -150,7 +150,10 @@ Elegant 的 `stroke.control = 0` 配合 `control.edge = ring`（§5 #1）与 `sh
 
 | 令牌 | Raft | Elegant | Brutal |
 | --- | --- | --- | --- |
-| `size.control.sm` / `md` / `lg` | 32 / 44 / 52 | 28 / 36 / 44 † | 24 / 36 / 44 † |
+| `size.control.sm` | 32 | 28 | 28 |
+| `size.control.md` | 32 | 32 | 32 |
+| `size.control.lg` | 44 | 40 | 36 |
+| `size.control.xl` | 52 | — | — |
 | `size.control.onFrame` | 36 | 32 † | 32 † |
 | `size.field` | 44 | 36 † | 40 † |
 | `size.panelHeader` | 56 | 56 | 62 |
@@ -162,6 +165,18 @@ Elegant 的 `stroke.control = 0` 配合 `control.edge = ring`（§5 #1）与 `sh
 | `space.controlX` | 12 | 6 | 8 |
 | `space.itemX` | 10 | 10 | 12 |
 | `space.inset.panel` | 16 | 26 † | 8 |
+
+`size.control.*` 的取值来源（三套各按自己的权威来源，不用当前分支的 recipe 反推）：
+
+- **Raft**：`@botiverse/raft-ui` 0.7.1 的 `button.tsx` —— `xs/sm/md` 共用 `textMd`
+  （`h-8` = 32），`lg` = `h-11` = 44，`xl` = `h-13` = 52。另用
+  `tool/parity-ui/run dom-dump` 在官方 React 样例上实测确认（md 32 / lg 44 / xl 52）。
+- **Brutal / Elegant**：`a57b9dab` 的 `RaftButtonRecipe.resolve(theme:, size:)` 解析结果。
+  brutal `sm 28 / md 32 / lg 40`；elegant `sm 28 / md 32 / lg 36`。
+  两者都没有 `xl` 这个尺寸（`xl` 是 0.7.1 引入的）。
+
+判据：三套取值相同 → 形态，组件里保留字面量；任一不同 → 主题值，必须进令牌。
+按此，`size.control.md` 是形态（32/32/32），`sm` 与 `lg` 是主题值。
 
 `size.*` 的 Raft 列全部来自 raft-ui 0.7.1（`button.md`、`spacing.md`）与已移植的 11 个组件；
 Elegant/Brutal 列来自 `inventory/G1…G5` 的 file:line。
