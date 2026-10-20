@@ -232,9 +232,14 @@ class RaftStickerAvatar extends StatelessWidget {
     final ui = t.ui;
     final dimension = extent ?? size.extent;
     final border = raftControlBorderPx(context, 1.5);
+    // Both radii come from the theme. The inner one is its own token rather
+    // than outer - inset: the official Raft specimen insets the image by 1px
+    // and still rounds it to 2, so concentric arithmetic would give 3.
+    final radiusOuter = t.size('radius.avatar', fallback: 4);
+    final radiusInner = t.size('radius.avatarInner', fallback: 2);
     Widget frame = RaftCssBox(
       key: frameKey,
-      radius: 4,
+      radius: radiusOuter,
       fill: type == RaftAvatarType.human
           ? ui['palette-lavender-400']
           : ui.inactive,
@@ -245,7 +250,7 @@ class RaftStickerAvatar extends StatelessWidget {
       height: dimension,
       child: ClipRRect(
         key: contentKey,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(radiusInner),
         child: SizedBox.expand(child: child),
       ),
     );

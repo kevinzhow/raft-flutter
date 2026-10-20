@@ -62,6 +62,9 @@ GEOMETRY_ELEGANT = {
     'radius.sticker': 3, 'radius.chip': 4, 'radius.control': 6, 'radius.controlSmall': 4,
     'radius.container': 8, 'radius.dialog': 8, 'radius.sheet': 16, 'radius.tooltip': 6,
     'radius.item': 2, 'radius.pill': 999, 'radius.avatar': 999, 'radius.rail': 8,
+    # a57b9dab rounds the inner container with the same expression as the outer
+    # (size/2), so the content is circular too.
+    'radius.avatarInner': 999,
     'radius.field': 6,
     'stroke.hairline': 0.5, 'stroke.control': 0, 'stroke.container': 1, 'stroke.rule': 1,
     # a57b9dab RaftButtonRecipe.resolve: sm 28, md 32, lg 36.
@@ -75,6 +78,7 @@ GEOMETRY_BRUTAL = {
     'radius.sticker': 0, 'radius.chip': 0, 'radius.control': 0, 'radius.controlSmall': 0,
     'radius.container': 0, 'radius.dialog': 0, 'radius.sheet': 0, 'radius.tooltip': 0,
     'radius.item': 0, 'radius.pill': 0, 'radius.avatar': 0, 'radius.rail': 0,
+    'radius.avatarInner': 0,
     'radius.field': 0,
     'stroke.hairline': 1, 'stroke.control': 2, 'stroke.container': 2, 'stroke.rule': 2,
     # a57b9dab RaftButtonRecipe.resolve: sm 28, md 32, lg 40.

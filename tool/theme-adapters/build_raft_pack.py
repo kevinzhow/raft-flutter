@@ -150,6 +150,10 @@ GEOMETRY_RAFT = {
     'radius.sticker': 4, 'radius.chip': 6, 'radius.control': 8, 'radius.controlSmall': 8,
     'radius.container': 10, 'radius.dialog': 16, 'radius.sheet': 16, 'radius.tooltip': 6,
     'radius.item': 6, 'radius.pill': 999, 'radius.avatar': 4, 'radius.rail': 0,
+    # The avatar's inner content radius (0.7.1: rounded-[2px]). It is NOT
+    # outer - inset: the official specimen insets the image by 1px and still
+    # rounds it to 2, so concentric arithmetic gives 3 and would be wrong.
+    'radius.avatarInner': 2,
     # The legacy field shape (design_primitives.dart:411). 0.7.1's Input uses
     # radius.control; this token keeps the older field recipe where it is.
     'radius.field': 6,

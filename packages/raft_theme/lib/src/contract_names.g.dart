@@ -230,6 +230,7 @@ const Set<String> raftColorRoles = {
 /// Numeric tokens: radii, stroke widths, sizes, density and spacing.
 const Set<String> raftGeometryTokens = {
   'radius.avatar',
+  'radius.avatarInner',
   'radius.chip',
   'radius.container',
   'radius.control',
