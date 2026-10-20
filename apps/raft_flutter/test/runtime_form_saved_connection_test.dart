@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
@@ -70,6 +71,9 @@ class _Workspace extends WorkspaceController {
   /// Every form read and option-source read, with its query.
   final reads = <String>[];
   final sourceQueries = <Map<String, dynamic>?>[];
+
+  /// The `Accept-Language` each read carried, in order.
+  final languages = <String?>[];
   int formReads = 0;
 
   /// Option-source reads that answer 409 `form_revision_stale` before serving.
@@ -103,6 +107,9 @@ class _Workspace extends WorkspaceController {
 
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
+    if (path.contains('/runtime-form')) {
+      languages.add(RaftClient.currentRequestHeaders['Accept-Language']);
+    }
     if (path == '/servers/s/machines') {
       return {
         'machines': [_machine],
@@ -184,29 +191,36 @@ void main() {
     await c.dispose();
   });
 
-  Future<Future<Map<String, dynamic>?>> open(WidgetTester t) async {
+  Widget app({
+    Locale? locale,
+    void Function(Future<Map<String, dynamic>?>)? opened,
+  }) => MaterialApp(
+    locale: locale,
+    supportedLocales: const [Locale('en'), Locale('zh', 'CN')],
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
+    theme: raftTheme(RaftFamily.brutal),
+    home: Scaffold(
+      body: Builder(
+        builder: (context) => TextButton(
+          onPressed: () => opened?.call(
+            showManagedAgentForm(context, w, initialName: 'Pi-Agent'),
+          ),
+          child: const Text('open'),
+        ),
+      ),
+    ),
+  );
+
+  Future<Future<Map<String, dynamic>?>> open(
+    WidgetTester t, {
+    Locale? locale,
+  }) async {
     late Future<Map<String, dynamic>?> result;
     t.view.physicalSize = const Size(900, 2400);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
     w.server = RaftRecord({'id': 's', 'role': 'owner'});
-    await t.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(RaftFamily.brutal),
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => TextButton(
-              onPressed: () => result = showManagedAgentForm(
-                context,
-                w,
-                initialName: 'Pi-Agent',
-              ),
-              child: const Text('open'),
-            ),
-          ),
-        ),
-      ),
-    );
+    await t.pumpWidget(app(locale: locale, opened: (r) => result = r));
     await t.tap(find.text('open'));
     await t.pumpAndSettle();
     return result;
@@ -527,5 +541,172 @@ void main() {
     });
     // The edit form's option sources echo the edit form's revision.
     expect(w.sourceQueries, everyElement({'formRevision': 'rev-1'}));
+  });
+
+  group('display language', () {
+    testWidgets(
+      'every form read asks in the app language, not the system one',
+      (t) async {
+        await open(t, locale: const Locale('zh', 'CN'));
+        // The form and both option sources.
+        expect(w.languages, ['zh-CN', 'zh-CN', 'zh-CN']);
+        expect(find.text('Provider'), findsNothing); // the UI itself is Chinese
+      },
+    );
+
+    testWidgets('English is sent as en', (t) async {
+      await open(t, locale: const Locale('en'));
+      expect(w.languages, ['en', 'en', 'en']);
+    });
+
+    testWidgets(
+      'switching the language reloads the form and keeps the values',
+      (t) async {
+        await open(t, locale: const Locale('en'));
+        await pickProvider(t, 'DeepSeek · Team key');
+        w.languages.clear();
+        await t.pumpWidget(app(locale: const Locale('zh', 'CN')));
+        await t.pumpAndSettle();
+        expect(w.languages, ['zh-CN', 'zh-CN', 'zh-CN']);
+        expect(w.formReads, 2);
+        // Still on the saved provider: the owned key field is disabled.
+        expect(_enabled(t, 'runtime-apiKey'), false);
+      },
+    );
+  });
+
+  group('re-entering the API key', () {
+    late RuntimeFormController form;
+    setUp(() {
+      w.editForm = _fixture('builtin.edit.json');
+      form = RuntimeFormController(
+        w,
+        machineId: 'mbp',
+        runtimeId: 'builtin',
+        agentId: 'a1',
+        valid: () => true,
+      );
+    });
+    tearDown(() => form.dispose());
+
+    Future<void> show(WidgetTester t) async {
+      t.view.physicalSize = const Size(900, 2400);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.brutal),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: ListenableBuilder(
+                listenable: form,
+                builder: (_, _) => form.definition == null
+                    ? const SizedBox.shrink()
+                    : RuntimeFormFields(form: form),
+              ),
+            ),
+          ),
+        ),
+      );
+      await form.load();
+      await t.pumpAndSettle();
+    }
+
+    const tied =
+        'The API key is tied to the saved settings you changed. Enter a new one.';
+    const kept = 'Leave blank to keep the saved value.';
+
+    testWidgets(
+      'a blank key keeps the stored one until a bound field changes',
+      (t) async {
+        await show(t);
+        expect(find.text(kept), findsOneWidget);
+        expect(find.text(tied), findsNothing);
+        expect(form.reentryBlocked, false);
+        await t.enterText(
+          find.descendant(
+            of: _key('runtime-baseUrl'),
+            matching: find.byType(TextField),
+          ),
+          'https://other.example.test/v1',
+        );
+        await t.pumpAndSettle();
+        // Said at once, not after a Save attempt; no "leave blank" promise.
+        expect(find.text(tied), findsOneWidget);
+        expect(find.text(kept), findsNothing);
+        expect(form.reentryBlocked, true);
+        await t.enterText(
+          find.descendant(
+            of: _key('runtime-apiKey'),
+            matching: find.byType(TextField),
+          ),
+          'sk-new',
+        );
+        await t.pumpAndSettle();
+        expect(find.text(tied), findsNothing);
+        expect(form.reentryBlocked, false);
+        expect(form.validate(), isEmpty);
+      },
+    );
+
+    testWidgets('a same address with a trailing slash does not ask again', (
+      t,
+    ) async {
+      await show(t);
+      await t.enterText(
+        find.descendant(
+          of: _key('runtime-baseUrl'),
+          matching: find.byType(TextField),
+        ),
+        'https://gateway.example.test/v1/',
+      );
+      await t.pumpAndSettle();
+      expect(form.reentryBlocked, false);
+      expect(find.text(tied), findsNothing);
+    });
+
+    testWidgets('Save stays disabled while a new key is required', (t) async {
+      t.view.physicalSize = const Size(900, 2400);
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.brutal),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RuntimeFormDialog(
+                controller: w,
+                machineId: 'mbp',
+                runtimeId: 'builtin',
+                agentId: 'a1',
+              ),
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      Finder save() => find.widgetWithText(RaftAgentDialogButton, 'Save');
+      bool saveEnabled() =>
+          t.widget<RaftAgentDialogButton>(save()).onPressed != null;
+      expect(saveEnabled(), true);
+      await t.enterText(
+        find.descendant(
+          of: _key('runtime-baseUrl'),
+          matching: find.byType(TextField),
+        ),
+        'https://other.example.test/v1',
+      );
+      await t.pumpAndSettle();
+      expect(saveEnabled(), false);
+      await t.enterText(
+        find.descendant(
+          of: _key('runtime-apiKey'),
+          matching: find.byType(TextField),
+        ),
+        'sk-new',
+      );
+      await t.pumpAndSettle();
+      expect(saveEnabled(), true);
+    });
   });
 }

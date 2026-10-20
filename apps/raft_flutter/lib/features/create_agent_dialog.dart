@@ -358,6 +358,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       machineId: machineId!,
       runtimeId: id,
       valid: () => currentAuthority,
+      language: runtimeFormLanguageTag(context),
     );
     Map<String, String>? env;
     try {

@@ -9,6 +9,7 @@
 // keys, gateways, schema forms) of their own; those runtimes stay on the
 // protocol-v2 form (see [legacyRuntimeEditorSupports]).
 import '../data/runtime_config.dart';
+import '../data/runtime_error.dart' show runtimeModelLookupReasons;
 import 'agent_runtime_catalog.dart';
 
 /// Runtimes whose settings the legacy editor can present and save.
@@ -82,9 +83,13 @@ class RuntimeModelNonLive extends RuntimeModelSource {
 }
 
 class RuntimeModelError extends RuntimeModelSource {
-  const RuntimeModelError({this.retryable = true, this.code});
+  const RuntimeModelError({this.retryable = true, this.code, this.reason});
   final bool retryable;
   final String? code;
+
+  /// How the daemon's lookup ended, beside `runtime_not_found`. Absent on old
+  /// daemons and unknown values: that is "unconfirmed", never "not installed".
+  final String? reason;
 }
 
 const _detectionErrorCodes = {
@@ -139,6 +144,9 @@ RuntimeModelSource parseRuntimeModelSourcePayload(Object? payload) {
       retryable: payload['retryable'] != false,
       code: _detectionErrorCodes.contains(payload['code'])
           ? payload['code'] as String
+          : null,
+      reason: runtimeModelLookupReasons.contains(payload['reason'])
+          ? payload['reason'] as String
           : null,
     );
   }

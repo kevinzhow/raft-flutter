@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../data/runtime_error.dart' show spawnLookupReason;
 import 'agent_metadata_catalog.dart';
 
 /// Only the adapter constructs this from the current authorized workspace.
@@ -115,6 +116,18 @@ String agentRowName(Map row) => nonEmptyOr(row['displayName'], row['name']);
 /// socket patch keeps `detailKind`.
 String? agentRowDetailKind(Map row) =>
     (row['activityDetailKind'] ?? row['detailKind']) as String?;
+
+/// The lookup reason of the row's current `runtime_unavailable` start failure:
+/// the socket patch's own value when it has one, else the REST row's typed
+/// `spawnFailure` carrier.
+String? agentRowSpawnLookupReason(Map row) {
+  if (row.containsKey('spawnLookupReason')) {
+    return row['spawnLookupReason'] is String
+        ? row['spawnLookupReason'] as String
+        : null;
+  }
+  return spawnLookupReason(agentRowDetailKind(row), row['spawnFailure']);
+}
 
 /// A directory row's current activity as the source hydrates it:
 /// normalizeActivity(activityKind ?? activity, status).

@@ -62,6 +62,65 @@ String runtimeErrorText(RuntimeErrorKind kind) => switch (kind) {
   RuntimeErrorKind.notInstalled =>
     'This runtime is not installed on this computer.',
   RuntimeErrorKind.authFailed => 'Runtime authentication failed.',
-  RuntimeErrorKind.toolArgsInvalid =>
-    'The model produced tool-call arguments in an invalid format, so Codex rejected the tool call — try a different model.',
+  RuntimeErrorKind.toolArgsInvalid => 'The model produced tool-call arguments in an invalid format, so Codex rejected the tool call — try a different model.',
 };
+
+/// Web `RuntimeLookupDisplay`: a runtime lookup failure (`runtime_not_found`)
+/// now says why the lookup missed. Only a confirmed miss keeps the install
+/// guidance; a timeout, a permission denial and an unresolved failure each get
+/// their own wording, and an absent reason (an old daemon) is unresolved too.
+/// Uncertainty never reads as "install it".
+enum RuntimeLookupDisplay {
+  confirmedMissing,
+  timeout,
+  permissionDenied,
+  unconfirmed,
+}
+
+/// Detection reasons (`not_installed`, `probe_timeout`, `permission_denied`,
+/// `probe_failed`) and launch reasons (`not_on_path`, `lookup_timed_out`,
+/// `lookup_permission_denied`, `lookup_failed`).
+const runtimeModelLookupReasons = {
+  'not_installed',
+  'probe_timeout',
+  'permission_denied',
+  'probe_failed',
+};
+const spawnFailureLookupReasons = {
+  'not_on_path',
+  'lookup_timed_out',
+  'lookup_permission_denied',
+  'lookup_failed',
+};
+
+RuntimeLookupDisplay runtimeLookupDisplayForReason(String? reason) =>
+    switch (reason) {
+      'not_installed' || 'not_on_path' => RuntimeLookupDisplay.confirmedMissing,
+      'probe_timeout' || 'lookup_timed_out' => RuntimeLookupDisplay.timeout,
+      'permission_denied' ||
+      'lookup_permission_denied' => RuntimeLookupDisplay.permissionDenied,
+      _ => RuntimeLookupDisplay.unconfirmed,
+    };
+
+/// The English catalog string of a lookup display that is not a confirmed
+/// miss (`agent.runtimeModels.runtimeLookup*`); `{runtimeName}` is filled by
+/// the caller.
+String runtimeLookupText(RuntimeLookupDisplay display) => switch (display) {
+  RuntimeLookupDisplay.confirmedMissing =>
+    '{runtimeName} was not found on this Computer. Install it, then retry.',
+  RuntimeLookupDisplay.timeout => "Checking for {runtimeName} on this Computer timed out. Retry, or check this Computer's status.",
+  RuntimeLookupDisplay.permissionDenied => 'Could not check for {runtimeName} on this Computer: permission denied. Check permissions on that machine, then retry.',
+  RuntimeLookupDisplay.unconfirmed => "Could not confirm whether {runtimeName} is available on this Computer. Retry, or check this Computer's status.",
+};
+
+/// Web `activityState.spawnFailure.lookupReason`: how the daemon's PATH lookup
+/// ended when a start failed with `runtime_not_found`. Only meaningful on the
+/// `runtime_unavailable` state; absent (or unknown) is "no verdict", which the
+/// display reads as unconfirmed, never as a confirmed miss.
+String? spawnLookupReason(Object? detailKind, Object? spawnFailure) =>
+    detailKind == 'runtime_unavailable' &&
+        spawnFailure is Map &&
+        spawnFailure['reason'] == 'runtime_not_found' &&
+        spawnFailureLookupReasons.contains(spawnFailure['lookupReason'])
+    ? spawnFailure['lookupReason'] as String
+    : null;

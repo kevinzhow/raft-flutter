@@ -290,4 +290,125 @@ void main() {
       );
     });
   });
+
+  group('re-entering the API key (writeOnlyKeepRequiresUnchanged)', () {
+    Map<String, Map<String, dynamic>> src() => {
+      'provider': fixture('builtin.saved.option-source.provider.json'),
+      'model': fixture('builtin.saved.option-source.model.json'),
+    };
+    RuntimeForm edit() => RuntimeForm.parse(fixture('builtin.edit.json'))!;
+
+    test('the binding is read from the edit form, tolerantly', () {
+      expect(edit().keepRequiresUnchanged, {
+        'apiKey': ['providerId', 'baseUrl'],
+      });
+      final raw = fixture('builtin.edit.json');
+      raw['writeOnlyKeepRequiresUnchanged'] = {
+        '/apiKey': ['/providerId', '/nope', '/apiKey', 7, '/a/b'],
+        '/baseUrl': ['/providerId'], // not a secret
+        '/missing': ['/providerId'],
+        'apiKey': ['/providerId'], // not a pointer
+        '/model': 'oops',
+      };
+      expect(RuntimeForm.parse(raw)!.keepRequiresUnchanged, {
+        'apiKey': ['providerId'],
+      });
+      raw['writeOnlyKeepRequiresUnchanged'] = 'oops';
+      expect(RuntimeForm.parse(raw)!.keepRequiresUnchanged, isEmpty);
+      raw.remove('writeOnlyKeepRequiresUnchanged');
+      expect(RuntimeForm.parse(raw)!.keepRequiresUnchanged, isEmpty);
+    });
+
+    test(
+      'a blank key keeps the stored one while the bound fields are unchanged',
+      () {
+        final form = edit(), s = src();
+        final values = form.initial(s);
+        expect(values['providerId'], 'openai-compatible');
+        expect(values['apiKey'], '');
+        expect(form.validate(s, values, editing: true), isEmpty);
+        // Only whitespace and a trailing slash differ: still the same address.
+        final same = form.change(
+          s,
+          values,
+          'baseUrl',
+          ' https://gateway.example.test/v1/ ',
+        );
+        expect(form.validate(s, same, editing: true), isEmpty);
+      },
+    );
+
+    test('changing a bound field makes a blank key invalid', () {
+      final form = edit(), s = src();
+      final values = form.initial(s);
+      final url = form.change(
+        s,
+        values,
+        'baseUrl',
+        'https://other.example.test/v1',
+      );
+      expect(form.validate(s, url, editing: true), {
+        'apiKey': 'secret_reentry_required',
+      });
+      expect(
+        form.secretReentryRequired(
+          form.fields.firstWhere((f) => f.key == 'apiKey'),
+          s,
+          url,
+        ),
+        true,
+      );
+      // A new key fixes it (the whole value is trimmed first).
+      expect(
+        form.validate(
+          s,
+          form.change(s, url, 'apiKey', ' sk-new '),
+          editing: true,
+        ),
+        isEmpty,
+      );
+      expect(
+        form.validate(s, form.change(s, url, 'apiKey', '   '), editing: true),
+        {'apiKey': 'secret_reentry_required'},
+      );
+      final provider = form.change(s, values, 'providerId', 'deepseek');
+      expect(form.validate(s, provider, editing: true), {
+        'apiKey': 'secret_reentry_required',
+      });
+      // Changing it back lifts the requirement.
+      expect(
+        form.validate(
+          s,
+          form.change(s, provider, 'providerId', 'openai-compatible'),
+          editing: true,
+        )['apiKey'],
+        isNull,
+      );
+    });
+
+    test('create is unaffected, a saved connection never needs a key', () {
+      final form = edit(), s = src();
+      final changed = form.change(s, form.initial(s), 'providerId', 'deepseek');
+      expect(form.validate(s, changed)['apiKey'], 'required');
+      // The saved-connection edit form marks the key as the connection's.
+      final saved = RuntimeForm.parse(fixture('builtin.saved.edit.json'))!;
+      expect(saved.keepRequiresUnchanged['apiKey'], isNotEmpty);
+      final direct = saved.change(
+        s,
+        saved.initial(s),
+        'providerId',
+        'deepseek',
+      );
+      expect(saved.validate(s, direct, editing: true), {
+        'apiKey': 'secret_reentry_required',
+      });
+      final connection = saved.change(
+        s,
+        direct,
+        'providerId',
+        'connection:conn-gateway',
+      );
+      expect(saved.validate(s, connection, editing: true)['apiKey'], isNull);
+    });
+  });
 }

@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 
 import '../features/agent_metadata_catalog.dart';
 import 'migration_error.dart' show migrationPhase;
+import 'runtime_error.dart' show spawnLookupReason;
 
 enum WorkspaceEntityKind { agents, computers, members }
 
@@ -721,6 +722,13 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           // Same key as the REST row's `activityDetailKind`.
           'activityDetailKind': detailKind,
           'detailKind': detailKind,
+          // Web agentStore keeps the typed `spawnFailure` carrier only while
+          // the state is the runtime_unavailable frame; the lookup reason it
+          // carries decides the "not installed" wording.
+          'spawnLookupReason': spawnLookupReason(
+            detailKind,
+            payload['spawnFailure'],
+          ),
         };
         _activityVersions[id] = (_activityVersions[id] ?? 0) + 1;
         _activity[id] = patch;

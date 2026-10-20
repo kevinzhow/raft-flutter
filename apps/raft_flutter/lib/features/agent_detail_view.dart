@@ -30,7 +30,7 @@ import 'agent_trajectory_log.dart';
 import 'tool_display.dart';
 import 'runtime_usage_chip.dart';
 import 'agent_metadata_catalog.dart';
-import 'agent_runtime_catalog.dart' show reasoningEfforts;
+import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
 import 'agent_metadata_projection.dart';
 import 'mcp_views.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
@@ -728,7 +728,26 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   ? classifyRuntimeError(display.detail)
                   : null)
         : null;
-    final status = _canViewPrivate && runtimeKind != null
+    // Web: "not installed" keeps the install copy only when the start
+    // failure's typed carrier confirms the miss; a timed-out, denied or failed
+    // lookup, and an old daemon that sends no reason, never say "install it".
+    final lookup = runtimeKind == RuntimeErrorKind.notInstalled
+        ? runtimeLookupDisplayForReason(agentRowSpawnLookupReason(a))
+        : null;
+    final lookupRuntime = '${a['runtime'] ?? ''}';
+    final status =
+        _canViewPrivate &&
+            lookup != null &&
+            lookup != RuntimeLookupDisplay.confirmedMissing
+        ? raftFormat(context, runtimeLookupText(lookup), {
+            'runtimeName':
+                runtimeInfos
+                    .where((r) => r.id == lookupRuntime)
+                    .firstOrNull
+                    ?.name ??
+                lookupRuntime,
+          })
+        : _canViewPrivate && runtimeKind != null
         ? raftText(context, runtimeErrorText(runtimeKind))
         : agentActivityText(
             display.activity,

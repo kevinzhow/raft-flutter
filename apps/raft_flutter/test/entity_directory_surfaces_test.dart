@@ -289,4 +289,53 @@ void main() {
       expect(t.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'a runtime_unavailable frame keeps how the runtime lookup ended',
+    (t) async {
+      await setUpWorkspace(t);
+      Object? reason() => w.entityDirectory.agent('a')?['spawnLookupReason'];
+      client.stream.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'error',
+          'detail': 'codex is not installed',
+          'detailKind': 'runtime_unavailable',
+          'spawnFailure': {
+            'reason': 'runtime_not_found',
+            'lookupReason': 'lookup_timed_out',
+          },
+        }),
+      );
+      await t.pump();
+      expect(reason(), 'lookup_timed_out');
+      // A later frame without the carrier clears it (Web keeps the carrier only
+      // while the state is the runtime_unavailable frame).
+      client.stream.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'error',
+          'detail': 'codex is not installed',
+          'detailKind': 'runtime_unavailable',
+        }),
+      );
+      await t.pump();
+      expect(reason(), isNull);
+      // An unknown value is dropped, never read as a verdict.
+      client.stream.add(
+        const RaftEvent('agent:activity', {
+          'agentId': 'a',
+          'activity': 'error',
+          'detail': 'codex is not installed',
+          'detailKind': 'runtime_unavailable',
+          'spawnFailure': {
+            'reason': 'runtime_not_found',
+            'lookupReason': 'cosmic_rays',
+          },
+        }),
+      );
+      await t.pump();
+      expect(reason(), isNull);
+    },
+  );
 }

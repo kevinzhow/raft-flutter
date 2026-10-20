@@ -940,6 +940,24 @@ class RaftClient {
       Zone.current[_priorityKey] as RequestPriority? ??
       RequestPriority.foreground;
 
+  static const _headersKey = #raftRequestHeaders;
+
+  /// Runs [body] so that every request it starts carries [headers] (an
+  /// explicit `headers:` argument of the request wins). For per-surface
+  /// headers such as `Accept-Language` on the runtime form reads; subclasses
+  /// and fakes of the client need no change.
+  static T runWithHeaders<T>(Map<String, String> headers, T Function() body) =>
+      runZoned(
+        body,
+        zoneValues: {
+          _headersKey: {...currentRequestHeaders, ...headers},
+        },
+      );
+
+  /// The headers [runWithHeaders] applies to requests started right here.
+  static Map<String, String> get currentRequestHeaders =>
+      Zone.current[_headersKey] as Map<String, String>? ?? const {};
+
   static const _sharedKey = #raftSharedReads;
 
   /// Runs [body] so that identical GETs started inside it while one is in
@@ -985,6 +1003,8 @@ class RaftClient {
     RequestPriority? priority,
   }) {
     final level = priority ?? RaftClient.currentPriority;
+    final scoped = currentRequestHeaders;
+    if (scoped.isNotEmpty) headers = {...scoped, ...?headers};
     Future<dynamic> send() => _sendPaced(
       method,
       path,
@@ -1027,6 +1047,7 @@ class RaftClient {
       user?.id,
       authorized,
       workspaceScoped ? serverId : headers?['X-Server-Id'],
+      headers?['Accept-Language'],
       path,
       query_,
     ].join('|');

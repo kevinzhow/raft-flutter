@@ -1,0 +1,172 @@
+{
+  "protocolVersion": 2,
+  "runtimeId": "builtin",
+  "schemaVersion": "builtin-pi.create.v3",
+  "dataSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "providerId",
+      "apiKey",
+      "model"
+    ],
+    "properties": {
+      "providerId": {
+        "type": "string",
+        "title": "Provider",
+        "minLength": 1,
+        "x-optionSource": "provider"
+      },
+      "apiKey": {
+        "type": "string",
+        "title": "API Key",
+        "minLength": 1,
+        "writeOnly": true
+      },
+      "baseUrl": {
+        "type": "string",
+        "title": "Base URL",
+        "minLength": 1,
+        "format": "uri"
+      },
+      "supportsImageInput": {
+        "type": "boolean",
+        "title": "Image input"
+      },
+      "loadLocalPlugins": {
+        "type": "boolean",
+        "title": "Load local Pi plugins"
+      },
+      "model": {
+        "type": "string",
+        "title": "Model",
+        "minLength": 1,
+        "x-optionSource": "model"
+      },
+      "envVars": {
+        "type": "object",
+        "title": "Environment Variables",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "uiSchema": {
+    "order": [
+      "providerId",
+      "apiKey",
+      "baseUrl",
+      "supportsImageInput",
+      "model",
+      "loadLocalPlugins",
+      "envVars"
+    ],
+    "layout": {
+      "advanced": [
+        "/loadLocalPlugins",
+        "/envVars"
+      ]
+    },
+    "visibility": [
+      {
+        "pointer": "/baseUrl",
+        "when": {
+          "pointer": "/providerId",
+          "in": [
+            "openai-compatible",
+            "anthropic-compatible"
+          ]
+        }
+      },
+      {
+        "pointer": "/supportsImageInput",
+        "when": {
+          "pointer": "/providerId",
+          "in": [
+            "openai-compatible",
+            "anthropic-compatible"
+          ]
+        }
+      }
+    ],
+    "localization": {
+      "providerId": {
+        "label": "Provider",
+        "hint": "Built-in Pi is ready to use without local runtime setup. It uses the provider key entered here."
+      },
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-..."
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "placeholder": "https://gateway.example.com/v1"
+      },
+      "supportsImageInput": {
+        "label": "Supports image input",
+        "hint": "Enable only when this gateway endpoint and model accept images."
+      },
+      "model": {
+        "label": "Model",
+        "placeholder": "Model ID",
+        "hint": "Use a model ID the selected provider supports."
+      },
+      "loadLocalPlugins": {
+        "label": "Load local Pi extensions",
+        "hint": "Load enabled Pi extensions installed on the computer running this agent. Applying changes restarts a running agent."
+      },
+      "envVars": {
+        "label": "Environment Variables",
+        "hint": "These will be injected into the runtime command environment."
+      }
+    }
+  },
+  "capabilities": {
+    "providerKinds": [
+      "preset",
+      "gateway"
+    ],
+    "writeOnlyPointers": [
+      "/apiKey"
+    ],
+    "forbiddenPointers": [
+      "/hostUserState"
+    ]
+  },
+  "optionSources": {
+    "provider": {
+      "protocolVersion": 1,
+      "runtimeId": "builtin",
+      "schemaVersion": "builtin-pi.create.v3",
+      "sourceId": "provider",
+      "kind": "select",
+      "pointer": "/providerId"
+    },
+    "model": {
+      "protocolVersion": 1,
+      "runtimeId": "builtin",
+      "schemaVersion": "builtin-pi.create.v3",
+      "sourceId": "model",
+      "kind": "dependent_select",
+      "pointer": "/model",
+      "dependsOn": "/providerId"
+    }
+  },
+  "writeOnlyKeepRequiresUnchanged": {
+    "/apiKey": [
+      "/providerId",
+      "/baseUrl"
+    ]
+  },
+  "values": {
+    "providerId": "openai-compatible",
+    "baseUrl": "https://gateway.example.test/v1",
+    "supportsImageInput": true,
+    "model": "example-model",
+    "loadLocalPlugins": false,
+    "envVars": {
+      "EXAMPLE_FLAG": "1"
+    }
+  }
+}

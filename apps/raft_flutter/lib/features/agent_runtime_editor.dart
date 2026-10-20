@@ -13,6 +13,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/runtime_error.dart'
+    show runtimeLookupDisplayForReason, runtimeLookupText;
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'agent_runtime_catalog.dart';
@@ -163,9 +165,16 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
   void initState() {
     super.initState();
     w.addListener(authorityChanged);
-    if (admissions != null) syncForm();
     unawaited(loadAdmissions());
     loadModels();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Cached admissions build the form at once; its first read carries the
+    // display language, which is not available in initState.
+    if (admissions != null) createForm();
   }
 
   @override
@@ -219,7 +228,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
         marker['protocolVersion'] == 2;
   }
 
-  void syncForm() {
+  void createForm() {
     if (v2Active && form == null && machineId != null) {
       form = RuntimeFormController(
         w,
@@ -227,8 +236,13 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
         runtimeId: agentRuntime,
         agentId: agentId,
         valid: () => current,
+        language: runtimeFormLanguageTag(context),
       )..load();
     }
+  }
+
+  void syncForm() {
+    createForm();
     if (mounted) setState(() {});
   }
 
@@ -599,7 +613,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
             : fmt(
                 '{runtimeName} does not report a model catalog from this Computer.',
               ),
-      RuntimeModelError(:final code) => switch (code) {
+      RuntimeModelError(:final code, :final reason) => switch (code) {
         'runtime_not_authenticated' =>
           draft.runtime == 'grok'
               ? raftText(
@@ -609,8 +623,11 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
               : fmt(
                   '{runtimeName} requires sign-in on this Computer. Sign in, then retry.',
                 ),
+        // Only a confirmed miss says "install it"; a timeout, a permission
+        // denial, an unresolved failure and an old daemon (no reason) each
+        // get their own wording.
         'runtime_not_found' => fmt(
-          '{runtimeName} was not found on this Computer. Install it, then retry.',
+          runtimeLookupText(runtimeLookupDisplayForReason(reason)),
         ),
         'detect_timeout' => fmt(
           '{runtimeName} model discovery timed out. Check the runtime on this Computer, then retry.',
@@ -679,7 +696,8 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
               f == null ||
               f.loading ||
               f.definition == null ||
-              !f.valuesChanged
+              !f.valuesChanged ||
+              f.reentryBlocked
         : saveDisabled;
     final footer = RaftAgentDialogFooter(
       children: [

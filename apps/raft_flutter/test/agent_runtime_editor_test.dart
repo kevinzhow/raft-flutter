@@ -593,6 +593,46 @@ void main() {
     );
   });
 
+  for (final (reason, expected) in <(String?, String)>[
+    (
+      'not_installed',
+      'Codex CLI was not found on this Computer. Install it, then retry.',
+    ),
+    (
+      'probe_timeout',
+      "Checking for Codex CLI on this Computer timed out. Retry, or check this Computer's status.",
+    ),
+    (
+      'permission_denied',
+      'Could not check for Codex CLI on this Computer: permission denied. Check permissions on that machine, then retry.',
+    ),
+    (
+      'probe_failed',
+      "Could not confirm whether Codex CLI is available on this Computer. Retry, or check this Computer's status.",
+    ),
+    // An old daemon sends no reason: never "install it".
+    (
+      null,
+      "Could not confirm whether Codex CLI is available on this Computer. Retry, or check this Computer's status.",
+    ),
+  ]) {
+    testWidgets('runtime_not_found with reason $reason', (tester) async {
+      await _open(
+        tester,
+        setup: (c) => c.models = (_) => {
+          'kind': 'error',
+          'code': 'runtime_not_found',
+          'retryable': true,
+          'reason': ?reason,
+        },
+      );
+      expect(
+        find.textContaining(expected, findRichText: true),
+        findsOneWidget,
+      );
+    });
+  }
+
   testWidgets('Retry asks the Computer again after a failure', (tester) async {
     final (_, client) = await _open(tester);
     final before = client.calls

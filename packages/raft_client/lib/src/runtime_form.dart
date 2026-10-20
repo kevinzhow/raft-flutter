@@ -48,6 +48,7 @@ class RuntimeForm {
     this.stored,
     this.capabilities,
     this.revision,
+    this.keepRequiresUnchanged,
   );
   final String runtimeId, schemaVersion;
 
@@ -55,6 +56,13 @@ class RuntimeForm {
   /// every option-source request as `?formRevision=`. Null: the plain direct
   /// option protocol (the server never sends connection options then).
   final String? revision;
+
+  /// `writeOnlyKeepRequiresUnchanged` (edit only), by secret field key: the
+  /// fields the stored secret is bound to. While one of them differs from its
+  /// stored value a blank secret no longer means "keep": a new one is needed.
+  /// Advisory (no capability): a client that ignores it gets the server's
+  /// `api_key_required` on save.
+  final Map<String, List<String>> keepRequiresUnchanged;
   final List<RuntimeField> fields;
   final Map<String, Map<String, dynamic>> sourceRefs;
   final Map<String, dynamic> stored;
@@ -153,6 +161,22 @@ class RuntimeForm {
         ),
       );
     }
+    // Entries naming no secret field, or bound fields naming no field, are
+    // dropped (tolerant by contract).
+    final kinds = {for (final f in fields) f.key: f.kind};
+    final keep = <String, List<String>>{};
+    for (final entry in _map(wire['writeOnlyKeepRequiresUnchanged']).entries) {
+      final key = _pointer(entry.key);
+      if (key == null || kinds[key] != 'secret' || entry.value is! List) {
+        continue;
+      }
+      final bound = [
+        for (final raw in entry.value as List)
+          if (_pointer(raw) case final name?)
+            if (kinds.containsKey(name) && name != key) name,
+      ];
+      if (bound.isNotEmpty) keep[key] = bound;
+    }
     final rawCaps = wire['requiredClientCapabilities'];
     final caps = rawCaps == null
         ? <String>[]
@@ -169,6 +193,7 @@ class RuntimeForm {
       wire['revision'] is String && (wire['revision'] as String).isNotEmpty
           ? wire['revision'] as String
           : null,
+      keep,
     );
   }
 
@@ -390,6 +415,37 @@ class RuntimeForm {
     return [raw];
   }
 
+  /// `writeOnlyKeepRequiresUnchanged` comparison: as strings, trimmed,
+  /// trailing slashes removed.
+  static String _boundValue(dynamic value) =>
+      (value is String ? value : (value ?? '').toString()).trim().replaceAll(
+        RegExp(r'/+$'),
+        '',
+      );
+
+  /// Edit: a blank secret cannot keep the stored value because a visible field
+  /// it is bound to was changed. A connection-owned secret never needs one (the
+  /// connection owns the credential).
+  bool secretReentryRequired(
+    RuntimeField f,
+    Map<String, Map<String, dynamic>> sources,
+    Map<String, dynamic> values,
+  ) {
+    if (f.kind != 'secret' || _text(values[f.key]).trim().isNotEmpty) {
+      return false;
+    }
+    if (!visible(f, values, sources)) return false;
+    if (connectionActive(sources, values) && f.connectionOwned) return false;
+    return (keepRequiresUnchanged[f.key] ?? const []).any((name) {
+      final bound = fields
+          .where((candidate) => candidate.key == name)
+          .firstOrNull;
+      return bound != null &&
+          visible(bound, values, sources) &&
+          _boundValue(values[name]) != _boundValue(stored[name]);
+    });
+  }
+
   bool unavailable(RuntimeField f, Map<String, Map<String, dynamic>> sources) =>
       sources[f.sourceId]?['status'] == 'unavailable';
   bool visible(
@@ -434,6 +490,10 @@ class RuntimeForm {
       // While a saved connection is selected, the fields it owns are not the
       // user's to fill: not required and not submitted.
       final ownedNow = connected && f.connectionOwned;
+      if (editing && secretReentryRequired(f, sources, values)) {
+        errors[f.key] = 'secret_reentry_required';
+        continue;
+      }
       if (f.required &&
           !(editing && f.kind == 'secret') &&
           !ownedNow &&

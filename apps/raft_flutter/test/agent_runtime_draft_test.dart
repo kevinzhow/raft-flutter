@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/data/runtime_error.dart';
 import 'package:raft_flutter/features/agent_runtime_catalog.dart';
 import 'package:raft_flutter/features/agent_runtime_draft.dart';
 
@@ -234,6 +235,48 @@ void main() {
           ],
         }),
         isA<RuntimeModelLive>(),
+      );
+    });
+
+    test('runtime_not_found carries how the lookup ended; unknown is dropped', () {
+      RuntimeModelError parse(Map<String, dynamic> extra) =>
+          parseRuntimeModelSourcePayload({
+            'kind': 'error',
+            'code': 'runtime_not_found',
+            ...extra,
+          }) as RuntimeModelError;
+      for (final reason in [
+        'not_installed',
+        'probe_timeout',
+        'permission_denied',
+        'probe_failed',
+      ]) {
+        expect(parse({'reason': reason}).reason, reason);
+      }
+      // An old daemon sends none; a value this client does not know is dropped.
+      expect(parse({}).reason, isNull);
+      expect(parse({'reason': 'cosmic_rays'}).reason, isNull);
+      expect(parse({'reason': 7}).reason, isNull);
+    });
+
+    test('only a confirmed miss says install it', () {
+      RuntimeLookupDisplay of(String? reason) =>
+          runtimeLookupDisplayForReason(reason);
+      expect(of('not_installed'), RuntimeLookupDisplay.confirmedMissing);
+      expect(of('not_on_path'), RuntimeLookupDisplay.confirmedMissing);
+      expect(of('probe_timeout'), RuntimeLookupDisplay.timeout);
+      expect(of('lookup_timed_out'), RuntimeLookupDisplay.timeout);
+      expect(of('permission_denied'), RuntimeLookupDisplay.permissionDenied);
+      expect(
+        of('lookup_permission_denied'),
+        RuntimeLookupDisplay.permissionDenied,
+      );
+      for (final unresolved in ['probe_failed', 'lookup_failed', null, 'x']) {
+        expect(of(unresolved), RuntimeLookupDisplay.unconfirmed);
+      }
+      expect(
+        runtimeLookupText(RuntimeLookupDisplay.unconfirmed),
+        isNot(contains('Install')),
       );
     });
 

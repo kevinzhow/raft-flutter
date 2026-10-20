@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -24,6 +25,11 @@ String runtimeFormLoadErrorText(Object error) {
     _ => 'Runtime configuration is unavailable. Refresh and try again.',
   };
 }
+
+/// `Accept-Language` for the form reads: the app's display language (what the
+/// UI is showing), not the system's. Web `htmlLangForLocale`.
+String runtimeFormLanguageTag(BuildContext context) =>
+    Localizations.localeOf(context).languageCode == 'zh' ? 'zh-CN' : 'en';
 
 /// 409 `form_revision_stale` (`recovery: refetch_form`): the server's form
 /// build moved on since this form was fetched; refetch the whole form and
@@ -65,10 +71,16 @@ class RuntimeFormController extends ChangeNotifier {
     required this.runtimeId,
     this.agentId,
     required this.valid,
+    this.language,
   });
   final WorkspaceController w;
   final String machineId, runtimeId;
   final String? agentId;
+
+  /// The app's display language as a BCP 47 tag (`en`, `zh-CN`), sent as
+  /// `Accept-Language` on every form read: the server writes the field labels,
+  /// hints and generic option names in it. Never the system language.
+  String? language;
 
   /// Whether results may still be applied (authority unchanged, still mounted).
   final bool Function() valid;
@@ -118,6 +130,28 @@ class RuntimeFormController extends ChangeNotifier {
     if (!disposed) notifyListeners();
   }
 
+  Future<dynamic> _read(String path, {Map<String, dynamic>? query}) {
+    final tag = language;
+    return tag == null
+        ? w.query(path, query: query)
+        : RaftClient.runWithHeaders({
+            'Accept-Language': tag,
+          }, () => w.query(path, query: query));
+  }
+
+  /// The display language changed: the form's copy is the server's, so the
+  /// form is fetched again (the user's values are kept).
+  Future<void> useLanguage(String tag) async {
+    final before = language;
+    language = tag;
+    if (before == null || before == tag || disposed) return;
+    if (definition == null && !loading) return;
+    final draft = _draft();
+    _generation++;
+    definition = null;
+    await load(seed: draft);
+  }
+
   Future<Map<String, dynamic>> source(
     String id, {
     bool refresh = false,
@@ -133,7 +167,7 @@ class RuntimeFormController extends ChangeNotifier {
     };
     try {
       return Map<String, dynamic>.from(
-        await w.query(
+        await _read(
           '$base/option-sources/${Uri.encodeComponent(id)}',
           query: query.isEmpty ? null : query,
         ),
@@ -157,7 +191,7 @@ class RuntimeFormController extends ChangeNotifier {
   /// source answering 409 `form_revision_stale` fails the fetch with that
   /// error (see [isFormRevisionStale]).
   Future<_FetchedForm> _fetch() async {
-    final raw = await w.query(editing ? '/agents/$agentId/runtime-form' : base);
+    final raw = await _read(editing ? '/agents/$agentId/runtime-form' : base);
     final form = RuntimeForm.parse(raw);
     if (form == null || !form.supported) {
       throw const RaftApiException(
@@ -374,6 +408,18 @@ class RuntimeFormController extends ChangeNotifier {
     return problems;
   }
 
+  /// Edit: a blank API key can no longer keep the stored one because a field
+  /// it is bound to changed. Save stays disabled until a new key is entered.
+  bool get reentryBlocked {
+    final form = definition;
+    return editing &&
+        form != null &&
+        form.fields.any((f) => form.secretReentryRequired(f, sources, values));
+  }
+
+  bool reentryRequired(RuntimeField f) =>
+      editing && definition?.secretReentryRequired(f, sources, values) == true;
+
   /// Required values still missing (Web: Create stays disabled, no error).
   bool get missingRequired {
     if (definition == null) return true;
@@ -398,6 +444,10 @@ String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
   ),
   'invalid_url' => raftText(context, 'Enter an HTTP or HTTPS URL.'),
   'not_a_choice' => raftText(context, 'Select an available choice.'),
+  'secret_reentry_required' => raftText(
+    context,
+    'The API key is tied to the saved settings you changed. Enter a new one.',
+  ),
   'connection_unavailable' => raftText(
     context,
     'This saved provider is unavailable. Select another provider.',
@@ -436,6 +486,21 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
   RuntimeFormController get c => widget.form;
 
   bool editingProvider = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tag = runtimeFormLanguageTag(context);
+    if (c.language == null) {
+      c.language = tag;
+    } else if (c.language != tag) {
+      // The language switched under an open form: its copy is the server's,
+      // so it is fetched again (after this build; the user's values stay).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(c.useLanguage(tag));
+      });
+    }
+  }
 
   /// Web `savedConnections.onEdit`: the selected connection's edit dialog.
   /// Saving refreshes the option sources, so the field shows its new name.
@@ -499,13 +564,21 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
     final selectedConnection = d.selectedConnection(f, c.sources, c.values);
     final managed = ownedNow ? managedPlaceholder(d) : null;
     final serverError = c.serverErrors[f.key];
+    // Edit: a blank secret keeps the stored one, unless a field it is bound to
+    // changed; then a new one is required, said at once (Save is disabled).
+    final reentry = c.reentryRequired(f);
+    final secretKept = c.editing && f.kind == 'secret' && !reentry;
     final error =
-        runtimeFieldError(context, c.validation[f.key]) ??
         (serverError == null || serverError.isEmpty
             ? null
-            : raftText(context, serverError));
+            : raftText(context, serverError)) ??
+        (reentry
+            ? runtimeFieldError(context, 'secret_reentry_required')
+            : runtimeFieldError(context, c.validation[f.key]));
     final hint = ownedNow
         ? managed
+        : secretKept
+        ? 'Leave blank to keep the saved value.'
         : f.kind == 'string_map'
         ? 'One KEY=value per line.'
         : f.copy['hint'] as String?;
@@ -605,7 +678,7 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
     final connectionId = selectedConnection?['connectionId'] as String?;
     return RaftStableField(
       label: f.label,
-      required: f.required && f.kind != 'boolean' && !ownedNow,
+      required: f.required && f.kind != 'boolean' && !ownedNow && !secretKept,
       hint: hint,
       error: error,
       // The pencil for the selected saved connection: operators who manage
@@ -787,9 +860,19 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
         );
       }
       loadOnboardingMachines();
-    } else {
-      form.load();
     }
+  }
+
+  bool formLoadStarted = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The first read needs the display language, which is not available in
+    // initState.
+    if (formLoadStarted || widget.onboarding) return;
+    formLoadStarted = true;
+    form.language = runtimeFormLanguageTag(context);
+    form.load();
   }
 
   Future<void> loadOnboardingMachines() async {
@@ -983,7 +1066,7 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
                       label: editing ? 'Save' : 'Create Agent',
                       primary: true,
                       busy: busy,
-                      onPressed: submit,
+                      onPressed: form.reentryBlocked ? null : submit,
                     )
                   else if (!form.loading)
                     RaftAgentDialogButton(
