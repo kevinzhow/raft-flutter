@@ -333,7 +333,8 @@ class RaftComputerRow extends StatelessWidget {
   final String? description, availableVersion, dotTooltip;
   final bool offline, diskLow, selected;
 
-  /// Row dot: upgrade (pink), online (lime), offline (gray).
+  /// Row dot: upgrade available (pink), online (lime), offline (gray),
+  /// restarting for an upgrade (cyan).
   final RaftComputerDot dot;
   final VoidCallback? onTap;
 
@@ -525,6 +526,7 @@ class RaftComputerRow extends StatelessWidget {
                           RaftComputerDot.upgrade => t.product.brutalPink,
                           RaftComputerDot.online => t.product.brutalLime,
                           RaftComputerDot.offline => raftGray400,
+                          RaftComputerDot.upgrading => t.product.brutalCyan,
                         },
                         border: Border.all(
                           color: brutal
@@ -614,7 +616,7 @@ class RaftComputerRow extends StatelessWidget {
   );
 }
 
-enum RaftComputerDot { upgrade, online, offline }
+enum RaftComputerDot { upgrade, online, offline, upgrading }
 
 /// AddMachineDialog machine-type option: `flex-1 flex items-center gap-2
 /// border p-3 text-left rounded-md theme-brutal:rounded-none

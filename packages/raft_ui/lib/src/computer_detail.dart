@@ -30,6 +30,11 @@ enum RaftComputerServiceKind {
   commands,
 }
 
+/// A Computer's upgrade seen from its connection (Web
+/// `useComputerUpgradeReconnect`): offline inside the grace is the upgrade's
+/// restart, offline past it is an upgrade that did not come back.
+enum RaftComputerUpgradeLink { none, reconnecting, overdue }
+
 /// MachineAgentList bulk modes.
 enum RaftComputerBulk { start, stop, restart, session, full }
 
@@ -118,9 +123,16 @@ class RaftComputerDetailData {
     this.diskLowTitle,
     this.commands,
     this.service,
+    this.upgradeLink = RaftComputerUpgradeLink.none,
+    this.upgradeVersion = '',
     this.highlightedAgentIds = const {},
   });
   final String id, name, slug, createdLabel;
+
+  /// Set only while the Computer is offline with an upgrade in flight;
+  /// [upgradeVersion] is that request's target.
+  final RaftComputerUpgradeLink upgradeLink;
+  final String upgradeVersion;
   final String? description, hostname, os, computerVersion, availableVersion;
   final String? diskLowTitle;
   final bool online, isComputer, windows, canManage;
@@ -366,6 +378,10 @@ class RaftComputerDetailView extends StatefulWidget {
 class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
   RaftComputerDetailData get d => widget.data;
   bool get online => d.online;
+  bool get upgrading =>
+      !d.online &&
+      d.isComputer &&
+      d.upgradeLink == RaftComputerUpgradeLink.reconnecting;
   bool get isComputer => d.isComputer;
 
   bool editingName = false, savingName = false;
@@ -712,7 +728,13 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                         if (!isComputer && manage) ?_migrateBlock(t),
                         if (!isComputer && !manage && !online)
                           _connectionAdminOnly(t),
-                        if (isComputer && !online) _recoveryCard(t, manage),
+                        if (isComputer &&
+                            !online &&
+                            d.upgradeLink ==
+                                RaftComputerUpgradeLink.reconnecting)
+                          _reconnectingCard(t, manage)
+                        else if (isComputer && !online)
+                          _recoveryCard(t, manage),
                         _agentsSection(t, manage),
                         if (online)
                           // `mt-2` collapses into `space-y-6` (24px).
@@ -813,12 +835,20 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                   Row(
                     children: [
                       RaftActivityDot(
-                        color: online ? t.product.brutalLime : raftGray400,
+                        color: online
+                            ? t.product.brutalLime
+                            : upgrading
+                            ? t.product.brutalCyan
+                            : raftGray400,
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: RaftCssText(
-                          online ? 'Connected' : 'Offline',
+                          online
+                              ? 'Connected'
+                              : upgrading
+                              ? 'Upgrading…'
+                              : 'Offline',
                           style: ink.mono(14, 20, color: ink.muted(.6)),
                         ),
                       ),
@@ -1180,6 +1210,64 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     );
   }
 
+  /// `computer-upgrade-reconnecting`: the restart for an upgrade, not an
+  /// outage, so no recovery commands (those return after the grace).
+  Widget _reconnectingCard(RaftTokens t, bool manage) {
+    final ink = _Ink(t);
+    final status = d.commands?.status ?? 'raft-computer status';
+    final hint = raftText(
+      context,
+      "If it doesn't reconnect within a few minutes, run {command} on that machine to check.",
+    ).split('{command}');
+    return RaftRecipeCard(
+      key: const ValueKey('computer-upgrade-reconnecting'),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: RaftSpinner(size: 12),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RaftCssText(
+                  raftFormat(
+                    context,
+                    "Upgrading to v{version}. The Computer is restarting and will reconnect when it's done.",
+                    {'version': d.upgradeVersion},
+                  ),
+                  style: ink.body(
+                    14,
+                    20,
+                    color: ink.strong,
+                    w: FontWeight.w700,
+                  ),
+                ),
+                if (manage) ...[
+                  const SizedBox(height: 4),
+                  RaftCssText.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: hint.first),
+                        TextSpan(text: status, style: ink.mono(12, 20)),
+                        if (hint.length > 1) TextSpan(text: hint.last),
+                      ],
+                    ),
+                    style: ink.note,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _recoveryCard(RaftTokens t, bool manage) {
     final ink = _Ink(t);
     final c = d.commands;
@@ -1191,6 +1279,24 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       children: [
         _terminalEyebrow(t, 'Bring this computer back online'),
         const SizedBox(height: 8),
+        if (d.upgradeLink == RaftComputerUpgradeLink.overdue) ...[
+          RaftCssText(
+            raftFormat(
+              context,
+              "It didn't reconnect after the upgrade to v{version}.",
+              {'version': d.upgradeVersion},
+            ),
+            key: const ValueKey('computer-upgrade-reconnect-overdue'),
+            style: ink.body(
+              12,
+              20,
+              color: t.brutal
+                  ? t.product.brutalOrange
+                  : t.colors['warning-strong'],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
         if (!manage)
           RaftCssText(
             'This computer is offline . Bringing it back online is admin-only.',

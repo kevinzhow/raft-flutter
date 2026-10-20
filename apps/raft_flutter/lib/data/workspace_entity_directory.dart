@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../features/agent_metadata_catalog.dart';
+import 'computer_upgrade_in_flight.dart';
 import 'migration_error.dart' show migrationPhase;
 
 enum WorkspaceEntityKind { agents, computers, members }
@@ -185,6 +186,19 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   bool _disposed = false;
   bool started = false;
   Timer? _refresh;
+
+  /// Client clock for the upgrade grace windows (tests move it).
+  DateTime Function() clock = DateTime.now;
+
+  /// Client-only copies of facts the server row does not carry (Web
+  /// `machineStore`): the upgrade request this client saw accepted, an
+  /// Upgrade click whose POST has not settled, and when a live online to
+  /// offline transition was seen. Never persisted; cleared with the scope.
+  final _upgradeAccepted = <String, AcceptedComputerUpgrade>{};
+  final _upgradeSubmitting = <String, String>{};
+  final _offlineObservedAt = <String, int>{};
+  final _upgradeDeadlines = <String, int>{};
+  Timer? _upgradeTimer;
   final _dirty = <WorkspaceEntityKind>{}, _queued = <WorkspaceEntityKind>{};
   StreamSubscription<RaftEvent>? _subscription;
 
@@ -209,6 +223,12 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _tombstones.clear();
     _settled.clear();
     _latestComputerVersion = null;
+    _upgradeAccepted.clear();
+    _upgradeSubmitting.clear();
+    _offlineObservedAt.clear();
+    _upgradeDeadlines.clear();
+    _upgradeTimer?.cancel();
+    _upgradeTimer = null;
     _fromDevice.clear();
     _denied.clear();
     _requested.clear();
@@ -227,6 +247,85 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _queued.clear();
     _restoring = next == null ? Future.value() : _restore(next, _epoch);
     return true;
+  }
+
+  /// Whether [machine] is restarting for an upgrade (see
+  /// [computerUpgradeReconnect]). The one answer for the sidebar rows and the
+  /// detail page. The directory rebuilds its listeners when a grace window
+  /// ends, so a reader needs no timer of its own.
+  ComputerUpgradeReconnect upgradeReconnect(Map<String, dynamic> machine) {
+    synchronize();
+    final id = machine['id'];
+    if (id is! String) return ComputerUpgradeReconnect.none;
+    final nowMs = clock().millisecondsSinceEpoch;
+    final accepted = _upgradeAccepted[id];
+    final result = computerUpgradeReconnect(
+      machine,
+      accepted: accepted,
+      offlineObservedAtMs: _offlineObservedAt[id],
+      nowMs: nowMs,
+    );
+    final deadline = [
+      ?result.graceEndsAtMs,
+      if (accepted != null && result.inFlight != null)
+        accepted.acceptedAtMs + computerUpgradeRequestDeadline.inMilliseconds,
+    ].fold<int?>(null, (a, b) => a == null || b < a ? b : a);
+    if (deadline == null) {
+      _upgradeDeadlines.remove(id);
+    } else if (_upgradeDeadlines[id] != deadline) {
+      _upgradeDeadlines[id] = deadline;
+      _armUpgradeTimer();
+    }
+    return result;
+  }
+
+  void _armUpgradeTimer() {
+    if (_disposed || _upgradeDeadlines.isEmpty) return;
+    final next = _upgradeDeadlines.values.reduce((a, b) => a < b ? a : b);
+    final wait = Duration(
+      milliseconds: next - clock().millisecondsSinceEpoch + 1,
+    );
+    _upgradeTimer?.cancel();
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot at the earliest upgrade grace end; it re-arms only for a deadline still in the future and stops with the last one.
+    _upgradeTimer = Timer(wait.isNegative ? Duration.zero : wait, () {
+      _upgradeTimer = null;
+      final now = clock().millisecondsSinceEpoch;
+      _upgradeDeadlines.removeWhere((_, at) => at <= now);
+      _computerRevision++;
+      notifyListeners();
+      _armUpgradeTimer();
+    });
+  }
+
+  /// The server accepted this client's Upgrade click (Web
+  /// `setComputerUpgradeAccepted`): the page says "upgrading" from this
+  /// answer, not from whichever later refresh carries the pending row.
+  void acceptComputerUpgrade(String id, Map<String, dynamic> request) {
+    synchronize();
+    _upgradeAccepted[id] = AcceptedComputerUpgrade(
+      Map<String, dynamic>.from(request),
+      clock().millisecondsSinceEpoch,
+    );
+    _computerRevision++;
+    notifyListeners();
+  }
+
+  /// Target version of an Upgrade click whose POST has not settled.
+  String? upgradeSubmitting(String id) {
+    synchronize();
+    return _upgradeSubmitting[id];
+  }
+
+  void setUpgradeSubmitting(String id, String? targetVersion) {
+    synchronize();
+    if (_upgradeSubmitting[id] == targetVersion) return;
+    if (targetVersion == null) {
+      _upgradeSubmitting.remove(id);
+    } else {
+      _upgradeSubmitting[id] = targetVersion;
+    }
+    _computerRevision++;
+    notifyListeners();
   }
 
   /// Completes once the device records of the current scope were read and,
@@ -835,8 +934,14 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             (version is! int || version == current)) {
           return;
         }
+        final wasOnline = row['status'] == 'online';
         row['status'] = status;
         if (version is int) row['statusVersion'] = version;
+        if (status == 'offline' && wasOnline) {
+          _offlineObservedAt[id] = clock().millisecondsSinceEpoch;
+        } else if (status == 'online') {
+          _offlineObservedAt.remove(id);
+        }
         _computerRevision++;
         _persist(WorkspaceEntityKind.computers);
         notifyListeners();
@@ -1004,6 +1109,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _pending.clear();
     _agentReadUpdates.clear();
     _refresh?.cancel();
+    _upgradeTimer?.cancel();
     _dirty.clear();
     _queued.clear();
     // Unflushed device writes are dropped: the owner flushes before closing.

@@ -404,23 +404,14 @@ class _FleetViewState extends State<FleetView> {
               mobile: true,
               name: '${row['name'] ?? ''}',
               description: '${row['description'] ?? ''}',
-              runLabel: raftText(context, computerRunLabel(row).$1),
-              offline: computerRunLabel(row).$2,
+              runLabel: raftText(context, _status(row).label),
+              offline: _status(row).offline,
               availableVersion: computerAvailableVersion(
                 row,
                 w.services.entityDirectory.latestComputerVersion,
               ),
               diskLow: computerDiskLow(row) != null,
-              dot:
-                  computerAvailableVersion(
-                        row,
-                        w.services.entityDirectory.latestComputerVersion,
-                      ) !=
-                      null
-                  ? RaftComputerDot.upgrade
-                  : row['status'] == 'online'
-                  ? RaftComputerDot.online
-                  : RaftComputerDot.offline,
+              dot: _status(row).dot,
               onTap: () {
                 if (!current(captured)) return;
                 if (widget.onOpenDetail != null) {
@@ -455,6 +446,17 @@ class _FleetViewState extends State<FleetView> {
       child: fleetList(context, rows, loading, error),
     );
   }
+
+  ({String label, bool offline, RaftComputerDot dot}) _status(
+    Map<String, dynamic> row,
+  ) => computerRowStatus(
+    row,
+    computerAvailableVersion(
+      row,
+      w.services.entityDirectory.latestComputerVersion,
+    ),
+    w.services.entityDirectory.upgradeReconnect(row),
+  );
 
   Widget fleetList(
     BuildContext context,

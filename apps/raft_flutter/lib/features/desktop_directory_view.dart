@@ -11,7 +11,7 @@ import 'add_computer_dialog.dart';
 import 'agent_avatar_projection.dart';
 import 'agent_metadata_catalog.dart' show sourceAgentActivities;
 import 'computer_detail_view.dart'
-    show computerAvailableVersion, computerDiskLow, computerRunLabel;
+    show computerAvailableVersion, computerDiskLow, computerRowStatus;
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
 import 'sender_avatar_projection.dart';
@@ -292,22 +292,22 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     if (id is! String) return const SizedBox.shrink();
     final latest = w.services.entityDirectory.latestComputerVersion;
     final available = computerAvailableVersion(m, latest);
-    final (label, offline) = computerRunLabel(m);
+    final status = computerRowStatus(
+      m,
+      available,
+      w.services.entityDirectory.upgradeReconnect(m),
+    );
     final target = DesktopContentTarget(DesktopContentKind.computer, id);
     final sourceAuthority = authority;
     return RaftComputerRow(
       key: ValueKey('desktop-directory-computer-$id'),
       name: '${m['name'] ?? ''}',
       description: '${m['description'] ?? ''}',
-      runLabel: label,
-      offline: offline,
+      runLabel: status.label,
+      offline: status.offline,
       availableVersion: available,
       diskLow: computerDiskLow(m) != null,
-      dot: available != null
-          ? RaftComputerDot.upgrade
-          : m['status'] == 'online'
-          ? RaftComputerDot.online
-          : RaftComputerDot.offline,
+      dot: status.dot,
       selected:
           widget.selected?.kind == DesktopContentKind.computer &&
           widget.selected?.id == id,

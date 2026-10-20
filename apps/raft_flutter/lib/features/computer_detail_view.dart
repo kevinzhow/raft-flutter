@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/computer_upgrade_in_flight.dart';
 import '../data/user_error.dart';
 import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
@@ -144,6 +145,32 @@ String? computerAvailableVersion(Map m, String? latest) {
     return ('$kind v$version', false);
   }
   return ('$kind online', false);
+}
+
+/// Sidebar `ComputerRowBody` status: offline while its upgrade restarts reads
+/// "Upgrading…" with a cyan dot (the detail page says the same), not "offline".
+({String label, bool offline, RaftComputerDot dot}) computerRowStatus(
+  Map m,
+  String? available,
+  ComputerUpgradeReconnect reconnect,
+) {
+  if (reconnect.reconnecting) {
+    return (
+      label: 'Upgrading…',
+      offline: false,
+      dot: RaftComputerDot.upgrading,
+    );
+  }
+  final (label, offline) = computerRunLabel(m);
+  return (
+    label: label,
+    offline: offline,
+    dot: available != null
+        ? RaftComputerDot.upgrade
+        : m['status'] == 'online'
+        ? RaftComputerDot.online
+        : RaftComputerDot.offline,
+  );
 }
 
 /// utils/fileSizePresentation.ts formatFileSizeBytes (en).
@@ -488,7 +515,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   }
 
   /// MachineDetailPanel CardState: one status sentence + next step.
-  RaftComputerService service(ComputerVersionFact fact) {
+  RaftComputerService service(
+    ComputerVersionFact fact,
+    ComputerUpgradeReconnect reconnect,
+  ) {
     final policy = m['computerBroadcastPolicy'];
     final target = policy is Map ? policy['targetVersion'] as String? : null;
     final gated =
@@ -504,8 +534,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             target != null
         ? target
         : null;
-    final request = m['upgradeRequest'];
-    final pending = request is Map && request['state'] == 'pending';
+    // The server's pending row, else the request this client saw accepted
+    // (Web computerUpgradeInFlight), else a click whose POST has not settled.
+    final inFlight = reconnect.inFlight;
+    final submitting = w.services.entityDirectory.upgradeSubmitting(id);
     final supported =
         (m['remoteUpgradeSupported'] ??
             isComputerSemver('${m['computerVersion'] ?? ''}')) ==
@@ -533,10 +565,15 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
         RaftComputerServiceKind.upToDate,
         'Up to date.',
       ),
-      ComputerVersionOutdated(:final available) when pending => card(
+      ComputerVersionOutdated(:final available) when inFlight != null => card(
         RaftComputerServiceKind.upgrading,
-        'Upgrading to v${request['targetVersion'] ?? available}. The Computer will disconnect briefly.',
-        '${request['targetVersion'] ?? available}',
+        'Upgrading to v${inFlight['targetVersion'] ?? available}. The Computer will disconnect briefly.',
+        '${inFlight['targetVersion'] ?? available}',
+      ),
+      ComputerVersionOutdated() when submitting != null => card(
+        RaftComputerServiceKind.upgrading,
+        'Upgrading to v$submitting. The Computer will disconnect briefly.',
+        submitting,
       ),
       ComputerVersionOutdated(:final available)
           when upgradeRefusal == 'not_allowed' =>
@@ -565,6 +602,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   }
 
   RaftComputerDetailData data() {
+    final reconnect = w.services.entityDirectory.upgradeReconnect(m);
     final fact = computerVersionFact(
       m,
       w.services.entityDirectory.latestComputerVersion,
@@ -629,7 +667,13 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       ],
       canManage: canManage,
       commands: commands,
-      service: isComputer && online ? service(fact) : null,
+      service: isComputer && online ? service(fact, reconnect) : null,
+      upgradeLink: reconnect.reconnecting
+          ? RaftComputerUpgradeLink.reconnecting
+          : reconnect.overdue
+          ? RaftComputerUpgradeLink.overdue
+          : RaftComputerUpgradeLink.none,
+      upgradeVersion: reconnect.targetVersion,
       highlightedAgentIds: bulkModelEnabled
           ? receipt?.highlightsAt(_now()) ?? const {}
           : const {},
@@ -699,13 +743,33 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   }
 
   Future<void> _upgrade(String target) async {
+    final directory = w.services.entityDirectory;
+    final controller = w, machineId = id;
+    if (directory.upgradeSubmitting(machineId) != null) return;
+    // Click, POST, refreshed row: the card says "upgrading" the whole time
+    // (Web computerUpgradeSubmitting), also after this page is closed.
+    directory.setUpgradeSubmitting(machineId, target);
     setState(() => upgradeRefusal = null);
     try {
-      await w.command(
+      final data = await w.command(
         'POST',
         '/servers/$serverId/machines/$id/computer/upgrade',
         data: {'targetVersion': target},
       );
+      // Keep the accepted request: the page says "upgrading" from this
+      // answer, not from whichever later refresh carries the pending row.
+      final request = data is Map ? data['upgradeRequest'] : null;
+      if (request is Map && identical(controller, w)) {
+        directory.acceptComputerUpgrade(
+          machineId,
+          Map<String, dynamic>.from(request),
+        );
+      }
+      try {
+        await _refreshComputers();
+      } catch (_) {
+        // The accepted request already answers; a later refresh settles it.
+      }
     } catch (e) {
       // Web upgradeRefusalFromCode: the server's `code`, never its text.
       final code = e is RaftApiException ? e.details['code'] : null;
@@ -720,8 +784,9 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           },
         );
       }
-    } finally {
       unawaited(_refreshComputers());
+    } finally {
+      directory.setUpgradeSubmitting(machineId, null);
     }
   }
 
