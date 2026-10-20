@@ -73,11 +73,7 @@ Future<T?> _fleetDialog<T>(
   final navigator = Navigator.of(context, rootNavigator: true);
   final Route<T> route = form
       // A form with inputs: a bottom sheet on a phone, a dialog from 768.
-      ? raftFormRoute<T>(
-          context,
-          builder: builder,
-          guardUnsaved: guardUnsaved,
-        )
+      ? raftFormRoute<T>(context, builder: builder, guardUnsaved: guardUnsaved)
       : RaftDialogRoute<T>(
           builder: builder,
           // Web `DialogCard` / `ConfirmDialog`: no scrim close, Escape closes.
@@ -127,8 +123,7 @@ Future<void> showCredential(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              detail ??
-                  'This credential is shown once. Store it securely before closing.',
+              detail ?? 'This credential is shown once. Store it securely before closing.',
             ),
             const SizedBox(height: 16),
             RaftSecretView(
@@ -431,8 +426,7 @@ class _FleetViewState extends State<FleetView> {
                 if (widget.onOpenDetail != null) {
                   widget.onOpenDetail!(Map.of(row));
                 } else {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute<void>(
                       // ds-allow: Standalone native route supplies the Material host and system insets; workspace routes already own them.
                       builder: (context) => Scaffold(
@@ -555,8 +549,7 @@ class _FleetViewState extends State<FleetView> {
                       }
                       // The detail edits the shared directory, so the list is
                       // already current when the route pops.
-                      await Navigator.push(
-                        context,
+                      await Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder: (_) => FleetDetail(
                             controller: w,
@@ -582,6 +575,7 @@ class FleetDetail extends StatefulWidget {
     required this.initial,
     this.onClose,
     this.closeAction = false,
+    this.onLeaveForMessage,
     this.backAlways = false,
     this.initialTab = AgentDetailTab.profile,
     this.clock,
@@ -605,6 +599,13 @@ class FleetDetail extends StatefulWidget {
   /// The agent header carries a close action at md+ (Web profile overlay
   /// `onClose`); the Agents route detail column has none.
   final bool closeAction;
+
+  /// A host that owns the page this detail lives on (the profile slot): called
+  /// just before the DM is opened, in place of [onClose] afterwards. [onClose]
+  /// is the host's *Back* (on a phone it pops the topmost mobile page), and
+  /// once the DM is the topmost page, running it would pop the DM the user
+  /// just opened.
+  final VoidCallback? onLeaveForMessage;
 
   /// The agent header keeps its Back at md+ too (a Search / Activity content
   /// slot: Web `backButtonVisibility="always"`).
@@ -755,7 +756,9 @@ class _FleetDetailState extends State<FleetDetail> {
       if (cached is Map<String, dynamic>) detail = cached;
     }
     row = compose();
-    if (w.services.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
+    if (w.services.entityDirectory
+        .state(WorkspaceEntityKind.computers)
+        .loaded) {
       machines = w.services.entityDirectory.rows(WorkspaceEntityKind.computers);
     }
     w.services.entityDirectory.addListener(directoryChanged);
@@ -904,6 +907,12 @@ class _FleetDetailState extends State<FleetDetail> {
         ? {'id': existing.id}
         : await w.client.post('/channels/dm', data: {'agentId': id});
     if (!current || value is! Map || value['id'] is! String) return;
+    final leave = widget.onLeaveForMessage;
+    if (leave != null) {
+      leave();
+      await w.jumpToMessage(value['id'], null);
+      return;
+    }
     await w.jumpToMessage(value['id'], null);
     if (mounted && widget.onClose == null) Navigator.of(context).maybePop();
     widget.onClose?.call();
@@ -943,7 +952,11 @@ class _FleetDetailState extends State<FleetDetail> {
     } catch (e) {
       if (current) {
         setState(
-          () => error = userErrorText(e, fallback: fallback, where: 'agent action'),
+          () => error = userErrorText(
+            e,
+            fallback: fallback,
+            where: 'agent action',
+          ),
         );
       }
     } finally {
@@ -1119,22 +1132,18 @@ class _FleetDetailState extends State<FleetDetail> {
         : 'issueAgentCredentials';
     require(cap);
     if (widget.computers) {
-      await confirm(
-        'Rotate computer key?',
-        'The old key will stop working. Reconnect this computer using the new key.',
-        () async {
-          require(cap);
-          final result = await w.command('POST', '$base/rotate-key');
-          if (mounted && allowed(cap)) {
-            await showCredential(
-              context,
-              result['apiKey'],
-              controller: w,
-              authorized: () => allowed(cap),
-            );
-          }
-        },
-      );
+      await confirm('Rotate computer key?', 'The old key will stop working. Reconnect this computer using the new key.', () async {
+        require(cap);
+        final result = await w.command('POST', '$base/rotate-key');
+        if (mounted && allowed(cap)) {
+          await showCredential(
+            context,
+            result['apiKey'],
+            controller: w,
+            authorized: () => allowed(cap),
+          );
+        }
+      });
     } else {
       final result = await w.command(
         'POST',
@@ -1156,8 +1165,7 @@ class _FleetDetailState extends State<FleetDetail> {
 
   Future<void> inspect(String kind) async {
     require(widget.computers ? 'editMachines' : 'editAgents');
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => FleetInspection(
           controller: w,
@@ -1348,7 +1356,10 @@ class _FleetDetailState extends State<FleetDetail> {
           if (!valid()) return;
           setState(() => row = next);
           unawaited(
-            w.services.entityDirectory.refresh(WorkspaceEntityKind.agents, force: true),
+            w.services.entityDirectory.refresh(
+              WorkspaceEntityKind.agents,
+              force: true,
+            ),
           );
         },
       ),
@@ -1425,8 +1436,7 @@ class _FleetDetailState extends State<FleetDetail> {
                 allowed('migrateAgents') &&
                 w.agentMigrationEnabled &&
                 row['machineId'] is String
-            ? () => Navigator.push(
-                context,
+            ? () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (_) =>
                       AgentMigrationView(controller: w, agentId: id),
@@ -1442,8 +1452,7 @@ class _FleetDetailState extends State<FleetDetail> {
             ? reportIssue
             : null,
         onPermissions: access.canManage
-            ? () => Navigator.push(
-                context,
+            ? () => Navigator.of(context, rootNavigator: true).push(
                 MaterialPageRoute(
                   builder: (_) => AgentScopesView(controller: w, agentId: id),
                 ),
@@ -1460,7 +1469,8 @@ class _FleetDetailState extends State<FleetDetail> {
       !widget.computers &&
       (gone ||
           row['deletedAt'] != null ||
-          (w.services.entityDirectory.state(kind).loaded && directoryRow == null));
+          (w.services.entityDirectory.state(kind).loaded &&
+              directoryRow == null));
 
   @override
   Widget build(BuildContext context) => !current
@@ -1726,9 +1736,7 @@ class _FleetInspectionState extends State<FleetInspection> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: [
-                  RaftLoadError(error!, onRetry: load, expand: false),
-                ],
+                children: [RaftLoadError(error!, onRetry: load, expand: false)],
               ),
             ),
           )

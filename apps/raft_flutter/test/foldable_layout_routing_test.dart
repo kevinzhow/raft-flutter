@@ -250,7 +250,7 @@ void main() {
     expect(phoneShown(t), isTrue);
   });
 
-  scenario('R3b full pages without a URL close; dialogs stay', (t) async {
+  scenario('R3b full pages without a URL stay open with the dialogs', (t) async {
     final f = await mount(t, wide, '/s/alpha');
     await openChannel(t, f);
     final ctx = t.element(find.byType(WorkspaceView).first);
@@ -265,7 +265,9 @@ void main() {
     await settle(t);
     expect(find.text('Pushed page'), findsOneWidget);
     await resize(t, f, phone);
-    expect(find.text('Pushed page'), findsNothing);
+    // A layout change is not the user leaving the page (layout_class_
+    // navigation_matrix_test walks every kind of page).
+    expect(find.text('Pushed page'), findsOneWidget);
     expect(where(f, t), '/channel/ca');
     expect(phoneShown(t), isTrue);
   });

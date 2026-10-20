@@ -64,6 +64,9 @@ class ProfileSidePanel extends StatelessWidget {
         ),
         onClose: onBack ?? onClose,
         closeAction: true,
+        // Closing the profile replaces its history entry (like the member
+        // profile's Message); `onBack` would pop the DM opened after it.
+        onLeaveForMessage: onClose,
         // Nested creator / created-agent navigation stays in this panel.
         onOpenAgent: (id) => w.openProfile(RaftProfileKind.agent, id),
       ),

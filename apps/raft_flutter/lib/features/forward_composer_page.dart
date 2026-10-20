@@ -144,7 +144,7 @@ Future<bool> showForwardComposerPage(
   WorkspaceController controller,
   List<RaftMessage> messages,
 ) async =>
-    await Navigator.of(context).push<bool>(
+    await Navigator.of(context, rootNavigator: true).push<bool>(
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
         builder: (_) =>

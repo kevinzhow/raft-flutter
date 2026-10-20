@@ -359,9 +359,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
   /// Width picks the projection of the one canonical location. Crossing the
   /// breakpoint (or arriving by link in the other layout) translates the few
   /// identities that only exist in one layout (`channelPage=` is phone-only,
-  /// `activity|search ?open=` is wide master/detail), closes full-page routes
-  /// that have no URL identity and keeps the dialogs. Silent: the build that
-  /// follows reads the translated location; listeners catch up after it.
+  /// `activity|search ?open=` is wide master/detail). Pages pushed without a
+  /// location (forward composer, fleet details, notification centre pages) and
+  /// dialogs are the user's task, not the layout's: they stay open across the
+  /// crossing. Silent: the build that follows reads the translated location;
+  /// listeners catch up after it.
   void ensureLayoutLocation() {
     if (widget.mobileRoutePage || !mounted || LayoutHold.held) return;
     final compact = !wide;
@@ -370,7 +372,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
     if (w.presentationSource != null || w.server == null) return;
     if (crossed) {
       w.navigation.collapseRepeatedEntries();
-      closeUrllessPages();
     }
     // A content slot opened on a phone (Search thread hits) is a phone page
     // already; only a slot the wide layout made needs translating.
@@ -385,27 +386,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
       if (!mounted) return;
       w.notifyListeners();
       if (translation != null) hydrateTranslated(translation, compact);
-    });
-  }
-
-  /// Full pages pushed without a location (notification centre pages, forward
-  /// composer, fleet details) have no counterpart in the other layout: close
-  /// them. Dialogs, sheets and the attachment preview are layout independent
-  /// and stay open.
-  void closeUrllessPages() {
-    final route = ModalRoute.of(context);
-    if (route == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).popUntil(
-        (candidate) =>
-            candidate == route ||
-            candidate.isFirst ||
-            // The attachment preview adapts to the width itself (dialog or
-            // page) and is contractually kept open across a resize.
-            candidate.settings.name == '/attachment-preview' ||
-            candidate is! MaterialPageRoute,
-      );
     });
   }
 
