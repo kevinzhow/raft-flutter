@@ -245,8 +245,14 @@ class RaftBadge extends StatelessWidget {
     final ringed = solid && !disabled;
     // `h-5` / `h-[22px]` is a minimum here: at a larger text scale the label keeps its whole line box (a fixed
     // height would clip the descenders); at scale 1 the badge is exactly 20 / 22.
+    // Both radii are theme tokens, and the official React specimen confirms the
+    // mapping: a solid badge is `rounded-sticker` (4 for Raft) and an outline
+    // badge `rounded-chip` (6). Elegant and Brutal then square or soften them.
     final box = RaftCssBox(
-      radius: radius ?? (solid ? 4 : 6),
+      radius: radius ??
+          (solid
+              ? t.size('radius.sticker', fallback: 4)
+              : t.size('radius.chip', fallback: 6)),
       fill: colors.fill,
       insetRingWidth: ringed ? 1.5 : (outline && !disabled ? 1 : 0),
       insetRingColor: ringed ? colors.ink : colors.hairline,
