@@ -651,7 +651,25 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
     if (v2Active) {
       fields = f == null
           ? const RaftAgentFieldNote('Loading runtime configuration…')
-          : RuntimeFormFields(form: f, busy: saving, rowGap: 16);
+          : RuntimeFormFields(
+              form: f,
+              busy: saving,
+              rowGap: 16,
+              // Web `schema-runtime-unavailable`: a form that did not load (or
+              // went stale twice) says so instead of showing nothing.
+              leading: [
+                if (f.loading && f.definition == null)
+                  const RaftAgentFieldNote('Loading runtime configuration…')
+                else if (f.error != null)
+                  RaftAgentBanner(
+                    key: const ValueKey('runtime-editor-form-error'),
+                    status: RaftAgentBannerStatus.warning,
+                    description: f.error!,
+                    action: 'Retry',
+                    onAction: f.load,
+                  ),
+              ],
+            );
     } else {
       fields = legacyFields(context, t);
     }

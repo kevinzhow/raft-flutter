@@ -378,6 +378,36 @@ void main() {
     );
   });
 
+  testWidgets('a v2 form that cannot be loaded says so', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      v2Flag: true,
+      setup: (c) {
+        c.runtimeOptions = {
+          'options': [
+            {
+              'runtimeId': 'codex',
+              'canSelectInThisContext': true,
+              'runtimeFormV2': {'protocolVersion': 2},
+            },
+          ],
+        };
+        // Not a v2 form at all: the load fails.
+        c.form = {'protocolVersion': 1};
+      },
+    );
+    expect(
+      find.textContaining(
+        'Runtime configuration is unavailable. Refresh and try again.',
+        findRichText: true,
+      ),
+      findsOneWidget,
+    );
+    expect(_k('runtime-editor-form-error'), findsOneWidget);
+  });
+
   testWidgets('Built-in Pi keeps the v2 form (no legacy fields for it)', (
     tester,
   ) async {

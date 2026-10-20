@@ -9,6 +9,8 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart' show WorkspaceEntityKind;
 import 'private_route_guard.dart';
 import 'create_agent_dialog.dart';
+import 'management_support.dart' show managementMap, managementRows;
+import 'provider_edit_dialog.dart';
 
 /// Web `runtimeFormUnavailableMessageId`: the catalog message for a failed
 /// form-definition read. The server's own text is never shown here; the
@@ -22,6 +24,12 @@ String runtimeFormLoadErrorText(Object error) {
     _ => 'Runtime configuration is unavailable. Refresh and try again.',
   };
 }
+
+/// 409 `form_revision_stale` (`recovery: refetch_form`): the server's form
+/// build moved on since this form was fetched; refetch the whole form and
+/// never merge options across builds.
+bool isFormRevisionStale(Object error) =>
+    error is RaftApiException && error.details['code'] == 'form_revision_stale';
 
 /// Web CreateAgentDialog / AgentDetailPanel `issues` handling: every issue whose
 /// pointer is `/formValues/<key>` marks that field with the server's error text
@@ -41,6 +49,12 @@ Map<String, String> runtimeFormIssueErrors(Object error, {String? fallback}) {
         (issue['pointer'] as String).substring(prefix.length): text,
   };
 }
+
+typedef _FetchedForm = ({
+  RuntimeForm form,
+  Set<String> advanced,
+  Map<String, Map<String, dynamic>> sources,
+});
 
 /// Protocol-v2 runtime form state for one computer + runtime (create) or one
 /// agent (edit). Shared by [RuntimeFormDialog] and the create-agent dialog.
@@ -78,6 +92,15 @@ class RuntimeFormController extends ChangeNotifier {
   final mapProblems = <String, String>{};
   final editors = <String, TextEditingController>{};
   bool loading = true, disposed = false;
+
+  /// Bumped on every whole-form (re)install: a response that belongs to an
+  /// earlier generation (a retry still in flight across a reload) is dropped
+  /// instead of being merged into the newer form.
+  int _generation = 0;
+
+  /// Whole-form refetches caused by a stale revision after the form was
+  /// installed (the first load has its own single attempt).
+  int _staleReloads = 0;
   // ignore: raft_lints/avoid_imperative_notice_state -- Controller load error: cleared when load restarts (Try again) or completes; dialog submit error: cleared when the next submit starts; both are disposed with the dialog.
   String? error;
   final retrying = <String>{};
@@ -101,15 +124,26 @@ class RuntimeFormController extends ChangeNotifier {
     RuntimeForm? form,
   }) async {
     final owner = (form ?? definition)!;
+    // A revisioned form echoes its token: the server answers within the
+    // capability range the form declared, or says the form is stale. An
+    // unrevisioned form keeps the plain direct-option protocol.
+    final query = <String, dynamic>{
+      if (refresh) 'refresh': 1,
+      'formRevision': ?owner.revision,
+    };
     try {
       return Map<String, dynamic>.from(
         await w.query(
           '$base/option-sources/${Uri.encodeComponent(id)}',
-          query: refresh ? {'refresh': 1} : null,
+          query: query.isEmpty ? null : query,
         ),
       );
-    } catch (_) {
-      if (!owner.capabilities.contains('option_source.status')) rethrow;
+    } catch (e) {
+      // A stale revision always propagates: the caller refetches the form.
+      if (isFormRevisionStale(e) ||
+          !owner.capabilities.contains('option_source.status')) {
+        rethrow;
+      }
       return {
         ...owner.sourceRefs[id]!,
         'status': 'unavailable',
@@ -119,39 +153,61 @@ class RuntimeFormController extends ChangeNotifier {
     }
   }
 
+  /// Fetches the form and all its option sources: one consistent build. A
+  /// source answering 409 `form_revision_stale` fails the fetch with that
+  /// error (see [isFormRevisionStale]).
+  Future<_FetchedForm> _fetch() async {
+    final raw = await w.query(editing ? '/agents/$agentId/runtime-form' : base);
+    final form = RuntimeForm.parse(raw);
+    if (form == null || !form.supported) {
+      throw const RaftApiException(
+        'This runtime form needs a newer client. It cannot be edited safely.',
+      );
+    }
+    final layout = raw is Map && raw['uiSchema'] is Map
+        ? (raw['uiSchema'] as Map)['layout']
+        : null;
+    final advanced = {
+      if (layout is Map && layout['advanced'] is List)
+        for (final p in layout['advanced'] as List)
+          if (p is String && p.startsWith('/')) p.substring(1),
+    };
+    final loaded = await Future.wait([
+      for (final id in form.sourceRefs.keys) source(id, form: form),
+    ]);
+    return (
+      form: form,
+      advanced: advanced,
+      sources: Map.fromIterables(form.sourceRefs.keys, loaded),
+    );
+  }
+
   /// Loads the definition and its option sources. [seed] pre-fills values the
   /// user already chose before the runtime was known (e.g. env vars).
+  ///
+  /// The form may go stale between its own fetch and its option sources (the
+  /// server's build changed, e.g. a feature flag flipped): the whole form is
+  /// then fetched once more; a second stale answer is a form-level error.
   Future<void> load({Map<String, dynamic> seed = const {}}) async {
+    final generation = ++_generation;
     loading = true;
     error = null;
     _notify();
     try {
-      final raw = await w.query(
-        editing ? '/agents/$agentId/runtime-form' : base,
-      );
-      final form = RuntimeForm.parse(raw);
-      if (form == null || !form.supported) {
-        throw const RaftApiException(
-          'This runtime form needs a newer client. It cannot be edited safely.',
-        );
+      _FetchedForm fetched;
+      try {
+        fetched = await _fetch();
+      } catch (e) {
+        if (!isFormRevisionStale(e)) rethrow;
+        if (disposed || !valid() || generation != _generation) return;
+        fetched = await _fetch();
       }
-      final layout = raw is Map && raw['uiSchema'] is Map
-          ? (raw['uiSchema'] as Map)['layout']
-          : null;
-      final nextAdvanced = {
-        if (layout is Map && layout['advanced'] is List)
-          for (final p in layout['advanced'] as List)
-            if (p is String && p.startsWith('/')) p.substring(1),
-      };
-      final loaded = await Future.wait([
-        for (final id in form.sourceRefs.keys) source(id, form: form),
-      ]);
-      if (disposed || !valid()) return;
+      final (:form, advanced: nextAdvanced, sources: nextSources) = fetched;
+      if (disposed || !valid() || generation != _generation) return;
       // Publish the definition only together with its sources, values and
       // editors: the fields render whenever `definition` is set, and any
       // rebuild in between (the dialog's entrance animation ticks every
       // frame while option sources load) would find no editor for a field.
-      final nextSources = Map.fromIterables(form.sourceRefs.keys, loaded);
       var nextValues = form.initial(nextSources);
       for (final entry in seed.entries) {
         final f = form.fields.where((f) => f.key == entry.key).firstOrNull;
@@ -175,11 +231,44 @@ class RuntimeFormController extends ChangeNotifier {
       loading = false;
       _notify();
     } catch (e) {
-      if (disposed) return;
+      if (disposed || generation != _generation) return;
+      // Nothing may be edited or submitted against a form that failed to load
+      // consistently.
+      definition = null;
       loading = false;
       error = runtimeFormLoadErrorText(e);
       _notify();
     }
+  }
+
+  /// The user's current values in dependency order, to survive a refetch.
+  Map<String, dynamic> _draft() => {
+    for (final f in definition?.dependencyOrder ?? const <RuntimeField>[])
+      if (values.containsKey(f.key)) f.key: values[f.key],
+  };
+
+  /// A source answered 409 `form_revision_stale`: the form in hand is
+  /// known-stale. Drop to loading, so nothing can be edited or submitted
+  /// against it, and refetch the whole form once (the user's values are kept);
+  /// a second stale answer is a form-level error. Returns false for any other
+  /// error.
+  Future<bool> _recoverFromStale(Object e) async {
+    if (!isFormRevisionStale(e)) return false;
+    if (_staleReloads < 1) {
+      _staleReloads++;
+      final draft = _draft();
+      // Retire every callback from this form before starting recovery.
+      _generation++;
+      definition = null;
+      await load(seed: draft);
+    } else {
+      _generation++;
+      definition = null;
+      loading = false;
+      error = runtimeFormLoadErrorText(e);
+      _notify();
+    }
+    return true;
   }
 
   String valueText(RuntimeField field, dynamic value) =>
@@ -220,16 +309,47 @@ class RuntimeFormController extends ChangeNotifier {
     }
   }
 
+  /// Marks [key] with [message] (a failure that belongs to that field).
+  void failField(String key, String message) {
+    serverErrors = {...serverErrors, key: message};
+    _notify();
+  }
+
   Future<void> retry(String id) async {
     if (!retrying.add(id)) return;
+    final generation = _generation;
     _notify();
     try {
       final next = await source(id, refresh: true);
-      if (disposed || !valid()) return;
+      if (disposed || !valid() || generation != _generation) return;
       sources[id] = next;
+    } catch (e) {
+      if (disposed || generation != _generation) return;
+      if (!await _recoverFromStale(e)) rethrow;
     } finally {
       retrying.remove(id);
       _notify();
+    }
+  }
+
+  /// Re-requests every option source of the current form (without a probe
+  /// refresh), e.g. after a saved provider was edited: the connection labels
+  /// and availability come from the server on each request. The user's values
+  /// stay as they are.
+  Future<void> refreshSources() async {
+    final form = definition;
+    if (form == null) return;
+    final generation = _generation;
+    try {
+      final ids = form.sourceRefs.keys.toList();
+      final loaded = await Future.wait([for (final id in ids) source(id)]);
+      if (disposed || !valid() || generation != _generation) return;
+      sources = {...sources, ...Map.fromIterables(ids, loaded)};
+      _notify();
+    } catch (e) {
+      if (disposed || generation != _generation) return;
+      // Anything else leaves the sources already shown in place.
+      await _recoverFromStale(e);
     }
   }
 
@@ -278,6 +398,10 @@ String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
   ),
   'invalid_url' => raftText(context, 'Enter an HTTP or HTTPS URL.'),
   'not_a_choice' => raftText(context, 'Select an available choice.'),
+  'connection_unavailable' => raftText(
+    context,
+    'This saved provider is unavailable. Select another provider.',
+  ),
   'unsupported_required' => raftText(
     context,
     'Update the client to edit this required field.',
@@ -311,6 +435,52 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
   bool moreOpen = false;
   RuntimeFormController get c => widget.form;
 
+  bool editingProvider = false;
+
+  /// Web `savedConnections.onEdit`: the selected connection's edit dialog.
+  /// Saving refreshes the option sources, so the field shows its new name.
+  Future<void> editSavedProvider(String fieldKey, String connectionId) async {
+    if (editingProvider || !c.valid()) return;
+    editingProvider = true;
+    try {
+      final catalog = managementMap(
+        await c.w.client.get('/provider-connections'),
+      );
+      if (!mounted || !c.valid()) return;
+      final connection = managementRows(catalog['connections'])
+          .where((row) => row['id'] == connectionId)
+          .firstOrNull;
+      if (connection == null) return;
+      final gateway = managementRows(catalog['providerOptions']).any(
+        (option) =>
+            option['id'] == connection['providerId'] &&
+            option['providerKind'] == 'gateway',
+      );
+      await showRaftForm<bool>(
+        context,
+        builder: (_) => EditProviderConnectionDialog(
+          controller: c.w,
+          connection: connection,
+          gateway: gateway,
+          onCompleted: c.refreshSources,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        c.failField(
+          fieldKey,
+          userErrorText(
+            e,
+            fallback: 'The provider connection could not be updated.',
+            where: 'edit saved provider',
+          ),
+        );
+      }
+    } finally {
+      editingProvider = false;
+    }
+  }
+
   Widget field(RuntimeField f) {
     final d = c.definition!;
     final choices = d.choices(f, c.sources, c.values),
@@ -326,15 +496,33 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
       return const SizedBox.shrink();
     }
     if (f.kind == 'unsupported' && !f.required) return const SizedBox.shrink();
+    // Saved provider connections (`provider.saved_connection`): a field the
+    // selected connection owns is the connection's, not the user's. Disabled,
+    // "Provided by ...", never required, never submitted.
+    final connected = d.connectionActive(c.sources, c.values);
+    final ownedNow = connected && f.connectionOwned;
+    final selectedConnection = d.selectedConnection(f, c.sources, c.values);
+    final managed = ownedNow ? managedPlaceholder(d) : null;
     final serverError = c.serverErrors[f.key];
     final error =
         runtimeFieldError(context, c.validation[f.key]) ??
         (serverError == null || serverError.isEmpty
             ? null
             : raftText(context, serverError));
-    final hint = f.kind == 'string_map'
+    final hint = ownedNow
+        ? managed
+        : f.kind == 'string_map'
         ? 'One KEY=value per line.'
         : f.copy['hint'] as String?;
+    // A stored value the current list no longer offers (a retired model, a
+    // removed connection) stays selected, marked, until another is picked.
+    final text = c.values[f.key] is String ? c.values[f.key] as String : '';
+    final unlisted =
+        choiceField &&
+        !custom &&
+        f.kind != 'derived_select' &&
+        text.isNotEmpty &&
+        !choices.any((o) => o['value'] == text);
     final Widget control;
     if (f.kind == 'boolean') {
       control = Align(
@@ -342,7 +530,7 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         child: RaftSwitch(
           value: c.values[f.key] == true,
           semanticLabel: raftText(context, f.label),
-          onChanged: widget.busy ? null : (v) => c.change(f, v),
+          onChanged: widget.busy || ownedNow ? null : (v) => c.change(f, v),
         ),
       );
     } else if (f.kind == 'unsupported') {
@@ -359,6 +547,8 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
             ? c.values[f.key] as String
             : f.kind == 'derived_select'
             ? ''
+            : unlisted
+            ? text
             : null,
         invalid: error != null,
         placeholder: f.copy['placeholder'] as String? ?? 'Select...',
@@ -366,7 +556,13 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
           if (f.kind == 'derived_select')
             RaftAgentSelectOption('', raftText(context, 'Runtime default')),
           for (final o in choices)
-            RaftAgentSelectOption(o['value'] as String, '${o['label']}'),
+            RaftAgentSelectOption(
+              o['value'] as String,
+              '${o['label']}',
+              enabled: o['unavailable'] != true,
+              group: runtimeOptionGroup(context, o),
+            ),
+          if (unlisted) RaftAgentSelectOption(text, text, enabled: false),
         ],
         onChanged: widget.busy ? null : (v) => c.change(f, v),
       );
@@ -376,19 +572,33 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         // ignore: raft_lints/avoid_render_index_assertion -- load() publishes definition and editors in one synchronous block (test/runtime_form_loading_test.dart); boolean and unsupported fields are branched out earlier.
         controller: c.editors[f.key]!,
         semanticLabel: raftText(context, f.label),
-        placeholder: f.copy['placeholder'] as String?,
-        enabled: !widget.busy,
+        placeholder: managed ?? f.copy['placeholder'] as String?,
+        enabled: !widget.busy && !ownedNow,
         invalid: error != null,
         obscure: f.kind == 'secret',
         multiline: f.kind == 'string_map',
         onChanged: (v) => c.changeText(f, v),
       );
     }
+    final connectionId = selectedConnection?['connectionId'] as String?;
     return RaftStableField(
       label: f.label,
-      required: f.required && f.kind != 'boolean',
+      required: f.required && f.kind != 'boolean' && !ownedNow,
       hint: hint,
       error: error,
+      // The pencil for the selected saved connection: operators who manage
+      // provider connections only (Web `capabilities.manageExternalAuth`).
+      labelAccessory: connectionId != null && c.w.can('manageExternalAuth')
+          ? RaftInlineIconButton(
+              key: ValueKey('runtime-${f.key}-edit-provider'),
+              glyph: RaftGlyph.pencil,
+              tooltip: 'Edit saved provider',
+              size: 14,
+              onPressed: widget.busy
+                  ? null
+                  : () => editSavedProvider(f.key, connectionId),
+            )
+          : null,
       belowControl: [
         if (choiceField && custom && choices.isNotEmpty)
           Wrap(
@@ -410,6 +620,14 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
                 ),
             ],
           ),
+        if (unlisted)
+          RaftAgentFieldNote(
+            raftFormat(
+              context,
+              'The saved value {value} is not in the current list. It stays selected until you pick another.',
+              {'value': text},
+            ),
+          ),
         if (status == 'fallback' || status == 'unavailable')
           RaftAgentSourceStatus(
             message: status == 'fallback'
@@ -424,6 +642,31 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
       child: control,
     );
   }
+
+  /// "Provided by ..." for the fields the selected saved connection owns.
+  String managedPlaceholder(RuntimeForm d) {
+    final option = d.fields
+        .map((f) => d.selectedConnection(f, c.sources, c.values))
+        .nonNulls
+        .firstOrNull;
+    return raftFormat(context, 'Provided by “{connection}”', {
+      'connection':
+          option?['label'] ??
+          raftText(
+            context,
+            'This saved provider is unavailable. Select another provider.',
+          ),
+    });
+  }
+
+  /// Option `group` (`provider.saved_connection`): saved connections first,
+  /// then direct setup.
+  String? runtimeOptionGroup(BuildContext context, Map<String, dynamic> o) =>
+      switch (o['group']) {
+        'saved' => raftText(context, 'Saved providers'),
+        'direct' => raftText(context, 'Direct setup'),
+        _ => null,
+      };
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -534,7 +777,9 @@ class _RuntimeFormDialogState extends State<RuntimeFormDialog> {
     }
     if (widget.onboarding) {
       // The directory's computers paint at once; the read revalidates them.
-      if (w.services.entityDirectory.state(WorkspaceEntityKind.computers).loaded) {
+      if (w.services.entityDirectory
+          .state(WorkspaceEntityKind.computers)
+          .loaded) {
         onboardingMachines = w.services.entityDirectory.rows(
           WorkspaceEntityKind.computers,
         );

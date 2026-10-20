@@ -12,9 +12,14 @@ class RuntimeField {
     this.derived,
     this.copy = const {},
     this.visibility = const [],
+    this.connectionOwned = false,
   });
   final String key, kind, label;
   final bool required;
+
+  /// `x-connectionOwned` (capability `provider.saved_connection`): a selected
+  /// saved provider connection owns this field's value.
+  final bool connectionOwned;
   final Map<String, dynamic> schema, copy;
   final String? sourceId, parent;
   final Map<String, dynamic>? derived;
@@ -42,8 +47,14 @@ class RuntimeForm {
     this.sourceRefs,
     this.stored,
     this.capabilities,
+    this.revision,
   );
   final String runtimeId, schemaVersion;
+
+  /// `Definition.revision`: opaque token of this exact form build, echoed on
+  /// every option-source request as `?formRevision=`. Null: the plain direct
+  /// option protocol (the server never sends connection options then).
+  final String? revision;
   final List<RuntimeField> fields;
   final Map<String, Map<String, dynamic>> sourceRefs;
   final Map<String, dynamic> stored;
@@ -52,6 +63,7 @@ class RuntimeForm {
     'select.custom_value',
     'choice.labels',
     'option_source.status',
+    'provider.saved_connection',
   };
   bool get supported => capabilities.every(supportedCapabilities.contains);
   static RuntimeForm? parse(dynamic wire) {
@@ -126,6 +138,7 @@ class RuntimeForm {
               ? (derived?['field'])
               : sources[sourceId]!['parent'],
           derived: derived,
+          connectionOwned: schema['x-connectionOwned'] == true,
           visibility: [
             for (final raw
                 in ui['visibility'] is List ? ui['visibility'] as List : [])
@@ -153,6 +166,9 @@ class RuntimeForm {
       sources,
       _map(wire['values']),
       caps,
+      wire['revision'] is String && (wire['revision'] as String).isNotEmpty
+          ? wire['revision'] as String
+          : null,
     );
   }
 
@@ -309,7 +325,69 @@ class RuntimeForm {
         changed.add(f.key);
       }
     }
+    // Moving onto or off a saved-connection selection hands the
+    // connection-owned fields to the connection or back to the user: either
+    // way their old value must not survive the switch.
+    if (connectionActive(sources, next) != connectionActive(sources, values)) {
+      for (final f in fields) {
+        if (f.connectionOwned) next[f.key] = defaultFor(f, sources, next);
+      }
+    }
     return next;
+  }
+
+  /// An option that is a saved provider connection (capability
+  /// `provider.saved_connection`). Hard constraint of the contract:
+  /// `value == "connection:" + connectionId`; an option that breaks it is
+  /// treated as a plain option, never as a connection.
+  static bool isConnectionOption(Map<String, dynamic> option) {
+    final id = option['connectionId'];
+    return id is String && id.isNotEmpty && option['value'] == 'connection:$id';
+  }
+
+  /// The selected option of a select field when it is a saved provider
+  /// connection; null for any other selection or field.
+  Map<String, dynamic>? selectedConnection(
+    RuntimeField f,
+    Map<String, Map<String, dynamic>> sources,
+    Map<String, dynamic> values,
+  ) {
+    if (f.kind != 'select') return null;
+    final option = selectedOption(f.key, sources, values);
+    return isConnectionOption(option) ? option : null;
+  }
+
+  /// True while any field holds a saved-connection selection: the
+  /// connection-owned fields are disabled, not required and not submitted.
+  bool connectionActive(
+    Map<String, Map<String, dynamic>> sources,
+    Map<String, dynamic> values,
+  ) => fields.any((f) => selectedConnection(f, sources, values) != null);
+
+  /// The values a visibility rule sees for [key]: the raw one, plus, for a
+  /// saved-connection selection, the connection's underlying provider id. A
+  /// gateway connection keeps driving the gateway fields: they stay visible
+  /// (as disabled managed fields) instead of vanishing with the raw
+  /// `connection:<id>` value.
+  List<String> _visibilityValues(
+    String key,
+    Map<String, dynamic> values,
+    Map<String, Map<String, dynamic>>? sources,
+  ) {
+    final raw = _text(values[key]);
+    if (sources == null) return [raw];
+    for (final source in sources.values) {
+      if (source['pointer'] != '/$key' || source['options'] is! List) continue;
+      for (final option in (source['options'] as List).whereType<Map>()) {
+        if (option['value'] != raw) continue;
+        final underlying = option['underlyingProviderId'];
+        return underlying is String && underlying.isNotEmpty
+            ? [raw, underlying]
+            : [raw];
+      }
+      return [raw];
+    }
+    return [raw];
   }
 
   bool unavailable(RuntimeField f, Map<String, Map<String, dynamic>> sources) =>
@@ -321,7 +399,11 @@ class RuntimeForm {
   ]) =>
       !(sources != null && !f.required && unavailable(f, sources)) &&
       f.visibility.every(
-        (r) => (r['in'] as List).contains(_text(values[r['key']])),
+        (r) => _visibilityValues(
+          r['key'] as String,
+          values,
+          sources,
+        ).any((candidate) => (r['in'] as List).contains(candidate)),
       );
   Map<String, String> validate(
     Map<String, Map<String, dynamic>> sources,
@@ -330,10 +412,18 @@ class RuntimeForm {
   }) {
     final errors = <String, String>{};
     if (!supported) return {'form': 'unsupported_capabilities'};
+    final connected = connectionActive(sources, values);
     for (final f in fields) {
       if (!visible(f, values, sources)) continue;
       if (f.kind == 'unsupported') {
         if (f.required) errors[f.key] = 'unsupported_required';
+        continue;
+      }
+      // A bound-but-unavailable connection stays visible and blocks the
+      // save: the binding is never silently rewritten.
+      if (connected &&
+          selectedConnection(f, sources, values)?['unavailable'] == true) {
+        errors[f.key] = 'connection_unavailable';
         continue;
       }
       if (f.required && unavailable(f, sources)) {
@@ -341,8 +431,12 @@ class RuntimeForm {
         continue;
       }
       final text = _text(values[f.key]).trim();
+      // While a saved connection is selected, the fields it owns are not the
+      // user's to fill: not required and not submitted.
+      final ownedNow = connected && f.connectionOwned;
       if (f.required &&
           !(editing && f.kind == 'secret') &&
+          !ownedNow &&
           [
             'text',
             'secret',
@@ -375,12 +469,17 @@ class RuntimeForm {
     Map<String, Map<String, dynamic>> sources,
   ) {
     final out = <String, dynamic>{};
+    final connected = connectionActive(sources, values);
     for (final f in fields) {
+      // Connection-owned fields never enter formValues while a saved
+      // connection is selected, not even as empty strings: the server refuses
+      // any value for them (`connection_field_forbidden`).
+      if (connected && f.connectionOwned) continue;
       if (!f.required && unavailable(f, sources)) {
         if (stored.containsKey(f.key)) out[f.key] = stored[f.key];
         continue;
       }
-      if (f.kind != 'unsupported' && !visible(f, values)) continue;
+      if (f.kind != 'unsupported' && !visible(f, values, sources)) continue;
       if (!values.containsKey(f.key)) continue;
       final v = values[f.key];
       out[f.key] = v is String

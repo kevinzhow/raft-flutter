@@ -1,0 +1,55 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "builtin",
+  "schemaVersion": "builtin-pi.create.v3",
+  "sourceId": "model",
+  "kind": "dependent_select",
+  "pointer": "/model",
+  "dependsOn": "/providerId",
+  "optionsByValue": {
+    "deepseek": [
+      {
+        "value": "deepseek-v4-pro",
+        "label": "DeepSeek V4 Pro"
+      },
+      {
+        "value": "deepseek-v4-flash",
+        "label": "DeepSeek V4 Flash"
+      }
+    ],
+    "openai-compatible": [],
+    "connection:conn-team": [
+      {
+        "value": "deepseek-v4-pro",
+        "label": "DeepSeek V4 Pro"
+      },
+      {
+        "value": "deepseek-v4-flash",
+        "label": "DeepSeek V4 Flash"
+      }
+    ],
+    "connection:conn-old": [
+      {
+        "value": "deepseek-v4-pro",
+        "label": "DeepSeek V4 Pro"
+      },
+      {
+        "value": "deepseek-v4-flash",
+        "label": "DeepSeek V4 Flash"
+      }
+    ],
+    "connection:conn-gateway": []
+  },
+  "defaultValueByValue": {
+    "deepseek": "deepseek-v4-pro",
+    "connection:conn-team": "deepseek-v4-pro",
+    "connection:conn-old": "deepseek-v4-pro"
+  },
+  "customValueAllowedByValue": {
+    "deepseek": false,
+    "openai-compatible": true,
+    "connection:conn-team": false,
+    "connection:conn-old": false,
+    "connection:conn-gateway": true
+  }
+}

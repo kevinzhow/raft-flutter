@@ -269,3 +269,33 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
     );
   }
 }
+
+/// `ComboboxGroupLabel`: the heading above a group of options (Web groups the
+/// runtime form's saved and direct providers this way). Not an option: it takes
+/// no focus and no taps.
+class RaftComboboxGroupLabel extends StatelessWidget {
+  const RaftComboboxGroupLabel(this.label, {super.key});
+  final String label;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context), tokens = t.recipeTokens;
+    final r = RaftComboboxRecipe.resolve(
+      theme: t.recipeTheme,
+      inputOwner: RaftComboboxRecipeInputOwner.group,
+      states: t.recipeStates(),
+      tokens: tokens,
+    );
+    final base = RaftTypography.body(t, size: 14, line: 20);
+    return Semantics(
+      header: true,
+      child: RaftRecipeBox(
+        style: r.groupLabel,
+        tokens: tokens,
+        child: Text(
+          raftText(context, label),
+          style: r.groupLabel.text(tokens, base: base),
+        ),
+      ),
+    );
+  }
+}

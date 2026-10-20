@@ -1,0 +1,50 @@
+{
+  "protocolVersion": 1,
+  "runtimeId": "builtin",
+  "schemaVersion": "builtin-pi.create.v3",
+  "sourceId": "provider",
+  "kind": "select",
+  "pointer": "/providerId",
+  "options": [
+    {
+      "value": "connection:conn-team",
+      "label": "DeepSeek · Team key",
+      "providerKind": "preset",
+      "connectionId": "conn-team",
+      "underlyingProviderId": "deepseek",
+      "group": "saved"
+    },
+    {
+      "value": "connection:conn-gateway",
+      "label": "OpenAI-compatible · Office gateway",
+      "providerKind": "gateway",
+      "connectionId": "conn-gateway",
+      "underlyingProviderId": "openai-compatible",
+      "group": "saved"
+    },
+    {
+      "value": "connection:conn-old",
+      "label": "DeepSeek · Retired key",
+      "providerKind": "preset",
+      "connectionId": "conn-old",
+      "underlyingProviderId": "deepseek",
+      "group": "saved",
+      "unavailable": true,
+      "unavailableReason": "disabled"
+    },
+    {
+      "value": "deepseek",
+      "label": "DeepSeek",
+      "providerKind": "preset",
+      "group": "direct"
+    },
+    {
+      "value": "openai-compatible",
+      "label": "OpenAI-compatible",
+      "providerKind": "gateway",
+      "group": "direct"
+    }
+  ],
+  "defaultValue": "deepseek",
+  "customValueAllowed": false
+}

@@ -25,6 +25,7 @@ import 'package:flutter/material.dart';
 import 'system_inset.dart';
 
 import 'components.dart';
+import 'combobox_panel.dart' show RaftComboboxGroupLabel;
 import 'anchored_popup.dart';
 import 'design_primitives.dart';
 import 'dismiss_scope.dart';
@@ -681,10 +682,18 @@ class _CssOuterShadowPainter extends CustomPainter {
 
 /// One option of [RaftAgentSelect].
 class RaftAgentSelectOption<T> {
-  const RaftAgentSelectOption(this.value, this.label, {this.enabled = true});
+  const RaftAgentSelectOption(
+    this.value,
+    this.label, {
+    this.enabled = true,
+    this.group,
+  });
   final T value;
   final String label;
   final bool enabled;
+
+  /// Heading shown above the first option of each run of equal groups.
+  final String? group;
 }
 
 /// raft-ui Select with `chrome="field"`: trigger = Button(outline, md) merged
@@ -819,7 +828,11 @@ class _RaftAgentSelectState<T> extends State<RaftAgentSelect<T>> {
                         width: width,
                         onDismiss: close,
                         children: [
-                          for (final o in widget.options)
+                          for (final (i, o) in widget.options.indexed) ...[
+                            if (o.group != null &&
+                                (i == 0 ||
+                                    widget.options[i - 1].group != o.group))
+                              RaftComboboxGroupLabel(o.group!),
                             RaftMenuItem(
                               label: o.label,
                               selected: o.value == widget.value,
@@ -830,6 +843,7 @@ class _RaftAgentSelectState<T> extends State<RaftAgentSelect<T>> {
                                     }
                                   : null,
                             ),
+                          ],
                         ],
                       ),
                     ),

@@ -115,4 +115,179 @@ void main() {
         );
     }
   });
+
+  group('saved provider connections (provider.saved_connection)', () {
+    Map<String, Map<String, dynamic>> builtinSources() => {
+      'provider': fixture('builtin.saved.option-source.provider.json'),
+      'model': fixture('builtin.saved.option-source.model.json'),
+    };
+    RuntimeForm builtin([String name = 'builtin.saved.form.json']) =>
+        RuntimeForm.parse(fixture(name))!;
+
+    // A server with provider_connections_v0 on adds this capability to the
+    // Built-in Pi form. Before the client declared it, the whole form was
+    // "unsupported" and Built-in Pi agents could be neither created nor edited.
+    test('a Built-in Pi form that requires the capability is supported', () {
+      final form = builtin();
+      expect(form.capabilities, ['provider.saved_connection']);
+      expect(form.supported, true);
+      expect(
+        form.validate(builtinSources(), form.initial(builtinSources())),
+        isNot(contains('form')),
+      );
+      expect(builtin('builtin.saved.edit.json').supported, true);
+      // A capability this client does not know still fails the whole form.
+      final raw = fixture('builtin.saved.form.json');
+      raw['requiredClientCapabilities'] = [
+        'provider.saved_connection',
+        'provider.future_thing',
+      ];
+      expect(RuntimeForm.parse(raw)!.supported, false);
+    });
+
+    test('x-connectionOwned marks the fields a connection owns', () {
+      final form = builtin();
+      expect(
+        [
+          for (final f in form.fields)
+            if (f.connectionOwned) f.key,
+        ],
+        ['apiKey', 'baseUrl', 'supportsImageInput'],
+      );
+      expect(builtin().revision, 'saved-connection.v1:3f2a9c1e');
+      final plain = fixture('builtin.saved.form.json')..remove('revision');
+      expect(RuntimeForm.parse(plain)!.revision, isNull);
+    });
+
+    test(
+      'a saved connection owns the credential: not required, not submitted',
+      () {
+        final form = builtin(), src = builtinSources();
+        var values = form.initial(src);
+        expect(values['providerId'], 'deepseek');
+        expect(form.connectionActive(src, values), false);
+        expect(form.validate(src, values)['apiKey'], 'required');
+        values = form.change(src, values, 'apiKey', 'sk-typed');
+        values = form.change(src, values, 'providerId', 'connection:conn-team');
+        expect(form.connectionActive(src, values), true);
+        // The typed key does not survive the hand-over to the connection.
+        expect(values['apiKey'], '');
+        expect(values['model'], 'deepseek-v4-pro');
+        expect(form.validate(src, values), isEmpty);
+        expect(form.submission(values, src), {
+          'providerId': 'connection:conn-team',
+          'model': 'deepseek-v4-pro',
+          'loadLocalPlugins': false,
+          'envVars': <String, String>{},
+        });
+        // Moving off the connection gives the fields back, empty and required.
+        final direct = form.change(src, values, 'providerId', 'deepseek');
+        expect(direct['apiKey'], '');
+        expect(form.validate(src, direct)['apiKey'], 'required');
+        expect(form.submission(direct, src)['apiKey'], '');
+      },
+    );
+
+    test('a gateway connection keeps the endpoint fields visible but owned', () {
+      final form = builtin(), src = builtinSources();
+      final team = form.change(
+        src,
+        form.initial(src),
+        'providerId',
+        'connection:conn-team',
+      );
+      final gateway = form.change(
+        src,
+        form.change(
+          src,
+          form.initial(src),
+          'providerId',
+          'connection:conn-gateway',
+        ),
+        'model',
+        'office-model',
+      );
+      RuntimeField field(String key) =>
+          form.fields.firstWhere((f) => f.key == key);
+      // The visibility rule sees the underlying provider id as well.
+      expect(form.visible(field('baseUrl'), gateway, src), true);
+      expect(form.visible(field('supportsImageInput'), gateway, src), true);
+      expect(form.visible(field('baseUrl'), team, src), false);
+      // Without sources only the raw value is known.
+      expect(form.visible(field('baseUrl'), gateway), false);
+      // Owned: no required/invalid-url error, nothing submitted, not even ''.
+      expect(form.validate(src, gateway), isEmpty);
+      final sent = form.submission(gateway, src);
+      expect(sent.keys, isNot(contains('baseUrl')));
+      expect(sent.keys, isNot(contains('supportsImageInput')));
+      expect(sent.keys, isNot(contains('apiKey')));
+      // The gateway connection may take a typed model; the preset one may not.
+      expect(form.validate(src, {...gateway, 'model': 'anything'}), isEmpty);
+      expect(
+        form.validate(src, {...team, 'model': 'anything'})['model'],
+        'not_a_choice',
+      );
+    });
+
+    test('an unavailable connection stays visible and blocks the save', () {
+      final form = builtin(), src = builtinSources();
+      final values = form.change(
+        src,
+        form.initial(src),
+        'providerId',
+        'connection:conn-old',
+      );
+      expect(
+        form.selectedConnection(
+          form.fields.first,
+          src,
+          values,
+        )?['unavailableReason'],
+        'disabled',
+      );
+      expect(
+        form.validate(src, values)['providerId'],
+        'connection_unavailable',
+      );
+      expect(
+        form.choices(form.fields.first, src, values).map((o) => o['value']),
+        contains('connection:conn-old'),
+      );
+    });
+
+    test(
+      'an option whose value breaks connection:<id> is not a connection',
+      () {
+        final form = builtin(), src = builtinSources();
+        final options = src['provider']!['options'] as List;
+        options.add({
+          'value': 'connection:other',
+          'label': 'Liar',
+          'connectionId': 'conn-liar',
+          'group': 'saved',
+        });
+        final values = {...form.initial(src), 'providerId': 'connection:other'};
+        expect(form.connectionActive(src, values), false);
+      },
+    );
+
+    test('editing an agent bound to a connection', () {
+      final form = builtin('builtin.saved.edit.json'), src = builtinSources();
+      final values = form.initial(src);
+      expect(values['providerId'], 'connection:conn-team');
+      expect(form.connectionActive(src, values), true);
+      expect(form.validate(src, values, editing: true), isEmpty);
+      expect(form.submission(values, src).keys, isNot(contains('apiKey')));
+      // The stored binding is not in the list for a caller who may not list
+      // connections: it stays selected (not silently rewritten) but blocks.
+      final direct = {'provider': src['provider']!, 'model': src['model']!};
+      (direct['provider']!['options'] as List).removeWhere(
+        (o) => (o as Map)['group'] == 'saved',
+      );
+      expect(
+        form.validate(direct, values, editing: true)['providerId'],
+        'not_a_choice',
+      );
+    });
+  });
 }
