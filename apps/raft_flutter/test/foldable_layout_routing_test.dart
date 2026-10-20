@@ -250,9 +250,12 @@ void main() {
     expect(phoneShown(t), isTrue);
   });
 
-  scenario('R3b full pages without a URL stay open with the dialogs', (t) async {
+  scenario('R3b full pages without a URL stay open with the dialogs', (
+    t,
+  ) async {
     final f = await mount(t, wide, '/s/alpha');
     await openChannel(t, f);
+    final w = f.workspace(t);
     final ctx = t.element(find.byType(WorkspaceView).first);
     final navigator = Navigator.of(ctx, rootNavigator: true);
     unawaited(
@@ -268,8 +271,12 @@ void main() {
     // A layout change is not the user leaving the page (layout_class_
     // navigation_matrix_test walks every kind of page).
     expect(find.text('Pushed page'), findsOneWidget);
-    expect(where(f, t), '/channel/ca');
-    expect(phoneShown(t), isTrue);
+    // The page covers the workspace, so read it from the controller.
+    expect(_short(w.location.uri), '/channel/ca');
+    expect(
+      find.byType(MobileWorkspacePages, skipOffstage: false),
+      findsOneWidget,
+    );
   });
 
   // R5: the location survives every crossing; Back always walks to Home.
