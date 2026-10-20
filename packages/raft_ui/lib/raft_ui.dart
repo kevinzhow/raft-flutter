@@ -183,6 +183,7 @@ export 'src/timeline_composition.dart';
 export 'src/panel_layout.dart';
 export 'src/css_pixel_snap.dart';
 export 'src/agent_create_form.dart';
+export 'src/agent_combobox.dart';
 export 'src/agent_profile.dart';
 export 'src/dialog_card.dart';
 export 'src/dismiss_scope.dart';

@@ -25,7 +25,6 @@ import 'package:flutter/material.dart';
 import 'system_inset.dart';
 
 import 'components.dart';
-import 'combobox_panel.dart' show RaftComboboxGroupLabel;
 import 'anchored_popup.dart';
 import 'design_primitives.dart';
 import 'dismiss_scope.dart';
@@ -509,6 +508,10 @@ class RaftAgentTextInput extends StatefulWidget {
     this.maxLength,
     this.onChanged,
     this.semanticLabel,
+    this.focusNode,
+    this.trailing,
+    this.onTap,
+    this.onKeyEvent,
   });
   final TextEditingController controller;
   final String? placeholder, semanticLabel;
@@ -516,23 +519,47 @@ class RaftAgentTextInput extends StatefulWidget {
   final int rows;
   final int? maxLength;
   final ValueChanged<String>? onChanged;
+
+  /// The host's focus node (a combobox input); its owner disposes it.
+  final FocusNode? focusNode;
+
+  /// A glyph at the end of the box (a combobox chevron), inside the border.
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  /// Keys the input receives before it handles them itself.
+  final KeyEventResult Function(FocusNode node, KeyEvent event)? onKeyEvent;
   @override
   State<RaftAgentTextInput> createState() => _RaftAgentTextInputState();
 }
 
 class _RaftAgentTextInputState extends State<RaftAgentTextInput> {
-  final focus = FocusNode();
+  late final ownFocus = FocusNode();
+  FocusNode get focus => widget.focusNode ?? ownFocus;
   @override
   void initState() {
     super.initState();
-    focus.addListener(() => setState(() {}));
+    focus.addListener(onFocus);
+  }
+
+  void onFocus() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    focus.dispose();
+    focus.removeListener(onFocus);
+    ownFocus.dispose();
     super.dispose();
   }
+
+  Widget withKeys(Widget editor) => widget.onKeyEvent == null
+      ? editor
+      : Focus(
+          canRequestFocus: false,
+          onKeyEvent: widget.onKeyEvent,
+          child: editor,
+        );
 
   @override
   Widget build(BuildContext context) {
@@ -592,6 +619,7 @@ class _RaftAgentTextInputState extends State<RaftAgentTextInput> {
       cursorColor: style.color,
       cursorWidth: 1,
       onChanged: widget.onChanged,
+      onTap: widget.onTap,
       // Bare editable text: every frame/border comes from the recipe box.
       decoration: InputDecoration(
         isCollapsed: true,
@@ -625,7 +653,15 @@ class _RaftAgentTextInputState extends State<RaftAgentTextInput> {
         tokens: tokens,
         height: minHeight,
         applyText: false,
-        child: editor,
+        child: widget.trailing == null
+            ? withKeys(editor)
+            : Row(
+                children: [
+                  Expanded(child: withKeys(editor)),
+                  const SizedBox(width: 2 * _tw),
+                  widget.trailing!,
+                ],
+              ),
       ),
     );
   }
@@ -682,18 +718,10 @@ class _CssOuterShadowPainter extends CustomPainter {
 
 /// One option of [RaftAgentSelect].
 class RaftAgentSelectOption<T> {
-  const RaftAgentSelectOption(
-    this.value,
-    this.label, {
-    this.enabled = true,
-    this.group,
-  });
+  const RaftAgentSelectOption(this.value, this.label, {this.enabled = true});
   final T value;
   final String label;
   final bool enabled;
-
-  /// Heading shown above the first option of each run of equal groups.
-  final String? group;
 }
 
 /// raft-ui Select with `chrome="field"`: trigger = Button(outline, md) merged
@@ -828,11 +856,7 @@ class _RaftAgentSelectState<T> extends State<RaftAgentSelect<T>> {
                         width: width,
                         onDismiss: close,
                         children: [
-                          for (final (i, o) in widget.options.indexed) ...[
-                            if (o.group != null &&
-                                (i == 0 ||
-                                    widget.options[i - 1].group != o.group))
-                              RaftComboboxGroupLabel(o.group!),
+                          for (final o in widget.options)
                             RaftMenuItem(
                               label: o.label,
                               selected: o.value == widget.value,
@@ -843,7 +867,6 @@ class _RaftAgentSelectState<T> extends State<RaftAgentSelect<T>> {
                                     }
                                   : null,
                             ),
-                          ],
                         ],
                       ),
                     ),

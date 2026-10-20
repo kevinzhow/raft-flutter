@@ -610,5 +610,9 @@ void main() {
       );
     },
   };
-  registerCloseTests(popupSurfaces, harness);
+  // The in-field combobox has its own file (close_combobox_test.dart).
+  registerCloseTests([
+    for (final surface in popupSurfaces)
+      if (surface.id != 'agent-combobox') surface,
+  ], harness);
 }

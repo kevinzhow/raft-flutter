@@ -128,6 +128,7 @@ in `apps/raft_flutter`.
 | `agent-overflow-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | agent/AgentProfileOverflowMenu.tsx:108 DropdownMenu (Base UI): Esc, outside press | ok |  |
 | `admin-principal-picker` | popup | scrim sysback | scrim sysback | scrim sysback | settings/SettingsPanel.tsx:2626-2638 mousedown outside (no Escape in Web) | ok |  |
 | `agent-select` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | agent/RuntimeConfigFields.tsx:32 raft-ui Select (Base UI): Esc, outside press | ok |  |
+| `agent-combobox` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | agent/RuntimeChoiceCombobox.tsx Combobox (Base UI): Esc, outside press; the input is the field | ok |  |
 | `feedback-close-menu` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | external hands-feedback ReporterCloseSplitButton (not in the Web source tree) | n/a |  |
 | `runtime-usage-card` | popup | - (phones open the bottom sheet (dialog family: runtime-usage-sheet)) | x esc scrim sysback | x esc scrim sysback | machine/RuntimeAccountUsageChip.tsx:520-540 pinned popover: Esc, pointerdown outside; CloseButton :234 | fixed | RaftHoverCard: a pinned card closes on Android Back (RaftBackDismiss) |
 | `section-emoji-picker` | popup | esc scrim sysback | esc scrim sysback | esc scrim sysback | layout/SidebarSectionEmojiPicker.tsx Popover (Base UI): Esc, outside press; the dialog stays open | ok |  |

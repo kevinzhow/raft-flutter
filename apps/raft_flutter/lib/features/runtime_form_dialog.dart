@@ -487,11 +487,6 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         custom = d.custom(f, c.sources, c.values);
     final source = c.sources[f.sourceId];
     final status = source?['status'], sourceReason = source?['reason'];
-    final choiceField = [
-      'select',
-      'dependent_select',
-      'derived_select',
-    ].contains(f.kind);
     if (f.kind == 'derived_select' && choices.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -514,13 +509,17 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         : f.kind == 'string_map'
         ? 'One KEY=value per line.'
         : f.copy['hint'] as String?;
+    // Web `RuntimeFormV2FieldControl`: a list the server describes is searched
+    // in a combobox (a field that takes typed text too); only a derived list
+    // (reasoning effort) is a plain select, and a dependent field whose
+    // current parent takes free text is a plain text input.
+    final searchable =
+        f.kind == 'select' || (f.kind == 'dependent_select' && !custom);
     // A stored value the current list no longer offers (a retired model, a
     // removed connection) stays selected, marked, until another is picked.
     final text = c.values[f.key] is String ? c.values[f.key] as String : '';
     final unlisted =
-        choiceField &&
-        !custom &&
-        f.kind != 'derived_select' &&
+        searchable &&
         text.isNotEmpty &&
         !choices.any((o) => o['value'] == text);
     final Widget control;
@@ -539,32 +538,55 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
           'field': raftText(context, f.label),
         }),
       );
-    } else if (choiceField && !custom) {
+    } else if (f.kind == 'derived_select') {
       control = RaftAgentSelect<String>(
         key: ValueKey('runtime-${f.key}'),
         semanticLabel: raftText(context, f.label),
         value: choices.any((o) => o['value'] == c.values[f.key])
             ? c.values[f.key] as String
-            : f.kind == 'derived_select'
-            ? ''
-            : unlisted
-            ? text
-            : null,
+            : '',
         invalid: error != null,
         placeholder: f.copy['placeholder'] as String? ?? 'Select...',
         options: [
-          if (f.kind == 'derived_select')
-            RaftAgentSelectOption('', raftText(context, 'Runtime default')),
+          RaftAgentSelectOption('', raftText(context, 'Runtime default')),
           for (final o in choices)
-            RaftAgentSelectOption(
-              o['value'] as String,
-              '${o['label']}',
-              enabled: o['unavailable'] != true,
-              group: runtimeOptionGroup(context, o),
-            ),
-          if (unlisted) RaftAgentSelectOption(text, text, enabled: false),
+            RaftAgentSelectOption(o['value'] as String, '${o['label']}'),
         ],
         onChanged: widget.busy ? null : (v) => c.change(f, v),
+      );
+    } else if (searchable) {
+      control = RaftAgentCombobox(
+        key: ValueKey('runtime-${f.key}'),
+        label: f.label,
+        semanticLabel: raftText(context, f.label),
+        value: text,
+        invalid: error != null,
+        placeholder: f.copy['placeholder'] as String? ?? 'Select...',
+        enabled: !widget.busy,
+        items: [
+          if (unlisted)
+            RaftComboboxItem(
+              text,
+              text,
+              description: raftText(context, 'Not in the current list'),
+            ),
+          for (final o in choices)
+            RaftComboboxItem(
+              '${o['value']}',
+              '${o['label']}',
+              description: o['description'] as String?,
+              hint: '${o['value']}',
+              keywords: '${o['value']}',
+              group: runtimeOptionGroup(context, o),
+              enabled: o['unavailable'] != true,
+            ),
+        ],
+        onSelected: (id) => c.change(f, id),
+        // A field that takes typed text offers the typed value as is.
+        customLabel: custom
+            ? (typed) => raftFormat(context, 'Use “{value}”', {'value': typed})
+            : null,
+        onCustom: custom ? (typed) => c.change(f, typed) : null,
       );
     } else {
       control = RaftAgentTextInput(
@@ -600,26 +622,6 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
             )
           : null,
       belowControl: [
-        if (choiceField && custom && choices.isNotEmpty)
-          Wrap(
-            spacing: raftAgentChipGap,
-            runSpacing: raftAgentChipGap,
-            children: [
-              for (final o in choices)
-                RaftTextButton(
-                  label: '${o['label']}',
-                  tooltip: o['description'] as String?,
-                  visualHeight: RaftMetrics.buttonSm,
-                  onPressed: widget.busy
-                      ? null
-                      : () {
-                          // ignore: raft_lints/avoid_render_index_assertion -- Tap handler of a rendered field; its editor exists for the same reason as the line above.
-                          c.editors[f.key]!.text = o['value'];
-                          c.change(f, o['value']);
-                        },
-                ),
-            ],
-          ),
         if (unlisted)
           RaftAgentFieldNote(
             raftFormat(

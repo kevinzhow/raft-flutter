@@ -218,6 +218,16 @@ const popupSurfaces = <CloseSurface>[
     files: ['../../packages/raft_ui/lib/src/agent_create_form.dart'],
   ),
   CloseSurface(
+    'agent-combobox',
+    kind: SurfaceKind.popup,
+    web:
+        'agent/RuntimeChoiceCombobox.tsx Combobox (Base UI): Esc, outside press; the input is the field',
+    phone: {_esc, _scrim, _sys},
+    fold: {_esc, _scrim, _sys},
+    desktop: {_esc, _scrim, _sys},
+    files: ['../../packages/raft_ui/lib/src/agent_combobox.dart'],
+  ),
+  CloseSurface(
     'feedback-close-menu',
     kind: SurfaceKind.popup,
     web:

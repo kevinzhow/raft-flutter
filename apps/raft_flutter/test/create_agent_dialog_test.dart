@@ -227,8 +227,8 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(trigger);
     await t.pumpAndSettle();
-    final popup = find.byType(RaftMenuPanel);
-    final list = find.ancestor(of: popup, matching: find.byType(Scrollable));
+    final popup = find.byType(RaftComboboxPanel);
+    final list = find.descendant(of: popup, matching: find.byType(Scrollable));
     final last = find.descendant(
       of: popup,
       matching: find.text('Fixture Model 39'),
@@ -247,5 +247,76 @@ void main() {
     await t.pumpAndSettle();
     expect(w.posts.single['data']['formValues']['model'], 'fixture-model-39');
     expect(await result, {'id': 'agent-new', 'name': 'Model-Scroll-Check'});
+  });
+
+  testWidgets('a model list is searched, and a typed model is used as is', (
+    t,
+  ) async {
+    w
+      ..machines = [_machine]
+      ..runtimes = ['codex'];
+    final result = await open(t, name: 'Custom-Model');
+    // The search input is the field itself (Web RuntimeChoiceCombobox).
+    final search = find.descendant(
+      of: find.byKey(const ValueKey('runtime-model')),
+      matching: find.byType(TextField),
+    );
+    await t.tap(find.byKey(const ValueKey('runtime-model')));
+    await t.pumpAndSettle();
+    expect(find.byType(RaftComboboxPanel), findsOneWidget);
+    await t.enterText(search, 'gpt');
+    await t.pump();
+    expect(find.text('Use “gpt”'), findsOneWidget);
+    await t.enterText(search, 'my-org/custom-model');
+    await t.pump();
+    await t.tap(find.text('Use “my-org/custom-model”'));
+    await t.pumpAndSettle();
+    expect(find.byType(RaftComboboxPanel), findsNothing);
+    // The typed value is the field's value, shown in the trigger.
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('runtime-model')),
+        matching: find.text('my-org/custom-model'),
+      ),
+      findsOneWidget,
+    );
+    await t.tap(find.text('Create Agent'));
+    await t.pumpAndSettle();
+    expect(
+      (w.posts.single['data'] as Map)['formValues']['model'],
+      'my-org/custom-model',
+    );
+    expect(await result, isNotNull);
+  });
+
+  testWidgets('searching a long live list finds a model by any word', (
+    t,
+  ) async {
+    w
+      ..machines = [
+        {
+          ..._machine,
+          'runtimes': ['opencode'],
+        },
+      ]
+      ..runtimes = ['opencode'];
+    w.longOpenCodeModels = true;
+    await open(t, name: 'Model-Search');
+    await t.tap(find.byKey(const ValueKey('runtime-model')));
+    await t.pumpAndSettle();
+    // The search input is the field itself (Web RuntimeChoiceCombobox).
+    final search = find.descendant(
+      of: find.byKey(const ValueKey('runtime-model')),
+      matching: find.byType(TextField),
+    );
+    await t.enterText(search, 'fixture 39');
+    await t.pump();
+    expect(find.text('Fixture Model 39'), findsOneWidget);
+    expect(find.text('Fixture Model 38'), findsNothing);
+    await t.tap(find.text('Fixture Model 39'));
+    await t.pumpAndSettle();
+    await t.tap(find.text('Create Agent'));
+    await t.pumpAndSettle();
+    expect(w.posts.single['data']['formValues']['model'], 'fixture-model-39');
   });
 }
