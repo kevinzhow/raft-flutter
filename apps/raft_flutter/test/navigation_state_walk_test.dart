@@ -30,13 +30,11 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/data/phone_stack.dart';
 import 'package:raft_flutter/data/raft_location.dart';
 import 'package:raft_flutter/features/mobile_workspace_pages.dart';
 
 import 'app_global_server_selector_test.dart' show RootFixture;
 import 'edge_to_edge_audit_test.dart' show richFixture, settle;
-import 'foldable_layout_routing_test.dart' show mountedPages;
 import 'layout_class_navigation_matrix_test.dart'
     show dm, dpr, desktop, folded, landscape, phone, unfolded;
 
@@ -118,8 +116,6 @@ const regressions = <(int, List<(Op, int)>)>[
 ];
 
 const sizes = [folded, phone, unfolded, desktop, landscape];
-
-RootFixture? _f;
 
 Future<RootFixture> mount(WidgetTester t, Size dp) async {
   debugDefaultTargetPlatformOverride = TargetPlatform.android;
@@ -285,17 +281,6 @@ void expectOnePage(WidgetTester t, RootFixture f, Size dp, String where) {
     final top = find.byElementPredicate((e) => e == roots.last);
     final box = t.renderObject<RenderBox>(top);
     expect(box.size.isEmpty, isFalse, reason: '$where: top page has no size');
-    if (!paints(t, top)) {
-      final names = <String>[];
-      void visit(Element e, int depth) {
-        if (names.length < 150)
-          names.add('${' ' * depth}${e.widget.runtimeType}');
-        e.visitChildren((c) => visit(c, depth + 1));
-      }
-
-      visit(top.evaluate().single, 0);
-      debugPrint(names.join('\n'));
-    }
     expect(
       paints(t, top),
       isTrue,
@@ -484,7 +469,6 @@ Future<String?> run(
   } finally {
     FocusManager.instance.primaryFocus?.unfocus();
     t.view.resetViewInsets();
-    _f = f;
   }
 }
 
