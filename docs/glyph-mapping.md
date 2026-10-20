@@ -7,12 +7,17 @@ Material `Icons.*` left in the app is traced to the Web element it mirrors.
 
 ## 1. Generated glyph set (`tool/gen-glyphs`)
 
-Two Lucide builds reach the Web screen (raft-source 26f77ef):
+Both import sites resolve to one Lucide build (raft-source v1.21.12, a98ae00; Web
+`lucide-react ^1.55.0`, raft-ui 0.5.52 depends on the same build). The pnpm lockfile
+pins `lucide-react@1.55.0`, integrity
+`sha512-bSozQHiI3/8q7JvgoqVRGOYUi7fYT3siAZwmZsljjsOH2Husp/2ODdFf/leD+ZC/2yKfn7r8oh6yeoR3ITR5vA==`
+(re-verified against `npm pack lucide-react@1.55.0`). The previous pin (raft-source 26f77ef) had
+two builds: Web 0.575.0 and raft-ui 0.5.27's 1.48.0.
 
-| Build | Who imports it | Names | Icons |
-| --- | --- | --- | --- |
-| lucide-react 0.575.0 | Web product code, `packages/web/src/**/*.ts(x)` (628 import specifiers in 133 files) | 152 | 148 |
-| lucide-react 1.48.0 | raft-ui 0.5.27 `dist/index.mjs` (drawn inside raft-ui components) | 14 | 14 |
+| Import site | Names | Icons |
+| --- | --- | --- |
+| Web product code, `packages/web/src/**/*.ts(x)` and `@botiverse/hands-feedback-react` (649 import specifiers in 162 files) | 155 | 152 |
+| raft-ui 0.5.52 `dist/index.mjs` and `dist/wip.mjs` (drawn inside raft-ui components; Web mounts `raft-ui/wip` since v1.21.x) | 21 | 21 |
 
 ```
 tool/gen-glyphs --import-sources --raft-source <raft-source checkout> [--raft-ui <dir>]
@@ -23,12 +28,12 @@ tool/gen-glyphs --check    # stale check (also tool/tests/test_gen_glyphs.py)
 tool/gen-glyphs --list     # enum name, lucide icon, build, users
 ```
 
-The output has **183 `RaftGlyph` values** and **175 geometries**:
+The output has **185 `RaftGlyph` values** and **177 geometries**:
 
-- **152 Web names.** One value per Web import name, in lowerCamel (`CheckSquare` → `checkSquare`, `Home` → `home`, `Image as ImageIcon` → `image`). A call site reads like the Web import it mirrors. Aliases share one geometry.
-- **raft-ui names.** These carry 1.48.0 geometry. Of the 14 names raft-ui imports, 13 have byte-identical geometry in both builds. The 14th, `CheckCircle2`, differs between builds: in 1.48.0 the tick is `m16 9-5.5 5.5L8 12`, in 0.575.0 it is `m9 12 2 2 4-4`. So it gets a second value, `checkCircle2RaftUi`, which `RaftNotificationCenter` now uses for the success status (raft-ui `DEFAULT_STATUS_ICON`, index.mjs:15048). `minus` is imported only by raft-ui.
-- **20 legacy names.** These pre-generator names (`ellipsis`, `squareCheck`, `menu`, ...) are kept so existing code compiles. They resolve through the 0.575.0 export map. No Web file imports them, so treat them as candidates for review.
-- **7 Flutter-only names** (`FLUTTER_ADDED` in `tool/gen-glyphs`: `bold`, `italic`, `strikethrough`, `heading`, `listOrdered`, `table`, `minimize2`). The message composer's Markdown toolbar and its collapse control draw them; no Web file imports them. Vendor with `tool/gen-glyphs --vendor-added <lucide-react 0.575.0 dir>`.
+- **155 Web names.** One value per Web import name, in lowerCamel (`CheckSquare` → `checkSquare`, `Home` → `home`, `Image as ImageIcon` → `image`). A call site reads like the Web import it mirrors. Aliases share one geometry.
+- **raft-ui names.** Names raft-ui imports that Web code does not (`minus`, `loaderCircle`) get a value of their own; all others share the Web value. With one build there are no `RaftUi`-suffixed values (`checkCircle2RaftUi` is gone; `checkCircle2` now draws the tick `m16 9-5.5 5.5L8 12` that raft-ui always used, and `RaftNotificationCenter` uses it for the success status, raft-ui `DEFAULT_STATUS_ICON`, 0.5.52 index.mjs:14438).
+- **21 legacy names.** These pre-generator names (`ellipsis`, `squareCheck`, `menu`, ...) are kept so existing code compiles. They resolve through the pinned export map. No Web file imports them, so treat them as candidates for review. `circleCheck` (feedback inbox resolved badge) and `squareSplitHorizontal` (workspace-mode rail action) joined them in the 1.55.0 upgrade: Web v1.21.12 no longer imports either, but Flutter code still draws them.
+- **6 Flutter-only names** (`FLUTTER_ADDED` in `tool/gen-glyphs`: `bold`, `italic`, `strikethrough`, `heading`, `listOrdered`, `table`, plus `minimize2`, which Web v1.21.12 now imports too and which is therefore listed as a Web name). The message composer's Markdown toolbar draws them; no Web file imports the other six. Vendor with `tool/gen-glyphs --vendor-added <lucide-react 1.55.0 dir>`.
 - **`bookmarkFilled`.** `bookmark` drawn with whole-icon `fill="currentColor"`, as Web does in MessageItem.tsx:4915 and SavedPanel.tsx:146. For any other glyph, use `RaftIcon(glyph, filled: true)` (e.g. Web `<Play fill="currentColor">`).
 
 Compared with the hand-picked set, all 88 old names keep identical geometry
@@ -47,17 +52,17 @@ tab, LeftRail.tsx:673).
 
 `tool/glyph-parity` checks the painter against Chromium:
 
-- **Reference.** `--refresh-reference --raft-source DIR` renders `tool/glyph_parity/samples.json` (36 samples) with lucide-react's own `react-dom/server` markup. Playwright Chromium 147.0.7727.15 paints it at 16/20/24 px, deviceScaleFactor 1, black on white. The output is `tool/glyph_parity/reference/chromium.png` plus `manifest.json`.
-- **Samples.** The 36 samples cover 0.575.0 and 1.48.0 builds, arcs, beziers, circles, rects, lines, the polyline in `inbox`, element fills, whole-icon fill, `strokeWidth` 2.5/3 and `absoluteStrokeWidth`. Probes (`database`, `codepen`, `navigation`) cover ellipse and polygon via `RaftGlyphPainter.debugNodes`.
+- **Reference.** `--refresh-reference --raft-source DIR` renders `tool/glyph_parity/samples.json` (46 samples) with lucide-react's own `react-dom/server` markup. Chromium 147.0.7727.15 (Playwright's headless shell; set `CHROMIUM_EXECUTABLE` when the checkout's playwright-core wants another build) paints it at 16/20/24 px, deviceScaleFactor 1, black on white. The output is `tool/glyph_parity/reference/chromium.png` plus `manifest.json`.
+- **Samples.** The 46 samples are all lucide-react 1.55.0 and cover the 1.55.0 shape changes (`bookOpenText`, `calendar`, `calendarRange`, `circleUserRound`, `creditCard`, `squareCheck`, `squareSplitHorizontal`, `volumeX`, `smilePlus`, `checkCircle2`), arcs, beziers, circles, rects, lines, the polyline in `inbox`, element fills, whole-icon fill, `strokeWidth` 2.5/3 and `absoluteStrokeWidth`. Probes (`database`, `navigation`, `navigation-2`; `codepen` left lucide in 1.x) cover ellipse and polygon via `RaftGlyphPainter.debugNodes`.
 - **Comparison.** `packages/raft_ui/test/glyph_parity_test.dart` paints the same grid with `RaftIcon` (`RepaintBoundary.toImage`) and compares every cell. It runs in `tool/check-project` with fixed ceilings. A geometry slip, such as the old `checkSquare`, scores 30+ mean-ink and fails.
-- **Results** (`tool/glyph_parity/results.json`, 108 cells, 8-bit channel deltas):
+- **Results** (`tool/glyph_parity/results.json`, 138 cells, 8-bit channel deltas):
 
 | Size | Max delta | Mean delta (all pixels) | Mean delta (ink pixels) |
 | --- | --- | --- | --- |
-| 16 px | 64 | 0.022 | 0.152 |
-| 20 px | 63 | 0.019 | 0.094 |
-| 24 px | 35 | 0.032 | 0.142 |
-| all | 64 | 0.024 | 0.159 |
+| 16 px | 64 | 0.017 | 0.122 |
+| 20 px | 63 | 0.018 | 0.096 |
+| 24 px | 35 | 0.025 | 0.111 |
+| all | 64 | 0.020 | 0.131 |
 
 The worst ink-coverage difference is 0.47%. The
 worst cells are paperclip@16 (mean-ink 2.523, max 64), paperclip@20 (mean-ink 1.962, max 63), paperclip@24 (mean-ink 1.87, max 35), atSign@16 (mean-ink 1.335, max 39).

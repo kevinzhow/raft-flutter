@@ -31,15 +31,24 @@ class GenGlyphs(unittest.TestCase):
                 name = gen.lower_camel(export)
                 self.assertTrue(name in self.by or name + 'RaftUi' in self.by, f'{build} {export}')
 
+    def test_single_pinned_build(self):
+        # raft-source v1.21.x: Web and raft-ui resolve lucide-react to one build, so no RaftUi variants.
+        self.assertEqual(gen.WEB_LUCIDE, gen.RAFT_UI_LUCIDE)
+        self.assertEqual({i['version'] for i in self.doc['icons'].values()}, {gen.WEB_LUCIDE})
+        self.assertFalse([n for n in self.by if n.endswith('RaftUi')])
+
     def test_provenance(self):
         icons = self.doc['icons']
         self.assertEqual(icons[self.by['checkSquare']['key']]['icon'], 'square-check-big')
         self.assertEqual(icons[self.by['home']['key']]['icon'], 'house')
-        self.assertEqual(self.by['checkCircle2']['key'], 'circle-check@0.575.0')
-        self.assertEqual(self.by['checkCircle2RaftUi']['key'], 'circle-check@1.48.0')
-        self.assertEqual(self.by['minus']['key'], 'minus@1.48.0')  # only raft-ui imports Minus
+        self.assertEqual(self.by['checkCircle2']['key'], 'circle-check@1.55.0')
+        self.assertEqual(self.by['minus']['key'], 'minus@1.55.0')  # only raft-ui imports Minus
+        # lucide 1.x renamed the icon files behind these Web import names (geometry of trash-2 and building-2 unchanged).
+        self.assertEqual(icons[self.by['smilePlus']['key']]['icon'], 'face-slightly-smiling-plus')
+        self.assertEqual(icons[self.by['building2']['key']]['icon'], 'building-complex')
+        self.assertEqual(icons[self.by['trash2']['key']]['icon'], 'trash')
         self.assertTrue(self.by['bookmarkFilled']['filled'])
-        # Web names always carry the Web (0.575.0) build.
+        # Web names always carry the Web build.
         for e in self.by.values():
             if e['web']:
                 self.assertTrue(e['key'].endswith('@' + gen.WEB_LUCIDE), e['name'])

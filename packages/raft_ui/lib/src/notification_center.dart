@@ -489,14 +489,15 @@ class _NotificationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = recipe.tokens;
-    // raft-ui DEFAULT_STATUS_ICON (dist/index.mjs:15045), its lucide 1.48.0.
+    // raft-ui DEFAULT_STATUS_ICON (0.5.52 dist/index.mjs:14438); its lucide-react
+    // 1.55.0 is the same build the Web imports, so one geometry serves both.
     final glyph =
         entry.glyph ??
         switch (entry.kind) {
           RaftNotificationKind.error ||
           RaftNotificationKind.warning => RaftGlyph.triangleAlert,
           RaftNotificationKind.info => RaftGlyph.info,
-          RaftNotificationKind.success => RaftGlyph.checkCircle2RaftUi,
+          RaftNotificationKind.success => RaftGlyph.checkCircle2,
         };
     return Semantics(
       container: true,

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Generate the Lucide glyph set the Raft Web client renders, as Flutter geometry.
 
-Two Lucide builds reach the Web screen and both are pinned here:
-  lucide-react 0.575.0   imported by Web product code (packages/web/src/**/*.ts[x])
-  lucide-react 1.48.0    imported by raft-ui 0.5.27 itself (dist/index.mjs), so
-                         every icon drawn INSIDE a raft-ui component comes from it
+Two import sites reach the Web screen; both resolve to one pinned build
+(lucide-react 1.55.0 in raft-source v1.21.12, pnpm-lock integrity
+sha512-bSozQHiI3/8q7JvgoqVRGOYUi7fYT3siAZwmZsljjsOH2Husp/2ODdFf/leD+ZC/2yKfn7r8oh6yeoR3ITR5vA==):
+  Web product code        packages/web/src/**/*.ts[x]
+  raft-ui 0.5.52 itself   dist/index.mjs + dist/wip.mjs, so every icon drawn
+                          INSIDE a raft-ui component comes from the same build
+Before v1.21.x the two sites resolved to different builds (0.575.0 vs 1.48.0).
+The generator still models them separately: when the pins differ, a name imported
+by both whose geometry differs gets a second `RaftUi`-suffixed value.
 
 Pipeline:
   tool/gen-glyphs --import-sources --raft-source DIR [--raft-ui DIR]
@@ -18,10 +23,10 @@ Pipeline:
 
 Naming: one `RaftGlyph` value per imported name (lowerCamel, `Icon`/`Lucide`
 affixes dropped), so a Flutter call site reads like the Web import it mirrors.
-Names only raft-ui imports carry raft-ui (1.48.0) geometry. A name imported by
+Names only raft-ui imports carry raft-ui (RAFT_UI_LUCIDE) geometry. A name imported by
 both whose geometry differs between the two builds gets a second value with the
-`RaftUi` suffix carrying the 1.48.0 geometry. LEGACY keeps older Flutter enum
-names compiling; they resolve through the 0.575.0 export map like a Web import.
+`RaftUi` suffix carrying the RAFT_UI_LUCIDE geometry. LEGACY keeps older Flutter enum
+names compiling; they resolve through the WEB_LUCIDE export map like a Web import.
 
 Stdlib only.
 """
@@ -39,22 +44,24 @@ ROOT = Path(__file__).resolve().parent.parent
 VENDOR = ROOT / 'tool/design-source/lucide/glyphs.json'
 OUT = ROOT / 'packages/raft_ui/lib/src/glyphs.g.dart'
 
-WEB_LUCIDE = '0.575.0'
-RAFT_UI_LUCIDE = '1.48.0'
-RAFT_UI_VERSION = '0.5.27'
-RAFT_UI_ENTRY = 'dist/index.mjs'  # dist/wip.mjs is not imported by Web (raft-ui/wip unused)
+WEB_LUCIDE = '1.55.0'
+RAFT_UI_LUCIDE = '1.55.0'
+RAFT_UI_VERSION = '0.5.52'
+# raft-ui/wip is imported by Web since 1.21.x (AnnouncementModal, AgentMigrationDialog).
+# dist/dialog-*.mjs only imports X, which Web code imports as well.
+RAFT_UI_ENTRIES = ['dist/index.mjs', 'dist/wip.mjs']
 
 # Pre-generator RaftGlyph names that no Web/raft-ui import uses. Kept so existing
-# call sites compile; each resolves as the 0.575.0 export of the same PascalCase name.
+# call sites compile; each resolves as the WEB_LUCIDE export of the same PascalCase name.
 LEGACY = [
-    'calendar', 'checkCheck', 'chevronsUpDown', 'circleUserRound', 'code', 'columns', 'columns2',
+    'calendar', 'checkCheck', 'chevronsUpDown', 'circleCheck', 'circleUserRound', 'code', 'columns', 'columns2',
     'ellipsis', 'laptop', 'loaderCircle', 'maximize', 'menu', 'minimize', 'moon',
-    'palette', 'reply', 'slidersHorizontal', 'squareCheck', 'sun', 'volumeX',
+    'palette', 'reply', 'slidersHorizontal', 'squareCheck', 'squareSplitHorizontal', 'sun', 'volumeX',
 ]
 # Glyphs only Flutter product code draws (no Web import): the message composer's
 # Markdown toolbar and its collapse control. Resolved like LEGACY through the
-# pinned 0.575.0 export map; vendor them with `tool/gen-glyphs --vendor-added DIR`
-# (DIR = a lucide-react 0.575.0 package) or a full `--import-sources`.
+# pinned WEB_LUCIDE export map; vendor them with `tool/gen-glyphs --vendor-added DIR`
+# (DIR = a lucide-react WEB_LUCIDE package) or a full `--import-sources`.
 FLUTTER_ADDED = [
     'bold', 'heading', 'italic', 'listOrdered', 'minimize2', 'strikethrough', 'table',
 ]
@@ -242,14 +249,15 @@ def import_sources(raft_source: Path, raft_ui: Path | None):
         for path in sorted((feedback / 'src').rglob('*.tsx')):
             for name, where in scan_imports(path, f'{label}/{path.relative_to(feedback)}'):
                 usages['web'].setdefault(name, []).append(where)
-    entry = raft_ui / RAFT_UI_ENTRY
-    entry_lines = entry.read_text().split('\n')
-    for name, where in scan_imports(entry, f'raft-ui@{RAFT_UI_VERSION}/{RAFT_UI_ENTRY}'):
-        # Cite the JSX render sites (raft-ui is bundled, so its import line alone says little).
-        import_line = int(where.rsplit(':', 1)[1])
-        sites = [f'{where.rsplit(":", 1)[0]}:{n}' for n, text in enumerate(entry_lines, 1)
-                 if n != import_line and 'jsx' in text and re.search(rf'(?<![\w$.]){re.escape(name)}(?![\w$])', text)]
-        usages['raftUi'].setdefault(name, []).extend(sites or [where])
+    for entry_name in RAFT_UI_ENTRIES:
+        entry = raft_ui / entry_name
+        entry_lines = entry.read_text().split('\n')
+        for name, where in scan_imports(entry, f'raft-ui@{RAFT_UI_VERSION}/{entry_name}'):
+            # Cite the JSX render sites (raft-ui is bundled, so its import line alone says little).
+            import_line = int(where.rsplit(':', 1)[1])
+            sites = [f'{where.rsplit(":", 1)[0]}:{n}' for n, text in enumerate(entry_lines, 1)
+                     if n != import_line and 'jsx' in text and re.search(rf'(?<![\w$.]){re.escape(name)}(?![\w$])', text)]
+            usages['raftUi'].setdefault(name, []).extend(sites or [where])
 
     builds = {'web': (web_lucide, WEB_LUCIDE), 'raftUi': (rui_lucide, RAFT_UI_LUCIDE)}
     exports = {k: export_map(p) for k, (p, _) in builds.items()}
@@ -292,7 +300,7 @@ def import_sources(raft_source: Path, raft_ui: Path | None):
         'sources': {
             'raftSourceCommit': _git_head(raft_source),
             'webLucide': {'version': WEB_LUCIDE, 'package': str(web_lucide.relative_to(raft_source))},
-            'raftUi': {'version': RAFT_UI_VERSION, 'entry': RAFT_UI_ENTRY, 'sha256': sha256(raft_ui / RAFT_UI_ENTRY)},
+            'raftUi': {'version': RAFT_UI_VERSION, 'entries': {e: sha256(raft_ui / e) for e in RAFT_UI_ENTRIES}},
             'raftUiLucide': {'version': RAFT_UI_LUCIDE, 'package': str(rui_lucide.relative_to(raft_source))},
         },
         'usages': usages,
@@ -442,8 +450,11 @@ def render(doc):
     src = doc['sources']
     lines = [
         '// GENERATED — do not edit. Regenerate with `tool/gen-glyphs`.',
-        f"// Geometry: lucide-react {src['webLucide']['version']} (Web product imports) and "
-        f"{src['raftUiLucide']['version']} (raft-ui {src['raftUi']['version']} imports), ISC;",
+        (f"// Geometry: lucide-react {src['webLucide']['version']} (Web product imports and "
+         f"raft-ui {src['raftUi']['version']} imports), ISC;")
+        if src['webLucide']['version'] == src['raftUiLucide']['version'] else
+        (f"// Geometry: lucide-react {src['webLucide']['version']} (Web product imports) and "
+         f"{src['raftUiLucide']['version']} (raft-ui {src['raftUi']['version']} imports), ISC;"),
         '// see packages/raft_ui/LICENSE-LUCIDE. Vendored source: tool/design-source/lucide/glyphs.json',
         f"// (raft-source {src['raftSourceCommit']}).",
         '// dart format off',

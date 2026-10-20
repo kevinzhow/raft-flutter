@@ -1,27 +1,21 @@
 {
  "about": "Vendored by `tool/gen-glyphs --import-sources`. Do not edit; regenerate.",
  "sources": {
-  "raftSourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "raftSourceCommit": "a98ae003246a0360872a77d76dec2fccd0347ef7",
   "webLucide": {
-   "version": "0.575.0",
-   "package": "node_modules/.pnpm/lucide-react@0.575.0_react@19.2.4/node_modules/lucide-react"
+   "version": "1.55.0",
+   "package": "node_modules/.pnpm/lucide-react@1.55.0_@types+react@19.3.0_react@19.3.0/node_modules/lucide-react"
   },
   "raftUi": {
-   "version": "0.5.27",
-   "entry": "dist/index.mjs",
-   "sha256": "eb843b9c5ce2676617abae49f5977b7f0171a0f2a6ac6662d3664f9bd2e5c31a"
+   "version": "0.5.52",
+   "entries": {
+    "dist/index.mjs": "0610aaa8a0d2e30dcdf6b1ae5fe8e4a0fac5187a5f39419b58622cf0330e1cea",
+    "dist/wip.mjs": "e27cd6b22239cb02b7dcf2d52ba84f555833d17edd90377438bda9c01619c3e1"
+   }
   },
   "raftUiLucide": {
-   "version": "1.48.0",
-   "package": "node_modules/.pnpm/lucide-react@1.48.0_react@19.2.4/node_modules/lucide-react"
-  },
-  "activityDmSource": {
-   "raftSourceCommit": "a98ae003246a0360872a77d76dec2fccd0347ef7",
-   "webVersion": "1.21.12",
-   "imports": [
-    "packages/web/src/components/thread/ThreadsInbox.tsx:17"
-   ],
-   "npmTarballSha256": "b53d76a053b7295f332d65405ccdccdf013acda067d46345be82105b1da94ee3"
+   "version": "1.55.0",
+   "package": "node_modules/.pnpm/lucide-react@1.55.0_@types+react@19.3.0_react@19.3.0/node_modules/lucide-react"
   }
  },
  "usages": {
@@ -31,38 +25,35 @@
    ],
    "X": [
     "packages/web/src/App.tsx:93",
-    "packages/web/src/components/AnnouncementModal.tsx:6",
-    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/ImageLightbox.tsx:6",
     "packages/web/src/components/LocalizedToastProvider.tsx:2",
     "packages/web/src/components/agent/AgentDetailPanel.tsx:32",
     "packages/web/src/components/agent/AgentProfileEditDialog.tsx:3",
     "packages/web/src/components/agent/AgentUnavailablePanel.tsx:2",
     "packages/web/src/components/agent/ChannelMembers.tsx:15",
     "packages/web/src/components/agent/CreateAgentDialog.tsx:21",
-    "packages/web/src/components/agentMigration/AgentMigrationCancelDialog.tsx:2",
-    "packages/web/src/components/agentMigration/AgentMigrationDialog.tsx:16",
-    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3",
-    "packages/web/src/components/channel/ChannelMemberList.tsx:5",
+    "packages/web/src/components/channel/ActiveUploadRow.tsx:2",
+    "packages/web/src/components/channel/ChannelMemberList.tsx:6",
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
-    "packages/web/src/components/channel/JointAttachmentUploadSection.tsx:2",
     "packages/web/src/components/channel/JointConversionSection.tsx:1",
-    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/layout/MainLayout.tsx:79",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/layout/SidebarSectionDialog.tsx:4",
+    "packages/web/src/components/layout/SidebarSectionDialog.tsx:5",
     "packages/web/src/components/layout/SidebarSectionEmojiPicker.tsx:7",
-    "packages/web/src/components/machine/AddMachineDialog.tsx:4",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/AddMachineDialog.tsx:5",
+    "packages/web/src/components/machine/BulkChangeModelDialog.tsx:5",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/machine/RuntimeAccountUsageChip.tsx:8",
-    "packages/web/src/components/member/HumanDetailPanel.tsx:9",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:8",
     "packages/web/src/components/mermaid/MermaidDiagram.tsx:9",
     "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
-    "packages/web/src/components/message/ChatPanel.tsx:7",
-    "packages/web/src/components/message/ForwardComposerDesktop.tsx:4",
+    "packages/web/src/components/message/ChatPanel.tsx:6",
+    "packages/web/src/components/message/ForwardComposerDesktop.tsx:5",
     "packages/web/src/components/message/MessageInput.tsx:4",
     "packages/web/src/components/message/NotificationActivationBanner.tsx:4",
     "packages/web/src/components/message/SelectModeToolbar.tsx:2",
     "packages/web/src/components/message/SelectShareLightbox.tsx:6",
-    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/components/message/ThreadPanel.tsx:7",
     "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
     "packages/web/src/components/profile/ExternalIdentityDetailPanel.tsx:3",
@@ -71,101 +62,115 @@
     "packages/web/src/components/search/MessageSearchPage.tsx:8",
     "packages/web/src/components/server/CommunityAgreementDialog.tsx:6",
     "packages/web/src/components/settings/AboutFeedbackDialog.tsx:10",
-    "packages/web/src/components/settings/SettingsPanel.tsx:41",
+    "packages/web/src/components/settings/JoinLinkRow.tsx:4",
+    "packages/web/src/components/settings/PendingInviteRow.tsx:4",
+    "packages/web/src/components/settings/PlanSectionContent.tsx:5",
+    "packages/web/src/components/settings/SettingsPanel.tsx:43",
     "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
-    "packages/web/src/components/thread/ThreadAgentFollowers.tsx:2",
+    "packages/web/src/components/thread/ThreadAgentFollowerRow.tsx:2",
     "packages/web/src/components/ui/CloseButton.tsx:1",
     "packages/web/src/components/ui/DialogCard.tsx:2",
-    "packages/web/src/components/ui/OverflowSheet.tsx:3",
+    "packages/web/src/components/ui/OverflowSheet.tsx:4",
     "packages/web/src/components/window/ThreadWindowRoute.tsx:3",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:30"
    ],
    "ChevronLeft": [
-    "packages/web/src/components/AnnouncementModal.tsx:6",
-    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/ImageLightbox.tsx:6",
     "packages/web/src/components/layout/Sidebar.tsx:9"
    ],
    "ChevronRight": [
-    "packages/web/src/components/AnnouncementModal.tsx:6",
-    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/ImageLightbox.tsx:6",
     "packages/web/src/components/agent/AgentActivityLog.tsx:11",
     "packages/web/src/components/agent/AgentWorkspace.tsx:4",
     "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/agent/SchemaBuiltInRuntimeFields.tsx:4",
+    "packages/web/src/components/agent/SchemaKimiRuntimeFields.tsx:1",
     "packages/web/src/components/auth/ServerCreatePreview.tsx:1",
     "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/message/ForwardComposerDialog.tsx:4",
     "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
     "packages/web/src/components/message/MentionHoverActivityPreview.tsx:2",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
-    "packages/web/src/components/settings/SettingsPanel.tsx:28",
+    "packages/web/src/components/settings/SettingsPanel.tsx:30",
     "packages/web/src/components/task/TaskProperties.tsx:4"
    ],
    "Download": [
-    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/ImageLightbox.tsx:6",
     "packages/web/src/components/layout/useSystemNotifications.tsx:4",
     "packages/web/src/components/mermaid/MermaidToolbar.tsx:5",
     "packages/web/src/components/message/AttachmentChip.tsx:1",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChannelFileOverflowMenu.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1",
+    "packages/web/src/components/message/GalleryImageItem.tsx:3",
     "packages/web/src/components/message/MessageItem.tsx:7",
     "packages/web/src/components/message/SelectShareLightbox.tsx:6",
     "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17",
     "packages/web/src/components/settings/AboutFeedbackDialog.tsx:10"
    ],
    "ImageOff": [
-    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/ImageLightbox.tsx:6",
     "packages/web/src/components/mermaid/MermaidDiagram.tsx:9"
    ],
    "MessageSquareMore": [
-    "packages/web/src/components/ImageLightbox.tsx:5",
+    "packages/web/src/components/ImageLightbox.tsx:6",
     "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17"
    ],
    "Pencil": [
-    "packages/web/src/components/InlineBadgeEditor.tsx:7",
+    "packages/web/src/components/InlineBadgeEditor.tsx:6",
     "packages/web/src/components/agent/AgentDetailPanel.tsx:30",
-    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
     "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/agent/RuntimeFormV2FieldControl.tsx:2",
+    "packages/web/src/components/agent/SchemaBuiltInRuntimeFields.tsx:4",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
-    "packages/web/src/components/member/HumanDetailPanel.tsx:10",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:9",
     "packages/web/src/components/message/InlineThreadReplies.tsx:22",
     "packages/web/src/components/message/ThreadRepliesBadge.tsx:1",
     "packages/web/src/components/settings/EditProviderConnectionModal.tsx:2",
+    "packages/web/src/components/settings/InstalledConnectedAppItem.tsx:4",
     "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
-    "packages/web/src/components/settings/SettingsPanel.tsx:53",
+    "packages/web/src/components/settings/RegisteredConnectedAppItem.tsx:4",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
    "Check": [
-    "packages/web/src/components/InlineBadgeEditor.tsx:7",
+    "packages/web/src/components/InlineBadgeMenuItem.tsx:2",
     "packages/web/src/components/actions/ActionCard.tsx:19",
     "packages/web/src/components/agent/AgentDetailPanel.tsx:31",
     "packages/web/src/components/agent/AgentMcpTab.tsx:17",
-    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3",
+    "packages/web/src/components/agent/McpRecommendationItem.tsx:2",
     "packages/web/src/components/agentMigration/MigrationReference.tsx:4",
     "packages/web/src/components/channel/CreateChannelDialog.tsx:5",
     "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/channel/JointConversionSection.tsx:1",
+    "packages/web/src/components/layout/MoveToSectionMenuItem.tsx:2",
+    "packages/web/src/components/layout/SectionSortModeMenuItem.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/BulkChangeModelDialog.tsx:5",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/member/InviteHumanDialog.tsx:3",
     "packages/web/src/components/mermaid/MermaidToolbar.tsx:2",
     "packages/web/src/components/message/ForwardComposerMobile.tsx:3",
     "packages/web/src/components/message/NotificationActivationBanner.tsx:4",
-    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1",
+    "packages/web/src/components/message/PendingMentionActionStripRow.tsx:1",
     "packages/web/src/components/message/SelectModeToolbar.tsx:2",
     "packages/web/src/components/message/SelectShareLightbox.tsx:6",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
-    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
-    "packages/web/src/components/settings/AppearanceThemePicker.tsx:1",
-    "packages/web/src/components/settings/SettingsPanel.tsx:29",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:13",
+    "packages/web/src/components/settings/JoinLinkRow.tsx:4",
+    "packages/web/src/components/settings/PlanSectionContent.tsx:5",
+    "packages/web/src/components/settings/SettingsPanel.tsx:31",
     "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
+    "packages/web/src/components/settings/ThemeModeGroup.tsx:1",
+    "packages/web/src/components/settings/ThemePresetCard.tsx:1",
+    "packages/web/src/components/thread/InboxContextMenu.tsx:3",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8",
     "packages/web/src/components/ui/CheckMarker.tsx:1",
     "packages/web/src/components/ui/CopyIconButton.tsx:1",
-    "packages/web/src/components/ui/SelectionPopover.tsx:2",
+    "packages/web/src/components/ui/SelectionPopover.tsx:3",
     "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24",
     "packages/web/src/pages/IntegrationInvitePage.tsx:4",
     "packages/web/src/pages/PaletteAuditPage.tsx:6",
@@ -177,7 +182,7 @@
     "packages/web/src/components/agent/ChannelMembers.tsx:15",
     "packages/web/src/components/layout/useSystemNotifications.tsx:4",
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/settings/SettingsPanel.tsx:43",
+    "packages/web/src/components/settings/SettingsPanel.tsx:45",
     "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
     "packages/web/src/components/ui/Banner.tsx:1",
     "packages/web/src/pages/PaletteAuditPage.tsx:5"
@@ -191,7 +196,7 @@
    ],
    "Info": [
     "packages/web/src/components/LocalizedToastProvider.tsx:2",
-    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
     "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/ui/Banner.tsx:1"
@@ -199,39 +204,40 @@
    "Activity": [
     "packages/web/src/components/agent/AgentActivityLog.tsx:11",
     "packages/web/src/components/agent/AgentDetailPanel.tsx:25",
-    "packages/web/src/components/layout/LeftRail.tsx:7",
+    "packages/web/src/components/layout/LeftRail.tsx:6",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3"
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
    "Play": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:26",
     "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/task/taskStatusUi.ts:1",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:28"
    ],
    "Square": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:27",
     "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4"
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5"
    ],
    "Trash2": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:28",
     "packages/web/src/components/agent/AgentMcpTab.tsx:17",
-    "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
+    "packages/web/src/components/agent/EnvVarEntryRow.tsx:5",
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
+    "packages/web/src/components/channel/JointInviteDraftCard.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
-    "packages/web/src/components/member/HumanDetailPanel.tsx:8",
-    "packages/web/src/components/member/InviteHumanDialog.tsx:3",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
+    "packages/web/src/components/machine/WorkspaceDeleteButton.tsx:3",
+    "packages/web/src/components/member/HumanDetailPanel.tsx:7",
+    "packages/web/src/components/member/InviteeRow.tsx:2",
     "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
-    "packages/web/src/components/settings/SettingsPanel.tsx:47",
-    "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
-    "packages/web/src/components/task/CreateTaskDialog.tsx:4",
+    "packages/web/src/components/settings/RemovePairButton.tsx:2",
+    "packages/web/src/components/settings/SettingsPanel.tsx:49",
+    "packages/web/src/components/task/TaskTitleRow.tsx:3",
     "packages/web/src/components/ui/KeyValueInput.tsx:1",
     "packages/web/src/pages/PaletteAuditPage.tsx:14"
    ],
@@ -244,28 +250,29 @@
     "packages/web/src/components/agent/AgentDetailPanel.tsx:33",
     "packages/web/src/components/agent/AgentSkills.tsx:3",
     "packages/web/src/components/agent/AgentWorkspace.tsx:6",
-    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:4",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:5",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/search/MessageSearchPage.tsx:8"
    ],
    "BellRing": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:34",
     "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
-    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1"
+    "packages/web/src/components/message/PendingMentionActionStripRow.tsx:1"
    ],
    "BellOff": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:35",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ChatPanel.tsx:6",
+    "packages/web/src/components/thread/InboxContextMenu.tsx:3",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
    "Link2": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:36",
-    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
     "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/member/InviteHumanDialog.tsx:3",
-    "packages/web/src/components/settings/SettingsPanel.tsx:45",
+    "packages/web/src/components/settings/SettingsPanel.tsx:47",
     "packages/web/src/components/settings/settingsNavigation.ts:10",
     "packages/web/src/pages/IntegrationInvitePage.tsx:4"
    ],
@@ -274,7 +281,7 @@
     "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
     "packages/web/src/components/agent/ResetAgentDialog.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/message/MessageItem.tsx:7",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
@@ -287,17 +294,16 @@
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/channel/channelKindIcon.tsx:1",
     "packages/web/src/components/layout/SidebarConversationFinder.tsx:3",
-    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:2",
     "packages/web/src/components/message/MessageInput.tsx:4",
     "packages/web/src/components/message/forwardComposerModel.tsx:2",
     "packages/web/src/components/search/MessageSearchPage.tsx:8",
     "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3",
     "packages/web/src/components/settings/MemberGraphSection.tsx:8",
-    "packages/web/src/components/settings/SettingsPanel.tsx:59",
+    "packages/web/src/components/settings/SettingsPanel.tsx:60",
     "packages/web/src/components/task/TasksPanel.tsx:31",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8",
     "packages/web/src/components/ui/cards/QuotedMessageCard.tsx:3",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
     "packages/web/src/pages/PaletteAuditPage.tsx:8",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
@@ -308,7 +314,7 @@
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/channel/channelKindIcon.tsx:1",
     "packages/web/src/components/layout/SidebarConversationFinder.tsx:3",
-    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:2",
     "packages/web/src/components/message/HistoryTopState.tsx:1",
     "packages/web/src/components/message/forwardComposerModel.tsx:2",
     "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3"
@@ -317,23 +323,23 @@
     "packages/web/src/components/agent/AgentDetailPanel.tsx:40",
     "packages/web/src/components/agent/AgentUnavailablePanel.tsx:2",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/settings/SettingsPanel.tsx:32",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3"
+    "packages/web/src/components/settings/SettingsPanel.tsx:34"
    ],
    "Plus": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:41",
     "packages/web/src/components/agent/AgentMcpTab.tsx:17",
     "packages/web/src/components/agent/ChannelMembers.tsx:15",
+    "packages/web/src/components/agent/McpRecommendationItem.tsx:2",
     "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/machine/MobileComputersPanel.tsx:2",
     "packages/web/src/components/member/InviteHumanDialog.tsx:3",
     "packages/web/src/components/message/MessageItem.tsx:7",
     "packages/web/src/components/message/attachmentPreviewSurfaces.tsx:17",
+    "packages/web/src/components/settings/PlanSectionContent.tsx:5",
     "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
-    "packages/web/src/components/settings/SettingsPanel.tsx:31",
+    "packages/web/src/components/settings/SettingsPanel.tsx:33",
     "packages/web/src/components/settings/SlackBridgeSetupWizard.tsx:2",
     "packages/web/src/components/task/CreateTaskDialog.tsx:4",
     "packages/web/src/components/task/TasksPanel.tsx:31",
@@ -347,11 +353,10 @@
    ],
    "HelpCircle": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:43",
-    "packages/web/src/components/member/HumanDetailPanel.tsx:7"
+    "packages/web/src/components/member/HumanDetailPanel.tsx:6"
    ],
    "MoveRight": [
-    "packages/web/src/components/agent/AgentDetailPanel.tsx:44",
-    "packages/web/src/components/agentMigration/AgentMigrationSection.tsx:4"
+    "packages/web/src/components/agent/AgentDetailPanel.tsx:44"
    ],
    "Blocks": [
     "packages/web/src/components/agent/AgentDetailPanel.tsx:45",
@@ -360,49 +365,26 @@
     "packages/web/src/components/message/MessageInput.tsx:4",
     "packages/web/src/components/settings/settingsNavigation.ts:4"
    ],
-   "ChevronDown": [
-    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
-    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
-    "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
-    "packages/web/src/components/message/ThreadPanel.tsx:8",
-    "packages/web/src/components/search/MessageSearchPage.tsx:8",
-    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
-    "packages/web/src/components/task/TaskProperties.tsx:4",
-    "packages/web/src/components/task/TasksPanel.tsx:31",
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
-    "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:23"
-   ],
-   "ChevronUp": [
-    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
-    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
-    "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
-    "packages/web/src/components/message/ThreadPanel.tsx:8"
-   ],
    "FlaskConical": [
     "packages/web/src/components/agent/AgentMcpTab.tsx:17",
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/settings/SettingsPanel.tsx:54",
+    "packages/web/src/components/settings/SettingsPanel.tsx:55",
     "packages/web/src/components/settings/settingsNavigation.ts:7"
-   ],
-   "Unplug": [
-    "packages/web/src/components/agent/AgentMcpTab.tsx:17",
-    "packages/web/src/components/channel/EditChannelDialog.tsx:19"
    ],
    "Upload": [
     "packages/web/src/components/agent/AgentProfileEditDialog.tsx:3",
-    "packages/web/src/components/member/HumanDetailPanel.tsx:11",
-    "packages/web/src/components/settings/SettingsPanel.tsx:49"
+    "packages/web/src/components/member/HumanDetailPanel.tsx:10",
+    "packages/web/src/components/settings/SettingsPanel.tsx:51"
    ],
    "EllipsisVertical": [
     "packages/web/src/components/agent/AgentProfileOverflowMenu.tsx:1",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChannelFileOverflowMenu.tsx:1",
     "packages/web/src/components/message/ThreadOverflowMenu.tsx:4"
    ],
    "Clock3": [
     "packages/web/src/components/agent/AgentRemindersSection.tsx:2",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1",
     "packages/web/src/components/search/MessageSearchPage.tsx:8"
    ],
    "RefreshCw": [
@@ -411,7 +393,7 @@
     "packages/web/src/components/agent/AgentWorkspace.tsx:9",
     "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
     "packages/web/src/components/auth/EmailVerificationPage.tsx:6",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/machine/MobileComputersPanel.tsx:2",
     "packages/web/src/components/machine/RuntimeAccountUsageChip.tsx:8",
     "packages/web/src/components/settings/MemberGraphSection.tsx:8",
@@ -426,8 +408,7 @@
    ],
    "TriangleAlert": [
     "packages/web/src/components/agent/AgentUnavailablePanel.tsx:2",
-    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3",
-    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:4"
+    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:5"
    ],
    "FolderClosed": [
     "packages/web/src/components/agent/AgentWorkspace.tsx:5"
@@ -436,16 +417,16 @@
     "packages/web/src/components/agent/AgentWorkspace.tsx:7",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1",
     "packages/web/src/components/message/MessageInput.tsx:4",
     "packages/web/src/components/settings/ReleaseNotesPanel.tsx:2",
-    "packages/web/src/components/settings/SettingsPanel.tsx:50",
+    "packages/web/src/components/settings/SettingsPanel.tsx:52",
     "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
    "File": [
     "packages/web/src/components/agent/AgentWorkspace.tsx:8",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1"
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1"
    ],
    "ArrowLeft": [
     "packages/web/src/components/agent/AgentWorkspace.tsx:10",
@@ -453,12 +434,12 @@
     "packages/web/src/components/auth/ForgotPasswordPage.tsx:6",
     "packages/web/src/components/auth/InviteAcceptPage.tsx:10",
     "packages/web/src/components/auth/ResetPasswordPage.tsx:6",
-    "packages/web/src/components/layout/MainLayout.tsx:83",
-    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/layout/MainLayout.tsx:79",
+    "packages/web/src/components/message/ChatPanel.tsx:6",
     "packages/web/src/components/message/ForwardComposerMobile.tsx:3",
     "packages/web/src/components/message/ForwardedBundleRouteCard.tsx:3",
     "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
-    "packages/web/src/components/ui/OverflowSheet.tsx:3",
+    "packages/web/src/components/ui/OverflowSheet.tsx:4",
     "packages/web/src/components/ui/PanelHeader.tsx:1",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:16"
    ],
@@ -467,8 +448,7 @@
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/message/AttachmentChip.tsx:1",
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/settings/SettingsPanel.tsx:44",
-    "packages/web/src/components/task/taskStatusUi.ts:1"
+    "packages/web/src/components/settings/SettingsPanel.tsx:46"
    ],
    "EyeOff": [
     "packages/web/src/components/agent/AgentWorkspace.tsx:13",
@@ -476,9 +456,9 @@
    ],
    "Users": [
     "packages/web/src/components/agent/ChannelMembers.tsx:15",
-    "packages/web/src/components/layout/LeftRail.tsx:18",
-    "packages/web/src/components/layout/MainLayout.tsx:83",
-    "packages/web/src/components/settings/SettingsPanel.tsx:34",
+    "packages/web/src/components/layout/LeftRail.tsx:15",
+    "packages/web/src/components/layout/MainLayout.tsx:79",
+    "packages/web/src/components/settings/SettingsPanel.tsx:36",
     "packages/web/src/pages/PaletteAuditPage.tsx:15"
    ],
    "Search": [
@@ -486,28 +466,54 @@
     "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4",
     "packages/web/src/components/channel/CreateChannelDialog.tsx:5",
     "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
-    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:4",
-    "packages/web/src/components/layout/LeftRail.tsx:15",
+    "packages/web/src/components/handoff/HandoffCreateFlow.tsx:5",
+    "packages/web/src/components/layout/LeftRail.tsx:13",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/layout/SidebarConversationFinder.tsx:3",
-    "packages/web/src/components/message/ForwardComposerDesktop.tsx:4",
+    "packages/web/src/components/message/ForwardComposerDesktop.tsx:5",
     "packages/web/src/components/message/ForwardComposerMobile.tsx:3",
-    "packages/web/src/components/message/ThreadOverflowMenu.tsx:8",
-    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:10",
+    "packages/web/src/components/message/ThreadPanel.tsx:7",
     "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
+   "ChevronDown": [
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
+    "packages/web/src/components/agent/RuntimeChoiceCombobox.tsx:14",
+    "packages/web/src/components/agent/RuntimeConfigFields.tsx:1",
+    "packages/web/src/components/agent/SchemaBuiltInRuntimeFields.tsx:4",
+    "packages/web/src/components/agent/SchemaKimiRuntimeFields.tsx:1",
+    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ThreadPanel.tsx:7",
+    "packages/web/src/components/search/MessageSearchPage.tsx:8",
+    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
+    "packages/web/src/components/task/TaskProperties.tsx:4",
+    "packages/web/src/components/task/TasksPanel.tsx:31",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+    "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:23"
+   ],
+   "ChevronUp": [
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
+    "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
+    "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
+    "packages/web/src/components/message/ThreadPanel.tsx:7"
+   ],
+   "Unplug": [
+    "packages/web/src/components/agent/McpServerListItem.tsx:3",
+    "packages/web/src/components/channel/EditChannelDialog.tsx:19"
    ],
    "CheckCircle": [
     "packages/web/src/components/agent/ReportIssueDialog.tsx:3",
-    "packages/web/src/components/machine/AddMachineDialog.tsx:4",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/AddMachineDialog.tsx:5",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/task/taskStatusUi.ts:1",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:20"
    ],
-   "CircleCheck": [
-    "packages/web/src/components/agentMigration/MigrationProgressPanel.tsx:3"
+   "ExternalLink": [
+    "packages/web/src/components/agentMigration/AgentMigrationDialog.tsx:19",
+    "packages/web/src/components/settings/SettingsPanel.tsx:48",
+    "packages/web/src/pages/IntegrationInvitePage.tsx:4"
    ],
    "Camera": [
     "packages/web/src/components/auth/AccountIdentitySetupPage.tsx:7"
@@ -515,53 +521,54 @@
    "LogOut": [
     "packages/web/src/components/auth/EmailVerificationPage.tsx:6",
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
-    "packages/web/src/components/settings/SettingsPanel.tsx:48"
+    "packages/web/src/components/settings/SettingsPanel.tsx:50"
    ],
    "KeyRound": [
     "packages/web/src/components/auth/EmailVerificationPage.tsx:6",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
-    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:13",
     "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19",
     "packages/web/src/components/settings/settingsNavigation.ts:9"
    ],
    "LogIn": [
     "packages/web/src/components/auth/InviteAcceptPage.tsx:10",
-    "packages/web/src/components/message/ChatPanel.tsx:7",
-    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/ChatPanel.tsx:6",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:2",
     "packages/web/src/components/message/ForwardComposerWarnings.tsx:1",
-    "packages/web/src/components/message/ThreadPanel.tsx:8",
+    "packages/web/src/components/message/ThreadPanel.tsx:7",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
    "UserPlus": [
     "packages/web/src/components/auth/InviteAcceptPage.tsx:10",
-    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:2",
     "packages/web/src/components/message/PendingMentionActionStrip.tsx:1",
+    "packages/web/src/components/message/PendingMentionActionStripRow.tsx:1",
     "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
    "LockKeyhole": [
     "packages/web/src/components/auth/ServerCreatePreview.tsx:1"
    ],
+   "FileUp": [
+    "packages/web/src/components/channel/ActiveUploadRow.tsx:2"
+   ],
    "UserMinus": [
-    "packages/web/src/components/channel/ChannelMemberList.tsx:5"
+    "packages/web/src/components/channel/ChannelMemberList.tsx:6"
    ],
    "CircleStop": [
     "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4"
    ],
    "Settings": [
     "packages/web/src/components/channel/ChannelOverflowMenu.tsx:4",
-    "packages/web/src/components/layout/LeftRail.tsx:16",
-    "packages/web/src/components/layout/MainLayout.tsx:83",
-    "packages/web/src/components/settings/SettingsPanel.tsx:27",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/components/layout/LeftRail.tsx:14",
+    "packages/web/src/components/layout/MainLayout.tsx:79",
+    "packages/web/src/components/settings/SettingsPanel.tsx:29",
     "packages/web/src/pages/PaletteAuditPage.tsx:13"
    ],
    "Pin": [
     "packages/web/src/components/channel/ChannelPinMenuItem.tsx:1",
-    "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3"
+    "packages/web/src/components/layout/Sidebar.tsx:9"
    ],
    "PinOff": [
     "packages/web/src/components/channel/ChannelPinMenuItem.tsx:1",
@@ -571,9 +578,9 @@
     "packages/web/src/components/channel/CreateJointChannelDialog.tsx:3",
     "packages/web/src/components/channel/JointConversionSection.tsx:1",
     "packages/web/src/components/channel/channelKindIcon.tsx:1",
-    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/layout/MainLayout.tsx:79",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/message/ForwardComposerTargetList.tsx:1",
+    "packages/web/src/components/message/ForwardComposerTargetList.tsx:2",
     "packages/web/src/components/message/forwardComposerModel.tsx:2",
     "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3",
     "packages/web/src/components/settings/MemberGraphSection.tsx:8"
@@ -581,106 +588,92 @@
    "Archive": [
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1",
     "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3"
    ],
    "ArchiveRestore": [
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
-    "packages/web/src/components/settings/ArchivedChannelsSection.tsx:3"
+    "packages/web/src/components/settings/UnarchiveChannelButton.tsx:3"
    ],
    "Mail": [
     "packages/web/src/components/channel/EditChannelDialog.tsx:19",
     "packages/web/src/components/member/InviteHumanDialog.tsx:3",
-    "packages/web/src/components/settings/SettingsPanel.tsx:35",
+    "packages/web/src/components/settings/SettingsPanel.tsx:37",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
-   ],
-   "FileUp": [
-    "packages/web/src/components/channel/JointAttachmentUploadSection.tsx:2"
    ],
    "CircleAlert": [
     "packages/web/src/components/channel/JointConversionSection.tsx:1",
     "packages/web/src/components/ui/Banner.tsx:1"
    ],
    "ArrowUpRight": [
-    "packages/web/src/components/layout/LeftRail.tsx:8"
-   ],
-   "Bookmark": [
-    "packages/web/src/components/layout/LeftRail.tsx:9",
-    "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/message/MessageHoverToolbar.tsx:4",
-    "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/saved/SavedPanel.tsx:3",
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+    "packages/web/src/components/layout/LeftRail.tsx:7"
    ],
    "BookOpenText": [
-    "packages/web/src/components/layout/LeftRail.tsx:10",
+    "packages/web/src/components/layout/LeftRail.tsx:8",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
    "CheckSquare": [
-    "packages/web/src/components/layout/LeftRail.tsx:11",
-    "packages/web/src/components/layout/MainLayout.tsx:83",
+    "packages/web/src/components/layout/LeftRail.tsx:9",
+    "packages/web/src/components/layout/MainLayout.tsx:79",
     "packages/web/src/components/task/TasksPanel.tsx:31",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
     "packages/web/src/pages/PaletteAuditPage.tsx:7"
    ],
    "CircleHelp": [
-    "packages/web/src/components/layout/LeftRail.tsx:12"
+    "packages/web/src/components/layout/LeftRail.tsx:10"
    ],
    "MessageSquare": [
-    "packages/web/src/components/layout/LeftRail.tsx:13",
+    "packages/web/src/components/layout/LeftRail.tsx:11",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/layout/useSystemNotifications.tsx:4",
     "packages/web/src/components/message/AttachmentChip.tsx:1",
     "packages/web/src/components/message/AttachmentCommentRefChip.tsx:1",
-    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ChatPanel.tsx:6",
     "packages/web/src/components/message/ThreadRepliesBadge.tsx:1",
     "packages/web/src/components/saved/SavedPanel.tsx:3",
     "packages/web/src/components/settings/AboutFeedbackDialog.tsx:10",
     "packages/web/src/components/settings/settingsNavigation.ts:11",
     "packages/web/src/components/ui/cards/QuotedMessageCard.tsx:3",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
     "packages/web/src/pages/PaletteAuditPage.tsx:10",
     "packages/web/src/pages/PublicServerPage.tsx:2",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:26"
    ],
    "Monitor": [
-    "packages/web/src/components/layout/LeftRail.tsx:14",
+    "packages/web/src/components/layout/LeftRail.tsx:12",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/layout/useSystemNotifications.tsx:4",
-    "packages/web/src/components/machine/AddMachineDialog.tsx:4",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/AddMachineDialog.tsx:5",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/machine/MobileComputersPanel.tsx:2",
     "packages/web/src/components/message/MessageInput.tsx:4",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
-    "packages/web/src/components/search/MessageSearchPage.tsx:8",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
+    "packages/web/src/components/search/EntityResultRow.tsx:4",
+    "packages/web/src/components/search/SearchHomeEntityRow.tsx:3",
     "packages/web/src/pages/PaletteAuditPage.tsx:11"
    ],
-   "SquareSplitHorizontal": [
-    "packages/web/src/components/layout/LeftRail.tsx:17"
-   ],
    "UsersRound": [
-    "packages/web/src/components/layout/LeftRail.tsx:19"
+    "packages/web/src/components/layout/LeftRail.tsx:16"
    ],
    "Smartphone": [
-    "packages/web/src/components/layout/LeftRail.tsx:20",
+    "packages/web/src/components/layout/LeftRail.tsx:17",
     "packages/web/src/components/pwa/PwaInstallPrompt.tsx:4",
-    "packages/web/src/components/settings/SettingsPanel.tsx:57"
+    "packages/web/src/components/settings/SettingsPanel.tsx:58"
    ],
    "Home": [
-    "packages/web/src/components/layout/MainLayout.tsx:83"
+    "packages/web/src/components/layout/MainLayout.tsx:79"
+   ],
+   "FolderInput": [
+    "packages/web/src/components/layout/MoveToSectionMenuItem.tsx:2",
+    "packages/web/src/components/layout/Sidebar.tsx:9"
    ],
    "Bell": [
     "packages/web/src/components/layout/NotificationTrigger.tsx:3",
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/message/NotificationActivationBanner.tsx:4",
-    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
-    "packages/web/src/components/settings/SettingsPanel.tsx:37",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:13",
+    "packages/web/src/components/settings/SettingsPanel.tsx:39",
     "packages/web/src/components/settings/settingsNavigation.ts:3",
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+    "packages/web/src/components/thread/InboxContextMenu.tsx:3"
    ],
    "ArrowRightLeft": [
     "packages/web/src/components/layout/Sidebar.tsx:9"
@@ -688,20 +681,17 @@
    "User": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/member/GravatarAvatar.tsx:2",
-    "packages/web/src/components/settings/SettingsPanel.tsx:33",
+    "packages/web/src/components/settings/SettingsPanel.tsx:35",
     "packages/web/src/components/settings/settingsNavigation.ts:15",
     "packages/web/src/components/task/TasksPanel.tsx:31",
     "packages/web/src/components/ui/AvatarSlot.tsx:2",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7",
-    "packages/web/src/components/workspace/WorkspaceGridRealPanel.tsx:3",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
-   "MessageSquareCheck": [
+   "Bookmark": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
-   ],
-   "MessageSquareDot": [
-    "packages/web/src/components/layout/Sidebar.tsx:9",
+    "packages/web/src/components/message/MessageHoverToolbar.tsx:4",
+    "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/saved/SavedPanel.tsx:3",
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
    "Network": [
@@ -711,38 +701,35 @@
    "AtSign": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/search/MessageSearchPage.tsx:8",
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
    "Building2": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/settings/SettingsPanel.tsx:38",
+    "packages/web/src/components/settings/SettingsPanel.tsx:40",
     "packages/web/src/components/settings/settingsNavigation.ts:5"
-   ],
-   "ArrowUpDown": [
-    "packages/web/src/components/layout/Sidebar.tsx:9"
    ],
    "Languages": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/settings/SettingsPanel.tsx:40",
+    "packages/web/src/components/settings/SettingsPanel.tsx:42",
     "packages/web/src/components/settings/settingsNavigation.ts:8",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
    "Type": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/settings/SettingsPanel.tsx:52",
+    "packages/web/src/components/settings/SettingsPanel.tsx:54",
     "packages/web/src/components/settings/settingsNavigation.ts:14",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
    "CreditCard": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/settings/SettingsPanel.tsx:42",
+    "packages/web/src/components/settings/PlanSectionContent.tsx:5",
+    "packages/web/src/components/settings/SettingsPanel.tsx:44",
     "packages/web/src/components/settings/settingsNavigation.ts:6"
    ],
    "Shield": [
     "packages/web/src/components/layout/Sidebar.tsx:9",
-    "packages/web/src/components/settings/SettingsPanel.tsx:36",
+    "packages/web/src/components/settings/SettingsPanel.tsx:38",
     "packages/web/src/components/settings/settingsNavigation.ts:13"
    ],
    "BadgeInfo": [
@@ -750,15 +737,23 @@
     "packages/web/src/components/settings/settingsNavigation.ts:2",
     "packages/web/src/pages/PublicServerPage.tsx:2"
    ],
-   "FolderInput": [
-    "packages/web/src/components/layout/Sidebar.tsx:9"
-   ],
    "FolderPlus": [
     "packages/web/src/components/layout/Sidebar.tsx:9"
+   ],
+   "MessageSquareCheck": [
+    "packages/web/src/components/layout/SidebarReadToggleMenuItem.tsx:3",
+    "packages/web/src/components/thread/InboxContextMenu.tsx:3"
+   ],
+   "MessageSquareDot": [
+    "packages/web/src/components/layout/SidebarReadToggleMenuItem.tsx:3",
+    "packages/web/src/components/thread/InboxContextMenu.tsx:3"
    ],
    "SmilePlus": [
     "packages/web/src/components/layout/SidebarSectionEmojiPicker.tsx:7",
     "packages/web/src/components/message/MessageHoverToolbar.tsx:4"
+   ],
+   "ArrowUpDown": [
+    "packages/web/src/components/layout/SidebarSortMenu.tsx:4"
    ],
    "HardDrive": [
     "packages/web/src/components/layout/useSystemNotifications.tsx:4"
@@ -767,17 +762,24 @@
     "packages/web/src/components/layout/useSystemNotifications.tsx:4"
    ],
    "Cloud": [
-    "packages/web/src/components/machine/AddMachineDialog.tsx:4"
+    "packages/web/src/components/machine/AddMachineDialog.tsx:5"
+   ],
+   "ArrowRight": [
+    "packages/web/src/components/machine/BulkChangeModelDialog.tsx:5"
    ],
    "Terminal": [
-    "packages/web/src/components/machine/ComputerCommandGuide.tsx:4",
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/ComputerCommandGuide.tsx:3",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6"
    ],
    "AlertCircle": [
-    "packages/web/src/components/machine/MachineDetailPanel.tsx:4",
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
     "packages/web/src/components/machine/RuntimeAccountUsageChip.tsx:8",
     "packages/web/src/components/thread/ThreadAgentFollowers.tsx:2"
+   ],
+   "ArrowLeftRight": [
+    "packages/web/src/components/machine/MachineDetailPanel.tsx:5",
+    "packages/web/src/components/message/MessageInput.tsx:4"
    ],
    "Copy": [
     "packages/web/src/components/member/InviteHumanDialog.tsx:3",
@@ -788,8 +790,9 @@
     "packages/web/src/components/message/SelectShareLightbox.tsx:6",
     "packages/web/src/components/onboarding/ServerSetupComputerRuntimeStep.tsx:6",
     "packages/web/src/components/saved/SavedPanel.tsx:3",
-    "packages/web/src/components/settings/AppNotificationsControls.tsx:12",
-    "packages/web/src/components/settings/SettingsPanel.tsx:30",
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:13",
+    "packages/web/src/components/settings/JoinLinkRow.tsx:4",
+    "packages/web/src/components/settings/SettingsPanel.tsx:32",
     "packages/web/src/components/ui/CopyIconButton.tsx:1"
    ],
    "Code2": [
@@ -797,12 +800,13 @@
    ],
    "Image": [
     "packages/web/src/components/mermaid/MermaidToolbar.tsx:6",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1",
     "packages/web/src/components/message/ForwardedBundleCard.tsx:3",
     "packages/web/src/components/message/SelectModeToolbar.tsx:2"
    ],
    "Maximize2": [
-    "packages/web/src/components/mermaid/MermaidToolbar.tsx:7"
+    "packages/web/src/components/mermaid/MermaidToolbar.tsx:7",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:5"
    ],
    "ZoomIn": [
     "packages/web/src/components/mermaid/MermaidToolbar.tsx:8"
@@ -812,26 +816,27 @@
    ],
    "MapPin": [
     "packages/web/src/components/message/AttachmentCommentsPanel.tsx:3",
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
-    "packages/web/src/components/message/ThreadOverflowMenu.tsx:5",
+    "packages/web/src/components/message/ChannelFileOverflowMenu.tsx:1",
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1",
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:7",
     "packages/web/src/components/task/LegacyTaskPanel.tsx:3",
     "packages/web/src/components/window/ThreadWindowRoute.tsx:3"
    ],
    "Paperclip": [
     "packages/web/src/components/message/ChannelFilesPanel.tsx:1",
-    "packages/web/src/components/message/ChatPanel.tsx:7",
+    "packages/web/src/components/message/ChatPanel.tsx:6",
     "packages/web/src/components/message/MessageInput.tsx:4",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:27"
    ],
    "Video": [
-    "packages/web/src/components/message/ChannelFilesPanel.tsx:1"
+    "packages/web/src/components/message/ChannelFilesPanelFileRow.tsx:1"
    ],
    "ListTodo": [
-    "packages/web/src/components/message/ChatPanel.tsx:7"
+    "packages/web/src/components/message/ChatPanel.tsx:6"
    ],
    "ArrowDown": [
-    "packages/web/src/components/message/ChatPanel.tsx:7",
-    "packages/web/src/components/message/ThreadPanel.tsx:8"
+    "packages/web/src/components/message/ChatPanel.tsx:6",
+    "packages/web/src/components/message/ThreadPanel.tsx:7"
    ],
    "Undo2": [
     "packages/web/src/components/message/ForwardComposerMobile.tsx:3"
@@ -847,7 +852,7 @@
    ],
    "UserX": [
     "packages/web/src/components/message/MessageInput.tsx:4",
-    "packages/web/src/components/message/PendingMentionActionStrip.tsx:1"
+    "packages/web/src/components/message/PendingMentionActionStripRow.tsx:1"
    ],
    "ImagePlus": [
     "packages/web/src/components/message/MessageInput.tsx:4",
@@ -855,11 +860,11 @@
    ],
    "MessageCirclePlus": [
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/message/ThreadOverflowMenu.tsx:7"
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:9"
    ],
    "MessageCircleOff": [
     "packages/web/src/components/message/MessageItem.tsx:7",
-    "packages/web/src/components/message/ThreadOverflowMenu.tsx:6"
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:8"
    ],
    "ClipboardCheck": [
     "packages/web/src/components/message/MessageItem.tsx:7"
@@ -872,6 +877,7 @@
    ],
    "Link": [
     "packages/web/src/components/message/MessageItem.tsx:7",
+    "packages/web/src/components/message/PermalinkReferenceChip.tsx:2",
     "packages/web/src/components/saved/SavedPanel.tsx:3",
     "packages/web/src/pages/PaletteAuditPage.tsx:9"
    ],
@@ -887,13 +893,16 @@
    ],
    "MoreHorizontal": [
     "packages/web/src/components/message/SelectModeToolbar.tsx:2",
-    "packages/web/src/components/ui/OverflowSheet.tsx:3"
+    "packages/web/src/components/ui/OverflowSheet.tsx:4"
    ],
    "ListChecks": [
     "packages/web/src/components/message/SelectModeToolbar.tsx:2"
    ],
    "Share2": [
     "packages/web/src/components/message/SelectShareLightbox.tsx:6"
+   ],
+   "Minimize2": [
+    "packages/web/src/components/message/ThreadOverflowMenu.tsx:6"
    ],
    "ArrowDownUp": [
     "packages/web/src/components/search/MessageSearchPage.tsx:8",
@@ -910,10 +919,10 @@
     "packages/web/src/components/task/TasksPanel.tsx:31"
    ],
    "RotateCw": [
-    "packages/web/src/components/settings/AppNotificationsControls.tsx:12"
+    "packages/web/src/components/settings/AppNotificationsControls.tsx:13"
    ],
    "Link2Off": [
-    "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
+    "packages/web/src/components/settings/AssignedAgentRow.tsx:3"
    ],
    "Power": [
     "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
@@ -922,42 +931,29 @@
     "packages/web/src/components/settings/ProviderConnectionsSettings.tsx:19"
    ],
    "Clock": [
-    "packages/web/src/components/settings/SettingsPanel.tsx:39",
+    "packages/web/src/components/settings/SettingsPanel.tsx:41",
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:22"
    ],
-   "ExternalLink": [
-    "packages/web/src/components/settings/SettingsPanel.tsx:46",
-    "packages/web/src/pages/IntegrationInvitePage.tsx:4"
-   ],
    "Tag": [
-    "packages/web/src/components/settings/SettingsPanel.tsx:51"
+    "packages/web/src/components/settings/SettingsPanel.tsx:53"
    ],
    "LayoutGrid": [
-    "packages/web/src/components/settings/SettingsPanel.tsx:55"
-   ],
-   "List": [
     "packages/web/src/components/settings/SettingsPanel.tsx:56"
    ],
+   "List": [
+    "packages/web/src/components/settings/SettingsPanel.tsx:57"
+   ],
    "Globe2": [
-    "packages/web/src/components/settings/SettingsPanel.tsx:58"
+    "packages/web/src/components/settings/SettingsPanel.tsx:59"
    ],
    "BarChart3": [
     "packages/web/src/components/settings/UsageDataSettings.tsx:12"
    ],
    "Columns3": [
-    "packages/web/src/components/task/TasksPanel.tsx:31",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+    "packages/web/src/components/task/TasksPanel.tsx:31"
    ],
    "LayoutList": [
     "packages/web/src/components/task/TasksPanel.tsx:31"
-   ],
-   "Ban": [
-    "packages/web/src/components/task/taskStatusUi.ts:1",
-    "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:17"
-   ],
-   "Circle": [
-    "packages/web/src/components/task/taskStatusUi.ts:1",
-    "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:21"
    ],
    "ArrowUp": [
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
@@ -965,294 +961,333 @@
    "Inbox": [
     "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
+   "MessageCircle": [
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
+   ],
    "MessageSquareText": [
-    "packages/web/src/components/thread/ThreadsInbox.tsx:8",
-    "packages/web/src/components/workspace/WorkspaceGridDemo.tsx:7"
+    "packages/web/src/components/thread/ThreadsInbox.tsx:8"
    ],
    "GripVertical": [
     "packages/web/src/components/ui/ServerSwitcherMenu.tsx:24"
    ],
+   "Ban": [
+    "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:17"
+   ],
+   "Circle": [
+    "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:21"
+   ],
    "Lightbulb": [
     "@botiverse/hands-feedback-react@0.4.1/src/components.tsx:25"
-   ],
-   "MessageCircle": [
-    "packages/web/src/components/thread/ThreadsInbox.tsx:17"
    ]
   },
   "raftUi": {
    "AlertTriangle": [
-    "raft-ui@0.5.27/dist/index.mjs:14878",
-    "raft-ui@0.5.27/dist/index.mjs:15045",
-    "raft-ui@0.5.27/dist/index.mjs:15046",
-    "raft-ui@0.5.27/dist/index.mjs:15730"
+    "raft-ui@0.5.52/dist/index.mjs:14272",
+    "raft-ui@0.5.52/dist/index.mjs:14439",
+    "raft-ui@0.5.52/dist/index.mjs:14440",
+    "raft-ui@0.5.52/dist/index.mjs:15158"
+   ],
+   "Ban": [
+    "raft-ui@0.5.52/dist/index.mjs:4"
    ],
    "Bell": [
-    "raft-ui@0.5.27/dist/index.mjs:14890",
-    "raft-ui@0.5.27/dist/index.mjs:14893"
+    "raft-ui@0.5.52/dist/index.mjs:14284",
+    "raft-ui@0.5.52/dist/index.mjs:14287"
    ],
    "Check": [
-    "raft-ui@0.5.27/dist/index.mjs:2578",
-    "raft-ui@0.5.27/dist/index.mjs:7048",
-    "raft-ui@0.5.27/dist/index.mjs:7466",
-    "raft-ui@0.5.27/dist/index.mjs:7470"
+    "raft-ui@0.5.52/dist/index.mjs:1761",
+    "raft-ui@0.5.52/dist/index.mjs:6237",
+    "raft-ui@0.5.52/dist/index.mjs:6655",
+    "raft-ui@0.5.52/dist/index.mjs:6659",
+    "raft-ui@0.5.52/dist/wip.mjs:50"
+   ],
+   "CheckCircle": [
+    "raft-ui@0.5.52/dist/index.mjs:4"
    ],
    "CheckCircle2": [
-    "raft-ui@0.5.27/dist/index.mjs:15048",
-    "raft-ui@0.5.27/dist/index.mjs:15730"
+    "raft-ui@0.5.52/dist/index.mjs:14442",
+    "raft-ui@0.5.52/dist/index.mjs:15158"
    ],
    "ChevronDown": [
-    "raft-ui@0.5.27/dist/index.mjs:7382",
-    "raft-ui@0.5.27/dist/index.mjs:7536",
-    "raft-ui@0.5.27/dist/index.mjs:7550"
+    "raft-ui@0.5.52/dist/index.mjs:6571",
+    "raft-ui@0.5.52/dist/index.mjs:6725",
+    "raft-ui@0.5.52/dist/index.mjs:6739",
+    "raft-ui@0.5.52/dist/wip.mjs:340"
    ],
    "ChevronLeft": [
-    "raft-ui@0.5.27/dist/index.mjs:13503"
+    "raft-ui@0.5.52/dist/index.mjs:12901"
    ],
    "ChevronRight": [
-    "raft-ui@0.5.27/dist/index.mjs:4241",
-    "raft-ui@0.5.27/dist/index.mjs:10271",
-    "raft-ui@0.5.27/dist/index.mjs:13518"
+    "raft-ui@0.5.52/dist/index.mjs:3428",
+    "raft-ui@0.5.52/dist/index.mjs:9486",
+    "raft-ui@0.5.52/dist/index.mjs:12916"
+   ],
+   "Circle": [
+    "raft-ui@0.5.52/dist/index.mjs:4"
    ],
    "Copy": [
-    "raft-ui@0.5.27/dist/index.mjs:2573"
+    "raft-ui@0.5.52/dist/index.mjs:1756"
+   ],
+   "Eye": [
+    "raft-ui@0.5.52/dist/index.mjs:4"
    ],
    "FileText": [
-    "raft-ui@0.5.27/dist/index.mjs:13793",
-    "raft-ui@0.5.27/dist/index.mjs:19517"
+    "raft-ui@0.5.52/dist/index.mjs:13191",
+    "raft-ui@0.5.52/dist/index.mjs:18838"
    ],
    "Image": [
-    "raft-ui@0.5.27/dist/index.mjs:13801"
+    "raft-ui@0.5.52/dist/index.mjs:13199"
    ],
    "Info": [
-    "raft-ui@0.5.27/dist/index.mjs:15047",
-    "raft-ui@0.5.27/dist/index.mjs:15730"
+    "raft-ui@0.5.52/dist/index.mjs:14441",
+    "raft-ui@0.5.52/dist/index.mjs:15158"
    ],
    "Minus": [
-    "raft-ui@0.5.27/dist/index.mjs:4"
+    "raft-ui@0.5.52/dist/index.mjs:4"
+   ],
+   "Play": [
+    "raft-ui@0.5.52/dist/index.mjs:4"
    ],
    "Upload": [
-    "raft-ui@0.5.27/dist/index.mjs:13797"
+    "raft-ui@0.5.52/dist/index.mjs:13195"
    ],
    "X": [
-    "raft-ui@0.5.27/dist/index.mjs:749",
-    "raft-ui@0.5.27/dist/index.mjs:965",
-    "raft-ui@0.5.27/dist/index.mjs:1300",
-    "raft-ui@0.5.27/dist/index.mjs:7065",
-    "raft-ui@0.5.27/dist/index.mjs:7138"
+    "raft-ui@0.5.52/dist/index.mjs:106",
+    "raft-ui@0.5.52/dist/index.mjs:484",
+    "raft-ui@0.5.52/dist/index.mjs:6254",
+    "raft-ui@0.5.52/dist/index.mjs:6327",
+    "raft-ui@0.5.52/dist/wip.mjs:68",
+    "raft-ui@0.5.52/dist/wip.mjs:335"
+   ],
+   "LoaderCircle": [
+    "raft-ui@0.5.52/dist/wip.mjs:328"
+   ],
+   "Plus": [
+    "raft-ui@0.5.52/dist/wip.mjs:40"
    ]
   }
  },
  "resolved": {
   "web": {
-   "Activity": "activity@0.575.0",
-   "AlertCircle": "circle-alert@0.575.0",
-   "AlertTriangle": "triangle-alert@0.575.0",
-   "Archive": "archive@0.575.0",
-   "ArchiveRestore": "archive-restore@0.575.0",
-   "ArrowDown": "arrow-down@0.575.0",
-   "ArrowDownUp": "arrow-down-up@0.575.0",
-   "ArrowLeft": "arrow-left@0.575.0",
-   "ArrowRightLeft": "arrow-right-left@0.575.0",
-   "ArrowUp": "arrow-up@0.575.0",
-   "ArrowUpDown": "arrow-up-down@0.575.0",
-   "ArrowUpRight": "arrow-up-right@0.575.0",
-   "AtSign": "at-sign@0.575.0",
-   "BadgeInfo": "badge-info@0.575.0",
-   "Ban": "ban@0.575.0",
-   "BarChart3": "chart-column@0.575.0",
-   "Bell": "bell@0.575.0",
-   "BellOff": "bell-off@0.575.0",
-   "BellRing": "bell-ring@0.575.0",
-   "Blocks": "blocks@0.575.0",
-   "BookOpenText": "book-open-text@0.575.0",
-   "Bookmark": "bookmark@0.575.0",
-   "BookmarkMinus": "bookmark-minus@0.575.0",
-   "Bot": "bot@0.575.0",
-   "Bug": "bug@0.575.0",
-   "Building2": "building-2@0.575.0",
-   "CalendarRange": "calendar-range@0.575.0",
-   "Camera": "camera@0.575.0",
-   "Check": "check@0.575.0",
-   "CheckCircle": "circle-check-big@0.575.0",
-   "CheckCircle2": "circle-check@0.575.0",
-   "CheckSquare": "square-check-big@0.575.0",
-   "ChevronDown": "chevron-down@0.575.0",
-   "ChevronLeft": "chevron-left@0.575.0",
-   "ChevronRight": "chevron-right@0.575.0",
-   "ChevronUp": "chevron-up@0.575.0",
-   "Circle": "circle@0.575.0",
-   "CircleAlert": "circle-alert@0.575.0",
-   "CircleCheck": "circle-check@0.575.0",
-   "CircleHelp": "circle-question-mark@0.575.0",
-   "CircleStop": "circle-stop@0.575.0",
-   "Clipboard": "clipboard@0.575.0",
-   "ClipboardCheck": "clipboard-check@0.575.0",
-   "Clock": "clock@0.575.0",
-   "Clock3": "clock-3@0.575.0",
-   "Cloud": "cloud@0.575.0",
-   "Code2": "code-xml@0.575.0",
-   "Columns3": "columns-3@0.575.0",
-   "Copy": "copy@0.575.0",
-   "CreditCard": "credit-card@0.575.0",
-   "Download": "download@0.575.0",
-   "EllipsisVertical": "ellipsis-vertical@0.575.0",
-   "ExternalLink": "external-link@0.575.0",
-   "Eye": "eye@0.575.0",
-   "EyeOff": "eye-off@0.575.0",
-   "File": "file@0.575.0",
-   "FileText": "file-text@0.575.0",
-   "FileUp": "file-up@0.575.0",
-   "FlaskConical": "flask-conical@0.575.0",
-   "FolderClosed": "folder-closed@0.575.0",
-   "FolderInput": "folder-input@0.575.0",
-   "FolderOpen": "folder-open@0.575.0",
-   "FolderPlus": "folder-plus@0.575.0",
-   "Forward": "forward@0.575.0",
-   "GitBranch": "git-branch@0.575.0",
-   "Globe": "globe@0.575.0",
-   "Globe2": "earth@0.575.0",
-   "GripVertical": "grip-vertical@0.575.0",
-   "HardDrive": "hard-drive@0.575.0",
-   "Hash": "hash@0.575.0",
-   "HelpCircle": "circle-question-mark@0.575.0",
-   "Home": "house@0.575.0",
-   "Image": "image@0.575.0",
-   "ImageOff": "image-off@0.575.0",
-   "ImagePlus": "image-plus@0.575.0",
-   "Inbox": "inbox@0.575.0",
-   "Info": "info@0.575.0",
-   "KeyRound": "key-round@0.575.0",
-   "Languages": "languages@0.575.0",
-   "LayoutGrid": "layout-grid@0.575.0",
-   "LayoutList": "layout-list@0.575.0",
-   "Lightbulb": "lightbulb@0.575.0",
-   "Link": "link@0.575.0",
-   "Link2": "link-2@0.575.0",
-   "Link2Off": "link-2-off@0.575.0",
-   "List": "list@0.575.0",
-   "ListChecks": "list-checks@0.575.0",
-   "ListTodo": "list-todo@0.575.0",
-   "Lock": "lock@0.575.0",
-   "LockKeyhole": "lock-keyhole@0.575.0",
-   "LogIn": "log-in@0.575.0",
-   "LogOut": "log-out@0.575.0",
-   "Mail": "mail@0.575.0",
-   "MapPin": "map-pin@0.575.0",
-   "Maximize2": "maximize-2@0.575.0",
-   "MessageCircleOff": "message-circle-off@0.575.0",
-   "MessageCirclePlus": "message-circle-plus@0.575.0",
-   "MessageSquare": "message-square@0.575.0",
-   "MessageSquareCheck": "message-square-check@0.575.0",
-   "MessageSquareDot": "message-square-dot@0.575.0",
-   "MessageSquareMore": "message-square-more@0.575.0",
-   "MessageSquareText": "message-square-text@0.575.0",
-   "Monitor": "monitor@0.575.0",
-   "MoreHorizontal": "ellipsis@0.575.0",
-   "MoveRight": "move-right@0.575.0",
-   "Music": "music@0.575.0",
-   "Network": "network@0.575.0",
-   "Paperclip": "paperclip@0.575.0",
-   "Pause": "pause@0.575.0",
-   "Pencil": "pencil@0.575.0",
-   "Pin": "pin@0.575.0",
-   "PinOff": "pin-off@0.575.0",
-   "Play": "play@0.575.0",
-   "Plus": "plus@0.575.0",
-   "Power": "power@0.575.0",
-   "RefreshCw": "refresh-cw@0.575.0",
-   "Repeat": "repeat@0.575.0",
-   "RotateCcw": "rotate-ccw@0.575.0",
-   "RotateCw": "rotate-cw@0.575.0",
-   "Search": "search@0.575.0",
-   "Send": "send@0.575.0",
-   "Settings": "settings@0.575.0",
-   "Settings2": "settings-2@0.575.0",
-   "Share2": "share-2@0.575.0",
-   "Shield": "shield@0.575.0",
-   "Smartphone": "smartphone@0.575.0",
-   "SmilePlus": "smile-plus@0.575.0",
-   "Square": "square@0.575.0",
-   "SquareSplitHorizontal": "square-split-horizontal@0.575.0",
-   "Star": "star@0.575.0",
-   "Tag": "tag@0.575.0",
-   "Terminal": "terminal@0.575.0",
-   "TextQuote": "text-quote@0.575.0",
-   "Trash2": "trash-2@0.575.0",
-   "TriangleAlert": "triangle-alert@0.575.0",
-   "Type": "type@0.575.0",
-   "Undo2": "undo-2@0.575.0",
-   "Unplug": "unplug@0.575.0",
-   "Upload": "upload@0.575.0",
-   "User": "user@0.575.0",
-   "UserCircle2": "circle-user-round@0.575.0",
-   "UserMinus": "user-minus@0.575.0",
-   "UserPlus": "user-plus@0.575.0",
-   "UserX": "user-x@0.575.0",
-   "Users": "users@0.575.0",
-   "UsersRound": "users-round@0.575.0",
-   "Video": "video@0.575.0",
-   "Volume2": "volume-2@0.575.0",
-   "WifiOff": "wifi-off@0.575.0",
-   "X": "x@0.575.0",
-   "XCircle": "circle-x@0.575.0",
-   "ZoomIn": "zoom-in@0.575.0",
-   "ZoomOut": "zoom-out@0.575.0",
-   "MessageCircle": "message-circle@0.575.0"
+   "Activity": "activity@1.55.0",
+   "AlertCircle": "circle-alert@1.55.0",
+   "AlertTriangle": "triangle-alert@1.55.0",
+   "Archive": "archive@1.55.0",
+   "ArchiveRestore": "archive-restore@1.55.0",
+   "ArrowDown": "arrow-down@1.55.0",
+   "ArrowDownUp": "arrow-down-up@1.55.0",
+   "ArrowLeft": "arrow-left@1.55.0",
+   "ArrowLeftRight": "arrow-left-right@1.55.0",
+   "ArrowRight": "arrow-right@1.55.0",
+   "ArrowRightLeft": "arrow-right-left@1.55.0",
+   "ArrowUp": "arrow-up@1.55.0",
+   "ArrowUpDown": "arrow-up-down@1.55.0",
+   "ArrowUpRight": "arrow-up-right@1.55.0",
+   "AtSign": "at-sign@1.55.0",
+   "BadgeInfo": "badge-info@1.55.0",
+   "Ban": "ban@1.55.0",
+   "BarChart3": "chart-column@1.55.0",
+   "Bell": "bell@1.55.0",
+   "BellOff": "bell-off@1.55.0",
+   "BellRing": "bell-ring@1.55.0",
+   "Blocks": "blocks@1.55.0",
+   "BookOpenText": "book-open-text@1.55.0",
+   "Bookmark": "bookmark@1.55.0",
+   "BookmarkMinus": "bookmark-minus@1.55.0",
+   "Bot": "bot@1.55.0",
+   "Bug": "bug@1.55.0",
+   "Building2": "building-complex@1.55.0",
+   "CalendarRange": "calendar-range@1.55.0",
+   "Camera": "camera@1.55.0",
+   "Check": "check@1.55.0",
+   "CheckCircle": "circle-check-big@1.55.0",
+   "CheckCircle2": "circle-check@1.55.0",
+   "CheckSquare": "square-check-big@1.55.0",
+   "ChevronDown": "chevron-down@1.55.0",
+   "ChevronLeft": "chevron-left@1.55.0",
+   "ChevronRight": "chevron-right@1.55.0",
+   "ChevronUp": "chevron-up@1.55.0",
+   "Circle": "circle@1.55.0",
+   "CircleAlert": "circle-alert@1.55.0",
+   "CircleHelp": "circle-question-mark@1.55.0",
+   "CircleStop": "circle-stop@1.55.0",
+   "Clipboard": "clipboard@1.55.0",
+   "ClipboardCheck": "clipboard-check@1.55.0",
+   "Clock": "clock@1.55.0",
+   "Clock3": "clock-3@1.55.0",
+   "Cloud": "cloud@1.55.0",
+   "Code2": "code-xml@1.55.0",
+   "Columns3": "columns-3@1.55.0",
+   "Copy": "copy@1.55.0",
+   "CreditCard": "credit-card@1.55.0",
+   "Download": "download@1.55.0",
+   "EllipsisVertical": "ellipsis-vertical@1.55.0",
+   "ExternalLink": "external-link@1.55.0",
+   "Eye": "eye@1.55.0",
+   "EyeOff": "eye-off@1.55.0",
+   "File": "file@1.55.0",
+   "FileText": "file-text@1.55.0",
+   "FileUp": "file-up@1.55.0",
+   "FlaskConical": "flask-conical@1.55.0",
+   "FolderClosed": "folder-closed@1.55.0",
+   "FolderInput": "folder-input@1.55.0",
+   "FolderOpen": "folder-open@1.55.0",
+   "FolderPlus": "folder-plus@1.55.0",
+   "Forward": "forward@1.55.0",
+   "GitBranch": "git-branch@1.55.0",
+   "Globe": "globe@1.55.0",
+   "Globe2": "earth@1.55.0",
+   "GripVertical": "grip-vertical@1.55.0",
+   "HardDrive": "hard-drive@1.55.0",
+   "Hash": "hash@1.55.0",
+   "HelpCircle": "circle-question-mark@1.55.0",
+   "Home": "house@1.55.0",
+   "Image": "image@1.55.0",
+   "ImageOff": "image-off@1.55.0",
+   "ImagePlus": "image-plus@1.55.0",
+   "Inbox": "inbox@1.55.0",
+   "Info": "info@1.55.0",
+   "KeyRound": "key-round@1.55.0",
+   "Languages": "languages@1.55.0",
+   "LayoutGrid": "layout-grid@1.55.0",
+   "LayoutList": "layout-list@1.55.0",
+   "Lightbulb": "lightbulb@1.55.0",
+   "Link": "link@1.55.0",
+   "Link2": "link-2@1.55.0",
+   "Link2Off": "link-2-off@1.55.0",
+   "List": "list@1.55.0",
+   "ListChecks": "list-checks@1.55.0",
+   "ListTodo": "list-todo@1.55.0",
+   "Lock": "lock@1.55.0",
+   "LockKeyhole": "lock-keyhole@1.55.0",
+   "LogIn": "log-in@1.55.0",
+   "LogOut": "log-out@1.55.0",
+   "Mail": "mail@1.55.0",
+   "MapPin": "map-pin@1.55.0",
+   "Maximize2": "maximize-2@1.55.0",
+   "MessageCircle": "message-circle@1.55.0",
+   "MessageCircleOff": "message-circle-off@1.55.0",
+   "MessageCirclePlus": "message-circle-plus@1.55.0",
+   "MessageSquare": "message-square@1.55.0",
+   "MessageSquareCheck": "message-square-check@1.55.0",
+   "MessageSquareDot": "message-square-dot@1.55.0",
+   "MessageSquareMore": "message-square-more@1.55.0",
+   "MessageSquareText": "message-square-text@1.55.0",
+   "Minimize2": "minimize-2@1.55.0",
+   "Monitor": "monitor@1.55.0",
+   "MoreHorizontal": "ellipsis@1.55.0",
+   "MoveRight": "move-right@1.55.0",
+   "Music": "music@1.55.0",
+   "Network": "network@1.55.0",
+   "Paperclip": "paperclip@1.55.0",
+   "Pause": "pause@1.55.0",
+   "Pencil": "pencil@1.55.0",
+   "Pin": "pin@1.55.0",
+   "PinOff": "pin-off@1.55.0",
+   "Play": "play@1.55.0",
+   "Plus": "plus@1.55.0",
+   "Power": "power@1.55.0",
+   "RefreshCw": "refresh-cw@1.55.0",
+   "Repeat": "repeat@1.55.0",
+   "RotateCcw": "rotate-ccw@1.55.0",
+   "RotateCw": "rotate-cw@1.55.0",
+   "Search": "search@1.55.0",
+   "Send": "send@1.55.0",
+   "Settings": "settings@1.55.0",
+   "Settings2": "settings-2@1.55.0",
+   "Share2": "share-2@1.55.0",
+   "Shield": "shield@1.55.0",
+   "Smartphone": "smartphone@1.55.0",
+   "SmilePlus": "face-slightly-smiling-plus@1.55.0",
+   "Square": "square@1.55.0",
+   "Star": "star@1.55.0",
+   "Tag": "tag@1.55.0",
+   "Terminal": "terminal@1.55.0",
+   "TextQuote": "text-quote@1.55.0",
+   "Trash2": "trash@1.55.0",
+   "TriangleAlert": "triangle-alert@1.55.0",
+   "Type": "type@1.55.0",
+   "Undo2": "undo-2@1.55.0",
+   "Unplug": "unplug@1.55.0",
+   "Upload": "upload@1.55.0",
+   "User": "user@1.55.0",
+   "UserCircle2": "circle-user-round@1.55.0",
+   "UserMinus": "user-minus@1.55.0",
+   "UserPlus": "user-plus@1.55.0",
+   "UserX": "user-x@1.55.0",
+   "Users": "users@1.55.0",
+   "UsersRound": "users-round@1.55.0",
+   "Video": "video@1.55.0",
+   "Volume2": "volume-2@1.55.0",
+   "WifiOff": "wifi-off@1.55.0",
+   "X": "x@1.55.0",
+   "XCircle": "circle-x@1.55.0",
+   "ZoomIn": "zoom-in@1.55.0",
+   "ZoomOut": "zoom-out@1.55.0"
   },
   "raftUi": {
-   "AlertTriangle": "triangle-alert@1.48.0",
-   "Bell": "bell@1.48.0",
-   "Check": "check@1.48.0",
-   "CheckCircle2": "circle-check@1.48.0",
-   "ChevronDown": "chevron-down@1.48.0",
-   "ChevronLeft": "chevron-left@1.48.0",
-   "ChevronRight": "chevron-right@1.48.0",
-   "Copy": "copy@1.48.0",
-   "FileText": "file-text@1.48.0",
-   "Image": "image@1.48.0",
-   "Info": "info@1.48.0",
-   "Minus": "minus@1.48.0",
-   "Upload": "upload@1.48.0",
-   "X": "x@1.48.0"
+   "AlertTriangle": "triangle-alert@1.55.0",
+   "Ban": "ban@1.55.0",
+   "Bell": "bell@1.55.0",
+   "Check": "check@1.55.0",
+   "CheckCircle": "circle-check-big@1.55.0",
+   "CheckCircle2": "circle-check@1.55.0",
+   "ChevronDown": "chevron-down@1.55.0",
+   "ChevronLeft": "chevron-left@1.55.0",
+   "ChevronRight": "chevron-right@1.55.0",
+   "Circle": "circle@1.55.0",
+   "Copy": "copy@1.55.0",
+   "Eye": "eye@1.55.0",
+   "FileText": "file-text@1.55.0",
+   "Image": "image@1.55.0",
+   "Info": "info@1.55.0",
+   "LoaderCircle": "loader-circle@1.55.0",
+   "Minus": "minus@1.55.0",
+   "Play": "play@1.55.0",
+   "Plus": "plus@1.55.0",
+   "Upload": "upload@1.55.0",
+   "X": "x@1.55.0"
   },
   "legacy": {
-   "Calendar": "calendar@0.575.0",
-   "CheckCheck": "check-check@0.575.0",
-   "ChevronsUpDown": "chevrons-up-down@0.575.0",
-   "CircleUserRound": "circle-user-round@0.575.0",
-   "Code": "code@0.575.0",
-   "Columns": "columns-2@0.575.0",
-   "Columns2": "columns-2@0.575.0",
-   "Ellipsis": "ellipsis@0.575.0",
-   "Laptop": "laptop@0.575.0",
-   "LoaderCircle": "loader-circle@0.575.0",
-   "Maximize": "maximize@0.575.0",
-   "Menu": "menu@0.575.0",
-   "Minimize": "minimize@0.575.0",
-   "Moon": "moon@0.575.0",
-   "Palette": "palette@0.575.0",
-   "Reply": "reply@0.575.0",
-   "SlidersHorizontal": "sliders-horizontal@0.575.0",
-   "SquareCheck": "square-check@0.575.0",
-   "Sun": "sun@0.575.0",
-   "VolumeX": "volume-x@0.575.0",
-   "Bookmark": "bookmark@0.575.0"
+   "Calendar": "calendar@1.55.0",
+   "CheckCheck": "check-check@1.55.0",
+   "ChevronsUpDown": "chevrons-up-down@1.55.0",
+   "CircleCheck": "circle-check@1.55.0",
+   "CircleUserRound": "circle-user-round@1.55.0",
+   "Code": "code@1.55.0",
+   "Columns": "columns-2@1.55.0",
+   "Columns2": "columns-2@1.55.0",
+   "Ellipsis": "ellipsis@1.55.0",
+   "Laptop": "laptop@1.55.0",
+   "LoaderCircle": "loader-circle@1.55.0",
+   "Maximize": "maximize@1.55.0",
+   "Menu": "menu@1.55.0",
+   "Minimize": "minimize@1.55.0",
+   "Moon": "moon@1.55.0",
+   "Palette": "palette@1.55.0",
+   "Reply": "reply@1.55.0",
+   "SlidersHorizontal": "sliders-horizontal@1.55.0",
+   "SquareCheck": "square-check@1.55.0",
+   "SquareSplitHorizontal": "square-split-horizontal@1.55.0",
+   "Sun": "sun@1.55.0",
+   "VolumeX": "volume-x@1.55.0",
+   "Bookmark": "bookmark@1.55.0"
   },
   "flutter": {
-   "Bold": "bold@0.575.0",
-   "Heading": "heading@0.575.0",
-   "Italic": "italic@0.575.0",
-   "ListOrdered": "list-ordered@0.575.0",
-   "Minimize2": "minimize-2@0.575.0",
-   "Strikethrough": "strikethrough@0.575.0",
-   "Table": "table@0.575.0"
+   "Bold": "bold@1.55.0",
+   "Heading": "heading@1.55.0",
+   "Italic": "italic@1.55.0",
+   "ListOrdered": "list-ordered@1.55.0",
+   "Minimize2": "minimize-2@1.55.0",
+   "Strikethrough": "strikethrough@1.55.0",
+   "Table": "table@1.55.0"
   }
  },
  "icons": {
-  "activity@0.575.0": {
+  "activity@1.55.0": {
    "icon": "activity",
-   "version": "0.575.0",
-   "sha256": "a297a71e6136739a86e71c620956ec528208e176d418b68aa74d992ef2fbc821",
+   "version": "1.55.0",
+   "sha256": "375c53de94acf227e087eeaed1d12a95768de235ee2f1600afc95192fd4f027d",
    "nodes": [
     {
      "tag": "path",
@@ -1262,10 +1297,10 @@
     }
    ]
   },
-  "archive-restore@0.575.0": {
+  "archive-restore@1.55.0": {
    "icon": "archive-restore",
-   "version": "0.575.0",
-   "sha256": "9c1ee76ca45a52660231178f5162515a3dfbef3d6d90343d6056e3a14071354f",
+   "version": "1.55.0",
+   "sha256": "72ad4d0a7c1b39a5fb026dc50591761b87e921cb772a70256c1e3ba692af5b58",
    "nodes": [
     {
      "tag": "rect",
@@ -1303,10 +1338,10 @@
     }
    ]
   },
-  "archive@0.575.0": {
+  "archive@1.55.0": {
    "icon": "archive",
-   "version": "0.575.0",
-   "sha256": "b3ccd932ee673c008c30df93d3223411863b2e229ae88a03bb96090acccbd578",
+   "version": "1.55.0",
+   "sha256": "9271b6472f094fefea9a05aa954df6d711075e73b71de42ef10a4d85e2d20863",
    "nodes": [
     {
      "tag": "rect",
@@ -1332,10 +1367,10 @@
     }
    ]
   },
-  "arrow-down-up@0.575.0": {
+  "arrow-down-up@1.55.0": {
    "icon": "arrow-down-up",
-   "version": "0.575.0",
-   "sha256": "8bf9226439b2eaa28bd6e800745e4ff7408c38dca6687c75b455044c6f04ce66",
+   "version": "1.55.0",
+   "sha256": "167b5386a6e91acd3b89ad8d16796c33073b17001ecdfadcfb46c7d440fa23af",
    "nodes": [
     {
      "tag": "path",
@@ -1363,10 +1398,10 @@
     }
    ]
   },
-  "arrow-down@0.575.0": {
+  "arrow-down@1.55.0": {
    "icon": "arrow-down",
-   "version": "0.575.0",
-   "sha256": "02bbfbfc580a121a4671e3ff0484bf4d4cef615579fb938118e40bd19f0dffc0",
+   "version": "1.55.0",
+   "sha256": "a81aae763ea28c1ad4aae08248fbe5a2348975655ce1ad3eb45d943c79920a93",
    "nodes": [
     {
      "tag": "path",
@@ -1382,10 +1417,41 @@
     }
    ]
   },
-  "arrow-left@0.575.0": {
+  "arrow-left-right@1.55.0": {
+   "icon": "arrow-left-right",
+   "version": "1.55.0",
+   "sha256": "3d1621cb94ea862b0a8eb3d38db4f2d61556828d3575eabd15049520bdf422cf",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M8 3 4 7l4 4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M4 7h16"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m16 21 4-4-4-4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 17H4"
+     }
+    }
+   ]
+  },
+  "arrow-left@1.55.0": {
    "icon": "arrow-left",
-   "version": "0.575.0",
-   "sha256": "a664bcbd51dd5047c9a9eb1f420178dd70d431245ea8f613141dd3b9f7bcdf78",
+   "version": "1.55.0",
+   "sha256": "161227ab0a0c63c53ecbe15133cd7ed3e8544f43e261a62e835b9bdb66668a79",
    "nodes": [
     {
      "tag": "path",
@@ -1401,10 +1467,10 @@
     }
    ]
   },
-  "arrow-right-left@0.575.0": {
+  "arrow-right-left@1.55.0": {
    "icon": "arrow-right-left",
-   "version": "0.575.0",
-   "sha256": "3364383f8285a87d1c54972a3c170d4ff55908edcdcc55568c2aecd3370ae9d2",
+   "version": "1.55.0",
+   "sha256": "49e262c04a4401fc48c0a6f841b6219a2af6953c1d1875aad1b8b12c07480928",
    "nodes": [
     {
      "tag": "path",
@@ -1432,10 +1498,29 @@
     }
    ]
   },
-  "arrow-up-down@0.575.0": {
+  "arrow-right@1.55.0": {
+   "icon": "arrow-right",
+   "version": "1.55.0",
+   "sha256": "299e47caeac973e52f6d3400cd55a6ea1f698bc476ee68b46452b9037cc91631",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M5 12h14"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m12 5 7 7-7 7"
+     }
+    }
+   ]
+  },
+  "arrow-up-down@1.55.0": {
    "icon": "arrow-up-down",
-   "version": "0.575.0",
-   "sha256": "3a9fb7fc848583e72319ac98df937a0d8100466f20784c69906642cf8df368b7",
+   "version": "1.55.0",
+   "sha256": "74c53f9c484d4678dff85fc12e12b816b381fdc92bb88958c2fe9cfda9589be4",
    "nodes": [
     {
      "tag": "path",
@@ -1463,10 +1548,10 @@
     }
    ]
   },
-  "arrow-up-right@0.575.0": {
+  "arrow-up-right@1.55.0": {
    "icon": "arrow-up-right",
-   "version": "0.575.0",
-   "sha256": "c96b7617df66de83874070e6d4874c987ab7adc0bba28b98e744199251ce4403",
+   "version": "1.55.0",
+   "sha256": "043408a39600f39b7a07d2dea7c369ce26b937cdd1d2dd786e12711bddb860bb",
    "nodes": [
     {
      "tag": "path",
@@ -1482,10 +1567,10 @@
     }
    ]
   },
-  "arrow-up@0.575.0": {
+  "arrow-up@1.55.0": {
    "icon": "arrow-up",
-   "version": "0.575.0",
-   "sha256": "719045757eb320128235f29f54074df073d1d355e0eec86f2d954bd892a961ae",
+   "version": "1.55.0",
+   "sha256": "1755b07654a275ba76fe08b86caaa194252392bfa7161705847e318a553cd2f9",
    "nodes": [
     {
      "tag": "path",
@@ -1501,10 +1586,10 @@
     }
    ]
   },
-  "at-sign@0.575.0": {
+  "at-sign@1.55.0": {
    "icon": "at-sign",
-   "version": "0.575.0",
-   "sha256": "67c29020c5aa7ed8c6cac7cb9e51533c3a5fddb40238ee4ecf337812f8ab7b51",
+   "version": "1.55.0",
+   "sha256": "bacfa7bb175d78c1724c737016d38d0f503b392ee1db2ed3daf1754c90c67e96",
    "nodes": [
     {
      "tag": "circle",
@@ -1522,10 +1607,10 @@
     }
    ]
   },
-  "badge-info@0.575.0": {
+  "badge-info@1.55.0": {
    "icon": "badge-info",
-   "version": "0.575.0",
-   "sha256": "8d544e166eee5761ecb4fdeb6a8f39adbf9266e510a3ada2c4ceb79d31ed0b6e",
+   "version": "1.55.0",
+   "sha256": "0e5a52410f4c0ec2ce24b06fc7d88c9c461e3449392fc96d344caddeac661c52",
    "nodes": [
     {
      "tag": "path",
@@ -1553,10 +1638,10 @@
     }
    ]
   },
-  "ban@0.575.0": {
+  "ban@1.55.0": {
    "icon": "ban",
-   "version": "0.575.0",
-   "sha256": "71c6b32a82e6d0ec4bae143b9700e60a955b81fd75ae935102bbcd2a2b02099e",
+   "version": "1.55.0",
+   "sha256": "38f28ff8972eee55b71d3b37d19fa7495c759f5314829e40db28a94571e6bfd8",
    "nodes": [
     {
      "tag": "circle",
@@ -1574,10 +1659,10 @@
     }
    ]
   },
-  "bell-off@0.575.0": {
+  "bell-off@1.55.0": {
    "icon": "bell-off",
-   "version": "0.575.0",
-   "sha256": "947296c9774020fe8ce7ea4e62145d7bcc335731d47d8c877ba080c7bea5d66c",
+   "version": "1.55.0",
+   "sha256": "157b9547804677921d14e1e46198aace97d9ba8fa6ee8c464500d7d7e86cfd0b",
    "nodes": [
     {
      "tag": "path",
@@ -1605,10 +1690,10 @@
     }
    ]
   },
-  "bell-ring@0.575.0": {
+  "bell-ring@1.55.0": {
    "icon": "bell-ring",
-   "version": "0.575.0",
-   "sha256": "d4d64a008b5514818d08efeea9388000cd0170c9396204a9c60281e62af24131",
+   "version": "1.55.0",
+   "sha256": "a25a81e6251ec8b2f7d7e9d41d98c1f6d70f495d954f6a5be462ebcd3735a012",
    "nodes": [
     {
      "tag": "path",
@@ -1636,10 +1721,10 @@
     }
    ]
   },
-  "bell@0.575.0": {
+  "bell@1.55.0": {
    "icon": "bell",
-   "version": "0.575.0",
-   "sha256": "1454801c76df5f5e86f86c150172da081742f2cdc7eebfd9fec495f4acd7bc6c",
+   "version": "1.55.0",
+   "sha256": "0ebe26f5468c290e71d95267ed360e5b7c75444ba4ccf7c9fac3611fda7fcb2d",
    "nodes": [
     {
      "tag": "path",
@@ -1655,29 +1740,10 @@
     }
    ]
   },
-  "bell@1.48.0": {
-   "icon": "bell",
-   "version": "1.48.0",
-   "sha256": "356e81abb65d0dc8fb6b924b97329c4d59df114705aef2ff8ae15960b6f9be2d",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M10.268 21a2 2 0 0 0 3.464 0"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-     }
-    }
-   ]
-  },
-  "blocks@0.575.0": {
+  "blocks@1.55.0": {
    "icon": "blocks",
-   "version": "0.575.0",
-   "sha256": "315ec6ee4a120e84c5a9f2d77aec4d4f59f4cfd9d967648744526b8902a8e654",
+   "version": "1.55.0",
+   "sha256": "5d2d9c7519871c260801966194467b78ad63329d37005b6ecee9e72c7e46d30b",
    "nodes": [
     {
      "tag": "path",
@@ -1697,10 +1763,10 @@
     }
    ]
   },
-  "bold@0.575.0": {
+  "bold@1.55.0": {
    "icon": "bold",
-   "version": "0.575.0",
-   "sha256": "0e92bdd9a390c5f15884da3cfdb47154b4870ad0c7f0d759ba51d094b2fdf053",
+   "version": "1.55.0",
+   "sha256": "7c25a1d7ba0419b22c19e9944465a1d8ddf1f87657077bc3dcd6d803801b1152",
    "nodes": [
     {
      "tag": "path",
@@ -1710,53 +1776,53 @@
     }
    ]
   },
-  "book-open-text@0.575.0": {
+  "book-open-text@1.55.0": {
    "icon": "book-open-text",
-   "version": "0.575.0",
-   "sha256": "e0b0bef96928d825bb78ea7e50745915f211546dbf22d8e7c0f2cdb1fd637a5f",
+   "version": "1.55.0",
+   "sha256": "985829552c34aebe9e945f07dc3c4c9c0084017bfd0ff0f9e3477f8f8d646be1",
    "nodes": [
     {
      "tag": "path",
      "attrs": {
-      "d": "M12 7v14"
+      "d": "M12 5v16"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M16 12h2"
+      "d": "M16 13h2"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M16 8h2"
+      "d": "M16 9h2"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"
+      "d": "M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M6 12h2"
+      "d": "M6 13h2"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M6 8h2"
+      "d": "M6 9h2"
      }
     }
    ]
   },
-  "bookmark-minus@0.575.0": {
+  "bookmark-minus@1.55.0": {
    "icon": "bookmark-minus",
-   "version": "0.575.0",
-   "sha256": "5b8edfaa52960ba3b7ca7a24c83738767c96d3c8e99cbd776bd3b8ecf87658e2",
+   "version": "1.55.0",
+   "sha256": "d068b3145c0537cb0f5b5c39142824f840617d8b035f3dacd8be9bd1ddae7733",
    "nodes": [
     {
      "tag": "path",
@@ -1772,10 +1838,10 @@
     }
    ]
   },
-  "bookmark@0.575.0": {
+  "bookmark@1.55.0": {
    "icon": "bookmark",
-   "version": "0.575.0",
-   "sha256": "a74016226e3d050ab4dc210899c6338ca5c3d0505ee2ef6a978241cfd35955f4",
+   "version": "1.55.0",
+   "sha256": "a0a9802749af6ad2afdb4d766c7aa6d4bd6b7f705458082090b19e41d8644d42",
    "nodes": [
     {
      "tag": "path",
@@ -1785,10 +1851,10 @@
     }
    ]
   },
-  "bot@0.575.0": {
+  "bot@1.55.0": {
    "icon": "bot",
-   "version": "0.575.0",
-   "sha256": "2311d6fdbc7afed2359a91f8b99e8f92c1ca2932ce2d50f21f459a0c85993fd6",
+   "version": "1.55.0",
+   "sha256": "0cb5969435ad5aa1fb7181f64086252fc3e11d04b74a3157834f8a045e96cf49",
    "nodes": [
     {
      "tag": "path",
@@ -1832,10 +1898,10 @@
     }
    ]
   },
-  "bug@0.575.0": {
+  "bug@1.55.0": {
    "icon": "bug",
-   "version": "0.575.0",
-   "sha256": "68300b8c98eb81605798be117d188d9f7672375fa55285bff2206c37f932153e",
+   "version": "1.55.0",
+   "sha256": "9da111a06000ef11ec0c8f6b9d745065d795e53d98e4eec116f91508c73155cd",
    "nodes": [
     {
      "tag": "path",
@@ -1905,10 +1971,10 @@
     }
    ]
   },
-  "building-2@0.575.0": {
-   "icon": "building-2",
-   "version": "0.575.0",
-   "sha256": "2bc3276cd3178aa1af4479fa18f623cf360a029c8065a01542e97f3ecbb439f5",
+  "building-complex@1.55.0": {
+   "icon": "building-complex",
+   "version": "1.55.0",
+   "sha256": "2219a7900604a4bebecb92be4e245c6113d73f922db9b09774bd57d5651caf26",
    "nodes": [
     {
      "tag": "path",
@@ -1942,104 +2008,104 @@
     }
    ]
   },
-  "calendar-range@0.575.0": {
+  "calendar-range@1.55.0": {
    "icon": "calendar-range",
-   "version": "0.575.0",
-   "sha256": "1cf9cd40192c7d60bba0203202c6979eefbbcc474d0e8f4614d1acc6a15f0af9",
+   "version": "1.55.0",
+   "sha256": "f2234810dc8f84d23aa9bfce4dbf47b3032f4cf3e48e8327c6f8e9ac58b10111",
    "nodes": [
     {
      "tag": "rect",
      "attrs": {
+      "x": "3",
+      "y": "3",
       "width": "18",
       "height": "18",
-      "x": "3",
-      "y": "4",
       "rx": "2"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M16 2v4"
+      "d": "M16 2v3"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M3 10h18"
+      "d": "M3 9h18"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M8 2v4"
+      "d": "M8 2v3"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M17 14h-6"
+      "d": "M17 13h-6"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M13 18H7"
+      "d": "M13 17H7"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M7 14h.01"
+      "d": "M7 13h.01"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M17 18h.01"
+      "d": "M17 17h.01"
      }
     }
    ]
   },
-  "calendar@0.575.0": {
+  "calendar@1.55.0": {
    "icon": "calendar",
-   "version": "0.575.0",
-   "sha256": "9f05c1af5f9f4c49d9f5ba4b5162f50db2cda6a2617f2de21115b0e8fe3374d5",
+   "version": "1.55.0",
+   "sha256": "c51009880f0536bf6abfab112cf31aff153df6bf01824d2b21057166be18efec",
    "nodes": [
     {
      "tag": "path",
      "attrs": {
-      "d": "M8 2v4"
+      "d": "M8 2v3"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M16 2v4"
+      "d": "M16 2v3"
      }
     },
     {
      "tag": "rect",
      "attrs": {
+      "x": "3",
+      "y": "3",
       "width": "18",
       "height": "18",
-      "x": "3",
-      "y": "4",
       "rx": "2"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M3 10h18"
+      "d": "M3 9h18"
      }
     }
    ]
   },
-  "camera@0.575.0": {
+  "camera@1.55.0": {
    "icon": "camera",
-   "version": "0.575.0",
-   "sha256": "54bbe99d4e5083d984bee53ef4ec41520db313b189e90d810669f9303b021fe2",
+   "version": "1.55.0",
+   "sha256": "89e314fc8db5bfb457d1fd717f2c1dd5fcd5a171450afc263f026452af5a3196",
    "nodes": [
     {
      "tag": "path",
@@ -2057,10 +2123,10 @@
     }
    ]
   },
-  "chart-column@0.575.0": {
+  "chart-column@1.55.0": {
    "icon": "chart-column",
-   "version": "0.575.0",
-   "sha256": "593286be01f6a18f0cf57fe77292908c3cb2c75d621b5d7e55f96f691e35268e",
+   "version": "1.55.0",
+   "sha256": "b33904adec50ffe8372203522a27598581993d49992aa3ece045aa7e7aef8840",
    "nodes": [
     {
      "tag": "path",
@@ -2088,10 +2154,10 @@
     }
    ]
   },
-  "check-check@0.575.0": {
+  "check-check@1.55.0": {
    "icon": "check-check",
-   "version": "0.575.0",
-   "sha256": "d52e1d5d30e97a21facfe7731e7af95339ef8c54b7438aec1f43d9a33035d0aa",
+   "version": "1.55.0",
+   "sha256": "e4c92753a6d03c35af24d2179ceca9fd7a57cb76a9a5d10871abab7a76aec483",
    "nodes": [
     {
      "tag": "path",
@@ -2107,10 +2173,10 @@
     }
    ]
   },
-  "check@0.575.0": {
+  "check@1.55.0": {
    "icon": "check",
-   "version": "0.575.0",
-   "sha256": "faf2335e56dade1dbe3052c19171d7e916b893a0da403a173b26cecae4a99dd0",
+   "version": "1.55.0",
+   "sha256": "68ac5b0ec47c6e0138a188f78e8179d2a4010aebabd6f05707467dca2a9168d4",
    "nodes": [
     {
      "tag": "path",
@@ -2120,23 +2186,10 @@
     }
    ]
   },
-  "check@1.48.0": {
-   "icon": "check",
-   "version": "1.48.0",
-   "sha256": "4c5db171943c6ff3c16579c6c53be7bef59ae6c13dc513a356b5303f98402cb1",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M20 6 9 17l-5-5"
-     }
-    }
-   ]
-  },
-  "chevron-down@0.575.0": {
+  "chevron-down@1.55.0": {
    "icon": "chevron-down",
-   "version": "0.575.0",
-   "sha256": "90beca9dee51b92652a0fe3ef0373e66be5f660b49bbbe2794a4ece621810147",
+   "version": "1.55.0",
+   "sha256": "e7bfa50572a7c9bfb43fc93e4d1550a2b6a733cf8f64fe56deb2f3230b22cdf9",
    "nodes": [
     {
      "tag": "path",
@@ -2146,23 +2199,10 @@
     }
    ]
   },
-  "chevron-down@1.48.0": {
-   "icon": "chevron-down",
-   "version": "1.48.0",
-   "sha256": "1639b098b1797afe2cb012c9d4f1c1645131ce3b146d12c9371b0125b75088b3",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m6 9 6 6 6-6"
-     }
-    }
-   ]
-  },
-  "chevron-left@0.575.0": {
+  "chevron-left@1.55.0": {
    "icon": "chevron-left",
-   "version": "0.575.0",
-   "sha256": "603b82433c04b583d293e3816933604ce110cb3b2a408e0eceb244f724892747",
+   "version": "1.55.0",
+   "sha256": "f64c377836db76b5c638c2f8b3e244059b88d216bc04a0239d9dced2d957ef5f",
    "nodes": [
     {
      "tag": "path",
@@ -2172,23 +2212,10 @@
     }
    ]
   },
-  "chevron-left@1.48.0": {
-   "icon": "chevron-left",
-   "version": "1.48.0",
-   "sha256": "5d81280bc88cb8a466d6093dd9470d9a41d484f97711ea5827830e59dbb86489",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m15 18-6-6 6-6"
-     }
-    }
-   ]
-  },
-  "chevron-right@0.575.0": {
+  "chevron-right@1.55.0": {
    "icon": "chevron-right",
-   "version": "0.575.0",
-   "sha256": "74dfafb99dfb7bf38153623761a80ddc4750d063a456b83613e166d459d7220c",
+   "version": "1.55.0",
+   "sha256": "d372ad4d201d85de886961c59864d3069b1882017cd975dad7e8968c16fc6a78",
    "nodes": [
     {
      "tag": "path",
@@ -2198,23 +2225,10 @@
     }
    ]
   },
-  "chevron-right@1.48.0": {
-   "icon": "chevron-right",
-   "version": "1.48.0",
-   "sha256": "1b7e83dec6e5fbb923e26174f3925eede6aaa385f57a7039c6ea8aaa3138dc1e",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m9 18 6-6-6-6"
-     }
-    }
-   ]
-  },
-  "chevron-up@0.575.0": {
+  "chevron-up@1.55.0": {
    "icon": "chevron-up",
-   "version": "0.575.0",
-   "sha256": "84026d6c650bb7000fe4b226dba405f62eeb8f4cb67e946828efd84186ac1220",
+   "version": "1.55.0",
+   "sha256": "3d22f9153903bc9a65b62034dc547d81a00846965541cb4b28a34d6c5823b452",
    "nodes": [
     {
      "tag": "path",
@@ -2224,10 +2238,10 @@
     }
    ]
   },
-  "chevrons-up-down@0.575.0": {
+  "chevrons-up-down@1.55.0": {
    "icon": "chevrons-up-down",
-   "version": "0.575.0",
-   "sha256": "9531586cae5a153f8a12e92b6656ca943a77cb25dd0e3c481c64e2a0a3e6a6ce",
+   "version": "1.55.0",
+   "sha256": "0608648c61267c874e664ae6e126174edaeb07aea35cb06c6db571c150ac5b90",
    "nodes": [
     {
      "tag": "path",
@@ -2243,10 +2257,10 @@
     }
    ]
   },
-  "circle-alert@0.575.0": {
+  "circle-alert@1.55.0": {
    "icon": "circle-alert",
-   "version": "0.575.0",
-   "sha256": "2b089423741f924d05e67d542c661cd22b1013676f9cc68dcdbc2bb16afc53a3",
+   "version": "1.55.0",
+   "sha256": "c5054d416bca84d6ab8ba9256dd4d7f31725165ff503f3dd0ad7f7c8fa016a9f",
    "nodes": [
     {
      "tag": "circle",
@@ -2276,10 +2290,10 @@
     }
    ]
   },
-  "circle-check-big@0.575.0": {
+  "circle-check-big@1.55.0": {
    "icon": "circle-check-big",
-   "version": "0.575.0",
-   "sha256": "083ab00c02bab61d8a214bb8910e1a37f3cf68de0307caff39a49be935947c41",
+   "version": "1.55.0",
+   "sha256": "ca64503bfd6db789456c88d1ff7b9bc28ce4fa132fa7ba66e39fbc7e60f06fb7",
    "nodes": [
     {
      "tag": "path",
@@ -2295,31 +2309,10 @@
     }
    ]
   },
-  "circle-check@0.575.0": {
+  "circle-check@1.55.0": {
    "icon": "circle-check",
-   "version": "0.575.0",
-   "sha256": "a448be32430c0b05e70818070109ff82736378ef0c803a2a63bbac9f4457e930",
-   "nodes": [
-    {
-     "tag": "circle",
-     "attrs": {
-      "cx": "12",
-      "cy": "12",
-      "r": "10"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m9 12 2 2 4-4"
-     }
-    }
-   ]
-  },
-  "circle-check@1.48.0": {
-   "icon": "circle-check",
-   "version": "1.48.0",
-   "sha256": "786bb0ced478ff6076b1882698229849e958e55e2ef4416d1c94362843a8bb56",
+   "version": "1.55.0",
+   "sha256": "c1076fc101900290bf68a4437cc4b5e998deb50c3dd26236a21ed1f775989f7a",
    "nodes": [
     {
      "tag": "circle",
@@ -2337,10 +2330,10 @@
     }
    ]
   },
-  "circle-question-mark@0.575.0": {
+  "circle-question-mark@1.55.0": {
    "icon": "circle-question-mark",
-   "version": "0.575.0",
-   "sha256": "7102ba2645b794ac52392a8d74fa75cf6d6f0c2deb9853674ac100fce810a1d9",
+   "version": "1.55.0",
+   "sha256": "dd1f1116ba3068a324605af0148b5f4ccb31a604880d54d7cc5b5dca62ad3a88",
    "nodes": [
     {
      "tag": "circle",
@@ -2364,10 +2357,10 @@
     }
    ]
   },
-  "circle-stop@0.575.0": {
+  "circle-stop@1.55.0": {
    "icon": "circle-stop",
-   "version": "0.575.0",
-   "sha256": "d6e97dfbd4fb586ff97a99cec7af77d91f040d91c364573b7e0c4ad7810d2ddb",
+   "version": "1.55.0",
+   "sha256": "dc7530103028aa503cdebdcc06e6462be1f7b970d348ab1f907bad37ce2a743b",
    "nodes": [
     {
      "tag": "circle",
@@ -2389,22 +2382,22 @@
     }
    ]
   },
-  "circle-user-round@0.575.0": {
+  "circle-user-round@1.55.0": {
    "icon": "circle-user-round",
-   "version": "0.575.0",
-   "sha256": "bedb75aafc9d47c16ea877e33ce0b7e82eb3f03e32999f1b532969f12945c9e2",
+   "version": "1.55.0",
+   "sha256": "d96529a89084359a8c74d38955fde493979010271046b709c6c5d07e11cb78f2",
    "nodes": [
     {
      "tag": "path",
      "attrs": {
-      "d": "M18 20a6 6 0 0 0-12 0"
+      "d": "M17.925 20.056a6 6 0 0 0-11.851.001"
      }
     },
     {
      "tag": "circle",
      "attrs": {
       "cx": "12",
-      "cy": "10",
+      "cy": "11",
       "r": "4"
      }
     },
@@ -2418,10 +2411,10 @@
     }
    ]
   },
-  "circle-x@0.575.0": {
+  "circle-x@1.55.0": {
    "icon": "circle-x",
-   "version": "0.575.0",
-   "sha256": "b90f37a70e260874ee18c98eb51737ef1099c4501c85ef4456091f80f766f94b",
+   "version": "1.55.0",
+   "sha256": "681a883fca38d8a5e6fe72b7c58c3da9ee7970f43a4b49ac52d9f20a97556265",
    "nodes": [
     {
      "tag": "circle",
@@ -2445,10 +2438,10 @@
     }
    ]
   },
-  "circle@0.575.0": {
+  "circle@1.55.0": {
    "icon": "circle",
-   "version": "0.575.0",
-   "sha256": "2481d2d2e861314cc3e283a6cadee40ce2ee58e3582b30d659d0c06b1c8af1a3",
+   "version": "1.55.0",
+   "sha256": "c442c5cf6d48ddfb877ebd20a1d88d51cb3ca587bf82537d04cf49714381ca06",
    "nodes": [
     {
      "tag": "circle",
@@ -2460,10 +2453,10 @@
     }
    ]
   },
-  "clipboard-check@0.575.0": {
+  "clipboard-check@1.55.0": {
    "icon": "clipboard-check",
-   "version": "0.575.0",
-   "sha256": "116828a1f64a60f76de1c825ced8433116a03ba46d8f284aec02bc00997e75d4",
+   "version": "1.55.0",
+   "sha256": "7d477fc9972d2433332db8b0eac378be28372a092005ebae1f7c0dbc62c565b0",
    "nodes": [
     {
      "tag": "rect",
@@ -2490,10 +2483,10 @@
     }
    ]
   },
-  "clipboard@0.575.0": {
+  "clipboard@1.55.0": {
    "icon": "clipboard",
-   "version": "0.575.0",
-   "sha256": "7636dc0a702785e7dfea421e2c1ab9e8c3818984138e5d4b09ee3a9cd0bdf2c9",
+   "version": "1.55.0",
+   "sha256": "c705a07914fa34b6d2322d0d6b20f28e1e52260e7f949f110d8bf8bc39f842f9",
    "nodes": [
     {
      "tag": "rect",
@@ -2514,10 +2507,10 @@
     }
    ]
   },
-  "clock-3@0.575.0": {
+  "clock-3@1.55.0": {
    "icon": "clock-3",
-   "version": "0.575.0",
-   "sha256": "4628d2b07ad4bc25df139d3181d1d33b9f8c9ed276084b800d7e58eff31d137d",
+   "version": "1.55.0",
+   "sha256": "cb209b8050ba22c022eac6c4514e38c84a76829e3df1be7a4ba01e42b7c2b9b1",
    "nodes": [
     {
      "tag": "circle",
@@ -2535,10 +2528,10 @@
     }
    ]
   },
-  "clock@0.575.0": {
+  "clock@1.55.0": {
    "icon": "clock",
-   "version": "0.575.0",
-   "sha256": "d01a0d7578127a131c8fd9c0eff009e2eda3ec5986df657d82f466eef53fda96",
+   "version": "1.55.0",
+   "sha256": "b07865442f873ee3e2a5d10e4a24731cb81d33c2a5823fed342507443b5c8888",
    "nodes": [
     {
      "tag": "circle",
@@ -2556,10 +2549,10 @@
     }
    ]
   },
-  "cloud@0.575.0": {
+  "cloud@1.55.0": {
    "icon": "cloud",
-   "version": "0.575.0",
-   "sha256": "c75e1f309ba0b3f6a9ed28baa336a8df6737d526c00ebcbc69b16086bc7aac00",
+   "version": "1.55.0",
+   "sha256": "0ed3b51e568b45d24a4e5c3c8d44630e358a1d4db98473e94cf8f8a2f3dbe1a9",
    "nodes": [
     {
      "tag": "path",
@@ -2569,10 +2562,10 @@
     }
    ]
   },
-  "code-xml@0.575.0": {
+  "code-xml@1.55.0": {
    "icon": "code-xml",
-   "version": "0.575.0",
-   "sha256": "254872e8203af468df8bc3cb74bb3ffc845f5b05143f2a4e6a06f1d1cb094f04",
+   "version": "1.55.0",
+   "sha256": "072eaa8c4734ec2511b7b47ec1ad2c8de4f5bd4c5e06a50fdd119f06c57e6f1c",
    "nodes": [
     {
      "tag": "path",
@@ -2594,10 +2587,10 @@
     }
    ]
   },
-  "code@0.575.0": {
+  "code@1.55.0": {
    "icon": "code",
-   "version": "0.575.0",
-   "sha256": "12cc53e2c73991d59feed4d77b8c306405ae83b4a4c5d6d6373143d1236c0b9d",
+   "version": "1.55.0",
+   "sha256": "aed360e7040a806dfddb84715eee3468fb89c7c3470ab09c4cfb049fb948ca82",
    "nodes": [
     {
      "tag": "path",
@@ -2613,10 +2606,10 @@
     }
    ]
   },
-  "columns-2@0.575.0": {
+  "columns-2@1.55.0": {
    "icon": "columns-2",
-   "version": "0.575.0",
-   "sha256": "854d534b4ca9466597cc3cef8796a8dcd32547eeb7e3e75325b593f47e7e35f7",
+   "version": "1.55.0",
+   "sha256": "0b138558a922b4c319aae8bf6d4353b73f204cfe5c2fa6a94702580bdd3af569",
    "nodes": [
     {
      "tag": "rect",
@@ -2636,10 +2629,10 @@
     }
    ]
   },
-  "columns-3@0.575.0": {
+  "columns-3@1.55.0": {
    "icon": "columns-3",
-   "version": "0.575.0",
-   "sha256": "87e7e949d85af3d77dce2df2be7dfe27b67d64b09c4411c626cb9db785251dce",
+   "version": "1.55.0",
+   "sha256": "d06bbff9064391bde7e0b231c508e2a07ed25153dedb4b245e0bec3361758df0",
    "nodes": [
     {
      "tag": "rect",
@@ -2665,10 +2658,10 @@
     }
    ]
   },
-  "copy@0.575.0": {
+  "copy@1.55.0": {
    "icon": "copy",
-   "version": "0.575.0",
-   "sha256": "6a9c1dc074f2f240fe0669638169f80c6b7d23c642c5dfd2a5491e69bbcf5ef0",
+   "version": "1.55.0",
+   "sha256": "73f35fadb426364af06d4d9689254316e12f13d257b27333a1abd66d5dc5124f",
    "nodes": [
     {
      "tag": "rect",
@@ -2689,34 +2682,10 @@
     }
    ]
   },
-  "copy@1.48.0": {
-   "icon": "copy",
-   "version": "1.48.0",
-   "sha256": "2078f99c89c56a6f43b5b4359b5cd91765b22ef372d46acc135016c3ba5c34f0",
-   "nodes": [
-    {
-     "tag": "rect",
-     "attrs": {
-      "width": "14",
-      "height": "14",
-      "x": "8",
-      "y": "8",
-      "rx": "2",
-      "ry": "2"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
-     }
-    }
-   ]
-  },
-  "credit-card@0.575.0": {
+  "credit-card@1.55.0": {
    "icon": "credit-card",
-   "version": "0.575.0",
-   "sha256": "92eaeb08d8160057510640150232937d5b6e7d2097c03e5ebc2b70420bc31241",
+   "version": "1.55.0",
+   "sha256": "d3cff0e6fcf2f43c4ad8f3d514dc75b2bf05cf171c87b582a056cb8a0bbbd412",
    "nodes": [
     {
      "tag": "rect",
@@ -2736,13 +2705,19 @@
       "y1": "10",
       "y2": "10"
      }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 14h2"
+     }
     }
    ]
   },
-  "download@0.575.0": {
+  "download@1.55.0": {
    "icon": "download",
-   "version": "0.575.0",
-   "sha256": "153d4d5c8076a78c876bb336c58921d2decd8826cac08a5201ac0ed9d04e76b6",
+   "version": "1.55.0",
+   "sha256": "2c0b6b6a4c192f3735526f152cc1ce213e91690727f8554441f5ca75107d60a8",
    "nodes": [
     {
      "tag": "path",
@@ -2764,10 +2739,10 @@
     }
    ]
   },
-  "earth@0.575.0": {
+  "earth@1.55.0": {
    "icon": "earth",
-   "version": "0.575.0",
-   "sha256": "14f1222fe46f405a8e3e57a329d657791909cce4cf6172aaecd675ae87a599b5",
+   "version": "1.55.0",
+   "sha256": "0aac3be8105aa36fe85809fc19b58629fe203bf2367741fa929e20be81ae36b1",
    "nodes": [
     {
      "tag": "path",
@@ -2797,10 +2772,10 @@
     }
    ]
   },
-  "ellipsis-vertical@0.575.0": {
+  "ellipsis-vertical@1.55.0": {
    "icon": "ellipsis-vertical",
-   "version": "0.575.0",
-   "sha256": "889220231e13d343bacecf000a22424555722befe9b8002105207f787d90a4ba",
+   "version": "1.55.0",
+   "sha256": "811cd866238b30ede89559c94431f4d1abf7a2ea7b43ced843a2d6de5bbf1602",
    "nodes": [
     {
      "tag": "circle",
@@ -2828,10 +2803,10 @@
     }
    ]
   },
-  "ellipsis@0.575.0": {
+  "ellipsis@1.55.0": {
    "icon": "ellipsis",
-   "version": "0.575.0",
-   "sha256": "caddb390bc8cc9e7689b9888fd6371f3b946113fea2aec98f3121f9a4161d6e3",
+   "version": "1.55.0",
+   "sha256": "95d106863ca004477377d82d30836ac5eb30f7e85618091128ba367fd3e7ed30",
    "nodes": [
     {
      "tag": "circle",
@@ -2859,10 +2834,10 @@
     }
    ]
   },
-  "external-link@0.575.0": {
+  "external-link@1.55.0": {
    "icon": "external-link",
-   "version": "0.575.0",
-   "sha256": "2b9983e06ca3eabd5180c5fdb274bf662076c3e02b297e36b20e31e673b5eb52",
+   "version": "1.55.0",
+   "sha256": "6836187d747f5699b709a81806a7ff2a858dd7da0151ba3ab5ac712e9d1b6241",
    "nodes": [
     {
      "tag": "path",
@@ -2884,10 +2859,10 @@
     }
    ]
   },
-  "eye-off@0.575.0": {
+  "eye-off@1.55.0": {
    "icon": "eye-off",
-   "version": "0.575.0",
-   "sha256": "17d7fe8e1166954fbd813774b20678fa9dc50416852a907be624cf945516ef0b",
+   "version": "1.55.0",
+   "sha256": "3eb51c0d723e2807f0f4698e9b63b4ca37a5c250d2a974ef43e2ef6f84b0f930",
    "nodes": [
     {
      "tag": "path",
@@ -2915,10 +2890,10 @@
     }
    ]
   },
-  "eye@0.575.0": {
+  "eye@1.55.0": {
    "icon": "eye",
-   "version": "0.575.0",
-   "sha256": "bd83d5eaf433f1d686d68289008ddaa1817ac4464688c7e762c1121eaea3db5a",
+   "version": "1.55.0",
+   "sha256": "b937537d611bb04c509d082e41f6bd298967f7036a1d7cafe9def88181a2fed5",
    "nodes": [
     {
      "tag": "path",
@@ -2936,10 +2911,53 @@
     }
    ]
   },
-  "file-text@0.575.0": {
+  "face-slightly-smiling-plus@1.55.0": {
+   "icon": "face-slightly-smiling-plus",
+   "version": "1.55.0",
+   "sha256": "3cbccf0588fd12fde8c6f1055b9503c22f52c4cfbbe2b63df94673186e90f266",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M13.267 2.08a10 10 0 108.653 8.653"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 10V9"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16 5h6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M16.472 15a6 6 0 01-8.943 0"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 2v6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M9 10V9"
+     }
+    }
+   ]
+  },
+  "file-text@1.55.0": {
    "icon": "file-text",
-   "version": "0.575.0",
-   "sha256": "b18380d87d5efd114347da93e05bf8be7880b8cdc1475a667f957c041692e39c",
+   "version": "1.55.0",
+   "sha256": "eb7c2bcfd47bc1152397658b5369596ddb16b4a868fded6b204e8b53e089ef19",
    "nodes": [
     {
      "tag": "path",
@@ -2973,47 +2991,10 @@
     }
    ]
   },
-  "file-text@1.48.0": {
-   "icon": "file-text",
-   "version": "1.48.0",
-   "sha256": "9850a08374ad2e8069904810240a5fb6485dd41b4f6f49a5b8dd99032b1a31d8",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M14 2v5a1 1 0 0 0 1 1h5"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M10 9H8"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M16 13H8"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M16 17H8"
-     }
-    }
-   ]
-  },
-  "file-up@0.575.0": {
+  "file-up@1.55.0": {
    "icon": "file-up",
-   "version": "0.575.0",
-   "sha256": "def7e09561487cfb8536f150e572f0051b5e4f49bd962bee18aee44f0ee695e7",
+   "version": "1.55.0",
+   "sha256": "4981a4d63fa05b8f407dd106811b05a7a37b10820fe9897e9d73f4dc687d6526",
    "nodes": [
     {
      "tag": "path",
@@ -3041,10 +3022,10 @@
     }
    ]
   },
-  "file@0.575.0": {
+  "file@1.55.0": {
    "icon": "file",
-   "version": "0.575.0",
-   "sha256": "207238761eeb1eafd0142d7f62e889bc5e205d47398d2c5f3cc37dac05b3650c",
+   "version": "1.55.0",
+   "sha256": "569bc42f33c4896be1a63fb35917142b60a4a06e27d9e1f022438a1018bae759",
    "nodes": [
     {
      "tag": "path",
@@ -3060,10 +3041,10 @@
     }
    ]
   },
-  "flask-conical@0.575.0": {
+  "flask-conical@1.55.0": {
    "icon": "flask-conical",
-   "version": "0.575.0",
-   "sha256": "b7f074c6b426fd70e8cb0104ec89c65b55450ba0faa3c5ea8af79c06591631b8",
+   "version": "1.55.0",
+   "sha256": "f09320d63066195edbaf2ca307ee8147f80693c433210f39078c3ba8770e5c95",
    "nodes": [
     {
      "tag": "path",
@@ -3085,10 +3066,10 @@
     }
    ]
   },
-  "folder-closed@0.575.0": {
+  "folder-closed@1.55.0": {
    "icon": "folder-closed",
-   "version": "0.575.0",
-   "sha256": "80b740a5b4afa45821509a786026bda9f0c19afae38a010ed0d6c6efd2b15aaf",
+   "version": "1.55.0",
+   "sha256": "69b858e6e09a509b69a875d5a3dfde0d03af1c06e8b278b5d4436508518ddcae",
    "nodes": [
     {
      "tag": "path",
@@ -3104,10 +3085,10 @@
     }
    ]
   },
-  "folder-input@0.575.0": {
+  "folder-input@1.55.0": {
    "icon": "folder-input",
-   "version": "0.575.0",
-   "sha256": "9a7953410440fa361e6a9a9375ceeb2a4c6e7fcaf544d6afb1f25ecf68130d03",
+   "version": "1.55.0",
+   "sha256": "6c30cce3e63aa28565cbb195269a7bbd6baf983b6c749d8ace41c8790f5c8d8b",
    "nodes": [
     {
      "tag": "path",
@@ -3129,10 +3110,10 @@
     }
    ]
   },
-  "folder-open@0.575.0": {
+  "folder-open@1.55.0": {
    "icon": "folder-open",
-   "version": "0.575.0",
-   "sha256": "b9d39a154aa47f09d14e87d8c559b297b221ebbc10bbe54e95a45dc013e317dd",
+   "version": "1.55.0",
+   "sha256": "eae60a4e9f800b2ab52435d1b3d4aa39663c5a122956b15f5408d400170bfae1",
    "nodes": [
     {
      "tag": "path",
@@ -3142,10 +3123,10 @@
     }
    ]
   },
-  "folder-plus@0.575.0": {
+  "folder-plus@1.55.0": {
    "icon": "folder-plus",
-   "version": "0.575.0",
-   "sha256": "2ae428b5d8950ad1b96c2db33e03312445f1a88b75baa8619935c56583da27cd",
+   "version": "1.55.0",
+   "sha256": "6834930b0be419ae28cf595e9b32a318b87b4c5c6e9b7d21195712782d95a9ea",
    "nodes": [
     {
      "tag": "path",
@@ -3167,10 +3148,10 @@
     }
    ]
   },
-  "forward@0.575.0": {
+  "forward@1.55.0": {
    "icon": "forward",
-   "version": "0.575.0",
-   "sha256": "c2f53ea4f4f1382b5e525bffd5eb2864d7ff9b90f4e88509cf78cccc8bb365df",
+   "version": "1.55.0",
+   "sha256": "962d5c3ddb2bf05136587ce8d59672c19266ace4c3da0ea1f6783b213b8c2ad6",
    "nodes": [
     {
      "tag": "path",
@@ -3186,10 +3167,10 @@
     }
    ]
   },
-  "git-branch@0.575.0": {
+  "git-branch@1.55.0": {
    "icon": "git-branch",
-   "version": "0.575.0",
-   "sha256": "d7d69089220298979f19da02383ca2c96ab09dd5b5b6dd6403a7b0b809004618",
+   "version": "1.55.0",
+   "sha256": "5a8a144e4cb5188f06d9af1be493379bb495f8925b4b8c86cc25206cc1266475",
    "nodes": [
     {
      "tag": "path",
@@ -3215,10 +3196,10 @@
     }
    ]
   },
-  "globe@0.575.0": {
+  "globe@1.55.0": {
    "icon": "globe",
-   "version": "0.575.0",
-   "sha256": "c18e7dcd5683c6d0848fdfbdf6a31a0fd93c7dd9c1b1d9c8873ea6bcd582e65d",
+   "version": "1.55.0",
+   "sha256": "cd228edd92ac42d656fb13a273ce8001916fe44d7a52a3fd07666f3ad3bc0dd8",
    "nodes": [
     {
      "tag": "circle",
@@ -3242,10 +3223,10 @@
     }
    ]
   },
-  "grip-vertical@0.575.0": {
+  "grip-vertical@1.55.0": {
    "icon": "grip-vertical",
-   "version": "0.575.0",
-   "sha256": "497aa89588110e35203fb3147a6c54beace5585fbe8a8f4ddccfa083f25ff73e",
+   "version": "1.55.0",
+   "sha256": "aea2b9be542dbcb0ea30ae73d134d7788f33757fca6cbc27a3da324055f1267a",
    "nodes": [
     {
      "tag": "circle",
@@ -3297,10 +3278,10 @@
     }
    ]
   },
-  "hard-drive@0.575.0": {
+  "hard-drive@1.55.0": {
    "icon": "hard-drive",
-   "version": "0.575.0",
-   "sha256": "3beeadbc4cb1b07706678a0a24b6fdd48d6f581cb986ce88cfe856a9306b34d1",
+   "version": "1.55.0",
+   "sha256": "aede608c39078f55c6950d4153a5212b33526de560daf00df8de4bba2f3746d9",
    "nodes": [
     {
      "tag": "path",
@@ -3328,10 +3309,10 @@
     }
    ]
   },
-  "hash@0.575.0": {
+  "hash@1.55.0": {
    "icon": "hash",
-   "version": "0.575.0",
-   "sha256": "b341942ab322cfb9fda65579c240064bcdcf401c8f8f1c5e134f6ddd6fb04247",
+   "version": "1.55.0",
+   "sha256": "b62b808cc0af465d51b69e00f39d5e4dfc6a8bedb2d8bced4066530c000734d6",
    "nodes": [
     {
      "tag": "line",
@@ -3371,10 +3352,10 @@
     }
    ]
   },
-  "heading@0.575.0": {
+  "heading@1.55.0": {
    "icon": "heading",
-   "version": "0.575.0",
-   "sha256": "d9152ccdf897d45e9dbf5dc1a4628adf5b6df85a4db69635bb371dd7cad687f1",
+   "version": "1.55.0",
+   "sha256": "4de9f80514ed5f6550b26ad6c216a54d0b78e0d89d2090726f22db1df24992aa",
    "nodes": [
     {
      "tag": "path",
@@ -3396,10 +3377,10 @@
     }
    ]
   },
-  "house@0.575.0": {
+  "house@1.55.0": {
    "icon": "house",
-   "version": "0.575.0",
-   "sha256": "10459f2700c362defe3719ad087a9ae8cf0213a6419cb2a358a15b05d20317d4",
+   "version": "1.55.0",
+   "sha256": "642b42c55324a426eb21310b551eb4ca2000d9f0b829a838415b725cba744975",
    "nodes": [
     {
      "tag": "path",
@@ -3415,10 +3396,10 @@
     }
    ]
   },
-  "image-off@0.575.0": {
+  "image-off@1.55.0": {
    "icon": "image-off",
-   "version": "0.575.0",
-   "sha256": "edac09f81edcb3f4d2977414f400b31d354dc7d54ba169b869425a383d925e82",
+   "version": "1.55.0",
+   "sha256": "e1cd63358455735b9f8ae7f52db8076f7ac9449d68298597b7ae921db1eae01e",
    "nodes": [
     {
      "tag": "line",
@@ -3467,10 +3448,10 @@
     }
    ]
   },
-  "image-plus@0.575.0": {
+  "image-plus@1.55.0": {
    "icon": "image-plus",
-   "version": "0.575.0",
-   "sha256": "0a020724473a6ab5990c2c01574433c1600dce8b58f953f9efb001a587d09a14",
+   "version": "1.55.0",
+   "sha256": "8ef70e5d5aaccfde01f73dd78478f7b5a23f426d3232318d1a024c3363977bcf",
    "nodes": [
     {
      "tag": "path",
@@ -3506,10 +3487,10 @@
     }
    ]
   },
-  "image@0.575.0": {
+  "image@1.55.0": {
    "icon": "image",
-   "version": "0.575.0",
-   "sha256": "2f0e9ea4a58dd94ea146666523224b0fad79239d0a22ac825ba25554950c570a",
+   "version": "1.55.0",
+   "sha256": "f1546af56201aabdb2efd3fd811b52eefdd61e1c8c8a909edd0f9a864c0ce43c",
    "nodes": [
     {
      "tag": "rect",
@@ -3538,42 +3519,10 @@
     }
    ]
   },
-  "image@1.48.0": {
-   "icon": "image",
-   "version": "1.48.0",
-   "sha256": "f2c723a1485825b8ffba898844dd21bb1ff4be321a57702be4b7654f938d4150",
-   "nodes": [
-    {
-     "tag": "rect",
-     "attrs": {
-      "width": "18",
-      "height": "18",
-      "x": "3",
-      "y": "3",
-      "rx": "2",
-      "ry": "2"
-     }
-    },
-    {
-     "tag": "circle",
-     "attrs": {
-      "cx": "9",
-      "cy": "9",
-      "r": "2"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"
-     }
-    }
-   ]
-  },
-  "inbox@0.575.0": {
+  "inbox@1.55.0": {
    "icon": "inbox",
-   "version": "0.575.0",
-   "sha256": "7cea84dd0a4b8a11afd0fc31e0ac83eb59364a6ce66b08cece3209f8a43c470a",
+   "version": "1.55.0",
+   "sha256": "13819ae68d38d609b779e6b1eb29c396c1170351322e9f6d3833ca4f28469bba",
    "nodes": [
     {
      "tag": "polyline",
@@ -3589,10 +3538,10 @@
     }
    ]
   },
-  "info@0.575.0": {
+  "info@1.55.0": {
    "icon": "info",
-   "version": "0.575.0",
-   "sha256": "6d5a403f23ac8bcc3f044118f9f0dda8d550124d40c0d962cc9842c3a7ae915b",
+   "version": "1.55.0",
+   "sha256": "bdcc7047006b357af0ec5af6a275e7ed3a5d3016e939e0564e20b8b74be93a3f",
    "nodes": [
     {
      "tag": "circle",
@@ -3616,37 +3565,10 @@
     }
    ]
   },
-  "info@1.48.0": {
-   "icon": "info",
-   "version": "1.48.0",
-   "sha256": "f2a57d82d320ca4c00237960edb607d5d4c9a1e6cfb9a82fdcf58a9209e4e925",
-   "nodes": [
-    {
-     "tag": "circle",
-     "attrs": {
-      "cx": "12",
-      "cy": "12",
-      "r": "10"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M12 16v-4"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M12 8h.01"
-     }
-    }
-   ]
-  },
-  "italic@0.575.0": {
+  "italic@1.55.0": {
    "icon": "italic",
-   "version": "0.575.0",
-   "sha256": "4b7862e638045a49be95b03910d9b437751409aa49e240c7380b4e315bd1b7f1",
+   "version": "1.55.0",
+   "sha256": "7a5bcbe7873d2c2e9eba557fd81584190cb05d654b529c759c4193d1011d5e63",
    "nodes": [
     {
      "tag": "line",
@@ -3677,10 +3599,10 @@
     }
    ]
   },
-  "key-round@0.575.0": {
+  "key-round@1.55.0": {
    "icon": "key-round",
-   "version": "0.575.0",
-   "sha256": "f31c3deb287a9a044bca928bd892b33e4d62c40bc152dfd7eddac5d5f0237eae",
+   "version": "1.55.0",
+   "sha256": "62eb3c6d09362cac9ec9a1b3751bcefafa512a0eaa72ec8c75619e305f52a78c",
    "nodes": [
     {
      "tag": "path",
@@ -3699,10 +3621,10 @@
     }
    ]
   },
-  "languages@0.575.0": {
+  "languages@1.55.0": {
    "icon": "languages",
-   "version": "0.575.0",
-   "sha256": "9bbda94357f19eb6d3dc3b11b8d83805c676274e65dc22eeb6680caa57b307c1",
+   "version": "1.55.0",
+   "sha256": "a33a0e7bf106081bd88ba423f20ab38e2ba2020b0161ed44d03eaa0770d92ef9",
    "nodes": [
     {
      "tag": "path",
@@ -3742,10 +3664,10 @@
     }
    ]
   },
-  "laptop@0.575.0": {
+  "laptop@1.55.0": {
    "icon": "laptop",
-   "version": "0.575.0",
-   "sha256": "ac73ca39a1785a6cd1ad823bede8b28dce99649028d6bf82a3aa376ac95ed316",
+   "version": "1.55.0",
+   "sha256": "8bc6fdfd7edcf0f191e638c70830d3dad4249afff49a9f9ecd6fdfd5a71e36e4",
    "nodes": [
     {
      "tag": "path",
@@ -3761,10 +3683,10 @@
     }
    ]
   },
-  "layout-grid@0.575.0": {
+  "layout-grid@1.55.0": {
    "icon": "layout-grid",
-   "version": "0.575.0",
-   "sha256": "f4f608d76f124da41786eeae25b85de47ac05b6c362bac645b86e01226c62812",
+   "version": "1.55.0",
+   "sha256": "e6200d8e398d35a527edc7570d193bd74a32aa66d1c95fe7a9d4f04dc1a3b676",
    "nodes": [
     {
      "tag": "rect",
@@ -3808,10 +3730,10 @@
     }
    ]
   },
-  "layout-list@0.575.0": {
+  "layout-list@1.55.0": {
    "icon": "layout-list",
-   "version": "0.575.0",
-   "sha256": "445b9f1310b5bb8d5a272256d99fed8dc5089393dda0181f3585d2973ad7e323",
+   "version": "1.55.0",
+   "sha256": "8580061b698372bdfd00c7e9a478430a0b8f66b360d9373f9101874fa55cf2e9",
    "nodes": [
     {
      "tag": "rect",
@@ -3859,10 +3781,10 @@
     }
    ]
   },
-  "lightbulb@0.575.0": {
+  "lightbulb@1.55.0": {
    "icon": "lightbulb",
-   "version": "0.575.0",
-   "sha256": "6f4a2b25845c0fd8ee0cc873eb2d00282ede5cc43e55deb0f2bee26d1536e7b2",
+   "version": "1.55.0",
+   "sha256": "287cd93bb3d53ce9f15a159c80e688afff42ea8160c41dba02e9bece48cf42a8",
    "nodes": [
     {
      "tag": "path",
@@ -3884,10 +3806,10 @@
     }
    ]
   },
-  "link-2-off@0.575.0": {
+  "link-2-off@1.55.0": {
    "icon": "link-2-off",
-   "version": "0.575.0",
-   "sha256": "3ec62c40e8381ac18ef2c5f41f90baf3627cb50cb92ff1569e6e2ef89bde8c01",
+   "version": "1.55.0",
+   "sha256": "3e8424aaff57d4e8c1835c9e4483d02c6e0ecc2331cc765737c257eb926bea4a",
    "nodes": [
     {
      "tag": "path",
@@ -3921,10 +3843,10 @@
     }
    ]
   },
-  "link-2@0.575.0": {
+  "link-2@1.55.0": {
    "icon": "link-2",
-   "version": "0.575.0",
-   "sha256": "fc3c16e62dc60093baf4e996203d64d0a5c400222480315f652b7042234b84d3",
+   "version": "1.55.0",
+   "sha256": "75583e89a64a4a37a058a518b9ddaa9b4a55a0c110c8a5c0e8f9fc92b87129c3",
    "nodes": [
     {
      "tag": "path",
@@ -3949,10 +3871,10 @@
     }
    ]
   },
-  "link@0.575.0": {
+  "link@1.55.0": {
    "icon": "link",
-   "version": "0.575.0",
-   "sha256": "5737d7c936ee80b6c41645d2d2ad51128b21251ba90e4df470714b6f6566dc2f",
+   "version": "1.55.0",
+   "sha256": "ddf089dd2bc34611eb9499a82cb70fb5b62b2816c49dc19a035712315e9c1513",
    "nodes": [
     {
      "tag": "path",
@@ -3968,10 +3890,10 @@
     }
    ]
   },
-  "list-checks@0.575.0": {
+  "list-checks@1.55.0": {
    "icon": "list-checks",
-   "version": "0.575.0",
-   "sha256": "810723e3d0f0718bc6b41144c81ee05b20d6188e4efff6f1f8a48b050d9fe532",
+   "version": "1.55.0",
+   "sha256": "1e7aacbc3677efd418e19c6704b02acaf4a5448702b70231b5236200e5862ddc",
    "nodes": [
     {
      "tag": "path",
@@ -4005,10 +3927,10 @@
     }
    ]
   },
-  "list-ordered@0.575.0": {
+  "list-ordered@1.55.0": {
    "icon": "list-ordered",
-   "version": "0.575.0",
-   "sha256": "f29830d7b2dd32c71aada3853ff15598cf619492637e0e2bbd06b333117dd96d",
+   "version": "1.55.0",
+   "sha256": "1b33e498add7086710588b55f5f00a642bc4b359024686489c7413d3ec933bff",
    "nodes": [
     {
      "tag": "path",
@@ -4048,10 +3970,10 @@
     }
    ]
   },
-  "list-todo@0.575.0": {
+  "list-todo@1.55.0": {
    "icon": "list-todo",
-   "version": "0.575.0",
-   "sha256": "9b41b0ce3b268763ca3177bffd248e2ad8f742736613229012e7b22d66a67442",
+   "version": "1.55.0",
+   "sha256": "20b3e852c3900209674a1a6c58a8a2b78e269aa30d7df1e67b1310d56f7d4bc8",
    "nodes": [
     {
      "tag": "path",
@@ -4089,10 +4011,10 @@
     }
    ]
   },
-  "list@0.575.0": {
+  "list@1.55.0": {
    "icon": "list",
-   "version": "0.575.0",
-   "sha256": "52ee67608cc9faf3cd676af10050fc9c5cb259135bcaf533f7c37db741f1c3b9",
+   "version": "1.55.0",
+   "sha256": "b3a48459bba6daf603819d4794bc738e4515619aacfe2f799127bd832d6ed52f",
    "nodes": [
     {
      "tag": "path",
@@ -4132,10 +4054,10 @@
     }
    ]
   },
-  "loader-circle@0.575.0": {
+  "loader-circle@1.55.0": {
    "icon": "loader-circle",
-   "version": "0.575.0",
-   "sha256": "dc9c9bf620fe6b80cd1c187610ecc16e9165d9b3b711a1ca59f36645104da90d",
+   "version": "1.55.0",
+   "sha256": "75cb40a3b0d0ab7649d4bc417f20530175c3ba3ecbe2d49379fbb6c1c2f6dad3",
    "nodes": [
     {
      "tag": "path",
@@ -4145,10 +4067,10 @@
     }
    ]
   },
-  "lock-keyhole@0.575.0": {
+  "lock-keyhole@1.55.0": {
    "icon": "lock-keyhole",
-   "version": "0.575.0",
-   "sha256": "7c94942e2821408eeaea945ef297daf6dc1eef762985b7361ce1a3ea14590de5",
+   "version": "1.55.0",
+   "sha256": "86bf917b0c769e32a3f1fdca02c83a9161b3d7fe3d223f1cac9462f932c1be5f",
    "nodes": [
     {
      "tag": "circle",
@@ -4176,10 +4098,10 @@
     }
    ]
   },
-  "lock@0.575.0": {
+  "lock@1.55.0": {
    "icon": "lock",
-   "version": "0.575.0",
-   "sha256": "8505c5faa6ee1eac36e3bd8760905a2c8c3f039af42e6e2b3a21f9ce8166951a",
+   "version": "1.55.0",
+   "sha256": "f302cae2d6a31b379ed6110b528b905f7f7755b1f1159e8c5abd3081806f2c88",
    "nodes": [
     {
      "tag": "rect",
@@ -4200,10 +4122,10 @@
     }
    ]
   },
-  "log-in@0.575.0": {
+  "log-in@1.55.0": {
    "icon": "log-in",
-   "version": "0.575.0",
-   "sha256": "4544fedc833a3cd62396f60081a64350282c3b851be91ff8540083ca8812c4fb",
+   "version": "1.55.0",
+   "sha256": "db2f5951aa6a5a04b9c306fecc14e571aa654924722502f0502087a3547fc050",
    "nodes": [
     {
      "tag": "path",
@@ -4225,10 +4147,10 @@
     }
    ]
   },
-  "log-out@0.575.0": {
+  "log-out@1.55.0": {
    "icon": "log-out",
-   "version": "0.575.0",
-   "sha256": "6c6547f29fa2722637f07b73ba5ce8506c55f647d1d0af4b2d3215b9027b1df3",
+   "version": "1.55.0",
+   "sha256": "57c98f25512f84d72c875d81b2cba4a72143b4e8664f92105ece89d6eded8147",
    "nodes": [
     {
      "tag": "path",
@@ -4250,10 +4172,10 @@
     }
    ]
   },
-  "mail@0.575.0": {
+  "mail@1.55.0": {
    "icon": "mail",
-   "version": "0.575.0",
-   "sha256": "f27f7e5bf17f89eb4a8d6137b25e5592d0407a2ffc54c8ae5dced57025239e5c",
+   "version": "1.55.0",
+   "sha256": "935cf9d868d9df6feb98a810a4e74364f213b0f8dd29f1513fa2de68f9b0b282",
    "nodes": [
     {
      "tag": "path",
@@ -4273,10 +4195,10 @@
     }
    ]
   },
-  "map-pin@0.575.0": {
+  "map-pin@1.55.0": {
    "icon": "map-pin",
-   "version": "0.575.0",
-   "sha256": "1c24d9a17ca4b3943619bfcc63cc5f8602d5ea4c84cd6f81ddb5a4c636ce5ec0",
+   "version": "1.55.0",
+   "sha256": "751353d6ccf19252d161b7ab34b3b70c311bf213b4865dc766db684086d76a5f",
    "nodes": [
     {
      "tag": "path",
@@ -4294,10 +4216,10 @@
     }
    ]
   },
-  "maximize-2@0.575.0": {
+  "maximize-2@1.55.0": {
    "icon": "maximize-2",
-   "version": "0.575.0",
-   "sha256": "5c2bb6cd9de7dd274db5056212810ec13533699021c682a9c0ddc4a6932531a8",
+   "version": "1.55.0",
+   "sha256": "25b3e909632249b59452d691f76410b51e700949777673a61d3e1f34506206f3",
    "nodes": [
     {
      "tag": "path",
@@ -4325,10 +4247,10 @@
     }
    ]
   },
-  "maximize@0.575.0": {
+  "maximize@1.55.0": {
    "icon": "maximize",
-   "version": "0.575.0",
-   "sha256": "1659a269f70615dabbd81b7071d6fa76d8bd2c727d758a5144edf095e1023117",
+   "version": "1.55.0",
+   "sha256": "266b3cbcd7688f60ce2da044286dfa0db727a08077ac747a9015b4a64c340b27",
    "nodes": [
     {
      "tag": "path",
@@ -4356,10 +4278,10 @@
     }
    ]
   },
-  "menu@0.575.0": {
+  "menu@1.55.0": {
    "icon": "menu",
-   "version": "0.575.0",
-   "sha256": "c620e0ad3d41c9df7690569c55c1c85381f735d7b4ce22d03cc83598205385ba",
+   "version": "1.55.0",
+   "sha256": "bb8ca85fa3cd032009eb567b4203a30957c1165b6fa6e65ba4027b95fd2f44de",
    "nodes": [
     {
      "tag": "path",
@@ -4381,10 +4303,10 @@
     }
    ]
   },
-  "message-circle-off@0.575.0": {
+  "message-circle-off@1.55.0": {
    "icon": "message-circle-off",
-   "version": "0.575.0",
-   "sha256": "024ddd935c1893eceebfa0524e5f545e702c2b65c6fc6bb8e8401bd58cff08be",
+   "version": "1.55.0",
+   "sha256": "9b030b9f2f7a60c5af820faaae92c269ccfbc36c1490715e922a4fd2a1d0922a",
    "nodes": [
     {
      "tag": "path",
@@ -4406,10 +4328,10 @@
     }
    ]
   },
-  "message-circle-plus@0.575.0": {
+  "message-circle-plus@1.55.0": {
    "icon": "message-circle-plus",
-   "version": "0.575.0",
-   "sha256": "2ca037aad6f5d137006e621d289ac4d5eeb99eb18baa9717d070bd31edfe1d3a",
+   "version": "1.55.0",
+   "sha256": "a9d1f9e4d8b486f17c7562c8e74bd244837cfe2a65d5a8024ede95ce1ca507e3",
    "nodes": [
     {
      "tag": "path",
@@ -4431,10 +4353,10 @@
     }
    ]
   },
-  "message-circle@0.575.0": {
+  "message-circle@1.55.0": {
    "icon": "message-circle",
-   "version": "0.575.0",
-   "sha256": "a302f35aa811d912f251206cf34eb3a3dc313342e735a80cd86d5468f1086971",
+   "version": "1.55.0",
+   "sha256": "54b59c0df0ec933a524e8b2d392cebc4a02df97a375bb7f4de4587a742fdf410",
    "nodes": [
     {
      "tag": "path",
@@ -4444,10 +4366,10 @@
     }
    ]
   },
-  "message-square-check@0.575.0": {
+  "message-square-check@1.55.0": {
    "icon": "message-square-check",
-   "version": "0.575.0",
-   "sha256": "eaf2570a9738230299fb937719bfc600e39e19a4d5cc486b22673ba5d63f7039",
+   "version": "1.55.0",
+   "sha256": "de5395c2b95cd4cbae1bfb62107095fa61e6e700c044350e3dbae7d76d4a0bdb",
    "nodes": [
     {
      "tag": "path",
@@ -4463,10 +4385,10 @@
     }
    ]
   },
-  "message-square-dot@0.575.0": {
+  "message-square-dot@1.55.0": {
    "icon": "message-square-dot",
-   "version": "0.575.0",
-   "sha256": "d6e3e1567675ce6674bc2acc32e207369db96789637ac42f9e520a3b4a3275b2",
+   "version": "1.55.0",
+   "sha256": "604b3828830134fa04d0f82975209c5fe6169e9393860fdbc3ed0e8e1b1ece75",
    "nodes": [
     {
      "tag": "path",
@@ -4484,10 +4406,10 @@
     }
    ]
   },
-  "message-square-more@0.575.0": {
+  "message-square-more@1.55.0": {
    "icon": "message-square-more",
-   "version": "0.575.0",
-   "sha256": "93d2bf16b7844582588e662782ae5db687b7d6c29b8ff26ec56a7e984eb59b1b",
+   "version": "1.55.0",
+   "sha256": "8dc6eac6d09d8d815484635098497bc3ea1b4afd35245456131c3b9d649c5a62",
    "nodes": [
     {
      "tag": "path",
@@ -4515,10 +4437,10 @@
     }
    ]
   },
-  "message-square-text@0.575.0": {
+  "message-square-text@1.55.0": {
    "icon": "message-square-text",
-   "version": "0.575.0",
-   "sha256": "1e874543c945d005314b76ea50855f8bd73f0053283de7ada4363aa32f4d703c",
+   "version": "1.55.0",
+   "sha256": "7ab81a0602004f28157328f0e52f95f706751c11dd227b80055905b73e6f6bf6",
    "nodes": [
     {
      "tag": "path",
@@ -4546,10 +4468,10 @@
     }
    ]
   },
-  "message-square@0.575.0": {
+  "message-square@1.55.0": {
    "icon": "message-square",
-   "version": "0.575.0",
-   "sha256": "ff73c985a7baab1302179481756bfb49a5bdd1ad5106e66cf803d8d1c0a38e02",
+   "version": "1.55.0",
+   "sha256": "ad6d266d71e968d33d16c317aaab460fac2f090634365eafb235fc5a41844a13",
    "nodes": [
     {
      "tag": "path",
@@ -4559,10 +4481,10 @@
     }
    ]
   },
-  "minimize-2@0.575.0": {
+  "minimize-2@1.55.0": {
    "icon": "minimize-2",
-   "version": "0.575.0",
-   "sha256": "c6f53e5d5d49fb54b8fa298938cb006c7e9ecd39fe6951c4d3ba6e64ad8a0b26",
+   "version": "1.55.0",
+   "sha256": "7cefbc4262c5d813eedd1e85d886c7a89982470bb021bb67ee7f610524fba1c2",
    "nodes": [
     {
      "tag": "path",
@@ -4590,10 +4512,10 @@
     }
    ]
   },
-  "minimize@0.575.0": {
+  "minimize@1.55.0": {
    "icon": "minimize",
-   "version": "0.575.0",
-   "sha256": "c32b28ad47b65039d9144b8bc7f88598601765224c2b594c95ae36f5599916d6",
+   "version": "1.55.0",
+   "sha256": "0494387fd24187aef8b3e02f59245deefa825ee9e7b7e065f07e06f96c41ec63",
    "nodes": [
     {
      "tag": "path",
@@ -4621,10 +4543,10 @@
     }
    ]
   },
-  "minus@1.48.0": {
+  "minus@1.55.0": {
    "icon": "minus",
-   "version": "1.48.0",
-   "sha256": "38be5c1a2813dac0fe8576d56fd517bee796d22fd32595844928da9f6363da6d",
+   "version": "1.55.0",
+   "sha256": "2850c922d3ef958e18be3be5163f30af6763e1fd41bd141134cdcb0c419d937b",
    "nodes": [
     {
      "tag": "path",
@@ -4634,10 +4556,10 @@
     }
    ]
   },
-  "monitor@0.575.0": {
+  "monitor@1.55.0": {
    "icon": "monitor",
-   "version": "0.575.0",
-   "sha256": "e592d6400e21fa75ffa02d23e0e40a044d3f2ee01636a2f948af248217bbf529",
+   "version": "1.55.0",
+   "sha256": "959c607fe4147cebb1f43f696aaef77a65569096c27f1c0afcc3355c1207eb7e",
    "nodes": [
     {
      "tag": "rect",
@@ -4669,10 +4591,10 @@
     }
    ]
   },
-  "moon@0.575.0": {
+  "moon@1.55.0": {
    "icon": "moon",
-   "version": "0.575.0",
-   "sha256": "00104c114c702b884f057a8c3998c40dc2d9811c0fdd00e4ccb33d7ced040d2d",
+   "version": "1.55.0",
+   "sha256": "98b2fad57f5e0164f1ce259f0207ebaaa33e4b752e63501f8077842805a14547",
    "nodes": [
     {
      "tag": "path",
@@ -4682,10 +4604,10 @@
     }
    ]
   },
-  "move-right@0.575.0": {
+  "move-right@1.55.0": {
    "icon": "move-right",
-   "version": "0.575.0",
-   "sha256": "e63132b9e24fd5b48fd92307c1ac87583c4c7e798d61c31181d528985f8fb0cf",
+   "version": "1.55.0",
+   "sha256": "26336aa19278c6df2da59e3baf2129b67ec413004b151e7ded7e6fb42ad83a58",
    "nodes": [
     {
      "tag": "path",
@@ -4701,10 +4623,10 @@
     }
    ]
   },
-  "music@0.575.0": {
+  "music@1.55.0": {
    "icon": "music",
-   "version": "0.575.0",
-   "sha256": "82e81d397dd3ae80049c770e28d1e1d3568fc8c1c1d9d27aa1f34e501c3b6f57",
+   "version": "1.55.0",
+   "sha256": "701a57b6fd583306ce698fbfc33e1ec1acb4ef7d5c63b11daa4958486d0a7b09",
    "nodes": [
     {
      "tag": "path",
@@ -4730,10 +4652,10 @@
     }
    ]
   },
-  "network@0.575.0": {
+  "network@1.55.0": {
    "icon": "network",
-   "version": "0.575.0",
-   "sha256": "9d00425516082dd2e682b2cde05c1a8b17433abfea3e0b8d5fd231e5cbe3061f",
+   "version": "1.55.0",
+   "sha256": "10948946c463dc336c688e081e1ff0b660cf505c5c158f078ce9e1fbec99a0d2",
    "nodes": [
     {
      "tag": "rect",
@@ -4779,10 +4701,10 @@
     }
    ]
   },
-  "palette@0.575.0": {
+  "palette@1.55.0": {
    "icon": "palette",
-   "version": "0.575.0",
-   "sha256": "8f71ae399eaf69c7ae985a6b3d9c18c7be49bce3ac4121d9a67644e17e12f299",
+   "version": "1.55.0",
+   "sha256": "581bd3b11156dfab747ea66a2f00edb139aa7df87b32f2f93efec1a19aeab736",
    "nodes": [
     {
      "tag": "path",
@@ -4828,10 +4750,10 @@
     }
    ]
   },
-  "paperclip@0.575.0": {
+  "paperclip@1.55.0": {
    "icon": "paperclip",
-   "version": "0.575.0",
-   "sha256": "13bb98655b7ec8d3e0554daed2b141427e29f39c0c7b62df78fee599647e6771",
+   "version": "1.55.0",
+   "sha256": "69a2c674a1c35db726738c7e46941861baa3c9f73ce9e1f47e352c105996f62b",
    "nodes": [
     {
      "tag": "path",
@@ -4841,10 +4763,10 @@
     }
    ]
   },
-  "pause@0.575.0": {
+  "pause@1.55.0": {
    "icon": "pause",
-   "version": "0.575.0",
-   "sha256": "9cd5eba6dc6e02b01fdc94a987d397205ce09440ac99d67f93b2eab99512dbc6",
+   "version": "1.55.0",
+   "sha256": "0fa15341826035342f43920f74ad218b629ded40f4410c49eecd9792ec844b93",
    "nodes": [
     {
      "tag": "rect",
@@ -4868,10 +4790,10 @@
     }
    ]
   },
-  "pencil@0.575.0": {
+  "pencil@1.55.0": {
    "icon": "pencil",
-   "version": "0.575.0",
-   "sha256": "56887cf82e45eb0137238dec001f8cf2e3a6945af2b7ea020b49558ae94bdf80",
+   "version": "1.55.0",
+   "sha256": "4d2369708555776422e95842d36365a406d4fda3fb15c5244fec9b747d0682d9",
    "nodes": [
     {
      "tag": "path",
@@ -4887,10 +4809,10 @@
     }
    ]
   },
-  "pin-off@0.575.0": {
+  "pin-off@1.55.0": {
    "icon": "pin-off",
-   "version": "0.575.0",
-   "sha256": "1e202f51a6ceb0c1f582e28576c3dba8c59a3a76e79b5aeacca7d7ebbc60e4b8",
+   "version": "1.55.0",
+   "sha256": "b5c710e001b0a44dc4ea1067248a32eef1a2d734d541e9dadb20f84b03239c5c",
    "nodes": [
     {
      "tag": "path",
@@ -4918,10 +4840,10 @@
     }
    ]
   },
-  "pin@0.575.0": {
+  "pin@1.55.0": {
    "icon": "pin",
-   "version": "0.575.0",
-   "sha256": "8d8322e706e98b63ee78fb99068a90b385ce26aec8306589cd276fd5576933c6",
+   "version": "1.55.0",
+   "sha256": "31e94bddfddf19d574f42be51247fcf29447451489773a448366a3742d476cc8",
    "nodes": [
     {
      "tag": "path",
@@ -4937,10 +4859,10 @@
     }
    ]
   },
-  "play@0.575.0": {
+  "play@1.55.0": {
    "icon": "play",
-   "version": "0.575.0",
-   "sha256": "7210abbfc4175fbe5b3390e9fc6f41c669b3bad3607a4a9e8bc1e6ff47ca950c",
+   "version": "1.55.0",
+   "sha256": "c7e5a34723e88470725c4fae7443a77250630db47fa20d66832dc4e2ab3a3908",
    "nodes": [
     {
      "tag": "path",
@@ -4950,10 +4872,10 @@
     }
    ]
   },
-  "plus@0.575.0": {
+  "plus@1.55.0": {
    "icon": "plus",
-   "version": "0.575.0",
-   "sha256": "2830c9a6436847ef1eaed48649622c073a3e49d0d4e7894b5dff8fc903e5ffbc",
+   "version": "1.55.0",
+   "sha256": "92b423aa6739347b0495ac26b6038b47c8f48a35d4fe2866aeebcaa114fc9a08",
    "nodes": [
     {
      "tag": "path",
@@ -4969,10 +4891,10 @@
     }
    ]
   },
-  "power@0.575.0": {
+  "power@1.55.0": {
    "icon": "power",
-   "version": "0.575.0",
-   "sha256": "25783b04433379e129f6c7ca95a26b018f35183b0977156ec351dceee004efeb",
+   "version": "1.55.0",
+   "sha256": "5aa160b1d368a3b16d53c7084db52ae57fdcf92ca0fe405a0411675cea19a442",
    "nodes": [
     {
      "tag": "path",
@@ -4988,10 +4910,10 @@
     }
    ]
   },
-  "refresh-cw@0.575.0": {
+  "refresh-cw@1.55.0": {
    "icon": "refresh-cw",
-   "version": "0.575.0",
-   "sha256": "283203b7a3d9b35f602434f975899114a60431bdbc6af30aae541802162dfce7",
+   "version": "1.55.0",
+   "sha256": "a572d2b3ffccf347738c4283ad4087fc33d175721ca60a3b688be7c6498fb68a",
    "nodes": [
     {
      "tag": "path",
@@ -5019,10 +4941,10 @@
     }
    ]
   },
-  "repeat@0.575.0": {
+  "repeat@1.55.0": {
    "icon": "repeat",
-   "version": "0.575.0",
-   "sha256": "433ea888eefcbc8f1fe3450e6896536856e22897f8e8b3b066aa2a35203a7904",
+   "version": "1.55.0",
+   "sha256": "b5339eca69a0c593b18335a4a222111c5d9a668d436a49c3a55883f17cc13f21",
    "nodes": [
     {
      "tag": "path",
@@ -5050,10 +4972,10 @@
     }
    ]
   },
-  "reply@0.575.0": {
+  "reply@1.55.0": {
    "icon": "reply",
-   "version": "0.575.0",
-   "sha256": "c7ec00937ced0d3e4ad463500fa575fe232c34bcc0f8329fcbd7ba80eaee071c",
+   "version": "1.55.0",
+   "sha256": "11a6f9c808c540c1472cfd5865eb562cd30b04c8f8b044480b9833958369c455",
    "nodes": [
     {
      "tag": "path",
@@ -5069,10 +4991,10 @@
     }
    ]
   },
-  "rotate-ccw@0.575.0": {
+  "rotate-ccw@1.55.0": {
    "icon": "rotate-ccw",
-   "version": "0.575.0",
-   "sha256": "27fbfde329a011f6fbb03e37b5cb4c45859fc86e15ae7bb24f5855f8590f4207",
+   "version": "1.55.0",
+   "sha256": "c7627c2bcf95782b073a442532df862cadccbf2411baae4c9c7204b45e93aa2b",
    "nodes": [
     {
      "tag": "path",
@@ -5088,10 +5010,10 @@
     }
    ]
   },
-  "rotate-cw@0.575.0": {
+  "rotate-cw@1.55.0": {
    "icon": "rotate-cw",
-   "version": "0.575.0",
-   "sha256": "2660cd025f86a7687cd64d36edd3b85f3f0130c7f00fbdb412a8ed410cbd72c9",
+   "version": "1.55.0",
+   "sha256": "222f189535c916d4d4590b5e2b3265093f9655357615b4e8779f4606ff61321e",
    "nodes": [
     {
      "tag": "path",
@@ -5107,10 +5029,10 @@
     }
    ]
   },
-  "search@0.575.0": {
+  "search@1.55.0": {
    "icon": "search",
-   "version": "0.575.0",
-   "sha256": "8940b47c5c0d64f76778aa61a5a25ee4c15a095fbf491fddd5ec59e593723a04",
+   "version": "1.55.0",
+   "sha256": "417fb08f4effe8ac280176d0487b4860388e98c8c4db5a0c01edb84c5ee1bf05",
    "nodes": [
     {
      "tag": "path",
@@ -5128,10 +5050,10 @@
     }
    ]
   },
-  "send@0.575.0": {
+  "send@1.55.0": {
    "icon": "send",
-   "version": "0.575.0",
-   "sha256": "203b21260b06d30daf5fd32c4d1e3cd468d848f77e3787ea8444e98ec7b81719",
+   "version": "1.55.0",
+   "sha256": "cfa47eb0b908db30178e2ea1fbfeb8c58cceff1cb065c3e074eaa74b4b5c3390",
    "nodes": [
     {
      "tag": "path",
@@ -5147,10 +5069,10 @@
     }
    ]
   },
-  "settings-2@0.575.0": {
+  "settings-2@1.55.0": {
    "icon": "settings-2",
-   "version": "0.575.0",
-   "sha256": "58e87bdb9db2ed4828ad4c050b4309f551a46024682e612cc4889cf8063a5de0",
+   "version": "1.55.0",
+   "sha256": "3ea6a922de321c65d1ad613a8b875bcd6b78a162608c06be29e9581eee04313f",
    "nodes": [
     {
      "tag": "path",
@@ -5182,10 +5104,10 @@
     }
    ]
   },
-  "settings@0.575.0": {
+  "settings@1.55.0": {
    "icon": "settings",
-   "version": "0.575.0",
-   "sha256": "cb58d6ccbccc1603d1e4235eb6a24a46f308c292626cc1e129b71dbb04a16b21",
+   "version": "1.55.0",
+   "sha256": "390aa1ebfa09f1c9a63dcfa24eaccf27c8d2aec3b5ee2dfa845be139955eab07",
    "nodes": [
     {
      "tag": "path",
@@ -5203,10 +5125,10 @@
     }
    ]
   },
-  "share-2@0.575.0": {
+  "share-2@1.55.0": {
    "icon": "share-2",
-   "version": "0.575.0",
-   "sha256": "b1621ccdd14150666a6a977100a18effbb6c94d570c90499149f702aad707e88",
+   "version": "1.55.0",
+   "sha256": "bb4284c841b25fab353c2020f87a658fa3979d47aef8f53898a1ce8cabf9d03a",
    "nodes": [
     {
      "tag": "circle",
@@ -5252,10 +5174,10 @@
     }
    ]
   },
-  "shield@0.575.0": {
+  "shield@1.55.0": {
    "icon": "shield",
-   "version": "0.575.0",
-   "sha256": "449f21b186458359124a266d660d2959d5adfcc5a35d5dfc7ecf029dcc8dda24",
+   "version": "1.55.0",
+   "sha256": "a7a778d9375da3090e0dbdf4338e919a6e0466b684bf32822226deb16ae19813",
    "nodes": [
     {
      "tag": "path",
@@ -5265,10 +5187,10 @@
     }
    ]
   },
-  "sliders-horizontal@0.575.0": {
+  "sliders-horizontal@1.55.0": {
    "icon": "sliders-horizontal",
-   "version": "0.575.0",
-   "sha256": "7d024243c8695fadf69a526c29a87c42856b6299a0d16cfc9cfb586891090cbe",
+   "version": "1.55.0",
+   "sha256": "eecc9944a5869a72523e02f62198cb8c0f99d56245d173695783063eba76aaab",
    "nodes": [
     {
      "tag": "path",
@@ -5326,10 +5248,10 @@
     }
    ]
   },
-  "smartphone@0.575.0": {
+  "smartphone@1.55.0": {
    "icon": "smartphone",
-   "version": "0.575.0",
-   "sha256": "c1d46e678ab01aac63ed80ec2acc39b86691ef55778ed24e76e0cd2ccccc868b",
+   "version": "1.55.0",
+   "sha256": "2e0700a792014acee28ad4723ec8c4d837f5973937e2e14efb17608ee85bc158",
    "nodes": [
     {
      "tag": "rect",
@@ -5350,59 +5272,10 @@
     }
    ]
   },
-  "smile-plus@0.575.0": {
-   "icon": "smile-plus",
-   "version": "0.575.0",
-   "sha256": "a0bfd53eeb8a6110904411cd7cf26e0aad798168067aaf0bbc9f106ecd1e77a6",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M22 11v1a10 10 0 1 1-9-10"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M8 14s1.5 2 4 2 4-2 4-2"
-     }
-    },
-    {
-     "tag": "line",
-     "attrs": {
-      "x1": "9",
-      "x2": "9.01",
-      "y1": "9",
-      "y2": "9"
-     }
-    },
-    {
-     "tag": "line",
-     "attrs": {
-      "x1": "15",
-      "x2": "15.01",
-      "y1": "9",
-      "y2": "9"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M16 5h6"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M19 2v6"
-     }
-    }
-   ]
-  },
-  "square-check-big@0.575.0": {
+  "square-check-big@1.55.0": {
    "icon": "square-check-big",
-   "version": "0.575.0",
-   "sha256": "60fd4e8e179efc272aa1f55be0f89daa5efa7e205db151554a43f3c6738b729b",
+   "version": "1.55.0",
+   "sha256": "8559843da2feac8bb20ecbcc8a5b4e8f0b1ce224e8b3e4b2fa7cd1df8acb5b94",
    "nodes": [
     {
      "tag": "path",
@@ -5418,10 +5291,10 @@
     }
    ]
   },
-  "square-check@0.575.0": {
+  "square-check@1.55.0": {
    "icon": "square-check",
-   "version": "0.575.0",
-   "sha256": "d9da565d85c7b72e0d203c8f09b03d05590adec36671d1d0eead1a21432ef074",
+   "version": "1.55.0",
+   "sha256": "1f17d92c1dfc2ddc57bf6e445d28f72f1bd1bc9e5e3a70398e6deabfab7977b0",
    "nodes": [
     {
      "tag": "rect",
@@ -5436,43 +5309,40 @@
     {
      "tag": "path",
      "attrs": {
-      "d": "m9 12 2 2 4-4"
+      "d": "m16 9-5.5 5.5L8 12"
      }
     }
    ]
   },
-  "square-split-horizontal@0.575.0": {
+  "square-split-horizontal@1.55.0": {
    "icon": "square-split-horizontal",
-   "version": "0.575.0",
-   "sha256": "45850cf6560f9402a2329f7cbe240f9a5a860b307e433ac6969aecef8527a7e3",
+   "version": "1.55.0",
+   "sha256": "45fec35b3282b220d23b2068f1d0b62e441873669942f0a144abcf9eb238ef99",
    "nodes": [
     {
      "tag": "path",
      "attrs": {
-      "d": "M8 19H5c-1 0-2-1-2-2V7c0-1 1-2 2-2h3"
+      "d": "M12 2v20"
      }
     },
     {
      "tag": "path",
      "attrs": {
-      "d": "M16 5h3c1 0 2 1 2 2v10c0 1-1 2-2 2h-3"
+      "d": "M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"
      }
     },
     {
-     "tag": "line",
+     "tag": "path",
      "attrs": {
-      "x1": "12",
-      "x2": "12",
-      "y1": "4",
-      "y2": "20"
+      "d": "M8 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3"
      }
     }
    ]
   },
-  "square@0.575.0": {
+  "square@1.55.0": {
    "icon": "square",
-   "version": "0.575.0",
-   "sha256": "630d306a04b282a5a73f14e6b55f3d811bf23db137b2db5a5b67d8a008fc379e",
+   "version": "1.55.0",
+   "sha256": "a7548d8ec2bbf54e266de47e4b9321fda31a0ffe445b3629c3f0b483d6ce51de",
    "nodes": [
     {
      "tag": "rect",
@@ -5486,10 +5356,10 @@
     }
    ]
   },
-  "star@0.575.0": {
+  "star@1.55.0": {
    "icon": "star",
-   "version": "0.575.0",
-   "sha256": "5f308e74ccdd2cb7c2e4a42e798e7537c0bed9514651426fe4ac533348640dcc",
+   "version": "1.55.0",
+   "sha256": "1e8a088aa1f6d9fa138cfe57fe865676ae094d1481b7ba8af23eba12163f1c31",
    "nodes": [
     {
      "tag": "path",
@@ -5499,10 +5369,10 @@
     }
    ]
   },
-  "strikethrough@0.575.0": {
+  "strikethrough@1.55.0": {
    "icon": "strikethrough",
-   "version": "0.575.0",
-   "sha256": "fcda6a99a3940a504f2c387ede8d3ebbb6ab1a1fa86b53a7f74cf08e7c31aed6",
+   "version": "1.55.0",
+   "sha256": "848eac480b3accc0b8b012a3c63994f60fe6134149c05bc00f344f9a426c9a00",
    "nodes": [
     {
      "tag": "path",
@@ -5527,10 +5397,10 @@
     }
    ]
   },
-  "sun@0.575.0": {
+  "sun@1.55.0": {
    "icon": "sun",
-   "version": "0.575.0",
-   "sha256": "d0c7ac00302264cc6973bac9f0ea692891cbb77773ecf374b3a4572bd0a5be7d",
+   "version": "1.55.0",
+   "sha256": "e2000e60ca29f267d847f4ba4b2b3c84df81750408d4f90d82eb1e7c5e62a616",
    "nodes": [
     {
      "tag": "circle",
@@ -5590,10 +5460,10 @@
     }
    ]
   },
-  "table@0.575.0": {
+  "table@1.55.0": {
    "icon": "table",
-   "version": "0.575.0",
-   "sha256": "872ec5542ec067f2062bed6e57912c1f062642cb2efabe47cd83d11b53b6b7ae",
+   "version": "1.55.0",
+   "sha256": "d8c2b9b30d3844d2dd97d78f0123fbe8efc672c8920b4e7bbeca5d9ae829afc5",
    "nodes": [
     {
      "tag": "path",
@@ -5625,10 +5495,10 @@
     }
    ]
   },
-  "tag@0.575.0": {
+  "tag@1.55.0": {
    "icon": "tag",
-   "version": "0.575.0",
-   "sha256": "f4c91e4f009c4d0d67a303aeceb89b3120d065caa64bf7fbb685cd2fcdb4cee0",
+   "version": "1.55.0",
+   "sha256": "e830e2d332be8b779998e734a630cb91de718ec87b722605b736eaa0185bd51d",
    "nodes": [
     {
      "tag": "path",
@@ -5647,10 +5517,10 @@
     }
    ]
   },
-  "terminal@0.575.0": {
+  "terminal@1.55.0": {
    "icon": "terminal",
-   "version": "0.575.0",
-   "sha256": "158cf113545236c36e1623b75b7c4830e773da27d695d9e7938deec45bce4623",
+   "version": "1.55.0",
+   "sha256": "74d00d131187214db74c627852bea51c72d926c50ce7f1ca7f526d3f6e0801b5",
    "nodes": [
     {
      "tag": "path",
@@ -5666,10 +5536,10 @@
     }
    ]
   },
-  "text-quote@0.575.0": {
+  "text-quote@1.55.0": {
    "icon": "text-quote",
-   "version": "0.575.0",
-   "sha256": "c04b441b3ddf07a2a42d7fa691b01c0ef39d1144ebd7cfa7edc6473d227b4706",
+   "version": "1.55.0",
+   "sha256": "2e0fa870640799af3310c5b9dad51d85448d8d2fac33c5a087e6e8c2a384e90f",
    "nodes": [
     {
      "tag": "path",
@@ -5697,10 +5567,10 @@
     }
    ]
   },
-  "trash-2@0.575.0": {
-   "icon": "trash-2",
-   "version": "0.575.0",
-   "sha256": "e4f43a30190e7a7faa8367dda7cafcc6bdef2f1b023b18e7b50e00f41ff29714",
+  "trash@1.55.0": {
+   "icon": "trash",
+   "version": "1.55.0",
+   "sha256": "1d1257afaf0d1edd7109a559591d8718ed3db4c55e7fe052a43344916c835859",
    "nodes": [
     {
      "tag": "path",
@@ -5734,10 +5604,10 @@
     }
    ]
   },
-  "triangle-alert@0.575.0": {
+  "triangle-alert@1.55.0": {
    "icon": "triangle-alert",
-   "version": "0.575.0",
-   "sha256": "b14363025adfdf8a22a0c173595ce6d857594f8d5ab140ffef57ae4fef0edf6c",
+   "version": "1.55.0",
+   "sha256": "c661f198b212b09dfd0cd6c4784141bc17da65dcb77e04097bfe710dc3549e18",
    "nodes": [
     {
      "tag": "path",
@@ -5759,35 +5629,10 @@
     }
    ]
   },
-  "triangle-alert@1.48.0": {
-   "icon": "triangle-alert",
-   "version": "1.48.0",
-   "sha256": "289a0f7c8ce8698e5cd5def7e4ace4430f8f643ced61fe35ef878bb5622bac35",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M12 9v4"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M12 17h.01"
-     }
-    }
-   ]
-  },
-  "type@0.575.0": {
+  "type@1.55.0": {
    "icon": "type",
-   "version": "0.575.0",
-   "sha256": "0dd0bdaa03762ec9a5a46e977257235dc2b1243cf3a930bfcb07dba810fe2ab2",
+   "version": "1.55.0",
+   "sha256": "626304c7e959c6eb1d9d23fff18382d4c47bb48cc173a2edebccaf9e65a7af97",
    "nodes": [
     {
      "tag": "path",
@@ -5809,10 +5654,10 @@
     }
    ]
   },
-  "undo-2@0.575.0": {
+  "undo-2@1.55.0": {
    "icon": "undo-2",
-   "version": "0.575.0",
-   "sha256": "84ae13e581c00d2f251596404a08cd702ba6b64d7fc36a3c68415a6ff6c87d0c",
+   "version": "1.55.0",
+   "sha256": "d4e8f6dcc08eec579bf8c47191ad7d737417a62cf1ce26dbe4cba0595a7adb62",
    "nodes": [
     {
      "tag": "path",
@@ -5828,10 +5673,10 @@
     }
    ]
   },
-  "unplug@0.575.0": {
+  "unplug@1.55.0": {
    "icon": "unplug",
-   "version": "0.575.0",
-   "sha256": "59de1bd00454eca90bee4ff46ba5518bd8586be2d131355922df61163d0a759c",
+   "version": "1.55.0",
+   "sha256": "2b31790113939572d969a687693e5bf47f9fb2b959c98b9fcc22d1c2e0367892",
    "nodes": [
     {
      "tag": "path",
@@ -5871,10 +5716,10 @@
     }
    ]
   },
-  "upload@0.575.0": {
+  "upload@1.55.0": {
    "icon": "upload",
-   "version": "0.575.0",
-   "sha256": "578d08559d6ab712b12c89c65d430ebdf244397a9df57223c70fa979ebe0a371",
+   "version": "1.55.0",
+   "sha256": "976b4031986459abfd41159f91c82fbe21f90ad4c711771c8e26a24921749f37",
    "nodes": [
     {
      "tag": "path",
@@ -5896,35 +5741,10 @@
     }
    ]
   },
-  "upload@1.48.0": {
-   "icon": "upload",
-   "version": "1.48.0",
-   "sha256": "eb8fa3c0a1931967f3c5e7646c91a6fa65022941a5230c3282b68a6651651006",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M12 3v12"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m17 8-5-5-5 5"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-     }
-    }
-   ]
-  },
-  "user-minus@0.575.0": {
+  "user-minus@1.55.0": {
    "icon": "user-minus",
-   "version": "0.575.0",
-   "sha256": "bb8fdf6586870d0f93edd715f9c84032dfd21cd7ffc9d64ca3c49d276464ff74",
+   "version": "1.55.0",
+   "sha256": "c3a770d45eeff541a0f9e191a136d55f6c83e19098aad40e972b4038ac4c406d",
    "nodes": [
     {
      "tag": "path",
@@ -5951,10 +5771,10 @@
     }
    ]
   },
-  "user-plus@0.575.0": {
+  "user-plus@1.55.0": {
    "icon": "user-plus",
-   "version": "0.575.0",
-   "sha256": "7f2c3707901b24b2cda7629e6f30184f906fac749a29439f1006f6c57744e5e7",
+   "version": "1.55.0",
+   "sha256": "7999e82484d201494ba0118207087a36a4cfdbc7d57d37db9556d34bcbe1224a",
    "nodes": [
     {
      "tag": "path",
@@ -5990,10 +5810,10 @@
     }
    ]
   },
-  "user-x@0.575.0": {
+  "user-x@1.55.0": {
    "icon": "user-x",
-   "version": "0.575.0",
-   "sha256": "0b17e74ab2c738a3668f2edf0474b798065f99dfa11d6829ed7853d77b1afa83",
+   "version": "1.55.0",
+   "sha256": "86aed52ed3472fe21dab2060dd179007b01df7155be34bf37ebb5deb27b8300a",
    "nodes": [
     {
      "tag": "path",
@@ -6029,10 +5849,10 @@
     }
    ]
   },
-  "user@0.575.0": {
+  "user@1.55.0": {
    "icon": "user",
-   "version": "0.575.0",
-   "sha256": "9baa650d9f5617388b9c12f4d9d8128e02c27dcf79259adef5221b0305bf9579",
+   "version": "1.55.0",
+   "sha256": "4fa04780804217bb54ba1fff72b7d4291d40f19215fe95067e9876ff257a2d02",
    "nodes": [
     {
      "tag": "path",
@@ -6050,10 +5870,10 @@
     }
    ]
   },
-  "users-round@0.575.0": {
+  "users-round@1.55.0": {
    "icon": "users-round",
-   "version": "0.575.0",
-   "sha256": "5868ef66d1d6e9a13b07e0f32bb0e4a11dae930a23574c81b2edd605c6db4680",
+   "version": "1.55.0",
+   "sha256": "e0850ccb90f57229dba6797fb9c9d14fb7361dc73d8092bc799132821427e739",
    "nodes": [
     {
      "tag": "path",
@@ -6077,10 +5897,10 @@
     }
    ]
   },
-  "users@0.575.0": {
+  "users@1.55.0": {
    "icon": "users",
-   "version": "0.575.0",
-   "sha256": "fe7c5f22ad84f6f7c84c36d763df49d468277a0a234873fef13b3a663496a82c",
+   "version": "1.55.0",
+   "sha256": "ce245789e366b84787eeaa81a1b0f55efcf70d3a4227c5ec6b5ecdc9b60fc6f1",
    "nodes": [
     {
      "tag": "path",
@@ -6110,10 +5930,10 @@
     }
    ]
   },
-  "video@0.575.0": {
+  "video@1.55.0": {
    "icon": "video",
-   "version": "0.575.0",
-   "sha256": "9931d01243a6569302d34bd6896c96b54f1d4e6edcc07b5c8c862c8378bad403",
+   "version": "1.55.0",
+   "sha256": "bb77d75153e24c7c1d19079570e8a91ae259041706a515ef5f4130c97ced53e3",
    "nodes": [
     {
      "tag": "path",
@@ -6133,10 +5953,10 @@
     }
    ]
   },
-  "volume-2@0.575.0": {
+  "volume-2@1.55.0": {
    "icon": "volume-2",
-   "version": "0.575.0",
-   "sha256": "61e24237975154a6081fd5fb154dea6de460c332057f9068368ae410607aa73f",
+   "version": "1.55.0",
+   "sha256": "dff97cea6bff9fcc7f3b8afaf881d141b5a36f750a289fd091c0eff7b7bcf1cd",
    "nodes": [
     {
      "tag": "path",
@@ -6158,41 +5978,35 @@
     }
    ]
   },
-  "volume-x@0.575.0": {
+  "volume-x@1.55.0": {
    "icon": "volume-x",
-   "version": "0.575.0",
-   "sha256": "1c13ff098041dcfde7f71d0074327180878c7fe24df850db4ae0ad51c89ae114",
+   "version": "1.55.0",
+   "sha256": "3e130cbe9e4ae5efedc61064fc3333d2892d07720d2490835c4469d44333052d",
    "nodes": [
     {
      "tag": "path",
      "attrs": {
-      "d": "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"
+      "d": "M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z"
      }
     },
     {
-     "tag": "line",
+     "tag": "path",
      "attrs": {
-      "x1": "22",
-      "x2": "16",
-      "y1": "9",
-      "y2": "15"
+      "d": "m16.5 14.5 5-5"
      }
     },
     {
-     "tag": "line",
+     "tag": "path",
      "attrs": {
-      "x1": "16",
-      "x2": "22",
-      "y1": "9",
-      "y2": "15"
+      "d": "m16.5 9.5 5 5"
      }
     }
    ]
   },
-  "wifi-off@0.575.0": {
+  "wifi-off@1.55.0": {
    "icon": "wifi-off",
-   "version": "0.575.0",
-   "sha256": "eae4169074f03015e71950c1231e18cd9c357fb71e10b3f8aaf520426ef86e9c",
+   "version": "1.55.0",
+   "sha256": "b7174c20d9f12f9fb0796e57179a37ac84ad245b5fed184377506b98b0014415",
    "nodes": [
     {
      "tag": "path",
@@ -6238,10 +6052,10 @@
     }
    ]
   },
-  "x@0.575.0": {
+  "x@1.55.0": {
    "icon": "x",
-   "version": "0.575.0",
-   "sha256": "b4aa6cda4d03397dc3e77978d4a47bf31b531cd958e5f6336d543f143ae93da8",
+   "version": "1.55.0",
+   "sha256": "0d8a57a1d4149a227d9714206137382d78a53e7fe8e91ee7593507c14cc6d754",
    "nodes": [
     {
      "tag": "path",
@@ -6257,29 +6071,10 @@
     }
    ]
   },
-  "x@1.48.0": {
-   "icon": "x",
-   "version": "1.48.0",
-   "sha256": "ee3a8876027b1fc5f1b1b36bb61de6800e5e1d18b78014f121e2e538567574d6",
-   "nodes": [
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "M18 6 6 18"
-     }
-    },
-    {
-     "tag": "path",
-     "attrs": {
-      "d": "m6 6 12 12"
-     }
-    }
-   ]
-  },
-  "zoom-in@0.575.0": {
+  "zoom-in@1.55.0": {
    "icon": "zoom-in",
-   "version": "0.575.0",
-   "sha256": "2ad4d57d6bbae37ab703fff8d76123b9200f3c1225b8ad9be9113b91e197e8ae",
+   "version": "1.55.0",
+   "sha256": "9c5f57e5fc61d70d236f929a224d039f05940975f94ee747c4e30e6ef6566cf9",
    "nodes": [
     {
      "tag": "circle",
@@ -6318,10 +6113,10 @@
     }
    ]
   },
-  "zoom-out@0.575.0": {
+  "zoom-out@1.55.0": {
    "icon": "zoom-out",
-   "version": "0.575.0",
-   "sha256": "ca28e3b561f12a01bc6667215ecc0418038a193290ee66f04723e04ccc9e0a3a",
+   "version": "1.55.0",
+   "sha256": "790086f7d10a0b3058ff82ae558808aa8d185794ccb618cdb73982ec4812c7a4",
    "nodes": [
     {
      "tag": "circle",

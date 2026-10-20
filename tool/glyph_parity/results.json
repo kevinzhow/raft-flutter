@@ -1,17 +1,17 @@
 {
  "reference": "tool/glyph_parity/reference/chromium.png",
  "chromium": "147.0.7727.15",
- "samples": 36,
+ "samples": 46,
  "sizes": [
   16.0,
   20.0,
   24.0
  ],
- "cells": 108,
+ "cells": 138,
  "overall": {
   "max": 64,
-  "meanInk": 0.159,
-  "meanCell": 0.024,
+  "meanInk": 0.131,
+  "meanCell": 0.02,
   "worstCellMeanInk": 2.523,
   "worstCoverageDelta": 0.0047
  },
@@ -257,30 +257,6 @@
    "coverageDelta": 0.0
   },
   {
-   "id": "checkCircle2RaftUi",
-   "size": 16.0,
-   "max": 0,
-   "meanCell": 0.0,
-   "meanInk": 0.0,
-   "coverageDelta": 0.0
-  },
-  {
-   "id": "checkCircle2RaftUi",
-   "size": 20.0,
-   "max": 0,
-   "meanCell": 0.0,
-   "meanInk": 0.0,
-   "coverageDelta": 0.0
-  },
-  {
-   "id": "checkCircle2RaftUi",
-   "size": 24.0,
-   "max": 0,
-   "meanCell": 0.0,
-   "meanInk": 0.0,
-   "coverageDelta": 0.0
-  },
-  {
    "id": "minus",
    "size": 16.0,
    "max": 0,
@@ -380,16 +356,16 @@
    "id": "calendarRange",
    "size": 16.0,
    "max": 1,
-   "meanCell": 0.005,
-   "meanInk": 0.031,
+   "meanCell": 0.006,
+   "meanInk": 0.038,
    "coverageDelta": 0.0002
   },
   {
    "id": "calendarRange",
    "size": 20.0,
    "max": 1,
-   "meanCell": 0.006,
-   "meanInk": 0.022,
+   "meanCell": 0.007,
+   "meanInk": 0.028,
    "coverageDelta": 0.0002
   },
   {
@@ -809,6 +785,270 @@
    "coverageDelta": 0.0
   },
   {
+   "id": "bookOpenText",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "bookOpenText",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.018,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "bookOpenText",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.004,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "calendar",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.005,
+   "meanInk": 0.04,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "calendar",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.008,
+   "meanInk": 0.037,
+   "coverageDelta": 0.0003
+  },
+  {
+   "id": "calendar",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "circleUserRound",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.025,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "circleUserRound",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.009,
+   "meanInk": 0.042,
+   "coverageDelta": 0.0003
+  },
+  {
+   "id": "circleUserRound",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.001,
+   "meanInk": 0.003,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "creditCard",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.025,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "creditCard",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "creditCard",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "squareCheck",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "squareCheck",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "squareCheck",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "volumeX",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.034,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "volumeX",
+   "size": 20.0,
+   "max": 24,
+   "meanCell": 0.103,
+   "meanInk": 0.82,
+   "coverageDelta": 0.002
+  },
+  {
+   "id": "volumeX",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.025,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "squareSplitHorizontal",
+   "size": 16.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "squareSplitHorizontal",
+   "size": 20.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "squareSplitHorizontal",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "arrowLeftRight",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.039,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "arrowLeftRight",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.006,
+   "meanInk": 0.054,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "arrowLeftRight",
+   "size": 24.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.014,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "arrowRight",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.052,
+   "coverageDelta": 0.0004
+  },
+  {
+   "id": "arrowRight",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.029,
+   "coverageDelta": 0.0002
+  },
+  {
+   "id": "arrowRight",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "building2",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.003,
+   "meanInk": 0.019,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "building2",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.016,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "building2",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
+   "id": "trash2",
+   "size": 16.0,
+   "max": 1,
+   "meanCell": 0.002,
+   "meanInk": 0.016,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "trash2",
+   "size": 20.0,
+   "max": 1,
+   "meanCell": 0.004,
+   "meanInk": 0.021,
+   "coverageDelta": 0.0001
+  },
+  {
+   "id": "trash2",
+   "size": 24.0,
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
+  },
+  {
    "id": "probe-database",
    "size": 16.0,
    "max": 1,
@@ -833,28 +1073,28 @@
    "coverageDelta": 0.0
   },
   {
-   "id": "probe-codepen",
+   "id": "probe-navigation2",
    "size": 16.0,
-   "max": 1,
-   "meanCell": 0.018,
-   "meanInk": 0.107,
-   "coverageDelta": 0.0005
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
   },
   {
-   "id": "probe-codepen",
+   "id": "probe-navigation2",
    "size": 20.0,
-   "max": 1,
-   "meanCell": 0.012,
-   "meanInk": 0.052,
+   "max": 3,
+   "meanCell": 0.004,
+   "meanInk": 0.032,
    "coverageDelta": 0.0001
   },
   {
-   "id": "probe-codepen",
+   "id": "probe-navigation2",
    "size": 24.0,
-   "max": 1,
-   "meanCell": 0.019,
-   "meanInk": 0.066,
-   "coverageDelta": 0.0004
+   "max": 0,
+   "meanCell": 0.0,
+   "meanInk": 0.0,
+   "coverageDelta": 0.0
   },
   {
    "id": "probe-navigation",

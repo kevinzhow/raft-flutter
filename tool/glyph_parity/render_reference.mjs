@@ -3,10 +3,12 @@
 //   node render_reference.mjs <raft-source> <samples.json> <out-dir>
 //
 // Every sample is rendered with react-dom/server from the pinned lucide-react
-// build named in the sample (0.575.0 = Web product imports, 1.48.0 = raft-ui),
+// build named in the sample (1.55.0 = Web product imports and raft-ui 0.5.52),
 // laid out on a white grid (one row per sample, one column per size, black
-// currentColor) and screenshotted at deviceScaleFactor 1 by the Playwright
-// Chromium the raft-source checkout pins. Writes chromium.png + manifest.json.
+// currentColor) and screenshotted at deviceScaleFactor 1 by Chromium through the
+// raft-source checkout's playwright-core. Set CHROMIUM_EXECUTABLE to keep the
+// committed Chromium build (147.0.7727.15) when the checkout's playwright-core
+// wants a different one. Writes chromium.png + manifest.json.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,14 +25,17 @@ const one = (pattern) => {
   if (!hits.length) throw new Error(`no ${pattern} in ${pnpm}`);
   return path.join(pnpm, hits[0], 'node_modules');
 };
-const packages = {
-  '0.575.0': path.join(one(/^lucide-react@0\.575\.0_/), 'lucide-react'),
-  '1.48.0': path.join(one(/^lucide-react@1\.48\.0_/), 'lucide-react'),
-};
+const spec = JSON.parse(fs.readFileSync(samplesPath, 'utf8'));
+const packages = Object.fromEntries(
+  [...new Set(spec.samples.map((s) => s.lucide))].map((version) => [
+    version,
+    path.join(one(new RegExp(`^lucide-react@${version.replaceAll('.', '\\.')}_`)), 'lucide-react'),
+  ]),
+);
 const webRequire = createRequire(path.join(raftSource, 'packages/web/package.json'));
 const React = webRequire('react');
 const { renderToStaticMarkup } = webRequire('react-dom/server');
-const { chromium } = createRequire(path.join(one(/^playwright-core@1\.59\./), 'playwright-core/package.json'))(
+const { chromium } = createRequire(path.join(one(/^playwright-core@1\./), 'playwright-core/package.json'))(
   'playwright-core',
 );
 
@@ -42,7 +47,6 @@ for (const [version, dir] of Object.entries(packages)) {
   lucide[version] = await import(pathToFileURL(path.join(dir, pkg.module)).href);
 }
 
-const spec = JSON.parse(fs.readFileSync(samplesPath, 'utf8'));
 const { sizes, pitch, inset, samples } = spec;
 const width = pitch * sizes.length;
 const height = pitch * samples.length;
@@ -63,7 +67,7 @@ for (const [row, sample] of samples.entries()) {
   const entry = { id: sample.id, markup: markup[sizes.indexOf(24)] ?? markup[0] };
   if (sample.probe) {
     // Raw iconNode for element types the generated enum does not contain.
-    const ext = sample.lucide === '0.575.0' ? '.js' : '.mjs';
+    const ext = fs.existsSync(path.join(packages[sample.lucide], 'dist/esm/icons', sample.probe + '.mjs')) ? '.mjs' : '.js';
     const mod = await import(pathToFileURL(path.join(packages[sample.lucide], 'dist/esm/icons', sample.probe + ext)).href);
     const nodes = mod.__iconNode ?? mod.__iconData.node;
     entry.nodes = nodes.map(([tag, attrs]) => {
@@ -79,7 +83,9 @@ const html =
   cells.join('') +
   `</div></body></html>`;
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(
+  process.env.CHROMIUM_EXECUTABLE ? { executablePath: process.env.CHROMIUM_EXECUTABLE } : {},
+);
 try {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
   const page = await context.newPage();

@@ -108,7 +108,7 @@ to the component package in §4.
 
 ### 3.2 Material icons — 113 uses → 45 (C6 done)
 
-- `RaftGlyph` is now generated from every lucide-react import of the Web and raft-ui (`tool/gen-glyphs`, 175 values). No glyph needs to be added by hand.
+- `RaftGlyph` is now generated from every lucide-react import of the Web and raft-ui (`tool/gen-glyphs`, 185 values). No glyph needs to be added by hand.
 - docs/glyph-mapping.md traces each of the 113 original uses to the Web element (file:line) and the lucide icon it renders. 68 are replaced with `RaftIcon(RaftGlyph.x)`.
 - The 45 left are TODO. In those places, Web shows no icon, a non-Lucide icon, or no such element. Resolve each against the TODO groups listed in that doc, not by icon name.
 
