@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -7,28 +11,46 @@ import 'package:raft_ui/raft_ui.dart';
 /// Two properties matter and neither is provable by reading the code: that each
 /// theme actually paints its own values in both modes, and that changing the
 /// theme does not disturb what the user is doing.
+/// Rasterises the current frame so two looks can be compared by pixels rather
+/// than by token values.
+Future<Uint8List> _capture(WidgetTester tester) async {
+  final boundary = tester.firstRenderObject<RenderRepaintBoundary>(
+    find.byType(RepaintBoundary),
+  );
+  // Rasterising runs on the real event loop; under the test's fake clock the
+  // image future never completes and the test times out.
+  final bytes = await tester.runAsync(() async {
+    final image = await boundary.toImage();
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    return data!.buffer.asUint8List();
+  });
+  return bytes!;
+}
+
 void main() {
   group('theme choice', () {
-    test('each built-in theme paints its own values in both modes', () {
-      // The three looks differ first and foremost in ink; a theme that resolved
-      // to the same ink as another would mean the pack was not reaching the
-      // token set.
-      for (final dark in [false, true]) {
-        final inks = <String, Color>{
-          for (final theme in builtInAppearanceThemes)
-            theme.id: RaftTokens.theme(dark: dark, pack: packForThemeId(theme.id))
-                .ink,
-        };
-        expect(inks, hasLength(3));
-        // Distinct within a mode: any two themes painting the same ink means
-        // one of them silently fell back to another.
-        final distinct = inks.values.toSet();
-        expect(
-          distinct.length,
-          inks.length,
-          reason: '${dark ? 'dark' : 'light'} inks collide: $inks',
-        );
-      }
+    test('each built-in theme paints its own values', () {
+      // In light mode the three looks are genuinely distinct.
+      //
+      // Dark mode has only two: Brutal has no dark look, so it borrows Elegant's
+      // entire dark appearance (see the dedicated test below). Asserting three
+      // distinct dark inks would contradict that decision, so dark is checked
+      // for "Raft differs from the Elegant/Brutal pair" instead.
+      Color ink(String id, {bool dark = false}) =>
+          RaftTokens.theme(dark: dark, pack: packForThemeId(id)).ink;
+
+      final light = {
+        for (final theme in builtInAppearanceThemes) theme.id: ink(theme.id),
+      };
+      expect(light.values.toSet(), hasLength(3),
+          reason: 'light inks collide: $light');
+
+      final raftDark = ink(raftThemePackId, dark: true);
+      final elegantDarkInk = ink(elegantThemePackId, dark: true);
+      final brutalDarkInk = ink(brutalThemePackId, dark: true);
+      expect(raftDark, isNot(elegantDarkInk));
+      expect(brutalDarkInk, elegantDarkInk);
     });
 
     test('the chosen pack supplies the values, not the default pack', () {
@@ -49,16 +71,43 @@ void main() {
       expect(brutal.border, 2);
     });
 
-    test('Brutal dark uses the Elegant dark values, as decided', () {
-      // Kevin's decision recorded in the contract: Brutal has no dark look of
-      // its own. The pack writes its light column twice, so Brutal dark equals
-      // Brutal light rather than falling back to Raft dark.
-      final brutalDark = RaftTokens.theme(dark: true, pack: packForThemeId(brutalThemePackId));
-      final brutalLight = RaftTokens.theme(pack: packForThemeId(brutalThemePackId));
-      expect(brutalDark.ink, brutalLight.ink);
+    testWidgets('Brutal dark renders identically to Elegant dark',
+        (tester) async {
+      // Kevin's decision, and what the old app actually did: selecting Brutal
+      // at night painted the whole Elegant dark look. Pinning it by pixels
+      // rather than by token comparison catches a pack that gets the colours
+      // right but leaves Brutal's square corners and 2px rules behind.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(dark: true, pack: packForThemeId(brutalThemePackId)),
+          home: const Scaffold(body: Text('same either way')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final brutalShot = await _capture(tester);
 
-      final raftDark = RaftTokens.theme(dark: true, pack: packForThemeId(raftThemePackId));
-      expect(brutalDark.ink, isNot(raftDark.ink));
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(dark: true, pack: packForThemeId(elegantThemePackId)),
+          home: const Scaffold(body: Text('same either way')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final elegantDarkShot = await _capture(tester);
+
+      expect(brutalShot, elegantDarkShot,
+          reason: 'Brutal dark must paint exactly the Elegant dark look');
+
+      // Sanity: Brutal light is a different look, so the comparison above is
+      // not passing because nothing varies.
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(pack: packForThemeId(brutalThemePackId)),
+          home: const Scaffold(body: Text('same either way')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(await _capture(tester), isNot(brutalShot));
     });
 
     test('an unknown theme id falls back to Raft instead of failing', () {
