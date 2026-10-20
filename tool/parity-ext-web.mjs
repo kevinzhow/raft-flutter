@@ -35,19 +35,36 @@ function once(code, before, after) {
 const sha = (text) => createHash('sha256').update(text).digest('hex');
 
 const rootOriginal = readFileSync(rootTarget, 'utf8');
-let rootCode = once(rootOriginal,
-  '  const preset: AppThemePreset = defaultTheme === "elegant" ? "elegant-light" : "brutal";',
-  `  const override = new URLSearchParams(window.location.search).get('parityTheme');
+const THEME_OVERRIDE = `  const override = new URLSearchParams(window.location.search).get('parityTheme');
   if (override && !['brutal-light', 'elegant-light', 'elegant-dark'].includes(override)) {
     throw new Error('Unknown extension parity theme');
   }
   const selectedTheme = override ? (override === 'brutal-light' ? 'brutal' : 'elegant') : defaultTheme;
   const dark = override === 'elegant-dark';
-  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';`);
-rootCode = once(rootCode, '    resolvedMode: "light" as const,', '    resolvedMode: dark ? "dark" as const : "light" as const,');
-rootCode = once(rootCode,
-  '<ThemeProvider defaultTheme={defaultTheme} defaultMode="light">',
-  '<ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>');
+`;
+let rootCode;
+if (rootOriginal.includes('const FIXED_THEME_CONTEXTS')) {
+  // v1.21.12+: the pinned contexts moved to module scope (fixedThemeContext).
+  rootCode = once(rootOriginal,
+    '  return (\n    <ThemeProvider defaultTheme={defaultTheme} defaultMode="light">\n'
+    + '      <AppThemeContext.Provider value={FIXED_THEME_CONTEXTS[defaultTheme]}>',
+    `${THEME_OVERRIDE}  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';
+  const themeContext: AppThemeContextValue = {
+    ...fixedThemeContext(preset),
+    resolvedMode: dark ? "dark" as const : "light" as const,
+  };
+  return (
+    <ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>
+      <AppThemeContext.Provider value={themeContext}>`);
+} else {
+  rootCode = once(rootOriginal,
+    '  const preset: AppThemePreset = defaultTheme === "elegant" ? "elegant-light" : "brutal";',
+    `${THEME_OVERRIDE}  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';`);
+  rootCode = once(rootCode, '    resolvedMode: "light" as const,', '    resolvedMode: dark ? "dark" as const : "light" as const,');
+  rootCode = once(rootCode,
+    '<ThemeProvider defaultTheme={defaultTheme} defaultMode="light">',
+    '<ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>');
+}
 
 const casesOriginal = readFileSync(casesTarget, 'utf8');
 const hostFiles = readdirSync(resolve(ext, 'host')).filter((f) => f.endsWith('.tsx')).sort();
