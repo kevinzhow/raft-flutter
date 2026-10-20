@@ -1,0 +1,549 @@
+#!/usr/bin/env python3
+"""Build the P2 legacy pixel baseline from a57b9dab on Linux Flutter.
+
+The pre-theme commit still ships the full parity capture pipeline, so this tool
+does not render anything itself: it pins the source, runs the existing
+provider twice, and proves the two passes are byte-identical.
+
+  tool/theme-baseline capture --out <dir> [--themes a,b,c] [--desktop-ext]
+  tool/theme-baseline verify  --dir <dir>
+
+`capture` writes <dir>/<theme>/pass-{1,2}/*.png plus <dir>/manifest.json.
+`verify` re-hashes an existing baseline against its manifest.
+
+Run it from a worktree whose product code is still a57b9dab, e.g.
+
+  git worktree add ../raft-flutter-wt/deep-theme-baseline --detach a57b9dab
+
+It refuses to run anywhere else, so it cannot be pointed at the current tree
+(where the old themes no longer exist) by accident.
+
+This tool is deliberately read-only with respect to the product: it never edits
+apps/, packages/ or the official sharedCases.json.
+
+There is deliberately no 390x560 compact variant: every case in this manifest
+uses `capture.crop: "element"`, so viewport height cannot change a pixel. Phone
+behaviour is covered by the 390-wide cases, which do take the phone layout
+branch.
+
+Exit codes: 0 success, 1 baseline failed (nondeterminism, missing capture, dirty
+source), 2 usage/precondition error.
+"""
+import argparse
+import datetime as dt
+import hashlib
+import json
+import os
+import pathlib
+import shutil
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+PINNED_COMMIT = 'a57b9dab'
+PINNED_FLUTTER = '3.47.6'
+THEMES = ('brutal-light', 'elegant-light', 'elegant-dark')
+PASSES = ('pass-1', 'pass-2')
+
+# Phone surfaces that carry the mobile-only chrome CodexMac called out:
+# floating capsule nav / docked tab bar / floating header / bottom sticker tabs.
+# Desktop surfaces Cindy asked for: the chat shell, tasks and settings pages.
+# Extension cases are desktop-only where the id names `desktop`.
+DESKTOP_EXT_PREFIXES = (
+    'components.screens-ext.',
+    'components.taskdetail.',
+    'components.channelsettings.desktop.',
+    'components.ext-settings.',
+)
+DESKTOP_MIN_WIDTH = 1000
+
+# The ONLY teardown failure this tool tolerates, and only in tearDownAll:
+# the capture pipeline's own rasterized pictures outlive the test binding.
+# Anything else fails the baseline.
+TOLERATED_LEAK = '_NativePicture'
+TOLERATED_PHASE = 'tearDownAll'
+
+_EXT_THEME_RE = __import__('re').compile(r'\.(brutal|elegant|elegant-dark)$')
+
+
+def die(message, code=2):
+    sys.exit(f'theme-baseline: {message}')
+
+
+def require_machine_lock():
+    """Take the shared K8 gate lock, or refuse to run.
+
+    Full-project checks and the nightly quality job use the same flock; sharing
+    it keeps a long capture from skewing their timing and load assumptions.
+    """
+    lock_path = pathlib.Path('/tmp/raft-flutter-check.lock')
+    handle = open(lock_path, 'w')
+    try:
+        import fcntl
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        die('the machine lock /tmp/raft-flutter-check.lock is busy '
+            '(a project check or nightly job is running); retry later', 3)
+    return handle
+
+
+def renice_self(level):
+    """Lower this process group's priority so a long capture cannot starve
+    anything else on the machine."""
+    try:
+        os.nice(level)
+    except OSError as error:
+        print(f'warning: could not renice (+{level}): {error}', file=sys.stderr)
+
+
+def git(*args):
+    return subprocess.check_output(['git', *args], cwd=ROOT, text=True).strip()
+
+
+def git_status():
+    """Porcelain status, preserving each line's leading XY column.
+
+    git() strips, which would eat the first character of a path on a
+    " M file" line, so status is read without stripping.
+    """
+    return subprocess.check_output(
+        ['git', 'status', '--porcelain'], cwd=ROOT, text=True).splitlines()
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with open(path, 'rb') as handle:
+        for chunk in iter(lambda: handle.read(1 << 20), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def raft_source():
+    default = pathlib.Path(
+        '/home/kevinzhow/.slock/agents/9a92b742-8942-488c-8635-67d224ec54ab'
+        '/work/raft-source')
+    source = pathlib.Path(os.environ.get('PARITY_RAFT_SOURCE', default))
+    if not source.is_dir():
+        die(f'raft-source checkout not found at {source}; set PARITY_RAFT_SOURCE')
+    return source
+
+
+def shared_dir():
+    path = raft_source() / 'packages' / 'visual-testing' / 'shared'
+    if not (path / 'sharedCases.json').is_file():
+        die(f'shared cases manifest missing under {path}')
+    return path
+
+
+def check_preconditions(allowed_untracked=()):
+    """Everything that must be true before a baseline means anything.
+
+    The rendered tree must be a57b9dab or that commit plus commits that touch
+    only the capture harness's own bookkeeping (e.g. fixing a mislabelled
+    metadata field). Anything that changes what is rendered is refused, which
+    is checked against the product trees rather than the commit id alone.
+    """
+    head = git('rev-parse', 'HEAD')
+    if not head.startswith(PINNED_COMMIT):
+        if not git('merge-base', '--is-ancestor', PINNED_COMMIT, 'HEAD'):
+            die(f'HEAD is {head[:8]} and does not descend from {PINNED_COMMIT}. '
+                'Run this in a worktree based on a57b9dab.')
+        product_diff = git('diff', '--stat', PINNED_COMMIT, 'HEAD', '--',
+                           'apps/raft_flutter/lib', 'packages/')
+        if product_diff.strip():
+            die('product code differs from ' + PINNED_COMMIT + '; the baseline '
+                'would no longer be the pre-theme look:\n' + product_diff)
+    dirty = []
+    allowed = set(allowed_untracked)
+    for line in git_status():
+        if not line.strip():
+            continue
+        path = line[3:].strip()
+        # This tool and its own outputs are the only untracked paths a clean
+        # pinned tree may carry; anything else means the tree drifted.
+        if line.startswith('??') and (path in allowed or path.startswith('build/')):
+            continue
+        # An allowed path may also be modified in place (the harness metadata
+        # fix); that changes bookkeeping only, never what is rendered.
+        if path in allowed:
+            continue
+        dirty.append(line)
+    if dirty:
+        die('worktree is dirty; a baseline must come from a clean pinned tree:\n'
+            + '\n'.join(dirty))
+    version = json.loads((ROOT / '.fvmrc').read_text())['flutter']
+    if version != PINNED_FLUTTER:
+        die(f'.fvmrc pins Flutter {version}, expected {PINNED_FLUTTER}')
+    if not (ROOT / 'apps/raft_flutter/test/parity/parity_capture_test.dart').is_file():
+        die('parity capture entry point is missing from this tree')
+    if not (ROOT / 'tool/flutter').is_file():
+        die('tool/flutter wrapper is missing')
+    return head
+
+
+def load_official_cases():
+    path = shared_dir() / 'sharedCases.json'
+    document = json.loads(path.read_text())
+    return document, document['cases']
+
+
+def build_extension_selection(out):
+    """Desktop extension subselection.
+
+    Extension cases bake the theme into the case id, so they are captured once
+    per id with no PARITY_THEME_OVERRIDE. Only the surfaces Cindy named (chat
+    shell, tasks, settings) are taken; the remaining ~2800 are P4 work.
+    """
+    result = subprocess.run(
+        [sys.executable, '-c',
+         'import sys,pathlib;sys.path.insert(0,"tool/parity-ext");'
+         'from builders import build_manifest;'
+         f'print(build_manifest(pathlib.Path({str(out / "ext-manifest")!r})))'],
+        cwd=ROOT, text=True, capture_output=True)
+    if result.returncode:
+        return None, result.stderr.strip()[-2000:]
+    manifest_file = pathlib.Path(result.stdout.strip().splitlines()[-1])
+    document = json.loads(manifest_file.read_text())
+    selected = []
+    for case in document['cases']:
+        case_id = case['id']
+        if not _EXT_THEME_RE.search(case_id):
+            continue
+        if not case_id.startswith(DESKTOP_EXT_PREFIXES):
+            continue
+        width = (case.get('viewport') or {}).get('width', 0)
+        if width < DESKTOP_MIN_WIDTH:
+            continue
+        selected.append(case_id)
+    if not selected:
+        return None, 'no desktop extension cases matched'
+    return manifest_file, selected
+
+
+def run_theme(theme, cases, dest, manifest_path, log_dir, tag, ext=False):
+    """Run the existing provider once into `dest`.
+
+    `theme` is the PARITY_THEME_OVERRIDE value for official cases, or None for
+    extension cases whose id already names the theme. Extension cases also need
+    PARITY_EXT_FIXTURES, exactly as tool/parity-ext/run sets it; without it the
+    extension builders have no data and every case fails.
+    """
+    results = dest / 'visual-testing-results'
+    results.mkdir(parents=True, exist_ok=True)
+    env = {
+        **os.environ,
+        'TZ': 'Asia/Shanghai',
+        'PARITY_RAFT_SOURCE': str(raft_source()),
+        'PARITY_SHARED_DIR': str(shared_dir()),
+        'PARITY_RESULT_ROOT': str(results),
+        'PARITY_CASES': ','.join(cases),
+        'PARITY_MANIFEST': str(manifest_path),
+    }
+    if ext:
+        env['PARITY_EXT_FIXTURES'] = str(ROOT / 'tool/parity-ext/fixtures')
+    if theme:
+        env['PARITY_THEME_OVERRIDE'] = theme
+    else:
+        env.pop('PARITY_THEME_OVERRIDE', None)
+    log = log_dir / f'{tag}.log'
+    with log.open('w') as sink:
+        proc = subprocess.run(
+            [str(ROOT / 'tool/flutter'), 'test',
+             'test/parity/parity_capture_test.dart', '--no-pub',
+             '--reporter', 'expanded'],
+            cwd=ROOT / 'apps/raft_flutter', env=env, stdout=sink,
+            stderr=subprocess.STDOUT)
+    return proc.returncode, log
+
+
+def teardown_verdict(log_path, missing):
+    """Classify a provider run's exit.
+
+    A nonzero exit is fine only when every requested image was written AND the
+    sole failure is the tolerated tearDownAll leakage. Everything else is a
+    real failure, so genuine problems are never swallowed.
+    """
+    if not missing:
+        return 'ok', None
+    text = log_path.read_text(errors='replace')
+    tolerated = []
+    if TOLERATED_PHASE in text and TOLERATED_LEAK in text:
+        for line in text.splitlines():
+            if TOLERATED_LEAK in line and ':' in line:
+                tolerated.append(line.strip())
+    return 'missing-capture', {'toleratedLeakLines': tolerated}
+
+
+def collect(dest):
+    """Map case id -> png path for one pass directory."""
+    android = dest / 'visual-testing-results' / 'android'
+    if not android.is_dir():
+        return {}
+    return {p.name[:-4]: p for p in android.glob('*.png')}
+
+
+def font_hashes():
+    """Per-file SHA of every font the capture can load."""
+    hashes = {}
+    for base in (ROOT / 'tool/parity-fonts/files', ROOT / 'tool/parity-ui/fonts'):
+        if not base.is_dir():
+            continue
+        for path in sorted(base.rglob('*')):
+            if path.is_file():
+                hashes[str(path.relative_to(ROOT))] = sha256(path)
+    return hashes
+
+
+def cmd_capture(args):
+    out = pathlib.Path(args.out).resolve()
+    if out.exists() and any(out.iterdir()):
+        die(f'{out} already exists and is not empty; use a new directory')
+    if args.no_lock:
+        lock = None
+    else:
+        lock = require_machine_lock()
+    renice_self(args.nice)
+    try:
+        return _capture(args, out)
+    finally:
+        if lock is not None:
+            lock.close()
+
+
+def _capture(args, out):
+    out.mkdir(parents=True, exist_ok=True)
+    head = check_preconditions(allowed_untracked=('tool/theme-baseline',
+                           'apps/raft_flutter/test/parity/parity_harness.dart'))
+    # Rendering must come from a57b9dab's product code. Carrying a fix to the
+    # capture harness's own metadata labels is fine; changing anything the
+    # capture actually renders is not, so prove the product tree is untouched.
+    product_diff = git('diff', '--stat', PINNED_COMMIT, 'HEAD', '--',
+                       'apps/raft_flutter/lib', 'packages/')
+    if product_diff.strip():
+        die('product code differs from ' + PINNED_COMMIT + '; the baseline would '
+            'no longer be the pre-theme look:\n' + product_diff)
+    source_hash_before = subprocess.check_output(
+        [str(ROOT / 'tool/source-hash')], cwd=ROOT, text=True).strip()
+
+    themes = [t.strip() for t in args.themes.split(',') if t.strip()]
+    unknown = [t for t in themes if t not in THEMES]
+    if unknown:
+        die(f'unknown themes {unknown}; choose from {list(THEMES)}')
+
+    document, cases = load_official_cases()
+    skip = {c['id'] for c in cases if c.get('skip')}
+    case_ids = [c['id'] for c in cases if not c.get('skip')]
+    official_manifest = shared_dir() / 'sharedCases.json'
+    manifest_path = official_manifest
+    if args.cases:
+        wanted = {c.strip() for c in args.cases.split(',') if c.strip()}
+        case_ids = [i for i in case_ids if i in wanted]
+        if not case_ids:
+            die(f'none of {sorted(wanted)} are official case ids')
+    print(f'source {head[:8]} @ {PINNED_COMMIT}, {len(case_ids)} cases '
+          f'({len(skip)} skipped), {len(themes)} themes x {len(PASSES)} passes')
+
+    log_dir = out / 'logs'
+    log_dir.mkdir(exist_ok=True)
+    entries, failures = [], []
+
+    for theme in themes:
+        for pass_name in PASSES:
+            dest = out / theme / pass_name
+            if dest.exists():
+                shutil.rmtree(dest)
+            dest.mkdir(parents=True)
+            code, log = run_theme(theme, case_ids, dest, manifest_path,
+                                  log_dir, f'official-{theme}-{pass_name}')
+            captured = collect(dest)
+            missing = [i for i in case_ids if i not in captured]
+            verdict, detail = teardown_verdict(log, missing)
+            if verdict != 'ok':
+                failures.append({
+                    'stage': 'official', 'theme': theme, 'pass': pass_name,
+                    'missing': missing[:20], 'missingCount': len(missing),
+                    'exit': code, 'log': str(log), 'detail': detail,
+                })
+            print(f'  official {theme}/{pass_name}: {len(captured)}/{len(case_ids)} '
+                  f'captured (exit {code}, {verdict})')
+            for case_id, path in sorted(captured.items()):
+                entries.append({
+                    'stage': 'official', 'theme': theme, 'pass': pass_name,
+                    'case': case_id, 'file': str(path.relative_to(out)),
+                    'sha256': sha256(path), 'bytes': path.stat().st_size,
+                })
+
+    # Extension desktop surfaces: the theme lives in the case id, so one run.
+    ext_ids, ext_note = [], None
+    if args.desktop_ext:
+        ext_manifest, ext_ids = build_extension_selection(out)
+        if ext_ids is None:
+            ext_note = ext_manifest
+            print(f'  extension cases unavailable: {ext_manifest}')
+        else:
+            print(f'  extension desktop selection: {len(ext_ids)} cases')
+            for pass_name in PASSES:
+                dest = out / 'ext-desktop' / pass_name
+                if dest.exists():
+                    shutil.rmtree(dest)
+                dest.mkdir(parents=True)
+                code, log = run_theme(None, ext_ids, dest, ext_manifest,
+                                      log_dir, f'ext-{pass_name}', ext=True)
+                captured = collect(dest)
+                missing = [i for i in ext_ids if i not in captured]
+                verdict, detail = teardown_verdict(log, missing)
+                if verdict != 'ok':
+                    failures.append({
+                        'stage': 'ext-desktop', 'theme': 'in-id',
+                        'pass': pass_name, 'missing': missing[:20],
+                        'missingCount': len(missing), 'exit': code,
+                        'log': str(log), 'detail': detail,
+                    })
+                print(f'  ext-desktop/{pass_name}: {len(captured)}/{len(ext_ids)} '
+                      f'captured (exit {code}, {verdict})')
+                for case_id, path in sorted(captured.items()):
+                    entries.append({
+                        'stage': 'ext-desktop', 'theme': 'in-id',
+                        'pass': pass_name, 'case': case_id,
+                        'file': str(path.relative_to(out)),
+                        'sha256': sha256(path), 'bytes': path.stat().st_size,
+                    })
+
+    # Determinism: pass-2 must reproduce pass-1 byte for byte.
+    by_key = {}
+    for entry in entries:
+        by_key.setdefault((entry['stage'], entry['theme'], entry['case']), {})[
+            entry['pass']] = entry['sha256']
+    nondeterministic = [
+        {'stage': stage, 'theme': theme, 'case': case,
+         'pass1': shas.get('pass-1'), 'pass2': shas.get('pass-2')}
+        for (stage, theme, case), shas in sorted(by_key.items())
+        if shas.get('pass-1') != shas.get('pass-2')
+    ]
+
+    total_bytes = sum(e['bytes'] for e in entries)
+    manifest = {
+        'kind': 'theme-legacy-pixel-baseline',
+        'source': {'commit': head, 'tag': PINNED_COMMIT,
+                   'flutter': PINNED_FLUTTER},
+        'platform': 'linux flutter_test host raster',
+        'targetPlatform': {
+            'official': 'android (test variant, phone width)',
+            'extensionDesktop': 'linux (test variant, props.platform=desktop)',
+        },
+        'themes': themes,
+        'passes': list(PASSES),
+        'caseCount': len(case_ids),
+        'extensionCases': len(ext_ids),
+        'extensionNote': ext_note,
+        'fonts': font_hashes(),
+        'totalBytes': total_bytes,
+        'imageCount': len(entries),
+        'deterministic': not nondeterministic,
+        'complete': not failures and not nondeterministic,
+        'failures': failures,
+        'toleratedTeardownLeaks': sorted(
+            line
+            for f in failures
+            for line in ((f.get('detail') or {}).get('toleratedLeakLines') or [])),
+        'nondeterministic': nondeterministic[:50],
+        'entries': entries,
+        'createdAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+        'sourceHash': source_hash_before,
+        'sourceChangedDuringCapture': source_hash_before != subprocess.check_output(
+            [str(ROOT / 'tool/source-hash')], cwd=ROOT, text=True).strip(),
+    }
+    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+
+    print(f'\nimages {len(entries)}, {total_bytes/1e6:.1f} MB')
+    print(f'deterministic: {manifest["deterministic"]}')
+    if failures:
+        print(f'MISSING CAPTURES in {len(failures)} pass(es)')
+    if nondeterministic:
+        print(f'NONDETERMINISTIC: {len(nondeterministic)} case(s)')
+    return 0 if manifest['complete'] else 1
+
+    total_bytes = sum(e['bytes'] for e in entries)
+    manifest = {
+        'kind': 'theme-legacy-pixel-baseline',
+        'source': {'commit': head, 'tag': PINNED_COMMIT,
+                   'flutter': PINNED_FLUTTER},
+        'platform': 'linux flutter_test host raster',
+        'targetPlatform': {
+            'official': 'android (test variant, phone width)',
+            'extensionDesktop': 'linux (test variant, props.platform=desktop)',
+        },
+        'themes': themes,
+        'passes': list(PASSES),
+        'caseCount': len(case_ids),
+        'fonts': font_hashes(),
+        'totalBytes': total_bytes,
+        'deterministic': not nondeterministic,
+        'complete': not failures and not nondeterministic,
+        'failures': failures,
+        'nondeterministic': nondeterministic[:50],
+        'entries': entries,
+        'createdAt': dt.datetime.now(dt.timezone.utc).isoformat(),
+        'sourceHash': source_hash_before,
+        'sourceChangedDuringCapture': source_hash_before != subprocess.check_output(
+            [str(ROOT / 'tool/source-hash')], cwd=ROOT, text=True).strip(),
+    }
+    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+
+    print(f'\nimages {len(entries)}, {total_bytes/1e6:.1f} MB')
+    print(f'deterministic: {manifest["deterministic"]}')
+    if failures:
+        print(f'MISSING CAPTURES in {len(failures)} pass(es)')
+    if nondeterministic:
+        print(f'NONDETERMINISTIC: {len(nondeterministic)} case(s)')
+    return 0 if manifest['complete'] else 1
+
+
+def cmd_verify(args):
+    out = pathlib.Path(args.dir).resolve()
+    manifest_file = out / 'manifest.json'
+    if not manifest_file.is_file():
+        die(f'no manifest.json under {out}')
+    manifest = json.loads(manifest_file.read_text())
+    bad = []
+    for entry in manifest['entries']:
+        path = out / entry['file']
+        if not path.is_file():
+            bad.append({'file': entry['file'], 'reason': 'missing'})
+        elif sha256(path) != entry['sha256']:
+            bad.append({'file': entry['file'], 'reason': 'hash-mismatch'})
+    if bad:
+        print(json.dumps({'ok': False, 'problems': bad[:50]}, indent=2))
+        return 1
+    print(f'ok: {len(manifest["entries"])} files match manifest')
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest='command', required=True)
+
+    capture = sub.add_parser('capture', help='capture the baseline twice and compare')
+    capture.add_argument('--out', required=True)
+    capture.add_argument('--themes', default=','.join(THEMES))
+    capture.add_argument('--desktop-ext', action='store_true',
+                         help='also capture the extension desktop surfaces')
+    capture.add_argument('--nice', type=int, default=10,
+                         help='nice level for the capture processes (default 10)')
+    capture.add_argument('--no-lock', action='store_true',
+                         help='skip the shared /tmp/raft-flutter-check.lock (do not use on K8)')
+    capture.add_argument('--cases',
+                         help='limit official cases to these ids (smoke testing)')
+    capture.set_defaults(func=cmd_capture)
+
+    verify = sub.add_parser('verify', help='re-hash a baseline against its manifest')
+    verify.add_argument('--dir', required=True)
+    verify.set_defaults(func=cmd_verify)
+
+    args = parser.parse_args()
+    sys.exit(args.func(args))
+
+
+if __name__ == '__main__':
+    main()

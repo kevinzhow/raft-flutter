@@ -13,6 +13,7 @@ import '../support/glyph_clip_scan.dart';
 
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -433,8 +434,13 @@ Future<Map<String, dynamic>> captureParityCase(
     'flutter': {
       'widgets': mapping.widgets,
       if (mapping.notes.isNotEmpty) 'notes': mapping.notes,
-      'targetPlatform': 'android',
-      'density': 'touch',
+      'targetPlatform': defaultTargetPlatform.name,
+      // A touch host is a platform property, not a pixel-density one: phone
+      // cases can be density 1 and must still report touch.
+      'density': switch (defaultTargetPlatform) {
+        TargetPlatform.android || TargetPlatform.iOS => 'touch',
+        _ => 'desktop',
+      },
       'renderer': 'flutter_test host raster (not a device screenshot)',
       'animationPolicy':
           'reduced-motion at rest; matches React animations:disabled',
