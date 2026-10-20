@@ -183,6 +183,19 @@ void main() {
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
+      RaftComposerAction send() => tester.widget<RaftComposerAction>(
+        find.byKey(const Key('composer-submit')),
+      );
+      // The note editor is Web's compact MessageInput: Send stays off until a
+      // destination is chosen, and the search field has the focus.
+      expect(send().onPressed, isNull);
+      expect(
+        tester
+            .widget<TextField>(find.widgetWithText(TextField, 'Search targets'))
+            .focusNode!
+            .hasFocus,
+        isTrue,
+      );
       await tester.enterText(
         find.widgetWithText(TextField, 'Search targets'),
         'c',
@@ -194,7 +207,8 @@ void main() {
       await tester.tap(find.text('#c2'));
       await tester.pump();
       expect(find.text('2 selected'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('forward-send')));
+      expect(send().onPressed, isNotNull);
+      await tester.tap(find.byKey(const Key('composer-submit')));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 500));
       // One destination failed: the dialog stays and reports the unconfirmed forward.
@@ -207,7 +221,7 @@ void main() {
       );
       // Web forwardToast.error: the same sentence also shows as a toast.
       expect(find.byKey(const Key('toast-close')), findsOneWidget);
-      await tester.tap(find.byKey(const Key('forward-send')));
+      await tester.tap(find.byKey(const Key('composer-submit')));
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 500));
       expect(t.writes.length, 2);
@@ -313,7 +327,7 @@ void main() {
       await tester.tap(find.text('#c1'));
       await tester.pump();
       final submit = tester
-          .widget<RaftRecipeButton>(find.byKey(const Key('forward-send')))
+          .widget<RaftComposerAction>(find.byKey(const Key('composer-submit')))
           .onPressed!;
       w.server = RaftRecord({'id': 's1', 'role': 'guest'});
       w.notifyListeners();

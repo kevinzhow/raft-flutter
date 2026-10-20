@@ -7,6 +7,7 @@ import 'hover_region.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'icons.dart';
 import 'recipe_surface.dart';
 import 'recipes/field.g.dart' as gen;
 import 'recipes/input.g.dart';
@@ -567,10 +568,19 @@ class RaftPrefixedInput extends StatefulWidget {
     this.inputFormatters,
     this.semanticLabel,
     this.leading,
+    this.leadingIcon,
+    this.controlWeight,
     this.autofocus = false,
     this.variant = RaftInputGroupRecipeVariant.container,
     this.maxLength,
   });
+
+  /// `InputGroupAddon` holding a 14px icon (`<Search size={14} />`) with the
+  /// recipe's addon padding and colour, instead of the text [prefix].
+  final RaftGlyph? leadingIcon;
+
+  /// The control's `font-bold` / `font-medium` class over the recipe weight.
+  final FontWeight? controlWeight;
 
   /// `InputGroupAddon className="p-0"` holding a control (the section emoji
   /// button) instead of the text [prefix].
@@ -619,6 +629,8 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
         hovered: hovered,
         extra: [
           if (focused) 'has:data-slot=input-group-control+focus',
+          // An editable text input always matches :focus-visible.
+          if (focused) 'has:data-slot=input-group-control+focus-visible',
           if (focused)
             'group/input-group:has:data-slot=input-group-control+focus',
           if (!widget.enabled) 'has:data-slot=input-group-control+disabled',
@@ -630,7 +642,9 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
       tokens: rt,
     );
     final base = DefaultTextStyle.of(context).style;
-    final control = g.control.text(rt, base: base);
+    final control = g.control
+        .text(rt, base: base)
+        .copyWith(fontWeight: widget.controlWeight);
     return Semantics(
       label: widget.semanticLabel,
       child: hoverRegion(
@@ -651,6 +665,15 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
                     alignment: Alignment.center,
                     child: widget.leading!,
                   )
+                else if (widget.leadingIcon != null)
+                  ExcludeSemantics(
+                    child: RaftRecipeBox(
+                      style: g.addon,
+                      tokens: rt,
+                      alignment: Alignment.center,
+                      child: RaftIcon(widget.leadingIcon!, size: 14),
+                    ),
+                  )
                 else
                   ExcludeSemantics(
                     child: RaftRecipeBox(
@@ -662,7 +685,11 @@ class _RaftPrefixedInputState extends State<RaftPrefixedInput>
                   ),
                 Expanded(
                   child: Padding(
-                    padding: g.control.padding,
+                    // `& ~ [data-slot=input-group-control]` after an icon
+                    // addon: `padding-left: 0`.
+                    padding: widget.leadingIcon == null
+                        ? g.control.padding
+                        : g.control.padding.copyWith(left: 0),
                     child: TextField(
                       contextMenuBuilder: RaftTextSelectionToolbar.editableText,
                       autofillHints: null,

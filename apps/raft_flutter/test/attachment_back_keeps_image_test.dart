@@ -321,7 +321,7 @@ _chrome(WidgetTester tester) {
     header: [
       for (final e in find.byType(RichText).evaluate())
         if ((e.renderObject! as RenderBox).localToGlobal(Offset.zero).dy < 90)
-          (e.widget as RichText).text.toPlainText(),
+          (e.widget as RichText).text.toPlainText(includePlaceholders: false),
     ],
     parent: seen('The parent message'),
     begin: seen('Beginning of replies'),

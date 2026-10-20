@@ -127,7 +127,10 @@ void main() {
         );
         expect(find.byKey(const ValueKey('thread-back')), findsOneWidget);
         expect(find.byKey(const ValueKey('thread-close')), findsNothing);
-        expect(find.text('Thread— #公开中文 日本語'), findsOneWidget);
+        expect(
+          find.text('Thread\uFFFC— #公开中文 日本語', findRichText: true),
+          findsOneWidget,
+        );
         final semantics = tester.ensureSemantics();
         try {
           final node = tester.getSemantics(

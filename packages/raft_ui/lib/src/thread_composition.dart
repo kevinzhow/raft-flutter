@@ -3,6 +3,7 @@ import 'text_selection_toolbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'channel_header.dart' show RaftConversationHeader;
 import 'design_primitives.dart';
 import 'conversation_surface.dart';
 import 'icons.dart';
@@ -49,19 +50,23 @@ class RaftThreadCompositionRecipe {
       presentation == RaftThreadPresentation.side && viewportWidth >= 1024;
   double get headerHeight =>
       RaftLayoutMetrics.shellHeaderHeight(tokens, viewportHeight);
+
+  /// `PanelHeader` (raft-ui 0.5.52): padding 20/20 (right 14 below 768 in
+  /// elegant) and gap 12 (8 below 768 in elegant).
   EdgeInsetsDirectional get headerInset => tokens.brutal
       ? const EdgeInsetsDirectional.symmetric(horizontal: 20)
       : EdgeInsetsDirectional.only(
-          start: viewportWidth < 768 ? 20 : 36,
+          start: 20,
           end: viewportWidth < 768 ? 14 : 20,
         );
-  double get headerGap => tokens.brutal ? 12 : 8;
+  double get headerGap => tokens.brutal || viewportWidth >= 768 ? 12 : 8;
   double get actionGap => tokens.brutal || viewportWidth >= 768 ? 6 : 2;
-  Color get headerBackground => tokens.brutal
-      ? Colors.white
-      : viewportWidth < 768
-      ? tokens.colors['layer-canvas-muted']!
-      : Colors.transparent;
+
+  /// The thread column's header container adds
+  /// `in-data-[theme=elegant]:bg-layer-canvas-muted` at every width (Web
+  /// v1.21.12 `THREAD_HEADER_CONTAINER_CLASS_NAME`).
+  Color get headerBackground =>
+      tokens.brutal ? Colors.white : tokens.colors['layer-canvas-muted']!;
   BorderSide get headerBorder => tokens.brutal
       ? const BorderSide(color: Colors.black, width: 2)
       // Mounted ThreadPanelRoot gives its AppPanelHeader a bottom rule.
@@ -76,17 +81,6 @@ class RaftThreadCompositionRecipe {
   );
   EdgeInsets get summaryInset =>
       const EdgeInsets.only(left: 12, right: 12, top: 8);
-  TextStyle get title => RaftTypography.body(
-    tokens,
-    size: 16,
-    line: 24,
-    weight: FontWeight.w700,
-    color: tokens.brutal ? Colors.black : tokens.strong,
-  );
-  TextStyle get titleSuffix => title.copyWith(
-    fontWeight: FontWeight.w400,
-    color: tokens.brutal ? Colors.black.withValues(alpha: .5) : tokens.muted,
-  );
   TextStyle get history => RaftTypography.mono(
     tokens,
     color: tokens.brutal ? Colors.black.withValues(alpha: .5) : tokens.muted,
@@ -161,17 +155,42 @@ class RaftThreadHeader extends StatelessWidget {
       presentation: presentation,
     );
     final grows = RaftScaled.grows(context);
+    // `PanelTitle` (17/600 elegant, 16/700 brutal) and the parent label span:
+    // `ml-1 font-normal in-data-[theme=elegant]:text-[15px]
+    // text-foreground-placeholder theme-brutal:text-black/50`.
+    final titleStyle = RaftConversationHeader.text(
+      context,
+      RaftConversationHeader.recipeOf(context).title,
+    );
+    final suffixStyle = titleStyle.copyWith(
+      fontWeight: FontWeight.w400,
+      fontSize: tokens.brutal ? null : 15,
+      color: tokens.brutal
+          ? Colors.black.withValues(alpha: .5)
+          : tokens.colors['foreground-placeholder'],
+    );
     Widget title() => Text.rich(
       TextSpan(
         text: threadLabel,
-        style: recipe.title,
+        style: titleStyle,
         children: [
-          // Source `<span> — {label}</span>` is a flex item of the title
-          // button: its leading space is collapsed at the item start.
-          if (parentLabel != null)
-            TextSpan(text: '— $parentLabel', style: recipe.titleSuffix),
+          // Source `<span className="ml-1"> — {label}</span>` is a flex item
+          // of the title button: the gap is a margin, not a collapsed space.
+          if (parentLabel != null) ...[
+            // A zero-height box: `middle` leaves the line box alone and, unlike
+            // `baseline`, needs no dry baseline from the Semantics RichText
+            // wraps around a placeholder.
+            const WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: SizedBox(width: 4),
+            ),
+            TextSpan(text: '— $parentLabel', style: suffixStyle),
+          ],
         ],
       ),
+      semanticsLabel: parentLabel == null
+          ? threadLabel
+          : '$threadLabel — $parentLabel',
       // Larger text wraps the title and grows the header.
       maxLines: grows ? null : 1,
       overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,

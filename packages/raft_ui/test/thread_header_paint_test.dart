@@ -69,18 +69,15 @@ void main() {
                 ? [229, 229, 226]
                 // Dark rule --ink-10 over layer-canvas-muted: Chromium paints
                 // 36 36 34 (tool/design-source/chrome-oracle.json canvasMuted).
-                : width < 768
-                ? [36, 36, 34]
-                : [49, 49, 47];
+                // v1.21.12 paints the muted canvas at every width.
+                : [36, 36, 34];
             expect(rgb(height - 1), expected);
             if (family == RaftFamily.brutal) expect(rgb(height - 2), expected);
             expect(
               rgb(height - (family == RaftFamily.brutal ? 3 : 2)),
               dark
-                  ? width < 768
-                        ? [13, 13, 11]
-                        : [27, 27, 25]
-                  : family == RaftFamily.elegant && width < 768
+                  ? [13, 13, 11]
+                  : family == RaftFamily.elegant
                   ? [248, 248, 247]
                   : [255, 255, 255],
             );

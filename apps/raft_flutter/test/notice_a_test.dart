@@ -167,7 +167,7 @@ void main() {
         .error;
     await t.tap(find.byKey(const ValueKey('forward-target-a')));
     await t.pump();
-    await t.tap(find.byKey(const Key('forward-send')));
+    await t.tap(find.byKey(const Key('composer-submit')));
     await t.pumpAndSettle();
     expect(shown(), isNotNull);
     // Another destination: the banner described the previous selection.

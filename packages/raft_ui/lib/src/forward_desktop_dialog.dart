@@ -1,7 +1,6 @@
 // Presentational pieces of Web ForwardComposerDesktop
 // (packages/web/src/components/message/ForwardComposerDesktop.tsx): the
 // two-pane dialog card. The app owns targets, search and sending.
-import 'text_selection_toolbar.dart';
 
 import 'dart:math' as math;
 
@@ -9,9 +8,10 @@ import 'package:flutter/material.dart';
 
 import 'raft_underline.dart';
 import 'design_primitives.dart';
-import 'dialog_card.dart' show RaftShadowSet;
 import 'error_presentation.dart' show RaftErrorBanner;
+import 'form_controls.dart' show RaftPrefixedInput;
 import 'icons.dart';
+import 'recipes/input_group.g.dart' show RaftInputGroupRecipeVariant;
 import 'theme.dart';
 
 Color _rule(RaftTokens t) => t.brutal ? Colors.black : t.colors['line-muted']!;
@@ -43,7 +43,6 @@ class RaftForwardDesktopDialog extends StatelessWidget {
     required this.preview,
     required this.noteLabel,
     required this.note,
-    required this.send,
     this.clearLabel,
     this.onClear,
     this.showClear = false,
@@ -69,8 +68,9 @@ class RaftForwardDesktopDialog extends StatelessWidget {
   /// The forwarded-bundle preview.
   final Widget preview;
 
-  /// The note editor ([RaftForwardDesktopNoteField]) and its send action.
-  final Widget note, send;
+  /// The note editor: Web mounts `MessageInput variant="compact"`, which
+  /// carries its own send button.
+  final Widget note;
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +213,6 @@ class RaftForwardDesktopDialog extends StatelessWidget {
                           _NoteBar(
                             noteLabel: noteLabel,
                             note: note,
-                            send: send,
                             error: error,
                           ),
                         ],
@@ -230,68 +229,42 @@ class RaftForwardDesktopDialog extends StatelessWidget {
   }
 }
 
-/// `border-t-2 bg-layer-panel p-3`: "Optional note" + the compact composer
-/// (`border-2 p-2`, 40px editor, 28px accent send button).
+/// `border-t-2 bg-layer-panel p-3` with a `Field`: the "Optional note" label
+/// above the compact composer.
 class _NoteBar extends StatelessWidget {
-  const _NoteBar({
-    required this.noteLabel,
-    required this.note,
-    required this.send,
-    this.error,
-  });
+  const _NoteBar({required this.noteLabel, required this.note, this.error});
   final String noteLabel;
-  final Widget note, send;
+  final Widget note;
   final String? error;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final rule = _rule(t);
-    final panel = _panel(t);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: panel,
-        border: Border(top: BorderSide(color: rule, width: 2)),
+        color: _panel(t),
+        border: Border(top: BorderSide(color: _rule(t), width: 2)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 4,
+        spacing: 6,
         children: [
-          Text(
-            noteLabel,
-            style: _label(t).copyWith(
-              color: t.brutal ? Colors.black.withValues(alpha: .6) : t.muted,
-            ),
-          ),
+          Text(noteLabel, style: _label(t)),
           // Web MessageInput's own error row: `Banner intent="warning"
           // density="sm" font-bold` above the editor.
           if (error != null) RaftErrorBanner(error!, small: true, bold: true),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: panel,
-              border: Border.all(color: rule, width: 2),
-              borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 8,
-              children: [
-                SizedBox(height: 40, child: note),
-                Align(alignment: Alignment.centerRight, child: send),
-              ],
-            ),
-          ),
+          note,
         ],
       ),
     );
   }
 }
 
-/// `label.flex items-center gap-2 border-2 bg-layer-panel px-2 py-2
-/// shadow-brutal-sm` around the 14px Search icon and the bold 14px input.
+/// raft-ui `InputGroup` (v1.21.12) around a 14px Search icon addon and a
+/// bold `text-sm` `InputGroupInput` with `autoFocus`, so the group shows its
+/// focus state as soon as the dialog opens.
 class RaftForwardDesktopSearch extends StatelessWidget {
   const RaftForwardDesktopSearch({
     super.key,
@@ -306,103 +279,16 @@ class RaftForwardDesktopSearch extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final text = TextStyle(
-      fontFamily: t.headingFont,
-      fontSize: 14,
-      height: 20 / 14,
-      fontWeight: FontWeight.w700,
-      color: t.strong,
-      leadingDistribution: TextLeadingDistribution.even,
-    );
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: _panel(t),
-        border: Border.all(color: _rule(t), width: 2),
-        borderRadius: BorderRadius.circular(t.brutal ? 0 : 6),
-        boxShadow: t.brutal ? RaftShadowSet.brutalSm : null,
-      ),
-      child: Row(
-        children: [
-          RaftIcon(
-            RaftGlyph.search,
-            size: 14,
-            color: t.brutal ? Colors.black.withValues(alpha: .5) : t.muted,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: TextField(
-              contextMenuBuilder: RaftTextSelectionToolbar.editableText,
-              autofillHints: null,
-              controller: controller,
-              focusNode: focusNode,
-              autofocus: true,
-              onChanged: onChanged,
-              style: text,
-              cursorColor: t.strong,
-              decoration: InputDecoration(
-                isCollapsed: true,
-                filled: false,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                hintText: placeholder,
-                hintStyle: text.copyWith(
-                  color: Colors.black.withValues(alpha: .35),
-                ),
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// The desktop dialog's borderless 14px note editor (fills its 40px slot).
-class RaftForwardDesktopNoteField extends StatelessWidget {
-  const RaftForwardDesktopNoteField({
-    super.key,
-    required this.controller,
-    this.hint,
-    this.enabled = true,
-  });
-  final TextEditingController controller;
-  final String? hint;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return TextField(
-      contextMenuBuilder: RaftTextSelectionToolbar.editableText,
-      autofillHints: null,
-      controller: controller,
-      enabled: enabled,
-      maxLength: 4000,
-      maxLines: null,
-      expands: true,
-      style: RaftTypography.body(t, size: 14, line: 20, color: Colors.black),
-      decoration: InputDecoration(
-        isCollapsed: true,
-        filled: false,
-        counterText: '',
-        border: InputBorder.none,
-        enabledBorder: InputBorder.none,
-        focusedBorder: InputBorder.none,
-        disabledBorder: InputBorder.none,
-        hintText: hint,
-        hintStyle: RaftTypography.body(
-          t,
-          size: 14,
-          line: 20,
-          color: Colors.black.withValues(alpha: .35),
-        ),
-        contentPadding: EdgeInsets.zero,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RaftPrefixedInput(
+    prefix: '',
+    leadingIcon: RaftGlyph.search,
+    controller: controller,
+    focusNode: focusNode,
+    hintText: placeholder,
+    semanticLabel: placeholder,
+    autofocus: true,
+    onChanged: onChanged,
+    controlWeight: FontWeight.w700,
+    variant: RaftInputGroupRecipeVariant.default_,
+  );
 }

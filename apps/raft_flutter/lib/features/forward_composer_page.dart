@@ -468,20 +468,24 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
         formatTimestamp: forwardStamp(),
       ),
       noteLabel: raftText(context, 'Optional note'),
-      note: RaftForwardDesktopNoteField(
+      // Web mounts the same compact MessageInput as the phone page, with
+      // allowEmptySubmit; Send stays off until a destination is chosen.
+      note: RaftComposer(
         key: const Key('forward-desktop-note'),
-        controller: note,
-        enabled: !busy && attempt == null,
+        variant: RaftComposerVariant.compact,
         hint: raftText(context, 'Add a note'),
-      ),
-      send: RaftRecipeButton(
-        key: const Key('forward-send'),
-        variant: RaftButtonRecipeVariant.accent,
-        size: RaftButtonRecipeSize.iconSm,
-        glyph: RaftGlyph.send,
-        tooltip: raftText(context, 'Send forward'),
-        disabled: selected.isEmpty,
-        onPressed: busy || selected.isEmpty ? null : send,
+        hasAttachments: true,
+        canSend: selected.isNotEmpty,
+        bottomSafeInset: 0,
+        enabled: !busy,
+        submitBusy: busy,
+        submitTooltip: raftText(context, 'Send forward'),
+        initialDraft: note.text,
+        onDraftChanged: (text) => note.text = text,
+        onSend: (text) {
+          note.text = text;
+          return send();
+        },
       ),
     );
   }

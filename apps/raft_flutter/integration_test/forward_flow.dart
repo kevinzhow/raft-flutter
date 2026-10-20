@@ -75,7 +75,7 @@ Future<void> verifyForwardFlow(
       await tester.pump(const Duration(milliseconds: 200));
     }
     await capture('linux-forward-destinations');
-    await tester.tap(find.byKey(const Key('forward-send')));
+    await tester.tap(find.byKey(const Key('composer-submit')));
     await wait(() => done);
     expect(accepted, true);
     for (final channel in owned.skip(1)) {
