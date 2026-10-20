@@ -45,9 +45,12 @@ void main() {
           clock.style!.fontSize,
           appearance.light == RaftFamily.brutal ? 12 : 11,
         );
+        // Web v1.21.12 (raft-ui 0.5.52): the note owns a `pt-[3px]` (brutal
+        // `pt-0`) lead-in and no bottom padding; the next row completes the
+        // seam (`data-follows-system`). 0.5.27 had py-1.5 plus mb-1.
         expect(
           t.getSize(find.byType(RaftSystemMessage)).height,
-          appearance.light == RaftFamily.brutal ? 32 : 34,
+          appearance.light == RaftFamily.brutal ? 16 : 21,
         );
         expect(t.takeException(), isNull);
         await t.pumpWidget(

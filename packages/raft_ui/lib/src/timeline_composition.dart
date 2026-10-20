@@ -24,12 +24,12 @@ class RaftTimelineCompositionRecipe {
   // have separate composition and must not receive this inset twice.
   EdgeInsets get messageInset => const EdgeInsets.symmetric(horizontal: 12);
 
-  /// Intended difference from Web (owner decision 2026-10-12): on a phone the
-  /// wrapper drops its inset so the avatar lines up with the header buttons
-  /// (20 dp in Brutal: row margin 12 + border 2 + padding 6) and a Brutal
-  /// row's box edge lines up with the composer.
-  EdgeInsets messageInsetFor(double viewportWidth) =>
-      viewportWidth < 768 ? EdgeInsets.zero : messageInset;
+  /// The wrapper keeps its inset at every width. raft-ui 0.5.36 dropped the
+  /// brutal row's `mx-3` and set the row insets to 8 (7 + 1 border; 6 + 2
+  /// brutal), so the Web itself lands the avatar on 20 next to the header
+  /// buttons on a phone. This replaces the owner decision of 2026-10-12, which
+  /// removed the wrapper inset on phones to reach the same 20.
+  EdgeInsets messageInsetFor(double viewportWidth) => messageInset;
   double get sentinelExtent => 1;
   EdgeInsets get channelHeaderInset =>
       const EdgeInsets.only(left: 12, right: 12, top: 12);

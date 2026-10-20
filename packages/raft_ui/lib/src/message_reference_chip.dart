@@ -243,11 +243,7 @@ class RaftReferenceChip extends StatelessWidget {
         icon = SizedBox.square(
           dimension: fontSize * .857,
           child: FittedBox(
-            child: RaftMessageTaskStatusIcon(
-              status: status,
-              color: iconColor,
-              inverse: t.brutal ? Colors.white : t.colors['layer-panel']!,
-            ),
+            child: RaftMessageTaskStatusIcon(status: status, color: iconColor),
           ),
         );
       case RaftReferenceKind.unknownTask:

@@ -660,7 +660,6 @@ class RaftTaskSectionBadge extends StatelessWidget {
           RaftMessageTaskStatusIcon(
             status: _iconStatus(status),
             color: iconColor,
-            inverse: t.colors['foreground-inverse']!,
             size: badge.target('& svg')?.width ?? 10,
           ),
           Text(

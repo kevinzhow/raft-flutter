@@ -11,6 +11,11 @@ import 'tooltip.dart';
 /// Mounted AvatarSlot contexts, independent of generic Avatar sizing.
 enum RaftMountedAvatarContext {
   panelHeader,
+  // AvatarSlot context="message-row" (Web v1.21.12): no forced frame. The
+  // message row's avatar slot recipe sizes the image (32, 28 below 768, 34 on
+  // the large text tier; the row passes tight constraints) and elegant drops
+  // the border.
+  messageRow,
   compactList,
   // AvatarSlot context="members-row": RAFT_AVATAR_SPEC `!size-7 !border`.
   membersRow,
@@ -59,6 +64,7 @@ class RaftMountedAvatarRecipe {
   final RaftMountedAvatarContext avatarContext;
   final RaftMountedAvatarIdentity identity;
   bool get panelHeader => avatarContext == RaftMountedAvatarContext.panelHeader;
+  bool get messageRow => avatarContext == RaftMountedAvatarContext.messageRow;
   bool get sidebarList => avatarContext == RaftMountedAvatarContext.sidebarList;
   bool get previewMini => avatarContext == RaftMountedAvatarContext.previewMini;
   bool get membersRow => avatarContext == RaftMountedAvatarContext.membersRow;
@@ -66,6 +72,8 @@ class RaftMountedAvatarRecipe {
   // sidebar-list !size-[18px], preview-mini !size-[14px]; SPEC icon sizes.
   double get extent => panelHeader
       ? 36
+      : messageRow
+      ? 32
       : membersRow
       ? 28
       : sidebarList
@@ -73,9 +81,13 @@ class RaftMountedAvatarRecipe {
       : previewMini
       ? 14
       : 20;
-  double get borderWidth => panelHeader ? 2 : 1;
+  double get borderWidth => messageRow
+      ? (tokens.brutal ? 2 : 0)
+      : panelHeader
+      ? 2
+      : 1;
   double get contentExtent => extent - borderWidth * 2;
-  double get placeholderExtent => panelHeader
+  double get placeholderExtent => panelHeader || messageRow
       ? 18
       : membersRow
       ? 14
@@ -84,9 +96,9 @@ class RaftMountedAvatarRecipe {
       : 12;
   // One glyph size for the humanPlaceholder and the Gravatar User fallback:
   // a gravatar hash that arrives after first paint never resizes the glyph.
-  double get gravatarFallbackExtent => placeholderExtent;
+  double get gravatarFallbackExtent => messageRow ? 16 : placeholderExtent;
   // raft-ui avatar badge: size-2.5 md, size-2 sm (members-row), size-1.5 xs.
-  double get badgeExtent => panelHeader
+  double get badgeExtent => panelHeader || messageRow
       ? 10
       : membersRow
       ? 8
@@ -113,7 +125,9 @@ class RaftMountedAvatarRecipe {
   // global inset-2.75 Brutal. Compact badge is source-recipe only: the public
   // MessageReplies fixture mounts compact avatars without presence chrome.
   double get badgeInset => tokens.brutal
-      ? borderWidth - (panelHeader ? 4.75 : 2.75)
+      ? borderWidth - (panelHeader || messageRow ? 4.75 : 2.75)
+      : messageRow
+      ? -1 // `-right-px -bottom-px` on the message row's md avatar badge.
       : panelHeader || sidebarList
       ? 1
       : borderWidth + .333;
@@ -182,7 +196,7 @@ class RaftMountedAvatarFallback extends StatelessWidget {
               textScaler: RaftChrome.boundedScalerOf(context),
               style: TextStyle(
                 fontFamily: t.headingFont,
-                fontSize: r.panelHeader ? 14 : 10,
+                fontSize: r.panelHeader || r.messageRow ? 14 : 10,
                 fontWeight: identity == RaftMountedAvatarIdentity.app
                     ? RaftTypography.black(t)
                     : FontWeight.w700,

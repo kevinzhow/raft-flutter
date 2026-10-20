@@ -277,7 +277,11 @@ void main() {
       expect(spans, findsOneWidget);
       await tester.pumpWidget(body(true));
       await tester.pump();
-      expect(find.byType(RaftReferenceChip), findsNWidgets(2));
+      // Web v1.21.12 `protectMessageMarkdownLinks` swaps every markdown link
+      // for a placeholder before the reference rules run, so a link label is
+      // never chipped (v1.21.2 chipped `#1487` inside the label as well).
+      expect(find.byType(RaftReferenceChip), findsOneWidget);
+      expect(spans, findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

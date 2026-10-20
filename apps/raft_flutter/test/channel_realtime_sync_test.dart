@@ -546,12 +546,15 @@ void main() {
     }
     expect(m3, findsOneWidget);
     // Like a live message:new at the bottom edge, the held rows move up once
-    // as one block by the appended row; their own layout never changes.
+    // as one block by the appended row. Only the row that now has a follower
+    // changes: Web v1.21.12 writes `data-followed-by` on it, which drops its
+    // trailing padding (a continuation followed by a continuation: 6 -> 2).
     final after = (t.getRect(m1), t.getRect(m2));
     final shift = after.$1.top - before.$1.top;
     expect(after.$2.top - before.$2.top, shift);
     expect(after.$1.size, before.$1.size);
-    expect(after.$2.size, before.$2.size);
+    expect(after.$2.width, before.$2.width);
+    expect(before.$2.height - after.$2.height, 4);
     expect(-shift, moreOrLessEquals(t.getRect(m3).top - after.$2.top));
     for (var frame = 0; frame < 6; frame++) {
       await t.pump(const Duration(milliseconds: 16));

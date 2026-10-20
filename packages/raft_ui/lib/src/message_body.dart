@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'interaction.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
@@ -91,14 +93,12 @@ String raftMessageReferences(
   String Function(int number)? taskHref,
   bool Function(int number)? knownTaskNumber,
 }) {
-  final protected = RegExp(
-    r'(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1|`+[^`]*`+|!?\[[^\]]*\]\([^)]*\)|https?://[^\s]+',
-  );
-  // Inside an authored link label a reference cannot become a nested
-  // markdown link; it is wrapped in private-use sentinels that
-  // _ReferenceSentinelSyntax turns into a `raftref` element (Web chips
-  // refs inside link labels too: MessageItem only protects code).
-  String plain(String text, {bool sentinel = false}) {
+  // Free-text `@name` handles the message can resolve (Web `isKnownHandle`).
+  final knownHandles = {
+    for (final r in references)
+      if (r.text.startsWith('@') && r.text.length > 1) r.text.substring(1),
+  };
+  String plain(String text) {
     final matches = <({int start, int end, String label, String href})>[];
     for (final ref in references) {
       if (ref.text.isEmpty) continue;
@@ -114,8 +114,23 @@ String raftMessageReferences(
             RegExp(r'[\p{L}\p{N}_@/]', unicode: true).hasMatch(left)) {
           continue;
         }
-        if (right.isNotEmpty &&
-            RegExp(r'[\p{L}\p{N}_-]', unicode: true).hasMatch(right)) {
+        final next = m.end == text.length
+            ? ''
+            : String.fromCharCode(
+                text
+                    .substring(m.end, math.min(m.end + 2, text.length))
+                    .runes
+                    .first,
+              );
+        if (next.isNotEmpty &&
+            _handleContinuation.hasMatch(next) &&
+            !_raftMentionBoundaryAllowed(
+              ref,
+              text,
+              m.start,
+              next,
+              knownHandles,
+            )) {
           continue;
         }
         if (right == '.' &&
@@ -174,11 +189,6 @@ String raftMessageReferences(
     for (final m in matches) {
       if (m.start < cursor) continue;
       result.write(text.substring(cursor, m.start));
-      if (sentinel) {
-        result.write('\u{E000}${m.href}\u{E001}${m.label}\u{E002}');
-        cursor = m.end;
-        continue;
-      }
       final label = m.label
           .replaceAll(r'\', r'\\')
           .replaceAll('[', r'\[')
@@ -192,17 +202,147 @@ String raftMessageReferences(
 
   final out = StringBuffer();
   var cursor = 0;
-  final authoredLink = RegExp(r'^\[([^\]]*)\](\([^)]*\))$');
-  for (final m in protected.allMatches(source)) {
-    out.write(plain(source.substring(cursor, m.start)));
-    final link = authoredLink.firstMatch(m[0]!);
-    out.write(
-      link == null ? m[0] : '[${plain(link[1]!, sentinel: true)}]${link[2]}',
-    );
-    cursor = m.end;
+  for (final range in raftProtectedMarkdownRanges(source)) {
+    out.write(plain(source.substring(cursor, range.$1)));
+    out.write(source.substring(range.$1, range.$2));
+    cursor = range.$2;
   }
   out.write(plain(source.substring(cursor)));
   return out.toString();
+}
+
+final _handleContinuation = RegExp(r'[\p{L}\p{N}_-]', unicode: true);
+final _cjkSuffixStart = RegExp(
+  r'^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]',
+  unicode: true,
+);
+final _nonCjkHandleEnd = RegExp(r'[\p{Script=Latin}\p{N}_-]$', unicode: true);
+
+/// Web `resolveRaftMentionHandle`: resolve a free-text mention [token] (the
+/// run of letters, digits, `_` and `-` after `@`) against known handles. An
+/// exact match wins. Otherwise the token is split only where the writing
+/// system changes, a Latin letter, digit, `_` or `-` followed by Han, kana or
+/// hangul (`@ops的`, `@opsさん`, `@ops와`); nothing is guessed inside one
+/// script. A split that is a guess (two valid splits, or a longer known name
+/// that is also a prefix of the token) stays unresolved. Returns the handle
+/// and the glued suffix, or null.
+({String handle, String suffix})? raftResolveMentionHandle(
+  String token,
+  bool Function(String handle) isKnownHandle,
+) {
+  if (isKnownHandle(token)) return (handle: token, suffix: '');
+  final chars = token.runes.map(String.fromCharCode).toList();
+  final splits = <({int length, String handle, String suffix})>[];
+  for (var length = 1; length < chars.length; length += 1) {
+    final handle = chars.sublist(0, length).join();
+    final suffix = chars.sublist(length).join();
+    if (!_nonCjkHandleEnd.hasMatch(handle)) continue;
+    if (!_cjkSuffixStart.hasMatch(suffix)) continue;
+    if (isKnownHandle(handle)) {
+      splits.add((length: length, handle: handle, suffix: suffix));
+    }
+  }
+  // `ops` and `ops君a` for `@ops君a的`: two members fit, so the split is a guess.
+  if (splits.length != 1) return null;
+  final split = splits.single;
+  // A longer member name also fits (`ops` and `ops君` for `@ops君的`).
+  for (var longer = split.length + 1; longer < chars.length; longer += 1) {
+    if (isKnownHandle(chars.sublist(0, longer).join())) return null;
+  }
+  return (handle: split.handle, suffix: split.suffix);
+}
+
+/// Whether a reference may end right before [next], a character that would
+/// otherwise continue the handle. A composer-resolved (identity-backed)
+/// mention may be followed by Han, kana or hangul (`@Mona的`), never by Latin
+/// letters, digits, `_` or `-`. Free text resolves through
+/// [raftResolveMentionHandle].
+bool _raftMentionBoundaryAllowed(
+  RaftTextReference ref,
+  String text,
+  int start,
+  String next,
+  Set<String> knownHandles,
+) {
+  if (!ref.text.startsWith('@')) return false;
+  if (ref.identityBacked) return _cjkSuffixStart.hasMatch(next);
+  final token = RegExp(
+    r'^[\p{L}\p{N}_-]+',
+    unicode: true,
+  ).firstMatch(text.substring(start + 1))?[0];
+  if (token == null) return false;
+  return raftResolveMentionHandle(token, knownHandles.contains)?.handle ==
+      ref.text.substring(1);
+}
+
+final _protectedStart = RegExp(
+  r'(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1|`+[^`]*`+|!?\[|'
+  r'https?://[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*',
+);
+
+/// Web `protectMarkdownInlineLinks` for the `[` at [labelStart]: the end of
+/// the whole `[label](destination)` (exclusive), honouring backslash escapes in
+/// the label and balanced parentheses in the destination, or null when the
+/// bracket does not open an inline link.
+int? _inlineLinkEnd(String source, int labelStart) {
+  var labelEnd = labelStart + 1;
+  while (labelEnd < source.length) {
+    final c = source[labelEnd];
+    if (c == r'\') {
+      labelEnd += 2;
+      continue;
+    }
+    if (c == ']') break;
+    labelEnd += 1;
+  }
+  if (labelEnd >= source.length ||
+      labelEnd + 1 >= source.length ||
+      source[labelEnd + 1] != '(') {
+    return null;
+  }
+  var end = labelEnd + 2;
+  var depth = 1;
+  while (end < source.length) {
+    final c = source[end];
+    if (c == r'\') {
+      end += 2;
+      continue;
+    }
+    if (c == '(') {
+      depth += 1;
+    } else if (c == ')') {
+      depth -= 1;
+      if (depth == 0) break;
+    }
+    end += 1;
+  }
+  return depth == 0 && end < source.length ? end + 1 : null;
+}
+
+/// The ranges [raftMessageReferences] must not touch: code, authored inline
+/// links and images (label and destination: Web v1.21.12 no longer chips a
+/// mention, channel or task inside a link label) and bare URLs.
+List<(int, int)> raftProtectedMarkdownRanges(String source) {
+  final ranges = <(int, int)>[];
+  var from = 0;
+  while (from < source.length) {
+    final m = _protectedStart.allMatches(source, from).firstOrNull;
+    if (m == null) break;
+    final text = m[0]!;
+    if (text == '[' || text == '![') {
+      final end = _inlineLinkEnd(source, m.end - 1);
+      if (end == null) {
+        from = m.end;
+        continue;
+      }
+      ranges.add((m.start, end));
+      from = end;
+      continue;
+    }
+    ranges.add((m.start, m.end));
+    from = m.end;
+  }
+  return ranges;
 }
 
 /// Inputs of [raftMessageReferences] that change its output. Task closures
@@ -319,7 +459,7 @@ final raftMarkdownAstCache = RaftLruCache<String, List<md.Node>?>(1024);
 
 List<md.Node> _parseMarkdownSource(String data) => raftFlattenNestedLinks(
   md.Document(
-    inlineSyntaxes: [_ReferenceSentinelSyntax(), RaftBareUrlSyntax()],
+    inlineSyntaxes: [RaftBareUrlSyntax()],
     extensionSet: md.ExtensionSet.gitHubFlavored,
     encodeHtml: false,
   ).parseLines(const LineSplitter().convert(data)),
@@ -603,7 +743,6 @@ class RaftMessageBody extends StatelessWidget {
         referenceAppearance,
         permalinkAppearance: permalinkAppearance,
       ),
-      'raftref': _MessageLinkBuilder(onLink, referenceAppearance),
       'code': _MessageInlineCodeBuilder(highlight: highlight),
       if (highlight.isNotEmpty) 'mark': _SearchMarkBuilder(t),
     };
@@ -1645,23 +1784,6 @@ class _MermaidToolbar extends StatelessWidget {
   }
 }
 
-/// Inline Markdown links need an explicit focus/action widget. The upstream
-/// recognizer alone is pointer-only and omits the link URL from Web semantics.
-/// `\uE000href\uE001label\uE002` → `raftref` element (see
-/// [raftMessageReferences]).
-class _ReferenceSentinelSyntax extends md.InlineSyntax {
-  _ReferenceSentinelSyntax()
-    : super('\u{E000}([^\u{E001}]*)\u{E001}([^\u{E002}]*)\u{E002}');
-  @override
-  bool onMatch(md.InlineParser parser, Match match) {
-    parser.addNode(
-      md.Element('raftref', [md.Text(match[2]!)])
-        ..attributes['href'] = match[1]!,
-    );
-    return true;
-  }
-}
-
 /// Message InlineCode is a splittable text run with CSS px-1 padding, not
 /// an indivisible chip. Empty placeholders add layout space without changing
 /// authored code or the text returned by selection and accessibility.
@@ -1723,6 +1845,8 @@ class _MessageInlineCodeBuilder extends MarkdownElementBuilder {
   }
 }
 
+/// Inline Markdown links need an explicit focus/action widget. The upstream
+/// recognizer alone is pointer-only and omits the link URL from Web semantics.
 class _MessageLinkBuilder extends MarkdownElementBuilder {
   _MessageLinkBuilder(
     this.onLink,
@@ -1773,9 +1897,9 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
     if (href == null) return null;
     final label = element.textContent as String;
     final base = parentStyle ?? DefaultTextStyle.of(context).style;
-    // Identity-backed references (`raft-ref:` hrefs, also nested inside an
-    // authored link label as `raftref` elements) are focusable inline links.
-    if (element.tag == 'raftref' || href.startsWith('raft-ref:')) {
+    // Identity-backed references (`raft-ref:` hrefs) are focusable inline
+    // links. An authored link label never contains one (Web v1.21.12).
+    if (href.startsWith('raft-ref:')) {
       return Text.rich(
         TextSpan(
           children: [_reference(context, href, label, base, preferredStyle)],
@@ -1814,22 +1938,13 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
       TextSpan(
         children: [
           for (final child in children)
-            if (child is md.Element && child.tag == 'raftref')
-              _reference(
-                context,
-                child.attributes['href'] ?? '',
-                child.textContent,
-                base,
-                preferredStyle,
-              )
-            else
-              TextSpan(
-                text: (child as md.Node).textContent,
-                style: linkStyle.copyWith(decoration: TextDecoration.none),
-                recognizer: recognizer,
-                mouseCursor: SystemMouseCursors.click,
-                semanticsLabel: child.textContent,
-              ),
+            TextSpan(
+              text: (child as md.Node).textContent,
+              style: linkStyle.copyWith(decoration: TextDecoration.none),
+              recognizer: recognizer,
+              mouseCursor: SystemMouseCursors.click,
+              semanticsLabel: child.textContent,
+            ),
         ],
       ),
     );
@@ -2352,7 +2467,7 @@ List<md.Node> _highlightSearchNodes(
       node,
 ];
 
-const _plainTags = {'a', 'raftref', 'pre', 'code'};
+const _plainTags = {'a', 'pre', 'code'};
 
 List<md.Node> _markText(String text, String query) {
   final parts = _searchFragments(text, query);

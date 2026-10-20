@@ -1502,7 +1502,8 @@ class RaftMessageTile extends StatelessWidget {
     this.onTap,
     this.rowContext = RaftMessageRowContext.main,
     this.continuation = false,
-    this.nextContinuation = false,
+    this.followedBy,
+    this.followsSystem = false,
     this.coarsePointer = false,
     this.popupOpen = false,
     this.highlighted = false,
@@ -1573,11 +1574,11 @@ class RaftMessageTile extends StatelessWidget {
   /// Multi-select checkbox shown while the app is in select mode.
   final Widget? selectionLeading;
   final VoidCallback? onAuthor, onTap;
-  final bool continuation,
-      nextContinuation,
-      coarsePointer,
-      popupOpen,
-      highlighted;
+  final bool continuation, coarsePointer, popupOpen, highlighted;
+
+  /// Rhythm markers (`data-followed-by`, `data-follows-system`).
+  final RaftMessageFollowedBy? followedBy;
+  final bool followsSystem;
 
   /// The default Markdown body in a compact row contributes only its links.
   Widget compactProse(Widget prose) => compactSemantics
@@ -1595,6 +1596,7 @@ class RaftMessageTile extends StatelessWidget {
       t,
       viewportWidth: MediaQuery.sizeOf(context).width,
       rowContext: rowContext,
+      sizeTier: RaftMessageSizeTier.of(bodyFontSize),
     );
     return RaftMessageRow(
       author: author,
@@ -1613,14 +1615,16 @@ class RaftMessageTile extends StatelessWidget {
           ? raftMessageSemanticsText(context, semanticsContent ?? content)
           : '',
       semanticsActions: semanticsActions,
-      avatar: avatar ?? RaftAvatar(name: author, size: 36),
+      avatar: avatar ?? RaftAvatar(name: author, size: 32),
       onAuthor: onAuthor,
       onActions: onActions,
       onActionsAt: onActionsAt,
       onTap: onTap,
       rowContext: rowContext,
       continuation: continuation,
-      nextContinuation: nextContinuation,
+      followedBy: followedBy,
+      followsSystem: followsSystem,
+      sizeTier: RaftMessageSizeTier.of(bodyFontSize),
       coarsePointer: coarsePointer,
       popupOpen: popupOpen,
       highlighted: highlighted,
@@ -1637,61 +1641,68 @@ class RaftMessageTile extends StatelessWidget {
                     child: RaftTooltip(
                       onlyWhenTruncated: true,
                       message: modelLabel!,
-                      child: Text(
+                      child: RaftCssText(
                         modelLabel!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        // `text-[11px]` replaces the meta slot's `text-xs`
+                        // The meta size class replaces the slot's `text-xs`
                         // (tailwind-merge), so brutal inherits the body's
                         // 20/14 line height; elegant keeps `leading-none`.
-                        style: recipe.time.copyWith(
-                          fontSize: 11,
-                          height: t.brutal ? 20 / 14 : 1,
-                        ),
+                        style: recipe.time,
                       ),
                     ),
                   ),
+                // The header gives this cluster less than its natural width
+                // when the row is narrow (Web: the tail is `min-w-0
+                // overflow-hidden`), so every part can shrink instead of
+                // overflowing.
                 if (badge != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 4),
-                    child: Text(
-                      badge!,
-                      maxLines: 1,
-                      style: recipe.time.copyWith(fontSize: 10),
+                  Flexible(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        badge!,
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                        style: recipe.time.copyWith(fontSize: 10),
+                      ),
                     ),
                   ),
                 if (departureLabel != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: t.brutal
-                          ? RaftWebPalette.gray300
-                          : t.colors['fill-muted'],
-                      border: Border.all(
-                        color: t.brutal
-                            ? Colors.black
-                            : t.colors['line-muted']!,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
                       ),
-                    ),
-                    child: RaftCssText(
-                      departureLabel!.toUpperCase(),
-                      maxLines: 1,
-                      softWrap: false,
-                      // Brutal, measured on the Web capture (deleted-human, 3x): the
-                      // bordered py-0.5 badge is exactly 20px tall, the same
-                      // as the sender line, and the header row does not grow;
-                      // the inherited 20/14 ratio (14.29px) made Flutter's row
-                      // 1/3px taller and pushed the body down a device row.
-                      style: recipe.body.copyWith(
-                        fontSize: 10,
-                        height: t.brutal ? 14 / 10 : null,
-                        fontWeight: FontWeight.w700,
+                      decoration: BoxDecoration(
                         color: t.brutal
-                            ? Colors.black.withValues(alpha: .6)
-                            : t.muted,
+                            ? RaftWebPalette.gray300
+                            : t.colors['fill-muted'],
+                        border: Border.all(
+                          color: t.brutal
+                              ? Colors.black
+                              : t.colors['line-muted']!,
+                        ),
+                      ),
+                      child: RaftCssText(
+                        departureLabel!.toUpperCase(),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.clip,
+                        // Brutal, measured on the Web capture (deleted-human, 3x): the
+                        // bordered py-0.5 badge is exactly 20px tall, the same
+                        // as the sender line, and the header row does not grow;
+                        // the inherited 20/14 ratio (14.29px) made Flutter's row
+                        // 1/3px taller and pushed the body down a device row.
+                        style: recipe.body.copyWith(
+                          fontSize: 10,
+                          height: t.brutal ? 14 / 10 : null,
+                          fontWeight: FontWeight.w700,
+                          color: t.brutal
+                              ? Colors.black.withValues(alpha: .6)
+                              : t.muted,
+                        ),
                       ),
                     ),
                   ),

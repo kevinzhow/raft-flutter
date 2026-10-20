@@ -72,29 +72,46 @@ void main() {
           r.background,
         );
       }
-      final todo = RaftMessageTaskChipRecipe(t, RaftMessageTaskStatus.todo);
-      final closed = RaftMessageTaskChipRecipe(t, RaftMessageTaskStatus.closed);
-      if (family == RaftFamily.brutal) {
-        expect(closed.background, t.colors['color-brutal-stone']);
-        expect(todo.background, t.colors['color-brutal-orange']);
-      } else {
-        expect(closed.background, todo.background);
-        expect(closed.iconForeground, t.colors['inactive']);
-        expect(todo.iconForeground, t.colors['foreground-placeholder']);
-        expect(
-          todo.side().color,
-          t.colors['line-muted']!.withValues(
-            alpha: t.colors['line-muted']!.a * .75,
-          ),
-        );
-        expect(
-          RaftMessageTaskChipRecipe(
-            t,
-            RaftMessageTaskStatus.inProgress,
-          ).foreground,
-          t.colors[dark ? 'primary-strong' : 'color-brutal-yellow-800'],
-        );
+      // raft-ui 0.5.30+: every status reads the `--task-status-*` tokens
+      // (the soft wash, strong ink and a 35% hairline in elegant; the solid
+      // status fill, black ink and keyline in brutal).
+      for (final (status, token) in [
+        (RaftMessageTaskStatus.todo, 'task-status-todo'),
+        (RaftMessageTaskStatus.inProgress, 'task-status-in-progress'),
+        (RaftMessageTaskStatus.inReview, 'task-status-in-review'),
+        (RaftMessageTaskStatus.done, 'task-status-done'),
+        (RaftMessageTaskStatus.closed, 'task-status-closed'),
+      ]) {
+        final r = RaftMessageTaskChipRecipe(t, status);
+        if (family == RaftFamily.brutal) {
+          expect(r.background, t.colors[token], reason: '$status');
+          expect(r.foreground, Colors.black);
+          expect(r.iconForeground, Colors.black);
+          expect(r.side().color, Colors.black);
+        } else {
+          final strong = t.colors['$token-strong']!;
+          expect(r.background, t.colors['$token-soft'], reason: '$status');
+          expect(r.foreground, strong);
+          expect(r.iconForeground, strong);
+          expect(r.side().color, strong.withValues(alpha: strong.a * .35));
+        }
       }
+    });
+
+    test('$family/$dark task status icons are the lucide glyphs', () {
+      expect(
+        [
+          for (final s in RaftMessageTaskStatus.values)
+            RaftMessageTaskStatusIcon.glyphOf(s),
+        ],
+        [
+          RaftGlyph.circle,
+          RaftGlyph.play,
+          RaftGlyph.eye,
+          RaftGlyph.checkCircle,
+          RaftGlyph.ban,
+        ],
+      );
     });
 
     testWidgets(

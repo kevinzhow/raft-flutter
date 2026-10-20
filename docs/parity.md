@@ -1276,14 +1276,14 @@ around ThreadsInbox at 390px, 3x), but Flutter does not draw it. The ext cases
 `components.shell.mobile.activity.frame.*` therefore differ from Web by that
 1px vertical line by design; the owner decision overrides the Web analysis.
 
-Owner decision 2026-10-12: on a phone the message avatar lines up with the
-header buttons (intended difference from Web). Web wraps every timeline row in
-`px-3` at every width, so the Brutal avatar sits at 32 dp (12 + row margin 12 +
-border 2 + padding 6) while the header Back sits at 20 dp. Flutter drops the
-wrapper inset below 768 dp (`RaftTimelineCompositionRecipe.messageInsetFor`):
-the Brutal avatar sits at 20 dp and a row's box edge at 12 dp, flush with the
-composer. Phone conversation cases therefore differ from Web by a 12 dp shift
-of the message rows.
+Owner decision 2026-10-12, superseded by the v1.21.12 message-row port: on a
+phone the message avatar lined up with the header buttons, which Web v1.21.2
+did not do (its Brutal avatar sat at 32 dp: 12 wrapper + row margin 12 + border
+2 + padding 6), so Flutter dropped the wrapper inset below 768 dp. raft-ui
+0.5.36 removed Brutal's row `mx-3` and set the row insets to 8, so Web
+v1.21.12 itself puts the avatar at 20 dp (12 + 8) and a row's box edge at 12
+dp at every width. `RaftTimelineCompositionRecipe.messageInsetFor` now keeps
+the wrapper inset at every width and the intended difference is gone.
 
 Owner decision 2026-10-12: no left panel border on phone (intended difference
 from Web). "On mobile, don't draw the black line on the left anywhere." Web's

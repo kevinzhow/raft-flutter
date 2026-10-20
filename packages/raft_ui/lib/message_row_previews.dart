@@ -38,7 +38,7 @@ class _RowsState extends State<_Rows> {
               : RaftMessageRowContext.main,
           author: 'Cindy',
           timestamp: '14:30',
-          nextContinuation: true,
+          followedBy: RaftMessageFollowedBy.compact,
           coarsePointer: coarse,
           avatar: const RaftAvatar(
             name: 'Cindy',

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'message_row_recipe.dart' show RaftMessageSizeScope, RaftMessageSizeTier;
 import 'theme.dart';
 import 'recipe_surface.dart';
 import 'text_scaling.dart' show RaftScaled;
@@ -28,8 +29,15 @@ class RaftInlineReply {
 /// messageBlock. These geometry/type overrides are separate from generic cards.
 @immutable
 class RaftInlineThreadRecipe {
-  const RaftInlineThreadRecipe(this.tokens);
+  const RaftInlineThreadRecipe(
+    this.tokens, {
+    this.sizeTier = RaftMessageSizeTier.md,
+  });
   final RaftTokens tokens;
+
+  /// The reader's message size: the sender, preview and time classes
+  /// (`getMessagePreviewSizeClass`, `getMessagePreviewTimeSizeClass`).
+  final RaftMessageSizeTier sizeTier;
   EdgeInsets get padding =>
       const EdgeInsets.symmetric(horizontal: 10, vertical: 8);
   double get topGap => 6;
@@ -47,28 +55,46 @@ class RaftInlineThreadRecipe {
   Color get normal =>
       tokens.brutal ? Colors.black.withValues(alpha: .03) : tokens.card;
   Color get muted => tokens.muted;
+
+  /// `messageReplies.summary`: brutal 12.5/700 black/55; elegant 12/500
+  /// foreground-muted on a 1.3333 line.
   TextStyle get summary => TextStyle(
     fontFamily: tokens.bodyFont,
     fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
-    fontSize: 12.5,
-    height: tokens.brutal ? 20 / 14 : 21 / 12.5,
-    fontWeight: FontWeight.w700,
-    color: muted,
+    fontSize: tokens.brutal ? 12.5 : 12,
+    height: tokens.brutal ? 20 / 14 : 16 / 12,
+    fontWeight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
+    color: tokens.brutal ? Colors.black.withValues(alpha: .55) : muted,
   );
   TextStyle get sender => TextStyle(
     fontFamily: tokens.bodyFont,
     fontFamilyFallback: tokens.systemFonts ? tokens.fontFallback : null,
-    fontSize: 12.5,
+    fontSize: sizeTier.preview,
     height: 1.25,
     fontWeight: FontWeight.w600,
-    color: muted,
+    // `messageReplies.sender`: brutal black/70, elegant foreground-muted.
+    color: tokens.brutal ? Colors.black.withValues(alpha: .7) : muted,
   );
-  TextStyle get preview => sender.copyWith(fontWeight: FontWeight.w400);
+  TextStyle get preview => sender.copyWith(
+    fontWeight: FontWeight.w400,
+    // `messageReplies.content`: brutal black/60, elegant muted at 80%.
+    color: tokens.brutal
+        ? Colors.black.withValues(alpha: .6)
+        : muted.withValues(alpha: muted.a * .8),
+  );
+
+  /// `messageReplies.time` (raft-ui 0.5.45: elegant sans, brutal mono) with
+  /// the host's colour: elegant light `oklch(0.52 0 0)`, dark placeholder,
+  /// brutal black/40.
   TextStyle get clock => TextStyle(
-    fontFamily: tokens.brutal ? tokens.bodyFont : tokens.monoFont,
-    fontSize: 11.5,
+    fontFamily: tokens.brutal ? tokens.monoFont : tokens.bodyFont,
+    fontSize: sizeTier.previewTime,
     height: 1.25,
-    color: tokens.colors['foreground-placeholder'],
+    color: tokens.brutal
+        ? Colors.black.withValues(alpha: .4)
+        : tokens.dark
+        ? tokens.colors['foreground-placeholder']
+        : const Color(0xFF696969),
     fontFeatures: const [FontFeature.tabularFigures()],
   );
 }
@@ -126,7 +152,10 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
     if (widget.replyCount <= 0 || visible.isEmpty)
       return const SizedBox.shrink();
     final t = RaftTokens.of(context);
-    final recipe = RaftInlineThreadRecipe(t);
+    final recipe = RaftInlineThreadRecipe(
+      t,
+      sizeTier: RaftMessageSizeScope.of(context),
+    );
     final enabled = widget.onOpen != null;
     final content = AnimatedContainer(
       duration: MediaQuery.disableAnimationsOf(context)
@@ -145,7 +174,7 @@ class _RaftInlineThreadSurfaceState extends State<RaftInlineThreadSurface> {
       ),
       child: DefaultTextStyle(
         style: recipe.summary.copyWith(
-          color: hovered ? t.strong : recipe.muted,
+          color: hovered && t.brutal ? t.strong : recipe.summary.color,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

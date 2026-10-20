@@ -3,6 +3,7 @@ import 'hover_region.dart';
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
+import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
 import 'theme.dart';
 
@@ -36,52 +37,27 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
   @override
   EdgeInsets get padding =>
       EdgeInsets.symmetric(horizontal: tokens.brutal ? 4 : 8);
+  String get _token => switch (status) {
+    RaftMessageTaskStatus.todo => 'task-status-todo',
+    RaftMessageTaskStatus.inProgress => 'task-status-in-progress',
+    RaftMessageTaskStatus.inReview => 'task-status-in-review',
+    RaftMessageTaskStatus.done => 'task-status-done',
+    RaftMessageTaskStatus.closed => 'task-status-closed',
+  };
+
+  /// Brutal: the solid `taskStatus` fill. Elegant: the status' soft wash
+  /// (raft-ui 0.5.30+: colours come from the `--task-status-*` tokens).
   @override
-  Color get background => tokens.brutal
-      ? tokens.colors[switch (status) {
-          RaftMessageTaskStatus.todo => 'color-brutal-orange',
-          RaftMessageTaskStatus.inProgress => 'color-brutal-cyan',
-          RaftMessageTaskStatus.inReview => 'color-brutal-lavender',
-          RaftMessageTaskStatus.done => 'color-brutal-lime',
-          RaftMessageTaskStatus.closed => 'color-brutal-stone',
-        }]!
-      : switch (status) {
-          RaftMessageTaskStatus.todo ||
-          RaftMessageTaskStatus.closed => tokens.colors['ink-4']!,
-          RaftMessageTaskStatus.inProgress => _opacity(
-            tokens.colors['primary-500']!,
-            .1,
-          ),
-          RaftMessageTaskStatus.inReview => _opacity(
-            tokens.colors['warning']!,
-            .1,
-          ),
-          RaftMessageTaskStatus.done => _opacity(tokens.colors['success']!, .1),
-        };
+  Color get background =>
+      tokens.colors[tokens.brutal ? _token : '$_token-soft']!;
+
+  /// Brutal `text-black`; elegant the status' strong ink.
   @override
-  Color get foreground => tokens.brutal
-      ? Colors.black
-      : switch (status) {
-          RaftMessageTaskStatus.todo ||
-          RaftMessageTaskStatus.closed => tokens.ink,
-          RaftMessageTaskStatus.inProgress =>
-            tokens.colors[tokens.dark
-                ? 'primary-strong'
-                : 'color-brutal-yellow-800']!,
-          RaftMessageTaskStatus.inReview => tokens.colors['warning-strong']!,
-          RaftMessageTaskStatus.done => tokens.colors['success-strong']!,
-        };
-  Color get iconForeground => tokens.brutal
-      ? Colors.black
-      : switch (status) {
-          RaftMessageTaskStatus.todo =>
-            tokens.colors['foreground-placeholder']!,
-          // Exact source task-status-icon literal OKLCH values converted to sRGB.
-          RaftMessageTaskStatus.inProgress => const Color(0xffefb400),
-          RaftMessageTaskStatus.inReview => const Color(0xffed8725),
-          RaftMessageTaskStatus.done => tokens.colors['success']!,
-          RaftMessageTaskStatus.closed => tokens.colors['inactive']!,
-        };
+  Color get foreground =>
+      tokens.brutal ? Colors.black : tokens.colors['$_token-strong']!;
+
+  /// `TaskStatusIcon`: the strong token (elegant); brutal paints `currentColor`.
+  Color get iconForeground => foreground;
   @override
   Color backgroundFor({bool hovered = false}) => background;
   @override
@@ -91,21 +67,14 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
   }) => background;
   @override
   Color foregroundFor({bool hovered = false}) => foreground;
+
+  /// Brutal `border-black`; elegant the strong token at 35% (`color-mix`).
   @override
   BorderSide side({bool hovered = false}) => BorderSide(
     width: borderWidth,
     color: tokens.brutal
         ? Colors.black
-        : _opacity(
-            tokens.colors[switch (status) {
-              RaftMessageTaskStatus.todo ||
-              RaftMessageTaskStatus.closed => 'line-muted',
-              RaftMessageTaskStatus.inProgress => 'primary-500',
-              RaftMessageTaskStatus.inReview => 'warning',
-              RaftMessageTaskStatus.done => 'success',
-            }]!,
-            .75,
-          ),
+        : _opacity(tokens.colors['$_token-strong']!, .35),
   );
   @override
   Gradient? get overlayGradient => null;
@@ -247,7 +216,6 @@ class _RaftMountedMessageTaskChipState
                   RaftMessageTaskStatusIcon(
                     status: widget.status,
                     color: recipe.iconForeground,
-                    inverse: tokens.colors['foreground-inverse']!,
                   ),
                   // Blink line boxes: rounded ascent + floored half-leading
                   // (13px at a 16.25px line sits a whole px above Flutter's
@@ -271,96 +239,33 @@ class _RaftMountedMessageTaskChipState
   }
 }
 
-/// RUI TaskStatusIcon geometry (viewBox 1.2 1.2 21.6 21.6), not Lucide Play/Eye.
+/// raft-ui `TaskStatusIcon` (0.5.30+): the app's lucide `Circle`, `Play`,
+/// `Eye`, `CheckCircle` and `Ban`, 12px (`[&>svg]:size-3`), coloured by the
+/// caller (the chip's strong token; brutal `currentColor`).
 class RaftMessageTaskStatusIcon extends StatelessWidget {
   const RaftMessageTaskStatusIcon({
     super.key,
     required this.status,
     required this.color,
-    required this.inverse,
     this.size = 12,
   });
   final RaftMessageTaskStatus status;
-  final Color color, inverse;
+  final Color color;
   final double size;
+
+  static RaftGlyph glyphOf(RaftMessageTaskStatus status) => switch (status) {
+    RaftMessageTaskStatus.todo => RaftGlyph.circle,
+    RaftMessageTaskStatus.inProgress => RaftGlyph.play,
+    RaftMessageTaskStatus.inReview => RaftGlyph.eye,
+    RaftMessageTaskStatus.done => RaftGlyph.checkCircle,
+    RaftMessageTaskStatus.closed => RaftGlyph.ban,
+  };
+
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
     child: SizedBox.square(
       dimension: size,
-      child: CustomPaint(painter: _TaskIconPainter(status, color, inverse)),
+      child: RaftIcon(glyphOf(status), size: size, color: color),
     ),
   );
-}
-
-class _TaskIconPainter extends CustomPainter {
-  const _TaskIconPainter(this.status, this.color, this.inverse);
-  final RaftMessageTaskStatus status;
-  final Color color, inverse;
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.scale(size.width / 21.6, size.height / 21.6);
-    canvas.translate(-1.2, -1.2);
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    if (status == RaftMessageTaskStatus.done ||
-        status == RaftMessageTaskStatus.closed) {
-      // Preserve the source's asymmetric SVG arc path, not a substitute icon.
-      final filled = Path()
-        ..moveTo(17, 3.34)
-        ..relativeArcToPoint(
-          const Offset(-14.995, 8.984),
-          radius: const Radius.circular(10),
-          largeArc: true,
-        )
-        ..relativeLineTo(-.005, -.324)
-        ..relativeLineTo(.005, -.324)
-        ..relativeArcToPoint(
-          const Offset(14.995, -8.336),
-          radius: const Radius.circular(10),
-        )
-        ..close();
-      canvas.drawPath(filled, Paint()..color = color);
-      final mark = Path()
-        ..moveTo(8.5, status == RaftMessageTaskStatus.done ? 12 : 8.5);
-      if (status == RaftMessageTaskStatus.done) {
-        mark
-          ..relativeLineTo(2.5, 2.5)
-          ..relativeLineTo(4.5, -5);
-      } else {
-        mark
-          ..relativeLineTo(7, 7)
-          ..relativeMoveTo(0, -7)
-          ..relativeLineTo(-7, 7);
-      }
-      stroke.color = inverse;
-      stroke.strokeWidth = 2.25;
-      canvas.drawPath(mark, stroke);
-      return;
-    }
-    canvas.drawCircle(const Offset(12, 12), 9, stroke);
-    if (status == RaftMessageTaskStatus.inProgress) {
-      final hatch = Path()
-        ..moveTo(12, 3)
-        ..lineTo(12, 21)
-        ..moveTo(12, 14)
-        ..relativeLineTo(7, -7)
-        ..moveTo(12, 19)
-        ..relativeLineTo(8.5, -8.5)
-        ..moveTo(12, 9)
-        ..relativeLineTo(4.5, -4.5);
-      canvas.drawPath(hatch, stroke);
-    } else if (status == RaftMessageTaskStatus.inReview) {
-      canvas.drawCircle(const Offset(12, 12), 1, stroke);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_TaskIconPainter oldDelegate) =>
-      oldDelegate.status != status ||
-      oldDelegate.color != color ||
-      oldDelegate.inverse != inverse;
 }

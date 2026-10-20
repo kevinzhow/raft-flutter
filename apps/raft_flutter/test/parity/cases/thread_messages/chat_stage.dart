@@ -303,8 +303,12 @@ class ChatStage {
   Widget build() {
     // The app hosts RaftChatView inside a Scaffold (Material ancestor for the
     // composer TextField, ScaffoldMessenger, bottom sheets).
-    final chat = RaftChatView(key: chatKey, controller: w);
-    if (rowWidth == null) return Scaffold(backgroundColor: backgroundColor, body: chat);
+    // Web's task chip is always an enabled button; a host without a task slot
+    // would paint it disabled (60% opacity), which the Web capture never shows.
+    final chat = RaftChatView(key: chatKey, controller: w, onTask: (_, _) {});
+    if (rowWidth == null) {
+      return Scaffold(backgroundColor: backgroundColor, body: chat);
+    }
     final canvas = this.canvas;
     return Scaffold(
       backgroundColor: backgroundColor,

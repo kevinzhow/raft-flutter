@@ -3,14 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 void main() {
-  // Owner decision 2026-10-12 (intended difference from Web): on a phone the
-  // message wrapper has no inset, so the Brutal avatar sits at 20 dp like the
-  // header buttons; tablets and desktop keep Web's 12 dp.
-  test('phone timeline rows drop the wrapper inset', () {
+  // Web v1.21.12 (raft-ui 0.5.36+) lands the avatar on 20 at every width: the
+  // wrapper keeps its 12 inset and the row adds 8. The phone exception of
+  // 2026-10-12 (no wrapper inset) is gone with the brutal row's `mx-3`.
+  test('timeline rows keep the wrapper inset at every width', () {
     const recipe = RaftTimelineCompositionRecipe();
-    expect(recipe.messageInsetFor(390), EdgeInsets.zero);
-    expect(recipe.messageInsetFor(767), EdgeInsets.zero);
-    expect(recipe.messageInsetFor(768), recipe.messageInset);
-    expect(recipe.messageInsetFor(1280), recipe.messageInset);
+    for (final width in [390.0, 767.0, 768.0, 1280.0]) {
+      expect(recipe.messageInsetFor(width), recipe.messageInset);
+    }
+    expect(recipe.messageInset, const EdgeInsets.symmetric(horizontal: 12));
   });
 }

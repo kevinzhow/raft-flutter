@@ -21,7 +21,7 @@ class _MountedAvatarsState extends State<_MountedAvatars> {
   bool deactivated = false;
   bool muted = false;
   @override
-  Widget build(BuildContext context) => Padding(
+  Widget build(BuildContext context) => SingleChildScrollView(
     padding: const EdgeInsets.all(16),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,6 +37,7 @@ class _MountedAvatarsState extends State<_MountedAvatars> {
                 identity: RaftMountedAvatarIdentity.agent,
                 presence:
                     role == RaftMountedAvatarContext.panelHeader ||
+                        role == RaftMountedAvatarContext.messageRow ||
                         role == RaftMountedAvatarContext.compactList
                     ? RaftAvatarPresence(
                         activity: activity,

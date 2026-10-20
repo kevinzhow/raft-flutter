@@ -86,11 +86,11 @@ void main() {
             family == RaftFamily.brutal ? 26 : 20,
           );
           if (family == RaftFamily.elegant) {
-            expect(withoutFooter, agent ? 81 : 74);
-            expect(
-              t.getSize(find.byType(RaftMessageRow)).height,
-              agent ? 101 : 94,
-            );
+            // Web v1.21.12: the first row of a group starts 17 down (was 14),
+            // and the model label is a `leading-none` note, so the header is
+            // as tall as the name's (a 21px model line made it 7px taller).
+            expect(withoutFooter, 77);
+            expect(t.getSize(find.byType(RaftMessageRow)).height, 97);
           }
           expect(t.takeException(), isNull);
         },

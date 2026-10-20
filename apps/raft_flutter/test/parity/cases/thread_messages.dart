@@ -775,7 +775,7 @@ final _linkedTaskCase = ParityCase(
               avatar: RaftAvatar(
                 name: ids.cindy['displayName'],
                 kind: RaftAvatarKind.agent,
-                mountedContext: RaftMountedAvatarContext.panelHeader,
+                mountedContext: RaftMountedAvatarContext.messageRow,
                 presence: const RaftAvatarPresence(
                   activity: RaftAvatarActivity.working,
                 ),

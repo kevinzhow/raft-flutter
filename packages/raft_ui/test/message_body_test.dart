@@ -37,16 +37,10 @@ void main() {
       expect(value, contains('[@Mona](<raft-ref://mention/user/known>)'));
       expect(value, contains('task [#27](<raft-ref://task/27>)'));
       expect(value, contains('x@Mona.com @MonaMore @unknown'));
-      // Web chips references inside authored link labels too (MessageItem
-      // only protects code); the label carries the reference sentinel.
-      expect(
-        value,
-        contains(
-          '`@Mona task #27` '
-          '[\u{E000}raft-ref://mention/user/known\u{E001}@Mona\u{E002}]'
-          '(https://example.org)',
-        ),
-      );
+      // Web v1.21.12 (MessageItem protectMessageMarkdownLinks) protects an
+      // authored link as a whole: no reference chip inside its label (Web
+      // v1.21.2 chipped them).
+      expect(value, contains('`@Mona task #27` [@Mona](https://example.org)'));
       expect(value, contains('```txt\n@Mona #team\n```'));
     },
   );
@@ -81,14 +75,50 @@ void main() {
       result,
       contains('then follow task [#1487](<raft-ref://task/1487>)'),
     );
-    expect(result, contains('[notes in \u{E000}raft-ref://channel/visual'));
-    expect(result, contains('[ping \u{E000}raft-ref://mention/user/artin'));
+    // Web v1.21.12: a link label is never chipped (v1.21.2 chipped it).
+    expect(
+      result,
+      contains('[notes in #visual-testing](https://raft.build/visual-testing)'),
+    );
+    expect(result, contains('[ping @artin](https://raft.build/mentions)'));
     final known = raftMessageReferences(
       '[#1487](https://example.org)',
       taskHref: (n) => 'raft-ref://task/$n',
       knownTaskNumber: (n) => n == 1487,
     );
-    expect(known, contains('\u{E000}raft-ref://task/1487'));
+    expect(known, '[#1487](https://example.org)');
+  });
+  test('authored links protect labels with escapes, nested parentheses and images', () {
+    const refs = [
+      RaftTextReference(text: '@Mona', href: 'raft-ref://mention/user/known'),
+    ];
+    String run(String source) =>
+        raftMessageReferences(source, references: refs);
+    // Balanced parentheses stay inside the destination.
+    expect(
+      run('[a @Mona](https://x.org/a_(b)) @Mona'),
+      '[a @Mona](https://x.org/a_(b)) [@Mona](<raft-ref://mention/user/known>)',
+    );
+    // An escaped bracket does not end the label.
+    expect(
+      run(r'[a \] @Mona](https://x.org) @Mona'),
+      r'[a \] @Mona](https://x.org) [@Mona](<raft-ref://mention/user/known>)',
+    );
+    // Images are protected like links.
+    expect(
+      run('![@Mona](https://x.org/i.png) @Mona'),
+      '![@Mona](https://x.org/i.png) [@Mona](<raft-ref://mention/user/known>)',
+    );
+    // A bracket that does not open an inline link is plain text.
+    expect(
+      run('[@Mona] and [x] (@Mona)'),
+      '[[@Mona](<raft-ref://mention/user/known>)] and [x] ([@Mona](<raft-ref://mention/user/known>))',
+    );
+    // A bare URL with balanced parentheses is protected up to the next space.
+    expect(
+      run('https://x.org/a_(b)@Mona @Mona'),
+      'https://x.org/a_(b)@Mona [@Mona](<raft-ref://mention/user/known>)',
+    );
   });
   for (final theme in raftThemeMatrix([
     raftTheme(RaftFamily.brutal),
@@ -310,7 +340,100 @@ void main() {
       references: refs,
     );
     expect(value, contains('草案[@Mona](<raft-ref://mention/user/known>)'));
-    expect(value, contains('@Mona继续 dm:@Mona:abcdef #team:abcdef'));
+    // Web v1.21.12: a selected mention may be followed by Han, kana or hangul
+    // (`@Mona继续`), never by Latin letters, digits, `_` or `-`.
+    expect(
+      value,
+      contains(
+        '[@Mona](<raft-ref://mention/user/known>)继续 dm:@Mona:abcdef #team:abcdef',
+      ),
+    );
+    for (final tail in ['的方案', 'さん', '와', ' 확인']) {
+      expect(
+        raftMessageReferences('@Mona$tail', references: refs),
+        '[@Mona](<raft-ref://mention/user/known>)$tail',
+      );
+    }
+    for (final tail in ['ica', '2', '_x', '-x']) {
+      expect(
+        raftMessageReferences('@Mona$tail', references: refs),
+        '@Mona$tail',
+      );
+    }
+  });
+  test('free-text mentions split only where Latin meets CJK', () {
+    const refs = [
+      RaftTextReference(text: '@ops', href: 'raft-ref://mention/user/ops'),
+    ];
+    String run(String text) => raftMessageReferences(text, references: refs);
+    expect(run('@ops的方案'), '[@ops](<raft-ref://mention/user/ops>)的方案');
+    expect(run('@opsさん'), '[@ops](<raft-ref://mention/user/ops>)さん');
+    expect(run('@ops와'), '[@ops](<raft-ref://mention/user/ops>)와');
+    expect(run('@ops.'), '[@ops](<raft-ref://mention/user/ops>).');
+    // Same-script continuations are never guessed.
+    expect(run('@opsteam'), '@opsteam');
+    expect(run('@ops2'), '@ops2');
+    expect(run('@ops_bot'), '@ops_bot');
+    expect(run('@opsx的'), '@opsx的');
+    // A member that is literally named `ops的` wins over the split.
+    expect(
+      raftMessageReferences(
+        '@ops的',
+        references: const [
+          RaftTextReference(text: '@ops', href: 'raft-ref://mention/user/ops'),
+          RaftTextReference(
+            text: '@ops的',
+            href: 'raft-ref://mention/user/ops2',
+          ),
+        ],
+      ),
+      '[@ops的](<raft-ref://mention/user/ops2>)',
+    );
+  });
+  test('raftResolveMentionHandle matches Web resolveRaftMentionHandle', () {
+    bool Function(String) known(List<String> names) => names.contains;
+    expect(raftResolveMentionHandle('ops', known(['ops'])), (
+      handle: 'ops',
+      suffix: '',
+    ));
+    expect(raftResolveMentionHandle('ops와', known(['ops'])), (
+      handle: 'ops',
+      suffix: '와',
+    ));
+    expect(raftResolveMentionHandle('opsテスト', known(['ops'])), (
+      handle: 'ops',
+      suffix: 'テスト',
+    ));
+    expect(raftResolveMentionHandle('ops-2的', known(['ops-2'])), (
+      handle: 'ops-2',
+      suffix: '的',
+    ));
+    expect(raftResolveMentionHandle('ops的', known(['ops', 'ops的'])), (
+      handle: 'ops的',
+      suffix: '',
+    ));
+    expect(raftResolveMentionHandle('opsteam', known(['ops'])), isNull);
+    expect(raftResolveMentionHandle('Kaiwen', known(['Kai'])), isNull);
+    expect(raftResolveMentionHandle('ops2', known(['ops'])), isNull);
+    expect(raftResolveMentionHandle('민수가', known(['민', '민수'])), isNull);
+    expect(raftResolveMentionHandle('张三的', known(['张三'])), isNull);
+    expect(raftResolveMentionHandle('ops的', known(['other'])), isNull);
+    expect(raftResolveMentionHandle('opsx的', known(['ops'])), isNull);
+    expect(raftResolveMentionHandle('ops君', known(['ops', 'ops君'])), (
+      handle: 'ops君',
+      suffix: '',
+    ));
+    expect(raftResolveMentionHandle('ops君', known(['ops'])), (
+      handle: 'ops',
+      suffix: '君',
+    ));
+    // Two valid splits, or a longer member that also fits, are guesses.
+    expect(raftResolveMentionHandle('ops君的', known(['ops', 'ops君'])), isNull);
+    expect(raftResolveMentionHandle('ops君a的', known(['ops', 'ops君a'])), isNull);
+    expect(raftResolveMentionHandle('ops君a的', known(['ops君a'])), (
+      handle: 'ops君a',
+      suffix: '的',
+    ));
   });
   testWidgets('Mermaid inside a longer literal fence remains code', (
     tester,

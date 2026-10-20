@@ -1,13 +1,15 @@
 import 'close_registry_dialogs.dart';
+import 'close_registry_links.dart';
 import 'close_registry_panels.dart';
 import 'close_registry_popups.dart';
 import 'close_registry_viewers.dart';
 import 'close_surface.dart';
 
-/// Every closable surface, across the four family registries.
+/// Every closable surface, across the family registries.
 List<CloseSurface> get allCloseSurfaces => [
   ...panelSurfaces,
   ...dialogSurfaces,
+  ...linkSurfaces,
   ...popupSurfaces,
   ...viewerSurfaces,
 ];

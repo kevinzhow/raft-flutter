@@ -47,24 +47,23 @@ void main() {
             ),
           );
           await t.pumpAndSettle();
+          // Web v1.21.12 (raft-ui 0.5.36+): the row carries 8 of its own
+          // (elegant 7 + 1 border, brutal 6 + 2) next to the wrapper's 12 at
+          // every width; the thread context no longer changes the padding.
           final isBrutal = family == RaftFamily.brutal;
-          final internal = isBrutal
-              ? 6.0
-              : rowContext == RaftMessageRowContext.thread && width < 1024
-              ? 12.0
-              : width < 768
-              ? 16.0
-              : 28.0;
-          final expectedAvatar =
-              12 + (isBrutal ? 12 : 0) + (isBrutal ? 2 : 1) + internal;
+          final inset = 12 + (isBrutal ? 2 + 6 : 1 + 7);
+          final mobile = width < 768;
+          // The avatar (32, 28 below 768) is centred in the 36 (32) slot.
           expect(
             t.getTopLeft(find.byKey(const ValueKey('avatar'))).dx,
-            expectedAvatar,
+            inset + 2,
+          );
+          expect(
+            t.getSize(find.byKey(const ValueKey('avatar'))),
+            Size.square(mobile ? 28 : 32),
           );
           final expectedContent =
-              expectedAvatar +
-              (isBrutal || width >= 768 ? 36 : 32) +
-              (isBrutal || width >= 768 ? 12 : 8);
+              inset + (mobile ? 32 : 36) + (isBrutal || !mobile ? 12 : 8);
           expect(
             t.getTopLeft(find.byKey(const ValueKey('content'))).dx,
             expectedContent,

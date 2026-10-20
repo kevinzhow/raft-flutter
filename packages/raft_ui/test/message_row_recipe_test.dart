@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/src/message_row_recipe.dart';
+import 'package:raft_ui/src/recipe_surface.dart';
+import 'package:raft_ui/src/recipes/message_item.g.dart';
+import 'package:raft_ui/src/recipes/recipe_runtime.dart';
 import 'package:raft_ui/src/theme.dart';
 import 'package:raft_ui/test_themes.dart';
 
@@ -61,7 +64,7 @@ void main() {
     (RaftFamily.elegant, true),
   ], full: true)) {
     testWidgets(
-      'header preserves intrinsic author/model/clock and shrinks description only $family/$dark',
+      'header gives up space in the Web order: description, model, name; the clock stays $family/$dark',
       (tester) async {
         var mentions = 0;
         Widget frame(double width) => MaterialApp(
@@ -87,19 +90,24 @@ void main() {
             ),
           ),
         );
-        await tester.pumpWidget(frame(390));
+        double width(Finder finder) => tester.getSize(finder).width;
         final author = find.text('Cindy');
-        final authorBox = tester.renderObject<RenderBox>(author);
-        final naturalAuthorWidth = authorBox.getMaxIntrinsicWidth(
-          double.infinity,
-        );
-        expect(authorBox.size.width, naturalAuthorWidth);
-        expect(tester.getSize(find.byKey(const Key('model'))).width, 120);
-        final time = tester.renderObject<RenderBox>(find.text('10:30'));
-        expect(time.size.width, time.getMaxIntrinsicWidth(double.infinity));
-        expect(tester.getSize(find.text('Long private description')).width, 0);
+        final time = find.text('10:30');
+        final model = find.byKey(const Key('model'));
+        final description = find.text('Long private description');
+        await tester.pumpWidget(frame(700));
+        final naturalAuthorWidth = tester
+            .renderObject<RenderBox>(author)
+            .getMaxIntrinsicWidth(double.infinity);
+        final naturalTimeWidth = tester
+            .renderObject<RenderBox>(time)
+            .getMaxIntrinsicWidth(double.infinity);
+        expect(width(author), naturalAuthorWidth);
+        expect(width(model), 120);
+        expect(width(description), greaterThan(0));
+        // Brutal 8, elegant 6 between the header items.
         expect(
-          tester.getTopLeft(find.byKey(const Key('model'))).dx,
+          tester.getTopLeft(model).dx,
           closeTo(
             tester.getTopRight(author).dx +
                 (family == RaftFamily.brutal ? 8 : 6),
@@ -109,13 +117,39 @@ void main() {
         await tester.tap(author);
         await tester.pump();
         expect(mentions, 1);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(frame(700));
-        expect(
-          tester.getSize(find.text('Long private description')).width,
-          greaterThan(0),
-        );
-        expect(tester.getSize(author).width, naturalAuthorWidth);
+
+        // Narrower: the description goes first. Name and model keep their
+        // size while the model still fits.
+        var narrow = 700.0;
+        while (width(description) > 0 && narrow > 200) {
+          narrow -= 2;
+          await tester.pumpWidget(frame(narrow));
+        }
+        expect(width(description), 0);
+        expect(width(model), closeTo(120, 2.1)); // at most one step short
+        expect(width(author), naturalAuthorWidth);
+
+        // Then the model truncates; the name is untouched until it is gone.
+        while (width(model) == 120 && narrow > 100) {
+          narrow -= 5;
+          await tester.pumpWidget(frame(narrow));
+        }
+        expect(width(model), lessThan(120));
+        expect(width(author), naturalAuthorWidth);
+
+        // Finally the name truncates (an ellipsis). The clock is never
+        // shortened (Web `shrink-0`).
+        while (width(model) > 0 && narrow > 40) {
+          narrow -= 5;
+          await tester.pumpWidget(frame(narrow));
+        }
+        while (width(author) == naturalAuthorWidth && narrow > 40) {
+          narrow -= 2;
+          await tester.pumpWidget(frame(narrow));
+        }
+        expect(width(model), 0);
+        expect(width(author), lessThan(naturalAuthorWidth));
+        expect(width(time), naturalTimeWidth);
         expect(tester.takeException(), isNull);
       },
     );
@@ -125,12 +159,15 @@ void main() {
       (tester) async {
         await tester.pumpWidget(host(family, dark: dark));
         final brutal = family == RaftFamily.brutal;
-        expect(tester.getSize(find.byKey(avatarKey)), const Size(36, 36));
+        // Web v1.21.12 (raft-ui 0.5.52): the avatar reads 28 below 768
+        // (32 above), centred in the 32/36 slot; brutal has no row margin
+        // and shifts the image 3px down (`--mi-avatar-shift`).
+        expect(tester.getSize(find.byKey(avatarKey)), const Size(28, 28));
         expect(
           tester.getTopLeft(find.byKey(avatarKey)),
-          Offset(brutal ? 20 : 17, brutal ? 14 : 11),
+          Offset(brutal ? 10 : 10, brutal ? 17 : 16),
         );
-        expect(tester.getTopLeft(find.byKey(bodyKey)).dx, brutal ? 68 : 57);
+        expect(tester.getTopLeft(find.byKey(bodyKey)).dx, brutal ? 52 : 48);
         final body = tester.widget<Text>(find.byKey(bodyKey));
         expect(body.style, isNull);
         final resolved = DefaultTextStyle.of(
@@ -142,6 +179,21 @@ void main() {
           resolved.fontFamily,
           RaftTokens.of(tester.element(find.byKey(bodyKey))).headingFont,
         );
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'mounted avatar and content origins at desktop width $family/$dark',
+      (tester) async {
+        await tester.pumpWidget(host(family, dark: dark, width: 1280));
+        final brutal = family == RaftFamily.brutal;
+        expect(tester.getSize(find.byKey(avatarKey)), const Size(32, 32));
+        expect(
+          tester.getTopLeft(find.byKey(avatarKey)),
+          Offset(brutal ? 10 : 10, brutal ? 17 : 20),
+        );
+        expect(tester.getTopLeft(find.byKey(bodyKey)).dx, brutal ? 56 : 56);
         expect(tester.takeException(), isNull);
       },
     );
@@ -207,7 +259,7 @@ void main() {
       expect(find.byKey(avatarKey), findsNothing);
       expect(find.text('Public Agent'), findsNothing);
       expect(find.text('14:30'), findsOneWidget);
-      expect(tester.getTopLeft(find.byKey(bodyKey)), const Offset(57, 7));
+      expect(tester.getTopLeft(find.byKey(bodyKey)), const Offset(48, 7));
       expect(tester.takeException(), isNull);
     },
   );
@@ -257,33 +309,167 @@ void main() {
     },
   );
 
-  test(
-    'source grouping and breakpoint overrides remain independent of pointer',
-    () {
-      final t = raftTheme(RaftFamily.elegant).extension<RaftTokens>()!;
-      final mobile = RaftMessageRowRecipe(
-        t,
-        viewportWidth: 390,
-        nextContinuation: true,
-      );
-      final desktop = RaftMessageRowRecipe(
-        t,
-        viewportWidth: 1280,
-        nextContinuation: true,
-      );
-      final continued = RaftMessageRowRecipe(
-        t,
-        viewportWidth: 390,
-        continuation: true,
-      );
-      expect(mobile.padding, const EdgeInsets.fromLTRB(16, 8, 16, 0));
-      expect(desktop.padding, const EdgeInsets.fromLTRB(28, 14, 28, 2));
-      expect(continued.padding, const EdgeInsets.fromLTRB(16, 6, 16, 6));
-      expect(mobile.gutterWidth, 32);
-      expect(desktop.gutterWidth, 36);
-      expect(mobile.avatarExtent, 36);
-      expect(mobile.headerReserve, 96);
-      expect(continued.bodyGap, 0);
+  // The recipe is hand-written (it carries the mounted MessageItem.tsx
+  // overrides); every geometry value it owns is pinned to the generated raft-ui
+  // 0.5.52 `messageItem` recipe, so a raft-ui upgrade cannot drift silently.
+  for (final family in [RaftFamily.brutal, RaftFamily.elegant]) {
+    test('row geometry equals the generated messageItem recipe $family', () {
+      final t = raftTheme(family).extension<RaftTokens>()!;
+      final theme = family == RaftFamily.brutal
+          ? RaftRecipeTheme.brutal
+          : RaftRecipeTheme.elegant;
+      for (final width in [390.0, 767.0, 768.0, 1280.0]) {
+        for (final continuation in [false, true]) {
+          for (final followedBy in [null, ...RaftMessageFollowedBy.values]) {
+            for (final followsSystem in [false, true]) {
+              final label =
+                  '$family width=$width continuation=$continuation '
+                  'followedBy=$followedBy followsSystem=$followsSystem';
+              final recipe = RaftMessageRowRecipe(
+                t,
+                viewportWidth: width,
+                continuation: continuation,
+                followedBy: followedBy,
+                followsSystem: followsSystem,
+              );
+              final s = RaftMessageItemRecipe.resolve(
+                theme: theme,
+                compact: continuation,
+                states: RaftRecipeStates({
+                  if (followedBy != null) 'data-followed-by=${followedBy.name}',
+                  if (followsSystem) 'data-follows-system',
+                }, width),
+                tokens: t.recipeTokens,
+              );
+              expect(recipe.padding, s.root.padding, reason: label);
+              expect(recipe.margin, s.root.margin, reason: label);
+              expect(recipe.gap, s.root.columnGap, reason: label);
+              expect(recipe.minimumHeight, s.root.minHeight, reason: label);
+              expect(recipe.borderWidth, s.root.borderWidth.top, reason: label);
+              expect(recipe.gutterWidth, s.gutter.width, reason: label);
+              expect(recipe.gutterWidth, s.avatarSlot.width, reason: label);
+              final avatar = s.avatarSlot.target(
+                '& [data-slot=avatar][data-size=md]',
+              )!;
+              expect(recipe.avatarExtent, avatar.width, reason: label);
+              expect(recipe.avatarExtent, avatar.height, reason: label);
+              expect(recipe.avatarTop - 2, avatar.margin.top, reason: label);
+              expect(recipe.headerGap, s.header.columnGap, reason: label);
+            }
+          }
+        }
+      }
+    });
+  }
+
+  test('sizing tiers follow the reader\'s message size', () {
+    expect(RaftMessageSizeTier.of(12), RaftMessageSizeTier.sm);
+    expect(RaftMessageSizeTier.of(14), RaftMessageSizeTier.md);
+    expect(RaftMessageSizeTier.of(16), RaftMessageSizeTier.lg);
+    final t = raftTheme(RaftFamily.elegant).extension<RaftTokens>()!;
+    RaftMessageRowRecipe at(RaftMessageSizeTier tier, double width) =>
+        RaftMessageRowRecipe(t, viewportWidth: width, sizeTier: tier);
+    // Name 12/14/16, meta and time 11/12/14.
+    expect([for (final x in RaftMessageSizeTier.values) x.name], [12, 14, 16]);
+    expect([for (final x in RaftMessageSizeTier.values) x.meta], [11, 12, 14]);
+    expect(at(RaftMessageSizeTier.sm, 1280).author.fontSize, 12);
+    expect(at(RaftMessageSizeTier.lg, 1280).time.fontSize, 14);
+    // `--mi-avatar` 2rem, 34px on the large tier; `--mi-avatar-narrow` 28.
+    expect(at(RaftMessageSizeTier.md, 1280).avatarExtent, 32);
+    expect(at(RaftMessageSizeTier.lg, 1280).avatarExtent, 34);
+    expect(at(RaftMessageSizeTier.lg, 390).avatarExtent, 28);
+  });
+
+  test('header reserve, name weight and toolbar edge follow v1.21.12', () {
+    final b = raftTheme(RaftFamily.brutal).extension<RaftTokens>()!;
+    final e = raftTheme(RaftFamily.elegant).extension<RaftTokens>()!;
+    RaftMessageRowRecipe row(RaftTokens t, double w, [bool thread = false]) =>
+        RaftMessageRowRecipe(
+          t,
+          viewportWidth: w,
+          rowContext: thread
+              ? RaftMessageRowContext.thread
+              : RaftMessageRowContext.main,
+        );
+    // `--mi-hdr-pr: 2.5rem` on the thread panel's row wrapper.
+    expect(row(e, 1280).headerReserve, 96);
+    expect(row(e, 1280, true).headerReserve, 40);
+    expect(row(e, 390, true).headerReserve, 40);
+    // Elegant sender 600 (was 500); brutal stays 700.
+    expect(row(e, 1280).author.fontWeight, FontWeight.w600);
+    expect(row(b, 1280).author.fontWeight, FontWeight.w700);
+    // Elegant notes (meta, time) read `foreground-hint`.
+    expect(row(e, 1280).time.color, e.colors['foreground-hint']);
+    // MessageHoverToolbar `right-2`, `max-md:right-0.5`, brutal `-right-1.5`.
+    expect(row(e, 1280).toolbarRight, 8);
+    expect(row(b, 1280).toolbarRight, 8);
+    expect(row(e, 390).toolbarRight, 2);
+    expect(row(b, 390).toolbarRight, -6);
+  });
+
+  test('the content ends with Web\'s mb-px only where the Web adds it', () {
+    final t = raftTheme(RaftFamily.elegant).extension<RaftTokens>()!;
+    bool px(
+      RaftMessageFollowedBy? followedBy, {
+      bool attachments = false,
+      bool translation = false,
+      bool footer = false,
+      bool inlineReplies = false,
+    }) => RaftMessageRowRecipe(t, viewportWidth: 1280, followedBy: followedBy)
+        .trailingPixel(
+          attachments: attachments,
+          translation: translation,
+          footer: footer,
+          inlineReplies: inlineReplies,
+        );
+    expect(px(null, inlineReplies: true), isTrue);
+    expect(px(null, footer: true), isFalse);
+    expect(px(RaftMessageFollowedBy.group, footer: true), isTrue);
+    expect(px(RaftMessageFollowedBy.compact, attachments: true), isTrue);
+    expect(px(null, attachments: true), isFalse);
+    expect(
+      px(RaftMessageFollowedBy.group, attachments: true, translation: true),
+      isFalse,
+    );
+    expect(px(RaftMessageFollowedBy.group), isFalse);
+  });
+
+  testWidgets(
+    'a followed-by row collapses its body margin and bottom padding',
+    (tester) async {
+      Future<double> height(RaftMessageFollowedBy? followedBy) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.elegant),
+            home: MediaQuery(
+              data: const MediaQueryData(size: Size(1280, 480)),
+              child: Scaffold(
+                body: Align(
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(
+                    width: 600,
+                    child: RaftMessageRow(
+                      author: 'Cindy',
+                      timestamp: '14:30',
+                      followedBy: followedBy,
+                      content: const Text('Body', key: bodyKey),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        return tester.getSize(find.byType(RaftMessageRow)).height;
+      }
+
+      final last = await height(null);
+      final compact = await height(RaftMessageFollowedBy.compact);
+      final group = await height(RaftMessageFollowedBy.group);
+      // Elegant wide: padding-bottom 12 + body margin 6 at the list end,
+      // 2 + 0 before a continuation, 6 + 0 before a new group.
+      expect(last - compact, 16);
+      expect(last - group, 12);
     },
   );
 }

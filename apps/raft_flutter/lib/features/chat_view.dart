@@ -10,7 +10,6 @@ import 'package:flutter_chat_core/flutter_chat_core.dart' as chat;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'mobile_route_gate.dart';
 export 'mobile_route_gate.dart' show MobileChatDirectRead;
@@ -46,6 +45,8 @@ import 'private_route_guard.dart';
 import 'message_selection.dart';
 import 'system_message_grouping.dart';
 import 'copy_selection_links.dart';
+import 'custom_protocol_link.dart';
+import 'message_grouping.dart';
 import 'message_image_export.dart';
 import 'forward_messages_dialog.dart';
 import 'channel_footer_states.dart';
@@ -1413,12 +1414,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         rowRect.top + requiredHeight <= viewRect.bottom + .5;
   }
 
-  Future<void> link(String url) async {
-    final uri = Uri.tryParse(url);
-    if (uri != null && ['https', 'http', 'mailto'].contains(uri.scheme)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
+  Future<void> link(String url) => openMessageLink(context, url);
 
   /// Web MessageInput rows above the composer card: the error banner, then
   /// the pending-mention strip.
@@ -2296,7 +2292,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     };
     final avatarContext = compact
         ? RaftMountedAvatarContext.compactList
-        : RaftMountedAvatarContext.panelHeader;
+        : RaftMountedAvatarContext.messageRow;
     final avatarContent = RaftAvatarContent(
       name: message.author,
       kind: switch (kind) {
@@ -2707,7 +2703,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     bool parent = false,
     Widget? selectionLeading,
     bool continuation = false,
-    bool nextContinuation = false,
+    RaftMessageFollowedBy? followedBy,
+    bool followsSystem = false,
   }) {
     // Optimistic rows share the final row's key and widget shape; only the
     // actions that need a server message id stay inert until it arrives.
@@ -2746,7 +2743,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           ? RaftMessageRowContext.thread
           : RaftMessageRowContext.main,
       continuation: continuation,
-      nextContinuation: nextContinuation,
+      followedBy: followedBy,
+      followsSystem: followsSystem,
       author: m.author,
       avatar: senderAvatar(m),
       selectionLeading: selectionLeading,
@@ -3102,8 +3100,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     final neighbours = displayedNeighbours(key, index);
     final continuation = continuesGroup(neighbours.$1, message);
     final following = neighbours.$2;
-    final nextContinuation =
-        following != null && continuesGroup(message, following);
+    final followedBy = messageFollowedBy(
+      message,
+      following,
+      dayKey: timeFormatter.dayKey,
+      standalone: standalone,
+    );
+    final followsSystem = neighbours.$1?.string('messageType') == 'system';
     return RaftRowExtentRecorder(
       scope: rowExtentScope(context),
       id: key,
@@ -3129,7 +3132,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               message,
               captureFocus: captureFocus,
               continuation: continuation,
-              nextContinuation: nextContinuation,
+              followedBy: followedBy,
+              followsSystem: followsSystem,
             ),
           ),
         ],
@@ -3155,29 +3159,17 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     );
   }
 
-  /// Source `messageGrouping.ts` computeMessageGrouping: [message] continues
-  /// [previous]'s sender group when both are chat rows from the same sender on
-  /// the same calendar day and neither carries a thread reply or a task (those
-  /// render standalone with their own header).
-  bool continuesGroup(RaftMessage? previous, RaftMessage message) {
-    if (previous == null) return false;
-    if (previous.string('messageType') == 'system' ||
-        message.string('messageType') == 'system') {
-      return false;
-    }
-    final before = previous.createdAt, now = message.createdAt;
-    if (before == null ||
-        now == null ||
-        timeFormatter.dayKey(before) != timeFormatter.dayKey(now)) {
-      return false;
-    }
-    bool standalone(RaftMessage m) =>
-        _messages.threadSummaries[m.id] != null ||
-        taskProjection.presentFor(m) != null;
-    if (standalone(previous) || standalone(message)) return false;
-    return previous.string('senderType') == message.string('senderType') &&
-        previous.string('senderId') == message.string('senderId');
-  }
+  bool standalone(RaftMessage m) =>
+      _messages.threadSummaries[m.id] != null ||
+      taskProjection.presentFor(m) != null;
+
+  bool continuesGroup(RaftMessage? previous, RaftMessage message) =>
+      messageContinuesGroup(
+        previous,
+        message,
+        dayKey: timeFormatter.dayKey,
+        standalone: standalone,
+      );
 
   String rowExtentScope(BuildContext context) {
     final tokens = RaftTokens.of(context);
@@ -3207,7 +3199,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     bool parent = false,
     bool captureFocus = true,
     bool continuation = false,
-    bool nextContinuation = false,
+    RaftMessageFollowedBy? followedBy,
+    bool followsSystem = false,
   }) {
     final selectable = selection.active && m.string('messageType') != 'system';
     final checked = selectable && selection.ids.contains(m.id);
@@ -3217,7 +3210,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       m,
       parent: parent,
       continuation: continuation,
-      nextContinuation: nextContinuation,
+      followedBy: followedBy,
+      followsSystem: followsSystem,
       selectionLeading: selectable
           ? RaftCheckbox(
               value: checked,
