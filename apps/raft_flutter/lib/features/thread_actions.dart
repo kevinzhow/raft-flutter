@@ -26,6 +26,7 @@ class ThreadActions extends StatefulWidget {
   final String parentMessageId;
   final bool menuMode;
   final VoidCallback? onSearch, onViewChannel;
+
   @override
   State<ThreadActions> createState() => _ThreadActionsState();
 }
@@ -162,6 +163,11 @@ class _ThreadActionsState extends State<ThreadActions> {
     if (box == null || overlayBox == null) return;
     final rect =
         box.localToGlobal(Offset.zero, ancestor: overlayBox) & box.size;
+    final placement = RaftThreadPlacement.maybeOf(context);
+    // Focus mode (Web `ThreadOverflowMenu.onToggleChannel`): offered only
+    // when the thread sits beside its own conversation (the layout says so).
+    final toggleFocus = placement?.toggleFocus;
+    final focused = placement?.focused ?? false;
     menu = OverlayEntry(
       builder: (context) => Positioned(
         left: (rect.right - 192).clamp(
@@ -181,11 +187,27 @@ class _ThreadActionsState extends State<ThreadActions> {
               child: RaftMenuPanel(
                 onDismiss: closeMenu,
                 children: [
+                  if (toggleFocus != null)
+                    RaftMenuItem(
+                      key: const Key('thread-focus-menu-item'),
+                      label: raftText(
+                        context,
+                        focused ? 'Standard mode' : 'Focus mode',
+                      ),
+                      glyph: focused
+                          ? RaftGlyph.minimize2
+                          : RaftGlyph.maximize2,
+                      autofocus: true,
+                      onPressed: () {
+                        closeMenu();
+                        if (current) toggleFocus();
+                      },
+                    ),
                   if (widget.onSearch != null)
                     RaftMenuItem(
                       label: raftText(context, 'Search in thread'),
                       glyph: RaftGlyph.search,
-                      autofocus: true,
+                      autofocus: toggleFocus == null,
                       onPressed: () {
                         closeMenu();
                         if (current) widget.onSearch!();

@@ -274,4 +274,195 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  group('thread focus mode', () {
+    final presented = <(bool, bool)>[];
+    RaftThreadPlacement? placementNow(WidgetTester tester) =>
+        RaftThreadPlacement.maybeOf(
+          tester.element(find.byKey(const ValueKey('thread'))),
+        );
+    Widget focusShell({
+      String? scope = 'c1',
+      bool thread = true,
+      bool profile = false,
+      Widget content = const Center(
+        key: ValueKey('conversation'),
+        child: Text('Conversation'),
+      ),
+    }) => MaterialApp(
+      theme: raftTheme(RaftFamily.elegant),
+      home: Scaffold(
+        body: RaftAdaptiveWorkspace(
+          sidebar: const SizedBox.expand(),
+          rail: const SizedBox.expand(),
+          content: content,
+          thread: thread
+              ? const Center(key: ValueKey('thread'), child: Text('Thread'))
+              : null,
+          profile: profile ? const Text('Profile') : null,
+          focusScope: scope,
+          onPresentationChanged: (main, thread) =>
+              presented.add((main, thread)),
+        ),
+      ),
+    );
+
+    Future<void> size(WidgetTester tester, Size value) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = value;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+    }
+
+    Future<void> toggle(WidgetTester tester) async {
+      placementNow(tester)!.toggleFocus!();
+      await tester.pump();
+    }
+
+    testWidgets('hides the conversation and gives the thread the row', (
+      tester,
+    ) async {
+      await size(tester, const Size(1440, 900));
+      presented.clear();
+      await tester.pumpWidget(focusShell());
+      final side = tester.getRect(
+        find.byKey(const Key('workspace-thread-panel')),
+      );
+      expect(find.text('Conversation'), findsOneWidget);
+      expect(placementNow(tester)?.split, isTrue);
+      expect(placementNow(tester)?.focused, isFalse);
+      expect(presented.last, (true, true));
+
+      presented.clear();
+      await toggle(tester);
+      final focused = tester.getRect(
+        find.byKey(const Key('workspace-thread-panel')),
+      );
+      expect(find.text('Conversation'), findsNothing);
+      expect(focused.width, greaterThan(side.width * 2));
+      expect(focused.right, side.right);
+      expect(placementNow(tester)?.focused, isTrue);
+      // The conversation is not presented, so nothing reads it meanwhile.
+      expect(presented.last, (false, true));
+      // The thread has no drag handle when it has the whole row.
+      expect(find.byKey(const Key('thread-resize-handle')), findsNothing);
+
+      presented.clear();
+      await toggle(tester);
+      expect(find.text('Conversation'), findsOneWidget);
+      expect(
+        tester.getRect(find.byKey(const Key('workspace-thread-panel'))).width,
+        side.width,
+      );
+      expect(presented.last, (true, true));
+      expect(find.byKey(const Key('thread-resize-handle')), findsOneWidget);
+    });
+
+    testWidgets('keeps the conversation mounted while hidden', (tester) async {
+      await size(tester, const Size(1440, 900));
+      await tester.pumpWidget(focusShell(content: const _Counter()));
+      await tester.tap(find.byType(_Counter));
+      await tester.pump();
+      expect(find.text('count 1'), findsOneWidget);
+      await toggle(tester);
+      expect(find.text('count 1', skipOffstage: false), findsOneWidget);
+      expect(find.text('count 1'), findsNothing);
+      await toggle(tester);
+      expect(find.text('count 1'), findsOneWidget);
+    });
+
+    testWidgets('no scope, no choice: a page thread or another route', (
+      tester,
+    ) async {
+      await size(tester, const Size(1440, 900));
+      await tester.pumpWidget(focusShell(scope: null));
+      expect(placementNow(tester)?.split, isTrue);
+      expect(placementNow(tester)?.toggleFocus, isNull);
+    });
+
+    testWidgets('a window too narrow for the side thread offers nothing', (
+      tester,
+    ) async {
+      await size(tester, const Size(900, 700));
+      await tester.pumpWidget(focusShell());
+      // Folded: the thread covers the conversation exactly as without focus.
+      expect(placementNow(tester)?.split, isFalse);
+      expect(placementNow(tester)?.focused, isFalse);
+      expect(placementNow(tester)?.toggleFocus, isNull);
+      expect(find.byKey(const Key('workspace-thread-panel')), findsNothing);
+    });
+
+    testWidgets('resizing across the side-thread cut follows the width', (
+      tester,
+    ) async {
+      await size(tester, const Size(1440, 900));
+      await tester.pumpWidget(focusShell());
+      await toggle(tester);
+      expect(find.text('Conversation'), findsNothing);
+      tester.view.physicalSize = const Size(900, 700);
+      await tester.pump();
+      expect(placementNow(tester)?.focused, isFalse);
+      expect(placementNow(tester)?.split, isFalse);
+      expect(find.byKey(const ValueKey('thread')), findsOneWidget);
+      tester.view.physicalSize = const Size(1440, 900);
+      await tester.pump();
+      expect(placementNow(tester)?.focused, isTrue);
+      expect(find.text('Conversation'), findsNothing);
+    });
+
+    testWidgets('a profile panel ends focus mode for good', (tester) async {
+      await size(tester, const Size(1440, 900));
+      await tester.pumpWidget(focusShell());
+      await toggle(tester);
+      expect(find.text('Conversation'), findsNothing);
+      await tester.pumpWidget(focusShell(profile: true));
+      expect(placementNow(tester)?.focused, isFalse);
+      expect(placementNow(tester)?.toggleFocus, isNull);
+      expect(find.text('Conversation'), findsOneWidget);
+      expect(find.text('Profile'), findsOneWidget);
+      // Closing the profile does not hide the conversation again.
+      await tester.pumpWidget(focusShell());
+      expect(placementNow(tester)?.focused, isFalse);
+      expect(find.text('Conversation'), findsOneWidget);
+    });
+
+    testWidgets('closing the thread or changing its conversation ends it', (
+      tester,
+    ) async {
+      await size(tester, const Size(1440, 900));
+      await tester.pumpWidget(focusShell());
+      await toggle(tester);
+      await tester.pumpWidget(focusShell(thread: false));
+      expect(find.text('Conversation'), findsOneWidget);
+      await tester.pumpWidget(focusShell());
+      expect(placementNow(tester)?.focused, isFalse);
+
+      await toggle(tester);
+      expect(placementNow(tester)?.focused, isTrue);
+      await tester.pumpWidget(focusShell(scope: 'c2'));
+      expect(placementNow(tester)?.focused, isFalse);
+      expect(find.text('Conversation'), findsOneWidget);
+
+      await toggle(tester);
+      await tester.pumpWidget(focusShell(scope: null));
+      await tester.pumpWidget(focusShell(scope: 'c2'));
+      expect(placementNow(tester)?.focused, isFalse);
+    });
+  });
+}
+
+class _Counter extends StatefulWidget {
+  const _Counter();
+  @override
+  State<_Counter> createState() => _CounterState();
+}
+
+class _CounterState extends State<_Counter> {
+  int count = 0;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () => setState(() => count++),
+    child: Center(child: Text('count $count')),
+  );
 }

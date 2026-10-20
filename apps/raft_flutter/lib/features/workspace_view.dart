@@ -329,6 +329,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   DesktopNavigationState get desktopNavigation =>
       _desktopNavigation ??= DesktopNavigationState(navigation: w.navigation);
   bool pendingDesktopSelection = false;
+
   String get desktopAuthority => '$mobileAuthority|$channelAuthorityRevision';
   int mobileSettingsRevision = 0;
   String get mobileAuthority => jsonEncode([
@@ -1786,6 +1787,18 @@ class _WorkspaceViewState extends State<WorkspaceView>
                         onDismiss: w.closeProfile,
                         child: RaftAdaptiveWorkspace(
                           key: ValueKey('adaptive-workspace-$authority'),
+                          // Focus mode may hide the channel only beside its own
+                          // thread on a chat route (Web canToggleChannel).
+                          focusScope:
+                              thread &&
+                                  (route == 'chat' || route == 'home') &&
+                                  (w.messageDomain.threadParentChannelId ==
+                                          null ||
+                                      w.channel?.id ==
+                                          w.messageDomain
+                                              .threadParentChannelId)
+                              ? w.channel?.id
+                              : null,
                           onPresentationChanged: (main, thread) =>
                               w.setConversationPresentation(
                                 this,

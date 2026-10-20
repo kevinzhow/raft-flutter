@@ -45,8 +45,21 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     this.threadResizeLabel = 'Resize thread',
     this.trailingExtent = 0,
     this.navigationOnRight = false,
+    this.focusScope,
   });
   final Widget content, sidebar, rail;
+
+  /// Thread focus mode (Web `uiStore.threadMaximized`): while the thread sits
+  /// beside its conversation, the conversation column can be hidden so the
+  /// thread takes the whole row. This widget owns the on/off choice; the host
+  /// only says where it may apply. A non-null [focusScope] (the conversation
+  /// the thread belongs to) offers the choice; the choice is dropped for good
+  /// when the scope changes or goes null, the thread closes or a profile opens
+  /// (Web `restoreThreadLayout`). Layout only: it takes effect where the window
+  /// shows the side thread (a narrower window keeps the choice without
+  /// applying it). The hidden conversation stays mounted but is not presented,
+  /// so nothing reads it meanwhile.
+  final String? focusScope;
 
   /// The desktop layout puts its navigation column (rail and sidebar, one
   /// unit) on the physical right edge, and the resizable sidebar's handle,
@@ -129,6 +142,31 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   State<RaftAdaptiveWorkspace> createState() => _RaftAdaptiveWorkspaceState();
 }
 
+/// How the thread slot is presented (read by the thread's own menu): beside
+/// the conversation ([split]) and, then, whether the conversation is hidden
+/// for focus mode ([focused]). Absent when the thread is a page of its own.
+class RaftThreadPlacement extends InheritedWidget {
+  const RaftThreadPlacement({
+    super.key,
+    required this.split,
+    required this.focused,
+    this.toggleFocus,
+    required super.child,
+  });
+  final bool split, focused;
+
+  /// Switches focus mode; null where it is not offered (the thread is a page,
+  /// no conversation to hide, or a profile panel is open).
+  final VoidCallback? toggleFocus;
+
+  static RaftThreadPlacement? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<RaftThreadPlacement>();
+
+  @override
+  bool updateShouldNotify(RaftThreadPlacement old) =>
+      split != old.split || focused != old.focused;
+}
+
 class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   final mainSlot = GlobalKey();
   final threadSlot = GlobalKey();
@@ -144,6 +182,19 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       widget.profile != null &&
       conversationWidth - threadSize - widget.profileWidth >= 320;
 
+  /// Focus mode is in effect: a side thread, no profile panel beside it.
+  bool focusedThread(bool split) =>
+      split &&
+      focusMode &&
+      widget.focusScope != null &&
+      widget.thread != null &&
+      widget.profile == null;
+
+  /// The person's choice (see [RaftAdaptiveWorkspace.focusScope]).
+  bool focusMode = false;
+
+  void toggleFocus() => setState(() => focusMode = !focusMode);
+
   Widget conversation({
     required bool split,
     double threadSize = 0,
@@ -151,6 +202,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   }) {
     final hasSide = widget.thread != null || widget.profile != null;
     final folded = hasSide && !split;
+    final focused = focusedThread(split);
     final both = split && columns(conversationWidth, threadSize);
     final profileOverThread =
         widget.thread != null && widget.profile != null && !both;
@@ -159,14 +211,25 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
     // A thread replaces the main conversation when folded; a profile overlay
     // only covers it (Web `absolute inset-0 z-30`), the chat stays mounted
     // and active underneath.
-    final hideMain = widget.thread != null && !split;
+    final hideMain = widget.thread != null && (!split || focused);
     widget.onPresentationChanged?.call(
       !hideMain,
       widget.thread != null && !(widget.profile != null && !both),
     );
-    Widget thread() => KeyedSubtree(key: threadSlot, child: widget.thread!);
+    Widget thread() => KeyedSubtree(
+      key: threadSlot,
+      child: RaftThreadPlacement(
+        split: split,
+        focused: focused,
+        toggleFocus:
+            split && widget.focusScope != null && widget.profile == null
+            ? toggleFocus
+            : null,
+        child: widget.thread!,
+      ),
+    );
     Widget profile() => KeyedSubtree(key: profileSlot, child: widget.profile!);
-    Widget panel(Key key, double width, Widget child) => Builder(
+    Widget panel(Key key, double? width, Widget child) => Builder(
       builder: (context) {
         final t = RaftTokens.of(context);
         // ThreadPanelRoot / ProfilePanel are attached Panels: their own left
@@ -194,17 +257,42 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
       children: [
         Row(
           children: [
-            Expanded(
-              child: KeyedSubtree(
-                key: mainSlot,
-                child: Visibility(
-                  visible: !hideMain,
-                  maintainState: true,
-                  child: widget.content,
+            if (focused)
+              // The conversation stays mounted at its usual width but takes no
+              // room: the thread panel fills the row.
+              Offstage(
+                child: SizedBox(
+                  width: math.max(0, conversationWidth - threadSize),
+                  child: KeyedSubtree(
+                    key: mainSlot,
+                    child: Visibility(
+                      visible: false,
+                      maintainState: true,
+                      child: widget.content,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: KeyedSubtree(
+                  key: mainSlot,
+                  child: Visibility(
+                    visible: !hideMain,
+                    maintainState: true,
+                    child: widget.content,
+                  ),
                 ),
               ),
-            ),
-            if (split && both) ...[
+            if (focused)
+              Expanded(
+                child: panel(
+                  const Key('workspace-thread-panel'),
+                  null,
+                  thread(),
+                ),
+              )
+            else if (split && both) ...[
               panel(const Key('workspace-thread-panel'), threadSize, thread()),
               panel(
                 const Key('workspace-profile-panel'),
@@ -251,6 +339,13 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   @override
   void didUpdateWidget(RaftAdaptiveWorkspace oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (focusMode &&
+        (widget.focusScope == null ||
+            widget.focusScope != oldWidget.focusScope ||
+            widget.thread == null ||
+            widget.profile != null)) {
+      focusMode = false;
+    }
     if (oldWidget.sidebarWidth != widget.sidebarWidth) {
       sidebarWidth = widget.sidebarWidth.clamp(180, 320);
     }
@@ -447,7 +542,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                 onChanged: resizeSidebar,
               ),
             ),
-          if (sideThread && widget.thread != null)
+          if (sideThread && widget.thread != null && !focusedThread(sideThread))
             Positioned(
               right:
                   (columns(conversationWidth, actualThread)
