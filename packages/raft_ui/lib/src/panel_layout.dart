@@ -33,7 +33,33 @@ import 'large_content_viewer.dart';
 import 'theme.dart';
 import 'tooltip.dart';
 
-RaftRecipeTheme raftRecipeTheme(RaftTokens t) => RaftRecipeTheme.elegant;
+/// Which generated recipe set a component resolves.
+///
+/// The recipes were generated from two CSS themes (`brutal` and `elegant`), so
+/// the resolver takes a two-valued enum. The contract forbids choosing by theme
+/// name or theme id, so the choice is derived from a **geometry token** the
+/// theme declares:
+///
+///   `radius.control` > 0  -> the elegant recipe set
+///   `radius.control` == 0 -> the brutal recipe set
+///
+/// Verified against the resolved recipes rather than assumed: the elegant set
+/// gives `rounded-md` + `border-0` (a ring drawn outside a transparent border),
+/// the brutal set gives `rounded-none` + `border-2`. The control radius is
+/// exactly the token that distinguishes them — Raft 8, Elegant 6, Brutal 0 — so
+/// Raft and Elegant both take the elegant set (which is what the app painted
+/// before this helper existed, since it was hardcoded to `elegant`) and Brutal
+/// now takes the brutal set.
+///
+/// This is a bridge, not a destination. The generated recipe tables carry radii,
+/// paddings and strokes as compile-time constants; the contract's §10.2 plan is
+/// to regenerate them from tokens instead of picking one of two compiled sets.
+/// Until then this is the honest mapping, and it is the only place the
+/// two-valued choice is made.
+RaftRecipeTheme raftRecipeTheme(RaftTokens t) =>
+    t.size('radius.control', fallback: 8) > 0
+    ? RaftRecipeTheme.elegant
+    : RaftRecipeTheme.brutal;
 
 /// AgentDetailPanel.tsx InfoRow: `grid grid-cols-[6.5rem_minmax(0,1fr)]
 /// items-start gap-x-4`; the term is `flex min-h-5 items-center gap-1.5

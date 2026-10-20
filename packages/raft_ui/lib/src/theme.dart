@@ -252,6 +252,20 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
   double get fieldRadius => _mode?.geometry['radius.field'] ?? 6;
   double get border => _mode?.geometry['stroke.container'] ?? 1;
 
+  /// Any other numeric token, by contract name. Components read control sizes
+  /// and stroke widths through this rather than repeating the Raft number as a
+  /// literal, which is what kept two of three themes stuck on Raft's geometry.
+  ///
+  /// [fallback] is the Raft value, used when a theme does not set the token (a
+  /// pack may override only what it cares about).
+  double size(String token, {required double fallback}) =>
+      _mode?.geometry[token] ?? fallback;
+
+  /// A structural option, by contract name. A component asks how to draw
+  /// itself; it must never ask which theme is current.
+  String option(String name, {required String fallback}) =>
+      _mode?.options[name] ?? fallback;
+
   /// The hyperlink underline every underlined run shares (Web `underline
   /// decoration-2 underline-offset-2`; no theme overrides it, so Brutal and
   /// Elegant agree and only the colour differs by recipe).
