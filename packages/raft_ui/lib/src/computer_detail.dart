@@ -247,31 +247,6 @@ Widget _gapColumn(double gap, List<Widget> children) => Column(
   ],
 );
 
-/// Web `KeyValueRow`: label `mb-1 text-xs text-foreground-muted
-/// theme-brutal:text-black/50`, value `text-sm text-foreground-strong
-/// theme-brutal:text-black` (+ `font-mono`).
-class _KeyValue extends StatelessWidget {
-  const _KeyValue(this.label, this.value);
-  final String label;
-  final Widget value;
-  @override
-  Widget build(BuildContext context) {
-    final ink = _Ink(RaftTokens.of(context));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        RaftCssText(label, style: ink.body(12, 16, color: ink.muted(.5))),
-        const SizedBox(height: 4),
-        DefaultTextStyle.merge(
-          style: ink.body(14, 20, color: ink.strong),
-          child: value,
-        ),
-      ],
-    );
-  }
-}
-
 /// `<Terminal size={16} /> <SectionEyebrow>` header row (`flex items-center
 /// gap-2`).
 Widget _terminalEyebrow(RaftTokens t, String label) => Row(
@@ -1049,14 +1024,15 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
       const SizedBox(height: 12),
       _gapColumn(12, [
         if ((d.os ?? '').isNotEmpty)
-          _KeyValue(
-            'OS',
-            RaftCssText(d.os!, style: ink.mono(14, 20, color: ink.strong)),
+          RaftKeyValueRow(label: 'OS', value: d.os!, mono: true),
+        if (isComputer)
+          RaftKeyValueRow.child(
+            label: 'Computer Version',
+            child: versionValue(),
           ),
-        if (isComputer) _KeyValue('Computer Version', versionValue()),
-        _KeyValue(
-          'Detected Runtimes',
-          Wrap(
+        RaftKeyValueRow.child(
+          label: 'Detected Runtimes',
+          child: Wrap(
             spacing: 6,
             runSpacing: 6,
             children: [
@@ -1071,17 +1047,21 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
           spacing: 32,
           runSpacing: 12,
           children: [
-            _KeyValue(
-              'Created',
-              RaftCssText(
-                d.createdLabel,
-                style: ink.mono(14, 20, color: ink.strong),
+            // `valueClassName="tabular-nums theme-brutal:font-mono"`.
+            RaftKeyValueRow.child(
+              label: 'Created',
+              mono: t.brutal,
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+                child: RaftCssText(d.createdLabel),
               ),
             ),
             if (isComputer)
-              _KeyValue(
-                'Creator',
-                creator != null
+              RaftKeyValueRow.child(
+                label: 'Creator',
+                child: creator != null
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [

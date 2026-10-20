@@ -180,4 +180,105 @@ void main() {
     );
     expect(styleOf(tester, '@agent').fontSize, 12);
   });
+
+  testWidgets('elegant profile header carries the 1px line-muted divider', (
+    tester,
+  ) async {
+    final t = await host(
+      tester,
+      const RaftPanelHeaderBar(title: 'Agent', profileBody: true),
+      family: RaftFamily.elegant,
+    );
+    BoxDecoration headerDecoration() => tester
+        .widgetList<Container>(
+          find.ancestor(
+            of: find.text('Agent'),
+            matching: find.byType(Container),
+          ),
+        )
+        .map((c) => c.decoration)
+        .whereType<BoxDecoration>()
+        .firstWhere((d) => d.border != null);
+    final border = headerDecoration().border! as Border;
+    expect(border.bottom.width, 1);
+    expect(border.bottom.color, t.colors['line-muted']);
+    // The divider sits inside the header's own height.
+    expect(tester.getSize(find.byType(RaftPanelHeaderBar)).height, 56);
+  });
+
+  testWidgets('elegant tab strip has no rule: list floor holds the indicator', (
+    tester,
+  ) async {
+    await host(
+      tester,
+      RaftPanelTabBar<String>(
+        tabs: const [
+          RaftPanelTab('a', 'Profile', RaftGlyph.bot),
+          RaftPanelTab('b', 'Chat', RaftGlyph.bot),
+        ],
+        value: 'a',
+        onChanged: (_) {},
+      ),
+      family: RaftFamily.elegant,
+    );
+    // `h-12` list and no root `border-b` / list hairline: 48, not 49.
+    expect(tester.getSize(find.byType(RaftPanelTabBar<String>)).height, 48);
+    // Label starts at the 20px `px-5` list inset + 12px tab padding.
+    expect(tester.getTopLeft(find.text('Profile')).dx, greaterThan(32));
+  });
+
+  testWidgets('identity name row is 22.5px in elegant too', (tester) async {
+    await host(
+      tester,
+      const RaftProfileIdentity(name: 'Product UX Designer', handle: 'pux'),
+      family: RaftFamily.elegant,
+    );
+    final name = find.ancestor(
+      of: find.text('Product UX Designer'),
+      matching: find.byType(RaftCssText),
+    );
+    final handle = find.ancestor(
+      of: find.text('@pux'),
+      matching: find.byType(RaftCssText),
+    );
+    expect(tester.getRect(name).top, 20);
+    expect(tester.getRect(handle).top, 42.5);
+  });
+
+  testWidgets('elegant avatar slot clips to the padding-box circle', (
+    tester,
+  ) async {
+    await host(
+      tester,
+      const RaftAvatarSlot(
+        name: 'A',
+        slot: RaftAvatarSlotContext.panelHeader,
+        avatarUrl: 'pixel:robot',
+      ),
+      family: RaftFamily.elegant,
+    );
+    final clip = tester.widget<ClipRRect>(
+      find.descendant(
+        of: find.byType(RaftAvatarSlot),
+        matching: find.byType(ClipRRect),
+      ),
+    );
+    // 36px slot, 2px transparent border: the circle is the 32px padding box.
+    expect(clip.borderRadius, BorderRadius.circular(16));
+  });
+
+  testWidgets('key-value row accepts a node that inherits the value style', (
+    tester,
+  ) async {
+    final t = await host(
+      tester,
+      const RaftKeyValueRow.child(label: 'Created', child: Text('Jun 18')),
+      family: RaftFamily.elegant,
+    );
+    expect(styleOf(tester, 'Created').fontSize, 13);
+    final style = DefaultTextStyle.of(tester.element(find.text('Jun 18')))
+        .style;
+    expect(style.color, t.colors['foreground-muted']);
+    expect(style.fontSize, 14);
+  });
 }

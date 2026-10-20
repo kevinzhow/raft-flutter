@@ -33,7 +33,7 @@ const _runtimeNames = <String, String>{
   'opencode': 'OpenCode',
   'pi': 'Pi',
 };
-const _deprecatedRuntimes = {'antigravity', 'kimi', 'gemini'};
+const _deprecatedRuntimes = {'antigravity', 'kimi', 'copilot', 'gemini'};
 
 String runtimeLabelWithStatus(BuildContext context, String runtime) {
   final name = _runtimeNames[runtime] ?? runtime;

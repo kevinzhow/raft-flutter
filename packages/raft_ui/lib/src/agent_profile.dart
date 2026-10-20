@@ -332,11 +332,26 @@ class RaftAvatarSlot extends StatelessWidget {
             ),
           ),
         );
+    // `rounded-full bg-clip-padding border-2 border-transparent`: the circle
+    // the artwork is clipped to is the padding box, `border` smaller than the
+    // slot on each side (not the outer box, which would show the artwork's
+    // corners cut by a circle wider than the padding box).
+    final BorderRadius? inner = t.brutal
+        ? null
+        : BorderRadius.circular(
+            math.max(0, (sizeOverride ?? slot.size) / 2 - slot.border),
+          );
     if (clipPadding && base.color != null) {
       child = DecoratedBox(
-        decoration: BoxDecoration(color: base.color, borderRadius: radius),
+        decoration: BoxDecoration(
+          color: base.color,
+          borderRadius: inner ?? radius,
+        ),
         child: child,
       );
+    }
+    if (inner != null) {
+      child = ClipRRect(borderRadius: inner, child: child);
     }
     return Container(
       width: sizeOverride ?? slot.size,
@@ -744,7 +759,11 @@ class RaftProfileIdentity extends StatelessWidget {
                   // The recipe's `leading-tight` is a 22.5px (brutal) line
                   // box; Flutter rounds a paragraph's height to whole pixels,
                   // so the line box is sized explicitly.
+                  // The row is 22.5px tall in both themes (measured on the Web
+                  // render: the handle starts there), the name at its top and
+                  // the pencil centred (`flex items-center gap-2`).
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Flexible(
                         child: RaftCssText(
@@ -756,14 +775,21 @@ class RaftProfileIdentity extends StatelessWidget {
                       ),
                       if (onEditName != null) ...[
                         const SizedBox(width: 8),
-                        RaftInlineIconButton(
-                          key: const ValueKey('agent-edit-display-name'),
-                          glyph: RaftGlyph.pencil,
-                          size: 14,
-                          tooltip: raftText(context, 'Edit display name'),
-                          onPressed: onEditName,
+                        SizedBox(
+                          height: 22.5,
+                          child: Center(
+                            child: RaftInlineIconButton(
+                              key: const ValueKey('agent-edit-display-name'),
+                              glyph: RaftGlyph.pencil,
+                              size: 14,
+                              tooltip: raftText(context, 'Edit display name'),
+                              onPressed: onEditName,
+                            ),
+                          ),
                         ),
-                      ],
+                      ] else
+                        // ignore: raft_lints/off_grid_spacing -- measured Web name-row height (leading-tight line box + pencil), not a spacing step
+                        const SizedBox(height: 22.5),
                     ],
                   ),
                   Row(
@@ -957,31 +983,49 @@ class RaftEnvVarChips extends StatelessWidget {
   }
 }
 
-/// KeyValueRow.tsx: label (`mb-1 text-xs`) above a `text-sm` value.
+/// KeyValueRow.tsx (Web v1.21.12): label (`mb-1 text-[13px]
+/// text-foreground-hint`) above a `text-sm text-foreground-muted` value. The
+/// value is a string ([value]) or any node ([child], which inherits the value
+/// style the way Web's value cell does; nodes keep their own explicit
+/// classes).
 class RaftKeyValueRow extends StatelessWidget {
   const RaftKeyValueRow({
     super.key,
     required this.label,
-    required this.value,
+    required String this.value,
     this.mono = false,
     this.breakAll = false,
-  });
-  final String label, value;
+  }) : child = null;
+  const RaftKeyValueRow.child({
+    super.key,
+    required this.label,
+    required Widget this.child,
+    this.mono = false,
+  }) : value = null,
+       breakAll = false;
+  final String label;
+  final String? value;
+  final Widget? child;
   final bool mono, breakAll;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final style = mono
+        ? RaftPanelText.profileMono(t)
+        : RaftPanelText.profileValue(t);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         RaftCssText(label, style: RaftPanelText.profileLabel(t)),
         const SizedBox(height: 4),
-        RaftCssText(
-          breakAll ? value.characters.join('​') : value,
-          style: mono
-              ? RaftPanelText.profileMono(t)
-              : RaftPanelText.profileValue(t),
-        ),
+        if (child case final node?)
+          DefaultTextStyle.merge(style: style, child: node)
+        else
+          RaftCssText(
+            breakAll ? value!.characters.join('\u200b') : value!,
+            style: style,
+          ),
       ],
     );
   }
@@ -1096,7 +1140,13 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            // `px-5 py-2`; the elegant ghost copy action sits in an inline
+            // `<span>` whose line box is 1px taller than the 24px button.
+            padding: EdgeInsets.symmetric(
+              horizontal: 20,
+              // ignore: raft_lints/off_grid_spacing -- measured 1px taller header split over both sides
+              vertical: t.brutal ? 8 : 8.5,
+            ),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(

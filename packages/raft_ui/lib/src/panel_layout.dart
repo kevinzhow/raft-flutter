@@ -461,6 +461,17 @@ class RaftPanelHeaderBar extends StatelessWidget {
                     ),
                   ),
                 )
+          : profileBody && !t.brutal
+          // Web v1.21.12 PROFILE_HEADER_SURFACE_CLASS (elegant only):
+          // `border-b border-line-muted` on the header; the 1px is inside the
+          // header's height. Brutal keeps the recipe's own 2px rule.
+          ? s.header
+                .decoration(rt)
+                .copyWith(
+                  border: Border(
+                    bottom: BorderSide(color: t.colors['line-muted']!),
+                  ),
+                )
           : s.header.decoration(rt),
       child: Row(
         children: [
@@ -686,12 +697,11 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
     return Container(
       decoration: BoxDecoration(
         color: listBg,
-        border: Border(
-          bottom: BorderSide(
-            color: t.brutal ? Colors.black : t.colors['line-muted']!,
-            width: t.brutal ? 2 : 1,
-          ),
-        ),
+        // Web v1.21.12 drops the Tabs root `border-b` in elegant (the profile
+        // header's own divider sits above); brutal keeps `border-b-2`.
+        border: t.brutal
+            ? const Border(bottom: BorderSide(color: Colors.black, width: 2))
+            : null,
       ),
       child: NotificationListener<ScrollMetricsNotification>(
         onNotification: _metricsChanged,
@@ -707,23 +717,15 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
                         _tab(widget.tabs[i], i, style, base, rt, t),
                     ],
                   )
-                // Elegant `tabs-list`: `h-12 gap-1 px-4` with a hairline rule; the
+                // Elegant `tabs-list`: `h-12 gap-1 px-5`, no rule of its own
+                // (raft-ui 0.5.52 only draws one with TabsBackground); the
                 // `h-7` tabs sit centred and the 2px indicator on the list floor.
                 : Container(
                     height: grows ? null : 48,
                     constraints: grows
                         ? const BoxConstraints(minHeight: 48)
                         : null,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color:
-                              t.colors['line-hairline'] ??
-                              t.colors['line-muted']!,
-                        ),
-                      ),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
                         for (var i = 0; i < widget.tabs.length; i++) ...[
@@ -784,14 +786,18 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
             child: Stack(
               children: [
                 Padding(
-                  // ds-allow: Web AgentDetailPanel.tsx tabs-list `h-12` centring the `h-7` tab: (48 - 1 - 28) / 2
-                  padding: const EdgeInsets.symmetric(vertical: 9.5),
+                  // ds-allow: Web AgentDetailPanel.tsx tabs-list `h-12` centring the `h-7` tab: (48 - 28) / 2
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   child: Container(
                     height: grows ? null : 28,
                     constraints: grows
                         ? const BoxConstraints(minHeight: 28)
                         : null,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    // The recipe's `pt-3.5 pb-3` is squeezed into the 28px
+                    // `h-7` box: its 2px content box starts at 14, so the
+                    // label sits 1px below the tab's centre.
+                    // ds-allow: 1px = (pt-3.5 - pb-3) / 2 of the recipe padding
+                    padding: const EdgeInsets.fromLTRB(12, 2, 12, 0),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

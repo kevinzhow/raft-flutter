@@ -39,7 +39,6 @@ const computerRuntimeOptions = <(String, String, bool)>[
   ('grok', 'Grok Build', false),
   ('builtin', 'Built-in Pi', true),
   ('kimi-sdk', 'Kimi Code', true),
-  ('copilot', 'Copilot CLI', false),
   ('cursor', 'Cursor CLI', false),
   ('opencode', 'OpenCode', false),
   ('pi', 'Pi', false),

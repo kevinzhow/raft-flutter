@@ -10,6 +10,7 @@
 // protocol-v2 form (see [legacyRuntimeEditorSupports]).
 import '../data/runtime_config.dart';
 import 'agent_runtime_catalog.dart';
+import 'agent_runtime_labels.dart';
 
 /// Runtimes whose settings the legacy editor can present and save.
 bool legacyRuntimeEditorSupports(String runtime) =>
@@ -466,5 +467,5 @@ String runtimeAvailabilityKind(String runtime, List<String> machineRuntimes) {
 List<({String id, String name, String binary, bool supported, bool deprecated})>
 existingAgentRuntimeOptions(String current) => [
   for (final r in runtimeInfos)
-    if (!r.deprecated || r.id == current) r,
+    if (!isRuntimeDeprecated(r.id) || r.id == current) r,
 ];
