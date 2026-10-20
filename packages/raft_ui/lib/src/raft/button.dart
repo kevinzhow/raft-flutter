@@ -184,19 +184,65 @@ class RaftButtonMetrics {
     square: true,
   );
 
-  static RaftButtonMetrics of(RaftButtonSize size, RaftButtonVariant variant) {
+  /// Metrics for [size] under the current theme.
+  ///
+  /// Heights come from the contract's control tokens, so a theme that sizes its
+  /// controls differently reaches the button. The table stays the source of the
+  /// parts every look agrees on -- paddings, icon sizes, which type style a size
+  /// uses -- because measuring the three looks showed those are equal in all of
+  /// them (form, not theme).
+  ///
+  /// Verified values, from the Raft React specimen's DOM and from resolving the
+  /// recipe on a57b9dab:
+  ///   sm  Raft 32 / Elegant 28 / Brutal 28
+  ///   md  Raft 32 / Elegant 32 / Brutal 32   (form: equal, so no token needed)
+  ///   lg  Raft 44 / Elegant 36 / Brutal 40   (theme value)
+  static RaftButtonMetrics of(
+    RaftButtonSize size,
+    RaftButtonVariant variant,
+    RaftTokens t,
+  ) {
     final onFrame = variant == RaftButtonVariant.onFrame;
+    // Each size reads its own token. s/m/l are distinct tokens in the contract
+    // even though Raft's xs/sm/md happen to share one box.
+    final sm = t.size('size.control.sm', fallback: 32);
+    final md = t.size('size.control.md', fallback: 32);
+    final lg = t.size('size.control.lg', fallback: 44);
+    final frame = t.size('size.control.onFrame', fallback: 36);
+
+    RaftButtonMetrics sized(double height, RaftButtonMetrics base) =>
+        height == base.height
+            ? base
+            : RaftButtonMetrics(
+                height: height,
+                paddingX: base.paddingX,
+                iconStartPaddingLeft: base.iconStartPaddingLeft,
+                iconEndPaddingRight: base.iconEndPaddingRight,
+                text: base.text,
+                icon: base.icon,
+                gap: base.gap,
+                square: base.square,
+              );
+
     return switch (size) {
-      RaftButtonSize.xs ||
-      RaftButtonSize.sm ||
-      RaftButtonSize.md => onFrame ? _onFrame : _md,
-      RaftButtonSize.lg => _lg,
-      RaftButtonSize.xl => _xl,
+      // xs and sm read the small token; md reads the medium one. Raft renders
+      // all three at one height, which the Raft pack's equal token values
+      // reproduce, while Elegant and Brutal can differ per step.
+      RaftButtonSize.xs => sized(sm, _md),
+      RaftButtonSize.sm => sized(sm, _md),
+      RaftButtonSize.md => onFrame ? sized(frame, _onFrame) : sized(md, _md),
+      RaftButtonSize.lg => sized(lg, _lg),
+      // xl exists only in raft-ui 0.7.1 (52); the pre-theme looks never had it,
+      // so there is no Elegant/Brutal value to read. Keep Raft's box exactly
+      // and add the family delta relative to lg, which keeps xl consistent with
+      // whatever lg the theme chose instead of silently equalising them.
+      RaftButtonSize.xl => sized(lg + (_xl.height - 44), _xl),
       RaftButtonSize.inline => _md,
       RaftButtonSize.iconXs ||
       RaftButtonSize.iconSm ||
-      RaftButtonSize.iconMd => onFrame ? _iconOnFrame : _iconMd,
-      RaftButtonSize.iconLg => _iconLg,
+      RaftButtonSize.iconMd =>
+        onFrame ? sized(frame, _iconOnFrame) : sized(md, _iconMd),
+      RaftButtonSize.iconLg => sized(lg, _iconLg),
     };
   }
 }
@@ -399,7 +445,7 @@ class RaftButton extends StatelessWidget {
     final ui = t.ui;
     final variantValue = resolvedVariant;
     final sizeValue = resolvedSize;
-    final metrics = RaftButtonMetrics.of(sizeValue, variantValue);
+    final metrics = RaftButtonMetrics.of(sizeValue, variantValue, t);
     final text = raftText(context, label);
     return RaftInteractive(
       onPressed: onPressed,
