@@ -125,6 +125,22 @@ RaftAppearance storedAppearance([SharedPreferences? preferences]) {
 /// independent of the Light / Dark / System choice in `raft.mode`.
 const appearanceThemeKey = 'raft.theme';
 
+/// Writes the appearance the settings page chose: the light/dark mode and the
+/// theme id on their own keys, so choosing one never rewrites the other.
+///
+/// Kept here, next to [storedAppearance] and the retired-key cleanup, so the app
+/// root only calls it; `app_root.dart` is a size-capped hotspot and this
+/// persistence is not root logic.
+Future<void> saveAppearance(
+  SharedPreferences preferences,
+  RaftAppearance appearance,
+) async {
+  await preferences.setString('raft.mode', appearance.mode.name);
+  await preferences.setString(appearanceThemeKey, appearance.themeId);
+  // The retired `raft.light` key must not come back; the native splash reads it.
+  await preferences.remove(retiredAppearanceThemeKey);
+}
+
 /// Drops the retired `raft.light` key once, so the native launch screens (which
 /// still read it) fall back to their default light canvas. Failures are ignored.
 Future<void> retireStoredAppearanceTheme(SharedPreferences preferences) async {

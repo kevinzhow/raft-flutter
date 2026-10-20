@@ -24,6 +24,17 @@ class RaftAppearance {
 
   RaftAppearance copyWith({ThemeMode? mode, String? themeId}) =>
       RaftAppearance(mode: mode ?? this.mode, themeId: themeId ?? this.themeId);
+
+  /// The pack this appearance paints with.
+  ///
+  /// An id that no longer names a built-in theme falls back to Raft rather than
+  /// painting nothing: a stored id can outlive the theme it names (a user pack
+  /// removed in a release), and the default look is a better failure than a
+  /// blank window. The stored id itself is not rewritten, so the user's choice
+  /// survives.
+  ///
+  /// Lives here rather than at the call site so the app root keeps only a call.
+  RaftThemePack get pack => packForThemeId(themeId);
 }
 
 /// The id of the built-in Raft pack, the default appearance.
