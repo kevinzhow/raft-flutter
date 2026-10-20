@@ -80,6 +80,7 @@ class ExternalIdentityDetailPanel extends StatelessWidget {
     );
     final wide = MediaQuery.sizeOf(context).width >= 768;
     return RaftPanelTextScope(
+      sans: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

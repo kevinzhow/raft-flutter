@@ -278,10 +278,11 @@ class RaftChoiceCard extends StatelessWidget {
   }
 }
 
-/// Web `AvatarListRow` (`align="center"`): a [RaftSurfaceListItem] with
-/// `px-3 py-2`, avatar, name (`truncate text-sm font-bold
-/// text-foreground-strong theme-brutal:text-black`) + subtitle (`text-xs
-/// font-mono text-foreground-muted theme-brutal:text-black/50`) in a
+/// Web `AvatarListRow` (`align="center"`, v1.21.12): a [RaftSurfaceListItem]
+/// with `px-3 py-2`, avatar, name (`truncate text-sm font-semibold
+/// text-foreground-muted theme-brutal:font-bold theme-brutal:text-black`) +
+/// subtitle (`text-xs font-mono text-foreground-hint
+/// theme-brutal:text-black/50`) in a
 /// baseline-aligned wrap, and right content (`flex shrink-0 items-center
 /// gap-1.5`).
 class RaftAvatarListRow extends StatelessWidget {
@@ -316,8 +317,8 @@ class RaftAvatarListRow extends StatelessWidget {
     final nameStyle = TextStyle(
       fontSize: 14,
       height: 20 / 14,
-      fontWeight: FontWeight.w700,
-      color: t.brutal ? RaftPrimitiveColors.black : s.foregroundStrong,
+      fontWeight: t.brutal ? FontWeight.w700 : FontWeight.w600,
+      color: t.brutal ? RaftPrimitiveColors.black : s.foregroundMuted,
     );
     final subtitleStyle = TextStyle(
       fontFamily: t.monoFont,
@@ -326,7 +327,7 @@ class RaftAvatarListRow extends StatelessWidget {
       height: 16 / 12,
       color: t.brutal
           ? RaftPrimitiveColors.black.withValues(alpha: .5)
-          : s.foregroundMuted,
+          : t.colors['foreground-hint']!,
     );
     List<Widget> gapped(List<Widget> items) => [
       for (var i = 0; i < items.length; i++) ...[

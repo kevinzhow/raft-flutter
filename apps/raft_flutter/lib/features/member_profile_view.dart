@@ -355,7 +355,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       children: [
         RaftCssText(
           raftTextZh(context, 'Status', '状态'),
-          style: RaftPanelText.label(t),
+          style: RaftPanelText.profileLabel(t),
         ),
         RaftInlineBadge(
           key: const ValueKey('member-departure-status'),
@@ -407,12 +407,14 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       );
     }
     return RaftPanelTextScope(
+      sans: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           RaftPanelHeaderBar(
             title: name,
             subtitle: handle.isEmpty ? null : '@$handle',
+            profileHandle: true,
             iconSlot: RaftAvatarSlot(
               name: name,
               agent: false,

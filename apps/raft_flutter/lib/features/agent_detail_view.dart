@@ -458,11 +458,15 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     double panelWidth,
   ) {
     return RaftPanelTextScope(
+      sans: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           RaftPanelHeaderBar(
             title: displayName,
+            // Web v1.21.12: the `@handle` subtitle, 15px mono in elegant.
+            subtitle: '@${a['name'] ?? ''}',
+            profileHandle: true,
             profileBody: true,
             iconAlwaysVisible: true,
             // `useMobileBack` renders the chevron below `md` only.
@@ -942,7 +946,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                       '${m['name']}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: RaftPanelText.monoSemibold(t),
+                      // v1.21.12: the machine link is plain `text-sm
+                      // text-foreground-muted` (no `font-mono font-semibold`).
+                      style: RaftPanelText.profileValue(t),
                     )
                   : RaftCssText(
                       raftText(context, 'No computer assigned'),
@@ -956,12 +962,23 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
               ),
               RaftInfoRow(
                 label: raftText(context, 'Computer Version'),
-                child: RaftCssText(runLabel(m), style: RaftPanelText.mono(t)),
+                child: RaftCssText(
+                  runLabel(m),
+                  style: RaftPanelText.profileMono(t),
+                ),
               ),
             ],
             RaftInfoRow(
               label: raftText(context, 'Created'),
-              child: RaftCssText(createdDate(context)),
+              // `tabular-nums theme-brutal:font-mono`.
+              child: RaftCssText(
+                createdDate(context),
+                style: t.brutal
+                    ? RaftPanelText.profileMono(t)
+                    : RaftPanelText.profileValue(t).copyWith(
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+              ),
             ),
             RaftInfoRow(
               label: raftText(context, 'Creator'),

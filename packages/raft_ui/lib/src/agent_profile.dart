@@ -56,21 +56,28 @@ Color raftActivityDotColor(RaftTokens t, String? activity) =>
       _ => raftGray400,
     };
 
-/// Panel body text: `body { font-family: var(--font-sans); color:
-/// var(--foreground) }` at 16/24.
+/// Panel body text at 16/24 in the page's inherited family (the theme's
+/// heading family).
+///
+/// [sans] is Web v1.21.12's `font-sans` on the profile panels' root
+/// (`ProfilePanelBody className="... font-sans"` in AgentDetailPanel,
+/// HumanDetailPanel and ExternalIdentityDetailPanel): text that names no
+/// family of its own switches from Inter to Geist in elegant (brutal's
+/// heading and sans families are both Hanken Grotesk).
 class RaftPanelTextScope extends StatelessWidget {
-  const RaftPanelTextScope({super.key, required this.child});
+  const RaftPanelTextScope({super.key, required this.child, this.sans = false});
   final Widget child;
+  final bool sans;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return RaftInheritedFontScope(
       child: DefaultTextStyle(
         style: raftCssText.merge(
-          RaftTypography.heading(
-            t,
-            weight: FontWeight.w400,
-          ).copyWith(color: t.ink),
+          (sans
+                  ? RaftTypography.body(t, weight: FontWeight.w400)
+                  : RaftTypography.heading(t, weight: FontWeight.w400))
+              .copyWith(color: t.ink),
         ),
         // The panel body is the column's surface under a transparent header.
         child: RaftStatusBarSource(
@@ -560,7 +567,33 @@ class RaftEditableEyebrow extends StatelessWidget {
 
 /// Text styles shared by the panels.
 abstract final class RaftPanelText {
-  static TextStyle value(RaftTokens t) => RaftInfoRow.valueStyle(t);
+  static TextStyle value(RaftTokens t) => raftCssText.merge(
+    RaftTypography.body(
+      t,
+      size: 14,
+      line: 20,
+    ).copyWith(color: t.brutal ? Colors.black : t.strong),
+  );
+
+  /// Web v1.21.12 profile value (`InfoRow` dd, `KeyValueRow` value, the
+  /// description paragraph): `text-sm text-foreground-muted
+  /// theme-brutal:text-black`.
+  static TextStyle profileValue(RaftTokens t) => RaftInfoRow.valueStyle(t);
+
+  /// `italic text-foreground-placeholder theme-brutal:text-black/40` in a
+  /// profile value (Web v1.21.12 human description).
+  static TextStyle profilePlaceholder(RaftTokens t) => profileValue(t).copyWith(
+    fontStyle: FontStyle.italic,
+    color: raftPanelInk(t, .4, t.colors['foreground-placeholder']!),
+  );
+
+  /// [profileValue] in the mono face (`font-mono` inside the profile value).
+  static TextStyle profileMono(RaftTokens t) =>
+      profileValue(t).copyWith(fontFamily: t.monoFont);
+
+  /// Web v1.21.12 profile term (`InfoRow` dt, `KeyValueRow` label):
+  /// `text-[13px] text-foreground-hint theme-brutal:text-black/50`.
+  static TextStyle profileLabel(RaftTokens t) => RaftInfoRow.labelStyle(t);
   static TextStyle placeholder(RaftTokens t) => value(t).copyWith(
     fontStyle: FontStyle.italic,
     color: raftPanelInk(t, .4, t.colors['foreground-muted']!),
@@ -570,22 +603,18 @@ abstract final class RaftPanelText {
           .copyWith(color: raftPanelInk(t, .5, t.colors['foreground-muted']!));
   static TextStyle mono(RaftTokens t) =>
       value(t).copyWith(fontFamily: t.monoFont);
-  static TextStyle monoSemibold(RaftTokens t) =>
-      mono(t).copyWith(fontWeight: FontWeight.w600);
   static TextStyle label(RaftTokens t) => raftCssText.merge(
-    RaftTypography.heading(
+    RaftTypography.body(
       t,
       size: 12,
       line: 16,
-      weight: FontWeight.w400,
     ).copyWith(color: raftPanelInk(t, .5, t.colors['foreground-muted']!)),
   );
   static TextStyle caption(RaftTokens t) => raftCssText.merge(
-    RaftTypography.heading(
+    RaftTypography.body(
       t,
       size: 12,
       line: 16,
-      weight: FontWeight.w400,
     ).copyWith(color: t.colors['foreground-muted']),
   );
   static TextStyle monoCaption(RaftTokens t) => raftCssText.merge(
@@ -649,6 +678,20 @@ class RaftProfileIdentity extends StatelessWidget {
   final Color? statusColor;
   final String? statusText;
   final double minHeight;
+
+  /// `text-sm PROFILE_HANDLE_SIZE_CLASS font-mono text-foreground-placeholder
+  /// theme-brutal:...`: 14/20 mono; elegant raises the size to 15 (the
+  /// line box stays `text-sm`'s 20) and uses the placeholder ink.
+  static TextStyle _handleStyle(RaftTokens t, {required Color brutal}) =>
+      raftCssText.merge(
+        RaftTypography.mono(
+          t,
+          size: t.brutal ? 14 : 15,
+          line: 20,
+          color: t.brutal ? brutal : t.colors['foreground-placeholder'],
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -695,9 +738,12 @@ class RaftProfileIdentity extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // `text-lg leading-tight` is a 22.5px line box; Flutter
-                  // rounds a paragraph's height to whole pixels, so the
-                  // line box is sized explicitly.
+                  // Web v1.21.12 `PanelTitle` (the detail-block name follows the
+                  // panel-title spec): elegant 17 / semibold / heading family
+                  // in `text-foreground-muted`; brutal `text-lg` (18) black.
+                  // The recipe's `leading-tight` is a 22.5px (brutal) line
+                  // box; Flutter rounds a paragraph's height to whole pixels,
+                  // so the line box is sized explicitly.
                   Row(
                     children: [
                       Flexible(
@@ -705,13 +751,7 @@ class RaftProfileIdentity extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: raftCssText.merge(
-                            RaftTypography.heading(
-                              t,
-                              size: 18,
-                              line: 22.5,
-                            ).copyWith(color: t.colors['foreground-strong']!),
-                          ),
+                          style: raftPanelTitleStyle(t),
                         ),
                       ),
                       if (onEditName != null) ...[
@@ -733,19 +773,15 @@ class RaftProfileIdentity extends StatelessWidget {
                           '@$handle',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: raftCssText.merge(
-                            RaftTypography.mono(
-                              t,
-                              size: 14,
-                              line: 20,
-                              color: agent
-                                  ? t.colors['foreground-muted']
-                                  : raftPanelInk(
-                                      t,
-                                      .5,
-                                      t.colors['foreground-muted']!,
-                                    ),
-                            ),
+                          style: _handleStyle(
+                            t,
+                            brutal: agent
+                                ? t.colors['foreground-muted']!
+                                : raftPanelInk(
+                                    t,
+                                    .5,
+                                    t.colors['foreground-muted']!,
+                                  ),
                           ),
                         ),
                       ),
@@ -754,16 +790,12 @@ class RaftProfileIdentity extends StatelessWidget {
                         RaftCssText(
                           youLabel!,
                           maxLines: 1,
-                          style: raftCssText.merge(
-                            RaftTypography.mono(
+                          style: _handleStyle(
+                            t,
+                            brutal: raftPanelInk(
                               t,
-                              size: 14,
-                              line: 20,
-                              color: raftPanelInk(
-                                t,
-                                .6,
-                                t.colors['foreground-muted']!,
-                              ),
+                              .6,
+                              t.colors['foreground-muted']!,
                             ),
                           ),
                         ),
@@ -839,7 +871,7 @@ class RaftCreatorLink extends StatelessWidget {
             name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w500),
+            // Web v1.21.12 drops `font-medium`: the name is regular weight.
           ),
         ),
         const SizedBox(width: 8),
@@ -848,7 +880,11 @@ class RaftCreatorLink extends StatelessWidget {
             '@$handle',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: RaftPanelText.monoCaption(t),
+            // `font-mono text-xs text-foreground-hint
+            // theme-brutal:text-black/50` (v1.21.12).
+            style: RaftPanelText.monoCaption(t).copyWith(
+              color: raftPanelInk(t, .5, t.colors['foreground-hint']!),
+            ),
           ),
         ),
       ],
@@ -867,7 +903,11 @@ class RaftConnectionValue extends StatelessWidget {
       children: [
         RaftActivityDot(color: online ? t.product.brutalLime : raftGray400),
         const SizedBox(width: 6),
-        RaftCssText(raftText(context, online ? 'Connected' : 'Offline')),
+        // v1.21.12 `<span className="flex items-center gap-1.5 font-mono">`.
+        RaftCssText(
+          raftText(context, online ? 'Connected' : 'Offline'),
+          style: RaftPanelText.profileMono(t),
+        ),
       ],
     );
   }
@@ -934,11 +974,13 @@ class RaftKeyValueRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        RaftCssText(label, style: RaftPanelText.label(t)),
+        RaftCssText(label, style: RaftPanelText.profileLabel(t)),
         const SizedBox(height: 4),
         RaftCssText(
           breakAll ? value.characters.join('​') : value,
-          style: mono ? RaftPanelText.mono(t) : RaftPanelText.value(t),
+          style: mono
+              ? RaftPanelText.profileMono(t)
+              : RaftPanelText.profileValue(t),
         ),
       ],
     );
@@ -2566,13 +2608,13 @@ class RaftDescriptionBlock extends StatelessWidget {
         text.isEmpty
             ? RaftCssText(
                 raftText(context, 'No description'),
-                style: RaftPanelText.placeholder(t),
+                style: RaftPanelText.profilePlaceholder(t),
               )
             : selectable
             ? RaftSelectionArea(
-                child: RaftCssText(text, style: RaftPanelText.value(t)),
+                child: RaftCssText(text, style: RaftPanelText.profileValue(t)),
               )
-            : RaftCssText(text, style: RaftPanelText.value(t)),
+            : RaftCssText(text, style: RaftPanelText.profileValue(t)),
       ],
     );
   }
@@ -2611,7 +2653,7 @@ class RaftRoleField extends StatelessWidget {
       children: [
         Row(
           children: [
-            RaftCssText(label, style: RaftPanelText.label(t)),
+            RaftCssText(label, style: RaftPanelText.profileLabel(t)),
             const SizedBox(width: 8),
             RaftInlineIconButton(
               key: helpKey,

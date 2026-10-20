@@ -41,10 +41,35 @@ RaftRecipeTheme raftRecipeTheme(RaftTokens t) =>
 Color raftPanelInk(RaftTokens t, double brutalAlpha, Color elegant) =>
     t.brutal ? Colors.black.withValues(alpha: brutalAlpha) : elegant;
 
-/// AgentDetailPanel.tsx InfoRow: `grid grid-cols-[6.5rem_minmax(0,1fr)]
-/// items-start gap-x-4`; the term is `flex min-h-5 items-center gap-1.5
-/// text-xs text-foreground-muted theme-brutal:text-black/50`, the value
-/// `text-sm text-foreground-strong theme-brutal:text-black`.
+/// raft-ui `PanelTitle` as the profile detail block uses it (Web v1.21.12
+/// `<PanelTitle className="min-w-0 text-foreground-muted
+/// theme-brutal:text-black theme-brutal:text-lg">`): the panel-header recipe's
+/// `title` slot (elegant 17 / semibold / heading family, brutal 16 bold) with
+/// the muted ink; brutal is black at `text-lg` (18, the recipe's
+/// `leading-tight` ratio keeps the 22.5px line box).
+TextStyle raftPanelTitleStyle(RaftTokens t) {
+  final rt = RaftRecipeTokens(t);
+  final slot = RaftPanelHeaderRecipe.resolve(
+    theme: raftRecipeTheme(t),
+    states: RaftRecipeStates({if (t.dark) RaftRecipeStates.dark}, 390),
+    tokens: rt,
+  ).title;
+  final base = RaftTypography.body(t, size: 16, line: 20);
+  final style = raftCssText.merge(
+    base
+        .merge(slot.textStyle(rt))
+        .copyWith(fontFamily: slot.fontFamily == null ? t.bodyFont : null),
+  );
+  return t.brutal
+      ? style.copyWith(fontSize: 18, color: Colors.black)
+      : style.copyWith(color: t.colors['foreground-muted']);
+}
+
+/// AgentDetailPanel.tsx InfoRow (Web v1.21.12): `grid
+/// grid-cols-[7.75rem_minmax(0,1fr)] items-start gap-x-4`; the term is `flex
+/// min-h-5 items-center gap-1.5 text-[13px] text-foreground-hint
+/// theme-brutal:text-black/50`, the value `text-sm text-foreground-muted
+/// theme-brutal:text-black`.
 class RaftInfoRow extends StatelessWidget {
   const RaftInfoRow({
     super.key,
@@ -57,12 +82,22 @@ class RaftInfoRow extends StatelessWidget {
   final List<Widget> actions;
 
   static TextStyle valueStyle(RaftTokens t) => raftCssText.merge(
-    RaftTypography.heading(
+    RaftTypography.body(
       t,
       size: 14,
       line: 20,
-      weight: FontWeight.w400,
-    ).copyWith(color: t.brutal ? Colors.black : t.strong),
+    ).copyWith(color: t.brutal ? Colors.black : t.colors['foreground-muted']),
+  );
+
+  /// The term: `text-[13px] text-foreground-hint theme-brutal:text-black/50`.
+  /// `text-[13px]` sets no line height, so the body's 1.5 ratio is inherited.
+  static TextStyle labelStyle(RaftTokens t) => raftCssText.merge(
+    RaftTypography.body(
+      t,
+      size: 13,
+      line: 19.5,
+      color: raftPanelInk(t, .5, t.colors['foreground-hint']!),
+    ),
   );
 
   @override
@@ -72,7 +107,7 @@ class RaftInfoRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 104,
+          width: 124,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 20),
             child: Row(
@@ -82,19 +117,7 @@ class RaftInfoRow extends StatelessWidget {
                     label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: raftCssText.merge(
-                      RaftTypography.heading(
-                        t,
-                        size: 12,
-                        line: 16,
-                        weight: FontWeight.w400,
-                        color: raftPanelInk(
-                          t,
-                          .5,
-                          t.colors['foreground-muted']!,
-                        ),
-                      ),
-                    ),
+                    style: labelStyle(t),
                   ),
                 ),
                 for (final a in actions) ...[const SizedBox(width: 6), a],
@@ -343,9 +366,15 @@ class RaftPanelHeaderBar extends StatelessWidget {
     this.leftPadding,
     this.bottomRule = false,
     this.titleSuffix,
+    this.profileHandle = false,
   });
   final String title;
   final String? subtitle;
+
+  /// Web `subtitleClassName={PROFILE_HANDLE_SIZE_CLASS}` (agent / human
+  /// profile headers): the `@handle` subtitle reads at 15px mono in elegant;
+  /// brutal keeps its own (already mono) meta.
+  final bool profileHandle;
 
   /// AppPanelHeader `titleSuffix`: a node inline after the title (outside the
   /// truncating title), e.g. `Badge.Experimental`.
@@ -502,7 +531,11 @@ class RaftPanelHeaderBar extends StatelessWidget {
                           overflow: lines == null
                               ? TextOverflow.clip
                               : TextOverflow.ellipsis,
-                          style: text(s.meta),
+                          style: profileHandle && !t.brutal
+                              ? text(
+                                  s.meta,
+                                ).copyWith(fontFamily: t.monoFont, fontSize: 15)
+                              : text(s.meta),
                         ),
                 ),
           ),
