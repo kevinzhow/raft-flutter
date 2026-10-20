@@ -31,7 +31,7 @@ class RaftCollapsible extends StatefulWidget {
   final bool initiallyExpanded;
 
   /// A manual toggle or a focus reveal. The initial value does not call this.
-  final ValueChanged<bool>? onExpandedChanged;
+  final void Function(bool expanded, BuildContext context)? onExpandedChanged;
   @override
   State<RaftCollapsible> createState() => _RaftCollapsibleState();
 }
@@ -97,7 +97,7 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
   void hold(bool value) {
     if (expanded == value) return;
     setState(() => expanded = value);
-    widget.onExpandedChanged?.call(expanded);
+    widget.onExpandedChanged?.call(expanded, context);
   }
 
   void toggle() => hold(!expanded);
@@ -114,7 +114,11 @@ class _RaftCollapsibleState extends State<RaftCollapsible> {
       toggleLabel = label;
       toggleWidget = Padding(
         padding: const EdgeInsets.only(top: MessageContentPrimitive.toggleGap),
-        child: RaftShowMoreToggle(label: label, onPressed: toggle),
+        child: RaftShowMoreToggle(
+          label: label,
+          onPressed: toggle,
+          expanded: expanded,
+        ),
       );
     }
     final fade = MessageContentSemantic(RaftTokens.of(context)).collapseFade;
@@ -683,8 +687,13 @@ class RaftShowMoreToggle extends StatefulWidget {
     this.style,
     this.underline = true,
     this.visualHeight = 16,
+    this.expanded,
   });
   final String label;
+
+  /// Web `aria-expanded`: whether the content the toggle controls is open.
+  /// Null for a toggle that does not control a disclosure.
+  final bool? expanded;
   final VoidCallback onPressed;
   final Widget? icon;
   final TextStyle? style;
@@ -709,32 +718,35 @@ class _RaftShowMoreToggleState extends State<RaftShowMoreToggle> {
     return RaftHoverRegion(
       onEnter: (_) => setState(() => hovered = true),
       onExit: (_) => setState(() => hovered = false),
-      child: RaftControl(
-        kind: RaftControlKind.textLink,
-        shadow: true,
-        visualHeight: widget.visualHeight,
-        // Web ShowMoreToggle is the bare 11px text on touch too: no
-        // touch-target expansion that would push the content below it.
-        minimumTargetSize: widget.visualHeight,
-        padding: EdgeInsets.zero,
-        semanticLabel: widget.label,
-        onPressed: widget.onPressed,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.icon != null) ...[
-              widget.icon!,
-              const SizedBox(width: 4),
-            ],
-            // The control's semantic label already announces it once.
-            ExcludeSemantics(
-              child: RaftUnderlinedText(
-                widget.label,
-                underline: widget.underline,
-                style: style.copyWith(color: color),
+      child: Semantics(
+        expanded: widget.expanded,
+        child: RaftControl(
+          kind: RaftControlKind.textLink,
+          shadow: true,
+          visualHeight: widget.visualHeight,
+          // Web ShowMoreToggle is the bare 11px text on touch too: no
+          // touch-target expansion that would push the content below it.
+          minimumTargetSize: widget.visualHeight,
+          padding: EdgeInsets.zero,
+          semanticLabel: widget.label,
+          onPressed: widget.onPressed,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                widget.icon!,
+                const SizedBox(width: 4),
+              ],
+              // The control's semantic label already announces it once.
+              ExcludeSemantics(
+                child: RaftUnderlinedText(
+                  widget.label,
+                  underline: widget.underline,
+                  style: style.copyWith(color: color),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1541,7 +1541,7 @@ class RaftMessageTile extends StatelessWidget {
   final bool initiallyExpanded;
 
   /// The reader's expand or collapse. Null when the row does not track it.
-  final ValueChanged<bool>? onMessageExpanded;
+  final void Function(bool expanded, BuildContext row)? onMessageExpanded;
   final double bodyFontSize;
 
   /// Business adapters may supply a richer body without replacing message

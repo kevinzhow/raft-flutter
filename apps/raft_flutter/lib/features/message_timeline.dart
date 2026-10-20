@@ -219,14 +219,21 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
   void userMovedNewer() {
     final position = singlePosition, load = widget.onLoadNewer;
     if (position == null) return;
-    final near = position.extentAfter <= math.max(200.0,
-      position.viewportDimension * RaftMessageTimeline.prefetchViewports);
+    final near =
+        position.extentAfter <=
+        math.max(
+          200.0,
+          position.viewportDimension * RaftMessageTimeline.prefetchViewports,
+        );
     if (!near) {
       newerSpent = false;
       return;
     }
-    if (newerSpent || load == null || !widget.hasNewer ||
-        widget.loadingOlder || widget.controller.pending != null) {
+    if (newerSpent ||
+        load == null ||
+        !widget.hasNewer ||
+        widget.loadingOlder ||
+        widget.controller.pending != null) {
       return;
     }
     newerSpent = true;
@@ -478,26 +485,24 @@ class _RaftMessageTimelineState extends State<RaftMessageTimeline>
       _ => false,
     };
     Widget list = Actions(
-      actions: <Type, Action<Intent>>{
-        ScrollIntent: _keyboardOlderScroll,
-      },
+      actions: <Type, Action<Intent>>{ScrollIntent: _keyboardOlderScroll},
       child: NotificationListener<Notification>(
         onNotification: onNotification,
         child: _TimelineScrollView(
-            controller: widget.controller,
-            // The timeline's own scrollbar replaces the platform default.
-            scrollBehavior: scrollbar
-                ? behavior.copyWith(scrollbars: false)
-                : null,
-            center: forwardKey,
-            anchor: widget.controller.anchor,
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            semanticChildCount: messages.length,
-            scrollCacheExtent: ScrollCacheExtent.pixels(
-              widget.cacheExtent ?? nearbyCache,
-            ),
-            slivers: slivers,
+          controller: widget.controller,
+          // The timeline's own scrollbar replaces the platform default.
+          scrollBehavior: scrollbar
+              ? behavior.copyWith(scrollbars: false)
+              : null,
+          center: forwardKey,
+          anchor: widget.controller.anchor,
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          semanticChildCount: messages.length,
+          scrollCacheExtent: ScrollCacheExtent.pixels(
+            widget.cacheExtent ?? nearbyCache,
           ),
+          slivers: slivers,
+        ),
       ),
     );
     if (scrollbar) {
@@ -618,6 +623,63 @@ class RaftTimelineScrollController extends ScrollController {
       p.followEnd = p.followStart = false;
       p.restart();
     }
+  }
+
+  /// A message's Show more / Collapse: an expansion keeps the row where the
+  /// reader sees it, a collapse reveals a row that ended outside the viewport.
+  void messageExpansionChanged(bool open, BuildContext row) =>
+      open ? holdViewport(row) : keepVisible(row);
+
+  /// Web `preserveTimelineViewport`: expanding a message is a reading action,
+  /// even at the live tail. [row] (inside the message) keeps its place on the
+  /// screen and the message grows downward from it, instead of the latest end
+  /// being followed (which would push the message's top out of view).
+  void holdViewport(BuildContext row) {
+    for (final p in positions) {
+      (p as RaftTimelinePosition).followEnd = false;
+    }
+    final box = row.findRenderObject();
+    final view = box is RenderBox && box.attached
+        ? RenderAbstractViewport.maybeOf(box)
+        : null;
+    if (view is! RenderObject) return;
+    final leading = MatrixUtils.transformPoint(
+      (box as RenderBox).getTransformTo(view),
+      Offset.zero,
+    ).dy;
+    _pending = RaftTimelineAlignment.row(
+      find: () {
+        final now = row.mounted ? row.findRenderObject() : null;
+        return now is RenderBox ? now : null;
+      },
+      leading: leading,
+    );
+  }
+
+  /// Web `keepTimelineMessageVisible`: after [row] collapsed, a row that
+  /// ended wholly outside the viewport is revealed at its nearest edge. A row
+  /// that is still partly visible leaves the list untouched.
+  void keepVisible(BuildContext row) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = row.mounted ? row.findRenderObject() : null;
+      if (box is! RenderBox || !box.attached || positions.length != 1) return;
+      final viewport = RenderAbstractViewport.maybeOf(box);
+      final p = position;
+      if (viewport == null || !p.hasPixels || !p.hasViewportDimension) return;
+      final top = viewport.getOffsetToReveal(box, 0).offset;
+      final height = box.size.height;
+      double? target;
+      if (p.pixels - top >= height) {
+        target = top;
+      } else if (top - p.pixels >= p.viewportDimension) {
+        target = viewport.getOffsetToReveal(box, 1).offset;
+      }
+      if (target == null || (target - p.pixels).abs() <= .5) return;
+      for (final position in positions) {
+        (position as RaftTimelinePosition).followEnd = false;
+      }
+      p.jumpTo(target);
+    });
   }
 
   /// Keeps the latest end pinned from the next layout on.

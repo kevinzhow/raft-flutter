@@ -200,6 +200,25 @@ keeps Web's 1 s activity gate. Everything else matches Web: opening clears the
 local unread, scrolling back to the bottom and returning to the foreground send
 the read receipt.
 
+## Unread agent messages start open: intended difference from Web (owner decision 2026-10-17)
+
+Web collapses any message taller than 320px behind "Show more", whoever sent it,
+and remembers what the reader expanded for the life of the app. Owner decision
+2026-10-17 (Kevin, task #151, commit dac14dae): an **unread agent message starts
+open** and a read one starts collapsed, the same on phone and desktop. The rule
+uses the read cursor the unread count uses (`maxReadSeq`, a missing fact counts
+as unread); a message that becomes read while it is on screen does not fold
+again; the reader's toggle wins for the rest of the visit; the next visit
+follows the cursor again (`agent_message_collapse.dart`). A thread's parent row
+keeps the ordinary collapse. Because the choice is per visit, Web's
+app-lifetime expansion memory is **not** ported: a message the reader expanded
+starts collapsed again on the next visit if it is read. Everything else follows
+Web: forwarded bundles and action cards never collapse, the toggle announces
+`aria-expanded`, an expansion grows downward from where the reader sees it
+(`preserveTimelineViewport`), and a collapse reveals a row that ended outside
+the viewport (`keepTimelineMessageVisible`). The `md-wrap-slice1` / `clarify`
+renders show an agent message that Web folds because the fixtures are unread.
+
 ## Phone task detail covers the bottom navigation: intended difference from Web (owner decision 2026-10-12)
 
 Owner decision 2026-10-12: on a phone the task detail is a full page that covers

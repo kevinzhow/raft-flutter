@@ -131,7 +131,7 @@ void main() {
     expect(open(session, 'reply', seq: 8, maxRead: 8), isFalse);
   });
 
-  test('long messages collapse unless the channel turns that off or the row is an action card', () {
+  test('long messages collapse unless the channel turns that off or the row is an action card or a forwarded bundle', () {
     const agent = {'senderType': 'agent', 'content': 'hello'};
     expect(longMessagesCollapse(agent, null), isTrue);
     expect(longMessagesCollapse(agent, const {}), isTrue);
@@ -145,11 +145,13 @@ void main() {
       }, null),
       isFalse,
     );
+    // Web `disabled={isActionCardMessage || forwardedBundle || ...}`: a
+    // forwarded bundle has its own "View all" and never collapses.
     expect(
       longMessagesCollapse(const {
         'actionMetadata': {'kind': 'forwarded-bundle'},
       }, null),
-      isTrue,
+      isFalse,
     );
   });
 

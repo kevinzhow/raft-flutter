@@ -737,7 +737,7 @@
      "needle": "void consumeMessageDisplayPrefs(dynamic payload)"
     }
    ],
-   "justification": "",
+   "justification": "Owner decision (Kevin, task #151, 2026-10-17): an unread agent message starts open and a read one starts collapsed, the same on phone and desktop (the read cursor, the same maxReadSeq as the unread count); the reader's toggle wins for the rest of the visit. Web collapses every message over 320px whoever sent it and remembers expansion for the life of the app. Forwarded bundles and action cards never collapse, as on Web.",
    "impact": "",
    "size": ""
   },

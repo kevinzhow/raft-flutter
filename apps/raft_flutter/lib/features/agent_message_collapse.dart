@@ -152,13 +152,16 @@ class AgentMessageCollapseSession {
 }
 
 /// Channel "Collapse long messages", on unless the channel turns it off.
-/// Action cards stay out of the collapse, as they do today.
+/// Action cards and forwarded bundles stay out of the collapse (Web
+/// `disabled={isActionCardMessage || forwardedBundle || !collapseLongMessages}`).
 bool longMessagesCollapse(
   Map<String, dynamic> message,
   Map<String, dynamic>? channel,
 ) {
   final metadata = message['actionMetadata'];
-  return (metadata is! Map || metadata['kind'] != 'action-card') &&
+  return (metadata is! Map ||
+          (metadata['kind'] != 'action-card' &&
+              metadata['kind'] != 'forwarded-bundle')) &&
       channel?['collapseLongMessages'] != false;
 }
 

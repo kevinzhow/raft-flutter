@@ -6,7 +6,7 @@ void main() {
   Widget frame({
     required bool initiallyExpanded,
     required double height,
-    ValueChanged<bool>? onExpandedChanged,
+    void Function(bool, BuildContext)? onExpandedChanged,
     Key? key,
     Widget? child,
   }) => MaterialApp(
@@ -88,7 +88,7 @@ void main() {
           key: key,
           initiallyExpanded: true,
           height: 700,
-          onExpandedChanged: seen.add,
+          onExpandedChanged: (open, _) => seen.add(open),
         ),
       );
       await tester.pumpAndSettle();
@@ -105,7 +105,7 @@ void main() {
           key: key,
           initiallyExpanded: true,
           height: 700,
-          onExpandedChanged: seen.add,
+          onExpandedChanged: (open, _) => seen.add(open),
         ),
       );
       await tester.pumpAndSettle();

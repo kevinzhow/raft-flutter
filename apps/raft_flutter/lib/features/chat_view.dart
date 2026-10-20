@@ -2782,7 +2782,10 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           _messages.state.highlightedMessageId == m.id || searchActive == m.id,
       collapseLongMessages: choice.collapse,
       initiallyExpanded: choice.open,
-      onMessageExpanded: (open) => session.choose(m.id, open),
+      onMessageExpanded: (open, row) {
+        session.choose(m.id, open);
+        viewport.messageExpansionChanged(open, row);
+      },
       timestamp: times.messageTime(m.createdAt),
       continuationTimestamp: continuation ? times.clock(m.createdAt) : null,
       timestampTooltip: continuation ? times.mediumDateTime(m.createdAt) : null,
