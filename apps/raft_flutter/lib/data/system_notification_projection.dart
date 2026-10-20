@@ -16,11 +16,21 @@ class SystemNotice {
     this.targetId,
     this.fingerprint,
     this.parameters = const {},
+    this.unread,
+    this.incidentId,
   });
   final String id, title, body;
   final SystemNoticeKind kind;
   final SystemNoticeDestination destination;
   final String? targetId, fingerprint;
+
+  /// Server-backed unread state. Null keeps the legacy behavior of counting as
+  /// unread while visible (Web `NotificationEntry.unread`).
+  final bool? unread;
+
+  /// Set for server-backed attention: seen and dismiss are receiver-scoped
+  /// receipts on the server, not local fingerprints.
+  final String? incidentId;
   final Map<String, Object?> parameters;
 }
 

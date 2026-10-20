@@ -5,11 +5,18 @@ import 'package:flutter/foundation.dart';
 
 import 'search_memory.dart';
 import 'system_notification_projection.dart';
+import 'usage_limit_attention.dart';
 
 typedef SystemNotificationGet = Future<dynamic> Function(
   String path, {
   Map<String, dynamic>? query,
 });
+
+/// A receiver-scoped write (`POST`) with no body.
+typedef SystemNotificationPost = Future<dynamic> Function(String path);
+
+/// Whether `usage_limit_attention_v0` is on for the current server.
+typedef UsageLimitGate = Future<bool> Function();
 
 class SystemNotificationContext {
   const SystemNotificationContext({
@@ -52,6 +59,8 @@ class SystemNotificationStore extends ChangeNotifier {
     SearchMemoryStorage? storage,
     DateTime Function()? clock,
     this.entities,
+    this.post,
+    this.usageLimitGate,
   }) : storage = storage ?? PreferencesSearchMemoryStorage(),
        clock = clock ?? DateTime.now;
   final SystemNotificationGet get;
@@ -61,7 +70,16 @@ class SystemNotificationStore extends ChangeNotifier {
   /// When set, machines/agents come from the shared directory (which owns
   /// their revalidation) and [refresh] reads only the feedback count.
   final SystemNotificationEntities Function()? entities;
+
+  /// Usage-limit attention (`system-notifications-v2`) needs both: without
+  /// them the feed stays off, as when the flag is off.
+  final SystemNotificationPost? post;
+  final UsageLimitGate? usageLimitGate;
   SystemNotificationContext? context;
+  UsageLimitSnapshot? _usage;
+  bool? _usageGate;
+  int _usageRevision = 0;
+  UsageLimitSnapshot? get usageLimits => _usage;
   final dismissed = <String>{};
   List<Map<String, dynamic>> _machines = [], _agents = [];
   List<Map<String, dynamic>> get machines =>
@@ -93,6 +111,8 @@ class SystemNotificationStore extends ChangeNotifier {
               a.destination == b.destination &&
               a.targetId == b.targetId &&
               a.fingerprint == b.fingerprint &&
+              a.unread == b.unread &&
+              a.incidentId == b.incidentId &&
               mapEquals(a.parameters, b.parameters);
         })) {
       return;
@@ -108,22 +128,29 @@ class SystemNotificationStore extends ChangeNotifier {
     final c = context;
     if (c == null) return const [];
     final shared = entities?.call();
-    return projectSystemNotifications(
-          server: c.server,
-          channels: c.channels,
-          machines: shared?.machines ?? _machines,
-          agents: shared?.agents ?? _agents,
-          machinesReady: shared?.ready ?? _machineReady,
-          canViewMachines: c.canViewMachines,
-          mobile: c.mobile,
-          feedbackUnread: feedbackUnread,
-          now: clock(),
-        )
+    return [
+          if (c.server != null) ...usageLimitNotices(_usage),
+          ...projectSystemNotifications(
+            server: c.server,
+            channels: c.channels,
+            machines: shared?.machines ?? _machines,
+            agents: shared?.agents ?? _agents,
+            machinesReady: shared?.ready ?? _machineReady,
+            canViewMachines: c.canViewMachines,
+            mobile: c.mobile,
+            feedbackUnread: feedbackUnread,
+            now: clock(),
+          ),
+        ]
         .where(
           (n) => n.fingerprint == null || !dismissed.contains(n.fingerprint),
         )
         .toList(growable: false);
   }
+
+  /// Entries that count toward the bell dot: [SystemNotice.unread] false marks
+  /// a seen server-backed entry, every other entry counts while visible.
+  int get unreadCount => entries.where((n) => n.unread != false).length;
 
   Future<void> bind(SystemNotificationContext next) async {
     if (closed) return;
@@ -139,6 +166,9 @@ class SystemNotificationStore extends ChangeNotifier {
     _machines = [];
     _agents = [];
     _machineReady = false;
+    _usage = null;
+    _usageGate = null;
+    ++_usageRevision;
     feedbackUnread = 0;
     failed = false;
     loading = false;
@@ -147,6 +177,7 @@ class SystemNotificationStore extends ChangeNotifier {
     final key = next.storageKey;
     if (key == null) return;
     unawaited(refresh());
+    unawaited(refreshUsageLimit());
     try {
       final raw = await storage.read(key);
       if (closed ||
@@ -271,6 +302,80 @@ class SystemNotificationStore extends ChangeNotifier {
     _publish();
   }
 
+  bool _acceptsUsage(String scope, int ticket) =>
+      !closed && context?.scope == scope && ticket == _usageRevision;
+
+  void _setUsage(UsageLimitSnapshot? next) {
+    _usage = next;
+    _publish();
+  }
+
+  /// Reads the replace-snapshot of usage-limit attention. Like Web
+  /// `useUsageLimitAttention`: a flag that is off or unresolved, or a failed
+  /// read, clears the feed (a stale card never outlives the authority), and a
+  /// snapshot with another contract version is ignored.
+  Future<void> refreshUsageLimit() async {
+    final c = context, gate = usageLimitGate;
+    if (closed || c?.server == null || gate == null || post == null) return;
+    final scope = c!.scope, ticket = ++_usageRevision;
+    final serverId = c.server!['id'];
+    try {
+      _usageGate ??= await gate();
+      if (!_acceptsUsage(scope, ticket)) return;
+      if (_usageGate != true) {
+        _setUsage(null);
+        return;
+      }
+      final raw = await get('/servers/$serverId/system-notifications-v2');
+      if (!_acceptsUsage(scope, ticket)) return;
+      final next = parseUsageLimitSnapshot(raw);
+      if (next != null) _setUsage(next);
+    } catch (_) {
+      if (_acceptsUsage(scope, ticket)) _setUsage(null);
+    }
+  }
+
+  Future<bool> _receipt(String scope, String incidentId, String action) async {
+    final c = context, send = post;
+    if (closed || send == null || c?.scope != scope || c?.server == null) {
+      return false;
+    }
+    if (!(_usage?.incidents.any((i) => i.id == incidentId) ?? false)) {
+      return false;
+    }
+    try {
+      await send(
+        '/servers/${c!.server!['id']}/system-notifications-v2/$incidentId/$action',
+      );
+    } catch (_) {
+      return false;
+    }
+    if (closed || context?.scope != scope) return false;
+    // A read that started before this receipt would restore the old state.
+    ++_usageRevision;
+    return true;
+  }
+
+  /// Marks one incident seen on the server, then locally. A failed write
+  /// leaves it unread so the next opening retries.
+  Future<void> markUsageLimitSeen(String scope, String incidentId) async {
+    if (!await _receipt(scope, incidentId, 'seen')) return;
+    final now = clock().toUtc().toIso8601String();
+    _setUsage(_usage?.markSeen(incidentId, now));
+  }
+
+  /// Marks every unread server-backed entry seen: the notification center
+  /// opened (Web `NotificationTrigger.handleOpenChange` -> `onSeen`).
+  Future<void> markUsageLimitsSeen(String scope) => Future.wait([
+    for (final i in _usage?.incidents ?? const <UsageLimitIncident>[])
+      if (!i.seen) markUsageLimitSeen(scope, i.id),
+  ]);
+
+  Future<void> dismissUsageLimit(String scope, String incidentId) async {
+    if (!await _receipt(scope, incidentId, 'dismiss')) return;
+    _setUsage(_usage?.without(incidentId));
+  }
+
   static List<Map>? _rows(dynamic value) =>
       value is List && value.every((row) => row is Map)
       ? value.cast<Map>()
@@ -325,6 +430,7 @@ class SystemNotificationStore extends ChangeNotifier {
   void dispose() {
     closed = true;
     ++revision;
+    ++_usageRevision;
     ++dismissRevision;
     super.dispose();
   }

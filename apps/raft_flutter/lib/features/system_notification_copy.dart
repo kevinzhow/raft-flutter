@@ -29,6 +29,36 @@ SystemNotificationCopy systemNotificationCopy(
       raftFormat(context, key, values);
   Object count(Object? value) =>
       zh ? value ?? 0 : NumberFormat.decimalPattern(locale).format(value ?? 0);
+  if (notice.incidentId != null) {
+    // Fixed templates are localized first; the Computer name, count and reset
+    // time are inserted afterwards and never enter a lookup.
+    final number = p['count'] as int? ?? 0;
+    final reset = DateTime.tryParse('${p['reset'] ?? ''}')?.toLocal();
+    if (reset != null && !_dateSymbolsReady) {
+      unawaited(initializeDateFormatting());
+      _dateSymbolsReady = true;
+    }
+    final values = {
+      'computer': p['computer'],
+      'count': count(number),
+      if (reset != null)
+        'reset':
+            '${DateFormat.yMMMd(locale).format(reset)} ${DateFormat.jm(locale).format(reset)}',
+    };
+    return SystemNotificationCopy(
+      format('{provider} usage limit reached', {'provider': p['provider']}),
+      format(
+        reset == null
+            ? (number == 1
+                  ? '{count} agent on {computer} may pause until usage is available again.'
+                  : '{count} agents on {computer} may pause until usage is available again.')
+            : (number == 1
+                  ? '{count} agent on {computer} may pause. Usage is expected to reset {reset}.'
+                  : '{count} agents on {computer} may pause. Usage is expected to reset {reset}.'),
+        values,
+      ),
+    );
+  }
   switch (notice.id) {
     case 'plan-downgrade':
       if (p['expired'] == true) {

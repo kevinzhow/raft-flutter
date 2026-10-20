@@ -127,6 +127,14 @@ const Map<String, String> zhCatalogUpstream12112 = <String, String>{
   // layout.*
   "Delete this server": "删除这个服务器",
   "{provider} usage limit reached": "{provider} 已达到用量限制",
+  "{count} agent on {computer} may pause until usage is available again.":
+      "{computer} 上的 {count} 个 Agent 可能会暂停，直到用量恢复。",
+  "{count} agents on {computer} may pause until usage is available again.":
+      "{computer} 上的 {count} 个 Agent 可能会暂停，直到用量恢复。",
+  "{count} agent on {computer} may pause. Usage is expected to reset {reset}.":
+      "{computer} 上的 {count} 个 Agent 可能会暂停。预计 {reset} 重置用量。",
+  "{count} agents on {computer} may pause. Usage is expected to reset {reset}.":
+      "{computer} 上的 {count} 个 Agent 可能会暂停。预计 {reset} 重置用量。",
   // machine.*
   "Uses the {runtime} account signed in on this computer.": "使用这台 Computer 上登录的 {runtime} 账号。",
   "Didn't finish": "未完成",

@@ -12,6 +12,8 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/freshness.dart';
 import '../data/system_notification_projection.dart';
 import '../data/system_notification_store.dart';
+import '../data/usage_limit_attention.dart';
+import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'fleet_views.dart';
@@ -88,7 +90,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
   void attach() {
     store =
         widget.store ??
-        SystemNotificationStore(get: w.query, entities: directoryEntities);
+        SystemNotificationStore(
+          get: w.query,
+          entities: directoryEntities,
+          post: (path) => w.command('POST', path),
+          usageLimitGate: usageLimitEnabled,
+        );
     unawaited(bind());
     store.addListener(updated);
     w.addListener(changed);
@@ -115,11 +122,32 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       }
     });
     // Stops while hidden/paused; resume refreshes (didChangeAppLifecycleState).
-    poll = RaftForegroundPeriodic(
-      const Duration(seconds: 60),
-      () => unawaited(store.refresh()),
-    );
+    poll = RaftForegroundPeriodic(const Duration(seconds: 60), () {
+      unawaited(store.refresh());
+      unawaited(store.refreshUsageLimit());
+    });
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  /// `usage_limit_attention_v0` for the current server. An unresolved
+  /// evaluation throws, which leaves the feed off and is retried on the next
+  /// read (Web `useServerFeatureFlag` fails closed).
+  Future<bool> usageLimitEnabled() async {
+    final result = await w.client.post(
+      '/feature-flags/evaluate',
+      data: featureFlagEvaluateBody(
+        keys: [usageLimitAttentionFlag],
+        serverId: w.server?.id,
+      ),
+    );
+    final evaluations = result is Map ? result['evaluations'] : null;
+    return evaluations is List &&
+        evaluations.any(
+          (f) =>
+              f is Map &&
+              f['key'] == usageLimitAttentionFlag &&
+              f['enabled'] == true,
+        );
   }
 
   Future<void> bind() => store.bind(
@@ -189,6 +217,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       close(remove: true);
       unawaited(bind());
       unawaited(store.refresh());
+      unawaited(store.refreshUsageLimit());
     }
   }
 
@@ -216,7 +245,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     if (state == AppLifecycleState.resumed) {
       changed();
       // Alt-tab many times a minute reads the machines and agents once.
-      if (resumeRefresh.due()) unawaited(store.refresh());
+      if (resumeRefresh.due()) {
+        unawaited(store.refresh());
+        unawaited(store.refreshUsageLimit());
+      }
     }
   }
 
@@ -345,6 +377,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       ),
     );
     popup = entry;
+    // Opening the center is what marks server-backed entries seen.
+    unawaited(store.markUsageLimitsSeen(captured));
     HardwareKeyboard.instance.addHandler(popupKey);
     popupKeyboard = keyboard;
     previousFocus = keyboard ? FocusManager.instance.primaryFocus : null;
@@ -401,6 +435,15 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
             onPressed: () {
               if (live(n, scope)) store.dismiss(scope, n.fingerprint!);
             },
+          )
+        else if (n.incidentId != null)
+          RaftNotificationAction(
+            label: raftText(context, 'Dismiss'),
+            onPressed: () {
+              if (live(n, scope)) {
+                unawaited(store.dismissUsageLimit(scope, n.incidentId!));
+              }
+            },
           ),
       ],
     );
@@ -429,7 +472,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
       for (final machine in store.machines) {
         if (machine['id'] == n.targetId) row = machine;
       }
-      if (row == null) return;
+      // Server-backed entries name a Computer the directory may not hold yet
+      // (or no longer): they open the list instead of doing nothing.
+      if (row == null && n.incidentId == null) return;
     }
     close();
     if (!current(captured)) return;
@@ -455,7 +500,11 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               )
             : row != null
             ? FleetDetail(controller: w, computers: true, initial: row)
-            : FleetView(controller: w, computers: true, attentionOnly: true),
+            : FleetView(
+                controller: w,
+                computers: true,
+                attentionOnly: n.incidentId == null,
+              ),
       ),
     );
     void revoked() {
@@ -526,12 +575,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
               children: [
                 RaftMobileNotificationButton(
                   open: popup != null,
-                  semanticLabel: store.entries.isEmpty
+                  semanticLabel: store.unreadCount == 0
                       ? raftText(context, 'Notification center')
                       : raftFormat(
                           context,
                           'Notification center ({count} active)',
-                          {'count': store.entries.length},
+                          {'count': store.unreadCount},
                         ),
                   visualSize: widget.mobile ? 32 : 40,
                   glyphSize: widget.mobile ? 16 : 18,
@@ -546,13 +595,13 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                         )
                       : close(),
                 ),
-                if (store.entries.isNotEmpty)
+                if (store.unreadCount > 0)
                   Positioned(
                     right: attentionInset(context),
                     top: attentionInset(context),
                     child: IgnorePointer(
                       child: RaftNotificationAttention(
-                        count: store.entries.length,
+                        count: store.unreadCount,
                       ),
                     ),
                   ),
