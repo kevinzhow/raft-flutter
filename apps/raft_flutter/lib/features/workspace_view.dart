@@ -1076,7 +1076,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
       }
       return;
     }
-    if (w.messageDomain.state.threadParent != null &&
+    // A thread parent kept in the message domain without a thread in the
+    // location is a visible panel only on a wide window. On a phone the pages
+    // are the location: consuming Back here would leave the Navigator one
+    // page short of the location (a blank page) and Back would do nothing.
+    if (wide &&
+        w.messageDomain.state.threadParent != null &&
         w.location.thread == null &&
         w.section == 'chat') {
       w.closeThread();

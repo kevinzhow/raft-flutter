@@ -126,7 +126,7 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
   final pageStorage = PageStorageBucket();
   int nextInstance = 0;
   late List<_MobilePageEntry> entries = reconcile(const []);
-  bool rootChanged = false;
+  bool rootChanged = false, profileHandoff = false;
 
   /// Set while the first frames of a workspace that mounted behind another
   /// route settle (the window was narrowed behind the expanded composer
@@ -186,6 +186,14 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
         !entries.any(
           (entry) => next.any((item) => item.identity == entry.identity),
         );
+    // The profile panel is one element for the whole workspace (a shared
+    // GlobalKey, so it survives the 768 dp cut). Two pages that both show it
+    // must not be on stage together, so no page-to-page animation is run
+    // between them: the outgoing page leaves in the frame the new one arrives.
+    profileHandoff =
+        entries.last.identity != next.last.identity &&
+        entries.last.location.profile != null &&
+        next.last.location.profile != null;
     entries = next;
   }
 
@@ -215,7 +223,10 @@ class _MobileWorkspacePagesState extends State<MobileWorkspacePages> {
           // the focus from that route.
           requestFocus: parentCurrent,
           transitionDelegate: _MobileTransitionDelegate(
-            skip: rootChanged || MediaQuery.disableAnimationsOf(context),
+            skip:
+                rootChanged ||
+                profileHandoff ||
+                MediaQuery.disableAnimationsOf(context),
           ),
           pages: [
             for (final entry in entries)
