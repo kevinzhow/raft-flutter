@@ -186,6 +186,7 @@ export 'src/agent_create_form.dart';
 export 'src/agent_profile.dart';
 export 'src/dialog_card.dart';
 export 'src/dismiss_scope.dart';
+export 'src/link_scope.dart';
 export 'src/copyable_code.dart';
 export 'src/computer_surfaces.dart';
 export 'src/mobile_computer_list.dart';

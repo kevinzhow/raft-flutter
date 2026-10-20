@@ -148,6 +148,18 @@ were equal):
   (`overflow-wrap: anywhere`), and Chrome's default `text-spacing-trim`
   halves adjacent CJK punctuation (`），`). A word-joiner fix needs a
   copy-stripping selection delegate; not done in this pass.
+* **Ellipsis in a name box narrower than "C…" (2026-10-21).** In the
+  260px `md-wrap-clarify` / `md-wrap-slice1` renders the name box is 16.8px
+  wide. Blink paints `C..` (the heading font has no `…`, so Chromium falls
+  back to periods and keeps as many as fit); Flutter measures one `…` (10.4px
+  in Hanken Grotesk) after `C` (10.6px), finds 21px > 16.8px and paints
+  nothing. The box width matches (header at the same x, same cluster width);
+  only the truncation glyph handling differs, and `Text` takes no custom
+  ellipsis. Left as is.
+* **Elegant avatar badge inset (2026-10-21).** Measured against the React
+  v1.21.12 render (thread panel 30px, main row 32px, light and dark): the
+  status dot covers the same pixels (x 47..54, y 112..119 and 50..57, 76..83),
+  so the recipe value stays.
 * **Host fallback fonts:** Chromium draws `→`/`。` from Liberation/Noto
   Sans Mongolian on this host.
 

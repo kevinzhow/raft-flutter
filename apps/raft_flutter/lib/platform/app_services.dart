@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
+import 'package:raft_ui/raft_ui.dart' show RaftLinkScope;
 
 import '../data/local_error_diagnostics.dart';
+import '../features/custom_protocol_link.dart';
 
 import 'app_update.dart';
 import 'local_network_access.dart';
@@ -114,8 +116,12 @@ class _AppServicesHostState extends State<AppServicesHost>
   }
 
   @override
-  Widget build(BuildContext context) =>
-      AppServicesScope(services: widget.services, child: widget.child);
+  Widget build(BuildContext context) => AppServicesScope(
+    services: widget.services,
+    // Every markdown host without a link handler of its own opens links the
+    // way a message does (Web `MarkdownLink`).
+    child: RaftLinkScope(open: openMessageLink, child: widget.child),
+  );
 
   @override
   void dispose() {

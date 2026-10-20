@@ -15,6 +15,7 @@ import 'presentation.dart';
 import 'markdown_editing.dart';
 import 'markdown_autolink.dart';
 import 'message_semantics.dart';
+import 'message_body.dart' show raftBodyEndsInCode;
 import 'message_row_recipe.dart';
 import 'message_content_tokens.dart';
 import 'mounted_reaction_recipe.dart';
@@ -1624,6 +1625,7 @@ class RaftMessageTile extends StatelessWidget {
       continuation: continuation,
       followedBy: followedBy,
       followsSystem: followsSystem,
+      bodyEndsInCode: followedBy != null && raftBodyEndsInCode(content),
       sizeTier: RaftMessageSizeTier.of(bodyFontSize),
       coarsePointer: coarsePointer,
       popupOpen: popupOpen,

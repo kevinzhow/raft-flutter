@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_ui/src/message_body.dart' show raftBodyEndsInCode;
 import 'package:raft_ui/src/message_row_recipe.dart';
 import 'package:raft_ui/src/recipe_surface.dart';
 import 'package:raft_ui/src/recipes/message_item.g.dart';
@@ -472,4 +473,29 @@ void main() {
       expect(last - group, 12);
     },
   );
+
+  test('a followed body that ends in code keeps Web mb-px', () {
+    final t = raftTheme(RaftFamily.elegant).extension<RaftTokens>()!;
+    RaftMessageRowRecipe recipe(RaftMessageFollowedBy? by, bool code) =>
+        RaftMessageRowRecipe(
+          t,
+          viewportWidth: 1280,
+          followedBy: by,
+          bodyEndsInCode: code,
+        );
+    expect(recipe(RaftMessageFollowedBy.compact, true).bodyBottomGap, 1);
+    expect(recipe(RaftMessageFollowedBy.group, true).bodyBottomGap, 1);
+    expect(recipe(RaftMessageFollowedBy.compact, false).bodyBottomGap, 0);
+    // The list end keeps the ordinary body margin.
+    expect(recipe(null, true).bodyBottomGap, 6);
+  });
+
+  test('raftBodyEndsInCode follows the last block', () {
+    expect(raftBodyEndsInCode('Text\n\n```dart\nvar a;\n```\n'), isTrue);
+    expect(raftBodyEndsInCode('```\ncode\n```'), isTrue);
+    expect(raftBodyEndsInCode('```\ncode\n```\n\nafter'), isFalse);
+    expect(raftBodyEndsInCode('plain text'), isFalse);
+    expect(raftBodyEndsInCode('```mermaid\ngraph TD\n```'), isFalse);
+    expect(raftBodyEndsInCode(''), isFalse);
+  });
 }

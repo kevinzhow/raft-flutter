@@ -105,6 +105,7 @@ class RaftMessageRowRecipe {
     this.continuation = false,
     this.followedBy,
     this.followsSystem = false,
+    this.bodyEndsInCode = false,
     this.sizeTier = RaftMessageSizeTier.md,
     this.hovered = false,
     this.focused = false,
@@ -124,6 +125,10 @@ class RaftMessageRowRecipe {
   /// `data-followed-by` and `data-follows-system` on the row root.
   final RaftMessageFollowedBy? followedBy;
   final bool followsSystem;
+
+  /// The body's last block is a fenced code block (`:has(pre)`): it keeps
+  /// `mb-px` under a followed row.
+  final bool bodyEndsInCode;
   final RaftMessageSizeTier sizeTier;
   bool get mobile => viewportWidth < 768;
   bool get attention => hovered || popupOpen;
@@ -205,7 +210,12 @@ class RaftMessageRowRecipe {
       : mobile
       ? 4
       : 6;
-  double get bodyBottomGap => followedBy != null ? 0 : bodyGap;
+  double get bodyBottomGap => followedBy == null
+      ? bodyGap
+      // ignore: raft_lints/off_grid_spacing -- Web `mb-px`
+      : bodyEndsInCode
+      ? 1
+      : 0;
   double get attachmentGap => 4;
 
   /// Whether the content ends with Web's `mb-px` (see the row build).
@@ -433,6 +443,7 @@ class RaftMessageRow extends StatefulWidget {
     this.continuation = false,
     this.followedBy,
     this.followsSystem = false,
+    this.bodyEndsInCode = false,
     this.sizeTier = RaftMessageSizeTier.md,
     this.coarsePointer = false,
     this.popupOpen = false,
@@ -482,6 +493,9 @@ class RaftMessageRow extends StatefulWidget {
   /// note directly precedes.
   final RaftMessageFollowedBy? followedBy;
   final bool followsSystem;
+
+  /// The body ends in a fenced code block ([RaftMessageRowRecipe.bodyEndsInCode]).
+  final bool bodyEndsInCode;
 
   /// The reader's message-size tier (name, meta and avatar scale with it).
   final RaftMessageSizeTier sizeTier;
@@ -783,6 +797,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       continuation: widget.continuation,
       followedBy: widget.followedBy,
       followsSystem: widget.followsSystem,
+      bodyEndsInCode: widget.bodyEndsInCode,
       sizeTier: widget.sizeTier,
       hovered: !widget.coarsePointer && (hovered || toolbarHovered),
       focused: focused,

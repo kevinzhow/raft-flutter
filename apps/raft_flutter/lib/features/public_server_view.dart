@@ -16,6 +16,7 @@ import '../platform/content_links.dart';
 import '../data/server_error_code.dart';
 import '../data/user_error.dart';
 import 'community_join.dart' show communityAgreementError;
+import 'custom_protocol_link.dart';
 import 'management_support.dart';
 import 'sender_avatar_projection.dart';
 
@@ -616,6 +617,9 @@ class _PublicServerViewState extends State<PublicServerView> {
     }
     if (uri != null && (uri.scheme == 'https' || uri.scheme == 'http')) {
       unawaited(managementLaunch(href));
+    } else if (uri != null && isAllowedCustomProtocol(uri)) {
+      // Web `MarkdownLink`: an `obsidian://` link asks before it leaves.
+      unawaited(openMessageLink(context, href));
     }
   }
 

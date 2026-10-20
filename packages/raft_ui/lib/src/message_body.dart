@@ -68,6 +68,7 @@ import 'sized_image.dart';
 import 'mermaid_fullscreen.dart';
 import 'diagram_theme.dart';
 import 'design_primitives.dart';
+import 'link_scope.dart';
 import 'localization.dart';
 import 'message_semantics.dart';
 import 'theme.dart';
@@ -440,6 +441,19 @@ List<_BodyChunk> _splitBody(String prepared) {
   return chunks;
 }
 
+/// Whether the last block of [content] is a fenced code block: Web's
+/// `[&>:last-child>:last-child:has(pre)]:mb-px` keeps one pixel under a body
+/// that ends in code even when another row follows. A Mermaid diagram is not
+/// a `pre`.
+bool raftBodyEndsInCode(String content) {
+  final chunks = _splitBody(raftMessageReferences(content));
+  for (final chunk in chunks.reversed) {
+    if (chunk.markdown && chunk.text.trim().isEmpty) continue;
+    return chunk.language != null && !chunk.mermaid;
+  }
+  return false;
+}
+
 /// Reference preparation and block splitting are pure functions of the
 /// message text and its reference projection, so a row that is scrolled away
 /// and back (or rebuilt by an unrelated update) does not redo them.
@@ -693,6 +707,10 @@ class RaftMessageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // A host without its own handler gets the app's (Web `MarkdownLink`); an
+    // export render stays inert.
+    final onLink =
+        this.onLink ?? (exportMode ? null : RaftLinkScope.handlerOf(context));
     final key = _ReferencesKey(content, references, taskHref, knownTaskNumber);
     final chunks = _bodyChunkCache.putIfAbsent(
       key,
