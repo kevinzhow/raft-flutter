@@ -170,6 +170,40 @@ void main() {
       expect(find.text('FROM'), findsNothing);
     });
 
+    testWidgets('deprecated runtimes carry Web\'s "(deprecated)" status', (
+      tester,
+    ) async {
+      // formatRuntimeLabelWithStatus: the Runtime badge and the Created Agents
+      // subtitles say "(deprecated)" for a deprecated runtime and nothing else.
+      await openFleet(
+        tester,
+        role: 'member',
+        agent: {
+          ...localAgent(creatorId: 'alice'),
+          'runtime': 'copilot',
+          'createdAgents': [
+            {
+              'id': 'k1',
+              'name': 'kid',
+              'displayName': 'Kid',
+              'runtime': 'kimi',
+              'status': 'active',
+            },
+            {
+              'id': 'c1',
+              'name': 'cc',
+              'displayName': 'Cc',
+              'runtime': 'claude',
+              'status': 'active',
+            },
+          ],
+        },
+      );
+      expect(find.text('Copilot CLI (deprecated)'), findsOneWidget);
+      expect(find.text('Kimi CLI (deprecated)'), findsOneWidget);
+      expect(find.text('Claude Code'), findsOneWidget);
+    });
+
     testWidgets('a member who did not create the agent does not manage it', (
       tester,
     ) async {

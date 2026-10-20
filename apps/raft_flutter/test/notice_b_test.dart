@@ -232,6 +232,23 @@ class _ExternalClient extends RaftClient {
   }
 }
 
+/// The server projects the deprecated Copilot CLI as selectable.
+class _CopilotWorkspace extends _Workspace {
+  _CopilotWorkspace(super.client);
+  @override
+  Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
+    if (path.endsWith('/runtime-options')) {
+      return {
+        'options': [
+          {'runtimeId': 'copilot', 'canSelectInThisContext': true},
+          {'runtimeId': 'codex', 'canSelectInThisContext': true},
+        ],
+      };
+    }
+    throw RaftApiException('Not found: $path', status: 404);
+  }
+}
+
 class _RescanWorkspace extends _Workspace {
   _RescanWorkspace(super.client);
   bool rescanFails = true;
@@ -517,6 +534,47 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('Rescan blocked'), findsNothing);
     });
+  });
+
+  testWidgets('create agent: the deprecated Copilot CLI is not offered', (
+    t,
+  ) async {
+    // Web v1.21.12 CreateAgentDialog intersects the server's admission options
+    // with getCreatableRuntimeOptions() (supported, not deprecated).
+    final activity = ActivityClient()..user = RaftRecord({'id': 'alice'});
+    activity.selectServer('s');
+    final ws = _CopilotWorkspace(activity)
+      ..server = RaftRecord({'id': 's', 'role': 'owner'});
+    addTearDown(() async {
+      ws.dispose();
+      await activity.dispose();
+    });
+    t.view.physicalSize = const Size(390, 1400);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    await t.pumpWidget(
+      _host(
+        CreateAgentDialog(
+          controller: ws,
+          machines: const [
+            {
+              'id': 'm',
+              'name': 'Computer',
+              'status': 'online',
+              'runtimes': ['codex', 'copilot'],
+            },
+          ],
+          initialRuntimeId: 'copilot',
+          onboarding: true,
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    // Copilot was asked for but is not creatable: the first creatable runtime
+    // is selected instead and Copilot appears nowhere.
+    expect(find.textContaining('Copilot'), findsNothing);
+    expect(find.text('Codex CLI'), findsWidgets);
+    await t.pumpWidget(const SizedBox.shrink());
   });
 
   group('external agent setup', () {

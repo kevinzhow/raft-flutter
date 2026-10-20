@@ -13,34 +13,10 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'agent_metadata_catalog.dart';
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_trajectory_log.dart';
 import 'agent_metadata_projection.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
-
-/// shared runtimeCatalog display names, with the deprecated status suffix
-/// (formatRuntimeLabelWithStatus).
-const _runtimeNames = <String, String>{
-  'claude': 'Claude Code',
-  'codex': 'Codex CLI',
-  'grok': 'Grok Build',
-  'builtin': 'Built-in Pi',
-  'antigravity': 'Antigravity CLI',
-  'kimi-sdk': 'Kimi Code',
-  'kimi': 'Kimi CLI',
-  'copilot': 'Copilot CLI',
-  'cursor': 'Cursor CLI',
-  'gemini': 'Gemini CLI',
-  'opencode': 'OpenCode',
-  'pi': 'Pi',
-};
-const _deprecatedRuntimes = {'antigravity', 'kimi', 'copilot', 'gemini'};
-
-String runtimeLabelWithStatus(BuildContext context, String runtime) {
-  final name = _runtimeNames[runtime] ?? runtime;
-  return _deprecatedRuntimes.contains(runtime)
-      ? '$name${raftText(context, ' (deprecated)')}'
-      : name;
-}
 
 RaftActivityTone activityTone(Object? activity) => switch (activity) {
   'online' => RaftActivityTone.online,

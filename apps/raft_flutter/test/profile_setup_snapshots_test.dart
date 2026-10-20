@@ -255,6 +255,35 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('setup runtime list hides the deprecated Copilot CLI', (t) async {
+    // Web v1.21.12 marks Copilot deprecated: getSetupRuntimeOptions() (and the
+    // detected-runtime log) leave it out even when the server projects it.
+    client.projectionOverride = {
+      'phase': 'in_progress',
+      'surface': 'computer_runtime',
+      'blocksChat': true,
+      'computerStatus': 'online',
+      'runtimeStatus': 'not_ready',
+      'runtimeOptions': [
+        for (final id in ['claude', 'codex', 'copilot', 'cursor', 'pi'])
+          {
+            'runtimeId': id,
+            'capabilityStatus': id == 'copilot' ? 'available' : 'not_installed',
+          },
+      ],
+    };
+    await t.pumpWidget(
+      _host(ServerSetupGate(controller: w, child: const Text('Chat'))),
+    );
+    await settle(t);
+    expect(find.text('No usable runtime yet'), findsOneWidget);
+    expect(find.text('Cursor CLI'), findsOneWidget);
+    expect(find.text('Pi'), findsOneWidget);
+    expect(find.textContaining('Copilot'), findsNothing);
+    await t.pumpWidget(const SizedBox.shrink());
+    expect(t.takeException(), isNull);
+  });
+
   for (final inset in [24.0, 48.0]) {
     testWidgets('setup scroll content clears $inset bottom inset and IME', (
       t,

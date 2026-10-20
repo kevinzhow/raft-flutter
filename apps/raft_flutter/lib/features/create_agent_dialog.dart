@@ -11,6 +11,7 @@ import '../data/cause_notice.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'agent_metadata_catalog.dart';
+import 'agent_runtime_labels.dart' show creatableRuntimeIds;
 import 'private_route_guard.dart';
 import 'runtime_form_dialog.dart';
 
@@ -247,7 +248,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       final options = [
         for (final o in (catalog['options'] as List? ?? []).whereType<Map>())
           if (o['canSelectInThisContext'] == true &&
-              createAgentRuntimeNames.containsKey(o['runtimeId']))
+              creatableRuntimeIds.contains(o['runtimeId']))
             Map<String, dynamic>.from(o),
       ];
       setState(() => runtimeOptions = options);
@@ -283,7 +284,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       final options = [
         for (final o in (catalog['options'] as List? ?? []).whereType<Map>())
           if (o['canSelectInThisContext'] == true &&
-              createAgentRuntimeNames.containsKey(o['runtimeId']))
+              creatableRuntimeIds.contains(o['runtimeId']))
             Map<String, dynamic>.from(o),
       ];
       setState(() {
@@ -693,7 +694,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
             for (final o in runtimeOptions)
               RaftAgentSelectOption(
                 o['runtimeId'] as String,
-                // ignore: raft_lints/avoid_render_index_assertion -- runtimeOptions are filtered with createAgentRuntimeNames.containsKey when loaded.
+                // ignore: raft_lints/avoid_render_index_assertion -- runtimeOptions are filtered with creatableRuntimeIds (a subset of createAgentRuntimeNames) when loaded.
                 createAgentRuntimeNames[o['runtimeId']]!,
               ),
           ],

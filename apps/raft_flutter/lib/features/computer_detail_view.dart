@@ -13,7 +13,7 @@ import '../data/user_error.dart';
 import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
-import 'agent_detail_view.dart' show sourceRuntimeDisplayNames;
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_metadata_catalog.dart';
 import 'agent_metadata_projection.dart';
 import 'computer_setup_commands.dart';
@@ -621,7 +621,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             id: a['id'] as String,
             name: agentRowName(a),
             avatarUrl: a['avatarUrl'] as String?,
-            subtitle: _agentSubtitle(a),
+            subtitle: _agentSubtitle(context, a),
             activity: agentRowAmbientDisplay(a).activity,
             activityText: computerAgentActivityText(a),
           ),
@@ -635,11 +635,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     );
   }
 
-  static String _agentSubtitle(Map a) {
+  static String _agentSubtitle(BuildContext context, Map a) {
     final runtime = '${a['runtime'] ?? ''}';
     final model = '${a['model'] ?? ''}';
     return [
-      sourceRuntimeDisplayNames[runtime] ?? runtime,
+      runtimeLabelWithStatus(context, runtime),
       if (model.isNotEmpty) sourceRuntimeModelLabels[runtime]?[model] ?? model,
     ].where((s) => s.isNotEmpty).join(' · ');
   }

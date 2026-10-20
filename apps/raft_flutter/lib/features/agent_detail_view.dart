@@ -31,6 +31,7 @@ import 'tool_display.dart';
 import 'runtime_usage_chip.dart';
 import 'agent_metadata_catalog.dart';
 import 'agent_runtime_catalog.dart' show reasoningEfforts;
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
 import 'mcp_views.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
@@ -1014,13 +1015,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                     enabled: canViewRuntimeUsage(widget.controller, machine),
                     runtimeId: runtime,
                     machineId: '${machine?['id'] ?? ''}',
-                    label: sourceRuntimeDisplayNames[runtime] ?? runtime,
+                    label: runtimeLabelWithStatus(context, runtime),
                     runtimeVersion: machine?['runtimeVersions'] is Map
                         ? (machine!['runtimeVersions'] as Map)[runtime]
                               as String?
                         : null,
                     chip: (status) => RaftRecipeBadge(
-                      sourceRuntimeDisplayNames[runtime] ?? runtime,
+                      runtimeLabelWithStatus(context, runtime),
                       appearance: RaftBadgeRecipeAppearance.solid,
                       variant: RaftBadgeRecipeVariant.information,
                       trailing: status,
@@ -1086,9 +1087,10 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                         slot: RaftAvatarSlotContext.surfaceList,
                       ),
                       name: agentRowName(c),
-                      subtitle:
-                          sourceRuntimeDisplayNames['${c['runtime']}'] ??
-                          '${c['runtime'] ?? ''}',
+                      subtitle: runtimeLabelWithStatus(
+                        context,
+                        '${c['runtime'] ?? ''}',
+                      ),
                       rightContent: [
                         RaftActivityDot(
                           color: raftActivityDotColor(

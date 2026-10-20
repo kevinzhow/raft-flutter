@@ -8,6 +8,7 @@ import '../data/user_error.dart';
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'management_support.dart';
 import 'member_profile_rules.dart';
 import 'provider_edit_dialog.dart';
@@ -238,7 +239,7 @@ class _ProviderConnectionsState
                     ListTile(
                       title: Text(humanDisplayName(a)),
                       subtitle: Text(
-                        '${a['runtime']} · ${a['status']}${a['computerName'] == null ? '' : ' · ${a['computerName']}'}',
+                        '${runtimeLabelWithStatus(context, '${a['runtime'] ?? ''}')} · ${a['status']}${a['computerName'] == null ? '' : ' · ${a['computerName']}'}',
                       ),
                       trailing: a['deleted'] == true
                           ? RaftTooltip(

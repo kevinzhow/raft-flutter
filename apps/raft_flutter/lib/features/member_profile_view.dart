@@ -11,6 +11,7 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'agent_detail_view.dart';
+import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'member_profile_rules.dart';
 import 'sender_avatar_projection.dart';
 
@@ -633,7 +634,7 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
                         slot: RaftAvatarSlotContext.surfaceList,
                       ),
                       name: humanDisplayName(a),
-                      subtitle: sourceRuntimeDisplayNames['${a['runtime']}'],
+                      subtitle: runtimeLabelWithStatus(context, '${a['runtime'] ?? ''}'),
                       rightContent: [
                         RaftActivityDot(
                           color: raftActivityDotColor(t, _createdActivity(a)),

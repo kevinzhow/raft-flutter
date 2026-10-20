@@ -559,13 +559,13 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   }
 
   /// packages/shared `getSetupRuntimeOptions()` (supported, not deprecated,
-  /// not the built-in): id, display name, abbreviation.
+  /// not the built-in; Copilot CLI is deprecated since Web v1.21.12): id,
+  /// display name, abbreviation.
   static const _setupRuntimes = <(String, String, String)>[
     ('claude', 'Claude Code', 'CC'),
     ('codex', 'Codex CLI', 'CX'),
     ('grok', 'Grok Build', 'GK'),
     ('kimi-sdk', 'Kimi Code', 'KC'),
-    ('copilot', 'Copilot CLI', 'CP'),
     ('cursor', 'Cursor CLI', 'CU'),
     ('opencode', 'OpenCode', 'OC'),
     ('pi', 'Pi', 'PI'),
