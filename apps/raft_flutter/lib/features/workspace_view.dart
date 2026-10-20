@@ -773,7 +773,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     if (bridgeScope == next) return;
     bridgeScope = next;
     final request = ++bridgeRequest;
-    // Settings rail gates (WorkspaceSettingsModal hiddenTabIds): IM Bridges
+    // Settings rail gates (Sidebar.tsx settingsSidebarGroups): IM Bridges
     // and Labs follow their flags alone; AI Providers also needs
     // manageExternalAuth (checked by WorkspaceSettings).
     if (w.server == null) {
@@ -2403,7 +2403,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
   }
 
   /// Cmd/Ctrl+K (search) and Cmd/Ctrl+, (settings) are global, like Source's
-  /// document-level listener and native menu: they work wherever focus is
+  /// document-level listener and native menu (MainLayout onOpenSettings, which
+  /// since Web v1.21.12 always navigates to the /settings route; there is no
+  /// settings modal to open instead): they work wherever focus is
   /// (composer, a field, nothing focused) while this workspace is the visible
   /// route, and never under an open dialog.
   bool globalShortcut(KeyEvent event) {

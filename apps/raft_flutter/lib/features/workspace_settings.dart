@@ -42,7 +42,9 @@ import 'source_feedback_view.dart';
 /// The Settings tab: Sidebar.tsx `settingsSidebarGroups` (desktop Settings
 /// rail, and the mobileInline Settings root) and the SettingsPanel tab each
 /// row opens. Groups and gates follow settingsNavigation.ts
-/// `canOpenSettingsTab` / WorkspaceSettingsModal hidden tabs.
+/// `canOpenSettingsTab` and the flag gates Sidebar.tsx applies to those rows
+/// (Web v1.21.12 removed WorkspaceSettingsModal / SettingsNavList; the nav is
+/// the sidebar group list only).
 class WorkspaceSettings extends StatefulWidget {
   const WorkspaceSettings({
     super.key,
