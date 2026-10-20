@@ -21,12 +21,12 @@ import 'recipes/button_variants.g.dart'
     show RaftButtonRecipeSize, RaftButtonRecipeVariant;
 import 'settings_controls.dart';
 import 'settings_layout.dart';
-import 'tokens/shadows.g.dart' show RaftProductShadows;
-import 'workspace_shell.dart' show RaftWorkspaceRailAction;
+import 'adaptive_workspace.dart' show RaftRailDestination, RaftWorkspaceRail;
+import 'workspace_shell.dart'
+    show RaftWorkspaceRailAction, RaftWorkspaceRailFooter;
 import 'status_bar.dart';
 import 'theme.dart';
 import 'viewport_breakpoints.dart';
-import 'sized_image.dart';
 
 /// `h-panel-header`: 62px on every theme (48px on short viewports).
 double _publicHeaderHeight(BuildContext context) =>
@@ -837,56 +837,11 @@ class RaftPublicMessageRow extends StatelessWidget {
   );
 }
 
-/// The public rail logo: `size-10 border-2 border-black bg-black font-display
-/// text-base font-bold text-soft-signal shadow-brutal-sm`, on every theme.
-class RaftPublicServerLogo extends StatelessWidget {
-  const RaftPublicServerLogo({
-    super.key,
-    required this.initial,
-    this.avatarUrl,
-  });
-  final String initial;
-  final String? avatarUrl;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final extent = MediaQuery.sizeOf(context).height <= 600 ? 36.0 : 40.0;
-    final letter = Center(
-      child: Text(
-        initial,
-        style: RaftTypography.heading(
-          t,
-          size: 16,
-          line: 24,
-          weight: FontWeight.w700,
-          color: t.product.softSignal,
-        ),
-      ),
-    );
-    final url = avatarUrl?.trim();
-    return Container(
-      width: extent,
-      height: extent,
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: Colors.black,
-        border: Border.all(color: Colors.black, width: 2),
-        boxShadow: RaftProductShadows.shadowBrutalSm.outer,
-      ),
-      child: url == null || url.isEmpty
-          ? letter
-          : RaftSizedImage.avatar(
-              url,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => letter,
-            ),
-    );
-  }
-}
-
-/// The public server rail (`data-public-server-rail`): a soft-signal strip on
-/// every theme with the logo header, the Chat tab, an optional Help button and
-/// Settings.
+/// The public server rail (`data-public-server-rail`): the signed-in app rail
+/// (AppRailRoot / Header / Nav / Footer) with the server switcher, the Chat tab,
+/// an optional Help button and Settings, on every theme. Web v1.21.12 dropped
+/// the hand-built soft-signal strip and the black logo block this rail used to
+/// draw.
 class RaftPublicRail extends StatelessWidget {
   const RaftPublicRail({
     super.key,
@@ -905,62 +860,32 @@ class RaftPublicRail extends StatelessWidget {
   final VoidCallback onChat, onSettings;
   final Widget? help;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final headerHeight = _publicHeaderHeight(context);
-    return Container(
-      key: const ValueKey('public-server-rail'),
-      width: 64,
-      decoration: BoxDecoration(
-        color: t.product.softSignal,
-        border: const Border(right: BorderSide(color: Colors.black, width: 2)),
+  Widget build(BuildContext context) => RaftWorkspaceRail(
+    key: const ValueKey('public-server-rail'),
+    destinations: [
+      RaftRailDestination(
+        id: 'chat',
+        label: chatLabel,
+        glyph: RaftGlyph.messageSquare,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // AppRailHeader: Brutal draws its `border-b-2` inside the switcher.
-          Container(
-            height: headerHeight,
-            decoration: BoxDecoration(
-              border: t.brutal
-                  ? null
-                  : const Border(
-                      bottom: BorderSide(color: Colors.black, width: 2),
-                    ),
-            ),
-            child: header,
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: RaftSpace.x2),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: RaftWorkspaceRailAction(
-                  key: const ValueKey('public-rail-chat'),
-                  label: chatLabel,
-                  glyph: RaftGlyph.messageSquare,
-                  selected: chatSelected,
-                  onPressed: onChat,
-                ),
-              ),
-            ),
-          ),
-          if (help != null) SizedBox(height: 44, child: Center(child: help)),
-          SizedBox(
-            height: 44,
-            child: Center(
-              child: RaftWorkspaceRailAction(
-                key: const ValueKey('public-rail-settings'),
-                label: settingsLabel,
-                glyph: RaftGlyph.settings,
-                selected: settingsSelected,
-                onPressed: onSettings,
-              ),
-            ),
-          ),
-          const SizedBox(height: RaftSpace.x2),
-        ],
-      ),
-    );
-  }
+    ],
+    selected: chatSelected ? 'chat' : '',
+    onSelected: (_) => onChat(),
+    workspaceName: '',
+    workspaceTooltip: '',
+    onWorkspace: () {},
+    workspaceHeader: header,
+    footer: RaftWorkspaceRailFooter(
+      children: [
+        ?help,
+        RaftWorkspaceRailAction(
+          key: const ValueKey('public-rail-settings'),
+          label: settingsLabel,
+          glyph: RaftGlyph.settings,
+          selected: settingsSelected,
+          onPressed: onSettings,
+        ),
+      ],
+    ),
+  );
 }

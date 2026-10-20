@@ -17,6 +17,7 @@ import '../data/server_error_code.dart';
 import '../data/user_error.dart';
 import 'community_join.dart' show communityAgreementError;
 import 'management_support.dart';
+import 'public_avatar_url.dart';
 import 'sender_avatar_projection.dart';
 
 /// A message of the public readback (`PublicMessage`).
@@ -876,9 +877,6 @@ class _PublicServerViewState extends State<PublicServerView> {
   Widget rail() {
     final name = '${server?['name'] ?? widget.slug}';
     final account = widget.account;
-    final initial = name.trim().isEmpty
-        ? 'S'
-        : name.trim().characters.first.toUpperCase();
     return RaftPublicRail(
       chatLabel: tr('Chat'),
       settingsLabel: tr('Settings'),
@@ -890,9 +888,9 @@ class _PublicServerViewState extends State<PublicServerView> {
         controller: menu,
         workspaceName: name,
         label: tr('Switch workspace'),
-        logo: RaftPublicServerLogo(
-          initial: initial,
-          avatarUrl: server?['avatarUrl'] as String?,
+        workspaceAvatarUrl: raftPublicAvatarUrl(
+          widget.client.origin,
+          server?['avatarUrl'] as String?,
         ),
         rows: [
           if (account != null)

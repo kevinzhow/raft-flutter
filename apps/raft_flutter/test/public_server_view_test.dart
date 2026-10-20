@@ -237,7 +237,7 @@ void main() {
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('public-server-settings-surface')), findsOneWidget);
     expect(find.text('Documentation'), findsOneWidget);
-    await t.tap(find.byKey(const ValueKey('public-rail-chat')));
+    await t.tap(find.byKey(const ValueKey('rail-chat')));
     await t.pumpAndSettle();
     expect(find.byKey(const ValueKey('public-server-settings-surface')), findsNothing);
   });

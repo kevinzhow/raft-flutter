@@ -531,13 +531,9 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     super.dispose();
   }
 
-  double attentionInset(BuildContext context) {
-    final visualSize = widget.mobile ? 32.0 : 40.0;
-    final glyphSize = widget.mobile ? 16.0 : 18.0;
-    // Source positions the dot relative to the glyph inside the visual box.
-    // RaftInteractive extends touch semantics without inflating that box.
-    return (visualSize - glyphSize) / 2 - 4;
-  }
+  /// The mobile navbar bell (32px box, 16px glyph) puts its Status dot
+  /// relative to the glyph. The rail bell's dot is the rail composite.
+  static const attentionInset = (32.0 - 16.0) / 2 - 4;
 
   @override
   Widget build(BuildContext context) => PopScope(
@@ -583,7 +579,12 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                           {'count': store.unreadCount},
                         ),
                   visualSize: widget.mobile ? 32 : 40,
-                  glyphSize: widget.mobile ? 16 : 18,
+                  glyphSize: 16,
+                  // NotificationTrigger: the rail bell is a rail icon with the
+                  // shared attention composite; the mobile navbar keeps its
+                  // 16px muted bell and Status dot.
+                  rail: !widget.mobile,
+                  attention: !widget.mobile && store.unreadCount > 0,
                   onPressed: () => popup == null
                       ? show(
                           keyboard:
@@ -595,10 +596,10 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
                         )
                       : close(),
                 ),
-                if (store.unreadCount > 0)
+                if (widget.mobile && store.unreadCount > 0)
                   Positioned(
-                    right: attentionInset(context),
-                    top: attentionInset(context),
+                    right: attentionInset,
+                    top: attentionInset,
                     child: IgnorePointer(
                       child: RaftNotificationAttention(
                         count: store.unreadCount,

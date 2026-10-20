@@ -9,7 +9,9 @@ import 'components.dart' show RaftSidebarUnreadCount;
 import 'icons.dart';
 import 'localization.dart';
 import 'primitive_tokens.dart';
+import 'rail_attention.dart';
 import 'recipe_surface.dart';
+import 'recipes/app_rail.g.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
 import 'text_scaling.dart';
@@ -745,6 +747,8 @@ class RaftMobileNotificationButton extends StatelessWidget {
     this.semanticLabel = 'Notification center',
     this.visualSize = 32,
     this.glyphSize = 16,
+    this.rail = false,
+    this.attention = false,
   });
   final VoidCallback? onPressed;
   final bool open;
@@ -752,6 +756,14 @@ class RaftMobileNotificationButton extends StatelessWidget {
 
   /// Original mobile32/16 and LeftRail40/18 share one trigger state recipe.
   final double visualSize, glyphSize;
+
+  /// NotificationTrigger `rail-bottom`: the bell reads like every other rail
+  /// item's icon (the AppRailItem glyph size and `foreground-icon`, brightening
+  /// to `foreground-strong` on hover; Brutal `foreground-strong`) instead of
+  /// the fixed [glyphSize] and muted colour, and [attention] rides the same
+  /// AppRailItemAttention composite the other rail items use. [glyphSize] is
+  /// ignored then.
+  final bool rail, attention;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -785,12 +797,39 @@ class RaftMobileNotificationButton extends StatelessWidget {
             null,
             EdgeInsets.all(t.border),
           ),
-          child: RaftIcon(
-            RaftGlyph.bell,
-            size: glyphSize,
-            color: recipe.foreground,
-          ),
+          child: rail
+              ? _railBell(t, state.hovered)
+              : RaftIcon(
+                  RaftGlyph.bell,
+                  size: glyphSize,
+                  color: recipe.foreground,
+                ),
         ),
+      ),
+    );
+  }
+
+  Widget _railBell(RaftTokens t, bool hovered) {
+    final item = RaftAppRailRecipe.resolve(
+      theme: t.recipeTheme,
+      tokens: t.recipeTokens,
+      states: t.recipeStates(hovered: hovered),
+    ).item;
+    final size = item.target('& svg')?.width ?? RaftMetrics.railGlyph;
+    final color = item.foreground(t.recipeTokens, inherited: t.strong);
+    return SizedBox.square(
+      dimension: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        fit: StackFit.expand,
+        children: [
+          RaftIcon(RaftGlyph.bell, size: size, color: color),
+          if (attention)
+            RaftRailAttention(
+              // The mask supplies currentColor through its descendant.
+              child: RaftIcon(RaftGlyph.bell, size: size),
+            ),
+        ],
       ),
     );
   }

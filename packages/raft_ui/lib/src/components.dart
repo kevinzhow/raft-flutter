@@ -25,6 +25,7 @@ import 'text_input_refresh.dart';
 import 'composer_suggestions.dart';
 import 'collapsible.dart';
 import 'sidebar_indicators.dart';
+import 'name_description_row.dart';
 
 import 'package:flutter/material.dart';
 
@@ -1105,60 +1106,50 @@ class RaftNavItem extends StatelessWidget {
                     ))
                 .copyWith(color: _titleColor(context, t)),
           )
-        : LayoutBuilder(
-            builder: (context, box) => Row(
-              // `items-baseline`; a `self-center` tag switches the row to
-              // centre alignment with the description's 3px baseline step
-              // (a 20px name line, a 16px description line) kept explicit.
-              crossAxisAlignment: tag == null
-                  ? CrossAxisAlignment.baseline
-                  : CrossAxisAlignment.center,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: box.maxWidth * .7),
-                  child: _title(
-                    t,
-                    RaftTypography.heading(
-                      t,
-                      size: 14,
-                      line: 20,
-                      weight: unread > 0 ? FontWeight.w700 : FontWeight.w500,
-                    ).copyWith(
-                      color: t.brutal
-                          ? Colors.black
-                          : DefaultTextStyle.of(context).style.color,
-                    ),
-                  ),
+        // Web v1.21.12: the name keeps its natural width and only gives way
+        // when the line is full (`min-w-0 truncate`); the description
+        // (`min-w-0 flex-1 truncate`) takes what is left. The 70% cap of
+        // v1.21.2 (`shrink-0 max-w-[70%]`) is gone.
+        : RaftNameDescriptionRow(
+            // `items-baseline`; a `self-center` tag switches the row to
+            // centre alignment with the description's 3px baseline step
+            // (a 20px name line, a 16px description line) kept explicit.
+            hasTag: tag != null,
+            children: [
+              _title(
+                t,
+                RaftTypography.heading(
+                  t,
+                  size: 14,
+                  line: 20,
+                  weight: unread > 0 ? FontWeight.w700 : FontWeight.w500,
+                ).copyWith(
+                  color: t.brutal
+                      ? Colors.black
+                      : DefaultTextStyle.of(context).style.color,
                 ),
-                if (tag != null) ...[
-                  const SizedBox(width: 4),
-                  RaftCssPixelSnap(child: tag!),
-                ],
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(top: tag == null ? 0 : 2),
-                    child: Text(
-                      description!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style:
-                          RaftTypography.heading(
-                            t,
-                            size: 12,
-                            line: 16,
-                            weight: FontWeight.w500,
-                          ).copyWith(
-                            color: t.brutal
-                                ? Colors.black.withValues(alpha: .4)
-                                : t.colors['foreground-muted'],
-                          ),
-                    ),
-                  ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(top: tag == null ? 0 : 2),
+                child: Text(
+                  description!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style:
+                      RaftTypography.heading(
+                        t,
+                        size: 12,
+                        line: 16,
+                        weight: FontWeight.w500,
+                      ).copyWith(
+                        color: t.brutal
+                            ? Colors.black.withValues(alpha: .4)
+                            : t.colors['foreground-muted'],
+                      ),
                 ),
-              ],
-            ),
+              ),
+              if (tag != null) RaftCssPixelSnap(child: tag!),
+            ],
           );
     Widget row(bool pointerPressed) => RaftControl(
       recipe: conversationKind == null
