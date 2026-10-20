@@ -295,9 +295,15 @@ class RaftAuthField extends StatelessWidget {
     this.helperRecipe = false,
     this.error,
     this.surface = true,
+    this.labelAction,
   });
   final String label;
   final Widget child;
+
+  /// FormField `labelAction` (Web v1.21.12): a secondary action pushed to the
+  /// far end of the label row (`ml-auto`), e.g. the sign-in form's "Forgot
+  /// password?" link. The row is `mb-1 flex items-center gap-1`.
+  final Widget? labelAction;
 
   /// Helper `<p className="mt-1 text-xs …">` rendered after the control;
   /// muted, or `text-foreground-hint` when [helperHint].
@@ -326,7 +332,21 @@ class RaftAuthField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(label, style: style.label.textStyle(tokens)),
+        if (labelAction == null)
+          Text(label, style: style.label.textStyle(tokens))
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // The label takes the free width (`ml-auto` on the action), so
+              // the action ends flush with the control below.
+              Expanded(
+                child: Text(label, style: style.label.textStyle(tokens)),
+              ),
+              const SizedBox(width: 4), // gap-1
+              labelAction!,
+            ],
+          ),
         SizedBox(height: 4 + (style.root.rowGap ?? 0)),
         surface ? RaftFieldSurface(child: child) : child,
         // Field `gap` separates every direct child of the field.
@@ -628,8 +648,10 @@ class _RaftAuthLegalCheckboxState extends State<RaftAuthLegalCheckbox> {
   }
 }
 
-/// pages.login.legalAgreement: `mt-4 text-center text-xs leading-5
-/// text-foreground-muted theme-brutal:text-black/60`, links `underline`.
+/// pages.login.legalAgreement (Web v1.21.12): `TextSans size="caption"
+/// className="mt-6 text-center leading-5 theme-brutal:text-black/60"`, i.e.
+/// the sans family at 12px with a 20px line, muted; links `underline`. The
+/// 24px gap above is the caller's.
 class RaftAuthLegalNotice extends StatefulWidget {
   const RaftAuthLegalNotice({
     super.key,
@@ -655,12 +677,11 @@ class _RaftAuthLegalNoticeState extends State<RaftAuthLegalNotice> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final base = RaftTypography.heading(
+    final base = RaftTypography.sans(
       t,
-      size: 12,
-      line: 20,
-      weight: FontWeight.w400,
-    ).copyWith(color: t.brutal ? const Color(0x99000000) : t.muted);
+      size: RaftSansSize.caption,
+      color: t.brutal ? const Color(0x99000000) : t.muted,
+    ).copyWith(height: 20 / 12);
     return RaftUnderlines(
       child: Text.rich(
         textAlign: TextAlign.center,
@@ -682,10 +703,13 @@ class _RaftAuthLegalNoticeState extends State<RaftAuthLegalNotice> {
   }
 }
 
-/// TextLink (packages/web/src/components/ui/TextLink.tsx): `muted` =
-/// `text-foreground-muted underline`, `primary` = `font-bold text-accent-strong
-/// underline theme-brutal:text-brutal-pink`; `disabled:opacity-50`. Used in
-/// `text-sm` paragraphs.
+/// TextLink (packages/web/src/components/ui/TextLink.tsx, v1.21.12): `muted` =
+/// `text-foreground-muted hover:text-foreground-strong`, `primary` =
+/// `font-medium text-accent-strong theme-brutal:text-brutal-pink`; neither is
+/// underlined at rest, the underline appears on hover and keyboard focus
+/// (`hover:underline focus-visible:underline`) unless the link is `inline`
+/// (a link inside a sentence of its own colour keeps it); `disabled:opacity-50`.
+/// Used in `text-sm` paragraphs.
 class RaftAuthTextLink extends StatelessWidget {
   const RaftAuthTextLink({
     super.key,
@@ -696,8 +720,17 @@ class RaftAuthTextLink extends StatelessWidget {
     this.bold = false,
     this.centeredLine = false,
     this.centered = false,
+    this.inline = false,
+    this.sans = false,
   });
   final String label;
+
+  /// TextLink `inline`: keep the underline at rest.
+  final bool inline;
+
+  /// The link sits in a `TextSans` paragraph and inherits `font-sans` instead
+  /// of the page's display family.
+  final bool sans;
 
   /// `<div className="text-center">` / `Center`: the link centred in its row.
   final bool centered;
@@ -712,7 +745,7 @@ class RaftAuthTextLink extends StatelessWidget {
   /// font-bold` over the muted variant).
   final bool bold;
 
-  /// `font-bold text-accent-strong underline theme-brutal:text-brutal-pink`.
+  /// `font-medium text-accent-strong theme-brutal:text-brutal-pink`.
   final bool primary;
 
   @override
@@ -729,6 +762,7 @@ class RaftAuthTextLink extends StatelessWidget {
           t,
           primary: primary,
           bold: bold,
+          sans: sans,
           size: small ? 12 : 14,
         );
         final color = strong ? t.strong : style.color;
@@ -754,6 +788,7 @@ class RaftAuthTextLink extends StatelessWidget {
             child: RaftUnderlinedText(
               label,
               style: style.copyWith(color: color),
+              underline: inline || state.hovered || state.focusVisible,
             ),
           ),
         );
@@ -786,49 +821,76 @@ TextStyle _linkStyle(
   RaftTokens t, {
   bool primary = false,
   bool bold = false,
+  bool sans = false,
   double size = 14,
-}) =>
-    RaftTypography.heading(
-      t,
-      size: size,
-      line: size == 14 ? 20 : 16,
-      weight: primary || bold ? FontWeight.w700 : FontWeight.w400,
-    ).copyWith(
-      color: primary
-          ? (t.brutal ? t.product.brutalPink : t.semantic.accentStrong)
-          : t.muted,
-    );
+}) {
+  final weight = bold
+      ? FontWeight.w700
+      : primary
+      ? FontWeight.w500
+      : FontWeight.w400;
+  final line = size == 14 ? 20.0 : 16.0;
+  final base = sans
+      ? RaftTypography.body(t, size: size, line: line, weight: weight)
+      : RaftTypography.heading(t, size: size, line: line, weight: weight);
+  return base.copyWith(
+    color: primary
+        ? (t.brutal ? t.product.brutalPink : t.semantic.accentStrong)
+        : t.muted,
+  );
+}
 
-/// `<p className="mt-4 text-center text-sm">` prompt + primary TextLink.
+/// `TextSans size="small" className="mt-4 text-center
+/// theme-brutal:text-black/60"` prompt (Web v1.21.12: sans family, muted)
+/// holding a primary TextLink. [template] is the Web message with one
+/// `<tag>link</tag>` (`pages.login.noAccountPrompt`,
+/// `pages.register.haveAccountPrompt`); the text before and after the link is
+/// localized with it, so the zh wording and spacing follow the Web catalog.
 class RaftAuthPrompt extends StatelessWidget {
   const RaftAuthPrompt({
     super.key,
-    required this.prefix,
-    required this.link,
+    required this.template,
+    required this.tag,
     this.onTap,
   });
-  final String prefix, link;
+  final String template, tag;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final text = raftText(context, template);
+    final match = RegExp('<$tag>(.*?)</$tag>').firstMatch(text);
+    final before = match == null ? text : text.substring(0, match.start);
+    final link = match?[1];
+    final after = match == null ? '' : text.substring(match.end);
+    final style = RaftTypography.sans(
+      t,
+      size: RaftSansSize.small,
+      color: t.brutal ? const Color(0x99000000) : t.muted,
+    );
+    // Wrap measures a trailing/leading space as nothing: keep it as NBSP.
+    Widget run(String value) => Text(
+      value
+          .replaceFirst(RegExp(r' $'), '\u00A0')
+          .replaceFirst(RegExp(r'^ '), '\u00A0'),
+      textAlign: TextAlign.center,
+      style: style,
+    );
     return _touchLine(
       context,
       Wrap(
         alignment: WrapAlignment.center,
         children: [
-          Text(
-            '$prefix\u00A0',
-            textAlign: TextAlign.center,
-            style: RaftTypography.heading(
-              t,
-              size: 14,
-              line: 20,
-              weight: FontWeight.w400,
-            ).copyWith(color: t.semantic.foreground),
-          ),
-          RaftAuthTextLink(label: link, primary: true, onTap: onTap),
+          if (before.isNotEmpty) run(before),
+          if (link != null)
+            RaftAuthTextLink(
+              label: link,
+              primary: true,
+              sans: true,
+              onTap: onTap,
+            ),
+          if (after.isNotEmpty) run(after),
         ],
       ),
     );
@@ -1018,8 +1080,11 @@ class RaftAuthSessionFooter extends StatelessWidget {
               weight: FontWeight.w400,
             ).copyWith(color: t.muted),
           ),
+          // `<TextLink variant="muted" inline>`: the underline stays at rest in
+          // a sentence of the same colour.
           RaftAuthTextLink(
             label: raftText(context, 'Log out'),
+            inline: true,
             onTap: onSignOut,
           ),
         ],
@@ -1158,6 +1223,15 @@ class RaftAuthPage extends StatelessWidget {
               ),
               surface: false,
               error: passwordError,
+              // Web v1.21.12: the sign-in form's "Forgot password?" sits at the
+              // far end of the password label row.
+              labelAction: mode == RaftAuthMode.login
+                  ? RaftAuthTextLink(
+                      key: const Key('login-forgot-password'),
+                      label: tr('Forgot password?'),
+                      onTap: () => onMode(RaftAuthMode.forgot),
+                    )
+                  : null,
               child: passwordField!,
             ),
           ],
@@ -1185,6 +1259,29 @@ class RaftAuthPage extends StatelessWidget {
             label: tr(_submit),
             onPressed: onSubmit,
           ),
+          // RegisterPage (task #724): a disabled Continue says why. A
+          // persistent line under the button while the legal box is unchecked
+          // (`text-center text-xs text-foreground-muted
+          // theme-brutal:text-black/50`, form `space-y-4`).
+          if (mode == RaftAuthMode.register && !accepted && !busy) ...[
+            const SizedBox(height: 16),
+            Text(
+              tr(
+                'Agree to the Terms of Service and acknowledge the Privacy Policy to continue.',
+              ),
+              key: const Key('register-legal-hint'),
+              textAlign: TextAlign.center,
+              style: RaftTypography.heading(
+                RaftTokens.of(context),
+                size: 12,
+                line: 16,
+                weight: FontWeight.w400,
+                color: RaftTokens.of(context).brutal
+                    ? const Color(0x80000000)
+                    : RaftTokens.of(context).muted,
+              ),
+            ),
+          ],
           if (providers.isNotEmpty && social) ...[
             RaftAuthOrDivider(label: tr('or')),
             Column(
@@ -1226,34 +1323,33 @@ class RaftAuthPage extends StatelessWidget {
             ],
           ],
           if (mode == RaftAuthMode.login) ...[
+            // Web v1.21.12 LoginPage: the "Forgot password?" link moved into
+            // the password label row; the no-account prompt (mt-4) now comes
+            // before the legal notice (mt-6).
             const SizedBox(height: 16), // mt-4
-            RaftAuthLegalNotice(onTerms: onTerms, onPrivacy: onPrivacy),
-            const SizedBox(height: 12), // mt-3
-            RaftAuthTextLink(
-              label: tr('Forgot password?'),
-              onTap: () => onMode(RaftAuthMode.forgot),
-              centered: true,
-            ),
-            const SizedBox(height: 8), // mt-2
             RaftAuthPrompt(
-              prefix: tr('No account?'),
-              link: tr('Create one'),
+              template: 'No account? <create>Create one</create>',
+              tag: 'create',
               onTap: () => onMode(RaftAuthMode.register),
             ),
+            const SizedBox(height: 24), // mt-6
+            RaftAuthLegalNotice(onTerms: onTerms, onPrivacy: onPrivacy),
           ] else if (mode == RaftAuthMode.register) ...[
             const SizedBox(height: 16), // mt-4
             RaftAuthPrompt(
-              prefix: tr('Already have an account?'),
-              link: tr('Sign in'),
+              template: 'Already have an account? <signin>Sign in</signin>',
+              tag: 'signin',
               onTap: () => onMode(RaftAuthMode.login),
             ),
           ] else ...[
-            // `<p className="mt-4 text-center text-sm"><button font-bold
-            // underline accent>Back to sign in</button></p>`
+            // `<TextSans size="small" className="mt-4 text-center
+            // theme-brutal:text-black/60"><TextLink variant="primary">Back to
+            // sign in</TextLink></TextSans>`
             const SizedBox(height: 16),
             RaftAuthTextLink(
               label: tr('Back to sign in'),
               primary: true,
+              sans: true,
               onTap: busy ? null : () => onMode(RaftAuthMode.login),
               centered: true,
             ),
