@@ -5,14 +5,37 @@ import 'package:raft_theme/raft_theme.dart';
 import 'control_typography.dart';
 import 'tokens/tokens.dart';
 
-/// The appearance setting: Light, Dark or System (follow the platform). The
-/// Raft Design System has one look in two modes, so there is no theme choice.
+/// The appearance setting: which theme to paint with (Raft, Elegant, Brutal or
+/// a user pack) and Light / Dark / System for its two modes.
+///
+/// The theme and the mode are independent: every theme carries both a light and
+/// a dark set of values, so choosing Elegant and Dark is meaningful, and so is
+/// Elegant and System.
 class RaftAppearance {
-  const RaftAppearance({this.mode = ThemeMode.system});
+  const RaftAppearance({
+    this.mode = ThemeMode.system,
+    this.themeId = builtInRaftThemeId,
+  });
   final ThemeMode mode;
-  RaftAppearance copyWith({ThemeMode? mode}) =>
-      RaftAppearance(mode: mode ?? this.mode);
+
+  /// The id of the theme pack to paint with. Must name a loadable pack; an
+  /// unknown id is reported by the registry rather than silently ignored.
+  final String themeId;
+
+  RaftAppearance copyWith({ThemeMode? mode, String? themeId}) =>
+      RaftAppearance(mode: mode ?? this.mode, themeId: themeId ?? this.themeId);
 }
+
+/// The id of the built-in Raft pack, the default appearance.
+const String builtInRaftThemeId = raftThemePackId;
+
+/// The themes offered in the appearance setting, in the order the picker shows
+/// them, with the label each one carries in the UI.
+const List<({String id, String en, String zh})> builtInAppearanceThemes = [
+  (id: raftThemePackId, en: 'Raft', zh: 'Raft'),
+  (id: 'elegant', en: 'Elegant', zh: '雅致'),
+  (id: 'brutal', en: 'Brutal', zh: '粗野'),
+];
 
 /// The token set of a brightness.
 RaftThemeId raftThemeId({bool dark = false}) =>

@@ -248,3 +248,17 @@ export 'src/composer_action_row.dart';
 export 'src/composer_tool_button.dart';
 
 export 'src/hover_region.dart';
+
+/// The theme contract: the built-in packs and the id lookup the appearance
+/// setting needs. Re-exported so a caller that already depends on raft_ui can
+/// name a theme without adding a second dependency.
+export 'package:raft_theme/raft_theme.dart'
+    show
+        builtInThemes,
+        builtInTheme,
+        packForThemeId,
+        raftThemePackId,
+        elegantThemePackId,
+        brutalThemePackId,
+        RaftThemePack,
+        RaftThemeException;

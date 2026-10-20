@@ -5,8 +5,11 @@ import 'dialog_card.dart';
 import 'localization.dart';
 import 'theme.dart';
 
-/// Appearance setting: Light, Dark or System (follow the platform). The Raft
-/// Design System has one look in two modes, so there is no theme choice.
+/// Appearance setting: which theme to paint with, and Light / Dark / System for
+/// that theme's two modes.
+///
+/// The theme and the mode are separate choices: every theme carries its own
+/// light and dark values, so any combination is meaningful.
 class RaftAppearancePicker extends StatelessWidget {
   const RaftAppearancePicker({
     super.key,
@@ -28,6 +31,22 @@ class RaftAppearancePicker extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Text(raftText(context, 'Theme'), style: eyebrow),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: RaftRecipeSegmentedControl<String>(
+            key: const Key('appearance-theme'),
+            value: appearance.themeId,
+            label: 'Theme',
+            items: [
+              for (final theme in builtInAppearanceThemes)
+                (theme.id, null, raftText(context, theme.en)),
+            ],
+            onChanged: (id) => onChanged(appearance.copyWith(themeId: id)),
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(raftText(context, 'Color mode'), style: eyebrow),
         const SizedBox(height: 8),
         Align(

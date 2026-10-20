@@ -8,5 +8,8 @@ library;
 export 'src/built_in.dart';
 export 'src/color_value.dart';
 export 'src/raft_pack.g.dart' show raftThemePackId, raftThemePackJson;
+export 'src/elegant_pack.g.dart'
+    show elegantThemePackId, elegantThemePackJson;
+export 'src/brutal_pack.g.dart' show brutalThemePackId, brutalThemePackJson;
 export 'src/shadow_value.dart';
 export 'src/theme_pack.dart';

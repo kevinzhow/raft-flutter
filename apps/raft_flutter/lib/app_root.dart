@@ -2049,6 +2049,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     setState(() => appearance = value);
     final p = await SharedPreferences.getInstance();
     await p.setString('raft.mode', value.mode.name);
+    await p.setString(appearanceThemeKey, value.themeId);
     await p.remove(retiredAppearanceThemeKey);
     // The next cold start's native splash needs the new canvas.
     await NativeLaunchTheme.instance.set(value);
@@ -2154,8 +2155,12 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     );
     final locale = displayLocale(client?.user?.string('displayLanguage'));
     final textLocale = WidgetsBinding.instance.platformDispatcher.locale;
+    // The chosen theme's pack, resolved once per build. An id that no longer
+    // names a built-in theme falls back to Raft rather than painting nothing.
+    final themePack = packForThemeId(appearance.themeId);
     ThemeData themed({bool dark = false}) => raftTheme(
       dark: dark,
+      pack: themePack,
       systemFonts: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
       systemFontFamilies: NativeSystemFonts.instance.value,
       locale: locale,

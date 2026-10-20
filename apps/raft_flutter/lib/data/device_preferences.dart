@@ -109,10 +109,21 @@ RaftAppearance storedAppearance([SharedPreferences? preferences]) {
   }
 
   const defaults = RaftAppearance();
+  final storedTheme = read(appearanceThemeKey);
   return RaftAppearance(
     mode: storedThemeMode(read('raft.mode')) ?? defaults.mode,
+    // An id naming no built-in theme is kept as written and resolved to the
+    // Raft look at paint time, so a returning user sees their stored choice
+    // rather than having it silently rewritten to 'raft'.
+    themeId: storedTheme == null || storedTheme.isEmpty
+        ? defaults.themeId
+        : storedTheme,
   );
 }
+
+/// The stored theme id (`raft.theme`): which built-in theme to paint with,
+/// independent of the Light / Dark / System choice in `raft.mode`.
+const appearanceThemeKey = 'raft.theme';
 
 /// Drops the retired `raft.light` key once, so the native launch screens (which
 /// still read it) fall back to their default light canvas. Failures are ignored.
