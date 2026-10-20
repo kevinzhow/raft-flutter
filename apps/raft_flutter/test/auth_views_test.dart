@@ -236,6 +236,39 @@ void main() {
     expect(find.text('忘记密码？'), findsOneWidget);
   });
 
+  // raft-ui field: elegant label is `font-medium text-foreground-strong
+  // dark:text-foreground-hint` (muted in dark, not the strong ink).
+  testWidgets('elegant-dark field labels are muted, light ones strong', (
+    tester,
+  ) async {
+    Future<(Color?, FontWeight?, RaftTokens)> labelOf(bool dark) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          key: ValueKey(dark),
+          theme: raftTheme(RaftFamily.elegant, dark: dark),
+          home: AuthView(
+            origin: 'https://example.invalid',
+            onLogin: (b, e, p) async {},
+            onRegister: (b, e, p, a) async {},
+          ),
+        ),
+      );
+      final style = tester.widget<Text>(find.text('Email').first).style;
+      return (
+        style?.color,
+        style?.fontWeight,
+        RaftTokens.of(tester.element(find.byType(AuthView))),
+      );
+    }
+
+    final (darkColor, darkWeight, darkTokens) = await labelOf(true);
+    expect(darkColor, darkTokens.semantic.foregroundHint);
+    expect(darkWeight, FontWeight.w500);
+    final (lightColor, lightWeight, lightTokens) = await labelOf(false);
+    expect(lightColor, lightTokens.strong);
+    expect(lightWeight, FontWeight.w500);
+  });
+
   // RegisterPage (task #724): a disabled Continue says why.
   testWidgets('register: the disabled Continue states the legal reason', (
     tester,

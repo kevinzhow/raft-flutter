@@ -24,7 +24,7 @@ import 'recipes/token_binding.dart';
 import 'status_bar.dart';
 import 'theme.dart' hide RaftFieldRecipe;
 import 'tokens/tokens.dart';
-import 'recipe_surface.dart' show RaftCssBoxDecoration;
+import 'recipe_surface.dart' show RaftCssBoxDecoration, RaftRecipeBinding;
 
 /// RaftAuthShell (packages/web/src/components/brand/RaftAuthShell.tsx):
 /// `bg-layer-canvas font-display safe-top safe-bottom`, brand top bar, then
@@ -327,6 +327,8 @@ class RaftAuthField extends StatelessWidget {
     final tokens = RaftRecipeTokens(t);
     final style = field_recipe.RaftFieldRecipe.resolve(
       theme: t.brutal ? RaftRecipeTheme.brutal : RaftRecipeTheme.elegant,
+      // `dark:text-foreground-hint` on the elegant label (raft-ui field).
+      states: t.recipeStates(),
       tokens: tokens,
     );
     return Column(
