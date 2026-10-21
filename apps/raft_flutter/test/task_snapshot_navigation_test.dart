@@ -259,8 +259,9 @@ void main() {
     await tester.pump();
     await gesture.up();
     await tester.pumpAndSettle();
-    expect(client.posts, contains('PATCH /tasks/t80/status'));
-    expect(client.bodies.last, {'status': 'in_progress'});
+    // Task 80 has no holder: starting it is the claim.
+    expect(client.posts, contains('PATCH /tasks/t80/claim'));
+    expect(client.posts, isNot(contains('PATCH /tasks/t80/status')));
   });
 
   testWidgets(

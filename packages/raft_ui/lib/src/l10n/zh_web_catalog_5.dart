@@ -107,7 +107,6 @@ const Map<String, String> zhCatalogWeb5 = <String, String>{
   "New DM": "新私信",
   "New MCP server": "新建 MCP 服务器",
   "New Password": "新密码",
-  "New Task": "新建任务",
   "New capabilities stay off until you turn them on for this agent.":
       "新的能力会保持关闭，直到你为此 Agent 手动打开。",
   "New connected app": "新建已连接应用",

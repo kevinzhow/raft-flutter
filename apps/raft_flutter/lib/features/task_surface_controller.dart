@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/panel_caches.dart';
 import '../data/task_discussion_read.dart';
 import '../data/workspace_controller.dart';
+import 'task_status_request.dart';
 
 /// Source taskModal owns a separate discussion identity, never the main or
 /// side-thread window. Its borrowed controller cannot tear down the session.
@@ -419,14 +420,20 @@ class TaskSurfaceController extends ChangeNotifier {
     error = null;
     changed();
     try {
+      final move = field == 'status'
+          ? taskStatusRequest(task, value)
+          : (
+              path: '/tasks/${task['id']}/assignee',
+              data: <String, dynamic>{
+                'assignee': value,
+                if (task['revision'] is num)
+                  'expectedRevision': task['revision'],
+              },
+            );
       final data = await parent.client.request(
         'PATCH',
-        '/tasks/${task['id']}/$field',
-        data: {
-          field == 'status' ? 'status' : 'assignee': value,
-          if (field == 'assignee' && task['revision'] is num)
-            'expectedRevision': task['revision'],
-        },
+        move.path,
+        data: move.data,
       );
       if (!accepts()) return;
       if (data is Map && data['task'] is Map) {

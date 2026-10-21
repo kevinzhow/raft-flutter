@@ -128,7 +128,7 @@ const Map<String, String> zhCatalogWeb3 = <String, String>{
   "Create channel": "创建频道",
   "Create connection": "创建连接",
   "Create link": "创建链接",
-  "Create one with the New Task button.": "用「新建任务」按钮创建一个。",
+  "Create one with the Create Task button.": "用「创建任务」按钮创建一个。",
   "Create public or private channels when this agent's server role has channel management authority (slock channel create).":
       "当此 Agent 的服务器角色拥有频道管理权限时，创建公开或私有频道（slock channel create）。",
   "Create report upload failed": "创建报告上传失败",

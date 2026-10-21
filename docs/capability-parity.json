@@ -9761,7 +9761,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/task_surface_controller.dart",
-     "needle": "'/tasks/${task['id']}/$field'"
+     "needle": "'/tasks/${task['id']}/assignee'"
     },
     {
      "file": "packages/raft_ui/lib/src/task_surface.dart",
@@ -9778,15 +9778,27 @@
    "area": "tasks",
    "capability": "Claim a task (assign to self and advance todo -> in_progress); used by Web when status is moved todo -> in_progress on an unassigned task",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "taskStore.updateTaskStatus: choosing 'In Progress' from any status control (board drag, card badge menu, TaskProperties status picker) on an unassigned todo task calls claimTask; the 'Claim' label has no standalone button",
    "gate": "Any non-guest member",
-   "flutterEntry": "",
-   "flutterRefs": [],
+   "flutterEntry": "task_status_request.dart taskStatusRequest: todo -> in_progress on an unheld task goes to PATCH /claim from the board drop, the card status menu and the detail Status picker (Web taskStore.updateTaskStatus)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/task_status_request.dart",
+     "needle": "/tasks/$id/claim"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "moveTaskStatus("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/task_surface_controller.dart",
+     "needle": "taskStatusRequest("
+    }
+   ],
    "justification": "",
-   "impact": "Owners/admins moving an unassigned todo task to In Progress (board drag, card menu, detail picker) get a server error because Flutter sends only PATCH /status; for members the task stays ownerless. Common daily task flow.",
-   "size": "S",
-   "topGap": 1
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -9794,27 +9806,27 @@
    "area": "tasks",
    "capability": "Change a task's status (drag between board columns, inline badge menu on cards, Status picker in the task modal, message menu Mark as Done / Reopen Task)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "TasksPanel board drag-and-drop; TaskCard InlineBadgeEditor; TaskProperties Status; MessageItem context menu 'Mark as Done'/'Reopen Task'",
    "gate": "Non-guest; read-only (joint/historical) tasks blocked; members get legal transitions only, owners/admins any status",
    "flutterEntry": "resource_view.dart board DragTarget + card onStatus; task_surface_controller.dart update('status'); chat_view.dart 'Mark as Done'/'Reopen Task'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "'/tasks/${payload.row['id']}/status'"
+     "file": "apps/raft_flutter/lib/features/task_status_request.dart",
+     "needle": "/tasks/$id/status"
     },
     {
      "file": "apps/raft_flutter/lib/features/task_surface_controller.dart",
-     "needle": "'/tasks/${task['id']}/$field'"
+     "needle": "taskStatusRequest("
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
      "needle": "task-done"
     }
    ],
-   "justification": "Same entry points and role/transition gating, but todo -> in_progress on an unassigned task must go through PATCH /claim on Web; Flutter sends /status, which is rejected for owners/admins (see PATCH /tasks/:id/claim).",
-   "impact": "Starting an unassigned task from the board/card/detail fails or leaves it ownerless on mobile.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -9840,7 +9852,7 @@
    "status": "covered",
    "webEntry": "TasksPanel (Tasks rail tab /s/:slug/tasks for server-wide; Chat > Tasks tab for channel) channel mode > 'New Task' > CreateTaskDialog (multiple title rows)",
    "gate": "Non-guest member of the channel",
-   "flutterEntry": "create_task_dialog.dart CreateTaskDialog via 'New Task' button (channel tab only; guest hidden)",
+   "flutterEntry": "create_task_dialog.dart CreateTaskDialog via 'Create Task' button (channel tab only; guest hidden)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/create_task_dialog.dart",
@@ -9885,19 +9897,27 @@
    "area": "tasks",
    "capability": "Tasks page view mode Board/List remembered across sessions (platform default board on desktop, list on mobile)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "components/task/TasksPanel.tsx readStoredTaskViewMode/writeStoredTaskViewMode (slock.tasks.viewMode) + ?view= param",
    "gate": "",
-   "flutterEntry": "resource_view.dart taskLayout segmented 'Board' / 'List' with viewport default; choice survives only inside the live session snapshot, no device-preference storage",
+   "flutterEntry": "resource_view.dart taskLayout segmented 'Board' / 'List'; the choice is kept in the device preference raft.tasks.viewMode (task_view_mode_preference.dart) and wins over the viewport default (Board on desktop, List on phone), shared by the server-wide page and every channel Tasks tab",
    "flutterRefs": [
     {
+     "file": "apps/raft_flutter/lib/data/task_view_mode_preference.dart",
+     "needle": "raft.tasks.viewMode"
+    },
+    {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "String taskLayout = 'list';"
+     "needle": "initialTaskView("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "rememberTaskView(layout)"
     }
    ],
-   "justification": "No SharedPreferences key for task layout (grep finds none).",
-   "impact": "Desktop users who prefer List over the default Board re-pick it after each restart.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -9963,7 +9983,7 @@
      "needle": "canMoveTask"
     }
    ],
-   "justification": "Drop on In Progress for an unassigned todo task hits the missing /claim path (see PATCH /tasks/:id/claim).",
+   "justification": "",
    "impact": "",
    "size": ""
   },
@@ -10228,7 +10248,7 @@
    "area": "tasks",
    "capability": "Change status from the detail Properties row (legal transitions for members, any for admins)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "TaskProperties Status InlineBadgeEditor",
    "gate": "Non-guest, not read-only",
    "flutterEntry": "RaftTaskSurface Status; controller statusOptions",
@@ -10242,9 +10262,9 @@
      "needle": "statusOptions"
     }
    ],
-   "justification": "Same picker; todo -> in_progress on unassigned task lacks the /claim step (see PATCH /tasks/:id/claim).",
-   "impact": "Starting unassigned tasks fails/ownerless on mobile.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -10531,23 +10551,27 @@
    "area": "tasks",
    "capability": "Remember last Board/List choice across channels and sessions (localStorage slock.tasks.viewMode, ?view= URL param)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "TasksPanel readStoredTaskViewMode/writeStoredTaskViewMode + searchParams view",
    "gate": "",
-   "flutterEntry": "resource_view.dart keeps taskLayout in the in-memory page snapshot only",
+   "flutterEntry": "resource_view.dart taskLayout segmented 'Board' / 'List'; the choice is kept in the device preference raft.tasks.viewMode (task_view_mode_preference.dart) and wins over the viewport default (Board on desktop, List on phone), shared by the server-wide page and every channel Tasks tab; the ?view= URL parameter is not carried (ui:tasks.filter-url-params is na)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "taskLayout"
+     "file": "apps/raft_flutter/lib/data/task_view_mode_preference.dart",
+     "needle": "raft.tasks.viewMode"
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
-     "needle": "initializedTaskLayout"
+     "needle": "initialTaskView("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "rememberTaskView(layout)"
     }
    ],
-   "justification": "No device-persisted preference like Web's localStorage key; resets to width default after an app restart.",
-   "impact": "Minor annoyance for users who prefer the non-default view.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

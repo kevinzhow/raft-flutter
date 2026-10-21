@@ -387,7 +387,7 @@ const Map<String, String> zhCatalogWeb4 = <String, String>{
   "Kimi is not signed in on this Computer. Run <command>kimi login</command> there, then retry the model check.":
       "此 Computer 尚未登录 Kimi。请在该 Computer 上运行 <command>kimi login</command>，然后重试模型检查。",
   "L": "L",
-  "LEGACY": "LEGACY",
+  "Legacy": "Legacy",
   "Labs": "Labs",
   "Labs settings response did not match the active server.":
       "Labs 设置响应与当前服务器不匹配。",

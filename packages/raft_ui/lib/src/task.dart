@@ -119,11 +119,15 @@ class RaftTaskCard extends StatelessWidget {
     this.channel = '',
     this.description = '',
     this.assignee,
+    this.legacy = false,
     this.onTap,
     this.onStatus,
     this.statusOptions = const [],
   });
   final String title, number, status, channel, description;
+
+  /// A pre-thread task: TaskCardLegacy badge after the number.
+  final bool legacy;
   final String? assignee;
   final VoidCallback? onTap;
   final ValueChanged<String>? onStatus;
@@ -197,6 +201,11 @@ class RaftTaskCard extends StatelessWidget {
                                 ),
                               ),
                             RaftCssText('#$number', style: text(r.number)),
+                            if (legacy)
+                              RaftCssText(
+                                raftText(context, 'Legacy'),
+                                style: text(r.legacy),
+                              ),
                           ],
                         ),
                       ),

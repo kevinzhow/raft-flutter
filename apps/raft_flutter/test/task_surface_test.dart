@@ -102,7 +102,7 @@ void main() {
           find.textContaining('Legacy tasks do not map to a message thread.'),
           findsOneWidget,
         );
-        expect(find.text('Task #8 · LEGACY'), findsOneWidget);
+        expect(find.text('Task #8 · Legacy'), findsOneWidget);
         expect(find.text('@Alice'), findsOneWidget);
         expect(find.byType(RaftComposer), findsNothing);
         expect(

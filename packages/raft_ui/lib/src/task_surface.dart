@@ -360,7 +360,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
                   raftFormat(
                     context,
                     widget.legacy
-                        ? 'Task #{taskNumber} · LEGACY'
+                        ? 'Task #{taskNumber} · Legacy'
                         : 'Task #{taskNumber}',
                     {'taskNumber': task['taskNumber'] ?? ''},
                   ),

@@ -148,7 +148,7 @@ void main() {
           t.getSize(find.byKey(const ValueKey('legacy-task-panel'))),
           const Size(760, 658.32),
         );
-        expect(find.text('Task #8 · LEGACY'), findsOneWidget);
+        expect(find.text('Task #8 · Legacy'), findsOneWidget);
         expect(find.textContaining('posting is disabled.'), findsOneWidget);
         expect(find.byType(RaftInlineBadgeEditor), findsNothing);
         expect(

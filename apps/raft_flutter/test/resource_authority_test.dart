@@ -11,6 +11,7 @@ import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/resource_view.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_ui/test_themes.dart';
+
 import 'flutter_test_config.dart' show leakDebt;
 
 class _Adapter implements HttpClientAdapter {
@@ -566,7 +567,7 @@ void main() {
       _taskRoutes(w, a);
       await tester.pumpWidget(_host(w, 'tasks', channelId: 'c1'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('New Task'));
+      await tester.tap(find.text('Create Task'));
       await tester.pumpAndSettle();
       final submit = tester
           .widget<RaftCreateTaskDialogView>(

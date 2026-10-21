@@ -36,6 +36,7 @@ import '../data/server_saved_window.dart';
 import 'server_task_scope.dart';
 import 'saved_page_scope.dart';
 import '../data/task_board_reconcile.dart';
+import '../data/task_view_mode_preference.dart';
 import 'activity_first_unread.dart';
 import 'activity_find_scope.dart';
 import 'create_task_dialog.dart';
@@ -43,6 +44,7 @@ import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
 import 'search_snapshot.dart';
 import 'task_surface.dart';
+import 'task_status_request.dart';
 import 'task_surface_controller.dart';
 import 'resource_filters.dart';
 import 'resource_authority_cache.dart';
@@ -1763,11 +1765,7 @@ class _ResourceViewState extends State<ResourceView> {
     bindSectionActivity();
     if (!initializedTaskLayout && widget.section == 'tasks') {
       initializedTaskLayout = true;
-      final next =
-          MediaQuery.sizeOf(context).width >=
-              RaftLayoutMetrics.desktopBreakpoint
-          ? 'board'
-          : 'list';
+      final next = initialTaskView(MediaQuery.sizeOf(context).width);
       if (taskLayout != next) {
         taskLayout = next;
         load();
@@ -2566,6 +2564,7 @@ class _ResourceViewState extends State<ResourceView> {
                       ),
                       onPressed: () {
                         taskLayout = taskLayout == 'board' ? 'list' : 'board';
+                        rememberTaskView(taskLayout);
                         load();
                       },
                     ),
@@ -5237,6 +5236,7 @@ class _ResourceViewState extends State<ResourceView> {
                 onChanged: (layout) {
                   if (accepts(scope) && taskLayout != layout) {
                     taskLayout = layout;
+                    rememberTaskView(layout);
                     load();
                   }
                 },
@@ -5389,7 +5389,7 @@ class _ResourceViewState extends State<ResourceView> {
         context,
         filtered
             ? 'Try a different combination or clear the current selection.'
-            : 'Create one with the New Task button.',
+            : 'Create one with the Create Task button.',
       ),
       icon: (context, size, color) =>
           RaftIcon(RaftGlyph.checkSquare, size: size, color: color),
@@ -5420,11 +5420,11 @@ class _ResourceViewState extends State<ResourceView> {
                   onAcceptWithDetails: (details) {
                     final payload = details.data;
                     if (canMoveTask(payload.row, payload.scope, status)) {
-                      command(
-                        'PATCH',
-                        '/tasks/${payload.row['id']}/status',
-                        data: {'status': status},
-                        sourceScope: payload.scope,
+                      moveTaskStatus(
+                        command,
+                        taskById(payload.row['id']) ?? payload.row,
+                        status,
+                        payload.scope,
                       );
                     }
                   },
@@ -5528,6 +5528,7 @@ class _ResourceViewState extends State<ResourceView> {
         status: status,
         description: '${row['descriptionPreview'] ?? row['description'] ?? ''}',
         assignee: row['claimedByName'] as String?,
+        legacy: row['isLegacy'] == true,
         onTap: () => taskDetails(row, sourceScope: scope),
         statusOptions: allowed,
         onStatus:
@@ -5537,11 +5538,11 @@ class _ResourceViewState extends State<ResourceView> {
                   (c) => c.id == row['channelId'] && c.joined && !c.archived,
                 )
             ? null
-            : (next) => command(
-                'PATCH',
-                '/tasks/${row['id']}/status',
-                data: {'status': next},
-                sourceScope: scope,
+            : (next) => moveTaskStatus(
+                command,
+                taskById(row['id']) ?? row,
+                next,
+                scope,
               ),
       );
     }

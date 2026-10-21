@@ -62,7 +62,7 @@ const Map<String, String> zhCatalogFeedback = <String, String>{
   "Open attachment {name}": "打开附件 {name}",
   "Screenshots (up to {count})": "截图（最多 {count} 张）",
   "Task #{taskNumber}": "任务 #{taskNumber}",
-  "Task #{taskNumber} · LEGACY": "任务 #{taskNumber} · LEGACY",
+  "Task #{taskNumber} · Legacy": "任务 #{taskNumber} · Legacy",
   "Task #{taskNumber} · Status: {status}": "任务号：{taskNumber} · 状态：{status}",
   "Assigned to {name}": "负责人：{name}",
   "{field}: {from} → {to}": "{field}：{from} → {to}",

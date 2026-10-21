@@ -176,7 +176,7 @@ void main() {
         });
         await flush(t);
         expect(find.byKey(const ValueKey('legacy-task-panel')), findsOneWidget);
-        expect(find.text('Task #8 · LEGACY'), findsOneWidget);
+        expect(find.text('Task #8 · Legacy'), findsOneWidget);
         expect(
           api.calls.where(
             (r) =>
