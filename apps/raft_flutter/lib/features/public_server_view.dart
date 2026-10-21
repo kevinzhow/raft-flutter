@@ -21,7 +21,9 @@ import 'community_join.dart'
     show communityAgreementError, communityServerSlug, joinCommunity;
 import 'custom_protocol_link.dart';
 import 'management_support.dart';
+import 'public_attachments.dart';
 import 'public_avatar_url.dart';
+import 'public_rich_message.dart';
 import 'public_server_panels.dart';
 import 'public_server_settings.dart';
 import 'sender_avatar_projection.dart';
@@ -40,6 +42,11 @@ class PublicServerMessage {
     this.avatarUrl,
     this.threadId,
     this.replyCount = 0,
+    this.attachments = const [],
+    this.mentions = const [],
+    this.reactions = const [],
+    this.lastReplyAt,
+    this.latestReplies = const [],
   });
 
   factory PublicServerMessage.fromJson(Map<String, dynamic> json) {
@@ -55,12 +62,38 @@ class PublicServerMessage {
       createdAt: DateTime.tryParse('${json['createdAt']}'),
       threadId: json['threadId'] as String?,
       replyCount: int.tryParse('${json['replyCount']}') ?? 0,
+      // Absent from servers older than the public rich-message projection.
+      attachments: [
+        for (final a in json['attachments'] as List? ?? const [])
+          ?PublicAttachment.tryParse(a),
+      ],
+      mentions: [
+        for (final m in json['mentions'] as List? ?? const [])
+          ?PublicMention.tryParse(m),
+      ],
+      reactions: [
+        for (final r in json['reactions'] as List? ?? const [])
+          ?PublicReaction.tryParse(r),
+      ],
+      lastReplyAt: DateTime.tryParse('${json['lastReplyAt']}'),
+      latestReplies: [
+        for (final r in json['latestReplies'] as List? ?? const [])
+          ?PublicThreadReply.tryParse(r),
+      ],
     );
   }
   final String id, senderType, author, content, messageType;
   final String? description, avatarUrl, threadId;
   final DateTime? createdAt;
   final int replyCount;
+
+  /// File metadata, `@token` mentions, emoji counts and the newest thread
+  /// replies (the inline preview); each empty from an older server.
+  final List<PublicAttachment> attachments;
+  final List<PublicMention> mentions;
+  final List<PublicReaction> reactions;
+  final DateTime? lastReplyAt;
+  final List<PublicThreadReply> latestReplies;
 
   /// `toReadOnlyMessage`: a display-local key; the public DTO exposes no
   /// authority-bearing identifier.
@@ -664,6 +697,66 @@ class _PublicServerViewState extends State<PublicServerView> {
       ),
   ];
 
+  /// The `@token` mentions of [m]: Web's display-local mention map
+  /// (`public:<type>:<name>`), so the renderer marks the token; the public
+  /// projection carries no principal to link to.
+  List<RaftTextReference> mentionReferences(PublicServerMessage m) => [
+    for (final mention in m.mentions)
+      RaftTextReference(
+        text: '@${mention.name}',
+        href: Uri(
+          scheme: 'raft-ref',
+          host: 'mention',
+          pathSegments: [mention.type, mention.key],
+        ).toString(),
+        identityBacked: true,
+      ),
+  ];
+
+  /// Where the attachment bytes of this page live.
+  PublicAttachmentUrls get attachmentUrls => PublicAttachmentUrls(
+    api: '${widget.client.origin}/api',
+    slug: widget.slug,
+  );
+
+  /// The same inline reply preview a member sees (Web
+  /// `readOnlyReplyScope`); null when the server sent no latest replies.
+  Widget? inlineReplies(PublicServerMessage m, VoidCallback? onOpen) {
+    if (m.threadId == null || m.replyCount <= 0 || m.latestReplies.isEmpty) {
+      return null;
+    }
+    final formatter = timeFormatter;
+    final count = raftFormat(context, '{count} replies', {
+      'count': m.replyCount,
+    });
+    return RaftInlineThreadSurface(
+      key: ValueKey('public-inline-thread-${m.id}'),
+      replies: [
+        for (final r in m.latestReplies)
+          RaftInlineReply(
+            id: r.messageId,
+            author: r.senderName,
+            preview: r.preview,
+            senderType: r.senderType,
+            timestamp: r.createdAt == null ? '' : formatter.clock(r.createdAt),
+            avatar: avatarOf(
+              author: r.senderName,
+              senderType: r.senderType,
+              avatarUrl: r.senderAvatarUrl,
+              // Public replies carry no sender id: a display-local key.
+              senderKey:
+                  'public:${r.senderType}:${r.senderName}:${r.senderAvatarUrl ?? ''}',
+              avatarContext: RaftMountedAvatarContext.compactList,
+            ),
+          ),
+      ],
+      replyCount: m.replyCount,
+      semanticLabel: count,
+      summary: Text('$count ›'),
+      onOpen: onOpen,
+    );
+  }
+
   /// `onReadOnlyNavigateChannel`: a channel chip selects that public channel.
   void openReference(String href) {
     final uri = Uri.tryParse(href);
@@ -682,36 +775,51 @@ class _PublicServerViewState extends State<PublicServerView> {
     }
   }
 
-  Widget avatar(PublicServerMessage m) {
+  Widget avatar(PublicServerMessage m) => avatarOf(
+    author: m.author,
+    senderType: m.senderType,
+    avatarUrl: m.avatarUrl,
+    senderKey: m.senderKey,
+  );
+
+  /// A sender's avatar from what the public projection carries (a message, or
+  /// a reply of the inline thread preview).
+  Widget avatarOf({
+    required String author,
+    required String senderType,
+    required String? avatarUrl,
+    required String senderKey,
+    RaftMountedAvatarContext avatarContext =
+        RaftMountedAvatarContext.panelHeader,
+  }) {
     final source = projectSenderAvatar(
       origin: widget.client.origin,
-      senderId: m.senderKey,
-      senderType: m.senderType,
+      senderId: senderKey,
+      senderType: senderType,
       agents: const [],
       members: const [],
-      carriedAvatarUrl: m.avatarUrl,
+      carriedAvatarUrl: avatarUrl,
     );
     final kind = switch (source.kind) {
       'agent' => RaftAvatarKind.agent,
       'app' => RaftAvatarKind.app,
       _ => RaftAvatarKind.human,
     };
-    const context = RaftMountedAvatarContext.panelHeader;
     final identity = switch (kind) {
       RaftAvatarKind.agent => RaftMountedAvatarIdentity.agent,
       RaftAvatarKind.app => RaftMountedAvatarIdentity.app,
       _ => RaftMountedAvatarIdentity.human,
     };
     return RaftAvatar(
-      name: m.author,
+      name: author,
       kind: kind,
-      mountedContext: context,
+      mountedContext: avatarContext,
       // Public agents carry no live state: the offline dot Web draws.
       presence: kind == RaftAvatarKind.agent
           ? const RaftAvatarPresence(activity: RaftAvatarActivity.offline)
           : null,
       content: RaftAvatarContent(
-        name: m.author,
+        name: author,
         kind: switch (kind) {
           RaftAvatarKind.agent => RaftAvatarContentKind.agent,
           RaftAvatarKind.app => RaftAvatarContentKind.app,
@@ -721,7 +829,7 @@ class _PublicServerViewState extends State<PublicServerView> {
         gravatarUrl: source.gravatarUrl,
         pixelKey: source.pixelKey,
         fallback: RaftMountedAvatarFallback(
-          avatarContext: context,
+          avatarContext: avatarContext,
           gravatar: source.gravatarUrl != null,
           identity: identity,
         ),
@@ -767,12 +875,25 @@ class _PublicServerViewState extends State<PublicServerView> {
       body: RaftMessageBody(
         mountedMessage: true,
         content: m.content,
-        references: channelReferences,
+        references: [...channelReferences, ...mentionReferences(m)],
         onLink: openReference,
       ),
+      attachments: [
+        for (final a in m.attachments)
+          {'id': a.id, 'filename': a.filename, 'mimeType': a.mimeType},
+      ],
+      attachmentGallery: m.attachments.isEmpty
+          ? null
+          : PublicAttachments(attachments: m.attachments, urls: attachmentUrls),
+      reactions: [for (final r in m.reactions) r.toRow()],
+      threadPreview: !parent && !thread ? inlineReplies(m, onThread) : null,
       timestamp: m.createdAt == null ? '' : formatter.messageTime(m.createdAt),
       threadRepliesBadge:
-          !parent && !thread && m.threadId != null && m.replyCount > 0
+          !parent &&
+              !thread &&
+              m.threadId != null &&
+              m.replyCount > 0 &&
+              inlineReplies(m, onThread) == null
           ? RaftThreadRepliesBadge(
               key: ValueKey('public-thread-open-${m.id}'),
               replyCount: m.replyCount,
