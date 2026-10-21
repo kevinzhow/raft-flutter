@@ -632,6 +632,18 @@ abstract final class RaftPanelText {
       line: 16,
     ).copyWith(color: t.colors['foreground-muted']),
   );
+
+  /// `text-xs font-bold text-warning-strong theme-brutal:text-brutal-orange`
+  /// (a failed read's message under a section eyebrow).
+  static TextStyle warningCaption(RaftTokens t) => raftCssText.merge(
+    RaftTypography.body(
+      t,
+      size: 12,
+      line: 16,
+      weight: FontWeight.w700,
+      color: t.brutal ? t.product.brutalOrange : t.colors['warning-strong'],
+    ),
+  );
   static TextStyle monoCaption(RaftTokens t) => raftCssText.merge(
     RaftTypography.mono(
       t,

@@ -19,6 +19,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_apps_view.dart';
+import 'agent_hosted_model.dart';
 import 'agent_migration_section.dart';
 import 'agent_profile_rules.dart';
 import 'external_agent_setup.dart';
@@ -208,6 +209,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   Map<String, dynamic> get a => widget.agent;
   String get displayName => agentRowName(a);
   bool get external => a['external'] == true || a['runtime'] == 'external';
+
+  /// Web `externalStatus?.hostedRuntime ?? agent.hostedRuntime`: the hosted
+  /// provisioning summary, present for callers who can manage the agent.
+  Map? get _hostedRuntime {
+    final fromStatus = externalStatus?['hostedRuntime'];
+    final value = fromStatus is Map ? fromStatus : a['hostedRuntime'];
+    return value is Map ? value : null;
+  }
   AgentAmbientDisplay get _display => agentRowAmbientDisplay(
     a,
     live: widget.liveActivity,
@@ -888,6 +897,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             credentialLastUsedAt:
                 externalStatus?['credentialLastUsedAt'] as String?,
             statusError: externalStatusError,
+          ),
+        // `showOperationalInfo && isExternalAgent && canManageAgent &&
+        // hostedRuntime?.state === "active"`.
+        if (external && _canManage && _hostedRuntime?['state'] == 'active')
+          AgentHostedRuntimeModel(
+            key: ValueKey('model-$agentId'),
+            controller: widget.controller,
+            agentId: agentId,
           ),
         if (!_bounded)
           RaftPanelSection(
