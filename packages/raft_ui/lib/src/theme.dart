@@ -152,7 +152,7 @@ class RaftTokens extends ThemeExtension<RaftTokens> {
     // against; any other pack is resolved fresh from its values.
     final set = pack == null
         ? RaftTokenSet.of(id)
-        : RaftTokenSet.fromPack(id, mode: mode);
+        : RaftTokenSet.fromPack(id, mode: mode, fonts: themePack.fonts);
     return RaftTokens(
       dark,
       // The pack's own names (0.7.1 roles, palette) sit on top of the legacy

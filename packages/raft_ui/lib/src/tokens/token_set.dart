@@ -2,7 +2,7 @@ import 'dart:ui' show Color;
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_theme/raft_theme.dart'
-    show RaftModeValues, RaftShadowSpec, builtInRaftTheme;
+    show RaftModeValues, RaftShadowSpec, RaftFontSpec, builtInRaftTheme;
 
 import 'component_colors.g.dart';
 import 'metrics.g.dart';
@@ -77,10 +77,26 @@ class RaftTokenSet {
 
   /// Every tier read from one mode of a theme pack instead of the generated
   /// statics.
+  /// [fonts] are the pack's own family/stack declarations. Without them every
+  /// theme would paint the built-in Raft typeface, which is what happened before
+  /// this parameter existed: Elegant's Geist/Inter never reached a single glyph.
   factory RaftTokenSet.fromPack(
     RaftThemeId id, {
     required RaftModeValues mode,
+    Map<String, RaftFontSpec> fonts = const {},
   }) {
+    // A pack may declare only some families; the Raft stacks remain the fallback.
+    RaftFontSpec? spec(String role) => fonts[role];
+    final headingStack = spec('heading')?.stack.isNotEmpty == true
+        ? spec('heading')!.stack
+        : raftSansFontStack;
+    final sansStack =
+        spec('sans')?.stack.isNotEmpty == true ? spec('sans')!.stack : raftSansFontStack;
+    final monoStack =
+        spec('mono')?.stack.isNotEmpty == true ? spec('mono')!.stack : raftMonoFontStack;
+    final headingFamily = spec('heading')?.family ?? raftSansFontFamily;
+    final sansFamily = spec('sans')?.family ?? raftSansFontFamily;
+    final monoFamily = spec('mono')?.family ?? raftMonoFontFamily;
     final colors = {...mode.colors, ...mode.palette};
     RaftShadow shadow(String role) => RaftShadow([
       for (final layer in mode.shadows[role] ?? const <RaftShadowSpec>[])
@@ -113,12 +129,12 @@ class RaftTokenSet {
         cardTitleFontSize: token('type.cardTitle.size', 16),
         cardTitleFontWeight: token('type.cardTitle.weight', 500),
         cardTitleLineHeight: token('type.cardTitle.line', 22),
-        headingFontStack: raftSansFontStack,
-        sansFontStack: raftSansFontStack,
-        monoFontStack: raftMonoFontStack,
-        headingFont: raftSansFontFamily,
-        sansFont: raftSansFontFamily,
-        monoFont: raftMonoFontFamily,
+        headingFontStack: headingStack,
+        sansFontStack: sansStack,
+        monoFontStack: monoStack,
+        headingFont: headingFamily,
+        sansFont: sansFamily,
+        monoFont: monoFamily,
       ),
     );
   }
