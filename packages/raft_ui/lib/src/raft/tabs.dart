@@ -201,7 +201,16 @@ class RaftTabButton extends StatelessWidget {
         ];
         final boxHeight = height ?? heightOf(variant);
         Widget box = RaftCssBox(
-          radius: underline ? 0 : 8,
+          // Measured per look rather than taken from the 0.7.1 class:
+          //   Raft     official `rounded-control`          = 8
+          //   Elegant  a57b9dab tab `rounded-md` (0.375rem) = 6
+          //   Brutal   a57b9dab tab, no rounding           = 0
+          // `radius.control` carries exactly 8 / 6 / 0, so it fits all three.
+          // `radius.chip` also holds 6 for Raft but 4 for Elegant, which would
+          // miss the measurement.
+          // The underline variant is `rounded-none` in the official source: a
+          // shape decision rather than a theme value, so it stays 0 everywhere.
+          radius: underline ? 0 : t.size('radius.control', fallback: 8),
           fill: colors.fill,
           borderWidth: borderWidth,
           borderColor: colors.border,
