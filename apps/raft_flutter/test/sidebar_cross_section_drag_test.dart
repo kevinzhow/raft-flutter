@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/personal_presentation.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/sidebar_drop.dart';
 import 'package:raft_flutter/features/sidebar_projection.dart';
@@ -175,8 +176,10 @@ void main() {
   group('mounted sidebar', () {
     Future<(WorkspaceController, List<Object?>)> setup(
       WidgetTester tester,
-      Map<String, dynamic> prefs,
-    ) async {
+      Map<String, dynamic> prefs, {
+      PersonalPresentationStore? presentation,
+      List<RaftChannel>? rows,
+    }) async {
       SharedPreferences.setMockInitialValues({});
       tester.view.physicalSize = const Size(1440, 900);
       tester.view.devicePixelRatio = 1;
@@ -185,7 +188,7 @@ void main() {
       addTearDown(w.dispose);
       w.loading = false;
       w.messageDomain.ledger.switchServer('s1');
-      w.channels = [channel('c1', 'general'), channel('c2', 'random')];
+      w.channels = rows ?? [channel('c1', 'general'), channel('c2', 'random')];
       w.dms = [dm('d1', 'u2', 'Alice'), dm('d2', 'u3', 'Bob')];
       w.section = 'chat';
       w.sidebarOrder = prefs;
@@ -211,6 +214,7 @@ void main() {
               appearance: RaftAppearance(light: RaftFamily.elegant),
               onAppearance: (_) async {},
               onLogout: () async {},
+              presentation: presentation,
             ),
           ),
         ),
@@ -281,7 +285,7 @@ void main() {
         'sectionsVersion': 3,
       });
       // c1 sits in Launch; c2 is in Channels (sorted by name).
-      final target = tester.getBottomLeft(row('c1')) + const Offset(40, -4);
+      final target = tester.getBottomLeft(row('c1')) + const Offset(40, 20);
       await longPressDragTo(tester, row('c2'), target);
       expect(patches.single, {
         'sectionPlacements': [
@@ -322,5 +326,136 @@ void main() {
         });
       },
     );
+
+    testWidgets('the lifted row moves live: it shows faded in the section '
+        'under the pointer and the section it left closes up', (tester) async {
+      final (_, patches) = await setup(tester, {
+        'channelOrder': ['c2'],
+        'customSections': [
+          {'id': 's1', 'name': 'Launch', 'sortMode': 'manual'},
+        ],
+        'sectionPlacements': [
+          {'kind': 'channel', 'id': 'c1', 'sectionId': 's1', 'position': 0},
+        ],
+        'sectionsVersion': 3,
+      });
+      double top(String id) =>
+          tester.getTopLeft(find.byKey(ValueKey('sidebar-section-$id'))).dy;
+      final channelsBefore = top('system:dms') - top('system:channels');
+      final start = tester.getCenter(row('c2'));
+      final gesture = await tester.startGesture(start);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      final target = tester.getCenter(row('c1')) - const Offset(0, 8);
+      for (var i = 1; i <= 10; i++) {
+        await gesture.moveTo(start + (target - start) * (i / 10));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // c2 sits in Launch now, above c1, faded; Channels has closed up.
+      expect(row('c2'), findsNWidgets(2), reason: 'the row and its card');
+      final ghost = find
+          .ancestor(of: row('c2'), matching: find.byType(Opacity))
+          .evaluate()
+          .map((e) => (e.widget as Opacity).opacity);
+      expect(ghost, contains(.12));
+      expect(
+        tester.getTopLeft(row('c2').first).dy,
+        lessThan(tester.getTopLeft(row('c1')).dy),
+      );
+      expect(top('s1'), lessThan(tester.getTopLeft(row('c2').first).dy));
+      expect(
+        top('system:dms') - top('system:channels'),
+        lessThan(channelsBefore),
+      );
+      expect(patches, isEmpty, reason: 'nothing is sent before the drop');
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(patches.single, {
+        'sectionPlacements': [
+          {'kind': 'channel', 'id': 'c2', 'sectionId': 's1', 'position': 0},
+          {'kind': 'channel', 'id': 'c1', 'sectionId': 's1', 'position': 1},
+        ],
+        'sectionsVersion': 3,
+      });
+      expect(row('c2'), findsOneWidget);
+    });
+
+    testWidgets('a drag released outside every section changes nothing and '
+        'the row returns', (tester) async {
+      final (_, patches) = await setup(tester, {
+        'channelOrder': ['c1', 'c2'],
+      });
+      final before = tester.getCenter(row('c1'));
+      final start = before;
+      final gesture = await tester.startGesture(start);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      for (var i = 1; i <= 6; i++) {
+        await gesture.moveTo(start + Offset(900, 0) * (i / 6));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(patches, isEmpty);
+      expect(tester.getCenter(row('c1')), before);
+      expect(SidebarDrag.active, isFalse);
+    });
+
+    testWidgets('empty custom sections stay visible when empty sections are '
+        'hidden', (tester) async {
+      final presentation = PersonalPresentationStore(desktop: false);
+      addTearDown(presentation.dispose);
+      await setup(tester, {
+        'customSections': [
+          {'id': 's1', 'name': 'Launch', 'sortMode': 'manual'},
+        ],
+        'sectionsVersion': 3,
+      }, presentation: presentation);
+      presentation.update(presentation.key, hideEmptySections: true);
+      await tester.pumpAndSettle();
+      expect(presentation.value.hideEmptySections, isTrue);
+      // Pinned has nothing and goes; the custom section stays, with its hint.
+      expect(
+        find.byKey(const ValueKey('sidebar-section-system:pinned')),
+        findsNothing,
+      );
+      expect(find.byKey(const ValueKey('sidebar-section-s1')), findsOneWidget);
+      expect(find.text('No conversations'), findsOneWidget);
+    });
+
+    testWidgets('a lifted row held at the edge of the list scrolls it', (
+      tester,
+    ) async {
+      final rows = [for (var i = 0; i < 40; i++) channel('x$i', 'room $i')];
+      await setup(tester, {
+        'channelOrder': [for (final c in rows) c.id],
+      }, rows: rows);
+      final list = find.descendant(
+        of: find.byKey(const Key('workspace-sidebar')),
+        matching: find.byType(Scrollable),
+      );
+      ScrollPosition position() =>
+          tester.state<ScrollableState>(list.first).position;
+      expect(position().pixels, 0);
+      final start = tester.getCenter(row('x2'));
+      final gesture = await tester.startGesture(start);
+      await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
+      final bottom = tester.getBottomLeft(
+        find.byKey(const Key('workspace-sidebar')),
+      );
+      for (var i = 1; i <= 8; i++) {
+        await gesture.moveTo(
+          Offset(start.dx, start.dy + (bottom.dy - 20 - start.dy) * i / 8),
+        );
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await tester.pump(const Duration(milliseconds: 500));
+      final held = position().pixels;
+      expect(held, greaterThan(100));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      // Released: the scrolling stops with the drag.
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(position().pixels, held);
+      expect(SidebarDrag.active, isFalse);
+    });
   });
 }

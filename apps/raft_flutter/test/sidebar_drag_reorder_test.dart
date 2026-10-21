@@ -558,15 +558,21 @@ void main() {
       });
     });
 
-    testWidgets('a sorted group does not lift its rows', (tester) async {
+    testWidgets('a sorted group takes no reorder of its own rows', (
+      tester,
+    ) async {
       final (_, patches) = await setup(tester, {
         'dmOrder': ['d1', 'd2'],
         'dmSortMode': 'az',
       });
-      expect(find.byType(SidebarReorderRow), findsWidgets);
+      // The rows can be lifted (to leave for Pinned or a section) but the
+      // sorted group is no destination for them.
+      expect(find.byType(SidebarDragRow), findsWidgets);
+      await longPressDrag(tester, row('d2'), row('d1'));
+      expect(patches, isEmpty);
       expect(
-        find.ancestor(of: row('d1'), matching: find.byType(SidebarReorderRow)),
-        findsNothing,
+        tester.getCenter(row('d1')).dy,
+        lessThan(tester.getCenter(row('d2')).dy),
       );
       // The long press still opens the row menu directly.
       await tester.longPress(row('d2'));

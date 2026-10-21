@@ -919,6 +919,7 @@ class RaftNavItem extends StatelessWidget {
     this.quietNew = false,
     this.providerBadge,
     this.onDoubleClick,
+    this.ignoreSecondClick = false,
     this.wrap = false,
     this.onContextMenu,
     this.contextMenuOnLongPress = true,
@@ -966,6 +967,16 @@ class RaftNavItem extends StatelessWidget {
   /// Source `onDoubleClick` of member rows and the Activity entry. Mouse and
   /// trackpad only; a tap keeps its [onTap].
   final VoidCallback? onDoubleClick;
+
+  /// The second click of a mouse double-click does not tap again (Activity
+  /// entry: `if (e.detail >= 2) return`). The first click is never held back.
+  final bool ignoreSecondClick;
+
+  VoidCallback get _tap => ignoreSecondClick
+      ? () {
+          if (!RaftMouseDoubleClick.secondClick) onTap();
+        }
+      : onTap;
 
   /// Sidebar.tsx `allowWrap` (Pinned rows): `items-start whitespace-normal
   /// leading-tight`, the title wraps and the row grows from a 30 / 32 minimum
@@ -1180,7 +1191,7 @@ class RaftNavItem extends StatelessWidget {
               pointerPressed: pointerPressed,
               menuOpen: menuOpen,
             ),
-      onPressed: onTap,
+      onPressed: _tap,
       selected: selected,
       // Mounted directory rows share Source's box; expand their touch area
       // without inserting 48px of layout between the section's entities.
@@ -1314,7 +1325,7 @@ class RaftNavItem extends StatelessWidget {
     ].join(', ');
     final item = Semantics(
       selected: selected,
-      onTap: onTap,
+      onTap: _tap,
       button: true,
       label: stateLabel,
       excludeSemantics: true,
@@ -1372,7 +1383,7 @@ class RaftNavItem extends StatelessWidget {
           child: Semantics(
             selected: selected,
             button: true,
-            onTap: onTap,
+            onTap: _tap,
             excludeSemantics: true,
             label: saved
                 ? '$label, $savedLabel'
@@ -1389,7 +1400,7 @@ class RaftNavItem extends StatelessWidget {
               // Same box as the Web mobile sidebar row (no 48dp inflation).
               minimumTargetSize: recipe.sourceHeight,
               recipe: recipe,
-              onPressed: onTap,
+              onPressed: _tap,
               child: Row(
                 children: [
                   if (glyph != null)

@@ -11,6 +11,11 @@ import 'package:flutter/widgets.dart';
 /// the child's own tap for that click (as the browser orders `click` before
 /// `dblclick`).
 class RaftMouseDoubleClick extends StatefulWidget {
+  /// True while the second click of a double-click is being dispatched, so a
+  /// tap handler can skip it (`event.detail >= 2`). Touch never sets it.
+  static bool get secondClick => _secondClick;
+  static bool _secondClick = false;
+
   const RaftMouseDoubleClick({
     super.key,
     required this.onDoubleClick,
@@ -48,6 +53,7 @@ class _RaftMouseDoubleClickState extends State<RaftMouseDoubleClick> {
     if (repeat) {
       _lastDown = null;
       _armedPointer = e.pointer;
+      RaftMouseDoubleClick._secondClick = true;
     } else {
       _lastDown = e.timeStamp;
       _lastPosition = e.position;
@@ -59,7 +65,15 @@ class _RaftMouseDoubleClickState extends State<RaftMouseDoubleClick> {
     _armedPointer = null;
     final callback = widget.onDoubleClick;
     // ignore: raft_lints/avoid_unreviewed_idle_work -- One microtask per double click, not a loop: it runs the callback after the child's own tap of this click.
-    if (callback != null) scheduleMicrotask(callback);
+    scheduleMicrotask(() {
+      RaftMouseDoubleClick._secondClick = false;
+      callback?.call();
+    });
+  }
+
+  void _cancel() {
+    _armedPointer = null;
+    RaftMouseDoubleClick._secondClick = false;
   }
 
   @override
@@ -69,7 +83,7 @@ class _RaftMouseDoubleClickState extends State<RaftMouseDoubleClick> {
           behavior: HitTestBehavior.translucent,
           onPointerDown: _down,
           onPointerUp: _up,
-          onPointerCancel: (_) => _armedPointer = null,
+          onPointerCancel: (_) => _cancel(),
           child: widget.child,
         );
 }

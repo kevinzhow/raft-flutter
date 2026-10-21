@@ -2,50 +2,58 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:raft_ui/raft_ui.dart';
 
 import '../data/closed_dm_reopen.dart';
 import '../data/workspace_controller.dart';
 import 'sidebar_projection.dart';
 import 'sidebar_reorder.dart';
 
-/// Where a sidebar row dragged out of its section would land.
-class SidebarDropHint {
-  const SidebarDropHint(this.group, this.shown, this.entryKey, this.after);
-
-  /// The destination section, the rows it shows, and the row the pointer is on
-  /// (null: the section's empty hint). [after]: lands below that row.
+/// Where the lifted row sits in the live projection: a section and the slot
+/// among that section's other rows ([shown] never holds the lifted row).
+class SidebarDropTarget {
+  const SidebarDropTarget(this.group, this.shown, this.index);
   final SidebarGroup group;
   final List<SidebarEntry> shown;
-  final String? entryKey;
-  final bool after;
-
-  /// Index among [shown] the row is inserted at.
-  int get index {
-    if (entryKey == null) return shown.length;
-    final at = shown.indexWhere((e) => e.key == entryKey);
-    return at < 0 ? shown.length : at + (after ? 1 : 0);
-  }
+  final int index;
 
   @override
   bool operator ==(Object other) =>
-      other is SidebarDropHint &&
+      other is SidebarDropTarget &&
       other.group.id == group.id &&
-      other.entryKey == entryKey &&
-      other.after == after;
+      other.index == index;
 
   @override
-  int get hashCode => Object.hash(group.id, entryKey, after);
+  int get hashCode => Object.hash(group.id, index);
 }
 
-/// An item drag that left the pointer free to cross sections (Sidebar.tsx
-/// `sidebarDndActiveId`): the section it started in, and the drop target the
-/// pointer is over.
+/// The item drag in flight (Sidebar.tsx `sidebarDndActiveId`,
+/// `sidebarDndProjection`): the section the row was lifted from and the slot
+/// it holds now. Sections list their rows through [project], so the row moves
+/// as the pointer does and the section it left closes up.
 class SidebarDrag {
   SidebarDrag._();
   static final source = _Signal<String?>(null);
-  static final hint = _Signal<SidebarDropHint?>(null);
+  static final target = _Signal<SidebarDropTarget?>(null);
+  static SidebarEntry? entry;
   static bool get active => source.value != null;
+  static Listenable get changes => Listenable.merge([source, target]);
+
+  /// [base] as [group] lists it with the lifted row moved to its slot.
+  static List<SidebarEntry> project(
+    SidebarGroup group,
+    List<SidebarEntry> base,
+  ) {
+    final lifted = entry, to = target.value;
+    if (lifted == null || to == null) return base;
+    final rest = [
+      for (final e in base)
+        if (e.key != lifted.key) e,
+    ];
+    if (group.id != to.group.id) {
+      return rest.length == base.length ? base : rest;
+    }
+    return [...rest]..insert(to.index.clamp(0, rest.length), lifted);
+  }
 }
 
 /// A process-wide value listenable. It is not a [ChangeNotifier]: it lives as
@@ -72,79 +80,153 @@ class _Signal<T> implements ValueListenable<T> {
   void removeListener(VoidCallback listener) => _listeners.remove(listener);
 }
 
-/// One lifted row: its owner, section and entry.
+/// One lifted row, as it was listed when it was lifted ([shown] are the rows
+/// of [group] then): its owner, section and entry.
 class SidebarDragSession {
   SidebarDragSession({
     required this.w,
     required this.group,
     required this.entry,
+    required this.shown,
   });
   final WorkspaceController w;
   final SidebarGroup group;
   final SidebarEntry entry;
+  final List<SidebarEntry> shown;
+  Timer? _scroll;
+  Offset? _at;
 
-  void start() => SidebarDrag.source.value = group.id;
+  void start() {
+    SidebarDrag.entry = entry;
+    SidebarDrag.target.value = null;
+    SidebarDrag.source.value = group.id;
+  }
 
-  void move(Offset at) => SidebarDrag.hint.value = _target(at);
+  void move(Offset at) {
+    _at = at;
+    SidebarDrag.target.value = _resolve(at);
+    _autoscroll(at);
+  }
 
-  /// Drops at [at]: true when the row went to another section (the persisting
-  /// move is sent), false when it stays where the list put it.
-  bool finish(Offset at) {
-    final target = _target(at);
-    SidebarDrag.hint.value = null;
-    SidebarDrag.source.value = null;
-    if (target == null) return false;
-    final updates = sidebarCrossMoveUpdates(
-      entry: entry,
-      dest: target.group,
-      shown: target.shown,
-      index: target.index,
-      preferences: w.sidebarOrder,
-    );
+  /// Persists where the row was dropped through the optimistic
+  /// [WorkspaceController.updateSidebarOrder].
+  void finish() {
+    final to = SidebarDrag.target.value;
+    cancel();
+    if (to == null) return;
+    final updates = to.group.id == group.id
+        ? sidebarReorderUpdates(
+            group: group,
+            shown: shown,
+            preferences: w.sidebarOrder,
+            from: shown.indexWhere((e) => e.key == entry.key),
+            to: to.index,
+          )
+        : sidebarCrossMoveUpdates(
+            entry: entry,
+            dest: to.group,
+            shown: to.shown,
+            index: to.index,
+            preferences: w.sidebarOrder,
+          );
     if (updates != null) unawaited(w.updateSidebarOrder(updates));
-    return true;
   }
 
   void cancel() {
-    SidebarDrag.hint.value = null;
+    _scroll?.cancel();
+    _scroll = null;
+    SidebarDrag.target.value = null;
     SidebarDrag.source.value = null;
+    SidebarDrag.entry = null;
   }
 
-  SidebarDropHint? _target(Offset at) {
+  /// The slot under the pointer. Over the lifted row itself, over a section
+  /// that cannot take it, or over no row at all, the row stays where it is
+  /// (Sidebar.tsx `resolveSidebarDndRetainedContainer`).
+  SidebarDropTarget? _resolve(Offset at) {
     _SidebarDropZoneState? row, empty;
     for (final zone in _zones) {
       final box = zone.context.findRenderObject();
-      if (box is! RenderBox ||
-          !box.attached ||
-          !box.hasSize ||
-          zone.widget.group.id == group.id ||
-          !(box.localToGlobal(Offset.zero) & box.size).contains(at) ||
-          !sidebarDropAllowed(entry, zone.widget.group, w.sidebarOrder)) {
-        continue;
-      }
-      if (zone.widget.entryKey == null) {
-        empty = zone;
-      } else {
-        row = zone;
+      if (box is RenderBox &&
+          box.attached &&
+          box.hasSize &&
+          (box.localToGlobal(Offset.zero) & box.size).contains(at)) {
+        if (zone.widget.entryKey == null) {
+          empty = zone;
+        } else {
+          row = zone;
+        }
       }
     }
-    final zone = row ?? empty;
-    if (zone == null) return null;
-    final box = zone.context.findRenderObject()! as RenderBox;
+    final zone = (row ?? empty)?.widget;
+    final current = SidebarDrag.target.value;
+    if (zone == null ||
+        zone.entryKey == entry.key ||
+        !sidebarDropAllowed(entry, zone.group, w.sidebarOrder)) {
+      return current;
+    }
+    final rest = [
+      for (final e in zone.shown)
+        if (e.key != entry.key) e,
+    ];
+    if (zone.entryKey == null) {
+      return SidebarDropTarget(zone.group, rest, rest.length);
+    }
+    final box = row!.context.findRenderObject()! as RenderBox;
     final center = box.localToGlobal(box.size.center(Offset.zero)).dy;
-    return SidebarDropHint(
-      zone.widget.group,
-      zone.widget.shown,
-      zone.widget.entryKey,
-      at.dy >= center,
-    );
+    final over = rest.indexWhere((e) => e.key == zone.entryKey);
+    return over < 0
+        ? current
+        : SidebarDropTarget(zone.group, rest, over + (at.dy >= center ? 1 : 0));
+  }
+
+  static const _edge = 56.0, _step = 14.0;
+
+  /// A pointer held near the top or bottom of the list scrolls it, as the
+  /// list's own drag did.
+  void _autoscroll(Offset at) {
+    ScrollPosition? position;
+    Rect? view;
+    for (final zone in _zones) {
+      final scrollable = Scrollable.maybeOf(zone.context);
+      final box = scrollable?.context.findRenderObject();
+      if (scrollable != null && box is RenderBox && box.hasSize) {
+        position = scrollable.position;
+        view = box.localToGlobal(Offset.zero) & box.size;
+        break;
+      }
+    }
+    final pos = position;
+    final direction = view == null
+        ? 0
+        : at.dy < view.top + _edge
+        ? -1
+        : at.dy > view.bottom - _edge
+        ? 1
+        : 0;
+    if (pos == null || direction == 0) {
+      _scroll?.cancel();
+      _scroll = null;
+      return;
+    }
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- Runs only while a lifted row is held within the list's edge band and is cancelled when it leaves, drops or is cancelled.
+    _scroll ??= Timer.periodic(const Duration(milliseconds: 16), (_) {
+      final to = (pos.pixels + direction * _step).clamp(
+        pos.minScrollExtent,
+        pos.maxScrollExtent,
+      );
+      if (to != pos.pixels) pos.jumpTo(to);
+      final last = _at;
+      if (last != null) SidebarDrag.target.value = _resolve(last);
+    });
   }
 }
 
 final _zones = <_SidebarDropZoneState>{};
 
-/// A row (or the empty hint) of a section that a dragged row can land on.
-/// While it is the target it shows the edge the row lands on.
+/// A row (or the empty hint) of a section that a dragged row can land on. The
+/// lifted row itself shows faded where the projection holds it
+/// (`opacity: isDragging ? 0.12 : 1`).
 class SidebarDropZone extends StatefulWidget {
   const SidebarDropZone({
     super.key,
@@ -176,37 +258,16 @@ class _SidebarDropZoneState extends State<SidebarDropZone> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    return ValueListenableBuilder<SidebarDropHint?>(
-      valueListenable: SidebarDrag.hint,
-      child: widget.child,
-      builder: (context, hint, child) {
-        final on =
-            hint != null &&
-            hint.group.id == widget.group.id &&
-            hint.entryKey == widget.entryKey;
-        if (!on) return child!;
-        final edge = Container(height: t.border, color: t.accent);
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            if (widget.entryKey == null)
-              Positioned.fill(child: ColoredBox(color: t.accentSoft)),
-            child!,
-            if (widget.entryKey != null)
-              Positioned(
-                left: 0,
-                right: 0,
-                top: hint.after ? null : 0,
-                bottom: hint.after ? 0 : null,
-                child: IgnorePointer(child: edge),
-              ),
-          ],
+  Widget build(BuildContext context) => widget.entryKey == null
+      ? widget.child
+      : ValueListenableBuilder<String?>(
+          valueListenable: SidebarDrag.source,
+          child: widget.child,
+          builder: (context, source, child) =>
+              source != null && SidebarDrag.entry?.key == widget.entryKey
+              ? Opacity(opacity: .12, child: child)
+              : child!,
         );
-      },
-    );
-  }
 }
 
 /// Sidebar.tsx `getSidebarDndHomeContainer`: the section an entry belongs to

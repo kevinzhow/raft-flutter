@@ -907,7 +907,13 @@ class RaftWorkspaceRail extends StatelessWidget {
                                       ],
                                     ),
                                   ),
-                                  onPressed: () => onSelected(d.id),
+                                  onPressed: () {
+                                    if (d.onDoubleClick != null &&
+                                        RaftMouseDoubleClick.secondClick) {
+                                      return;
+                                    }
+                                    onSelected(d.id);
+                                  },
                                 ),
                               ),
                             ),

@@ -287,7 +287,9 @@ class _SectionDragHeaderState extends State<SidebarSectionDragHeader> {
           final edge = BorderSide(color: t.accent, width: t.border);
           return _SectionDraggable(
             data: id,
-            onHeldInPlace: widget.onHeldInPlace,
+            onHeldInPlace: widget.onHeldInPlace == null
+                ? null
+                : (at) => widget.onHeldInPlace?.call(at),
             onDragStarted: () => setDragging(true),
             onDragEnd: (_) => setDragging(false),
             feedback: _SectionDragCard(
@@ -376,21 +378,22 @@ class _SectionDragCard extends StatelessWidget {
 }
 
 /// [LongPressDraggable] through the rows' hold recognizer: a long press lifts
-/// the section, a release without travel is [onHeldInPlace] instead.
+/// the section or row, a release without travel is [onHeldInPlace] instead.
+/// The recognizer is made once per draggable state, so [onHeldInPlace] and
+/// [sessionOf] must answer from the current widget, not the first one.
 class _SectionDraggable extends LongPressDraggable<String> {
   const _SectionDraggable({
     required super.data,
     required super.feedback,
     required super.child,
-    super.childWhenDragging,
     super.onDragStarted,
     super.onDragEnd,
     this.onHeldInPlace,
-    this.session,
+    this.sessionOf,
   });
 
   final ValueChanged<Offset>? onHeldInPlace;
-  final SidebarDragSession? session;
+  final SidebarDragSession? Function()? sessionOf;
 
   @override
   DelayedMultiDragGestureRecognizer createRecognizer(
@@ -399,7 +402,7 @@ class _SectionDraggable extends LongPressDraggable<String> {
       _HoldRecognizer(
           debugOwner: this,
           onHeldInPlace: onHeldInPlace,
-          session: session,
+          sessionOf: sessionOf,
         )
         ..onStart = (position) {
           final drag = onStart(position);
@@ -408,164 +411,122 @@ class _SectionDraggable extends LongPressDraggable<String> {
         };
 }
 
-/// The persisting reorder of [group]'s [shown] rows through the optimistic
-/// [WorkspaceController.updateSidebarOrder], or null (plain rows) while the
-/// group sorts by activity or name.
-ReorderCallback? sidebarReorderCallback(
-  SidebarGroup group,
-  List<SidebarEntry> shown,
-  WorkspaceController w,
-) => !sidebarGroupReorderable(group, w.sidebarOrder)
-    ? null
-    : (from, to) {
-        final updates = sidebarReorderUpdates(
-          group: group,
-          shown: shown,
-          preferences: w.sidebarOrder,
-          from: from,
-          to: to,
-        );
-        if (updates != null) unawaited(w.updateSidebarOrder(updates));
-      };
-
 /// The index of the row keyed [key] (a sidebar row's own key) in [entries].
 int? sidebarEntryIndex(List<SidebarEntry> entries, Key key) {
   if (key is! ValueKey<String>) return null;
   final index = entries.indexWhere(
-    (entry) =>
-        (entry.agent == null
-            ? 'sidebar-channel-${entry.channel!.id}'
-            : 'sidebar-${entry.key}') ==
-        key.value,
+    (entry) => 'sidebar-drag-${entry.key}' == key.value,
   );
   return index < 0 ? null : index;
 }
 
-/// Row [index] of [entries] built by [row]. A long press lifts it: with
-/// [onReorder] it is an item of a reorderable list, otherwise a draggable of
-/// its own; either way it can be dropped on another section
-/// ([SidebarDragSession]).
+/// Row [index] of [entries] built by [row]. A long press lifts it and it can
+/// be dropped on any section that takes it ([SidebarDragSession]); the
+/// section listing it follows the pointer through [SidebarDrag.project].
 Widget sidebarListRow(
   List<SidebarEntry> entries,
   int index,
-  ReorderCallback? onReorder,
   RaftNavItem Function(SidebarEntry entry, bool reorderable) row, {
   required SidebarGroup group,
   required WorkspaceController w,
 }) {
   final entry = entries[index], item = row(entry, true);
-  final session = SidebarDragSession(w: w, group: group, entry: entry);
-  final zone = SidebarDropZone(
-    group: group,
-    shown: entries,
-    entryKey: entry.key,
-    child: item,
-  );
-  return onReorder == null
-      ? _EntryDraggable(
-          key: ValueKey('sidebar-drag-${entry.key}'),
-          session: session,
-          onHeldInPlace: item.onContextMenu,
-          child: zone,
-        )
-      : SidebarReorderRow(
-          key: ValueKey('sidebar-reorder-${entry.key}'),
-          index: index,
-          onHeldInPlace: item.onContextMenu,
-          session: session,
-          child: zone,
-        );
-}
-
-/// A row of a section that sorts itself: it cannot be reordered in place, but
-/// it can still leave for Pinned or a custom section.
-class _EntryDraggable extends StatelessWidget {
-  const _EntryDraggable({
-    super.key,
-    required this.session,
-    required this.onHeldInPlace,
-    required this.child,
-  });
-  final SidebarDragSession session;
-  final ValueChanged<Offset>? onHeldInPlace;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) => _SectionDraggable(
-      data: session.entry.key,
-      session: session,
-      onHeldInPlace: onHeldInPlace,
-      feedback: SizedBox(
-        width: constraints.maxWidth,
-        child: raftSidebarReorderProxy(
-          child,
-          0,
-          const AlwaysStoppedAnimation(1),
-        ),
-      ),
-      childWhenDragging: Opacity(opacity: .4, child: child),
-      child: child,
+  return SidebarDragRow(
+    key: ValueKey('sidebar-drag-${entry.key}'),
+    session: SidebarDragSession(
+      w: w,
+      group: group,
+      entry: entry,
+      shown: entries,
+    ),
+    onHeldInPlace: item.onContextMenu,
+    feedback: item,
+    child: SidebarDropZone(
+      group: group,
+      shown: entries,
+      entryKey: entry.key,
+      child: item,
     ),
   );
 }
 
-/// The rows of a custom section: a [SliverReorderableList] with [onReorder].
+/// A sidebar row that a long press lifts: it follows the pointer as a card
+/// (the [feedback]) while its section moves it to the slot under the pointer.
+class SidebarDragRow extends StatefulWidget {
+  const SidebarDragRow({
+    super.key,
+    required this.session,
+    required this.onHeldInPlace,
+    required this.feedback,
+    required this.child,
+  });
+  final SidebarDragSession session;
+  final ValueChanged<Offset>? onHeldInPlace;
+  final Widget feedback, child;
+
+  @override
+  State<SidebarDragRow> createState() => _SidebarDragRowState();
+}
+
+class _SidebarDragRowState extends State<SidebarDragRow> {
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _SectionDraggable(
+      data: widget.session.entry.key,
+      sessionOf: () => widget.session,
+      onHeldInPlace: widget.onHeldInPlace == null
+          ? null
+          : (at) => widget.onHeldInPlace?.call(at),
+      feedback: SizedBox(
+        width: constraints.maxWidth,
+        child: raftSidebarReorderProxy(
+          widget.feedback,
+          0,
+          const AlwaysStoppedAnimation(1),
+        ),
+      ),
+      child: widget.child,
+    ),
+  );
+}
+
+/// The rows of a section listed by [shown].
 Widget sidebarRowsSliver(
-  List<SidebarEntry> entries, {
-  required ReorderCallback? onReorder,
+  List<SidebarEntry> shown, {
   required RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
   required SidebarGroup group,
   required WorkspaceController w,
-}) => onReorder == null
-    ? SliverList.builder(
-        itemCount: entries.length,
-        itemBuilder: (context, index) =>
-            sidebarListRow(entries, index, null, row, group: group, w: w),
-        findChildIndexCallback: (key) => sidebarEntryIndex(entries, key),
-      )
-    : SliverReorderableList(
-        itemCount: entries.length,
-        itemBuilder: (context, index) =>
-            sidebarListRow(entries, index, onReorder, row, group: group, w: w),
-        onReorderItem: onReorder,
-        proxyDecorator: raftSidebarReorderProxy,
-      );
+}) => SliverList.builder(
+  itemCount: shown.length,
+  itemBuilder: (context, index) =>
+      sidebarListRow(shown, index, row, group: group, w: w),
+  findChildIndexCallback: (key) => sidebarEntryIndex(shown, key),
+);
 
-/// A custom section: its header, its rows (reordered when the section sorts
-/// manually) and the hint of an empty one. Empty sections stay open while a
-/// row is dragged, so they can take a drop.
+/// A custom section: its header, its rows and the hint of an empty one. Like
+/// the system sections it lists the live projection of an item drag; it is
+/// shown even when empty, so it can take a drop.
 Widget sidebarCustomGroupSliver({
   required SidebarGroup group,
   required WorkspaceController w,
   required Widget header,
   required bool expanded,
-  required bool hideEmpty,
   required String emptyLabel,
   required RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
 }) => ListenableBuilder(
   key: ValueKey('sidebar-group-${group.id}'),
-  listenable: SidebarDrag.source,
+  listenable: SidebarDrag.changes,
   builder: (context, _) {
-    if (group.entries.isEmpty && hideEmpty && !SidebarDrag.active) {
-      return const SliverToBoxAdapter();
-    }
+    final shown = SidebarDrag.project(group, group.entries);
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(child: header),
-        if (expanded)
-          sidebarRowsSliver(
-            group.entries,
-            onReorder: sidebarReorderCallback(group, group.entries, w),
-            row: row,
-            group: group,
-            w: w,
-          ),
-        if (expanded && group.entries.isEmpty)
+        if (expanded) sidebarRowsSliver(shown, row: row, group: group, w: w),
+        if (expanded && shown.isEmpty)
           SliverToBoxAdapter(
             child: SidebarDropZone(
               group: group,
-              shown: group.entries,
+              shown: shown,
               child: RaftSidebarSectionEmptyHint(emptyLabel),
             ),
           ),
@@ -611,77 +572,52 @@ Widget sidebarSystemGroupSliver({
   required ValueChanged<Offset> onOpenMenu,
   required RaftNavItem Function(SidebarEntry entry, bool reorderable) row,
 }) {
-  final reorder = sidebarReorderCallback(group, entries, w);
   return ListenableBuilder(
     key: ValueKey('sidebar-group-${group.id}'),
-    listenable: SidebarDrag.source,
-    builder: (context, _) => RaftChatSidebarGroup.sliver(
-      headerKey: ValueKey('sidebar-section-${group.id}'),
-      disclosureKey: ValueKey('sidebar-disclosure-${group.id}'),
-      kind: kind,
-      label: label,
-      count: entries.length,
-      expanded: expanded,
-      hideEmpty: hideEmpty,
-      dragActive: SidebarDrag.active,
-      dragSource: SidebarDrag.source.value == group.id,
-      loading: loading,
-      emptyLabel: emptyLabel,
-      onExpandedChanged: onExpandedChanged,
-      attention: attention,
-      actions: actions,
-      onContextMenu: onOpenMenu,
-      contextMenuOnLongPress: false,
-      wrapHeader: (header) => sidebarSectionDragHeader(
-        group: group,
-        w: w,
+    listenable: SidebarDrag.changes,
+    builder: (context, _) {
+      final shown = SidebarDrag.project(group, entries);
+      return RaftChatSidebarGroup.sliver(
+        headerKey: ValueKey('sidebar-section-${group.id}'),
+        disclosureKey: ValueKey('sidebar-disclosure-${group.id}'),
+        kind: kind,
         label: label,
-        header: header,
-        count: entries.length,
-        onHeldInPlace: onOpenMenu,
-      ),
-      wrapEmpty: (empty) =>
-          SidebarDropZone(group: group, shown: entries, child: empty),
-      itemBuilder: (context, index) =>
-          sidebarListRow(entries, index, reorder, row, group: group, w: w),
-      findChildIndexCallback: (key) => sidebarEntryIndex(entries, key),
-      onReorderItem: reorder,
-    ),
-  );
-}
-
-/// A reorderable sidebar row: a long press (press and hold with a mouse)
-/// lifts it. The row's own long-press menu ([RaftNavItem.onContextMenu]
-/// with `contextMenuOnLongPress: false`) opens when it is released without
-/// the pointer travelling, so touch keeps its path to the menu.
-class SidebarReorderRow extends ReorderableDelayedDragStartListener {
-  const SidebarReorderRow({
-    super.key,
-    required super.index,
-    required super.child,
-    this.onHeldInPlace,
-    this.session,
-  });
-
-  final ValueChanged<Offset>? onHeldInPlace;
-
-  /// Lets the row leave its section (Sidebar.tsx cross-section drag).
-  final SidebarDragSession? session;
-
-  @override
-  MultiDragGestureRecognizer createRecognizer() => _HoldRecognizer(
-    debugOwner: this,
-    onHeldInPlace: onHeldInPlace,
-    session: session,
+        count: shown.length,
+        expanded: expanded,
+        hideEmpty: hideEmpty,
+        dragActive: SidebarDrag.active,
+        dragSource: SidebarDrag.source.value == group.id,
+        loading: loading,
+        emptyLabel: emptyLabel,
+        onExpandedChanged: onExpandedChanged,
+        attention: attention,
+        actions: actions,
+        onContextMenu: onOpenMenu,
+        contextMenuOnLongPress: false,
+        wrapHeader: (header) => sidebarSectionDragHeader(
+          group: group,
+          w: w,
+          label: label,
+          header: header,
+          count: shown.length,
+          onHeldInPlace: onOpenMenu,
+        ),
+        wrapEmpty: (empty) =>
+            SidebarDropZone(group: group, shown: shown, child: empty),
+        itemBuilder: (context, index) =>
+            sidebarListRow(shown, index, row, group: group, w: w),
+        findChildIndexCallback: (key) => sidebarEntryIndex(shown, key),
+      );
+    },
   );
 }
 
 class _HoldRecognizer extends DelayedMultiDragGestureRecognizer {
-  _HoldRecognizer({super.debugOwner, this.onHeldInPlace, this.session});
+  _HoldRecognizer({super.debugOwner, this.onHeldInPlace, this.sessionOf});
   final ValueChanged<Offset>? onHeldInPlace;
-  final SidebarDragSession? session;
+  final SidebarDragSession? Function()? sessionOf;
 
-  /// The list's drag, observed for how far the pointer travels.
+  /// The drag, observed for how far the pointer travels.
   @override
   GestureMultiDragStartCallback? get onStart {
     final start = super.onStart;
@@ -690,7 +626,7 @@ class _HoldRecognizer extends DelayedMultiDragGestureRecognizer {
       final drag = start(position);
       return drag == null
           ? null
-          : _HeldDrag(drag, position, onHeldInPlace, session);
+          : _HeldDrag(drag, position, onHeldInPlace, sessionOf?.call());
     };
   }
 }
@@ -710,7 +646,7 @@ class _HeldDrag implements Drag {
   void update(DragUpdateDetails details) {
     last = details.globalPosition;
     travel = math.max(travel, (last - origin).distance);
-    // Other sections open up for the drop only once the row really moves.
+    // The projection starts only once the row really moves.
     if (travel >= kTouchSlop && !lifted && session != null) {
       lifted = true;
       session!.start();
@@ -728,12 +664,12 @@ class _HeldDrag implements Drag {
       onHeldInPlace?.call(origin);
       return;
     }
-    // Dropped on another section: that move replaces the list's own.
-    if (lifted && session!.finish(last)) {
+    // A row is dropped where the projection holds it, not on a drag target.
+    if (lifted) {
+      session!.finish();
       drag.cancel();
       return;
     }
-    if (lifted) session!.cancel();
     drag.end(details);
   }
 

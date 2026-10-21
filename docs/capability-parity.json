@@ -2746,7 +2746,7 @@
    "status": "covered",
    "webEntry": "Sidebar.tsx dnd-kit DndContext + SortableSidebarItem/SortableSidebarSection (sidebarDnd.ts) writes channelOrder/dmOrder/pinned/sectionPlacements/sectionOrder via PATCH sidebar-order",
    "gate": "none (any member)",
-   "flutterEntry": "sidebar_reorder.dart: a long press lifts a row (SliverReorderableList in a manual section, a draggable in a sorted one); sidebar_drop.dart drops it on another section (Pinned, a custom section, its own home) through updateSidebarOrder; section headers drag too",
+   "flutterEntry": "sidebar_reorder.dart + sidebar_drop.dart: a long press lifts a row of any section; the sections list the live projection (SidebarDrag.project), so the row moves faded to the slot under the pointer and the section it left closes up; the drop persists through updateSidebarOrder (pinned, sectionPlacements, channelOrder, dmOrder); a pointer held at the list edge scrolls it; section headers drag too",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/sidebar_drop.dart",
@@ -2757,7 +2757,7 @@
      "needle": "Widget sidebarListRow("
     }
    ],
-   "justification": "The drop target shows an edge line (the empty hint a fill) instead of the row moving live as in Web's projection.",
+   "justification": "",
    "impact": "",
    "size": ""
   },
@@ -11809,7 +11809,7 @@
    "status": "covered",
    "webEntry": "Sidebar.tsx Activity entry onDoubleClick -> focusFirstUnreadInboxItem; ThreadsInbox header title double-click -> focusNextUnread (tooltip 'Double-click to jump to the next unread item')",
    "gate": "",
-   "flutterEntry": "activity_first_unread.dart: the rail Activity item and the phone-sidebar Activity entry (mouse double-click) arm the first-unread mark; the Activity header double-click marks the next unread row",
+   "flutterEntry": "activity_first_unread.dart: the rail Activity item and the phone-sidebar Activity entry (mouse double-click) arm the first-unread mark; the Activity header double-click marks the next unread row; the second click of the double-click does not select again",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/activity_first_unread.dart",

@@ -37,10 +37,13 @@ void main() {
   }
 
   group('double click', () {
-    for (final (name, build)
-        in <(String, Widget Function(VoidCallback tap, VoidCallback dbl))>[
+    for (final (name, skipsSecond, build)
+        in <
+          (String, bool, Widget Function(VoidCallback tap, VoidCallback dbl))
+        >[
           (
             'directory row',
+            false,
             (tap, dbl) => RaftNavItem(
               label: 'Alice',
               glyph: RaftGlyph.user,
@@ -51,12 +54,14 @@ void main() {
           ),
           (
             'Activity entry',
+            true,
             (tap, dbl) => RaftNavItem(
               label: 'Activity',
               glyph: RaftGlyph.activity,
               role: RaftNavItemRole.activity,
               onTap: tap,
               onDoubleClick: dbl,
+              ignoreSecondClick: true,
             ),
           ),
         ]) {
@@ -72,11 +77,12 @@ void main() {
         expect(log, ['tap']);
         await click(t, find.byType(RaftNavItem), times: 1);
         await t.pump();
-        expect(log, ['tap', 'tap', 'double']);
+        // The Activity entry ignores the second click (`detail >= 2`).
+        expect(log, ['tap', if (!skipsSecond) 'tap', 'double']);
         // A third click starts a new count.
         await click(t, find.byType(RaftNavItem), times: 1);
         await t.pump();
-        expect(log, ['tap', 'tap', 'double', 'tap']);
+        expect(log.last, 'tap');
       });
 
       testWidgets('$name: touch taps and slow clicks never fire it', (t) async {
@@ -135,7 +141,8 @@ void main() {
       log.clear();
       await click(t, activity);
       await t.pump();
-      expect(log, ['activity', 'activity', 'double']);
+      // The second click of the double-click does not select again.
+      expect(log, ['activity', 'double']);
       await click(t, find.byKey(const ValueKey('rail-chat')));
       await t.pump();
       expect(log.where((e) => e == 'double'), hasLength(1));

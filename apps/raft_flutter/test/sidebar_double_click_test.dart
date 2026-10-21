@@ -130,6 +130,47 @@ void main() {
       });
     }
 
+    testWidgets('a mouse double-click on a member of the mounted Members rail '
+        'opens the DM and switches the rail to Chat', (t) async {
+      final (w, api) = await pageFixture(t);
+      final dm = RaftChannel({
+        'id': 'dm1',
+        'type': 'dm',
+        'name': 'Source Human',
+        'joined': true,
+        'peerType': 'user',
+        'peerId': 'u',
+        'peerDisplayName': 'Source Human',
+      });
+      w.dms = [dm];
+      api.routes['GET /servers/s1/members'] = (_) => [
+        {'userId': 'u', 'name': 'Source Human', 'role': 'member'},
+      ];
+      api.routes['GET /agents'] = (_) => <dynamic>[];
+      api.routes['GET /servers/s1/machines'] = (_) => {'machines': []};
+      api.routes['POST /channels/dm'] = (_) => dm.json;
+      api.routes['GET /messages/channel/dm1'] = (_) => {'messages': []};
+      api.routes['POST /channels/dm1/read'] = (_) => {};
+      await mountPage(t, w, RaftFamily.elegant, false);
+      await t.tap(find.byKey(const ValueKey('rail-members')));
+      await t.pumpAndSettle();
+      expect(w.section, 'members');
+      final human = find.byKey(const ValueKey('desktop-directory-human-u'));
+      expect(human, findsOneWidget);
+      await click(t, human);
+      await t.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await t.pumpAndSettle();
+      expect(w.channel?.id, 'dm1');
+      expect(w.section, 'chat');
+      expect(
+        t.widget<RaftWorkspaceRail>(find.byType(RaftWorkspaceRail)).selected,
+        'chat',
+      );
+      await t.pumpWidget(const SizedBox());
+    });
+
     testWidgets('a failing DM request leaves the column alone', (t) async {
       final client = _Client();
       final w = _Workspace(client)

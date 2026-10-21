@@ -3416,7 +3416,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
           w: w,
           header: sectionLabel(group.label, group: group),
           expanded: sidebarDisclosure.collapsed[group.id] != true,
-          hideEmpty: presentation.value.hideEmptySections,
           emptyLabel: tr('No conversations'),
           row: (e, reorderable) =>
               sidebarEntry(e, custom: true, reorderable: reorderable),
@@ -3705,6 +3704,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   onTap: () => select('activity'),
                                   onDoubleClick: () =>
                                       ActivityFirstUnread.of(w).request(w),
+                                  ignoreSecondClick: true,
                                 ),
                               ),
                             SliverToBoxAdapter(
