@@ -169,6 +169,9 @@ GEOMETRY_RAFT = {
     # and leaves these at the regular value; the family packs lower them.
     'size.navRowCompact': 34, 'size.menuRowCompact': 32,
     'space.controlX': 12, 'space.itemX': 10, 'space.inset.panel': 16,
+    # Gap between separate segments (the `separate` frame). Raft frames its
+    # segments in a track, so this only takes effect for the family packs.
+    'space.segmentGap': 2,
     # The six type metrics raft-ui carries; they size the field and the card
     # title, so they belong to the contract rather than to a constant.
     'type.field.size': 16, 'type.field.line': 24, 'type.field.weight': 400,
@@ -180,6 +183,8 @@ OPTIONS_RAFT = {
     'press.effect': 'overlay', 'control.sheen': 'none', 'avatar.shape': 'square',
     'indicator.border': 'none', 'switch.shape': 'pill', 'checkbox.mark': 'fillCheck',
     'field.style': 'border', 'tabs.selected': 'sticker', 'segmented.selected': 'sticker',
+    # 0.7.1 wraps the segments in a rounded, padded track.
+    'segmented.frame': 'framed',
     'mobileNav.style': 'docked', 'mobileNav.labels': 'iconsOnly', 'header.layout': 'overlay',
     'panel.edge': 'seam', 'nav.selection': 'sticker', 'tooltip.arrow': 'yes',
     'code.innerBorder': 'dashed', 'spinner.style': 'pixel',

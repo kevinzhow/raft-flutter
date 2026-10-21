@@ -260,6 +260,7 @@ const Set<String> raftGeometryTokens = {
   'space.controlX',
   'space.inset.panel',
   'space.itemX',
+  'space.segmentGap',
   'stroke.container',
   'stroke.control',
   'stroke.hairline',

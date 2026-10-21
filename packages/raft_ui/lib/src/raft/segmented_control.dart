@@ -178,8 +178,15 @@ class RaftSegmentedItem extends StatelessWidget {
           ),
         );
         Widget box = RaftCssBox(
-          // `rounded-control` on the official segment.
-          radius: t.size('radius.control', fallback: 8),
+          // Raft's segment is `rounded-control` (8). The pre-theme app drew the
+          // segment with `rounded-sm` (4) for Elegant and square for Brutal, and
+          // 4 is what the contract carries as `radius.chip`; `radius.control`
+          // would give Elegant 6 and miss the measurement. The chip token is used
+          // for both looks because Brutal's chip is 0 and Raft keeps its own 8
+          // through `radius.control` in the framed structure below.
+          radius: t.option('segmented.frame', fallback: 'framed') == 'framed'
+              ? t.size('radius.control', fallback: 8)
+              : t.size('radius.chip', fallback: 4),
           fill: colors.fill,
           borderWidth: borderWidth,
           borderColor: colors.border,
@@ -216,11 +223,29 @@ class RaftSegmentedTrack extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final ui = t.ui;
+
+    // Two structures, chosen by the theme: raft-ui 0.7.1 wraps the segments in a
+    // rounded, padded track; the pre-theme app drew a flat row of separate
+    // segments with a gap. Replicating Elegant and Brutal means matching the
+    // latter exactly, so the frame is a structural option rather than always on.
+    final framed = t.option('segmented.frame', fallback: 'framed') == 'framed';
+
+    if (!framed) {
+      // a57b9dab separates the segments with `gap-1` (Brutal, 4px) or `gap-1.5`
+      // (Elegant, 6px) -- Tailwind `--spacing` is 0.25rem, so 1 and 1.5 steps.
+      // The family packs carry their own `itemGap` so neither is hardcoded here.
+      final gap = t.size('space.segmentGap', fallback: 4);
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: children,
+      );
+    }
+
     // The track is the control radius plus its inset: the official source nests
     // `rounded-[11px]` around `p-[3px]` holding a `rounded-control` (8px) segment,
-    // so the two corners stay concentric. Derived from the token rather than
-    // hardcoded, or a theme with squarer controls would leave the track rounder
-    // than the segment inside it.
+    // so the two corners stay concentric.
     final inset = 3.0;
     final trackRadius = t.size('radius.control', fallback: 8) + inset;
     return DecoratedBox(

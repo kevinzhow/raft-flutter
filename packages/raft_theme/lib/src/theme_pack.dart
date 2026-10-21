@@ -112,6 +112,9 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'field.style': {'border', 'inset'},
   'tabs.selected': {'sticker', 'tint', 'underline'},
   'segmented.selected': {'sticker', 'tint'},
+  // Whether the segments sit inside a rounded, padded track (raft-ui 0.7.1) or
+  // are separate segments separated by a gap (the pre-theme app).
+  'segmented.frame': {'framed', 'separate'},
   'mobileNav.style': {'floatingCapsule', 'docked'},
   'mobileNav.labels': {'iconsOnly', 'withLabels'},
   'header.layout': {'overlay', 'inFlow'},

@@ -41,6 +41,8 @@ OPTIONS_ELEGANT = {
     'press.effect': 'scale', 'control.sheen': 'gradient', 'avatar.shape': 'circle',
     'indicator.border': 'none', 'switch.shape': 'pill', 'checkbox.mark': 'strokeCheck',
     'field.style': 'inset', 'tabs.selected': 'tint', 'segmented.selected': 'tint',
+    # a57b9dab draws a flat row of separate segments: no rounded, padded track.
+    'segmented.frame': 'separate',
     'mobileNav.style': 'floatingCapsule', 'mobileNav.labels': 'iconsOnly',
     'header.layout': 'overlay', 'panel.edge': 'seam', 'nav.selection': 'softFill',
     'tooltip.arrow': 'yes', 'code.innerBorder': 'dashed', 'spinner.style': 'ring',
@@ -50,6 +52,7 @@ OPTIONS_BRUTAL = {
     'press.effect': 'offsetShadow', 'control.sheen': 'none', 'avatar.shape': 'square',
     'indicator.border': 'ink', 'switch.shape': 'square', 'checkbox.mark': 'thickStroke',
     'field.style': 'border', 'tabs.selected': 'sticker', 'segmented.selected': 'sticker',
+    'segmented.frame': 'separate',
     'mobileNav.style': 'docked', 'mobileNav.labels': 'withLabels', 'header.layout': 'inFlow',
     'panel.edge': 'border', 'nav.selection': 'sticker', 'tooltip.arrow': 'no',
     'code.innerBorder': 'solid', 'spinner.style': 'ring',
@@ -73,6 +76,8 @@ GEOMETRY_ELEGANT = {
     'size.railGlyph': 16, 'size.navRow': 34, 'size.navRowCompact': 30,
     'size.menuRow': 31.5, 'size.menuRowCompact': 27.5, 'size.drawer': 380,
     'space.controlX': 6, 'space.itemX': 10, 'space.inset.panel': 26,
+    # a57b9dab `gap-1.5` between segments, at --spacing 0.25rem.
+    'space.segmentGap': 6,
 }
 GEOMETRY_BRUTAL = {
     'radius.sticker': 0, 'radius.chip': 0, 'radius.control': 0, 'radius.controlSmall': 0,
@@ -87,6 +92,8 @@ GEOMETRY_BRUTAL = {
     'size.railGlyph': 18, 'size.navRow': 40, 'size.navRowCompact': 32,
     'size.menuRow': 36, 'size.menuRowCompact': 28, 'size.drawer': 420,
     'space.controlX': 8, 'space.itemX': 12, 'space.inset.panel': 8,
+    # a57b9dab `gap-1` between segments.
+    'space.segmentGap': 4,
 }
 
 # AUTHORED: docs/theme-contract.md §3.5. The contract fixes three slots; a theme

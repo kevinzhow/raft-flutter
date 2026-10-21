@@ -74,11 +74,14 @@ void main() {
         }
       });
 
-      test('$id sets the 20 structural options', () {
+      test('$id sets every structural option the contract defines', () {
         final pack = RaftThemePack.parse(_readPack(entry.value), origin: id);
         for (final dark in [false, true]) {
           final options = dark ? pack.dark.options : pack.light.options;
-          expect(options, hasLength(20),
+          // Assert against the contract's own vocabulary rather than a count:
+          // a hardcoded 20 would need editing whenever an option is added, and
+          // silently pass if one were dropped.
+          expect(options.keys.toSet(), raftStructuralOptions.keys.toSet(),
               reason: '$id ${dark ? 'dark' : 'light'} options');
         }
       });
