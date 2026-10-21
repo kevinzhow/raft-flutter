@@ -563,9 +563,13 @@ class RaftPublicSettingsSidebar extends StatelessWidget {
     super.key,
     required this.title,
     required this.child,
+    this.width,
   });
   final String title;
   final Widget child;
+
+  /// Dragged width (sm and up); null keeps the 240 / 144 default.
+  final double? width;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -573,7 +577,7 @@ class RaftPublicSettingsSidebar extends StatelessWidget {
     return _PublicSidebarFrame(
       frameKey: const ValueKey('public-server-settings-sidebar'),
       title: title,
-      width: sm ? 240 : 144,
+      width: sm ? (width ?? 240) : 144,
       padding: RaftSettingsSidebarList.inset(t),
       child: child,
     );
@@ -583,13 +587,16 @@ class RaftPublicSettingsSidebar extends StatelessWidget {
 /// The side column of the thread panel at sm and up (`sm:w-[380px]
 /// sm:border-l`).
 class RaftPublicThreadColumn extends StatelessWidget {
-  const RaftPublicThreadColumn({super.key, required this.child});
+  const RaftPublicThreadColumn({super.key, required this.child, this.width});
   final Widget child;
+
+  /// Dragged width; null keeps the 380 default.
+  final double? width;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Container(
-      width: 380,
+      width: width ?? 380,
       decoration: BoxDecoration(
         color: t.brutal ? Colors.white : t.colors['layer-canvas'],
         border: Border(left: _publicRule(t)),

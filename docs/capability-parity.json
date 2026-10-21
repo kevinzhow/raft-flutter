@@ -15434,7 +15434,7 @@
    "status": "partial",
    "webEntry": "hooks/useResizablePanel.ts (localStorage slock:sidebarWidth, slock:threadPanelWidth, slock:profilePanelWidth, slock:legacyTaskPanelWidth, slock:searchPanelWidth, slock:searchPanelCompactWidth, slock:workspaceTreeWidth, slock:publicServer:*) + lib/panelBounds.ts",
    "gate": "",
-   "flutterEntry": "workspace_view.dart persists sidebarWidth, threadWidth, masterWideWidth, masterCompactWidth (raft.layout.*). Profile panel is a fixed 380 (adaptive_workspace.dart profileWidth) with no resize/persist; no agent file-tree width",
+   "flutterEntry": "workspace_view.dart persists sidebarWidth, threadWidth, masterWideWidth, masterCompactWidth (raft.layout.*); the public server page persists its channel, settings and thread widths (public_server_panels.dart, the Web slock:publicServer:* keys). Profile panel is a fixed 380 (adaptive_workspace.dart profileWidth) with no resize/persist; no agent file-tree width",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
@@ -15443,9 +15443,13 @@
     {
      "file": "packages/raft_ui/lib/src/adaptive_workspace.dart",
      "needle": "this.profileWidth = 380"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/public_server_panels.dart",
+     "needle": "slock:publicServer:threadPanelWidth"
     }
    ],
-   "justification": "Sidebar, thread and Activity/Search master columns resize and persist; profile panel, legacy task panel and agent file tree widths do not.",
+   "justification": "Sidebar, thread and Activity/Search master columns and the public page columns resize and persist; profile panel, legacy task panel and agent file tree widths do not.",
    "impact": "Desktop users with wide profile/agent panels; cosmetic.",
    "size": "S"
   },

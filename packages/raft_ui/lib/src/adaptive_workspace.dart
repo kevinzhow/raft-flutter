@@ -580,20 +580,51 @@ class RaftPanelResizeHandle extends StatefulWidget {
     required this.value,
     required this.onChanged,
     this.reversed = false,
+    this.onChangeStart,
+    this.onChangeEnd,
+    this.hairline = false,
   });
   final String label;
   final double value;
   final ValueChanged<double> onChanged;
   final bool reversed;
 
+  /// A drag began (Web's `handleResizeStart`).
+  final VoidCallback? onChangeStart;
+
+  /// A drag ended, or a keyboard / semantics step landed (Web persists the
+  /// width on pointer up).
+  final VoidCallback? onChangeEnd;
+
+  /// The public page's PanelResizeHandle: a `w-px bg-foreground/25` rule
+  /// (`group-hover:bg-foreground`, Brutal black) centred on the strip, always
+  /// painted. The signed-in shell's resizers paint nothing.
+  final bool hairline;
+
   @override
   State<RaftPanelResizeHandle> createState() => _ResizeHandleState();
 }
 
 class _ResizeHandleState extends State<RaftPanelResizeHandle> {
+  /// `bg-foreground/25 group-hover:bg-foreground`, Brutal `black/25` / black.
+  static Color _hairline(RaftTokens t, bool active) {
+    final ink = t.brutal ? Colors.black : t.colors['foreground']!;
+    return active ? ink : ink.withValues(alpha: .25);
+  }
+
   bool focused = false, hovering = false;
   double? dragValue;
-  void change(double delta) => widget.onChanged(widget.value + delta);
+  void change(double delta) {
+    widget.onChangeStart?.call();
+    widget.onChanged(widget.value + delta);
+    widget.onChangeEnd?.call();
+  }
+
+  void end() {
+    final dragging = dragValue != null;
+    setState(() => dragValue = null);
+    if (dragging) widget.onChangeEnd?.call();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -627,15 +658,18 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             dragStartBehavior: DragStartBehavior.down,
-            onHorizontalDragStart: (_) => dragValue = widget.value,
+            onHorizontalDragStart: (_) {
+              widget.onChangeStart?.call();
+              setState(() => dragValue = widget.value);
+            },
             onHorizontalDragUpdate: (details) {
               dragValue =
                   (dragValue ?? widget.value) +
                   details.delta.dx * (widget.reversed ? -1 : 1);
               widget.onChanged(dragValue!);
             },
-            onHorizontalDragEnd: (_) => dragValue = null,
-            onHorizontalDragCancel: () => dragValue = null,
+            onHorizontalDragEnd: (_) => end(),
+            onHorizontalDragCancel: end,
             // Web's panel resizers (MainLayout thread/sidebar/search,
             // LegacyTaskPanel, ProfilePanel) paint nothing: hover and drag
             // only change the cursor. Keyboard focus, which Web lacks, keeps
@@ -645,7 +679,9 @@ class _ResizeHandleState extends State<RaftPanelResizeHandle> {
               child: Center(
                 child: Container(
                   width: 1,
-                  color: focused && !hovering && dragValue == null
+                  color: widget.hairline
+                      ? _hairline(t, hovering || dragValue != null)
+                      : focused && !hovering && dragValue == null
                       ? (t.brutal ? Colors.black : t.colors['foreground']!)
                       : Colors.transparent,
                 ),

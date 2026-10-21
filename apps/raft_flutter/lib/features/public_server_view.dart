@@ -20,6 +20,7 @@ import 'community_join.dart' show communityAgreementError;
 import 'custom_protocol_link.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
+import 'public_server_panels.dart';
 import 'public_server_settings.dart';
 import 'sender_avatar_projection.dart';
 
@@ -204,6 +205,7 @@ class _PublicServerViewState extends State<PublicServerView> {
   late String settingsTab = widget.account?.settings != null
       ? 'account'
       : 'about';
+  PublicPanelWidths? panels;
   // ignore: raft_lints/avoid_imperative_notice_state -- Anonymous rail prompt (Web keeps it sticky): shown only while the visitor is signed out.
   bool selectionNotice = false;
   final menu = RaftMenuController();
@@ -243,9 +245,23 @@ class _PublicServerViewState extends State<PublicServerView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The thread column's max is 60% of the viewport (panelBounds.ts).
+    panels ??= PublicPanelWidths(viewport: MediaQuery.sizeOf(context).width)
+      ..addListener(panelsChanged)
+      ..load();
+  }
+
+  void panelsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
     menu.removeListener(menuChanged);
     menu.dispose();
+    panels?.dispose();
     timelineScroll.dispose();
     threadScroll.dispose();
     super.dispose();
@@ -890,13 +906,23 @@ class _PublicServerViewState extends State<PublicServerView> {
     settings = true;
   });
 
-  Widget settingsSurface() => PublicServerSettings(
-    tab: settingsTab,
-    onTab: (tab) => setState(() => settingsTab = tab),
-    about: about,
-    documentationUrl: widget.documentationUrl,
-    account: widget.account?.settings,
-  );
+  /// Widths apply only where the columns sit side by side (sm and up).
+  bool get sideBySide => raftBreakpointWidth(context) >= 640;
+
+  Widget settingsSurface() {
+    final widths = panels;
+    return PublicServerSettings(
+      tab: settingsTab,
+      onTab: (tab) => setState(() => settingsTab = tab),
+      about: about,
+      documentationUrl: widget.documentationUrl,
+      account: widget.account?.settings,
+      sidebarWidth: sideBySide ? widths?.settingsSidebar : null,
+      onSidebarResize: widths?.setSettingsSidebar,
+      onSidebarResizeEnd: () =>
+          unawaited(widths?.persist(PublicPanelWidths.settingsSidebarKey)),
+    );
+  }
 
   Widget rail() {
     final name = '${server?['name'] ?? widget.slug}';
@@ -999,27 +1025,83 @@ class _PublicServerViewState extends State<PublicServerView> {
               onPressed: widget.onRegister,
             ),
           ];
+    final widths = panels;
+    final sm = band >= 640;
     final columns = settings
         ? settingsSurface()
-        : Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        : Stack(
+            fit: StackFit.expand,
             children: [
-              RaftPublicChannelSidebar(
-                serverName: name,
-                channels: [
-                  for (final c in channels)
-                    RaftPublicServerChannel(
-                      id: '${c['id']}',
-                      name: '${c['name']}',
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  RaftPublicChannelSidebar(
+                    serverName: name,
+                    channels: [
+                      for (final c in channels)
+                        RaftPublicServerChannel(
+                          id: '${c['id']}',
+                          name: '${c['name']}',
+                        ),
+                    ],
+                    selectedId: selectedId,
+                    onSelect: selectChannel,
+                    label: tr('Public channels'),
+                    width: widths?.channelSidebar,
+                  ),
+                  Expanded(child: RaftPublicSurface(child: channelPanel())),
+                  if (thread != null && sm)
+                    RaftPublicThreadColumn(
+                      width: widths?.thread,
+                      child: thread,
                     ),
                 ],
-                selectedId: selectedId,
-                onSelect: selectChannel,
-                label: tr('Public channels'),
               ),
-              Expanded(child: RaftPublicSurface(child: channelPanel())),
-              if (thread != null && band >= 640)
-                RaftPublicThreadColumn(child: thread),
+              // PanelResizeHandle: 8px strips centred on the two edges,
+              // over the columns (`-right-1` / `-left-1`).
+              if (sm && widths != null)
+                Positioned(
+                  left:
+                      widths.channelSidebar -
+                      RaftPanelResizeHandle.hitExtent / 2,
+                  top: 0,
+                  bottom: 0,
+                  width: RaftPanelResizeHandle.hitExtent,
+                  child: RaftPanelResizeHandle(
+                    key: const ValueKey(
+                      'public-server-channel-sidebar-resize-handle',
+                    ),
+                    label: tr('Resize sidebar'),
+                    value: widths.channelSidebar,
+                    hairline: true,
+                    onChanged: widths.setChannelSidebar,
+                    onChangeEnd: () => unawaited(
+                      widths.persist(PublicPanelWidths.channelSidebarKey),
+                    ),
+                  ),
+                ),
+              if (sm && widths != null && thread != null)
+                Positioned(
+                  right: widths.thread - RaftPanelResizeHandle.hitExtent / 2,
+                  top: 0,
+                  bottom: 0,
+                  width: RaftPanelResizeHandle.hitExtent,
+                  child: RaftPanelResizeHandle(
+                    key: const ValueKey(
+                      'public-server-thread-panel-resize-handle',
+                    ),
+                    label: tr('Resize thread'),
+                    value: widths.thread,
+                    reversed: true,
+                    hairline: true,
+                    onChangeStart: () => widths.beginThreadResize(
+                      MediaQuery.sizeOf(context).width,
+                    ),
+                    onChanged: widths.setThread,
+                    onChangeEnd: () =>
+                        unawaited(widths.persist(PublicPanelWidths.threadKey)),
+                  ),
+                ),
             ],
           );
     return RaftPublicServerLayout(

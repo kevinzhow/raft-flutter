@@ -127,6 +127,9 @@ class PublicServerSettings extends StatefulWidget {
     required this.about,
     required this.documentationUrl,
     this.account,
+    this.sidebarWidth,
+    this.onSidebarResize,
+    this.onSidebarResizeEnd,
   });
 
   /// The selected tab id; one this visitor has no access to resolves to the
@@ -136,6 +139,12 @@ class PublicServerSettings extends StatefulWidget {
   final Widget Function(BuildContext) about;
   final String documentationUrl;
   final PublicSettingsAccount? account;
+
+  /// The dragged sidebar width, at sm and up where the columns sit side by
+  /// side; null below it (`w-36`, no handle).
+  final double? sidebarWidth;
+  final ValueChanged<double>? onSidebarResize;
+  final VoidCallback? onSidebarResizeEnd;
 
   @override
   State<PublicServerSettings> createState() => _PublicServerSettingsState();
@@ -235,12 +244,14 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
             key: ValueKey(active.id),
             child: active.builder!(context),
           );
-    return Row(
+    final width = widget.sidebarWidth;
+    final columns = Row(
       key: const ValueKey('public-server-settings-surface'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         RaftPublicSettingsSidebar(
           title: raftText(context, 'Settings'),
+          width: widget.sidebarWidth,
           child: RaftSettingsSidebarList(groups: groups, activeId: active.id),
         ),
         Expanded(
@@ -257,6 +268,29 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
                     ],
                   )
                 : page(),
+          ),
+        ),
+      ],
+    );
+    if (width == null || widget.onSidebarResize == null) return columns;
+    // PanelResizeHandle: an 8px strip centred on the sidebar's edge, over both
+    // columns (`-right-1`), so it never takes width from either.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        columns,
+        Positioned(
+          left: width - RaftPanelResizeHandle.hitExtent / 2,
+          top: 0,
+          bottom: 0,
+          width: RaftPanelResizeHandle.hitExtent,
+          child: RaftPanelResizeHandle(
+            key: const ValueKey('public-server-settings-sidebar-resize-handle'),
+            label: raftText(context, 'Resize sidebar'),
+            value: width,
+            hairline: true,
+            onChanged: widget.onSidebarResize!,
+            onChangeEnd: widget.onSidebarResizeEnd,
           ),
         ),
       ],
