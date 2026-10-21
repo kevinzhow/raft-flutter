@@ -13310,7 +13310,7 @@
      "needle": "'release-notes'"
     }
    ],
-   "justification": "See endpoint GET /release-notes: content source differs; Flutter's public-page settings omit it.",
+   "justification": "See endpoint GET /release-notes: content source differs. The public settings surface shows the same page to a signed-in non-member.",
    "impact": "Same as endpoint entry.",
    "size": "S"
   },
@@ -14606,23 +14606,23 @@
    "area": "public-guest",
    "capability": "Signed-in non-member on a public server can open Settings > Account, Language & Region, Appearance, Feedback, Release Notes (plus About, Documentation)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "PublicServerPage settings surface with settingsScope account-and-resources",
    "gate": "signed-in non-member of a public server",
-   "flutterEntry": "public_server_view.dart settingsSurface() lists only About + Documentation, even when account != null",
+   "flutterEntry": "public_server_settings.dart publicSettingsDestinations(): Personal (Account, Language & Region, Appearance) and Resources (About, Documentation, Feedback, Release Notes) for a signed-in non-member; About + Documentation signed out",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "public-server-settings-surface"
+     "file": "apps/raft_flutter/lib/features/public_server_settings.dart",
+     "needle": "publicSettingsDestinations"
     },
     {
      "file": "apps/raft_flutter/lib/features/public_server_view.dart",
-     "needle": "RaftSettingsNavGroup('Resources'"
+     "needle": "PublicServerSettings("
     }
    ],
-   "justification": "Flutter's public surface hides the personal group (Account, Language & Region, Appearance) and Feedback / Release Notes that Web shows to signed-in visitors.",
-   "impact": "A signed-in user previewing a public server cannot change language/theme or log out from that page without switching to their own server; moderate-low frequency (public-link visitors).",
-   "size": "M"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

@@ -1843,13 +1843,13 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         client: active,
         slug: nonmember.slug,
         initialChannelId: nonmember.channelId,
-        account: PublicServerAccount(
-          servers: w.servers,
+        account: PublicServerAccount.of(
+          w,
           onSelect: chooseServer,
+          appearance: appearance,
+          onAppearance: setAppearance,
+          onLogout: logout,
         ),
-        appVersion: const String.fromEnvironment('RAFT_APP_VERSION'),
-        onSignIn: () {},
-        onRegister: () {},
         onUnavailable: () => dismissPublic(rediscover: true),
         onJoined: () async {
           if (!await w.loadServerDirectory()) {

@@ -12,6 +12,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/source_time_formatter.dart';
+import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
 import '../data/server_error_code.dart';
 import '../data/user_error.dart';
@@ -19,6 +20,7 @@ import 'community_join.dart' show communityAgreementError;
 import 'custom_protocol_link.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
+import 'public_server_settings.dart';
 import 'sender_avatar_projection.dart';
 
 /// A message of the public readback (`PublicMessage`).
@@ -65,7 +67,32 @@ class PublicServerMessage {
 /// What the page needs from the account when the visitor is signed in.
 @immutable
 class PublicServerAccount {
-  const PublicServerAccount({required this.servers, required this.onSelect});
+  const PublicServerAccount({
+    required this.servers,
+    required this.onSelect,
+    this.settings,
+  });
+
+  /// The signed-in visitor of [controller]: the workspace's servers for the
+  /// rail switcher and the Settings pages a non-member also gets.
+  PublicServerAccount.of(
+    WorkspaceController controller, {
+    required this.onSelect,
+    required RaftAppearance appearance,
+    required Future<void> Function(RaftAppearance) onAppearance,
+    required Future<void> Function() onLogout,
+  }) : servers = controller.servers,
+       settings = PublicSettingsAccount(
+         controller: controller,
+         appearance: appearance,
+         onAppearance: (next) => unawaited(onAppearance(next)),
+         onLogout: onLogout,
+       );
+
+  /// The signed-in Settings pages (Account, Language & Region, Appearance,
+  /// Feedback, Release Notes) a non-member also gets; null shows only About
+  /// and Documentation.
+  final PublicSettingsAccount? settings;
 
   /// The visitor's servers for the rail switcher.
   final List<RaftRecord> servers;
@@ -124,18 +151,20 @@ class PublicServerMemory {
   }
 }
 
+void _ignore() {}
+
 class PublicServerView extends StatefulWidget {
   const PublicServerView({
     super.key,
     required this.client,
     required this.slug,
-    required this.onSignIn,
-    required this.onRegister,
     required this.onUnavailable,
+    this.onSignIn = _ignore,
+    this.onRegister = _ignore,
     this.initialChannelId,
     this.account,
     this.onJoined,
-    this.appVersion,
+    this.appVersion = const String.fromEnvironment('RAFT_APP_VERSION'),
     this.documentationUrl = 'https://docs.raft.build',
   });
   final RaftClient client;
@@ -170,6 +199,11 @@ class _PublicServerViewState extends State<PublicServerView> {
   int serverRequest = 0, messageRequest = 0;
 
   bool settings = false;
+
+  /// The selected Settings tab (`useState(authenticated ? "account" : "about")`).
+  late String settingsTab = widget.account?.settings != null
+      ? 'account'
+      : 'about';
   // ignore: raft_lints/avoid_imperative_notice_state -- Anonymous rail prompt (Web keeps it sticky): shown only while the visitor is signed out.
   bool selectionNotice = false;
   final menu = RaftMenuController();
@@ -829,65 +863,40 @@ class _PublicServerViewState extends State<PublicServerView> {
     );
   }
 
-  Widget settingsSurface() {
+  /// About (`SettingsPanel` About with `showAboutWorkspace={false}`): the
+  /// version and the mobile app, never a workspace.
+  Widget about(BuildContext context) {
     final api = widget.client.origin;
     final web = ContentLinks.originFor(api);
-    return Row(
-      key: const ValueKey('public-server-settings-surface'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        RaftPublicSettingsSidebar(
-          title: tr('Settings'),
-          child: RaftSettingsSidebarList(
-            activeId: 'about',
-            groups: [
-              RaftSettingsNavGroup('Resources', [
-                RaftSettingsNavEntry(
-                  id: 'about',
-                  label: tr('About'),
-                  glyph: RaftGlyph.badgeInfo,
-                  onTap: () {},
-                ),
-                RaftSettingsNavEntry(
-                  id: 'documentation',
-                  label: tr('Documentation'),
-                  glyph: RaftGlyph.bookOpenText,
-                  onTap: () =>
-                      unawaited(managementLaunch(widget.documentationUrl)),
-                ),
-              ]),
-            ],
-          ),
+    return RaftSettingsAbout(
+      version: (widget.appVersion ?? '').isEmpty
+          ? 'development'
+          : widget.appVersion!,
+      mobileApp: RaftAboutMobileApp(
+        onAndroid: () => unawaited(
+          managementLaunch('$api/api/mobile-download?platform=android'),
         ),
-        Expanded(
-          child: RaftSettingsPanelFrame(
-            header: RaftSettingsPanelHeader(
-              title: tr('About'),
-              glyph: RaftGlyph.badgeInfo,
-              mobile: false,
-            ),
-            child: SingleChildScrollView(
-              padding: RaftSettingsPanelFrame.contentInset,
-              child: RaftSettingsAbout(
-                version: widget.appVersion ?? 'development',
-                mobileApp: RaftAboutMobileApp(
-                  onAndroid: () => unawaited(
-                    managementLaunch(
-                      '$api/api/mobile-download?platform=android',
-                    ),
-                  ),
-                  onIos: () => unawaited(
-                    managementLaunch('$api/api/mobile-download?platform=ios'),
-                  ),
-                  qrUrl: '${web.origin}/download',
-                ),
-              ),
-            ),
-          ),
+        onIos: () => unawaited(
+          managementLaunch('$api/api/mobile-download?platform=ios'),
         ),
-      ],
+        qrUrl: '${web.origin}/download',
+      ),
     );
   }
+
+  /// Opens Settings on [tab] (the rail Help menu's Mobile App / Feedback).
+  void openSettingsTab(String tab) => setState(() {
+    settingsTab = tab;
+    settings = true;
+  });
+
+  Widget settingsSurface() => PublicServerSettings(
+    tab: settingsTab,
+    onTab: (tab) => setState(() => settingsTab = tab),
+    about: about,
+    documentationUrl: widget.documentationUrl,
+    account: widget.account?.settings,
+  );
 
   Widget rail() {
     final name = '${server?['name'] ?? widget.slug}';
@@ -937,8 +946,14 @@ class _PublicServerViewState extends State<PublicServerView> {
                 RaftMenuEntry(
                   label: tr('Mobile App'),
                   glyph: RaftGlyph.smartphone,
-                  onPressed: () => setState(() => settings = true),
+                  onPressed: () => openSettingsTab('about'),
                 ),
+                if (account.settings != null)
+                  RaftMenuEntry(
+                    label: tr('Feedback'),
+                    glyph: RaftGlyph.messageSquare,
+                    onPressed: () => openSettingsTab('feedback'),
+                  ),
               ],
             ),
     );

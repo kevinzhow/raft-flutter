@@ -8,7 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart' show addTearDown;
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/source_time_formatter.dart';
+import 'package:raft_flutter/data/workspace_controller.dart';
+import 'package:raft_flutter/features/public_server_settings.dart';
 import 'package:raft_flutter/features/public_server_view.dart';
+import 'package:raft_ui/raft_ui.dart' show RaftAppearance;
 
 import '../parity_harness.dart';
 import 'screens/screen_fixture.dart';
@@ -59,14 +62,29 @@ Widget _page(ParityContext ctx) {
     for (final s in (fx['servers'] as Map)['two'] as List)
       RaftRecord(Map<String, dynamic>.from(s as Map)),
   ];
+  final client = ScreenFixtureClient(
+    (method, path, query) => _answer(ctx, method, path),
+    user: authenticated ? {...user, 'emailVerified': true} : null,
+  );
+  // The signed-in visitor's workspace: no current server (a non-member).
+  final controller = WorkspaceController(client);
+  addTearDown(controller.dispose);
   final page = PublicServerView(
-    client: ScreenFixtureClient(
-      (method, path, query) => _answer(ctx, method, path),
-      user: authenticated ? {...user, 'emailVerified': true} : null,
-    ),
+    client: client,
     slug: fx['slug'] as String,
     account: authenticated
-        ? PublicServerAccount(servers: servers, onSelect: (_) {})
+        ? PublicServerAccount(
+            servers: servers,
+            onSelect: (_) {},
+            settings: PublicSettingsAccount(
+              controller: controller,
+              appearance: RaftAppearance(
+                mode: ctx.dark ? ThemeMode.dark : ThemeMode.light,
+                light: ctx.family,
+              ),
+              onAppearance: (_) {},
+            ),
+          )
         : null,
     appVersion: '1.17.5',
     onSignIn: () {},
@@ -83,7 +101,10 @@ Widget _page(ParityContext ctx) {
 }
 
 ParityCase _case({String? note}) => ParityCase(
-  widgets: const ['raft_flutter:PublicServerView', 'raft_ui:RaftPublicServerLayout'],
+  widgets: const [
+    'raft_flutter:PublicServerView',
+    'raft_ui:RaftPublicServerLayout',
+  ],
   notes: 'Extension suite (not official).${note == null ? '' : ' $note'}',
   settle: const Duration(milliseconds: 600),
   build: _page,
@@ -100,6 +121,7 @@ final Map<String, ParityCase> _surfaces = {
     'page.messages-error',
     'page.thread',
     'page.settings-about',
+    'page.settings-account',
     'page.join-ready',
     'page.join-confirm',
     'page.join-error',
@@ -111,7 +133,7 @@ final Map<String, ParityCase> _surfaces = {
 /// Surfaces a platform does not run (see build-public-server.py `platforms`).
 const _platforms = {
   'desktop': <String>{},
-  'mobile': <String>{'page.settings-about'},
+  'mobile': <String>{'page.settings-about', 'page.settings-account'},
 };
 
 const _themes = ['brutal', 'elegant', 'elegant-dark'];

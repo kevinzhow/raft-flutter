@@ -11,8 +11,8 @@ Total capabilities: 744 (329 endpoint/network keys, 415 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 544 |
-| ⚠️ partial | 70 |
+| ✅ covered | 545 |
+| ⚠️ partial | 69 |
 | ❌ missing | 76 |
 | ➖ na | 54 |
 
@@ -34,7 +34,7 @@ Total capabilities: 744 (329 endpoint/network keys, 415 client-side).
 | Account and profile | 37 | 3 | 4 | 6 |
 | Onboarding and auth | 33 | 1 | 2 | 5 |
 | Joint channels | 6 | 4 | 1 | 0 |
-| Public and guest | 7 | 1 | 0 | 0 |
+| Public and guest | 8 | 0 | 0 | 0 |
 | Global UI and cross-cutting | 38 | 8 | 6 | 27 |
 
 ### Top gaps by user impact
@@ -732,7 +732,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Settings tab: Appearance | `ui:tabs.appearance` | Settings nav > Appearance | workspace_settings.dart 'appearance' |  |
 | ✅ | Settings tab: Feedback with unread dot | `ui:tabs.feedback` | Settings nav > Feedback (+ unread dot, Help menu entry)[gate: signed in with a server] | workspace_settings.dart 'feedback' with attention dot |  |
 | ✅ | Settings tab: Language & Region | `ui:tabs.language-region` | Settings nav > Language & Region | workspace_settings.dart 'language-region' |  |
-| ⚠️ | Release Notes page reachable from Settings and the public settings surface | `ui:tabs.release-notes` | Settings nav > Release Notes | workspace_settings.dart 'release-notes' (client notes, see GET /release-notes) | Impact: Same as endpoint entry. See endpoint GET /release-notes: content source differs; Flutter's public-page settings omit it. Size S |
+| ⚠️ | Release Notes page reachable from Settings and the public settings surface | `ui:tabs.release-notes` | Settings nav > Release Notes | workspace_settings.dart 'release-notes' (client notes, see GET /release-notes) | Impact: Same as endpoint entry. See endpoint GET /release-notes: content source differs. The public settings surface shows the same page to a signed-in non-member. Size S |
 
 ## Onboarding and auth
 
@@ -805,7 +805,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Read a public thread read-only and load older replies | `GET /public/servers/:id/threads/:id/messages` | PublicServerPage thread panel (read-only)[gate: public server] | public_server_view.dart thread panel |  |
 | ✅ | Join a public server as a Guest (with agreement step) | `POST /public/servers/:id/join-as-guest` | PublicServerPage 'Join as Guest' + confirm (data-testid public-server-join-guest)[gate: server_guest_v0 + public guest join enabled; signed in] | public_server_view.dart 'Join as Guest' (public-join-guest) and confirm |  |
 | ✅ | Open public thread read-only and Load older messages | `ui:public.read-only-thread-and-load-older` | PublicServerPage thread panel | public_server_view.dart thread open + RaftPublicAutoLoadOlder |  |
-| ⚠️ | Signed-in non-member on a public server can open Settings > Account, Language & Region, Appearance, Feedback, Release Notes (plus About, Documentation) | `ui:public.settings-account-tabs` | PublicServerPage settings surface with settingsScope account-and-resources[gate: signed-in non-member of a public server] | public_server_view.dart settingsSurface() lists only About + Documentation, even when account != null | Impact: A signed-in user previewing a public server cannot change language/theme or log out from that page without switching to their own server; moderate-low frequency (public-link visitors). Flutter's public surface hides the personal group (Account, Language & Region, Appearance) and Feedback / Release Notes that Web shows to signed-in visitors. Size M |
+| ✅ | Signed-in non-member on a public server can open Settings > Account, Language & Region, Appearance, Feedback, Release Notes (plus About, Documentation) | `ui:public.settings-account-tabs` | PublicServerPage settings surface with settingsScope account-and-resources[gate: signed-in non-member of a public server] | public_server_settings.dart publicSettingsDestinations(): Personal (Account, Language & Region, Appearance) and Resources (About, Documentation, Feedback, Release Notes) for a signed-in non-member; About + Documentation signed out |  |
 | ✅ | Public server banner/buttons: Sign in, Create account (Join), Join as Guest, selection notice | `ui:public.sign-in-register-join` | PublicServerPage bottom banner and header actions[gate: public_server_v0; guest join per server] | public_server_view.dart 'Sign in' / 'Create account' / 'Join as Guest' |  |
 | ✅ | Signed-in visitor can switch to one of their own servers from the public page header | `ui:public.switch-workspace` | PublicServerPage header server switcher[gate: signed in] | public_server_view.dart rail RaftServerSwitcher rows |  |
 
