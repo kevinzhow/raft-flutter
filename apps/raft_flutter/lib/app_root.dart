@@ -944,16 +944,6 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
     (c) => c.register(email.trim(), password, acceptTerms: accepted),
   );
 
-  Future<void> completeOAuth(
-    String base,
-    String code,
-    String verifier,
-    bool accepted,
-  ) => authenticate(
-    base,
-    (c) => c.completeMobileOAuth(code, verifier, acceptTerms: accepted),
-  );
-
   Future<void> finishOnboarding(RaftClient c) async {
     if (!mounted || !identical(c, client) || accountNeedsOnboarding(c.user)) {
       return;
@@ -1815,7 +1805,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
         bootError: bootError,
         onLogin: login,
         onRegister: register,
-        onOAuth: completeOAuth,
+        authenticate: authenticate,
       );
     }
     if (invite != null) return inviteHome(true);

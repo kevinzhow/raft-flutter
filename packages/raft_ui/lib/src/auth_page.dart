@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'auth_account_link.dart';
 import 'raft_underline.dart';
 import 'banner.dart';
 import 'brand.dart';
@@ -1138,7 +1139,11 @@ class RaftAuthPage extends StatelessWidget {
     required this.onPrivacy,
     this.server,
     this.onServer,
+    this.accountLink,
   });
+
+  /// Login only: the page continues a pending "sign in and connect".
+  final RaftAuthAccountLink? accountLink;
   final RaftAuthMode mode;
   final bool busy, accepted;
   final Widget? emailField, tokenField, passwordField, confirmField;
@@ -1164,7 +1169,8 @@ class RaftAuthPage extends StatelessWidget {
     RaftAuthMode.register => 'Create your account',
     RaftAuthMode.forgot => 'Reset Password',
     RaftAuthMode.reset => 'Set New Password',
-    RaftAuthMode.login => 'Sign In',
+    RaftAuthMode.login =>
+      accountLink == null ? 'Sign In' : 'Connect to your existing account',
   };
   String get _submit => switch (mode) {
     RaftAuthMode.register => busy ? 'Creating account…' : 'Continue',
@@ -1177,6 +1183,10 @@ class RaftAuthPage extends StatelessWidget {
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
     final social = mode == RaftAuthMode.login || mode == RaftAuthMode.register;
+    final link = accountLink;
+    // An account-link page without a usable password form is only the social
+    // buttons and the way out (expired / conflict, or a provider-only account).
+    final form = link == null || (!link.terminal && link.passwordSignIn);
     return RaftAuthShell(
       server: server,
       onServer: onServer,
@@ -1191,6 +1201,17 @@ class RaftAuthPage extends StatelessWidget {
                   )
                 : null,
           ),
+          if (link != null && !link.terminal)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: RaftAuthBanner(
+                text: raftFormat(
+                  context,
+                  "This email already has a Raft account. Sign in the way you usually do, and we'll connect {provider} and take you into Raft.",
+                  {'provider': link.providerLabel},
+                ),
+              ),
+            ),
           if (banner != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 16), // mb-4
@@ -1202,7 +1223,7 @@ class RaftAuthPage extends StatelessWidget {
               child: RaftAuthBanner(text: tr(notice!), info: true),
             ),
           // <form className="space-y-4">
-          if (emailField != null)
+          if (emailField != null && form)
             RaftAuthField(
               label: tr('Email'),
               surface: false,
@@ -1216,7 +1237,7 @@ class RaftAuthPage extends StatelessWidget {
               error: tokenError,
               child: tokenField!,
             ),
-          if (passwordField != null) ...[
+          if (passwordField != null && form) ...[
             if (emailField != null || tokenField != null)
               const SizedBox(height: 16),
             RaftAuthField(
@@ -1255,12 +1276,25 @@ class RaftAuthPage extends StatelessWidget {
               onPrivacy: onPrivacy,
             ),
           ],
-          const SizedBox(height: 16),
-          RaftAuthSubmit(
-            key: submitKey,
-            label: tr(_submit),
-            onPressed: onSubmit,
-          ),
+          if (form) ...[
+            const SizedBox(height: 16),
+            RaftAuthSubmit(
+              key: submitKey,
+              label: link != null && !busy
+                  ? raftFormat(context, 'Sign in and connect {provider}', {
+                      'provider': link.providerLabel,
+                    })
+                  : tr(_submit),
+              onPressed: onSubmit,
+            ),
+          ],
+          if (link != null && !link.terminal && !link.passwordSignIn) ...[
+            RaftAuthTextLink(
+              key: const Key('login-forgot-password'),
+              label: tr('Forgot password?'),
+              onTap: () => onMode(RaftAuthMode.forgot),
+            ),
+          ],
           // RegisterPage (task #724): a disabled Continue says why. A
           // persistent line under the button while the legal box is unchecked
           // (`text-center text-xs text-foreground-muted
@@ -1284,7 +1318,7 @@ class RaftAuthPage extends StatelessWidget {
               ),
             ),
           ],
-          if (providers.isNotEmpty && social) ...[
+          if (providers.isNotEmpty && social && !(link?.terminal ?? false)) ...[
             RaftAuthOrDivider(label: tr('or')),
             Column(
               key: const ValueKey('auth-social-buttons'),
@@ -1324,16 +1358,19 @@ class RaftAuthPage extends StatelessWidget {
               ),
             ],
           ],
+          if (link != null) RaftAuthAccountLinkActions(link: link),
           if (mode == RaftAuthMode.login) ...[
             // Web v1.21.12 LoginPage: the "Forgot password?" link moved into
             // the password label row; the no-account prompt (mt-4) now comes
             // before the legal notice (mt-6).
-            const SizedBox(height: 16), // mt-4
-            RaftAuthPrompt(
-              template: 'No account? <create>Create one</create>',
-              tag: 'create',
-              onTap: () => onMode(RaftAuthMode.register),
-            ),
+            if (link == null) ...[
+              const SizedBox(height: 16), // mt-4
+              RaftAuthPrompt(
+                template: 'No account? <create>Create one</create>',
+                tag: 'create',
+                onTap: () => onMode(RaftAuthMode.register),
+              ),
+            ],
             const SizedBox(height: 24), // mt-6
             RaftAuthLegalNotice(onTerms: onTerms, onPrivacy: onPrivacy),
           ] else if (mode == RaftAuthMode.register) ...[

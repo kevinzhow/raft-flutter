@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:uuid/uuid.dart';
 
+import 'account_link.dart';
 import 'models.dart';
 import 'rate_limit_governor.dart';
 import 'request_meter.dart';
@@ -108,6 +109,16 @@ Map<String, dynamic> _errorDetails(Map? body) {
     // Form-validation issues (`[{code, pointer}]`); the pointer names the
     // field that failed (runtime form v2 create / edit).
     'issues',
+    // account_link_required: the pending "sign in and connect" handle and
+    // what it is for (`pendingLinkToken`, `provider`, `email`, `expiresAt`,
+    // `signInMethods`); LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED: the
+    // current terms (`legal`). Short-lived handles and public text only.
+    'pendingLinkToken',
+    'provider',
+    'email',
+    'expiresAt',
+    'signInMethods',
+    'legal',
     // Agent migration start refusals: which computer lacks which runtime
     // (COMPUTER_CAPABILITY_INSUFFICIENT) or needs a Raft Computer update
     // (MIGRATION_RESUMABLE_CAPABILITY_REQUIRED); the view validates the shape.
@@ -133,8 +144,33 @@ Map<String, dynamic> _errorDetails(Map? body) {
       : {};
   dynamic selected(String key) {
     final value = body![key];
-    if (key == 'targetServerSlug' || key == 'invitee') {
+    if (const {
+      'targetServerSlug',
+      'invitee',
+      'pendingLinkToken',
+      'provider',
+      'email',
+      'expiresAt',
+    }.contains(key)) {
       return value is String ? value : null;
+    }
+    if (key == 'signInMethods') {
+      return {
+        ...receipt(value, {'password'}),
+        'providers': [
+          if (value is Map && value['providers'] is List)
+            for (final p in value['providers'] as List)
+              if (p is String) p,
+        ],
+      };
+    }
+    if (key == 'legal') {
+      return receipt(value, {
+        'termsVersion',
+        'privacyVersion',
+        'termsUrl',
+        'privacyUrl',
+      });
     }
     if (key == 'uploadScope')
       return receipt(value, {
@@ -678,12 +714,22 @@ class RaftClient {
     return _validateOnce(_authenticationGeneration);
   }
 
-  Future<void> login(String email, String password) async {
+  /// [link] finishes a pending "sign in and connect": the password sign-in
+  /// also connects the social provider, or fails without a session.
+  Future<void> login(
+    String email,
+    String password, {
+    AccountLinkContinuation? link,
+  }) async {
     final authGeneration = ++_authenticationGeneration;
     final result = await request(
       'POST',
       '/auth/login',
-      data: {'email': email, 'password': password},
+      data: {
+        'email': email,
+        'password': password,
+        if (link != null) 'pendingLinkToken': link.token,
+      },
       authorized: false,
     );
     if (_closed || authGeneration != _authenticationGeneration) {
@@ -691,6 +737,8 @@ class RaftClient {
         'The authentication attempt is no longer active.',
       );
     }
+    final unconfirmed = accountLinkNotCompleted(result, link);
+    if (unconfirmed != null) throw unconfirmed;
     _session = Session.fromJson(Map<String, dynamic>.from(result));
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
     _generation++;
@@ -736,6 +784,7 @@ class RaftClient {
     String code,
     String codeVerifier, {
     bool acceptTerms = false,
+    AccountLinkContinuation? link,
   }) async {
     final authGeneration = ++_authenticationGeneration;
     final result = await request(
@@ -745,6 +794,7 @@ class RaftClient {
       data: {
         'code': code,
         'codeVerifier': codeVerifier,
+        if (link != null) 'pendingLinkToken': link.token,
         if (acceptTerms) 'acceptTerms': true,
         if (acceptTerms) 'termsVersion': '2026-05-12',
         if (acceptTerms) 'privacyVersion': '2026-05-12',
@@ -755,6 +805,8 @@ class RaftClient {
       throw const RaftApiException(
         'The authentication attempt is no longer active.',
       );
+    final unconfirmed = accountLinkNotCompleted(result, link);
+    if (unconfirmed != null) throw unconfirmed;
     _session = Session.fromJson(Map<String, dynamic>.from(result));
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
     _generation++;

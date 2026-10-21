@@ -1,5 +1,6 @@
 library;
 
+export 'src/account_link.dart';
 export 'src/client.dart';
 export 'src/models.dart';
 export 'src/permissions.dart';

@@ -13,6 +13,7 @@ import 'package:raft_ui/raft_ui.dart';
 
 import '../data/server_error_code.dart';
 import '../data/user_error.dart';
+import 'auth_account_link.dart';
 import 'management_support.dart';
 
 bool isValidAuthEmail(String value) =>
@@ -69,8 +70,14 @@ class AuthView extends StatefulWidget {
     this.oauthBrokerFactory,
     this.initialMode = 'login',
     this.resetToken,
+    this.authenticate,
   });
   final Future<void> Function(String, String, String, bool)? onOAuth;
+
+  /// Runs a sign-in step on the app's session client. With it the browser
+  /// sign-in completes through it (so [onOAuth] is not needed), and the
+  /// "sign in and connect" continuation can add its handle to the request.
+  final AuthAuthenticate? authenticate;
 
   /// First mode shown: 'login', 'register', 'forgot' or 'reset' (a reset or
   /// verification link opens straight into its page, like the Web query
@@ -110,6 +117,12 @@ class _AuthState extends State<AuthView> {
   String? emailError, passwordError, confirmError, tokenError;
   List<Map<String, dynamic>> providers = [];
   NativeOAuthBroker? broker;
+
+  /// The pending "sign in and connect" this page continues, and why its last
+  /// attempt failed (a server `code`). Kept across the forgot-password page.
+  PendingAccountLink? link;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears on submit, social sign-in start, cancel, restart and when a new link starts.
+  String? linkFailure;
   Timer? providerDebounce;
   int providerRequest = 0;
   @override
@@ -118,9 +131,11 @@ class _AuthState extends State<AuthView> {
     loadProviders();
   }
 
+  bool get hasOAuth => widget.onOAuth != null || widget.authenticate != null;
+
   Future<void> loadProviders({bool requestPermission = false}) async {
     final request = ++providerRequest;
-    if (widget.onOAuth == null || authOriginError(base.text) != null) {
+    if (!hasOAuth || authOriginError(base.text) != null) {
       if (mounted) setState(() => providers = []);
       return;
     }
@@ -162,13 +177,14 @@ class _AuthState extends State<AuthView> {
   }
 
   Future<void> social(String provider) async {
-    if (busy || widget.onOAuth == null || authOriginError(base.text) != null) {
+    if (busy || !hasOAuth || authOriginError(base.text) != null) {
       return;
     }
     setState(() {
       busy = true;
       error = null;
       notice = null;
+      linkFailure = null;
     });
     final client =
         widget.anonymousClientFactory?.call(base.text.trim()) ??
@@ -190,26 +206,48 @@ class _AuthState extends State<AuthView> {
       if (!mounted) return;
       final handoff = await active.begin(client, provider);
       if (mounted) {
-        await widget.onOAuth!(
-          base.text.trim(),
-          handoff.code,
-          handoff.verifier,
-          // Login: "By continuing, you agree to the Terms of Service and
-          // Privacy Policy" (pages.login.legalAgreement); register: checkbox.
-          mode == 'login' || accepted,
-        );
+        // Login: "By continuing, you agree to the Terms of Service and
+        // Privacy Policy" (pages.login.legalAgreement); register: checkbox.
+        final agreed = mode == 'login' || accepted;
+        final pending = link?.continuation;
+        final run = widget.authenticate;
+        if (run != null) {
+          await run(
+            base.text.trim(),
+            (c) => c.completeMobileOAuth(
+              handoff.code,
+              handoff.verifier,
+              acceptTerms: agreed,
+              link: pending,
+            ),
+          );
+        } else {
+          await widget.onOAuth!(
+            base.text.trim(),
+            handoff.code,
+            handoff.verifier,
+            agreed,
+          );
+        }
       }
     } catch (e) {
       // Web SocialAuthCallbackPage: `finishFailed` unless the server sent text.
       // A sign-in the person cancelled reports nothing.
       if (mounted && !active.cancelled) {
-        setState(
-          () => error = authFailureText(
-            e,
-            'Failed to finish sign-in',
-            where: 'social sign-in',
-          ),
-        );
+        final conflict = PendingAccountLink.fromError(e);
+        setState(() {
+          if (conflict != null) {
+            startLink(conflict);
+          } else if (link != null && isAccountLinkFailure(e)) {
+            linkFailure = serverErrorCode(e);
+          } else {
+            error = authFailureText(
+              e,
+              'Failed to finish sign-in',
+              where: 'social sign-in',
+            );
+          }
+        });
       }
     } finally {
       active.helpUrl.removeListener(helpChanged);
@@ -218,6 +256,52 @@ class _AuthState extends State<AuthView> {
       broker = null;
       if (mounted) setState(() => busy = false);
     }
+  }
+
+  /// The server asked to sign in to the account that owns this email: the
+  /// page becomes "Connect to your existing account" (Web `accountLink`).
+  void startLink(PendingAccountLink pending) {
+    link = pending;
+    linkFailure = null;
+    error = null;
+    mode = 'login';
+    accepted = false;
+    email.text = pending.email;
+    password.clear();
+    emailError = passwordError = null;
+  }
+
+  /// "Don't connect {provider}" / "Back to Sign In": drop the pending link on
+  /// the server, then show the ordinary sign-in page.
+  Future<void> cancelLink() async {
+    final pending = link;
+    if (pending == null || busy) return;
+    setState(() {
+      busy = true;
+      error = null;
+      linkFailure = null;
+    });
+    try {
+      await anonymous('/auth/pending-link/cancel', {
+        'pendingLinkToken': pending.token,
+      });
+      if (mounted) setState(() => link = null);
+    } catch (_) {
+      if (mounted) setState(() => error = 'Login failed');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  /// An expired link only continues by starting the provider again.
+  void restartLink() {
+    final pending = link;
+    if (pending == null || busy) return;
+    setState(() {
+      link = null;
+      linkFailure = null;
+    });
+    unawaited(social(pending.provider));
   }
 
   late String mode = widget.initialMode;
@@ -284,6 +368,7 @@ class _AuthState extends State<AuthView> {
     setState(() {
       error = null;
       notice = null;
+      linkFailure = null;
     });
     if (!validate()) return;
     if (mode == 'register' && !accepted) {
@@ -296,11 +381,20 @@ class _AuthState extends State<AuthView> {
     try {
       switch (mode) {
         case 'login':
-          await widget.onLogin(
-            base.text.trim(),
-            email.text.trim(),
-            password.text,
-          );
+          final pending = link?.continuation;
+          final run = widget.authenticate;
+          if (pending != null && run != null) {
+            await run(
+              base.text.trim(),
+              (c) => c.login(email.text.trim(), password.text, link: pending),
+            );
+          } else {
+            await widget.onLogin(
+              base.text.trim(),
+              email.text.trim(),
+              password.text,
+            );
+          }
         case 'register':
           await widget.onRegister(
             base.text.trim(),
@@ -331,14 +425,18 @@ class _AuthState extends State<AuthView> {
       }
     } catch (e) {
       if (mounted) {
-        setState(
-          () => error = authFailureText(e, switch (mode) {
-            'register' => 'Registration failed',
-            'forgot' => 'Failed to send reset email',
-            'reset' => 'Password reset failed. The link may be expired.',
-            _ => 'Login failed',
-          }, where: 'auth $mode'),
-        );
+        setState(() {
+          if (mode == 'login' && link != null && isAccountLinkFailure(e)) {
+            linkFailure = serverErrorCode(e);
+          } else {
+            error = authFailureText(e, switch (mode) {
+              'register' => 'Registration failed',
+              'forgot' => 'Failed to send reset email',
+              'reset' => 'Password reset failed. The link may be expired.',
+              _ => 'Login failed',
+            }, where: 'auth $mode');
+          }
+        });
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -446,6 +544,10 @@ class _AuthState extends State<AuthView> {
       );
     }
     final t = RaftTokens.of(context);
+    final pending = link;
+    final failure = pending == null || linkFailure == null
+        ? null
+        : accountLinkFailureText(context, linkFailure, pending);
     Widget bars(Widget page) =>
         RaftSystemBarSurface(statusBarFallback: t.canvas, child: page);
     final page = AutofillGroup(
@@ -458,7 +560,17 @@ class _AuthState extends State<AuthView> {
         busy: busy,
         server: Uri.tryParse(base.text.trim())?.authority ?? base.text.trim(),
         onServer: busy ? null : editServer,
-        banner: error == null ? widget.bootError : tr(error!),
+        banner: failure ?? (error == null ? widget.bootError : tr(error!)),
+        accountLink: pending == null || mode != 'login'
+            ? null
+            : RaftAuthAccountLink(
+                providerLabel: socialProviderLabel(pending.provider),
+                passwordSignIn: pending.passwordSignIn,
+                expired: linkFailure == 'pending_link_expired',
+                conflict: linkFailure == 'provider_conflict',
+                onCancel: busy ? null : cancelLink,
+                onRestart: busy ? null : restartLink,
+              ),
         notice: notice,
         emailError: emailError == null ? null : tr(emailError!),
         tokenError: tokenError == null ? null : tr(tokenError!),
@@ -496,6 +608,7 @@ class _AuthState extends State<AuthView> {
             : RaftTextInput(
                 key: Key(mode == 'reset' ? 'reset-password' : 'login-password'),
                 controller: password,
+                autofocus: pending != null,
                 // Web: plain Input type=password, no visibility toggle
                 // (LoginPage.tsx, RegisterPage.tsx).
                 obscureText: true,
@@ -538,7 +651,8 @@ class _AuthState extends State<AuthView> {
             : submitChecked,
         providers: [
           for (final p in providers)
-            RaftAuthProviderEntry('${p['id']}', '${p['label']}'),
+            if (pending == null || pending.providers.contains(p['id']))
+              RaftAuthProviderEntry('${p['id']}', '${p['label']}'),
         ],
         onProvider: (id) => social(id),
         onCancelBrowser: broker == null ? null : () => broker!.cancel(),

@@ -139,6 +139,9 @@ class NativeOAuthBroker {
         data: {
           if (mode != 'link') 'provider': provider,
           'mode': mode,
+          // Opt in to "sign in and connect" when the email already has an
+          // account (Web `buildSocialAuthStartUrl` `linkOnConflict=1`).
+          if (mode != 'link') 'linkOnConflict': true,
           'returnUri': returnUri.toString(),
           'codeChallenge': oauthCodeChallenge(verifier),
         },
