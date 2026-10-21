@@ -3,6 +3,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/server_error_code.dart';
+import '../platform/oauth_broker.dart' show OAuthHandoff;
 
 /// Runs one sign-in step on the app's session client (the app owns it); the
 /// "sign in and connect" and legal-acceptance steps need request fields the
@@ -49,4 +50,24 @@ String accountLinkFailureText(
     _ => 'Login failed',
   };
   return raftFormat(context, template, values);
+}
+
+/// A social sign-in the server will only finish once the person accepts the
+/// current terms (Web `needsLegalAcceptance`). The one-time browser code is
+/// kept and sent again with the acceptance.
+class SocialLegalStep {
+  const SocialLegalStep(
+    this.handoff,
+    this.provider, {
+    required this.changed,
+    this.versions,
+  });
+  final OAuthHandoff handoff;
+  final String provider;
+
+  /// `TERMS_CHANGED`: the terms moved since they were last accepted.
+  final bool changed;
+
+  /// The versions the server named; null falls back to this build's.
+  final LegalVersions? versions;
 }

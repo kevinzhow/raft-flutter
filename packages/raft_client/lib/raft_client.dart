@@ -2,6 +2,7 @@ library;
 
 export 'src/account_link.dart';
 export 'src/client.dart';
+export 'src/legal_acceptance.dart';
 export 'src/models.dart';
 export 'src/permissions.dart';
 export 'src/rate_limit_governor.dart';

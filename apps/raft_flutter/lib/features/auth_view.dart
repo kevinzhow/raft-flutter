@@ -121,6 +121,10 @@ class _AuthState extends State<AuthView> {
   /// The pending "sign in and connect" this page continues, and why its last
   /// attempt failed (a server `code`). Kept across the forgot-password page.
   PendingAccountLink? link;
+
+  /// The sign-in code waits for an explicit acceptance of the terms.
+  SocialLegalStep? legal;
+  bool legalChecked = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Clears on submit, social sign-in start, cancel, restart and when a new link starts.
   String? linkFailure;
   Timer? providerDebounce;
@@ -185,6 +189,8 @@ class _AuthState extends State<AuthView> {
       error = null;
       notice = null;
       linkFailure = null;
+      legal = null;
+      legalChecked = false;
     });
     final client =
         widget.anonymousClientFactory?.call(base.text.trim()) ??
@@ -201,59 +207,95 @@ class _AuthState extends State<AuthView> {
     }
 
     active.helpUrl.addListener(helpChanged);
+    OAuthHandoff? handoff;
     try {
       await networkAccess.ensure(base.text.trim(), request: true);
       if (!mounted) return;
-      final handoff = await active.begin(client, provider);
-      if (mounted) {
-        // Login: "By continuing, you agree to the Terms of Service and
-        // Privacy Policy" (pages.login.legalAgreement); register: checkbox.
-        final agreed = mode == 'login' || accepted;
-        final pending = link?.continuation;
-        final run = widget.authenticate;
-        if (run != null) {
-          await run(
-            base.text.trim(),
-            (c) => c.completeMobileOAuth(
-              handoff.code,
-              handoff.verifier,
-              acceptTerms: agreed,
-              link: pending,
-            ),
-          );
-        } else {
-          await widget.onOAuth!(
-            base.text.trim(),
-            handoff.code,
-            handoff.verifier,
-            agreed,
-          );
-        }
-      }
+      handoff = await active.begin(client, provider);
+      if (mounted) await exchange(handoff, provider);
     } catch (e) {
-      // Web SocialAuthCallbackPage: `finishFailed` unless the server sent text.
       // A sign-in the person cancelled reports nothing.
       if (mounted && !active.cancelled) {
-        final conflict = PendingAccountLink.fromError(e);
-        setState(() {
-          if (conflict != null) {
-            startLink(conflict);
-          } else if (link != null && isAccountLinkFailure(e)) {
-            linkFailure = serverErrorCode(e);
-          } else {
-            error = authFailureText(
-              e,
-              'Failed to finish sign-in',
-              where: 'social sign-in',
-            );
-          }
-        });
+        setState(() => socialFailed(e, handoff, provider));
       }
     } finally {
       active.helpUrl.removeListener(helpChanged);
       await active.cancel();
       await client.dispose();
       broker = null;
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  /// The browser's one-time code, exchanged for a session. [accepting] adds
+  /// the explicit acceptance of the terms the server asked for.
+  Future<void> exchange(
+    OAuthHandoff handoff,
+    String provider, {
+    LegalVersions? accepting,
+  }) {
+    final pending = link?.continuation, run = widget.authenticate;
+    return run != null
+        ? run(
+            base.text.trim(),
+            (c) => c.completeMobileOAuth(
+              handoff.code,
+              handoff.verifier,
+              acceptTerms: accepting != null,
+              legal: accepting ?? LegalVersions.current,
+              link: pending,
+            ),
+          )
+        : widget.onOAuth!(
+            base.text.trim(),
+            handoff.code,
+            handoff.verifier,
+            accepting != null,
+          );
+  }
+
+  /// Web SocialAuthCallbackPage: the account-link page, the legal-acceptance
+  /// step, or `finishFailed` unless the server sent text.
+  void socialFailed(Object e, OAuthHandoff? handoff, String provider) {
+    final conflict = PendingAccountLink.fromError(e);
+    legal = null;
+    if (conflict != null) {
+      startLink(conflict);
+    } else if (handoff != null && isLegalAcceptanceRejection(e)) {
+      legal = SocialLegalStep(
+        handoff,
+        provider,
+        changed: (e as RaftApiException).message == 'TERMS_CHANGED',
+        versions: LegalVersions.fromError(e),
+      );
+    } else if (link != null && isAccountLinkFailure(e)) {
+      linkFailure = serverErrorCode(e);
+    } else {
+      error = authFailureText(
+        e,
+        'Failed to finish sign-in',
+        where: 'social sign-in',
+      );
+    }
+  }
+
+  /// "Continue" on the legal-acceptance step: the same code, now accepted.
+  Future<void> continueLegal() async {
+    final step = legal;
+    if (step == null || busy || !legalChecked) return;
+    setState(() {
+      busy = true;
+      error = null;
+    });
+    try {
+      await exchange(
+        step.handoff,
+        step.provider,
+        accepting: step.versions ?? LegalVersions.current,
+      );
+    } catch (e) {
+      if (mounted) setState(() => socialFailed(e, step.handoff, step.provider));
+    } finally {
       if (mounted) setState(() => busy = false);
     }
   }
@@ -514,6 +556,24 @@ class _AuthState extends State<AuthView> {
   @override
   Widget build(BuildContext context) {
     String tr(String s) => raftText(context, s);
+    final step = legal;
+    if (step != null) {
+      return RaftAuthLegalPage(
+        providerLabel: socialProviderLabel(step.provider),
+        accepted: legalChecked,
+        busy: busy,
+        changed: step.changed,
+        error: error == null ? null : tr(error!),
+        onAccepted: (v) => setState(() => legalChecked = v),
+        onContinue: continueLegal,
+        onBack: () => setState(() {
+          legal = null;
+          legalChecked = false;
+        }),
+        onTerms: () => managementLaunch('https://raft.build/terms'),
+        onPrivacy: () => managementLaunch('https://raft.build/privacy'),
+      );
+    }
     if (mode == 'forgot' && forgotSent) {
       // ForgotPasswordPage `sent`: "Check your email" + Back to Sign In.
       return RaftAuthResultPage(

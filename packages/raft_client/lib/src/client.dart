@@ -8,6 +8,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'package:uuid/uuid.dart';
 
 import 'account_link.dart';
+import 'legal_acceptance.dart';
 import 'models.dart';
 import 'rate_limit_governor.dart';
 import 'request_meter.dart';
@@ -784,6 +785,7 @@ class RaftClient {
     String code,
     String codeVerifier, {
     bool acceptTerms = false,
+    LegalVersions legal = LegalVersions.current,
     AccountLinkContinuation? link,
   }) async {
     final authGeneration = ++_authenticationGeneration;
@@ -796,8 +798,8 @@ class RaftClient {
         'codeVerifier': codeVerifier,
         if (link != null) 'pendingLinkToken': link.token,
         if (acceptTerms) 'acceptTerms': true,
-        if (acceptTerms) 'termsVersion': '2026-05-12',
-        if (acceptTerms) 'privacyVersion': '2026-05-12',
+        if (acceptTerms) 'termsVersion': legal.termsVersion,
+        if (acceptTerms) 'privacyVersion': legal.privacyVersion,
         if (acceptTerms) 'legalAcceptanceSource': 'oauth',
       },
     );

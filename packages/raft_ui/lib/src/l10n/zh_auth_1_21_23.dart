@@ -15,4 +15,5 @@ const Map<String, String> zhCatalogAuth12123 = <String, String>{
       "这次 {provider} 登录已过期，请重新用 {provider} 登录。",
   "We couldn't connect {provider}, so you haven't been signed in. Please try again.":
       "没能连接 {provider}，你还没有登录。请再试一次。",
+  "{provider} sign-in": "{provider} 登录",
 };
