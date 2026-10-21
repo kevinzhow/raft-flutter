@@ -19,8 +19,8 @@ void main() {
     testWidgets('$family/$dark confirm → stopping → stopped → resume', (
       tester,
     ) async {
-      final stop = Completer<String?>();
-      final resume = Completer<String?>();
+      final stop = Completer<RaftSosOutcome?>();
+      final resume = Completer<Object?>();
       final guidance = <String>[];
       var closed = 0;
       await tester.pumpWidget(
@@ -82,7 +82,9 @@ void main() {
     });
   }
 
-  testWidgets('failures keep the phase and show the error', (tester) async {
+  testWidgets('failures keep the phase and show nothing, like Web', (
+    tester,
+  ) async {
     var closed = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -91,8 +93,8 @@ void main() {
           body: Center(
             child: RaftSosDialog(
               channelName: 'release',
-              onStop: () async => 'Agents could not be stopped. Try again.',
-              onResume: (_) async => 'Server busy',
+              onStop: () async => RaftSosOutcome.retained,
+              onResume: (_) async => RaftSosOutcome.retained,
               onClose: () => closed++,
             ),
           ),
@@ -102,10 +104,7 @@ void main() {
     await tester.tap(_button('sos-stop'));
     await tester.pumpAndSettle();
     expect(find.text('STOP ALL AGENTS'), findsOneWidget);
-    expect(
-      find.text('Agents could not be stopped. Try again.'),
-      findsOneWidget,
-    );
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(_onPressed(tester, 'sos-stop'), isNotNull);
     await tester.tap(_button('sos-cancel'));
     expect(closed, 1);
@@ -124,7 +123,7 @@ void main() {
               channelName: 'release',
               initialPhase: RaftSosPhase.stopped,
               onStop: () async => null,
-              onResume: (_) async => 'Server busy',
+              onResume: (_) async => RaftSosOutcome.retained,
               onClose: () => closed++,
             ),
           ),
@@ -139,7 +138,7 @@ void main() {
     await tester.pump();
     await tester.tap(_button('sos-resume'));
     await tester.pumpAndSettle();
-    expect(find.text('Server busy'), findsOneWidget);
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(find.text('Revert the schema change'), findsOneWidget);
     expect(_onPressed(tester, 'sos-resume'), isNotNull);
     expect(closed, 0);

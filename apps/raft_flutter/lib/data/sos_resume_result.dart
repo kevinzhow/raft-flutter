@@ -1,57 +1,36 @@
-/// The mounted resume-all-agents response, including older ok-only servers.
+/// The `resume-all-agents` response as Web `SOSDialog` reads it: only the
+/// per-agent `results` matter. Every row whose `ok` is falsy is an agent the
+/// resume did not reach; a response without such rows (including an old
+/// ok-only server or an unreadable body) counts as complete.
 class SosResumeResult {
-  SosResumeResult._(this.succeeded, this.failures, this.retryAgentIds);
+  SosResumeResult._(this.missed);
 
-  final bool succeeded;
-  final List<({String agentId, String? reason, String? error})> failures;
+  /// Agents the resume did not reach, with the server's `reason`.
+  final List<({String agentId, String? reason})> missed;
 
-  /// A complete per-agent response can safely retry just the missed agents.
-  /// An unknown response cannot establish which agents received the guidance.
-  final List<String>? retryAgentIds;
+  /// A retry names only these agents, so the others are not sent the guidance
+  /// again.
+  List<String> get retryAgentIds => [for (final m in missed) m.agentId];
+
+  /// Still starting (`start_in_flight`): try again shortly.
+  int get starting => missed.where((m) => m.reason == 'start_in_flight').length;
+
+  /// Not reached for any other reason.
+  int get failed => missed.length - starting;
 
   factory SosResumeResult.parse(Object? value) {
-    if (value is! Map) return SosResumeResult._(false, [], null);
-    final rows = value['results'];
-    if (!value.containsKey('results')) {
-      final countsMatch =
-          value['total'] == null || value['started'] == value['total'];
-      return SosResumeResult._(value['ok'] == true && countsMatch, [], null);
-    }
-    if (rows is! List) return SosResumeResult._(false, [], null);
-    final failures = <({String agentId, String? reason, String? error})>[];
-    final ids = <String>{};
-    var complete = true;
-    for (final row in rows) {
-      if (row is! Map ||
-          row['agentId'] is! String ||
-          (row['agentId'] as String).isEmpty ||
-          row['ok'] is! bool) {
-        complete = false;
-        continue;
-      }
-      final id = row['agentId'] as String;
-      if (!ids.add(id)) complete = false;
-      if (row['ok'] != true) {
-        failures.add((
-          agentId: id,
-          reason: row['reason'] is String ? row['reason'] as String : null,
-          error: row['error'] is String ? row['error'] as String : null,
-        ));
-      }
-    }
-    if (value['total'] != null && value['total'] != rows.length) {
-      complete = false;
-    }
-    if (value['started'] != null &&
-        value['started'] != ids.length - failures.length) {
-      complete = false;
-    }
-    return SosResumeResult._(
-      value['ok'] == true && complete && failures.isEmpty,
-      failures,
-      complete && failures.isNotEmpty
-          ? failures.map((f) => f.agentId).toList()
-          : null,
-    );
+    final rows = value is Map ? value['results'] : null;
+    return SosResumeResult._([
+      for (final row in rows is List ? rows : const [])
+        if (row is Map && !_truthy(row['ok']) && row['agentId'] is String)
+          (
+            agentId: row['agentId'] as String,
+            reason: row['reason'] is String ? row['reason'] as String : null,
+          ),
+    ]);
   }
+
+  /// JavaScript truthiness of a decoded JSON value.
+  static bool _truthy(Object? v) =>
+      v != null && v != false && v != 0 && v != '' && v != 0.0;
 }

@@ -3379,13 +3379,36 @@ class _MentionSuggestionBody extends StatelessWidget {
                     (hasDescription ? 18 : 12) -
                     (hasServer ? 6 : 0))
                 .clamp(0.0, 192.0);
+        final titleText = s.title?.isNotEmpty == true ? s.title! : s.name;
+        // CSS flex: the description and the source server are both
+        // `flex-1 basis-0 min-w-0`; the server also has `max-w-[10rem]`. They
+        // split the free space evenly, and a server capped at 10rem hands the
+        // rest to the description.
+        var serverWidth = 0.0;
+        if (hasServer) {
+          final titlePainter = TextPainter(
+            text: TextSpan(text: titleText, style: title),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+            maxLines: 1,
+          )..layout();
+          final free =
+              (constraints.maxWidth -
+                      titlePainter.width.clamp(0.0, titleMaximum) -
+                      badge.naturalWidth(context) -
+                      handleWidth -
+                      (hasDescription ? 24 : 18))
+                  .clamp(0.0, double.infinity);
+          titlePainter.dispose();
+          serverWidth = (hasDescription ? free / 2 : free).clamp(0.0, 160.0);
+        }
         return Row(
           children: [
             // `max-w-[12rem] flex-[0_1_auto]`: natural width, shrink-only.
             ConstrainedBox(
               constraints: BoxConstraints(maxWidth: titleMaximum),
               child: Text(
-                s.title?.isNotEmpty == true ? s.title! : s.name,
+                titleText,
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.ellipsis,
@@ -3409,30 +3432,23 @@ class _MentionSuggestionBody extends StatelessWidget {
               const Spacer(),
             if (hasServer) ...[
               const SizedBox(width: 6),
-              // `ComposerSuggestionMeta min-w-0 max-w-[10rem] truncate`.
-              Expanded(
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 160),
-                    child: RaftTooltip(
-                      message: raftFormat(context, 'Source server: {server}', {
-                        'server': server,
-                      }),
-                      child: Text(
-                        server,
-                        key: const ValueKey('mention-source-server'),
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                        style: recipe.suggestionMetaFor(
-                          highlighted: highlighted,
-                        ),
-                      ),
-                    ),
+              SizedBox(
+                width: serverWidth,
+                child: RaftTooltip(
+                  message: raftFormat(context, 'Source server: {server}', {
+                    'server': server,
+                  }),
+                  child: Text(
+                    server,
+                    key: const ValueKey('mention-source-server'),
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: recipe.suggestionMetaFor(highlighted: highlighted),
                   ),
                 ),
               ),
+              if (!hasDescription) const Spacer(),
             ],
             const SizedBox(width: 6),
             SizedBox(width: handleWidth, child: handle),

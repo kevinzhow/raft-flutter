@@ -170,10 +170,8 @@ class _ExternalProfileSourceState extends State<ExternalProfileSource> {
           widget.messageId,
         );
         if (!mounted) return;
-        setState(() {
-          profile = author;
-          failed = author == null;
-        });
+        if (author == null) return closeStale();
+        setState(() => profile = author);
         return;
       }
       final data = await w.client.get(
@@ -195,7 +193,22 @@ class _ExternalProfileSourceState extends State<ExternalProfileSource> {
         }
       });
     } catch (_) {
-      if (mounted) setState(() => failed = true);
+      if (!mounted) return;
+      if (widget.isMention) return closeStale();
+      setState(() => failed = true);
+    }
+  }
+
+  /// Web `restoreExternalMentionProfileFromUrl`: a mention whose roster entry
+  /// cannot be read (or is gone) closes the panel, but only while the address
+  /// still names this profile.
+  void closeStale() {
+    final here = widget.controller.location.profile;
+    if (here != null &&
+        here.isMention &&
+        here.id == widget.messageId &&
+        here.channelId == widget.channelId) {
+      widget.controller.closeProfile();
     }
   }
 

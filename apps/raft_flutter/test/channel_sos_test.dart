@@ -125,7 +125,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a rejected stop stays on the confirmation with the error', (
+  testWidgets('a rejected stop stays on the confirmation without a message', (
     tester,
   ) async {
     final (w, api) = (await tester.runAsync(() => fixture('admin')))!;
@@ -141,12 +141,10 @@ void main() {
     await tester.pumpAndSettle();
     // No route: the adapter answers 404 `Unexpected endpoint`.
     await tester.tap(find.byKey(const ValueKey('sos-stop')));
-    await _settle(
-      tester,
-      () => find.byKey(const ValueKey('sos-error')).evaluate().isNotEmpty,
-    );
+    await _settle(tester, () => _sos(api).isNotEmpty);
     expect(find.text('STOP ALL AGENTS'), findsOneWidget);
-    expect(find.byKey(const ValueKey('sos-error')), findsOneWidget);
+    // Web shows nothing for a failed stop.
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
     expect(_sos(api).single.path, '/channels/c1/stop-all-agents');
     expect(
       tester
@@ -154,6 +152,15 @@ void main() {
           .onPressed,
       isNotNull,
     );
+    // Permission lost while the dialog is open: nothing is sent and, again,
+    // nothing is said.
+    w.server = RaftRecord({'id': 's1', 'role': 'guest'});
+    w.notifyListeners();
+    await tester.tap(find.byKey(const ValueKey('sos-stop')));
+    await _settle(tester, () => false);
+    expect(_sos(api), hasLength(1));
+    expect(find.text('STOP ALL AGENTS'), findsOneWidget);
+    expect(find.byKey(const ValueKey('sos-error')), findsNothing);
   });
 
   for (final (label, response) in <(String, Object?)>[
@@ -170,26 +177,15 @@ void main() {
         ],
       },
     ),
+    // Web reads only `results`: a response naming no missed agent closes
+    // the dialog, and a request that throws keeps the guidance silently.
     ('legacy failure', {'ok': false}),
     ('missing response', null),
-    (
-      'incomplete results',
-      {
-        'ok': true,
-        'started': 1,
-        'total': 2,
-        'results': [
-          {'agentId': 'a', 'ok': true},
-        ],
-      },
-    ),
+    ('rejected request', 'rejected'),
   ]) {
-    testWidgets('$label resume retains guidance until retry resolves it', (
-      tester,
-    ) async {
-      final feedback = label == 'partial'
-          ? 'sos-resume-shortfall'
-          : 'sos-error';
+    final closes = label == 'legacy failure' || label == 'missing response';
+    testWidgets('$label resume follows Web', (tester) async {
+      const feedback = 'sos-resume-shortfall';
       final (w, api) = (await tester.runAsync(() => fixture('member')))!;
       addTearDown(w.dispose);
       _routes(api);
@@ -204,6 +200,9 @@ void main() {
       final resumeBodies = <Map>[];
       api.routes['POST /channels/c1/resume-all-agents'] = (request) {
         resumeBodies.add(Map.from(request.data as Map));
+        if (response == 'rejected' && resumeBodies.length == 1) {
+          throw StateError('offline');
+        }
         return resumeBodies.length == 1
             ? response
             : {
@@ -239,16 +238,28 @@ void main() {
         tester,
         () =>
             resumeBodies.isNotEmpty &&
-            find.byKey(Key(feedback)).evaluate().isNotEmpty,
+            (closes
+                ? find
+                      .byKey(const ValueKey('channel-sos-dialog'))
+                      .evaluate()
+                      .isEmpty
+                : label != 'partial' ||
+                      find.byKey(const Key(feedback)).evaluate().isNotEmpty),
       );
+      if (closes) {
+        expect(resumeBodies, hasLength(1));
+        expect(find.byKey(const ValueKey('channel-sos-dialog')), findsNothing);
+        expect(tester.takeException(), isNull);
+        return;
+      }
       expect(find.byKey(const ValueKey('channel-sos-dialog')), findsOneWidget);
       expect(
         tester.widget<EditableText>(field).controller.text,
         'Keep the schema.',
       );
-      expect(find.byKey(Key(feedback)), findsOneWidget);
       expect(resumeBodies.single.containsKey('agentIds'), false);
       if (label == 'partial') {
+        expect(find.byKey(const Key(feedback)), findsOneWidget);
         // Web counts: one agent still starting, one failed (no names).
         expect(
           find.text(
@@ -258,6 +269,16 @@ void main() {
         );
         expect(find.text('1 agent could not be resumed.'), findsOneWidget);
         expect(find.textContaining('Birch'), findsNothing);
+      } else {
+        // A thrown request shows nothing at all.
+        expect(find.byKey(const Key(feedback)), findsNothing);
+        expect(find.byKey(const ValueKey('sos-error')), findsNothing);
+        expect(
+          tester
+              .widget<RaftButton>(find.byKey(const ValueKey('sos-resume')))
+              .onPressed,
+          isNotNull,
+        );
       }
       await tester.tap(find.byKey(const ValueKey('sos-resume')));
       await _settle(
@@ -269,7 +290,7 @@ void main() {
       if (label == 'partial') expect(resumeBodies.last['agentIds'], ['b', 'c']);
       expect(resumeBodies.last['prompt'], resumeBodies.first['prompt']);
       expect(find.byKey(const ValueKey('channel-sos-dialog')), findsNothing);
-      expect(find.byKey(Key(feedback)), findsNothing);
+      expect(find.byKey(const Key(feedback)), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

@@ -2,12 +2,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_flutter/data/sos_resume_result.dart';
 
 void main() {
-  test('old ok-only servers and empty channels still complete', () {
-    for (final response in [
+  test('a response without failed rows completes like Web', () {
+    for (final response in <Object?>[
+      null,
+      {},
       {'ok': true},
-      {'ok': true, 'started': 0, 'total': 0, 'results': []},
+      {'ok': false},
+      {'ok': true, 'results': null},
+      {'ok': true, 'results': 'invalid'},
+      {'ok': true, 'total': 2, 'results': []},
+      {
+        'ok': false,
+        'total': 3,
+        'results': [
+          {'agentId': 'a', 'ok': true},
+        ],
+      },
     ]) {
-      expect(SosResumeResult.parse(response).succeeded, true);
+      expect(
+        SosResumeResult.parse(response).missed,
+        isEmpty,
+        reason: '$response',
+      );
     }
   });
 
@@ -16,82 +32,33 @@ void main() {
     () {
       final result = SosResumeResult.parse({
         'ok': false,
-        'started': 1,
-        'total': 3,
         'results': [
           {'agentId': 'ready', 'ok': true},
           {'agentId': 'starting', 'ok': false, 'reason': 'start_in_flight'},
           {'agentId': 'offline', 'ok': false, 'error': 'Computer offline'},
+          {'agentId': 'silent'},
         ],
       });
-      expect(result.succeeded, false);
-      expect(result.retryAgentIds, ['starting', 'offline']);
-      expect(result.failures.map((f) => f.reason), ['start_in_flight', null]);
-      expect(result.failures.last.error, 'Computer offline');
+      expect(result.retryAgentIds, ['starting', 'offline', 'silent']);
+      expect(result.missed.map((m) => m.reason), [
+        'start_in_flight',
+        null,
+        null,
+      ]);
+      expect((result.starting, result.failed), (1, 2));
     },
   );
 
-  test('malformed or inconsistent responses never acknowledge all agents', () {
-    for (final response in <Object?>[
-      null,
-      {},
-      {'ok': false},
-      {'ok': true, 'results': null},
-      {'ok': true, 'started': 1, 'total': 2},
-      {'ok': true, 'results': 'invalid'},
-      {'ok': true, 'total': 1, 'results': []},
-      {
-        'ok': true,
-        'started': 0,
-        'results': [
-          {'agentId': 'a', 'ok': true},
-        ],
-      },
-      {
-        'ok': true,
-        'results': [
-          {'agentId': 'a', 'ok': false},
-        ],
-      },
-      {
-        'ok': true,
-        'results': [
-          {'agentId': 'a', 'ok': 'true'},
-        ],
-      },
-      {
-        'ok': true,
-        'results': [null],
-      },
-      {
-        'ok': true,
-        'results': [
-          {'agentId': 'a', 'ok': true},
-          {'agentId': 'a', 'ok': true},
-        ],
-      },
-    ]) {
-      expect(
-        SosResumeResult.parse(response).succeeded,
-        false,
-        reason: '$response',
-      );
-    }
+  test('ok is read by JavaScript truthiness', () {
+    final result = SosResumeResult.parse({
+      'results': [
+        {'agentId': 'a', 'ok': 'yes'},
+        {'agentId': 'b', 'ok': 1},
+        {'agentId': 'c', 'ok': 0},
+        {'agentId': 'd', 'ok': ''},
+        {'agentId': 'e', 'ok': null},
+      ],
+    });
+    expect(result.retryAgentIds, ['c', 'd', 'e']);
   });
-
-  test(
-    'an incomplete response cannot authorize retrying successful agents',
-    () {
-      final result = SosResumeResult.parse({
-        'ok': false,
-        'total': 3,
-        'results': [
-          {'agentId': 'a', 'ok': true},
-          {'agentId': 'b', 'ok': false},
-        ],
-      });
-      expect(result.retryAgentIds, isNull);
-      expect(result.failures.single.agentId, 'b');
-    },
-  );
 }

@@ -70,9 +70,21 @@ void main() {
       api.calls.where((c) => c.path.startsWith('/messages/context')),
       isEmpty,
     );
+    // A mention whose roster entry is gone closes the panel (Web), but only
+    // while the address still names it.
+    w.navigation.navigateProfile(
+      w.location.withQuery({'profile': 'external-mention:c1:gone'}),
+    );
+    expect(w.location.profile?.id, 'gone');
     await show('gone');
     await t.pump();
-    expect(find.text('failed'), findsOneWidget);
+    expect(w.location.profile, isNull);
+    w.navigation.navigateProfile(
+      w.location.withQuery({'profile': 'external-mention:c1:other'}),
+    );
+    await show('gone2');
+    await t.pump();
+    expect(w.location.profile?.id, 'other');
   });
 
   testWidgets('a mention with no roster entry still reads as a mention', (
@@ -194,6 +206,69 @@ void main() {
     expect(find.text('Ann'), findsOneWidget);
     expect(find.text('Ada Slack'), findsNothing);
   });
+
+  for (final (width, capped) in [(1000.0, true), (520.0, false)]) {
+    testWidgets(
+      'description and source server split the row like Web at $width',
+      (t) async {
+        t.view.physicalSize = Size(width, 700);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
+        await t.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.elegant),
+            home: Scaffold(
+              body: Column(
+                children: [
+                  const Spacer(),
+                  RaftComposer(
+                    suggestions: [
+                      RaftComposerSuggestion(
+                        avatar: const SizedBox.square(dimension: 20),
+                        type: 'user',
+                        id: 'u2',
+                        name: 'ann',
+                        title: 'Ann',
+                        detail: 'd' * 120,
+                        serverLabel: 'S' * 60,
+                      ),
+                    ],
+                    onSend: (_) async => false,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+        await t.enterText(find.byType(TextField), '@');
+        await t.pumpAndSettle();
+        final server = t.getSize(
+          find.byKey(const ValueKey('mention-source-server')),
+        );
+        final description = t.getSize(find.textContaining('dddd'));
+        // flex-1 basis-0 on both: an even split, unless the server hits its
+        // 10rem cap, which hands the rest to the description.
+        if (capped) {
+          expect(server.width, 160);
+          expect(description.width, greaterThan(server.width));
+          // The description took the rest: the capped server sits 6px from
+          // the @handle instead of leaving its half of the row blank.
+          expect(
+            t.getTopLeft(find.text('@ann')).dx -
+                t
+                    .getTopRight(
+                      find.byKey(const ValueKey('mention-source-server')),
+                    )
+                    .dx,
+            closeTo(6, 0.5),
+          );
+        } else {
+          expect(server.width, lessThan(160));
+          expect(server.width, closeTo(description.width, 1));
+        }
+      },
+    );
+  }
 
   test('search source labels name a DM by its peer', () {
     final dms = [

@@ -8,7 +8,6 @@ import 'banner.dart';
 import 'components.dart';
 import 'dialog_card.dart';
 import 'form_controls.dart';
-import 'error_presentation.dart';
 import 'localization.dart';
 import 'recipes/button_variants.g.dart';
 import 'theme.dart';
@@ -25,12 +24,17 @@ class RaftSosShortfall {
   final int starting, failed;
 }
 
+/// What a stop or resume that failed resolves to: Web changes nothing and
+/// shows no message (a failed stop stays on the confirmation, a failed resume
+/// keeps the guidance).
+enum RaftSosOutcome { retained }
+
 /// Web SOSDialog in a `DialogCard maxWidthClass="max-w-sm"`.
 ///
-/// [onStop] and [onResume] resolve to null on success or to a user-facing
-/// error. A failed stop stays on the confirm phase and a failed resume keeps
-/// the guidance, exactly as Web; the error is shown inline. [onResume] may
-/// also resolve to a [RaftSosShortfall] (a String is the error text).
+/// [onStop] and [onResume] resolve to null on success. A failure resolves to
+/// [RaftSosOutcome.retained]: a failed stop stays on the confirm phase and a
+/// failed resume keeps the guidance, with no message, exactly as Web.
+/// [onResume] may also resolve to a [RaftSosShortfall].
 class RaftSosDialog extends StatefulWidget {
   const RaftSosDialog({
     super.key,
@@ -41,7 +45,7 @@ class RaftSosDialog extends StatefulWidget {
     this.initialPhase = RaftSosPhase.confirm,
   });
   final String channelName;
-  final Future<String?> Function() onStop;
+  final Future<RaftSosOutcome?> Function() onStop;
   final Future<Object?> Function(String guidance) onResume;
 
   /// Cancel, Keep Stopped, the close button, and a successful resume.
@@ -54,8 +58,6 @@ class RaftSosDialog extends StatefulWidget {
 class _RaftSosDialogState extends State<RaftSosDialog> {
   late RaftSosPhase phase = widget.initialPhase;
   bool stopping = false, resuming = false;
-  // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next stop or resume starts; the dialog state is dropped when it closes.
-  String? error;
   RaftSosShortfall? shortfall;
   final guidance = TextEditingController();
   final guidanceFocus = FocusNode();
@@ -80,15 +82,11 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
 
   Future<void> stop() async {
     if (stopping) return;
-    setState(() {
-      stopping = true;
-      error = null;
-    });
+    setState(() => stopping = true);
     final failure = await widget.onStop();
     if (!mounted) return;
     setState(() {
       stopping = false;
-      error = failure;
       if (failure == null) phase = RaftSosPhase.stopped;
     });
     if (failure == null) focusGuidance();
@@ -97,10 +95,7 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
   Future<void> resume() async {
     final text = guidance.text.trim();
     if (text.isEmpty || resuming) return;
-    setState(() {
-      resuming = true;
-      error = null;
-    });
+    setState(() => resuming = true);
     final outcome = await widget.onResume(text);
     if (!mounted) return;
     if (outcome == null) {
@@ -110,7 +105,6 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
     setState(() {
       resuming = false;
       if (outcome is RaftSosShortfall) shortfall = outcome;
-      error = outcome is String ? outcome : null;
     });
   }
 
@@ -130,16 +124,6 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
       runSpacing: 8,
       children: children,
     );
-    final errorText = error == null
-        ? null
-        : Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: RaftErrorBanner(
-              error!,
-              key: const ValueKey('sos-error'),
-              small: true,
-            ),
-          );
     // Raft dialog routes carry no Material; the guidance editor needs one.
     return Material(
       type: MaterialType.transparency,
@@ -206,7 +190,6 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
                       ),
                     ),
                   ),
-                  ?errorText,
                 ],
               )
             : Column(
@@ -280,7 +263,6 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
                       ),
                     ),
                   ),
-                  ?errorText,
                 ],
               ),
       ),

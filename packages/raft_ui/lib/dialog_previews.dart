@@ -93,7 +93,7 @@ Widget sosStoppedPreview() => Center(
     onStop: () async => null,
     onResume: (_) async {
       await Future<void>.delayed(const Duration(seconds: 1));
-      return 'Agents could not be resumed. Try again.';
+      return const RaftSosShortfall(starting: 1, failed: 1);
     },
     onClose: () {},
   ),
