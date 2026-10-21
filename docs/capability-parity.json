@@ -3562,14 +3562,14 @@
    "status": "covered",
    "webEntry": "Server Profile > Danger Zone 'Delete Server' + slug confirmation",
    "gate": "owner only",
-   "flutterEntry": "server_views.dart 'server-danger-delete-button' + _DeleteServerConfirm",
+   "flutterEntry": "server_views.dart 'server-danger-delete-button' + delete_server_confirm.dart confirmDeleteServer (also the setup footer 'Delete this server')",
    "flutterRefs": [
     {
      "file": "packages/raft_client/lib/src/client.dart",
      "needle": "exitServer"
     },
     {
-     "file": "apps/raft_flutter/lib/features/server_views.dart",
+     "file": "apps/raft_flutter/lib/features/delete_server_confirm.dart",
      "needle": "server-delete-slug-input"
     }
    ],
@@ -14144,11 +14144,11 @@
    "status": "covered",
    "webEntry": "SetupSessionFooter, OnboardingCreateShell showSessionFooter",
    "gate": "",
-   "flutterEntry": "server_setup_gate.dart onSwitchServer / RaftCindySessionLink; account_onboarding.dart onSignOut",
+   "flutterEntry": "server_setup_gate.dart onSwitchServer / setupSessionActions (RaftCindySessionFooter, owner-only Delete this server); account_onboarding.dart onSignOut",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/server_setup_gate.dart",
-     "needle": "RaftCindySessionLink"
+     "needle": "setupSessionActions"
     },
     {
      "file": "apps/raft_flutter/lib/features/account_onboarding.dart",

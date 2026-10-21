@@ -250,13 +250,18 @@ class RaftCindySetupScreen extends StatelessWidget {
 
 /// SetupSessionFooter.tsx + the product muted TextLink (no button box).
 class RaftCindySessionLink extends StatelessWidget {
-  const RaftCindySessionLink({super.key, required this.onPressed});
+  const RaftCindySessionLink({
+    super.key,
+    required this.onPressed,
+    this.label = 'Switch server',
+  });
   final VoidCallback? onPressed;
+  final String label;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return RaftInteractive(
-      semanticLabel: raftText(context, 'Switch server'),
+      semanticLabel: raftText(context, label),
       onPressed: onPressed,
       builder: (context, state) => CustomPaint(
         foregroundPainter: RaftCssFocusOutline(
@@ -266,7 +271,7 @@ class RaftCindySessionLink extends StatelessWidget {
         child: Opacity(
           opacity: state.enabled ? 1 : .5,
           child: RaftCssText(
-            raftText(context, 'Switch server'),
+            raftText(context, label),
             underline: true,
             style: TextStyle(
               fontFamily: t.bodyFont,
@@ -280,4 +285,38 @@ class RaftCindySessionLink extends StatelessWidget {
       ),
     );
   }
+}
+
+/// SetupSessionFooter.tsx: `flex items-center gap-4 text-sm` with the muted
+/// "Switch server" link and, for the server's owner, "Delete this server".
+/// Setup may make you finish before chatting, but it must never lock the
+/// owner out of abandoning the server (Settings is covered by the blocking
+/// setup surface). [showDeleteServer] defaults to `onDeleteServer != null`; a
+/// busy step passes a null callback with it true so the link stays, dimmed.
+class RaftCindySessionFooter extends StatelessWidget {
+  const RaftCindySessionFooter({
+    super.key,
+    this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
+  });
+  final VoidCallback? onSwitchServer, onDeleteServer;
+  final bool? showDeleteServer;
+  @override
+  Widget build(BuildContext context) => Wrap(
+    // `gap-4`; the links wrap under each other when a narrow card or a large
+    // text size leaves no room for both.
+    spacing: 16,
+    runSpacing: 4,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: [
+      RaftCindySessionLink(onPressed: onSwitchServer),
+      if (showDeleteServer ?? onDeleteServer != null)
+        RaftCindySessionLink(
+          key: const ValueKey('setup-delete-server'),
+          label: 'Delete this server',
+          onPressed: onDeleteServer,
+        ),
+    ],
+  );
 }

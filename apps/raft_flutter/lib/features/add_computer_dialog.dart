@@ -209,17 +209,20 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
     );
   }
 
+  ComputerCommands? _commands(bool windows) => ComputerCommands.build(
+    slug: w.server?.string('slug') ?? '',
+    serverUrl: w.client.origin,
+    deployment: widget.deployment,
+    windows: windows,
+  );
+
   @override
   Widget build(BuildContext context) => RaftAddComputerDialog(
     commandsFor: (windows) {
-      final c = ComputerCommands.build(
-        slug: w.server?.string('slug') ?? '',
-        serverUrl: w.client.origin,
-        deployment: widget.deployment,
-        windows: windows,
-      );
+      final c = _commands(windows);
       return c == null ? null : (c.install, c.setup);
     },
+    installAndSetupFor: (windows) => _commands(windows)?.installAndSetup,
     register: register,
     onViewPlans: () => w.setSection('billing'),
     cancel: cancel,

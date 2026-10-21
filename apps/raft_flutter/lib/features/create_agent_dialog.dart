@@ -12,6 +12,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'agent_metadata_catalog.dart';
 import 'agent_runtime_labels.dart' show creatableRuntimeIds;
+import 'delete_server_confirm.dart';
 import 'private_route_guard.dart';
 import 'runtime_form_dialog.dart';
 
@@ -749,14 +750,18 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
             onClose: widget.onboardingModal ? close : null,
             onCreate: createDisabled ? null : submit,
             busy: busy,
-            sessionActions: widget.onSwitchServer == null
-                ? null
-                : Align(
-                    alignment: Alignment.centerLeft,
-                    child: RaftCindySessionLink(
-                      onPressed: busy ? null : widget.onSwitchServer,
-                    ),
-                  ),
+            sessionActions: switch (setupSessionActions(
+              context,
+              w,
+              onSwitchServer: widget.onSwitchServer,
+              busy: busy,
+            )) {
+              final actions? => Align(
+                alignment: Alignment.centerLeft,
+                child: actions,
+              ),
+              null => null,
+            },
           ),
         ),
       );

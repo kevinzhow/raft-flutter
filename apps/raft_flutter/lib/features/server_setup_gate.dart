@@ -13,6 +13,7 @@ import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'create_agent_dialog.dart';
 import 'computer_setup_commands.dart';
+import 'delete_server_confirm.dart';
 import 'resource_cards.dart';
 
 /// Settings and the setup surface of one workspace share an invalidation
@@ -74,6 +75,11 @@ class ServerSetupGate extends StatefulWidget {
 class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
   @override
   WorkspaceController get w => widget.controller;
+
+  /// SetupSessionFooter "Delete this server": owners only.
+  bool get ownerDeletes => setupShowsDeleteServer(w);
+  VoidCallback? get deleteServer =>
+      setupDeleteServerAction(context, w, busy: busy);
   Map<String, dynamic>? projection;
   // ignore: raft_lints/avoid_imperative_notice_state -- createdAgentId clears on setup reset and server/account switch (clearData); notice is written by reset() but never rendered and clears on server/account switch (clearData).
   String? createdAgentId, notice;
@@ -139,8 +145,10 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
 
   /// The directory's scoped counters for what setup reads: computers and
   /// agents. Members, presence and activity never move them.
-  (int, int) directoryRevisions() =>
-      (w.services.entityDirectory.computerRevision, w.services.entityDirectory.agentRevision);
+  (int, int) directoryRevisions() => (
+    w.services.entityDirectory.computerRevision,
+    w.services.entityDirectory.agentRevision,
+  );
 
   /// Source ServerSetupProjectionGate re-reads the projection when the
   /// machines' id/status/runtimes change. Agent creation moves the
@@ -180,7 +188,9 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       _directory?.removeListener(directoryChanged);
       _signal?.removeListener(reload);
       if (_announcementServer != null) {
-        oldWidget.controller.services.announcementGate.detach(_announcementServer!);
+        oldWidget.controller.services.announcementGate.detach(
+          _announcementServer!,
+        );
         _announcementServer = null;
       }
       rebindManagementController();
@@ -374,11 +384,12 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
                     'enabled'
             ? null
             : completeCindy,
-        sessionActions: widget.onSwitchServer == null
-            ? null
-            : RaftCindySessionLink(
-                onPressed: busy ? null : widget.onSwitchServer,
-              ),
+        sessionActions: setupSessionActions(
+          context,
+          w,
+          onSwitchServer: widget.onSwitchServer,
+          busy: busy,
+        ),
       );
     }
     return CreateAgentDialog(
@@ -536,6 +547,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
           otherController: surveyOther,
           onContinue: submitSurvey,
           onSwitchServer: busy ? null : widget.onSwitchServer,
+          onDeleteServer: deleteServer,
+          showDeleteServer: ownerDeletes,
         ),
       );
     }
@@ -545,6 +558,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
           key: const ValueKey('setup-handoff'),
           starting: busy,
           onSwitchServer: busy ? null : widget.onSwitchServer,
+          onDeleteServer: deleteServer,
+          showDeleteServer: ownerDeletes,
           onDone: () => run(() async {
             final generation = w.client.generation, scope = authority;
             final result = await w.client.post('$base/setup-handoff');
@@ -660,6 +675,7 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
       guideCommands: commands == null
           ? null
           : (commands.install, commands.setup),
+      guideInstallAndSetup: commands?.installAndSetup,
       serverSlug: w.server?.string('slug'),
       canReset: managementStrings(current['allowedExits']).contains('reset'),
       loading: busy,
@@ -675,6 +691,8 @@ class _ServerSetupGateState extends ManagementState<ServerSetupGate> {
         }
       },
       onSwitchServer: busy ? null : widget.onSwitchServer,
+      onDeleteServer: deleteServer,
+      showDeleteServer: ownerDeletes,
       onCopyInstallCommand: (id, command) =>
           Clipboard.setData(ClipboardData(text: command)),
     );

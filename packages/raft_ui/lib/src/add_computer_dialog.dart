@@ -24,6 +24,7 @@ class RaftAddComputerDialog extends StatefulWidget {
   const RaftAddComputerDialog({
     super.key,
     required this.commandsFor,
+    this.installAndSetupFor,
     required this.register,
     required this.cancel,
     required this.done,
@@ -36,6 +37,10 @@ class RaftAddComputerDialog extends StatefulWidget {
 
   /// (install, setup) for macOS/Linux or Windows; null without a slug.
   final (String, String)? Function(bool windows) commandsFor;
+
+  /// mac/Linux production one-paste install + setup (Web
+  /// `ComputerCommands.installAndSetup`); null keeps the two steps.
+  final String? Function(bool windows)? installAndSetupFor;
 
   /// Registers the placeholder row ("Next"); throws
   /// [RaftComputerActionError] with the copy to show.
@@ -282,6 +287,9 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           platform: platform,
           onPlatform: (v) => setState(() => platform = v),
           commands: widget.commandsFor(platform == 'windows'),
+          installAndSetup: widget.installAndSetupFor?.call(
+            platform == 'windows',
+          ),
         ),
         const SizedBox(height: 16),
         RaftBanner(
@@ -418,10 +426,15 @@ class RaftComputerCommandGuide extends StatelessWidget {
     required this.platform,
     required this.onPlatform,
     required this.commands,
+    this.installAndSetup,
   });
   final String platform;
   final ValueChanged<String> onPlatform;
   final (String, String)? commands;
+
+  /// When set on macOS / Linux, the guide shows this single install-then-setup
+  /// command instead of the separate install and setup steps.
+  final String? installAndSetup;
 
   @override
   Widget build(BuildContext context) =>
@@ -511,7 +524,13 @@ class RaftComputerCommandGuide extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
-        if (c != null)
+        if (c != null && !windows && installAndSetup != null)
+          // One displayed step: no step label, and the generic CLI copy label.
+          RaftCopyableCode(
+            installAndSetup!,
+            copyLabel: 'Copy Computer CLI command',
+          )
+        else if (c != null)
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

@@ -44,6 +44,7 @@ const dialogSurfaces = <CloseSurface>[
       'lib/features/channel_members.dart',
       'lib/features/channel_settings.dart',
       'lib/features/connected_app_editor.dart',
+      'lib/features/delete_server_confirm.dart',
       'lib/features/incoming_share_picker.dart',
       'lib/features/integrations_views.dart',
       'lib/features/public_server_view.dart',

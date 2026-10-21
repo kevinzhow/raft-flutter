@@ -10,6 +10,7 @@ import 'agent_metadata_projection.dart';
 import 'agent_runtime_catalog.dart';
 import 'agent_runtime_draft.dart';
 import 'bulk_agent_model_change.dart';
+import 'bulk_model_step_body.dart';
 import 'management_support.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 import 'runtime_usage_chip.dart';
@@ -603,21 +604,27 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
             ),
             const SizedBox(height: RaftSpace.x4),
           ],
-          if (step == _Step.choose)
-            _choose()
-          else ...[
-            for (final row in rows)
-              if (!busy || row.action != BulkModelAction.skip)
-                _row(row, applying: busy),
-            if (!busy && restarts > 0)
-              RaftAgentFieldNote(
-                plural(
-                  '{count} running agent will restart.',
-                  '{count} running agents will restart.',
-                  restarts,
-                ),
-              ),
-          ],
+          BulkModelStepBody(
+            stepKey: step.name,
+            child: step == _Step.choose
+                ? _choose()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final row in rows)
+                        if (!busy || row.action != BulkModelAction.skip)
+                          _row(row, applying: busy),
+                      if (!busy && restarts > 0)
+                        RaftAgentFieldNote(
+                          plural(
+                            '{count} running agent will restart.',
+                            '{count} running agents will restart.',
+                            restarts,
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );

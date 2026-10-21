@@ -18,6 +18,7 @@ import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_metadata_catalog.dart';
 import 'agent_metadata_projection.dart';
 import 'computer_setup_commands.dart';
+import 'computer_upgrade_outcome.dart';
 import 'runtime_usage_chip.dart';
 import 'bulk_agent_model_change.dart';
 import 'bulk_agent_model_dialog.dart';
@@ -550,6 +551,16 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       sentence: sentence,
       version: version,
       webUpgradeOn: webUpgradeOn,
+      // A refused click wins; else the server's settled verdict on the last
+      // request while it is still true (not while upgrading or up to date).
+      outcome:
+          kind == RaftComputerServiceKind.oneClick &&
+              upgradeRefusal == 'unknown'
+          ? RaftComputerUpgradeOutcome.refusedUnknown
+          : kind == RaftComputerServiceKind.upgrading ||
+                kind == RaftComputerServiceKind.upToDate
+          ? RaftComputerUpgradeOutcome.none
+          : computerUpgradeRequestOutcome(m),
     );
     return switch (fact) {
       ComputerVersionUnknown() => card(
@@ -673,6 +684,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           ? RaftComputerUpgradeLink.overdue
           : RaftComputerUpgradeLink.none,
       upgradeVersion: reconnect.targetVersion,
+      requestOutcome: computerUpgradeRequestOutcome(m),
       highlightedAgentIds: bulkModelEnabled
           ? receipt?.highlightsAt(_now()) ?? const {}
           : const {},
@@ -710,6 +722,10 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             sizeLabel: computerFileSize(e['totalSizeBytes'] as num? ?? 0),
             filesLabel:
                 '${e['fileCount'] ?? 0} ${e['fileCount'] == 1 ? 'file' : 'files'}',
+            displayPath: switch (e['displayPath']) {
+              final String path when path.isNotEmpty => path,
+              _ => null,
+            },
             modifiedLabel: switch (DateTime.tryParse(
               '${e['lastModified'] ?? ''}',
             )) {

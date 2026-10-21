@@ -14,6 +14,7 @@ import 'member_profile_rules.dart';
 import 'invite_accept_view.dart';
 import 'public_avatar_url.dart';
 import 'public_visibility_view.dart';
+import 'delete_server_confirm.dart';
 
 class WorkspaceActions {
   static Future<void> create(
@@ -179,9 +180,8 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
     });
     bool current() => mounted && w.server?.id == id;
     try {
-      final picked = await (widget.pickAvatar ?? AccountMediaActions.pickAvatar)(
-        w.client,
-      );
+      final picked =
+          await (widget.pickAvatar ?? AccountMediaActions.pickAvatar)(w.client);
       if (picked == null || !current()) return;
       final data = await w.command(
         'POST',
@@ -252,28 +252,7 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
     }
   }
 
-  Future<void> confirmDelete() async {
-    final server = w.server;
-    if (server == null) return;
-    final matches = ValueNotifier(false);
-    final ok = await RaftConfirmDialog.show(
-      context,
-      RaftConfirmDialog(
-        title: 'Delete Server',
-        confirmLabel: 'Delete Server',
-        surfaceKey: const ValueKey('server-danger-dialog'),
-        confirmKey: const Key('server-delete-confirm-button'),
-        content: _DeleteServerConfirm(
-          name: server.name,
-          slug: server.string('slug'),
-          matches: matches,
-        ),
-        confirmEnabled: matches,
-      ),
-    );
-    matches.dispose();
-    if (ok == true) await exitServer(delete: true);
-  }
+  Future<void> confirmDelete() => confirmDeleteServer(context, w);
 
   Future<void> confirmLeave() async {
     final server = w.server;
@@ -456,82 +435,6 @@ class _ServerSettingsViewState extends State<ServerSettingsView> {
             ),
           ),
         const SizedBox(height: RaftSpace.x6),
-      ],
-    );
-  }
-}
-
-/// DangerZoneSection delete confirmation body: `space-y-4`, warning copy
-/// with the bold server name, then "Type `slug` to confirm:" over SlugInput.
-class _DeleteServerConfirm extends StatefulWidget {
-  const _DeleteServerConfirm({
-    required this.name,
-    required this.slug,
-    required this.matches,
-  });
-  final String name, slug;
-  final ValueNotifier<bool> matches;
-  @override
-  State<_DeleteServerConfirm> createState() => _DeleteServerConfirmState();
-}
-
-class _DeleteServerConfirmState extends State<_DeleteServerConfirm> {
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final text = RaftSettingsText(t);
-    // `<span className="font-bold">` inside the dialog copy.
-    final bold = RaftConfirmDialog.messageStyle(t)
-        .merge(text.title)
-        .copyWith(
-          fontSize: RaftConfirmDialog.messageStyle(t).fontSize,
-          height: RaftConfirmDialog.messageStyle(t).height,
-          color: RaftConfirmDialog.messageStyle(t).color,
-        );
-    // `text-sm text-foreground-muted theme-brutal:text-black/60 mb-2`
-    final prompt = text.bodyMuted;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: raftText(context, 'This will permanently delete '),
-              ),
-              TextSpan(text: widget.name, style: bold),
-              TextSpan(
-                text: raftText(
-                  context,
-                  ' and all its data (agents, channels, messages). This cannot be undone.',
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: RaftSpace.x4),
-        Text.rich(
-          // CSS gives the inline mono span the paragraph's 20px line box.
-          strutStyle: StrutStyle.fromTextStyle(prompt, forceStrutHeight: true),
-          TextSpan(
-            style: prompt,
-            children: [
-              TextSpan(text: raftText(context, 'Type ')),
-              TextSpan(text: widget.slug, style: text.monoBold),
-              TextSpan(text: raftText(context, ' to confirm:')),
-            ],
-          ),
-        ),
-        const SizedBox(height: RaftSpace.x2),
-        RaftSettingsPrefixedInput(
-          key: const Key('server-delete-slug-input'),
-          prefix: '/',
-          placeholder: widget.slug,
-          mono: true,
-          // Inherits the confirm copy's `text-foreground-muted`.
-          textColor: RaftConfirmDialog.messageStyle(t).color,
-          onChanged: (v) => widget.matches.value = v == widget.slug,
-        ),
       ],
     );
   }
@@ -740,9 +643,7 @@ class _MembersViewState extends State<MembersView> {
                     RaftLoadError(error!, onRetry: load, expand: false),
                   for (final member in members)
                     ListTile(
-                      leading: RaftAvatar(
-                        name: humanDisplayName(member),
-                      ),
+                      leading: RaftAvatar(name: humanDisplayName(member)),
                       title: Text(humanDisplayName(member)),
                       subtitle: Text(
                         '${member['role']} · ${member['email'] ?? ''}',

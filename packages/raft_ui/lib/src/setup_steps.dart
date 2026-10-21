@@ -105,6 +105,8 @@ class RaftSetupSurveyCard extends StatelessWidget {
     this.onSource,
     this.onContinue,
     this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
   });
 
   /// `id -> label`, in display order.
@@ -118,6 +120,8 @@ class RaftSetupSurveyCard extends StatelessWidget {
   final bool saving;
   final ValueChanged<String>? onRole, onSource;
   final VoidCallback? onContinue, onSwitchServer;
+  final VoidCallback? onDeleteServer;
+  final bool? showDeleteServer;
 
   @override
   Widget build(BuildContext context) =>
@@ -142,7 +146,13 @@ class RaftSetupSurveyCard extends StatelessWidget {
         ? Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SessionFooter(onSwitchServer: onSwitchServer),
+              Flexible(
+                child: _SessionFooter(
+                  onSwitchServer: onSwitchServer,
+                  onDeleteServer: onDeleteServer,
+                  showDeleteServer: showDeleteServer,
+                ),
+              ),
               cont,
             ],
           )
@@ -151,7 +161,11 @@ class RaftSetupSurveyCard extends StatelessWidget {
             children: [
               cont,
               const SizedBox(height: 12),
-              _SessionFooter(onSwitchServer: onSwitchServer),
+              _SessionFooter(
+                onSwitchServer: onSwitchServer,
+                onDeleteServer: onDeleteServer,
+                showDeleteServer: showDeleteServer,
+              ),
             ],
           );
     return _StepCard(
@@ -404,16 +418,25 @@ class _Chip extends StatelessWidget {
 }
 
 /// SetupSessionFooter: `flex items-center gap-4 text-sm` with the muted
-/// "Switch server" TextLink.
+/// "Switch server" TextLink and the owner-only "Delete this server" one.
 class _SessionFooter extends StatelessWidget {
-  const _SessionFooter({this.onSwitchServer});
-  final VoidCallback? onSwitchServer;
+  const _SessionFooter({
+    this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
+  });
+  final VoidCallback? onSwitchServer, onDeleteServer;
+  final bool? showDeleteServer;
 
   @override
   Widget build(BuildContext context) => Align(
     alignment: AlignmentDirectional.centerStart,
     heightFactor: 1,
-    child: RaftCindySessionLink(onPressed: onSwitchServer),
+    child: RaftCindySessionFooter(
+      onSwitchServer: onSwitchServer,
+      onDeleteServer: onDeleteServer,
+      showDeleteServer: showDeleteServer,
+    ),
   );
 }
 
@@ -426,11 +449,15 @@ class RaftSetupHandoffCard extends StatelessWidget {
     this.agentName = 'Cindy',
     this.onDone,
     this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
   });
   final bool starting;
   final String agentName;
   final VoidCallback? onDone;
   final VoidCallback? onSwitchServer;
+  final VoidCallback? onDeleteServer;
+  final bool? showDeleteServer;
 
   @override
   Widget build(BuildContext context) =>
@@ -520,7 +547,13 @@ class RaftSetupHandoffCard extends StatelessWidget {
                 ? Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _SessionFooter(onSwitchServer: onSwitchServer),
+                      Flexible(
+                        child: _SessionFooter(
+                          onSwitchServer: onSwitchServer,
+                          onDeleteServer: onDeleteServer,
+                          showDeleteServer: showDeleteServer,
+                        ),
+                      ),
                       done,
                     ],
                   )
@@ -529,7 +562,11 @@ class RaftSetupHandoffCard extends StatelessWidget {
                     children: [
                       done,
                       const SizedBox(height: 12),
-                      _SessionFooter(onSwitchServer: onSwitchServer),
+                      _SessionFooter(
+                        onSwitchServer: onSwitchServer,
+                        onDeleteServer: onDeleteServer,
+                        showDeleteServer: showDeleteServer,
+                      ),
                     ],
                   ),
           ),
@@ -591,6 +628,7 @@ class RaftSetupComputerCard extends StatefulWidget {
     required this.guidePlatform,
     required this.onGuidePlatform,
     required this.guideCommands,
+    this.guideInstallAndSetup,
     required this.serverSlug,
     required this.canReset,
     required this.loading,
@@ -598,6 +636,8 @@ class RaftSetupComputerCard extends StatefulWidget {
     this.onStartOver,
     this.onNext,
     this.onSwitchServer,
+    this.onDeleteServer,
+    this.showDeleteServer,
     this.onCopyInstallCommand,
   });
 
@@ -615,10 +655,18 @@ class RaftSetupComputerCard extends StatefulWidget {
 
   /// (install, setup) of the selected platform; null without a slug.
   final (String, String)? guideCommands;
+
+  /// mac/Linux one-paste install + setup of the selected platform; null keeps
+  /// the two steps (Web `computerInstallAndSetupCommand`).
+  final String? guideInstallAndSetup;
   final String? serverSlug;
   final bool canReset, loading;
   final String? error;
   final VoidCallback? onStartOver, onNext, onSwitchServer;
+  final VoidCallback? onDeleteServer;
+
+  /// Owner-only "Delete this server" link; defaults to `onDeleteServer != null`.
+  final bool? showDeleteServer;
   final void Function(String runtimeId, String command)? onCopyInstallCommand;
 
   @override
@@ -669,7 +717,13 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
           ? Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _SessionFooter(onSwitchServer: widget.onSwitchServer),
+                Flexible(
+                  child: _SessionFooter(
+                    onSwitchServer: widget.onSwitchServer,
+                    onDeleteServer: widget.onDeleteServer,
+                    showDeleteServer: widget.showDeleteServer,
+                  ),
+                ),
                 next,
               ],
             )
@@ -678,7 +732,11 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
               children: [
                 next,
                 const SizedBox(height: 12),
-                _SessionFooter(onSwitchServer: widget.onSwitchServer),
+                _SessionFooter(
+                  onSwitchServer: widget.onSwitchServer,
+                  onDeleteServer: widget.onDeleteServer,
+                  showDeleteServer: widget.showDeleteServer,
+                ),
               ],
             ),
     );
@@ -774,6 +832,7 @@ class _RaftSetupComputerCardState extends State<RaftSetupComputerCard> {
     platform: widget.guidePlatform,
     onPlatform: widget.onGuidePlatform,
     commands: widget.guideCommands,
+    installAndSetup: widget.guideInstallAndSetup,
   );
 
   Widget _runtimeBox(BuildContext context, RaftTokens t) {
