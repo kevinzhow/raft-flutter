@@ -5267,6 +5267,30 @@
   },
   {
    "kind": "endpoint",
+   "id": "GET /agents/:id/hosted-runtime/model",
+   "area": "agents-computers-runtimes",
+   "capability": "Read the hosted external agent's model choice (offered models, provider default, current pick, admin lock)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentHostedRuntimeModel (Profile > Info > Model card)",
+   "gate": "external agent + canManageAgent + hostedRuntime.state active (hidden on 4xx except 429)",
+   "flutterEntry": "agent_hosted_model.dart AgentHostedRuntimeModel._read() (HostedModelView.parse)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_hosted_model.dart",
+     "needle": "hostedRuntimeModelPath("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "AgentHostedRuntimeModel("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
    "id": "GET /agents/:id/hosted-runtime/usage",
    "area": "agents-computers-runtimes",
    "capability": "Hosted-runtime 7-day token/tool-call/top-model usage block",
@@ -5726,7 +5750,7 @@
    "status": "partial",
    "webEntry": "modelLabelCatalogStore.watchModelLabelCatalog (MainLayout) feeding catalogModelLabel in agent profile, create/edit model selects and message headers",
    "gate": "background; any member",
-   "flutterEntry": "agent_metadata_catalog.dart sourceRuntimeModelLabels (bundled static map, no server fetch)",
+   "flutterEntry": "agent_metadata_catalog.dart sourceRuntimeModelLabels (bundled static map generated at Web v1.21.12 by apps/raft_flutter/tool/gen_runtime_catalog.mjs, no server fetch)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_metadata_catalog.dart",
@@ -6312,6 +6336,30 @@
    "size": "S"
   },
   {
+   "kind": "endpoint",
+   "id": "PUT /agents/:id/hosted-runtime/model",
+   "area": "agents-computers-runtimes",
+   "capability": "Pick the hosted external agent's model (searchable list with a Default row; optimistic with rollback; 409 locked, 422 not offered)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentHostedRuntimeModel combobox",
+   "gate": "external agent + canManageAgent + hostedRuntime.state active; not while an administrator locks the model",
+   "flutterEntry": "agent_hosted_model.dart AgentHostedRuntimeModel save ('PUT' with rollback)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_hosted_model.dart",
+     "needle": "'PUT'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_hosted_model.dart",
+     "needle": "hostedModelDefaultChoice"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
    "kind": "ui",
    "id": "ui:agents-computers-runtimes.sidebar-agent-machine-groups",
    "area": "agents-computers-runtimes",
@@ -6842,7 +6890,7 @@
    "gate": "isElectronDesktopShell() && handoff bridge present",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Requires the Electron desktop shell's local-session bridge reading the machine's local agent sessions; not meaningful for the native Flutter app (no equivalent bridge).",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): taking over a local Claude/Codex session needs the Electron desktop shell's local-session bridge; the native app has no such bridge and uses its own native flows.",
    "impact": "",
    "size": ""
   },
@@ -6867,6 +6915,30 @@
     }
    ],
    "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:agents.hosted-runtime-model",
+   "area": "agents-computers-runtimes",
+   "capability": "Hosted-runtime Model card: searchable model list with 'Default ({label})', admin-default note, saving / saved / hint line",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/agent/AgentHostedRuntimeModel.tsx in the agent profile Info section",
+   "gate": "external agent + canManageAgent + hostedRuntime.state active",
+   "flutterEntry": "agent_hosted_model.dart AgentHostedRuntimeModel mounted from agent_detail_view.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_hosted_model.dart",
+     "needle": "class AgentHostedRuntimeModel"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "AgentHostedRuntimeModel("
+    }
+   ],
+   "justification": "The rest of the hosted-runtime family (status panel, usage, retry, create checkbox, GitHub connections, official identity) is still recorded as missing.",
    "impact": "",
    "size": ""
   },
@@ -7042,7 +7114,7 @@
    "status": "partial",
    "webEntry": "Profile > Runtime Config description list",
    "gate": "non-external agents",
-   "flutterEntry": "agent_detail_view.dart Runtime Config section (Runtime w/ usage chip, Model, Reasoning, Mode, env vars)",
+   "flutterEntry": "agent_detail_view.dart Runtime Config section (Runtime w/ usage chip and deprecated-runtime banner, Model, Reasoning, Mode, env vars)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
@@ -7051,9 +7123,13 @@
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "runtimeUsageGateChip("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "This agent uses a deprecated runtime"
     }
    ],
-   "justification": "Missing the Provider (API URL) and Command rows for Claude agents and the 'deprecated runtime' warning banner.",
+   "justification": "Missing the Provider (API URL) and Command rows for Claude agents. The deprecated-runtime warning banner under the Runtime row is done.",
    "impact": "Low; shown only in edit modal in Flutter.",
    "size": "S"
   },
@@ -7554,13 +7630,13 @@
    "area": "agents-computers-runtimes",
    "capability": "Create-agent menu item 'Take over a local session': scan local Claude/Codex sessions on this computer, search transcript bodies, and hand one over to a Raft agent",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "components/layout/Sidebar.tsx create-agent menu (layout.sidebar.handoffSession) + components/handoff/HandoffCreateFlow.tsx, handoffSessions.ts (raftDesktop.handoff bridge: listSessions, sessionExcerpt, searchContent; raftDesktop.computer.getLocalInfo/getStatus)",
    "gate": "Electron desktop shell with handoff bridge",
    "flutterEntry": "",
-   "justification": "",
-   "impact": "Desktop owners/admins migrating a running local agent session into Raft; rare but a flagship desktop-only flow. Needs a native bridge over local transcript files.",
-   "size": "L",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): taking over a local Claude/Codex session needs the Electron desktop shell's local-session bridge; the native app has no such bridge and uses its own native flows.",
+   "impact": "",
+   "size": "",
    "flutterRefs": []
   },
   {
@@ -8123,14 +8199,14 @@
    "area": "integrations-apps-mcp",
    "capability": "Look up a third-party app by client id on the 'Login with Raft' setup page",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "pages/HumanLoginSetupPage (/login-with-raft/setup, legacy /login-with-slock/setup, /login-with-slock-human/setup)",
    "gate": "Signed-in user; server must have the app registered/installed",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "",
-   "impact": "Users who tap a 'Login with Raft' link from a third-party app cannot approve it inside the Raft app; they must use a browser. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "M"
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' setup / consent page.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -8657,14 +8733,14 @@
    "area": "integrations-apps-mcp",
    "capability": "Approve a third-party app login (scope consent, pick Raft server, 'Login with Raft' / 'Install and continue')",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "pages/HumanLoginSetupPage > server picker + RequestedScopeConsent + 'Login with Raft' / 'Install and continue'",
    "gate": "Signed-in user with access to a server where the app is installed; install needs manageIntegrations",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "",
-   "impact": "Third-party OAuth consent screen (scope list, server chooser, install-and-continue, FAQ) is web-only today. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "M",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
+   "impact": "",
+   "size": "",
    "topGap": 9
   },
   {
@@ -8992,13 +9068,13 @@
    "area": "integrations-apps-mcp",
    "capability": "'Log in with Raft' consent/setup page for third-party apps (/login-with-raft/setup, legacy login-with-slock aliases): pick a server, review scopes, authorize or install",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "App.tsx routes /login-with-raft/setup, /login-with-slock/setup, /login-with-slock-human/setup -> pages/HumanLoginSetupPage.tsx (GET /oauth/clients/lookup, POST /oauth/authorize/human, marketplace install)",
    "gate": "",
    "flutterEntry": "",
-   "justification": "",
-   "impact": "Users approving third-party app sign-ins; they must use the web in a browser. Occasional.",
-   "size": "M",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
+   "impact": "",
+   "size": "",
    "flutterRefs": []
   },
   {
@@ -9031,14 +9107,14 @@
    "area": "integrations-apps-mcp",
    "capability": "Approve an external app's login request at /login/app?request= (Approve, Use another account, Cancel, Open app/back to app)",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "pages/AppLoginPage -> /auth/app-login/requests/:id",
    "gate": "Signed-in user",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "",
-   "impact": "App-login approval screen exists only on Web. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "S"
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted native-app login approval page (/login/app).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -9070,14 +9146,14 @@
    "area": "integrations-apps-mcp",
    "capability": "Approve a CLI/device login code at /login/device (enter user code, Approve, use another account)",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "pages/DeviceLoginPage -> POST /auth/device/approve",
    "gate": "Signed-in user",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "",
-   "impact": "Raft Computer / CLI device-code approval can only be done in a browser; no in-app code entry or deep link. (Endpoint belongs to the auth slice; listed here as a consent-screen UI.) No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "S"
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted device / CLI login approval page (/login/device).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -9244,14 +9320,14 @@
    "area": "integrations-apps-mcp",
    "capability": "'Login with Raft' consent page for third-party apps: client lookup, server picker with search, requested scopes, Install and continue, Login with Raft, FAQ",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "pages/HumanLoginSetupPage (+ RequestedScopeConsent)",
    "gate": "Signed-in user",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "",
-   "impact": "Third-party app login approval is only possible in a browser. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser.",
-   "size": "M"
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -11686,6 +11762,26 @@
   },
   {
    "kind": "endpoint",
+   "id": "GET /servers/:id/system-notifications-v2",
+   "area": "notifications",
+   "capability": "Read the replace-snapshot of usage-limit attention incidents for the Notification Center (polled every 60 s)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "useUsageLimitAttention.ts (Notification Center, usage-limit attention cards)",
+   "gate": "flag usage_limit_attention_v0 on the current server",
+   "flutterEntry": "system_notification_store.dart refreshUsageLimit() (parseUsageLimitSnapshot, 60 s poll, fail closed)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
+     "needle": "'/servers/$serverId/system-notifications-v2'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
    "id": "PATCH /channels/:id/notification-settings",
    "area": "notifications",
    "capability": "Mute / unmute Activity notifications for one channel (per user)",
@@ -11794,6 +11890,46 @@
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
      "needle": "Restore conversation"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /servers/:id/system-notifications-v2/:id/dismiss",
+   "area": "notifications",
+   "capability": "Dismiss a usage-limit attention incident",
+   "background": false,
+   "status": "covered",
+   "webEntry": "useUsageLimitAttention.dismiss",
+   "gate": "flag usage_limit_attention_v0 on the current server",
+   "flutterEntry": "system_notification_store.dart _receipt(... 'dismiss')",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
+     "needle": "system-notifications-v2/$incidentId/$action"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /servers/:id/system-notifications-v2/:id/seen",
+   "area": "notifications",
+   "capability": "Mark a usage-limit attention incident as seen (clears the unseen count)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "useUsageLimitAttention.markSeen",
+   "gate": "flag usage_limit_attention_v0 on the current server",
+   "flutterEntry": "system_notification_store.dart _receipt(... 'seen')",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
+     "needle": "system-notifications-v2/$incidentId/$action"
     }
    ],
    "justification": "",
@@ -12595,7 +12731,7 @@
      "needle": "feedback-new-submit"
     }
    ],
-   "justification": "",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): Web v1.21.12 sends X-Raft-Client-Kind (default web) on this call; the app sends no X-Raft-Client-Kind header, so the server default (web) applies and tickets stay in one source. Not split into ios / android.",
    "impact": "",
    "size": ""
   },
@@ -13325,7 +13461,7 @@
    "gate": "signed in in the browser",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Browser-hosted approval page for the Web/Electron app handoff; the Flutter app is itself the native client and signs in through its own OAuth broker (auth_view.dart / oauth_broker.dart), so it neither hosts nor needs this page.",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted native-app login approval page (/login/app).",
    "impact": "",
    "size": ""
   },
@@ -13508,7 +13644,7 @@
    "gate": "signed in in the browser",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Same as GET: browser approval step for the Web/desktop-shell handoff; not part of the Flutter app's own sign-in flow.",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted native-app login approval page (/login/app).",
    "impact": "",
    "size": ""
   },
@@ -13518,14 +13654,14 @@
    "area": "onboarding-auth",
    "capability": "Approve a CLI/device-code login by typing the device code",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "DeviceLoginPage (/login/device): device code field + 'Approve' + 'Use another account'",
    "gate": "signed-in user",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "",
-   "impact": "Anyone running the Raft CLI device login (raft login) must open a desktop browser to approve; a phone or desktop Flutter user already signed in cannot approve in-app. Rare, power-user/CLI.",
-   "size": "S"
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted device / CLI login approval page (/login/device).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -14029,7 +14165,7 @@
    "webEntry": "App.tsx route /login/app -> pages/AppLoginPage.tsx (GET/POST /auth/app-login/requests/:id)",
    "gate": "",
    "flutterEntry": "",
-   "justification": "Serves the HarmonyOS web-login flow of a different native client; Flutter signs in natively (oauth_broker.dart).",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted native-app login approval page (/login/app).",
    "impact": "",
    "size": "",
    "flutterRefs": []
@@ -14040,13 +14176,13 @@
    "area": "onboarding-auth",
    "capability": "Approve a device/CLI login by entering or opening /login/device?user_code=...",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "App.tsx route /login/device -> pages/DeviceLoginPage.tsx (POST /auth/device/approve)",
    "gate": "",
    "flutterEntry": "",
-   "justification": "",
-   "impact": "Anyone signing in the Raft CLI/daemon from a phone/desktop app session; falls back to the website. Occasional.",
-   "size": "S",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted device / CLI login approval page (/login/device).",
+   "impact": "",
+   "size": "",
    "flutterRefs": []
   },
   {
@@ -14060,7 +14196,7 @@
    "gate": "signed in in browser",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Duplicate of endpoint entries; app-login is browser-hosted handoff for the Web/Electron app, device-code approval is tracked as a separate missing item in POST /auth/device/approve.",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted device-code and app-login approval pages (/login/device, /login/app).",
    "impact": "",
    "size": ""
   },
@@ -14075,7 +14211,7 @@
    "gate": "signed in in browser; OAuth client request",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Browser-hosted OAuth consent page opened by external apps; not a surface the Flutter shell hosts (integration/OAuth endpoints are audited in the integrations slice).",
+   "justification": "Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted 'Login with Raft' consent page.",
    "impact": "",
    "size": ""
   },

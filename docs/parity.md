@@ -1937,3 +1937,27 @@ PR #295):
 
 Parity cases that compare a message attachment card with Web differ only where Web draws the image hover Download.
 The row is `ui:files.attachment-card-download` in `capability-parity.json` (partial).
+
+## Owner decisions 2026-10-21 (Kevin): differences from Web v1.21.12 that stay
+
+Recorded after the v1.21.2 to v1.21.12 audit. Each one is also on its row in `capability-parity.json` or in the
+behaviour checklists (`docs/behavior-parity/`).
+
+* **Feedback source stays `web`.** Web sends `X-Raft-Client-Kind` on `POST /product-feedback` (default `web`). The app
+  sends no such header, so the server default (`web`) applies and feedback tickets stay in one source; they are not
+  split into ios / android. Row: `POST /product-feedback`.
+* **We keep the `reaction_viewer:updated` listener.** Web v1.21.12 dropped it together with the normalized-V2
+  reaction layer, but the server still emits it to the user room. Keeping it is a harmless superset (the own-reaction
+  state follows another device). BP-RT-008 is resolved as an intended difference.
+* **Unread agent messages start expanded.** Unchanged since 2026-10-17 (section "Unread agent messages start open"
+  above): an unread agent message starts open, a read one starts collapsed, per visit; the reader's toggle wins.
+  Confirmed again for the v1.21.12 message-row port. Checked against the code in
+  `agent_message_collapse.dart`.
+* **Browser-hosted login pages are not ported.** "Login with Raft" (consent / setup, `/oauth/clients/lookup`,
+  `/oauth/authorize/human`), device / CLI login approval (`/login/device`, `/auth/device/approve`) and native-app
+  login approval (`/login/app`, `/auth/app-login/requests/*`) are browser pages. The native app signs in through its
+  own native login flows (`auth_view.dart`, `oauth_broker.dart`), so these rows are intentional differences (➖) in
+  `capability-parity.json`; they were ❌ in some rows and ➖ in others before. The private-app share link page
+  (`/integration-invites/:token`) is a different surface and is still recorded as missing.
+* **No local-session handoff.** "Take over a local session" needs the Electron desktop shell's local-session bridge;
+  the app has none. Rows `ui:agents.handoff-local-session` and `ui:global-ui.desktop-handoff-local-session` are ➖.
