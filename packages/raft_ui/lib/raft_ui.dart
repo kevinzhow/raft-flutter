@@ -204,6 +204,7 @@ export 'src/provider_edit_view.dart';
 export 'src/slack_bridge_wizard.dart';
 export 'src/task_filter_control.dart';
 export 'src/channel_members_view.dart';
+export 'src/joint_server_badges.dart';
 
 export 'src/channel_header.dart';
 export 'src/agent_avatar_picker.dart';

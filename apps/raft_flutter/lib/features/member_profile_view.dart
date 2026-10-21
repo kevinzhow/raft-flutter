@@ -12,6 +12,7 @@ import '../data/workspace_entity_directory.dart';
 import 'management_support.dart';
 import 'agent_detail_view.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'channel_member_servers.dart' show withPrimedServers;
 import 'member_profile_rules.dart';
 import 'sender_avatar_projection.dart';
 
@@ -87,19 +88,29 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
   void didUpdateWidget(MemberProfileView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != w) {
-      oldWidget.controller.services.entityDirectory.removeListener(directoryChanged);
+      oldWidget.controller.services.entityDirectory.removeListener(
+        directoryChanged,
+      );
       w.services.entityDirectory.addListener(directoryChanged);
       rebindManagementController();
-      profile = {...profile, ...?w.services.entityDirectory.member(widget.userId)};
+      profile = {
+        ...profile,
+        ...?w.services.entityDirectory.member(widget.userId),
+      };
     } else if (oldWidget.userId != widget.userId) {
       refreshAuthority();
-      profile = {...profile, ...?w.services.entityDirectory.member(widget.userId)};
+      profile = {
+        ...profile,
+        ...?w.services.entityDirectory.member(widget.userId),
+      };
     }
   }
 
   void directoryChanged() {
     if (!mounted) return;
-    final failure = w.services.entityDirectory.state(WorkspaceEntityKind.members).error;
+    final failure = w.services.entityDirectory
+        .state(WorkspaceEntityKind.members)
+        .error;
     if (failure is RaftApiException && [401, 403].contains(failure.status)) {
       setState(() {
         profile = {};
@@ -154,10 +165,15 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       }
       // resolveHumanProfile.ts:4–17: accepted live membership wins over a
       // fallback detail projection; preserve detail-only fields.
-      profile = {
-        ...Map<String, dynamic>.from(value),
-        ...?w.services.entityDirectory.member(widget.userId),
-      };
+      profile = withPrimedServers(
+        w,
+        {
+          ...Map<String, dynamic>.from(value),
+          ...?w.services.entityDirectory.member(widget.userId),
+        },
+        w.server?.id,
+        widget.userId,
+      );
       detailLoaded = true;
       // `useServerFeatureFlag(server_guest_v0)` feeds the role options
       // (humanRoleTransitions.ts:11): a Guest target has no options while the
@@ -500,9 +516,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         .toList();
     final joinedRaw = profile['joinedAt'];
     final joined = joinedRaw is String && DateTime.tryParse(joinedRaw) != null
-        ? DateFormat.yMMMd(
-            Localizations.localeOf(context).toLanguageTag(),
-          ).format(DateTime.parse(joinedRaw).toLocal())
+        ? DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
+              .format(DateTime.parse(joinedRaw).toLocal())
         : null;
     final status = profile['membershipStatus'];
     final departure = humanDepartureLabel(status);
@@ -634,7 +649,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
                         slot: RaftAvatarSlotContext.surfaceList,
                       ),
                       name: humanDisplayName(a),
-                      subtitle: runtimeLabelWithStatus(context, '${a['runtime'] ?? ''}'),
+                      subtitle: runtimeLabelWithStatus(
+                        context,
+                        '${a['runtime'] ?? ''}',
+                      ),
                       rightContent: [
                         RaftActivityDot(
                           color: raftActivityDotColor(t, _createdActivity(a)),

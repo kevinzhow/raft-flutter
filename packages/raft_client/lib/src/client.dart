@@ -96,6 +96,11 @@ Map<String, dynamic> _errorDetails(Map? body) {
     'archivedChannelName',
     'archivedChannelType',
     'canUnarchiveArchivedChannel',
+    // Joint-invite rejections (`joint_invitee_not_found`, ...): the target
+    // server slug and the exact invitee the server refused, which the create
+    // dialog localizes into its own sentence. Plain strings only.
+    'targetServerSlug',
+    'invitee',
     // agreement_required / agreement_changed: the community agreement the
     // caller must accept before joining (a public guest join, a community
     // server or an invite); public text, not a credential.
@@ -128,6 +133,9 @@ Map<String, dynamic> _errorDetails(Map? body) {
       : {};
   dynamic selected(String key) {
     final value = body![key];
+    if (key == 'targetServerSlug' || key == 'invitee') {
+      return value is String ? value : null;
+    }
     if (key == 'uploadScope')
       return receipt(value, {
         'sessionIds',

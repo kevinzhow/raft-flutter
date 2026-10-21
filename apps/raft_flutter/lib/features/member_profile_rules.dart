@@ -3,6 +3,8 @@
 /// `resolveHumanProfile.ts`) so they are testable without widgets.
 library;
 
+import 'member_server_badges.dart';
+
 /// `getHumanDepartureLabel`: `Left` / `Removed` for a departed member.
 String? humanDepartureLabel(Object? membershipStatus) =>
     switch (membershipStatus) {
@@ -34,14 +36,12 @@ bool isRemoteJointHuman(Map profile, String? currentServerId) {
 bool isChannelSummaryHuman(Map profile) =>
     profile['profileProjection'] == 'channel_summary';
 
-/// `sourceServerLabel`: `serverName || serverSlug` for a remote joint human.
+/// `sourceServerLabel`: every server the person participates through when any
+/// of them is not the open one, joined with ", " (a person on both sides of a
+/// joint channel lists both); null for a purely local profile.
 String? humanSourceServerLabel(Map profile, String? currentServerId) {
-  if (!isRemoteJointHuman(profile, currentServerId)) return null;
-  for (final key in const ['serverName', 'serverSlug']) {
-    final value = profile[key];
-    if (value is String && value.isNotEmpty) return value;
-  }
-  return null;
+  final labels = memberServerBadgeLabels(profile, currentServerId);
+  return labels.isEmpty ? null : labels.join(', ');
 }
 
 /// `membershipStatus === "active"`. The server always sends the field on the

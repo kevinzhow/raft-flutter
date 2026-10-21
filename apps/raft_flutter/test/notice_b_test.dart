@@ -488,10 +488,16 @@ void main() {
       await t.pump();
       await t.tap(find.byKey(const ValueKey('add-member-confirm')));
       await t.pumpAndSettle();
-      expect(find.textContaining('could not be added'), findsOneWidget);
+      expect(
+        find.text('None of the selected members could be added.'),
+        findsOneWidget,
+      );
       await t.tap(find.byKey(const ValueKey('add-candidate-human:u3')));
       await t.pump();
-      expect(find.textContaining('could not be added'), findsNothing);
+      expect(
+        find.text('None of the selected members could be added.'),
+        findsNothing,
+      );
     });
   });
 

@@ -17,6 +17,7 @@ import '../data/workspace_controller.dart';
 import '../data/raft_location.dart';
 import '../data/workspace_entity_directory.dart';
 import 'channel_form_fields.dart';
+import 'channel_member_servers.dart';
 import 'composer_directory.dart'
     show cachedChannelRoster, rememberChannelRoster;
 import 'create_channel_dialog.dart';
@@ -47,22 +48,6 @@ bool isLocalChannelMember(Map<String, dynamic> member, RaftChannel channel) {
       memberServer is! String ||
       memberServer.isEmpty ||
       memberServer == channelServer;
-}
-
-/// Web `jointPeerLabel`: the partner server of a joint-channel member
-/// (`serverName || serverSlug`), null for local members and other types.
-String? channelMemberPeerLabel(
-  Map<String, dynamic> member,
-  RaftChannel channel,
-) {
-  if (channel.type != 'joint' || isLocalChannelMember(member, channel)) {
-    return null;
-  }
-  for (final key in const ['serverName', 'serverSlug']) {
-    final value = member[key];
-    if (value is String && value.isNotEmpty) return value;
-  }
-  return null;
 }
 
 /// Web `useChannelMembers` + `useAgentDisplayState`: the roster snapshot with
@@ -430,7 +415,10 @@ class _ChannelMembersState extends State<ChannelMembers> {
         setState(
           () => error = raftText(
             context,
-            'Some selected members could not be added. They remain selected — press Add again to retry.',
+            // The server batch is atomic, so a rejection (a personal assistant
+            // is refused with 403 `assistant_channel_forbidden`) leaves every
+            // selected row unresolved: Web's one "none" banner.
+            'None of the selected members could be added.',
           ),
         );
       }
@@ -670,8 +658,19 @@ class _ChannelMembersState extends State<ChannelMembers> {
           origin: origin,
           presence: widget.page ? presence : null,
         ),
+        serverBadges: channelMemberServerLabels(m, channel),
         onTap: widget.page
-            ? () => setState(() => profile = (kind: kind, id: id))
+            ? () => setState(() {
+                if (kind != 'agent') {
+                  primeHumanProfileServers(
+                    w,
+                    channel.json['serverId'] as String?,
+                    id,
+                    m['servers'],
+                  );
+                }
+                profile = (kind: kind, id: id);
+              })
             : null,
         onRemove: canRemove && !isAllChannel && local
             ? () => requestRemove(

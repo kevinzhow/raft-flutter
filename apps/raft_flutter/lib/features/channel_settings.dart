@@ -10,8 +10,10 @@ import '../data/workspace_controller.dart';
 import 'channel_conversion_section.dart';
 import 'channel_form_fields.dart';
 import 'channel_members.dart';
+import 'channel_settings_strip.dart';
 import 'channel_sos.dart';
-import 'composer_directory.dart' show cachedChannelRoster;
+import 'composer_directory.dart'
+    show cachedChannelRoster, cachedChannelRosterExternals;
 import 'create_channel_dialog.dart' show ChannelMemberCandidate;
 import 'management_support.dart'
     show
@@ -89,6 +91,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       ].where((c) => c.id == widget.channel.id).firstOrNull ??
       widget.channel;
   List<Map<String, dynamic>> members = [];
+
+  /// Slack bridge participants (`externalMembers`): display-only, counted in
+  /// the members strip beside the humans and agents.
+  List<Map<String, dynamic>> externalMembers = [];
   Map<String, dynamic> sidebar = {}, notification = {}, display = {};
 
   /// Parts of [load] accepted for this channel (from its snapshot or a
@@ -128,6 +134,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     final roster = drawer ? cachedChannelRoster(w, widget.channel.id) : null;
     if (roster != null) {
       members = rosterRows(roster.humans, roster.agents);
+      externalMembers = cachedChannelRosterExternals(w, widget.channel.id);
       known.add('members');
     }
     _draftName = name.text;
@@ -269,6 +276,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                   ],
                 ),
               );
+              externalMembers = stable(externalMembers, [
+                for (final row in value['externalMembers'] as List? ?? [])
+                  Map<String, dynamic>.from(row as Map),
+              ]);
             case 'sidebar':
               sidebar = stable(sidebar, Map<String, dynamic>.from(value));
             case 'display':
@@ -1104,17 +1115,6 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     if (mounted) unawaited(load({'members'}));
   }
 
-  String membersSummary(BuildContext context, int humans, int agents) {
-    if (Localizations.localeOf(context).languageCode == 'zh') {
-      return raftFormat(context, '{humans} humans · {agents} agents', {
-        'humans': humans,
-        'agents': agents,
-      });
-    }
-    return '$humans ${humans == 1 ? 'human' : 'humans'} · '
-        '$agents ${agents == 1 ? 'agent' : 'agents'}';
-  }
-
   Widget membersStrip(BuildContext context, RaftChannel c) {
     final origin = w.client.origin;
     RaftStripMember tile(Map<String, dynamic> m) {
@@ -1155,11 +1155,18 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       heading: 'Members',
       summary: loadingMembers
           ? raftText(context, 'Loading members…')
-          : membersSummary(context, humans.length, agents.length),
+          : channelMembersSummary(
+              context,
+              humans: humans.length,
+              agents: agents.length,
+              slack: externalMembers.length,
+            ),
       loading: loadingMembers,
       members: [
         for (final m in humans) tile(m),
         for (final m in agents) tile(m),
+        for (final m in externalMembers)
+          slackStripMember(context, m, origin: origin),
       ],
       onOpen: openMembers,
       onAdd: canAdd ? () => openMembers(add: true) : null,

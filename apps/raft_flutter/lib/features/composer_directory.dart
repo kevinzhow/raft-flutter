@@ -207,6 +207,17 @@ cachedChannelRoster(WorkspaceController w, String channelId) {
   return roster == null ? null : (humans: roster.humans, agents: roster.agents);
 }
 
+/// The Slack participants of the roster [cachedChannelRoster] returns (empty
+/// until that roster is read), for the settings drawer's members strip.
+List<Map<String, dynamic>> cachedChannelRosterExternals(
+  WorkspaceController w,
+  String channelId,
+) =>
+    _sharedComposerData[w.services.entityDirectory]
+        ?.rosters[channelId]
+        ?.externals ??
+    const [];
+
 /// Accepted channel-scoped provider members. Never uses the server directory.
 List<Map<String, dynamic>> cachedExternalMembers(
   WorkspaceController w,

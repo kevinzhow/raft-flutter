@@ -16,6 +16,7 @@ import 'create_channel_dialog.dart'
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart' show WorkspaceEntityKind;
 import 'joint_channel_views.dart' show jointPeople;
+import 'joint_invite_errors.dart';
 import 'management_support.dart';
 
 /// `MAX_JOINT_CHANNEL_SERVERS` of @botiverse/raft-shared.
@@ -31,8 +32,13 @@ class CreateJointChannelDialog extends StatefulWidget {
     this.freePlan = false,
     this.origin,
     this.onViewBilling,
+    this.currentServerSlug,
   });
   final List<Map<String, dynamic>> agents, users;
+
+  /// The open server's slug: a joint invite that names it is the server being
+  /// invited to its own channel (`joint_target_server_invalid`).
+  final String? currentServerSlug;
 
   /// POST /channels with the Web payload; returns the created channel.
   final Future<Map<String, dynamic>> Function(Map<String, dynamic> payload)
@@ -100,6 +106,7 @@ class CreateJointChannelDialog extends StatefulWidget {
         users: users,
         freePlan: (w.server?.string('plan') ?? 'free') == 'free',
         origin: w.client.origin,
+        currentServerSlug: w.server?.string('slug'),
         onCreate: (payload) => post('/channels', payload),
         onUnarchive: (id) => post('/channels/$id/unarchive', null),
         onViewBilling: () => w.setSection('billing'),
@@ -261,7 +268,9 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
       if (mounted) Navigator.of(context).pop(channel);
     } catch (e) {
       if (!mounted) return;
-      final details = e is RaftApiException ? e.details : const {};
+      final Map<String, dynamic> details = e is RaftApiException
+          ? e.details
+          : const {};
       setState(() {
         submitting = false;
         if (details['code'] == 'archived_name_collision' &&
@@ -281,6 +290,13 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
             'Joint Channels are limited to {max} servers. To request a higher limit, send feedback from Settings.',
             {'max': maxJointChannelServers},
           );
+        } else if (describeJointInviteError(
+              details,
+              widget.currentServerSlug,
+              (source, values) => raftFormat(context, source, values),
+            )
+            case final inviteError?) {
+          error = inviteError;
         } else {
           final body = raftText(
             context,

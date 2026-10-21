@@ -311,6 +311,7 @@ class _JointChannelsState extends _JointState<JointChannelsView> {
         users: users,
         freePlan: (w.server?.string('plan') ?? 'free') == 'free',
         origin: w.client.origin,
+        currentServerSlug: w.server?.string('slug'),
         onCreate: (payload) => mutate('/channels', payload, scope),
         onUnarchive: (id) => mutate('/channels/$id/unarchive', null, scope),
         onViewBilling: () => w.setSection('billing'),

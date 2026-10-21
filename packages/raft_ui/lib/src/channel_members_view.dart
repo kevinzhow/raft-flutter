@@ -16,6 +16,7 @@ import 'dialog_card.dart';
 import 'icons.dart';
 import 'indicators.dart';
 import 'inline_badge_editor.dart' show RaftTouchTargetExpander;
+import 'joint_server_badges.dart';
 import 'localization.dart';
 import 'recipe_min_height.dart' show RaftMinHeightBox;
 import 'recipes/button_variants.g.dart';
@@ -80,9 +81,14 @@ class RaftMemberRowData {
     this.roleActionSemantics,
     this.onRoleAction,
     this.roleActionDisabled = false,
+    this.serverBadges = const [],
     this.testId,
   });
   final String label;
+
+  /// `JointServerBadges`: the servers a joint-channel member participates
+  /// through, shown after the name. Empty for a purely local member.
+  final List<String> serverBadges;
 
   /// Stable id of the row: keys the row (`<id>`), its profile button
   /// (`<id>-open`), role action (`<id>-role`) and remove button (`<id>-remove`).
@@ -249,15 +255,18 @@ class RaftChannelMembersModal extends StatelessWidget {
           m.avatar,
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              m.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: raftCssTextStyle(
-                family: t.headingFont,
-                step: RaftTextSteps.sm,
-                weight: FontWeight.w500,
-                color: t.strong,
+            child: RaftMemberNameLine(
+              labels: m.serverBadges,
+              name: Text(
+                m.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: raftCssTextStyle(
+                  family: t.headingFont,
+                  step: RaftTextSteps.sm,
+                  weight: FontWeight.w500,
+                  color: t.strong,
+                ),
               ),
             ),
           ),
@@ -1346,19 +1355,22 @@ class _MemberPageRowState extends State<_MemberPageRow> {
                         children: [
                           SizedBox(
                             width: double.infinity,
-                            child: Text(
-                              r.label,
-                              maxLines: grows ? null : 1,
-                              overflow: grows
-                                  ? TextOverflow.clip
-                                  : TextOverflow.ellipsis,
-                              style: raftCssTextStyle(
-                                family: t.headingFont,
-                                step: RaftTextSteps.sm,
-                                weight: r.human
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: ink,
+                            child: RaftMemberNameLine(
+                              labels: r.serverBadges,
+                              name: Text(
+                                r.label,
+                                maxLines: grows ? null : 1,
+                                overflow: grows
+                                    ? TextOverflow.clip
+                                    : TextOverflow.ellipsis,
+                                style: raftCssTextStyle(
+                                  family: t.headingFont,
+                                  step: RaftTextSteps.sm,
+                                  weight: r.human
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: ink,
+                                ),
                               ),
                             ),
                           ),

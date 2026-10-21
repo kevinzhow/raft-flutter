@@ -8,8 +8,7 @@ const Map<String, String> zhCatalogChannelSettings = <String, String>{
       '所有服务器成员将恢复对「{name}」的读取权限。已加入的人类和 Agent 会保持加入状态。',
   'Existing joined humans and agents keep access to "{name}". Non-joined server members and historical thread followers will lose access to the channel and its threads.':
       '已加入的人类和 Agent 仍可访问「{name}」。未加入的服务器成员以及历史消息列关注者，将失去对该频道及其消息列的访问权限。',
-  'You will stop receiving ordinary delivery from #{name} and cannot send messages until you rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify you until you unfollow or manage those threads. Private content remains gated by current access.':
-      '你将停止接收 #{name} 的常规消息，并且在重新加入前无法发送消息。已关注的消息列不会自动取消关注；在你取消关注或另行处理这些消息列之前，已关注的公开消息列仍可能通知你。私密内容仍受当前访问权限限制。',
+  'You will stop receiving ordinary delivery from #{name} and cannot send messages until you rejoin. Existing followed threads are not automatically unfollowed; followed public threads can still notify you until you unfollow or manage those threads. Private content remains gated by current access.': '你将停止接收 #{name} 的常规消息，并且在重新加入前无法发送消息。已关注的消息列不会自动取消关注；在你取消关注或另行处理这些消息列之前，已关注的公开消息列仍可能通知你。私密内容仍受当前访问权限限制。',
   '"{name}" and all of its messages will be permanently deleted. This cannot be undone.':
       '「{name}」及其中的所有消息都会被永久删除，且无法撤销。',
   '"{name}" will be removed from this server. Other connected servers keep their own projection and history.':
@@ -18,4 +17,6 @@ const Map<String, String> zhCatalogChannelSettings = <String, String>{
   '{label} must be at least {min} characters': '{label}至少需要 {min} 个字符',
   '{label} must be at most {max} characters': '{label}最多 {max} 个字符',
   '{humans} humans · {agents} agents': '{humans} 位人类 · {agents} 个 Agent',
+  '{humans} humans · {agents} agents · {slack} Slack':
+      '{humans} 位人类 · {agents} 个 Agent · {slack} 位 Slack 成员',
 };

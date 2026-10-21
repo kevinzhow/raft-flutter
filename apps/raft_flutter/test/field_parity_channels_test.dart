@@ -12,6 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/workspace_messages.dart';
+import 'package:raft_flutter/features/channel_member_servers.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/joint_channel_views.dart';
@@ -324,37 +325,35 @@ void main() {
       expect(channelRosterCount(null), 0);
     });
 
-    test('joint peer badge and no Remove for non-local members', () {
+    test('joint server badges and no Remove for non-local members', () {
       expect(isLocalChannelMember(member('agents', 'cindy'), joint), isTrue);
-      expect(channelMemberPeerLabel(member('agents', 'cindy'), joint), isNull);
+      expect(channelMemberServerLabels(member('agents', 'cindy'), joint), []);
       expect(
         isLocalChannelMember(member('agents', 'acme-bot'), joint),
         isFalse,
       );
-      expect(
-        channelMemberPeerLabel(member('agents', 'acme-bot'), joint),
+      expect(channelMemberServerLabels(member('agents', 'acme-bot'), joint), [
         'Acme Partners',
-      );
-      expect(
-        channelMemberPeerLabel(member('humans', 'pat'), joint),
+      ]);
+      expect(channelMemberServerLabels(member('humans', 'pat'), joint), [
         'Acme Partners',
-      );
-      expect(channelMemberPeerLabel(member('humans', 'owner'), joint), isNull);
+      ]);
+      expect(channelMemberServerLabels(member('humans', 'owner'), joint), []);
       // serverName missing -> slug; only joint channels show a badge.
       expect(
-        channelMemberPeerLabel({
+        channelMemberServerLabels({
           'serverId': 'x',
           'serverName': null,
           'serverSlug': 'acme',
         }, joint),
-        'acme',
+        ['acme'],
       );
       expect(
-        channelMemberPeerLabel(
+        channelMemberServerLabels(
           member('humans', 'pat'),
           RaftChannel(_listRow(0)),
         ),
-        isNull,
+        isEmpty,
       );
     });
 

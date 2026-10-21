@@ -185,6 +185,18 @@ class _RaftInviteHumanDialogState extends State<RaftInviteHumanDialog> {
                 ),
                 const SizedBox(height: 16),
               ],
+              // `member.invite.agentReachHint`: any member can DM and direct
+              // every agent in the server, so the dialog says so up front.
+              RaftBanner(
+                key: const ValueKey('invite-agent-reach-hint'),
+                status: RaftBannerRecipeStatus.info,
+                glyph: RaftGlyph.info,
+                description: raftText(
+                  context,
+                  'Members you invite can DM and give instructions to every agent in this server. Keep personal agents in a separate server of your own.',
+                ),
+              ),
+              const SizedBox(height: 16),
               RaftRecipeSegmentedControl<String>(
                 value: tab,
                 label: raftText(context, 'Invite method'),
