@@ -33,6 +33,13 @@ void main() {
     final target = last ? 't-199' : 't-150';
     testWidgets(
       '$family/$dark fling=$fling target=$target thread=$thread Activity re-activation never overscrolls',
+      // CPU-bound, not waiting: the full desktop workspace over 200 rows is
+      // ~9 s of CPU a case (the first case of a process ~2x, JIT warm-up). A
+      // wall clock bound of 60 s then fails whenever the process is starved
+      // (`tool/preflight` runs 8 test processes beside other agents' work).
+      // Every wait in the body is bounded by a count, so a hang still ends
+      // the case, in 4 minutes instead of 1.
+      timeout: const Timeout(Duration(minutes: 4)),
       (tester) async {
         SharedPreferences.setMockInitialValues({});
         tester.view.physicalSize = const Size(1440, 900);
@@ -142,11 +149,14 @@ void main() {
         expect(row, findsWidgets);
         Future<void> activate() async {
           await tester.tap(row.first);
-          for (var i = 0; i < 20; i++) {
+          // Until the target is on screen (the context page answered), not
+          // for a fixed 20 frames.
+          for (var i = 0; i < 400; i++) {
             await tester.pump(const Duration(milliseconds: 16));
             await tester.runAsync(
               () => Future<void>.delayed(const Duration(milliseconds: 5)),
             );
+            if (paintedMessage(tester, target) != null) break;
           }
         }
 
@@ -178,16 +188,39 @@ void main() {
 
         expect(paintedMessage(tester, target), isNotNull, reason: diag());
         final chat = find.byType(RaftChatView).last;
-        for (var k = 0; k < 25; k++) {
-          await tester.timedDrag(
-            chat,
-            const Offset(0, 700),
-            const Duration(milliseconds: 120),
-          );
-          await tester.runAsync(
-            () => Future<void>.delayed(const Duration(milliseconds: 10)),
-          );
+        // Scroll back until every older page is loaded and the top is
+        // reached. A page lands when the fake API answers, not after a number
+        // of frames, so this waits for each load instead of dragging a fixed
+        // 25 times (which loaded a different number of pages depending on how
+        // fast the machine was). One move event per drag: the frames of a
+        // slow drag add cost and nothing the re-activation below checks.
+        double? backPixels() {
+          for (final scrollable
+              in find
+                  .descendant(
+                    of: find.byType(RaftChatView),
+                    matching: find.byType(Scrollable),
+                  )
+                  .evaluate()) {
+            final q = ((scrollable as StatefulElement).state as ScrollableState)
+                .position;
+            if (q.hasPixels && q.axis == Axis.vertical) return q.pixels;
+          }
+          return null;
+        }
+
+        for (var k = 0; k < 60; k++) {
+          final before = backPixels();
+          await tester.drag(chat, const Offset(0, 2400));
           await tester.pump(const Duration(milliseconds: 16));
+          for (var i = 0; i < 400 && w.messageDomain.state.loadingOlder; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 5)),
+            );
+          }
+          await tester.pump(const Duration(milliseconds: 16));
+          final more = thread ? w.threadHasMore : w.messageDomain.state.hasMore;
+          if (!more && backPixels() == before) break;
         }
         await tester.pumpAndSettle();
         expect(paintedMessage(tester, target), isNull);

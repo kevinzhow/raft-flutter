@@ -545,12 +545,24 @@ void main() {
       final url = open('big', '/big.mp4');
       final a = await fetch(url, range: 'bytes=0-', stopAfter: big ~/ 2);
       expect(a.body.length, greaterThanOrEqualTo(big ~/ 2));
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      // Wait for what the proxy does when the player is gone, not for a
+      // pause that is long enough on a quiet machine: its reader ends and
+      // the upstream requests under way are cancelled. The wait is bounded
+      // only so that a proxy that never notices fails; it would read the
+      // file's 400 chunks to the end (about 5 s at this pace).
+      final deadline = DateTime.now().add(const Duration(seconds: 30));
+      while (!proxy.isIdle && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+      expect(proxy.isIdle, isTrue, reason: 'the reader and its requests end');
+      // Nothing runs now, so the count cannot change. The probe's chunk, the
+      // 4 chunk window of the request and a window started for the
+      // read-ahead at most; the file is 400 chunks, which an unnoticed
+      // hang-up reads to the end. (The proxy sees the player leave within a
+      // few writes, so this is the probe's chunk in practice.)
       final settled = proxy.upstreamBytes;
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      await proxy.flushWrites();
       expect(proxy.upstreamBytes, settled, reason: 'no more is taken');
-      // The probe's chunk, the 4 chunk window of the request and a window
-      // started for the read-ahead at most; the file is 400 chunks.
       expect(settled, lessThanOrEqualTo(10 * big));
     });
 

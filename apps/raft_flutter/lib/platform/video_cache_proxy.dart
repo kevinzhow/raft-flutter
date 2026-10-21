@@ -360,6 +360,13 @@ class VideoCacheProxy {
   /// folder could not be opened: playback streams through, nothing is stored.
   bool get cachingSuspended => _suspended;
 
+  /// No player is being served and no upstream request is under way (a
+  /// reader ends when its player hangs up, and then its requests are
+  /// cancelled).
+  @visibleForTesting
+  bool get isIdle =>
+      _entries.values.every((e) => e.readers.isEmpty && e.sessions.isEmpty);
+
   static String _newToken() {
     final random = math.Random.secure();
     return List.generate(
@@ -677,11 +684,20 @@ class VideoCacheProxy {
           .then((_) {}, onError: (Object _) {})
           .whenComplete(() => gone = true),
     );
+    // `response.done` is not enough: when the player hangs up, dart:io
+    // destroys the socket, and `done` then completes only if a write was in
+    // flight at that moment; later writes to the dead socket succeed without
+    // an error. The reader would go on serving nobody, and the upstream
+    // sessions behind it (the whole file for an open-ended Range) would run
+    // on. A destroyed socket has no [HttpResponse.connectionInfo]; the first
+    // write after the hang-up is what destroys it, so this is checked
+    // wherever the reader writes.
+    bool hungUp() => gone || response.connectionInfo == null;
     final firstChunk = start ~/ chunkSize, lastChunk = end ~/ chunkSize;
     final chunks = (meta.total + chunkSize - 1) ~/ chunkSize;
     try {
       for (var i = firstChunk; i <= lastChunk; i++) {
-        if (gone) throw const _Cancelled();
+        if (hungUp()) throw const _Cancelled();
         reader.position = i;
         _reap(entry);
         final chunkStart = i * chunkSize;
@@ -718,7 +734,7 @@ class VideoCacheProxy {
         final download =
             entry.inflight[i] ?? _download(entry, meta, i, lastChunk, chunks);
         while (at <= to) {
-          if (gone) throw const _Cancelled();
+          if (hungUp()) throw const _Cancelled();
           final error = download.error;
           if (error != null) throw error;
           final available = math.min(download.filled, to + 1);
@@ -727,7 +743,7 @@ class VideoCacheProxy {
             response.add(download.view(at, available));
             servedBytes += available - at;
             at = available;
-            await response.flush();
+            await _flush(response);
           } else {
             await download.changed().timeout(stallTimeout);
           }
@@ -737,6 +753,22 @@ class VideoCacheProxy {
     } finally {
       entry.readers.remove(reader);
       _reap(entry);
+    }
+  }
+
+  /// `response.flush()`, ended by [_Cancelled] when the player hangs up
+  /// meanwhile: dart:io then never completes a flush that was waiting for the
+  /// player to read (nor fails it). The socket is destroyed at once, which
+  /// [HttpResponse.connectionInfo] shows.
+  static Future<void> _flush(HttpResponse response) async {
+    final flushed = response.flush();
+    while (true) {
+      try {
+        await flushed.timeout(const Duration(milliseconds: 250));
+        return;
+      } on TimeoutException {
+        if (response.connectionInfo == null) throw const _Cancelled();
+      }
     }
   }
 
@@ -791,11 +823,12 @@ class VideoCacheProxy {
           await _drop(key);
           return at;
         }
+        if (response.connectionInfo == null) throw const _Cancelled();
         reader.wrote = true;
         response.add(piece);
         servedBytes += piece.length;
         at += piece.length;
-        await response.flush();
+        await _flush(response);
       }
       return at;
     } finally {
