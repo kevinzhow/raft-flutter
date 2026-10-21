@@ -47,7 +47,7 @@ double _segmentRadius(WidgetTester tester) =>
     tester.widgetList<RaftCssBox>(find.byType(RaftCssBox)).first.radius;
 
 double _gap(WidgetTester tester) =>
-    tester.widgetList<Wrap>(find.byType(Wrap)).first.spacing ?? 0;
+    tester.widgetList<Wrap>(find.byType(Wrap)).first.spacing;
 
 Future<void> _pump(WidgetTester tester, String id) async {
   await tester.pumpWidget(_host(id));
