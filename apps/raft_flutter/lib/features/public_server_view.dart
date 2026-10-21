@@ -16,6 +16,7 @@ import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
 import '../data/server_error_code.dart';
 import '../data/user_error.dart';
+import 'chinese_community.dart';
 import 'community_join.dart'
     show communityAgreementError, communityServerSlug, joinCommunity;
 import 'custom_protocol_link.dart';
@@ -1037,12 +1038,11 @@ class _PublicServerViewState extends State<PublicServerView> {
                     glyph: RaftGlyph.messageSquare,
                     onPressed: () => openSettingsTab('feedback'),
                   ),
-                RaftMenuEntry(
-                  label: tr(joiningCommunity ? 'Joining...' : 'Join Community'),
-                  glyph: RaftGlyph.usersRound,
-                  onPressed: joiningCommunity
-                      ? null
-                      : () => unawaited(openCommunity()),
+                communityHelpEntry(
+                  context,
+                  apiOrigin: widget.client.origin,
+                  joining: joiningCommunity,
+                  join: () => unawaited(openCommunity()),
                 ),
               ],
             ),

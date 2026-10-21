@@ -88,6 +88,7 @@ import '../platform/native_notifications.dart';
 import '../platform/system_bars.dart';
 import '../platform/keyboard_inset_diagnostics.dart';
 import '../data/feature_flag_client_facts.dart';
+import 'chinese_community.dart';
 import 'public_avatar_url.dart';
 import 'public_page_live.dart';
 
@@ -2823,14 +2824,11 @@ class _WorkspaceViewState extends State<WorkspaceView>
                 glyph: RaftGlyph.messageSquare,
                 onPressed: () => openHelpSettings('feedback'),
               ),
-              RaftMenuEntry(
-                label: tr(
-                  joiningCommunityFromHelp ? 'Joining...' : 'Join Community',
-                ),
-                glyph: RaftGlyph.usersRound,
-                onPressed: joiningCommunityFromHelp
-                    ? null
-                    : () => unawaited(openCommunityFromHelp()),
+              communityHelpEntry(
+                context,
+                apiOrigin: w.client.origin,
+                joining: joiningCommunityFromHelp,
+                join: () => unawaited(openCommunityFromHelp()),
               ),
             ],
           ),
