@@ -157,7 +157,6 @@ in `apps/raft_flutter`.
 | `public-thread-panel` | panel | back sysback | back esc sysback | x esc sysback | PublicServerPage.tsx:668 ThreadPanel side: Back lg:hidden, X lg:flex, Esc | ok |  |
 | `feedback-ticket` | page | back sysback | back sysback | back sysback | AboutFeedbackDialog.tsx:196-252 FeedbackWorkspace route=ticket (Back to the inbox inside the @hands workspace); inbox Back md:hidden to Settings | ok |  |
 | `feedback-create` | page | back sysback | back sysback | back sysback | AboutFeedbackDialog.tsx:196-252 FeedbackWorkspace route=create (Back to the inbox) | ok |  |
-| `agent-migration-page` | page | back sysback | back sysback | back sysback | agentMigration/AgentMigrationDialog.tsx: a Modal (X, Esc); Flutter presents the same flow as a pushed page | approved | native page: raftPageAppBar Back + system back |
 | `agent-scopes-page` | page | back sysback | back sysback | back sysback | AgentAppAccessTab.tsx: an inline tab of AgentDetailPanel (no page); Flutter pushes a native page | no-web |  |
 | `incoming-share-picker` | page | back sysback | back sysback | back sysback | none: Android share-sheet hand-off, native only | no-web |  |
 | `server-setup-gate` | page | - (non-dismissible gate: the workspace is unusable until setup completes) | - (non-dismissible gate: the workspace is unusable until setup completes) | - (non-dismissible gate: the workspace is unusable until setup completes) | onboarding/ServerSetupProjectionGate.tsx: blocks the workspace until setup completes; no close by design | n/a |  |

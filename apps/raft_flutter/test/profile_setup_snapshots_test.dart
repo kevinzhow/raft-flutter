@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/agent_migration_view.dart';
+import 'package:raft_flutter/features/agent_migration_section.dart';
 import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_flutter/features/server_setup_gate.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -198,34 +198,39 @@ void main() {
   });
 
   testWidgets(
-    'agent migration revisit shows the accepted page at the first frame',
+    'agent migration revisit shows the accepted status at the first frame',
     (t) async {
-      Widget page() => _host(AgentMigrationView(controller: w, agentId: 'a1'));
+      Widget page() => _host(
+        AgentMigrationSection(
+          controller: w,
+          agent: const {'id': 'a1', 'runtime': 'codex', 'machineId': 'c1'},
+          machines: const [
+            {'id': 'c1', 'name': 'Source', 'isComputer': true},
+            {'id': 'c2', 'name': 'Target', 'isComputer': true},
+          ],
+        ),
+      );
       await t.pumpWidget(page());
-      expect(_spinner, findsOneWidget, reason: 'true cold load');
       await settle(t);
-      expect(find.text('Fixture agent'), findsOneWidget);
+      expect(find.text('Migrating to Target'), findsOneWidget);
       await leave(t);
 
       final gate = Completer<void>();
       w.gate = gate;
       final reads = w.paths.length;
       await t.pumpWidget(page());
-      expect(find.text('Fixture agent'), findsOneWidget);
       expect(find.text('Migrating to Target'), findsOneWidget);
-      expect(_spinner, findsNothing);
-      final rect = t.getRect(find.text('Fixture agent'));
+      final rect = t.getRect(find.text('Migrating to Target'));
       await t.pump();
       expect(
         w.paths.length,
-        reads + 4,
-        reason: 'revalidates agent, status, computers and billing in the background',
+        reads + 2,
+        reason: 'revalidates status and billing in the background',
       );
       release(gate);
       w.gate = null;
       await settle(t);
-      expect(t.getRect(find.text('Fixture agent')), rect);
-      expect(_spinner, findsNothing);
+      expect(t.getRect(find.text('Migrating to Target')), rect);
       expect(t.takeException(), isNull);
     },
   );

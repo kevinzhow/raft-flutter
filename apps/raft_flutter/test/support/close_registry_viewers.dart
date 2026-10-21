@@ -231,20 +231,6 @@ const viewerSurfaces = <CloseSurface>[
     files: ['lib/features/source_feedback_view.dart'],
   ),
   CloseSurface(
-    'agent-migration-page',
-    kind: SurfaceKind.page,
-    web: 'agentMigration/AgentMigrationDialog.tsx: a Modal (X, Esc); Flutter presents the same flow as a pushed page',
-    phone: {_back, _sys},
-    fold: {_back, _sys},
-    desktop: {_back, _sys},
-    files: [
-      'lib/features/agent_migration_view.dart',
-      'lib/features/fleet_views.dart',
-    ],
-    status: 'approved',
-    fix: 'native page: raftPageAppBar Back + system back',
-  ),
-  CloseSurface(
     'agent-scopes-page',
     kind: SurfaceKind.page,
     web: 'AgentAppAccessTab.tsx: an inline tab of AgentDetailPanel (no page); Flutter pushes a native page',

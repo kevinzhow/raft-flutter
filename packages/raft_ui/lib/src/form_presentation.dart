@@ -141,6 +141,16 @@ class RaftUnsavedGuard extends StatefulWidget {
   State<RaftUnsavedGuard> createState() => RaftUnsavedGuardState();
 }
 
+/// Excludes the text inputs below it from the enclosing [RaftUnsavedGuard]: a
+/// search box or a picker whose text only mirrors a choice, where Web asks
+/// nothing when the form is closed.
+class RaftUnsavedGuardIgnore extends StatelessWidget {
+  const RaftUnsavedGuardIgnore({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context) => child;
+}
+
 class _GuardScope extends InheritedWidget {
   const _GuardScope({required this.state, required super.child});
   final RaftUnsavedGuardState state;
@@ -184,6 +194,7 @@ class RaftUnsavedGuardState extends State<RaftUnsavedGuard> {
     final seen = <TextEditingController>{};
     void visit(Element element) {
       final widget = element.widget;
+      if (widget is RaftUnsavedGuardIgnore) return;
       if (widget is EditableText && !widget.readOnly) {
         seen.add(widget.controller);
       }

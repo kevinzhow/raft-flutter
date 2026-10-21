@@ -55,8 +55,18 @@ class RaftFormDialog extends StatefulWidget {
     this.extra,
     this.errorFallback,
     this.errorContent,
+    this.submitEnabled = true,
+    this.busyLabel,
   });
   final String title, submitLabel;
+
+  /// False keeps the submit action disabled (Web `disabled={!target}`).
+  final bool submitEnabled;
+
+  /// The submit action's catalog text while the submit is in flight (Web
+  /// "Starting migration…" in place of the idle label); null keeps
+  /// [submitLabel].
+  final String? busyLabel;
 
   /// Rich content for a failed submit (a banner with details and a recovery
   /// action) in place of the plain error banner. Returning null for an error
@@ -311,9 +321,11 @@ class _RaftFormDialogState extends State<RaftFormDialog> {
       onPressed: busy ? null : () => Navigator.pop(context, false),
     ),
     RaftButton(
-      label: widget.submitLabel,
+      label: busy && widget.busyLabel != null
+          ? widget.busyLabel!
+          : widget.submitLabel,
       busy: busy,
-      onPressed: submit,
+      onPressed: widget.submitEnabled ? submit : null,
       destructive: widget.destructive,
     ),
   ];

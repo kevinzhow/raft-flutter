@@ -26,7 +26,11 @@ class RaftAgentCombobox extends StatefulWidget {
     this.invalid = false,
     this.enabled = true,
     this.semanticLabel,
+    this.emptyLabel = 'No results',
   });
+
+  /// The catalog text shown when no row matches what was typed.
+  final String emptyLabel;
 
   /// Names the list for assistive technology.
   final String label;
@@ -162,6 +166,7 @@ class _RaftAgentComboboxState extends State<RaftAgentCombobox> {
                           ),
                           child: RaftComboboxPanel.items(
                             label: widget.label,
+                            emptyLabel: widget.emptyLabel,
                             controller: panel,
                             currentId: widget.value,
                             enabled: widget.enabled,

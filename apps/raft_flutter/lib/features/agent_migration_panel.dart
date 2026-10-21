@@ -498,6 +498,7 @@ class _MigrationReferenceState extends State<MigrationReference> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final label = copied ? 'Migration ID copied' : 'Copy migration ID';
     return Row(
       children: [
         Text(
@@ -524,87 +525,16 @@ class _MigrationReferenceState extends State<MigrationReference> {
           glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
           visualSize: 20,
           glyphSize: 12,
-          tooltip: copied ? 'Migration ID copied' : 'Copy migration ID',
+          tooltip: label,
+          // Web `referenceCopyAria`: the accessible name carries the ID.
+          semanticLabel: copied
+              ? raftText(context, label)
+              : raftFormat(context, 'Copy migration ID {ref}', {
+                  'ref': widget.migrationRef,
+                }),
           onPressed: copy,
         ),
       ],
     );
   }
-}
-
-/// The agent detail's view of the agent's migration (Web renders the whole
-/// progress panel there): the state's header and notice, opening the migration
-/// page, which owns the steps, Cancel and the failure details.
-class MigrationInlineStatus extends StatelessWidget {
-  const MigrationInlineStatus({
-    super.key,
-    required this.migration,
-    required this.machines,
-    required this.now,
-    required this.formatTimestamp,
-    this.onOpen,
-  });
-  final Map<String, dynamic> migration;
-  final List<Map<String, dynamic>> machines;
-  final DateTime now;
-  final String Function(String value) formatTimestamp;
-  final VoidCallback? onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final presentation = migrationNoticePresentation(
-      migration,
-      machines,
-      now: now,
-      formatTimestamp: formatTimestamp,
-    );
-    final target = MigrationText('{target}', {
-      'target': migrationComputerLabel(machines, migration['targetMachineId']),
-    }).text(context);
-    final header = raftFormat(context, migrationPanelHeader(migration), {
-      'target': target,
-    });
-    final attention =
-        migrationShownFailed(migration) ||
-        migration['cancelNeedsAttention'] == true;
-    final body = presentation.placement == null
-        ? presentation.message.text(context)
-        : '${presentation.placement!.text(context)} ${presentation.message.text(context)}';
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(header, style: RaftTypography.heading(t, size: 14, line: 20)),
-        // The banner is already an alert; plain progress is a live region.
-        Semantics(
-          liveRegion: !attention,
-          child: Text(
-            body,
-            style: RaftTypography.body(t, size: 14, line: 20, color: t.muted),
-          ),
-        ),
-      ],
-    );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: RaftSpace.x3),
-      child: attention
-          ? RaftBanner(
-              status: RaftBannerRecipeStatus.warning,
-              size: RaftBannerRecipeSize.sm,
-              descriptionBuilder: (_) => _tappable(content),
-            )
-          : _tappable(content),
-    );
-  }
-
-  Widget _tappable(Widget child) => onOpen == null
-      ? child
-      : Semantics(
-          button: true,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onOpen,
-            child: child,
-          ),
-        );
 }

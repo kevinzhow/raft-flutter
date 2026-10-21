@@ -6,7 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import '../features/agent_metadata_catalog.dart';
 import 'computer_upgrade_in_flight.dart';
 import 'migration_error.dart' show migrationPhase;
-import 'runtime_error.dart' show spawnLookupReason;
+import 'runtime_error.dart' show spawnFailureCarrier, spawnLookupReason;
 
 enum WorkspaceEntityKind { agents, computers, members }
 
@@ -825,6 +825,12 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
           // the state is the runtime_unavailable frame; the lookup reason it
           // carries decides the "not installed" wording.
           'spawnLookupReason': spawnLookupReason(
+            detailKind,
+            payload['spawnFailure'],
+          ),
+          // The whole carrier: the failed-start text is chosen by its
+          // `reason`, `model` and `autoRestartPaused`.
+          'spawnFailure': spawnFailureCarrier(
             detailKind,
             payload['spawnFailure'],
           ),

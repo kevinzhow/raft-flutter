@@ -621,7 +621,7 @@ badge-dot, and loading-skeleton pulse phase (Activity/Saved loading elegant ~78 
 
 No Flutter equivalent (so no case; not built here): report-issue dialog, agent
 unavailable panel, role-permission help dialog, seat-limit banner in the invite dialog.
-Flutter has agent migration (`agent_migration_view.dart`) but no extension case was
+Flutter has agent migration (`agent_migration_section.dart`) but no extension case was
 added for its dialogs/progress yet.
 
 ### Manifest generation (2026-10-11)

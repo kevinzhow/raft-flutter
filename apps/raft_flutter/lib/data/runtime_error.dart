@@ -124,3 +124,53 @@ String? spawnLookupReason(Object? detailKind, Object? spawnFailure) =>
         spawnFailureLookupReasons.contains(spawnFailure['lookupReason'])
     ? spawnFailure['lookupReason'] as String
     : null;
+
+/// Web `activityState.spawnFailure`: the typed carrier of a failed start,
+/// kept only while the state is the `runtime_unavailable` frame (agentStore).
+/// Null when the state is something else or the carrier is absent or malformed.
+Map<String, dynamic>? spawnFailureCarrier(
+  Object? detailKind,
+  Object? spawnFailure,
+) =>
+    detailKind == 'runtime_unavailable' &&
+        spawnFailure is Map &&
+        spawnFailure['reason'] is String
+    ? Map<String, dynamic>.from(spawnFailure)
+    : null;
+
+/// Web `formatSpawnFailureDetail` (utils/activity.ts): the text of a failed
+/// start, chosen by its typed reason and never by parsing the daemon's
+/// [daemonDetail]. `model_not_found` has catalog copy; other reasons keep the
+/// daemon's message. While the server has paused automatic restarts it says so
+/// and how to lift it. Null when there is nothing to replace. [translate]
+/// localizes an English catalog source and fills its `{values}`.
+String? spawnFailureDetailText(
+  Map<String, dynamic>? spawnFailure,
+  String daemonDetail,
+  String Function(String source, Map<String, Object?> values) translate,
+) {
+  if (spawnFailure == null) return null;
+  final reason = spawnFailure['reason'];
+  // Restarting resumes the same stuck session, so the generic paused copy
+  // ("...or restart the agent") would send people the wrong way.
+  if (reason == 'session_needs_reset') {
+    return translate(
+      "This agent's conversation no longer fits its model, and context compaction failed several times in a row, so restarting would fail again. To start a new session, open Restart / Reset and choose Reset Session & Restart (Reset Model for members). Raft messages and workspace files, including MEMORY.md, are kept",
+      const {},
+    );
+  }
+  final modelNotFound = reason == 'model_not_found';
+  final detail = modelNotFound
+      ? translate(
+          'Model "{model}" is not available for this runtime — it may have been renamed or removed, or its provider has no API key on this computer. Pick another model or fix the key in the agent settings',
+          {'model': spawnFailure['model'] ?? '?'},
+        )
+      : daemonDetail;
+  if (spawnFailure['autoRestartPaused'] != true) {
+    return modelNotFound ? detail : null;
+  }
+  return translate(
+    '{detail} — automatic restarts are paused until you change the model or API key, or restart the agent',
+    {'detail': detail},
+  );
+}
