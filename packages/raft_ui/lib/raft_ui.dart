@@ -243,6 +243,7 @@ export 'src/sidebar_indicators.dart';
 export 'src/mobile_page_header.dart';
 export 'src/product_empty_state.dart';
 export 'src/task_timeline.dart';
+export 'src/task_status_badge.dart';
 export 'src/app_icon_choices.dart';
 export 'src/markdown_editing.dart';
 export 'src/composer_expand.dart';

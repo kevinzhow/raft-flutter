@@ -37,7 +37,12 @@ class RaftMessageTaskChipRecipe extends RaftControlRecipe {
   @override
   EdgeInsets get padding =>
       EdgeInsets.symmetric(horizontal: tokens.brutal ? 4 : 8);
-  String get _token => switch (status) {
+  String get _token => tokenOf(status);
+
+  /// The `--task-status-*` token a status paints with. The one place a task
+  /// surface reads a status colour from: the chip, the status badge, the
+  /// editor trigger and the history marker all resolve this token.
+  static String tokenOf(RaftMessageTaskStatus status) => switch (status) {
     RaftMessageTaskStatus.todo => 'task-status-todo',
     RaftMessageTaskStatus.inProgress => 'task-status-in-progress',
     RaftMessageTaskStatus.inReview => 'task-status-in-review',

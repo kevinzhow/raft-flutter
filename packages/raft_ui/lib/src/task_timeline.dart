@@ -3,22 +3,22 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
 import 'panel_layout.dart' show RaftCssText;
-import 'recipe_surface.dart';
-import 'recipes/badge.g.dart';
+import 'mounted_task_chip.dart';
 import 'theme.dart';
 
-/// raft-ui `TimelineItem` marker variants used by the task history.
-enum RaftTimelineVariant { neutral, information, success, warning, accent }
-
-/// One history row: marker colour, title, meta line and optional detail.
+/// One history row: marker status, title, meta line and optional detail.
 class RaftTimelineEntry {
   const RaftTimelineEntry({
-    required this.variant,
+    required this.status,
     required this.title,
     required this.meta,
     this.detail,
   });
-  final RaftTimelineVariant variant;
+
+  /// raft-ui `TimelineItem taskStatus`: the marker paints with this status's
+  /// `task-status-*` token, the same one every other task surface reads. Null
+  /// is the neutral marker (an event with no status).
+  final RaftMessageTaskStatus? status;
   final String title, meta;
 
   /// Rendered under the meta line with `mt-0.5`.
@@ -35,15 +35,17 @@ class RaftTimelineSm extends StatelessWidget {
 
   static const double marker = 12, axisOffset = 2, itemGap = 16, gap = 12;
 
-  (Color color, Color fill) _tones(RaftTokens t, RaftTimelineVariant v) {
-    Color c(String name) => t.colors[name]!;
-    return switch (v) {
-      RaftTimelineVariant.information => (c('info-strong'), c('info')),
-      RaftTimelineVariant.success => (c('success-strong'), c('success')),
-      RaftTimelineVariant.warning => (c('warning-strong'), c('warning')),
-      RaftTimelineVariant.accent => (c('accent-strong'), c('accent-400')),
-      RaftTimelineVariant.neutral => (c('foreground-hint'), c('layer-panel')),
-    };
+  /// `--r-timeline-item-color` / `--r-timeline-item-fill`: both are
+  /// `var(--task-status-<status>)` for a status marker (`taskStatusMarkerColor`).
+  (Color color, Color fill) _tones(
+    RaftTokens t,
+    RaftMessageTaskStatus? status,
+  ) {
+    if (status == null) {
+      return (t.colors['foreground-hint']!, t.colors['layer-panel']!);
+    }
+    final token = t.colors[RaftMessageTaskChipRecipe.tokenOf(status)]!;
+    return (token, token);
   }
 
   @override
@@ -67,7 +69,7 @@ class RaftTimelineSm extends StatelessWidget {
     Color rail, {
     required bool last,
   }) {
-    final (color, fill) = _tones(t, e.variant);
+    final (color, fill) = _tones(t, e.status);
     final title = t.brutal
         ? RaftTypography.heading(t, size: 12, line: 16)
         : RaftTypography.body(t, size: 12, line: 16, weight: FontWeight.w500);
@@ -193,36 +195,4 @@ class _RaftTimelineTextState extends State<RaftTimelineText> {
       );
     },
   );
-}
-
-/// A plain soft `Badge` (`appearance="soft" uppercase={false}`) carrying the
-/// status colours, as `TimelineDetail` shows the from/to statuses.
-class RaftSoftBadge extends StatelessWidget {
-  const RaftSoftBadge({
-    super.key,
-    required this.label,
-    required this.background,
-    required this.foreground,
-  });
-  final String label;
-  final Color background, foreground;
-  @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final root = RaftBadgeRecipe.resolve(
-      theme: t.recipeTheme,
-      appearance: RaftBadgeRecipeAppearance.soft,
-      uppercase: false,
-      tokens: t.recipeTokens,
-    ).root;
-    return RaftRecipeBox(
-      style: root,
-      tokens: t.recipeTokens,
-      decorationOverride: (d) => d.copyWith(color: background),
-      child: DefaultTextStyle.merge(
-        style: TextStyle(color: foreground),
-        child: Text(label),
-      ),
-    );
-  }
 }

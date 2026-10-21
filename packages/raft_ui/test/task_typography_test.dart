@@ -116,12 +116,9 @@ void main() {
         tester.widget<Text>(find.text('In Progress')).style!.fontFamily,
         tokens.headingFont,
       );
-      // Source DOM: h20 Brutal badge keeps the h24 strut; the h22 Elegant
-      // badge plus its baseline descent grows the inline line to h25.
-      expect(
-        tester.getSize(find.byType(RaftInlineLineBox)).height,
-        family == RaftFamily.brutal ? 24 : 25,
-      );
+      // Web v1.21.12: the status trigger is the TaskChip (h18.25 Brutal, h19
+      // Elegant, `mt-0.5`); both fit the document's h24 strut line.
+      expect(tester.getSize(find.byType(RaftInlineLineBox)).height, 24);
       if (family == RaftFamily.brutal) {
         final badge = find
             .ancestor(
@@ -129,9 +126,9 @@ void main() {
               matching: find.byType(DecoratedBox),
             )
             .first;
-        // Actual Chromium DOM: badge top 3, h20 in the document's h24 line.
-        expect(tester.getTopLeft(badge).dy, 3);
-        expect(tester.getSize(badge).height, 20);
+        // The chip sits on the line's baseline: top 4, h18.25 in the h24 line.
+        expect(tester.getTopLeft(badge).dy, 4);
+        expect(tester.getSize(badge).height, 18.25);
       }
       expect(tester.takeException(), isNull);
     });

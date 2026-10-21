@@ -7,6 +7,8 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'icons.dart';
+import 'mounted_task_chip.dart';
+import 'task_status_badge.dart';
 import 'design_primitives.dart';
 import 'recipe_surface.dart';
 import 'panel_layout.dart' show RaftCssText, raftCssBaseline;
@@ -39,8 +41,9 @@ class RaftInlineBadgeEditor extends StatefulWidget {
     required this.selectedId,
     required this.options,
     required this.onSelect,
-    required this.background,
-    required this.foreground,
+    this.background,
+    this.foreground,
+    this.taskStatus,
     this.open,
     this.onOpenChanged,
     this.uppercase = false,
@@ -59,8 +62,14 @@ class RaftInlineBadgeEditor extends StatefulWidget {
   final List<RaftInlineBadgeOption> options;
   final ValueChanged<String> onSelect;
 
-  /// Resolved `badgeClassName` background/foreground (theme dependent).
-  final Color background, foreground;
+  /// Resolved `badgeClassName` background/foreground (theme dependent). Not
+  /// used with [taskStatus], whose colours come from the `task-status-*` tokens.
+  final Color? background, foreground;
+
+  /// Web `badgeStatus`: the trigger is raft-ui's `TaskStatusBadge` for this
+  /// status (icon + label + pencil on the task-status tokens) instead of the
+  /// generic soft Badge.
+  final RaftMessageTaskStatus? taskStatus;
   final bool? open;
   final ValueChanged<bool>? onOpenChanged;
   final bool uppercase, alignRight, enabled;
@@ -172,6 +181,46 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
       color: widget.foreground,
       letterSpacing: widget.uppercase ? 12 * .025 : badge.letterSpacing,
     );
+    // `badgeStatus`: raft-ui TaskStatusBadge (the TaskChip look) with the same
+    // `mt-0.5`, a hover brightness shift and the 2px line-strong focus ring.
+    Widget statusTrigger(
+      RaftInteractionState state,
+      RaftMessageTaskStatus status,
+    ) {
+      final chip = RaftMessageTaskChipRecipe(t, status);
+      return Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: CustomPaint(
+          foregroundPainter: state.focusVisible
+              ? _BadgeFocusOutline(t.semantic.lineStrong, chip.radius)
+              : null,
+          child: Stack(
+            children: [
+              RaftTaskStatusBadge(
+                status: status,
+                label: widget.label,
+                trailing: RaftBadgeEditPencil(color: chip.iconForeground),
+              ),
+              if (state.hovered && widget.enabled)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    // hover:brightness-[0.96] (elegant) / 0.90 (brutal).
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(
+                          alpha: 1 - chip.hoverBrightness,
+                        ),
+                        borderRadius: chip.radius,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    }
+
     Widget trigger(RaftInteractionState state) => Padding(
       padding: const EdgeInsets.only(top: 2), // mt-0.5 is outside the button.
       child: CustomPaint(
@@ -217,7 +266,7 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
                 child: RaftIcon(
                   RaftGlyph.pencil,
                   size: 10,
-                  color: widget.foreground,
+                  color: widget.foreground!,
                 ),
               ),
             ],
@@ -226,6 +275,11 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
       ),
     );
     final movement = Scrollable.maybeOf(context)?.position;
+    assert(
+      widget.taskStatus != null ||
+          (widget.background != null && widget.foreground != null),
+      'a badge editor needs taskStatus or background and foreground',
+    );
     return OverlayPortal(
       controller: portal,
       overlayChildBuilder: (context) => !isOpen
@@ -331,7 +385,9 @@ class _RaftInlineBadgeEditorState extends State<RaftInlineBadgeEditor> {
               builder: (context, state) => ExcludeSemantics(
                 child: Opacity(
                   opacity: widget.enabled ? 1 : .6,
-                  child: trigger(state),
+                  child: widget.taskStatus == null
+                      ? trigger(state)
+                      : statusTrigger(state, widget.taskStatus!),
                 ),
               ),
             ),

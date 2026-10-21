@@ -185,12 +185,8 @@ final _cases = <_Case>[
   _Case('RaftResourceBadge', (l) => RaftResourceBadge(label: l)),
   _Case('RaftSettingsRecipeBadge', (l) => RaftSettingsRecipeBadge(label: l)),
   _Case(
-    'RaftSoftBadge',
-    (l) => RaftSoftBadge(
-      label: l,
-      background: const Color(0xFFFFE0B2),
-      foreground: Colors.black,
-    ),
+    'RaftTaskStatusBadge',
+    (l) => RaftTaskStatusBadge(status: RaftMessageTaskStatus.todo, label: l),
   ),
   _Case(
     'RaftTaskSectionBadge',

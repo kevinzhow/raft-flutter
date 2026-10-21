@@ -5,11 +5,11 @@ import 'control_typography.dart';
 import 'localization.dart';
 
 import 'theme.dart';
-import 'icons.dart';
 import 'design_primitives.dart';
 import 'inline_badge_editor.dart';
 import 'recipe_surface.dart';
 import 'mounted_task_chip.dart';
+import 'task_status_badge.dart';
 import 'panel_layout.dart' show RaftCssText;
 import '../recipes.dart';
 
@@ -30,94 +30,30 @@ String raftTaskStatusLabel(String status) => switch (status) {
   _ => status,
 };
 
-/// Component scales from raft-ui Badge and the product InlineBadgeEditor.
-/// Status colors remain semantic status roles, resolved by RaftTaskStatus.
+/// Hit target of the status badge: the chip's own height, or the touch target
+/// in touch density.
 @immutable
 class RaftTaskBadgeRecipe {
   const RaftTaskBadgeRecipe(this.tokens);
   final RaftTokens tokens;
-  double get height => 20;
-  double get radius => tokens.brutal ? 0 : 999;
-  EdgeInsets get inset =>
-      EdgeInsets.symmetric(horizontal: tokens.brutal ? 6 : 10, vertical: 2);
-  TextStyle label(Color foreground) => RaftTypography.body(
-    tokens,
-    size: tokens.brutal ? 10 : 11,
-    line: 12,
-    weight: tokens.brutal ? FontWeight.w700 : FontWeight.w500,
-    color: foreground,
-  ).copyWith(letterSpacing: tokens.brutal ? 0 : .22);
+  double get height =>
+      RaftMessageTaskChipRecipe(tokens, RaftMessageTaskStatus.todo).chipHeight;
   BoxConstraints target(RaftDensity density) => BoxConstraints(
     minWidth: density == RaftDensity.touch ? RaftMetrics.touchTarget : 0,
     minHeight: density == RaftDensity.touch ? RaftMetrics.touchTarget : height,
   );
 }
 
+/// Web `StatusBadge` (a raft-ui `TaskStatusBadge`): the status icon and label on
+/// the `task-status-*` tokens, the same chip a message row shows.
 class RaftTaskStatus extends StatelessWidget {
   const RaftTaskStatus({super.key, required this.status});
   final String status;
   @override
-  Widget build(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final recipe = RaftTaskBadgeRecipe(t);
-    final (semantic, brutal, icon) = switch (status) {
-      'in_progress' => ('info', 'cyan', Icons.play_arrow_outlined),
-      'in_review' => ('accent', 'lavender', Icons.visibility_outlined),
-      'done' => ('success', 'lime', Icons.check_circle_outline),
-      'closed' => ('muted', 'stone', Icons.block),
-      _ => ('warning', 'orange', Icons.circle_outlined),
-    };
-    final bg =
-        t.colors[t.brutal
-            ? 'color-brutal-$brutal'
-            : status == 'closed'
-            ? 'fill-muted'
-            : '$semantic-soft']!;
-    final fg = t.brutal
-        ? Colors.black
-        : t.colors[status == 'closed'
-              ? 'foreground-strong'
-              : '$semantic-strong']!;
-    return Container(
-      // The recipe height is a minimum: a taller line box (Android Chinese
-      // control profile, larger text) grows the pill instead of being clipped.
-      constraints: BoxConstraints(minHeight: recipe.height),
-      padding: recipe.inset,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(recipe.radius),
-        border: t.brutal ? Border.all(color: t.ink) : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 4,
-        children: [
-          ExcludeSemantics(child: RaftSymbol(icon, size: 10, color: fg)),
-          Text(
-            raftText(context, raftTaskStatusLabel(status)),
-            style: RaftControlTypography.of(context, recipe.label(fg)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Status chip background/foreground — getTaskStatusBadgeClassName
-/// (packages/web/src/components/task/taskStatusUi.ts): soft semantic pair in
-/// elegant, `bg-brutal-{tone} text-black` in brutal.
-(Color, Color) raftTaskStatusBadgeColors(RaftTokens t, String status) {
-  final (semantic, brutal) = switch (status) {
-    'in_progress' => ('info', 'cyan'),
-    'in_review' => ('accent', 'lavender'),
-    'done' => ('success', 'lime'),
-    'closed' => ('muted', 'stone'),
-    _ => ('warning', 'orange'),
-  };
-  if (t.brutal) return (t.colors['color-brutal-$brutal']!, Colors.black);
-  return status == 'closed'
-      ? (t.colors['fill-muted']!, t.colors['foreground-strong']!)
-      : (t.colors['$semantic-soft']!, t.colors['$semantic-strong']!);
+  Widget build(BuildContext context) => RaftTaskStatusBadge(
+    status: raftTaskStatusOf(status),
+    label: raftText(context, raftTaskStatusLabel(status)),
+  );
 }
 
 /// TaskCard's status control: InlineBadgeEditor with the task status options
@@ -141,7 +77,6 @@ class RaftTaskStatusEditor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final (bg, fg) = raftTaskStatusBadgeColors(t, status);
     final editor = RaftInlineBadgeEditor(
       label: raftText(context, raftTaskStatusLabel(status)),
       // The badge reads its status; a "Task status" tooltip adds nothing.
@@ -159,8 +94,7 @@ class RaftTaskStatusEditor extends StatelessWidget {
           ),
       ],
       onSelect: onSelect,
-      background: bg,
-      foreground: fg,
+      taskStatus: raftTaskStatusOf(status),
       open: open,
       onOpenChanged: onOpenChanged,
       alignRight: alignRight,
@@ -333,14 +267,6 @@ class _RenderTaskMetaBaseline extends RenderProxyBox {
     return distance == null ? null : offset + distance;
   }
 }
-
-RaftMessageTaskStatus _iconStatus(String status) => switch (status) {
-  'in_progress' => RaftMessageTaskStatus.inProgress,
-  'in_review' => RaftMessageTaskStatus.inReview,
-  'done' => RaftMessageTaskStatus.done,
-  'closed' => RaftMessageTaskStatus.closed,
-  _ => RaftMessageTaskStatus.todo,
-};
 
 RaftTaskStatusRecipeStatus _recipeStatus(String status) => switch (status) {
   'in_progress' => RaftTaskStatusRecipeStatus.inProgress,
@@ -658,7 +584,7 @@ class RaftTaskSectionBadge extends StatelessWidget {
         spacing: badge.columnGap ?? 4,
         children: [
           RaftMessageTaskStatusIcon(
-            status: _iconStatus(status),
+            status: raftTaskStatusOf(status),
             color: iconColor,
             size: badge.target('& svg')?.width ?? 10,
           ),

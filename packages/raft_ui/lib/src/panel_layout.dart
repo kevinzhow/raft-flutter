@@ -1359,9 +1359,13 @@ class _RenderCssLineBox extends RenderProxyBox {
     _flutterBaseline = (reported + 0.5).floorToDouble();
   }
 
+  // Inside a baseline query the child is asked with getDistanceToActualBaseline;
+  // getDistanceToBaseline would re-enter the baseline assertion when an ancestor
+  // (an inline line box, a baseline Row) is measuring this label.
   @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) =>
-      _optical ? child?.getDistanceToBaseline(baseline) : _metrics.baseline;
+  double? computeDistanceToActualBaseline(TextBaseline baseline) => _optical
+      ? child?.getDistanceToActualBaseline(baseline)
+      : _metrics.baseline;
 
   @override
   double? computeDryBaseline(

@@ -25,7 +25,9 @@ import 'inline_badge_editor.dart';
 import 'localization.dart';
 import 'css_recipe_decoration.dart';
 import 'recipe_surface.dart';
+import 'mounted_task_chip.dart' show RaftMessageTaskStatus;
 import 'task.dart';
+import 'task_status_badge.dart';
 import 'task_timeline.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
@@ -644,7 +646,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
   }
 
   Widget status(BuildContext context) {
-    final t = RaftTokens.of(context), value = '${widget.task['status']}';
+    final value = '${widget.task['status']}';
     if (!raftTaskStatuses.contains(value)) return Text(value);
     final label = raftText(context, raftTaskStatusLabel(value));
     // Web: editor when the viewer may edit (or the row is read-only with a
@@ -655,12 +657,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
         status: value,
       );
     }
-    final (bg, fg) = raftTaskStatusBadgeColors(t, value);
     return RaftInlineBadgeEditor(
       key: const ValueKey('task-properties-status'),
-      // Web InlineBadgeEditor keeps its `uppercase` default for status (only
-      // the assignee passes `uppercase={false}`).
-      uppercase: true,
+      // Web `badgeStatus`: the trigger is the TaskStatusBadge, so `uppercase`
+      // does not apply.
       label: label,
       selectedId: value,
       options: [
@@ -683,8 +683,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               'This task predates the channel conversion. Only the source workspace can change it.',
             ),
       onSelect: (next) => unawaited(widget.onUpdate('status', next)),
-      background: bg,
-      foreground: fg,
+      taskStatus: raftTaskStatusOf(value),
     );
   }
 
@@ -911,7 +910,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
       entries: [
         for (final event in events)
           RaftTimelineEntry(
-            variant: historyVariant(event),
+            status: historyStatus(event),
             title: raftText(context, switch (event['eventType']) {
               'created' => 'Created task',
               'amended' => 'Updated task',
@@ -929,7 +928,10 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     );
   }
 
-  RaftTimelineVariant historyVariant(Map<String, dynamic> event) {
+  /// Web `HistoryTimeline.historyStatus`: the status the event is about, so
+  /// the marker paints from that status's own token. A closed event is
+  /// `closed` and a reopened one `in_progress` when the payload names none.
+  RaftMessageTaskStatus? historyStatus(Map<String, dynamic> event) {
     final payload = event['payload'] is Map
         ? event['payload'] as Map
         : const {};
@@ -943,13 +945,7 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
           'reopened' => 'in_progress',
           _ => null,
         };
-    return switch (status) {
-      'todo' => RaftTimelineVariant.warning,
-      'in_progress' => RaftTimelineVariant.information,
-      'in_review' => RaftTimelineVariant.accent,
-      'done' => RaftTimelineVariant.success,
-      _ => RaftTimelineVariant.neutral,
-    };
+    return status == null ? null : raftTaskStatusOf('$status');
   }
 
   Widget? _historyDetail(
@@ -958,22 +954,15 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
     TextStyle style,
     String Function(dynamic) label,
   ) {
-    final t = RaftTokens.of(context);
     final type = '${event['eventType']}';
     final p = event['payload'] is Map ? event['payload'] as Map : const {};
     if (const ['status_changed', 'closed', 'reopened'].contains(type) &&
         p['from'] != null &&
         p['to'] != null) {
-      Widget badge(dynamic status) {
-        final (bg, fg) = raftTaskStatuses.contains('$status')
-            ? raftTaskStatusBadgeColors(t, '$status')
-            : raftTaskStatusBadgeColors(t, 'todo');
-        return RaftSoftBadge(
-          label: label(status),
-          background: bg,
-          foreground: fg,
-        );
-      }
+      Widget badge(dynamic status) => RaftTaskStatusBadge(
+        status: raftTaskStatusOf('$status'),
+        label: label(status),
+      );
 
       return Row(
         spacing: 4,
