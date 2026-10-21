@@ -184,7 +184,7 @@ class RaftSegmentedItem extends StatelessWidget {
           // would give Elegant 6 and miss the measurement. The chip token is used
           // for both looks because Brutal's chip is 0 and Raft keeps its own 8
           // through `radius.control` in the framed structure below.
-          radius: t.option('segmented.frame', fallback: 'framed') == 'framed'
+          radius: t.option('segmented.frame', or: 'framed') == 'framed'
               ? t.size('radius.control', fallback: 8)
               : t.size('radius.chip', fallback: 4),
           fill: colors.fill,
@@ -228,7 +228,7 @@ class RaftSegmentedTrack extends StatelessWidget {
     // rounded, padded track; the pre-theme app drew a flat row of separate
     // segments with a gap. Replicating Elegant and Brutal means matching the
     // latter exactly, so the frame is a structural option rather than always on.
-    final framed = t.option('segmented.frame', fallback: 'framed') == 'framed';
+    final framed = t.option('segmented.frame', or: 'framed') == 'framed';
 
     if (!framed) {
       // a57b9dab separates the segments with `gap-1` (Brutal, 4px) or `gap-1.5`
