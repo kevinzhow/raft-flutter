@@ -694,7 +694,11 @@ class RaftProfileIdentity extends StatelessWidget {
     this.statusText,
     this.minHeight = 0,
     this.youLabel,
+    this.avatarLabel,
   });
+
+  /// The avatar action's label and tooltip (default "Choose Avatar").
+  final String? avatarLabel;
 
   /// `(you)` after the handle: `shrink-0 text-sm font-mono text-foreground-muted`.
   final String? youLabel;
@@ -749,6 +753,7 @@ class RaftProfileIdentity extends StatelessWidget {
       avatar = _ProfileAvatarAction(
         key: const ValueKey('agent-profile-avatar-trigger'),
         onPressed: onAvatar!,
+        label: avatarLabel,
         child: avatar,
       );
     }
@@ -2855,9 +2860,11 @@ class _ProfileAvatarAction extends StatefulWidget {
     super.key,
     required this.onPressed,
     required this.child,
+    this.label,
   });
   final VoidCallback onPressed;
   final Widget child;
+  final String? label;
   @override
   State<_ProfileAvatarAction> createState() => _ProfileAvatarActionState();
 }
@@ -2866,7 +2873,7 @@ class _ProfileAvatarActionState extends State<_ProfileAvatarAction> {
   bool hovered = false;
   @override
   Widget build(BuildContext context) => RaftTooltip(
-    message: raftText(context, 'Choose Avatar'),
+    message: raftText(context, widget.label ?? 'Choose Avatar'),
     child: FocusableActionDetector(
       mouseCursor: SystemMouseCursors.click,
       actions: {
@@ -2879,7 +2886,7 @@ class _ProfileAvatarActionState extends State<_ProfileAvatarAction> {
       },
       child: Semantics(
         button: true,
-        label: raftText(context, 'Choose Avatar'),
+        label: raftText(context, widget.label ?? 'Choose Avatar'),
         child: RaftHoverRegion(
           onEnter: (_) => setState(() => hovered = true),
           onExit: (_) => setState(() => hovered = false),

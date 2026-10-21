@@ -14,6 +14,7 @@ import 'agent_detail_view.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'channel_member_servers.dart' show withPrimedServers;
 import 'member_profile_rules.dart';
+import 'member_profile_self_edit.dart';
 import 'sender_avatar_projection.dart';
 
 /// Current-authority HumanRoute/ProfilePanel fallback contract. Entity payloads
@@ -141,6 +142,8 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
     // The role editor and its error belong to the member they were opened for.
     roleError = null;
     editingRole = rolePickerOpen = false;
+    avatarSaving = false;
+    avatarError = null;
   }
 
   @override
@@ -212,6 +215,45 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
       widget.onBack != null ? widget.onBack!() : widget.onClose();
     }
   }
+
+  bool avatarSaving = false;
+  // ignore: raft_lints/avoid_imperative_notice_state -- Clears when a new upload starts and when the viewed member or server/account changes (clearData); a late result for another member is ignored.
+  String? avatarError;
+
+  /// Your own picture (HumanDetailPanel `handleUploadAvatar`).
+  Future<void> uploadAvatar() async {
+    if (avatarSaving) return;
+    final source = authority;
+    setState(() {
+      avatarSaving = true;
+      avatarError = null;
+    });
+    final failure = await uploadOwnAvatar(w.client);
+    if (!mounted || source != authority) return;
+    setState(() {
+      avatarSaving = false;
+      avatarError = failure;
+    });
+  }
+
+  /// Your own description (HumanDetailPanel inline editor, as a form).
+  Future<void> editDescription() => scopedDialog<void>(
+    form: true,
+    (context) => ownDescriptionDialog(
+      context,
+      client: w.client,
+      initial: '${profile['description'] ?? ''}',
+      onSaved: () async {
+        await reload();
+        unawaited(
+          w.services.entityDirectory.refresh(
+            WorkspaceEntityKind.members,
+            force: true,
+          ),
+        );
+      },
+    ),
+  );
 
   /// `getEditableHumanServerRoles`: the roles the viewer may assign
   /// (`canTransitionServerRole`; Guest only while guest invites are on).
@@ -523,6 +565,9 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
     final departure = humanDepartureLabel(status);
     final summaryOnly = remoteJoint || isChannelSummaryHuman(profile);
     final source = humanSourceServerLabel(profile, w.server?.id);
+    // HumanDetailPanel: your own picture and description, while you are an
+    // active member.
+    final editOwn = self && status == 'active';
     final roles = w.can('changeMemberRoles')
         ? editableRoles(self: self)
         : const <String>[];
@@ -567,11 +612,38 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         agent: false,
         avatarUrl: avatarUrl,
         youLabel: self ? raftText(context, '(you)') : null,
+        onAvatar: editOwn ? uploadAvatar : null,
+        avatarLabel: avatarSaving ? 'Uploading avatar' : 'Upload image',
       ),
+      if (editOwn && avatarError != null)
+        RaftPanelSection(
+          topBorder: false,
+          vertical: 8,
+          children: [
+            Semantics(
+              liveRegion: true,
+              child: RaftCssText(
+                raftText(context, avatarError!),
+                key: const ValueKey('member-avatar-error'),
+                style: RaftTypography.heading(
+                  t,
+                  size: 12,
+                  line: 16,
+                  weight: FontWeight.w600,
+                  color: t.colors['danger'],
+                ),
+              ),
+            ),
+          ],
+        ),
       if (detailSettled || profile['description'] is String)
         RaftPanelSection(
           children: [
-            RaftDescriptionBlock(text: '${profile['description'] ?? ''}'),
+            RaftDescriptionBlock(
+              text: '${profile['description'] ?? ''}',
+              onEdit: editOwn ? editDescription : null,
+              editKey: const ValueKey('member-edit-description'),
+            ),
           ],
         ),
       if (!summaryOnly)

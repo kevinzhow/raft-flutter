@@ -11,8 +11,8 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 554 |
-| ⚠️ partial | 68 |
+| ✅ covered | 555 |
+| ⚠️ partial | 67 |
 | ❌ missing | 63 |
 | ➖ na | 65 |
 
@@ -31,7 +31,7 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 | Files and attachments | 15 | 8 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
 | Notifications | 28 | 2 | 0 | 6 |
-| Account and profile | 41 | 3 | 0 | 6 |
+| Account and profile | 42 | 2 | 0 | 6 |
 | Onboarding and auth | 34 | 0 | 0 | 7 |
 | Joint channels | 6 | 4 | 1 | 0 |
 | Public and guest | 8 | 0 | 0 | 0 |
@@ -730,7 +730,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Default translated-message view: Translated / Original / Bilingual | `ui:language.translation-default-view` | Language & Region > Default view segmented control | locale_settings_page.dart translationDisplay |  |
 | ✅ | Translation mode segmented control: Auto / Manual / Off | `ui:language.translation-mode` | Language & Region > Translation mode (translation-mode-auto/manual/off) | locale_settings_page.dart -> RaftLanguageSettings translationMode |  |
 | ✅ | Pick the language to translate into (browser/device default or a specific language) | `ui:language.translation-target` | Language & Region > Translation target select | locale_settings_page.dart translationTargetOptions |  |
-| ⚠️ | In your own member profile: click avatar to upload a new picture, pencil to edit your description (with save/cancel) | `ui:members-roles.profile-self-edit` | HumanDetailPanel.tsx isSelf avatar upload button + description editor[gate: self, active membership] | member_profile_view.dart is read-only for self; avatar upload and description edit live in Account settings (account_settings.dart) | Impact: Low: users must open Settings > Account instead of editing in place. Same capability exists in Account settings, not inside the profile panel. Size S |
+| ✅ | In your own member profile: click avatar to upload a new picture, pencil to edit your description (with save/cancel) | `ui:members-roles.profile-self-edit` | HumanDetailPanel.tsx isSelf avatar upload button + description editor[gate: self, active membership] | member_profile_view.dart: your own active profile edits the picture (avatar action 'Upload image') and the description (pencil -> 'Edit description' form, 3000 characters, empty clears); logic in member_profile_self_edit.dart |  |
 | ✅ | Language & Region: translation mode (Auto/Manual/Off), translation target, default view (Translated/Original/Bilingual) | `ui:messages.translation-settings` | SettingsPanel > Language > Translation mode / Translation target / Default view[gate: server translation enabled] | locale_settings_page.dart -> raft_ui settings_language.dart |  |
 | ✅ | Report issue dialog: describe issue, choose what to include (recent messages, live activity, activity history, runtime transcript, machine log tail), consent, view ticket | `ui:report-issue.dialog-options` | Agent detail > Report issue (ReportIssueDialog)[gate: canManageAgent] | report_issue.dart + raft_ui report_issue_dialog.dart (onViewTicket) |  |
 | ✅ | Settings tab: About (version, mobile app download buttons + QR on desktop, current workspace card) | `ui:tabs.about` | Settings nav > About | workspace_settings.dart WorkspaceAboutSection (mobile app block hidden on phones where the app is already installed) |  |

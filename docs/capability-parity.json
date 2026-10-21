@@ -13295,19 +13295,23 @@
    "area": "account-profile",
    "capability": "In your own member profile: click avatar to upload a new picture, pencil to edit your description (with save/cancel)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "HumanDetailPanel.tsx isSelf avatar upload button + description editor",
    "gate": "self, active membership",
-   "flutterEntry": "member_profile_view.dart is read-only for self; avatar upload and description edit live in Account settings (account_settings.dart)",
+   "flutterEntry": "member_profile_view.dart: your own active profile edits the picture (avatar action 'Upload image') and the description (pencil -> 'Edit description' form, 3000 characters, empty clears); logic in member_profile_self_edit.dart",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/account_settings.dart",
-     "needle": "AccountMediaActions.uploadAvatar"
+     "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
+     "needle": "editDescription"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/member_profile_self_edit.dart",
+     "needle": "uploadOwnAvatar"
     }
    ],
-   "justification": "Same capability exists in Account settings, not inside the profile panel.",
-   "impact": "Low: users must open Settings > Account instead of editing in place.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
