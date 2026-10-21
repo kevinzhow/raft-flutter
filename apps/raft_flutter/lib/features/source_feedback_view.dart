@@ -16,8 +16,15 @@ import '../platform/file_selection.dart';
 
 import '../data/source_feedback_store.dart';
 import '../data/workspace_controller.dart';
+import 'feedback_attachment_preview.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
+
+/// `GET /product-feedback/tickets/:id/attachments/:id`.
+typedef FeedbackAttachmentLoader = Future<Uint8List> Function(
+  String ticketId,
+  String attachmentId,
+);
 
 /// Picks image attachments (the Web `<input type=file accept=...>`).
 typedef FeedbackFilePicker = Future<List<SourceFeedbackFile>> Function();
@@ -256,6 +263,11 @@ class _SourceFeedbackViewState extends State<SourceFeedbackView> {
     store: store,
     pickFiles: pickFeedbackImages,
     inboxSeed: seed,
+    loadAttachment: (ticketId, attachmentId) =>
+        widget.controller.client.getBytes(
+          '/product-feedback/tickets/${Uri.encodeComponent(ticketId)}'
+          '/attachments/${Uri.encodeComponent(attachmentId)}',
+        ),
   );
 }
 
@@ -379,9 +391,14 @@ class SourceFeedbackProjectionView extends StatefulWidget {
     required this.store,
     this.pickFiles,
     this.inboxSeed = const [],
+    this.loadAttachment,
   });
   final SourceFeedbackStore store;
   final FeedbackFilePicker? pickFiles;
+
+  /// Reads a ticket's attachment with the session (Web `openAttachment`);
+  /// without it the sent attachments stay plain rows.
+  final FeedbackAttachmentLoader? loadAttachment;
 
   /// The previous visit's first inbox page, shown instead of the skeleton
   /// until the store's own read lands.
@@ -523,6 +540,50 @@ class _SourceFeedbackProjectionViewState
         },
       ),
     );
+  }
+
+  int _previewRequest = 0;
+
+  /// Web `openAttachment`: the screenshot is read with the session, then
+  /// shown in the lightbox; a failure says so and shows nothing. The latest
+  /// tap wins, and an answer for another account or screen is dropped.
+  Future<void> _openSent(String ticketId, SourceFeedbackAttachment file) async {
+    final request = ++_previewRequest;
+    try {
+      if (file.id.isEmpty) throw const RaftApiException('No attachment id');
+      final bytes = await widget.loadAttachment!(ticketId, file.id);
+      if (!mounted || request != _previewRequest || !store.authorized) return;
+      await showFeedbackImage(
+        context,
+        filename: file.filename,
+        contentType: file.contentType,
+        bytes: bytes,
+      );
+    } catch (_) {
+      if (mounted && request == _previewRequest && store.authorized) {
+        showRaftToast(
+          context,
+          'The attachment could not be opened. Try again.',
+        );
+      }
+    }
+  }
+
+  /// Web `openPendingAttachment`: a picked screenshot, before it is sent.
+  void _openPending(String id) {
+    _previewRequest++;
+    for (final item in [...store.newAttachments, ...store.replyAttachments]) {
+      if (item.id != id || item.file.bytes.isEmpty) continue;
+      unawaited(
+        showFeedbackImage(
+          context,
+          filename: item.file.name,
+          contentType: item.file.contentType,
+          bytes: item.file.bytes,
+        ),
+      );
+      return;
+    }
   }
 
   Future<void> _attach({required bool reply}) async {
@@ -693,6 +754,7 @@ class _SourceFeedbackProjectionViewState
         onChanged: store.setNewMessage,
         attachments: _pending(store.newAttachments),
         onRemoveAttachment: store.removeNewAttachment,
+        onOpenAttachment: _openPending,
         onAttachImage: () => unawaited(_attach(reply: false)),
         onAttachFile: () => unawaited(_attach(reply: false)),
         busy: sending,
@@ -763,6 +825,10 @@ class _SourceFeedbackProjectionViewState
               for (final attachment in store.attachments)
                 (attachment.filename, _size(attachment.size)),
             ],
+            onOpenAttachment: widget.loadAttachment == null
+                ? null
+                : (index) =>
+                      unawaited(_openSent(ticket.id, store.attachments[index])),
             footer: [
               RaftFeedbackKindChip(problem: ticket.kind != 'feedback'),
               RaftFeedbackStatusBadge(
@@ -806,6 +872,7 @@ class _SourceFeedbackProjectionViewState
               onSubmit: () => unawaited(store.sendReply()),
               attachments: _pending(store.replyAttachments),
               onRemoveAttachment: store.removeReplyAttachment,
+              onOpenAttachment: _openPending,
               onAttachImage: () => unawaited(_attach(reply: true)),
               onAttachFile: () => unawaited(_attach(reply: true)),
               busy: sending,

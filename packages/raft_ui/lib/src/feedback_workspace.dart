@@ -270,6 +270,7 @@ class RaftFeedbackComposer extends StatefulWidget {
     this.newFeedback = false,
     this.attachments = const [],
     this.onRemoveAttachment,
+    this.onOpenAttachment,
     this.onAttachImage,
     this.onAttachFile,
     this.busy = false,
@@ -288,6 +289,9 @@ class RaftFeedbackComposer extends StatefulWidget {
   final bool newFeedback;
   final List<RaftFeedbackPendingFile> attachments;
   final ValueChanged<String>? onRemoveAttachment;
+
+  /// A not-yet-sent attachment was tapped (Web `onOpenPendingAttachment`).
+  final ValueChanged<String>? onOpenAttachment;
   final VoidCallback? onAttachImage, onAttachFile;
   final bool busy;
   final String? error;
@@ -489,6 +493,9 @@ class _RaftFeedbackComposerState extends State<RaftFeedbackComposer> {
                   onRemove: widget.onRemoveAttachment == null
                       ? null
                       : () => widget.onRemoveAttachment!(file.id),
+                  onOpen: widget.onOpenAttachment == null || file.bytes == null
+                      ? null
+                      : () => widget.onOpenAttachment!(file.id),
                 ),
             ],
           ),
@@ -550,10 +557,11 @@ class _PendingAttachment extends StatelessWidget {
     required this.file,
     required this.busy,
     required this.onRemove,
+    this.onOpen,
   });
   final RaftFeedbackPendingFile file;
   final bool busy;
-  final VoidCallback? onRemove;
+  final VoidCallback? onRemove, onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -577,6 +585,7 @@ class _PendingAttachment extends StatelessWidget {
               file.bytes!,
               fit: BoxFit.cover,
               gaplessPlayback: true,
+              evictOnDispose: true,
             )
           : Center(
               child: RaftIcon(
@@ -626,7 +635,14 @@ class _PendingAttachment extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          tile,
+          onOpen == null
+              ? tile
+              : _FeedbackTap(
+                  key: ValueKey('feedback-pending-open-${file.id}'),
+                  label: '${raftText(context, 'Open')} ${file.name}',
+                  onTap: onOpen!,
+                  child: tile,
+                ),
           if (overlay != null) Positioned.fill(child: overlay),
           Positioned(
             top: -6,
@@ -767,6 +783,7 @@ class RaftFeedbackMessageData {
     required this.time,
     required this.body,
     this.attachments = const [],
+    this.onOpenAttachment,
     this.footer = const [],
   });
   final String id, sender, time, body;
@@ -774,6 +791,10 @@ class RaftFeedbackMessageData {
 
   /// `(filename, size label)` rows.
   final List<(String, String)> attachments;
+
+  /// A sent attachment row was tapped, with its index in [attachments] (Web
+  /// `onOpenAttachment`). Null leaves the rows as plain text.
+  final ValueChanged<int>? onOpenAttachment;
   final List<Widget> footer;
 }
 
@@ -788,6 +809,39 @@ class RaftFeedbackMessage extends StatefulWidget {
 
 class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
   bool hovered = false;
+
+  Widget _attachmentRow(
+    RaftTokens t,
+    RaftFeedbackMessageData m,
+    int index,
+    String name,
+    String size,
+  ) {
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 6,
+      children: [
+        RaftIcon(RaftGlyph.file, size: 14, color: t.colors['foreground-muted']),
+        Text(
+          '$name · $size',
+          style: raftFeedbackText(
+            t,
+            size: 12,
+            color: t.colors['foreground-muted'],
+          ),
+        ),
+      ],
+    );
+    final open = m.onOpenAttachment;
+    return open == null
+        ? row
+        : _FeedbackTap(
+            key: ValueKey('feedback-attachment-${m.id}-$index'),
+            label: '${raftText(context, 'Open')} $name',
+            onTap: () => open(index),
+            child: row,
+          );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -882,26 +936,9 @@ class _RaftFeedbackMessageState extends State<RaftFeedbackMessage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           spacing: 8,
                           children: [
-                            for (final (name, size) in m.attachments)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                spacing: 6,
-                                children: [
-                                  RaftIcon(
-                                    RaftGlyph.file,
-                                    size: 14,
-                                    color: t.colors['foreground-muted'],
-                                  ),
-                                  Text(
-                                    '$name · $size',
-                                    style: raftFeedbackText(
-                                      t,
-                                      size: 12,
-                                      color: t.colors['foreground-muted'],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            for (final (i, (name, size))
+                                in m.attachments.indexed)
+                              _attachmentRow(t, m, i, name, size),
                           ],
                         ),
                       ],
@@ -1677,4 +1714,34 @@ class RaftFeedbackCloseDialog extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A tappable attachment (a sent row or a pending tile): a button for the
+/// pointer, the keyboard and assistive technology.
+class _FeedbackTap extends StatelessWidget {
+  const _FeedbackTap({
+    super.key,
+    required this.label,
+    required this.onTap,
+    required this.child,
+  });
+  final String label;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    onTap: onTap,
+    child: MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: child,
+      ),
+    ),
+  );
 }

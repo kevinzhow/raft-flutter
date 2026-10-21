@@ -12500,14 +12500,23 @@
    "area": "account-profile",
    "capability": "Open or download a screenshot/attachment attached to a feedback ticket",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "Settings > Feedback > ticket detail: click an attachment (onOpenAttachment) -> Lightbox with Download and Close",
    "gate": "any signed-in user viewing own ticket",
-   "flutterEntry": "",
-   "flutterRefs": [],
+   "flutterEntry": "source_feedback_view.dart _openSent -> RaftClient.getBytes, then showFeedbackImage (lightbox with Download and Close)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/source_feedback_view.dart",
+     "needle": "/attachments/"
+    },
+    {
+     "file": "packages/raft_client/lib/src/client.dart",
+     "needle": "Future<Uint8List> getBytes"
+    }
+   ],
    "justification": "",
-   "impact": "Any user who attached screenshots to a feedback ticket (or sees staff-attached files) can only see filename/size rows in Flutter; there is no way to view or download them. Occasional (only tickets with attachments).",
-   "size": "S"
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -13078,14 +13087,23 @@
    "area": "account-profile",
    "capability": "Tap a ticket attachment to preview/download it",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "AboutFeedbackDialog onOpenAttachment -> Lightbox with Download / Close",
    "gate": "",
-   "flutterEntry": "",
-   "flutterRefs": [],
+   "flutterEntry": "A ticket attachment row opens the lightbox (feedback_attachment_preview.dart); a failed read shows 'The attachment could not be opened. Try again.'",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/source_feedback_view.dart",
+     "needle": "_openSent"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/feedback_attachment_preview.dart",
+     "needle": "showFeedbackImage"
+    }
+   ],
    "justification": "",
-   "impact": "Attachments on tickets are listed as inert filename+size rows; cannot be viewed or saved.",
-   "size": "S"
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -13141,19 +13159,23 @@
    "area": "account-profile",
    "capability": "Tap a not-yet-sent pending attachment to preview it (onOpenPendingAttachment)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "Feedback composer pending attachment chip click -> Lightbox",
    "gate": "",
-   "flutterEntry": "source_feedback_view.dart shows pending attachments with remove only",
+   "flutterEntry": "A pending attachment tile opens the same lightbox before sending",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/source_feedback_view.dart",
-     "needle": "onRemoveAttachment: store.removeReplyAttachment"
+     "needle": "_openPending"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/feedback_workspace.dart",
+     "needle": "onOpenAttachment"
     }
    ],
-   "justification": "Pending chips can be removed but not opened for preview.",
-   "impact": "Minor: users cannot double-check a screenshot before sending feedback.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

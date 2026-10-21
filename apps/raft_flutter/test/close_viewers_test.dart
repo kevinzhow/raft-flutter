@@ -20,6 +20,7 @@ import 'package:raft_flutter/features/public_server_view.dart';
 import 'package:raft_flutter/features/quick_switcher.dart';
 import 'package:raft_flutter/features/task_surface.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
+import 'package:raft_flutter/features/feedback_attachment_preview.dart';
 import 'package:raft_flutter/features/source_channel_files_actions.dart';
 import 'package:raft_flutter/platform/attachment_files.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -520,6 +521,38 @@ void registerCloseViewerTests(TestPart part) {
       await t.runAsync(() => w.attachUpload('pic.png', _png));
       await frames(t, 20);
       await t.tap(find.byKey(const ValueKey('composer-attachment-0')));
+      await frames(t, 20);
+      await settleImage(t); // display-size decode is real async work
+      return SurfaceProbe(
+        isOpen: lightboxOpen,
+        x: find.byTooltip('Close preview'),
+        scrim: emptyStage(size),
+      );
+    },
+    'image-lightbox-feedback': (t, size) async {
+      t.view.physicalSize = size;
+      t.view.devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      late BuildContext host;
+      await t.pumpWidget(
+        MaterialApp(
+          theme: raftTheme(RaftFamily.elegant),
+          home: Builder(
+            builder: (context) {
+              host = context;
+              return const Scaffold(body: SizedBox());
+            },
+          ),
+        ),
+      );
+      unawaited(
+        showFeedbackImage(
+          host,
+          filename: 'shot.png',
+          contentType: 'image/png',
+          bytes: _png,
+        ),
+      );
       await frames(t, 20);
       await settleImage(t); // display-size decode is real async work
       return SurfaceProbe(

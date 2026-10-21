@@ -50,6 +50,15 @@ const viewerSurfaces = <CloseSurface>[
     fix: 'empty-stage tap closes (RaftLightboxStageTap)',
   ),
   CloseSurface(
+    'image-lightbox-feedback',
+    kind: SurfaceKind.viewer,
+    web: 'AboutFeedbackDialog.tsx Lightbox (onOpenAttachment / onOpenPendingAttachment): Esc / Ctrl+W, backdrop, LightboxClose X',
+    phone: {_x, _esc, _scrim, _sys},
+    fold: {_x, _esc, _scrim, _sys},
+    desktop: {_x, _esc, _scrim, _sys},
+    files: ['lib/features/feedback_attachment_preview.dart'],
+  ),
+  CloseSurface(
     'image-lightbox-files',
     kind: SurfaceKind.viewer,
     web: 'ChannelFilesPanel.tsx:332 useImageLightboxStore.open -> ImageLightbox.tsx:267 empty-stage click, Esc / Ctrl+W, X',

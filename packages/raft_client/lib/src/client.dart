@@ -1063,6 +1063,21 @@ class RaftClient {
       Zone.current[_priorityKey] as RequestPriority? ??
       RequestPriority.foreground;
 
+  static const _bytesKey = #raftResponseBytes;
+
+  /// An authenticated read of a binary response (an image the server holds
+  /// behind the session, not behind a signed link). Failures are the usual
+  /// [RaftApiException]s; the error body is not decoded.
+  Future<Uint8List> getBytes(String path) async {
+    final result = await runZoned(
+      () => get(path),
+      zoneValues: {_bytesKey: true},
+    );
+    if (result is Uint8List) return result;
+    if (result is List<int>) return Uint8List.fromList(result);
+    throw const RaftApiException('The server did not return a file.');
+  }
+
   static const _headersKey = #raftRequestHeaders;
 
   /// Runs [body] so that every request it starts carries [headers] (an
@@ -1379,6 +1394,9 @@ class RaftClient {
                 method: method,
                 receiveTimeout: receiveTimeout,
                 headers: requestHeaders,
+                responseType: Zone.current[_bytesKey] == true
+                    ? ResponseType.bytes
+                    : null,
               ),
             );
       governor.observe(

@@ -11,9 +11,9 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 551 |
+| ✅ covered | 554 |
 | ⚠️ partial | 68 |
-| ❌ missing | 66 |
+| ❌ missing | 63 |
 | ➖ na | 65 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
@@ -31,7 +31,7 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 | Files and attachments | 15 | 8 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
 | Notifications | 28 | 2 | 0 | 6 |
-| Account and profile | 38 | 3 | 3 | 6 |
+| Account and profile | 41 | 3 | 0 | 6 |
 | Onboarding and auth | 34 | 0 | 0 | 7 |
 | Joint channels | 6 | 4 | 1 | 0 |
 | Public and guest | 8 | 0 | 0 | 0 |
@@ -694,7 +694,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | List connected social sign-in identities and whether a password is set | `GET /auth/identities` | Settings > Account > 'Connected accounts' card (AccountSection loadIdentities) | account_connections_view.dart (Settings > Account sign-in methods) |  |
 | ✅ | List my feedback tickets (Active/Ended/All filter, unread dot, load more) | `GET /product-feedback/tickets` | Settings > Feedback inbox \| Feedback unread dot in settings nav (background poll)[gate: any signed-in user] | source_feedback_view.dart inbox; workspace_settings.dart loadFeedbackUnread dot |  |
 | ✅ | Open a feedback ticket conversation | `GET /product-feedback/tickets/:id` | Settings > Feedback > ticket[gate: any signed-in user] | source_feedback_view.dart _ticket() detail conversation |  |
-| ❌ | Open or download a screenshot/attachment attached to a feedback ticket | `GET /product-feedback/tickets/:id/attachments/:id` | Settings > Feedback > ticket detail: click an attachment (onOpenAttachment) -> Lightbox with Download and Close[gate: any signed-in user viewing own ticket] |  | Impact: Any user who attached screenshots to a feedback ticket (or sees staff-attached files) can only see filename/size rows in Flutter; there is no way to view or download them. Occasional (only tickets with attachments). Size S |
+| ✅ | Open or download a screenshot/attachment attached to a feedback ticket | `GET /product-feedback/tickets/:id/attachments/:id` | Settings > Feedback > ticket detail: click an attachment (onOpenAttachment) -> Lightbox with Download and Close[gate: any signed-in user viewing own ticket] | source_feedback_view.dart _openSent -> RaftClient.getBytes, then showFeedbackImage (lightbox with Download and Close) |  |
 | ➖ | Fetch the VAPID public key to subscribe the browser (bg) | `GET /push/vapid-key` | Notifications > Web Push 'Enable'[gate: push-capable browser (web channel); desktop shell uses desktop-native card] | notification_settings_view.dart 'Test notification' (local OS notification, no server push) | N/A: Web Push (VAPID service-worker subscription) is browser-only. The server has no APNs/FCM channel (routes/push.ts only serves web-push), so Flutter's native equivalent is local OS notifications posted by the app's background inbox refresh (platform/background_inbox.dart, desktop_inbox_notifications.dart) with a phone/desktop 'Test notification' card (docs/parity.md ~L1040-1050 records the difference). Note: with the app fully closed there is no server-initiated push. |
 | ⚠️ | Read the product release notes page (paged list with 'Current' and 'Retracted' badges) | `GET /release-notes` | Settings > Release Notes (ReleaseNotesPanel, loadReleaseNotesPage); also reachable from the public server settings when signed in[gate: none] | workspace_settings.dart 'Release Notes' row -> ReleaseNotesView fed by platform/client_release_notes.dart (GitHub release asset) | Impact: Every user: the page exists but lists the app's builds, not the Raft server/product release notes Web users read, and is English only. Recorded intentional difference (docs/parity.md ~L1703-1707): Flutter shows the client app's own English-only release notes from the GitHub release asset, not the server's GET /release-notes (no server product notes, no cursor paging, no zh). Size S |
 | ✅ | Read whether push notifications from this server are muted | `GET /servers/:id/notification-settings` | Settings > Notifications > Web Push card 'Mute notifications from this server' (refreshState)[gate: web push channel only] | notification_settings_view.dart phone card member mute form |  |
@@ -721,10 +721,10 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Message font size Small / Medium / Large with live preview (saved on device) | `ui:appearance.message-font-size` | Appearance > Message font size segmented control + preview | appearance_section.dart 'Message font size' |  |
 | ✅ | Toggle showing agent model next to names | `ui:appearance.show-agent-model` | Appearance > 'Show agent model' switch | appearance_section.dart toggle 'appearance-agent-model' |  |
 | ✅ | Pick appearance mode (Light / Dark / System) and a theme per mode | `ui:appearance.theme-picker` | Settings > Appearance > Theme card (AppearanceThemePicker) | appearance_section.dart RaftAppearancePicker (local, saved on device) |  |
-| ❌ | Tap a ticket attachment to preview/download it | `ui:feedback.attachment-preview` | AboutFeedbackDialog onOpenAttachment -> Lightbox with Download / Close |  | Impact: Attachments on tickets are listed as inert filename+size rows; cannot be viewed or saved. Size S |
+| ✅ | Tap a ticket attachment to preview/download it | `ui:feedback.attachment-preview` | AboutFeedbackDialog onOpenAttachment -> Lightbox with Download / Close | A ticket attachment row opens the lightbox (feedback_attachment_preview.dart); a failed read shows 'The attachment could not be opened. Try again.' |  |
 | ✅ | Feedback inbox: Active / Ended / All filter, Refresh, load more | `ui:feedback.inbox-filter-refresh` | Feedback workspace inbox | source_feedback_view.dart store.filter + Refresh + load more |  |
 | ✅ | New feedback: Idea/Problem toggle, description, image attachments (up to the limit), Submit/Retry upload | `ui:feedback.new-feedback-form` | Feedback workspace 'New feedback' (hands-feedback-react NewFeedbackForm) | source_feedback_view.dart _create() RaftFeedbackNewForm |  |
-| ❌ | Tap a not-yet-sent pending attachment to preview it (onOpenPendingAttachment) | `ui:feedback.pending-attachment-preview` | Feedback composer pending attachment chip click -> Lightbox | source_feedback_view.dart shows pending attachments with remove only | Impact: Minor: users cannot double-check a screenshot before sending feedback. Pending chips can be removed but not opened for preview. Size S |
+| ✅ | Tap a not-yet-sent pending attachment to preview it (onOpenPendingAttachment) | `ui:feedback.pending-attachment-preview` | Feedback composer pending attachment chip click -> Lightbox | A pending attachment tile opens the same lightbox before sending |  |
 | ✅ | Choose the app display language (English / Simplified Chinese) | `ui:language.display-language` | Settings > Language & Region > Display language select + Save | locale_settings_page.dart language card; account_settings.dart 'Display language' action |  |
 | ✅ | Choose timezone (device default or specific zone) and 12h/24h time format | `ui:language.timezone-and-time-format` | Language & Region > Date & time: Timezone select, Time format 12h/24h, Save | locale_settings_page.dart timezoneOptions / timeFormat |  |
 | ✅ | Default translated-message view: Translated / Original / Bilingual | `ui:language.translation-default-view` | Language & Region > Default view segmented control | locale_settings_page.dart translationDisplay |  |
