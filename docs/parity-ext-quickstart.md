@@ -80,3 +80,27 @@ malformed globs and on globs matching the other platform's cases, not on documen
 - No full-suite runs (`run run` without `--cases`) and no `tool/check-project` per task; the lead runs them per batch.
 - Run your cases once per change, read the output once. No polling or sleep loops; no sub-agents.
 - Do not publish; do not touch the raft-source checkout; do not commit `build/`.
+
+## Scoring against the P2 (a57b9dab) baseline
+
+`tool/p2-score.mjs` compares a fresh capture against the pre-theme baseline images
+with the **official** metric, not a lookalike: it calls the same
+`pixelPerfectSimilarity` / `rgbSimilarity` arithmetic as
+`raft-source/packages/visual-testing/src/sharp-image-overlay.mjs`, so a number here
+means the same thing as a number in the parity report.
+
+```bash
+node tool/p2-score.mjs <baseline-android-dir> <current-android-dir> out.json
+```
+
+Both directories hold `<case>.png` plus `<case>.metadata.json`; the comparison box is
+the baseline's own `crop.rect`. The table it writes is the "never drops" reference for
+each migration batch — keep it outside the repository.
+
+Why it exists: the parity run measures a case against the React reference, while
+Elegant and Brutal are supposed to match the *pre-theme Flutter* build. Those are
+different references, so this scores the Flutter-vs-Flutter pair directly.
+
+`tool/tests/test_p2_score.py` pins the property that makes the numbers trustworthy: an
+image scored against itself must be exactly 100%, and a mutated copy must score below
+it. Both skip when the baseline data is not on the machine.
