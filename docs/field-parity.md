@@ -63,7 +63,7 @@ Status: FIXED = changed on this branch with a fixture-backed test; LEFT = not ch
 
 ## Left, with reasons
 
-- Features Web has and Flutter does not (not stale reads): attachment `commentRef` chip and `commentCount` badge, direct-upload sessions, agent read receipts (`scope_read:updated`), hosted external runtime (`hostedRuntime`, retry), `lastRuntimeError` banner, `latestComputerReleaseNotes`, Slack `bridge` indicator, server profile avatar upload, `computer:restart:done` feedback, mobile push registrations, server-side system notifications contract. Each needs a product decision or a raft_ui widget.
+- Features Web has and Flutter does not (not stale reads): attachment `commentRef` chip and `commentCount` badge, direct-upload sessions, agent read receipts (`scope_read:updated`), hosted external runtime (`hostedRuntime`, retry), `lastRuntimeError` banner, Slack `bridge` indicator, server profile avatar upload, `computer:restart:done` feedback, mobile push registrations, server-side system notifications contract. Each needs a product decision or a raft_ui widget.
 - raft_ui follow-ups: `RaftTaskStatus` label, profile identity avatar slot and Left/Removed badge slot, member-row name badge and Slack section, sidebar quiet "new" dot. Avoided here to keep `ds-audit` counts and widget previews unchanged.
 - Low-confidence or harmless: followed-thread unread double count on replayed `thread:updated`, DM merge-vs-replace semantics on `channel:updated`, agent model-label catalog on the Computer page, activity sender-name precedence, HistoryLimit banner using the entitlement plan.
 

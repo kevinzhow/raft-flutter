@@ -37,7 +37,9 @@ class RaftInlineBox extends StatelessWidget {
     children: [
       // The strut: an empty inline run in the inherited font / line-height.
       Text('​', style: raftCssText.merge(DefaultTextStyle.of(context).style)),
-      child,
+      // Loose: the child keeps its natural width, but a line that is wider
+      // than the box (an action row at a large text size) can wrap.
+      Flexible(child: child),
     ],
   );
 }

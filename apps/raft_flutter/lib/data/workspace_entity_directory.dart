@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
 
 import '../features/agent_metadata_catalog.dart';
+import 'computer_release_notes.dart';
 import 'computer_upgrade_in_flight.dart';
 import 'migration_error.dart' show migrationPhase;
 import 'runtime_error.dart' show spawnFailureCarrier, spawnLookupReason;
@@ -226,6 +227,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     _tombstones.clear();
     _settled.clear();
     _latestComputerVersion = null;
+    _latestComputerReleaseNotes = null;
     _upgradeAccepted.clear();
     _upgradeSubmitting.clear();
     _offlineObservedAt.clear();
@@ -389,6 +391,10 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     if (kind == WorkspaceEntityKind.computers) {
       final latest = value['latestComputerVersion'];
       _latestComputerVersion = latest is String ? latest : null;
+      final notes = value['latestComputerReleaseNotes'];
+      _latestComputerReleaseNotes = notes is Map
+          ? normalizeComputerReleaseNotes(notes['version'], notes)
+          : null;
     }
     _fromDevice.add(kind);
     _settled.add(kind);
@@ -477,6 +483,9 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
                   ],
                 if (kind == WorkspaceEntityKind.computers)
                   'latestComputerVersion': _latestComputerVersion,
+                if (kind == WorkspaceEntityKind.computers)
+                  'latestComputerReleaseNotes': _latestComputerReleaseNotes
+                      ?.toJson(),
               },
       );
     }
@@ -650,6 +659,17 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   }
 
   String? _latestComputerVersion;
+
+  /// Release notes of that latest version (`latestComputerReleaseNotes` on the
+  /// same read, Web machineStore.ts:339); null when the server sent none.
+  ComputerReleaseNotes? get latestComputerReleaseNotes {
+    synchronize();
+    return _scope?.allows(WorkspaceEntityKind.computers) == true
+        ? _latestComputerReleaseNotes
+        : null;
+  }
+
+  ComputerReleaseNotes? _latestComputerReleaseNotes;
   Map<String, dynamic>? member(String userId) =>
       _lookup(WorkspaceEntityKind.members, userId);
   List<Map<String, dynamic>> rows(WorkspaceEntityKind kind) {
@@ -761,6 +781,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         if (kind == WorkspaceEntityKind.computers) {
           final latest = value is Map ? value['latestComputerVersion'] : null;
           _latestComputerVersion = latest is String ? latest : null;
+          _latestComputerReleaseNotes = computerReleaseNotesOf(value);
         }
         if (kind == WorkspaceEntityKind.agents) {
           _tombstones
@@ -1014,6 +1035,16 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         final patch = <String, dynamic>{
           if (payload['runtimes'] is List)
             'runtimes': List<dynamic>.from(payload['runtimes'] as List),
+          // Source applyCapabilities (task #1268): an explicit detection
+          // state wins; an event that carries an inventory but no state is a
+          // synchronous, authoritative inventory and ends an earlier
+          // detecting / did-not-finish state; one without an inventory never
+          // touches the list.
+          if (payload.containsKey('runtimeDetection'))
+            'runtimeDetection': _copyValue(payload['runtimeDetection'])
+          else if (payload['runtimes'] is List &&
+              row['runtimeDetection'] != null)
+            'runtimeDetection': null,
           for (final key in const [
             'runtimeVersions',
             'hostname',

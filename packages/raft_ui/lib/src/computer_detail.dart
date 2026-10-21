@@ -140,8 +140,23 @@ class RaftComputerDetailData {
     this.upgradeVersion = '',
     this.requestOutcome = RaftComputerUpgradeOutcome.none,
     this.highlightedAgentIds = const {},
+    this.runtimeDetection,
+    this.canRescanRuntimes = false,
+    this.releaseNotes,
   });
   final String id, name, slug, createdLabel;
+
+  /// The explicit detection state while it is pending / did not finish (Web
+  /// `Machine.runtimeDetection`); null when complete or not reported.
+  final RaftRuntimeDetection? runtimeDetection;
+
+  /// Whether the viewer may use the rescan route: the creator or someone with
+  /// Edit Machines.
+  final bool canRescanRuntimes;
+
+  /// Notes of the version this Computer can upgrade to, when the server sent
+  /// them for exactly that version.
+  final RaftComputerReleaseNotes? releaseNotes;
 
   /// Set only while the Computer is offline with an upgrade in flight;
   /// [upgradeVersion] is that request's target.
@@ -187,6 +202,8 @@ class RaftComputerDetailActions {
     this.createAgent,
     this.runtimeChip,
     this.changeModel,
+    this.rescanRuntimes,
+    this.openCreator,
   });
   final Future<void> Function(String name) rename;
   final Future<void> Function(String? description) describe;
@@ -210,6 +227,13 @@ class RaftComputerDetailActions {
   /// Opens the two-step model chooser. True means it finished (including a
   /// partial result), so the view leaves selection mode just like Web.
   final Future<bool> Function(List<String> agentIds)? changeModel;
+
+  /// Asks the Computer which runtimes are installed, right now. Throws
+  /// [RaftRuntimeRescanFailure] when the request did not go through.
+  final Future<void> Function()? rescanRuntimes;
+
+  /// Opens the creator's profile (the Creator row is a button when set).
+  final VoidCallback? openCreator;
 }
 
 /// Text helpers for the Tailwind classes this page writes in JSX.
@@ -1062,6 +1086,14 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                     w: FontWeight.w700,
                   ),
                 ),
+              // Online, the link sits beside the upgrade button instead.
+              if (d.releaseNotes case final notes? when !online) ...[
+                const TextSpan(text: ' '),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: RaftReleaseNotesLink(notes: notes),
+                ),
+              ],
             ],
           ),
         );
@@ -1100,6 +1132,13 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             key: const ValueKey('computer-upgrade-ask-admin'),
             style: ink.note,
           ),
+        if (online && d.runtimeDetection != null)
+          RaftRuntimeDetectionNotice(
+            detection: d.runtimeDetection!,
+            canRescan:
+                d.canRescanRuntimes && widget.actions.rescanRuntimes != null,
+            rescan: widget.actions.rescanRuntimes ?? () async {},
+          ),
         RaftKeyValueRow.child(
           label: 'Detected Runtimes',
           child: Wrap(
@@ -1132,31 +1171,34 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
               RaftKeyValueRow.child(
                 label: 'Creator',
                 child: creator != null
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RaftAvatarSlot(
-                            name: creator.name,
-                            agent: false,
-                            avatarUrl: creator.avatarUrl,
-                            slot: RaftAvatarSlotContext.creatorLink,
-                          ),
-                          const SizedBox(width: 8),
-                          RaftCssText(
-                            creator.name,
-                            style: ink.body(
-                              14,
-                              20,
-                              color: ink.strong,
-                              w: FontWeight.w700,
+                    ? _creatorLink(
+                        creator,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            RaftAvatarSlot(
+                              name: creator.name,
+                              agent: false,
+                              avatarUrl: creator.avatarUrl,
+                              slot: RaftAvatarSlotContext.creatorLink,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          RaftCssText(
-                            '@${creator.handle}',
-                            style: ink.mono(12, 16, color: ink.muted(.5)),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            RaftCssText(
+                              creator.name,
+                              style: ink.body(
+                                14,
+                                20,
+                                color: ink.strong,
+                                w: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            RaftCssText(
+                              '@${creator.handle}',
+                              style: ink.mono(12, 16, color: ink.muted(.5)),
+                            ),
+                          ],
+                        ),
                       )
                     : RaftCssText(
                         'No creator assigned',
@@ -1169,6 +1211,20 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         ),
       ]),
     ]);
+  }
+
+  /// The creator button (Web `openProfile("human", creator.id)`); a plain row
+  /// where the app cannot open profiles.
+  Widget _creatorLink(RaftComputerCreator creator, Widget row) {
+    final open = widget.actions.openCreator;
+    return open == null
+        ? row
+        : RaftInteractive(
+            key: const ValueKey('computer-creator-link'),
+            onPressed: open,
+            semanticLabel: '${creator.name} @${creator.handle}',
+            builder: (context, state) => row,
+          );
   }
 
   Widget _commandStep(String label, String command, {String? copyLabel}) {
@@ -1472,8 +1528,13 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
     final selectedOffline = list.where(
       (a) => selected.contains(a.id) && !a.online,
     );
-    final action = Row(
-      mainAxisSize: MainAxisSize.min,
+    // `flex items-center gap-1.5`; the buttons drop to a second line at a
+    // large text size instead of overflowing the header.
+    final action = Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (manage && list.isNotEmpty) ...[
           if (selectionMode) ...[
@@ -1489,7 +1550,6 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                 }
               }),
             ),
-            const SizedBox(width: 6),
             _smallButton(
               'Cancel',
               glyph: RaftGlyph.x,
@@ -1508,9 +1568,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
             ),
         ],
         if (manage && !selectionMode) ...[
-          if (list.isNotEmpty) const SizedBox(width: 6),
           _smallButton(
-            'Create',
+            'Create Agent',
             glyph: RaftGlyph.plus,
             variant: RaftButtonRecipeVariant.accent,
             onPressed: widget.actions.createAgent ?? () {},
@@ -1790,11 +1849,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
         if (scanned && deleted > 0)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: _DeletedWorkspaceNote(
-              count: deleted,
-              text:
-                  ' ${plural(deleted, 'workspace', 'workspaces')} found — the agent is deleted but its files still remain on disk.',
-            ),
+            child: _DeletedWorkspaceNote(count: deleted),
           ),
         if (sorted.isNotEmpty)
           _gapColumn(6, [
@@ -1968,6 +2023,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                     glyph: RaftGlyph.play,
                     variant: RaftButtonRecipeVariant.accent,
                   ),
+                if (d.releaseNotes case final notes?)
+                  RaftReleaseNotesLink(notes: notes),
               ],
             ),
             if (_outcomeLine(
@@ -2139,9 +2196,8 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
 /// `mb-2 border-2 border-line-muted theme-brutal:border-black bg-fill-muted
 /// theme-brutal:bg-gray-200 px-3 py-2 text-xs text-foreground-strong`.
 class _DeletedWorkspaceNote extends StatelessWidget {
-  const _DeletedWorkspaceNote({required this.count, required this.text});
+  const _DeletedWorkspaceNote({required this.count});
   final int count;
-  final String text;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -2159,13 +2215,20 @@ class _DeletedWorkspaceNote extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           style: style,
-          children: [
-            TextSpan(
-              text: '$count deleted-agent',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            TextSpan(text: text),
-          ],
+          // `machine.detail.deletedWorkspaceBanner`: the count is bold.
+          children: raftRichText(
+            context,
+            count == 1
+                ? '<strong>{count} archived-agent</strong> workspace found — the agent is archived but its files are still on this Computer. Delete them if they are no longer needed.'
+                : '<strong>{count} archived-agent</strong> workspaces found — the agent is archived but its files are still on this Computer. Delete them if they are no longer needed.',
+            {
+              'strong': (inner) => TextSpan(
+                text: inner,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+            },
+            values: {'count': count},
+          ),
         ),
       ),
     );
@@ -2232,7 +2295,10 @@ class _WorkspaceRow extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     RaftRecipeBadge(
-                      status,
+                      // `machine.detail.workspaceStatus.deleted` reads "archived".
+                      status == 'deleted'
+                          ? raftText(context, 'archived')
+                          : status,
                       uppercase: true,
                       appearance: RaftBadgeRecipeAppearance.solid,
                       variant: switch (status) {
@@ -2252,7 +2318,10 @@ class _WorkspaceRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   RaftCssText(
                     status == 'deleted'
-                        ? 'AGENT DELETED. WORKSPACE RETAINED ON DISK.'
+                        ? raftText(
+                            context,
+                            'Agent archived. Workspace still on this Computer.',
+                          ).toUpperCase()
                         : 'NO MATCHING AGENT RECORD FOUND.',
                     style: ink
                         .body(
@@ -2347,8 +2416,13 @@ class _BulkResetDialogState extends State<_BulkResetDialog> {
           padding: const EdgeInsets.all(16),
           child: RaftDialogCard(
             key: const ValueKey('computer-dialog'),
-            title:
-                'Restart ${widget.count} ${widget.count == 1 ? 'Agent' : 'Agents'}',
+            title: raftFormat(
+              context,
+              widget.count == 1
+                  ? 'Restart or reset {count} Agent'
+                  : 'Restart or reset {count} Agents',
+              {'count': widget.count},
+            ),
             onClose: () => Navigator.of(context).pop(),
             child: Column(
               mainAxisSize: MainAxisSize.min,

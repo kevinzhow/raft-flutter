@@ -368,6 +368,25 @@ class AgentModelLabelCatalog {
   final Map<String, Map<String, Map<String, String>>> machines;
 }
 
+/// The accepted catalog of each owner (a workspace session's catalog store), by
+/// scope: lets [agentPresentationModelLabel] find the server's shared name
+/// without every caller threading the store through. A row's scope names the
+/// session it belongs to, so a stale scope never matches.
+abstract final class AgentModelLabelRegistry {
+  static final _byOwner = <Object, AgentModelLabelCatalog>{};
+
+  static void accept(Object owner, AgentModelLabelCatalog value) =>
+      _byOwner[owner] = value;
+  static void forget(Object owner) => _byOwner.remove(owner);
+
+  static AgentModelLabelCatalog? of(AgentPresentationScope scope) {
+    for (final catalog in _byOwner.values) {
+      if (catalog.scope == scope) return catalog;
+    }
+    return null;
+  }
+}
+
 String? agentPresentationModelLabel({
   required AgentPresentationScope scope,
   required AgentPresentationIdentity identity,
@@ -376,6 +395,7 @@ String? agentPresentationModelLabel({
 }) {
   final model = identity.model;
   if (!showModelName || model == null || model.isEmpty) return null;
+  catalog ??= AgentModelLabelRegistry.of(scope);
   if (catalog?.scope == scope) {
     final label =
         catalog!.machines[identity.machineId]?[identity.runtime]?[model];

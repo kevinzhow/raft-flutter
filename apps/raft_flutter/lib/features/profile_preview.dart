@@ -12,9 +12,9 @@ import '../data/runtime_config.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_detail_view.dart' show agentTimeFormatter;
-import 'agent_metadata_catalog.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'agent_trajectory_log.dart';
+import 'model_label_catalog.dart';
 import 'agent_metadata_projection.dart';
 import 'resource_cards.dart' show resourceRelativeTime;
 
@@ -257,6 +257,7 @@ class ProfilePreviewContent extends StatefulWidget {
 class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   WorkspaceController get w => widget.controller;
   StreamSubscription<RaftEvent>? events;
+  late final ModelLabelCatalogStore modelLabels;
   Map<String, dynamic>? fetched;
   bool fetching = false;
   _HoverActivity? activity;
@@ -265,6 +266,7 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   void initState() {
     super.initState();
     w.services.entityDirectory.addListener(changed);
+    modelLabels = ModelLabelCatalogStore.of(w)..addListener(changed);
     events = w.client.events.listen(event);
     // A revisited card shows the activity it already read at its first frame.
     if (widget.agent && private) {
@@ -280,6 +282,7 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
   void dispose() {
     events?.cancel();
     w.services.entityDirectory.removeListener(changed);
+    modelLabels.removeListener(changed);
     super.dispose();
   }
 
@@ -479,7 +482,12 @@ class _ProfilePreviewContentState extends State<ProfilePreviewContent> {
                 raftText(context, 'Model'),
                 model.isEmpty || model == 'default'
                     ? raftText(context, 'Default')
-                    : sourceRuntimeModelLabels[runtime]?[model] ?? model,
+                    : modelDisplayLabel(
+                        w,
+                        machineId: machineId is String ? machineId : null,
+                        runtime: runtime,
+                        model: model,
+                      ),
               ),
               if (reasoning != null)
                 RaftProfilePreviewFact(

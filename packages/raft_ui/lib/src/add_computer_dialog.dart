@@ -92,8 +92,13 @@ class RaftAddComputerDialog extends StatefulWidget {
   State<RaftAddComputerDialog> createState() => _RaftAddComputerDialogState();
 }
 
+/// Web `WAITING_HINT_DELAY_MS`: how long "waiting for computer" runs before the
+/// dialog points at the terminal (the browser cannot see a failed install).
+const raftAddComputerWaitingHintDelay = Duration(seconds: 45);
+
 class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
-  bool waiting = false, registering = false;
+  bool waiting = false, registering = false, waitingStalled = false;
+  final stalledTimer = RaftIdleTimer(yieldToAnimation: false);
   bool confirmedComputerMatch = false, saving = false;
   bool nameEdited = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next register attempt starts; the dialog state is dropped when it closes.
@@ -126,6 +131,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
 
   @override
   void dispose() {
+    stalledTimer.cancel();
     name.dispose();
     super.dispose();
   }
@@ -137,7 +143,12 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
     });
     try {
       await widget.register();
-      if (mounted) setState(() => waiting = true);
+      if (mounted) {
+        setState(() => waiting = true);
+        stalledTimer.start(raftAddComputerWaitingHintDelay, () {
+          if (mounted) setState(() => waitingStalled = true);
+        });
+      }
     } catch (e) {
       if (mounted) {
         setState(
@@ -352,6 +363,23 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
             ),
           ),
         ),
+        if (waitingStalled) ...[
+          const SizedBox(height: 8),
+          // `-mt-2 mb-4 text-footnote text-foreground-muted`.
+          Text(
+            raftText(
+              context,
+              'Still waiting? Check the terminal where you ran the command. If it says Raft Computer is already running, or the install failed, use "Already have Raft Computer on this machine?" above.',
+            ),
+            key: const ValueKey('add-computer-still-waiting'),
+            style: RaftTypography.body(
+              t,
+              size: 12,
+              line: 20,
+              color: raftPanelInk(t, .6, t.colors['foreground-muted']!),
+            ),
+          ),
+        ],
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -473,7 +501,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
 /// segmented control, the platform description, and the install / setup
 /// [RaftCopyableCode] rows. [commands] is (install, setup) of the selected
 /// platform; null renders the "generate a fresh command" notice.
-class RaftComputerCommandGuide extends StatelessWidget {
+class RaftComputerCommandGuide extends StatefulWidget {
   const RaftComputerCommandGuide({
     super.key,
     required this.platform,
@@ -490,12 +518,27 @@ class RaftComputerCommandGuide extends StatelessWidget {
   final String? installAndSetup;
 
   @override
+  State<RaftComputerCommandGuide> createState() =>
+      _RaftComputerCommandGuideState();
+}
+
+class _RaftComputerCommandGuideState extends State<RaftComputerCommandGuide> {
+  /// The "Already have Raft Computer on this machine?" disclosure: the
+  /// one-line command installs first and only connects if that succeeds, so a
+  /// machine that already runs it could never get past "waiting" without the
+  /// connect-only command (Web bug-triage task #22).
+  bool showConnectOnly = false;
+
+  String get platform => widget.platform;
+  String? get installAndSetup => widget.installAndSetup;
+
+  @override
   Widget build(BuildContext context) =>
       LayoutBuilder(builder: (context, box) => _build(context, box.maxWidth));
 
   Widget _build(BuildContext context, double available) {
     final t = RaftTokens.of(context);
-    final c = commands;
+    final c = widget.commands;
     final windows = platform == 'windows';
     // Tailwind `sm` (640px viewport); a guide in a host too narrow for the
     // heading beside the platform control stacks them instead of overflowing.
@@ -545,7 +588,7 @@ class RaftComputerCommandGuide extends StatelessWidget {
             SizedBox(width: narrow ? 0 : 12, height: narrow ? 8 : 0),
             RaftRecipeSegmentedControl<String>(
               value: platform,
-              onChanged: onPlatform,
+              onChanged: widget.onPlatform,
               items: const [
                 ('mac-linux', null, 'macOS / Linux'),
                 ('windows', null, 'Windows x64'),
@@ -577,13 +620,47 @@ class RaftComputerCommandGuide extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
-        if (c != null && !windows && installAndSetup != null)
+        if (c != null && !windows && installAndSetup != null) ...[
           // One displayed step: no step label, and the generic CLI copy label.
           RaftCopyableCode(
             installAndSetup!,
             copyLabel: 'Copy Computer CLI command',
-          )
-        else if (c != null)
+          ),
+          const SizedBox(height: 8),
+          RaftUnderlineTextButton(
+            key: const ValueKey('computer-command-already-installed'),
+            label: raftText(
+              context,
+              'Already have Raft Computer on this machine?',
+            ),
+            style: RaftTypography.body(
+              t,
+              size: 12,
+              line: 16,
+              weight: FontWeight.w600,
+              color: t.brutal ? Colors.black : t.colors['foreground'],
+            ),
+            onPressed: () => setState(() => showConnectOnly = !showConnectOnly),
+          ),
+          if (showConnectOnly) ...[
+            const SizedBox(height: 8),
+            Column(
+              key: const ValueKey('computer-command-connect-only'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  raftText(
+                    context,
+                    'Skip the install and only connect it to this server. If raft-computer is not found, run it as ~/.local/bin/raft-computer.',
+                  ),
+                  style: note,
+                ),
+                const SizedBox(height: 8),
+                RaftCopyableCode(c.$2, copyLabel: 'Copy 2. setup command'),
+              ],
+            ),
+          ],
+        ] else if (c != null)
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

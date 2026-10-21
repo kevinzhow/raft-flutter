@@ -5750,15 +5750,19 @@
    "status": "partial",
    "webEntry": "modelLabelCatalogStore.watchModelLabelCatalog (MainLayout) feeding catalogModelLabel in agent profile, create/edit model selects and message headers",
    "gate": "background; any member",
-   "flutterEntry": "agent_metadata_catalog.dart sourceRuntimeModelLabels (bundled static map generated at Web v1.21.12 by apps/raft_flutter/tool/gen_runtime_catalog.mjs, no server fetch)",
+   "flutterEntry": "model_label_catalog.dart ModelLabelCatalogStore (GET /servers/:id/model-label-catalog, 5 min window, 60 s back-off) feeding message sender rows (agentPresentationModelLabel), the Computer page agent rows and the profile hover card; the bundled sourceRuntimeModelLabels remains the fallback",
    "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/model_label_catalog.dart",
+     "needle": "/model-label-catalog"
+    },
     {
      "file": "apps/raft_flutter/lib/features/agent_metadata_catalog.dart",
      "needle": "sourceRuntimeModelLabels"
     }
    ],
-   "justification": "Flutter never calls the endpoint; it shows names from a bundled label table, so newly added or server-customised model labels render as raw ids until the app is rebuilt.",
-   "impact": "Cosmetic: model names may show as raw ids for new models.",
+   "justification": "The agent profile page (agent_detail_view.dart) and the create-agent model select still resolve names from the bundled table only; they move with the Agent profile and New Agent packages.",
+   "impact": "Cosmetic: a model the server names itself still shows as a raw id on those two surfaces.",
    "size": "S"
   },
   {
@@ -7415,10 +7419,10 @@
    "area": "agents-computers-runtimes",
    "capability": "Computer detail info: OS, version with up-to-date/available, detected runtimes (usage chips), created, creator profile link, low-disk banner",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MachineDetailPanel Info block + disk-low banner",
    "gate": "any viewer",
-   "flutterEntry": "computer_detail_view.dart data() + RaftComputerDetailView",
+   "flutterEntry": "computer_detail_view.dart data() + RaftComputerDetailView; the Creator row opens the creator's profile (openCreator)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
@@ -7427,11 +7431,15 @@
     {
      "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
      "needle": "_runtimeChip"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
+     "needle": "openCreator"
     }
    ],
-   "justification": "Creator row is not tappable (Web opens the creator's profile).",
-   "impact": "Admins cannot jump from a computer to its creator's profile; cosmetic.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -7483,14 +7491,71 @@
    "area": "agents-computers-runtimes",
    "capability": "'What's new' release notes dialog beside 'update available'",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "MachineDetailPanel > Computer version / Actions card > ComputerReleaseNotesAffordance",
    "gate": "update available and notes text present",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "No Flutter equivalent (docs/field-parity.md line 66 lists latestComputerReleaseNotes as Web-only).",
-   "impact": "Admins deciding whether to upgrade cannot read the changelog in-app.",
-   "size": "S"
+   "flutterEntry": "computer_detail_view.dart _releaseNotes() + raft_ui computer_release_notes.dart RaftReleaseNotesLink / showRaftComputerReleaseNotes (offline: beside the available version; online: beside Upgrade)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/computer_detail_view.dart",
+     "needle": "_releaseNotes"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/computer_release_notes.dart",
+     "needle": "showRaftComputerReleaseNotes"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:computers.runtime-detection-rescan",
+   "area": "agents-computers-runtimes",
+   "capability": "Computer detail: runtime detection state (detecting / did not finish, with the unchecked runtimes) and 'Rescan runtimes' (creator or Edit Machines; 403 has its own message)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "MachineDetailPanel machine-runtime-detection + useRuntimeRescan (POST /servers/:id/machines/:id/runtimes/rescan)",
+   "gate": "online Computer; rescan: creator, attaching human or editMachines",
+   "flutterEntry": "computer_detail_view.dart data() runtimeDetection + _rescanRuntimes; computer_runtime_detection.dart; raft_ui computer_runtime_detection.dart RaftRuntimeDetectionNotice",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/computer_runtime_detection.dart",
+     "needle": "/runtimes/rescan"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/computer_runtime_detection.dart",
+     "needle": "machine-runtime-detection-rescan"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:computers.connect-only-command",
+   "area": "agents-computers-runtimes",
+   "capability": "Add Computer / setup: 'Already have Raft Computer on this machine?' connect-only command, and the still-waiting hint after 45 seconds",
+   "background": false,
+   "status": "covered",
+   "webEntry": "ComputerCommandGuide showConnectOnly; AddMachineDialog waitingStalled (WAITING_HINT_DELAY_MS)",
+   "gate": "macOS / Linux one-paste command",
+   "flutterEntry": "raft_ui add_computer_dialog.dart RaftComputerCommandGuide + raftAddComputerWaitingHintDelay",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/add_computer_dialog.dart",
+     "needle": "computer-command-already-installed"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/add_computer_dialog.dart",
+     "needle": "raftAddComputerWaitingHintDelay"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

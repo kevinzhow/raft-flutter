@@ -858,9 +858,10 @@ void registerCloseDialogTests(TestPart part) {
       (context, w) => unawaited(showWorkspaceMenuInvite(context, w)),
     ),
   };
+  // The release-notes dialog has its own file (close_release_notes_test.dart).
   final surfaces = [
     for (final surface in dialogSurfaces)
-      if (part.claim()) surface,
+      if (surface.id != 'computer-release-notes' && part.claim()) surface,
   ];
   registerCloseTests(surfaces, harness);
   registerNoScrimTests(surfaces, harness);

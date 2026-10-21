@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import '../data/workspace_controller.dart';
 import 'agent_metadata_projection.dart';
 import 'message_reference_directory.dart';
+import 'model_label_catalog.dart';
 import 'private_route_guard.dart';
 
 /// Message metadata borrows the workspace's accepted Agent state. Event
@@ -16,8 +17,15 @@ class MessageAgentPresentation extends ChangeNotifier {
     directory.addListener(changed);
     w.addListener(changed);
     directory.store.addListener(_presenceChanged);
+    // Sender rows name a model from the server's shared catalog, so they
+    // repaint when it arrives. The session loads it once (Web
+    // watchModelLabelCatalog); pages only read.
+    modelLabels = ModelLabelCatalogStore.of(w)
+      ..addListener(notifyListeners)
+      ..load();
     changed();
   }
+  late final ModelLabelCatalogStore modelLabels;
   final WorkspaceController w;
   final MessageReferenceDirectory directory;
   bool ended = false;
@@ -154,6 +162,7 @@ class MessageAgentPresentation extends ChangeNotifier {
     directory.store.removeListener(_presenceChanged);
     directory.removeListener(changed);
     w.removeListener(changed);
+    modelLabels.removeListener(notifyListeners);
     for (final signal in _presence.values) {
       signal.dispose();
     }

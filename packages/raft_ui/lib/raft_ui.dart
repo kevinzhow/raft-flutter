@@ -193,6 +193,8 @@ export 'src/copyable_code.dart';
 export 'src/computer_surfaces.dart';
 export 'src/mobile_computer_list.dart';
 export 'src/computer_detail.dart';
+export 'src/computer_release_notes.dart';
+export 'src/computer_runtime_detection.dart';
 export 'src/bulk_model_stepper.dart';
 export 'src/add_computer_dialog.dart';
 export 'src/channel_settings_sheet.dart';

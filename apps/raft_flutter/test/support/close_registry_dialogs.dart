@@ -73,6 +73,16 @@ const dialogSurfaces = <CloseSurface>[
     fix: 'scrim press: RaftAgentDialogCard.onBackdrop (the card scroll view swallowed it)',
   ),
   CloseSurface(
+    'computer-release-notes',
+    kind: SurfaceKind.dialog,
+    web: 'ComputerReleaseNotesAffordance.tsx DialogCard closeOnBackdrop: X + Esc + backdrop',
+    phone: {_x, _esc, _scrim, _sys},
+    fold: {_x, _esc, _scrim, _sys},
+    desktop: {_x, _esc, _scrim, _sys},
+    files: ['../../packages/raft_ui/lib/src/computer_release_notes.dart'],
+    status: 'ok',
+  ),
+  CloseSurface(
     'sidebar-section-dialog',
     kind: SurfaceKind.dialog,
     web:

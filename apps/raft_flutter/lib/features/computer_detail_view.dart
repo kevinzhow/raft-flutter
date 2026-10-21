@@ -10,14 +10,16 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/computer_upgrade_in_flight.dart';
+import '../data/raft_location.dart' show RaftProfileKind;
 import '../data/user_error.dart';
 import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
-import 'agent_metadata_catalog.dart';
 import 'agent_metadata_projection.dart';
+import 'computer_runtime_detection.dart';
 import 'computer_setup_commands.dart';
+import 'model_label_catalog.dart';
 import 'computer_upgrade_outcome.dart';
 import 'runtime_usage_chip.dart';
 import 'bulk_agent_model_change.dart';
@@ -287,11 +289,16 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     w.services.entityDirectory.addListener(_changed);
     w.addListener(_authorityChanged);
     w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+    // The agent rows name their models from the server's catalog, which the
+    // session loads once (Web watchModelLabelCatalog); this page only reads.
+    modelLabels = ModelLabelCatalogStore.of(w)..addListener(_changed);
     bulkScope = pageIdentity(w);
     bulkModelEnabled = cachedServerFlag(w, bulkModelFlag) ?? false;
     unawaited(_evaluateBulkModel());
     _scheduleReceipt();
   }
+
+  late ModelLabelCatalogStore modelLabels;
 
   @override
   void didUpdateWidget(ComputerDetailPanel old) {
@@ -299,9 +306,11 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     if (!identical(old.controller, w)) {
       old.controller.services.entityDirectory.removeListener(_changed);
       old.controller.removeListener(_authorityChanged);
+      modelLabels.removeListener(_changed);
       w.services.entityDirectory.addListener(_changed);
       w.addListener(_authorityChanged);
       w.services.entityDirectory.ensure([WorkspaceEntityKind.agents]);
+      modelLabels = ModelLabelCatalogStore.of(w)..addListener(_changed);
     }
     if (pageIdentity(w) != bulkScope || !identical(old.controller, w)) {
       bulkScope = pageIdentity(w);
@@ -319,6 +328,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
   void dispose() {
     w.services.entityDirectory.removeListener(_changed);
     w.removeListener(_authorityChanged);
+    modelLabels.removeListener(_changed);
     receiptTimer.cancel();
     super.dispose();
   }
@@ -453,7 +463,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
           if (!value.success && canManage)
             RaftAgentDialogButton(
               key: const ValueKey('bulk-model-try-again'),
-              label: raftText(context, 'Try again'),
+              label: raftTextZh(context, 'Try Again', '重试'),
               size: RaftButtonRecipeSize.sm,
               onPressed: () =>
                   _changeModels(value.unfinished.keys.toList(), retry: value),
@@ -624,7 +634,14 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     final creator = m['creator'];
     final disk = computerDiskLow(m);
     final version = m['computerVersion'];
+    final detection = computerRuntimeDetection(
+      m,
+      (rid) => runtimeLabelWithStatus(context, rid),
+    );
     return RaftComputerDetailData(
+      runtimeDetection: detection,
+      canRescanRuntimes: canRescanComputerRuntimes(w, m),
+      releaseNotes: _releaseNotes(fact),
       id: id,
       name: '${m['name'] ?? ''}',
       description: m['description'] as String?,
@@ -691,13 +708,45 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
     );
   }
 
-  static String _agentSubtitle(BuildContext context, Map a) {
+  /// The notes of the version this Computer can upgrade to, in the UI
+  /// language; only when the server sent them for exactly that version (Web
+  /// releaseNotesForUpdate).
+  RaftComputerReleaseNotes? _releaseNotes(ComputerVersionFact fact) {
+    final notes = w.services.entityDirectory.latestComputerReleaseNotes;
+    if (notes == null ||
+        fact is! ComputerVersionOutdated ||
+        notes.version != fact.available) {
+      return null;
+    }
+    final text = notes.text(
+      chinese: Localizations.maybeLocaleOf(context)?.languageCode == 'zh',
+    );
+    return text == null
+        ? null
+        : RaftComputerReleaseNotes(version: notes.version, text: text);
+  }
+
+  String _agentSubtitle(BuildContext context, Map a) {
     final runtime = '${a['runtime'] ?? ''}';
     final model = '${a['model'] ?? ''}';
     return [
       runtimeLabelWithStatus(context, runtime),
-      if (model.isNotEmpty) sourceRuntimeModelLabels[runtime]?[model] ?? model,
+      if (model.isNotEmpty)
+        modelDisplayLabel(
+          w,
+          machineId: a['machineId'] as String?,
+          runtime: runtime,
+          model: model,
+        ),
     ].where((s) => s.isNotEmpty).join(' · ');
+  }
+
+  /// The daemon answers a rescan by re-emitting its capabilities (a
+  /// `machine:capabilities` push); the catalog is read again after a live
+  /// detect (Web modelLabelCatalogStore).
+  Future<void> _rescanRuntimes() async {
+    await rescanComputerRuntimes(w, id);
+    modelLabels.load(force: true);
   }
 
   Future<void> _refreshComputers() => w.services.entityDirectory.refresh(
@@ -860,6 +909,14 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
       createAgent: widget.onCreateAgent,
       runtimeChip: _runtimeChip,
       changeModel: bulkModelEnabled && canManage ? _changeModels : null,
+      rescanRuntimes: _rescanRuntimes,
+      openCreator: switch (m['creator']) {
+        {'id': final String creator} => () => w.openProfile(
+          RaftProfileKind.human,
+          creator,
+        ),
+        _ => null,
+      },
     ),
   );
 
