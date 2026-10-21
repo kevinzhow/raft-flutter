@@ -6,7 +6,7 @@ import 'theme.dart';
 import 'tokens/tokens.dart';
 import 'design_primitives.dart';
 
-/// raft-ui 0.5.27 FilePreviewBadge and message-image-gallery primitives.
+/// raft-ui 0.5.52 FilePreviewBadge and message-image-gallery primitives.
 /// OKLCH roles are resolved by the actual Chromium renderer and retained in
 /// attachment-badge-colors.json; dimensions come from the pinned recipe.
 abstract final class AttachmentPrimitive {

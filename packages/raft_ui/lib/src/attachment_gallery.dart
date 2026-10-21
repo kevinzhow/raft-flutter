@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'attachment_tokens.dart';
 import 'theme.dart';
 
-/// Pure row allocation ported from raft-ui 0.5.27 message-image-gallery-rows.
+/// Pure row allocation ported from raft-ui 0.5.52 message-image-gallery-rows.
 /// Media bytes, capabilities and preview operations belong to the app adapter.
 List<List<int>> raftImageGalleryRows(
   List<({double? width, double? height})> images,

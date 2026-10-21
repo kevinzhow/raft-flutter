@@ -2,6 +2,8 @@
 
 Source RUI0.5.27 / pinned 26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6. Native HEAD cad434fc630733cf4519af7d8f344078fe2318cf; file SHAs capture the frozen working tree.
 
+Historical snapshot (2026-10-08). The app is being aligned to Web v1.21.12 / raft-ui 0.5.52; the current source pin is in `docs/upstream-sync.md`. The numbers below were measured at the pinned source above and were not re-measured.
+
 This is an implementation/provenance audit, not pixel acceptance. Every scoped public class is inventoried; unmatched consumer rules stay partial. Library defaults and mounted product overrides are distinct.
 
 ## Findings and minimal shared corrections

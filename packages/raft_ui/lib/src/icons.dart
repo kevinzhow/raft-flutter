@@ -400,7 +400,7 @@ RaftGlyph? raftGlyphForMaterialIcon(IconData icon) => {
   Icons.done_all: RaftGlyph.checkCheck,
 }[icon];
 
-/// raft-ui 0.5.27 ChatIcon (dist/index.mjs:18975), with its 18-unit artwork.
+/// raft-ui 0.5.52 ChatIcon (dist/index.mjs), with its 18-unit artwork.
 class RaftChatIcon extends StatelessWidget {
   const RaftChatIcon({
     super.key,
@@ -472,7 +472,7 @@ class _ChatIconPainter extends CustomPainter {
       old.color != color || old.strokeWidth != strokeWidth;
 }
 
-/// raft-ui0.5.27 DirectMessageIcon (dist/index.mjs19015).
+/// raft-ui 0.5.52 DirectMessageIcon (dist/index.mjs).
 class RaftDirectMessageIcon extends StatelessWidget {
   const RaftDirectMessageIcon({super.key, this.size = 18, this.color});
   final double size;
@@ -535,7 +535,7 @@ class _DirectMessageIconPainter extends CustomPainter {
   bool shouldRepaint(_DirectMessageIconPainter old) => old.color != color;
 }
 
-/// raft-ui0.5.27 ThreadIcon (dist/index.mjs19040).
+/// raft-ui 0.5.52 ThreadIcon (dist/index.mjs).
 /// The product uses this 18-unit two-bubble SVG for search thread metadata.
 class RaftThreadIcon extends StatelessWidget {
   const RaftThreadIcon({super.key, this.size = 18, this.color});

@@ -32,7 +32,7 @@ abstract final class RaftPopoverShadowRoles {
       .withValues(alpha: alpha);
 }
 
-/// Tier 3: actual RUI0.5.27 PopoverPopup, NOT the DropdownMenu recipe.
+/// Tier 3: actual RUI 0.5.52 PopoverPopup, NOT the DropdownMenu recipe.
 /// Original index.mjs5893/5902 maps Brutal→LG and Elegant→XL. There is no
 /// Popover XS size API. Business padding/position/width belong to the caller.
 @immutable

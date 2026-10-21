@@ -66,7 +66,7 @@ class RaftControlBounds {
   double get visualBoundsHeight => visualHeight;
 }
 
-/// Shared recipe geometry from raft-ui 0.5.27 and pinned Web product overrides.
+/// Shared recipe geometry from raft-ui 0.5.52 and pinned Web product overrides.
 /// Visual dimensions are independent of the native accessible touch rectangle.
 abstract final class RaftMetrics {
   static const double touchTarget = 48;
@@ -2948,7 +2948,7 @@ class _RaftSegmentedControlState<T> extends State<RaftSegmentedControl<T>> {
 }
 
 /// Original PickerTriggerButton, not the generic Button outline variant.
-/// Source: raft-ui0.5.27 index.mjs7146; Search activeFilterClass2173.
+/// Source: raft-ui 0.5.52 index.mjs, Search activeFilterClass.
 class RaftPickerTriggerRecipe extends RaftControlRecipe {
   const RaftPickerTriggerRecipe(
     super.tokens, {

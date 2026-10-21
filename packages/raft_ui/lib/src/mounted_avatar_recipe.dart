@@ -56,7 +56,7 @@ abstract final class RaftAvatarStatusPrimitives {
   static const offline = Color(0xff99a1af);
 }
 
-/// Tier 3: AvatarSlot SPEC/RAFT_AVATAR_SPEC and RUI0.5.27 avatar recipe.
+/// Tier 3: AvatarSlot SPEC/RAFT_AVATAR_SPEC and RUI 0.5.52 avatar recipe.
 @immutable
 class RaftMountedAvatarRecipe {
   const RaftMountedAvatarRecipe(this.tokens, this.avatarContext, this.identity);

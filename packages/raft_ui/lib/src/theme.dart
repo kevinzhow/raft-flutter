@@ -283,7 +283,7 @@ class RaftFieldRecipe {
 }
 
 /// Original dark Input's two inset shadows and outer bottom shadow.
-/// Source: raft-ui 0.5.27 input.recipe, after semantic role resolution.
+/// Source: raft-ui 0.5.52 input.recipe, after semantic role resolution.
 @immutable
 class RaftFieldInsetRecipe {
   const RaftFieldInsetRecipe(this.tokens);

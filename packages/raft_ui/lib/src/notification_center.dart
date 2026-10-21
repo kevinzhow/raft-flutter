@@ -10,7 +10,7 @@ import 'recipe_surface.dart';
 import 'recipes/notification_center.g.dart';
 import 'theme.dart';
 
-/// Pure status roles from raft-ui 0.5.27; the mounted app emits the first three.
+/// Pure status roles from raft-ui 0.5.52; the mounted app emits the first three.
 enum RaftNotificationKind { error, warning, info, success }
 
 @immutable

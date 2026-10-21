@@ -8,7 +8,7 @@ import 'theme.dart';
 
 enum RaftSwitchSize { sm, md }
 
-/// Semantic roles resolved from the original raft-ui 0.5.27 switch recipe.
+/// Semantic roles resolved from the raft-ui 0.5.52 switch recipe.
 @immutable
 class RaftSwitchSemanticTokens {
   const RaftSwitchSemanticTokens(this.tokens);

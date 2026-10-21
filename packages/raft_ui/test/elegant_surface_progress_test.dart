@@ -6,7 +6,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
 // Pinned Source SurfaceListItem.tsx 17–39, ProgressBar.tsx 47–66,
-// raft-ui 0.5.27 input/progress recipes. Actual SDK components; these do not
+// raft-ui 0.5.52 input/progress recipes. Actual SDK components; these do not
 // count as product-page or native-platform evidence.
 Widget host(ThemeData theme, Widget child) => MaterialApp(
   theme: theme,

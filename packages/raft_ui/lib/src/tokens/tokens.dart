@@ -1,4 +1,4 @@
-/// Design tokens generated from raft-ui 0.5.27 CSS by `tool/gen-tokens`.
+/// Design tokens generated from raft-ui 0.5.52 CSS by `tool/gen-tokens`.
 ///
 /// Tiers: [RaftPrimitiveColors] (raw ramps) → [RaftSemanticColors] (theme
 /// blocks) / [RaftProductColors] (Tailwind aliases incl. Web product

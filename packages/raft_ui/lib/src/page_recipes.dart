@@ -5,7 +5,7 @@ import 'settings_layout.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 
-/// Component layer, traced to raft-ui0.5.27 search recipe (dist/index.mjs) and
+/// Component layer, traced to raft-ui 0.5.52 search recipe (dist/index.mjs) and
 /// pinned SettingsProfileCard.tsx. Components consume shared semantic roles;
 /// individual pages do not own a second color or typography palette.
 class RaftSearchRecipe {

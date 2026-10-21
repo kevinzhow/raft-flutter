@@ -15,7 +15,7 @@ Derivation (raft-source 26f77ef, packages/web/src):
   components/ui/OverflowSheet.tsx       OverflowMenuTrigger (Button icon-sm outline + Tooltip)
   components/message/ThreadPanel.tsx    side thread header (title, parent label,
                                          ThreadOverflowMenu, Close)
-  raft-ui 0.5.27 panel-header / conversation-panel recipes
+  raft-ui 0.5.52 panel-header / conversation-panel recipes
 Ids: components.channelheader.<platform>.<state>.<theme>. Each case captures a
 window at the top of the conversation column (or the side thread column):
 React mounts the real ChatPanel / ThreadPanel in a column-sized box, Flutter

@@ -6,7 +6,7 @@ import 'design_primitives.dart';
 import 'tokens/tokens.dart';
 import 'theme.dart';
 
-/// Exact pinned raft-ui 0.5.27 messageEmbed/messageForwardedBundle and solid
+/// Exact pinned raft-ui 0.5.52 messageEmbed/messageForwardedBundle and solid
 /// success Badge primitives. See dist/index.mjs; colors resolve through the
 /// shared semantic palette rather than duplicating sampled PNG literals.
 abstract final class RichCardPrimitive {
