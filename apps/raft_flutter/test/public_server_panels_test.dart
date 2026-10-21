@@ -120,7 +120,7 @@ void main() {
       expect(_width(t, 'public-server-channel-sidebar'), 240);
     });
 
-    testWidgets('below sm the columns keep their CSS widths and no handle', (
+    testWidgets('below sm the channel list is the page and has no handle', (
       t,
     ) async {
       SharedPreferences.setMockInitialValues({
@@ -128,7 +128,8 @@ void main() {
       });
       await mountPublicServer(t, size: const Size(600, 800));
       expect(_sidebarHandle, findsNothing);
-      expect(_width(t, 'public-server-channel-sidebar'), 144);
+      // One column at a time (Web v1.21.23): the list fills the width.
+      expect(_width(t, 'public-server-channel-sidebar'), 600);
     });
   });
 

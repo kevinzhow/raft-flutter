@@ -14690,6 +14690,259 @@
   },
   {
    "kind": "endpoint",
+   "id": "GET /public/servers/:id/attachments/:id",
+   "area": "public-guest",
+   "capability": "Read a public message attachment (inline image, preview text/PDF, ?download=1)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PublicServerPage ReadOnlyAttachmentUrlContext (ReadOnlyMessageAttachments.tsx)",
+   "gate": "public server; anonymous or signed-in non-member",
+   "flutterEntry": "public_attachments.dart PublicAttachments / PublicAttachmentUrls",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_attachments.dart",
+     "needle": "attachments/"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /public/servers/:id/message-translations:batch",
+   "area": "public-guest",
+   "capability": "Translate the public messages on screen for an anonymous or non-member visitor",
+   "background": false,
+   "status": "covered",
+   "webEntry": "translationStore requestTranslations with publicTranslationSlug",
+   "gate": "server.translationEnabled and a configured provider",
+   "flutterEntry": "message_translation_store.dart usePublicServer(): slug-scoped batch route",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/message_translation_store.dart",
+     "needle": "message-translations:batch"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PATCH /servers/:id/public-search",
+   "area": "public-guest",
+   "capability": "Allow or stop search engines listing the public channels",
+   "background": false,
+   "status": "covered",
+   "webEntry": "Server Profile > Public access > Allow search engines switch",
+   "gate": "owner only, flag public_server_v0; the server flag public_server_search_index_v0 decides whether the server accepts it",
+   "flutterEntry": "public_visibility_view.dart search switch",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_visibility_view.dart",
+     "needle": "/public-search"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /public-visits/:id",
+   "area": "public-guest",
+   "capability": "Count a public page view, channel open or thread open (RFC-067)",
+   "background": false,
+   "status": "na",
+   "webEntry": "analytics/publicVisits.ts recordPublicVisit",
+   "gate": "logged-out browser visitors",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web-only usage statistics for the browser page: the app has no cookie-consent surface and sends no public-page visit counts (plan WP-PUB decision).",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.attachments",
+   "area": "public-guest",
+   "capability": "Attachments of public messages: image gallery with lightbox and download, previews for markdown, text and PDF, other files download",
+   "background": false,
+   "status": "covered",
+   "webEntry": "ReadOnlyMessageAttachments.tsx",
+   "gate": "",
+   "flutterEntry": "public_attachments.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_attachments.dart",
+     "needle": "class PublicAttachments"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.rich-message-parts",
+   "area": "public-guest",
+   "capability": "Public messages show @mentions, reaction counts and the inline thread reply preview",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PublicMessageRow.tsx, toReadOnlyMessage",
+   "gate": "",
+   "flutterEntry": "public_server_view.dart row(): mentionReferences, reactions, inlineReplies",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
+     "needle": "inlineReplies("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
+     "needle": "mentionReferences("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.translation",
+   "area": "public-guest",
+   "capability": "Translate public messages (mode, target, default view), indicator and Show original",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PublicServerPage useTranslationBatch + TranslationIndicator",
+   "gate": "server.translationEnabled; a signed-out visitor keeps the choices on the device",
+   "flutterEntry": "public_translation.dart, public_language_settings.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_translation.dart",
+     "needle": "publicTranslationStatus"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/public_language_settings.dart",
+     "needle": "class PublicLanguageRegionPage"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.phone-one-column",
+   "area": "public-guest",
+   "capability": "Phones show the channel list, then one channel with Back to channels",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PublicServerPage phoneView + pages.publicServer.backToChannels",
+   "gate": "",
+   "flutterEntry": "public_server_view.dart phoneChannel / showChannelList",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
+     "needle": "showChannelList"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.bottom-banner-under-conversation",
+   "area": "public-guest",
+   "capability": "The sign in / join banner sits under the conversation and thread, the channel column runs the full height",
+   "background": false,
+   "status": "covered",
+   "webEntry": "PublicServerPage columns grid (task #123)",
+   "gate": "",
+   "flutterEntry": "public_server_view.dart build(): banner inside the right column",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
+     "needle": "final bottom = RaftPublicBottomBanner("
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.cookie-consent",
+   "area": "public-guest",
+   "capability": "Cookie choice banner and Cookie settings for logged-out visitors",
+   "background": false,
+   "status": "na",
+   "webEntry": "PublicCookieConsent.tsx, publicVisitorConsent.ts",
+   "gate": "logged-out browser visitors",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "Web-only (plan WP-PUB decision): the visitor id and visit counts exist for browser pages; the app records neither.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:server.public-page-live-globe",
+   "area": "public-guest",
+   "capability": "A globe after the server name when its public page is live",
+   "background": false,
+   "status": "partial",
+   "webEntry": "PublicPageGlobe.tsx (AppTopBar, Sidebar head)",
+   "gate": "",
+   "flutterEntry": "public_page_mark.dart RaftPublicPageGlobe in the mobile server selector; the desktop top bar belongs to the shell package",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/mobile_navigation.dart",
+     "needle": "RaftPublicPageGlobe"
+    }
+   ],
+   "justification": "The phone server selector shows it; the desktop workspace name has no top bar yet (Web v1.21.23 shell), so no desktop place carries the globe.",
+   "impact": "Desktop members do not see which servers are public; owners see it in Public access.",
+   "size": "S"
+  },
+  {
+   "kind": "ui",
+   "id": "ui:channels.public-page-mark",
+   "area": "public-guest",
+   "capability": "Channels anyone can read on the public page carry a # with a small globe (sidebar row and header)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "channelKindIcon.tsx onPublicPage",
+   "gate": "",
+   "flutterEntry": "public_page_live.dart channelPublicLeading, RaftChannelHeader.publicPage",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/public_page_live.dart",
+     "needle": "channelOnPublicPage"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:public.settings-appearance-signed-out",
+   "area": "public-guest",
+   "capability": "Signed-out visitors get an Appearance tab on the public page",
+   "background": false,
+   "status": "missing",
+   "webEntry": "PublicServerPage getPublicPersonalSettingsTabIds (appearance for everyone)",
+   "gate": "",
+   "flutterEntry": "",
+   "flutterRefs": [],
+   "justification": "",
+   "impact": "A signed-out visitor cannot change the theme from the public page (the app follows the device).",
+   "size": "S"
+  },
+  {
+   "kind": "endpoint",
    "id": "POST /public/servers/:id/join-as-guest",
    "area": "public-guest",
    "capability": "Join a public server as a Guest (with agreement step)",
@@ -14745,7 +14998,7 @@
    "status": "covered",
    "webEntry": "PublicServerPage settings surface with settingsScope account-and-resources",
    "gate": "signed-in non-member of a public server",
-   "flutterEntry": "public_server_settings.dart publicSettingsDestinations(): Personal (Account, Language & Region, Appearance) and Resources (About, Documentation, Feedback, Release Notes) for a signed-in non-member; About + Documentation signed out",
+   "flutterEntry": "public_server_settings.dart publicSettingsDestinations(): Personal (Account, Language & Region only where the server offers translation, Appearance) and Resources (About, Documentation, Feedback, Release Notes) for a signed-in non-member; Language & Region (local choices) and About + Documentation signed out",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/public_server_settings.dart",
@@ -14932,14 +15185,19 @@
    "area": "global-ui",
    "capability": "Load the Chinese community QR configuration (/community/chinese)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "pages/ChineseCommunityPage.tsx (Help menu > Chinese community)",
    "gate": "",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "See ui:help.chinese-community-page.",
-   "impact": "Chinese-language users get the generic Join Community entry instead of the QR page.",
-   "size": "S"
+   "flutterEntry": "chinese_community.dart ChineseCommunityPage: QR config from the static host, the Web app copy as fallback",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/chinese_community.dart",
+     "needle": "chineseCommunityQrConfigUrl"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -15210,23 +15468,23 @@
    "area": "global-ui",
    "capability": "Rail Help menu: Documentation (docs.raft.build), Mobile App (QR), Feedback, Join Community",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "components/layout/LeftRail.tsx Help PopoverContent (openDocumentation, openMobileApp, openFeedback, openCommunity)",
    "gate": "",
-   "flutterEntry": "workspace_view.dart help menu: Documentation, Feedback (Settings > feedback), Join Community; Mobile App item intentionally absent (Flutter is the app)",
+   "flutterEntry": "workspace_view.dart help menu: Documentation, Mobile App, Feedback, Join Community / Join Chinese Community",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "openHelpSettings('feedback')"
+     "needle": "communityHelpEntry("
     },
     {
-     "file": "apps/raft_flutter/lib/features/community_join.dart",
-     "needle": "class CommunityJoined"
+     "file": "apps/raft_flutter/lib/features/public_server_view.dart",
+     "needle": "communityHelpEntry("
     }
    ],
-   "justification": "Mobile App item is na; Chinese-language community branch is missing (see routes-chinese-community).",
-   "impact": "Chinese-language users; low.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -15687,14 +15945,23 @@
    "area": "global-ui",
    "capability": "Chinese community entry: Help menu 'Join Community' shows /community/chinese WeChat QR page (title 'Scan the QR code to join', refresh, copy page link, expiry/fallback contact) for Chinese-language browsers",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "App.tsx route /community/chinese -> pages/ChineseCommunityPage.tsx; LeftRail.tsx openCommunity -> shouldShowChineseCommunityEntry (utils/communityServers.ts)",
    "gate": "Browser language starts with zh",
-   "flutterEntry": "Flutter Help menu 'Join Community' joins the default community server only (community_join.dart); no QR page, no community-cn branch (K08 'Chinese discovery page' not implemented)",
-   "justification": "",
-   "impact": "Chinese-language users using the community entry; one-off, but it is the primary Chinese support channel.",
-   "size": "S",
-   "flutterRefs": []
+   "flutterEntry": "chinese_community.dart communityHelpEntry: a Chinese display language opens the QR page from the Help menu (workspace and public page)",
+   "justification": "Web also redirects a direct /s/community-cn link to the page when the server is not joined; the app has no such deep-link branch yet. Analytics (community_cn_qr_page_view) is not sent.",
+   "impact": "",
+   "size": "",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/chinese_community.dart",
+     "needle": "communityHelpEntry"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/chinese_community.dart",
+     "needle": "showChineseCommunityPage"
+    }
+   ]
   },
   {
    "kind": "ui",
@@ -16222,14 +16489,19 @@
    "area": "global-ui",
    "capability": "Help menu > Chinese community entry opens a QR-code page (/community-cn style page) instead of joining the server, for Chinese-language users",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "LeftRail help menu (shouldShowChineseCommunityEntry -> ChineseCommunityPage with QR)",
    "gate": "browser prefers Chinese",
-   "flutterEntry": "",
-   "flutterRefs": [],
+   "flutterEntry": "chinese_community.dart ChineseCommunityPage",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/chinese_community.dart",
+     "needle": "class ChineseCommunityPage"
+    }
+   ],
    "justification": "",
-   "impact": "Chinese-language users see 'Join Community' (joins the default community server) instead of the WeChat-style QR community entry Web shows them; Flutter has no ChineseCommunityPage.",
-   "size": "S"
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

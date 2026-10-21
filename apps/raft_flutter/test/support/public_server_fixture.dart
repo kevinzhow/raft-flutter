@@ -19,13 +19,16 @@ const publicServer = {
 };
 
 class PublicClient extends RaftClient {
-  PublicClient({Map<String, dynamic>? user})
+  PublicClient({Map<String, dynamic>? user, this.translation = false})
     : super(
         origin: 'https://example.invalid',
         sessionStore: MemorySessionStore(),
       ) {
     if (user != null) this.user = RaftRecord(user);
   }
+
+  /// The server offers message translation (`server.translationEnabled`).
+  final bool translation;
   @override
   void connect() {}
   @override
@@ -44,7 +47,8 @@ class PublicClient extends RaftClient {
   }) async {
     if (method == 'GET' && path == publicBase) {
       return {
-        'server': publicServer,
+        'server': {...publicServer, 'translationEnabled': translation},
+        'translationAvailable': translation,
         'channels': [
           {'id': 'c1', 'name': 'general', 'description': null},
         ],
@@ -93,6 +97,7 @@ Future<void> mountPublicServer(
   WidgetTester t, {
   PublicServerAccount? account,
   Size size = const Size(1280, 800),
+  bool translation = false,
 }) async {
   t.view.physicalSize = size;
   t.view.devicePixelRatio = 1;
@@ -102,7 +107,10 @@ Future<void> mountPublicServer(
       theme: raftTheme(RaftFamily.elegant),
       home: Scaffold(
         body: PublicServerView(
-          client: PublicClient(user: account == null ? null : {'id': 'u1'}),
+          client: PublicClient(
+            user: account == null ? null : {'id': 'u1'},
+            translation: translation,
+          ),
           slug: 'raft-design',
           account: account,
           onSignIn: () {},

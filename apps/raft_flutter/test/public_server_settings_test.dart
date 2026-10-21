@@ -14,7 +14,11 @@ void main() {
     testWidgets('a signed-in non-member gets the personal and resource tabs', (
       t,
     ) async {
-      await mountPublicServer(t, account: nonMemberAccount());
+      await mountPublicServer(
+        t,
+        account: nonMemberAccount(),
+        translation: true,
+      );
       await openPublicSettings(t);
       for (final label in [
         'Account',
@@ -55,7 +59,11 @@ void main() {
     });
 
     testWidgets('each tab opens its page without a current server', (t) async {
-      await mountPublicServer(t, account: nonMemberAccount());
+      await mountPublicServer(
+        t,
+        account: nonMemberAccount(),
+        translation: true,
+      );
       await openPublicSettings(t);
       String title() => t
           .widget<RaftSettingsPanelHeader>(find.byType(RaftSettingsPanelHeader))
@@ -98,7 +106,11 @@ void main() {
     testWidgets('the Help menu opens Feedback and the Mobile app (About)', (
       t,
     ) async {
-      await mountPublicServer(t, account: nonMemberAccount());
+      await mountPublicServer(
+        t,
+        account: nonMemberAccount(),
+        translation: true,
+      );
       await t.tap(find.byKey(const ValueKey('public-rail-help')));
       await t.pumpAndSettle();
       await t.tap(find.text('Feedback'));

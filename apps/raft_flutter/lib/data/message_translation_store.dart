@@ -164,6 +164,35 @@ class MessageTranslationPresentation {
   bool get indicated => entry?.indicated ?? false;
 }
 
+/// A public server being read without membership (Web translationStore
+/// `publicServerProjection`): its gate comes from the public readback, the
+/// requests go to the slug-scoped public route, and for a signed-out visitor
+/// the preferences live in the browser ([preferences]) instead of /auth/me.
+@immutable
+class PublicTranslationScope {
+  const PublicTranslationScope({
+    required this.serverId,
+    required this.slug,
+    required this.enabled,
+    required this.available,
+    this.preferences,
+  });
+  final String serverId, slug;
+  final bool enabled, available;
+
+  /// The visitor's local preference record (signed out); null reads the
+  /// signed-in user's own.
+  final Map<String, dynamic> Function()? preferences;
+
+  PublicTranslationScope withAvailable(bool value) => PublicTranslationScope(
+    serverId: serverId,
+    slug: slug,
+    enabled: enabled,
+    available: value,
+    preferences: preferences,
+  );
+}
+
 class _ServerGate {
   const _ServerGate({
     required this.enabled,
@@ -317,8 +346,48 @@ class MessageTranslationStore extends ChangeNotifier {
     _settingsErrors.clearAll();
   }
 
-  String? get _serverId => w.server?.id;
-  bool get settingsLoading => _loading.contains(_serverId);
+  PublicTranslationScope? _public;
+  _ServerGate? _publicGate;
+
+  /// Reads [scope]'s public server instead of the selected one until
+  /// [clearPublicServer]. The gate needs no request: it came with the page.
+  void usePublicServer(PublicTranslationScope scope) {
+    _adopt();
+    final same =
+        _public != null &&
+        _public!.serverId == scope.serverId &&
+        _public!.slug == scope.slug &&
+        _public!.enabled == scope.enabled &&
+        _public!.available == scope.available &&
+        _public!.preferences == scope.preferences;
+    if (same) return;
+    _public = scope;
+    _publicGate = _ServerGate(
+      enabled: scope.enabled,
+      available: scope.available,
+      canManage: false,
+    );
+    _memo = null;
+    notifyListeners();
+  }
+
+  void clearPublicServer() {
+    if (_public == null) return;
+    _public = null;
+    _publicGate = null;
+    _memo = null;
+    // Called while the public page is unmounted, in the middle of a frame:
+    // nothing is told; the next read of the settings sees the server again.
+  }
+
+  /// The signed-out visitor's local preferences changed.
+  void publicPreferencesChanged() {
+    _memo = null;
+    notifyListeners();
+  }
+
+  String? get _serverId => _public?.serverId ?? w.server?.id;
+  bool get settingsLoading => _public == null && _loading.contains(_serverId);
 
   MessageTranslationSettings? _memo;
   Object? _memoUser, _memoGate;
@@ -329,8 +398,9 @@ class MessageTranslationStore extends ChangeNotifier {
   /// accepted user record and server gate they derive from.
   MessageTranslationSettings get settings {
     _adopt();
-    final user = w.client.user?.json ?? const {};
-    final gate = _servers[_serverId];
+    final user =
+        _public?.preferences?.call() ?? w.client.user?.json ?? const {};
+    final gate = _public != null ? _publicGate : _servers[_serverId];
     final memo = _memo;
     if (memo != null &&
         identical(user, _memoUser) &&
@@ -387,6 +457,8 @@ class MessageTranslationStore extends ChangeNotifier {
   void ensureSettings({bool force = false}) {
     _adopt();
     final id = _serverId;
+    // A public server's gate came with its page: nothing to read.
+    if (_public != null) return;
     if (_disposed || id == null || _loading.contains(id)) return;
     // Web loads once per server id; a role change keeps the accepted gate.
     // A gate restored from the device is shown while it is read once.
@@ -473,6 +545,7 @@ class MessageTranslationStore extends ChangeNotifier {
     }
     final own =
         message.string('senderType') == 'user' &&
+        w.client.user?.id != null &&
         message.senderId == w.client.user?.id;
     if (s.mode != MessageTranslationMode.manual && own) {
       return MessageTranslationPresentation.none;
@@ -599,7 +672,7 @@ class MessageTranslationStore extends ChangeNotifier {
     final serial = ++_batch, epoch = _epoch;
     final generation = w.client.generation;
     final original = {for (final m in batch) m.id: m.content};
-    final server = _serverId;
+    final server = _public == null ? _serverId : null;
     for (final m in batch) {
       if (server != null) _homes[m.id] = (server, m.channelId);
       _fromDevice.remove(m.id);
@@ -621,8 +694,11 @@ class MessageTranslationStore extends ChangeNotifier {
       }
     }
     try {
+      final scope = _public;
       final data = await w.client.post(
-        '/message-translations:batch',
+        scope == null
+            ? '/message-translations:batch'
+            : '/public/servers/${Uri.encodeComponent(scope.slug)}/message-translations:batch',
         data: {
           'messageIds': ids,
           'targetLanguage': target,
@@ -692,7 +768,15 @@ class MessageTranslationStore extends ChangeNotifier {
       // Web: the API is not mounted here; forget the rows and hide the UI.
       ids.forEach(_entries.remove);
       final id = _serverId;
-      if (id != null) {
+      if (_public != null) {
+        _public = _public!.withAvailable(false);
+        _publicGate = _ServerGate(
+          enabled: _public!.enabled,
+          available: false,
+          canManage: false,
+        );
+        _memo = null;
+      } else if (id != null) {
         _servers[id] = _ServerGate(
           enabled: _servers[id]?.enabled ?? false,
           available: false,
@@ -773,7 +857,9 @@ class MessageTranslationStore extends ChangeNotifier {
   Future<void> restore() async {
     _adopt();
     final server = _serverId, role = w.server?.string('role');
-    if (_disposed || server == null || w.cache == null) return;
+    if (_disposed || _public != null || server == null || w.cache == null) {
+      return;
+    }
     if (!_restored.add(server)) return;
     final epoch = _epoch;
     final (rows, gate) = await (

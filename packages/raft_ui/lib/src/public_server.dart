@@ -152,11 +152,16 @@ class RaftPublicChannelSidebar extends StatelessWidget {
     required this.onSelect,
     this.width,
     this.label = 'Public channels',
+    this.fill = false,
   });
   final String serverName, label;
   final List<RaftPublicServerChannel> channels;
   final String? selectedId;
   final ValueChanged<String> onSelect;
+
+  /// Below sm the channel list is the page, one column at a time (`col-span-full
+  /// w-full`): it fills the width instead of the 144px column.
+  final bool fill;
 
   /// Dragged width (sm and up); null keeps the 240 / 144 default.
   final double? width;
@@ -172,7 +177,7 @@ class RaftPublicChannelSidebar extends StatelessWidget {
       child: _PublicSidebarFrame(
         frameKey: const ValueKey('public-server-channel-sidebar'),
         title: serverName,
-        width: sm ? (width ?? 240) : 144,
+        width: fill ? double.infinity : (sm ? (width ?? 240) : 144),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -247,18 +252,19 @@ class RaftPublicBottomBanner extends StatelessWidget {
       tokens,
       base: DefaultTextStyle.of(context).style,
     );
+    // `text-callout font-bold max-sm:text-footnote`.
+    final narrow = raftBreakpointWidth(context) < 640;
     final copy = Text(
       raftText(context, message),
       style: recipe.description
           .text(tokens, base: base)
-          .copyWith(fontSize: 14, fontWeight: FontWeight.w700),
+          .copyWith(fontSize: narrow ? 12 : 14, fontWeight: FontWeight.w700),
     );
     final buttons = Row(
       mainAxisSize: MainAxisSize.min,
       spacing: RaftSpace.x2,
       children: actions,
     );
-    final narrow = raftBreakpointWidth(context) < 640;
     return Semantics(
       key: const ValueKey('public-server-bottom-action'),
       container: true,
@@ -268,9 +274,10 @@ class RaftPublicBottomBanner extends StatelessWidget {
         tokens: tokens,
         width: double.infinity,
         applyText: false,
+        // `!px-5 max-sm:!px-3 max-sm:!py-2`.
         padding: EdgeInsets.symmetric(
-          horizontal: RaftSpace.x5,
-          vertical: recipe.root.padding.top,
+          horizontal: narrow ? RaftSpace.x3 : RaftSpace.x5,
+          vertical: narrow ? RaftSpace.x2 : recipe.root.padding.top,
         ),
         decorationOverride: (d) => d.copyWith(
           borderRadius: BorderRadius.zero,
@@ -279,30 +286,21 @@ class RaftPublicBottomBanner extends StatelessWidget {
               : d.border,
           boxShadow: const [],
         ),
-        child: narrow
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                // The Banner grid's `max-sm:gap-2` + its own row gap: the
-                // action row sits 16px under the copy.
-                spacing: RaftSpace.x4,
-                children: [
-                  copy,
-                  Align(alignment: Alignment.centerRight, child: buttons),
-                ],
-              )
-            : Row(
-                children: [
-                  Expanded(child: copy),
-                  const SizedBox(width: RaftSpace.x2),
-                  buttons,
-                ],
-              ),
+        // On phones the copy and the actions stay on one row (small text and
+        // small buttons): stacked, the banner was ~105px tall on a 390px phone.
+        child: Row(
+          children: [
+            Expanded(child: copy),
+            const SizedBox(width: RaftSpace.x2),
+            buttons,
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Sign in / Create account / Join as Guest: a `Button size="md"` with a
+/// Sign in / Create account / Join as Guest: a `Button size="sm"` with a
 /// leading icon (`<LogIn className="size-4" />`).
 class RaftPublicActionButton extends StatelessWidget {
   const RaftPublicActionButton({
@@ -324,7 +322,7 @@ class RaftPublicActionButton extends StatelessWidget {
     variant: accent
         ? RaftButtonRecipeVariant.accent
         : RaftButtonRecipeVariant.outline,
-    size: RaftButtonRecipeSize.md,
+    size: RaftButtonRecipeSize.sm,
     onPressed: onPressed,
   );
 }
@@ -772,12 +770,17 @@ class RaftPublicServerLayout extends StatelessWidget {
   const RaftPublicServerLayout({
     super.key,
     required this.columns,
-    required this.banner,
+    this.banner,
     this.rail,
     this.threadOverlay,
     this.overlays = const [],
   });
-  final Widget columns, banner;
+  final Widget columns;
+
+  /// A banner under every column; null when [columns] places it itself (since
+  /// Web v1.21.23 it sits under the conversation only, so the channel column
+  /// runs the full height beside it).
+  final Widget? banner;
   final Widget? rail, threadOverlay;
   final List<Widget> overlays;
   @override
@@ -819,7 +822,7 @@ class RaftPublicServerLayout extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            banner,
+                            ?banner,
                           ],
                         ),
                       ),
@@ -843,8 +846,15 @@ class RaftPublicChannelHeader extends StatelessWidget {
     super.key,
     required this.name,
     this.description = '',
+    this.onBack,
+    this.backLabel = 'Back to channels',
   });
   final String name, description;
+
+  /// Phones show one column at a time: Back returns to the channel list
+  /// (`onMobileBack` + `backButtonVisibility="always"`).
+  final VoidCallback? onBack;
+  final String backLabel;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -852,6 +862,11 @@ class RaftPublicChannelHeader extends StatelessWidget {
     final bar = RaftPanelHeaderBar(
       title: name,
       subtitle: meta.isEmpty ? null : meta,
+      onBack: onBack,
+      backKey: onBack == null
+          ? null
+          : const ValueKey('public-server-phone-back'),
+      backTooltip: raftText(context, backLabel),
       // AppPanelHeader `icon` with the default `bg-primary`.
       iconSlot: RaftPanelHeaderIconTile(
         glyph: RaftGlyph.hash,

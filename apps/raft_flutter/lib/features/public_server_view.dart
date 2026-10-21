@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/message_translation_store.dart';
 import '../data/source_time_formatter.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
@@ -24,6 +25,7 @@ import 'management_support.dart';
 import 'public_attachments.dart';
 import 'public_avatar_url.dart';
 import 'public_rich_message.dart';
+import 'public_translation.dart';
 import 'public_server_panels.dart';
 import 'public_server_settings.dart';
 import 'sender_avatar_projection.dart';
@@ -236,6 +238,18 @@ class _PublicServerViewState extends State<PublicServerView> {
 
   bool settings = false;
 
+  /// Phones show one column at a time (Web `phoneView`): the channel list
+  /// first, then the channel full width with a Back to channels. A link to a
+  /// channel opens it.
+  late bool phoneChannel = widget.initialChannelId != null;
+
+  /// Message translation of this page (Web `useTranslationBatch`): the
+  /// signed-in visitor's own store, else one with the preferences kept on
+  /// this device.
+  MessageTranslationStore? translations;
+  PublicLocalPreferences? localPrefs;
+  bool ownsTranslations = false;
+
   /// The selected Settings tab (`useState(authenticated ? "account" : "about")`).
   late String settingsTab = widget.account?.settings != null
       ? 'account'
@@ -268,7 +282,46 @@ class _PublicServerViewState extends State<PublicServerView> {
   void initState() {
     super.initState();
     menu.addListener(menuChanged);
+    setUpTranslations();
     unawaited(loadServer());
+  }
+
+  void setUpTranslations() {
+    final workspace = widget.account?.settings?.controller;
+    if (workspace != null) {
+      translations = workspace.services.translations;
+    } else {
+      ownsTranslations = true;
+      if (widget.account == null) {
+        localPrefs = PublicLocalPreferences()
+          ..addListener(() => translations?.publicPreferencesChanged());
+        unawaited(localPrefs!.load());
+      }
+      translations = MessageTranslationStore(
+        PublicTranslationAuthority(widget.client),
+      );
+    }
+    translations!.addListener(panelsChanged);
+  }
+
+  Map<String, dynamic> localPreferenceJson() => localPrefs!.json;
+
+  /// The page's gate for translation: `server.translationEnabled` with the
+  /// deployment's provider (Web `loadSettings(serverId, publicServerProjection)`).
+  bool get translationEnabled => server?['translationEnabled'] == true;
+
+  void bindTranslation(Map<String, dynamic> data) {
+    final id = server?['id'];
+    if (id is! String) return;
+    translations?.usePublicServer(
+      PublicTranslationScope(
+        serverId: id,
+        slug: widget.slug,
+        enabled: translationEnabled,
+        available: data['translationAvailable'] == true,
+        preferences: localPrefs == null ? null : localPreferenceJson,
+      ),
+    );
   }
 
   @override
@@ -296,6 +349,13 @@ class _PublicServerViewState extends State<PublicServerView> {
   void dispose() {
     menu.removeListener(menuChanged);
     menu.dispose();
+    translations?.removeListener(panelsChanged);
+    if (ownsTranslations) {
+      translations?.dispose();
+    } else {
+      translations?.clearPublicServer();
+    }
+    localPrefs?.dispose();
     panels?.dispose();
     timelineScroll.dispose();
     threadScroll.dispose();
@@ -324,6 +384,7 @@ class _PublicServerViewState extends State<PublicServerView> {
     server = managementMap(data['server']);
     channels = list;
     canJoin = data['canJoinAsGuest'] == true;
+    bindTranslation(data);
     final next = keep ?? '${(linked ?? list.firstOrNull)?['id'] ?? ''}';
     selectedId = next.isEmpty ? null : next;
     if (keep == null) {
@@ -465,7 +526,10 @@ class _PublicServerViewState extends State<PublicServerView> {
   }
 
   void selectChannel(String id) {
-    if (id == selectedId && !settings) return;
+    if (id == selectedId && !settings) {
+      if (!phoneChannel) setState(() => phoneChannel = true);
+      return;
+    }
     final seen = PublicServerMemory.messages(memoryKey, 'channel:$id');
     setState(() {
       selectedId = id;
@@ -473,6 +537,7 @@ class _PublicServerViewState extends State<PublicServerView> {
       hasOlder = seen != null && seen.length == 50;
       threadChannelId = null;
       settings = false;
+      phoneChannel = true;
     });
     unawaited(loadMessages());
   }
@@ -560,6 +625,15 @@ class _PublicServerViewState extends State<PublicServerView> {
   void closeThread() {
     threadRequest++;
     setState(() => threadChannelId = null);
+  }
+
+  /// Phones: Back to channels (`showPhoneChannelList`).
+  void showChannelList() {
+    threadRequest++;
+    setState(() {
+      phoneChannel = false;
+      threadChannelId = null;
+    });
   }
 
   /// `joinAsGuest`: the confirm and agreement dialogs both end here. Returns
@@ -863,6 +937,24 @@ class _PublicServerViewState extends State<PublicServerView> {
             : formatter.messageTime(m.createdAt),
       );
     }
+    // Web useTranslationBatch: auto mode asks for the rows built.
+    final store = translations;
+    final row = RaftMessage({
+      'id': m.id,
+      'channelId': thread ? '$threadChannelId' : '$selectedId',
+      'content': m.content,
+      'senderType': m.senderType,
+      'messageType': m.messageType,
+    });
+    final translation =
+        store?.present(row) ?? MessageTranslationPresentation.none;
+    if (store != null && translation.needsRequest) store.want(row);
+    Widget text(String content) => RaftMessageBody(
+      mountedMessage: true,
+      content: content,
+      references: [...channelReferences, ...mentionReferences(m)],
+      onLink: openReference,
+    );
     return RaftMessageTile(
       key: ValueKey('public-message-${m.id}'),
       rowContext: thread
@@ -871,13 +963,30 @@ class _PublicServerViewState extends State<PublicServerView> {
       author: m.author,
       avatar: avatar(m),
       subtitle: m.description,
-      content: m.content,
-      body: RaftMessageBody(
-        mountedMessage: true,
-        content: m.content,
-        references: [...channelReferences, ...mentionReferences(m)],
-        onLink: openReference,
-      ),
+      content: translation.translatedContent ?? m.content,
+      translation: store == null
+          ? null
+          : publicTranslationStatus(context, store, row, translation),
+      body: translation.skeleton
+          ? RaftMessageTranslationSkeleton(
+              key: ValueKey('message-translation-placeholder-${m.id}'),
+            )
+          : !translation.bilingual
+          ? text(translation.translatedContent ?? m.content)
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                text(translation.translatedContent!),
+                RaftMessageTranslationOriginal(
+                  key: ValueKey(
+                    'message-translation-bilingual-original-${m.id}',
+                  ),
+                  label: tr('Original'),
+                  child: text(m.content),
+                ),
+              ],
+            ),
       attachments: [
         for (final a in m.attachments)
           {'id': a.id, 'filename': a.filename, 'mimeType': a.mimeType},
@@ -936,7 +1045,7 @@ class _PublicServerViewState extends State<PublicServerView> {
     );
   }
 
-  Widget channelPanel() {
+  Widget channelPanel({VoidCallback? onBack}) {
     final channel = channels.where((c) => c['id'] == selectedId).firstOrNull;
     if (channel == null) {
       return RaftPublicEmptyMessage(
@@ -953,6 +1062,8 @@ class _PublicServerViewState extends State<PublicServerView> {
           RaftPublicChannelHeader(
             name: '${channel['name']}',
             description: description ?? '',
+            onBack: onBack,
+            backLabel: tr('Back to channels'),
           ),
           if (error.isNotEmpty)
             Padding(
@@ -1088,7 +1199,7 @@ class _PublicServerViewState extends State<PublicServerView> {
   /// Widths apply only where the columns sit side by side (sm and up).
   bool get sideBySide => raftBreakpointWidth(context) >= 640;
 
-  Widget settingsSurface() {
+  Widget settingsSurface(Widget banner) {
     final widths = panels;
     return PublicServerSettings(
       tab: settingsTab,
@@ -1096,6 +1207,10 @@ class _PublicServerViewState extends State<PublicServerView> {
       about: about,
       documentationUrl: widget.documentationUrl,
       account: widget.account?.settings,
+      translationEnabled: translationEnabled,
+      localPreferences: localPrefs,
+      translations: translations,
+      banner: banner,
       sidebarWidth: sideBySide ? widths?.settingsSidebar : null,
       onSidebarResize: widths?.setSettingsSidebar,
       onSidebarResizeEnd: () =>
@@ -1212,91 +1327,135 @@ class _PublicServerViewState extends State<PublicServerView> {
           ];
     final widths = panels;
     final sm = band >= 640;
-    final columns = settings
-        ? settingsSurface()
-        : Stack(
-            fit: StackFit.expand,
+    final bottom = RaftPublicBottomBanner(
+      message: raftFormat(context, message, {'server': name}),
+      actions: actions,
+    );
+    final phoneList = !sm && !phoneChannel;
+    final sidebar = RaftPublicChannelSidebar(
+      serverName: name,
+      channels: [
+        for (final c in channels)
+          RaftPublicServerChannel(id: '${c['id']}', name: '${c['name']}'),
+      ],
+      selectedId: selectedId,
+      onSelect: selectChannel,
+      label: tr('Public channels'),
+      width: widths?.channelSidebar,
+      fill: phoneList,
+    );
+    // The banner sits under the conversation (and the thread) only, so the
+    // channel column runs the full height beside it (Web v1.21.23 grid); on
+    // phones it spans the page and the thread panel stops above it.
+    final main = RaftPublicSurface(
+      child: channelPanel(onBack: sm ? null : showChannelList),
+    );
+    final Widget columns;
+    if (settings) {
+      columns = settingsSurface(bottom);
+    } else if (!sm) {
+      columns = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [phoneList ? sidebar : main, ?thread],
+            ),
+          ),
+          bottom,
+        ],
+      );
+    } else {
+      columns = Stack(
+        fit: StackFit.expand,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  RaftPublicChannelSidebar(
-                    serverName: name,
-                    channels: [
-                      for (final c in channels)
-                        RaftPublicServerChannel(
-                          id: '${c['id']}',
-                          name: '${c['name']}',
-                        ),
-                    ],
-                    selectedId: selectedId,
-                    onSelect: selectChannel,
-                    label: tr('Public channels'),
-                    width: widths?.channelSidebar,
-                  ),
-                  Expanded(child: RaftPublicSurface(child: channelPanel())),
-                  if (thread != null && sm)
-                    RaftPublicThreadColumn(
-                      width: widths?.thread,
-                      child: thread,
+              sidebar,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(child: main),
+                              if (thread != null)
+                                RaftPublicThreadColumn(
+                                  width: widths?.thread,
+                                  child: thread,
+                                ),
+                            ],
+                          ),
+                          // PanelResizeHandle: an 8px strip centred on the
+                          // thread's left edge (`-left-1`).
+                          if (widths != null && thread != null)
+                            Positioned(
+                              right:
+                                  widths.thread -
+                                  RaftPanelResizeHandle.hitExtent / 2,
+                              top: 0,
+                              bottom: 0,
+                              width: RaftPanelResizeHandle.hitExtent,
+                              child: RaftPanelResizeHandle(
+                                key: const ValueKey(
+                                  'public-server-thread-panel-resize-handle',
+                                ),
+                                label: tr('Resize thread'),
+                                value: widths.thread,
+                                reversed: true,
+                                hairline: true,
+                                onChangeStart: () => widths.beginThreadResize(
+                                  MediaQuery.sizeOf(context).width,
+                                ),
+                                onChanged: widths.setThread,
+                                onChangeEnd: () => unawaited(
+                                  widths.persist(PublicPanelWidths.threadKey),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                ],
+                    bottom,
+                  ],
+                ),
               ),
-              // PanelResizeHandle: 8px strips centred on the two edges,
-              // over the columns (`-right-1` / `-left-1`).
-              if (sm && widths != null)
-                Positioned(
-                  left:
-                      widths.channelSidebar -
-                      RaftPanelResizeHandle.hitExtent / 2,
-                  top: 0,
-                  bottom: 0,
-                  width: RaftPanelResizeHandle.hitExtent,
-                  child: RaftPanelResizeHandle(
-                    key: const ValueKey(
-                      'public-server-channel-sidebar-resize-handle',
-                    ),
-                    label: tr('Resize sidebar'),
-                    value: widths.channelSidebar,
-                    hairline: true,
-                    onChanged: widths.setChannelSidebar,
-                    onChangeEnd: () => unawaited(
-                      widths.persist(PublicPanelWidths.channelSidebarKey),
-                    ),
-                  ),
-                ),
-              if (sm && widths != null && thread != null)
-                Positioned(
-                  right: widths.thread - RaftPanelResizeHandle.hitExtent / 2,
-                  top: 0,
-                  bottom: 0,
-                  width: RaftPanelResizeHandle.hitExtent,
-                  child: RaftPanelResizeHandle(
-                    key: const ValueKey(
-                      'public-server-thread-panel-resize-handle',
-                    ),
-                    label: tr('Resize thread'),
-                    value: widths.thread,
-                    reversed: true,
-                    hairline: true,
-                    onChangeStart: () => widths.beginThreadResize(
-                      MediaQuery.sizeOf(context).width,
-                    ),
-                    onChanged: widths.setThread,
-                    onChangeEnd: () =>
-                        unawaited(widths.persist(PublicPanelWidths.threadKey)),
-                  ),
-                ),
             ],
-          );
+          ),
+          // The channel column's handle: an 8px strip centred on its right
+          // edge (`-right-1`), over the full height.
+          if (widths != null)
+            Positioned(
+              left: widths.channelSidebar - RaftPanelResizeHandle.hitExtent / 2,
+              top: 0,
+              bottom: 0,
+              width: RaftPanelResizeHandle.hitExtent,
+              child: RaftPanelResizeHandle(
+                key: const ValueKey(
+                  'public-server-channel-sidebar-resize-handle',
+                ),
+                label: tr('Resize sidebar'),
+                value: widths.channelSidebar,
+                hairline: true,
+                onChanged: widths.setChannelSidebar,
+                onChangeEnd: () => unawaited(
+                  widths.persist(PublicPanelWidths.channelSidebarKey),
+                ),
+              ),
+            ),
+        ],
+      );
+    }
     return RaftPublicServerLayout(
       rail: band >= 768 && server != null ? rail() : null,
       columns: columns,
-      threadOverlay: thread != null && band < 640 ? thread : null,
-      banner: RaftPublicBottomBanner(
-        message: raftFormat(context, message, {'server': name}),
-        actions: actions,
-      ),
       overlays: [
         // The sign-in prompt is only true for a visitor who is not signed in.
         if (selectionNotice && !authenticated)

@@ -13,12 +13,15 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../data/message_translation_store.dart';
 import '../data/personal_presentation.dart';
 import '../data/workspace_controller.dart';
 import '../platform/app_services.dart';
 import 'account_settings.dart';
 import 'appearance_section.dart';
 import 'locale_settings_page.dart';
+import 'public_language_settings.dart';
+import 'public_translation.dart';
 import 'settings_page.dart';
 import 'source_feedback_view.dart';
 import 'workspace_settings.dart';
@@ -45,9 +48,36 @@ List<RaftSettingsDestination> publicSettingsDestinations({
   PublicSettingsAccount? account,
   PersonalPresentationStore? presentation,
   AppServices? services,
+  bool translationEnabled = false,
+  PublicLocalPreferences? localPreferences,
+  MessageTranslationStore? translations,
 }) {
   final w = account?.controller;
+  // Web getPublicPersonalSettingsTabIds: Language & Region only where the
+  // server offers translation. A signed-out visitor keeps it on this device.
+  final language = translationEnabled
+      ? [
+          if (account != null && w != null)
+            RaftSettingsDestination(
+              'language-region',
+              'Language & Region',
+              RaftGlyph.languages,
+              (_) => LocaleSettingsPage(controller: w),
+            )
+          else if (localPreferences != null && translations != null)
+            RaftSettingsDestination(
+              'language-region',
+              'Language & Region',
+              RaftGlyph.languages,
+              (_) => PublicLanguageRegionPage(
+                preferences: localPreferences,
+                translations: translations,
+              ),
+            ),
+        ]
+      : const <RaftSettingsDestination>[];
   return [
+    if (account == null || w == null || presentation == null) ...language,
     if (account != null && w != null && presentation != null) ...[
       RaftSettingsDestination(
         'account',
@@ -55,12 +85,7 @@ List<RaftSettingsDestination> publicSettingsDestinations({
         RaftGlyph.user,
         (_) => AccountSettings(controller: w, onLogout: account.onLogout),
       ),
-      RaftSettingsDestination(
-        'language-region',
-        'Language & Region',
-        RaftGlyph.languages,
-        (_) => LocaleSettingsPage(controller: w),
-      ),
+      ...language,
       RaftSettingsDestination(
         'appearance',
         'Appearance',
@@ -127,6 +152,10 @@ class PublicServerSettings extends StatefulWidget {
     required this.about,
     required this.documentationUrl,
     this.account,
+    this.translationEnabled = false,
+    this.localPreferences,
+    this.translations,
+    this.banner,
     this.sidebarWidth,
     this.onSidebarResize,
     this.onSidebarResizeEnd,
@@ -139,6 +168,16 @@ class PublicServerSettings extends StatefulWidget {
   final Widget Function(BuildContext) about;
   final String documentationUrl;
   final PublicSettingsAccount? account;
+
+  /// The server offers translation: Language & Region is a tab (a signed-out
+  /// visitor's form needs [localPreferences] and [translations]).
+  final bool translationEnabled;
+  final PublicLocalPreferences? localPreferences;
+  final MessageTranslationStore? translations;
+
+  /// The sign in / join banner: under the panel from sm up, under both
+  /// columns below it (Web v1.21.23 grid, `sm:col-start-2`).
+  final Widget? banner;
 
   /// The dragged sidebar width, at sm and up where the columns sit side by
   /// side; null below it (`w-36`, no handle).
@@ -203,6 +242,9 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
       account: widget.account,
       presentation: presentation,
       services: AppServicesScope.maybeOf(context),
+      translationEnabled: widget.translationEnabled,
+      localPreferences: widget.localPreferences,
+      translations: widget.translations,
     );
     final pages = destinations.where((d) => d.builder != null).toList();
     final active =
@@ -245,6 +287,17 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
             child: active.builder!(context),
           );
     final width = widget.sidebarWidth;
+    final sideBySide = raftBreakpointWidth(context) >= 640;
+    final banner = widget.banner;
+    Widget panel(Widget frame) => sideBySide && banner != null
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: frame),
+              banner,
+            ],
+          )
+        : frame;
     final columns = Row(
       key: const ValueKey('public-server-settings-surface'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -255,30 +308,42 @@ class _PublicServerSettingsState extends State<PublicServerSettings> {
           child: RaftSettingsSidebarList(groups: groups, activeId: active.id),
         ),
         Expanded(
-          child: RaftSettingsPanelFrame(
-            attached: active.attached,
-            contentColor: active.contentColor?.call(t),
-            header: active.ownHeader ? null : header,
-            child: active.ownHeader
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      header,
-                      Expanded(child: page()),
-                    ],
-                  )
-                : page(),
+          child: panel(
+            RaftSettingsPanelFrame(
+              attached: active.attached,
+              contentColor: active.contentColor?.call(t),
+              header: active.ownHeader ? null : header,
+              child: active.ownHeader
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        header,
+                        Expanded(child: page()),
+                      ],
+                    )
+                  : page(),
+            ),
           ),
         ),
       ],
     );
-    if (width == null || widget.onSidebarResize == null) return columns;
+    // Below sm the banner spans both columns.
+    final body = !sideBySide && banner != null
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: columns),
+              banner,
+            ],
+          )
+        : columns;
+    if (width == null || widget.onSidebarResize == null) return body;
     // PanelResizeHandle: an 8px strip centred on the sidebar's edge, over both
     // columns (`-right-1`), so it never takes width from either.
     return Stack(
       fit: StackFit.expand,
       children: [
-        columns,
+        body,
         Positioned(
           left: width - RaftPanelResizeHandle.hitExtent / 2,
           top: 0,

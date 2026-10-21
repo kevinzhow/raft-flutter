@@ -10,6 +10,8 @@ const Map<String, String> zhCatalogW23Public = <String, String>{
   "Search engines can show the channels visible to anyone, and their threads, in search results. Turning it off stops this, though results already listed can take a while to drop out. The channels stay public.":
       "搜索引擎可以在搜索结果中展示任何人可见的频道及其消息列。关闭后会停止收录，已出现的搜索结果可能需要一段时间才会消失；频道仍然公开。",
   "Failed to update search engine access": "无法更新搜索引擎收录设置",
+  // pages.publicServer.backToChannels
+  "Back to channels": "返回频道列表",
   // channel.publicPageReadable, layout.server.publicPageLive
   "Anyone can read this channel on the public page": "任何人都能在公开页阅读这个频道",
   "Public: anyone can read its public channels without signing in":

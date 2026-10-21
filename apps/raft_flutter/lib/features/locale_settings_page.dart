@@ -90,6 +90,7 @@ class _LocaleSettingsPageState extends ManagementState<LocaleSettingsPage> {
   String get savedDisplay => translations.settings.display.name;
   String get savedTimezone =>
       w.client.user?.string('preferredTimezone').trim() ?? '';
+
   /// `effectiveTimeFormat = preferred ?? detectBrowserTimeFormat()`
   /// (translationStore.ts:271): a null / `auto` preference follows the device.
   String get savedTimeFormat => effectiveTimeFormat(
@@ -391,4 +392,11 @@ List<RaftLanguageOption> _timezoneOptions(String preferred) {
     ('', _timezoneLabel(effective, now)),
     for (final id in ids) (id, _timezoneLabel(id, now)),
   ];
+}
+
+/// The timezone choices of Language & Region for a [preferred] zone ('' = the
+/// device's), for the signed-out public page's own preferences form.
+List<RaftLanguageOption> localeTimezoneOptions(String preferred) {
+  _initializeTimezones();
+  return _timezoneOptions(preferred);
 }

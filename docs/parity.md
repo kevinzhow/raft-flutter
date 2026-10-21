@@ -1976,3 +1976,14 @@ behaviour checklists (`docs/behavior-parity/`).
   (`/integration-invites/:token`) is a different surface and is still recorded as missing.
 * **No local-session handoff.** "Take over a local session" needs the Electron desktop shell's local-session bridge;
   the app has none. Rows `ui:agents.handoff-local-session` and `ui:global-ui.desktop-handoff-local-session` are ➖.
+
+## Public server page vs Web v1.21.23 (cindy/w23-pub): open differences
+
+Not owner decisions yet; each is listed so a reviewer can accept or send it back.
+
+* Signed-out visitors get no Appearance tab on the public page (Web v1.21.23 shows it to everyone). The app follows the device theme while signed out and the appearance setting lives in the app root; the tab waits for the appearance rework.
+* Signed-out Language & Region shows the display language of the device and offers no other (Web keeps a local display language). Translation mode, target, default view, timezone and time format are saved on the device like Web.
+* No cookie banner, visitor id or public visit counts (`POST /public-visits/:slug`): Web-only browser statistics (plan decision).
+* The Chinese community page opens from the Help menu only; Web's redirect of a direct `/s/community-cn` link and the `community_cn_qr_page_view` event are not ported. The page has a Back control (a browser page has the browser's).
+* A native window has no per-page title: Web sets the document title of the Chinese community page; the app title bar keeps the app name.
+* The globe after the server name shows in the phone server selector only; the desktop top bar that carries it in Web is the shell package.
