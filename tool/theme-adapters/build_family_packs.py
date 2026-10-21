@@ -75,6 +75,8 @@ GEOMETRY_ELEGANT = {
     'size.control.onFrame': 32, 'size.field': 36, 'size.panelHeader': 56, 'size.rail': 56,
     'size.railGlyph': 16, 'size.navRow': 34, 'size.navRowCompact': 30,
     'size.menuRow': 31.5, 'size.menuRowCompact': 27.5, 'size.drawer': 380,
+    # a57b9dab keeps Elegant's rail at one width on short viewports.
+    'size.railShort': 56,
     'space.controlX': 6, 'space.itemX': 10, 'space.inset.panel': 26,
     # a57b9dab `gap-1.5` between segments, at --spacing 0.25rem.
     'space.segmentGap': 6,
@@ -90,7 +92,13 @@ GEOMETRY_BRUTAL = {
     'size.control.sm': 28, 'size.control.md': 32, 'size.control.lg': 40,
     'size.control.onFrame': 32, 'size.field': 40, 'size.panelHeader': 62, 'size.rail': 64,
     'size.railGlyph': 18, 'size.navRow': 40, 'size.navRowCompact': 32,
-    'size.menuRow': 36, 'size.menuRowCompact': 28, 'size.drawer': 420,
+    'size.menuRow': 36, 'size.menuRowCompact': 28,
+    # Measured: a57b9dab's drawer/profile width is a flat 380 in every family
+    # (adaptive_workspace.dart profileWidth default; no theme branch). The 420 the
+    # contract carried had no source.
+    'size.drawer': 380,
+    # a57b9dab: Brutal narrows its rail to 50 below 600px tall.
+    'size.railShort': 50,
     'space.controlX': 8, 'space.itemX': 12, 'space.inset.panel': 8,
     # a57b9dab `gap-1` between segments.
     'space.segmentGap': 4,

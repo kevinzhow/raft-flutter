@@ -165,6 +165,10 @@ GEOMETRY_RAFT = {
     'size.control.xl': 52,
     'size.control.onFrame': 36, 'size.field': 44, 'size.panelHeader': 56, 'size.rail': 56,
     'size.railGlyph': 16, 'size.navRow': 34, 'size.menuRow': 32, 'size.drawer': 380,
+    # The rail on a short viewport (height <= 600). Raft keeps one width; the
+    # pre-theme app narrowed Brutal to 50 there. Paired with size.rail exactly as
+    # navRow/navRowCompact and menuRow/menuRowCompact already are.
+    'size.railShort': 56,
     # Shorter rows on short viewports (contract §3.3). Raft keeps one row height
     # and leaves these at the regular value; the family packs lower them.
     'size.navRowCompact': 34, 'size.menuRowCompact': 32,

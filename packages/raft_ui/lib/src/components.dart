@@ -518,10 +518,33 @@ class RaftConversationNavigationRecipe {
   // Resolved mounted ChannelRow cascade (including original md:py-1.5
   // Elegant precedence): desktop Br32/El34, short Br32/El30,
   // tall mobile Br40/El34. Direct-message AvatarSlot is a separate contract.
+  /// A navigation row's height, from the theme's `size.navRow` /
+  /// `size.navRowCompact` tokens.
+  ///
+  /// Measured on a57b9dab's conversation `rowHeight`:
+  ///   `tokens.brutal
+  ///      ? (viewportWidth >= desktopBreakpoint || viewportHeight <= 600 ? 32 : 40)
+  ///      : (viewportHeight <= 600 ? 30 : 34)`
+  ///
+  /// The two conditions are not the same rule. For every look a short viewport
+  /// means the compact row; for Brutal *only*, a desktop width also uses the
+  /// compact row (32 rather than 40). Applying the desktop clause to all themes --
+  /// which my first attempt did -- gave Elegant 32 on desktop instead of 34.
+  ///
+  /// Compact therefore cannot be a single boolean derived from the viewport; it is
+  /// the short-viewport rule for everyone, plus the desktop clause for the look
+  /// whose pack makes its regular row taller than its compact one.
   double rowHeight({
     required double viewportWidth,
     required double viewportHeight,
-  }) => viewportHeight <= 600 ? 30 : 34;
+  }) {
+    final regular = tokens.size('size.navRow', fallback: 34);
+    final compact = tokens.size('size.navRowCompact', fallback: 30);
+    // A pack that keeps one row height has no desktop clause to apply.
+    final desktopUsesCompact =
+        regular > compact && viewportWidth >= RaftLayoutMetrics.desktopBreakpoint;
+    return viewportHeight <= 600 || desktopUsesCompact ? compact : regular;
+  }
 
   // SidebarItemCount solid/accent merges Sidebar count and Badge recipes.
   double get countHeight => 16;

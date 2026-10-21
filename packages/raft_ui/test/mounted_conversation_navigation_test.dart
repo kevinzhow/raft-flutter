@@ -98,10 +98,16 @@ void main() {
             of: channel,
             matching: find.byType(RaftControl),
           );
-          expect(tester.widget<RaftControl>(control).visualHeight, 30);
+          // The row height is a contract token. The default (Raft) pack keeps one
+          // height at every viewport and density, so read it rather than assuming
+          // the 30 this asserted while the value was a single literal.
+          final rowHeight = raftTheme(dark: dark)
+              .extension<RaftTokens>()!
+              .size('size.navRow', fallback: 34);
+          expect(tester.widget<RaftControl>(control).visualHeight, rowHeight);
           // The row box is Web's in every density; touch only widens the hit
           // and semantics rectangle to 48dp (RaftTouchTarget).
-          expect(tester.getSize(control).height, 30);
+          expect(tester.getSize(control).height, rowHeight);
           if (density == RaftDensity.touch) {
             expect(find.byType(RaftTouchTarget), findsWidgets);
           }
@@ -282,7 +288,13 @@ void main() {
       testWidgets(
         '${dark ? 'dark' : 'light'} compiled channel cadence $viewport',
         (tester) async {
-          final expected = (viewport.height <= 600 ? 30.0 : 34.0);
+          // Read the expectation from the theme rather than a literal: the row
+          // height is a contract token now, and the default (Raft) pack keeps one
+          // height at every viewport and density.
+          final rowTokens = raftTheme(dark: dark).extension<RaftTokens>()!;
+          final expected = viewport.height <= 600
+              ? rowTokens.size('size.navRowCompact', fallback: 30)
+              : rowTokens.size('size.navRow', fallback: 34);
           await tester.pumpWidget(
             MaterialApp(
               theme: raftTheme(dark: dark),
