@@ -178,7 +178,8 @@ class RaftSegmentedItem extends StatelessWidget {
           ),
         );
         Widget box = RaftCssBox(
-          radius: 8,
+          // `rounded-control` on the official segment.
+          radius: t.size('radius.control', fallback: 8),
           fill: colors.fill,
           borderWidth: borderWidth,
           borderColor: colors.border,
@@ -213,15 +214,25 @@ class RaftSegmentedTrack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = RaftTokens.of(context).ui;
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
+    // The track is the control radius plus its inset: the official source nests
+    // `rounded-[11px]` around `p-[3px]` holding a `rounded-control` (8px) segment,
+    // so the two corners stay concentric. Derived from the token rather than
+    // hardcoded, or a theme with squarer controls would leave the track rounder
+    // than the segment inside it.
+    final inset = 3.0;
+    final trackRadius = t.size('radius.control', fallback: 8) + inset;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: ui.fillMuted,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(
+          trackRadius >= 999 ? 999 : trackRadius,
+        ),
       ),
       child: Padding(
         // ignore: raft_lints/off_grid_spacing -- the track's `p-[3px]` is an explicit arbitrary value in the raft-ui source (3px ink-to-sticker inset), not a spacing step.
-        padding: const EdgeInsets.all(3),
+        padding: EdgeInsets.all(inset),
         child: Wrap(
           spacing: 2,
           runSpacing: 2,
