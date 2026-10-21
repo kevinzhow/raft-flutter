@@ -1,8 +1,0 @@
-analyzer:
-  exclude:
-    - build/**
-    - macos/**
-    - windows/**
-include:
-  - package:flutter_lints/flutter.yaml
-  - ../../analysis_options.yaml

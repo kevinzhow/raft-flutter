@@ -1,2 +1,0 @@
-# Preserve verbatim upstream font license copies.
-docs/licenses/*.txt whitespace=-blank-at-eol,-blank-at-eof

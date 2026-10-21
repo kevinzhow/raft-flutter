@@ -1,5 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.solusibejo.flutter_dynamic_icon_plus">
-
-  <uses-permission android:name="android.permission.INTERNET"/>
-</manifest>

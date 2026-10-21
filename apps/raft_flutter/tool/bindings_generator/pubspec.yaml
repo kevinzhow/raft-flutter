@@ -1,6 +1,0 @@
-name: raft_android_bindings_generator
-publish_to: none
-environment:
-  sdk: ^3.13.5
-dependencies:
-  ffigen: 23.0.0
