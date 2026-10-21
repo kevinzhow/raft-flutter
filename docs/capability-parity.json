@@ -9132,7 +9132,7 @@
    "flutterEntry": "connected_app_editor.dart profile()",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
+     "file": "apps/raft_flutter/lib/features/app_when_to_use.dart",
      "needle": "When to use"
     },
     {
@@ -16147,6 +16147,66 @@
     }
    ],
    "justification": "Browser tab/window mechanics; mobile has a single window. Linux desktop gets the nearest equivalent (open workspace in browser).",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /integrations/clients/:id/agent-jwt",
+   "area": "integrations-apps-mcp",
+   "capability": "Load an app's Agent access JWT settings",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentJwtSettings (installed app detail, installed marketplace detail, app editor)",
+   "gate": "Visible to all; changing needs manageIntegrations",
+   "flutterEntry": "agent_jwt_settings.dart AgentJwtSettings._load()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_jwt_settings.dart",
+     "needle": "/agent-jwt"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "PUT /integrations/clients/:id/agent-jwt",
+   "area": "integrations-apps-mcp",
+   "capability": "Turn Agent access JWT on or off for an app or its installation",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AgentJwtSettings > 'Save JWT settings'",
+   "gate": "Visible to all; changing needs manageIntegrations",
+   "flutterEntry": "agent_jwt_settings.dart AgentJwtSettings._save()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_jwt_settings.dart",
+     "needle": "'PUT'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "POST /integrations/clients/:id/app-notifications/permissions/review",
+   "area": "integrations-apps-mcp",
+   "capability": "Approve a marketplace app's pending permission update (marketplace reviewers)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "Marketplace app detail > App permissions > 'Approve update' (canReviewAppNotifications)",
+   "gate": "Visible to all; changing needs manageIntegrations (reviewers only for review)",
+   "flutterEntry": "app_permission_review.dart appPermissionReviewPath() via IntegrationsView.approvePermissionUpdate()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/app_permission_review.dart",
+     "needle": "permissions/review"
+    }
+   ],
+   "justification": "",
    "impact": "",
    "size": ""
   }

@@ -2028,37 +2028,42 @@ class RaftAppPermissionsApproval extends StatelessWidget {
             color: t.brutal ? Colors.black.withValues(alpha: .7) : t.muted,
           ),
         ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final g in groups)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: t.brutal ? Colors.white : t.panel,
-                  border: Border.all(
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .2)
-                        : t.colors['line-strong']!,
+        if (groups.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final g in groups)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: t.brutal ? Colors.white : t.panel,
+                    border: Border.all(
+                      color: t.brutal
+                          ? Colors.black.withValues(alpha: .2)
+                          : t.colors['line-strong']!,
+                    ),
+                  ),
+                  child: Text(
+                    g,
+                    style: RaftTypography.body(
+                      t,
+                      size: 11,
+                      line: 11 * 1.5,
+                      weight: FontWeight.w700,
+                      color: t.brutal
+                          ? Colors.black.withValues(alpha: .7)
+                          : t.muted,
+                    ),
                   ),
                 ),
-                child: Text(
-                  g,
-                  style: RaftTypography.body(
-                    t,
-                    size: 11,
-                    line: 11 * 1.5,
-                    weight: FontWeight.w700,
-                    color: t.brutal
-                        ? Colors.black.withValues(alpha: .7)
-                        : t.muted,
-                  ),
-                ),
-              ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
     return Container(

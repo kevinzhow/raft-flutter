@@ -114,6 +114,7 @@ export 'src/settings_workspace.dart';
 export 'src/settings_billing.dart';
 export 'src/settings_applications.dart';
 export 'src/settings_app_editor.dart';
+export 'src/settings_agent_jwt.dart';
 export 'src/public_server.dart';
 export 'src/agent_dialogs.dart';
 export 'src/invite_human_dialog.dart';

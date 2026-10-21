@@ -17,7 +17,9 @@ import '../platform/file_selection.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
+import 'agent_jwt_settings.dart';
 import 'app_notifications_catalog.dart';
+import 'app_when_to_use.dart';
 import 'integrations_views.dart';
 import 'management_support.dart';
 
@@ -336,8 +338,20 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     };
   }
 
+  bool get whenToUseTooLong => isAppWhenToUseTooLong(whenToUse.text);
+
   Future<void> save() async {
     if (submitting) return;
+    if (whenToUseTooLong) {
+      setState(
+        () => error = raftFormat(
+          context,
+          'Use no more than {limit} characters before saving.',
+          {'limit': appWhenToUseMaxCodePoints},
+        ),
+      );
+      return;
+    }
     setState(() {
       submitting = true;
       savingId = editing?['id'] as String?;
@@ -830,7 +844,8 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             : 'Save',
       ),
       onSubmit:
-          submitting ||
+          whenToUseTooLong ||
+              submitting ||
               notificationsLoading ||
               savingId != null && savingId == '${app?['id']}'
           ? null
@@ -975,16 +990,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             enabled: app == null,
           ),
         ),
-        RaftAppEditorField(
-          label: 'When to use',
-          optional: true,
-          hint:
-              'Shown to agents in their system prompt; leave empty to hide it.',
-          child: input(
-            whenToUse,
-            placeholder: 'When an agent should reach for this app, in one line',
-            maxLength: 160,
-          ),
+        AppWhenToUseField(
+          controller: whenToUse,
+          onChanged: (_) => setState(() {}),
         ),
       ],
     );
@@ -1022,6 +1030,11 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
             ? 'Existing agent:read login access is preserved. Configure App permissions separately.'
             : null,
         resourceNote: 'The user chooses the target agent when authorizing.',
+      ),
+      AgentJwtSettings(
+        controller: w,
+        clientId: editing?['id'] as String?,
+        canManage: w.can('manageIntegrations'),
       ),
     ],
   );
@@ -1366,7 +1379,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
                     : 'Request publish',
                 variant: RaftButtonRecipeVariant.accent,
                 size: small,
-                onPressed: savingId == '${app['id']}' ? null : requestPublish,
+                onPressed: whenToUseTooLong || savingId == '${app['id']}'
+                    ? null
+                    : requestPublish,
               ),
             ),
           ),

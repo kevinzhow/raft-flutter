@@ -7,11 +7,11 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 739 (325 endpoint/network keys, 414 client-side).
+Total capabilities: 742 (328 endpoint/network keys, 414 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 533 |
+| ✅ covered | 536 |
 | ⚠️ partial | 72 |
 | ❌ missing | 80 |
 | ➖ na | 54 |
@@ -26,7 +26,7 @@ Total capabilities: 739 (325 endpoint/network keys, 414 client-side).
 | Server settings and admin | 50 | 0 | 0 | 0 |
 | Billing | 7 | 0 | 0 | 0 |
 | Agents, computers, runtimes | 76 | 21 | 29 | 1 |
-| Integrations, apps, MCP | 71 | 4 | 10 | 1 |
+| Integrations, apps, MCP | 74 | 4 | 10 | 1 |
 | Tasks | 30 | 4 | 1 | 5 |
 | Files and attachments | 16 | 7 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
@@ -463,6 +463,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ⚠️ | Open one app event sent to an agent and read its payload | `GET /integrations/agents/:id/events/:id` | AgentAppAccessTab (Agent detail > Apps tab) > App events list > click event row to expand payload (AppEventRow)[gate: Any member who can inspect the agent (server loadInspectableAgent); not limited to managers] | agent_apps_view.dart AgentAppAccessView (Agent detail > Apps tab) event row onTap -> eventDetail() dialog; list is shown only when manager | Impact: Non-manager members who can open an agent's Apps tab cannot see app events or payloads on mobile; low frequency. Flutter renders the App events section only for manager (agent creator / manageIntegrations); Web shows it to every viewer of the Apps tab. Size S |
 | ✅ | List apps that can still be granted to an agent (feeds the Grant access form) | `GET /integrations/agents/:id/grantable-apps` | AgentAppAccessTab (Agent detail > Apps tab) > 'Grant access' > GrantAccessForm app list[gate: Only rendered when canManageAgentAccess (agent creator or server owner/admin (canManageAgentAccess = manageExternalAuth on that agent))] | agent_apps_view.dart AgentAppAccessView (Agent detail > Apps tab) 'Grant access' button -> grant() app chooser; only fetched when manager |  |
 | ✅ | Load the server's registered (My apps) OAuth clients | `GET /integrations/clients` | Settings > Applications loads clients, marketplace, overview in parallel[gate: Tab hidden for guests] | integrations_views.dart IntegrationsView._loadData |  |
+| ✅ | Load an app's Agent access JWT settings | `GET /integrations/clients/:id/agent-jwt` | AgentJwtSettings (installed app detail, installed marketplace detail, app editor)[gate: Visible to all; changing needs manageIntegrations] | agent_jwt_settings.dart AgentJwtSettings._load() |  |
 | ✅ | Load a registered app's App Notifications state (permissions, webhook, pending revision) | `GET /integrations/clients/:id/app-notifications` | AppNotificationsControls/SettingsPanel editor sections 'App permissions' + 'Webhook' (loaded when editing an app)[gate: manageIntegrations (Edit only for owners/admins)] | connected_app_editor.dart loadNotifications() for the edit dialog |  |
 | ✅ | Load the active private share link of an app | `GET /integrations/clients/:id/share-link` | Editor > Distribution > 'Private share link' card (state load)[gate: manageIntegrations; app status private or rejected] | connected_app_editor.dart loadShare() |  |
 | ✅ | Load marketplace listings and installed state | `GET /integrations/marketplace` | Settings > Applications > Marketplace / Installed tabs[gate: Tab hidden for guests] | integrations_views.dart _loadData marketplace |  |
@@ -479,6 +480,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ❌ | Install a privately shared app to a chosen server from an invite link | `POST /integration-invites/:id/install` | pages/IntegrationInvitePage > 'Install app' with server select; 'Open settings' once installed[gate: Owner/admin of target server ('needAdmin' banner otherwise)] |  | Impact: Admins cannot accept a private app invite from the app. No Flutter route, deep-link handler or screen exists for this page; a mobile user can still complete it in a mobile browser. Size M |
 | ✅ | Grant a connected app access to an agent with selected scopes | `POST /integrations/agents/:id/grants` | AgentAppAccessTab (Agent detail > Apps tab) > GrantAccessForm: pick app, tick requested scopes, 'Grant access'[gate: canManageAgentAccess (agent creator or server owner/admin (canManageAgentAccess = manageExternalAuth on that agent))] | agent_apps_view.dart AgentAppAccessView (Agent detail > Apps tab) grant(): 'Choose app' then 'Granted permissions' form, submit 'Grant access' | Equivalent options and gate. Scopes are entered as a comma-separated text field (prefilled with all requested scopes, validated as a subset) instead of Web per-scope checkboxes. |
 | ✅ | Register a new connected app (shows the client secret once) | `POST /integrations/clients` | Settings > Applications > 'Register app' button > editor > 'Register app'[gate: manageIntegrations] | connected_app_editor.dart save() new branch; 'Register app' button in IntegrationsView |  |
+| ✅ | Approve a marketplace app's pending permission update (marketplace reviewers) | `POST /integrations/clients/:id/app-notifications/permissions/review` | Marketplace app detail > App permissions > 'Approve update' (canReviewAppNotifications)[gate: Visible to all; changing needs manageIntegrations (reviewers only for review)] | app_permission_review.dart appPermissionReviewPath() via IntegrationsView.approvePermissionUpdate() |  |
 | ✅ | Rotate the webhook signing secret (shown once, copyable) | `POST /integrations/clients/:id/app-notifications/webhook/rotate-secret` | Editor > Webhook > 'Rotate secret' + signing secret reveal with Copy[gate: manageIntegrations] | connected_app_editor.dart rotateSecret() |  |
 | ✅ | Upload a square app logo | `POST /integrations/clients/:id/logo` | Editor > Profile > Logo 'Upload'/'Change' (file input)[gate: manageIntegrations; app must be saved first] | connected_app_editor.dart uploadLogo() (multipart 'logo') |  |
 | ✅ | Regenerate an app's client secret (confirm dialog, new secret shown once) | `POST /integrations/clients/:id/regenerate-secret` | Editor > Danger zone > 'Regenerate client secret' > ConfirmDialog[gate: manageIntegrations] | connected_app_editor.dart confirmRegenerate() / dangerSection |  |
@@ -499,6 +501,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Disconnect the Slack bridge (confirm) | `POST /slack-bridge/provisioning/disconnect` | IMBridgesSettingsSection / SlackBridgeSetupWizard (Settings > IM Bridges) > 'Disconnect' + confirm[gate: Settings tab only when slack_bridge feature flag allows; mutations need manageIntegrations (read-only note otherwise)] | im_bridges_view.dart IMBridgesView (Settings > 'IM Bridges', shown only when slack_bridge_v0 flag on; manageIntegrations for actions) disconnect() |  |
 | ✅ | Enable the Slack bridge after preflight passes | `POST /slack-bridge/provisioning/enable` | IMBridgesSettingsSection / SlackBridgeSetupWizard (Settings > IM Bridges) > 'Retry and finish setup' / enable[gate: Settings tab only when slack_bridge feature flag allows; mutations need manageIntegrations (read-only note otherwise)] | im_bridges_view.dart IMBridgesView (Settings > 'IM Bridges', shown only when slack_bridge_v0 flag on; manageIntegrations for actions) enable() |  |
 | ✅ | Run Slack bridge preflight checks ('Retry and finish setup') | `POST /slack-bridge/provisioning/preflight` | IMBridgesSettingsSection / SlackBridgeSetupWizard (Settings > IM Bridges) > preflight step[gate: Settings tab only when slack_bridge feature flag allows; mutations need manageIntegrations (read-only note otherwise)] | im_bridges_view.dart IMBridgesView (Settings > 'IM Bridges', shown only when slack_bridge_v0 flag on; manageIntegrations for actions) verifyAndEnable()/verify() |  |
+| ✅ | Turn Agent access JWT on or off for an app or its installation | `PUT /integrations/clients/:id/agent-jwt` | AgentJwtSettings > 'Save JWT settings'[gate: Visible to all; changing needs manageIntegrations] | agent_jwt_settings.dart AgentJwtSettings._save() |  |
 | ✅ | Save the app's requested App permissions (data groups and events) with the app form | `PUT /integrations/clients/:id/app-notifications/permissions` | Editor > App permissions picker + Webhook events checkboxes, saved with 'Save' / 'Register app'[gate: manageIntegrations] | connected_app_editor.dart savePermissions() |  |
 | ✅ | Save/enable the app's HTTPS webhook endpoint | `PUT /integrations/clients/:id/app-notifications/webhook` | Editor > Webhook > 'Enable Webhook' switch, 'HTTPS endpoint' field, 'Save endpoint'[gate: manageIntegrations; app must be saved first] | connected_app_editor.dart saveEndpoint() via 'Save endpoint' |  |
 | ✅ | Approve new data access requested by an installed marketplace app ('Approve update') | `PUT /integrations/marketplace/:id/install/app-notifications/grant` | InstalledAppNotifications > 'Approve update' when approval_required[gate: manageIntegrations] | integrations_views.dart _InstalledAppPermissions.approve() -> 'Approve update' (string-built '$path/grant') |  |

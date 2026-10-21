@@ -154,6 +154,25 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
     await launchManaged(url);
   }
 
+  /// `beginReauthorization`: reload the snapshot, then re-run Slack OAuth from
+  /// its authority. A connect / oauth stage has nothing to reauthorize, so the
+  /// fresh view is adopted instead of redirecting.
+  Future<void> reauthorize(String scope) async {
+    checkScope(scope);
+    final next = SlackBridgeProjection.parse(await w.client.get(base));
+    checkScope(scope);
+    final a = next.oauthAuthority;
+    if (a == null || next.stage == 'connect' || next.stage == 'oauth') {
+      setState(() => adopt(next));
+      return;
+    }
+    final url = SlackBridgeProjection.oauthUrl(
+      await w.client.post('/slack-bridge/oauth/start', data: a),
+    );
+    checkScope(scope);
+    await launchManaged(url);
+  }
+
   Future<void> verifyAndEnable(String scope) async {
     final next = await update(() => w.client.post('$base/preflight'), scope);
     if (next.preflightPassed) {
@@ -509,6 +528,9 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
         onDisconnect: () => setState(() => disconnectConfirmed = true),
         onDisconnectCancel: () => setState(() => disconnectConfirmed = false),
         onDisconnectConfirm: disconnect,
+        onReauthorize: disconnectable && p.stage != 'oauth'
+            ? () => run(() => reauthorize(authority), refresh: false)
+            : null,
       );
     }
     return ListView(

@@ -9,7 +9,9 @@ import '../data/user_error.dart';
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart';
+import 'agent_jwt_settings.dart';
 import 'app_notifications_catalog.dart';
+import 'app_permission_review.dart';
 import 'connected_app_editor.dart';
 
 const integrationScopeLabels = <String, String>{
@@ -372,7 +374,22 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
     return true;
   }
 
-  Future<void> openListing(Map<String, dynamic> listing) async {
+  /// Approves the pending permission update the reviewer is looking at
+  /// (Web handleApproveSelectedAppPermissionUpdate). Returns the English error
+  /// text to show, or null on success / when the change was dropped.
+  Future<String?> approvePermissionUpdate(Map<String, dynamic> listing) {
+    final id = '${listing['id']}';
+    return _mutate(
+      id,
+      () => w.client.post(
+        appPermissionReviewPath(id),
+        data: appPermissionReviewBody(listing),
+      ),
+      fallback: 'Failed to approve permission update',
+    );
+  }
+
+  Future<void> openListing(Map<String, dynamic> opened) async {
     final source = authority;
     // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the install retry starts; the local variable dies with the app detail modal.
     String? modalError;
@@ -385,13 +402,26 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
           if (source != authority) {
             WidgetsBinding.instance.addPostFrameCallback((_) => close());
           }
-          final id = '${listing['id']}';
+          final id = '${opened['id']}';
+          // The listing reloads after a mutation; follow it by id.
+          final listing = marketplace.firstWhere(
+            (m) => '${m['id']}' == id,
+            orElse: () => opened,
+          );
           final installed = listing['installedAt'] != null;
           final saving = savingId == id;
           final developer =
               '${listing['publisherServerName'] ?? listing['publisherName'] ?? tr('Third-party developer')}';
           final homepage = listing['homepageUrl'] as String?;
-          final review = listing['appNotificationReviewPending'] == true;
+          Future<void> approveUpdate() async {
+            setModal(() => modalError = null);
+            final run = approvePermissionUpdate(listing);
+            setModal(() {});
+            final failure = await run;
+            if (!modal.mounted) return;
+            setModal(() => modalError = failure ?? error);
+          }
+
           Future<void> install() async {
             setModal(() => modalError = null);
             final failure = await _mutate(
@@ -483,42 +513,20 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                     ),
                   ),
                 ),
+                if (installed)
+                  AgentJwtSettings(
+                    controller: w,
+                    clientId: id,
+                    canManage: canManage,
+                  ),
                 RaftConnectedAppDetailSection(
                   title: 'App permissions',
                   cream: true,
-                  child: RaftAppPermissionsSummary(
-                    description: tr(
-                      review
-                          ? 'Additional App permissions are pending review. Existing approved access remains available.'
-                          : 'App permissions requested for this installation. Reading data does not require login or webhook delivery.',
-                    ),
-                    badge: review
-                        ? RaftConnectedAppBadge.warning(
-                            tr('App Review pending'),
-                          )
-                        : null,
-                    columns: [
-                      (
-                        tr('Data groups'),
-                        [
-                          for (final g in managementStrings(
-                            listing['appNotificationGroups'],
-                          ))
-                            _groupLabel(modal, g),
-                        ],
-                        tr('No data access'),
-                      ),
-                      (
-                        tr('Notification events'),
-                        [
-                          for (final e in managementStrings(
-                            listing['appNotificationEvents'],
-                          ))
-                            tr(appNotificationEventLabels[e] ?? e),
-                        ],
-                        tr('No events'),
-                      ),
-                    ],
+                  child: AppPermissionRequestSummary(
+                    listing: listing,
+                    groupLabel: (g) => _groupLabel(modal, g),
+                    reviewing: saving,
+                    onApprove: approveUpdate,
                   ),
                 ),
                 RaftConnectedAppDetailSection(
@@ -626,6 +634,11 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                 emptyLabel: tr(
                   'No active grant scopes are currently recorded for this connection.',
                 ),
+              ),
+              AgentJwtSettings(
+                controller: w,
+                clientId: app.id,
+                canManage: canManage,
               ),
               _InstalledAppPermissions(
                 controller: w,

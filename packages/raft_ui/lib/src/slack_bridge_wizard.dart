@@ -79,6 +79,7 @@ class RaftSlackWizardView extends StatelessWidget {
     this.onDisconnect,
     this.onDisconnectCancel,
     this.onDisconnectConfirm,
+    this.onReauthorize,
   });
 
   final RaftSlackStage stage;
@@ -108,6 +109,10 @@ class RaftSlackWizardView extends StatelessWidget {
 
   final bool canDisconnect, disconnectConfirming;
   final VoidCallback? onDisconnect, onDisconnectCancel, onDisconnectConfirm;
+
+  /// `canReauthorize`: re-runs Slack OAuth for the connected workspace (the
+  /// server keeps its channel pairs). Offered next to Disconnect, null hides it.
+  final VoidCallback? onReauthorize;
 
   /// `fg/alpha` over [bg] as Chromium composites it. Brutal fills match a
   /// premultiplied model (alpha quantised to 8 bits, half-way rounding down,
@@ -174,15 +179,28 @@ class RaftSlackWizardView extends StatelessWidget {
           _stageCard(context, t, s, strong, muted),
           if (canDisconnect && !disconnectConfirming) ...[
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: RaftSettingsRecipeButton(
-                key: const ValueKey('slack-bridge-disconnect'),
-                label: 'Disconnect Slack workspace',
-                variant: RaftButtonRecipeVariant.danger,
-                size: RaftButtonRecipeSize.sm,
-                onPressed: busy ? null : onDisconnect,
-              ),
+            // `flex flex-wrap justify-end gap-2`
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (onReauthorize != null)
+                  RaftSettingsRecipeButton(
+                    key: const ValueKey('slack-bridge-reauthorize'),
+                    label: 'Update Slack authorization',
+                    variant: RaftButtonRecipeVariant.default_,
+                    size: RaftButtonRecipeSize.sm,
+                    onPressed: busy ? null : onReauthorize,
+                  ),
+                RaftSettingsRecipeButton(
+                  key: const ValueKey('slack-bridge-disconnect'),
+                  label: 'Disconnect Slack workspace',
+                  variant: RaftButtonRecipeVariant.danger,
+                  size: RaftButtonRecipeSize.sm,
+                  onPressed: busy ? null : onDisconnect,
+                ),
+              ],
             ),
           ],
           if (canDisconnect && disconnectConfirming) ...[
