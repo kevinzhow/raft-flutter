@@ -5,6 +5,7 @@ import 'message_history_summaries.dart';
 import 'message_window_snapshot.dart';
 import 'workspace_message_host.dart';
 import 'workspace_message_windows.dart';
+import 'thread_visit.dart';
 import 'user_error.dart';
 
 /// Paging commands share the receiver's existing request and boundary owners.
@@ -121,6 +122,9 @@ class MessageHistoryNavigation {
     );
     if (thread) {
       w.messageWindows.threadGeneration++;
+      // The thread stays open: its identity must outlive the new epoch also
+      // when the window needs no reload below.
+      if (identity != null) ThreadVisit.renew(w.windowReceiver);
     } else {
       w.messageWindows.channelGeneration++;
     }

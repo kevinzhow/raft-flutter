@@ -6,6 +6,7 @@ import 'message_window_snapshot.dart';
 import 'message_history_pages.dart';
 import 'message_history_positions.dart';
 import 'thread_search.dart';
+import 'thread_visit.dart';
 import 'thread_window_snapshot.dart';
 import 'user_error.dart';
 import 'workspace_messages.dart';
@@ -120,27 +121,11 @@ class WorkspaceThreadCommands {
         kind: m.presentation.location.panelNavigationKindTo(next),
       );
     }
-    final navigationWindow = m.presentation.navigationRevision,
-        requestAuthority = m.replyToken(parentChannelId),
+    final requestAuthority = m.replyToken(parentChannelId),
         messageAuthority = m.threadResourceAuthority(parentChannelId),
         generation = m.ledger.generation;
     m.messageWindows.threadGeneration++;
-    final request = m.messageWindows.request(
-      thread: true,
-      allowed: () =>
-          navigationWindow == m.presentation.navigationRevision &&
-          requestAuthority == m.replyToken(parentChannelId) &&
-          (messageAuthority == null ||
-              messageAuthority == m.threadResourceAuthority(parentChannelId)) &&
-          !m.session.revocations.revokedChannels.contains(parentChannelId) &&
-          !m.session.revocations.revokedChannels.contains(
-            m.state.threadChannelId,
-          ) &&
-          m.context.can(
-            'viewChannel',
-            resource: m.threadChannelResource(parentChannelId),
-          ),
-    );
+    final request = ThreadVisit.request(m, parentChannelId);
     m.state.threadIdentity = WorkspaceThreadIdentity(
       parentChannelId: parentChannelId,
       parentMessageId: parentMessageId,
