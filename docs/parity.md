@@ -298,11 +298,12 @@ Result: 152 Playwright tests passed (99 provider captures + the package's
 metric specs), 99/99 React captures. Provenance (raft-source commit and dirty
 files at capture time) is in `build/parity/react-source.json`.
 
-One-time host setup that was needed: the pinned `@playwright/test` 1.59.1
-wants `chromium_headless_shell-1217`, and Playwright refuses to download on
+One-time host setup that was needed: the pinned `@playwright/test` wants a
+matching `chromium_headless_shell-<build>` (1.59.1 at v1.21.2: build 1217, Chrome 147;
+1.64.0 at v1.21.12: build 1248, Chrome 156), and Playwright refuses to download on
 Ubuntu 26.04, so it was installed with
 `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 pnpm exec playwright install chromium`
-from `raft-source/packages/web`.
+from `raft-source/packages/web`. The shared `~/.cache/ms-playwright` keeps both builds.
 
 ### Provider identity
 
@@ -377,8 +378,8 @@ product.)
 What `tool/parity run` does now (raft-source untouched):
 
 * `tool/parity-fonts/` (committed, 492 KB, OFL): the exact CSS Google returns
-  for raft-ui's URL to the pinned Chromium 147 UA (identical to the headed
-  Chrome 147 response) and all 22 woff2 files it references, sha256-pinned in
+  for raft-ui's URL to the Chromium 147 UA (identical to the headed
+  Chrome 147 response, and byte-identical for the Chrome 156 UA of the v1.21.12 reference, checked 2026-10-21) and all 22 woff2 files it references, sha256-pinned in
   `manifest.json`. `tool/parity fonts` verifies, `--refresh` refetches.
 * The official spec and Playwright config are copied into
   `build/parity/react-provider/` and patched; every patch anchor must match

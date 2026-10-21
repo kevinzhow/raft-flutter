@@ -1,7 +1,7 @@
 # Capability parity: Web vs Flutter
 
 Generated from `docs/capability-parity.json` by `tool/capability_parity_report.py`; edit the JSON, not this file.
-Web reference: raft-source `26f77ef97` (Web 1.17.5). Guard: `apps/raft_flutter/test/capability_parity_guard_test.dart` (run with `RAFT_WEB_SOURCE=<checkout>` to also fail on Web endpoints missing from the JSON). Extractor: `tool/capability_parity.py`.
+Web reference: raft-source `a98ae0032` (Web 1.21.12). Guard: `apps/raft_flutter/test/capability_parity_guard_test.dart` (run with `RAFT_WEB_SOURCE=<checkout>` to also fail on Web endpoints missing from the JSON). Extractor: `tool/capability_parity.py`.
 
 Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`docs/parity.md`) never compared what a user can do. This document does: every Web client-to-server call and every client-side action, mapped to Flutter.
 

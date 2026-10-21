@@ -33,9 +33,9 @@
 
 ## 固定源快照的本地启动兼容补丁
 
-原快照 verifier 导入已经移除的 `__testRisingWaveInboxFailSoft` 并调用 `.setDeps`，而当前 channelService 仅导出 `__testRisingWaveInbox.set`，因此 strict parity 启动时报 SyntaxError。只修正该校验脚本的符号与setter，不改服务端查询/权限/消息或Web行为，不删除严格计数/全量PG与RW比较。可审核diff和前后SHA256在 `tool/reference-patches/`；launcher仅在固定旧hash时自动应用，遇到陌生hash拒绝修改。
+v1.21.2 快照的 verifier 导入已经移除的 `__testRisingWaveInboxFailSoft` 并调用 `.setDeps`，当时用 `verify-inbox-parity.patch` 改成 `__testRisingWaveInbox.set`。v1.21.12 的 `verify-risingwave-inbox-parity.ts` 已经使用 `__testRisingWaveInbox`，该补丁已删除，launcher 不再应用它；严格计数和全量 PG/RW 比较保持上游原样。其余兼容补丁在 launcher 中仅在固定旧hash时自动应用，遇到陌生hash拒绝修改。
 
-源码HEAD仍是 source-reference.json 的固定commit，但工作目录含已列出的校验脚本和fixture补丁。新机器可复现，不把dirty工作目录伪称完整原样快照。
+源码HEAD仍是 source-reference.json 的固定commit，但工作目录含已列出的fixture补丁。新机器可复现，不把dirty工作目录伪称完整原样快照。
 
 种子脚本把历史消息设成几分钟前/几天前，却用当前时间写频道加入记录。RW Activity遵守加入后活动的规则，原PG校验计入该历史，初始totalCount34 vs28。`seed-history.patch`仅调整本地fixtures的加入时间早于其历史，并为primary #all创建一条普通参照消息；不改服务端查询/权限逻辑。所有兼容文件均有固定前后hash，且完整严格parity仍执行。
 

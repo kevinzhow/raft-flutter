@@ -7,7 +7,7 @@
 // laid out on a white grid (one row per sample, one column per size, black
 // currentColor) and screenshotted at deviceScaleFactor 1 by Chromium through the
 // raft-source checkout's playwright-core. Set CHROMIUM_EXECUTABLE to keep the
-// committed Chromium build (147.0.7727.15) when the checkout's playwright-core
+// committed Chromium build (156.0.8078.4) when the checkout's playwright-core
 // wants a different one. Writes chromium.png + manifest.json.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';

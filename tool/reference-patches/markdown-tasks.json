@@ -1,6 +1,6 @@
 {
   "repairId": "markdown-task-status-v1",
-  "sourceCommit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "sourceCommit": "a98ae003246a0360872a77d76dec2fccd0347ef7",
   "scope": "Public visual fixture data only. All five channel tasks are explicitly in_progress; #606 and #607 match the message text. These values declare test states, not live task history. Product code, message bodies, widths, manifest, thresholds and unrelated fixtures are unchanged.",
   "cases": [
     "components.thread.message-row.md-wrap-slice1",

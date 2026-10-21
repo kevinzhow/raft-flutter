@@ -47,10 +47,11 @@ PAIR = 'react__android'
 FONT_CACHE = root / 'tool/parity-fonts'
 RAFT_UI_FONT_CSS_URL = ('https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@300..700'
                         '&family=Hanken+Grotesk:wght@300..700&family=Inter:wght@400;500;600;700&display=swap')
-# UA of the pinned Playwright Chromium (headless shell 147); Google serves the
-# same woff2 + unicode-range CSS to the headed Chrome 147 UA (checked).
+# UA of the pinned Playwright Chromium headless shell (156 for the v1.21.12 reference's
+# @playwright/test 1.64; it was 147 under 1.59). Google serves the byte-identical CSS to
+# both UAs (sha256 b66bcc6f..., checked 2026-10-21), so the committed cache stays valid.
 FONT_FETCH_UA = ('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                 'HeadlessChrome/147.0.7727.15 Safari/537.36')
+                 'HeadlessChrome/156.0.8078.4 Safari/537.36')
 PASS_STATUSES = {'same', 'pass', 'basic-pass'}
 
 

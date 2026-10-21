@@ -1,6 +1,6 @@
 {
  "reference": "tool/glyph_parity/reference/chromium.png",
- "chromium": "147.0.7727.15",
+ "chromium": "156.0.8078.4",
  "samples": 46,
  "sizes": [
   16.0,

@@ -1,6 +1,6 @@
 # Third-party notices
 
-Raft protocol behavior, theme mapping and SyncCore compatibility ports reference `botiverse/raft-source` commit `26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6`, copyright 2026 Botiverse, Inc. The source license is preserved in [docs/licenses/raft-source-FSL-1.1-ALv2.txt](docs/licenses/raft-source-FSL-1.1-ALv2.txt). Source provenance and local test-fixture patches are recorded in [docs/source-reference.json](docs/source-reference.json).
+Raft protocol behavior, theme mapping and SyncCore compatibility ports reference `botiverse/raft-source` commit `a98ae003246a0360872a77d76dec2fccd0347ef7`, copyright 2026 Botiverse, Inc. The source license is preserved in [docs/licenses/raft-source-FSL-1.1-ALv2.txt](docs/licenses/raft-source-FSL-1.1-ALv2.txt). Source provenance and local test-fixture patches are recorded in [docs/source-reference.json](docs/source-reference.json).
 
 Bundled Geist, Geist Mono, Hanken Grotesk and Inter fonts carry their respective SIL Open Font License notices beside the font assets in `packages/raft_ui/assets/fonts/` and in `docs/licenses/` for packaged distribution.
 

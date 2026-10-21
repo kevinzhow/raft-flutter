@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "repository": "https://github.com/botiverse/raft-source",
-  "pinned": "v1.21.2-source.1",
-  "commit": "26f77ef97c40d3d91aa2c5e42b0fd66b8bf39fe6",
+  "pinned": "v1.21.12-source.1",
+  "commit": "a98ae003246a0360872a77d76dec2fccd0347ef7",
   "history": [
     {
       "tag": "v1.21.2-source.1",
@@ -13,6 +13,17 @@
       "date": "2026-10-06",
       "note": "Initial baseline: the revision all existing parity work (docs/source-reference.json, capability and field parity, visual parity, zh catalog) was written against.",
       "report": "",
+      "deferred": []
+    },
+    {
+      "tag": "v1.21.12-source.1",
+      "commit": "a98ae003246a0360872a77d76dec2fccd0347ef7",
+      "from": "v1.21.2-source.1",
+      "decision": "follow",
+      "decidedBy": "kevinzhow",
+      "date": "2026-10-21",
+      "note": "Kevin (Raft #raft-flutter:6d2dbe4e): full alignment with Web. v1.21.12 fully ported in PRs #310-#372 except the intentional differences recorded in docs/parity.md and docs/capability-parity.json. The 136 pre-v1.21.12 capability rows (69 partial, 67 missing) stay tracked in docs/capability-parity.json.",
+      "report": "docs/upstream-reports/v1.21.2-to-v1.21.12.md",
       "deferred": []
     }
   ]

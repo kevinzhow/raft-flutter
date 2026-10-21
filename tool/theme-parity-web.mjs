@@ -19,24 +19,31 @@ function once(code, before, after) {
   return code.replace(before, after);
 }
 let code = once(original,
-  '  const preset: AppThemePreset = defaultTheme === "elegant" ? "elegant-light" : "brutal";',
+  '  return (\n    <ThemeProvider defaultTheme={defaultTheme} defaultMode="light">\n'
+  + '      <AppThemeContext.Provider value={FIXED_THEME_CONTEXTS[defaultTheme]}>',
   `  const override = new URLSearchParams(window.location.search).get('parityTheme');
   if (override && !['brutal-light', 'elegant-light', 'elegant-dark'].includes(override)) {
     throw new Error('Unknown supplemental parity theme');
   }
   const selectedTheme = override ? (override === 'brutal-light' ? 'brutal' : 'elegant') : defaultTheme;
   const dark = override === 'elegant-dark';
-  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';`);
-code = once(code, '    resolvedMode: "light" as const,', '    resolvedMode: dark ? "dark" as const : "light" as const,');
+  const preset: AppThemePreset = dark ? 'elegant-dark' : selectedTheme === 'elegant' ? 'elegant-light' : 'brutal';
+  const themeContext: AppThemeContextValue = {
+    ...fixedThemeContext(preset),
+    resolvedMode: dark ? "dark" as const : "light" as const,
+  };
+  return (
+    <ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>
+      <AppThemeContext.Provider value={themeContext}>`);
 // The official host wraps every case in `<main className="min-h-screen bg-white">`. A
 // screen is a full-height panel in the app, but the React fixture keeps it at content
 // height, so in elegant-dark the uncovered part of the 390x844 frame stays white while
 // the Flutter screen paints the panel colour. Paint that frame in the panel colour
 // (screens only; component cases keep the host's white).
 code = once(code,
-  '<ThemeProvider defaultTheme={defaultTheme} defaultMode="light">',
-  `<ThemeProvider defaultTheme={selectedTheme} defaultMode={dark ? "dark" : "light"}>
-    {dark ? <style>{"main.bg-white:has([data-visual-case^='screens.']) { background-color: var(--layer-panel) !important; }"}</style> : null}`);
+  '      <AppThemeContext.Provider value={themeContext}>',
+  `      <AppThemeContext.Provider value={themeContext}>
+      {dark ? <style>{"main.bg-white:has([data-visual-case^='screens.']) { background-color: var(--layer-panel) !important; }"}</style> : null}`);
 mkdirSync(out, { recursive: true });
 // Apply the same owner-authorized fixture repair as the original 99 runner.
 // Theme overrides still affect only the fixture root; no product code edits.

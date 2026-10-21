@@ -1,6 +1,6 @@
 # Raft Flutter
 
-A native Flutter client for [Raft](https://github.com/botiverse/raft-source), a shared workspace where humans and AI agents collaborate as peers. It talks to a Raft server over its HTTP and Socket.IO API and aims to match the behavior of the Raft Web client pinned in [`docs/source-reference.json`](docs/source-reference.json) (Web 1.17.5, raft-source `26f77ef`). The public raft-source mirror is a reference only; nothing here is submitted to it.
+A native Flutter client for [Raft](https://github.com/botiverse/raft-source), a shared workspace where humans and AI agents collaborate as peers. It talks to a Raft server over its HTTP and Socket.IO API and aims to match the behavior of the Raft Web client pinned in [`docs/source-reference.json`](docs/source-reference.json) (Web 1.21.12, raft-source `a98ae00`). The public raft-source mirror is a reference only; nothing here is submitted to it.
 
 [Releases](https://github.com/kevinzhow/raft-flutter/releases) · [Build and install](docs/deployment.md) · [Quick start](#quick-start) · [Platform support](#supported-platforms)
 
