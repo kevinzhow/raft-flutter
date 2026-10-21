@@ -1,5 +1,7 @@
 # Message synchronization evidence
 
+> Update 2026-10-21: Web v1.21.12 deleted `messageSyncDomain.ts`, `messageSyncFeatureFlag.ts` and `normalizedMessageV2FeatureFlag.ts`. The app retired the `sync_core_messages_v0` flag as well (bbc62c43): `WorkspaceController` no longer evaluates it and a late `message:new` frame below the channel watermark is accepted, as on Web (`message_sync_controller_test.dart`, "obsolete message flag is not evaluated and late ingress remains accepted"). The first sections below describe the removed flag-gated path and stay as history. The notification-preferences domain further down is unchanged.
+
 The pinned Web `messageSyncDomain.ts` uses a sparse `messages` domain: a server-wide message sequence is not contiguous inside one channel. Its compatibility domain consumes `message:new`; the established socket `sync:resume` transport owns reconnect replay. It does not invent a messages snapshot/difference HTTP endpoint.
 
 `MessageSync` ports that consumer to `raft_sync`. `WorkspaceController` evaluates the mounted `sync_core_messages_v0` capability for the current workspace and rejects stale flag responses across account/workspace changes. Enabled ingress deduplicates/regression-checks new channel facts; unresolved/off ingress preserves the legacy delivery path. Positive safe numeric sequences and canonical uint64 strings remain exact at the boundary. Missing sequences retain the source's fallback.
