@@ -6,9 +6,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../data/announcement_store.dart';
 import '../data/workspace_controller.dart';
+import 'announcement_cta.dart';
 
-/// Mounts the Web `AnnouncementModal` over the workspace
-/// (MainLayout: `<AnnouncementModal suppressed={…onboarding gate…} />`).
+/// Mounts the Web `AnnouncementModal` (v1.21.12: raft-ui's AnnouncementDialog)
+/// over the workspace (MainLayout: `<AnnouncementModal suppressed={…onboarding
+/// gate…} />`).
 ///
 /// * Entry: the queue is read when the workspace mounts (Web
 ///   `bootstrapMainLayoutRealtimeBridge`) and on every return to the
@@ -16,8 +18,11 @@ import '../data/workspace_controller.dart';
 ///   never pushes a read.
 /// * The oldest unread row is shown when the current server's onboarding
 ///   gate is ready and onboarding was not seen this session.
-/// * The modal is a full-window layer above the workspace and any dialog
-///   open at that moment (Web `layer={1}`).
+/// * The dialog is a layer above the workspace and any dialog open at that
+///   moment (Web `layer={1}`). It shows the first page only; every way out
+///   (✕, Escape, the scrim, "Got it", the CTA, Enter) dismisses the row.
+/// * The CTA dismisses, then opens its href: an internal path or query in the
+///   app ([openAnnouncementInternalLink]), an https URL in the browser.
 /// * A failed read-complete write raises an error notice once per row.
 class AnnouncementHost extends StatefulWidget {
   const AnnouncementHost({
@@ -51,7 +56,7 @@ class _AnnouncementHostState extends State<AnnouncementHost>
   WorkspaceController get w => widget.controller;
   late WorkspaceController _bound;
   String? _serverId;
-  RawDialogRoute<void>? _route;
+  Route<void>? _route;
   String? _routeId;
   bool _scheduled = false;
   final _notified = <String>{};
@@ -182,34 +187,69 @@ class _AnnouncementHostState extends State<AnnouncementHost>
     final navigator = Navigator.maybeOf(context, rootNavigator: true);
     if (navigator == null) return;
     final store = w.services.announcements;
-    final route = raftModalRoute<void>(
+    final cta = a.cta, image = a.image;
+    // AnnouncementModal `activate`: once per presentation.
+    var activated = false;
+    void activate() {
+      if (activated) return;
+      activated = true;
+      // Open synchronously in the user gesture; a failed write still raises
+      // the store's save-failed notice.
+      unawaited(store.dismiss(a.id));
+      if (cta != null) _openCta(cta);
+    }
+
+    final route = RaftDialogRoute<void>(
       settings: RouteSettings(name: 'announcement:${a.id}'),
+      capturedThemes: InheritedTheme.capture(
+        from: context,
+        to: navigator.context,
+      ),
       builder: (context) => RaftAnnouncementModal(
         key: ValueKey('announcement:${a.id}'),
         title: a.title,
-        pages: [
-          for (final page in a.pages)
-            RaftAnnouncementPage(title: page.title, body: page.body),
-        ],
-        onClose: () => store.close(a.id),
-        onConfirm: () => unawaited(store.dismiss(a.id)),
+        body: a.pages.first.body,
+        label: a.label,
+        image: image == null
+            ? null
+            : RaftAnnouncementImage(
+                url: announcementImageUrl(w.client.origin, image.assetId),
+                alt: image.alt,
+              ),
+        ctaLabel: cta?.label,
+        onCta: activate,
+        onDismiss: () => unawaited(store.dismiss(a.id)),
         onLink: widget.openLink ?? _openLink,
       ),
     );
     _route = route;
     _routeId = a.id;
     navigator.push(route).then((_) {
-      // Popped from outside (Android back): a local close, like ✕.
+      // Popped from outside (Escape, the scrim, Android back): the dialog's
+      // `onOpenChange(false)`, a dismissal like ✕.
       if (!identical(_route, route)) return;
       _route = null;
       _routeId = null;
-      store.close(a.id);
+      unawaited(store.dismiss(a.id));
     });
     if (widget.deployment == 'slockdev') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (identical(_route, route)) unawaited(store.dismiss(a.id));
       });
     }
+  }
+
+  void _openCta(AnnouncementCta cta) {
+    if (!cta.internal) {
+      (widget.openLink ?? _openLink)(cta.href);
+      return;
+    }
+    openAnnouncementInternalLink(
+      context,
+      w,
+      cta.href,
+      openExternal: widget.openLink ?? _openLink,
+    );
   }
 
   void _removeRoute({bool deferred = false}) {

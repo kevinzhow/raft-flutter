@@ -949,59 +949,73 @@ padding, the messages card paints without a heading while an error shows.
 Remaining difference is text rasterisation and Chromium's truncating blend arithmetic
 (1-2 level steps on every shadow/ring line, worst in elegant-dark), not geometry.
 
-### Announcement modal cases (13 surfaces x 3 themes = 39)
+### Announcement dialog cases (17 surfaces x 3 themes = 51)
 
-Derived from Web `components/AnnouncementModal.tsx` (`Modal layer={1}
-closeOnBackdrop` + `Card w-full max-w-xl`), `components/Modal.tsx` and
-`store/announcementStore.ts`. `tool/parity-ext/build-announcements.py`
-appends `components.announcements.<platform>.<kind>.<theme>` (run it after
+Derived from Web v1.21.12 `components/AnnouncementModal.tsx` (raft-ui 0.5.52
+`AnnouncementDialog*` from `raft-ui/wip` on `layer={1}`: label row with the
+close button, title, optional picture, the first page's Markdown, and a footer
+with "Got it" or the call to action) and `store/announcementStore.ts`.
+`tool/parity-ext/build-announcements.py` appends
+`components.announcements.<platform>.<kind>.<theme>` (run it after
 `build-cases.py` and `build-live-activity.py`); data is
 `tool/parity-ext/fixtures/announcements.json`. The React host
 (`host/AnnouncementCases.tsx`) mounts the real `AnnouncementModal` with
-`useAnnouncementStore.pending` primed; the Flutter builders
-(`test/parity/cases/ext_announcements.dart`) mount the real `AnnouncementHost`
-whose fixture client answers `GET /announcements/active` and the setup
-projection (`phase: null`), so the modal opens exactly as on workspace entry.
+`useAnnouncementStore.pending` primed and serves
+`GET /api/announcements/images/:id` from `fixtures/announcement-picture.png`
+(a `{"$file": ...}` route answer in `tool/parity-ext/run`); the Flutter
+builders (`test/parity/cases/ext_announcements.dart`) mount the real
+`AnnouncementHost` whose fixture client answers `GET /announcements/active`
+and the setup projection (`phase: null`), so the dialog opens exactly as on
+workspace entry. The picture comes through an `HttpOverrides` client that
+answers the same PNG.
 
-* desktop (1280x800, 1x): single page, multi-page first / middle / last
-  (`capture.interactions` press Next), rich Markdown (h2/h3, ordered list,
-  bold/italic, inline code, link), long body (`max-h-[60vh]`), long title
-  (`truncate`), and the whole viewport with the backdrop (`overlay`);
-* mobile (390x844, 3x): single, multi-middle, rich, long, overlay.
+* desktop (1280x800, 1x): single, call to action (`cta`, `cta-long` where the
+  label wraps and the footer wraps with it), `image` (label + picture + CTA),
+  `image-only`, `multi` (three pages; only the first shows), rich Markdown (h1
+  to h3, ordered list, bold/italic, inline code, link), long body
+  (`max-h-[70dvh]`), long title, and the whole viewport with the scrim
+  (`overlay`);
+* mobile (390x844, 3x): single, cta, cta-long (footer stacks, `@max-[28rem]`),
+  image, rich, long, overlay.
 
-Element cases crop the card (`[data-testid="announcement-modal"]` / `ValueKey
+Element cases crop the dialog (`[data-testid="announcement-modal"]` / `ValueKey
 announcement-modal`), overlay cases the viewport.
 
-Blink details reproduced in `packages/raft_ui/lib/src/announcement_modal.dart`
-(each measured on the parity Chromium with element/range rects):
+Details reproduced in `packages/raft_ui/lib/src/announcement_modal.dart` and
+`announcement_markdown.dart`:
 
-* the card is centred at a fractional y (e.g. 296.5) but painted at the whole
-  CSS pixel (round half up); its layout rect keeps the fraction, and
-  Playwright's element screenshot encloses it in whole CSS pixels. The
-  harness now encloses extension element crops in CSS pixels before scaling
-  (`parity_harness.dart`; no change for integer rects, the 9 mobile live
-  activity cases score identically);
-* text uses `RaftCssText` line boxes (22.75px `leading-relaxed` lines, Blink
-  baseline); elegant InlineCode is `inline-flex` with `py-[1.5px]`, so a line
-  holding it grows by `box descent - (line-height - css baseline)` (1.094px
-  at 14px Geist), brutal InlineCode is an inline box (content area + 1px
-  border) that never grows its line;
-* `list-disc` markers are Blink's painted symbol: an `(A*2/3+1)/2` circle
-  (5px for A = 14) ending 11px before the item content;
-* the primary button is focused on open and keeps `:focus-visible` after it
-  is clicked (Blink keeps it on a script-focused element).
+* the dialog is `DialogContent` with `max-w-xl gap-0 overflow-clip p-0`; the
+  body slot is `px-7 pt-6 pb-5` and scrolls under `max-h-[70dvh]`; the footer
+  is `flex-wrap justify-between gap-3 border-t px-7 py-4`, `flex-col` with
+  `w-full` actions when the dialog is narrower than 28rem, and its actions are
+  `ml-auto`; the CTA button is `h-auto min-h-8 whitespace-normal`;
+* text uses `RaftCssText` line boxes (22.75px `leading-relaxed` lines); the
+  Markdown has no heading margins or uppercase (h1 `text-xl`, h2 `text-lg`, h3
+  `text-base`, bold), only `p + p` gets `mt-3`, lists are `list-disc|decimal
+  pl-5` with no item margin, links are underlined, and `code` is the plain
+  raft-ui InlineCode;
+* a link's tap recognizer sits on every text leaf of the link (a span's
+  recognizer does not cover its children; with the recognizer on the parent
+  span, as the previous modal had it, a tap on the link did nothing in a
+  widget test);
+* the dialog route fades in over 150ms; the case waits for it and for the
+  picture to decode (`interact`).
 
-| | first run | final |
+| | v1.21.2 modal (39 cases) | v1.21.12 dialog (51 cases) |
 | --- | --- | --- |
-| mean pixel-perfect similarity | 92.0 % | 93.6 % |
-| passing (>96 %) | 8 / 39 | 8 / 39 (overlay x6, mobile single/rich brutal) |
-| capture size mismatches | 15 | 0 |
+| capture size mismatches | 0 | 0 |
+| mean RGB similarity | n/a | 98.9 % |
+| mean pixel-perfect similarity | 93.6 % | 89.7 % |
+| passing (>96 % pixel-perfect) | 8 / 39 | 1 / 51 |
 
-All 39 crops have identical sizes and the glyph positions match (checked by
-row profiles and 5x zooms); what remains is Chromium vs Skia text
-rasterisation (Chromium's glyphs are darker, see "Text rendering"), which
-keeps text-dense cards at 89–96 %. Not covered: the failed-write error
-notice (Web `toast.error`; Flutter uses a SnackBar), hover states.
+Every crop has the Web's size. What remains is text rasterisation (Chromium's
+glyphs are darker, see "Text rendering"), the picture's resampling filter, and
+a few lines one pixel off (row profiles of the glyphs agree everywhere else).
+The old modal painted its card at the whole CSS pixel; applying that snap (down
+or up) to the dialog, which Web centres with `top-1/2 -translate-1/2` at e.g. y
+= 263.375, lowered every score, so the dialog is painted unsnapped. Not
+covered: the failed-write error notice
+(Web `toast.error`; Flutter uses a SnackBar), hover states.
 
 ### Thread, timeline, attachment and message-surface cases (`components.thread-ext.*`, 240 cases)
 

@@ -98,7 +98,16 @@ class RaftRecipeButton extends StatelessWidget {
     this.glyphTrailing = false,
     this.focusRing = false,
     this.disabledOpacity,
+    this.underline = false,
+    this.autoHeight = false,
   });
+
+  /// Callsite `underline`.
+  final bool underline;
+
+  /// Callsite `h-auto min-h-8 whitespace-normal text-center`: the recipe
+  /// height is a minimum and a long label wraps.
+  final bool autoHeight;
 
   /// Callsite `disabled:opacity-*` replacing the recipe's disabled opacity.
   final double? disabledOpacity;
@@ -173,8 +182,10 @@ class RaftRecipeButton extends StatelessWidget {
         fontSize: step?.$1 ?? base.fontSize,
         height: step == null ? base.height : step.$2 / step.$1,
         leadingDistribution: TextLeadingDistribution.even,
+        decoration: underline ? TextDecoration.underline : null,
       ),
     );
+    final wraps = autoHeight || RaftScaled.grows(context);
     final svg = root.target("& svg:not([class*='size-'])");
     final iconSize = glyphSize ?? svg?.width ?? 16;
     final resolvedGap = gap ?? root.columnGap ?? 0;
@@ -191,13 +202,9 @@ class RaftRecipeButton extends StatelessWidget {
               Flexible(
                 child: Text(
                   raftText(context, label!),
-                  maxLines: RaftScaled.grows(context) ? null : 1,
-                  textAlign: RaftScaled.grows(context)
-                      ? TextAlign.center
-                      : null,
-                  overflow: RaftScaled.grows(context)
-                      ? TextOverflow.clip
-                      : TextOverflow.ellipsis,
+                  maxLines: wraps ? null : 1,
+                  textAlign: wraps ? TextAlign.center : null,
+                  overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
                   style: text,
                 ),
               ),
@@ -221,7 +228,7 @@ class RaftRecipeButton extends StatelessWidget {
     final resolvedPadding = padding ?? root.padding;
     // Above the default text size the recipe height is a minimum (CSS
     // `min-height`) and the label wraps, so the button grows with its text.
-    final grows = root.height != null && RaftScaled.grows(context);
+    final grows = root.height != null && wraps;
     Widget box = Container(
       height: grows ? null : root.height,
       constraints: grows ? BoxConstraints(minHeight: root.height!) : null,

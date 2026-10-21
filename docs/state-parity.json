@@ -551,14 +551,38 @@
     },
     {
      "state": "partial",
-     "variant": "multi-page position",
+     "variant": "first page only (later pages never shown)",
      "web": "yes",
      "flutter": "yes",
      "parityCase": [
-      "components.announcements.desktop.multi-first",
-      "components.announcements.desktop.multi-middle",
-      "components.announcements.desktop.multi-last",
-      "components.announcements.mobile.multi-middle"
+      "components.announcements.desktop.multi",
+      "components.announcements.desktop.single",
+      "components.announcements.mobile.single"
+     ],
+     "status": "covered"
+    },
+    {
+     "state": "partial",
+     "variant": "label and call to action",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [
+      "components.announcements.desktop.cta",
+      "components.announcements.desktop.cta-long",
+      "components.announcements.mobile.cta",
+      "components.announcements.mobile.cta-long"
+     ],
+     "status": "covered"
+    },
+    {
+     "state": "partial",
+     "variant": "picture",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [
+      "components.announcements.desktop.image",
+      "components.announcements.desktop.image-only",
+      "components.announcements.mobile.image"
      ],
      "status": "covered"
     }

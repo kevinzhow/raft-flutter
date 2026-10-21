@@ -7,11 +7,11 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 742 (328 endpoint/network keys, 414 client-side).
+Total capabilities: 744 (329 endpoint/network keys, 415 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 542 |
+| ✅ covered | 544 |
 | ⚠️ partial | 70 |
 | ❌ missing | 76 |
 | ➖ na | 54 |
@@ -35,7 +35,7 @@ Total capabilities: 742 (328 endpoint/network keys, 414 client-side).
 | Onboarding and auth | 33 | 1 | 2 | 5 |
 | Joint channels | 6 | 4 | 1 | 0 |
 | Public and guest | 7 | 1 | 0 | 0 |
-| Global UI and cross-cutting | 36 | 8 | 6 | 27 |
+| Global UI and cross-cutting | 38 | 8 | 6 | 27 |
 
 ### Top gaps by user impact
 
@@ -814,13 +814,15 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | | Capability | Id | Web entry | Flutter entry | Notes |
 | --- | --- | --- | --- | --- | --- |
 | ✅ | Fetch active announcements to show in the announcement modal (bg) | `GET /announcements/active` | AnnouncementModal (background load on entry/focus)[gate: signed in; suppressed during server setup gate] | announcement_host.dart AnnouncementHost |  |
-| ✅ | Mark an announcement as read (OK on the last page) | `POST /announcements/:id/dismiss` | AnnouncementModal Back / Next / OK, close X (close does not mark read) | announcement_host.dart RaftAnnouncementModal onConfirm -> store.dismiss |  |
+| ✅ | Load the picture of an announcement (public, no credentials, only once the announcement is published) | `GET /announcements/images/:id` | AnnouncementModal AnnouncementDialogPicture img src[gate: announcement has an image] | announcement_cta.dart announcementImageUrl -> RaftAnnouncementModal picture |  |
+| ✅ | Dismiss an announcement (Got it, the call to action, or closing the dialog) | `POST /announcements/:id/dismiss` | AnnouncementModal Got it / CTA / close X / Esc / outside press (every one records the dismissal) | announcement_host.dart RaftAnnouncementModal onDismiss / onCta -> store.dismiss |  |
 | ✅ | Evaluate server feature flags that gate UI (labs, public server, guest, providers, bridges, etc.) (bg) | `POST /feature-flags/evaluate` | serverFeatureFlags store (background) | Flutter evaluates flags per surface via featureFlagEvaluateBody |  |
 | ❌ | Send batched product-analytics events (POST /product-events/batch) when the server allows analytics (bg) | `RAW analytics/track.ts` | analytics/track.ts (background; honours the server Product analytics setting) |  | Impact: No end-user effect; the product team gets no usage data from Flutter and the opt-in switch does nothing. Flutter has the Share usage data switch (ui:global-ui.product-analytics-events) but never emits events. Size M |
 | ➖ | Dev-only preview deployment API target probe (/__raft_preview) (bg) | `RAW hooks/usePreviewApiTarget.ts` | usePreviewApiTarget (preview builds only) |  | N/A: Web preview-deployment tooling; no user capability. |
 | ❌ | Load the Chinese community QR configuration (/community/chinese) | `RAW pages/ChineseCommunityPage.tsx` | pages/ChineseCommunityPage.tsx (Help menu > Chinese community) |  | Impact: Chinese-language users get the generic Join Community entry instead of the QR page. See ui:help.chinese-community-page. Size S |
 | ➖ | Web auth trace upload to the observability backend (scope attestation + trace POST) (bg) | `RAW utils/webAuthTrace.ts` | webAuthTrace.ts (background diagnostics) |  | N/A: Web-only auth diagnostics telemetry; Flutter reports issues through report_issue.dart with its own transcript. |
-| ✅ | Announcement modal: multi-page Back / Next / OK, close X, markdown links, Enter to advance | `ui:announcements.modal-pages` | AnnouncementModal | announcement_host.dart RaftAnnouncementModal |  |
+| ✅ | Announcement call to action: dismisses, then opens an internal path / query (?dialog=create-joint-channel) in the app or an https URL in the browser | `ui:announcements.cta` | AnnouncementModal activate()[gate: announcement has a cta] | announcement_cta.dart openAnnouncementInternalLink | An internal path of a Web route the app does not host (another server, /servers) opens in the browser on the Web origin. |
+| ✅ | Announcement dialog: label, picture, first page Markdown with links, Got it / call to action, close X, Enter confirms | `ui:announcements.modal-pages` | AnnouncementModal | announcement_host.dart RaftAnnouncementModal |  |
 | ✅ | Toast when marking an announcement read fails | `ui:announcements.save-failed-toast` | AnnouncementModal writeFailedIds toast | announcement_host.dart showRaftToast saveFailed copy |  |
 | ➖ | Public /download page choosing Android/iOS build by platform | `ui:download.mobile-download-chooser` | MobileDownloadChooserPage (/download) + About QR target |  | N/A: App-store/download chooser for the native app; Flutter users already have the app. Desktop Flutter About still offers Android/iOS buttons and QR that point to this page. |
 | ⚠️ | Respect OS reduced-motion setting for animations | `ui:global-ui.a11y-reduced-motion` | index.css @media (prefers-reduced-motion) and components/ImageZoom.ts | MediaQuery.disableAnimationsOf honoured in a few places (mounted_reaction_recipe.dart, chat_composition.dart, source_channel_files_view.dart, mobile_workspace_pages.dart) but not app-wide | Impact: Users with vestibular sensitivity; low frequency. Breadth unverified; many raft_ui transitions have no reduced-motion branch. Size M |
@@ -867,7 +869,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Workspace switcher menu: server rows (current check, avatar, /slug, Activity unread badge, muted count), drag handle to reorder servers, 'Join Community', 'Switch or Create Server', 'Invite human' | `ui:global-ui.server-switcher-menu` | ServerSwitcherMenu.tsx (desktop LeftRail flyout and mobile Home pill; PATCH /servers/order on drag)[gate: Join Community only if not joined; Invite human needs inviteMembers] | workspace_view.dart server menu (RaftServerMenuRow rows, onReorder -> reorderMenuServers, Join Community, Switch or Create Server, Invite human) |  |
 | ➖ | Service worker caching/offline shell, push handling and navigation bridge | `ui:global-ui.service-worker-offline` | public/sw.js, components/pwa/ServiceWorkerNavigationBridge.tsx, utils/serviceWorkerRecovery.ts |  | N/A: Browser runtime mechanism; Flutter has its own local caches (workspace_cache, attachment_disk_cache) and notification path (see push-subscription). |
 | ✅ | Cmd/Ctrl+F inside Activity opens the Activity filter/search box | `ui:global-ui.shortcut-activity-find` | components/thread/ThreadsInbox.tsx keydown (meta/ctrl+F) -> setActivitySearchVisible(true) while the Activity surface has focus[gate: Activity sidebar inbox enabled] | resource_view.dart CallbackShortcuts SingleActivator(keyF control/meta) -> showActivitySearch |  |
-| ✅ | Announcement modal keyboard: Enter advances/confirms, Escape dismisses (capture phase) | `ui:global-ui.shortcut-announcement-modal-keys` | components/AnnouncementModal.tsx window keydown capture (Escape/Enter) | raft_ui announcement_modal.dart key handler (enter, numpadEnter, escape) |  |
+| ✅ | Announcement dialog keyboard: Enter confirms (the call to action when there is one), Escape dismisses (capture phase) | `ui:global-ui.shortcut-announcement-modal-keys` | components/AnnouncementModal.tsx window keydown capture (Escape/Enter) | raft_ui announcement_modal.dart key handler (enter, numpadEnter, escape) |  |
 | ✅ | Cmd/Ctrl+K opens global search from anywhere (floating quick switcher on desktop, full Search page when narrow) | `ui:global-ui.shortcut-cmdk-search` | components/layout/MainLayout.tsx onKeyDown + utils/keyboardShortcuts.ts isGlobalSearchShortcut: Cmd+K (Apple) / Ctrl+K (others) anywhere in the app; Electron shell floats SearchOverlay, plain web navigates to /s/:slug/search, workspace mode switches the left rail to Search | workspace_view.dart globalShortcut()/openSearchShortcut(): Cmd or Ctrl+K from any focus while the workspace route is current; wide window floats QuickSwitcher, narrow window opens the Search page; phone has the Search row/tab instead | Flutter accepts either Cmd or Ctrl on every OS (Web is Cmd on Apple, Ctrl elsewhere); harmless difference. Not available on phones (no hardware keyboard contract). |
 | ✅ | Escape closes the topmost transient surface: modals, thread panel, profile panel, legacy task panel, message select mode, reaction picker, sidebar/context menus, share preview | `ui:global-ui.shortcut-escape-closes` | components/Modal.tsx, ThreadPanel.tsx (capture phase), ProfilePanel.tsx, LegacyTaskPanel.tsx, ChatPanel.tsx select-mode, MessageItem.tsx reaction picker, Sidebar.tsx menus (document keydown Escape handlers) | RaftDismissScope (packages/raft_ui dismiss_scope.dart) binds Escape for modals/dialogs/shell; chat_view.dart selection toolbar Escape -> selection.exit; docs/close-affordances.md sweeps every surface |  |
 | ✅ | Cmd/Ctrl+, opens Settings (desktop shell menu item) | `ui:global-ui.shortcut-open-settings` | components/layout/MainLayout.tsx useEffect raftDesktop.onOpenSettings -> components/layout/desktopSettingsShortcut.ts openDesktopSettings (Electron native menu 'Settings...' only; no keydown handler in plain web)[gate: Electron desktop shell only] | workspace_view.dart globalShortcut(): Cmd/Ctrl+, selects Settings | Flutter is itself the desktop app, so the shortcut is bound in-app instead of via a native menu. |

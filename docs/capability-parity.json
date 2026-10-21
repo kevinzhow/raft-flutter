@@ -14696,12 +14696,12 @@
    "kind": "endpoint",
    "id": "POST /announcements/:id/dismiss",
    "area": "global-ui",
-   "capability": "Mark an announcement as read (OK on the last page)",
+   "capability": "Dismiss an announcement (Got it, the call to action, or closing the dialog)",
    "background": false,
    "status": "covered",
-   "webEntry": "AnnouncementModal Back / Next / OK, close X (close does not mark read)",
+   "webEntry": "AnnouncementModal Got it / CTA / close X / Esc / outside press (every one records the dismissal)",
    "gate": "",
-   "flutterEntry": "announcement_host.dart RaftAnnouncementModal onConfirm -> store.dismiss",
+   "flutterEntry": "announcement_host.dart RaftAnnouncementModal onDismiss / onCta -> store.dismiss",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/announcement_store.dart",
@@ -14710,6 +14710,26 @@
     {
      "file": "apps/raft_flutter/lib/features/announcement_host.dart",
      "needle": "RaftAnnouncementModal"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /announcements/images/:id",
+   "area": "global-ui",
+   "capability": "Load the picture of an announcement (public, no credentials, only once the announcement is published)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AnnouncementModal AnnouncementDialogPicture img src",
+   "gate": "announcement has an image",
+   "flutterEntry": "announcement_cta.dart announcementImageUrl -> RaftAnnouncementModal picture",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/announcement_cta.dart",
+     "needle": "/api/announcements/images/"
     }
    ],
    "justification": "",
@@ -14804,7 +14824,7 @@
    "kind": "ui",
    "id": "ui:announcements.modal-pages",
    "area": "global-ui",
-   "capability": "Announcement modal: multi-page Back / Next / OK, close X, markdown links, Enter to advance",
+   "capability": "Announcement dialog: label, picture, first page Markdown with links, Got it / call to action, close X, Enter confirms",
    "background": false,
    "status": "covered",
    "webEntry": "AnnouncementModal",
@@ -14817,6 +14837,26 @@
     }
    ],
    "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:announcements.cta",
+   "area": "global-ui",
+   "capability": "Announcement call to action: dismisses, then opens an internal path / query (?dialog=create-joint-channel) in the app or an https URL in the browser",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AnnouncementModal activate()",
+   "gate": "announcement has a cta",
+   "flutterEntry": "announcement_cta.dart openAnnouncementInternalLink",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/announcement_cta.dart",
+     "needle": "create-joint-channel"
+    }
+   ],
+   "justification": "An internal path of a Web route the app does not host (another server, /servers) opens in the browser on the Web origin.",
    "impact": "",
    "size": ""
   },
@@ -15756,7 +15796,7 @@
    "kind": "ui",
    "id": "ui:global-ui.shortcut-announcement-modal-keys",
    "area": "global-ui",
-   "capability": "Announcement modal keyboard: Enter advances/confirms, Escape dismisses (capture phase)",
+   "capability": "Announcement dialog keyboard: Enter confirms (the call to action when there is one), Escape dismisses (capture phase)",
    "background": false,
    "status": "covered",
    "webEntry": "components/AnnouncementModal.tsx window keydown capture (Escape/Enter)",

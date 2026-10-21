@@ -124,7 +124,8 @@ Widget app(Fixture f, {String deployment = 'production', Widget? home}) =>
     );
 
 Future<void> settle(WidgetTester t) async {
-  for (var i = 0; i < 6; i++) {
+  // The dialog route fades in and out over 150 ms.
+  for (var i = 0; i < 14; i++) {
     await t.pump(const Duration(milliseconds: 16));
   }
 }
@@ -133,28 +134,23 @@ final modal = find.byKey(const ValueKey('announcement-modal'));
 
 void main() {
   testWidgets(
-    'entry read shows the oldest row; Next/Back walk pages; OK writes read-complete',
+    'entry read shows the oldest row, page one only; Got it dismisses',
     (t) async {
       final f = Fixture();
       await t.pumpWidget(app(f));
       await settle(t);
       expect(f.count('GET /announcements/active'), 1);
       expect(modal, findsOneWidget);
-      expect(find.text('WHAT IS NEW A1'), findsOneWidget);
-      expect(find.text('WELCOME'), findsOneWidget);
-      expect(find.text('1 / 2'), findsOneWidget);
-      expect(find.byKey(const ValueKey('announcement-back')), findsNothing);
-      await t.tap(find.byKey(const ValueKey('announcement-next')));
-      await settle(t);
-      expect(find.text('2 / 2'), findsOneWidget);
-      expect(find.byKey(const ValueKey('announcement-ok')), findsOneWidget);
-      await t.tap(find.byKey(const ValueKey('announcement-back')));
-      await settle(t);
-      expect(find.text('1 / 2'), findsOneWidget);
-      // Navigation is read-only.
+      expect(find.text('What is new a1'), findsOneWidget);
+      expect(find.text('Latest updates'), findsOneWidget);
+      // The first page only: no page title, no second page, no pager.
+      expect(find.textContaining('Page 1 body'), findsOneWidget);
+      expect(find.textContaining('Page 2 body'), findsNothing);
+      expect(find.text('Welcome'), findsNothing);
+      expect(find.byKey(const ValueKey('announcement-next')), findsNothing);
+      expect(find.byKey(const ValueKey('announcement-dismiss')), findsNothing);
+      // Showing it never writes.
       expect(f.count('POST'), 0);
-      await t.tap(find.byKey(const ValueKey('announcement-next')));
-      await settle(t);
       await t.tap(find.byKey(const ValueKey('announcement-ok')));
       await settle(t);
       expect(modal, findsNothing);
@@ -171,25 +167,11 @@ void main() {
     },
   );
 
-  testWidgets('Enter advances and confirms even when Back holds focus', (
-    t,
-  ) async {
+  testWidgets('Enter dismisses once, whatever holds focus', (t) async {
     final f = Fixture();
     await t.pumpWidget(app(f));
     await settle(t);
     await t.sendKeyEvent(LogicalKeyboardKey.enter);
-    await settle(t);
-    expect(find.text('2 / 2'), findsOneWidget);
-    // Focus Back, then press Enter: OK is confirmed, Back is not pressed.
-    Focus.of(
-      t.element(
-        find.descendant(
-          of: find.byKey(const ValueKey('announcement-back')),
-          matching: find.byType(Text),
-        ),
-      ),
-    ).requestFocus();
-    await settle(t);
     await t.sendKeyEvent(LogicalKeyboardKey.enter);
     await settle(t);
     expect(modal, findsNothing);
@@ -197,34 +179,36 @@ void main() {
   });
 
   testWidgets(
-    '✕, Escape and the backdrop close locally; the row returns on the next foreground read',
+    'X, Escape and the backdrop all record the dismissal (closing counts as read)',
     (t) async {
       final f = Fixture();
       await t.pumpWidget(app(f));
       await settle(t);
-      await t.tap(find.byType(RaftCloseButton));
+      await t.tap(find.byType(RaftDialogClose));
       await settle(t);
       expect(modal, findsNothing);
-      expect(f.count('POST'), 0);
+      expect(f.count('POST /announcements/a1/dismiss'), 1);
 
+      f.active = [announcement('a2')];
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await settle(t);
-      expect(modal, findsOneWidget);
+      expect(find.text('What is new a2'), findsOneWidget);
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await settle(t);
       expect(modal, findsNothing);
+      expect(f.count('POST /announcements/a2/dismiss'), 1);
 
+      f.active = [announcement('a3')];
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await settle(t);
-      expect(modal, findsOneWidget);
       // A press inside the card does not close it; one on the backdrop does.
-      await t.tap(find.text('WHAT IS NEW A1'));
+      await t.tap(find.text('What is new a3'));
       await settle(t);
       expect(modal, findsOneWidget);
       await t.tapAt(const Offset(4, 4));
       await settle(t);
       expect(modal, findsNothing);
-      expect(f.count('POST'), 0);
+      expect(f.count('POST /announcements/a3/dismiss'), 1);
     },
   );
 
@@ -274,7 +258,6 @@ void main() {
     f.active = [announcement('a1', pages: 1)];
     await t.pumpWidget(app(f));
     await settle(t);
-    expect(find.text('1 / 1'), findsNothing);
     await t.tap(find.byKey(const ValueKey('announcement-ok')));
     await settle(t);
     expect(modal, findsNothing);
@@ -304,7 +287,7 @@ void main() {
     await settle(t);
     expect(modal, findsOneWidget);
     expect(ModalRoute.of(t.element(modal))!.isCurrent, isTrue);
-    await t.tap(find.byType(RaftCloseButton));
+    await t.tap(find.byType(RaftDialogClose));
     await settle(t);
     expect(find.text('open dialog'), findsOneWidget);
   });

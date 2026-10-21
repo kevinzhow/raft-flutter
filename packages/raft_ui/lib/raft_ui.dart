@@ -175,6 +175,7 @@ export 'src/mounted_task_chip.dart';
 
 export 'src/popover_surface.dart';
 export 'src/quick_switcher.dart';
+export 'src/announcement_markdown.dart';
 export 'src/announcement_modal.dart';
 export 'src/quick_switcher_results.dart';
 

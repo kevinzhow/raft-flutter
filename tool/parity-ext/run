@@ -235,8 +235,13 @@ async function parityExtRoutes(page: Page, visualCase: VisualCase) {
           const hit = when.find((w: any) => Object.entries(w.query || {}).every(([k, v]) => params.get(k) === v));
           answer = hit ? hit.answer : (body as any).$default;
         }
-        const special = (answer || {}) as { $pending?: boolean; $status?: number; $body?: unknown };
+        const special = (answer || {}) as { $pending?: boolean; $status?: number; $body?: unknown; $file?: string; $contentType?: string };
         if (special.$pending) return;
+        // `{"$file": "name.png", "$contentType": "image/png"}` answers the bytes of a fixture file.
+        if (special.$file) {
+          return route.fulfill({ status: 200, contentType: special.$contentType || "application/octet-stream",
+            body: readFileSync(resolve(dir, special.$file)) });
+        }
         if (special.$status) {
           return route.fulfill({ status: special.$status, contentType: "application/json",
             body: JSON.stringify(special.$body ?? { error: "fixture error" }) });

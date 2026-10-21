@@ -252,7 +252,7 @@ const dialogSurfaces = <CloseSurface>[
   CloseSurface(
     'announcement-modal',
     kind: SurfaceKind.dialog,
-    web: 'AnnouncementModal.tsx:179 Modal layer=1 closeOnBackdrop: X + Esc + backdrop',
+    web: 'AnnouncementModal.tsx AnnouncementDialog layer=1: X + Esc + outside press (each dismisses)',
     phone: {_x, _esc, _scrim, _sys},
     fold: {_x, _esc, _scrim, _sys},
     desktop: {_x, _esc, _scrim, _sys},

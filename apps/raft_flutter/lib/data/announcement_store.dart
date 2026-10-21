@@ -10,14 +10,37 @@ class AnnouncementPageData {
   final String body;
 }
 
+/// `Announcement.cta`: the primary action beside "Got it". [href] is an
+/// internal path or query (`/...`, `?...`) or an https URL.
+@immutable
+class AnnouncementCta {
+  const AnnouncementCta({required this.label, required this.href});
+  final String label, href;
+
+  /// Web `activate`: a leading `/` or `?` navigates inside the app, anything
+  /// else opens in a new browsing context.
+  bool get internal => href.startsWith('/') || href.startsWith('?');
+}
+
+/// `Announcement.image`: a picture served by `GET /announcements/images/:id`
+/// (public, no credentials) with its localized alt text.
+@immutable
+class AnnouncementImage {
+  const AnnouncementImage({required this.assetId, required this.alt});
+  final String assetId, alt;
+}
+
 /// Web `Announcement` (packages/shared): an account-level popup, shown until
-/// the user explicitly finishes reading it; a new announcement is a new id.
+/// the user dismisses it (OK, CTA or close); a new announcement is a new id.
 @immutable
 class Announcement {
   const Announcement({
     required this.id,
     required this.title,
     required this.pages,
+    this.label,
+    this.cta,
+    this.image,
     this.publishedAt,
     this.startsAt,
     this.endsAt,
@@ -26,7 +49,13 @@ class Announcement {
 
   final String id, title;
 
-  /// Empty pages are the server's "clear" signal: nothing is presented.
+  /// Eyebrow of the dialog; null reads "Latest updates".
+  final String? label;
+  final AnnouncementCta? cta;
+  final AnnouncementImage? image;
+
+  /// Empty pages are the server's "clear" signal: nothing is presented. Only
+  /// the first page is shown.
   final List<AnnouncementPageData> pages;
   final String? publishedAt, startsAt, endsAt, locale;
 
@@ -44,10 +73,32 @@ class Announcement {
             ),
     ];
     String? text(String key) => raw[key] is String ? raw[key] as String : null;
+    final label = text('label')?.trim();
+    final cta = raw['cta'];
+    final image = raw['image'];
     return Announcement(
       id: id,
       title: text('title') ?? '',
       pages: pages,
+      label: label == null || label.isEmpty ? null : label,
+      cta:
+          cta is Map &&
+              cta['label'] is String &&
+              (cta['label'] as String).trim().isNotEmpty &&
+              cta['href'] is String &&
+              (cta['href'] as String).trim().isNotEmpty
+          ? AnnouncementCta(
+              label: (cta['label'] as String).trim(),
+              href: (cta['href'] as String).trim(),
+            )
+          : null,
+      image:
+          image is Map && image['assetId'] is String && image['alt'] is String
+          ? AnnouncementImage(
+              assetId: image['assetId'] as String,
+              alt: image['alt'] as String,
+            )
+          : null,
       publishedAt: text('publishedAt'),
       startsAt: text('startsAt'),
       endsAt: text('endsAt'),
@@ -56,8 +107,10 @@ class Announcement {
   }
 }
 
-typedef AnnouncementGet =
-    Future<dynamic> Function(String path, {Map<String, dynamic>? query});
+typedef AnnouncementGet = Future<dynamic> Function(
+  String path, {
+  Map<String, dynamic>? query,
+});
 typedef AnnouncementPost = Future<dynamic> Function(String path);
 
 /// Web `useAnnouncementStore` (packages/web/src/store/announcementStore.ts).
@@ -66,10 +119,11 @@ typedef AnnouncementPost = Future<dynamic> Function(String path);
 ///   user has not finished reading) on workspace entry and on return to the
 ///   foreground. It never runs while a row is presented ([pending] non-empty)
 ///   and shares one in-flight request; a publish event does not trigger it.
-/// * [close] (✕, Escape, backdrop) only hides the row locally; it returns on
-///   the next entry/foreground load.
-/// * [dismiss] (OK / Enter on the last page) hides it and records the
-///   explicit read-complete `POST /announcements/:id/dismiss`. A failed write
+/// * [close] only hides the row locally. Web v1.21.12 no longer uses it for
+///   the dialog: ✕, Escape, the scrim, "Got it", the CTA and Enter all
+///   [dismiss].
+/// * [dismiss] hides the row and records `POST /announcements/:id/dismiss`
+///   (closing counts as read since v1.21.12). A failed write
 ///   lands in [writeFailedIds] (memory only): later loads skip past it with
 ///   `?after=<last failed id>` for the rest of this session, and the
 ///   presentation raises an error notice.
@@ -163,7 +217,8 @@ class AnnouncementStore extends ChangeNotifier {
     return completer.future;
   }
 
-  /// Records an explicit confirmation. Rendering and navigation never do.
+  /// Records explicit confirmation, closing or CTA activation. Rendering
+  /// alone never does.
   Future<void> markRead(String id) async {
     if (_disposed || markedReadIds.contains(id)) return;
     final generation = _generation;
@@ -184,7 +239,7 @@ class AnnouncementStore extends ChangeNotifier {
     }
   }
 
-  /// Local visibility only (✕ / Escape / backdrop).
+  /// Local visibility only.
   void close(String id) {
     if (_disposed || !pending.any((a) => a.id == id)) return;
     pending = [
@@ -194,7 +249,7 @@ class AnnouncementStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Explicit read-complete + hide (OK / Enter on the last page).
+  /// Account dismissal + local hide, shared by every dismissal action.
   Future<void> dismiss(String id) {
     close(id);
     return markRead(id);

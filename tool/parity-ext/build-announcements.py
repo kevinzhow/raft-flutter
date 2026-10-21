@@ -5,12 +5,13 @@ Run after build-cases.py (which regenerates the Computers cases) and
 build-live-activity.py; idempotent: every `components.announcements.*` case
 is replaced, all other cases are kept.
 
-Derivation (raft-source packages/web/src):
-  components/AnnouncementModal.tsx   (Modal layer=1 closeOnBackdrop + Card)
-  components/Modal.tsx               (backdrop, p-4 centring)
+Derivation (raft-source v1.21.12 packages/web/src, raft-ui 0.5.52):
+  components/AnnouncementModal.tsx   (AnnouncementDialog layer=1: label, title,
+                                      picture, pages[0] body, Got it / CTA)
+  raft-ui/wip announcement-dialog    (slots) + Dialog (overlay, content)
   store/announcementStore.ts         (pending[0] is presented)
-Ids: components.announcements.<platform>.<kind>.<theme>. Props `ann` (a key
-of fixtures/announcements.json), `next` (Next presses before capture).
+Ids: components.announcements.<platform>.<kind>.<theme>. Prop `ann` is a key
+of fixtures/announcements.json.
 """
 import json
 import pathlib
@@ -22,37 +23,39 @@ from builders import manifest_path  # noqa: E402  (tool/parity-ext/builders.py)
 THEMES = {'brutal': 'brutal-light', 'elegant': 'elegant-light', 'elegant-dark': 'elegant-dark'}
 DESKTOP = {'width': 1280, 'height': 800, 'density': 1}
 MOBILE = {'width': 390, 'height': 844, 'density': 3}
-# kind: (announcement, Next presses, whole viewport?)
+# kind: (announcement, whole viewport?)
 KINDS = {
-    'single': ('single', 0, False),
-    'multi-first': ('multi', 0, False),
-    'multi-middle': ('multi', 1, False),
-    'multi-last': ('multi', 2, False),
-    'rich': ('rich', 0, False),
-    'long': ('long', 0, False),
-    'long-title': ('long-title', 0, False),
-    'overlay': ('multi', 0, True),
+    'single': ('single', False),
+    'cta': ('cta', False),
+    'cta-long': ('cta-long', False),
+    'image': ('image', False),
+    'image-only': ('image-only', False),
+    'multi': ('multi', False),
+    'rich': ('rich', False),
+    'long': ('long', False),
+    'long-title': ('long-title', False),
+    'overlay': ('image', True),
 }
 PLATFORMS = {
     'desktop': (DESKTOP, list(KINDS)),
-    'mobile': (MOBILE, ['single', 'multi-middle', 'rich', 'long', 'overlay']),
+    'mobile': (MOBILE, ['single', 'cta', 'cta-long', 'image', 'rich', 'long', 'overlay']),
 }
-HINT = 'packages/web/src/components/AnnouncementModal.tsx (+ components/Modal.tsx)'
+HINT = 'packages/web/src/components/AnnouncementModal.tsx (+ raft-ui/wip AnnouncementDialog)'
 
 cases = []
 for platform, (viewport, kinds) in PLATFORMS.items():
     for kind in kinds:
-        ann, presses, whole = KINDS[kind]
+        ann, whole = KINDS[kind]
         for suffix, theme in THEMES.items():
             cid = f'components.announcements.{platform}.{kind}.{suffix}'
             props = {'extCase': f'{platform}.{kind}', 'extKind': 'announcement', 'parityTheme': theme,
-                     'platform': platform, 'ann': ann, 'next': str(presses)}
+                     'platform': platform, 'ann': ann}
             capture = {
                 'selector': 'body' if whole else '[data-testid="announcement-modal"]',
                 'crop': 'viewport' if whole else 'element',
                 'contract': 'viewport-with-portal' if whole else 'component-bounds',
-                'interactions': [{'type': 'click', 'target': '[data-testid="announcement-next"]'}] * presses,
-                'androidInteractions': [{'type': 'tap', 'key': 'announcement-next'}] * presses,
+                'interactions': [],
+                'androidInteractions': [],
             }
             if not whole:
                 capture['androidKey'] = 'announcement-modal'

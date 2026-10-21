@@ -189,6 +189,12 @@ final auditSurfaces = <AuditSurface>[
     Size(900, 640),
   ),
   AuditSurface(
+    'announcementModalCtaPreview',
+    'Announcement modal with a call to action',
+    announcementModalCtaPreview,
+    Size(900, 640),
+  ),
+  AuditSurface(
     'appIconChoicesPreview',
     'App icon choices',
     appIconChoicesPreview,
