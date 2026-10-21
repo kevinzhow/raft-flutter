@@ -12,6 +12,7 @@ import 'private_route_guard.dart';
 import 'create_agent_dialog.dart';
 import 'management_support.dart' show managementMap, managementRows;
 import 'provider_edit_dialog.dart';
+import 'runtime_form_status_copy.dart';
 
 /// Web `runtimeFormUnavailableMessageId`: the catalog message for a failed
 /// form-definition read. The server's own text is never shown here; the
@@ -438,12 +439,13 @@ class RuntimeFormController extends ChangeNotifier {
 String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
   'required' => raftText(context, 'This field is required.'),
   'invalid_map' => raftText(context, 'Enter one unique KEY=value per line.'),
-  'source_unavailable' => raftText(
+  // The field's source status line already says why, with its retry.
+  'source_unavailable' => null,
+  'invalid_url' => raftText(
     context,
-    'Choices are unavailable. Retry after connecting the computer.',
+    'Base URL must start with http:// or https://.',
   ),
-  'invalid_url' => raftText(context, 'Enter an HTTP or HTTPS URL.'),
-  'not_a_choice' => raftText(context, 'Select an available choice.'),
+  'not_a_choice' => raftText(context, 'Choose one of the available options.'),
   'secret_reentry_required' => raftText(
     context,
     'The API key is tied to the saved settings you changed. Enter a new one.',
@@ -454,7 +456,7 @@ String? runtimeFieldError(BuildContext context, String? code) => switch (code) {
   ),
   'unsupported_required' => raftText(
     context,
-    'Update the client to edit this required field.',
+    'Update Raft to edit this setting.',
   ),
   _ => null,
 };
@@ -606,11 +608,7 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         ),
       );
     } else if (f.kind == 'unsupported') {
-      control = Text(
-        raftFormat(context, '{field}: update the client to edit this field.', {
-          'field': raftText(context, f.label),
-        }),
-      );
+      control = Text(raftText(context, 'Update Raft to edit this setting.'));
     } else if (f.kind == 'derived_select') {
       control = RaftAgentSelect<String>(
         key: ValueKey('runtime-${f.key}'),
@@ -621,7 +619,7 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
         invalid: error != null,
         placeholder: f.copy['placeholder'] as String? ?? 'Select...',
         options: [
-          RaftAgentSelectOption('', raftText(context, 'Runtime default')),
+          RaftAgentSelectOption('', raftText(context, 'Default')),
           for (final o in choices)
             RaftAgentSelectOption(o['value'] as String, '${o['label']}'),
         ],
@@ -705,9 +703,11 @@ class _RuntimeFormFieldsState extends State<RuntimeFormFields> {
           ),
         if (status == 'fallback' || status == 'unavailable')
           RaftAgentSourceStatus(
-            message: status == 'fallback'
-                ? 'Using fallback choices${sourceReason == null ? '' : ': $sourceReason'}.'
-                : 'Choices are unavailable${sourceReason == null ? '' : ': $sourceReason'}.',
+            message: runtimeSourceStatusText(
+              context,
+              status: status as String,
+              reason: sourceReason,
+            ),
             retryLabel: source?['retryable'] == true ? 'Retry' : null,
             onRetry: widget.busy || c.retrying.contains(f.sourceId)
                 ? null

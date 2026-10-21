@@ -9,6 +9,7 @@ import 'agent_create_form.dart';
 import 'anchored_popup.dart';
 import 'combobox_panel.dart';
 import 'dismiss_scope.dart';
+import 'form_presentation.dart' show RaftUnsavedGuard;
 import 'icons.dart';
 import 'theme.dart';
 
@@ -80,6 +81,7 @@ class _RaftAgentComboboxState extends State<RaftAgentCombobox> {
     super.didUpdateWidget(old);
     if (!open && panel.query.text != selectedLabel) {
       panel.query.text = selectedLabel;
+      RaftUnsavedGuard.maybeOf(context)?.rebase(panel.query);
     }
     if (open && !widget.enabled) close();
   }

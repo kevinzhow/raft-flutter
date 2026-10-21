@@ -176,7 +176,7 @@ void main() {
         isTrue,
       );
       final c = RuntimeConfig.fromAgent({'runtime': 'codex', 'model': ' '});
-      expect(c.model, 'gpt-6-astra');
+      expect(c.model, 'gpt-6.1-sol');
       expect(c.customModel, isFalse);
     });
 

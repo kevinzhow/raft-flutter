@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerPhase;
 
 import 'agent_avatar_picker.dart' show RaftAvatarDiscardConfirmation;
 import 'overlays/dialog.dart' show showRaftDialog;
@@ -206,8 +207,23 @@ class RaftUnsavedGuardState extends State<RaftUnsavedGuard> {
       _initial.entries.any((e) => e.key.text != e.value) ||
       _checks.any((check) => check());
 
+  /// A field whose text the app rewrote itself (a combobox showing the chosen
+  /// name once the list has loaded), not the member: the new text is its
+  /// baseline.
+  void rebase(TextEditingController controller) {
+    if (_initial.containsKey(controller))
+      _initial[controller] = controller.text;
+  }
+
   void _refresh() {
     if (!mounted) return;
+    // A controller written while the tree builds must not rebuild the guard
+    // in the same frame.
+    if (WidgetsBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+      return;
+    }
     final dirty = _changed;
     if (dirty != _dirty) setState(() => _dirty = dirty);
   }

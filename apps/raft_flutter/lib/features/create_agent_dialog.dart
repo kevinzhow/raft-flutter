@@ -13,6 +13,7 @@ import '../data/workspace_controller.dart';
 import 'agent_metadata_catalog.dart';
 import 'agent_runtime_labels.dart' show creatableRuntimeIds;
 import 'private_route_guard.dart';
+import 'runtime_options_request.dart';
 import 'runtime_form_dialog.dart';
 
 /// shared/src/runtimeCatalog.ts `RUNTIMES[].displayName`.
@@ -241,8 +242,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
     final runtimes = machine?['runtimes'];
     if (runtimes is List && runtimes.contains('claude')) loadPreAdmission();
     try {
-      final catalog = await w.query(
-        '/servers/${w.server!.id}/machines/$id/runtime-options',
+      final catalog = await readRuntimeOptions(
+        () => w.query('/servers/${w.server!.id}/machines/$id/runtime-options'),
       );
       if (!currentAuthority || ticket != machineTicket) return;
       final options = [
@@ -277,8 +278,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
         '/servers/${w.server!.id}/machines/$id/runtimes/rescan',
       );
       if (!currentAuthority || ticket != machineTicket) return;
-      final catalog = await w.query(
-        '/servers/${w.server!.id}/machines/$id/runtime-options',
+      final catalog = await readRuntimeOptions(
+        () => w.query('/servers/${w.server!.id}/machines/$id/runtime-options'),
       );
       if (!currentAuthority || ticket != machineTicket) return;
       final options = [

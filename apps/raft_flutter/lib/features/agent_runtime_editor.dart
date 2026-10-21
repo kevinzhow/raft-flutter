@@ -20,9 +20,11 @@ import '../data/workspace_controller.dart';
 import 'agent_runtime_catalog.dart';
 import 'agent_runtime_labels.dart';
 import 'agent_runtime_draft.dart';
+import 'agent_runtime_model_field.dart';
 import 'management_support.dart'
     show pageIdentity, readPageSnapshot, writePageSnapshot;
 import 'private_route_guard.dart';
+import 'runtime_options_request.dart';
 import 'runtime_form_dialog.dart';
 
 /// A confirmation the profile shows after the modal closes (Web
@@ -197,7 +199,9 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
     final identity = pageIdentity(w);
     var accepted = false;
     try {
-      final data = await w.client.get('/agents/$agentId/runtime-options');
+      final data = await readRuntimeOptions(
+        () => w.client.get('/agents/$agentId/runtime-options'),
+      );
       if (data is Map && data['options'] is List) {
         options = [
           for (final o in data['options'] as List)
@@ -572,9 +576,8 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
 
   List<RaftAgentSelectOption<String>> runtimeOptions(BuildContext context) => [
     for (final option in admissions ?? const <Map<String, dynamic>>[])
-      if (existingAgentRuntimeOptions(
-            base.runtime,
-          ).any((r) => r.id == option['runtimeId']) &&
+      if (existingAgentRuntimeOptions(base.runtime)
+              .any((r) => r.id == option['runtimeId']) &&
           (legacyRuntimeEditorSupports('${option['runtimeId']}') ||
               option['runtimeId'] == draft.runtime))
         RaftAgentSelectOption(
@@ -752,27 +755,6 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
     final showHeaderRescan =
         machineSourceApplies &&
         (source is RuntimeModelLive || source is RuntimeModelLoading);
-    final modelOptions = <RaftAgentSelectOption<String>>[
-      for (final m in proj.models) RaftAgentSelectOption(m.id, m.label),
-    ];
-    if (proj.live &&
-        !draft.customModelMode &&
-        draft.model.isNotEmpty &&
-        !modelOptions.any((o) => o.value == draft.model)) {
-      modelOptions.add(
-        RaftAgentSelectOption(
-          draft.model,
-          raftFormat(context, "{model} (not in this computer's config)", {
-            'model': runtimeModelLabel(runtime, draft.model),
-          }),
-        ),
-      );
-    }
-    if (customAllowed) {
-      modelOptions.add(
-        RaftAgentSelectOption(customModelSelectValue, tr('Custom')),
-      );
-    }
     final modelInfo = proj.models.where((m) => m.id == draft.model).firstOrNull;
     final suggestionOnly = modelInfo?.verified == 'suggestion_only';
     final showSuggestion =
@@ -780,7 +762,6 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
         (!proj.live &&
             !proj.loading &&
             proj.models.any((m) => m.verified == 'suggestion_only'));
-    final customInput = customAllowed && draft.customModelMode;
     final reasoningChoices = reasoningOptionsForModel(
       runtime,
       draft.model,
@@ -804,8 +785,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
       if (supportsRuntimeApiUrl(runtime)) ...[
         RaftStableField(
           label: 'Provider',
-          hint:
-              'Default leaves Claude Code provider settings untouched. Custom sets ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY for this agent.',
+          hint: 'Default leaves Claude Code provider settings untouched. Custom sets ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY for this agent.',
           child: RaftAgentSelect<String>(
             key: const ValueKey('runtime-editor-provider'),
             value: draft.providerCustom ? 'custom' : 'default',
@@ -893,45 +873,20 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
               "This model is a catalog suggestion and has not been verified to launch with this computer's current runtime config.",
             ),
         ],
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            RaftAgentSelect<String>(
-              key: const ValueKey('runtime-editor-model'),
-              value: draft.customModelMode
-                  ? customModelSelectValue
-                  : draft.model,
-              unmatchedLabel: draft.model,
-              options: modelOptions,
-              placeholder: 'Model',
-              semanticLabel: tr('Model'),
-              onChanged: saving
-                  ? null
-                  : (next) {
-                      if (next == customModelSelectValue) {
-                        setState(() {
-                          draft.customModelMode = true;
-                          draft.model = '';
-                        });
-                        return;
-                      }
-                      draft.customModelMode = false;
-                      changeModel(next);
-                    },
-            ),
-            if (customInput) ...[
-              const SizedBox(height: raftAgentChipGap),
-              _TextField(
-                key: const ValueKey('runtime-editor-custom-model'),
-                value: draft.model,
-                placeholder: runtime == 'claude'
-                    ? 'Custom model name'
-                    : 'Custom model ID',
-                invalid: draft.customModelInvalid,
-                onChanged: (v) => setState(() => draft.model = v),
-              ),
-            ],
-          ],
+        child: RuntimeModelCombobox(
+          key: const ValueKey('runtime-editor-model'),
+          runtime: runtime,
+          models: proj.models,
+          live: proj.live,
+          model: draft.model,
+          customModelMode: draft.customModelMode,
+          customAllowed: customAllowed,
+          enabled: !saving,
+          invalid: draft.customModelInvalid,
+          onChanged: (model, custom) {
+            draft.customModelMode = custom;
+            changeModel(model);
+          },
         ),
       ),
       if (supportsRuntimeReasoning(runtime))
@@ -962,8 +917,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
             key: const ValueKey('runtime-editor-fast-mode'),
             checked: draft.fastMode,
             title: 'Fast mode',
-            description:
-                'Launch this runtime with higher speed at a higher cost per token.',
+            description: 'Launch this runtime with higher speed at a higher cost per token.',
             onChanged: saving
                 ? null
                 : (v) => setState(() => draft.fastMode = v),
@@ -977,8 +931,7 @@ class _AgentRuntimeEditorState extends State<AgentRuntimeEditor> {
           if (supportsRuntimeCommand(runtime))
             RaftStableField(
               label: 'Claude Command',
-              hint:
-                  'Executable path or command name; Slock adds the Claude stream-json runtime arguments.',
+              hint: 'Executable path or command name; Slock adds the Claude stream-json runtime arguments.',
               child: _TextField(
                 key: const ValueKey('runtime-editor-command'),
                 value: draft.command,

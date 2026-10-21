@@ -1,4 +1,4 @@
-// Generated from pinned shared RUNTIME_MODELS. Regenerate with generate_catalog.ts.
+// Generated from pinned shared RUNTIME_MODELS. Regenerate with tool/gen_agent_metadata_catalog.mjs.
 const sourceRuntimeModelLabels = <String, Map<String, String>>{
   'external': {'external': 'External agent'},
   'builtin': {
@@ -118,13 +118,15 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/anthropic/claude-sonnet-4': 'Anthropic: Claude Sonnet 4',
     'openrouter/~anthropic/claude-sonnet-latest':
         'Anthropic: Claude Sonnet Latest',
+    'openrouter/anthropic/claude-haiku-5.5': 'Anthropic: Claude Haiku 5.5',
+    'openrouter/anthropic/claude-haiku-5.5:batch':
+        'Anthropic: Claude Haiku 5.5 (batch)',
     'openrouter/anthropic/claude-haiku-4.5': 'Anthropic: Claude Haiku 4.5',
     'openrouter/anthropic/claude-haiku-4.5:batch':
         'Anthropic: Claude Haiku 4.5 (batch)',
     'openrouter/~anthropic/claude-haiku-latest':
         'Anthropic: Claude Haiku Latest',
     'openrouter/openai/gpt-5.1-codex-max': 'OpenAI: GPT-5.1-Codex-Max',
-    'openrouter/kwaipilot/kat-coder-pro-v2.5': 'Kwaipilot: KAT-Coder-Pro V2.5',
     'openrouter/qwen/qwen3-max-thinking': 'Qwen: Qwen3 Max Thinking',
     'openrouter/qwen/qwen3.8-max-0902': 'Qwen: Qwen3.8 Max (0902)',
     'openrouter/deepseek/deepseek-v4-pro-0813':
@@ -220,6 +222,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
         'Mistral: Mistral Large 3 2512 (batch)',
     'openrouter/mistralai/mistral-large-2407': 'Mistral Large 2407',
     'openrouter/nvidia/nemotron-3-super-120b-a12b': 'NVIDIA: Nemotron 3 Super',
+    'openrouter/mistralai/mistral-large-4-0': 'Mistral: Mistral Large 4',
     'openrouter/mistralai/mistral-large': 'Mistral Large',
     'openrouter/nvidia/nemotron-3-ultra-550b-a55b:free':
         'NVIDIA: Nemotron 3 Ultra (free)',
@@ -427,7 +430,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/rekaai/reka-edge': 'Reka Edge',
     'openrouter/relace/relace-search': 'Relace: Relace Search',
     'openrouter/sakana/sakana-namazu': 'Sakana: Sakana Namazu',
-    'openrouter/stealth/space-bunny-alpha': 'Space Bunny Alpha',
     'openrouter/typesafe/jev-router': 'TypeSafe: Jev Router',
     'openrouter/~x-ai/grok-latest': 'xAI: Grok Latest',
     'openrouter/~z-ai/glm-latest': 'Z.ai: GLM Latest',
@@ -527,6 +529,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/openai/o3-mini': 'OpenAI: o3 Mini',
     'openrouter/openai/o3-mini:batch': 'OpenAI: o3 Mini (batch)',
     'openrouter/openai/o3-mini-high': 'OpenAI: o3 Mini High',
+    'openrouter/google/gemini-nano-banana-2.1': 'Google: Nano Banana 2.1',
     'openrouter/amazon/nova-2-lite-v1': 'Amazon: Nova 2 Lite',
     'openrouter/bytedance-seed/seed-2.0-lite': 'ByteDance Seed: Seed-2.0-Lite',
     'openrouter/bytedance-seed/seed-2.0-mini': 'ByteDance Seed: Seed-2.0-Mini',
@@ -538,7 +541,6 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'openrouter/google/gemma-4-31b-it:free': 'Google: Gemma 4 31B (free)',
     'openrouter/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free':
         'NVIDIA: Nemotron 3 Nano Omni (free)',
-    'openrouter/qwen/qwen3.8-27b:free': 'Qwen: Qwen3.8 27B (free)',
     'openrouter/google/gemma-4-26b-a4b-it:free':
         'Google: Gemma 4 26B A4B  (free)',
     'openrouter/nvidia/nemotron-3.5-lightning:free':
@@ -622,6 +624,7 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'anthropic/claude-sonnet-4-6': 'Claude Sonnet 4.6',
     'anthropic/claude-sonnet-4-5': 'Claude Sonnet 4.5 (latest)',
     'anthropic/claude-haiku-4-5-20251001': 'Claude Haiku 4.5',
+    'anthropic/claude-haiku-5-5': 'Claude Haiku 5.5',
     'anthropic/claude-haiku-4-5': 'Claude Haiku 4.5 (latest)',
     'google/deep-research-max-preview-04-2026':
         'Deep Research Max Preview (Apr-21-2026)',
@@ -675,10 +678,14 @@ const sourceRuntimeModelLabels = <String, Map<String, String>>{
     'claude-sonnet-5-5': 'Claude Sonnet 5.5',
     'claude-sonnet-5': 'Claude Sonnet 5',
     'claude-sonnet-4-6': 'Claude Sonnet 4.6',
+    'claude-haiku-5-5': 'Claude Haiku 5.5',
     'claude-haiku-4-5': 'Claude Haiku 4.5',
   },
   'codex': {
+    'gpt-6.1-sol': 'GPT-6.1 Sol',
     'gpt-6-astra': 'GPT-6-Astra',
+    'gpt-6-sol': 'GPT-6 Sol',
+    'gpt-6-luna': 'GPT-6 Luna',
     'gpt-5.6-sol': 'GPT-5.6 Sol',
     'gpt-5.6-terra': 'GPT-5.6 Terra',
     'gpt-5.6-luna': 'GPT-5.6 Luna',

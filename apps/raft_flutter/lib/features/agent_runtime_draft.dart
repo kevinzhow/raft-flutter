@@ -50,8 +50,6 @@ String runtimeModelLabel(String runtime, String model) =>
         ?.label ??
     model;
 
-const customModelSelectValue = '__custom__';
-
 // ------------------------------------------------------------ model sources
 
 /// `RuntimeModelSourceState`.

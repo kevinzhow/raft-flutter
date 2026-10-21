@@ -378,9 +378,7 @@ void main() {
     );
   });
 
-  testWidgets('a v2 form that cannot be loaded says so', (
-    tester,
-  ) async {
+  testWidgets('a v2 form that cannot be loaded says so', (tester) async {
     await _open(
       tester,
       v2Flag: true,
@@ -626,10 +624,7 @@ void main() {
           'reason': ?reason,
         },
       );
-      expect(
-        find.textContaining(expected, findRichText: true),
-        findsOneWidget,
-      );
+      expect(find.textContaining(expected, findRichText: true), findsOneWidget);
     });
   }
 
@@ -705,16 +700,25 @@ void main() {
     },
   );
 
-  testWidgets('a custom model name is required once Custom is chosen', (
+  testWidgets('a typed model name is used as typed from the Model combobox', (
     tester,
   ) async {
-    await _open(tester);
-    await _choose(tester, 'runtime-editor-model', 'Custom');
-    expect(find.text('Custom model name is required.'), findsOneWidget);
-    expect(_saveEnabled(tester), isFalse);
-    await tester.enterText(_k('runtime-editor-custom-model'), 'my-model');
-    await tester.pump();
+    final (_, client) = await _open(tester);
+    await tester.enterText(
+      find.descendant(
+        of: _k('runtime-editor-model'),
+        matching: find.byType(EditableText),
+      ),
+      'my-model',
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use “my-model”'));
+    await tester.pumpAndSettle();
     expect(_saveEnabled(tester), isTrue);
+    await tester.tap(_k('runtime-editor-save'));
+    await tester.pumpAndSettle();
+    final patch = client.calls.where((c) => c.$1 == 'PATCH').single;
+    expect((patch.$3 as Map)['model'], 'my-model');
   });
 
   testWidgets('Cancel closes without saving', (tester) async {
@@ -763,11 +767,13 @@ void main() {
       return c;
     }
 
-    bool moveEnabled(WidgetTester tester) => tester
-        .widget<RaftButton>(
-          find.widgetWithText(RaftButton, 'Move to another computer'),
-        )
-        .onPressed != null;
+    bool moveEnabled(WidgetTester tester) =>
+        tester
+            .widget<RaftButton>(
+              find.widgetWithText(RaftButton, 'Move to another computer'),
+            )
+            .onPressed !=
+        null;
 
     const active = {
       'migrationRef': 'ref-1',
@@ -810,33 +816,39 @@ void main() {
       expect(moveEnabled(tester), isTrue);
     });
 
-    testWidgets('a migration push re-reads and the 2s poll covers a missed push', (
-      tester,
-    ) async {
-      final c = await profile(tester, flag: true, migration: active);
-      int reads() => c.calls.where((x) => x.$2 == '/agents/a1/migration').length;
-      final first = reads();
-      // A missed push: the server moved on and nothing was sent.
-      c.migration = {...active, 'state': 'arriving'};
-      await tester.pump(const Duration(seconds: 2, milliseconds: 100));
-      await tester.pump();
-      expect(reads(), greaterThan(first));
-      expect(find.text('Setting up the workspace on m2.'), findsOneWidget);
-      // A push for this agent re-reads at once; one for another agent does not.
-      final before = reads();
-      c.stream.add(const RaftEvent('agent:migration-updated', {'agentId': 'zz'}));
-      await tester.pump();
-      expect(reads(), before);
-      c.migration = {...active, 'state': 'completed'};
-      c.stream.add(const RaftEvent('agent:migration-updated', {'agentId': 'a1'}));
-      await tester.pumpAndSettle();
-      expect(find.text('Migrated to m2'), findsOneWidget);
-      expect(moveEnabled(tester), isTrue);
-      // Ended: no more polling.
-      final settled = reads();
-      await tester.pump(const Duration(seconds: 10));
-      expect(reads(), settled);
-    });
+    testWidgets(
+      'a migration push re-reads and the 2s poll covers a missed push',
+      (tester) async {
+        final c = await profile(tester, flag: true, migration: active);
+        int reads() =>
+            c.calls.where((x) => x.$2 == '/agents/a1/migration').length;
+        final first = reads();
+        // A missed push: the server moved on and nothing was sent.
+        c.migration = {...active, 'state': 'arriving'};
+        await tester.pump(const Duration(seconds: 2, milliseconds: 100));
+        await tester.pump();
+        expect(reads(), greaterThan(first));
+        expect(find.text('Setting up the workspace on m2.'), findsOneWidget);
+        // A push for this agent re-reads at once; one for another agent does not.
+        final before = reads();
+        c.stream.add(
+          const RaftEvent('agent:migration-updated', {'agentId': 'zz'}),
+        );
+        await tester.pump();
+        expect(reads(), before);
+        c.migration = {...active, 'state': 'completed'};
+        c.stream.add(
+          const RaftEvent('agent:migration-updated', {'agentId': 'a1'}),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Migrated to m2'), findsOneWidget);
+        expect(moveEnabled(tester), isTrue);
+        // Ended: no more polling.
+        final settled = reads();
+        await tester.pump(const Duration(seconds: 10));
+        expect(reads(), settled);
+      },
+    );
 
     testWidgets('is offered only while agent_migration_v0 is on', (
       tester,

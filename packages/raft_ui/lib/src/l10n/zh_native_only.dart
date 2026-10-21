@@ -39,11 +39,6 @@ const Map<String, String> zhCatalogNativeOnly = <String, String>{
   "Show direct message": "显示私信",
   "Hide direct message": "隐藏私信",
   "Enter one unique KEY=value per line.": "每行输入一个唯一的 KEY=value。",
-  "Choices are unavailable. Retry after connecting the computer.":
-      "无法获取可选项。请在连接 Computer 后重试。",
-  "Enter an HTTP or HTTPS URL.": "请输入 HTTP 或 HTTPS URL。",
-  "Select an available choice.": "请选择一个可用选项。",
-  "Update the client to edit this required field.": "请升级客户端后再编辑此必填项。",
   "Pending requests": "待处理请求",
   "Sign-in methods could not be verified. Refresh before changing them.":
       "无法验证登录方式。请刷新后再更改。",

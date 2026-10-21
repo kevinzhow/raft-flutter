@@ -382,7 +382,7 @@ void main() {
     expect(sourceRuntimeModelLabels.length, 13);
     expect(
       sourceRuntimeModelLabels.values.fold<int>(0, (n, m) => n + m.length),
-      616,
+      622,
     );
     expect(
       agentPresentationModelLabel(scope: scope, identity: agent),
