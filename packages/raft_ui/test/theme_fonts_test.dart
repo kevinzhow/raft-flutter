@@ -31,11 +31,14 @@ void main() {
       expect(t.monoFont, 'Geist Mono');
     });
 
-    test('Brutal shares the Raft families, as its pack declares', () {
-      // Brutal's pack intentionally names the same faces; this checks the pack is
-      // read rather than that the families differ everywhere.
+    test('Brutal uses HankenGrotesk, as a57b9dab did', () {
+      // Corrected: the pack first claimed Space Grotesk, but a57b9dab's generated
+      // metrics set headingFont and sansFont to HankenGrotesk, and a Brutal page
+      // in the P2 baseline reports exactly that family. Brutal is not Raft with a
+      // dark palette -- its typeface differs too.
       final t = _tokens(brutalThemePackId);
-      expect(t.headingFont, 'Space Grotesk');
+      expect(t.headingFont, 'HankenGrotesk');
+      expect(t.bodyFont, 'HankenGrotesk');
       expect(t.monoFont, 'Space Mono');
     });
 

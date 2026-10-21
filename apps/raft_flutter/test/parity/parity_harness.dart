@@ -140,31 +140,34 @@ class ParityContext {
   );
 }
 
-/// Whether the case renders dark. There is one Raft look: every case renders
-/// light unless a supplemental run asks for `elegant-dark` / `dark`. The
-/// historical `brutal-light` / `elegant-light` overrides still name the light
-/// look so older capture scripts keep working.
-bool parityThemeFor(Map<String, dynamic> visualCase, {String? override}) {
-  // Supplemental theme runs preserve each original case/fixture identity.
-  // The official run leaves this unset and retains its original 99-case matrix.
-  if (override != null && override.isNotEmpty) {
-    return switch (override) {
-      'brutal-light' || 'elegant-light' || 'light' => false,
-      'elegant-dark' || 'dark' => true,
-      _ => throw ArgumentError.value(
-        override,
-        'override',
-        'Unknown parity theme',
-      ),
-    };
-  }
+/// Which theme pack and mode a case renders with.
+///
+/// This used to return only a `dark` bool, after the single-look rewrite dropped
+/// the family. The effect was silent and total: every case rendered the built-in
+/// Raft pack, so a "brutal" or "elegant" capture differed from Raft only by
+/// darkness. The P2 baseline at a57b9dab passed the family through, which is why
+/// those images really are Brutal and Elegant.
+///
+/// An official case renders Raft unless a supplemental run overrides it; the
+/// extension suite names its theme explicitly in `props.parityTheme`.
+({String pack, bool dark}) parityThemeFor(
+  Map<String, dynamic> visualCase, {
+  String? override,
+}) {
+  ({String pack, bool dark}) named(String name) => switch (name) {
+    'brutal-light' || 'brutal' => (pack: brutalThemePackId, dark: false),
+    'elegant-light' || 'elegant' => (pack: elegantThemePackId, dark: false),
+    'elegant-dark' || 'dark' => (pack: elegantThemePackId, dark: true),
+    'light' || 'raft' => (pack: raftThemePackId, dark: false),
+    _ => throw ArgumentError.value(name, 'override', 'Unknown parity theme'),
+  };
+  if (override != null && override.isNotEmpty) return named(override);
   final props =
       ((visualCase['variants'] as List?)?.firstOrNull as Map?)?['props']
           as Map?;
-  // Extension suite cases name their theme explicitly (tool/parity-ext).
   final extTheme = props?['parityTheme'];
-  if (extTheme is String) return parityThemeFor(visualCase, override: extTheme);
-  return false;
+  if (extTheme is String) return named(extTheme);
+  return (pack: raftThemePackId, dark: false);
 }
 
 Map<String, List<String>> paritySystemFonts() => {
@@ -253,10 +256,11 @@ Future<Map<String, dynamic>> captureParityCase(
   required Directory outputDir,
   required Map<String, dynamic> runInfo,
 }) async {
-  final dark = parityThemeFor(
+  final selection = parityThemeFor(
     visualCase,
     override: Platform.environment['PARITY_THEME_OVERRIDE'],
   );
+  final dark = selection.dark;
   final ctx = ParityContext(
     caseJson: visualCase,
     fixtures: fixtures,
@@ -268,7 +272,7 @@ Future<Map<String, dynamic>> captureParityCase(
   addTearDown(t.view.reset);
 
   final rootKey = GlobalKey(debugLabel: 'parity-root');
-  final raft = raftTheme(dark: dark);
+  final raft = raftTheme(dark: dark, pack: packForThemeId(selection.pack));
   // Playwright screenshots default to caret: "hide"; hide Flutter's text
   // caret the same way so a focused field is not a spurious diff.
   final theme = raft.copyWith(

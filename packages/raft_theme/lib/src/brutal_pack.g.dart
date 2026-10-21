@@ -23,9 +23,9 @@ const String brutalThemePackJson = r'''{
   "author": "Raft Design System",
   "fonts": {
     "sans": {
-      "family": "Space Grotesk",
+      "family": "HankenGrotesk",
       "stack": [
-        "Space Grotesk",
+        "HankenGrotesk",
         "PingFang SC",
         "Hiragino Sans GB",
         "Microsoft YaHei",
@@ -35,9 +35,9 @@ const String brutalThemePackJson = r'''{
       ]
     },
     "heading": {
-      "family": "Space Grotesk",
+      "family": "HankenGrotesk",
       "stack": [
-        "Space Grotesk",
+        "HankenGrotesk",
         "PingFang SC",
         "Hiragino Sans GB",
         "Microsoft YaHei",

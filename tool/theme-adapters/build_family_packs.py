@@ -113,12 +113,16 @@ FONTS_ELEGANT = {
     'mono': {'family': 'Geist Mono',
              'stack': ['Geist Mono', 'ui-monospace', 'monospace']},
 }
+# a57b9dab's Brutal look is HankenGrotesk, not Space Grotesk: its generated
+# metrics.g.dart sets headingFont and sansFont to `packages/raft_ui/HankenGrotesk`
+# (line 59-60). Measured from the P2 baseline metadata too -- a Brutal page there
+# reports fontFamily HankenGrotesk while the pack used to claim Space Grotesk.
 FONTS_BRUTAL = {
-    'sans': {'family': 'Space Grotesk',
-             'stack': ['Space Grotesk', 'PingFang SC', 'Hiragino Sans GB',
+    'sans': {'family': 'HankenGrotesk',
+             'stack': ['HankenGrotesk', 'PingFang SC', 'Hiragino Sans GB',
                        'Microsoft YaHei', 'Noto Sans SC', 'system-ui', 'sans-serif']},
-    'heading': {'family': 'Space Grotesk',
-                'stack': ['Space Grotesk', 'PingFang SC', 'Hiragino Sans GB',
+    'heading': {'family': 'HankenGrotesk',
+                'stack': ['HankenGrotesk', 'PingFang SC', 'Hiragino Sans GB',
                           'Microsoft YaHei', 'Noto Sans SC', 'system-ui', 'sans-serif']},
     'mono': {'family': 'Space Mono',
              'stack': ['Space Mono', 'ui-monospace', 'monospace']},
