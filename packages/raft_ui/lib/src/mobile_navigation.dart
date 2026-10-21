@@ -9,6 +9,7 @@ import 'components.dart' show RaftSidebarUnreadCount;
 import 'icons.dart';
 import 'localization.dart';
 import 'primitive_tokens.dart';
+import 'public_page_mark.dart';
 import 'rail_attention.dart';
 import 'recipe_surface.dart';
 import 'recipes/app_rail.g.dart';
@@ -479,6 +480,7 @@ class RaftMobileServerSelector extends StatelessWidget {
     this.viewportHeight,
     this.attentionLabel,
     this.focusNode,
+    this.publicPageLive = false,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -486,6 +488,10 @@ class RaftMobileServerSelector extends StatelessWidget {
   final String? attentionLabel;
   final double? viewportHeight;
   final FocusNode? focusNode;
+
+  /// The server's public page is live: a globe after the name (Web
+  /// `PublicPageGlobe`).
+  final bool publicPageLive;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -500,6 +506,7 @@ class RaftMobileServerSelector extends StatelessWidget {
       attention: attention,
       attentionLabel: attentionLabel,
       focusNode: focusNode,
+      publicPageLive: publicPageLive,
     );
   }
 }
@@ -512,6 +519,7 @@ class _SelectorControl extends StatelessWidget {
     required this.attention,
     this.attentionLabel,
     this.focusNode,
+    this.publicPageLive = false,
   });
   final RaftMobileServerSelectorRecipe recipe;
   final String label;
@@ -519,6 +527,7 @@ class _SelectorControl extends StatelessWidget {
   final bool attention;
   final String? attentionLabel;
   final FocusNode? focusNode;
+  final bool publicPageLive;
   @override
   Widget build(BuildContext context) => RaftControl(
     focusNode: focusNode,
@@ -554,6 +563,14 @@ class _SelectorControl extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (publicPageLive) ...[
+                  const SizedBox(width: 6),
+                  RaftPublicPageGlobe(
+                    live: true,
+                    size: 14,
+                    color: recipe.foreground,
+                  ),
+                ],
                 const SizedBox(width: 6),
                 Transform.rotate(
                   angle: recipe.chevronAngle,

@@ -20,8 +20,11 @@ import 'management_support.dart'
 /// Settings > Server Profile: SettingsPanel.tsx PublicVisibilitySection.
 /// Owner only, behind `public_server_v0`; the Guest-join switch also needs
 /// `server_guest_v0`. GET/PATCH /servers/:id/public-visibility and PATCH
-/// /servers/:id/public-guest-join; turning public on asks for confirmation
-/// with the exposed channel list.
+/// /servers/:id/public-guest-join and /servers/:id/public-search (Allow search
+/// engines); turning public on asks for confirmation with the exposed channel
+/// list. The server list carries `publicPageLive` (the globe after the server
+/// name and on public channels), so it is reloaded after the visibility
+/// changes: the owner who just flipped it should not wait.
 class PublicVisibilitySection extends StatefulWidget {
   const PublicVisibilitySection({
     super.key,
@@ -75,12 +78,15 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
       final result = managementMap(
         await w.client.post(
           '/feature-flags/evaluate',
-          data: featureFlagEvaluateBody(keys: [publicFlag, guestFlag], serverId: w.server?.id),
+          data: featureFlagEvaluateBody(
+            keys: [publicFlag, guestFlag],
+            serverId: w.server?.id,
+          ),
         ),
       );
-      bool on(String key) => managementRows(
-        result['evaluations'],
-      ).any((f) => f['key'] == key && f['enabled'] == true);
+      bool on(String key) =>
+          managementRows(result['evaluations'])
+              .any((f) => f['key'] == key && f['enabled'] == true);
       final public = on(publicFlag), guest = on(guestFlag);
       rememberServerFlag(w, publicFlag, public, identity);
       rememberServerFlag(w, guestFlag, guest, identity);
@@ -148,6 +154,14 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
     }
   }
 
+  /// PATCH public-visibility, then the globe's source of truth.
+  Future<void> setVisibility(bool visible) async {
+    await patch('$base/public-visibility', {
+      'publiclyVisible': visible,
+    }, 'Failed to update public access');
+    unawaited(w.loadServerDirectory().catchError((_) => false));
+  }
+
   List<RaftPublicChannel> get channels => [
     for (final c in managementRows(readback?['exposedChannels']))
       RaftPublicChannel(
@@ -168,9 +182,7 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
         confirmVariant: RaftButtonRecipeVariant.accent,
         maxWidth: 512,
         content: RaftPublicVisibilityConfirmBody(channels: channels),
-        onConfirm: () => patch('$base/public-visibility', {
-          'publiclyVisible': true,
-        }, 'Failed to update public access'),
+        onConfirm: () => setVisibility(true),
       ),
     );
   }
@@ -210,9 +222,7 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
                 if (on) {
                   makePublic();
                 } else {
-                  patch('$base/public-visibility', {
-                    'publiclyVisible': false,
-                  }, 'Failed to update public access').catchError((_) {});
+                  setVisibility(false).catchError((_) {});
                 }
               }
             : null,
@@ -224,6 +234,12 @@ class _PublicVisibilitySectionState extends State<PublicVisibilitySection> {
             ? (on) => patch('$base/public-guest-join', {
                 'publicGuestJoinEnabled': on,
               }, 'Failed to update Guest joining').catchError((_) {})
+            : null,
+        searchEngines: r?['publicSearchEnabled'] == true,
+        onSearchEngines: idle && visible
+            ? (on) => patch('$base/public-search', {
+                'publicSearchEnabled': on,
+              }, 'Failed to update search engine access').catchError((_) {})
             : null,
         loading: loading,
         channels: channels,

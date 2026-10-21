@@ -78,6 +78,7 @@ export 'src/keyboard_reveal.dart';
 export 'src/root_error_fallback.dart';
 export 'src/server_access_denied.dart';
 export 'src/archived_channels_section.dart';
+export 'src/public_page_mark.dart';
 export 'src/setup_resume_bar.dart';
 export 'src/community_agreement_dialog.dart';
 export 'src/invite_accept_page.dart';

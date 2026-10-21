@@ -1907,6 +1907,8 @@ class RaftPublicVisibilityCard extends StatelessWidget {
     this.onCopy,
     this.guestJoin,
     this.onGuestJoin,
+    this.searchEngines = false,
+    this.onSearchEngines,
     this.loading = false,
     this.error,
   });
@@ -1922,6 +1924,12 @@ class RaftPublicVisibilityCard extends StatelessWidget {
   /// Null hides the Guest-join row (`server_guest_v0` off).
   final bool? guestJoin;
   final ValueChanged<bool>? onGuestJoin;
+
+  /// Allow search engines to list the public channels
+  /// (`publicSearchEnabled`); only meaningful while the server is public.
+  /// A null [onSearchEngines] disables the switch.
+  final bool searchEngines;
+  final ValueChanged<bool>? onSearchEngines;
   final bool loading;
   final String? error;
 
@@ -1976,6 +1984,17 @@ class RaftPublicVisibilityCard extends StatelessWidget {
         ),
       ],
     );
+    final hairline = t.colors['line-hairline'] ?? t.colors['line-muted']!;
+    Widget secondLevel(Key key, Widget child) => Padding(
+      key: key,
+      padding: const EdgeInsets.only(left: 4),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(left: BorderSide(color: hairline)),
+        ),
+        child: Padding(padding: const EdgeInsets.only(left: 16), child: child),
+      ),
+    );
     return RaftSettingsCard.box(
       t,
       padding: const EdgeInsets.all(16),
@@ -2012,36 +2031,56 @@ class RaftPublicVisibilityCard extends StatelessWidget {
               ],
             ),
           ],
+          // Second level: indented under the setting it depends on, with a
+          // guide line (`ml-1 border-l border-line-hairline pl-4`).
           if (guestJoin case final guest?) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.only(top: 16),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: t.colors['line-hairline'] ?? t.colors['line-muted']!,
-                  ),
-                ),
-              ),
-              child: switchRow(
+            secondLevel(
+              const ValueKey('public-guest-join-setting'),
+              switchRow(
                 'Allow visitors to join as Guest',
-                'Signed-in visitors can choose to join. Public reading never adds membership automatically.',
+                'Signed-in visitors can join the server as read-only Guests, follow channels open to Guests, and be invited into other channels.',
                 guest,
                 onGuestJoin,
                 const ValueKey('public-guest-join-switch'),
               ),
             ),
           ],
+          // Public server SEO: also second level. It never makes anything
+          // readable; it only decides whether public content may be indexed.
           const SizedBox(height: 16),
-          RaftCssText(
-            raftText(context, 'Channels visible to anyone').toUpperCase(),
-            style: eyebrow,
+          secondLevel(
+            const ValueKey('public-search-setting'),
+            switchRow(
+              'Allow search engines',
+              'Search engines can show the channels visible to anyone, and their threads, in search results. Turning it off stops this, though results already listed can take a while to drop out. The channels stay public.',
+              publiclyVisible && searchEngines,
+              onSearchEngines,
+              const ValueKey('public-search-switch'),
+            ),
           ),
-          const SizedBox(height: 8),
-          if (loading)
-            const RaftUiSkeleton(height: 64)
-          else
-            RaftPublicChannelList(channels: channels),
+          const SizedBox(height: 16),
+          Container(
+            key: const ValueKey('public-visibility-channels'),
+            padding: const EdgeInsets.only(top: 16),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: hairline)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                RaftCssText(
+                  raftText(context, 'Channels visible to anyone').toUpperCase(),
+                  style: eyebrow,
+                ),
+                const SizedBox(height: 8),
+                if (loading)
+                  const RaftUiSkeleton(height: 64)
+                else
+                  RaftPublicChannelList(channels: channels),
+              ],
+            ),
+          ),
           if (error case final error?) ...[
             const SizedBox(height: 16),
             RaftAdminWarning(error),

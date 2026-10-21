@@ -11,6 +11,7 @@ import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
 import 'indicators.dart';
 import 'panel_layout.dart';
+import 'public_page_mark.dart';
 import 'recipe_surface.dart';
 import 'recipes/panel_header.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -187,10 +188,15 @@ class RaftChannelHeader extends StatelessWidget {
     this.searchLabel = 'Search this channel',
     this.settingsLabel = 'Channel settings',
     this.archivedLabel,
+    this.publicPage = false,
   });
   final String name, description, kind, backLabel, searchLabel, settingsLabel;
   final VoidCallback? onBack, onSearch, onSettings;
   final Key? backKey;
+
+  /// Anyone can read this channel on the server's public page (the server is
+  /// public and the channel visible to Guests): the # carries a small globe.
+  final bool publicPage;
 
   /// ChatPanel `regularTitleSuffix` for an archived channel: the localized
   /// "Archived" badge after the title (null = not archived).
@@ -218,11 +224,15 @@ class RaftChannelHeader extends StatelessWidget {
       backKey: backKey,
       backLabel: backLabel,
       hasMeta: meta.isNotEmpty,
-      identity: RaftIcon(
-        glyph,
-        size: 14,
-        color: recipe.headerIcon.color?.resolve(rt) ?? t.strong,
-      ),
+      identity: publicPage && kind == 'channel'
+          ? RaftPublicChannelMark(
+              color: recipe.headerIcon.color?.resolve(rt) ?? t.strong,
+            )
+          : RaftIcon(
+              glyph,
+              size: 14,
+              color: recipe.headerIcon.color?.resolve(rt) ?? t.strong,
+            ),
       content: RaftPanelHeaderContent(
         style: recipe.headerContent,
         heading: _withArchivedBadge(

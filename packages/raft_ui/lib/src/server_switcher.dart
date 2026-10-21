@@ -81,7 +81,12 @@ class RaftServerSwitcher extends StatefulWidget {
     this.attention = false,
     this.logo,
     this.workspaceAvatarUrl,
+    this.publicPageLive = false,
   });
+
+  /// The current server's public page is live: the mobile selector carries a
+  /// globe after the name.
+  final bool publicPageLive;
 
   /// The current workspace's resolved public avatar (rail trigger); the
   /// initial shows while absent.
@@ -225,6 +230,7 @@ class _RaftServerSwitcherState extends State<RaftServerSwitcher> {
                     key: const Key('mobile-server-selector'),
                     label: widget.workspaceName,
                     attention: widget.attention,
+                    publicPageLive: widget.publicPageLive,
                     attentionLabel: raftText(
                       context,
                       'Other servers have unread messages',

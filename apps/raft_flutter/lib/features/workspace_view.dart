@@ -89,6 +89,7 @@ import '../platform/system_bars.dart';
 import '../platform/keyboard_inset_diagnostics.dart';
 import '../data/feature_flag_client_facts.dart';
 import 'public_avatar_url.dart';
+import 'public_page_live.dart';
 
 part 'workspace_view_sidebar_menus.dart';
 part 'mobile_workspace_route.dart';
@@ -2862,6 +2863,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final scope = mobileAuthority;
     return RaftServerSwitcher(
       mobile: mobile,
+      publicPageLive: serverPublicPageLive(w),
       attention: w.servers.any(
         (s) => s.id != w.server?.id && (activityCountOf(s.id) ?? 0) > 0,
       ),
@@ -3187,6 +3189,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     searchLabel: tr('Search this channel'),
     settingsLabel: tr('Channel details and settings'),
     archivedLabel: w.channel!.archived ? tr('Archived') : null,
+    publicPage: channelOnPublicPage(w, w.channel!),
   );
 
   /// ChatPanel's DM header: identity from the DM record (first frame), the
@@ -3558,7 +3561,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                   ? agentRowPresence(peer.profile!)
                   : null,
             )
-          : null,
+          : channelPublicLeading(context, w, c),
       wrap: pinned,
       menuOpen: menuOpenRow == 'c:${c.id}',
       onContextMenu: (at) => openChannelMenu(at, c),
