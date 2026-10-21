@@ -5280,28 +5280,28 @@
    "capability": "Read the latest agent migration status (progress panel, polling and realtime updates)",
    "background": true,
    "status": "covered",
-   "webEntry": "Profile > Actions > AgentMigrationSection button label ('Move to another computer' / 'Migration in progress' / 'Try migration again') + MigrationProgressPanel",
+   "webEntry": "Profile > AgentMigrationSection (between Skills and Actions) button label ('Migrate' / 'Try migration again') + MigrationProgressPanel",
    "gate": "agent_migration_v0 flag",
-   "flutterEntry": "agent_migration_view.dart (reads on open, realtime listener, polling) + agent_migration_panel.dart MigrationProgressPanel / MigrationInlineStatus on the agent detail",
+   "flutterEntry": "agent_migration_section.dart AgentMigrationSection (reads on mount, realtime listener, polling via agent_migration_status.dart) + agent_migration_panel.dart MigrationProgressPanel",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/agent_migration_view.dart",
-     "needle": "$base/migration'"
+     "file": "apps/raft_flutter/lib/data/agent_migration_status.dart",
+     "needle": "/agents/$agentId/migration'"
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_migration_panel.dart",
      "needle": "class MigrationProgressPanel"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_migration_panel.dart",
-     "needle": "class MigrationInlineStatus"
+     "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
+     "needle": "class AgentMigrationSection"
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_migration_presentation.dart",
      "needle": "Migration status"
     }
    ],
-   "justification": "Flutter shows the progress panel (steps, cancel, failure details) in the dedicated view and the state header and notice inline on the agent detail (tap opens the view); the profile Actions button is disabled while a migration runs but is not a status-aware label.",
+   "justification": "",
    "impact": "",
    "size": ""
   },
@@ -5923,25 +5923,25 @@
    "kind": "endpoint",
    "id": "POST /agents/:id/migrate",
    "area": "agents-computers-runtimes",
-   "capability": "Start moving an agent to another computer ('Move to another computer' > target computer select > 'Start migration'); Free plans see a 'Move agents with Pro' upsell",
+   "capability": "Start moving an agent to another computer (AgentMigrationSection 'Migrate' > 'Move to another computer' dialog with a searchable target computer); Free plans see the upgrade dialog",
    "background": false,
-   "status": "partial",
-   "webEntry": "AgentDetailPanel > Profile > Actions > 'Move to another computer' (AgentMigrationDialog; AgentMigrationUpgradeDialog when plan is not Pro)",
+   "status": "covered",
+   "webEntry": "AgentDetailPanel > Profile > AgentMigrationSection > 'Migrate' (AgentMigrationDialog; AgentMigrationUpgradeDialog when plan is not Pro)",
    "gate": "agent_migration_v0 flag, agent has computer, canManageAgent, plan Pro",
-   "flutterEntry": "agent_migration_view.dart (flag w.agentMigrationEnabled and migrateAgents capability in fleet_views.dart onMigrate)",
+   "flutterEntry": "agent_migration_section.dart AgentMigrationSection + agent_migration_start_dialog.dart (flag w.agentMigrationEnabled and migrateAgents capability in fleet_views.dart canMigrate)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/agent_migration_view.dart",
-     "needle": "$base/migrate"
+     "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
+     "needle": "/agents/$_agentId/migrate'"
     },
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
      "needle": "agentMigrationEnabled"
     }
    ],
-   "justification": "Flutter lacks the pre-flight billing check and the 'Move agents with Pro' dialog with 'View plans'; a Free-plan user only gets the server error text after submitting (migration_error.dart MIGRATION_PRO_PLAN_REQUIRED).",
-   "impact": "Free-plan admins get a late error instead of an upgrade path.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -5952,14 +5952,14 @@
    "status": "covered",
    "webEntry": "AgentMigrationSection / MigrationProgressPanel > 'Cancel' action (AgentMigrationCancelDialog)",
    "gate": "agent_migration_v0 flag + agent has a computer + canManageAgent",
-   "flutterEntry": "agent_migration_view.dart cancel() ('Cancel migration?')",
+   "flutterEntry": "agent_migration_section.dart cancel() ('Cancel migration?')",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/agent_migration_view.dart",
-     "needle": "$base/migration/cancel"
+     "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
+     "needle": "/agents/$_agentId/migration/cancel'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_migration_view.dart",
+     "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
      "needle": "Cancel migration"
     }
    ],
@@ -6376,23 +6376,23 @@
    "kind": "ui",
    "id": "ui:agents.actions-move-computer",
    "area": "agents-computers-runtimes",
-   "capability": "'Move to another computer' action + migration progress and cancel",
+   "capability": "'Migrate' action + migration progress and cancel",
    "background": false,
    "status": "covered",
-   "webEntry": "Profile > Actions > AgentMigrationSection",
+   "webEntry": "Profile > AgentMigrationSection (between Skills and Actions)",
    "gate": "agent_migration_v0 + computer + canManageAgent",
-   "flutterEntry": "agent_detail_view.dart onMigrate -> agent_migration_view.dart",
+   "flutterEntry": "agent_detail_view.dart canMigrate -> agent_migration_section.dart AgentMigrationSection",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "Move to another computer"
+     "needle": "AgentMigrationSection("
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_migration_view.dart",
-     "needle": "Move agent"
+     "file": "apps/raft_flutter/lib/features/agent_migration_section.dart",
+     "needle": "'Migrate'"
     }
    ],
-   "justification": "Pro-plan upsell dialog missing (see POST /agents/:id/migrate).",
+   "justification": "",
    "impact": "",
    "size": ""
   },

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../data/runtime_error.dart' show spawnLookupReason;
+import '../data/runtime_error.dart' show spawnFailureCarrier, spawnLookupReason;
 import 'agent_metadata_catalog.dart';
 
 /// Only the adapter constructs this from the current authorized workspace.
@@ -128,6 +128,11 @@ String? agentRowSpawnLookupReason(Map row) {
   }
   return spawnLookupReason(agentRowDetailKind(row), row['spawnFailure']);
 }
+
+/// The typed `spawnFailure` carrier of the row's current `runtime_unavailable`
+/// start failure (socket patch or REST row).
+Map<String, dynamic>? agentRowSpawnFailure(Map row) =>
+    spawnFailureCarrier(agentRowDetailKind(row), row['spawnFailure']);
 
 /// A directory row's current activity as the source hydrates it:
 /// normalizeActivity(activityKind ?? activity, status).

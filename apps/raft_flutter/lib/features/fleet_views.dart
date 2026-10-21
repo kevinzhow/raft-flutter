@@ -14,7 +14,6 @@ import '../data/workspace_entity_directory.dart';
 import '../platform/system_bars.dart';
 import 'managed_agent_launcher.dart';
 import 'agent_scopes_view.dart';
-import 'agent_migration_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_profile_rules.dart';
 import 'agent_metadata_catalog.dart' show sourceAgentActivities;
@@ -1433,18 +1432,11 @@ class _FleetDetailState extends State<FleetDetail> {
             ? () => action(message)
             : null,
         // Web `AgentMigrationSection`: `agent_migration_v0` and a computer.
-        onMigrate:
+        canMigrate:
             access.canManage &&
-                allowed('migrateAgents') &&
-                w.agentMigrationEnabled &&
-                row['machineId'] is String
-            ? () => Navigator.of(context, rootNavigator: true).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AgentMigrationView(controller: w, agentId: id),
-                ),
-              )
-            : null,
+            allowed('migrateAgents') &&
+            w.agentMigrationEnabled &&
+            row['machineId'] is String,
         onReportIssue:
             access.canManage &&
                 reportIssueEnabled(

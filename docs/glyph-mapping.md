@@ -126,7 +126,6 @@ icon on the same UI element. Icon names were never used as evidence.
 | `features/account_onboarding.dart:305` | `Icons.add_a_photo` | Onboarding profile step, "Choose profile image" avatar upload button | components/auth/AccountIdentitySetupPage.tsx:515 | `Camera` (size=15) | camera | REPLACED | Web button label is `pages.identitySetup.avatarCta` ("Upload") |
 | `features/admin_views.dart:284` | `Icons.public` | Admin public visibility: row leading icon in the exposed channels list | components/settings/SettingsPanel.tsx:2127 | `Hash` (size=14, strokeWidth=2.5) | hash | REPLACED | Sits in a size-7 bordered chip in `PublicChannelList` |
 | `features/agent_apps_view.dart:305` | `Icons.add` | "Grant app access" action in the Agent App Access view | components/agent/AgentAppAccessTab.tsx:376 | none | — | TODO | Web `agent.apps.grantAccess` is a text-only outline Button. The file has no lucide import |
-| `features/agent_migration_view.dart:178` | `Icons.refresh` | Agent migration AppBar Refresh button | components/agentMigration/AgentMigrationSection.tsx:60-138 | none | — | TODO | Web has no migration screen and no manual refresh. Status refreshes through `useAgentMigrationStatus` |
 | `features/fleet_views.dart:290` | `Icons.refresh` | Agents/Computers list header Refresh IconButton | components/machine/MobileComputersPanel.tsx:97,110 | (`RefreshCw` size=14, only in the Retry button after an error) | — | TODO | Web has no header refresh. `RefreshCw` appears only in the load-error Retry button |
 | `features/fleet_views.dart:310` | `Icons.computer` | "Create managed agent" button on the Agents list | components/layout/Sidebar.tsx:2430 | `Bot` (size=14, className shrink-0) | bot | REPLACED | Web "+" menu item `layout.sidebar.createAgent`, which opens `openCreateAgentDialog` (managed agent). External agent is a separate item with `Link2` |
 | `features/fleet_views.dart:342` | `Icons.computer` | Computers list row leading icon (agents branch uses RaftAvatar) | components/machine/MobileComputersPanel.tsx:149; components/layout/Sidebar.tsx:704 | `Monitor` (size=20 mobile page / size=18 sidebar) | monitor | REPLACED | Web wraps it in a bordered box with a StatusDot |
@@ -217,7 +216,7 @@ icon on the same UI element. Icon names were never used as evidence.
   - `auth_view:374/375` (password reveal), `workspace_view:874/1749/1840`
   - `sidebar_preferences_view` (the whole page), `chat_view:614` (share link)
   - `forward_messages_dialog:375/376`, `provider_views:406/407`
-  - `fleet_views:934/1199`, `agent_migration_view:178`
+  - `fleet_views:934/1199`
 - **Web draws a non-lucide icon:**
   - raft-ui `ThreadIcon`/`ChatIcon`/`DirectMessageIcon`: `chat_view:608`, `fleet_views:984/989`
   - agent avatars: `workspace_view:1547`, `sidebar_preferences_view:434`

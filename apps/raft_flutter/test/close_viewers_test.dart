@@ -12,7 +12,6 @@ import 'package:raft_flutter/data/source_channel_files_store.dart';
 import 'package:raft_flutter/data/source_feedback_store.dart';
 import 'package:raft_flutter/features/source_feedback_view.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
-import 'package:raft_flutter/features/agent_migration_view.dart';
 import 'package:raft_flutter/features/agent_scopes_view.dart';
 import 'package:raft_flutter/features/attachment_view.dart';
 import 'package:raft_flutter/features/incoming_share_picker.dart';
@@ -359,22 +358,6 @@ void registerCloseViewerTests(TestPart part) {
       return SurfaceProbe(
         isOpen: () => panel.evaluate().isNotEmpty,
         x: find.byKey(const ValueKey('thread-close')),
-        back: find.byTooltip('Back'),
-      );
-    },
-    'agent-migration-page': (t, size) async {
-      final (w, api) = await mountWorkspace(t, size);
-      api.routes['GET /agents/a1/migration'] = (_) => {'migration': null};
-      unawaited(
-        Navigator.of(t.element(find.byType(WorkspaceView))).push(
-          MaterialPageRoute<void>(
-            builder: (_) => AgentMigrationView(controller: w, agentId: 'a1'),
-          ),
-        ),
-      );
-      await frames(t, 30);
-      return SurfaceProbe(
-        isOpen: () => find.byType(AgentMigrationView).evaluate().isNotEmpty,
         back: find.byTooltip('Back'),
       );
     },

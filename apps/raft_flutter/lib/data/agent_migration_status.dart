@@ -33,6 +33,10 @@ class AgentMigrationStatus extends ChangeNotifier {
   /// The last read failed. The accepted migration is kept.
   bool failed = false;
 
+  /// What the failed read threw (Web `statusError` source); null while the
+  /// last read succeeded.
+  Object? error;
+
   String get _cacheKey => 'migration-status/$agentId';
   StreamSubscription<RaftEvent>? _events;
   RaftForegroundPeriodic? _poll;
@@ -59,7 +63,9 @@ class AgentMigrationStatus extends ChangeNotifier {
     _reading = true;
     try {
       final value = await w.query('/agents/$agentId/migration');
-      if (_disposed || request != _request || generation != w.client.generation) {
+      if (_disposed ||
+          request != _request ||
+          generation != w.client.generation) {
         return;
       }
       final next = value is Map && value['migration'] is Map
@@ -67,14 +73,16 @@ class AgentMigrationStatus extends ChangeNotifier {
           : <String, dynamic>{};
       migration = next;
       failed = false;
+      error = null;
       if (next.isEmpty) {
         w.agentTabCache.remove(_cacheKey);
       } else {
         w.agentTabCache.put(_cacheKey, next);
       }
-    } catch (_) {
+    } catch (e) {
       if (_disposed || request != _request) return;
       failed = true;
+      error = e;
     } finally {
       _reading = false;
     }

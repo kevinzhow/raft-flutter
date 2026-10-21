@@ -57,17 +57,6 @@
    "widget.dialog": 1,
    "widget.other": 1
   },
-  "apps/raft_flutter/lib/features/agent_migration_view.dart": {
-   "style.edge_insets": 1,
-   "style.material_icons": 1,
-   "style.material_theme": 1,
-   "style.sized_box": 2,
-   "widget.button": 2,
-   "widget.icon_button": 1,
-   "widget.other": 1,
-   "widget.progress": 1,
-   "widget.scaffold": 1
-  },
   "apps/raft_flutter/lib/features/agent_scopes_view.dart": {
    "style.dimension": 1,
    "style.edge_insets": 1,

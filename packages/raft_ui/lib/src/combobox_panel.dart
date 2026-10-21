@@ -93,6 +93,7 @@ class RaftComboboxPanel extends StatefulWidget {
     this.glyph,
     this.enabled = true,
   }) : items = null,
+       emptyLabel = 'No results',
        customLabel = null,
        onCustom = null,
        currentId = null,
@@ -111,10 +112,14 @@ class RaftComboboxPanel extends StatefulWidget {
     this.autofocus = false,
     this.enabled = true,
     this.controller,
+    this.emptyLabel = 'No results',
   }) : options = const {},
        glyph = null;
 
   final String label;
+
+  /// The catalog text shown when no row matches the typed query.
+  final String emptyLabel;
   final Map<String, String> options;
   final List<RaftComboboxItem>? items;
   final ValueChanged<String> onSelected;
@@ -454,7 +459,7 @@ class _RaftComboboxPanelState extends State<RaftComboboxPanel> {
                               style: r.empty,
                               tokens: tokens,
                               child: Text(
-                                raftText(context, 'No results'),
+                                raftText(context, widget.emptyLabel),
                                 textAlign: TextAlign.center,
                               ),
                             ),

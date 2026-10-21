@@ -765,7 +765,7 @@ void main() {
 
     bool moveEnabled(WidgetTester tester) => tester
         .widget<RaftButton>(
-          find.widgetWithText(RaftButton, 'Move to another computer'),
+          find.widgetWithText(RaftButton, 'Migrate'),
         )
         .onPressed != null;
 
@@ -783,7 +783,9 @@ void main() {
       await profile(tester, flag: true, migration: active);
       expect(find.text('Migrating to m2'), findsOneWidget);
       expect(find.text('Transferring workspace to m2.'), findsOneWidget);
-      expect(moveEnabled(tester), isFalse);
+      // Web: the progress block owns the only action (Cancel) while it runs.
+      expect(find.widgetWithText(RaftButton, 'Migrate'), findsNothing);
+      expect(find.widgetWithText(RaftButton, 'Cancel'), findsOneWidget);
     });
 
     testWidgets('no migration shows nothing and keeps Move enabled', (
@@ -807,7 +809,10 @@ void main() {
         find.textContaining('The agent is still on Box and works as usual.'),
         findsOneWidget,
       );
-      expect(moveEnabled(tester), isTrue);
+      expect(
+        find.widgetWithText(RaftButton, 'Try migration again'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('a migration push re-reads and the 2s poll covers a missed push', (
@@ -843,12 +848,12 @@ void main() {
     ) async {
       await profile(tester, flag: false);
       expect(
-        find.text('Move to another computer', skipOffstage: false),
+        find.text('AGENT MIGRATION', skipOffstage: false),
         findsNothing,
       );
       await profile(tester, flag: true);
       expect(
-        find.text('Move to another computer', skipOffstage: false),
+        find.text('AGENT MIGRATION', skipOffstage: false),
         findsOneWidget,
       );
     });

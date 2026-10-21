@@ -1276,10 +1276,15 @@ class RaftIconButton extends StatelessWidget {
     this.variant = RaftControlVariant.ghost,
     this.shadow = true,
     this.busy = false,
+    this.semanticLabel,
   });
   final RaftGlyph glyph;
   final VoidCallback? onPressed;
   final String? tooltip;
+
+  /// The accessible name when it differs from the [tooltip] (Web `aria-label`
+  /// that carries more than the tooltip text).
+  final String? semanticLabel;
   final double visualSize;
   final double? minimumTargetSize;
   final double? glyphSize;
@@ -1296,7 +1301,9 @@ class RaftIconButton extends StatelessWidget {
       minimumTargetSize: minimumTargetSize,
       variant: variant,
       busy: busy,
-      semanticLabel: busy ? raftText(context, tooltip ?? 'Loading') : null,
+      semanticLabel: busy
+          ? raftText(context, tooltip ?? 'Loading')
+          : semanticLabel,
       child: busy
           ? RaftSpinner(size: glyphSize)
           : RaftIcon(glyph, size: glyphSize ?? (visualSize <= 28 ? 14 : 16)),

@@ -12,7 +12,6 @@ import 'package:intl/intl.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
-import '../data/agent_migration_status.dart';
 import '../data/runtime_config.dart';
 import '../data/source_time_formatter.dart';
 import '../data/runtime_error.dart';
@@ -20,7 +19,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_apps_view.dart';
-import 'agent_migration_panel.dart' show MigrationInlineStatus;
+import 'agent_migration_section.dart';
 import 'agent_profile_rules.dart';
 import 'external_agent_setup.dart';
 import 'channel_form_fields.dart' show ChannelCandidateAvatar;
@@ -31,7 +30,8 @@ import 'tool_display.dart';
 import 'runtime_usage_chip.dart';
 import 'agent_metadata_catalog.dart';
 import 'agent_runtime_catalog.dart' show reasoningEfforts, runtimeInfos;
-import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
+import 'agent_runtime_labels.dart'
+    show isRuntimeDeprecated, runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
 import 'mcp_views.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
@@ -95,13 +95,18 @@ class AgentDetailActions {
     this.onRestartReset,
     this.onDelete,
     this.onMessage,
-    this.onMigrate,
+    this.canMigrate = false,
     this.onPermissions,
     this.onReportIssue,
   });
 
   /// Keep the Back chevron at md+ (`backButtonVisibility="always"`).
   final bool backAlways;
+
+  /// Mount the Agent migration section (Web `AgentMigrationSection`: the
+  /// viewer manages a non-external agent that has a computer and
+  /// `agent_migration_v0` is on).
+  final bool canMigrate;
   final VoidCallback? onBack,
       onClose,
       onEditName,
@@ -113,7 +118,6 @@ class AgentDetailActions {
       onRestartReset,
       onDelete,
       onMessage,
-      onMigrate,
       onPermissions,
       /// Report Issue (offered only when the build names a feedback export
       /// worker, Web `FEEDBACK_EXPORT_ENABLED`).
@@ -288,29 +292,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     super.initState();
     _adoptCachedExternalStatus();
     unawaited(loadExternalStatus());
-    _syncMigration();
-  }
-
-  /// Web `AgentMigrationSection`: the agent's migration, watched only where
-  /// the viewer can move it (the Move action is offered).
-  AgentMigrationStatus? _migration;
-
-  void _syncMigration() {
-    final id = '${a['id']}';
-    final want = widget.actions.onMigrate != null && !_bounded;
-    final held = _migration;
-    if (want && held != null && held.agentId == id) return;
-    held
-      ?..removeListener(_migrationChanged)
-      ..dispose();
-    _migration = want
-        ? (AgentMigrationStatus(widget.controller, id)
-            ..addListener(_migrationChanged))
-        : null;
-  }
-
-  void _migrationChanged() {
-    if (mounted) setState(() {});
   }
 
   /// A revisit shows the last accepted setup state at its first frame (the
@@ -326,7 +307,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   @override
   void didUpdateWidget(AgentDetailPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    _syncMigration();
     if (oldWidget.agent['id'] != a['id'] ||
         oldWidget.agent['runtime'] != a['runtime'] ||
         oldWidget.agent['external'] != a['external']) {
@@ -374,9 +354,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   @override
   void dispose() {
     diagnosticTimer?.cancel();
-    _migration
-      ?..removeListener(_migrationChanged)
-      ..dispose();
     super.dispose();
   }
 
@@ -740,6 +717,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         ? runtimeLookupDisplayForReason(agentRowSpawnLookupReason(a))
         : null;
     final lookupRuntime = '${a['runtime'] ?? ''}';
+    final spawnText =
+        _canViewPrivate && display.detailKind == 'runtime_unavailable'
+        ? spawnFailureDetailText(
+            agentRowSpawnFailure(a),
+            display.detail,
+            (source, values) => raftFormat(context, source, values),
+          )
+        : null;
     final status =
         _canViewPrivate &&
             lookup != null &&
@@ -756,7 +741,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         ? raftText(context, runtimeErrorText(runtimeKind))
         : agentActivityText(
             display.activity,
-            _canViewPrivate ? display.detail : '',
+            // Web `formatSpawnFailureDetail`: a failed start's typed reason
+            // stands in for the daemon's detail.
+            _canViewPrivate ? spawnText ?? display.detail : '',
             _canViewPrivate ? display.detailKind : null,
             translate: (source, values) => raftFormat(context, source, values),
           );
@@ -783,18 +770,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         .toList();
     final buttons = <Widget>[
       if (!external) ...[
-        if (widget.actions.onMigrate != null)
-          RaftButton(
-            label: raftText(context, 'Move to another computer'),
-            glyph: RaftGlyph.moveRight,
-            tone: RaftButtonRecipeVariant.outline,
-            size: RaftButtonRecipeSize.md,
-            expand: true,
-            // Web AgentMigrationSection: no new move while one runs.
-            onPressed: widget.busy || _migration?.active == true
-                ? null
-                : widget.actions.onMigrate,
-          ),
         if (_canControlRuntime) ...[
           RaftButton(
             label: raftText(context, online ? 'Stop Agent' : 'Start Agent'),
@@ -1048,6 +1023,18 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   ),
                 ),
               ),
+              // Web `currentRuntimeDeprecated`: the agent keeps running, but new
+              // agents cannot select this runtime.
+              if (isRuntimeDeprecated(runtime))
+                RaftBanner(
+                  status: RaftBannerRecipeStatus.warning,
+                  size: RaftBannerRecipeSize.sm,
+                  descriptionWeight: FontWeight.w700,
+                  description: raftText(
+                    context,
+                    'This agent uses a deprecated runtime. It can keep running, but new agents cannot select this runtime.',
+                  ),
+                ),
               RaftInfoRow(
                 label: raftText(context, 'Model'),
                 child: RaftInlineBadge(
@@ -1130,21 +1117,19 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             controller: widget.controller,
             agentId: '${a['id']}',
           ),
+        // Web `{canManageAgent && !agent.deletedAt && !isExternalAgent &&
+        // <AgentMigrationSection />}`, between Skills and Actions.
+        if (widget.actions.canMigrate && canEdit && !external)
+          AgentMigrationSection(
+            controller: widget.controller,
+            agent: a,
+            machines: widget.machines ?? const [],
+            now: widget.clock,
+          ),
         if (canEdit && buttons.isNotEmpty)
           RaftPanelSection(
             children: [
               RaftSectionEyebrow(raftText(context, 'Actions')),
-              if (_migration case final status? when status.migration.isNotEmpty)
-                MigrationInlineStatus(
-                  migration: status.migration,
-                  machines: widget.machines ?? const [],
-                  now: (widget.clock ?? DateTime.now)().toUtc(),
-                  formatTimestamp: agentTimeFormatter(
-                    context,
-                    widget.controller,
-                  ).shortDateTime,
-                  onOpen: widget.actions.onMigrate,
-                ),
               RaftGapColumn(children: buttons),
             ],
           ),
