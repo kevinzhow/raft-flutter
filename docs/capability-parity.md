@@ -11,8 +11,8 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 549 |
-| ⚠️ partial | 69 |
+| ✅ covered | 550 |
+| ⚠️ partial | 68 |
 | ❌ missing | 67 |
 | ➖ na | 65 |
 
@@ -32,7 +32,7 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 | Search | 17 | 1 | 0 | 1 |
 | Notifications | 28 | 2 | 0 | 6 |
 | Account and profile | 37 | 3 | 4 | 6 |
-| Onboarding and auth | 33 | 1 | 0 | 7 |
+| Onboarding and auth | 34 | 0 | 0 | 7 |
 | Joint channels | 6 | 4 | 1 | 0 |
 | Public and guest | 8 | 0 | 0 | 0 |
 | Global UI and cross-cutting | 38 | 8 | 6 | 27 |
@@ -773,7 +773,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Register requires the Terms/Privacy checkbox; login shows 'By continuing you agree' with Terms and Privacy links | `ui:auth.legal-checkbox-and-links` | RegisterPage LegalAcceptanceCheckbox \| LoginPage legalAgreement text with links | auth_view.dart accepted checkbox, onTerms/onPrivacy |  |
 | ✅ | Switch between Sign in / Create account / Forgot password / Back to sign in | `ui:auth.mode-switch-links` | LoginPage 'Forgot password?' and 'No account? Register' links; Register 'Have an account?' | auth_view.dart onMode switchMode |  |
 | ✅ | Embedded-browser sign-in help: open in browser / copy link / back to options | `ui:auth.open-in-browser-guide` | OpenInBrowserSignInGuide (embedded user-agent provider error) | auth_view.dart 'Browser didn't open?' onCopyLink / onOpenAgain / onCancelBrowser |  |
-| ⚠️ | After a social sign-in the server can demand legal acceptance (LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED): an explicit checkbox page 'Continue' | `ui:auth.social-legal-reaccept` | SocialAuthCallbackPage needsLegalAcceptance step with LegalAcceptanceCheckbox | auth_view.dart social() passes implied acceptance (acceptTerms true in login mode, checkbox only in register mode); client.dart hard-codes terms/privacy version 2026-05-12 | Impact: Existing social-login users after a terms update are recorded as accepting without being shown the change; low frequency (only on terms version bumps). Flutter never shows the post-OAuth re-acceptance step: login mode sends acceptTerms=true silently, so a changed-terms prompt for existing users is skipped and the versions are a client constant that can drift from the server. Size S |
+| ✅ | After a social sign-in the server can demand legal acceptance (LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED): an explicit checkbox page 'Continue' | `ui:auth.social-legal-reaccept` | SocialAuthCallbackPage needsLegalAcceptance step with LegalAcceptanceCheckbox | auth_view.dart: the first completion carries no acceptance; LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED opens RaftAuthLegalPage (checkbox, Continue) and resends the same code with the server's legal versions |  |
 | ✅ | Continue with a social provider on login and register (providers from /auth/providers) | `ui:auth.social-login-buttons` | LoginPage/RegisterPage SocialProviderButton list with 'or' divider | auth_view.dart providers list -> onProvider social() |  |
 | ➖ | Native-app login handoff page (/login/app?request=id) to confirm an account for a HarmonyOS app | `ui:global-ui.routes-app-login-handoff` | App.tsx route /login/app -> pages/AppLoginPage.tsx (GET/POST /auth/app-login/requests/:id) |  | N/A: Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted native-app login approval page (/login/app). |
 | ➖ | Approve a device/CLI login by entering or opening /login/device?user_code=... | `ui:global-ui.routes-device-login` | App.tsx route /login/device -> pages/DeviceLoginPage.tsx (POST /auth/device/approve) |  | N/A: Intentional difference (owner decision Kevin, 2026-10-21): the native app signs in through its own native login flows (auth_view.dart / oauth_broker.dart), so it does not host this browser-hosted device / CLI login approval page (/login/device). |

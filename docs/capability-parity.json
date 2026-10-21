@@ -14117,23 +14117,23 @@
    "area": "onboarding-auth",
    "capability": "After a social sign-in the server can demand legal acceptance (LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED): an explicit checkbox page 'Continue'",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "SocialAuthCallbackPage needsLegalAcceptance step with LegalAcceptanceCheckbox",
    "gate": "",
-   "flutterEntry": "auth_view.dart social() passes implied acceptance (acceptTerms true in login mode, checkbox only in register mode); client.dart hard-codes terms/privacy version 2026-05-12",
+   "flutterEntry": "auth_view.dart: the first completion carries no acceptance; LEGAL_ACCEPTANCE_REQUIRED / TERMS_CHANGED opens RaftAuthLegalPage (checkbox, Continue) and resends the same code with the server's legal versions",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/auth_view.dart",
-     "needle": "mode == 'login' || accepted"
+     "needle": "RaftAuthLegalPage("
     },
     {
-     "file": "packages/raft_client/lib/src/client.dart",
-     "needle": "'termsVersion': '2026-05-12'"
+     "file": "packages/raft_client/lib/src/legal_acceptance.dart",
+     "needle": "TERMS_CHANGED"
     }
    ],
-   "justification": "Flutter never shows the post-OAuth re-acceptance step: login mode sends acceptTerms=true silently, so a changed-terms prompt for existing users is skipped and the versions are a client constant that can drift from the server.",
-   "impact": "Existing social-login users after a terms update are recorded as accepting without being shown the change; low frequency (only on terms version bumps).",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
