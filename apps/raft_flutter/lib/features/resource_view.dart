@@ -2719,6 +2719,7 @@ class _ResourceViewState extends State<ResourceView> {
             origin: w.client.origin,
             agents: rowAgents,
             members: rowPeople,
+            dms: w.dms,
             currentUser: w.client.user?.json,
             plan: w.server?.string('plan', 'free') ?? 'free',
             now: widget.clock?.call() ?? DateTime.now(),

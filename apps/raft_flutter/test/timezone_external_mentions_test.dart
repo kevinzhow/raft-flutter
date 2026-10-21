@@ -78,7 +78,7 @@ void main() {
     },
   );
   test(
-    'thread replies and direct comment-style sends omit the device timezone',
+    'thread replies send the device zone; direct client sends stay plain',
     () async {
       final (w, api) = await fixture('owner');
       addTearDown(w.dispose);
@@ -100,10 +100,13 @@ void main() {
       w.threadChannelId = 'thread-1';
       expect(await w.send('thread reply', thread: true), isTrue);
       await w.client.send('comments', 'attachment comment');
-      expect(reads, 0);
-      for (final request in api.calls.where((r) => r.path == '/v2/messages')) {
-        expect((request.data as Map).containsKey('timezone'), isFalse);
-      }
+      expect(reads, 1);
+      final bodies = api.calls
+          .where((r) => r.path == '/v2/messages')
+          .map((r) => r.data as Map)
+          .toList();
+      expect(bodies.first['timezone'], 'Asia/Shanghai');
+      expect(bodies.last.containsKey('timezone'), isFalse);
     },
   );
 
@@ -340,7 +343,12 @@ void main() {
           presentation.references.single.href,
           'raft-ref://mention/external/projection-1',
         );
-        expect(view(id: 'missing').references, isEmpty);
+        // Web MentionLink: styled before the roster knows the projection
+        // (and for guests); only the click needs the roster entry.
+        expect(
+          view(id: 'missing').references.single.href,
+          'raft-ref://mention/external/missing',
+        );
         expect(view(sender: 'external_projection').references, isEmpty);
         await t.pumpWidget(
           MaterialApp(
@@ -365,12 +373,14 @@ void main() {
         await t.tap(find.text('@ada-slack', findRichText: true));
         await t.pump();
         expect(w.location.profile?.kind, RaftProfileKind.external);
-        expect(w.externalProfile('m1')?['displayName'], 'Ada Slack');
+        expect(w.location.profile?.isMention, isTrue);
+        expect(w.location.profile?.id, 'projection-1');
+        expect(w.externalProfile('projection-1')?['displayName'], 'Ada Slack');
         expect(api.calls.length, reads);
         w.closeProfile();
         w.server = RaftRecord({'id': 's1', 'role': 'guest'});
         w.notifyListeners();
-        expect(presentation.references, isEmpty);
+        expect(presentation.references.single.identityBacked, isTrue);
         await presentation.open(
           t.element(find.byType(MessagePresentation)),
           'raft-ref://mention/external/projection-1',

@@ -9,6 +9,7 @@ class RaftComposerSuggestion {
     required this.name,
     this.title,
     this.detail,
+    this.serverLabel,
     this.inChannel = true,
     this.threadRank,
     this.archived = false,
@@ -18,6 +19,12 @@ class RaftComposerSuggestion {
   });
   final String type, id, name;
   final String? title, detail, referenceText;
+
+  /// Web `getMentionCandidateServerLabel`: the source server of a person who
+  /// participates through another server (`serverName || serverSlug`). Shown
+  /// as a second meta with the "Source server: {server}" tooltip and matched
+  /// by the query.
+  final String? serverLabel;
 
   /// Web MentionCandidateAvatar (`AvatarSlot context="compact-list"`),
   /// supplied by the authority-checked adapter; [mutedAvatar] is the

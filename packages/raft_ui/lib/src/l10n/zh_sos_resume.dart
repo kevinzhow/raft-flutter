@@ -1,6 +1,10 @@
-// Channel SOS resume results.
+// Channel SOS resume results (Web zh-cn message.sos.resumeStillStarting /
+// resumeFailed, one entry per plural form).
 const Map<String, String> zhCatalogSosResume = {
-  '{agent}: {reason}': '{agent}：{reason}',
-  'Still starting. Try again shortly.': '仍在启动，请稍后重试。',
-  'The agent could not be resumed.': '无法恢复此 Agent。',
+  '{count} agent is still starting and did not get your guidance. Try again in a moment.':
+      '{count} 个 Agent 仍在启动中，没有收到你的指导，请稍后再试。',
+  '{count} agents are still starting and did not get your guidance. Try again in a moment.':
+      '{count} 个 Agent 仍在启动中，没有收到你的指导，请稍后再试。',
+  '{count} agent could not be resumed.': '{count} 个 Agent 未能恢复。',
+  '{count} agents could not be resumed.': '{count} 个 Agent 未能恢复。',
 };

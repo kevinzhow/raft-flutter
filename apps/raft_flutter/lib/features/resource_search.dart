@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/recipes.dart' as rui;
 
@@ -311,6 +312,25 @@ String searchResultCount(BuildContext context, int count) =>
     ? '1 result'
     : '$count ${raftText(context, 'results')}';
 
+/// Source getSourceLabel: `#channel` or `@peer`, a DM named by its peer's
+/// display name (falling back to the raw channel name).
+String searchSourceLabel(
+  Map<String, dynamic> row,
+  Iterable<Map<String, dynamic>> dms,
+) {
+  final thread = row['channelType'] == 'thread';
+  final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
+  final id = thread ? row['parentChannelId'] : row['channelId'];
+  var name =
+      '${(thread ? row['parentChannelName'] : row['channelName']) ?? ''}';
+  if (dm) {
+    final peer = dms.where((c) => c['id'] == id).firstOrNull;
+    final label = peer?['peerDisplayName'] ?? peer?['peerName'];
+    if (label is String && label.isNotEmpty) name = label;
+  }
+  return '${dm ? '@' : '#'}$name';
+}
+
 /// Page composition of source SearchResultsSection/EntityResult/MessageResult.
 /// Transport, keyboard selection and authority are owned by ResourceView.
 class ResourceSearchResults extends StatelessWidget {
@@ -333,10 +353,12 @@ class ResourceSearchResults extends StatelessWidget {
     this.onSortRecent,
     this.agents = const [],
     this.members = const [],
+    this.dms = const [],
     this.currentUser,
   });
   final String query, origin, plan;
   final List<Map<String, dynamic>> agents, members;
+  final List<RaftChannel> dms;
   final Map<String, dynamic>? currentUser;
   final List<Map<String, dynamic>> rows;
   final List<SearchEntity> entities;
@@ -491,15 +513,13 @@ class ResourceSearchResults extends StatelessWidget {
       (grouped[key] ??= []).add(row);
     }
     final messageGroups = grouped.values.toList(growable: false);
+    final dmRows = [for (final dm in dms) dm.json];
     Widget message(
       Map<String, dynamic> row, {
       bool nested = false,
       bool first = false,
     }) {
       final thread = row['channelType'] == 'thread';
-      final name = thread ? row['parentChannelName'] : row['channelName'];
-      final dm =
-          (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
       final sender = '${row['senderName'] ?? ''}';
       final archived =
           (thread
@@ -508,7 +528,7 @@ class ResourceSearchResults extends StatelessWidget {
           null;
       return RaftQuickSwitcherHit(
         key: ValueKey('search-message:${row['id']}'),
-        where: '${dm ? '@' : '#'}${name ?? ''}',
+        where: searchSourceLabel(row, dmRows),
         threadLabel: thread ? raftText(context, 'Thread').toLowerCase() : null,
         warnings: [
           if (archived) raftText(context, 'Archived'),
@@ -547,8 +567,7 @@ class ResourceSearchResults extends StatelessWidget {
       }
       return RaftQuickSwitcherThreadGroup(
         badge: raftText(context, 'Thread'),
-        where:
-            '${first['parentChannelType'] == 'dm' ? '@' : '#'}${first['parentChannelName'] ?? ''}',
+        where: searchSourceLabel(first, dmRows),
         hits: raftFormat(
           context,
           hits.length == 1 ? '{count} hit' : '{count} hits',

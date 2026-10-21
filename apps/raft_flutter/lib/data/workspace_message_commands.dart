@@ -187,7 +187,7 @@ class WorkspaceThreadCommands {
       try {
         final page = await m.transport.client.get(
           '/messages/context/$parentMessageId',
-          query: {'channelId': parentChannelId},
+          query: threadParentQuery(parentChannelId),
         );
         if (!request.current) return;
         final rows = acceptedWindowRows(page['messages'], parentChannelId);

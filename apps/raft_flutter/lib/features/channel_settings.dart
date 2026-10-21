@@ -1559,15 +1559,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     );
   }
 
-  Future<void> stopAgents() => showChannelSos(
-    context,
-    w,
-    channel,
-    agentName: (id) =>
-        members.where((row) => row['id'] == id).firstOrNull?['name']
-            as String? ??
-        id,
-  );
+  Future<void> stopAgents() => showChannelSos(context, w, channel);
 
   Future<void> deleteChannel() async {
     final accepted = await showDialog<bool>(

@@ -24,4 +24,5 @@ const Map<String, String> zhCatalogComposerExpand = <String, String>{
   "Enter adds a line · Ctrl+Enter sends": "回车换行 · Ctrl+回车发送",
   "Enter adds a line · Cmd+Enter sends": "回车换行 · Cmd+回车发送",
   "Formatting": "格式",
+  "Source server: {server}": "来源服务器：{server}",
 };

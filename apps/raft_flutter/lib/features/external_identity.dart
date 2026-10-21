@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
+import 'external_mentions.dart' show restoreExternalMentionProfile;
 import 'public_avatar_url.dart';
 
 /// Web `formatExternalProviderLabel`: Slack is named, any other provider
@@ -131,9 +132,14 @@ class ExternalProfileSource extends StatefulWidget {
     required this.channelId,
     required this.builder,
     required this.fallback,
+    this.isMention = false,
   });
   final WorkspaceController controller;
   final String messageId, channelId;
+
+  /// [messageId] is a projection id (`external-mention:`), read from the
+  /// channel roster instead of a message.
+  final bool isMention;
   final Widget Function(Map<String, dynamic> profile) builder;
 
   /// Shown while the message is read (or when it carries no attribution).
@@ -157,6 +163,19 @@ class _ExternalProfileSourceState extends State<ExternalProfileSource> {
   Future<void> load() async {
     final w = widget.controller;
     try {
+      if (widget.isMention) {
+        final author = await restoreExternalMentionProfile(
+          w,
+          widget.channelId,
+          widget.messageId,
+        );
+        if (!mounted) return;
+        setState(() {
+          profile = author;
+          failed = author == null;
+        });
+        return;
+      }
       final data = await w.client.get(
         '/messages/context/${widget.messageId}',
         query: {'channelId': widget.channelId},

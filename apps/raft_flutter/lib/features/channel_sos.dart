@@ -11,9 +11,8 @@ import 'management_support.dart' show pageIdentity;
 Future<void> showChannelSos(
   BuildContext context,
   WorkspaceController w,
-  RaftChannel channel, {
-  required String Function(String id) agentName,
-}) async {
+  RaftChannel channel,
+) async {
   final identity = pageIdentity(w);
   List<String>? retryAgentIds;
   String? refused() =>
@@ -65,21 +64,17 @@ Future<void> showChannelSos(
               final result = SosResumeResult.parse(response);
               if (result.succeeded) return null;
               retryAgentIds = result.retryAgentIds ?? retryAgentIds;
-              final details = [
-                for (final missed in result.failures)
-                  raftFormat(dialogContext, '{agent}: {reason}', {
-                    'agent': agentName(missed.agentId),
-                    'reason': missed.reason == 'start_in_flight'
-                        ? tr('Still starting. Try again shortly.')
-                        : missed.error ??
-                              missed.reason ??
-                              tr('The agent could not be resumed.'),
-                  }),
-              ];
-              return [
-                tr('Agents could not be resumed. Try again.'),
-                ...details,
-              ].join('\n');
+              if (result.failures.isNotEmpty) {
+                // Web SOSDialog `ResumeShortfall`: counts, not agent names.
+                final starting = result.failures
+                    .where((missed) => missed.reason == 'start_in_flight')
+                    .length;
+                return RaftSosShortfall(
+                  starting: starting,
+                  failed: result.failures.length - starting,
+                );
+              }
+              return tr('Agents could not be resumed. Try again.');
             } catch (e) {
               if (!dialogContext.mounted) return null;
               return failure(e, tr('Agents could not be resumed. Try again.'));

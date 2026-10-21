@@ -14,6 +14,14 @@ import 'workspace_cache.dart';
 import 'workspace_message_host.dart';
 import 'workspace_message_windows.dart';
 
+/// Web `buildThreadParentContextRequest`: the thread panel renders only the
+/// parent, so it asks for no surrounding window (the default is 15 each side).
+Map<String, dynamic> threadParentQuery(String parentChannelId) => {
+  'channelId': parentChannelId,
+  'before': 0,
+  'after': 0,
+};
+
 /// Transport and local paging use the same admitted projections. Request
 /// metadata is held in a Dart object and never added to the server protocol.
 class MessageHistoryPages {

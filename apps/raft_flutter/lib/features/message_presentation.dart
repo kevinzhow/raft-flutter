@@ -362,9 +362,7 @@ class MessagePresentation extends StatelessWidget {
         in (message.json['mentions'] as List? ?? []).whereType<Map>()) {
       if (m['name'] is String &&
           m['id'] is String &&
-          (['agent', 'user'].contains(m['type']) ||
-              m['type'] == 'external' &&
-                  externalMember('${m['id']}') != null)) {
+          ['agent', 'user', 'external'].contains(m['type'])) {
         refs['@${m['name']}'] = RaftTextReference(
           text: '@${m['name']}',
           identityBacked: true,
@@ -531,9 +529,9 @@ class MessagePresentation extends StatelessWidget {
         if (member != null) {
           w.openProfile(
             RaftProfileKind.external,
-            message.id,
-            channelId: message.channelId,
-            externalAuthor: {...member, 'projectionId': member['id']},
+            '${member['id']}',
+            channelId: externalMentionChannelId(w, message.channelId),
+            externalAuthor: externalMentionAuthor(member),
           );
         }
         return;
@@ -909,19 +907,21 @@ class MessagePresentation extends StatelessWidget {
     switch (uri.host) {
       case 'mention' when parts.length == 2:
         if (parts[0] == 'external') {
-          final member = externalMember(parts[1]);
-          return member == null
-              ? null
-              : RaftReferenceAppearance(
-                  RaftReferenceKind.mention,
-                  hoverCard: exportMode
-                      ? null
-                      : (ctx) => externalMentionPreview(
-                          ctx,
-                          controller.client.origin,
-                          member,
-                        ),
-                );
+          // Web MentionLink: a mention renders styled before the roster
+          // loads (and for guests); the hover card falls back to the handle.
+          final member =
+              externalMember(parts[1]) ??
+              externalMentionFallback(message, parts[1]);
+          return RaftReferenceAppearance(
+            RaftReferenceKind.mention,
+            hoverCard: exportMode
+                ? null
+                : (ctx) => externalMentionPreview(
+                    ctx,
+                    controller.client.origin,
+                    member,
+                  ),
+          );
         }
 
         String? handle;

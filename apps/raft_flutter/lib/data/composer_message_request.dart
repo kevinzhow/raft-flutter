@@ -16,11 +16,8 @@ extension ComposerMessageRequest on RaftClient {
     bool asTask = false,
   }) async {
     final generation = this.generation;
-    // WorkspaceEditor.draftScope uses this namespace only for thread replies.
-    // Plain channel/DM sends (including a newly resolved DM) use channel IDs.
-    final timezone = visit.scope.startsWith('thread:')
-        ? null
-        : await readDeviceTimezone();
+    // Web sends the sender's zone on every composer send, thread replies included.
+    final timezone = await readDeviceTimezone();
     if (generation != this.generation || !visit.current()) {
       throw const RaftApiException(
         'The send destination is no longer current.',

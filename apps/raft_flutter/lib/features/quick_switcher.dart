@@ -781,21 +781,8 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
     );
   }
 
-  /// Source getSourceLabel: `#channel` or `@peer`, DMs by the peer's name.
-  String _sourceLabel(Map<String, dynamic> row, QuickSwitcherData data) {
-    final thread = row['channelType'] == 'thread';
-    final dm = (thread ? row['parentChannelType'] : row['channelType']) == 'dm';
-    final id = thread ? row['parentChannelId'] : row['channelId'];
-    final raw =
-        '${(thread ? row['parentChannelName'] : row['channelName']) ?? ''}';
-    var name = raw;
-    if (dm) {
-      final peer = data.dms.where((c) => c['id'] == id).firstOrNull;
-      final label = peer?['peerDisplayName'] ?? peer?['peerName'];
-      if (label is String && label.isNotEmpty) name = label;
-    }
-    return '${dm ? '@' : '#'}$name';
-  }
+  String _sourceLabel(Map<String, dynamic> row, QuickSwitcherData data) =>
+      searchSourceLabel(row, data.dms);
 
   Widget _leading(SearchEntity entity, QuickSwitcherData data) {
     if (entity.kind == 'channel') {
@@ -932,6 +919,7 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
         if (searchBeyondHistory(row['createdAt'] as String?, data.plan, now))
           raftText(context, 'Upgrade to view'),
       ],
+      uppercaseWarnings: {raftText(context, 'Archived')},
       avatar: sender.isEmpty
           ? null
           : searchHitSenderAvatar(
@@ -943,11 +931,13 @@ class _QuickSwitcherState extends State<QuickSwitcher> {
               currentUser: data.currentUser,
             ),
       sender: sender,
-      time: resourceRelativeTime(
-        row['createdAt'] as String?,
-        now: widget.clock?.call(),
-        chinese: Localizations.localeOf(context).languageCode == 'zh',
-      ),
+      time: DateTime.tryParse('${row['createdAt']}') == null
+          ? raftText(context, 'unknown time')
+          : resourceRelativeTime(
+              row['createdAt'] as String?,
+              now: widget.clock?.call(),
+              chinese: Localizations.localeOf(context).languageCode == 'zh',
+            ),
       snippet: SearchHighlight(
         text: '${row['snippet'] ?? row['content'] ?? ''}',
         query: query,

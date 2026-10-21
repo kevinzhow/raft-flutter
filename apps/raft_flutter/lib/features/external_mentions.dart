@@ -1,5 +1,8 @@
 import 'package:flutter/widgets.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+
+import '../data/workspace_controller.dart';
 
 import 'profile_preview.dart';
 import 'public_avatar_url.dart';
@@ -70,3 +73,64 @@ Widget externalMentionPreview(
   workspaceName: member['workspaceName'] as String?,
   actorKind: member['actorKind'] as String?,
 );
+
+/// Web `handleNavigateExternalMention`: a thread panel passes the thread's
+/// channel, but the provider binding lives on the parent channel.
+String externalMentionChannelId(WorkspaceController w, String channelId) =>
+    (w.threadChannelId == channelId
+        ? w.messageDomain.threadSourceChannel?.id
+        : null) ??
+    channelId;
+
+/// The attribution payload for a mention, as Web builds it from the members
+/// endpoint (which omits provider-side ids). `isMention` keys the profile by
+/// projection id (`profile=external-mention:<channel>:<projection>`).
+Map<String, dynamic> externalMentionAuthor(Map<String, dynamic> member) => {
+  'projectionId': member['id'],
+  'provider': member['provider'],
+  'appRegistrationId': '',
+  'installId': '',
+  'workspaceId': '',
+  'externalActorId': '',
+  'workspaceName': member['workspaceName'],
+  'externalConversationId': '',
+  'externalMessageId': '',
+  'displayName': member['displayName'],
+  'actorKind': member['actorKind'],
+  'avatarUrl': member['avatarUrl'],
+  'avatarDigest': null,
+  'actorProjectionRevision': 0,
+  'isMention': true,
+};
+
+/// Web `restoreExternalMentionProfileFromUrl`: the roster entry of
+/// [projectionId] in [channelId], or null.
+Future<Map<String, dynamic>?> restoreExternalMentionProfile(
+  WorkspaceController w,
+  String channelId,
+  String projectionId,
+) async {
+  final data = await w.client.get('/channels/$channelId/members');
+  final rows = data is Map ? data['externalMembers'] : null;
+  final member = (rows is List ? rows : const [])
+      .whereType<Map>()
+      .where((row) => row['id'] == projectionId)
+      .firstOrNull;
+  return member == null
+      ? null
+      : externalMentionAuthor(Map<String, dynamic>.from(member));
+}
+
+/// The roster entry stand-in for an `external` mention whose roster has not
+/// loaded (or is hidden from a guest): only the handle is known.
+Map<String, dynamic> externalMentionFallback(RaftMessage message, String id) =>
+    {
+      'id': id,
+      'displayName':
+          [
+            for (final m in (message.json['mentions'] as List? ?? const []))
+              if (m is Map && m['id'] == id && m['name'] is String)
+                m['name'] as String,
+          ].firstOrNull ??
+          '',
+    };

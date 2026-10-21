@@ -2086,7 +2086,7 @@ class _RaftComposerState extends State<RaftComposer> {
               (trigger!.prefix == '#'
                   ? s.type == 'channel'
                   : s.type != 'channel') &&
-              ('${s.name} ${s.title ?? ''} ${s.detail ?? ''}')
+              ('${s.name} ${s.title ?? ''} ${s.detail ?? ''} ${s.serverLabel ?? ''}')
                   .toLowerCase()
                   .contains(q),
         )
@@ -3151,6 +3151,17 @@ class _RaftComposerSuggestionRowState
                           color: recipe.suggestionAuxiliary,
                         ),
                       ],
+                      if (s.type == 'external') ...[
+                        // `ComposerSuggestionIcon variant="auxiliary"`: the
+                        // Slack-side participant tag, ArrowLeftRight 10 / 2.5.
+                        const SizedBox(width: 4),
+                        RaftIcon(
+                          RaftGlyph.arrowLeftRight,
+                          size: 10,
+                          strokeWidth: 2.5,
+                          color: recipe.suggestionAuxiliary,
+                        ),
+                      ],
                     ] else if (s.type == 'channel')
                       const _FramedSuggestionIcon(glyph: RaftGlyph.hash)
                     else
@@ -3359,11 +3370,14 @@ class _MentionSuggestionBody extends StatelessWidget {
         );
         handlePainter.dispose();
         final hasDescription = description != null && description.isNotEmpty;
+        final server = s.serverLabel?.trim() ?? '';
+        final hasServer = server.isNotEmpty;
         final titleMaximum =
             (constraints.maxWidth -
                     badge.naturalWidth(context) -
                     handleWidth -
-                    (hasDescription ? 18 : 12))
+                    (hasDescription ? 18 : 12) -
+                    (hasServer ? 6 : 0))
                 .clamp(0.0, 192.0);
         return Row(
           children: [
@@ -3391,8 +3405,35 @@ class _MentionSuggestionBody extends StatelessWidget {
                   style: recipe.suggestionMetaFor(highlighted: highlighted),
                 ),
               ),
-            ] else
+            ] else if (!hasServer)
               const Spacer(),
+            if (hasServer) ...[
+              const SizedBox(width: 6),
+              // `ComposerSuggestionMeta min-w-0 max-w-[10rem] truncate`.
+              Expanded(
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: RaftTooltip(
+                      message: raftFormat(context, 'Source server: {server}', {
+                        'server': server,
+                      }),
+                      child: Text(
+                        server,
+                        key: const ValueKey('mention-source-server'),
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: recipe.suggestionMetaFor(
+                          highlighted: highlighted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(width: 6),
             SizedBox(width: handleWidth, child: handle),
           ],

@@ -187,6 +187,9 @@ void main() {
     testWidgets('$label resume retains guidance until retry resolves it', (
       tester,
     ) async {
+      final feedback = label == 'partial'
+          ? 'sos-resume-shortfall'
+          : 'sos-error';
       final (w, api) = (await tester.runAsync(() => fixture('member')))!;
       addTearDown(w.dispose);
       _routes(api);
@@ -236,21 +239,25 @@ void main() {
         tester,
         () =>
             resumeBodies.isNotEmpty &&
-            find.byKey(const ValueKey('sos-error')).evaluate().isNotEmpty,
+            find.byKey(Key(feedback)).evaluate().isNotEmpty,
       );
       expect(find.byKey(const ValueKey('channel-sos-dialog')), findsOneWidget);
       expect(
         tester.widget<EditableText>(field).controller.text,
         'Keep the schema.',
       );
-      expect(find.byKey(const ValueKey('sos-error')), findsOneWidget);
+      expect(find.byKey(Key(feedback)), findsOneWidget);
       expect(resumeBodies.single.containsKey('agentIds'), false);
       if (label == 'partial') {
+        // Web counts: one agent still starting, one failed (no names).
         expect(
-          find.textContaining('Birch: Still starting. Try again shortly.'),
+          find.text(
+            '1 agent is still starting and did not get your guidance. Try again in a moment.',
+          ),
           findsOneWidget,
         );
-        expect(find.textContaining('Cedar: Computer offline'), findsOneWidget);
+        expect(find.text('1 agent could not be resumed.'), findsOneWidget);
+        expect(find.textContaining('Birch'), findsNothing);
       }
       await tester.tap(find.byKey(const ValueKey('sos-resume')));
       await _settle(
@@ -262,7 +269,7 @@ void main() {
       if (label == 'partial') expect(resumeBodies.last['agentIds'], ['b', 'c']);
       expect(resumeBodies.last['prompt'], resumeBodies.first['prompt']);
       expect(find.byKey(const ValueKey('channel-sos-dialog')), findsNothing);
-      expect(find.byKey(const ValueKey('sos-error')), findsNothing);
+      expect(find.byKey(Key(feedback)), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }

@@ -42,9 +42,18 @@ final _permalinkPath = RegExp(
   caseSensitive: false,
 );
 final _threadParam = RegExp(
-  r'^([0-9a-f-]+):([0-9a-f-]+)$',
+  r'^([0-9a-f-]+):(.+)$',
+  caseSensitive: false,
+  dotAll: true,
+);
+
+/// Web `LEADING_MESSAGE_ID`: a link typed straight into CJK prose has no space
+/// before the next word, so keep only the leading full or 8-hex short id.
+final _leadingMessageId = RegExp(
+  r'^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{8})(?![0-9a-f-])',
   caseSensitive: false,
 );
+String? _leadingId(String value) => _leadingMessageId.firstMatch(value)?[1];
 
 /// Web `parseRaftPermalink`: a message link of this app (the current frontend
 /// host or one of the known Raft hosts), or null.
@@ -71,10 +80,13 @@ RaftPermalink? parseRaftPermalink(
   if (thread != null && thread.isNotEmpty) {
     final m = _threadParam.firstMatch(thread);
     if (m == null || m[1] != match[3]) return null;
-    parent = m[2];
+    parent = _leadingId(m[2]!);
+    if (parent == null) return null;
   }
   // `msg=` pinpoints a message; a thread-only URL targets the thread parent.
-  final explicit = url.queryParameters['msg'];
+  final explicitParam = url.queryParameters['msg'];
+  final explicit = explicitParam == null ? null : _leadingId(explicitParam);
+  if (explicitParam != null && explicit == null) return null;
   final messageId = explicit ?? parent;
   if (messageId == null) return null;
   String slug;

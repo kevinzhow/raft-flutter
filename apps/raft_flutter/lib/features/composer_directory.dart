@@ -435,6 +435,7 @@ class ComposerDirectory extends ChangeNotifier {
       Iterable<Map<String, dynamic>> raw,
       String type, {
       bool describe = true,
+      bool roster = false,
     }) {
       for (final value in raw) {
         final id = type == 'user'
@@ -470,6 +471,12 @@ class ComposerDirectory extends ChangeNotifier {
           detail: describe
               ? value['description'] as String? ?? previous?.detail
               : previous?.detail,
+          serverLabel: mentionServerLabel(
+            value,
+            currentServerId: w.server?.id,
+            roster: roster,
+            agent: type == 'agent',
+          ),
           inChannel: memberIds.contains(key),
           threadRank: recent[id],
           avatar: _ComposerCandidateAvatar(
@@ -518,8 +525,8 @@ class ComposerDirectory extends ChangeNotifier {
       add(w.services.entityDirectory.authorAgents, 'agent');
     }
     if (roster != null) {
-      add(roster.humans, 'user');
-      add(roster.agents, 'agent');
+      add(roster.humans, 'user', roster: true);
+      add(roster.agents, 'agent', roster: true);
       for (final member in cachedExternalMembers(w, channel.id)) {
         final candidate = externalMentionSuggestion(w.client.origin, member);
         if (candidate != null) entries['external:${candidate.id}'] = candidate;
@@ -692,4 +699,28 @@ Widget _avatar(
     ),
   );
   return avatar;
+}
+
+/// Web `getMentionCandidateServerLabel` input: a roster row names its source
+/// server (`serverName || serverSlug`) only when it belongs to another server
+/// than the viewed one; directory agents carry theirs as given. A later row
+/// replaces an earlier one entirely, so a local roster row clears the label.
+String? mentionServerLabel(
+  Map<String, dynamic> row, {
+  required String? currentServerId,
+  required bool roster,
+  required bool agent,
+}) {
+  final serverId = row['serverId'];
+  final remote =
+      currentServerId != null &&
+      serverId is String &&
+      serverId.isNotEmpty &&
+      serverId != currentServerId;
+  if (roster ? !remote : !agent) return null;
+  for (final key in const ['serverName', 'serverSlug']) {
+    final value = row[key];
+    if (value is String && value.isNotEmpty) return value;
+  }
+  return null;
 }

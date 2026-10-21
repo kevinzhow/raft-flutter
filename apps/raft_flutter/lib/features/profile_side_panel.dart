@@ -85,6 +85,7 @@ class ProfileSidePanel extends StatelessWidget {
         controller: w,
         messageId: profile.id,
         channelId: profile.channelId ?? '',
+        isMention: profile.isMention,
         builder: (author) => ExternalIdentityDetailPanel(
           controller: w,
           profile: author,

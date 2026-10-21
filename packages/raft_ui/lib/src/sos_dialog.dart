@@ -17,11 +17,20 @@ import 'theme.dart';
 /// `resuming` as the busy sub-state of the guidance form).
 enum RaftSosPhase { confirm, stopped }
 
+/// Web `ResumeShortfall`: agents the resume did not reach, either still
+/// starting (try again shortly) or failed. A resume that resolves to one keeps
+/// the guidance and shows the counts in a warning banner.
+class RaftSosShortfall {
+  const RaftSosShortfall({required this.starting, required this.failed});
+  final int starting, failed;
+}
+
 /// Web SOSDialog in a `DialogCard maxWidthClass="max-w-sm"`.
 ///
 /// [onStop] and [onResume] resolve to null on success or to a user-facing
 /// error. A failed stop stays on the confirm phase and a failed resume keeps
-/// the guidance, exactly as Web; the error is shown inline.
+/// the guidance, exactly as Web; the error is shown inline. [onResume] may
+/// also resolve to a [RaftSosShortfall] (a String is the error text).
 class RaftSosDialog extends StatefulWidget {
   const RaftSosDialog({
     super.key,
@@ -33,7 +42,7 @@ class RaftSosDialog extends StatefulWidget {
   });
   final String channelName;
   final Future<String?> Function() onStop;
-  final Future<String?> Function(String guidance) onResume;
+  final Future<Object?> Function(String guidance) onResume;
 
   /// Cancel, Keep Stopped, the close button, and a successful resume.
   final VoidCallback onClose;
@@ -47,6 +56,7 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
   bool stopping = false, resuming = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next stop or resume starts; the dialog state is dropped when it closes.
   String? error;
+  RaftSosShortfall? shortfall;
   final guidance = TextEditingController();
   final guidanceFocus = FocusNode();
 
@@ -91,15 +101,16 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
       resuming = true;
       error = null;
     });
-    final failure = await widget.onResume(text);
+    final outcome = await widget.onResume(text);
     if (!mounted) return;
-    if (failure == null) {
+    if (outcome == null) {
       widget.onClose();
       return;
     }
     setState(() {
       resuming = false;
-      error = failure;
+      if (outcome is RaftSosShortfall) shortfall = outcome;
+      error = outcome is String ? outcome : null;
     });
   }
 
@@ -220,6 +231,41 @@ class _RaftSosDialogState extends State<RaftSosDialog> {
                       style: body,
                     ),
                   ),
+                  if (shortfall case final missed?)
+                    Padding(
+                      key: const ValueKey('sos-resume-shortfall'),
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: RaftBanner(
+                        size: RaftBannerRecipeSize.sm,
+                        descriptionBuilder: (style) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (missed.starting > 0)
+                              Text(
+                                raftFormat(
+                                  context,
+                                  missed.starting == 1
+                                      ? '{count} agent is still starting and did not get your guidance. Try again in a moment.'
+                                      : '{count} agents are still starting and did not get your guidance. Try again in a moment.',
+                                  {'count': missed.starting},
+                                ),
+                                style: style,
+                              ),
+                            if (missed.failed > 0)
+                              Text(
+                                raftFormat(
+                                  context,
+                                  missed.failed == 1
+                                      ? '{count} agent could not be resumed.'
+                                      : '{count} agents could not be resumed.',
+                                  {'count': missed.failed},
+                                ),
+                                style: style,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: RaftTextarea(

@@ -340,7 +340,7 @@ class WorkspacePresentation {
     }
     if (externalAuthor != null) _externalProfiles[id] = externalAuthor;
     final next = location.withQuery({
-      'profile': RaftProfileLocation(kind, id, channelId: channelId).toString(),
+      'profile': RaftProfileLocation.query(kind, id, channelId, externalAuthor),
       'agentTab': kind == RaftProfileKind.agent ? agentTab : null,
     });
     if (next.uri == location.uri) return;
