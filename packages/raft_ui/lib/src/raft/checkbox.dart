@@ -65,7 +65,12 @@ class RaftCheckboxIndicator extends StatelessWidget {
     }
     final showMark = checked || previewOnHover;
     return RaftCssBox(
-      radius: shape == RaftCheckboxShape.circle ? size / 2 : 4,
+      // The square form is the theme's sticker corner; the circle form is a true
+      // circle at any size, which is why the official `rounded-full` stays
+      // `size / 2` rather than becoming a token.
+      radius: shape == RaftCheckboxShape.circle
+          ? size / 2
+          : t.size('radius.sticker', fallback: 4),
       fill: fill,
       borderWidth: raftControlBorderPx(context, 1.5),
       borderColor: border,
@@ -107,7 +112,8 @@ class RaftCheckboxControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = RaftTokens.of(context).ui;
+    final t = RaftTokens.of(context);
+    final ui = t.ui;
     final disabled = onChanged == null;
     return RaftInteractive(
       onPressed: disabled
@@ -120,8 +126,9 @@ class RaftCheckboxControl extends StatelessWidget {
       builder: (context, st) => Semantics(
         mixed: indeterminate,
         child: RaftCssBox(
-          // `rounded-sticker` on the root, also for the circle shape.
-          radius: 4,
+          // `rounded-sticker` on the root, also for the circle shape: the official
+          // root keeps the sticker corner and the inner indicator draws the circle.
+          radius: t.size('radius.sticker', fallback: 4),
           rings: [
             if (st.focusVisible)
               for (final layer in ui.focusRing.layers)
