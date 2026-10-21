@@ -347,6 +347,8 @@ void main() {
         _row('m6', 6),
       ], expectedGeneration: w.messageDomain.ledger.generation);
       w.conversationReads.latestActivity['c1'] = BigInt.from(6);
+      // The live arrival past the read cursor lifts the 30 s floor.
+      w.conversationReads.queue.forgetSuppressionIfNewer('c1', BigInt.from(6));
       f.client.unreadValue = {
         'channels': {'c1': 1},
       };
@@ -393,21 +395,18 @@ void main() {
     });
   }
 
-  test(
-    'B5 failed POST keeps its count and reconciles once without retry',
-    () async {
-      final f = _Fixture(), w = f.root;
-      f.client.failRead = true;
-      await w.markRead('c1');
-      await w.lastReconcile;
-      expect(f.client.countersAtPost, [1]);
-      expect(f.client.reads, 1);
-      expect(w.conversationReads.readPosts['c1'], 1);
-      expect(w.refreshes, 1);
-      expect(w.conversationReads.unread['c1'], 7);
-      expect(w.readState.state('s1', 'alice', 'c1'), isNull);
-    },
-  );
+  test('B5 failed POST clears locally, keeps the cursor and retries on the next refresh', () async {
+    final f = _Fixture(), w = f.root;
+    f.client.failRead = true;
+    await w.markRead('c1');
+    expect(f.client.countersAtPost, [1]);
+    expect(f.client.reads, 1);
+    expect(w.conversationReads.readPosts['c1'], 1);
+    expect(w.refreshes, 0);
+    expect(w.conversationReads.unread['c1'], 0);
+    expect(w.readState.state('s1', 'alice', 'c1'), isNull);
+    expect(w.conversationReads.queue.pending('c1')?.seq, BigInt.from(5));
+  });
 
   test('B5 failed POST after disposal cannot reconcile', () async {
     final f = _Fixture(), w = f.root;

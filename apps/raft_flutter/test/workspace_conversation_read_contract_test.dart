@@ -125,7 +125,7 @@ class _Client extends RaftClient {
 class _Workspace extends WorkspaceController {
   _Workspace(super.client, {required super.cache, super.presentationSource})
     : super(ownsClient: presentationSource == null, mobileNavigation: true);
-  int notifications = 0, refreshes = 0, unreadCommands = 0, prefetches = 0;
+  int notifications = 0, refreshes = 0, prefetches = 0;
   final reads = <String>[];
   @override
   void notifyListeners() {
@@ -137,12 +137,6 @@ class _Workspace extends WorkspaceController {
   Future<void> refreshUnread() {
     refreshes++;
     return super.refreshUnread();
-  }
-
-  @override
-  void markUnreadLocally(String id) {
-    unreadCommands++;
-    super.markUnreadLocally(id);
   }
 
   @override
@@ -253,11 +247,7 @@ void main() {
     expect(f.client.calls, ['GET:/channels/unread']);
     expect(source.conversationReads.unread, {'c2': 4});
     expect(borrower.conversationReads.unread, {'local': 2});
-    borrower.markUnreadLocally('dm');
-    expect([borrower.unreadCommands, source.unreadCommands], [1, 1]);
-    expect(source.conversationReads.unread['dm'], 1);
-    expect(borrower.conversationReads.unread.containsKey('dm'), isFalse);
-    expect(source.notifications, 2);
+    expect(source.notifications, 1);
     expect(borrower.notifications, 0);
   });
 

@@ -981,13 +981,6 @@ class WorkspaceController extends ChangeNotifier
 
   RaftChannel? channelById(String id) => _channels.channelById(id);
 
-  /// Optimistic local unread for Mark as Unread (Source markUnread).
-  void markUnreadLocally(String id) {
-    final source = presentationSource;
-    if (source != null) return source.markUnreadLocally(id);
-    _channels.markUnreadLocally(id);
-  }
-
   /// Full channel and DM list reload (Source `loadChannels` +
   /// `loadDMChannels`): server selection, `rooms:joined`, a role change, or a
   /// channel event without an id. Unchanged rows keep their objects.

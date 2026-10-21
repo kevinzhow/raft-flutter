@@ -171,7 +171,7 @@ void main() {
     await w.selectChannel(w.channels.single);
     expect(w.conversationReads.unread['c'], 0);
     // The member marks it unread, then a read is in flight when they leave.
-    w.markUnreadLocally('c');
+    w.conversationReads.unread = {'c': 1};
     expect(w.conversationReads.unread['c'], 1);
     c.pendingRead = Completer<dynamic>();
     final read = w.markRead('c');
@@ -181,24 +181,6 @@ void main() {
     await read;
     expect(w.conversationReads.unread['c'], 0);
   });
-
-  test(
-    'a failed receipt restores the server unread after the optimistic clear',
-    () async {
-      final c = _Client();
-      final w = await _mobile(c);
-      addTearDown(() async {
-        w.dispose();
-        await c.stream.close();
-      });
-      c.failRead = true;
-      await w.selectChannel(w.channels.single);
-      await Future<void>.delayed(Duration.zero);
-      await Future<void>.delayed(Duration.zero);
-      expect(c.reads, 1);
-      expect(w.conversationReads.unread['c'], 1);
-    },
-  );
 
   test('a stale receipt never erases messages that arrived after it', () async {
     final c = _Client();

@@ -220,20 +220,17 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     },
   );
 
-  /// Sidebar.tsx `renderReadToggleAction`: Mark as Read posts read-all and
-  /// clears the count; Mark as Unread shows the dot first. A failure only
-  /// reloads the unread counts (no message).
+  /// SidebarReadToggleMenuItem: Mark as Read posts read-all and clears the
+  /// count; Mark as Unread waits for the server's count (no invented badge).
+  /// A failure only reloads the unread counts (no message).
   Future<void> _toggleRead(String id) async {
     final unread = (w.conversationReads.unread[id] ?? 0) > 0;
-    if (!unread) w.markUnreadLocally(id);
     try {
-      final receipt = await w.command(
-        'POST',
-        '/channels/$id/${unread ? 'read-all' : 'unread'}',
-      );
+      if (!unread) return await w.conversationReads.markUnread(id);
+      final receipt = await w.command('POST', '/channels/$id/read-all');
       if (!mounted) return;
       final principal = w.client.user?.id, serverId = w.client.serverId;
-      if (unread && principal != null && serverId != null) {
+      if (principal != null && serverId != null) {
         w.conversationReads.acceptReadAllAck(
           id,
           receipt,
@@ -242,7 +239,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         );
       }
     } catch (_) {
-      if (mounted) unawaited(w.refreshUnread());
+      if (mounted && unread) unawaited(w.refreshUnread());
     }
   }
 

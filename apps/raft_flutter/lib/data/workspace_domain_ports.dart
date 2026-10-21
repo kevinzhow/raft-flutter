@@ -195,7 +195,6 @@ abstract interface class WorkspaceReadStatePort {
 abstract interface class WorkspaceReadCommandsPort {
   Future<void> markRead(String id);
   Future<void> refreshUnread();
-  void markUnreadLocally(String id);
   bool acceptReadAllAck(
     String scopeId,
     dynamic receipt, {

@@ -68,6 +68,7 @@ class WorkspaceMessageSelection {
     if (!retainContextUntilAccepted && m.presentation.channel?.id != next.id) {
       m.contextLoadError = null;
     }
+    autoRead &= m.channels.readsOnOpen(next.id);
     m.presentation.setSelectedChannel(next);
     m.state.hasNewer = false;
     if (!retainThread) m.state.highlightedMessageId = null;
@@ -96,9 +97,7 @@ class WorkspaceMessageSelection {
     m.state.loadingOlder = false;
     m.state.channelLoading = true;
     m.presentation.assignError(null);
-    // Source messageStore selectChannel: opening a conversation clears its
-    // local unread at once; the read receipt follows the first page. A load
-    // that never sends the receipt reconciles with the server in `finally`.
+    // Opening clears the unread at once; the receipt follows the first page.
     final optimisticRead =
         autoRead &&
         navigate &&
@@ -293,11 +292,14 @@ class WorkspaceMessageSelection {
         m.channels.channels.firstWhere((next) => next.id == c.id),
       );
     } catch (e) {
-      if (!m.context.disposed && !m.staleScope(e)) {
-        // ignore: raft_lints/avoid_imperative_notice_state -- User-initiated join; stale-scope failures are not reported; cleared on server switch or revoke.
-        m.presentation.setError(userErrorText(e, where: 'join channel'));
-      }
+      _joinFailed(e, 'join channel');
     }
+  }
+
+  void _joinFailed(Object e, String where) {
+    if (m.context.disposed || m.staleScope(e)) return;
+    // ignore: raft_lints/avoid_imperative_notice_state -- User-initiated join; stale-scope failures are not reported; cleared on server switch or revoke.
+    m.presentation.setError(userErrorText(e, where: where));
   }
 
   /// Web ThreadPanel `handleJoinParentChannel`: join the thread's parent
@@ -309,12 +311,7 @@ class WorkspaceMessageSelection {
       await m.transport.command('POST', '/channels/$id/join');
       await m.entries.refreshChannels();
     } catch (e) {
-      if (!m.context.disposed && !m.staleScope(e)) {
-        // ignore: raft_lints/avoid_imperative_notice_state -- User-initiated join; stale-scope failures are not reported; cleared on server switch or revoke.
-        m.presentation.setError(
-          userErrorText(e, where: 'join thread parent channel'),
-        );
-      }
+      _joinFailed(e, 'join thread parent channel');
     }
   }
 }

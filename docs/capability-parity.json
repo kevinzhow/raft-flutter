@@ -2475,7 +2475,7 @@
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
-     "needle": "${unread ? 'read-all' : 'unread'}"
+     "needle": "w.conversationReads.markUnread(id)"
     },
     {
      "file": "apps/raft_flutter/lib/data/conversation_read_repository.dart",

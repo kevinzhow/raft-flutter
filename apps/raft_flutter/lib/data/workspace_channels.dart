@@ -131,10 +131,7 @@ class WorkspaceChannels
   void resetDirectoryAndUnreadProjection() {
     channels = [];
     dms = [];
-    unread = {};
-    mentions = {};
-    newFlags = {};
-    latestActivity.clear();
+    reads.resetProjection();
   }
 
   @override
@@ -228,8 +225,6 @@ class WorkspaceChannels
   @override
   Future<void> refreshUnread() => reads.refreshUnread();
   @override
-  void markUnreadLocally(String id) => reads.markUnreadLocally(id);
-  @override
   bool acceptReadAllAck(
     String scopeId,
     dynamic receipt, {
@@ -242,8 +237,12 @@ class WorkspaceChannels
     principalId: principalId,
   );
 
+  /// Source loadMessages: false when the member marked this conversation
+  /// unread while it was open; that open does not read it.
+  bool readsOnOpen(String next) =>
+      !reads.queue.opening(presentation.channel?.id, next);
+
   void persistReadState() => reads.persistReadState();
-  void persistUnread() => reads.persistUnread();
   void receiveUnread(Map<String, dynamic> row) => reads.receiveUnread(row);
   void clearMention(String id) => reads.clearMention(id);
   void projectReadState(String id) => reads.projectReadState(id);
@@ -259,7 +258,7 @@ class WorkspaceChannels
     if (optimistic) {
       if ((unread[id] ?? 0) != 0) unread = {...unread, id: 0};
       clearMention(id);
-      persistUnread();
+      reads.persistUnread();
     }
     return readPostsBefore;
   }

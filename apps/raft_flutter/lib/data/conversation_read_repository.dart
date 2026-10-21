@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_sync/raft_sync.dart';
 
-import 'user_activity.dart';
+import 'read_write_queue.dart';
 import 'source_read_all_transport.dart';
+import 'user_activity.dart';
 
 /// Read cursors and unread projections for one workspace receiver.
 ///
@@ -98,7 +99,11 @@ class ConversationReadRepository {
 
   /// Marks [id] unread and reconciles the receiver, even if the write fails.
   ///
-  /// The injected refresh preserves source dispatch and receiver overrides.
+  /// Source markUnread: the pending read and the 30 s floor go first, a read
+  /// already in flight settles before the write, and no badge is invented
+  /// before the server names an eligible message: the count is the answer's.
+  /// The open conversation is remembered so its next open does not read it
+  /// again. The injected refresh preserves source dispatch and overrides.
   Future<void> markUnread(String id) async {
     final identity = SourceReadAllIdentity.capture(client);
     if (_isDisposed() ||
@@ -106,16 +111,81 @@ class ConversationReadRepository {
         !identity.current(client)) {
       return;
     }
+    bool current() =>
+        !_isDisposed() &&
+        !_revokedChannels().contains(id) &&
+        identity.current(client);
+    final inFlight = queue.inFlight(id);
+    queue
+      ..forgetPending(id)
+      ..forgetSuppression(id);
+    if (id == _channelId()) {
+      queue.rememberManualUnread(id);
+    } else {
+      queue.forgetManualUnread(id);
+    }
     try {
-      await client.post('/channels/$id/unread');
+      if (inFlight != null) await inFlight.catchError((_) {});
+      if (!current()) return;
+      final answer = await client.post('/channels/$id/unread');
+      if (!current()) return;
+      _holdUnreadAnswer(id, answer, identity);
     } finally {
-      if (!_isDisposed() &&
-          !_revokedChannels().contains(id) &&
-          identity.current(client)) {
-        await reconcileUnread();
-      }
+      if (current()) await reconcileUnread();
     }
   }
+
+  void _holdUnreadAnswer(
+    String id,
+    dynamic answer,
+    SourceReadAllIdentity identity,
+  ) {
+    final count = answer is Map ? answer['unreadCount'] : null;
+    final version = answer is Map ? answer['readStateVersion'] : null;
+    final maxRead = answer is Map
+        ? canonicalWireSeq(answer['maxReadSeq'])
+        : null;
+    queue.dropReceipt(id);
+    if (count is! num || count < 0) return;
+    if (version is int && version > 0 && maxRead != null) {
+      final accepted = _readState().state(
+        identity.serverId!,
+        identity.principalId!,
+        id,
+      );
+      if (accepted != null && accepted['readStateVersion'] > version) return;
+      _readState().consumeUpdate(
+        {
+          'serverId': identity.serverId,
+          'scopeId': id,
+          'maxReadSeq': maxRead.toInt(),
+          'readStateVersion': version,
+        },
+        serverId: identity.serverId!,
+        principalId: identity.principalId!,
+      );
+      queue.holdReceipt(
+        id,
+        PendingUnreadReceipt(
+          version: version,
+          unreadCount: count.toInt(),
+          maxReadSeq: maxRead,
+        ),
+      );
+    }
+    if (id == _channelId() && count > 0) {
+      queue.rememberManualUnread(id);
+    } else {
+      queue.forgetManualUnread(id);
+    }
+    unread = {...unread, id: count.toInt()};
+    persistReadState();
+    persistUnread();
+    _changed();
+  }
+
+  /// Read-write bookkeeping of this receiver (Web messageStore module state).
+  final queue = ReadWriteQueue();
 
   final localReadState = ReadStateLedger();
   Map<String, int> unread = {};
@@ -128,6 +198,15 @@ class ConversationReadRepository {
   /// Projection reset deliberately leaves both objects intact.
   final Map<String, int> readPosts = {};
   final scrolledAway = RaftTimelineBottoms();
+
+  /// A new identity: counts, flags and the read write path start empty.
+  void resetProjection() {
+    unread = {};
+    mentions = {};
+    newFlags = {};
+    latestActivity.clear();
+    queue.reset();
+  }
 
   void persistReadState() {
     final serverId = client.serverId, principal = client.user?.id;
@@ -148,6 +227,7 @@ class ConversationReadRepository {
     if (seq != null && seq > (latestActivity[id] ?? BigInt.zero)) {
       latestActivity[id] = seq;
     }
+    queue.forgetSuppressionIfNewer(id, seq);
     if ((id == _channelId() || id == _threadChannelId()) &&
         _mayMarkRead(id) &&
         scrolledAway.readsLiveArrival(id, _mobileNavigation())) {
@@ -172,6 +252,10 @@ class ConversationReadRepository {
       return;
     }
     unread = {...unread, id: (unread[id] ?? 0) + 1};
+    final held = queue.receipt(id);
+    if (held != null && (seq == null || seq > held.maxReadSeq)) {
+      queue.holdReceipt(id, held.withCount(held.unreadCount + 1));
+    }
     if (_mentionsMember(row)) mentions = {...mentions, id};
     persistUnread();
     unawaited(_prefetch());
@@ -224,9 +308,13 @@ class ConversationReadRepository {
   }
 
   Future<void> refreshUnread() async {
-    final requestGeneration = _readState().generation;
     final serverId = client.serverId, principal = client.user?.id;
     if (serverId == null || principal == null) return;
+    // Source loadUnreadCounts: settle queued reads first, so a stale snapshot
+    // cannot resurrect counts the member already cleared.
+    await flushPendingReads();
+    if (client.serverId != serverId || client.user?.id != principal) return;
+    final requestGeneration = _readState().generation;
     try {
       final value = await client.get('/channels/unread', query: {'summary': 1});
       if (client.serverId != serverId || client.user?.id != principal) return;
@@ -238,7 +326,7 @@ class ConversationReadRepository {
         for (final e in counts.entries) {
           final id = e.key.toString(), entry = e.value;
           if (entry is num) {
-            next[id] = entry.toInt();
+            next[id] = queue.isSuppressed(id) ? 0 : entry.toInt();
             continue;
           }
           if (entry is! Map) continue;
@@ -257,7 +345,11 @@ class ConversationReadRepository {
           final latest = frontier is Map && frontier['latestActivity'] is Map
               ? canonicalUint64(frontier['latestActivity']['seq'])
               : null;
-          if (latest != null) latestActivity[id] = latest;
+          if (latest != null) {
+            latestActivity[id] = latest;
+            // Activity past the read cursor lifts the 30 s floor.
+            queue.forgetSuppressionIfNewer(id, latest);
+          }
           final fullyRead =
               state != null &&
               latest != null &&
@@ -267,6 +359,28 @@ class ConversationReadRepository {
               : outcome == 'corrupt'
               ? (unread[id] ?? 0)
               : ((entry['unreadCount'] ?? 0) as num).toInt();
+          // Source pendingUnreadReceipts: the answer to "mark as unread" holds
+          // until a snapshot proves the same (or a newer) cursor version.
+          final held = queue.receipt(id);
+          if (held != null) {
+            final caughtUp =
+                frontier is Map &&
+                frontier['kind'] == 'present' &&
+                frontier['readStateVersion'] is int &&
+                frontier['readStateVersion'] >= held.version;
+            if (caughtUp ||
+                state != null && state['readStateVersion'] > held.version) {
+              queue.dropReceipt(id);
+            } else {
+              next[id] = held.unreadCount;
+            }
+          }
+          // Source rememberLocalReadSuppression: for 30 s after a local read
+          // a snapshot cannot repaint the cleared count, mention or new dot.
+          if (queue.isSuppressed(id)) {
+            next[id] = 0;
+            continue;
+          }
           if (entry['hasMention'] == true && next[id]! > 0) {
             nextMentions.add(id);
           }
@@ -282,12 +396,6 @@ class ConversationReadRepository {
     } catch (_) {
       /* Keep accepted counts through transient failures. */
     }
-  }
-
-  void markUnreadLocally(String id) {
-    if ((unread[id] ?? 0) > 0) return;
-    unread = {...unread, id: 1};
-    _changed();
   }
 
   void applyThreadUnread(dynamic threadChannelId, dynamic summary) {
@@ -307,6 +415,10 @@ class ConversationReadRepository {
   /// Their tail may be stale, so they never send a read receipt (nor clear
   /// the unread count) until revalidated.
 
+  /// Source markCurrentChannelRead / queueAutoReadSync: the cursor is queued,
+  /// one POST per conversation is in flight, the receipt clears the unread,
+  /// and a failure clears it locally anyway and keeps the cursor for the next
+  /// refresh or reconnect (the local clear does not depend on the POST).
   Future<void> markRead(String id) async {
     if (_isDiskOnly(id) || !_mayMarkRead(id)) {
       return;
@@ -315,66 +427,87 @@ class ConversationReadRepository {
         .where((m) => _visibleIds(id)?.contains(m['id']) ?? false)
         .toList();
     if (rows.isEmpty) return;
-    final origin = client.origin,
-        principal = client.user?.id,
-        serverId = client.serverId,
-        generation = _generation();
-    final window = id == _threadChannelId()
-        ? _windowGeneration(true)
-        : _windowGeneration(false);
     readPosts[id] = (readPosts[id] ?? 0) + 1;
-    try {
-      final receipt = await client.post(
-        '/channels/$id/read',
-        data: {'seq': rows.last['seq']},
+    queue
+      ..dropReceipt(id)
+      ..remember(
+        id,
+        PendingRead(
+          seq: RaftMessage(rows.last).seq,
+          wireSeq: rows.last['seq'],
+          origin: client.origin,
+          principal: client.user?.id,
+          serverId: client.serverId,
+          generation: _generation(),
+          window: _windowGeneration(id == _threadChannelId()),
+        ),
       );
-      if (client.origin != origin ||
-          client.user?.id != principal ||
-          client.serverId != serverId) {
-        return;
-      }
-      if (_generation() != generation ||
-          window !=
-              (id == _threadChannelId()
-                  ? _windowGeneration(true)
-                  : _windowGeneration(false)) ||
-          !_mayMarkRead(id)) {
-        // The user left (or the window was replaced) while the receipt was in
-        // flight. The server cursor still advanced: fold the accepted frontier
-        // in and clear only what it covers, so Home never keeps an indicator
-        // for a conversation that was read (Source clearUnread).
-        // A reset ledger or a revoked scope never accepts a late receipt.
-        if (_generation() == generation && !_revokedChannels().contains(id)) {
-          _acceptStaleReadReceipt(id, receipt);
-        }
-        return;
-      }
-      if (receipt is Map && client.serverId != null && client.user != null) {
-        _readState().consumeUpdate(
-          {
-            'serverId': client.serverId,
-            'scopeId': id,
-            'maxReadSeq': receipt['maxReadSeq'],
-            'readStateVersion': receipt['readStateVersion'],
-          },
-          serverId: client.serverId!,
-          principalId: client.user!.id,
-        );
-      }
-      // Source clearUnread: the read tail is the latest; no snapshot GET.
-      if ((unread[id] ?? 0) != 0) unread = {...unread, id: 0};
-      clearMention(id);
-      persistReadState();
-      _changed();
+    await queue.flush(id, (read) => _sendRead(id, read));
+  }
+
+  /// Web flushAllPendingReads, awaited before every unread snapshot.
+  Future<void> flushPendingReads() =>
+      queue.flushAll((id, read) => _sendRead(id, read));
+
+  /// Posts one queued cursor. True: settled (taken, or no longer ours to
+  /// send); false: keep it for the next refresh or reconnect.
+  Future<bool> _sendRead(String id, PendingRead read) async {
+    bool same() =>
+        !_isDisposed() &&
+        client.origin == read.origin &&
+        client.user?.id == read.principal &&
+        client.serverId == read.serverId;
+    if (!same() || _revokedChannels().contains(id)) return true;
+    final dynamic receipt;
+    try {
+      receipt = await client.post(
+        '/channels/$id/read',
+        data: {'seq': read.wireSeq},
+      );
     } catch (_) {
-      // The cursor did not advance: an optimistic clear must not hide it.
-      if (!_isDisposed() &&
-          client.origin == origin &&
-          client.user?.id == principal &&
-          client.serverId == serverId) {
-        unawaited(reconcileUnread());
+      if (!same()) return true;
+      // Source: the cursor stays queued and the 30 s floor holds the clear.
+      if ((unread[id] ?? 0) != 0 || mentions.contains(id)) {
+        unread = {...unread, id: 0};
+        clearMention(id);
+        persistUnread();
+        _changed();
       }
+      return false;
     }
+    if (!same()) return true;
+    if (_generation() != read.generation ||
+        read.window != _windowGeneration(id == _threadChannelId()) ||
+        !_mayMarkRead(id)) {
+      // The user left (or the window was replaced) while the receipt was in
+      // flight. The server cursor still advanced: fold the accepted frontier
+      // in and clear only what it covers, so Home never keeps an indicator
+      // for a conversation that was read (Source clearUnread).
+      // A reset ledger or a revoked scope never accepts a late receipt.
+      if (_generation() == read.generation &&
+          !_revokedChannels().contains(id)) {
+        _acceptStaleReadReceipt(id, receipt);
+      }
+      return true;
+    }
+    if (receipt is Map && client.serverId != null && client.user != null) {
+      _readState().consumeUpdate(
+        {
+          'serverId': client.serverId,
+          'scopeId': id,
+          'maxReadSeq': receipt['maxReadSeq'],
+          'readStateVersion': receipt['readStateVersion'],
+        },
+        serverId: client.serverId!,
+        principalId: client.user!.id,
+      );
+    }
+    // Source clearUnread: the read tail is the latest; no snapshot GET.
+    if ((unread[id] ?? 0) != 0) unread = {...unread, id: 0};
+    clearMention(id);
+    persistReadState();
+    _changed();
+    return true;
   }
 
   void _acceptStaleReadReceipt(String id, dynamic receipt) {
@@ -430,6 +563,14 @@ class ConversationReadRepository {
       principalId: principalId,
     );
     if (outcome == 'corrupt') return false;
+    // Source markRead (read-all): remember the 30 s floor from the answer's
+    // seq, drop the queued cursor and the manual-unread skip, clear locally.
+    queue
+      ..dropReceipt(scopeId)
+      ..forgetPending(scopeId)
+      ..forgetManualUnread(scopeId);
+    final seq = canonicalWireSeq(receipt['seq']);
+    if (seq != null) queue.rememberSuppression(scopeId, seq);
     if ((unread[scopeId] ?? 0) != 0) unread = {...unread, scopeId: 0};
     clearMention(scopeId);
     persistReadState();
