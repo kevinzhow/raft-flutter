@@ -599,9 +599,7 @@ class _BulkAgentModelDialogState extends State<BulkAgentModelDialog> {
               ),
         children: [
           if (!busy) ...[
-            RaftCssText(
-              '${raftText(context, 'Choose model')} → ${raftText(context, 'Review')}',
-            ),
+            RaftBulkModelStepper(reviewing: step != _Step.choose),
             const SizedBox(height: RaftSpace.x4),
           ],
           BulkModelStepBody(

@@ -108,7 +108,8 @@ class RaftComputerWorkspace {
   final String? modifiedLabel;
 
   /// The real directory, reported by daemons from 1.0.46 on (Web
-  /// `workspaceLocation`); older daemons only kept `~/.slock/agents/`.
+  /// `workspaceLocation`: `ws.displayPath ?? default`, so only an absent
+  /// value falls back); older daemons only kept `~/.slock/agents/`.
   final String? displayPath;
   String get location => displayPath ?? '~/.slock/agents/$directoryName/';
 }
@@ -1659,6 +1660,9 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                           glyph: RaftGlyph.play,
                           variant: RaftButtonRecipeVariant.success,
                           brutalDisabledFill: true,
+                          tooltip: online
+                              ? 'Start selected offline agents'
+                              : 'Computer must be online to start agents',
                           onPressed:
                               bulkAction == null &&
                                   selectedOffline.isNotEmpty &&
@@ -1669,6 +1673,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                         _smallButton(
                           'Stop',
                           key: const ValueKey('computer-bulk-stop'),
+                          tooltip: 'Stop selected online agents',
                           glyph: RaftGlyph.square,
                           brutalDisabledFill: true,
                           onPressed:
@@ -1679,6 +1684,7 @@ class _RaftComputerDetailViewState extends State<RaftComputerDetailView> {
                         _smallButton(
                           'Restart / Reset',
                           key: const ValueKey('computer-bulk-restart-reset'),
+                          tooltip: online ? 'Restart or reset selected agents' : 'Computer must be online to restart or reset agents',
                           glyph: RaftGlyph.rotateCcw,
                           brutalDisabledFill: true,
                           onPressed: bulkAction == null && online

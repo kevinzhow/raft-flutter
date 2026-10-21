@@ -722,10 +722,7 @@ class _ComputerDetailPanelState extends State<ComputerDetailPanel> {
             sizeLabel: computerFileSize(e['totalSizeBytes'] as num? ?? 0),
             filesLabel:
                 '${e['fileCount'] ?? 0} ${e['fileCount'] == 1 ? 'file' : 'files'}',
-            displayPath: switch (e['displayPath']) {
-              final String path when path.isNotEmpty => path,
-              _ => null,
-            },
+            displayPath: e['displayPath'] as String?,
             modifiedLabel: switch (DateTime.tryParse(
               '${e['lastModified'] ?? ''}',
             )) {
