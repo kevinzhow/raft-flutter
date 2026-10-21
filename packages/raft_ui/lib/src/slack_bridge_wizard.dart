@@ -70,6 +70,8 @@ class RaftSlackWizardView extends StatelessWidget {
     this.failingSurface,
     this.recoveryTitle,
     this.recoveryDescription,
+    this.mentionSyncTitle,
+    this.mentionSyncDescription,
     this.inviteStepsOpen = false,
     this.onToggleInviteSteps,
     this.onManage,
@@ -104,6 +106,10 @@ class RaftSlackWizardView extends StatelessWidget {
   final String healthState, healthReason, healthAction;
   final String? lastVerified, failingSurface;
   final String? recoveryTitle, recoveryDescription;
+
+  /// `agentMentionSync` hint: Raft members that Slack's @ menu could not list
+  /// (a Slack-side limit; delivery by typed @name still works).
+  final String? mentionSyncTitle, mentionSyncDescription;
   final bool inviteStepsOpen;
   final VoidCallback? onToggleInviteSteps, onManage;
 
@@ -1022,6 +1028,18 @@ class RaftSlackWizardView extends StatelessWidget {
               if (workspaceName != null) _pill(context, t, s, workspaceName!),
             ],
           ),
+          if (mentionSyncTitle != null) ...[
+            const SizedBox(height: 16),
+            RaftBanner(
+              key: const ValueKey('slack-mention-sync-hint'),
+              title: mentionSyncTitle,
+              titleGap: t.brutal ? null : 4,
+              description: mentionSyncDescription ?? '',
+              status: RaftBannerRecipeStatus.info,
+              size: RaftBannerRecipeSize.sm,
+              glyph: RaftGlyph.info,
+            ),
+          ],
           if (recoveryTitle != null) ...[
             const SizedBox(height: 16),
             RaftBanner(

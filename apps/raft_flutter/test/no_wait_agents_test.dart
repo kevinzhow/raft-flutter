@@ -337,7 +337,7 @@ void main() {
     api.hangAll = false;
   });
 
-  testWidgets('the app event detail dialog opens before the payload read '
+  testWidgets('the app event row opens before the payload read '
       'lands', (t) async {
     final (w, api) = await mount(t);
     api.routes['GET /integrations/agents/a1'] = (_) => [];
@@ -364,7 +364,8 @@ void main() {
     api.hangAll = true;
     await t.tap(event.first);
     await frames(t, 6);
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Loading…'), findsOneWidget);
     api.hangAll = false;
   });
 }

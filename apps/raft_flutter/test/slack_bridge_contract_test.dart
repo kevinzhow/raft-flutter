@@ -80,30 +80,27 @@ void main() {
     v['snapshot']['preflight']['state'] = 'failed';
     expect(SlackBridgeProjection.parse(v).preflightPassed, isFalse);
   });
-  test(
-    'unknown contracts, overlapping pairs and missing authority fail closed',
-    () {
-      final v = bridgeFixture();
-      final newer = clone(v)..['protocolVersion'] = 2;
-      expect(() => SlackBridgeProjection.parse(newer), throwsFormatException);
-      final duplicate = clone(v);
-      duplicate['snapshot']['channelPairs'].add({
-        'raftChannelId': 'r1',
-        'slackChannelId': 's2',
-        'bindingEpoch': 8,
-      });
-      expect(
-        () => SlackBridgeProjection.parse(duplicate),
-        throwsFormatException,
-      );
-      final oauth = clone(v);
-      oauth['snapshot']['stage'] = 'oauth';
-      expect(() => SlackBridgeProjection.parse(oauth), throwsFormatException);
-      final unknown = clone(v);
-      unknown['snapshot']['rawHealth']['healthy'] = true;
-      expect(() => SlackBridgeProjection.parse(unknown), throwsFormatException);
-    },
-  );
+  test('unknown contracts and overlapping pairs fail closed', () {
+    final v = bridgeFixture();
+    final newer = clone(v)..['protocolVersion'] = 2;
+    expect(() => SlackBridgeProjection.parse(newer), throwsFormatException);
+    final duplicate = clone(v);
+    duplicate['snapshot']['channelPairs'].add({
+      'raftChannelId': 'r1',
+      'slackChannelId': 's2',
+      'bindingEpoch': 8,
+    });
+    expect(() => SlackBridgeProjection.parse(duplicate), throwsFormatException);
+    // Web v1.21.23: a viewer who may not start OAuth (a read-only member)
+    // gets the `oauth` stage without authority; that parses, and nothing can
+    // authorize from it.
+    final oauth = clone(v);
+    oauth['snapshot']['stage'] = 'oauth';
+    expect(SlackBridgeProjection.parse(oauth).oauthAuthority, isNull);
+    final unknown = clone(v);
+    unknown['snapshot']['rawHealth']['healthy'] = true;
+    expect(() => SlackBridgeProjection.parse(unknown), throwsFormatException);
+  });
   test('health requires durable verification and matched audience with ordered degradation', () {
     final v = bridgeFixture();
     expect(SlackBridgeProjection.parse(v).healthReason, 'healthy');

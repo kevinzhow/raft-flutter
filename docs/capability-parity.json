@@ -7935,10 +7935,10 @@
    "area": "integrations-apps-mcp",
    "capability": "List events connected apps sent to an agent (filter by app, refresh, load more)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentAppAccessTab (Agent detail > Apps tab) > AgentAppEventsSection: 'Refresh', 'All apps' + per-app filter chips, 'Load more'",
    "gate": "Any member who can inspect the agent",
-   "flutterEntry": "agent_apps_view.dart AgentAppAccessView (Agent detail > Apps tab) 'App events' section: Refresh, All apps/app chips, Load more (manager only)",
+   "flutterEntry": "agent_apps_view.dart AgentAppAccessView (Agent detail > Apps tab) 'App events' section for every viewer: Refresh, All apps/app chips (apps seen in the unfiltered list), Load more",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
@@ -7946,12 +7946,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
-     "needle": "App events"
+     "needle": "eventApps"
     }
    ],
-   "justification": "Same list/filter/paging, but Flutter gates the section on manager; Web shows it to every viewer.",
-   "impact": "Non-manager members cannot see app events on mobile.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -7959,10 +7959,10 @@
    "area": "integrations-apps-mcp",
    "capability": "Open one app event sent to an agent and read its payload",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentAppAccessTab (Agent detail > Apps tab) > App events list > click event row to expand payload (AppEventRow)",
    "gate": "Any member who can inspect the agent (server loadInspectableAgent); not limited to managers",
-   "flutterEntry": "agent_apps_view.dart AgentAppAccessView (Agent detail > Apps tab) event row onTap -> eventDetail() dialog; list is shown only when manager",
+   "flutterEntry": "agent_apps_view.dart AgentAppAccessView: tapping an event row opens its payload under the row (read once); the list is shown to every viewer, as on Web",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
@@ -7970,12 +7970,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
-     "needle": "No app events yet"
+     "needle": "app-event-payload-"
     }
    ],
-   "justification": "Flutter renders the App events section only for manager (agent creator / manageIntegrations); Web shows it to every viewer of the Apps tab.",
-   "impact": "Non-manager members who can open an agent's Apps tab cannot see app events or payloads on mobile; low frequency.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -9083,10 +9083,10 @@
    "area": "integrations-apps-mcp",
    "capability": "Agent Apps tab: active app card shows granted date, grant source, description, manifest URL and 'View service' homepage link",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentAppAccessTab Applications list item",
    "gate": "",
-   "flutterEntry": "agent_apps_view.dart _accessCard shows name, Active badge, scope chips, Revoke only",
+   "flutterEntry": "agent_apps_view.dart _accessCard: granted date, grant source label, description, agent manifest URL, scope chips, Revoke (managers) and the 'View service' link",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
@@ -9094,12 +9094,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_apps_view.dart",
-     "needle": "RaftAccessCard"
+     "needle": "View service"
     }
    ],
-   "justification": "Flutter card omits grant date, grant source label, app description, agent manifest URL and the 'View service' link.",
-   "impact": "Admins/creators reviewing which app has agent access see less context on mobile; cosmetic-to-moderate.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -16390,6 +16390,54 @@
     {
      "file": "apps/raft_flutter/lib/features/app_permission_review.dart",
      "needle": "permissions/review"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "endpoint",
+   "id": "GET /integrations/clients/:id/setup",
+   "area": "integrations-apps-mcp",
+   "capability": "Read an installed app's setup state (not required / pending / complete, setup URL with installation identifiers, who may configure)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AppSetupPanel (installed app detail, installed marketplace detail right after install); refreshes on window focus and on Refresh status",
+   "gate": "Any member; canConfigure is true for Server owners/admins",
+   "flutterEntry": "app_setup.dart AppSetupPanel._load() (refreshes when the app resumes and on 'Refresh status')",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/app_setup.dart",
+     "needle": "/setup"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:integrations.app-installation-setup",
+   "area": "integrations-apps-mcp",
+   "capability": "App installation setup: publisher editor fields ('Requires configuration after installation', setup URL, instructions), 'Setup required' notice before install, per-installation setup panel, install action card notes/setup URL rows and the 'Continue setup' button",
+   "background": false,
+   "status": "covered",
+   "webEntry": "AppSetup.tsx (AppSetupFields, AppSetupRequirement, AppSetupPanel) in SettingsPanel connected-app editor/detail; ActionCard install result",
+   "gate": "Editor: manageIntegrations; Continue setup: Server owner/admin",
+   "flutterEntry": "connected_app_editor.dart (Installation setup section), integrations_views.dart (listing + installed detail), message_action_card.dart (install / register / update cards, result button)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/connected_app_editor.dart",
+     "needle": "RaftAppSetupFields"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/integrations_views.dart",
+     "needle": "AppSetupPanel"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/message_action_card.dart",
+     "needle": "action-card-continue-setup"
     }
    ],
    "justification": "",

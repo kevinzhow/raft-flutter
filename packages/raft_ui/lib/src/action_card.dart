@@ -32,6 +32,7 @@ class RaftActionCard extends StatelessWidget {
     this.titleParts,
     this.body = const [],
     this.completedResult,
+    this.completedAction,
   });
 
   /// ActionTitleLine: the title as `flex flex-wrap items-center gap-2` items
@@ -43,6 +44,10 @@ class RaftActionCard extends StatelessWidget {
 
   /// ResultLink after "Committed by": the `→ ...` produced resource.
   final String? completedResult;
+
+  /// A follow-up action under the completed line (the installed App's
+  /// "Continue setup" button).
+  final Widget? completedAction;
   final String title, state, confirmLabel;
   final List<({String label, String value})> details;
   final String? hint, targetServer, completedBy, blockedReason, error;
@@ -241,6 +246,14 @@ class RaftActionCard extends StatelessWidget {
                           ),
                         );
                       },
+                    ),
+                  ),
+                if (done && completedAction != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: completedAction,
                     ),
                   ),
                 if (error != null)

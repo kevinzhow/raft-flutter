@@ -2441,6 +2441,7 @@ class RaftAccessCard extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.badge,
+    this.details = const [],
     this.chips = const [],
     this.actions = const [],
     this.onTap,
@@ -2448,6 +2449,10 @@ class RaftAccessCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? badge;
+
+  /// Rows between the header and the [chips] (an App's description and
+  /// manifest on the Apps tab).
+  final List<Widget> details;
   final List<String> chips;
   final List<Widget> actions;
   final VoidCallback? onTap;
@@ -2477,6 +2482,7 @@ class RaftAccessCard extends StatelessWidget {
               ?badge,
             ],
           ),
+          for (final row in details) ...[const SizedBox(height: 8), row],
           if (chips.isNotEmpty) ...[
             const SizedBox(height: 8),
             Wrap(

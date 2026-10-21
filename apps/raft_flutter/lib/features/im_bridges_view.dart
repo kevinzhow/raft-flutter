@@ -432,6 +432,7 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
       final missing = membershipIssues.whereType<Map<String, dynamic>>().where((c) => c['isMember'] == false).toList();
       final unknown = membershipIssues.any((c) => c == null || c['isMember'] == null);
       final recovery = healthReason == _reasons['audience_mismatch'] && membershipIssues.isNotEmpty;
+      final mentionSync = p.mentionSyncHint;
       final disconnectable = manage &&
           p.stage != 'connect' &&
           p.health['install']?['state'] != 'revoked' &&
@@ -520,6 +521,15 @@ class _IMBridgesState extends ManagementState<IMBridgesView> {
                       'channels': missing.map((c) => '#${c['name']}').join(', '),
                     }))
             : null,
+        mentionSyncTitle: mentionSync == null
+            ? null
+            : "Some members can't be picked from Slack's @ menu yet",
+        mentionSyncDescription: mentionSync == null
+            ? null
+            : raftFormat(context, mentionSync.source, {
+                'count': mentionSync.count,
+                'code': mentionSync.code,
+              }),
         inviteStepsOpen: inviteHelp,
         onToggleInviteSteps: () => setState(() => inviteHelp = !inviteHelp),
         onManage: manage ? this.manage : null,

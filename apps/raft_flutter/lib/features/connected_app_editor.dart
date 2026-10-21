@@ -18,6 +18,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
 import 'app_notifications_catalog.dart';
+import 'app_setup.dart';
 import 'app_when_to_use.dart';
 import 'integrations_views.dart';
 import 'management_support.dart';
@@ -132,8 +133,11 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       homepage = TextEditingController(),
       returnUrl = TextEditingController(),
       manifest = TextEditingController(),
+      setupUrl = TextEditingController(),
+      setupDescription = TextEditingController(),
       endpoint = TextEditingController();
   String category = 'Other';
+  bool setupRequired = false;
   List<String> scopes = [..._identityScopes];
   List<String> groups = [], events = [];
   Map<String, dynamic>? notifications;
@@ -177,6 +181,7 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       homepage,
       returnUrl,
       manifest,
+      setupUrl,
     ]) {
       c.addListener(refresh);
     }
@@ -200,6 +205,8 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       homepage,
       returnUrl,
       manifest,
+      setupUrl,
+      setupDescription,
       endpoint,
     ]) {
       c.dispose();
@@ -215,6 +222,9 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
     homepage.text = '${app['homepageUrl'] ?? ''}';
     returnUrl.text = '${app['returnUrl'] ?? ''}';
     manifest.text = '${app['agentManifestUrl'] ?? ''}';
+    setupUrl.text = '${app['setupUrl'] ?? ''}';
+    setupDescription.text = '${app['setupDescription'] ?? ''}';
+    setupRequired = hasAppSetup(app);
     scopes = declaredIntegrationScopes(app['allowedScopes']);
     category = integrationCategoryLabel(app['category'] as String?);
   }
@@ -332,6 +342,8 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
       'homepageUrl': value(homepage),
       'returnUrl': value(returnUrl),
       'agentManifestUrl': value(manifest),
+      'setupUrl': setupRequired ? setupUrl.text : null,
+      'setupDescription': setupRequired ? setupDescription.text : null,
       'allowedScopes': scopes,
       'category': category,
     };
@@ -350,6 +362,20 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
         ),
       );
       return;
+    }
+    if (setupRequired) {
+      try {
+        if (normalizeAppSetupUrl(setupUrl.text) == null) {
+          throw const FormatException('missing setup URL');
+        }
+      } on FormatException {
+        setState(
+          () => error = tr(
+            'Enter an HTTPS setup URL (loopback HTTP is allowed for local development).',
+          ),
+        );
+        return;
+      }
     }
     setState(() {
       submitting = true;
@@ -777,6 +803,20 @@ class _ConnectedAppEditorState extends State<ConnectedAppEditor> {
         description: 'Authorized by the user at login.',
         status: tr(loginStatus),
         child: login(),
+      ),
+      RaftAppEditorSection(
+        id: 'setup',
+        glyph: RaftGlyph.settings,
+        railLabel: 'Installation setup',
+        title: 'Installation setup',
+        description: 'Tell installers where to connect an external account or configure your App.',
+        status: tr(setupRequired ? 'Setup required' : 'No setup required'),
+        child: RaftAppSetupFields(
+          required: setupRequired,
+          url: setupUrl,
+          description: setupDescription,
+          onRequiredChanged: (v) => setState(() => setupRequired = v),
+        ),
       ),
       RaftAppEditorSection(
         id: 'permissions',

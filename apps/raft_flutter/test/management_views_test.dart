@@ -435,7 +435,7 @@ void main() {
   );
 
   testWidgets(
-    'same-generation role downgrade removes private agent events before the next HTTP response',
+    'same-generation role downgrade drops the manager data before the next HTTP response; the events reload for a member',
     (tester) async {
       final (w, a) = (await tester.runAsync(() => _fixture('owner')))!;
       addTearDown(w.dispose);
@@ -477,7 +477,9 @@ void main() {
         'creatorId': 'someone-else',
       });
       await tester.pumpAndSettle();
-      expect(find.text('Private agent event fixture'), findsNothing);
+      // Web shows the events to every member who can open the Apps tab.
+      expect(find.text('Private agent event fixture'), findsOneWidget);
+      expect(find.text('Grant app access'), findsNothing);
     },
   );
   testWidgets('management header actions wrap at narrow phone width', (

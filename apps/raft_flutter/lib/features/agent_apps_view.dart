@@ -7,6 +7,7 @@ import 'package:raft_ui/raft_ui.dart';
 import '../data/user_error.dart';
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
+import 'agent_detail_view.dart' show agentTimeFormatter;
 import 'management_support.dart';
 import 'integrations_views.dart';
 
@@ -27,6 +28,9 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
   WorkspaceController get w => widget.controller;
   List<Map<String, dynamic>> access = [], apps = [], events = [];
   Map<String, dynamic> agent = {};
+
+  /// Filter chips come from the apps seen so far in the unfiltered list.
+  Map<String, String> eventApps = {};
   String? nextCursor, filter;
   bool get manager =>
       w.can('manageIntegrations') ||
@@ -44,6 +48,10 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     access = [];
     apps = [];
     events = [];
+    _openEvents.clear();
+    _payloads.clear();
+    _payloadFailures.clear();
+    eventApps = {};
     agent = {};
     nextCursor = null;
     filter = null;
@@ -56,6 +64,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     'access': access,
     'apps': apps,
     'events': events,
+    'eventApps': eventApps,
     'agent': agent,
     'nextCursor': nextCursor,
     'filter': filter,
@@ -65,6 +74,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     access = fields['access'] as List<Map<String, dynamic>>;
     apps = fields['apps'] as List<Map<String, dynamic>>;
     events = fields['events'] as List<Map<String, dynamic>>;
+    eventApps = fields['eventApps'] as Map<String, String>;
     agent = fields['agent'] as Map<String, dynamic>;
     nextCursor = fields['nextCursor'] as String?;
     filter = fields['filter'] as String?;
@@ -94,19 +104,28 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     final results = await Future.wait([
       w.client.get(base),
       if (manages) w.client.get('$base/grantable-apps'),
-      if (manages)
-        w.client.get(
-          '$base/events',
-          query: {'limit': '25', if (filter != null) 'clientId': filter},
-        ),
+      // The events are readable by every member who can inspect the agent.
+      w.client.get(
+        '$base/events',
+        query: {'limit': '25', if (filter != null) 'clientId': filter},
+      ),
     ]);
     if (!accepts(generation, request)) return;
     agent = agentData;
     access = managementRows(results[0]);
     apps = manages ? managementRows(managementMap(results[1])['apps']) : [];
-    final page = manages ? managementMap(results[2]) : <String, dynamic>{};
+    final page = managementMap(results[manages ? 2 : 1]);
     events = managementRows(page['events']);
+    _seeApps(events);
     nextCursor = page['nextCursor'];
+  }
+
+  void _seeApps(List<Map<String, dynamic>> page) {
+    if (filter != null) return;
+    for (final event in page) {
+      final app = managementMap(event['app']);
+      eventApps['${app['clientId']}'] = '${app['name']}';
+    }
   }
 
   Future<void> moreEvents() async {
@@ -133,6 +152,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
       ...events,
       ...managementRows(page['events']).where((e) => ids.add(e['id'])),
     ];
+    _seeApps(managementRows(page['events']));
     nextCursor = page['nextCursor'];
     setState(() {});
   }
@@ -190,59 +210,50 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     );
   }
 
-  Future<void> eventDetail(Map<String, dynamic> event) async {
-    final generation = w.client.generation;
-    // The dialog opens at once with the event summary the list holds; the
-    // payload (read per event) fills in when it lands.
-    final payload = ValueNotifier<(Object?,)?>(null);
-    final failure = ValueNotifier<String?>(null);
-    unawaited(
-      w.client
-          .get('$base/events/${event['id']}')
-          .then<void>(
-            (value) {
-              if (accepts(generation)) {
-                payload.value = (managementMap(value)['payload'],);
-              }
-            },
-            onError: (Object e) {
-              if (accepts(generation)) {
-                failure.value = userErrorText(
-                  e,
-                  fallback: 'Failed to load the event',
-                  where: 'agent app event',
-                );
-              }
-            },
-          ),
-    );
-    await scopedDialog<void>(
-      (context) => AlertDialog(
-        title: Text('${event['summary']}'),
-        content: SizedBox(
-          width: 560,
-          child: SingleChildScrollView(
-            child: ListenableBuilder(
-              listenable: Listenable.merge([payload, failure]),
-              builder: (context, _) => failure.value != null
-                  ? RaftErrorBanner(failure.value!, small: true, bold: true)
-                  : SelectableText(
-                      payload.value == null
-                          ? raftText(context, 'Loading…')
-                          : const JsonEncoder.withIndent(
-                              '  ',
-                            ).convert(payload.value!.$1),
-                    ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
+  /// Events whose payload is open under the row (Web `AppEventRow`): the
+  /// payload once read, or the failure. The row toggles; a read happens once.
+  final Set<String> _openEvents = {};
+  final Map<String, Object?> _payloads = {};
+  final Map<String, String> _payloadFailures = {};
+
+  Future<void> toggleEvent(Map<String, dynamic> event) async {
+    final id = '${event['id']}';
+    if (!_openEvents.remove(id)) {
+      _openEvents.add(id);
+    } else {
+      setState(() {});
+      return;
+    }
+    setState(() {});
+    if (_payloads.containsKey(id)) return;
+    final generation = w.client.generation, sourceAuthority = authority;
+    try {
+      final value = await w.client.get('$base/events/$id');
+      if (!accepts(generation) || sourceAuthority != authority) return;
+      _payloads[id] = managementMap(value)['payload'];
+    } catch (e) {
+      if (!accepts(generation) || sourceAuthority != authority) return;
+      _payloadFailures[id] = userErrorText(
+        e,
+        fallback: 'Failed to load the event',
+        where: 'agent app event',
+      );
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// The payload under an open event: app-supplied data, shown as inert JSON
+  /// text, never as links or markup.
+  Widget _payload(BuildContext context, String id) {
+    final failure = _payloadFailures[id];
+    if (failure != null) return RaftErrorBanner(failure, small: true);
+    final t = RaftTokens.of(context);
+    return SelectableText(
+      _payloads.containsKey(id)
+          ? const JsonEncoder.withIndent('  ').convert(_payloads[id])
+          : raftText(context, 'Loading…'),
+      key: ValueKey('app-event-payload-$id'),
+      style: RaftPanelText.monoCaption(t),
     );
   }
 
@@ -302,8 +313,7 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
           else
             for (final item in active) _accessCard(context, item),
         ],
-        if (manager)
-          [
+        [
             RaftDescribedSectionHeader(
               label: raftText(context, 'App events'),
               description: raftText(
@@ -315,18 +325,18 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
                 busy || loading ? null : reload,
               ),
             ),
-            if (apps.length > 1)
+            if (eventApps.length > 1)
               RaftButtonWrap(
                 children: [
                   _small(raftText(context, 'All apps'), () {
                     setState(() => filter = null);
                     reload();
                   }, selected: filter == null),
-                  for (final app in apps)
-                    _small('${app['name']}', () {
-                      setState(() => filter = '${app['clientId']}');
+                  for (final app in eventApps.entries)
+                    _small(app.value, () {
+                      setState(() => filter = app.key);
                       reload();
-                    }, selected: filter == app['clientId']),
+                    }, selected: filter == app.key),
                 ],
               ),
             if (events.isEmpty && !loading)
@@ -336,8 +346,13 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
                 RaftAccessCard(
                   title: '${event['summary']}',
                   subtitle:
-                      '${managementMap(event['app'])['name']} · ${event['kind']} · ${event['status']}',
-                  onTap: () => run(() => eventDetail(event), refresh: false),
+                      '${managementMap(event['app'])['name']} · ${event['kind']} · ${agentTimeFormatter(context, w).shortDateTime(event['createdAt'])}',
+                  badge: _eventStatus(context, '${event['status']}'),
+                  details: [
+                    if (_openEvents.contains('${event['id']}'))
+                      _payload(context, '${event['id']}'),
+                  ],
+                  onTap: () => toggleEvent(event),
                 ),
             if (nextCursor != null)
               Align(
@@ -352,10 +367,51 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
     );
   }
 
+  /// The delivery word beside an event: delivered / queued / expired.
+  Widget? _eventStatus(BuildContext context, String status) {
+    final label = switch (status) {
+      'delivered' => 'Delivered',
+      'queued' => 'Queued',
+      'expired' => 'Expired',
+      _ => null,
+    };
+    if (label == null) return null;
+    return RaftRecipeBadge(
+      raftText(context, label),
+      variant: switch (status) {
+        'delivered' => RaftBadgeRecipeVariant.success,
+        'queued' => RaftBadgeRecipeVariant.warning,
+        _ => RaftBadgeRecipeVariant.muted,
+      },
+    );
+  }
+
   Widget _accessCard(BuildContext context, Map<String, dynamic> item) {
     final pending = item['type'] == 'pending';
+    final t = RaftTokens.of(context);
+    final source = switch (item['grantSource']) {
+      'person' => 'Granted by a person',
+      'agent_login' => 'Granted when the agent signed in',
+      'app_request' => 'Granted automatically to the app',
+      _ => null,
+    };
+    final description = item['clientDescription'];
+    final manifest = item['clientAgentManifestUrl'];
+    final homepage = item['clientHomepageUrl'];
     return RaftAccessCard(
       title: '${item['clientName']}',
+      subtitle: agentTimeFormatter(context, w).shortDateTime(item['createdAt']),
+      details: [
+        if (!pending && source != null)
+          Text(raftText(context, source), style: RaftPanelText.caption(t)),
+        if (!pending && description is String && description.isNotEmpty)
+          Text(description, style: RaftPanelText.muted(t)),
+        if (!pending && manifest is String && manifest.isNotEmpty)
+          Text(
+            raftFormat(context, 'Agent manifest: {url}', {'url': manifest}),
+            style: RaftPanelText.monoCaption(t),
+          ),
+      ],
       badge: RaftRecipeBadge(
         raftText(context, pending ? 'Pending' : 'Active'),
         variant: pending
@@ -407,6 +463,13 @@ class _AgentAppsState extends ManagementState<AgentAppAccessView> {
                 destructive: true,
               );
             }),
+          ),
+        if (!pending && homepage is String && homepage.isNotEmpty)
+          RaftRecipeTextButton(
+            label: raftText(context, 'View service'),
+            variant: RaftButtonRecipeVariant.link,
+            onPressed: () =>
+                run(() => managementLaunch(homepage), refresh: false),
           ),
       ],
     );

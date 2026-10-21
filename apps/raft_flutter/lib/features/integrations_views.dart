@@ -11,6 +11,7 @@ import '../data/workspace_controller.dart';
 import 'management_support.dart';
 import 'app_notifications_catalog.dart';
 import 'app_permission_review.dart';
+import 'app_setup.dart';
 import 'connected_app_editor.dart';
 
 const integrationScopeLabels = <String, String>{
@@ -408,6 +409,7 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             orElse: () => opened,
           );
           final installed = listing['installedAt'] != null;
+          final hasSetup = hasAppSetup(listing);
           final saving = savingId == id;
           final developer =
               '${listing['publisherServerName'] ?? listing['publisherName'] ?? tr('Third-party developer')}';
@@ -430,7 +432,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             );
             if (!modal.mounted) return;
             if (failure == null && error == null) {
-              close();
+              // A listing with a setup page stays open on its setup panel.
+              if (!hasSetup) close();
             } else {
               setModal(
                 () => modalError =
@@ -512,6 +515,14 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
                     ),
                   ),
                 ),
+                if (hasSetup && installed)
+                  AppSetupPanel(controller: w, clientId: id)
+                else if (hasSetup &&
+                    appSetupDomain(listing['setupUrl']) != null)
+                  RaftAppSetupRequirement(
+                    domain: appSetupDomain(listing['setupUrl'])!,
+                    description: listing['setupDescription'] as String?,
+                  ),
                 RaftConnectedAppDetailSection(
                   title: 'App permissions',
                   cream: true,
@@ -613,6 +624,8 @@ class _IntegrationsState extends ManagementState<IntegrationsView> {
             closeLabel: tr('Close installed app details'),
             onClose: close,
             sections: [
+              if (hasAppSetup(app.source))
+                AppSetupPanel(controller: w, clientId: app.id),
               RaftOAuthScopeSummary(
                 title: tr('Login with Raft access'),
                 description: tr(

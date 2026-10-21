@@ -10,9 +10,11 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'add_members_dialog.dart';
+import 'app_setup.dart';
 import 'integrations_views.dart'
     show integrationScopeCopy, integrationVisibleScopes;
 import 'managed_agent_launcher.dart';
+import 'management_support.dart' show managementLaunch;
 import 'private_route_guard.dart';
 
 const _inlineActions = {
@@ -763,6 +765,10 @@ class _MessageActionCardState extends State<MessageActionCard> {
           'Only a Server owner or admin can install this Marketplace app. The Agent cannot install it automatically.',
           tone: RaftActionTone.orange,
         ),
+        if (_nonEmpty(action['setupUrl'])) ...[
+          const RaftActionNote('Setup required'),
+          ?_note(action['setupDescription']),
+        ],
       ],
       'integration:register_app' => [
         field(
@@ -774,6 +780,8 @@ class _MessageActionCardState extends State<MessageActionCard> {
         field('Redirect URL:', '${action['returnUrl']}'),
         ?maybe('App URL:', action['homepageUrl']),
         ?maybe('Agent manifest:', action['agentManifestUrl']),
+        ?maybe('Setup page URL:', action['setupUrl']),
+        ?maybe('Configuration instructions:', action['setupDescription']),
         _scopes(context),
         const RaftActionNote(
           "The requesting agent becomes this app's owner and can rotate, update, or transfer it after commit.",
@@ -790,6 +798,8 @@ class _MessageActionCardState extends State<MessageActionCard> {
         ?maybe('Redirect URL:', action['returnUrl']),
         ?maybe('App URL:', action['homepageUrl']),
         ?maybe('Agent manifest:', action['agentManifestUrl']),
+        ?maybe('Setup page URL:', action['setupUrl']),
+        ?maybe('Configuration instructions:', action['setupDescription']),
         if (action['scopes'] is List) _scopes(context),
         if (action['unsafeDemoUrlOverride'] == true)
           const RaftActionNote(
@@ -806,6 +816,38 @@ class _MessageActionCardState extends State<MessageActionCard> {
         ),
       ],
     };
+  }
+
+  static bool _nonEmpty(Object? value) => value is String && value.isNotEmpty;
+
+  static Widget? _note(Object? value) =>
+      _nonEmpty(value) ? RaftActionNote(value as String) : null;
+
+  /// ResultLink of an installed Marketplace App that needs setup: the
+  /// "Continue setup" button, when the setup page is a safe web URL.
+  Widget? _resultAction(BuildContext context) {
+    final result = _map(metadata['result']);
+    final url = result['setupUrl'];
+    if (result['kind'] != 'marketplace-app-installation' ||
+        url is! String ||
+        !isSafeAppSetupUrl(url)) {
+      return null;
+    }
+    return RaftRecipeButton(
+      key: const ValueKey('action-card-continue-setup'),
+      label: 'Continue setup',
+      variant: RaftButtonRecipeVariant.outline,
+      size: RaftButtonRecipeSize.sm,
+      onPressed: () async {
+        try {
+          await managementLaunch(url);
+        } catch (_) {
+          if (context.mounted) {
+            showRaftToast(context, 'Could not open this address.');
+          }
+        }
+      },
+    );
   }
 
   /// ResultLink: `→ ...` for the resource the execute step produced.
@@ -868,6 +910,7 @@ class _MessageActionCardState extends State<MessageActionCard> {
           : null,
       completedBy: metadata['executedByUserName'],
       completedResult: _resultText(context),
+      completedAction: _resultAction(context),
       // ignore: raft_lints/avoid_render_index_assertion -- Only reached for known action types; `verbs` lists every type _knownCard renders.
       confirmLabel: verbs[type]!,
       blockedReason: blocked,
