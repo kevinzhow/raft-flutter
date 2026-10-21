@@ -246,7 +246,6 @@ void main() {
               mimeType: 'image/png',
               sizeBytes: 2048,
               onOpen: () {},
-              onDownload: () {},
             ),
           ),
         ),

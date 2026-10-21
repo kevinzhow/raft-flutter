@@ -707,6 +707,7 @@ class _AttachmentViewState extends State<AttachmentView> {
                 authorized: current,
                 onClose: close,
                 onDownload: download,
+                onShare: sharing.supported ? shareAttachment : null,
               )
             : AttachmentPreviewDialog(
                 page: page,
@@ -716,6 +717,7 @@ class _AttachmentViewState extends State<AttachmentView> {
                 authorized: current,
                 onClose: close,
                 onDownload: download,
+                onShare: sharing.supported ? shareAttachment : null,
                 onNetworkSettings: kIsWeb
                     ? null
                     : () {
@@ -983,15 +985,6 @@ class _AttachmentViewState extends State<AttachmentView> {
     return card(context);
   }
 
-  /// Phones: an image tile carries no Share / Download overlay (Web shows it
-  /// on hover only). The viewer's long-press menu saves to the photo library
-  /// and shares instead.
-  bool get phoneImageTile =>
-      isImage &&
-      !widget.exportMode &&
-      files.gallerySupported &&
-      RaftInteraction.of(context).touch;
-
   Widget card(BuildContext context) => RaftAttachmentCard(
     summary: webChip.summary,
     metaLabel: webChip.meta,
@@ -1011,8 +1004,6 @@ class _AttachmentViewState extends State<AttachmentView> {
     onRetry: loadImage,
     downloadFailed: downloadFailed,
     onOpen: open,
-    onDownload: phoneImageTile ? null : download,
-    onShare: sharing.supported && !phoneImageTile ? shareAttachment : null,
     onCancel: saving ? transfers.cancel.cancel : null,
     preview: imageProvider == null ? null : previewImage(imageProvider!),
   );

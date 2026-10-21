@@ -30,8 +30,6 @@ class _AttachmentPreviewState extends State<_AttachmentPreview> {
               child: Center(child: Icon(Icons.image_outlined, size: 64)),
             ),
             onOpen: () => setState(() => result = 'Preview opened'),
-            onDownload: () => setState(() => result = 'Download requested'),
-            onShare: () => setState(() => result = 'Share sheet requested'),
           ),
           const SizedBox(height: 12),
           RaftAttachmentCard(
@@ -51,7 +49,6 @@ class _AttachmentPreviewState extends State<_AttachmentPreview> {
             imageHeight: 3000,
             previewPending: true,
             onOpen: () => setState(() => result = 'Image preview opened'),
-            onDownload: () => setState(() => result = 'Download requested'),
           ),
           const SizedBox(height: 12),
           const RaftAttachmentCard(

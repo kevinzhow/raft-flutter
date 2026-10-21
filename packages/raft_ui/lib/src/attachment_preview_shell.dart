@@ -39,6 +39,7 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
     required this.onClose,
     required this.child,
     this.onDownload,
+    this.onShare,
     this.copyText,
     this.commentsBuilder,
     this.canvas = false,
@@ -49,6 +50,9 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
   final String filename;
   final VoidCallback onClose;
   final VoidCallback? onDownload;
+
+  /// The system share sheet (native platforms that have one); null hides it.
+  final VoidCallback? onShare;
   final Widget child;
 
   /// The pane's text; when set the header offers the copy action.
@@ -122,6 +126,13 @@ class _RaftAttachmentPreviewShellState
           glyph: copied ? RaftGlyph.check : RaftGlyph.copy,
           label: 'Copy',
           onPressed: copy,
+        ),
+      if (widget.onShare != null)
+        RaftLightboxIconAction(
+          key: const ValueKey('attachment-preview-share'),
+          glyph: RaftGlyph.share2,
+          label: 'Share',
+          onPressed: widget.onShare,
         ),
       RaftLightboxIconAction(
         key: const ValueKey('attachment-preview-download'),

@@ -196,6 +196,7 @@ class AttachmentPreviewDialog extends StatefulWidget {
     required this.authorized,
     required this.onClose,
     required this.onDownload,
+    this.onShare,
     this.onNetworkSettings,
     this.files,
     this.pdf,
@@ -210,6 +211,9 @@ class AttachmentPreviewDialog extends StatefulWidget {
   final bool Function() authorized;
   final VoidCallback onClose;
   final Future<void> Function() onDownload;
+
+  /// The system share sheet; null where the platform has none.
+  final Future<void> Function()? onShare;
 
   /// Closes the viewer and opens Settings > Network (offered when a video or
   /// audio failed because of the connection or a proxy).
@@ -1120,6 +1124,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     page: widget.page,
     onClose: widget.onClose,
     onDownload: current ? widget.onDownload : null,
+    onShare: current ? widget.onShare : null,
     copyText: copyText,
     // Web lays text, csv, xlsx and markdown out on the canvas surface.
     canvas: document != null || kind == 'audio',

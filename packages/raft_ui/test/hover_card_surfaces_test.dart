@@ -547,7 +547,7 @@ void main() {
     testWidgets('image actions stay absent on hover / focus ($density)', (
       tester,
     ) async {
-      var opened = 0, downloaded = 0, shared = 0;
+      var opened = 0;
       TestGesture? mouse;
       void expectNoActions() {
         expect(find.byKey(const ValueKey('image-actions')), findsNothing);
@@ -567,8 +567,6 @@ void main() {
                 imageHeight: 200,
                 preview: const ColoredBox(color: Color(0xff336699)),
                 onOpen: () => opened++,
-                onDownload: () => downloaded++,
-                onShare: () => shared++,
               ),
             ),
           ),
@@ -590,8 +588,6 @@ void main() {
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         await tester.pump();
         expect(opened, 1);
-        expect(downloaded, 0);
-        expect(shared, 0);
         expectNoActions();
       } finally {
         await mouse?.removePointer();

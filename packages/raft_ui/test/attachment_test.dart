@@ -12,11 +12,11 @@ void main() {
     (RaftFamily.elegant, true),
   ])) {
     testWidgets(
-      '${family.name} dark=$dark file has separate accessible open/download actions',
+      '${family.name} dark=$dark file opens as one accessible action',
       (tester) async {
         final semantics = tester.ensureSemantics();
         try {
-          var opened = 0, downloaded = 0;
+          var opened = 0;
           await tester.pumpWidget(
             MaterialApp(
               theme: raftTheme(family, dark: dark),
@@ -26,16 +26,14 @@ void main() {
                   mimeType: 'application/pdf',
                   sizeBytes: 2048,
                   onOpen: () => opened++,
-                  onDownload: () => downloaded++,
                 ),
               ),
             ),
           );
           expect(find.text('日本語.pdf'), findsOneWidget);
           await tester.tap(find.text('日本語.pdf'));
-          await tester.tap(find.byTooltip('Download 日本語.pdf'));
+          expect(find.byTooltip('Download 日本語.pdf'), findsNothing);
           expect(opened, 1);
-          expect(downloaded, 1);
           await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
           await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
           expect(tester.takeException(), isNull);
@@ -50,7 +48,7 @@ void main() {
         (tester) async {
           final semantics = tester.ensureSemantics();
           try {
-            var opened = 0, downloaded = 0, shared = 0;
+            var opened = 0;
             await tester.pumpWidget(
               MaterialApp(
                 theme: raftTheme(family, dark: dark),
@@ -62,8 +60,6 @@ void main() {
                       mimeType: 'image/png',
                       preview: const ColoredBox(color: Colors.blue),
                       onOpen: () => opened++,
-                      onDownload: () => downloaded++,
-                      onShare: () => shared++,
                     ),
                   ),
                 ),
@@ -90,8 +86,6 @@ void main() {
             await tester.tapAt(bottomRight - const Offset(28, 28));
             await tester.tapAt(bottomRight - const Offset(76, 28));
             expect(opened, 2);
-            expect(downloaded, 0);
-            expect(shared, 0);
             await tester.sendKeyEvent(LogicalKeyboardKey.tab);
             await tester.sendKeyEvent(LogicalKeyboardKey.enter);
             expect(opened, 3);
@@ -158,8 +152,6 @@ void main() {
             error: 'Unavailable',
             preview: const SizedBox(),
             onOpen: () {},
-            onDownload: () {},
-            onShare: () {},
             onCancel: () {},
             onRetry: () {},
           ),

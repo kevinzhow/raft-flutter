@@ -498,7 +498,6 @@ void main() {
                   metaLabel: 'application/pdf',
                   downloadFailed: true,
                   onOpen: () {},
-                  onDownload: () {},
                 ),
               ),
             ]),

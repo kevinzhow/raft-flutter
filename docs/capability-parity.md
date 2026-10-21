@@ -11,8 +11,8 @@ Total capabilities: 742 (328 endpoint/network keys, 414 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 536 |
-| ⚠️ partial | 72 |
+| ✅ covered | 535 |
+| ⚠️ partial | 73 |
 | ❌ missing | 80 |
 | ➖ na | 54 |
 
@@ -28,7 +28,7 @@ Total capabilities: 742 (328 endpoint/network keys, 414 client-side).
 | Agents, computers, runtimes | 76 | 21 | 29 | 1 |
 | Integrations, apps, MCP | 74 | 4 | 10 | 1 |
 | Tasks | 30 | 4 | 1 | 5 |
-| Files and attachments | 16 | 7 | 7 | 0 |
+| Files and attachments | 15 | 8 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
 | Notifications | 24 | 2 | 1 | 6 |
 | Account and profile | 37 | 3 | 4 | 6 |
@@ -606,7 +606,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ❌ | Direct (presigned PUT) upload of large attachments | `RAW utils/directAttachmentUpload.ts` | directAttachmentUpload.ts, MessageInput composer for files above the direct-upload threshold |  | Impact: Members attaching files between 90 MB and the plan maximum get a limit error on Flutter. See POST /attachments/upload-sessions. Size M |
 | ✅ | Channel Files tab: file rows with type icon, preview, 'Jump to message', 'Download file', overflow menu, Load more, empty/error states | `ui:files-attachments.channel-files-tab` | ChannelFilesPanel.tsx | source_channel_files_view.dart + source_channel_files_actions.dart |  |
 | ❌ | Pin attachment comments to a location: text line/selection, CSV/XLSX row, HTML region (click/drag), video timestamp; anchor chip 'Remove anchor'; 'Jump to location'; comment-mode toggle | `ui:files.anchored-comments` | AttachmentPreviewShell comment mode + PreviewCommentModeContext[gate: attachment comments flag; viewer.canComment] |  | Impact: Document/video reviewers on Flutter cannot reference the exact spot. AttachmentCommentsView accepts pendingAnchor but no preview surface produces anchors (grep 'pendingAnchor' only in attachment_comments_view.dart); no jump-to-location. Size M |
-| ✅ | Attachment card download button on file/audio/image tiles | `ui:files.attachment-card-download` | MessageItem handleDownloadAttachment[gate: none] | attachment_transfers.dart download action ('Saved {name}') |  |
+| ⚠️ | Attachment card download button on file/audio/image tiles | `ui:files.attachment-card-download` | MessageItem handleDownloadAttachment[gate: none] | attachment_transfers.dart download action ('Saved {name}') | Impact: Hovering or focusing an image or file card never reveals Share or Download; one tap opens the viewer and Download is there. Files with no preview (archives, code, diff/patch) save on tap and have no Share. Intentional difference (owner decision 2026-10-21, docs/parity.md 'Attachment cards: no floating Share / Download icons'): Web v1.21.12 shows a hover Download on image tiles (MessageImageGalleryAction) and a secondary Download on audio chips; file chips only carry a decorative Download/Eye glyph. Flutter has no floating Share or Download icon on any message attachment card (image and file cards): the card opens the viewer, where Download stays (preview header, media viewer; a file with no preview saves on tap). Share moves into the viewer headers (document, PDF, CSV/XLSX, markdown, text, HTML previews; image and video viewer), only on platforms with a share sheet. The audio card keeps its Download icon, as Web does, because it has no viewer to open. Size S |
 | ✅ | Channel 'Files' tab: list files, preview, 'Jump to original message', 'Download file', Load more | `ui:files.channel-files-tab` | ChannelFilesPanel[gate: channel read access] | source_channel_files_view.dart + source_channel_files_actions.dart |  |
 | ❌ | Comment messages show a chip referencing the commented attachment/anchor ('re: filename'), click jumps to the host message | `ui:files.comment-ref-chip-on-message` | AttachmentCommentRefChip[gate: attachment comments flag] |  | Impact: Comment messages appear without context. No commentRef handling in Flutter (grep finds none); recorded LEFT in docs/field-parity.md:66. Size S |
 | ✅ | Document preview modal (CSV, XLSX with sheet tabs, markdown, plain text, PDF): Copy, Download, Comments, Close | `ui:files.document-preview-copy-download` | DocumentPreviewHost + attachmentPreviewSurfaces header[gate: preview gate enabled] | attachment_preview_dialog.dart copyText / onDownload |  |

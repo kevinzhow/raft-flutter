@@ -19,8 +19,6 @@ class RaftAttachmentCard extends StatelessWidget {
     super.key,
     required this.filename,
     required this.onOpen,
-    this.onDownload,
-    this.onShare,
     this.onCancel,
     this.preview,
     this.imageWidth,
@@ -62,7 +60,7 @@ class RaftAttachmentCard extends StatelessWidget {
   final double? imageWidth, imageHeight;
   final Size? imageExtent;
   final Widget? preview;
-  final VoidCallback? onOpen, onDownload, onRetry, onShare, onCancel;
+  final VoidCallback? onOpen, onRetry, onCancel;
   final bool busy, exportMode;
   final String? error;
 
@@ -218,12 +216,11 @@ class RaftAttachmentCard extends StatelessWidget {
                       maxLines: 1,
                     ),
                   ),
-                  if (onDownload == null && onShare == null)
-                    RaftIcon(
-                      RaftGlyph.eye,
-                      size: 12,
-                      color: component.actionForeground,
-                    ),
+                  RaftIcon(
+                    RaftGlyph.eye,
+                    size: 12,
+                    color: component.actionForeground,
+                  ),
                 ],
               ),
           ],
@@ -312,53 +309,20 @@ class RaftAttachmentCard extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              children: [
-                if (exportMode)
-                  content
-                else
-                  TextButton(
-                    onPressed: busy ? null : onOpen,
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      foregroundColor: t.strong,
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: const RoundedRectangleBorder(),
-                    ),
-                    child: content,
-                  ),
-                if (!exportMode)
-                  Positioned(
-                    right: 0,
-                    bottom: 0,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (onShare != null)
-                          RaftIconButton(
-                            glyph: RaftGlyph.share2,
-                            tooltip: '${raftText(context, 'Share')} $filename',
-                            onPressed: busy ? null : onShare,
-                            visualSize: 24,
-                            minimumTargetSize: 48,
-                            glyphSize: 12,
-                          ),
-                        if (onDownload != null && metaLabel == null)
-                          RaftIconButton(
-                            glyph: RaftGlyph.download,
-                            tooltip:
-                                '${raftText(context, 'Download')} $filename',
-                            onPressed: busy ? null : onDownload,
-                            visualSize: 24,
-                            minimumTargetSize: 48,
-                            glyphSize: 12,
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+            if (exportMode)
+              content
+            else
+              TextButton(
+                onPressed: busy ? null : onOpen,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  foregroundColor: t.strong,
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: const RoundedRectangleBorder(),
+                ),
+                child: content,
+              ),
             if (busy && !exportMode) const LinearProgressIndicator(),
             if (downloadFailed && !busy && !exportMode)
               const RaftTransferBar(failed: true),
@@ -396,8 +360,8 @@ class RaftAttachmentCard extends StatelessWidget {
   }
 }
 
-/// One shared surface state controls the source file border. Descendant open,
-/// download, share and retry controls retain their independent focus/actions.
+/// One shared surface state controls the source file border. The card itself
+/// is the only action (open); Download lives in the viewer it opens.
 class _AttachmentSurface extends StatefulWidget {
   const _AttachmentSurface({required this.recipe, required this.child});
   final RaftAttachmentRecipe recipe;

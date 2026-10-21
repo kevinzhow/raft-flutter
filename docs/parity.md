@@ -1908,3 +1908,32 @@ Flutter now renders the section as one collapsible header row (`RaftCollapsibleS
   `components.members-pages.*.agent.profile-fast-mode`, …) therefore differ from Web by the collapsed body on
   purpose: the React hosts always render the cards. The state cases for this section still apply — expand it in
   the Flutter case before comparing the list.
+
+## Attachment cards: no floating Share / Download icons (owner decision 2026-10-21)
+
+Web v1.21.12 puts a Download icon over an image tile on hover or focus (`MessageImageGalleryAction`,
+`group-hover/img:flex`) and a real secondary Download button on the audio chip (`secondaryDownload`). Its file
+chips (`AttachmentChip`) carry only the decorative, `aria-hidden` Download / Eye glyph at the end of the meta line.
+There is no Share on any of them: Share on a card is a Flutter addition.
+
+Flutter shows no floating Share or Download icon on any message attachment card (Kevin, 2026-10-21; images first,
+PR #295):
+
+* Image tiles, file cards (documents, PDF, CSV / XLSX, markdown, text, diff, HTML, archives, code, anything else),
+  forwarded-message and thread-reply attachments, the public page and the pending-share preview all use the one
+  `RaftAttachmentCard`; it has no Share / Download callbacks, so hover, focus and touch never reveal an icon.
+  The decorative Eye / Download glyph in the meta line of a file card stays, as on Web.
+* The whole card is the action: tap, click, Enter and Space open the viewer. A file with no preview (archives,
+  code the server does not preview, diff / patch) saves on tap, as before.
+* Download stays in the viewer (document preview header, HTML preview, media viewer, failed-preview pane). Share
+  moves there too: the document / PDF, CSV / XLSX, markdown, text and HTML preview headers have a Share action
+  (`attachment-preview-share`, before Download) that runs the same share path the card used and shows only where
+  the platform has a share sheet (Android, iOS), as before. Web has no file Share, so this is a Flutter addition.
+  A file with no preview (archive, code, diff / patch) is saved by the tap and has no Share, as it had none beyond
+  the removed overlay.
+* Left as is: the audio card keeps its Download icon (Web has it too, and the inline player has no viewer to
+  open); the Files tab rows keep their "Jump to original message" and "Download file" actions, which are list-row
+  actions on Web as well and not an overlay on a card.
+
+Parity cases that compare a message attachment card with Web differ only where Web draws the image hover Download.
+The row is `ui:files.attachment-card-download` in `capability-parity.json` (partial).

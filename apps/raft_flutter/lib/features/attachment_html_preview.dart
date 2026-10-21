@@ -22,6 +22,7 @@ class HtmlAttachmentPreviewDialog extends StatefulWidget {
     required this.authorized,
     required this.onClose,
     required this.onDownload,
+    this.onShare,
     this.page = false,
     this.loader,
     this.openExternal,
@@ -33,6 +34,9 @@ class HtmlAttachmentPreviewDialog extends StatefulWidget {
   final bool Function() authorized;
   final VoidCallback onClose;
   final Future<void> Function() onDownload;
+
+  /// The system share sheet; null where the platform has none.
+  final Future<void> Function()? onShare;
   final bool page;
   final AttachmentHtmlLoader? loader;
   final Future<bool> Function(Uri)? openExternal;
@@ -367,6 +371,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     filename: '${widget.metadata['filename'] ?? 'HTML'}',
     onClose: widget.onClose,
     onDownload: current ? widget.onDownload : null,
+    onShare: current ? widget.onShare : null,
     commentsBuilder: current && widget.metadata['id'] is String
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
