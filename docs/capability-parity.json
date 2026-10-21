@@ -12702,14 +12702,23 @@
    "area": "account-profile",
    "capability": "Report the device's observed timezone to the server (first/last observed timezone)",
    "background": true,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "authStore reportBrowserTimezoneObservation after login/restore (background, no UI)",
    "gate": "server supports first-observation field",
-   "flutterEntry": "",
-   "flutterRefs": [],
+   "flutterEntry": "client.dart _reportTimezone after sign-in/restore (flutter_timezone via readDeviceTimezone)",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_client/lib/src/client.dart",
+     "needle": "/auth/me/timezone-observation"
+    },
+    {
+     "file": "apps/raft_flutter/lib/app_root.dart",
+     "needle": "timezoneProbe: readDeviceTimezone"
+    }
+   ],
    "justification": "",
-   "impact": "No user-facing control. Server never learns the phone/desktop timezone, so the server-side observed-timezone fields (used for analytics and any default-timezone inference) stay empty for Flutter users; Flutter itself derives the timezone locally, so display is unaffected.",
-   "size": "S"
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",

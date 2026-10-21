@@ -261,6 +261,7 @@ class RaftClient {
     this.recoveryBackoff = defaultRecoveryBackoff,
     RateLimitGovernor? governor,
     Future<void> Function(Duration)? sleep,
+    this.timezoneProbe,
   }) : governor = governor ?? RateLimitGovernor(),
        _sleep = sleep ?? ((d) => Future<void>.delayed(d)),
        origin = origin.replaceFirst(RegExp(r'/$'), ''),
@@ -334,6 +335,12 @@ class RaftClient {
   /// rejects its credentials it only stops; the foreground meets the same
   /// rejection on its own and ends the session with the user in front of it.
   final bool allowSessionEnd;
+
+  /// The device's IANA timezone, reported once per signed-in account when the
+  /// server exposes the observation fields (Web `reportBrowserTimezoneObservation`).
+  /// Null disables the report.
+  final Future<String?> Function()? timezoneProbe;
+  String? _timezoneReportedFor;
   final List<Duration> recoveryBackoff;
   final Dio http;
   Session? _session;
@@ -478,6 +485,7 @@ class RaftClient {
     }
     try {
       user = RaftRecord(Map<String, dynamic>.from(await get('/auth/me')));
+      _reportTimezone();
       // A guest handoff may have replaced or removed the stored session.
       final s = _session;
       if (s == null || _closed || authentication != _authenticationGeneration) {
@@ -609,6 +617,7 @@ class RaftClient {
       if (!current() || s == null) return true;
       final changed = jsonEncode(next.json) != jsonEncode(user?.json);
       user = next;
+      _reportTimezone();
       final recovered = restoredOffline || sessionDegraded;
       restoredOffline = false;
       _markHealthy();
@@ -744,6 +753,7 @@ class RaftClient {
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
     _generation++;
     await _persist(_session);
+    _reportTimezone();
   }
 
   /// Registration requires the caller to collect explicit agreement first.
@@ -779,6 +789,7 @@ class RaftClient {
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
     _generation++;
     await _persist(_session);
+    _reportTimezone();
   }
 
   Future<void> completeMobileOAuth(
@@ -813,6 +824,7 @@ class RaftClient {
     user = RaftRecord(Map<String, dynamic>.from(result['user']));
     _generation++;
     await _persist(_session);
+    _reportTimezone();
   }
 
   /// Signs out on the user's behalf and revokes the refresh token on the
@@ -925,6 +937,55 @@ class RaftClient {
     '/servers/$id${delete ? '' : '/leave'}',
     acceptServerExit: true,
   );
+
+  /// Tells the server which timezone this device observes: background
+  /// analytics enrichment, never a sign-in blocker. Older servers (no
+  /// `firstObservedTimezone` on the account) are not asked.
+  void _reportTimezone() {
+    final probe = timezoneProbe, current = user;
+    if (probe == null || current == null || _closed) return;
+    if (!current.json.containsKey('firstObservedTimezone')) return;
+    final id = current.id;
+    if (_timezoneReportedFor == id) return;
+    _timezoneReportedFor = id;
+    unawaited(_postTimezone(probe, id));
+  }
+
+  Future<void> _postTimezone(
+    Future<String?> Function() probe,
+    String id,
+  ) async {
+    try {
+      final zone = (await probe())?.trim();
+      if (zone == null || zone.isEmpty || _closed || user?.id != id) {
+        _timezoneReportedFor = null;
+        return;
+      }
+      final result = await request(
+        'POST',
+        '/auth/me/timezone-observation',
+        data: {'timezone': zone},
+      );
+      final current = user;
+      if (result is Map && !_closed && current != null && current.id == id) {
+        const keys = {
+          'firstObservedTimezone',
+          'firstObservedTimezoneAt',
+          'lastObservedTimezone',
+          'lastObservedTimezoneAt',
+        };
+        user = RaftRecord({
+          ...current.json,
+          for (final key in keys)
+            if (result.containsKey(key)) key: result[key],
+        });
+      }
+    } catch (_) {
+      // Observation is analytics enrichment; the next account check retries.
+      if (_timezoneReportedFor == id) _timezoneReportedFor = null;
+    }
+  }
+
   Future<void> reloadUser() async {
     final next = RaftRecord(Map<String, dynamic>.from(await get('/auth/me')));
     final s = _session;

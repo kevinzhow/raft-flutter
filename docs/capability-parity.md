@@ -11,9 +11,9 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 550 |
+| ✅ covered | 551 |
 | ⚠️ partial | 68 |
-| ❌ missing | 67 |
+| ❌ missing | 66 |
 | ➖ na | 65 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
@@ -31,7 +31,7 @@ Total capabilities: 750 (334 endpoint/network keys, 416 client-side).
 | Files and attachments | 15 | 8 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
 | Notifications | 28 | 2 | 0 | 6 |
-| Account and profile | 37 | 3 | 4 | 6 |
+| Account and profile | 38 | 3 | 3 | 6 |
 | Onboarding and auth | 34 | 0 | 0 | 7 |
 | Joint channels | 6 | 4 | 1 | 0 |
 | Public and guest | 8 | 0 | 0 | 0 |
@@ -703,7 +703,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Connect an additional social sign-in provider to the account | `POST /auth/:id/link/start` | Settings > Account > Connected accounts > provider 'Connect' button | account_connections_view.dart 'Connect' -> NativeOAuthBroker link flow (/auth/mobile/oauth/:provider/link/start + link/complete) | Flutter uses the mobile OAuth link endpoints rather than the Web browser redirect endpoint; same user capability. |
 | ✅ | Log out (Settings > Account > Session, server selector, email verification page) | `POST /auth/logout` | Settings > Account 'Log out' + confirm \| ServerSelector 'Log out' \| EmailVerificationPage 'Log out' | account_settings.dart 'account-logout' + confirm; global_server_selector.dart; account_onboarding.dart onLogOut |  |
 | ✅ | Upload my profile picture (account settings and onboarding identity setup) | `POST /auth/me/avatar` | Settings > Account avatar upload tile \| AccountIdentitySetupPage avatar | account_settings.dart image() -> AccountMediaActions.uploadAvatar; onboarding avatar picker |  |
-| ❌ | Report the device's observed timezone to the server (first/last observed timezone) (bg) | `POST /auth/me/timezone-observation` | authStore reportBrowserTimezoneObservation after login/restore (background, no UI)[gate: server supports first-observation field] |  | Impact: No user-facing control. Server never learns the phone/desktop timezone, so the server-side observed-timezone fields (used for analytics and any default-timezone inference) stay empty for Flutter users; Flutter itself derives the timezone locally, so display is unaffected. Size S |
+| ✅ | Report the device's observed timezone to the server (first/last observed timezone) (bg) | `POST /auth/me/timezone-observation` | authStore reportBrowserTimezoneObservation after login/restore (background, no UI)[gate: server supports first-observation field] | client.dart _reportTimezone after sign-in/restore (flutter_timezone via readDeviceTimezone) |  |
 | ✅ | Submit new feedback (idea or problem) with screenshots; also auto-created tickets from Report Issue | `POST /product-feedback` | Settings > Feedback > 'New feedback' form \| Report Issue dialog ticket[gate: any signed-in user] | source_feedback_view.dart _create() 'feedback-new-submit' \| report_issue.dart | Intentional difference (owner decision Kevin, 2026-10-21): Web v1.21.12 sends X-Raft-Client-Kind (default web) on this call; the app sends no X-Raft-Client-Kind header, so the server default (web) applies and tickets stay in one source. Not split into ios / android. |
 | ✅ | Close a feedback ticket with a reason (completed / no longer needed) | `POST /product-feedback/tickets/:id/close` | Feedback ticket 'Close ticket' split button with reason menu[gate: any signed-in user; ticket not closed] | source_feedback_view.dart RaftFeedbackCloseSplit |  |
 | ✅ | Reply on a feedback ticket (with image attachments) | `POST /product-feedback/tickets/:id/comments` | Feedback ticket composer 'Send reply'[gate: any signed-in user; ticket not closed] | source_feedback_view.dart 'feedback-reply-send' |  |

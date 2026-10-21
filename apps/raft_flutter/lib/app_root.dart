@@ -12,6 +12,7 @@ import 'package:raft_ui/raft_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'platform/cache_hygiene.dart' show purgeAccountCaches;
+import 'platform/device_timezone.dart' show readDeviceTimezone;
 import 'data/device_preferences.dart';
 import 'data/workspace_controller.dart';
 import 'data/workspace_messages.dart';
@@ -855,6 +856,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
           sessionStore: store,
           clientKind: kind,
           auditSink: AuthAuditLog.shared,
+          timezoneProbe: readDeviceTimezone,
           // One limiter view for the API and the attachment transfers: the
           // server counts both against the same per-user bucket.
           governor: AttachmentHttp.governor,
