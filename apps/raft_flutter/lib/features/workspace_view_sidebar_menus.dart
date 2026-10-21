@@ -653,10 +653,13 @@ extension _SidebarContextMenus on _WorkspaceViewState {
         if (group.id == 'system:channels')
           RaftSidebarMenuItem(
             label: tr('Show joined channels only'),
-            checked: joinedChannelsOnly,
+            checked: sidebarDisclosure.joinedChannelsOnly,
             onPressed: () {
               close();
-              toggleJoinedChannelsOnly();
+              sidebarDisclosure.setJoinedChannelsOnly(
+                mobileAuthority,
+                !sidebarDisclosure.joinedChannelsOnly,
+              );
             },
           ),
         RaftSidebarMenuItem(

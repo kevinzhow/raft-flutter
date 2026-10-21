@@ -39,6 +39,12 @@ class RaftChannel extends RaftRecord {
     'displayName',
     'name',
   ]);
+
+  /// `bridge.provider` of a bridged channel (`slack`), else null.
+  String? get bridgeProvider => switch (json['bridge']) {
+    {'provider': final String provider} => provider,
+    _ => null,
+  };
   bool get joined =>
       json['joined'] == true ||
       json['isJoined'] == true ||

@@ -24,6 +24,7 @@ class DesktopDirectoryView extends StatefulWidget {
     super.key,
     required this.controller,
     required this.onSelected,
+    this.onOpenDm,
     this.computers = false,
     this.mobileRoot = false,
     this.selected,
@@ -32,6 +33,10 @@ class DesktopDirectoryView extends StatefulWidget {
   final bool computers, mobileRoot;
   final DesktopContentTarget? selected;
   final ValueChanged<DesktopContentTarget> onSelected;
+
+  /// Source `MemberHumanRow` / `MemberAgentRow` `onDoubleClick`: a mouse
+  /// double-click opens the DM with that person or agent.
+  final Future<void> Function(DesktopContentTarget)? onOpenDm;
   @override
   State<DesktopDirectoryView> createState() => _DesktopDirectoryViewState();
 }
@@ -282,6 +287,16 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
           widget.onSelected(target);
         }
       },
+      onDoubleClick: kind == DesktopContentKind.computer
+          ? null
+          : () {
+              if (sourceAuthority == authority && mounted) {
+                unawaited(
+                  widget.onOpenDm?.call(target).catchError((_) {}) ??
+                      Future.value(),
+                );
+              }
+            },
     );
   }
 

@@ -10,6 +10,7 @@ import 'theme.dart';
 import 'panel_edge.dart';
 import 'design_primitives.dart';
 import 'icons.dart';
+import 'mouse_double_click.dart';
 import 'mounted_avatar_recipe.dart';
 import 'recipe_surface.dart';
 import 'recipes/app_rail.g.dart';
@@ -668,6 +669,7 @@ class RaftRailDestination {
     this.unread = 0,
     this.attention = false,
     this.attentionInactiveOnly = true,
+    this.onDoubleClick,
   }) : assert(icon != null || glyph != null || iconWidget != null);
   final String id, label;
   final IconData? icon;
@@ -677,6 +679,10 @@ class RaftRailDestination {
 
   /// Source binary attention; numeric unread remains a separate library API.
   final bool attention, attentionInactiveOnly;
+
+  /// LeftRail `onDoubleClick` (Activity: jump to the first unread). Mouse and
+  /// trackpad only; a tap keeps selecting the destination.
+  final VoidCallback? onDoubleClick;
 }
 
 class RaftWorkspaceRail extends StatelessWidget {
@@ -813,91 +819,96 @@ class RaftWorkspaceRail extends StatelessWidget {
                             padding: EdgeInsets.zero,
                             child: RaftTooltip(
                               message: d.label,
-                              child: IconButton(
-                                key: ValueKey('rail-${d.id}'),
-                                isSelected: selected == d.id,
-                                constraints: BoxConstraints.tightFor(
-                                  width: bounds.layoutHeight,
-                                  height: bounds.layoutHeight,
-                                ),
-                                style: IconButton.styleFrom(
-                                  visualDensity: phone
-                                      ? VisualDensity.standard
-                                      : null,
-                                  minimumSize: Size.square(bounds.layoutHeight),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                  padding: EdgeInsets.zero,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: recipe.radius,
+                              child: RaftMouseDoubleClick(
+                                onDoubleClick: d.onDoubleClick,
+                                child: IconButton(
+                                  key: ValueKey('rail-${d.id}'),
+                                  isSelected: selected == d.id,
+                                  constraints: BoxConstraints.tightFor(
+                                    width: bounds.layoutHeight,
+                                    height: bounds.layoutHeight,
                                   ),
-                                  foregroundColor: t.brutal
-                                      ? t.strong
-                                      : t.muted,
-                                  backgroundColor: Colors.transparent,
-                                ),
-                                icon: Container(
-                                  width: visualSize,
-                                  height: visualSize,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: selected == d.id
-                                        ? recipe.selectedBackground
-                                        : Colors.transparent,
-                                    borderRadius: recipe.radius,
-                                    border: Border.all(
-                                      color: selected == d.id && t.brutal
-                                          ? t.strong
-                                          : Colors.transparent,
-                                      width: t.brutal ? 2 : 1,
-                                    ),
-                                    boxShadow: selected == d.id && t.brutal
-                                        ? [
-                                            BoxShadow(
-                                              color: t.strong,
-                                              offset: const Offset(2, 2),
-                                            ),
-                                          ]
+                                  style: IconButton.styleFrom(
+                                    visualDensity: phone
+                                        ? VisualDensity.standard
                                         : null,
+                                    minimumSize: Size.square(
+                                      bounds.layoutHeight,
+                                    ),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: recipe.radius,
+                                    ),
+                                    foregroundColor: t.brutal
+                                        ? t.strong
+                                        : t.muted,
+                                    backgroundColor: Colors.transparent,
                                   ),
-                                  child: Stack(
+                                  icon: Container(
+                                    width: visualSize,
+                                    height: visualSize,
                                     alignment: Alignment.center,
-                                    fit: StackFit.expand,
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Center(
-                                        child: SizedBox.square(
-                                          dimension: recipe.glyphSize,
-                                          child: Stack(
-                                            clipBehavior: Clip.none,
-                                            fit: StackFit.expand,
-                                            children: [
-                                              railGlyph(d, recipe.glyphSize),
-                                              if (d.attention &&
-                                                  (!d.attentionInactiveOnly ||
-                                                      selected != d.id))
-                                                RaftRailAttention(
-                                                  child: railGlyph(
-                                                    d,
-                                                    recipe.glyphSize,
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
+                                    decoration: BoxDecoration(
+                                      color: selected == d.id
+                                          ? recipe.selectedBackground
+                                          : Colors.transparent,
+                                      borderRadius: recipe.radius,
+                                      border: Border.all(
+                                        color: selected == d.id && t.brutal
+                                            ? t.strong
+                                            : Colors.transparent,
+                                        width: t.brutal ? 2 : 1,
                                       ),
-                                      if (d.unread > 0)
-                                        Positioned(
-                                          right: -4,
-                                          top: -4,
-                                          child: RaftRailUnreadCount(
-                                            count: d.unread,
+                                      boxShadow: selected == d.id && t.brutal
+                                          ? [
+                                              BoxShadow(
+                                                color: t.strong,
+                                                offset: const Offset(2, 2),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      fit: StackFit.expand,
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Center(
+                                          child: SizedBox.square(
+                                            dimension: recipe.glyphSize,
+                                            child: Stack(
+                                              clipBehavior: Clip.none,
+                                              fit: StackFit.expand,
+                                              children: [
+                                                railGlyph(d, recipe.glyphSize),
+                                                if (d.attention &&
+                                                    (!d.attentionInactiveOnly ||
+                                                        selected != d.id))
+                                                  RaftRailAttention(
+                                                    child: railGlyph(
+                                                      d,
+                                                      recipe.glyphSize,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                    ],
+                                        if (d.unread > 0)
+                                          Positioned(
+                                            right: -4,
+                                            top: -4,
+                                            child: RaftRailUnreadCount(
+                                              count: d.unread,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
+                                  onPressed: () => onSelected(d.id),
                                 ),
-                                onPressed: () => onSelected(d.id),
                               ),
                             ),
                           ),

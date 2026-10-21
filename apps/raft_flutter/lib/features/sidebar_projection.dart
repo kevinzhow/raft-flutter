@@ -27,6 +27,7 @@ List<SidebarGroup> projectSidebar({
   required Map<String, dynamic> preferences,
   List<Map<String, dynamic>> agents = const [],
   Map<String, DateTime> activity = const {},
+  Map<String, int> unread = const {},
 }) {
   final visibleChannels = channels.where((c) => !c.archived).toList();
   final byChannel = {
@@ -181,11 +182,13 @@ List<SidebarGroup> projectSidebar({
     regular.where((c) => c.type != 'joint').toList(),
     'channelOrder',
   );
+  // Sidebar.tsx `closedDmUnreadSet`: a closed DM with unread messages stays
+  // listed (it reappears on a new message) without leaving the closed set.
   final hidden = (preferences['hiddenDmIds'] as List? ?? []).toSet();
+  bool closed(RaftChannel c) =>
+      hidden.contains(c.id) && (unread[c.id] ?? 0) <= 0;
   final direct = ordered(
-    dms
-        .where((c) => !hidden.contains(c.id) && !claimedChannels.contains(c.id))
-        .toList(),
+    dms.where((c) => !closed(c) && !claimedChannels.contains(c.id)).toList(),
     'dmOrder',
   );
   sort(joint, preferences['jointChannelSortMode']);

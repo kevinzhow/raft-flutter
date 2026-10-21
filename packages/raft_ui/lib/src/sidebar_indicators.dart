@@ -29,6 +29,34 @@ class RaftSidebarQuietUnreadCount extends StatelessWidget {
   }
 }
 
+/// Sidebar.tsx `sidebar-quiet-new-dot`: `ml-auto size-1.5 rounded-full
+/// bg-foreground-muted` (brutal `bg-black/50`).
+class RaftSidebarQuietNewDot extends StatelessWidget {
+  const RaftSidebarQuietNewDot({super.key, required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: Semantics(
+        label: label,
+        child: DecoratedBox(
+          key: const ValueKey('sidebar-quiet-new-dot'),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: t.brutal
+                ? Colors.black.withValues(alpha: .5)
+                : t.colors['foreground-muted'],
+          ),
+          child: const SizedBox.square(dimension: 6),
+        ),
+      ),
+    );
+  }
+}
+
 /// SidebarItemMetaIcon uses a 16px slot around the mounted 12px BellOff.
 class RaftSidebarMutedIcon extends StatelessWidget {
   const RaftSidebarMutedIcon({super.key, required this.label});

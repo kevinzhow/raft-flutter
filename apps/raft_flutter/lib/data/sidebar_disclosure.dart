@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'closed_dm_reopen.dart';
 import 'search_memory.dart';
 
 /// Device-local disclosure choices. The record contains booleans only, scoped
@@ -11,6 +12,15 @@ class SidebarDisclosureStore extends ChangeNotifier {
     : storage = storage ?? PreferencesSearchMemoryStorage();
   final SearchMemoryStorage storage;
   final Map<String, bool> collapsed = {};
+  final reopenClosedDm = ClosedDmReopen();
+
+  /// Sidebar.tsx `joinedChannelsOnly`: a display choice remembered per
+  /// server, kept in the same record under a key no section id can take.
+  static const joinedOnlyKey = 'display:joinedChannelsOnly';
+  bool get joinedChannelsOnly => collapsed[joinedOnlyKey] == true;
+  bool setJoinedChannelsOnly(String scope, bool value) =>
+      setExpanded(scope, joinedOnlyKey, !value);
+
   String? key, authority;
   int revision = 0;
   bool closed = false;

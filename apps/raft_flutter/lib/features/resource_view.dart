@@ -36,10 +36,10 @@ import '../data/server_saved_window.dart';
 import 'server_task_scope.dart';
 import 'saved_page_scope.dart';
 import '../data/task_board_reconcile.dart';
+import 'activity_first_unread.dart';
 import 'activity_find_scope.dart';
 import 'create_task_dialog.dart';
-import 'desktop_navigation_policy.dart'
-    show DesktopContentKind, DesktopContentTarget;
+import 'desktop_navigation_policy.dart' show DesktopContentTarget;
 import 'search_home.dart';
 import 'search_snapshot.dart';
 import 'task_surface.dart';
@@ -616,6 +616,9 @@ class _ResourceViewState extends State<ResourceView> {
       }
     }
     final scroll = listScroll;
+    if (activityPage) {
+      ActivityFirstUnread.of(w).observe(visibleRows, rowKey, scroll, context);
+    }
     listUpdates.observeRows(
       view: (widget.section, filter, rowsView, advanced.groupByChannel),
       rows: visibleRows,
@@ -3670,7 +3673,7 @@ class _ResourceViewState extends State<ResourceView> {
     if (widget.mobileRoot && mobile && widget.section == 'activity') {
       return const RaftMobileRootHeader(title: 'Activity');
     }
-    return RaftPageHeader(
+    final header = RaftPageHeader(
       title: raftText(context, switch (widget.section) {
         'tasks' => 'Tasks',
         'saved' => 'Saved',
@@ -3708,26 +3711,17 @@ class _ResourceViewState extends State<ResourceView> {
           ? (widget.onBack ?? () {})
           : null,
     );
+    return activityHeaderJump(context, w, widget.section, header);
   }
 
-  /// Whether [row] is the item open in the preview. Identity is the content
-  /// target's id (thread channel / channel), never the target's message focus:
-  /// that moves with unread state and refreshes, the row's identity does not.
-  /// A mention action additionally requires its own message, so opening an
-  /// ordinary channel row never lights up a mention row of that channel.
+  /// Whether [row] is the item open in the preview, else the row a double
+  /// click on the Activity entry marked as the first unread.
   bool activityRowSelected(Map<String, dynamic> row) {
     final target = widget.activitySelectedTarget;
-    if (widget.section != 'activity' || target == null) return false;
-    final kind = row['kind'];
-    if (kind == 'thread') {
-      return target.kind == DesktopContentKind.thread &&
-          target.id == row['threadChannelId'];
-    }
-    if (target.kind != DesktopContentKind.channel ||
-        target.id != row['channelId']) {
-      return false;
-    }
-    return kind != 'mention_action' || target.messageId == row['messageId'];
+    return widget.section == 'activity' &&
+        (target == null
+            ? ActivityFirstUnread.of(w).highlights(rowKey(row))
+            : activityRowOpen(target, row));
   }
 
   void activateActivity(

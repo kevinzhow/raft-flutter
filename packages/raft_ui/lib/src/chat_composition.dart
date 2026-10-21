@@ -87,6 +87,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.onContextMenu,
     this.contextMenuOnLongPress = true,
     this.wrapHeader,
+    this.wrapEmpty,
   }) : itemBuilder = null,
        findChildIndexCallback = null,
        onReorderItem = null;
@@ -115,6 +116,7 @@ class RaftChatSidebarGroup extends StatelessWidget {
     this.onContextMenu,
     this.contextMenuOnLongPress = true,
     this.wrapHeader,
+    this.wrapEmpty,
   }) : children = const [];
 
   final IndexedWidgetBuilder? itemBuilder;
@@ -131,6 +133,9 @@ class RaftChatSidebarGroup extends StatelessWidget {
 
   /// Wraps the built header (the host makes it a drag handle or drop target).
   final Widget Function(Widget header)? wrapHeader;
+
+  /// Wraps the empty-section hint (the host makes it a drop target).
+  final Widget Function(Widget empty)? wrapEmpty;
   final RaftChatSidebarGroupKind kind;
   final String label, emptyLabel;
   final int count;
@@ -190,9 +195,11 @@ class RaftChatSidebarGroup extends StatelessWidget {
     final header = wrapHeader?.call(built) ?? built;
     final emptyRegion = empty == null
         ? null
-        : ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 28),
-            child: empty,
+        : (wrapEmpty ?? (Widget w) => w)(
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 28),
+              child: empty,
+            ),
           );
     final builder = itemBuilder;
     if (builder != null) {

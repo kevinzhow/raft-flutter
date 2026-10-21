@@ -26,6 +26,7 @@ import 'text_input_refresh.dart';
 import 'composer_suggestions.dart';
 import 'collapsible.dart';
 import 'sidebar_indicators.dart';
+import 'mouse_double_click.dart';
 import 'name_description_row.dart';
 
 import 'package:flutter/material.dart';
@@ -50,7 +51,7 @@ import 'design_primitives.dart';
 import 'css_opacity.dart';
 import 'css_pixel_snap.dart';
 import 'icons.dart';
-import 'indicators.dart' show RaftWebPalette;
+import 'indicators.dart' show RaftBadge, RaftWebPalette;
 import 'panel_layout.dart' show RaftCssText, RaftCssLineBox;
 import 'tokens/tokens.dart';
 import 'recipe_surface.dart';
@@ -915,6 +916,9 @@ class RaftNavItem extends StatelessWidget {
     this.activityMuted = false,
     this.hasDraft = false,
     this.mention = false,
+    this.quietNew = false,
+    this.providerBadge,
+    this.onDoubleClick,
     this.wrap = false,
     this.onContextMenu,
     this.contextMenuOnLongPress = true,
@@ -952,6 +956,17 @@ class RaftNavItem extends StatelessWidget {
   /// an unread message of this joined channel (an @ chip before the count).
   final bool mention;
 
+  /// Unread summary `hasNew` of a non-joined channel: past the cursor, no
+  /// exact count. Lights only a quiet dot (Sidebar.tsx `showQuietNewDot`).
+  final bool quietNew;
+
+  /// Bridge provider chip after the channel name (Slack: `bridge.provider`).
+  final String? providerBadge;
+
+  /// Source `onDoubleClick` of member rows and the Activity entry. Mouse and
+  /// trackpad only; a tap keeps its [onTap].
+  final VoidCallback? onDoubleClick;
+
   /// Sidebar.tsx `allowWrap` (Pinned rows): `items-start whitespace-normal
   /// leading-tight`, the title wraps and the row grows from a 30 / 32 minimum
   /// (an 18px icon slot + padding, the 17.5px line is shorter than the slot).
@@ -970,6 +985,7 @@ class RaftNavItem extends StatelessWidget {
   bool get _channel => conversationKind == RaftConversationNavKind.channel;
   bool get _mutedIcon => _channel && joined && activityMuted;
   bool get _mention => mention && _channel && joined;
+  bool get _quietNew => quietNew && _channel && !joined && unread <= 0;
   bool get _loudUnread => unread > 0 && (!_channel || joined && !_mutedIcon);
   bool get _dimmed => _channel && !selected && !joined;
   Color? _titleColor(BuildContext context, RaftTokens t) => _dimmed
@@ -1009,7 +1025,10 @@ class RaftNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     if (role != RaftNavItemRole.generic) {
-      return _mounted(context, t);
+      return RaftMouseDoubleClick(
+        onDoubleClick: onDoubleClick,
+        child: _mounted(context, t),
+      );
     }
     final conversation = conversationKind == null
         ? null
@@ -1209,13 +1228,24 @@ class RaftNavItem extends StatelessWidget {
               leading,
             const SizedBox(width: 6),
             Expanded(
-              child: _mutedIcon
+              child: _mutedIcon || providerBadge != null
                   ? Row(
                       children: [
                         Flexible(child: titleContent(context)),
-                        RaftSidebarMutedIcon(
-                          label: raftText(context, 'Activity muted'),
-                        ),
+                        if (providerBadge != null)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: RaftBadge(
+                              label: providerBadge!,
+                              appearance: RaftBadgeRecipeAppearance.soft,
+                              variant: RaftBadgeRecipeVariant.accent,
+                              uppercase: true,
+                            ),
+                          ),
+                        if (_mutedIcon)
+                          RaftSidebarMutedIcon(
+                            label: raftText(context, 'Activity muted'),
+                          ),
                       ],
                     )
                   : titleContent(context),
@@ -1255,6 +1285,8 @@ class RaftNavItem extends StatelessWidget {
                     )
             else if (unread > 0)
               RaftSidebarUnreadCount(count: unread)
+            else if (_quietNew)
+              RaftSidebarQuietNewDot(label: raftText(context, 'New messages'))
             else if (hasDraft && conversationKind != null)
               wrap && !_channel
                   ? const SizedBox(
@@ -1275,6 +1307,7 @@ class RaftNavItem extends StatelessWidget {
             })
           : semanticLabel,
       if (_mutedIcon) raftText(context, 'Activity muted'),
+      if (_quietNew) raftText(context, 'New messages'),
       if (_channel && !joined) raftText(context, 'Not joined'),
       if (hasDraft && unread <= 0 && conversationKind != null)
         raftText(context, 'Draft'),
@@ -1299,14 +1332,19 @@ class RaftNavItem extends StatelessWidget {
               ),
             ),
     );
-    if (onContextMenu == null) return item;
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onSecondaryTapDown: (d) => onContextMenu!(d.globalPosition),
-      onLongPressStart: contextMenuOnLongPress
-          ? (d) => onContextMenu!(d.globalPosition)
-          : null,
-      child: item,
+    if (onContextMenu == null) {
+      return RaftMouseDoubleClick(onDoubleClick: onDoubleClick, child: item);
+    }
+    return RaftMouseDoubleClick(
+      onDoubleClick: onDoubleClick,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onSecondaryTapDown: (d) => onContextMenu!(d.globalPosition),
+        onLongPressStart: contextMenuOnLongPress
+            ? (d) => onContextMenu!(d.globalPosition)
+            : null,
+        child: item,
+      ),
     );
   }
 

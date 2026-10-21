@@ -71,6 +71,7 @@ import 'fleet_views.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
 import 'sidebar_projection.dart';
+import 'activity_first_unread.dart';
 import 'sidebar_reorder.dart';
 import 'sidebar_sort_menu.dart';
 import 'agent_avatar_projection.dart';
@@ -142,9 +143,6 @@ class WorkspaceView extends StatefulWidget {
 class _WorkspaceViewState extends State<WorkspaceView>
     with WidgetsBindingObserver, KeyboardInsetLogger<WorkspaceView> {
   AppUpdateService? get appUpdate => AppServicesScope.of(context).appUpdate;
-  /// Sidebar.tsx `joinedChannelsOnly` display preference of the Channels
-  /// section (per workspace session here; Web persists it per server).
-  bool joinedChannelsOnly = false;
 
   // The most recently admitted Settings page survives a conversation visit.
   // Other destinations retire it; workspace authority retires both panes.
@@ -160,8 +158,6 @@ class _WorkspaceViewState extends State<WorkspaceView>
   /// Sidebar row-menu feedback (Source `toast.error` of the mute action).
   final rowToast = RaftToastController();
 
-  void toggleJoinedChannelsOnly() =>
-      setState(() => joinedChannelsOnly = !joinedChannelsOnly);
   final serverMenu = RaftMenuController();
   late SourceServerUnreadStore serverUnread;
   String? serverMenuScope;
@@ -536,6 +532,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
   final sortingGroups = <String>{};
   void syncSidebarDisclosure() {
     if (skipCoveredPage) return;
+    reopenOpenedDm(w, sidebarDisclosure.reopenClosedDm);
     unawaited(
       sidebarDisclosure.bind(
         origin: w.client.origin,
@@ -1479,6 +1476,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
               mobileRoot: !wide,
               selected: desktopNavigation.target,
               onSelected: selectDesktopDirectoryTarget,
+              onOpenDm: messageDesktopProfile,
             )
           : route == 'agents' || route == 'computers'
           ? wide
@@ -1488,6 +1486,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
                     computers: route == 'computers',
                     selected: desktopNavigation.target,
                     onSelected: selectDesktopDirectoryTarget,
+              onOpenDm: messageDesktopProfile,
                   )
                 : FleetView(
                     key: ValueKey('fleet-${w.server!.id}:$route'),
@@ -2742,6 +2741,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       glyph: RaftGlyph.activity,
       iconWidget: railIcon(RaftGlyph.activity),
       attention: hasActivityAttention,
+      onDoubleClick: () => ActivityFirstUnread.of(w).request(w),
     ),
     RaftRailDestination(
       id: 'tasks',
@@ -3305,6 +3305,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       preferences: w.sidebarOrder,
       agents: sidebarAgents,
       activity: activity,
+      unread: w.conversationReads.unread,
     );
   }
 
@@ -3407,35 +3408,20 @@ class _WorkspaceViewState extends State<WorkspaceView>
     );
   }
 
-  List<SidebarEntry> _shownEntries(SidebarGroup group) =>
-      joinedChannelsOnly && group.id == 'system:channels'
-      ? [
-          for (final e in group.entries)
-            if (e.channel?.joined ?? true) e,
-        ]
-      : group.entries;
-
   List<Widget> conversationSlivers() => [
     for (final group in sidebarGroups)
-      if (group.custom) ...[
-        if (group.entries.isNotEmpty || !presentation.value.hideEmptySections)
-          SliverMainAxisGroup(
-            key: ValueKey('sidebar-group-${group.id}'),
-            slivers: [
-              SliverToBoxAdapter(
-                child: sectionLabel(group.label, group: group),
-              ),
-              if (sidebarDisclosure.collapsed[group.id] != true)
-                sidebarCustomRows(group, w, (e, reorderable) =>
-                    sidebarEntry(e, custom: true, reorderable: reorderable)),
-              if (sidebarDisclosure.collapsed[group.id] != true &&
-                  group.entries.isEmpty)
-                SliverToBoxAdapter(
-                  child: RaftSidebarSectionEmptyHint(tr('No conversations')),
-                ),
-            ],
-          ),
-      ] else
+      if (group.custom)
+        sidebarCustomGroupSliver(
+          group: group,
+          w: w,
+          header: sectionLabel(group.label, group: group),
+          expanded: sidebarDisclosure.collapsed[group.id] != true,
+          hideEmpty: presentation.value.hideEmptySections,
+          emptyLabel: tr('No conversations'),
+          row: (e, reorderable) =>
+              sidebarEntry(e, custom: true, reorderable: reorderable),
+        )
+      else
         sidebarGroupSliver(group),
   ];
 
@@ -3452,7 +3438,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
       : null;
 
   Widget sidebarGroupSliver(SidebarGroup group) {
-    final entries = _shownEntries(group);
+    final joinedOnly = sidebarDisclosure.joinedChannelsOnly;
+    final entries = sidebarShownEntries(group, joinedOnly);
     return sidebarSystemGroupSliver(
       group: group,
       entries: entries,
@@ -3470,6 +3457,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
       emptyLabel: switch (group.id) {
         'system:pinned' => tr('Drag channels or DMs here to pin'),
         'system:joint' => tr('No joint channels yet'),
+        'system:channels' =>
+          tr(joinedOnly ? 'No joined channels' : 'No channels yet'),
         _ => '',
       },
       onExpandedChanged: (expanded) =>
@@ -3592,6 +3581,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
       selected: w.section == 'chat' && w.channel?.id == c.id,
       unread: w.conversationReads.unread[c.id] ?? 0,
       joined: c.joined,
+      quietNew: w.conversationReads.newFlags.contains(c.id),
+      providerBadge: c.bridgeProvider == 'slack' ? tr('Slack') : null,
       activityMuted: c.flag('activityMuted'),
       hasDraft: (w.drafts[c.id] ?? '').isNotEmpty,
       mention:
@@ -3712,6 +3703,8 @@ class _WorkspaceViewState extends State<WorkspaceView>
                                   unread:
                                       activityCountOf(w.server?.id ?? '') ?? 0,
                                   onTap: () => select('activity'),
+                                  onDoubleClick: () =>
+                                      ActivityFirstUnread.of(w).request(w),
                                 ),
                               ),
                             SliverToBoxAdapter(

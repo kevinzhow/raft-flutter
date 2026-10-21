@@ -240,6 +240,7 @@ export 'src/page_recipes.dart';
 export 'src/sidebar_frame.dart';
 
 export 'src/sidebar_indicators.dart';
+export 'src/mouse_double_click.dart';
 export 'src/mobile_page_header.dart';
 export 'src/product_empty_state.dart';
 export 'src/task_timeline.dart';
