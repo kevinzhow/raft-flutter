@@ -16,7 +16,8 @@ import '../data/workspace_controller.dart';
 import '../platform/content_links.dart';
 import '../data/server_error_code.dart';
 import '../data/user_error.dart';
-import 'community_join.dart' show communityAgreementError;
+import 'community_join.dart'
+    show communityAgreementError, communityServerSlug, joinCommunity;
 import 'custom_protocol_link.dart';
 import 'management_support.dart';
 import 'public_avatar_url.dart';
@@ -900,6 +901,62 @@ class _PublicServerViewState extends State<PublicServerView> {
     );
   }
 
+  bool joiningCommunity = false;
+
+  /// Help > Join Community (LeftRail `openCommunity`): joins the default
+  /// community server unless already a member (an agreement opens its dialog),
+  /// reloads the server list and switches to it. A failure shows in the join
+  /// error banner (Web alerts).
+  Future<void> openCommunity() async {
+    final account = widget.account;
+    final settings = account?.settings;
+    if (account == null || joiningCommunity) return;
+    RaftRecord? community(Iterable<RaftRecord> servers) => servers
+        .where((s) => s.string('slug') == communityServerSlug)
+        .firstOrNull;
+    setState(() {
+      joiningCommunity = true;
+      joinError = '';
+    });
+    try {
+      var joined = community(account.servers);
+      if (joined == null) {
+        final accepted = await joinCommunity(
+          () => context,
+          widget.client,
+          communityServerSlug,
+        );
+        if (!accepted || !mounted) return;
+        // The server list the account holds now includes the community.
+        if (settings == null ||
+            !await settings.controller.loadServerDirectory()) {
+          throw const RaftApiException('The server list is unavailable.');
+        }
+        joined = community(settings.controller.servers);
+        if (joined == null) {
+          throw const RaftApiException(
+            "Joined community server but it's missing from the list",
+          );
+        }
+      }
+      if (mounted) account.onSelect(joined);
+    } catch (e) {
+      if (mounted) {
+        setState(
+          () => joinError = tr(
+            userErrorText(
+              e,
+              fallback: 'Failed to join community server',
+              where: 'community from help',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => joiningCommunity = false);
+    }
+  }
+
   /// Opens Settings on [tab] (the rail Help menu's Mobile App / Feedback).
   void openSettingsTab(String tab) => setState(() {
     settingsTab = tab;
@@ -980,6 +1037,13 @@ class _PublicServerViewState extends State<PublicServerView> {
                     glyph: RaftGlyph.messageSquare,
                     onPressed: () => openSettingsTab('feedback'),
                   ),
+                RaftMenuEntry(
+                  label: tr(joiningCommunity ? 'Joining...' : 'Join Community'),
+                  glyph: RaftGlyph.usersRound,
+                  onPressed: joiningCommunity
+                      ? null
+                      : () => unawaited(openCommunity()),
+                ),
               ],
             ),
     );
