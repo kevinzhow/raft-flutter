@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -8,6 +10,7 @@ import '../data/attachment_image_repository.dart';
 import '../data/source_channel_files_store.dart';
 import '../platform/attachment_files.dart';
 import 'chat_view.dart';
+import 'conversation_tab_reorder.dart';
 import 'message_selection.dart';
 import 'resource_view.dart';
 import 'source_channel_files_view.dart';
@@ -267,6 +270,16 @@ class _ConversationPanelState extends State<ConversationPanel> {
             ],
             value: tab,
             onChanged: selectTab,
+            // Web `SortableTabsList`: the new order is saved for every device.
+            reorderWrapper: conversationTabReorder(
+              order: order,
+              touch: RaftInteraction.of(context).touch,
+              onReorder: (next) => unawaited(
+                w.updateSidebarOrder({
+                  'channelPanelTabOrder': [for (final id in next) id.name],
+                }),
+              ),
+            ),
           ),
         Expanded(
           child: ColoredBox(

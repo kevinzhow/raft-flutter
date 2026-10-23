@@ -51,6 +51,7 @@ export 'src/context_menu_content.dart';
 export 'src/joint_channel_dialog_view.dart';
 export 'src/joint_same_admin_notice.dart';
 export 'src/channel_joint_section_view.dart';
+export 'src/channel_slack_field.dart';
 export 'src/emoji_picker.dart';
 export 'src/message_context_menu.dart';
 export 'src/composer_pending_mentions.dart';

@@ -4,9 +4,11 @@
 // The generated panelHeader recipe supplies dimensions and text.
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'avatar_button.dart';
+import 'channel_description_links.dart';
 import 'design_primitives.dart' hide RaftPanelHeaderRecipe;
 import 'icons.dart';
 import 'indicators.dart';
@@ -188,11 +190,22 @@ class RaftChannelHeader extends StatelessWidget {
     this.searchLabel = 'Search this channel',
     this.settingsLabel = 'Channel settings',
     this.archivedLabel,
+    this.mutedLabel,
+    this.onOpenLink,
     this.publicPage = false,
   });
   final String name, description, kind, backLabel, searchLabel, settingsLabel;
   final VoidCallback? onBack, onSearch, onSettings;
   final Key? backKey;
+
+  /// ChatPanel `ActivityMutedBadge`: the viewer muted this channel's activity.
+  /// The localized tooltip of the small bell-off after the title (null = not
+  /// muted).
+  final String? mutedLabel;
+
+  /// ChannelDescription: tapping an http(s) link in the description. Null
+  /// leaves the description plain text.
+  final ValueChanged<String>? onOpenLink;
 
   /// Anyone can read this channel on the server's public page (the server is
   /// public and the channel visible to Guests): the # carries a small globe.
@@ -260,17 +273,24 @@ class RaftChannelHeader extends StatelessWidget {
             : RaftTruncationTooltip(
                 text: meta,
                 style: metaStyle,
-                child: RaftCssText(
-                  meta,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.clip,
-                  style: metaStyle,
-                  strutStyle: StrutStyle.fromTextStyle(
-                    metaStyle,
-                    forceStrutHeight: true,
-                  ),
-                ),
+                child: onOpenLink == null
+                    ? RaftCssText(
+                        meta,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.clip,
+                        style: metaStyle,
+                        strutStyle: StrutStyle.fromTextStyle(
+                          metaStyle,
+                          forceStrutHeight: true,
+                        ),
+                      )
+                    : _LinkedDescription(
+                        meta,
+                        style: metaStyle,
+                        linkColor: t.colors['foreground-hint']!,
+                        onOpenLink: onOpenLink!,
+                      ),
               ),
       ),
       actions: raftConversationHeaderActions(
@@ -282,16 +302,102 @@ class RaftChannelHeader extends StatelessWidget {
     );
   }
 
+  /// ChatPanel `regularTitleSuffix`: the Archived badge and the muted bell in
+  /// one `gap-1.5` row after the title.
   Widget _withArchivedBadge(RaftTokens t, Widget title) {
-    final label = archivedLabel;
-    if (label == null) return title;
+    final label = archivedLabel, muted = mutedLabel;
+    if (label == null && muted == null) return title;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Flexible(child: title),
         const SizedBox(width: 8),
-        _ArchivedBadge(label),
+        if (label != null) _ArchivedBadge(label),
+        if (label != null && muted != null) const SizedBox(width: 6),
+        if (muted != null)
+          RaftTooltip(
+            message: muted,
+            child: RaftIcon(
+              RaftGlyph.bellOff,
+              key: const ValueKey('channel-activity-muted-badge'),
+              size: 12,
+              color: t.colors['foreground-hint'],
+            ),
+          ),
       ],
+    );
+  }
+}
+
+/// The header description with its http(s) links tappable
+/// ([raftSegmentChannelDescription]); the line stays one clipped line.
+class _LinkedDescription extends StatefulWidget {
+  const _LinkedDescription(
+    this.text, {
+    required this.style,
+    required this.linkColor,
+    required this.onOpenLink,
+  });
+  final String text;
+  final TextStyle style;
+  final Color linkColor;
+  final ValueChanged<String> onOpenLink;
+  @override
+  State<_LinkedDescription> createState() => _LinkedDescriptionState();
+}
+
+class _LinkedDescriptionState extends State<_LinkedDescription> {
+  final _recognizers = <TapGestureRecognizer>[];
+
+  void _release() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
+  void dispose() {
+    _release();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _release();
+    final spans = <InlineSpan>[];
+    for (final segment in raftSegmentChannelDescription(widget.text)) {
+      if (!segment.link) {
+        spans.add(TextSpan(text: segment.value));
+        continue;
+      }
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () => widget.onOpenLink(segment.value);
+      _recognizers.add(recognizer);
+      spans.add(
+        TextSpan(
+          text: segment.value,
+          recognizer: recognizer,
+          mouseCursor: SystemMouseCursors.click,
+          style: TextStyle(
+            decoration: TextDecoration.underline,
+            decorationColor: widget.linkColor,
+            decorationThickness: 1.5,
+          ),
+        ),
+      );
+    }
+    return RaftCssText.rich(
+      TextSpan(children: spans),
+      key: const ValueKey('channel-description-links'),
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.clip,
+      style: widget.style,
+      strutStyle: StrutStyle.fromTextStyle(
+        widget.style,
+        forceStrutHeight: true,
+      ),
     );
   }
 }

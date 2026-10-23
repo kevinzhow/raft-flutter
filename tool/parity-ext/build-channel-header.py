@@ -55,6 +55,12 @@ fixture = {
         channel('channel-colvalley', 'colvalley', SHORT),
         channel('channel-colvalley-long', 'colvalley', LONG),
         channel('channel-colvalley-none', 'colvalley', None),
+        # ChannelDescription: http(s) links in the description are links.
+        channel('channel-colvalley-link', 'colvalley',
+                'Release gates, notes at https://docs.example.com/release-notes (read first).'),
+        # ChatPanel ActivityMutedBadge: the viewer muted this channel's activity.
+        {**channel('channel-colvalley-muted', 'colvalley', SHORT), 'activityMuted': True,
+         'activityMuteSupported': True},
         channel('channel-colvalley-private', 'colvalley-private', SHORT, 'private'),
         # The reported channel: an authored newline inside the description.
         channel('channel-colvalley-newline', 'colvalley', '日语 lost and found 单词 App\n结合了 crowded scene 的特性'),
@@ -110,6 +116,9 @@ for platform in ['desktop', 'mobile']:
     add(platform, 'long', 'channel, long description (two-line clamp)', props={'channel': 'channel-colvalley-long'})
     add(platform, 'none', 'channel, no description', props={'channel': 'channel-colvalley-none'})
     add(platform, 'private', 'private channel', props={'channel': 'channel-colvalley-private'})
+    add(platform, 'link', 'channel, description with a link', props={'channel': 'channel-colvalley-link'})
+    add(platform, 'muted', 'channel, activity muted (bell after the title)',
+        props={'channel': 'channel-colvalley-muted'})
     add(platform, 'dm-agent', 'agent DM', props={'channel': 'dm-agent-cindy'})
     add(platform, 'thread', 'side thread panel header', props={'channel': 'channel-colvalley', 'thread': 'true'},
         height=64)

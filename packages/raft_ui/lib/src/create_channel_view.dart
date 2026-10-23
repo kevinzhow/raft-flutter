@@ -49,10 +49,15 @@ class RaftCreateChannelDialogView extends StatelessWidget {
     required this.onSubmit,
     this.error,
     this.notice,
+    this.slackField,
     this.submitting = false,
   });
   final TextEditingController name, description, search;
   final String visibility;
+
+  /// The Slack channel field (Web ChannelSlackBridgeField) under the members;
+  /// null while the Slack bridge is not ready.
+  final Widget? slackField;
   final ValueChanged<String> onVisibilityChanged;
   final List<RaftPickerItem> agents, humans;
   final bool hasCandidates, submitting;
@@ -127,6 +132,18 @@ class RaftCreateChannelDialogView extends StatelessWidget {
                 onToggle: submitting ? null : onToggle,
               ),
             ),
+            if (slackField != null) ...[
+              gap,
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: RaftTokens.of(context).brutal
+                    ? Colors.black.withValues(alpha: .1)
+                    : RaftTokens.of(context).colors['line-muted'],
+              ),
+              gap,
+              slackField!,
+            ],
           ],
         ),
         footer: Row(

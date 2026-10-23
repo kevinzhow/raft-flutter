@@ -78,6 +78,7 @@ import 'agent_avatar_projection.dart';
 import 'saved_sidebar_entry.dart';
 import 'system_notification_center.dart';
 import 'workspace_browser.dart';
+import 'workspace_channel_header.dart';
 import 'workspace_dm_header.dart';
 import 'management_support.dart' show managementLaunch;
 import 'sender_avatar_projection.dart';
@@ -3172,22 +3173,17 @@ class _WorkspaceViewState extends State<WorkspaceView>
     );
   }
 
-  Widget channelHeader({bool mobile = false}) => RaftChannelHeader(
-    key: Key(
+  Widget channelHeader({bool mobile = false}) => WorkspaceChannelHeader(
+    headerKey: Key(
       mobile ? 'workspace-mobile-detail-header' : 'workspace-channel-header',
     ),
-    name: w.channel!.name,
-    description: w.channel!.description,
-    kind: w.channel!.type,
+    controller: w,
+    channel: w.channel!,
     onBack: mobile ? dismissPanel : null,
     backKey: mobile ? const Key('mobile-detail-back') : null,
     backLabel: mainSelection.active ? tr('Exit selection') : tr('Back'),
     onSearch: searchThisChannel,
     onSettings: channelSettings,
-    searchLabel: tr('Search this channel'),
-    settingsLabel: tr('Channel details and settings'),
-    archivedLabel: w.channel!.archived ? tr('Archived') : null,
-    publicPage: channelOnPublicPage(w, w.channel!),
   );
 
   /// ChatPanel's DM header: identity from the DM record (first frame), the

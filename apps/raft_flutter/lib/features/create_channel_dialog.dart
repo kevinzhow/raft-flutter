@@ -12,6 +12,7 @@ import '../data/cause_notice.dart';
 import '../data/user_error.dart';
 
 import '../data/workspace_controller.dart';
+import 'slack_channel_pairing.dart';
 import '../data/workspace_entity_directory.dart';
 import 'channel_form_fields.dart';
 
@@ -213,6 +214,18 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
   List<ChannelMemberCandidate> get candidates => _feed.value;
   bool submitting = false, unarchiving = false;
 
+  /// Pair the new channel with a Slack channel (Web
+  /// `useChannelSlackBridgeEditor`): only while the bridge is ready.
+  late final SlackChannelPairing slack = SlackChannelPairing(w)
+    ..addListener(_slackChanged);
+  void _slackChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// The channel created before the bridge failed: a retry only applies the
+  /// pairing, it never creates a second channel.
+  RaftChannel? createdForBridge;
+
   /// A failed create / unarchive (server text); the next submit clears it.
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next submit starts; the dialog state is dropped when it closes.
   String? error;
@@ -231,10 +244,12 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
     _feed.addListener(() {
       if (mounted) setState(() {});
     });
+    unawaited(slack.load(canManage: w.can('createChannels')));
   }
 
   @override
   void dispose() {
+    slack.dispose();
     _feed.dispose();
     name.dispose();
     description.dispose();
@@ -301,25 +316,44 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       archivedCollision = null;
     });
     try {
-      final result = await w.command(
-        'POST',
-        '/channels',
-        data: {
-          'name': trimmed,
-          if (description.text.trim().isNotEmpty)
-            'description': description.text.trim(),
-          'visibility': visibility,
-          'type': 'channel',
-          'agentIds': [...agentIds],
-          'userIds': [...humanIds],
-        },
-      );
+      final created =
+          createdForBridge ??
+          RaftChannel(
+            Map<String, dynamic>.from(
+              await w.command(
+                'POST',
+                '/channels',
+                data: {
+                  'name': trimmed,
+                  if (description.text.trim().isNotEmpty)
+                    'description': description.text.trim(),
+                  'visibility': visibility,
+                  'type': 'channel',
+                  'agentIds': [...agentIds],
+                  'userIds': [...humanIds],
+                },
+              ) as Map,
+            ),
+          );
+      try {
+        await slack.apply(created.id);
+      } catch (_) {
+        createdForBridge = created;
+        await w.refreshChannels();
+        if (mounted) {
+          setState(
+            () => error = raftText(
+              context,
+              'The channel was saved, but its Slack bridge was not enabled. Retry to finish the bridge setup.',
+            ),
+          );
+        }
+        return;
+      }
       await w.refreshChannels();
       if (!mounted) return;
       Navigator.of(context).pop();
-      await widget.onCreated?.call(
-        RaftChannel(Map<String, dynamic>.from(result as Map)),
-      );
+      await widget.onCreated?.call(created);
     } catch (e) {
       if (mounted) {
         final details = e is RaftApiException ? e.details : const {};
@@ -381,6 +415,14 @@ class _CreateChannelDialogState extends State<CreateChannelDialog> {
       }),
       onClose: close,
       onSubmit: submit,
+      slackField: slack.available
+          ? SlackChannelPairingField(
+              pairing: slack,
+              privacy: visibility,
+              enabled: !submitting && createdForBridge == null,
+              compact: true,
+            )
+          : null,
       error: error ?? nameInvalid.message,
       notice: archivedCollision == null
           ? null

@@ -13,6 +13,7 @@ import 'channel_joint_section.dart';
 import 'channel_members.dart';
 import 'channel_settings_strip.dart';
 import 'channel_sos.dart';
+import 'slack_channel_pairing.dart';
 import 'composer_directory.dart'
     show cachedChannelRoster, cachedChannelRosterExternals;
 import 'create_channel_dialog.dart' show ChannelMemberCandidate;
@@ -111,6 +112,16 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   static const _parts = {'members', 'sidebar', 'display', 'notification'};
   static const guestFlag = 'server_guest_v0';
 
+  /// The Slack channel this channel is paired with (Web
+  /// `useChannelSlackBridgeEditor`): a section only while the bridge is ready.
+  late final SlackChannelPairing slack = SlackChannelPairing(
+    w,
+    channelId: widget.channel.id,
+  )..addListener(_slackChanged);
+  void _slackChanged() {
+    if (mounted) setState(() {});
+  }
+
   /// Server flags that decide which sections exist. Unknown only on the
   /// first settings visit under this server identity (true cold load).
   bool flagsKnown = false;
@@ -178,6 +189,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     description.removeListener(draftChanged);
     name.dispose();
     description.dispose();
+    slack.dispose();
     events?.cancel();
     refresh?.cancel();
     savedTimer?.cancel();
@@ -373,7 +385,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         'POST',
         '/feature-flags/evaluate',
         data: featureFlagEvaluateBody(
-          keys: [guestFlag, channelConversionFlag],
+          keys: [guestFlag, channelConversionFlag, SlackChannelPairing.flag],
           serverId: serverId,
         ),
       );
@@ -394,6 +406,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           guestFeature = enabled(guestFlag);
           flagsKnown = true;
         });
+        unawaited(
+          slack.load(
+            canManage: canEditChannel,
+            flagEnabled: enabled(SlackChannelPairing.flag),
+          ),
+        );
       }
     } catch (_) {
       // Unknown flags never enable a section; the page still opens.
@@ -449,6 +467,14 @@ class _ChannelSettingsState extends State<ChannelSettings> {
     await w.loadSidebar();
   });
   bool cap(String name) => w.can(name, resource: channel);
+
+  /// Web `canEditChannel`: any management capability the edit form needs.
+  bool get canEditChannel =>
+      cap('editChannelMetadata') ||
+      cap('changeChannelVisibility') ||
+      cap('archiveChannels') ||
+      cap('deleteChannels') ||
+      cap('federateChannels');
 
   Future<void> editMetadata() async {
     final c = channel, identity = pageIdentity(w);
@@ -769,7 +795,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       name.text != channel.name || description.text != channel.description;
 
   /// Mirrors `isDirty`: the host drawer guards every dismissal while true.
-  bool get dirty => nameDescDirty || jointDraft;
+  bool get dirty => nameDescDirty || slack.dirty || jointDraft;
 
   /// An invitation typed into the joint section and not sent (Web
   /// `hasInviteDraft`): it blocks Save and close, whose save cannot send it.
@@ -779,6 +805,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
   void resetDraft() {
     name.text = channel.name;
     description.text = channel.description;
+    slack.reset();
     clearSaved();
     setState(() => error = null);
   }
@@ -821,6 +848,21 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       if (updates.isNotEmpty) {
         await w.command('PATCH', '/channels/${c.id}', data: updates);
         await w.refreshChannels();
+      }
+      // The Slack pairing is applied with the channel; its failure leaves the
+      // channel saved and says so (Web `channel.bridge.partialFailure`).
+      try {
+        await slack.apply(c.id);
+      } catch (_) {
+        if (mounted) {
+          setState(
+            () => error = raftText(
+              context,
+              'The channel was saved, but its Slack bridge was not enabled. Retry to finish the bridge setup.',
+            ),
+          );
+        }
+        return false;
       }
       if (!mounted) return true;
       name.text = channel.name;
@@ -1437,12 +1479,20 @@ class _ChannelSettingsState extends State<ChannelSettings> {
                             ? 'The #all channel cannot be renamed'
                             : null,
                         onSubmitName: (_) => saveAndClose(),
-                        canCancel: nameDescDirty,
-                        canSave: nameDescDirty && !archived,
+                        canCancel: nameDescDirty || slack.dirty,
+                        canSave: (nameDescDirty || slack.dirty) && !archived,
                         saving: saving,
                         savedLabel: savedLabel,
                         onCancel: resetDraft,
                         onSave: saveChanges,
+                      ),
+                    if (canEdit &&
+                        !archived &&
+                        (c.type == 'channel' || c.type == 'private'))
+                      SlackChannelPairingField(
+                        pairing: slack,
+                        privacy: private ? 'private' : 'public',
+                        enabled: !saving,
                       ),
                     if (guestSection)
                       raftSheetSection(

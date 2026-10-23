@@ -2232,10 +2232,10 @@
    "area": "channels",
    "capability": "Edit channel name/description, change visibility (public/private, hide/restore #all), guest visible/joinable policy",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Channel settings drawer: Info form (Name, Description, Save changes/Cancel), 'Make Public'/'Make Private' (#all: 'Hide #all'/'Restore #all') with confirm, Guest access switches 'Visible to Guests'/'Guests can join', Slack channel field",
    "gate": "editChannelMetadata / changeChannelVisibility / manageGuestAccess capabilities (channel-level channelCapabilities); guest section needs guest feature flag, not archived/joint, private channels excluded except #all",
-   "flutterEntry": "channel_settings.dart panel: RaftChannelInfoForm, visibility action, Guest access switches, unsaved-changes prompt",
+   "flutterEntry": "channel_settings.dart panel: RaftChannelInfoForm, visibility action, Guest access switches, Slack channel field, unsaved-changes prompt",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
@@ -2250,9 +2250,9 @@
      "needle": "updateGuestPolicy"
     }
    ],
-   "justification": "Everything present except the Slack channel pairing field inside the same form (see POST /channels).",
-   "impact": "Admins of Slack-bridged servers cannot re-pair a channel's Slack channel from its settings (only via IM Bridges settings).",
-   "size": "M"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -2284,10 +2284,10 @@
    "area": "channels",
    "capability": "Create a channel (name, description, public/private, initial members) or a joint channel with server invites",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Sidebar 'Channels' section '+' / section context menu 'Create Channel' / empty-sidebar menu | CreateChannelDialog fields: Name, Description (optional), Visibility Public/Private, Members (agents/humans search), archived-name collision banner with 'Unarchive' / 'Change name', plan-limit banner, optional Slack channel field (ChannelSlackBridgeField) | 'Create Joint Channel' variant",
    "gate": "createChannels capability (channels); federateChannels (joint)",
-   "flutterEntry": "create_channel_dialog.dart (Name, Description, Visibility, Members, archived collision) opened from sidebar '+' / section menu / surface menu | create_joint_channel_dialog.dart",
+   "flutterEntry": "create_channel_dialog.dart (Name, Description, Visibility, Members, archived collision, Slack channel) opened from sidebar '+' / section menu / surface menu | create_joint_channel_dialog.dart (invites, same-admin direct connection)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/create_channel_dialog.dart",
@@ -2298,9 +2298,9 @@
      "needle": "'Create Channel'"
     }
    ],
-   "justification": "All visible fields are present except the optional Slack channel pairing field (ChannelSlackBridgeField, shown only when the Slack bridge flag is on and the bridge is ready). The plan-limit banner is intentionally absent (docs/code note: maxChannels is -1 on every plan).",
-   "impact": "Workspace admins who pair channels with Slack must use Settings > IM Bridges mapping editor instead of the create dialog; only affects servers with the Slack bridge enabled.",
-   "size": "M"
+   "justification": "The plan-limit banner is intentionally absent (docs/code note: maxChannels is -1 on every plan).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -2536,19 +2536,23 @@
    "area": "channels",
    "capability": "Reorder the Chat / Tasks / Files tabs by drag (order stored as channelPanelTabOrder)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "ChatPanel.tsx SortableTabsList onReorder -> reorderTabs",
    "gate": "",
-   "flutterEntry": "conversation_panel.dart reads sidebarOrder['channelPanelTabOrder'] and renders tabs in that order, but RaftConversationTabs is given no reorder wrapper, so users cannot change it",
+   "flutterEntry": "conversation_tab_reorder.dart: RaftConversationTabs.reorderWrapper from conversation_panel.dart; a pointer drags at once, a finger after a long press; the whole new order is saved as sidebarOrder.channelPanelTabOrder",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/conversation_panel.dart",
      "needle": "channelPanelTabOrder"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/conversation_tab_reorder.dart",
+     "needle": "movedConversationTab"
     }
    ],
-   "justification": "Order from another client is honoured; Flutter cannot set it.",
-   "impact": "Users who prefer Files/Tasks first; cosmetic.",
-   "size": "S"
+   "justification": "Dropping a tab on another takes its place (arrayMove), the strip follows the saved order at once and on every device.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -2576,14 +2580,23 @@
    "area": "channels",
    "capability": "Channel description in the header renders http(s) links as clickable links",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "ChannelDescription.tsx segmentChannelDescription (safe-URL autolink, trailing punctuation trimmed)",
    "gate": "",
-   "flutterEntry": "RaftChannelHeader shows description as plain text (no link handling in channel_header.dart)",
-   "flutterRefs": [],
-   "justification": "",
-   "impact": "Channels whose description holds a link (docs, board URL): users must copy the text instead of tapping.",
-   "size": "S"
+   "flutterEntry": "channel_header.dart _LinkedDescription over channel_description_links.dart (Web segmentChannelDescription); opened by workspace_channel_header.dart through the system browser",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/channel_description_links.dart",
+     "needle": "raftSegmentChannelDescription"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/workspace_channel_header.dart",
+     "needle": "onOpenLink"
+    }
+   ],
+   "justification": "Same segmentation as Web: trailing sentence punctuation and unmatched closing brackets stay outside the link, only http(s) with a real host is a link. The header line stays one clipped line (Web clamps to two); the full text is in the tooltip and the settings drawer.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -2591,19 +2604,23 @@
    "area": "channels",
    "capability": "'Activity muted' bell badge in the header of a muted channel",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "ChatPanel.tsx regularTitleSuffix ActivityMutedBadge (channels) and DM titleSlot",
    "gate": "",
-   "flutterEntry": "DM header shows it (RaftDmHeader muted); regular channel header (RaftChannelHeader) has only an Archived badge",
+   "flutterEntry": "channel_header.dart mutedLabel: the bell-off after the title (and the Archived badge) of a channel whose activityMuted is set; workspace_channel_header.dart",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_dm_header.dart",
-     "needle": "muted: channel.flag('activityMuted')"
+     "file": "packages/raft_ui/lib/src/channel_header.dart",
+     "needle": "channel-activity-muted-badge"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/workspace_channel_header.dart",
+     "needle": "activityMuted"
     }
    ],
-   "justification": "Channel header does not show the muted badge; mute state is still visible in the sidebar row and the settings switch.",
-   "impact": "Users who mute busy channels; cosmetic reminder only.",
-   "size": "S"
+   "justification": "Tooltip 'Activity muted. Direct mentions can still notify you.'",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -9082,19 +9099,27 @@
    "area": "integrations-apps-mcp",
    "capability": "Pair a channel with a Slack channel from channel create/settings ('Slack channel' select: Not connected / channel names, already-paired and membership-required options disabled)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "ChannelSlackBridgeField.tsx in CreateChannelDialog and EditChannelDialog (Save applies the selection; partial failure message)",
    "gate": "Slack bridge feature flags + bridge ready + createChannels/edit capabilities",
-   "flutterEntry": "No per-channel field; channel<->Slack pairs are edited in Settings > IM Bridges mapping editor (im_bridges_view.dart)",
+   "flutterEntry": "slack_channel_pairing.dart + raft_ui RaftChannelSlackField: 'Connect to Slack' section in the channel settings drawer and the create dialog; Save / Create applies the pick after the channel (remove by binding epoch, save, preflight, enable)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/im_bridges_view.dart",
-     "needle": "editingMappings"
+     "file": "apps/raft_flutter/lib/features/slack_channel_pairing.dart",
+     "needle": "class SlackChannelPairing"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/channel_settings.dart",
+     "needle": "SlackChannelPairingField"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/create_channel_dialog.dart",
+     "needle": "SlackChannelPairingField"
     }
    ],
-   "justification": "Capability exists in the Slack bridge settings but not at the channel.",
-   "impact": "Admins of Slack-bridged servers; they must go through Settings > IM Bridges.",
-   "size": "M"
+   "justification": "Shown only while the bridge flag is on and the bridge is in the health stage, for channels and private channels that are not archived; options of the channel's privacy class, already-paired and app-missing channels disabled; a failed bridge says the channel was saved and a retry never creates a second channel.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
