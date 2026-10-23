@@ -104,6 +104,19 @@ void main() {
           ],
         };
       };
+      // The document cards' summary line (`report-N.pdf`): the server's
+      // answer for a PDF it can preview.
+      for (final row in rows) {
+        for (final a in (row['attachments'] as List? ?? const [])) {
+          final id = (a as Map)['id'] as String;
+          if (!id.startsWith('doc-')) continue;
+          f.overrides['GET /attachments/$id/preview'] = (_) => {
+            'status': 'ok',
+            'data': {'kind': 'pdf'},
+            'truncated': false,
+          };
+        }
+      }
       for (final c in channels) {
         final id = c['id'] as String;
         f.overrides['GET /messages/channel/$id'] = (_) => {
