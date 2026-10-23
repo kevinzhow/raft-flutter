@@ -382,6 +382,7 @@ const String raftThemePackJson = r'''{
         "palette-cream-950": "#191300"
       },
       "geometry": {
+        "size.touchLayoutMin": 0,
         "size.switch.width.sm": 50,
         "size.switch.width.md": 50,
         "size.switch.height.sm": 30,
@@ -870,6 +871,7 @@ const String raftThemePackJson = r'''{
         "palette-cream-950": "#191300"
       },
       "geometry": {
+        "size.touchLayoutMin": 0,
         "size.switch.width.sm": 50,
         "size.switch.width.md": 50,
         "size.switch.height.sm": 30,

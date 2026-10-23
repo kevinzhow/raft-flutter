@@ -219,6 +219,7 @@ const String elegantThemePackJson = r'''{
         "switch-shadow-bottom": "rgb(0 0 0 / 0)"
       },
       "geometry": {
+        "size.touchLayoutMin": 48,
         "size.switch.width.sm": 28,
         "size.switch.width.md": 36,
         "size.switch.height.sm": 16,
@@ -474,6 +475,7 @@ const String elegantThemePackJson = r'''{
         "switch-shadow-bottom": "rgb(243.444675 243.444675 247.22862 / 0.039203)"
       },
       "geometry": {
+        "size.touchLayoutMin": 48,
         "size.switch.width.sm": 28,
         "size.switch.width.md": 36,
         "size.switch.height.sm": 16,

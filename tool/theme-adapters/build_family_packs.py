@@ -62,6 +62,8 @@ OPTIONS_BRUTAL = {
 # digits that the P2 baseline can now confirm or refute; they are carried as-is
 # until that reconciliation, which is its own change.
 GEOMETRY_ELEGANT = {
+    # a57b9dab switch/control bounds; 0 keeps the Raft hit-only expander.
+    'size.touchLayoutMin': 48,
     # a57b9dab switch.dart:65-81 and primitive_tokens.dart:12.
     'size.switch.width.sm': 28, 'size.switch.width.md': 36,
     'size.switch.height.sm': 16, 'size.switch.height.md': 20,
@@ -89,6 +91,8 @@ GEOMETRY_ELEGANT = {
     'space.segmentGap': 6,
 }
 GEOMETRY_BRUTAL = {
+    # a57b9dab switch/control bounds; 0 keeps the Raft hit-only expander.
+    'size.touchLayoutMin': 48,
     # a57b9dab switch.dart:65-81 and primitive_tokens.dart:12.
     'size.switch.width.sm': 28, 'size.switch.width.md': 36,
     'size.switch.height.sm': 16, 'size.switch.height.md': 20,

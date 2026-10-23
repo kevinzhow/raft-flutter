@@ -171,6 +171,10 @@ class ParityContext {
   return (pack: raftThemePackId, dark: false);
 }
 
+/// The selected pack and brightness recorded beside the captured image.
+String parityThemeLabel(({String pack, bool dark}) selection) =>
+    '${selection.pack}-${selection.dark ? 'dark' : 'light'}';
+
 Map<String, List<String>> paritySystemFonts() => {
   'Noto Sans CJK JP': [
     systemTestFont('opentype/noto/NotoSansCJK-Regular.ttc').path,
@@ -423,7 +427,7 @@ Future<Map<String, dynamic>> captureParityCase(
     'source': 'flutter',
     'caseId': id,
     'variantId': ctx.variant['id'],
-    'theme': ctx.themeId,
+    'theme': parityThemeLabel(selection),
     'image': 'visual-testing-results/android/$id.png',
     'viewport': ctx.viewport,
     'selector': (visualCase['capture'] as Map?)?['selector'],

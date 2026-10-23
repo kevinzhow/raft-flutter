@@ -147,6 +147,8 @@ def stretch(families: list[str], mono: bool = False) -> str:
 # AUTHORED: the two tables below are the contract's decisions, not derived data.
 # §3.3–3.5 of docs/theme-contract.md lists where each number comes from.
 GEOMETRY_RAFT = {
+    # a57b9dab switch/control bounds; 0 keeps the Raft hit-only expander.
+    'size.touchLayoutMin': 0,
     # 0.7.1 switchRecipe (dist/index.mjs): border 1.5 + padding 2.5.
     'size.switch.width.sm': 50, 'size.switch.width.md': 50,
     'size.switch.height.sm': 30, 'size.switch.height.md': 30,

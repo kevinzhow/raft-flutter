@@ -86,7 +86,11 @@ class _RaftSwitchControlState extends State<RaftSwitchControl> {
     final disabled = !_enabled;
     // Touch density adds no layout (the 0.7.1 `after:` hit slop takes no space): [RaftInteractive] extends the 48px
     // hit target and semantics rect around the 50x30 track.
-    final min = minimumTargetSize ?? 0;
+    final min =
+        minimumTargetSize ??
+        (RaftDensityScope.of(context) == RaftDensity.touch
+            ? t.size('size.touchLayoutMin', fallback: 0)
+            : 0);
     return RaftInteractive(
       onPressed: disabled ? null : () => onChanged!(!value),
       button: false,

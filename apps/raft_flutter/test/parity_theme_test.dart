@@ -75,4 +75,19 @@ void main() {
       expect(parityThemeFor(visualCase), (pack: raftThemePackId, dark: dark));
     }
   });
+  test('capture labels retain the actual selected pack and brightness', () {
+    expect(
+      parityThemeLabel((pack: raftThemePackId, dark: false)),
+      'raft-light',
+    );
+    expect(parityThemeLabel((pack: raftThemePackId, dark: true)), 'raft-dark');
+    expect(
+      parityThemeLabel((pack: brutalThemePackId, dark: false)),
+      'brutal-light',
+    );
+    expect(
+      parityThemeLabel((pack: elegantThemePackId, dark: true)),
+      'elegant-dark',
+    );
+  });
 }

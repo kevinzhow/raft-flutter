@@ -23,6 +23,7 @@ void main() {
         for (final size in RaftSwitchSize.values) {
           await t.pumpWidget(
             MaterialApp(
+              themeAnimationDuration: Duration.zero,
               theme: raftTheme(pack: packForThemeId(id), dark: dark),
               home: Scaffold(
                 body: Align(
@@ -98,6 +99,7 @@ void main() {
             late StateSetter change;
             await t.pumpWidget(
               MaterialApp(
+                themeAnimationDuration: Duration.zero,
                 theme: raftTheme(pack: packForThemeId(id), dark: dark),
                 home: Scaffold(
                   body: StatefulBuilder(
@@ -189,6 +191,7 @@ void main() {
       expect(recipe.thumbInset, 6);
       await t.pumpWidget(
         MaterialApp(
+          themeAnimationDuration: Duration.zero,
           theme: raftTheme(pack: pack),
           home: Scaffold(
             body: Align(
@@ -202,6 +205,7 @@ void main() {
       final off = t.getTopLeft(find.byType(RaftCssBox).last);
       await t.pumpWidget(
         MaterialApp(
+          themeAnimationDuration: Duration.zero,
           theme: raftTheme(pack: pack),
           home: Scaffold(
             body: Align(
@@ -272,6 +276,7 @@ void main() {
         );
         await t.pumpWidget(
           MaterialApp(
+            themeAnimationDuration: Duration.zero,
             theme: raftTheme(pack: packForThemeId(brutalThemePackId)),
             home: Scaffold(
               body: Align(alignment: Alignment.topLeft, child: specimen),
@@ -308,6 +313,7 @@ void main() {
             RaftBorderSnap.emulatedDeviceScaleFactor = emulated;
             await t.pumpWidget(
               MaterialApp(
+                themeAnimationDuration: Duration.zero,
                 theme: raftTheme(),
                 home: Scaffold(
                   body: Align(
@@ -336,6 +342,99 @@ void main() {
       } finally {
         await t.pumpWidget(const SizedBox.shrink());
         RaftBorderSnap.emulatedDeviceScaleFactor = snap;
+      }
+    },
+  );
+  testWidgets('touch layout keeps the source minimum box at both sizes', (
+    t,
+  ) async {
+    try {
+      for (final id in [
+        raftThemePackId,
+        elegantThemePackId,
+        brutalThemePackId,
+      ]) {
+        for (final dark in [false, true]) {
+          for (final size in RaftSwitchSize.values) {
+            await t.pumpWidget(
+              MaterialApp(
+                themeAnimationDuration: Duration.zero,
+                theme: raftTheme(
+                  pack: packForThemeId(id),
+                  dark: dark,
+                  platform: TargetPlatform.android,
+                ),
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.topLeft,
+                    child: RaftDensityScope(
+                      density: RaftDensity.touch,
+                      child: RaftSwitch(
+                        value: false,
+                        size: size,
+                        onChanged: (_) {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            expect(
+              t.getSize(find.byType(RaftSwitch)),
+              id == raftThemePackId ? const Size(50, 30) : const Size(48, 48),
+              reason: '$id dark=$dark $size',
+            );
+          }
+        }
+      }
+    } finally {
+      await t.pumpWidget(const SizedBox.shrink());
+    }
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+  testWidgets(
+    'explicit minimum target overrides the theme touch layout minimum',
+    (t) async {
+      try {
+        for (final id in [
+          raftThemePackId,
+          elegantThemePackId,
+          brutalThemePackId,
+        ]) {
+          for (final minimum in [0.0, 60.0]) {
+            await t.pumpWidget(
+              MaterialApp(
+                themeAnimationDuration: Duration.zero,
+                theme: raftTheme(
+                  pack: packForThemeId(id),
+                  platform: TargetPlatform.android,
+                ),
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.topLeft,
+                    child: RaftDensityScope(
+                      density: RaftDensity.touch,
+                      child: RaftSwitch(
+                        value: false,
+                        onChanged: (_) {},
+                        minimumTargetSize: minimum,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            expect(
+              t.getSize(find.byType(RaftSwitch)),
+              minimum == 60
+                  ? const Size(60, 60)
+                  : id == raftThemePackId
+                  ? const Size(50, 30)
+                  : const Size(28, 16),
+            );
+          }
+        }
+      } finally {
+        await t.pumpWidget(const SizedBox.shrink());
       }
     },
   );

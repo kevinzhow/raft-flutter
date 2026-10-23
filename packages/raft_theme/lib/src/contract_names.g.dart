@@ -267,6 +267,7 @@ const Set<String> raftGeometryTokens = {
   'size.switch.thumb.sm',
   'size.switch.width.md',
   'size.switch.width.sm',
+  'size.touchLayoutMin',
   'space.controlX',
   'space.inset.panel',
   'space.itemX',
