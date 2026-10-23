@@ -432,14 +432,19 @@
    "area": "messages",
    "capability": "Create a public share link + image for selected messages (Share to X, shareable artifact)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "Select mode > More > Generate image -> SelectShareLightbox 'Share to X' button (uploads PNG, opens twitter intent with the artifact URL)",
    "gate": "not for guests (Select Message hidden for guests; server role check authoritative)",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter's image review dialog (message_image_export.dart) offers Save and native file Share only; it never uploads the PNG as a share artifact and has no Share to X / public link.",
-   "impact": "Users who want a public link to a message screenshot; native share sheet partly substitutes.",
-   "size": "S"
+   "flutterEntry": "message_image_export.dart MessageImageReview 'Share to X' -> message_share_artifact.dart createMessageSelectionShareArtifact (multipart channelId + image), then the X intent in the system browser",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_share_artifact.dart",
+     "needle": "/share-artifacts/message-selection"
+    }
+   ],
+   "justification": "Same as Web: the button lives in the share preview only (Web's select toolbar does not call it either). The upload runs from the reviewed PNG; the preview closes and the selection ends on success.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -481,12 +486,12 @@
    "flutterEntry": "copy_selection_links.dart and message_selection.dart cover Markdown/link copy",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/message_selection.dart",
-     "needle": "class "
+     "file": "apps/raft_flutter/lib/platform/image_clipboard.dart",
+     "needle": "Pasteboard.writeImage"
     }
    ],
-   "justification": "Markdown copy exists; clipboard image copy is missing (ui:messages.select-share-copy-image).",
-   "impact": "Desktop users cannot paste the selection screenshot into another app directly.",
+   "justification": "Markdown copy exists. 'Copy image' puts the reviewed PNG on the clipboard on macOS, iOS and Windows (pasteboard plugin); Linux has no image writer and Android's clipboard image needs a FileProvider the app does not declare, so the button is hidden there, as Web hides it when the browser blocks PNG clipboard writes (Android keeps Save and Share image).",
+   "impact": "Linux and Android users cannot copy the selection image to the clipboard; they save or share it.",
    "size": "S"
   },
   {
@@ -663,19 +668,19 @@
    "area": "messages",
    "capability": "Cmd/Ctrl+Z immediately after a mention auto-insert (picker or 'mention sender') restores the text and mention set from before the insert",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "components/message/MessageInput.tsx handleKeyDown mentionUndoSnapshotRef (beforeContent/beforeMentions/beforeCursor)",
    "gate": "",
-   "flutterEntry": "Flutter has no mention-insert undo snapshot; only the text field's own undo stack applies (programmatic completion inserts may not be on it - unverified)",
+   "flutterEntry": "raft_ui composer_mention_undo.dart + RaftComposer.undoMention (picker choice and mention-sender)",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/components.dart",
-     "needle": "void insertNewline()"
+     "needle": "undoMention"
     }
    ],
-   "justification": "No mentionUndo equivalent found in raft_ui components.dart / composer_directory.dart / chat_view.dart.",
-   "impact": "Anyone who accepts a wrong mention suggestion and presses undo; occasional.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -930,14 +935,19 @@
    "area": "messages",
    "capability": "Cmd/Ctrl+Z immediately after a sender-name mention insert restores the previous text",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "MessageInput mentionUndoSnapshotRef in handleKeyDown",
    "gate": "only right after sender mention insert",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "No undo snapshot handling in raft_ui composer (no keyZ binding).",
-   "impact": "Very low; editing nicety.",
-   "size": "S"
+   "flutterEntry": "raft_ui composer_mention_undo.dart + RaftComposer.undoMention",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/components.dart",
+     "needle": "undoMention"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -1610,13 +1620,18 @@
    "area": "messages",
    "capability": "Share preview: 'Copy image' to the clipboard",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "SelectShareLightbox > 'Copy image' (shown when the browser allows PNG clipboard write)",
    "gate": "clipboard PNG capability",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "message_image_export.dart offers Save and native Share only (no image clipboard copy; Flutter Clipboard API is text-only).",
-   "impact": "Desktop users pasting the screenshot straight into another app.",
+   "flutterEntry": "message_image_export.dart MessageImageReview 'Copy image' (platform/image_clipboard.dart)",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/message_export.dart",
+     "needle": "Copy image"
+    }
+   ],
+   "justification": "Offered where the pasteboard plugin can write a PNG (macOS, iOS, Windows); hidden on Linux and Android, the Web behaviour when the clipboard cannot take an image.",
+   "impact": "Linux and Android users save or share the image instead.",
    "size": "S"
   },
   {
@@ -1655,23 +1670,19 @@
    "area": "messages",
    "capability": "Click the sender name (or long-press the avatar) to insert @mention of the sender into the composer",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageItemSenderButton 'Mention @{name}' tooltip; avatar long-press (touch) -> dispatchSenderMentionInsert",
    "gate": "not for external, departed or deleted senders",
-   "flutterEntry": "chat_view.dart senderMention() -> composerHandle.insertMention via onAuthor (name tap)",
+   "flutterEntry": "chat_view.dart senderMention: name tap and avatar long press (RaftAvatarButton.onLongPress, touch 500ms); Cmd/Ctrl+Z undoes the insert",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "VoidCallback? senderMention("
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "composerHandle.insertMention("
+     "file": "packages/raft_ui/lib/src/avatar_button.dart",
+     "needle": "onLongPress"
     }
    ],
-   "justification": "Name tap implemented. Avatar long-press-to-mention (touch) is not: avatar long-press falls to the message menu. Cmd/Ctrl+Z undo of the insert is also missing (see ui:messages.composer-mention-undo).",
-   "impact": "Mobile users cannot long-press an avatar to mention.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

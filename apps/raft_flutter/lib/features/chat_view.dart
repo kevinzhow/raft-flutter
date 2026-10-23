@@ -2355,6 +2355,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
               onPressed: senderProfileTarget(message) == null
                   ? null
                   : () => openSenderProfile(message),
+              onLongPress: senderMention(message),
               child: sender,
             ),
             onOpenActivity: senderIsAgent(message)

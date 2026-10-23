@@ -243,15 +243,13 @@ ChatStage _menuStage(ParityContext ctx) {
   );
 }
 
-/// Long-press on the row's avatar gutter: the body sits in a SelectionArea,
-/// so a long-press on text starts text selection (product behavior) instead
-/// of RaftMessageRow.onLongPress → actions sheet.
+/// Long-press on the row's right edge: the body sits in a SelectionArea, so a
+/// long-press on text starts text selection (product behavior) instead of
+/// RaftMessageRow.onLongPress → actions sheet, and one on the avatar mentions
+/// the sender.
 Future<void> _longPressRow(WidgetTester t, int index) async {
-  final avatar = find.descendant(
-    of: find.byType(RaftMessageRow).at(index),
-    matching: find.byType(RaftAvatar),
-  );
-  await t.longPress(avatar.first, warnIfMissed: false);
+  final row = find.byType(RaftMessageRow).at(index);
+  await t.longPressAt(t.getTopRight(row) + const Offset(-6, 6));
   for (var i = 0; i < 12; i++) {
     await t.pump(const Duration(milliseconds: 50));
   }

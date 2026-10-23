@@ -1,6 +1,7 @@
 // Chinese (zh) strings, see the catalog header in ../localization.dart.
 // English source text is the key. Part of `raftChinese` (merged by the generated zh_index.g.dart).
-// Web v1.21.23-source.1 zh-cn.ts wording verbatim, for the forward dialog's join banner.
+// Web v1.21.23-source.1 zh-cn.ts wording verbatim: the forward dialog's join banner and the
+// selected-message image export (the timeout copy with its 10 second limit filled in).
 // The ICU plural of joinAllFailed is flattened to its only (plural) form here.
 const Map<String, String> zhCatalogW23Msgb = <String, String>{
   "Join {targets} before forwarding.": "转发前请先加入 {targets}。",
@@ -9,4 +10,6 @@ const Map<String, String> zhCatalogW23Msgb = <String, String>{
   "Couldn't join {count} channels. Try again.": "无法加入 {count} 个频道。请重试。",
   "Joined {joined} of {total} channels. Try the remaining {failed}.":
       "已加入 {total} 个频道中的 {joined} 个。请重试剩余 {failed} 个。",
+  "Rendering timed out after {seconds}s": "渲染超时（{seconds} 秒）",
+  "Rendering timed out after 10s": "渲染超时（10 秒）",
 };

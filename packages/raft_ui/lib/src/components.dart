@@ -8,6 +8,7 @@ import 'dart:async' show unawaited;
 import 'control_typography.dart';
 import 'composer_composing_text.dart';
 import 'composer_action_row.dart';
+import 'composer_mention_undo.dart';
 import 'composer_paste.dart';
 import 'composer_editing.dart';
 import 'composer_expand.dart';
@@ -2092,6 +2093,10 @@ class _RaftComposerState extends State<RaftComposer> {
   int suggestionIndex = 0;
   String? dismissedValue;
   final mentions = <String, Map<String, dynamic>>{};
+
+  /// Web `mentionUndoSnapshotRef`: set by a mention insert, cleared by any
+  /// other edit of the text.
+  RaftMentionUndoSnapshot? mentionUndo;
   bool get composing =>
       controller.value.composing.isValid &&
       !controller.value.composing.isCollapsed;
@@ -2153,6 +2158,9 @@ class _RaftComposerState extends State<RaftComposer> {
   void changed() {
     if (dismissedValue != null && dismissedValue != controller.text)
       dismissedValue = null;
+    if (mentionUndo != null && mentionUndo!.afterText != controller.text) {
+      mentionUndo = null;
+    }
     if (!restoringDraft) {
       // Persist the projected external draft while leaving native composition
       // untouched, so navigation cannot lose a deferred caption/recovery.
@@ -2241,6 +2249,19 @@ class _RaftComposerState extends State<RaftComposer> {
       raftSafeEditingOffset(controller.text, range.end, forward: true),
       '${suggestion.insertion} ',
     );
+    mentionUndo = suggestion.isMention
+        ? RaftMentionUndoSnapshot(
+            beforeText: controller.text,
+            beforeCursor: raftSafeEditingOffset(
+              controller.text,
+              controller.selection.baseOffset < 0
+                  ? controller.text.length
+                  : controller.selection.baseOffset,
+            ),
+            beforeMentions: mentions,
+            afterText: next,
+          )
+        : null;
     if (suggestion.isMention) mentions[suggestion.name] = suggestion.mention;
     dismissedValue = next;
     controller.value = TextEditingValue(
@@ -2275,8 +2296,14 @@ class _RaftComposerState extends State<RaftComposer> {
     final trailing = after.isEmpty || !RegExp(r'^\s').hasMatch(after);
     final insertion =
         '${leading ? ' ' : ''}@${suggestion.name}${trailing ? ' ' : ''}';
-    mentions[suggestion.name] = suggestion.mention;
     final next = '$before$insertion$after';
+    mentionUndo = RaftMentionUndoSnapshot(
+      beforeText: controller.text,
+      beforeCursor: cursor,
+      beforeMentions: mentions,
+      afterText: next,
+    );
+    mentions[suggestion.name] = suggestion.mention;
     dismissedValue = next;
     controller.value = TextEditingValue(
       text: next,
@@ -2284,6 +2311,27 @@ class _RaftComposerState extends State<RaftComposer> {
         offset: before.length + insertion.length,
       ),
     );
+    activeFocus.requestFocus();
+    return true;
+  }
+
+  /// Web `handleKeyDown`: Cmd/Ctrl+Z straight after an inserted mention
+  /// restores the text, the caret and the mention set from before it.
+  bool undoMention(KeyEvent event) {
+    final snapshot = mentionUndo;
+    if (snapshot == null ||
+        composing ||
+        !raftIsMentionUndoKey(event) ||
+        snapshot.afterText != controller.text) {
+      return false;
+    }
+    mentionUndo = null;
+    mentions
+      ..clear()
+      ..addAll(snapshot.beforeMentions);
+    // The text is "@al" again; the picker stays closed until the next edit.
+    dismissedValue = snapshot.beforeText;
+    controller.value = raftMentionUndoValue(snapshot);
     activeFocus.requestFocus();
     return true;
   }
@@ -2348,6 +2396,7 @@ class _RaftComposerState extends State<RaftComposer> {
     if (event.logicalKey == LogicalKeyboardKey.escape && composing) {
       return KeyEventResult.skipRemainingHandlers;
     }
+    if (undoMention(event)) return KeyEventResult.handled;
     final suggested = suggestionKey(node, event);
     if (suggested == KeyEventResult.handled) return suggested;
     final key = event.logicalKey;

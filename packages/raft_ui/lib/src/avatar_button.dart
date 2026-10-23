@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import 'design_primitives.dart';
@@ -13,10 +14,16 @@ class RaftAvatarButton extends StatelessWidget {
     super.key,
     required this.child,
     required this.onPressed,
+    this.onLongPress,
     this.semanticLabel,
   });
   final Widget child;
   final VoidCallback? onPressed;
+
+  /// Web SenderAvatar `onLongPressMention`: a touch held 500ms (moving no more
+  /// than 10px) runs this instead of [onPressed], and swallows the tap. A
+  /// mouse click is never a long press.
+  final VoidCallback? onLongPress;
   final String? semanticLabel;
 
   /// CSS `brightness(x)`: scale the colour channels.
@@ -28,7 +35,31 @@ class RaftAvatarButton extends StatelessWidget {
   ]);
 
   @override
-  Widget build(BuildContext context) => RaftInteractive(
+  Widget build(BuildContext context) {
+    final button = _button();
+    final longPress = onLongPress;
+    if (longPress == null) return button;
+    return RawGestureDetector(
+      behavior: HitTestBehavior.translucent,
+      gestures: {
+        LongPressGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+              () => LongPressGestureRecognizer(
+                duration: const Duration(milliseconds: 500),
+                postAcceptSlopTolerance: 10,
+                supportedDevices: const {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.stylus,
+                },
+              ),
+              (recognizer) => recognizer.onLongPress = longPress,
+            ),
+      },
+      child: button,
+    );
+  }
+
+  Widget _button() => RaftInteractive(
     onPressed: onPressed,
     button: onPressed != null,
     semanticLabel: semanticLabel,

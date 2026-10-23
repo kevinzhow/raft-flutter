@@ -9,14 +9,31 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/attachment_files.dart';
+import '../platform/image_clipboard.dart';
 import '../platform/native_sharing.dart';
 import 'attachment_view.dart';
 import 'message_presentation.dart';
 import 'message_selection.dart';
+import 'message_share_artifact.dart';
 import 'private_route_guard.dart';
+import 'screenshot_budget.dart';
+
+/// How long the render waits for its images; Web `SelectScreenshotTimeoutError`.
+const _captureTimeout = Duration(seconds: 10);
+
+/// Web `message.share.selectionTooLong`, `renderEmpty` and `renderTimedOut`.
+const _tooLong = RaftUserError(
+  'This selection is too long for one image. Select fewer messages and try again.',
+);
+const _renderEmpty = RaftUserError(
+  'The image came out empty. Try again, or select fewer messages.',
+);
+const _renderTimedOut = RaftUserError('Rendering timed out after 10s');
 
 /// A reviewed full-content artifact is kept only in memory until the user
 /// chooses a real save/share action. No signed capability enters the PNG.
@@ -29,6 +46,8 @@ Future<bool?> previewMessageImage(
   bool thread = false,
   AttachmentFiles? files,
   NativeSharing? sharing,
+  ImageClipboard? clipboard,
+  Future<bool> Function(Uri)? openExternal,
   String Function(DateTime)? clock,
   bool Function()? authorized,
   Listenable? authorityChanges,
@@ -37,9 +56,7 @@ Future<bool?> previewMessageImage(
     return false;
   }
   if (messages.fold<int>(0, (n, r) => n + r.message.content.length) > 50000) {
-    throw const RaftApiException(
-      'Select fewer or shorter messages to export an image.',
-    );
+    throw _tooLong;
   }
   String scope() => jsonEncode([
     w.client.generation,
@@ -213,7 +230,7 @@ Future<bool?> previewMessageImage(
     await WidgetsBinding.instance.endOfFrame;
     if (!current() || entry == null) return false;
     await Future.any([Future.wait(ready.map((r) => r.future)), revoked.future])
-        .timeout(const Duration(seconds: 10));
+        .timeout(_captureTimeout);
     if (!current() || entry == null) return false;
     await WidgetsBinding.instance.endOfFrame;
     if (!current() || entry == null) return false;
@@ -242,9 +259,7 @@ Future<bool?> previewMessageImage(
       if (!current() || entry == null) return false;
     }
     if (!decoded(renderKey.currentContext! as Element)) {
-      throw const RaftApiException(
-        'Rendering the message image timed out. Try a smaller selection.',
-      );
+      throw _renderTimedOut;
     }
     final boundary =
         renderKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -254,28 +269,28 @@ Future<bool?> previewMessageImage(
       await WidgetsBinding.instance.endOfFrame;
       if (!current() || entry == null) return false;
     }
-    if (boundary.debugNeedsPaint) {
-      throw const RaftApiException('The message image could not be rendered.');
-    }
-    final ratio = math.min(3.0, math.max(2.0, media.devicePixelRatio));
+    if (boundary.debugNeedsPaint) throw _renderEmpty;
+    // Web screenshotBudget: the highest ratio that fits the pixel budget, and
+    // no render at all when even 1x does not.
     final size = boundary.size;
-    if (size.height > 4096 ||
-        size.width * size.height * ratio * ratio > 16000000) {
-      throw const RaftApiException(
-        'Select fewer or shorter messages to export an image.',
-      );
-    }
+    final ratio = planScreenshotPixelRatio(
+      size.width,
+      size.height,
+      math.min(3.0, math.max(2.0, media.devicePixelRatio)),
+    );
+    if (ratio == null) throw _tooLong;
     final image = await boundary.toImage(pixelRatio: ratio);
     try {
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (data == null) {
-        throw const RaftApiException(
-          'The message image could not be rendered.',
-        );
-      }
+      if (data == null) throw _renderEmpty;
       png = data.buffer.asUint8List();
     } finally {
       image.dispose();
+    }
+    try {
+      validateScreenshotPng(png);
+    } on ScreenshotInvalidOutputError {
+      throw _renderEmpty;
     }
     entry
       ?..remove()
@@ -295,12 +310,15 @@ Future<bool?> previewMessageImage(
         authorityChanges: authorityChanges,
         files: files,
         sharing: sharing,
+        clipboard: clipboard,
+        openExternal: openExternal,
+        shareChannelId: thread
+            ? w.threadChannelId ?? w.channel?.id
+            : w.channel?.id,
       ),
     );
   } on TimeoutException {
-    throw const RaftApiException(
-      'Rendering the message image timed out. Try a smaller selection.',
-    );
+    throw _renderTimedOut;
   } finally {
     entry?.remove();
     w.removeListener(revoke);
@@ -322,6 +340,9 @@ class MessageImageReview extends StatefulWidget {
     this.authorityChanges,
     this.files,
     this.sharing,
+    this.clipboard,
+    this.openExternal,
+    this.shareChannelId,
   });
   final WorkspaceController controller;
   final Uint8List bytes;
@@ -330,6 +351,12 @@ class MessageImageReview extends StatefulWidget {
   final Listenable? authorityChanges;
   final AttachmentFiles? files;
   final NativeSharing? sharing;
+  final ImageClipboard? clipboard;
+  final Future<bool> Function(Uri)? openExternal;
+
+  /// The conversation the share page is created for (Web: the selection's
+  /// channel); without one "Share to X" is not offered.
+  final String? shareChannelId;
   @override
   State<MessageImageReview> createState() => _MessageImageReviewState();
 }
@@ -337,8 +364,9 @@ class MessageImageReview extends StatefulWidget {
 class _MessageImageReviewState extends State<MessageImageReview> {
   late final files = widget.files ?? AttachmentFiles();
   late final sharing = widget.sharing ?? NativeSharing();
+  late final clipboard = widget.clipboard ?? const ImageClipboard();
   SharedFileLease? lease;
-  bool busy = false;
+  bool busy = false, copying = false, copied = false, sharingLink = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Export dialog error: cleared when the next save/share starts; the dialog closes on authority loss.
   String? error;
   bool get current => mounted && widget.authorized();
@@ -428,6 +456,85 @@ class _MessageImageReviewState extends State<MessageImageReview> {
     }
   }
 
+  /// Web `handleCopyImage`: the PNG on the clipboard; the button then reads
+  /// "Copied" until the next attempt.
+  Future<void> copyImage() async {
+    if (busy || !current) return;
+    setState(() {
+      busy = copying = true;
+      copied = false;
+      error = null;
+    });
+    try {
+      await clipboard.copyPng(widget.bytes);
+      if (mounted && current) setState(() => copied = true);
+    } catch (e) {
+      logUserError(e, where: 'copy message image');
+      if (mounted && current) {
+        setState(
+          () => error = raftText(
+            context,
+            "Couldn't copy the image. Use Download instead.",
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = copying = false;
+        });
+      }
+    }
+  }
+
+  /// Web `createShareArtifactAndNavigateToX`: upload the reviewed PNG as a
+  /// share artifact, open the X intent for its page, and leave the review
+  /// (the selection ends, like Save).
+  Future<void> shareToX() async {
+    final channelId = widget.shareChannelId;
+    if (busy || !current || channelId == null) return;
+    setState(() {
+      busy = sharingLink = true;
+      error = null;
+    });
+    try {
+      final artifact = await createMessageSelectionShareArtifact(
+        widget.controller,
+        png: widget.bytes,
+        channelId: channelId,
+      );
+      if (!mounted || !current) return;
+      final intent = shareArtifactXIntentUrl(
+        artifact.url,
+        raftText(context, 'via Raft'),
+      );
+      await (widget.openExternal?.call(intent) ??
+          launchUrl(intent, mode: LaunchMode.externalApplication));
+      if (mounted && current && ModalRoute.of(context)?.isCurrent == true) {
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      if (mounted && current) {
+        setState(
+          () => error = raftText(
+            context,
+            userErrorText(
+              e,
+              fallback: 'Share failed',
+              where: 'share message image',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          busy = sharingLink = false;
+        });
+      }
+    }
+  }
+
   void close() {
     if (!busy) Navigator.pop(context, false);
   }
@@ -475,6 +582,13 @@ class _MessageImageReviewState extends State<MessageImageReview> {
                       onClose: () => Navigator.pop(context, false),
                       onSave: () => act(false),
                       onShare: sharing.supported ? () => act(true) : null,
+                      onCopy: clipboard.supported ? copyImage : null,
+                      onShareLink: widget.shareChannelId == null
+                          ? null
+                          : shareToX,
+                      copying: copying,
+                      copied: copied,
+                      sharingLink: sharingLink,
                       busy: busy,
                       error: error,
                     ),

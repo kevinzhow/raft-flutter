@@ -337,12 +337,22 @@ class RaftImageReview extends StatelessWidget {
     required this.onClose,
     this.onSave,
     this.onShare,
+    this.onCopy,
+    this.onShareLink,
+    this.copying = false,
+    this.copied = false,
+    this.sharingLink = false,
     this.busy = false,
     this.error,
   });
   final Widget preview;
   final VoidCallback onClose;
   final VoidCallback? onSave, onShare;
+
+  /// Web SelectShareLightbox "Copy image" (only where the clipboard takes a
+  /// PNG) and "Share to X" (uploads a public share page for the image).
+  final VoidCallback? onCopy, onShareLink;
+  final bool copying, copied, sharingLink;
   final bool busy;
   final String? error;
   @override
@@ -394,11 +404,24 @@ class RaftImageReview extends StatelessWidget {
                 secondary: true,
                 onPressed: busy ? null : onClose,
               ),
+              if (onCopy != null)
+                RaftButton(
+                  key: const ValueKey('image-review-copy'),
+                  label: copying
+                      ? 'Copying…'
+                      : copied
+                      ? 'Copied'
+                      : 'Copy image',
+                  icon: copied ? Icons.check : Icons.copy_outlined,
+                  secondary: true,
+                  busy: copying,
+                  onPressed: busy ? null : onCopy,
+                ),
               if (onSave != null)
                 RaftButton(
                   label: 'Save image',
                   icon: Icons.download_outlined,
-                  busy: busy,
+                  busy: busy && !copying && !sharingLink,
                   onPressed: onSave,
                 ),
               if (onShare != null)
@@ -407,6 +430,14 @@ class RaftImageReview extends StatelessWidget {
                   icon: Icons.share_outlined,
                   secondary: true,
                   onPressed: busy ? null : onShare,
+                ),
+              if (onShareLink != null)
+                RaftButton(
+                  key: const ValueKey('image-review-share-link'),
+                  label: sharingLink ? 'Sharing…' : 'Share to X',
+                  icon: Icons.ios_share,
+                  busy: sharingLink,
+                  onPressed: busy ? null : onShareLink,
                 ),
             ],
           ),
