@@ -76,9 +76,28 @@ class MessageHistoryMemory {
         main == w.presentation.channel?.id &&
         thread == w.state.threadChannelId;
     if (principal == null || server == null || !current()) return result;
+    // Resolve retained window snapshots once, then index their rows once.
+    // Re-reading every snapshot for every channel makes a long session's
+    // maintenance quadratic and repeatedly rebuilds inactive projections.
+    final snapshots = w.messageWindows.retainedSnapshots.toList();
+    final retained = <String, List<Map<String, dynamic>>>{};
+    void retain(Map<String, dynamic> row) {
+      if (row['channelId'] case final String id) {
+        retained.putIfAbsent(id, () => []).add(row);
+      }
+    }
+
+    for (final snapshot in snapshots) {
+      for (final row in snapshot.rows.followedBy(snapshot.timeline)) {
+        retain(row.json);
+      }
+    }
+    for (final held in w.messageWindows.threads.values) {
+      if (held.parent case final parent?) retain(parent.json);
+    }
     for (final id in {
       ...w.ledger.channelIds,
-      for (final snapshot in w.messageWindows.retainedSnapshots) ...[
+      for (final snapshot in snapshots) ...[
         ?snapshot.channelId,
         ?snapshot.parent?.channelId,
       ],
@@ -113,7 +132,7 @@ class MessageHistoryMemory {
       }
       if (scope == null || !current()) continue;
       final ticket = w.messageHistoryTicket(scope.parentChannel);
-      final versions = _versions(w, id);
+      final versions = _versions(w, id, retained: retained[id] ?? const []);
       if (versions.isEmpty) continue;
       final active = w.presentation.foreground && (id == main || id == thread);
       final anchor = w.messageWindows.readingAnchor(id);
@@ -204,8 +223,9 @@ class MessageHistoryMemory {
 
   static Map<String, List<Map<String, dynamic>>> _versions(
     WorkspaceMessageHost host,
-    String id,
-  ) {
+    String id, {
+    Iterable<Map<String, dynamic>>? retained,
+  }) {
     final w = host.messageDomain;
     final result = <String, List<Map<String, dynamic>>>{};
     void add(Map<String, dynamic> row) {
@@ -218,13 +238,17 @@ class MessageHistoryMemory {
     for (final row in w.ledger.messages(id)) {
       add(row);
     }
-    for (final snapshot in w.messageWindows.retainedSnapshots) {
-      for (final row in [...snapshot.rows, ...snapshot.timeline]) {
-        add(row.json);
+    if (retained != null) {
+      retained.forEach(add);
+    } else {
+      for (final snapshot in w.messageWindows.retainedSnapshots) {
+        for (final row in snapshot.rows.followedBy(snapshot.timeline)) {
+          add(row.json);
+        }
       }
-    }
-    for (final thread in w.messageWindows.threads.values) {
-      if (thread.parent case final parent?) add(parent.json);
+      for (final thread in w.messageWindows.threads.values) {
+        if (thread.parent case final parent?) add(parent.json);
+      }
     }
     for (final row in w.state.messageSync.messages(id)) {
       final copies = result.putIfAbsent(row['id'] as String, () => []);

@@ -124,7 +124,11 @@ class HistoryMemoryPool {
       () => timer.start(const Duration(milliseconds: 200), () {
         _samples.remove(owner);
         sample();
-        changed();
+        // Position alone changes no retained body or byte budget. Data changes
+        // and direction changes already request maintenance when it is needed.
+        // An in-flight proof may have captured the previous anchor. Retry that
+        // existing work once rather than leaving an over-budget window stale.
+        if (_running) _dirty = true;
       }),
     );
   }

@@ -10,6 +10,7 @@ import '../data/history_read_policy.dart';
 import '../data/history_range_digest.dart';
 import '../data/history_capacity.dart';
 import '../data/history_memory.dart';
+import '../data/history_body_proofs.dart';
 import '../data/reading_positions.dart';
 import '../data/workspace_cache_codec.dart';
 import 'history_capacity.dart';
@@ -73,6 +74,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     releaseHold: () => capacity.release(memory),
   );
 
+  final _bodyProofs = HistoryBodyProofs();
   Future<List<HistoryBodyProof>> _inspectMemory(
     MessageHistoryScope scope,
     Map<String, List<Map<String, dynamic>>> versions,
@@ -87,7 +89,7 @@ class SqliteMessageHistory implements MessageHistoryStorage {
         if (entry.value.read<int>('tombstone') == 0)
           entry.key: entry.value.read<String>('payload')};
     });
-    return inspectHistoryBodies(versions, saved);
+    return _bodyProofs(versions, saved);
   }
   @override
   late final SqliteHistoryCapacity capacity = SqliteHistoryCapacity(
@@ -113,12 +115,14 @@ class SqliteMessageHistory implements MessageHistoryStorage {
     reads.close();
     capacity.close();
     memory.close();
+    _bodyProofs.clear();
     gaps.dispose();
     _migrationTimer.cancel();
     _migrations.clear();
   }
 
   void cancelAccount(String origin, String principal) {
+    _bodyProofs.clear();
     receiver.clearAccount(origin, principal);
     reads.forgetAccount(origin, principal);
     capacity.cancel(HistoryAccount(origin, principal));
