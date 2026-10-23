@@ -2,6 +2,8 @@
 // confirmed flag): enabled, disabled, and the fail-closed undetermined state.
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raftbench_flag_controller.dart';
@@ -39,6 +41,7 @@ class _Flag {
 }
 
 void main() {
+  _retryTimerLifecycle();
   test(
     'evaluates the one key for this server and remembers the answer',
     () async {
@@ -169,5 +172,26 @@ void main() {
     await f.controller.refresh();
     expect(f.api.calls, isEmpty);
     f.controller.dispose();
+  });
+}
+
+// The retry wait is a timer owned by the controller: a page that goes away
+// while it waits must not leave it pending (flutter_test fails the test).
+void _retryTimerLifecycle() {
+  testWidgets('no timer outlives a disposed controller', (t) async {
+    final api = RaftbenchApi()
+      ..routes['POST /feature-flags/evaluate'] = ((_) =>
+          throw RaftApiException('down', status: 503));
+    final flag = RaftbenchFlagController(
+      request: api.request,
+      identity: () => 'g|u|s|owner',
+      serverId: () => 's1',
+      cached: () => null,
+      remember: (_, _) {},
+    );
+    unawaited(flag.refresh());
+    await t.pump(const Duration(milliseconds: 10));
+    expect(api.calls, hasLength(1), reason: 'waiting for the retry');
+    flag.dispose();
   });
 }

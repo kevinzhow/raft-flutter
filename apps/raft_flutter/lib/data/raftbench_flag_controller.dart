@@ -99,7 +99,7 @@ class RaftbenchFlagController extends ChangeNotifier {
           ? RaftbenchFlagState.enabled
           : RaftbenchFlagState.disabled;
     } catch (_) {
-      await Future<void>.delayed(retryDelay);
+      await _pause(retryDelay);
       if (_disposed || seq != _seq) return;
       try {
         next = await evaluate()
@@ -120,9 +120,21 @@ class RaftbenchFlagController extends ChangeNotifier {
     }
   }
 
+  Timer? _retry;
+
+  /// The wait before the one retry; cancelled with the controller so no timer
+  /// outlives the page (the future then never completes, and nothing awaits it
+  /// past [dispose]).
+  Future<void> _pause(Duration delay) {
+    final done = Completer<void>();
+    _retry = Timer(delay, done.complete);
+    return done.future;
+  }
+
   @override
   void dispose() {
     _disposed = true;
+    _retry?.cancel();
     _seq++;
     super.dispose();
   }
