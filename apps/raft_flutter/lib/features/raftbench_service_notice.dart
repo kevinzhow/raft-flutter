@@ -1,9 +1,5 @@
-// The footer of a DM with the RaftBench service agent (Web ChatPanel
-// `raftbench-service-dm-notice`): the agent is read-only analysis, it never
-// replies, so the composer is replaced by an info banner.
-import 'package:flutter/material.dart';
-import 'package:raft_ui/raft_ui.dart';
-
+// Whether the open conversation is a DM with the RaftBench service agent (Web
+// ChatPanel `dmAgent?.raftbenchService`); its footer is RaftbenchServiceDmNotice.
 import '../data/workspace_controller.dart';
 
 /// Web `dmAgent?.raftbenchService`: the open conversation is a DM with an
@@ -15,23 +11,4 @@ bool isRaftbenchServiceDm(WorkspaceController w) {
   return channel.json['peerType'] == 'agent' &&
       peer is String &&
       w.services.entityDirectory.agent(peer)?['raftbenchService'] == true;
-}
-
-class RaftbenchServiceDmNotice extends StatelessWidget {
-  const RaftbenchServiceDmNotice({super.key});
-
-  @override
-  Widget build(BuildContext context) => ColoredBox(
-    key: const ValueKey('raftbench-service-dm-notice'),
-    color: RaftTokens.of(context).canvas,
-    child: Padding(
-      // ds-allow: Web `px-3 pt-2 pb-3` host of the footer Banner
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: RaftBanner(
-        status: RaftBannerRecipeStatus.info,
-        textAlign: TextAlign.center,
-        description: 'This read-only analysis agent does not reply to DMs. Results appear on the RaftBench page.',
-      ),
-    ),
-  );
 }

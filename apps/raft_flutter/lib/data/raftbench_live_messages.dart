@@ -1,13 +1,18 @@
 import 'dart:async';
 
+import 'package:raft_ui/raft_ui.dart'
+    show
+        RaftbenchChannelSummary,
+        RaftbenchEvidenceMessage,
+        RaftbenchOverviewSnapshot,
+        raftbenchOverviewChannelLimit;
+
 import 'raftbench_hosted_controller.dart' show RaftbenchRequest;
-import 'raftbench_rules.dart';
 
 /// Explicit foreground message reads for the legacy phrase scan (Web
 /// `raftbench/liveMessages.ts`): the normal human message API, so the server's
 /// channel ACL applies, capped by the caller, four requests in flight. A
 /// denied channel contributes no message and no signal count.
-const raftbenchOverviewChannelLimit = 20;
 const raftbenchMessageWindowLimit = 200;
 
 class RaftbenchMessageSnapshot {
@@ -20,27 +25,6 @@ class RaftbenchMessageSnapshot {
   final List<RaftbenchEvidenceMessage> messages;
   final DateTime fetchedAt;
   final bool historyLimited, mayHaveOlder;
-}
-
-class RaftbenchChannelSummary {
-  const RaftbenchChannelSummary(this.channelId, this.messages);
-  final String channelId;
-  final int messages;
-}
-
-class RaftbenchOverviewSnapshot extends RaftbenchMessageSnapshot {
-  const RaftbenchOverviewSnapshot({
-    required super.messages,
-    required super.fetchedAt,
-    required super.historyLimited,
-    required super.mayHaveOlder,
-    required this.channels,
-    required this.unavailableChannelIds,
-    required this.requestedChannels,
-  });
-  final List<RaftbenchChannelSummary> channels;
-  final List<String> unavailableChannelIds;
-  final int requestedChannels;
 }
 
 RaftbenchEvidenceMessage? _evidence(Object? value, String channelId) {

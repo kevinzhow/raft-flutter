@@ -2,9 +2,9 @@
 // enable / disable, the sources and start date, the service agent, progress,
 // coverage and the accepted findings.
 import 'package:flutter/material.dart';
-import 'package:raft_ui/raft_ui.dart';
 
-import '../data/raftbench_hosted_controller.dart';
+import '../../raft_ui.dart';
+
 import 'raftbench_date_field.dart';
 import 'raftbench_findings.dart';
 import 'raftbench_parts.dart';
@@ -17,7 +17,7 @@ class RaftbenchHostedAnalysis extends StatelessWidget {
     required this.onOpenAgent,
     required this.onOpenMessage,
   });
-  final RaftbenchHostedController controller;
+  final RaftbenchHostedPanel controller;
   final bool allowed;
 
   /// Open the agent's profile (Web `nav.toAgent`).
@@ -45,7 +45,7 @@ class _Analysis extends StatelessWidget {
     required this.onOpenAgent,
     required this.onOpenMessage,
   });
-  final RaftbenchHostedController controller;
+  final RaftbenchHostedPanel controller;
   final bool allowed;
   final void Function(String) onOpenAgent;
   final void Function(String, String) onOpenMessage;
@@ -476,7 +476,7 @@ class _Analysis extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  for (final days in RaftbenchHostedController.historyDays)
+                  for (final days in raftbenchHistoryDays)
                     RaftbenchButton(
                       raftFormat(context, 'Past {days} days', {'days': days}),
                       small: true,
@@ -665,7 +665,7 @@ class _ChannelGrid extends StatelessWidget {
     required this.columns,
     required this.ty,
   });
-  final RaftbenchHostedController controller;
+  final RaftbenchHostedPanel controller;
   final int columns;
   final RaftbenchType ty;
 

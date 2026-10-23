@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/channel_footer_widgets.dart';
 import 'package:raft_flutter/features/raftbench_service_notice.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'support/raftbench_host.dart';
 

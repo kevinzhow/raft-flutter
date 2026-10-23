@@ -4,11 +4,9 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
-import 'package:raft_flutter/data/raftbench_hosted_controller.dart'
-    show RaftbenchOption;
 import 'package:raft_flutter/data/raftbench_live_messages.dart';
-import 'package:raft_flutter/data/raftbench_rules.dart';
 import 'package:raft_flutter/data/raftbench_rules_controller.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'support/raftbench_fixture.dart';
 

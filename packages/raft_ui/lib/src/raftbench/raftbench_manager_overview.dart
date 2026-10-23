@@ -2,14 +2,14 @@
 // snapshot, the 7-day completion comparison and the server-wide cloud-agent
 // spend, read from existing database and billing aggregates.
 import 'package:flutter/material.dart';
-import 'package:raft_ui/raft_ui.dart';
 
-import '../data/raftbench_overview_controller.dart';
+import '../../raft_ui.dart';
+
 import 'raftbench_parts.dart';
 
 class RaftbenchManagerOverview extends StatelessWidget {
   const RaftbenchManagerOverview({super.key, required this.controller});
-  final RaftbenchOverviewController controller;
+  final RaftbenchOverviewPanel controller;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -20,7 +20,7 @@ class RaftbenchManagerOverview extends StatelessWidget {
 
 class _Overview extends StatelessWidget {
   const _Overview({required this.controller});
-  final RaftbenchOverviewController controller;
+  final RaftbenchOverviewPanel controller;
 
   static const _tabular = [FontFeature.tabularFigures()];
 

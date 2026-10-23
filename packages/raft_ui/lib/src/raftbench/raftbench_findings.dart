@@ -2,10 +2,9 @@
 // HostedAnalysis.tsx): window, status, failure or partial reasons, accepted
 // findings with evidence references that open the source message, paging.
 import 'package:flutter/material.dart';
-import 'package:raft_ui/raft_ui.dart';
 
-import '../data/raftbench_hosted_controller.dart';
-import '../data/raftbench_models.dart';
+import '../../raft_ui.dart';
+
 import 'raftbench_parts.dart';
 
 const _statusText = {
@@ -49,7 +48,7 @@ class RaftbenchFindings extends StatelessWidget {
     required this.controller,
     required this.onOpenMessage,
   });
-  final RaftbenchHostedController controller;
+  final RaftbenchHostedPanel controller;
   final void Function(String channelId, String messageId) onOpenMessage;
 
   @override

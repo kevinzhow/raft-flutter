@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
-import 'package:raft_flutter/features/raftbench_date_field.dart';
 import 'package:raft_flutter/features/system_notification_center.dart';
 import 'package:raft_flutter/features/workspace_view.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -35,8 +34,9 @@ Future<void> mountHost(
   await t.pumpWidget(
     MaterialApp(
       navigatorKey: nav,
-      theme: raftTheme(RaftFamily.elegant)
-          .copyWith(platform: platformFor(size)),
+      theme: raftTheme(
+        RaftFamily.elegant,
+      ).copyWith(platform: platformFor(size)),
       home: const Scaffold(body: Text('root-page')),
     ),
   );
@@ -189,27 +189,6 @@ void main() {
         scrim: farPoint(size),
       );
     },
-    'raftbench-date-picker': (t, size) async {
-      await mountHost(
-        t,
-        size,
-        (_) => SizedBox(
-          width: 200,
-          child: RaftbenchDateField(
-            value: '2026-10-17',
-            max: '2026-10-24',
-            semanticLabel: 'Analyze messages since (UTC)',
-            onChanged: (_) {},
-          ),
-        ),
-      );
-      await t.tap(find.byKey(const ValueKey('raftbench-history-from')));
-      await frames(t, 15);
-      return SurfaceProbe(
-        isOpen: openWhile(find.byType(DatePickerDialog)),
-        scrim: farPoint(size),
-      );
-    },
     'dropdown-menu': (t, size) async {
       await mountHost(
         t,
@@ -333,8 +312,9 @@ void main() {
         size,
         (context) => RaftButton(
           label: 'Show snack',
-          onPressed: () => ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Download failed'))),
+          onPressed: () => ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Download failed'))),
         ),
       );
       await t.tap(find.text('Show snack'));
@@ -362,14 +342,8 @@ void main() {
           ],
         }),
       ];
-      w.messageDomain.ledger.ingest(
-        rows,
-        expectedGeneration: w.messageDomain.ledger.generation,
-      );
-      w.messageDomain.visibleIds['c1'] = {
-        ...?w.messageDomain.visibleIds['c1'],
-        'mr',
-      };
+      w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+      w.messageDomain.visibleIds['c1'] = {...?w.messageDomain.visibleIds['c1'], 'mr'};
       w.notifyListeners();
       await frames(t, 20);
       if (size.width < 768) {

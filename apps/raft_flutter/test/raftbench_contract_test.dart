@@ -4,9 +4,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raftbench_access.dart';
-import 'package:raft_flutter/data/raftbench_metrics.dart';
-import 'package:raft_flutter/data/raftbench_models.dart';
-import 'package:raft_flutter/data/raftbench_rules.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'support/raftbench_fixture.dart';
 

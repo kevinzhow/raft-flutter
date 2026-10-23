@@ -2,11 +2,9 @@
 // `raftbench-legacy-rules`): manual phrase matching over the latest messages
 // of the chosen scope, a review queue with evidence and nearby context.
 import 'package:flutter/material.dart';
-import 'package:raft_ui/raft_ui.dart';
 
-import '../data/raftbench_live_messages.dart';
-import '../data/raftbench_rules.dart';
-import '../data/raftbench_rules_controller.dart';
+import '../../raft_ui.dart';
+
 import 'raftbench_parts.dart';
 
 String _label(RaftbenchSignal kind) => switch (kind) {
@@ -32,7 +30,7 @@ class RaftbenchLegacyRules extends StatelessWidget {
     required this.channelName,
     required this.onOpenMessage,
   });
-  final RaftbenchRulesController controller;
+  final RaftbenchRulesPanel controller;
 
   /// The scope shown in the coverage line (the workspace overview or a channel).
   final String channelName;
@@ -55,7 +53,7 @@ class _Rules extends StatelessWidget {
     required this.channelName,
     required this.onOpenMessage,
   });
-  final RaftbenchRulesController controller;
+  final RaftbenchRulesPanel controller;
   final String channelName;
   final void Function(String, String) onOpenMessage;
 

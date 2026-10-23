@@ -14,10 +14,6 @@ import '../data/raftbench_overview_controller.dart';
 import '../data/raftbench_rules_controller.dart';
 import '../data/workspace_controller.dart';
 import 'management_support.dart' show pageIdentity;
-import 'raftbench_hosted_analysis.dart';
-import 'raftbench_legacy_rules.dart';
-import 'raftbench_manager_overview.dart';
-import 'raftbench_parts.dart';
 
 /// The page and its gates: owner / admin only (the server role, never staff
 /// access), then the server flag. A page that was confirmed on stays open when
@@ -73,24 +69,10 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
 
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), ty = RaftbenchType(t);
-    String tr(String s) => raftText(context, s);
-    Widget notice(String title, String help) => _Scroll(
-      child: RaftbenchCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(tr(title), style: ty.title()),
-            const SizedBox(height: 8),
-            Text(tr(help), style: ty.callout(color: t.muted)),
-          ],
-        ),
-      ),
-    );
     if (!canUseRaftBench(w.server?.string('role'))) {
-      return notice(
-        'RaftBench is for server administrators',
-        'Only this server’s owner or administrators can open this overview. Existing channel permissions still apply.',
+      return const RaftbenchNotice(
+        title: 'RaftBench is for server administrators',
+        help: 'Only this server’s owner or administrators can open this overview. Existing channel permissions still apply.',
       );
     }
     final flag = widget.flag;
@@ -98,11 +80,11 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
       // A flag that has not resolved yet shows nothing rather than flashing
       // "not enabled" (the first frame is the final one).
       if (!flag.resolved) {
-        return ColoredBox(color: t.canvas, child: const SizedBox.expand());
+        return const RaftbenchBlankPage();
       }
-      return notice(
-        'RaftBench is not enabled for this server',
-        'This pilot is off by default and only available to explicitly enrolled servers.',
+      return const RaftbenchNotice(
+        title: 'RaftBench is not enabled for this server',
+        help: 'This pilot is off by default and only available to explicitly enrolled servers.',
       );
     }
     return _AdminPage(
@@ -112,33 +94,6 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
       now: widget.now,
     );
   }
-}
-
-/// The scrolling canvas of the page (`px-5 py-4`, `max-w-7xl`).
-class _Scroll extends StatelessWidget {
-  const _Scroll({required this.child, this.controller});
-  final Widget child;
-  final ScrollController? controller;
-
-  @override
-  Widget build(BuildContext context) => ColoredBox(
-    color: RaftTokens.of(context).canvas,
-    child: SingleChildScrollView(
-      key: const ValueKey('raftbench-scroll'),
-      controller: controller,
-      primary: false,
-      padding: raftScrollPadding(
-        context,
-        const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1280),
-          child: child,
-        ),
-      ),
-    ),
-  );
 }
 
 class _AdminPage extends StatefulWidget {
@@ -157,8 +112,6 @@ class _AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<_AdminPage> {
-  final scroll = ScrollController();
-  final metricsKey = GlobalKey(), aiKey = GlobalKey();
   String channelId = raftbenchWorkspaceScope;
   bool consented = false;
   late final RaftbenchHostedController hosted;
@@ -207,7 +160,6 @@ class _AdminPageState extends State<_AdminPage> {
     hosted.dispose();
     rules.dispose();
     overview?.dispose();
-    scroll.dispose();
     super.dispose();
   }
 
@@ -234,21 +186,8 @@ class _AdminPageState extends State<_AdminPage> {
     unawaited(w.jumpToMessage(channel, message));
   }
 
-  void _reveal(GlobalKey key) {
-    final target = key.currentContext;
-    if (target == null) return;
-    Scrollable.ensureVisible(
-      target,
-      duration: MediaQuery.disableAnimationsOf(context)
-          ? Duration.zero
-          : const Duration(milliseconds: 200),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final t = RaftTokens.of(context), ty = RaftbenchType(t);
-    String tr(String s) => raftText(context, s);
     final choices = options;
     final ids = {for (final o in choices) o.value};
     // A chosen channel that is no longer a candidate leaves the scope empty.
@@ -280,185 +219,19 @@ class _AdminPageState extends State<_AdminPage> {
       );
       if (scope.isNotEmpty) overview!.load();
     }
-    final wide = raftBreakpointWidth(context) >= 768;
-    final gap = wide ? 20.0 : 16.0;
-    final scopeName = scope == raftbenchWorkspaceScope
-        ? tr('Workspace overview')
-        : choices.where((o) => o.value == scope).firstOrNull?.label ?? '';
-    Widget tile({
-      required RaftGlyph glyph,
-      required String title,
-      required String cue,
-      required Color color,
-      required GlobalKey target,
-    }) => GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _reveal(target),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              RaftIcon(glyph, size: 22, color: t.ink),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: ty.callout(weight: FontWeight.w700)),
-                    // The cue is an inline span: its line box takes the 24px of
-                    // the parent's line height, not the caption's 16.
-                    Text(
-                      cue,
-                      style: ty
-                          .caption(weight: FontWeight.w400)
-                          .copyWith(height: 24 / 12),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    final tiles = [
-      tile(
-        glyph: RaftGlyph.barChart3,
-        title: tr('Tasks and cost'),
-        cue: tr('Database metrics · no AI scan needed'),
-        color: t.colors['info-soft']!,
-        target: metricsKey,
-      ),
-      tile(
-        glyph: RaftGlyph.sparkles,
-        title: tr('Conversation insights'),
-        cue: tr('Reads selected channels · no DM replies'),
-        color: t.colors['success-soft']!,
-        target: aiKey,
-      ),
-    ];
-    return _Scroll(
-      controller: scroll,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: gap,
-        children: [
-          if (!widget.analysisAllowed)
-            RaftbenchCard(
-              color: t.colors['warning-soft'],
-              transparentBorder: true,
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  tr(
-                    'Rollout status could not be refreshed. Your current evidence and review are preserved; new reads are paused until the status is confirmed.',
-                  ),
-                  style: ty.callout(),
-                ),
-              ),
-            ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  tr('Workspace efficiency and cost'),
-                  style: wide ? ty.display() : ty.title(),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                tr(
-                  'Two views: task metrics from the database and AI insights from conversations.',
-                ),
-                style: ty.callout(color: t.muted),
-              ),
-            ],
-          ),
-          LayoutBuilder(
-            builder: (context, box) {
-              final two = raftBreakpointWidth(context) >= 640;
-              if (!two) {
-                return Column(spacing: 12, children: tiles);
-              }
-              return Row(
-                spacing: 12,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [for (final x in tiles) Expanded(child: x)],
-              );
-            },
-          ),
-          RaftbenchCard(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: wide ? 240 : 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('Task metrics and phrase-scan scope'),
-                      style: ty.footnote(
-                        weight: FontWeight.w600,
-                        color: t.muted,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    RaftSelectField<String>(
-                      value: scope.isEmpty ? null : scope,
-                      label: tr('Task metrics and phrase-scan scope'),
-                      height: 40,
-                      placeholder: 'Select a channel',
-                      items: [
-                        DropdownMenuItem(
-                          value: raftbenchWorkspaceScope,
-                          child: Text(tr('Workspace overview')),
-                        ),
-                        for (final o in choices)
-                          DropdownMenuItem(
-                            value: o.value,
-                            child: Text(o.label),
-                          ),
-                      ],
-                      onChanged: (value) {
-                        setState(
-                          () => channelId = value ?? raftbenchWorkspaceScope,
-                        );
-                        rules.resetDrill();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          KeyedSubtree(
-            key: metricsKey,
-            child: RaftbenchManagerOverview(controller: overview!),
-          ),
-          KeyedSubtree(
-            key: aiKey,
-            child: RaftbenchHostedAnalysis(
-              controller: hosted,
-              allowed: widget.analysisAllowed,
-              onOpenAgent: _openAgent,
-              onOpenMessage: _openMessage,
-            ),
-          ),
-          RaftbenchLegacyRules(
-            controller: rules,
-            channelName: scopeName,
-            onOpenMessage: _openMessage,
-          ),
-        ],
-      ),
+    return RaftbenchAdminView(
+      overview: overview!,
+      hosted: hosted,
+      rules: rules,
+      options: choices,
+      scope: scope,
+      onScope: (value) {
+        setState(() => channelId = value);
+        rules.resetDrill();
+      },
+      analysisAllowed: widget.analysisAllowed,
+      onOpenAgent: _openAgent,
+      onOpenMessage: _openMessage,
     );
   }
 }

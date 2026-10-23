@@ -10,7 +10,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'select-field',
     kind: SurfaceKind.popup,
-    web: 'ui/FormField.tsx:1 native <select> / SelectContent: Esc, outside press',
+    web:
+        'ui/FormField.tsx:1 native <select> / SelectContent: Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -19,15 +20,6 @@ const popupSurfaces = <CloseSurface>[
       'lib/features/connected_app_editor.dart',
       'lib/features/resource_view.dart',
     ],
-  ),
-  CloseSurface(
-    'raftbench-date-picker',
-    kind: SurfaceKind.popup,
-    web: 'raftbench/HostedAnalysis.tsx native <input type="date"> picker: Esc, outside press',
-    phone: {_esc, _scrim, _sys},
-    fold: {_esc, _scrim, _sys},
-    desktop: {_esc, _scrim, _sys},
-    files: ['lib/features/raftbench_date_field.dart'],
   ),
   CloseSurface(
     'dropdown-menu',
@@ -75,7 +67,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'notification-center',
     kind: SurfaceKind.popup,
-    web: 'layout/NotificationTrigger.tsx:55-60 Base UI Popover: Esc, outside press',
+    web:
+        'layout/NotificationTrigger.tsx:55-60 Base UI Popover: Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -93,7 +86,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'message-context-menu',
     kind: SurfaceKind.popup,
-    web: 'message/MessageItem.tsx:5103-5109 DismissBackdrop (outside press), scroll/resize close',
+    web:
+        'message/MessageItem.tsx:5103-5109 DismissBackdrop (outside press), scroll/resize close',
     phone: {_scrim, _sys},
     fold: {_scrim, _sys},
     desktop: {_scrim, _sys},
@@ -106,7 +100,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'toast',
     kind: SurfaceKind.toast,
-    web: 'LocalizedToastProvider.tsx:35,61-69 ToastClose unless hasClose === false',
+    web:
+        'LocalizedToastProvider.tsx:35,61-69 ToastClose unless hasClose === false',
     phone: {_x},
     fold: {_x},
     desktop: {_x},
@@ -116,16 +111,21 @@ const popupSurfaces = <CloseSurface>[
       'lib/features/thread_agent_followers_view.dart',
     ],
     status: 'fixed',
-    fix: 'RaftToastPortal renders the Web default toast (icon + close + action); close was ignored in the icon-less layout',
+    fix:
+        'RaftToastPortal renders the Web default toast (icon + close + action); close was ignored in the icon-less layout',
   ),
   CloseSurface(
     'selection-toast',
     kind: SurfaceKind.toast,
-    web: 'ChatPanel.tsx:117, ThreadPanel.tsx:86 SELECTION_TOAST_OPTIONS dismissible:false; forwardToast.ts:28 hasClose false',
+    web:
+        'ChatPanel.tsx:117, ThreadPanel.tsx:86 SELECTION_TOAST_OPTIONS dismissible:false; forwardToast.ts:28 hasClose false',
     none: {
-      'phone': 'Web gives the selection toast no close (auto timeout); asserted in chat_selection_consumer_test',
-      'fold': 'Web gives the selection toast no close (auto timeout); asserted in chat_selection_consumer_test',
-      'desktop': 'Web gives the selection toast no close (auto timeout); asserted in chat_selection_consumer_test',
+      'phone':
+          'Web gives the selection toast no close (auto timeout); asserted in chat_selection_consumer_test',
+      'fold':
+          'Web gives the selection toast no close (auto timeout); asserted in chat_selection_consumer_test',
+      'desktop':
+          'Web gives the selection toast no close (auto timeout); asserted in chat_selection_consumer_test',
     },
     files: ['lib/features/chat_view.dart'],
     status: 'fixed',
@@ -134,7 +134,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'snackbar',
     kind: SurfaceKind.toast,
-    web: 'LocalizedToastProvider.tsx:61-69 (Web has no snackbar; every transient message is a toast with ToastClose)',
+    web:
+        'LocalizedToastProvider.tsx:61-69 (Web has no snackbar; every transient message is a toast with ToastClose)',
     phone: {_x},
     fold: {_x},
     desktop: {_x},
@@ -154,7 +155,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'reaction-picker',
     kind: SurfaceKind.popup,
-    web: 'message/MessageItem.tsx:4009-4033 pointerdown outside, Esc, scroll, resize',
+    web:
+        'message/MessageItem.tsx:4009-4033 pointerdown outside, Esc, scroll, resize',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -172,7 +174,8 @@ const popupSurfaces = <CloseSurface>[
       'lib/features/thread_agent_followers_view.dart',
     ],
     status: 'fixed',
-    fix: 'RaftDismissScope: Escape closes the popover with focus still on the trigger',
+    fix:
+        'RaftDismissScope: Escape closes the popover with focus still on the trigger',
   ),
   CloseSurface(
     'inline-badge-editor',
@@ -187,7 +190,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-overflow-menu',
     kind: SurfaceKind.popup,
-    web: 'agent/AgentProfileOverflowMenu.tsx:108 DropdownMenu (Base UI): Esc, outside press',
+    web:
+        'agent/AgentProfileOverflowMenu.tsx:108 DropdownMenu (Base UI): Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -196,7 +200,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'admin-principal-picker',
     kind: SurfaceKind.popup,
-    web: 'settings/SettingsPanel.tsx:2626-2638 mousedown outside (no Escape in Web)',
+    web:
+        'settings/SettingsPanel.tsx:2626-2638 mousedown outside (no Escape in Web)',
     phone: {_scrim, _sys},
     fold: {_scrim, _sys},
     desktop: {_scrim, _sys},
@@ -205,7 +210,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-select',
     kind: SurfaceKind.popup,
-    web: 'agent/RuntimeConfigFields.tsx:32 raft-ui Select (Base UI): Esc, outside press',
+    web:
+        'agent/RuntimeConfigFields.tsx:32 raft-ui Select (Base UI): Esc, outside press',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -214,7 +220,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'agent-combobox',
     kind: SurfaceKind.popup,
-    web: 'agent/RuntimeChoiceCombobox.tsx Combobox (Base UI): Esc, outside press; the input is the field',
+    web:
+        'agent/RuntimeChoiceCombobox.tsx Combobox (Base UI): Esc, outside press; the input is the field',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -223,7 +230,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'feedback-close-menu',
     kind: SurfaceKind.popup,
-    web: 'external hands-feedback ReporterCloseSplitButton (not in the Web source tree)',
+    web:
+        'external hands-feedback ReporterCloseSplitButton (not in the Web source tree)',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -233,7 +241,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'runtime-usage-card',
     kind: SurfaceKind.popup,
-    web: 'machine/RuntimeAccountUsageChip.tsx:520-540 pinned popover: Esc, pointerdown outside; CloseButton :234',
+    web:
+        'machine/RuntimeAccountUsageChip.tsx:520-540 pinned popover: Esc, pointerdown outside; CloseButton :234',
     fold: {_x, _esc, _scrim, _sys},
     desktop: {_x, _esc, _scrim, _sys},
     none: {
@@ -251,7 +260,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'section-emoji-picker',
     kind: SurfaceKind.popup,
-    web: 'layout/SidebarSectionEmojiPicker.tsx Popover (Base UI): Esc, outside press; the dialog stays open',
+    web:
+        'layout/SidebarSectionEmojiPicker.tsx Popover (Base UI): Esc, outside press; the dialog stays open',
     phone: {_esc, _scrim, _sys},
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
@@ -260,7 +270,8 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'composer-suggestions',
     kind: SurfaceKind.popup,
-    web: 'hooks/useAutocomplete.ts:76 Escape dismisses (no outside-press handler; typing or blur ends the trigger)',
+    web:
+        'hooks/useAutocomplete.ts:76 Escape dismisses (no outside-press handler; typing or blur ends the trigger)',
     phone: {_esc},
     fold: {_esc},
     desktop: {_esc},
@@ -274,7 +285,8 @@ const popupSurfaces = <CloseSurface>[
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
     none: {
-      'phone': 'the Help popover hangs off the wide rail only (LeftRail side === left)',
+      'phone':
+          'the Help popover hangs off the wide rail only (LeftRail side === left)',
     },
     files: [
       '../../packages/raft_ui/lib/src/workspace_shell.dart',
@@ -297,11 +309,13 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'hover-card',
     kind: SurfaceKind.popup,
-    web: 'Base UI PreviewCard: pointer-hover surface; Esc and outside press close it',
+    web:
+        'Base UI PreviewCard: pointer-hover surface; Esc and outside press close it',
     fold: {_esc, _scrim},
     desktop: {_esc, _scrim},
     none: {
-      'phone': 'hover cards are pointer-only (docs/parity.md); a touch never opens one',
+      'phone':
+          'hover cards are pointer-only (docs/parity.md); a touch never opens one',
     },
     files: ['../../packages/raft_ui/lib/src/hover_card.dart'],
     status: 'approved',
@@ -309,9 +323,11 @@ const popupSurfaces = <CloseSurface>[
   CloseSurface(
     'message-hover-toolbar',
     kind: SurfaceKind.popup,
-    web: 'message/MessageItem.tsx:4375 MessageHoverToolbar: follows the pointer, no close control',
+    web:
+        'message/MessageItem.tsx:4375 MessageHoverToolbar: follows the pointer, no close control',
     none: {
-      'phone': 'the strip is a hover affordance; touch reaches the same actions through the long-press menu',
+      'phone':
+          'the strip is a hover affordance; touch reaches the same actions through the long-press menu',
       'fold': 'the strip follows the pointer (hover); Web has no close control',
       'desktop':
           'the strip follows the pointer (hover); Web has no close control',

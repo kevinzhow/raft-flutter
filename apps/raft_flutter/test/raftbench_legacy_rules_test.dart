@@ -2,10 +2,8 @@
 // scan on request, cues, evidence with nearby context, review labels.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:raft_flutter/data/raftbench_hosted_controller.dart'
-    show RaftbenchOption;
 import 'package:raft_flutter/data/raftbench_rules_controller.dart';
-import 'package:raft_flutter/features/raftbench_legacy_rules.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'support/raftbench_fixture.dart';
 import 'support/raftbench_host.dart';

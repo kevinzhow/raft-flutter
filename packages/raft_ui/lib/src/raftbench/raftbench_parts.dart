@@ -3,7 +3,8 @@
 // native `<details>` disclosure the page uses.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:raft_ui/raft_ui.dart';
+
+import '../../raft_ui.dart';
 
 /// `text-display`, `text-title`, `text-headline`, `text-callout`,
 /// `text-footnote`, `text-caption`, `text-mono-meta` (raft-ui 0.7.0 scale),

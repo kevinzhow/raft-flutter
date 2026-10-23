@@ -4,18 +4,16 @@ import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart' show RaftApiException;
 
 import 'raftbench_hosted_controller.dart' show RaftbenchRequest;
-import 'raftbench_metrics.dart';
 
-enum RaftbenchLoadKind { idle, loading, error, unavailable, ready }
-
-/// One metric's load state (Web `Load<T>`).
-class RaftbenchLoad<T> {
-  const RaftbenchLoad(this.kind, [this.value]);
-  const RaftbenchLoad.ready(T this.value) : kind = RaftbenchLoadKind.ready;
-  final RaftbenchLoadKind kind;
-  final T? value;
-  bool get loading => kind == RaftbenchLoadKind.loading;
-}
+import 'package:raft_ui/raft_ui.dart'
+    show
+        RaftbenchCostComparison,
+        RaftbenchLoad,
+        RaftbenchLoadKind,
+        RaftbenchOverviewPanel,
+        RaftbenchTaskPeriods,
+        RaftbenchTaskSnapshot,
+        RaftbenchWindow;
 
 /// "Tasks and cost" (Web `ManagerOverview.tsx`): task snapshot, the period
 /// comparison and the server-wide cloud-agent spend, three independent reads
@@ -24,7 +22,8 @@ class RaftbenchLoad<T> {
 /// One controller serves one scope (a channel, or the whole workspace when
 /// [channelId] is null). A result is dropped once the identity changed or a
 /// newer [load] started.
-class RaftbenchOverviewController extends ChangeNotifier {
+class RaftbenchOverviewController extends ChangeNotifier
+    implements RaftbenchOverviewPanel {
   RaftbenchOverviewController({
     required this.request,
     required this.identity,
@@ -39,12 +38,15 @@ class RaftbenchOverviewController extends ChangeNotifier {
   final String? channelId;
   final DateTime Function() now;
 
+  @override
   RaftbenchLoad<RaftbenchTaskPeriods> tasks = const RaftbenchLoad(
     RaftbenchLoadKind.idle,
   );
+  @override
   RaftbenchLoad<RaftbenchTaskSnapshot> snapshot = const RaftbenchLoad(
     RaftbenchLoadKind.idle,
   );
+  @override
   RaftbenchLoad<RaftbenchCostComparison> costs = const RaftbenchLoad(
     RaftbenchLoadKind.idle,
   );
@@ -53,6 +55,7 @@ class RaftbenchOverviewController extends ChangeNotifier {
   int _seq = 0;
   bool _disposed = false;
 
+  @override
   bool get anyLoading => snapshot.loading || tasks.loading || costs.loading;
 
   bool _current(int seq) =>
@@ -62,6 +65,7 @@ class RaftbenchOverviewController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  @override
   Future<void> load() async {
     if (_disposed || identity() != _identity || !roleAllowed()) return;
     final seq = ++_seq;

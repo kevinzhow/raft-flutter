@@ -3,7 +3,8 @@
 // the platform date picker.
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:raft_ui/raft_ui.dart';
+
+import '../../raft_ui.dart';
 
 class RaftbenchDateField extends StatefulWidget {
   const RaftbenchDateField({

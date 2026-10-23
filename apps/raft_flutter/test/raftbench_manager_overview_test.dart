@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raftbench_overview_controller.dart';
-import 'package:raft_flutter/features/raftbench_manager_overview.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'support/raftbench_fixture.dart';
 import 'support/raftbench_host.dart';
