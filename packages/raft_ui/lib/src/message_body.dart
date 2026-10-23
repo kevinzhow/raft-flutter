@@ -71,6 +71,7 @@ import 'design_primitives.dart';
 import 'link_scope.dart';
 import 'localization.dart';
 import 'message_semantics.dart';
+import 'selected_text_quote.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 
@@ -84,7 +85,7 @@ class _ReferencesKey {
     String Function(int number)? taskHref,
     bool Function(int number)? knownTaskNumber,
   ) : references = [
-        for (final r in references) (r.text, r.href, r.identityBacked),
+        for (final r in references) (r.text, r.href, r.identityBacked, r.label),
       ],
       tasks = taskHref == null
           ? null
@@ -97,7 +98,7 @@ class _ReferencesKey {
             ];
   static final _taskNumberPattern = RegExp(r'#([1-9][0-9]*)');
   final String source;
-  final List<(String, String, bool)> references;
+  final List<(String, String, bool, String?)> references;
   final List<(int, String, bool)>? tasks;
   @override
   bool operator ==(Object other) =>
@@ -633,10 +634,18 @@ class RaftMessageBody extends StatelessWidget {
     if (joinsAmbientSelection) return body;
     // One selection region per message: prose blocks before and after a
     // code block share it, and a row mounts one region instead of several.
+
+    final quote = mountedMessage
+        ? RaftSelectionShortcutScope.maybeOf(context)
+        : null;
     return RaftSelectionArea(
       // Desktop context menus belong to the message host; a touch selection
       // keeps the platform Copy / Select all toolbar.
       contextMenuBuilder: RaftSelectionArea.touchToolbarOnly,
+      // Web MessageSelectionShortcut: a mouse selection offers Quote / Copy.
+      shortcut: quote == null
+          ? null
+          : RaftSelectionShortcut(onQuote: quote.onQuote),
       // The region is its child's box and the body is as wide as its widest
       // line, so a mouse drag starting in the blank space beside a short
       // message (a lone link) began outside any selectable region. On desktop

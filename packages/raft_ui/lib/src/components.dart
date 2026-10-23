@@ -15,6 +15,7 @@ import 'presentation.dart';
 import 'markdown_editing.dart';
 import 'markdown_autolink.dart';
 import 'message_semantics.dart';
+import 'selected_text_quote.dart';
 import 'message_body.dart' show raftBodyEndsInCode;
 import 'message_row_recipe.dart';
 import 'message_content_tokens.dart';
@@ -1489,6 +1490,7 @@ class RaftMessageTile extends StatelessWidget {
     this.threadLabel,
     this.threadPreview,
     this.taskReference,
+    this.savedIndicator,
     this.threadRepliesBadge,
     this.badge,
     this.departureLabel,
@@ -1515,6 +1517,7 @@ class RaftMessageTile extends StatelessWidget {
     this.hoverToolbar,
     this.selectionLeading,
     this.onAuthor,
+    this.onAuthorMenu,
     this.onTap,
     this.rowContext = RaftMessageRowContext.main,
     this.continuation = false,
@@ -1564,6 +1567,9 @@ class RaftMessageTile extends StatelessWidget {
   /// actions, thread controls, attachments, or reactions.
   final Widget? body, threadPreview, taskReference;
 
+  /// Web `MessageItemSavedIndicator`: shown in the footer of a saved message.
+  final Widget? savedIndicator;
+
   /// Web MessageItem footer `ThreadRepliesBadge`, after the task badge and
   /// before reactions (hidden when the inline reply surface replaces it).
   final Widget? threadRepliesBadge;
@@ -1590,6 +1596,9 @@ class RaftMessageTile extends StatelessWidget {
   /// Multi-select checkbox shown while the app is in select mode.
   final Widget? selectionLeading;
   final VoidCallback? onAuthor, onTap;
+
+  /// See [RaftMessageRow.onAuthorMenu].
+  final ValueChanged<Offset>? onAuthorMenu;
   final bool continuation, coarsePointer, popupOpen, highlighted;
 
   /// Rhythm markers (`data-followed-by`, `data-follows-system`).
@@ -1633,6 +1642,7 @@ class RaftMessageTile extends StatelessWidget {
       semanticsActions: semanticsActions,
       avatar: avatar ?? RaftAvatar(name: author, size: 32),
       onAuthor: onAuthor,
+      onAuthorMenu: onAuthorMenu,
       onActions: onActions,
       onActionsAt: onActionsAt,
       onTap: onTap,
@@ -1786,6 +1796,7 @@ class RaftMessageTile extends StatelessWidget {
       inlineReplies: threadPreview,
       footer:
           taskReference == null &&
+              savedIndicator == null &&
               threadRepliesBadge == null &&
               reactions.isEmpty &&
               (threadPreview != null ||
@@ -1796,6 +1807,7 @@ class RaftMessageTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (taskReference != null ||
+                    savedIndicator != null ||
                     threadRepliesBadge != null ||
                     reactions.isNotEmpty)
                   // `mt-1.5 flex flex-wrap items-center gap-1.5`.
@@ -1805,6 +1817,7 @@ class RaftMessageTile extends StatelessWidget {
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       ?taskReference,
+                      ?savedIndicator,
                       ?threadRepliesBadge,
                       ...reactions
                           .where(
@@ -1896,17 +1909,37 @@ class _RaftForceTaskSendIntent extends Intent {
 class RaftComposerHandle {
   Object? _owner;
   bool Function(RaftComposerSuggestion)? _insert;
+  bool Function(String)? _quote;
   bool insertMention(RaftComposerSuggestion suggestion) =>
       suggestion.isMention && (_insert?.call(suggestion) ?? false);
-  void _bind(Object owner, bool Function(RaftComposerSuggestion) insert) {
+
+  /// Web `appendQuoteToComposer`: adds [quote] (already a Markdown blockquote)
+  /// to the draft and focuses the composer. False when there is no composer
+  /// that takes it.
+  bool appendQuote(String quote) => _quote?.call(quote) ?? false;
+
+  /// Quotes selected message text (Web `emitSelectedTextQuote`).
+  void quoteSelection(String selected) {
+    if (raftHasQuotableSelection(selected)) {
+      appendQuote(raftFormatSelectedTextQuote(selected));
+    }
+  }
+
+  void _bind(
+    Object owner,
+    bool Function(RaftComposerSuggestion) insert,
+    bool Function(String) quote,
+  ) {
     _owner = owner;
     _insert = insert;
+    _quote = quote;
   }
 
   void _release(Object owner) {
     if (!identical(owner, _owner)) return;
     _owner = null;
     _insert = null;
+    _quote = null;
   }
 }
 
@@ -2255,6 +2288,24 @@ class _RaftComposerState extends State<RaftComposer> {
     activeFocus.requestFocus();
   }
 
+  bool insertQuote(String quote) {
+    if (!presentationActive ||
+        composing ||
+        sending ||
+        widget.submitBusy ||
+        !widget.enabled) {
+      return false;
+    }
+    final next = raftAppendQuoteToComposer(controller.text, quote);
+    dismissedValue = next;
+    controller.value = TextEditingValue(
+      text: next,
+      selection: TextSelection.collapsed(offset: next.length),
+    );
+    activeFocus.requestFocus();
+    return true;
+  }
+
   bool insertSender(RaftComposerSuggestion suggestion) {
     if (!presentationActive ||
         composing ||
@@ -2402,7 +2453,7 @@ class _RaftComposerState extends State<RaftComposer> {
       text: raftProgrammaticEditingText(widget.initialDraft),
     );
     controller.addListener(changed);
-    widget.handle?._bind(this, insertSender);
+    widget.handle?._bind(this, insertSender, insertQuote);
     RaftTextInputRefresh.retain();
     updateSuggestionPortal(defer: true);
     toastHost = RaftToastHost.maybeOf(context)
@@ -2415,7 +2466,7 @@ class _RaftComposerState extends State<RaftComposer> {
     queueInitialFocus();
     if (oldWidget.handle != widget.handle) {
       oldWidget.handle?._release(this);
-      widget.handle?._bind(this, insertSender);
+      widget.handle?._bind(this, insertSender, insertQuote);
     }
     updateSuggestionPortal(defer: true);
     if (!widget.enabled && expanded) closeExpanded();

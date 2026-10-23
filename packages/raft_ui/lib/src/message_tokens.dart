@@ -12,9 +12,14 @@ class RaftTextReference {
     required this.text,
     required this.href,
     this.identityBacked = false,
+    this.label,
   });
   final String text, href;
   final bool identityBacked;
+
+  /// What the chip reads instead of [text]: Web shows a mention by the
+  /// person's display name (`@Claude Assistant`), whatever handle was typed.
+  final String? label;
 }
 
 /// What the message passes need besides the tree: the accepted reference
@@ -110,7 +115,12 @@ List<_Match> _referenceMatches(String text, RaftTokenContext ctx) {
                   ).hasMatch(text.substring(m.end))))) {
         continue;
       }
-      matches.add((start: m.start, end: m.end, label: m[0]!, href: ref.href));
+      matches.add((
+        start: m.start,
+        end: m.end,
+        label: ref.label ?? m[0]!,
+        href: ref.href,
+      ));
     }
   }
   if (taskHref != null) {
@@ -256,13 +266,14 @@ class _TokenPass {
     for (final r in ctx.references) r.text.toLowerCase(): r,
   };
 
-  /// The reference for [target], or null (Web renders a plain span).
-  String? hrefFor(RaftRefTarget target) {
+  /// The link and label for [target], or null (Web renders a plain span).
+  (String, String)? refFor(RaftRefTarget target) {
     if (target.kind == RaftRefKind.task) {
-      return ctx.taskHref?.call(target.taskNumber!);
+      final href = ctx.taskHref?.call(target.taskNumber!);
+      return href == null ? null : (href, target.text);
     }
-    return (byText[target.text] ?? byLowerText[target.text.toLowerCase()])
-        ?.href;
+    final ref = byText[target.text] ?? byLowerText[target.text.toLowerCase()];
+    return ref == null ? null : (ref.href, ref.label ?? target.text);
   }
 
   md.Node refNode(String href, String label) =>
@@ -356,11 +367,13 @@ class _TokenPass {
         link.children?.length == 1 &&
         link.children!.single is md.Text &&
         link.children!.single.textContent == href;
+    final resolved = refFor(target);
     final label = autolink
-        ? target.text
+        ? resolved?.$2 ?? target.text
         : raftStripEscapeMarks(link.textContent);
-    final resolved = hrefFor(target);
-    return resolved == null ? RaftClaimedText(label) : refNode(resolved, label);
+    return resolved == null
+        ? RaftClaimedText(label)
+        : refNode(resolved.$1, label);
   }
 
   List<md.Node> _textRun(List<md.Text> run) {
@@ -471,9 +484,11 @@ class _TokenPass {
     if (target.kind == RaftRefKind.computer || target.kind == RaftRefKind.app) {
       return null;
     }
-    final href = hrefFor(target);
+    final resolved = refFor(target);
     return [
-      href == null ? RaftClaimedText(target.text) : refNode(href, target.text),
+      resolved == null
+          ? RaftClaimedText(target.text)
+          : refNode(resolved.$1, resolved.$2),
     ];
   });
 

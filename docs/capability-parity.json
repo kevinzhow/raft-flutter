@@ -20,7 +20,7 @@
    "status": "covered",
    "webEntry": "MessageHoverToolbar bookmark (active) | context menu 'Remove from Saved' | footer 'Saved' badge | SavedPanel row remove button / context menu 'Remove from Saved'",
    "gate": "none",
-   "flutterEntry": "chat_view.dart saveMessage() toggle, Saved page row menu (resource_view.dart savedMenu 'Remove from Saved'); no footer Saved badge",
+   "flutterEntry": "chat_view.dart saveMessage() toggle, the Saved footer badge (RaftMessageSavedIndicator), Saved page row menu (resource_view.dart savedMenu 'Remove from Saved')",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/saved_sidebar_entry.dart",
@@ -28,6 +28,10 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "'Remove from Saved'"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/message_saved_indicator.dart",
      "needle": "'Remove from Saved'"
     }
    ],
@@ -679,15 +683,23 @@
    "area": "messages",
    "capability": "Agent read receipts: 'Read' badge in DMs and per-mention 'Read / Not read yet' state on agent mentions",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "MessageItem showDmReadReceipt footer 'Read' | MessageMarkdownBody readReceiptEnabled mention chips",
    "gate": "agent read badges feature enabled",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Recorded as LEFT in docs/field-parity.md:66 ('agent read receipts (scope_read:updated)').",
-   "impact": "Users DMing agents cannot see whether the agent has read a message.",
-   "size": "M",
-   "topGap": 14
+   "flutterEntry": "agent_read_badge.dart agentMentionRead -> RaftReferenceAppearance.agentRead (marker on an @mentioned agent)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_read_badge.dart",
+     "needle": "bool? agentMentionRead("
+    },
+    {
+     "file": "packages/raft_ui/lib/src/message_reference_chip.dart",
+     "needle": "class _AgentReadBadge"
+    }
+   ],
+   "justification": "The per-mention read marker is drawn (sender only, agents only, once the channel's read frontiers are known). The DM 'Read' line under the last message is not drawn yet.",
+   "impact": "Users DMing agents cannot see the single 'Read' line; the markers cover channels and DMs with an @mention.",
+   "size": "M"
   },
   {
    "kind": "ui",
@@ -1048,10 +1060,10 @@
    "area": "messages",
    "capability": "Context menu: Follow Thread / Unfollow Thread",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageItem ctx menu > 'Follow Thread' / 'Unfollow Thread' (also shown on the thread parent row inside ThreadPanel via showThreadFollowAction)",
    "gate": "message has a thread conversation",
-   "flutterEntry": "chat_view.dart actions() follow/unfollow items; only when !hideThreadActions",
+   "flutterEntry": "chat_view.dart actions() follow/unfollow items; on the thread-panel root row too (parentTile)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
@@ -1059,11 +1071,11 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/chat_view.dart",
-     "needle": "final follow = !hideThreadActions && hasThreadConversation"
+     "needle": "final follow = canFollow && hasThreadConversation"
     }
    ],
-   "justification": "Flutter omits the item on the thread-panel parent row (Web ThreadPanel passes showThreadFollowAction). Follow/Unfollow remains reachable from the thread header overflow menu.",
-   "impact": "Minor: one extra tap via the header menu.",
+   "justification": "The thread panel's root row offers Follow / Unfollow like Web (showThreadFollowAction); its replies do not.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -1258,13 +1270,22 @@
    "area": "messages",
    "capability": "Forwarded message card: 'Open source message' jumps to the original message; click forwarded attachment to open it",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "ForwardedBundleRouteCard onOpenSource / onOpenAttachment",
    "gate": "source must still be readable",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "raft_ui forwarded_bundle.dart renders the bundle without a source-open handler (RaftAttachmentCard onOpen: null for fallback items); attachments with ids do open via AttachmentView but there is no source link.",
-   "impact": "Readers of forwarded messages cannot jump to the origin conversation.",
+   "flutterEntry": "raft_ui forwarded_bundle.dart source label (onOpenSource) -> message_presentation.dart forwardedSourceHref",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/forwarded_bundle.dart",
+     "needle": "'Open source message'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/forwarded_source.dart",
+     "needle": "String? forwardedSourceHref("
+    }
+   ],
+   "justification": "The 'from #channel' label of a forwarded bundle opens the source message when it is public and has its ids (Web canOpenSourceLabel); forwarded attachments with ids open through AttachmentView.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -1611,13 +1632,22 @@
    "area": "messages",
    "capability": "Select text inside a message: floating 'Quote' (appends blockquote to the right composer) and 'Copy' shortcut",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "MessageSelectionShortcut 'Selected text actions' popup (Quote / Copy)",
    "gate": "not in select mode; not on action targets",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter message text is selectable (SelectionArea) but message_body.dart sets contextMenuBuilder to an empty box, so there is no Quote/Copy action and no selected-text quote into the composer.",
-   "impact": "Users replying with a quote of part of a message (common in long agent replies).",
+   "flutterEntry": "raft_ui raft_selection_area.dart RaftSelectionShortcutBar; chat_view.dart RaftSelectionShortcutScope -> RaftComposerHandle.quoteSelection",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/selected_text_quote.dart",
+     "needle": "class RaftSelectionShortcutBar"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "needle": "onQuote: composerHandle.quoteSelection"
+    }
+   ],
+   "justification": "A mouse selection inside one message shows Quote / Copy beside it; Quote appends a blockquote below the draft of the channel or thread composer. A touch selection keeps the platform toolbar (Web hides the pair on touch viewports).",
+   "impact": "",
    "size": "S"
   },
   {
@@ -1626,13 +1656,22 @@
    "area": "messages",
    "capability": "Right-click / long-press a sender name or avatar: Copy Name, Copy Handle",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "MessageItem sender ctx menu ('Sender context menu')",
    "gate": "handle item only when the sender has a mention handle",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "No Copy Name / Copy Handle anywhere in apps/raft_flutter/lib or raft_ui (grep finds none).",
-   "impact": "Users copying a teammate or agent handle from a message; low frequency.",
+   "flutterEntry": "message_sender_menu.dart showMessageSenderMenu from RaftMessageRow.onAuthorMenu (right-click name or avatar, long-press name)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/message_sender_menu.dart",
+     "needle": "'Copy Handle'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "needle": "onAuthorMenu: senderMenuOf("
+    }
+   ],
+   "justification": "Copy Name always, Copy Handle when the sender has a mention handle. The avatar's long press stays reserved for inserting an @mention.",
+   "impact": "",
    "size": "S"
   },
   {

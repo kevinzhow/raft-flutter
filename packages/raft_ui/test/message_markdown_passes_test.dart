@@ -134,6 +134,24 @@ void main() {
     });
   });
 
+  test('a mention reads the display name, however the handle was typed', () {
+    const named = [
+      RaftTextReference(
+        text: '@ada',
+        href: 'raft-ref://mention/agent/ada',
+        label: '@Ada Lovelace',
+      ),
+    ];
+    const chip = '[@Ada Lovelace](<raft-ref://mention/agent/ada>)';
+    expect(tokenized('hi @ada', references: named), 'hi $chip');
+    expect(tokenized('hi <@ada>', references: named), 'hi $chip');
+    // An authored label stays the author's.
+    expect(
+      tokenized('[the boss](<@ada>)', references: named),
+      '[the boss](<raft-ref://mention/agent/ada>)',
+    );
+  });
+
   test('compact Markdown has no indented code, documents keep it', () {
     expect(
       raftParseMarkdown('x\n\n    code', RaftMarkdownMode.compact).length,

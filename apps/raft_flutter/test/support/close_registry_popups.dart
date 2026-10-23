@@ -93,6 +93,7 @@ const popupSurfaces = <CloseSurface>[
     desktop: {_scrim, _sys},
     files: [
       'lib/features/chat_view.dart',
+      'lib/features/message_sender_menu.dart',
       'lib/features/resource_view.dart',
       '../../packages/raft_ui/lib/src/message_context_menu.dart',
     ],

@@ -19,6 +19,10 @@ List<CloseSurface> get allCloseSurfaces => [
 /// Files that contain a surface API call but are not a surface themselves.
 /// Each entry says why; a new entry needs a reviewer's agreement.
 const closeScanExempt = <String, String>{
+  '../../packages/raft_ui/lib/src/raft_selection_area.dart':
+      'the Quote / Copy pair beside a mouse selection is a non-modal toolbar '
+      '(Web MessageSelectionShortcut): it closes with the next press, Escape '
+      'or a changed selection and has no scrim or page of its own',
   'lib/platform/app_window.dart':
       'dispatches close commands to existing routes and the native window; '
       'opens no surface of its own',

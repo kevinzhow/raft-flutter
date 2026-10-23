@@ -146,6 +146,8 @@ export 'src/avatar_image_cache.dart';
 export 'src/sized_image.dart';
 
 export 'src/message_row_recipe.dart';
+export 'src/message_saved_indicator.dart';
+export 'src/selected_text_quote.dart';
 export 'src/message_translation.dart';
 export 'src/message_semantics.dart';
 export 'src/tooltip.dart';

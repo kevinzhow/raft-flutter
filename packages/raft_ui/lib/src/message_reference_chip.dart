@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'raft_underline.dart';
 import 'hover_card.dart';
 import 'icons.dart';
+import 'localization.dart';
 import 'mounted_task_chip.dart';
 import 'panel_layout.dart' show raftCssBaseline;
 import 'recipe_surface.dart' show RaftRecipeBinding;
@@ -60,8 +61,13 @@ class RaftReferenceAppearance {
     this.taskStatus,
     this.hoverCard,
     this.label,
+    this.agentRead,
   });
   final RaftReferenceKind kind;
+
+  /// Web MentionLink #693: whether the mentioned agent has read the message
+  /// (a small square on the mention's corner); null draws nothing.
+  final bool? agentRead;
 
   /// Shown instead of the link text (a permalink chip's channel label).
   final String? label;
@@ -118,6 +124,10 @@ InlineSpan raftReferenceSpan(
       fontFamilyFallback: base.fontFamilyFallback,
     );
   }
+  final read = appearance?.kind == RaftReferenceKind.mention
+      ? appearance?.agentRead
+      : null;
+  if (read != null) child = _AgentReadBadge(read: read, child: child);
   Widget link = _ReferenceLink(
     label: label,
     href: href,
@@ -405,5 +415,50 @@ class RaftReferenceChip extends StatelessWidget {
       ),
     );
     return chip;
+  }
+}
+
+/// The read marker of an @mentioned agent: a 8px square (radius 2, 1.5px ink
+/// edge) hanging off the mention's top-right corner, lime once read and a
+/// white sticker until then. `mr-2` keeps the next word clear of it.
+class _AgentReadBadge extends StatelessWidget {
+  const _AgentReadBadge({required this.read, required this.child});
+  final bool read;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final label = raftText(context, read ? 'Read' : 'Not read yet');
+    final ink = t.colors['sticker-ink'] ?? t.strong;
+    final paper = t.colors['sticker-paper'] ?? Colors.white;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          child,
+          Positioned(
+            right: -6,
+            top: 0,
+            child: IgnorePointer(
+              child: Semantics(
+                label: label,
+                child: Container(
+                  key: ValueKey('mention-read-${read ? 'read' : 'unread'}'),
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: read ? t.colors['success'] : paper,
+                    border: Border.all(color: ink, width: 1.5),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

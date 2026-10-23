@@ -436,6 +436,7 @@ class RaftMessageRow extends StatefulWidget {
     this.toolbar,
     this.selectionLeading,
     this.onAuthor,
+    this.onAuthorMenu,
     this.onActions,
     this.onActionsAt,
     this.onTap,
@@ -482,6 +483,11 @@ class RaftMessageRow extends StatefulWidget {
   final String? subtitle;
   final VoidCallback? onAuthor, onActions, onTap;
 
+  /// Web MessageItem `handleSenderContextMenu`: right-click on the sender's
+  /// name or avatar, and a long press on the name, open a small menu (Copy
+  /// Name, Copy Handle) at that point instead of the message menu.
+  final ValueChanged<Offset>? onAuthorMenu;
+
   /// Web MessageItem opens its context menu at the pointer: right-click
   /// (`contextmenu` clientX/Y) and 500ms long-press (touch clientX/Y).
   /// Receives the global press position; takes precedence over [onActions].
@@ -507,6 +513,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
   bool hovered = false, toolbarHovered = false, focused = false;
   bool scrollSuppressed = false;
   bool secondaryDown = false;
+  bool authorMenuHandled = false;
   final portal = OverlayPortalController();
   final toolbarKey = GlobalKey();
 
@@ -789,6 +796,13 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     child: Builder(builder: buildContent),
   );
 
+  ValueChanged<Offset>? get authorMenu => widget.onAuthorMenu == null
+      ? null
+      : (at) {
+          authorMenuHandled = true;
+          widget.onAuthorMenu!(at);
+        };
+
   Widget buildContent(BuildContext context) {
     final recipe = RaftMessageRowRecipe(
       RaftTokens.of(context),
@@ -806,26 +820,30 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
     );
     // One widget shape whether or not the author is linkable: a mention
     // affordance that arrives after first paint never reflows the header.
-    final author = RaftControl(
-      key: const ValueKey('message-author'),
-      onPressed: widget.onAuthor,
-      inertWhenDisabled: true,
-      kind: RaftControlKind.textLink,
-      shadow: false,
-      // The name's line: brutal 20/14 of the size, elegant `leading-none`.
-      visualHeight: recipe.tokens.brutal
-          ? recipe.sizeTier.name * 20 / 14
-          : recipe.sizeTier.name,
-      minimumTargetSize: 0,
-      padding: EdgeInsets.zero,
-      child: Text(
-        widget.author,
-        // An ellipsis implies a single line; wrapped text must not set one.
-        maxLines: RaftScaled.grows(context) ? null : 1,
-        overflow: RaftScaled.grows(context)
-            ? TextOverflow.clip
-            : TextOverflow.ellipsis,
-        style: recipe.author,
+    final author = _AuthorMenuGesture(
+      onMenu: authorMenu,
+      longPress: true,
+      child: RaftControl(
+        key: const ValueKey('message-author'),
+        onPressed: widget.onAuthor,
+        inertWhenDisabled: true,
+        kind: RaftControlKind.textLink,
+        shadow: false,
+        // The name's line: brutal 20/14 of the size, elegant `leading-none`.
+        visualHeight: recipe.tokens.brutal
+            ? recipe.sizeTier.name * 20 / 14
+            : recipe.sizeTier.name,
+        minimumTargetSize: 0,
+        padding: EdgeInsets.zero,
+        child: Text(
+          widget.author,
+          // An ellipsis implies a single line; wrapped text must not set one.
+          maxLines: RaftScaled.grows(context) ? null : 1,
+          overflow: RaftScaled.grows(context)
+              ? TextOverflow.clip
+              : TextOverflow.ellipsis,
+          style: recipe.author,
+        ),
       ),
     );
     // Compact rows announce author, metadata and time in their own label.
@@ -889,6 +907,7 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       // SelectionArea wins the secondary-tap gesture arena), like Web's
       // `contextmenu` handler on the MessageItem root.
       onPointerDown: (event) {
+        authorMenuHandled = false;
         secondaryDown =
             widget.onActionsAt != null &&
             event.kind == PointerDeviceKind.mouse &&
@@ -897,6 +916,11 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
       onPointerUp: (event) {
         if (!secondaryDown) return;
         secondaryDown = false;
+        // The sender's name or avatar answered this click with its own menu.
+        if (authorMenuHandled) {
+          authorMenuHandled = false;
+          return;
+        }
         widget.onActionsAt?.call(event.position);
       },
       onPointerCancel: (_) => secondaryDown = false,
@@ -1044,7 +1068,12 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
                                           dimension: recipe.avatarExtent,
                                           child: ExcludeSemantics(
                                             excluding: compact,
-                                            child: widget.avatar,
+                                            child: _AuthorMenuGesture(
+                                              onMenu: authorMenu,
+                                              child:
+                                                  widget.avatar ??
+                                                  const SizedBox.shrink(),
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -1662,4 +1691,51 @@ class _RenderMessageHeader extends RenderBox
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) =>
       defaultHitTestChildren(result, position: position);
+}
+
+/// Opens the sender menu at the pointer: a secondary click anywhere on the
+/// name or avatar, and a long press where [longPress] is set (the avatar's
+/// long press belongs to inserting an @mention).
+class _AuthorMenuGesture extends StatefulWidget {
+  const _AuthorMenuGesture({
+    required this.onMenu,
+    required this.child,
+    this.longPress = false,
+  });
+  final ValueChanged<Offset>? onMenu;
+  final bool longPress;
+  final Widget child;
+
+  @override
+  State<_AuthorMenuGesture> createState() => _AuthorMenuGestureState();
+}
+
+class _AuthorMenuGestureState extends State<_AuthorMenuGesture> {
+  bool secondaryDown = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final open = widget.onMenu;
+    if (open == null) return widget.child;
+    // A pointer listener, not a tap recognizer: the row's own right-click
+    // handler is a listener too and runs after this one in the same event.
+    return Listener(
+      onPointerDown: (event) => secondaryDown =
+          event.kind == PointerDeviceKind.mouse &&
+          (event.buttons & kSecondaryMouseButton) != 0,
+      onPointerUp: (event) {
+        if (!secondaryDown) return;
+        secondaryDown = false;
+        open(event.position);
+      },
+      onPointerCancel: (_) => secondaryDown = false,
+      child: GestureDetector(
+        behavior: HitTestBehavior.deferToChild,
+        onLongPressStart: widget.longPress
+            ? (details) => open(details.globalPosition)
+            : null,
+        child: widget.child,
+      ),
+    );
+  }
 }

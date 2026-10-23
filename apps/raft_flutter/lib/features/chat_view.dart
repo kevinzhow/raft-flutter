@@ -37,6 +37,8 @@ import 'attachment_view.dart';
 import 'media_items.dart';
 import 'attachment_shape.dart';
 import 'message_presentation.dart';
+import 'message_saved_action.dart';
+import 'message_sender_menu.dart';
 import 'message_preparation.dart';
 import 'pending_mention_actions.dart';
 import 'message_reference_directory.dart';
@@ -1518,14 +1520,18 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     // `hideThreadActions`: thread panel rows (parent and replies).
     final hideThreadActions = widget.thread || parentTile;
     final threadReply = widget.thread && !parentTile;
+    // Web `canShowThreadFollowAction`: the thread panel's root offers Follow
+    // too (`showThreadFollowAction`); its replies never do.
+    final canFollow = !hideThreadActions || parentTile;
     final hasThreadConversation =
+        parentTile ||
         (summary is Map &&
             (summary['threadChannelId'] != null ||
                 (int.tryParse('${summary['replyCount']}') ?? 0) > 0)) ||
         message.json['threadChannelId'] != null;
     // Source MessageItem reads the server-scoped followed list synchronously.
     final followedThreads = w.services.followedThreads;
-    if (!hideThreadActions && hasThreadConversation) followedThreads.ensure();
+    if (canFollow && hasThreadConversation) followedThreads.ensure();
     final followed = followedThreads.isFollowing(message.id);
     final task = taskProjection.taskFor(message);
     final guest = w.server?.string('role') == 'guest';
@@ -1556,7 +1562,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
           icon: icon,
           onPressed: () => pick(menuContext, value),
         );
-        final follow = !hideThreadActions && hasThreadConversation;
+        final follow = canFollow && hasThreadConversation;
         final taskItems = [
           if (!threadReply && supportsTasks)
             task == null
@@ -1681,7 +1687,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         final threadId =
             followedThreads.threadChannelIdFor(message.id) ??
             (summary is Map ? summary['threadChannelId'] : null) ??
-            message.json['threadChannelId'];
+            message.json['threadChannelId'] ??
+            (parentTile ? w.threadChannelId : null);
         if (threadId is String) {
           await followedThreads.unfollow(message.id, threadChannelId: threadId);
         }
@@ -2053,18 +2060,9 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         referenceDirectory.scope != directoryAuthority(w)) {
       return null;
     }
-    final type = messageSenderIdentityKind(message);
-    if (type == null) return null;
-    final entry =
-        (type == 'agent'
-                ? referenceDirectory.agents
-                : referenceDirectory.members)
-            .where((row) => (row['userId'] ?? row['id']) == message.senderId)
-            .firstOrNull;
-    final name = entry?['name'];
-    if (name is! String || name.isEmpty || entry?['deletedAt'] != null) {
-      return null;
-    }
+    final handle = senderHandleOf(referenceDirectory, message);
+    if (handle == null) return null;
+    final (:type, :name) = handle;
     final authority = workspaceAuthority(w);
     return () {
       if (authority == workspaceAuthority(w) && presentationActive) {
@@ -2245,19 +2243,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     ];
   }
 
-  /// Source MessageItem `handleToggleSave`: the saved state and the Saved
-  /// badge change at once; a failed request puts them back.
-  Future<void> saveMessage(RaftMessage message) async {
-    final authority = workspaceAuthority(w);
-    final store = SavedCountStore.of(w);
-    try {
-      await store.setSaved(message.id, !store.isSaved(message.id));
-    } catch (e) {
-      if (mounted && authority == workspaceAuthority(w)) {
-        showRaftToast(context, userErrorText(e, where: 'save message'));
-      }
-    }
-  }
+  Future<void> saveMessage(RaftMessage message) =>
+      toggleSavedMessage(context, w, message, () => mounted);
 
   Widget senderAvatar(RaftMessage message, {bool compact = false}) {
     final local =
@@ -2755,6 +2742,8 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
       modelLabel: currentAgentModel(m),
       subtitle: senderSubtitle(m),
       onAuthor: senderMention(m),
+      onAuthorMenu: senderMenuOf(context, referenceDirectory, m),
+      savedIndicator: savedIndicatorOf(w, m, saveMessage),
       hoverToolbar: IgnorePointer(
         ignoring: pending,
         child: ExcludeFocus(
@@ -3443,6 +3432,13 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
   @override
   Widget buildLive(BuildContext context) {
     bindAgentCollapse(this, w, scope);
+    return RaftSelectionShortcutScope(
+      onQuote: composerHandle.quoteSelection,
+      child: buildLiveView(context),
+    );
+  }
+
+  Widget buildLiveView(BuildContext context) {
     final search = boundSearch;
     if (!widget.thread || search == null) return buildView(context);
     final apple =

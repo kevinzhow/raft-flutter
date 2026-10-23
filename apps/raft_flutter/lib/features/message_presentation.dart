@@ -25,6 +25,7 @@ import 'private_route_guard.dart';
 import 'profile_preview.dart';
 import 'composer_directory.dart' show cachedExternalMembers;
 import 'external_mentions.dart';
+import 'agent_read_badge.dart';
 import 'forwarded_source.dart';
 import '../data/feature_flag_client_facts.dart';
 
@@ -364,10 +365,15 @@ class MessagePresentation extends StatelessWidget {
       if (m['name'] is String &&
           m['id'] is String &&
           ['agent', 'user', 'external'].contains(m['type'])) {
+        final mention = href('mention', ['${m['type']}', '${m['id']}']);
         refs['@${m['name']}'] = RaftTextReference(
           text: '@${m['name']}',
           identityBacked: true,
-          href: href('mention', ['${m['type']}', '${m['id']}']),
+          href: mention,
+          label: directoryReferences
+              .where((r) => r.href == mention)
+              .firstOrNull
+              ?.label,
         );
       }
     }
@@ -877,6 +883,8 @@ class MessagePresentation extends StatelessWidget {
         unavailablePermalink,
         controller.channels.length,
         controller.dms.length,
+        // The read markers on agent mentions follow the channel's frontiers.
+        controller.readReceipts.scope(message.channelId),
       ),
     );
   }
@@ -956,6 +964,9 @@ class MessagePresentation extends StatelessWidget {
           parts[0] == 'user' && parts[1] == controller.client.user?.id
               ? RaftReferenceKind.selfMention
               : RaftReferenceKind.mention,
+          agentRead: parts[0] == 'agent' && !exportMode
+              ? agentMentionRead(controller, message, parts[1])
+              : null,
           // Web MentionLink PreviewCard; export renders no popups.
           hoverCard: exportMode
               ? null
