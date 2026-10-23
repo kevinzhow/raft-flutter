@@ -4,7 +4,13 @@ import 'dart:math' as math;
 /// memory; dismissal storage persists fingerprints rather than private copy.
 enum SystemNoticeKind { error, warning, info }
 
-enum SystemNoticeDestination { billing, computer, computers, feedback }
+enum SystemNoticeDestination {
+  billing,
+  computer,
+  computers,
+  feedback,
+  jointInvite,
+}
 
 class SystemNotice {
   const SystemNotice({

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import 'joint_invite_notices.dart';
 import 'search_memory.dart';
 import 'system_notification_projection.dart';
 import 'usage_limit_attention.dart';
@@ -80,6 +81,9 @@ class SystemNotificationStore extends ChangeNotifier {
   bool? _usageGate;
   int _usageRevision = 0;
   UsageLimitSnapshot? get usageLimits => _usage;
+  List<PendingJointInvite> _jointInvites = const [];
+  int _jointRevision = 0;
+  List<PendingJointInvite> get jointInvites => _jointInvites;
   final dismissed = <String>{};
   List<Map<String, dynamic>> _machines = [], _agents = [];
   List<Map<String, dynamic>> get machines =>
@@ -129,6 +133,7 @@ class SystemNotificationStore extends ChangeNotifier {
     if (c == null) return const [];
     final shared = entities?.call();
     return [
+          if (c.server != null) ...jointInviteNotices(_jointInvites),
           if (c.server != null) ...usageLimitNotices(_usage),
           ...projectSystemNotifications(
             server: c.server,
@@ -169,6 +174,8 @@ class SystemNotificationStore extends ChangeNotifier {
     _usage = null;
     _usageGate = null;
     ++_usageRevision;
+    _jointInvites = const [];
+    ++_jointRevision;
     feedbackUnread = 0;
     failed = false;
     loading = false;
@@ -178,6 +185,7 @@ class SystemNotificationStore extends ChangeNotifier {
     if (key == null) return;
     unawaited(refresh());
     unawaited(refreshUsageLimit());
+    unawaited(refreshJointInvites());
     try {
       final raw = await storage.read(key);
       if (closed ||
@@ -335,6 +343,33 @@ class SystemNotificationStore extends ChangeNotifier {
     }
   }
 
+  /// RFC 075 section 4.5: the pending joint invites addressed to this user on
+  /// this server (Web `usePendingJointInvites`). Only owners and admins can be
+  /// invited, so nobody else reads them; a failed read keeps the last list (the
+  /// email link remains a fallback) and a reply for another server is dropped.
+  Future<void> refreshJointInvites() async {
+    final c = context;
+    if (closed || c?.server == null) return;
+    final scope = c!.scope, ticket = ++_jointRevision;
+    if (!canBeInvitedToJointChannel(c.server)) {
+      if (_jointInvites.isNotEmpty) {
+        _jointInvites = const [];
+        _publish();
+      }
+      return;
+    }
+    try {
+      final raw = await get('/channels/joint-invites');
+      if (closed || context?.scope != scope || ticket != _jointRevision) {
+        return;
+      }
+      _jointInvites = parseJointInvites(raw);
+      _publish();
+    } catch (_) {
+      // Keep the last known list.
+    }
+  }
+
   Future<bool> _receipt(String scope, String incidentId, String action) async {
     final c = context, send = post;
     if (closed || send == null || c?.scope != scope || c?.server == null) {
@@ -384,7 +419,7 @@ class SystemNotificationStore extends ChangeNotifier {
   static bool validFingerprint(String value) =>
       value.length <= 4096 &&
       RegExp(
-        r'^(plan-downgrade|joint-over-limit|computer-attention|machine-offline|machine-disk-low):[a-zA-Z0-9_:.,+=\-]+$',
+        r'^(plan-downgrade|joint-over-limit|joint-invite|computer-attention|machine-offline|machine-disk-low):[a-zA-Z0-9_:.,+=\-]+$',
       ).hasMatch(value);
 
   bool reconcileFeedback(String scope, int unread) {
@@ -431,6 +466,7 @@ class SystemNotificationStore extends ChangeNotifier {
     closed = true;
     ++revision;
     ++_usageRevision;
+    ++_jointRevision;
     ++dismissRevision;
     super.dispose();
   }

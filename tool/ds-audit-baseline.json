@@ -122,11 +122,6 @@
   "apps/raft_flutter/lib/features/forward_messages_dialog.dart": {
    "widget.dialog": 1
   },
-  "apps/raft_flutter/lib/features/joint_channel_views.dart": {
-   "style.sized_box": 1,
-   "widget.dialog": 1,
-   "widget.list_tile": 4
-  },
   "apps/raft_flutter/lib/features/management_support.dart": {
    "style.dimension": 2,
    "style.edge_insets": 4,

@@ -2132,10 +2132,10 @@
    "area": "channels",
    "capability": "Delete a channel (permanent); for a joint channel Web instead offers 'Disconnect channel'",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Channel settings drawer > actions > 'Delete Channel' (danger row, confirm) for ordinary/private channels; for completed joint channels the same slot is 'Disconnect channel' (POST /disconnect), not delete",
    "gate": "deleteChannels capability; not #all; not archived",
-   "flutterEntry": "channel_settings.dart 'Delete Channel' action (channel-settings-delete-action) shown for every channel type including joint",
+   "flutterEntry": "channel_settings.dart: 'Delete Channel' (channel-settings-delete-action) for ordinary and private channels; a joint channel shows 'Disconnect Channel' in the same slot (disconnectFromPanel)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
@@ -2144,11 +2144,15 @@
     {
      "file": "apps/raft_flutter/lib/features/channel_settings.dart",
      "needle": "channel-settings-delete-action"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/channel_settings.dart",
+     "needle": "disconnectFromPanel"
     }
    ],
-   "justification": "For a joint channel Flutter still offers 'Delete Channel' and sends DELETE, which the server rejects (400 'Joint channels cannot be deleted; disconnect this server instead'); the correct Disconnect action is not reachable (see POST /channels/:id/disconnect).",
-   "impact": "Owner/admin of a joint channel taps Delete and gets an error; they cannot leave the shared channel from the app.",
-   "size": "S"
+   "justification": "A joint channel is never deleted: the same row becomes Disconnect (Web showCompletedJointSettings), so the server's 400 for DELETE on a joint channel is not reachable.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -14533,23 +14537,23 @@
    "area": "joint-channels",
    "capability": "Disconnect this server from a joint channel",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Joint channel settings drawer > actions > 'Disconnect channel' (Unplug icon) > confirm 'Disconnect' (EditChannelDialog handleDisconnectJointChannel)",
    "gate": "deleteChannels capability; completed joint channel; not archived",
-   "flutterEntry": "joint_channel_views.dart JointChannelManagementView 'Disconnect workspace' action - dead code: the view is never opened from the app (JointChannelsView unreachable; channel_settings.dart has no disconnect row)",
+   "flutterEntry": "channel_settings.dart disconnectFromPanel: settings drawer > 'Disconnect Channel' (unplug glyph) > 'Disconnect Joint Channel' confirm",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "$base/disconnect"
+     "file": "apps/raft_flutter/lib/features/channel_settings.dart",
+     "needle": "/channels/${c.id}/disconnect"
     },
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "Disconnect workspace"
+     "file": "apps/raft_flutter/lib/features/channel_settings.dart",
+     "needle": "Disconnect Joint Channel"
     }
    ],
-   "justification": "Endpoint is called only from an unreachable management view; the settings drawer shows Delete instead.",
-   "impact": "Admins of a server that joined a joint channel cannot disconnect from the app.",
-   "size": "S"
+   "justification": "Same gate as Web (deleteChannels, not archived); the drawer closes and the fallback channel opens.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -14557,23 +14561,19 @@
    "area": "joint-channels",
    "capability": "Resend pending joint-channel invitations issued by this server",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Joint channel settings drawer > 'Connected servers' > 'Resend invite' button (shown when this server has pending invites; button turns 'Sent')",
    "gate": "federateChannels capability; not archived; this server issued a pending invite",
-   "flutterEntry": "joint_channel_views.dart JointChannelManagementView 'Resend invitations' - dead code, unreachable from the app",
+   "flutterEntry": "channel_joint_section.dart: settings drawer > Connected servers > 'Resend Invite' (shown while this server has invitations out)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "$base/joint-invite/resend"
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "Resend invitations"
+     "file": "apps/raft_flutter/lib/features/channel_joint_section.dart",
+     "needle": "/channels/${c.id}/joint-invite/resend"
     }
    ],
-   "justification": "Endpoint is called only from an unreachable management view; channel settings has no joint-server section.",
-   "impact": "Joint-channel admins cannot re-send expired/lost invitations from the app.",
-   "size": "S"
+   "justification": "Button label turns to 'Invite resent' for 1.5 s like Web; a failure shows the server's text under the button.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -14581,23 +14581,23 @@
    "area": "joint-channels",
    "capability": "Invite another server (slug + people) into an existing joint channel",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Joint channel settings drawer > 'Invite server' form: Server slug, People to invite (names/@handles/emails), 'Send invitation' (max servers cap, free-plan limit errors)",
    "gate": "federateChannels capability; not archived",
-   "flutterEntry": "joint_channel_views.dart JointChannelManagementView 'Invite workspace' form - dead code, unreachable (the create-time invite fields in CreateJointChannelDialog do work)",
+   "flutterEntry": "channel_joint_section.dart: settings drawer > 'Channel connection invitation' form (server slug + invited people), including the RFC 075 same-admin confirmation and 'Connected {server} directly.'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "$base/joint-invites"
+     "file": "apps/raft_flutter/lib/features/channel_joint_section.dart",
+     "needle": "/channels/${c.id}/joint-invites"
     },
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "Invite workspace"
+     "file": "apps/raft_flutter/lib/features/channel_joint_section.dart",
+     "needle": "'sameAdmin': true"
     }
    ],
-   "justification": "Only creation-time invites are reachable (POST /channels jointInvites); inviting more servers later has no UI.",
-   "impact": "Joint-channel admins cannot add another server after creation from the app.",
-   "size": "M"
+   "justification": "Server errors land on the slug or people field by the same message patterns as Web; the 30-server cap replaces the form with its explanation; an unsent draft blocks closing the drawer.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -14653,28 +14653,23 @@
    "area": "joint-channels",
    "capability": "Accept a joint-channel invitation sent to this server",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "App.tsx effect: opening a server URL carrying ?jointInvite=<id> (the invite email/link) auto-POSTs accept, then navigates to the new channel; failure shows an error toast. No button; link-driven, runs for whoever opens the link",
    "gate": "server enforces federateChannels/owner-admin; no client role gate",
-   "flutterEntry": "joint_channel_views.dart JointChannelsView 'Accept invitation' action (confirm 'Accept joint channel invitation') - but the page is unreachable: NavigationRegistry lists 'joint-channels' as an unsupported section and nothing in lib instantiates JointChannelsView; no ?jointInvite= query handling anywhere in lib",
+   "flutterEntry": "system_notification_center.dart: bell > 'Invitation to join #channel' > Accept (acceptJointInvite), then the new channel opens",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "/channels/joint-invites/${invite['id']}/accept"
+     "file": "apps/raft_flutter/lib/features/system_notification_center.dart",
+     "needle": "/channels/joint-invites/${Uri.encodeComponent(id)}/accept"
     },
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "Accept joint channel invitation"
-    },
-    {
-     "file": "apps/raft_flutter/lib/data/navigation_registry.dart",
-     "needle": "'joint-channels':"
+     "file": "apps/raft_flutter/lib/data/joint_invite_notices.dart",
+     "needle": "joint-invite:"
     }
    ],
-   "justification": "Call and dialog exist but only in a dead page (only tests import joint_channel_views.dart); the Web auto-accept-from-link path has no Flutter counterpart.",
-   "impact": "Owner/admin of an invited server who taps the joint-invite link from a phone/desktop app cannot accept the invite from Flutter (must use the Web). Rare but it blocks joint-channel onboarding.",
-   "size": "M",
-   "topGap": 7
+   "justification": "Web also accepts from the invite email link (?jointInvite=<id>). The app has no https link route (see ui:global-ui.routes-external-https-links), so the email link opens the Web and the notification is the in-app path. The dead 'Joint channels' page is removed.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -14706,19 +14701,23 @@
    "area": "joint-channels",
    "capability": "Joint channel settings 'Connected servers' list (name, slug, 'this server', plan Free/Paid, Active/Pending) with the rule tooltip",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "EditChannelDialog.tsx joint section (channel.jointServers / jointPendingInvites)",
    "gate": "joint channel settings",
-   "flutterEntry": "none in channel_settings.dart; the participating-servers list exists only in the unreachable JointChannelManagementView",
+   "flutterEntry": "channel_joint_section.dart + raft_ui RaftChannelJointSectionView in the settings drawer",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "Participating workspaces"
+     "file": "apps/raft_flutter/lib/features/channel_joint_section.dart",
+     "needle": "RaftChannelJointSectionView"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/channel_joint_section_view.dart",
+     "needle": "channel-settings-joint-servers-rule"
     }
    ],
-   "justification": "",
-   "impact": "Members of a joint channel cannot see which servers share it or whether invites are pending.",
-   "size": "S"
+   "justification": "Name, slug, 'This server', plan Free/Paid and active/pending badges, the rule tooltip, and the legacy single-peer fallback.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -16966,19 +16965,19 @@
    "area": "channels",
    "capability": "List pending joint-channel invitations for the server (owner/admin; Web polls it and offers Accept in notifications)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "useSystemNotifications / App.tsx joint invite polling (60 s and on focus)",
    "gate": "none",
-   "flutterEntry": "Joint channels management page loads the list once",
+   "flutterEntry": "system_notification_store.dart refreshJointInvites: owners and admins only, every 60 s while the app is in the foreground and on resume; entries come first in the bell",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/joint_channel_views.dart",
-     "needle": "w.client.get('/channels/joint-invites')"
+     "file": "apps/raft_flutter/lib/data/system_notification_store.dart",
+     "needle": "'/channels/joint-invites'"
     }
    ],
-   "justification": "The app reads the list when the Joint channels management page opens; it does not poll it in the background or surface an Accept notification (RFC 075 follow-up, WP-CHAN).",
-   "impact": "An owner or admin sees a new invitation only after opening the page.",
-   "size": "S"
+   "justification": "A failed read keeps the last list; a reply for another server is dropped.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",

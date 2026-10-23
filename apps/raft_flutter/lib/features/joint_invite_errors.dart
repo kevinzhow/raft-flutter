@@ -6,6 +6,8 @@
 // only, so showing it verbatim would leave zh users an untranslated line.
 library;
 
+import '../data/user_error.dart';
+
 /// Formats an English catalog [source] with [values] in the UI language.
 typedef JointInviteFormat = String Function(
   String source,
@@ -57,3 +59,23 @@ String? describeJointInviteError(
       return null;
   }
 }
+
+/// Web `jointInviteAcceptErrorMessage`: the toast for a failed accept (the
+/// notification's Accept and the email link). The limit codes carry their own
+/// copy; anything else is the server's text, then the generic line.
+String jointInviteAcceptErrorText(Object error, JointInviteFormat format) =>
+    userErrorText(
+      error,
+      fallback: format("Couldn't accept the Joint Channel invite.", const {}),
+      codeText: {
+        'joint_free_server_limit': format(
+          'This Joint Channel already has 2 free servers. Upgrade either side to Pro, or have a free server leave, to continue (30 servers max).',
+          const {},
+        ),
+        'joint_server_limit': format(
+          'Joint Channels are limited to {max} servers. To request a higher limit, send feedback from Settings.',
+          const {'max': 30},
+        ),
+      },
+      where: 'joint invite accept',
+    );

@@ -35,7 +35,6 @@ import 'forward_flow.dart';
 import 'message_selection_flow.dart';
 import 'native_message_menu.dart';
 import 'resource_flow.dart';
-import 'joint_channel_flow.dart';
 import 'composer_suggestions_flow.dart';
 import 'action_card_flow.dart';
 import 'channel_conversion_flow.dart';
@@ -2288,13 +2287,6 @@ void main() {
         tester,
         w,
         capture: (name) => screenshot(tester, 'linux-$name'),
-      );
-      await verifyJointChannelFlow(
-        tester,
-        w,
-        section: (name) => section(tester, name),
-        capture: (name) => screenshot(tester, 'linux-$name'),
-        fixtureEmailDisabled: true,
       );
       await w.selectChannel(general);
       await tester.pumpAndSettle();

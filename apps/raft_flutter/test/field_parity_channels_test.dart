@@ -15,7 +15,6 @@ import 'package:raft_flutter/data/workspace_messages.dart';
 import 'package:raft_flutter/features/channel_member_servers.dart';
 import 'package:raft_flutter/features/channel_members.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
-import 'package:raft_flutter/features/joint_channel_views.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 dynamic _fixture(String name) => jsonDecode(
@@ -649,63 +648,5 @@ void main() {
     // A stopped managed agent reads Stopped.
     expect(find.textContaining('Stopped'), findsOneWidget);
     expect(find.text('Editing release notes'), findsOneWidget);
-  });
-
-  testWidgets('joint views: a channelCapabilities change is a policy change', (
-    t,
-  ) async {
-    final api = _Api();
-    late final _Client client;
-    final jointRow = _listRow(1);
-    final id = jointRow['id'] as String;
-    api.routes['POST /auth/login'] = (_) => (
-      200,
-      {
-        'accessToken': 'x',
-        'refreshToken': 'x',
-        'user': {'id': _me},
-      },
-    );
-    api.routes['GET /channels/joint-invites'] = (_) => (200, {'invites': []});
-    api.routes['GET /channels'] = (_) => (200, <dynamic>[]);
-    api.routes['GET /agents'] = (_) => (200, <dynamic>[]);
-    api.routes['GET /servers/$_server/members'] = (_) => (200, <dynamic>[]);
-    api.routes['GET /channels/$id'] = (_) => (200, jointRow);
-    await t.runAsync(() async {
-      client = _Client(api);
-      await client.login('x', 'x');
-      client.selectServer(_server);
-    });
-    final w = WorkspaceController(client)
-      ..server = RaftRecord({'id': _server, 'role': 'owner'});
-    w.channels = [RaftChannel(jointRow)];
-    addTearDown(() async {
-      w.dispose();
-      await client.dispose();
-    });
-    await t.pumpWidget(
-      MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
-        home: Scaffold(
-          body: JointChannelManagementView(controller: w, channelId: id),
-        ),
-      ),
-    );
-    await t.pumpAndSettle();
-    await t.tap(find.text('Invite workspace'));
-    await t.pumpAndSettle();
-    expect(find.byType(RaftFormDialog), findsOneWidget);
-    // The server row has no `capabilities`/`isPrivate`: only the real
-    // authority keys change what the member may do.
-    client.emit('channel:updated', {
-      'channel': {
-        'id': id,
-        'serverId': _server,
-        'name': 'partners',
-        'channelCapabilities': {'federateChannels': false},
-      },
-    });
-    await t.pumpAndSettle();
-    expect(find.byType(RaftFormDialog), findsNothing);
   });
 }

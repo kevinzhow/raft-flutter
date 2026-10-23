@@ -7,7 +7,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_flutter/features/channel_conversion_section.dart';
 
-import 'joint_channel_views_test.dart' show fixture, host;
+import 'support/joint_channel_fixture.dart' show fixture, host;
 
 Map<String, dynamic> channel({
   String type = 'channel',

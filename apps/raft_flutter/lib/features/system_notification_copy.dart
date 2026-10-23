@@ -145,6 +145,14 @@ SystemNotificationCopy systemNotificationCopy(
         ),
       );
   }
+  if (notice.id.startsWith('joint-invite:')) {
+    return SystemNotificationCopy(
+      format('Invitation to join #{channel}', {'channel': p['channel']}),
+      format('{server} invited this server to a joint channel.', {
+        'server': p['server'],
+      }),
+    );
+  }
   if (notice.id.startsWith('joint-over-limit:')) {
     if (!_dateSymbolsReady) {
       unawaited(initializeDateFormatting());

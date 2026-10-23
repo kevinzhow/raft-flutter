@@ -1,6 +1,6 @@
 // Create joint (shared) channel dialog: the Web CreateJointChannelDialog
 // (packages/web/src/components/channel/CreateJointChannelDialog.tsx) over the
-// raft_ui RaftCreateJointChannelDialogView. The host (JointChannelsView) owns
+// raft_ui RaftCreateJointChannelDialogView. The host (CreateJointChannelDialog.show) owns
 // the guarded mutations; this dialog owns the form state and Web's error
 // mapping (archived-name collision, free-server and server limits, billing gate).
 import 'package:flutter/material.dart';
@@ -15,8 +15,8 @@ import 'create_channel_dialog.dart'
     show ChannelMemberCandidate, channelNameError;
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart' show WorkspaceEntityKind;
-import 'joint_channel_views.dart' show jointPeople;
 import 'joint_invite_errors.dart';
+import 'joint_same_admin.dart';
 import 'management_support.dart';
 
 /// `MAX_JOINT_CHANNEL_SERVERS` of @botiverse/raft-shared.
@@ -33,8 +33,17 @@ class CreateJointChannelDialog extends StatefulWidget {
     this.origin,
     this.onViewBilling,
     this.currentServerSlug,
+    this.currentServerName = '',
+    this.servers = const [],
+    this.currentUser,
   });
   final List<Map<String, dynamic>> agents, users;
+
+  /// RFC 075 section 4.5: the inviter's servers and identity decide whether an
+  /// invite to themselves connects directly (Web `findSameAdminJointTarget`).
+  final List<RaftRecord> servers;
+  final RaftRecord? currentUser;
+  final String currentServerName;
 
   /// The open server's slug: a joint invite that names it is the server being
   /// invited to its own channel (`joint_target_server_invalid`).
@@ -107,6 +116,9 @@ class CreateJointChannelDialog extends StatefulWidget {
         freePlan: (w.server?.string('plan') ?? 'free') == 'free',
         origin: w.client.origin,
         currentServerSlug: w.server?.string('slug'),
+        currentServerName: w.server?.name ?? '',
+        servers: w.servers,
+        currentUser: w.client.user,
         onCreate: (payload) => post('/channels', payload),
         onUnarchive: (id) => post('/channels/$id/unarchive', null),
         onViewBilling: () => w.setSection('billing'),
@@ -125,8 +137,32 @@ class CreateJointChannelDialog extends StatefulWidget {
 class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
   final name = TextEditingController(), description = TextEditingController();
   final search = TextEditingController();
-  final drafts = [RaftJointInviteDraft('invite-1')];
+  late final drafts = [newDraft('invite-1')];
   int nextInvite = 2;
+
+  /// The (slug, people) a draft's direct-connection checkbox was ticked for:
+  /// editing either asks again (Web `sameAdminConfirmed: false` on change).
+  final confirmedFor = <String, (String, String)>{};
+
+  RaftJointInviteDraft newDraft(String id) => RaftJointInviteDraft(id)
+    ..slug.addListener(refresh)
+    ..people.addListener(refresh);
+
+  void refresh() {
+    if (mounted) setState(() {});
+  }
+
+  RaftRecord? sameAdminTarget(RaftJointInviteDraft draft) =>
+      findSameAdminJointTarget(
+        servers: widget.servers,
+        currentServerSlug: widget.currentServerSlug,
+        user: jointSelf(widget.currentUser),
+        targetServerSlug: draft.slug.text,
+        invitedPeople: jointPeople(draft.people.text),
+      );
+
+  bool confirmed(RaftJointInviteDraft draft) =>
+      confirmedFor[draft.id] == (draft.slug.text, draft.people.text);
   final agentIds = <String>{}, humanIds = <String>{};
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next submit starts or the invite list changes; the dialog state is dropped when it closes.
   String? error;
@@ -194,7 +230,7 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
     setState(() {
       error = null;
       billingError = false;
-      drafts.add(RaftJointInviteDraft('invite-${nextInvite++}'));
+      drafts.add(newDraft('invite-${nextInvite++}'));
     });
   }
 
@@ -235,6 +271,7 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
         {
           'targetServerSlug': draft.slug.text.trim(),
           'invitedPeople': jointPeople(draft.people.text),
+          if (sameAdminTarget(draft) != null) 'sameAdmin': true,
         },
     ];
     final incomplete = invites.firstWhere(
@@ -250,6 +287,15 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
           incomplete['targetServerSlug'] == ''
               ? 'Invite server slug is required'
               : 'At least one invited person is required',
+        ),
+      );
+      return;
+    }
+    if (drafts.any((d) => sameAdminTarget(d) != null && !confirmed(d))) {
+      setState(
+        () => error = raftText(
+          context,
+          'Confirm the direct connection, or remove yourself from the invited people.',
         ),
       );
       return;
@@ -360,6 +406,28 @@ class _CreateJointChannelDialogState extends State<CreateJointChannelDialog> {
       onAddServer: addServer,
       onRemoveServer: removeServer,
       onInviteChanged: clearSubmitError,
+      inviteNotice: (draft) {
+        final target = sameAdminTarget(draft);
+        if (target == null) return null;
+        return RaftSameAdminJointNotice(
+          sourceServerName: widget.currentServerName,
+          targetServerName: target.name,
+          confirmed: confirmed(draft),
+          onConfirmedChange: submitting
+              ? null
+              : (value) => setState(() {
+                  if (value) {
+                    confirmedFor[draft.id] = (
+                      draft.slug.text,
+                      draft.people.text,
+                    );
+                  } else {
+                    confirmedFor.remove(draft.id);
+                  }
+                  clearSubmitError();
+                }),
+        );
+      },
       agents: [
         for (final c in candidates)
           if (c.kind == 'agent' && c.matches(search.text)) item(c),

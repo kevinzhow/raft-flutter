@@ -12,7 +12,6 @@ import 'package:raft_flutter/features/agent_scopes_view.dart';
 import 'package:raft_flutter/features/channel_settings.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
 import 'package:raft_flutter/features/integrations_views.dart';
-import 'package:raft_flutter/features/joint_channel_views.dart';
 import 'package:raft_flutter/features/management_support.dart';
 import 'package:raft_flutter/features/sidebar_preferences_view.dart';
 import 'package:raft_flutter/features/workspace_settings.dart';
@@ -351,42 +350,6 @@ void main() {
         await t.pumpAndSettle();
       },
     );
-
-    for (final changed in [false, true]) {
-      testWidgets(
-        changed
-            ? 'joint channels reject a snapshot accepted before an access change'
-            : 'joint channels revisit renders the snapshot at once',
-        (t) async {
-          final (w, a) = (await t.runAsync(_fixture))!;
-          addTearDown(w.dispose);
-          final shared = {
-            'id': 'j1',
-            'name': 'shared',
-            'type': 'joint',
-            'joined': true,
-          };
-          w.channels = [RaftChannel(shared)];
-          a.routes['GET /channels/joint-invites'] = (_) => {'invites': []};
-          a.routes['GET /channels'] = (_) => [shared];
-          await t.pumpWidget(_host(JointChannelsView(controller: w)));
-          await t.pumpAndSettle();
-          expect(find.text('#shared'), findsOneWidget);
-          await _leave(t);
-          if (changed) {
-            w.channels = [
-              RaftChannel({...shared, 'joined': false}),
-            ];
-          }
-          a.gate = Completer<void>();
-          await t.pumpWidget(_host(JointChannelsView(controller: w)));
-          expect(find.text('#shared'), changed ? findsNothing : findsOneWidget);
-          expect(_anySpinner, changed ? findsOneWidget : findsNothing);
-          a.gate!.complete();
-          await t.pumpAndSettle();
-        },
-      );
-    }
 
     testWidgets('sidebar preferences revisit skips its full-page spinner', (
       t,

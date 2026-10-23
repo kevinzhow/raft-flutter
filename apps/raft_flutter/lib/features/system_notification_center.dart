@@ -17,6 +17,7 @@ import '../data/feature_flag_client_facts.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'fleet_views.dart';
+import 'joint_invite_errors.dart';
 import 'source_feedback_view.dart';
 import 'system_notification_copy.dart';
 
@@ -125,6 +126,7 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     poll = RaftForegroundPeriodic(const Duration(seconds: 60), () {
       unawaited(store.refresh());
       unawaited(store.refreshUsageLimit());
+      unawaited(store.refreshJointInvites());
     });
     WidgetsBinding.instance.addObserver(this);
   }
@@ -249,6 +251,8 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         unawaited(store.refresh());
         unawaited(store.refreshUsageLimit());
       }
+      // Web refreshes the pending joint invites on window focus.
+      unawaited(store.refreshJointInvites());
     }
   }
 
@@ -412,10 +416,19 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
         'machine-offline' => RaftGlyph.wifiOff,
         'machine-disk-low' => RaftGlyph.hardDrive,
         'feedback-replies' => RaftGlyph.messageSquare,
+        _ when n.destination == SystemNoticeDestination.jointInvite =>
+          RaftGlyph.gitBranch,
         _ => RaftGlyph.triangleAlert,
       },
       actions: [
-        if (n.destination != SystemNoticeDestination.billing ||
+        if (n.destination == SystemNoticeDestination.jointInvite)
+          RaftNotificationAction(
+            label: raftText(context, 'Accept'),
+            primary: true,
+            enabled: acceptingJointInvite == null,
+            onPressed: () => unawaited(acceptJointInvite(n, scope)),
+          )
+        else if (n.destination != SystemNoticeDestination.billing ||
             w.can('viewBilling'))
           RaftNotificationAction(
             label: raftText(
@@ -447,6 +460,47 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
           ),
       ],
     );
+  }
+
+  /// The invite being accepted: one at a time (Web `acceptingJointInviteId`).
+  String? acceptingJointInvite;
+
+  /// Same endpoint as the email link, so accept authority and the server's
+  /// limit checks are identical on both paths. Success opens the channel; a
+  /// failure is a toast with the limit codes' own copy.
+  Future<void> acceptJointInvite(SystemNotice n, String captured) async {
+    final id = n.targetId;
+    if (id == null || acceptingJointInvite != null || !live(n, captured)) {
+      return;
+    }
+    setState(() => acceptingJointInvite = id);
+    try {
+      final reply = await w.command(
+        'POST',
+        '/channels/joint-invites/${Uri.encodeComponent(id)}/accept',
+      );
+      if (current(captured) && reply is Map && reply['id'] is String) {
+        close();
+        await w.refreshChannels();
+        if (current(captured)) {
+          await w.selectChannel(RaftChannel(Map<String, dynamic>.from(reply)));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showRaftToast(
+          context,
+          jointInviteAcceptErrorText(
+            e,
+            (source, values) => raftFormat(context, source, values),
+          ),
+          tone: RaftToastRecipeTone.error,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => acceptingJointInvite = null);
+      if (!disposed) unawaited(store.refreshJointInvites());
+    }
   }
 
   Future<void> navigate(SystemNotice n, String captured) async {

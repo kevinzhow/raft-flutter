@@ -52,6 +52,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
     this.error,
     this.onViewBilling,
     this.notice,
+    this.inviteNotice,
     this.submitting = false,
   });
   final TextEditingController name, description, search;
@@ -72,6 +73,10 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
 
   /// Extra banner under [error] (the archived-name collision).
   final Widget? notice;
+
+  /// Content under one invite card's fields (Web JointInviteDraftCard
+  /// `sameAdminTarget` notice); null for none.
+  final Widget? Function(RaftJointInviteDraft draft)? inviteNotice;
 
   @override
   Widget build(BuildContext context) {
@@ -252,6 +257,7 @@ class RaftCreateJointChannelDialogView extends StatelessWidget {
                       eyebrow: eyebrow,
                       onRemove: () => onRemoveServer(draft.id),
                       onChanged: onInviteChanged,
+                      notice: inviteNotice?.call(draft),
                     ),
                   ],
                 ],
@@ -289,7 +295,9 @@ class _InviteCard extends StatelessWidget {
     required this.eyebrow,
     required this.onRemove,
     required this.onChanged,
+    this.notice,
   });
+  final Widget? notice;
   final int index;
   final RaftJointInviteDraft draft;
   final bool removable, submitting;
@@ -362,6 +370,7 @@ class _InviteCard extends StatelessWidget {
               multiline: true,
             ),
           ),
+          if (notice != null) ...[gap, notice!],
         ],
       ),
     );

@@ -16,7 +16,7 @@ import 'package:raft_flutter/features/member_profile_view.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'joint_channel_views_test.dart' show fixture;
+import 'support/joint_channel_fixture.dart' show fixture;
 
 const _caps = {
   'editChannelMetadata': true,

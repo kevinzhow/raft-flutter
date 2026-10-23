@@ -9,6 +9,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'channel_conversion_section.dart';
 import 'channel_form_fields.dart';
+import 'channel_joint_section.dart';
 import 'channel_members.dart';
 import 'channel_settings_strip.dart';
 import 'channel_sos.dart';
@@ -709,12 +710,22 @@ class _ChannelSettingsState extends State<ChannelSettings> {
             stopAgents,
           ),
         if (!all && !archived && cap('deleteChannels'))
-          RaftSheetAction(
-            'Delete Channel',
-            RaftGlyph.trash2,
-            RaftButtonRecipeVariant.danger,
-            deleteChannel,
-          ),
+          // A joint channel cannot be deleted (the server answers 400): the
+          // action is Disconnect (Web `showCompletedJointSettings`).
+          if (joint)
+            RaftSheetAction(
+              'Disconnect Channel',
+              RaftGlyph.unplug,
+              RaftButtonRecipeVariant.danger,
+              disconnectFromPanel,
+            )
+          else
+            RaftSheetAction(
+              'Delete Channel',
+              RaftGlyph.trash2,
+              RaftButtonRecipeVariant.danger,
+              deleteChannel,
+            ),
       ],
       onSave: canEdit && !dm && !widget.page ? save : null,
       saveDisabled: archived,
@@ -758,7 +769,12 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       name.text != channel.name || description.text != channel.description;
 
   /// Mirrors `isDirty`: the host drawer guards every dismissal while true.
-  bool get dirty => nameDescDirty;
+  bool get dirty => nameDescDirty || jointDraft;
+
+  /// An invitation typed into the joint section and not sent (Web
+  /// `hasInviteDraft`): it blocks Save and close, whose save cannot send it.
+  bool jointDraft = false;
+  final jointKey = GlobalKey<ChannelJointSectionState>();
 
   void resetDraft() {
     name.text = channel.name;
@@ -855,23 +871,28 @@ class _ChannelSettingsState extends State<ChannelSettings> {
         builder: (dialogContext, setDialog) => PopScope(
           canPop: !busy,
           child: RaftUnsavedChangesPrompt(
-            message: 'The channel name or description has unsaved edits. Save them before closing?',
+            message: jointDraft
+                ? 'A Joint invitation has not been sent. Keep editing to send it, or discard all unsaved changes before closing.'
+                : 'The channel name or description has unsaved edits. Save them before closing?',
             busy: busy,
             onKeepEditing: () => Navigator.of(dialogContext).pop(),
             onDiscard: () {
               Navigator.of(dialogContext).pop();
+              jointKey.currentState?.discardDraft();
               resetDraft();
               transition();
             },
-            onSaveAndClose: () async {
-              setDialog(() => busy = true);
-              final saved = await saveChanges();
-              if (!dialogContext.mounted) return;
-              setDialog(() => busy = false);
-              if (!saved) return;
-              Navigator.of(dialogContext).pop();
-              transition();
-            },
+            onSaveAndClose: jointDraft
+                ? null
+                : () async {
+                    setDialog(() => busy = true);
+                    final saved = await saveChanges();
+                    if (!dialogContext.mounted) return;
+                    setDialog(() => busy = false);
+                    if (!saved) return;
+                    Navigator.of(dialogContext).pop();
+                    transition();
+                  },
           ),
         ),
       ),
@@ -1042,6 +1063,34 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       },
     );
     if (ok && mounted) closeSheet();
+  }
+
+  bool get joint => channel.type == 'joint';
+
+  /// A joint channel is never deleted (`DELETE` answers 400 "Joint channels
+  /// cannot be deleted; disconnect this server instead"): Web's delete row
+  /// becomes Disconnect, which removes this server from it.
+  Future<void> disconnectFromPanel() async {
+    final c = channel;
+    final ok = await confirmAction(
+      title: 'Disconnect Joint Channel',
+      message: raftFormat(
+        context,
+        '"{name}" will be removed from this server. Other connected servers keep their own projection and history.',
+        {'name': c.name},
+      ),
+      confirmLabel: 'Disconnect',
+      loadingLabel: 'Disconnecting…',
+      variant: RaftButtonRecipeVariant.danger,
+      action: () async {
+        await w.command('POST', '/channels/${c.id}/disconnect');
+        await w.refreshChannels();
+      },
+    );
+    if (!ok || !mounted) return;
+    closeSheet();
+    final next = fallbackChannel;
+    if (next != null) unawaited(w.selectChannel(next));
   }
 
   Future<void> deleteFromPanel() async {
@@ -1326,10 +1375,10 @@ class _ChannelSettingsState extends State<ChannelSettings> {
       if (deleteRow)
         RaftOverflowAction(
           id: 'channel-settings-delete-action',
-          label: 'Delete Channel',
-          glyph: RaftGlyph.trash2,
+          label: joint ? 'Disconnect Channel' : 'Delete Channel',
+          glyph: joint ? RaftGlyph.unplug : RaftGlyph.trash2,
           danger: true,
-          onPressed: deleteFromPanel,
+          onPressed: joint ? disconnectFromPanel : deleteFromPanel,
         ),
     ];
 
@@ -1355,6 +1404,15 @@ class _ChannelSettingsState extends State<ChannelSettings> {
               ? const RaftOverflowLoading()
               : RaftOverflowPanelBody(
                   children: [
+                    if (c.type == 'joint')
+                      ChannelJointSection(
+                        key: jointKey,
+                        controller: w,
+                        channelId: c.id,
+                        onDraftChanged: (draft) {
+                          if (mounted) setState(() => jointDraft = draft);
+                        },
+                      ),
                     if (info)
                       ChannelConversionSection(
                         key: ValueKey('conversion-${w.server?.id}-${c.id}'),

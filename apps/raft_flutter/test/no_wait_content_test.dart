@@ -11,9 +11,7 @@ import 'package:raft_flutter/features/attachment_comments_view.dart';
 import 'package:raft_flutter/features/attachment_preview_dialog.dart';
 import 'package:raft_flutter/features/attachment_preview_gate.dart';
 import 'package:raft_flutter/features/attachment_view.dart';
-import 'package:raft_flutter/features/create_joint_channel_dialog.dart';
 import 'package:raft_flutter/features/fleet_views.dart';
-import 'package:raft_flutter/features/joint_channel_views.dart';
 import 'package:raft_flutter/features/source_channel_files_actions.dart';
 import 'package:raft_flutter/data/source_channel_files_store.dart';
 import 'package:raft_flutter/features/management_support.dart'
@@ -473,33 +471,6 @@ void main() {
       api.hangAll = false;
       await t.pumpWidget(const SizedBox());
       await frames(t, 40);
-    });
-  });
-
-  group('joint channels', () {
-    testWidgets('Create opens from the directory while the page revisits', (
-      t,
-    ) async {
-      final (w, api) = await mountWorkspace(t, const Size(1280, 800));
-      api.routes['GET /channels/joint-invites'] = (_) => {'invites': []};
-      api.routes['GET /channels'] = (_) => [
-        {'id': 'j1', 'name': 'shared', 'type': 'joint'},
-      ];
-      Widget page() => MaterialApp(
-        theme: raftTheme(RaftFamily.elegant),
-        home: Scaffold(body: JointChannelsView(controller: w)),
-      );
-      await t.pumpWidget(page());
-      await frames(t, 6);
-      expect(find.text('#shared'), findsOneWidget);
-      await t.pumpWidget(const SizedBox());
-      api.hangAll = true;
-      await t.pumpWidget(page());
-      expect(find.text('#shared'), findsOneWidget, reason: 'revisit snapshot');
-      await t.tap(find.text('Create joint channel'));
-      await frames(t, 6);
-      expect(find.byType(CreateJointChannelDialog), findsOneWidget);
-      api.hangAll = false;
     });
   });
 }

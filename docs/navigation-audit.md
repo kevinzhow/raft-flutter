@@ -72,7 +72,7 @@ difference), GAP (Web has it, Flutter does not; not a fallback).
 | Notification bell Upgrade, chat banners, thread banners, home header (`onViewBilling` / `onBilling`, :1153, :1683, :2337, :2344, :2443, :2528, :3307) | `select('billing')` | Settings > Plan & Billing | same | toSettings("billing") | OK (needs viewBilling; Web shows Account without it) | tested |
 | Invite human sent (:2739) | `select('administration')` | Settings > Administration | same | toSettings("administration") | OK | tested |
 | Invite dialog "view billing" (`workspace_menu_invite.dart:253`) | settingsPath `billing` | Settings > Billing | same | toSettings("billing") | OK | lint |
-| Create Joint dialog billing link (`create_joint_channel_dialog.dart:90`), JointChannelsView (`joint_channel_views.dart:286`) | `setSection('billing')` | Settings > Billing | same | toSettings("billing") | OK | lint |
+| Create Joint dialog billing link (`create_joint_channel_dialog.dart:90`) | `setSection('billing')` | Settings > Billing | same | toSettings("billing") | OK | lint |
 | Create Agent "Upgrade for more" (`create_agent_dialog.dart`) | closed the dialog only | stayed on page | same | onClose + toSettings("billing") | FIXED | now `setSection('billing')`; tested |
 | Create Channel / Add computer limit banners and "View plans" | none | missing | missing | toSettings("billing") | GAP (feature, not a fallback) | not done |
 | System notice "View feedback" (`system_notification_center.dart`) | pushed a standalone Feedback page | off-route page | off-route page | toSettings("feedback") | FIXED | `onFeedback` -> `openHelpSettings('feedback')`; tested |
@@ -85,7 +85,7 @@ difference), GAP (Web has it, Flutter does not; not a fallback).
 | Settings row Documentation | external URL | opens browser | opens browser | link | OK | declared `page: false` |
 | Settings row Bottom bar | `bottom-bar` | page | hidden | none | DIFF (phone-only device preference) | declared `wide: false` |
 | Settings tab not in the page | any other id | Account | Account | normalizeSettingsTab -> account | FIXED (loud in debug) | `reportFallback('settings tab')` |
-| `select('joint-channels')` (removed by c88601bc) | settings joint-channels | Account | Account | no page | FIXED | `unsupportedSections`; `JointChannelsView` stays only as a unit-tested widget |
+| `select('joint-channels')` (removed by c88601bc) | settings joint-channels | Account | Account | no page | FIXED | `unsupportedSections`; the unreachable `JointChannelsView` page was removed (accept lives in the notification center, manage in the channel settings drawer) |
 | `select('sidebar-settings')` | settings sidebar-settings | Account | Account | no page | FIXED | `unsupportedSections`; no caller left |
 | Dead route branches in `workspace_view.dart` (workspace-settings, sidebar-settings, providers, administration, billing, joint-channels, im-bridges, integrations) | n/a | unreachable: `route` is forced to `settings` for every settings location | same | n/a | FIXED | removed with their titles and unused imports |
 | Deep link `/settings/<slug>`, `server-labs` alias (`WorkspaceNavigation.settingsTab`) | slug | tab or Account | same | settingsTabIdForRouteSlug | FIXED (`server-labs` -> labs; unknown slug loud in debug) | |
@@ -138,10 +138,9 @@ the matrix checks that every container shows them.
 
 ## Stale device flows
 
-`integration_test/joint_channel_flow.dart` and `integration_test/sidebar_flow.dart`
-call `section('joint-channels')` / `section('sidebar-settings')` and wait for
-`JointChannelsView` / `SidebarPreferencesView`. Those pages are not reachable
-from any route (they were already rendering Account before this change), so the
-flows can not pass on a device. They need a rewrite that opens the joint
-channel dialog from the sidebar and sidebar preferences from the sidebar menus;
-that needs a device run and is not part of this change.
+`integration_test/sidebar_flow.dart` calls `section('sidebar-settings')` and waits
+for `SidebarPreferencesView`. That page is not reachable from any route (it was
+already rendering Account before this change), so the flow can not pass on a
+device. It needs a rewrite that opens sidebar preferences from the sidebar menus;
+that needs a device run and is not part of this change. The joint-channel flow
+(`joint_channel_flow.dart`, same problem) was removed with the page it drove.
