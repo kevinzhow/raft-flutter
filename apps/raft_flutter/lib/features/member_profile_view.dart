@@ -6,6 +6,7 @@ import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/feature_flag_client_facts.dart';
+import '../data/raft_location.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
@@ -15,6 +16,7 @@ import 'agent_runtime_labels.dart' show runtimeLabelWithStatus;
 import 'channel_member_servers.dart' show withPrimedServers;
 import 'member_profile_rules.dart';
 import 'member_profile_self_edit.dart';
+import 'feedback_attachment_preview.dart' show showFeedbackImage;
 import 'sender_avatar_projection.dart';
 
 /// Current-authority HumanRoute/ProfilePanel fallback contract. Entity payloads
@@ -28,9 +30,15 @@ class MemberProfileView extends StatefulWidget {
     required this.onClose,
     this.onMessage,
     this.onBack,
+    this.onOpenAgent,
     this.showClose = true,
   });
   final WorkspaceController controller;
+
+  /// Tapping a created agent opens its profile (Web `CreatedAgentRow`
+  /// `nav.toAgent`). Without a host that presents profiles itself it opens in
+  /// the workspace's profile pane.
+  final void Function(String agentId)? onOpenAgent;
 
   /// Web HumanRoute renders no close control (only the overlay presentation
   /// passes `onClose`); the desktop detail pane hides it.
@@ -543,6 +551,34 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
     );
   }
 
+  void openAgent(String id) {
+    final open = widget.onOpenAgent;
+    if (open != null) {
+      open(id);
+    } else {
+      w.openProfile(RaftProfileKind.agent, id);
+    }
+  }
+
+  /// Web `HumanDetailPanel` lightbox: an uploaded avatar opens large, titled
+  /// with the person's name.
+  Future<void> viewAvatar() async {
+    final url = _avatar().uploadedUrl;
+    if (url == null) return;
+    try {
+      final bytes = await RaftImageBytes.instance.load(url);
+      if (!mounted) return;
+      await showFeedbackImage(
+        context,
+        filename: humanDisplayName(profile),
+        contentType: 'image/png',
+        bytes: bytes,
+      );
+    } catch (_) {
+      if (mounted) showRaftToast(context, 'Failed to load file');
+    }
+  }
+
   List<Widget> _sections(
     BuildContext context,
     String name,
@@ -612,8 +648,16 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
         agent: false,
         avatarUrl: avatarUrl,
         youLabel: self ? raftText(context, '(you)') : null,
-        onAvatar: editOwn ? uploadAvatar : null,
-        avatarLabel: avatarSaving ? 'Uploading avatar' : 'Upload image',
+        // Web: your own picture changes; anyone else's uploaded picture
+        // opens enlarged.
+        onAvatar: editOwn
+            ? uploadAvatar
+            : avatarUrl != null
+            ? viewAvatar
+            : null,
+        avatarLabel: editOwn
+            ? (avatarSaving ? 'Uploading avatar' : 'Upload image')
+            : 'View avatar',
       ),
       if (editOwn && avatarError != null)
         RaftPanelSection(
@@ -715,6 +759,10 @@ class _MemberProfileViewState extends ManagementState<MemberProfileView> {
                 children: [
                   for (final a in created)
                     RaftAvatarListRow(
+                      key: ValueKey('created-agent-${a['id']}'),
+                      onTap: a['id'] is String
+                          ? () => openAgent(a['id'] as String)
+                          : null,
                       avatar: RaftAvatarSlot(
                         name: humanDisplayName(a),
                         avatarUrl: a['avatarUrl'] as String?,

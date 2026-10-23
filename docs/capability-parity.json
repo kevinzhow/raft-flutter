@@ -3468,19 +3468,23 @@
    "area": "members-roles",
    "capability": "Tap an agent in a person's 'Created Agents' list to open that agent's profile",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "HumanDetailPanel.tsx created-agents ProfileRow onClick -> openProfile('agent', id)",
    "gate": "",
-   "flutterEntry": "member_profile_view.dart renders RaftAvatarListRow without onTap (rows are static; also no runtime-status text)",
+   "flutterEntry": "member_profile_view.dart: each Created Agents row (created-agent-<id>) opens the agent's profile: through onOpenAgent when the host presents profiles itself (the members page), else the workspace profile pane",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
-     "needle": "RaftAvatarListRow("
+     "needle": "created-agent-"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
+     "needle": "openAgent"
     }
    ],
-   "justification": "",
-   "impact": "Admins browsing who created which agent; must find the agent via the Agents list.",
-   "size": "S"
+   "justification": "Same as Web CreatedAgentRow nav.toAgent.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -3488,14 +3492,23 @@
    "area": "members-roles",
    "capability": "Click a member's uploaded avatar in their profile to view it large (lightbox)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "HumanDetailPanel.tsx 'View avatar' button -> useImageLightboxStore.openImage",
    "gate": "uploaded avatar only",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "",
-   "impact": "Cosmetic; users cannot enlarge a profile photo.",
-   "size": "S"
+   "flutterEntry": "member_profile_view.dart viewAvatar: tapping a person's uploaded avatar ('View avatar') opens it in the lightbox titled with their name; your own avatar still uploads",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
+     "needle": "Future<void> viewAvatar"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/member_profile_view.dart",
+     "needle": "'View avatar'"
+    }
+   ],
+   "justification": "Only an uploaded avatar (Raft-stored) is enlargeable, as on Web; Gravatar and pixel avatars are not.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -6622,14 +6635,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Channel Add members > 'Create agent' entry that auto-joins the new agent to the channel",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "ChannelMembers add section (channel.addMembers.createAgent / ...AutoJoin / retry join)",
    "gate": "createAgents capability",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter add-members dialog has no create-agent entry.",
-   "impact": "Channel admins must leave the channel, create the agent, then re-add it.",
-   "size": "M"
+   "flutterEntry": "channel_members.dart createAgent: Add members > Create Agent opens the existing create-agent dialog (showManagedAgentForm); the new agent joins the channel with the same atomic batch as Add selected",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/channel_members.dart",
+     "needle": "Future<void> createAgent"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/channel_members.dart",
+     "needle": "joinCreatedAgent"
+    }
+   ],
+   "justification": "The Web dialog's prefilled-name note (the leading @ was removed / spaces are kept) belongs to the create-agent dialog, which this work package does not own; the typed name is still prefilled.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -7347,10 +7369,10 @@
    "area": "agents-computers-runtimes",
    "capability": "In Add Member: pinned 'Create a New Agent' entry (promoted with the typed name when search has no hit) that creates an agent and auto-joins it, with a 'created but not joined' banner and Retry join",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "ChannelMembers.tsx add view footer (add-member-create-agent-entry) + CreateAgentDialog prefill + D-state banner",
    "gate": "createAgents capability (disabled row with explanation otherwise)",
-   "flutterEntry": "channel_members_view.dart _CreateAgentEntry renders the tile (enabled flag from createAgents) but has no onTap/callback: tapping does nothing; no join-failed banner",
+   "flutterEntry": "channel_members_view.dart _CreateAgentEntry: pinned entry in the add view, promoted to 'Create Agent “{name}”' when the search has no hit, inert with the owner/admin reason without createAgents; join-failed banner with 'Retry Joining This Channel'",
    "flutterRefs": [
     {
      "file": "packages/raft_ui/lib/src/channel_members_view.dart",
@@ -7358,12 +7380,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/channel_members.dart",
-     "needle": "canCreateAgent: w.can('createAgents')"
+     "needle": "onCreateAgent: createAgent"
     }
    ],
-   "justification": "The entry is visual only: the host passes canCreateAgent but never a create-agent handler.",
-   "impact": "Owners/admins adding an agent that does not exist yet; they must leave, create the agent from Members, then come back to add it.",
-   "size": "M",
+   "justification": "A failed join stages the agent in the selection too, so the banner's retry and Add selected both finish it; a retry never creates a second agent.",
+   "impact": "",
+   "size": "",
    "topGap": 15
   },
   {

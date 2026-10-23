@@ -10,6 +10,7 @@ import 'hover_region.dart';
 
 import 'package:flutter/material.dart';
 
+import 'banner.dart';
 import 'create_channel_view.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart';
@@ -139,6 +140,11 @@ class RaftChannelMembersModal extends StatelessWidget {
     required this.isChecked,
     required this.onToggle,
     this.canCreateAgent = false,
+    this.onCreateAgent,
+    this.createAgentName,
+    this.joinFailedAgent,
+    this.onRetryJoin,
+    this.retryingJoin = false,
     this.onConfirm,
     this.page = false,
   });
@@ -146,6 +152,20 @@ class RaftChannelMembersModal extends StatelessWidget {
   final TextEditingController search;
   final String channelName;
   final bool addView, loading, adding, hasCandidates, canCreateAgent;
+
+  /// The pinned "Create Agent" entry of the add view (Web
+  /// `add-member-create-agent-entry`); null leaves it inert.
+  final VoidCallback? onCreateAgent;
+
+  /// The typed search text when it matches nobody: the entry then reads
+  /// "Create Agent “{name}”" and steps up to the primary next action.
+  final String? createAgentName;
+
+  /// A created agent that could not join the channel (D-state): the banner
+  /// names it and offers the retry. Null when there is none.
+  final String? joinFailedAgent;
+  final VoidCallback? onRetryJoin;
+  final bool retryingJoin;
   final String? error;
   final List<RaftMemberRowData> humans, agents;
 
@@ -429,12 +449,50 @@ class RaftChannelMembersModal extends StatelessWidget {
           ),
           _CreateAgentEntry(
             channelName: channelName,
-            enabled: canCreateAgent && !adding,
+            canCreate: canCreateAgent,
+            enabled: !adding,
+            promotedName: createAgentName,
+            onTap: onCreateAgent,
           ),
         ],
       ),
     );
     return [
+      if (joinFailedAgent != null) ...[
+        RaftBanner(
+          key: const ValueKey('add-member-create-agent-join-failed'),
+          status: RaftBannerRecipeStatus.warning,
+          title: raftFormat(
+            context,
+            'Agent “{name}” was created but could not join {channel}',
+            {'name': joinFailedAgent, 'channel': '#$channelName'},
+          ),
+          description: raftText(
+            context,
+            'It already exists on this server — do not create another one with the same name. Retry joining instead.',
+          ),
+          footer: Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: RaftRecipeButton(
+                key: const ValueKey('add-member-create-agent-retry-join'),
+                label: 'Retry Joining This Channel',
+                variant: RaftButtonRecipeVariant.outline,
+                size: RaftButtonRecipeSize.sm,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                textStep: RaftTextSteps.sm,
+                disabled: retryingJoin || adding,
+                onPressed: onRetryJoin,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
       if (chips.isNotEmpty) ...[
         Wrap(
           spacing: 6,
@@ -629,76 +687,143 @@ class _CheckMarker extends StatelessWidget {
 /// Pinned "Create a New Agent" footer: `border-t-2 border-black px-3
 /// py-2.5 gap-2.5`, dashed `size-6` plus tile, bold title + auto-join line.
 class _CreateAgentEntry extends StatelessWidget {
-  const _CreateAgentEntry({required this.channelName, required this.enabled});
+  const _CreateAgentEntry({
+    required this.channelName,
+    required this.canCreate,
+    required this.enabled,
+    this.promotedName,
+    this.onTap,
+  });
   final String channelName;
-  final bool enabled;
+
+  /// The `createAgents` capability. Without it the row stays visible but
+  /// inert, with the reason under it: hiding it would recreate the dead end
+  /// this entry exists to remove.
+  final bool canCreate, enabled;
+  final String? promotedName;
+  final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final ink = t.brutal ? Colors.black : t.strong;
-    return Opacity(
-      opacity: enabled ? 1 : .5,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    final hint = t.brutal
+        ? Colors.black.withValues(alpha: .5)
+        : t.colors['foreground-muted'];
+    final seam = t.brutal ? Colors.black : t.colors['line-strong']!;
+    final promoted = promotedName != null && promotedName!.isNotEmpty;
+    Widget plus(Color color) => SizedBox.square(
+      dimension: 24,
+      child: CustomPaint(
+        painter: _DashedBoxPainter(color: color, width: t.brutal ? 2 : 1),
+        child: Center(child: RaftIcon(RaftGlyph.plus, size: 14, color: color)),
+      ),
+    );
+    if (!canCreate) {
+      return Container(
+        key: const ValueKey('add-member-create-agent-entry-disabled'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: t.brutal ? Colors.white : t.panel,
           border: Border(
-            top: BorderSide(
-              color: t.brutal ? Colors.black : t.colors['line-strong']!,
-              width: t.brutal ? 2 : 1,
-            ),
+            top: BorderSide(color: seam, width: t.brutal ? 2 : 1),
           ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox.square(
-              dimension: 24,
-              child: CustomPaint(
-                painter: _DashedBoxPainter(
-                  color: t.brutal ? Colors.black : t.colors['line-strong']!,
-                  width: t.brutal ? 2 : 1,
+            Row(
+              children: [
+                plus(t.colors['foreground-disabled']!),
+                const SizedBox(width: 10),
+                Text(
+                  raftText(context, 'Create Agent'),
+                  style: raftCssTextStyle(
+                    family: t.headingFont,
+                    step: RaftTextSteps.sm,
+                    weight: FontWeight.w700,
+                    color: t.colors['foreground-disabled'],
+                  ),
                 ),
-                child: Center(
-                  child: RaftIcon(RaftGlyph.plus, size: 14, color: ink),
-                ),
-              ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    raftText(context, 'Create Agent'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssTextStyle(
-                      family: t.headingFont,
-                      step: RaftTextSteps.sm,
-                      weight: FontWeight.w700,
-                      color: ink,
-                    ),
-                  ),
-                  Text(
-                    raftFormat(
-                      context,
-                      'Joins {channel} automatically after creation',
-                      {'channel': '#$channelName'},
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: raftCssTextStyle(
-                      family: t.headingFont,
-                      step: RaftTextSteps.xs,
-                      color: t.brutal
-                          ? Colors.black.withValues(alpha: .5)
-                          : t.colors['foreground-muted'],
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 6),
+            Text(
+              raftText(
+                context,
+                'You can add members here, but creating Agents on this server needs an owner or admin. Ask one to grant the permission, or have them create the Agent so you can add it.',
+              ),
+              style: raftCssTextStyle(
+                family: t.headingFont,
+                step: RaftTextSteps.xs,
+                color: hint,
               ),
             ),
           ],
+        ),
+      );
+    }
+    return RaftInteractive(
+      onPressed: enabled ? onTap : null,
+      semanticLabel: promoted
+          ? raftFormat(context, 'Create Agent “{name}”', {'name': promotedName})
+          : raftText(context, 'Create Agent'),
+      builder: (context, st) => Opacity(
+        opacity: enabled ? 1 : .5,
+        child: Container(
+          key: const ValueKey('add-member-create-agent-entry'),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: promoted
+                ? (t.brutal ? t.primaryFill : t.colors['primary-soft'])
+                : st.hovered
+                ? t.colors['fill-pressed']
+                : (t.brutal ? Colors.white : t.panel),
+            border: Border(
+              top: BorderSide(color: seam, width: t.brutal ? 2 : 1),
+            ),
+          ),
+          child: Row(
+            children: [
+              plus(promoted ? ink : (hint ?? ink)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      promoted
+                          ? raftFormat(context, 'Create Agent “{name}”', {
+                              'name': promotedName,
+                            })
+                          : raftText(context, 'Create Agent'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: raftCssTextStyle(
+                        family: t.headingFont,
+                        step: RaftTextSteps.sm,
+                        weight: FontWeight.w700,
+                        color: ink,
+                      ),
+                    ),
+                    Text(
+                      raftFormat(
+                        context,
+                        'Joins {channel} automatically after creation',
+                        {'channel': '#$channelName'},
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: raftCssTextStyle(
+                        family: t.headingFont,
+                        step: RaftTextSteps.xs,
+                        color: hint,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

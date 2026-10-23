@@ -24,6 +24,7 @@ import 'create_channel_dialog.dart';
 import 'fleet_views.dart';
 import 'management_support.dart'
     show cachedServerFlag, pageIdentity, rememberServerFlag;
+import 'managed_agent_launcher.dart';
 import 'member_profile_view.dart';
 import 'agent_metadata_catalog.dart' show sourceAgentActivities;
 import 'agent_metadata_projection.dart';
@@ -169,10 +170,20 @@ class ChannelMembers extends StatefulWidget {
     this.embedded = false,
     this.onClose,
     this.startInAdd = false,
+    this.createAgentForm = showManagedAgentForm,
   });
   final WorkspaceController controller;
   final RaftChannel channel;
   final bool page;
+
+  /// Opens the create-agent dialog (the existing one); returns the created
+  /// agent row, or null when the dialog was dismissed.
+  final Future<Map<String, dynamic>?> Function(
+    BuildContext context,
+    WorkspaceController w, {
+    String? initialName,
+  })
+  createAgentForm;
 
   /// The page is mounted inside the desktop settings drawer (Web `OverflowSheet
   /// bare`), so back from the roster returns to the drawer root.
@@ -385,6 +396,71 @@ class _ChannelMembersState extends State<ChannelMembers> {
 
   bool get canAdd =>
       w.can('addChannelMembers', resource: channel) && !channel.archived;
+
+  /// The created agent that could not join this channel (Web
+  /// `pendingJoinAgent`): the banner stays until the roster holds it.
+  ({String id, String name})? pendingJoin;
+  bool retryingJoin = false;
+
+  /// The search text doubles as the new agent's suggested name; the leading
+  /// "@" is display notation, so it is dropped (Web `createAgentPrefillName`).
+  String get createAgentName => search.text.trim().replaceFirst('@', '');
+
+  /// The name carries over only from the promoted (no-hit) entry: a generic
+  /// "Create Agent" row never smuggles the search text into the dialog.
+  bool get createPromoted =>
+      createAgentName.isNotEmpty &&
+      !candidates.any((c) => c.matches(search.text));
+
+  /// "Create Agent": the existing create-agent dialog, then the new agent
+  /// joins this channel.
+  Future<void> createAgent() async {
+    if (adding || !w.can('createAgents') || !canAdd) return;
+    final created = await widget.createAgentForm(
+      context,
+      w,
+      initialName: createPromoted ? createAgentName : null,
+    );
+    final id = created?['id'];
+    if (created == null || id is! String || !mounted) return;
+    await joinCreatedAgent(
+      id,
+      '${created['name'] ?? created['displayName'] ?? id}',
+    );
+  }
+
+  /// The same atomic batch as "Add selected" for every way a created agent
+  /// reaches this channel. A failure stages it in the selection too, so the
+  /// banner's retry and "Add selected" both finish the join.
+  Future<void> joinCreatedAgent(String id, String name) async {
+    setState(() => retryingJoin = true);
+    try {
+      await w.command(
+        'POST',
+        '/channels/${channel.id}/members/batch',
+        data: {
+          'userIds': <String>[],
+          'agentIds': [id],
+        },
+      );
+      if (!mounted) return;
+      setState(() {
+        pendingJoin = null;
+        selected.remove('agent:$id');
+        search.clear();
+      });
+      await load();
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          pendingJoin = (id: id, name: name);
+          selected.add('agent:$id');
+        });
+      }
+    } finally {
+      if (mounted) setState(() => retryingJoin = false);
+    }
+  }
 
   Future<void> confirmAdd() async {
     if (adding || selected.isEmpty || !canAdd) return;
@@ -769,6 +845,17 @@ class _ChannelMembersState extends State<ChannelMembers> {
         error = null;
       }),
       canCreateAgent: w.can('createAgents'),
+      onCreateAgent: createAgent,
+      createAgentName: createPromoted ? createAgentName : null,
+      joinFailedAgent:
+          pendingJoin != null && !agents.any((a) => a['id'] == pendingJoin!.id)
+          ? pendingJoin!.name
+          : null,
+      onRetryJoin: pendingJoin == null
+          ? null
+          : () =>
+                unawaited(joinCreatedAgent(pendingJoin!.id, pendingJoin!.name)),
+      retryingJoin: retryingJoin,
       onConfirm: confirmAdd,
     );
     final open = profile;
@@ -784,6 +871,8 @@ class _ChannelMembersState extends State<ChannelMembers> {
                 userId: open.id,
                 onClose: back,
                 onBack: back,
+                onOpenAgent: (id) =>
+                    setState(() => profile = (kind: 'agent', id: id)),
               )
             : FleetDetail(
                 key: ValueKey('member-page-profile-${open.id}'),

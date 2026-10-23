@@ -8,6 +8,10 @@ const Map<String, String> zhCatalogW23Chan = <String, String>{
   "{count} invite emails sent.": "已发送 {count} 封邀请邮件。",
   // channel.edit.maxServers
   "Joint channels support a maximum of {max} servers.": "联合频道最多支持 {max} 个服务器。",
+  // channel.addMembers.createAgentNamed, createAgentJoinFailedTitle
+  "Create Agent “{name}”": "创建 Agent「{name}」",
+  "Agent “{name}” was created but could not join {channel}":
+      "Agent「{name}」已经创建好了，但没能加进 {channel}",
   // channel.bridge.alreadyPairedOption
   "#{name} — already paired": "#{name} — 已配对",
 };
