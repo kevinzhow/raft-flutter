@@ -26,7 +26,9 @@ import '../platform/mp4_hdr_probe.dart';
 import '../platform/native_sharing.dart';
 import '../platform/system_bars.dart';
 import '../data/attachment_transfer.dart';
+import 'attachment_comments_flag.dart';
 import 'attachment_comments_view.dart';
+import 'attachment_video_comments.dart';
 import 'attachment_transfer_view.dart';
 
 String? attachmentPreviewKind(Map<String, dynamic> metadata) {
@@ -276,6 +278,12 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
   final transfer = AttachmentTransfer();
   late final transferView = AttachmentTransferView(transfer);
   Future<void>? cleanup;
+
+  /// The comment session of the shell (Web `PreviewCommentModeContext`), the
+  /// flag that gates comments, and a video's timestamp anchors.
+  final commentSession = RaftAttachmentCommentState();
+  late final gate = AttachmentCommentsGate.of(widget.controller);
+  VideoCommentAnchors? videoComments;
   String get kind => attachmentPreviewKind(widget.metadata) ?? 'unsupported';
   bool get current =>
       mounted && !invalidated && !cancel.isCancelled && widget.authorized();
@@ -284,7 +292,20 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(scopeChanged);
+    gate.addListener(gateChanged);
+    unawaited(gate.ensure());
+    if (kind == 'video') {
+      videoComments = VideoCommentAnchors(
+        session: commentSession,
+        attachmentId: widget.metadata['id'] as String?,
+        player: () => player,
+      );
+    }
     load();
+  }
+
+  void gateChanged() {
+    if (mounted) setState(() {});
   }
 
   void scopeChanged() {
@@ -738,6 +759,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     playback = next.playback;
     playbackEvents = next.changes.listen((value) {
       if (!current || !identical(player, next)) return;
+      videoComments?.playbackChanged(value);
       setState(() {
         playback = value;
         if (value.error) {
@@ -748,6 +770,7 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
       });
     });
     if (mounted) setState(() {});
+    videoComments?.consumePendingSeek();
   }
 
   // ---- HDR: the native view needs a player of its own ----------------------
@@ -985,6 +1008,9 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     cancel.cancel();
     transfer.dispose();
     widget.controller.removeListener(scopeChanged);
+    gate.removeListener(gateChanged);
+    videoComments?.dispose();
+    commentSession.dispose();
     WidgetsBinding.instance.removeObserver(this);
     if (pageBytes != null) unawaited(raftEvictMemoryImage(pageBytes!));
     pageBytes = null;
@@ -1130,8 +1156,14 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
     canvas: document != null || kind == 'audio',
     // Web VideoPreviewBody: a solid black stage.
     dark: kind == 'video',
-    // Web suppresses attachment comments for PDF and image surfaces.
-    commentsBuilder: current && kind != 'pdf' && widget.metadata['id'] is String
+    commentSession: commentSession,
+    // Web suppresses attachment comments for PDF and image surfaces, and
+    // everywhere while the server has them off (`attachment_comments_v0`).
+    commentsBuilder:
+        current &&
+            gate.enabled &&
+            kind != 'pdf' &&
+            widget.metadata['id'] is String
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
             attachmentId: widget.metadata['id'] as String,
@@ -1200,19 +1232,23 @@ class _AttachmentPreviewDialogState extends State<AttachmentPreviewDialog>
                   ),
                 )
               : kind == 'video' && player != null
-              ? RaftVideoViewer(
-                  filename: '${widget.metadata['filename'] ?? ''}',
-                  video: videoSurface(player!),
-                  videoSize: playback.videoSize,
-                  playing: playback.playing,
-                  buffering: playback.buffering,
-                  position: playback.position,
-                  duration: playback.duration,
-                  volume: playback.volume,
-                  onTogglePlay: () => action((p) => p.toggle()),
-                  onSeek: (v) => action((p) => p.seek(v)),
-                  onVolume: (v) => action((p) => p.volume(v)),
-                  onDownload: current ? widget.onDownload : null,
+              ? videoComments!.overlay(
+                  context,
+                  playback,
+                  RaftVideoViewer(
+                    filename: '${widget.metadata['filename'] ?? ''}',
+                    video: videoSurface(player!),
+                    videoSize: playback.videoSize,
+                    playing: playback.playing,
+                    buffering: playback.buffering,
+                    position: playback.position,
+                    duration: playback.duration,
+                    volume: playback.volume,
+                    onTogglePlay: () => action((p) => p.toggle()),
+                    onSeek: (v) => action((p) => p.seek(v)),
+                    onVolume: (v) => action((p) => p.volume(v)),
+                    onDownload: current ? widget.onDownload : null,
+                  ),
                 )
               : kind == 'audio' && player != null
               ? RaftAudioPreview(

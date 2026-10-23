@@ -63,6 +63,7 @@ import 'profile_preview.dart';
 import 'quoted_message_preview.dart';
 import 'message_task_projection.dart';
 import 'saved_sidebar_entry.dart';
+import 'attachment_comment_ref.dart';
 import 'composer_slot.dart';
 
 /// Controlled mounted-viewport action; no route, controller or data ownership.
@@ -2577,6 +2578,7 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
     ({String rawUrl, RaftPermalink parsed})? quoted,
     Widget body,
   ) {
+    body = withAttachmentCommentRef(context, w, m, body);
     if (quoted == null || unavailableQuoted[m.id] == quoted.rawUrl) return body;
     return Column(
       mainAxisSize: MainAxisSize.min,

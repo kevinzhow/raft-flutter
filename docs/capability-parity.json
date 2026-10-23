@@ -10704,7 +10704,7 @@
    "status": "covered",
    "webEntry": "AttachmentCommentsPanel inside the lightbox / document / HTML / video preview shell ('Comments' toggle)",
    "gate": "server feature flag attachment comments; viewer.canComment gates posting (archived / not a member / read-only plan)",
-   "flutterEntry": "attachment_comments_view.dart in attachment_preview_dialog.dart and media_image_page.dart comments aside",
+   "flutterEntry": "attachment_comments_view.dart in attachment_preview_dialog.dart, attachment_html_preview.dart and media_image_page.dart comments aside; the panel is offered only while `attachment_comments_v0` is on (attachment_comments_flag.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/attachment_comments_view.dart",
@@ -10916,19 +10916,23 @@
    "status": "partial",
    "webEntry": "AttachmentCommentsPanel composer (sendComment) with pending-anchor chip; anchors captured by text selection, row click, HTML region drag/click, 'Add timestamp' on video",
    "gate": "viewer.canComment; Joined channel, not archived, plan not read-only",
-   "flutterEntry": "attachment_comments_view.dart send() posts content + mentions; anchor field is only forwarded from a pendingAnchor that no preview ever supplies",
+   "flutterEntry": "attachment_comments_view.dart send() posts content, mentions and the anchor the preview captured (text lines and CSV/XLSX rows by tap or drag, a video's paused time); Remove anchor and the anchor card's Jump to location are in the panel",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/attachment_comments_view.dart",
      "needle": "'/attachments/$id/comments'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/attachment_comments_view.dart",
-     "needle": "'anchor': ?anchor"
+     "file": "packages/raft_ui/lib/src/document_anchors.dart",
+     "needle": "class RaftDocumentAnchorHost"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/attachment_video_comments.dart",
+     "needle": "class VideoCommentAnchors"
     }
    ],
-   "justification": "Plain (unanchored) comments work. Flutter never creates anchors: no text-selection / row / HTML-region / video-timestamp capture, no 'Remove anchor' chip source, no 'Jump to location'. The comment message chip (commentRef) is also absent (docs/field-parity.md:66 'attachment commentRef chip and commentCount badge').",
-   "impact": "Anyone reviewing documents or videos on mobile/desktop Flutter cannot pin comments to a place in the file; moderate for review workflows.",
+   "justification": "Lines, CSV/XLSX rows and video timestamps are captured and jumped to. HTML-region anchors are not captured (the preview WebView has no JavaScript channel by design, and Web offers region capture on fine pointers only, i.e. desktop WebView platforms); a stored html-region anchor shows its label and quote but does not jump. Markdown section anchors are not captured either (Web's tap-to-structure for md-section).",
+   "impact": "HTML pages and Markdown sections cannot be pinned from the app.",
    "size": "M",
    "topGap": 11
   },
@@ -11069,13 +11073,26 @@
    "area": "files-attachments",
    "capability": "Pin attachment comments to a location: text line/selection, CSV/XLSX row, HTML region (click/drag), video timestamp; anchor chip 'Remove anchor'; 'Jump to location'; comment-mode toggle",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "AttachmentPreviewShell comment mode + PreviewCommentModeContext",
    "gate": "attachment comments flag; viewer.canComment",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "AttachmentCommentsView accepts pendingAnchor but no preview surface produces anchors (grep 'pendingAnchor' only in attachment_comments_view.dart); no jump-to-location.",
-   "impact": "Document/video reviewers on Flutter cannot reference the exact spot.",
+   "flutterEntry": "raft_ui document_anchors.dart (RaftDocumentAnchorHost / RaftAnchorRow over the lines and rows of RaftDocumentPreview), attachment_video_comments.dart (pause / scrub capture, Add timestamp, seek), the shell's comment session (attachment_comment_scope.dart: comment mode = panel open, pending anchor, jump handler)",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/attachment_comment_scope.dart",
+     "needle": "class RaftAttachmentCommentState"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/document_anchors.dart",
+     "needle": "class RaftAnchorRow"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/attachment_video_comments.dart",
+     "needle": "Add timestamp {timestamp}"
+    }
+   ],
+   "justification": "Text lines, CSV/XLSX rows and video timestamps: capture, pending-anchor chip with Remove anchor, jump with a 1.6 s flash. HTML-region and Markdown-section capture are not ported (see POST /attachments/:id/comments). Capture is a tap or a drag over the numbered rows (Web: a text selection, or a tap on touch screens).",
+   "impact": "HTML and Markdown comments stay unanchored.",
    "size": "M"
   },
   {
@@ -11128,13 +11145,22 @@
    "area": "files-attachments",
    "capability": "Comment messages show a chip referencing the commented attachment/anchor ('re: filename'), click jumps to the host message",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "AttachmentCommentRefChip",
    "gate": "attachment comments flag",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "No commentRef handling in Flutter (grep finds none); recorded LEFT in docs/field-parity.md:66.",
-   "impact": "Comment messages appear without context.",
+   "flutterEntry": "attachment_comment_ref.dart withAttachmentCommentRef (hooked into chat_view withQuotedPreview) over raft_ui RaftAttachmentCommentRef: `re: filename · anchor`, the anchor quote, a jump to the host message (channel, DM or thread) and, for a video, to the commented time",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/attachment_comment_ref.dart",
+     "needle": "Widget withAttachmentCommentRef"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/attachment_comment_ref.dart",
+     "needle": "class RaftAttachmentCommentRef"
+    }
+   ],
+   "justification": "Web AttachmentCommentRefChip + handleJumpToCommentHost; gated by `attachment_comments_v0`. Web's same-surface 'transient focus' is the ordinary message jump here.",
+   "impact": "",
    "size": "S"
   },
   {

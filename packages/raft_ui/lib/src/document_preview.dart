@@ -4,6 +4,8 @@ import 'raft_selection_area.dart';
 
 import 'localization.dart';
 import 'lazy_markdown_document.dart';
+import 'attachment_comment_scope.dart';
+import 'document_anchors.dart';
 import 'markdown_outline.dart';
 import 'message_body.dart';
 import 'design_primitives.dart';
@@ -53,6 +55,10 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
   // Markdown outline: the document scrolls through [markdownScroll] and its
   // headings are found inside [markdownBody] (Web `MarkdownOutlineNav` links).
   final markdownScroll = ScrollController();
+
+  // Long text and CSV are lazy lists; a comment anchor's jump scrolls them.
+  final lazyTextScroll = ScrollController(), lazyCsvScroll = ScrollController();
+  double lazyCsvRowHeight = 0;
   final markdownBody = GlobalKey();
   final lazyMarkdown = RaftLazyMarkdownHandle();
   String? _outlineSource;
@@ -69,6 +75,8 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
   @override
   void dispose() {
     markdownScroll.dispose();
+    lazyTextScroll.dispose();
+    lazyCsvScroll.dispose();
     super.dispose();
   }
 
@@ -225,11 +233,17 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
               child: RaftSelectionArea(
                 child: ListView.builder(
                   key: const ValueKey('lazy-text-lines'),
+                  controller: lazyTextScroll,
                   padding: recipe.textInset,
                   itemCount: lines.length,
-                  itemBuilder: (_, index) => Text(
-                    lines[index].isEmpty ? ' ' : lines[index],
-                    style: recipe.text,
+                  itemBuilder: (_, index) => RaftAnchorRow(
+                    kind: 'lines',
+                    number: index + 1,
+                    text: lines[index],
+                    child: Text(
+                      lines[index].isEmpty ? ' ' : lines[index],
+                      style: recipe.text,
+                    ),
                   ),
                 ),
               ),
@@ -258,6 +272,7 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
         recipe.tableText.fontSize! * (recipe.tableText.height ?? 1.5) +
         recipe.cellInset.vertical +
         1;
+    lazyCsvRowHeight = rowHeight;
     return ColoredBox(
       color: recipe.background,
       child: Padding(
@@ -366,12 +381,18 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                               Expanded(
                                 child: ListView.builder(
                                   key: const ValueKey('lazy-csv-rows'),
+                                  controller: lazyCsvScroll,
                                   itemExtent: rowHeight,
                                   itemCount: rows.length,
-                                  itemBuilder: (_, index) => cells(
-                                    rows[index],
-                                    recipe.tableText,
-                                    index.isEven ? recipe.rowStripe : null,
+                                  itemBuilder: (_, index) => RaftAnchorRow(
+                                    kind: 'csv-rows',
+                                    number: index + 1,
+                                    text: rows[index].join('\t'),
+                                    child: cells(
+                                      rows[index],
+                                      recipe.tableText,
+                                      index.isEven ? recipe.rowStripe : null,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -396,6 +417,45 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
 
   @override
   Widget build(BuildContext context) {
+    final data = widget.data;
+    final kind = data['kind'];
+    // Web `data-anchor-line` / `data-anchor-row`: a comment session can anchor
+    // to (and jump to) the numbered lines and rows of text, CSV and XLSX.
+    final sheets = (data['sheets'] as List? ?? []).whereType<Map>().toList();
+    final selected = sheets.isEmpty
+        ? data
+        : sheets[sheet.clamp(0, sheets.length - 1)];
+    final tabular = kind == 'csv' || kind == 'xlsx';
+    final lineCount = kind == 'markdown' || tabular
+        ? 0
+        : linesOf('${data['text'] ?? ''}').length;
+    final rowCount = tabular ? (selected['rows'] as List? ?? []).length : 0;
+    return RaftDocumentAnchorHost(
+      totals: {'lines': lineCount, 'csv-rows': rowCount},
+      scrollNear: scrollLazyNear,
+      child: buildPane(context),
+    );
+  }
+
+  /// A jump to a row the lazy list has not built: scroll close to it (the
+  /// host then finds the row and refines).
+  void scrollLazyNear(String kind, int number) {
+    final controller = kind == 'lines' ? lazyTextScroll : lazyCsvScroll;
+    if (!controller.hasClients) return;
+    final extent = kind == 'lines'
+        ? (DocumentAttachmentRecipe(RaftTokens.of(context)).text.fontSize ??
+                  12) *
+              (DocumentAttachmentRecipe(RaftTokens.of(context)).text.height ??
+                  1.6)
+        : lazyCsvRowHeight;
+    final target = ((number - 1) * extent).clamp(
+      0.0,
+      controller.position.maxScrollExtent,
+    );
+    controller.jumpTo(target);
+  }
+
+  Widget buildPane(BuildContext context) {
     final data = widget.data;
     final t = RaftTokens.of(context);
     final recipe = DocumentAttachmentRecipe(t);
@@ -554,10 +614,37 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
               ),
               child: Padding(
                 padding: recipe.textInset,
-                child: SelectableText(
-                  lines.map((line) => line.isEmpty ? ' ' : line).join('\n'),
-                  style: recipe.text,
-                ),
+                // Comment mode numbers the lines (Web `data-anchor-line`
+                // rows); otherwise the text is one selectable block.
+                child:
+                    RaftAttachmentCommentScope.maybeOf(context)?.commentMode ==
+                        true
+                    ? RaftSelectionArea(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < lines.length; i++)
+                              RaftAnchorRow(
+                                kind: 'lines',
+                                number: i + 1,
+                                text: lines[i],
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: Text(
+                                    lines[i].isEmpty ? ' ' : lines[i],
+                                    style: recipe.text,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      )
+                    : SelectableText(
+                        lines
+                            .map((line) => line.isEmpty ? ' ' : line)
+                            .join('\n'),
+                        style: recipe.text,
+                      ),
               ),
             ),
           ],
@@ -760,23 +847,28 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
                                   ),
                                   children: [
                                     for (var i = 0; i < headers.length; i++)
-                                      Padding(
-                                        padding: recipe.cellInset,
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(
-                                            maxWidth: recipe.maxColumnWidth,
-                                          ),
-                                          child: Semantics(
-                                            label: i < rows[rowIndex].length
-                                                ? '${rows[rowIndex][i]}'
-                                                : '',
-                                            excludeSemantics: true,
-                                            child: SelectableText(
-                                              i < rows[rowIndex].length
+                                      RaftAnchorRow(
+                                        kind: 'csv-rows',
+                                        number: rowIndex + 1,
+                                        text: rows[rowIndex].join('\t'),
+                                        child: Padding(
+                                          padding: recipe.cellInset,
+                                          child: ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxWidth: recipe.maxColumnWidth,
+                                            ),
+                                            child: Semantics(
+                                              label: i < rows[rowIndex].length
                                                   ? '${rows[rowIndex][i]}'
                                                   : '',
-                                              style: recipe.tableText,
-                                              maxLines: 1,
+                                              excludeSemantics: true,
+                                              child: SelectableText(
+                                                i < rows[rowIndex].length
+                                                    ? '${rows[rowIndex][i]}'
+                                                    : '',
+                                                style: recipe.tableText,
+                                                maxLines: 1,
+                                              ),
                                             ),
                                           ),
                                         ),

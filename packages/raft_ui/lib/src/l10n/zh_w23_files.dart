@@ -27,4 +27,14 @@ const Map<String, String> zhCatalogW23Files = <String, String>{
   // documentSummaryFirst / documentSummaryPreview (columnCount)
   "{count} column": "{count} 列",
   "{count} columns": "{count} 列",
+  // message.attachment.rePrefix
+  "re: {name}": "回复：{name}",
+  // message.attachmentComment.jumpTitle
+  "Jump to the message with {detail}": "跳转到含有 {detail} 的消息",
+  // message.attachmentComment.commentTitle
+  "Comment on {detail}": "针对 {detail} 的评论",
+  // message.messageItem.addTimestamp
+  "Add timestamp {timestamp}": "添加时间戳 {timestamp}",
+  // message.messageItem.attachTimestamp
+  "Attach timestamp {timestamp}": "附加时间戳 {timestamp}",
 };

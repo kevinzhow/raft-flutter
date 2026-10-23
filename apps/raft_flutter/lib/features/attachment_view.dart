@@ -17,6 +17,7 @@ import '../platform/attachment_files.dart';
 import '../platform/native_sharing.dart';
 import '../platform/video_frame_probe.dart';
 import 'attachment_card_summary.dart';
+import 'attachment_comment_ref.dart' show AttachmentPendingOpen;
 import 'attachment_preview_dialog.dart';
 import 'attachment_html_preview.dart';
 import 'attachment_image_loader.dart';
@@ -204,6 +205,10 @@ class _AttachmentViewState extends State<AttachmentView> {
     transfers = newTransfers();
     startCardSummary();
     w.addListener(scopeChanged);
+    // A comment's `re:` chip asked for this video to open (Web clicks the
+    // host message's preview button once the jump put it on screen).
+    AttachmentPendingOpen.instance.addListener(pendingOpen);
+    WidgetsBinding.instance.addPostFrameCallback((_) => pendingOpen());
     if (isImage && attachmentDeclaredShape(widget.metadata) == null) {
       // No size in the message: the one learnt before (this session or on
       // disk) gives the card its box in the first frames; else it is learnt
@@ -219,6 +224,19 @@ class _AttachmentViewState extends State<AttachmentView> {
         ),
       );
     }
+  }
+
+  void pendingOpen() {
+    final id = widget.metadata['id'];
+    if (!mounted ||
+        id is! String ||
+        widget.exportMode ||
+        widget.messageId == null ||
+        attachmentPreviewKind(widget.metadata) != 'video' ||
+        !authorized) {
+      return;
+    }
+    if (AttachmentPendingOpen.instance.take(id)) unawaited(open());
   }
 
   /// A shape was learnt somewhere: a card without a message size re-lays out.
@@ -582,6 +600,7 @@ class _AttachmentViewState extends State<AttachmentView> {
   void dispose() {
     ++bindingRevision;
     cardSummary?.dispose();
+    AttachmentPendingOpen.instance.removeListener(pendingOpen);
     hiddenTimer?.cancel();
     hiddenTimer = null;
     w.removeListener(scopeChanged);
@@ -1039,6 +1058,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     final chip = webChip;
     return RaftAttachmentCard(
       summary: chip.summary,
+      commentCount: (widget.metadata['commentCount'] as num?)?.toInt() ?? 0,
       summaryAdditions: chip.text?.additions,
       summaryDeletions: chip.text?.deletions,
       metaLabel: chip.meta,

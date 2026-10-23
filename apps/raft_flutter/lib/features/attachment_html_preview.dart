@@ -12,6 +12,7 @@ import '../data/attachment_image_store.dart';
 import '../data/workspace_controller.dart';
 import '../platform/attachment_html.dart';
 import '../platform/attachment_html_webview.dart';
+import 'attachment_comments_flag.dart';
 import 'attachment_comments_view.dart';
 
 class HtmlAttachmentPreviewDialog extends StatefulWidget {
@@ -73,7 +74,16 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   void initState() {
     super.initState();
     widget.controller.addListener(scopeChanged);
+    gate.addListener(gateChanged);
+    unawaited(gate.ensure());
     unawaited(load());
+  }
+
+  /// Attachment comments exist only while the server has them on.
+  late final gate = AttachmentCommentsGate.of(widget.controller);
+
+  void gateChanged() {
+    if (mounted) setState(() {});
   }
 
   void scopeChanged() {
@@ -358,6 +368,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
   @override
   void dispose() {
     widget.controller.removeListener(scopeChanged);
+    gate.removeListener(gateChanged);
     cancel.cancel();
     html = null;
     progress.dispose();
@@ -372,7 +383,7 @@ class _HtmlPreviewState extends State<HtmlAttachmentPreviewDialog> {
     onClose: widget.onClose,
     onDownload: current ? widget.onDownload : null,
     onShare: current ? widget.onShare : null,
-    commentsBuilder: current && widget.metadata['id'] is String
+    commentsBuilder: current && gate.enabled && widget.metadata['id'] is String
         ? (_, sheet) => AttachmentCommentsView(
             controller: widget.controller,
             attachmentId: widget.metadata['id'] as String,

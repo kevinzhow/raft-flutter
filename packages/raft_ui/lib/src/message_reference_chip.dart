@@ -51,6 +51,10 @@ enum RaftReferenceKind {
   /// The same link whose target could not be read ("Unavailable linked
   /// message", a non-interactive span).
   permalinkUnavailable,
+
+  /// `re: filename · anchor` above an attachment comment (`ReferenceChip
+  /// variant="muted"` with a MessageSquare icon).
+  attachmentComment,
 }
 
 @immutable
@@ -275,6 +279,13 @@ class RaftReferenceChip extends StatelessWidget {
           states: t.recipeStates(),
           tokens: resolver,
         ).root;
+      case RaftReferenceKind.attachmentComment:
+        s = RaftMessageReferenceRecipe.resolve(
+          theme: _theme(t),
+          variant: RaftMessageReferenceRecipeVariant.muted,
+          states: t.recipeStates(extra: const ['has:>svg']),
+          tokens: resolver,
+        ).root;
       case RaftReferenceKind.permalink ||
           RaftReferenceKind.permalinkUnavailable:
         // `<MessageReferenceChip variant="link"><Link/>label</…>`: the
@@ -290,6 +301,8 @@ class RaftReferenceChip extends StatelessWidget {
         appearance.kind == RaftReferenceKind.permalinkUnavailable) {
       // `<Icon size={12} className="shrink-0" />`
       icon = const RaftIcon(RaftGlyph.link, size: 12);
+    } else if (appearance.kind == RaftReferenceKind.attachmentComment) {
+      icon = const RaftIcon(RaftGlyph.messageSquare, size: 12);
     }
     final decoration = s.decoration(resolver);
     final size = s.fontSize ?? fontSize;

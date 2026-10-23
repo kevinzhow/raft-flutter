@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'attachment_comment_scope.dart';
 import 'attachment_lightbox.dart';
 import 'design_primitives.dart' show RaftLightboxRecipe, RaftSpinner;
 import 'dialog_card.dart' show RaftShadowSet;
@@ -46,6 +47,7 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
     this.dark = false,
     this.commentsOpenInitially = false,
     this.page = false,
+    this.commentSession,
   });
   final String filename;
   final VoidCallback onClose;
@@ -67,6 +69,11 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
   final bool dark;
   final bool commentsOpenInitially;
 
+  /// The comment session shared with the panel and the body (Web
+  /// `PreviewCommentModeContext`); the shell makes its own when the owner
+  /// does not need to reach it.
+  final RaftAttachmentCommentState? commentSession;
+
   /// Mobile page route: a plain Material page with the shared page header
   /// instead of a fullscreen dialog.
   final bool page;
@@ -78,6 +85,26 @@ class RaftAttachmentPreviewShell extends StatefulWidget {
 class _RaftAttachmentPreviewShellState
     extends State<RaftAttachmentPreviewShell> {
   late bool open = widget.commentsOpenInitially;
+  late final RaftAttachmentCommentState session =
+      widget.commentSession ?? RaftAttachmentCommentState();
+  late final bool ownsSession = widget.commentSession == null;
+
+  @override
+  void initState() {
+    super.initState();
+    // Web: comment mode keeps the panel open; a pushed anchor opens it.
+    session
+      ..commentMode = open
+      ..openPanel = () => setOpen(true);
+  }
+
+  @override
+  void dispose() {
+    session.openPanel = null;
+    if (ownsSession) session.dispose();
+    super.dispose();
+  }
+
   // Sticky after the first open: the panel keeps its content (and fetched
   // comments) across collapse and reopen.
   late bool mounted_ = open;
@@ -85,6 +112,8 @@ class _RaftAttachmentPreviewShellState
 
   void setOpen(bool value) => setState(() {
     open = value;
+    // Closing the panel ends the comment session (the pending anchor dies).
+    session.commentMode = value;
     if (value) mounted_ = true;
   });
 
@@ -283,11 +312,12 @@ class _RaftAttachmentPreviewShellState
         ),
       ),
     );
+    final scoped = RaftAttachmentCommentScope(state: session, child: content);
     return widget.page
-        ? Material(color: pageRecipe.backdrop, child: content)
+        ? Material(color: pageRecipe.backdrop, child: scoped)
         : Dialog.fullscreen(
             backgroundColor: raftLightboxBackdrop,
-            child: content,
+            child: scoped,
           );
   }
 }

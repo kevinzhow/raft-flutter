@@ -39,6 +39,8 @@ export 'src/message_export.dart';
 export 'src/forwarded_bundle.dart';
 export 'src/composer_suggestions.dart';
 
+export 'src/attachment_comment_ref.dart';
+export 'src/attachment_comment_scope.dart';
 export 'src/document_preview.dart';
 export 'src/markdown_outline.dart';
 export 'src/preview_unavailable.dart';

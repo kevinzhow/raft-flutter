@@ -33,6 +33,7 @@ class RaftAttachmentCard extends StatelessWidget {
     this.summary,
     this.summaryAdditions,
     this.summaryDeletions,
+    this.commentCount = 0,
     this.metaLabel,
     this.previewAffordance = false,
     this.previewPending = false,
@@ -46,6 +47,10 @@ class RaftAttachmentCard extends StatelessWidget {
   /// A diff card's `+N` / `-M` totals after the [summary] (Web
   /// `MessageAttachmentDiffAddition` / `DiffDeletion`, 6px apart).
   final int? summaryAdditions, summaryDeletions;
+
+  /// Comments on the attachment (Web `attachment.commentCount`): `· ◻ 3` in
+  /// the meta row; not for images and PDFs (no comment entry there).
+  final int commentCount;
 
   /// Web `AttachmentMetaText` label (mime type, "HTML preview", …); when set,
   /// the meta row reads `label · size` and ends with the decorative
@@ -87,6 +92,13 @@ class RaftAttachmentCard extends StatelessWidget {
       style: TextStyle(color: color),
     ),
   ];
+
+  bool get _showsCommentCount {
+    final type = mimeType.toLowerCase().split(';').first.trim();
+    return commentCount > 0 &&
+        !type.startsWith('image/') &&
+        type != 'application/pdf';
+  }
 
   static double metaLineHeight(RaftTokens t) => t.brutal ? 20 / 14 : 21 / 10;
 
@@ -220,6 +232,7 @@ class RaftAttachmentCard extends StatelessWidget {
                 size: sizeBytes == null || sizeBytes! <= 0
                     ? null
                     : formatSize(sizeBytes!),
+                commentCount: _showsCommentCount ? commentCount : 0,
                 style: component.metadata.copyWith(
                   height: metaLineHeight(t),
                   color: downloadFailed ? failedColor : null,
@@ -432,7 +445,12 @@ class _WebMeta extends StatelessWidget {
     required this.glyph,
     required this.glyphColor,
     this.wrap = false,
+    this.commentCount = 0,
   });
+
+  /// `attachment-comment-count`: separator, MessageSquare 12 and the number
+  /// (`inline-flex items-center gap-1 pl-1`).
+  final int commentCount;
 
   /// Above the default text size the label wraps instead of being cut.
   final bool wrap;
@@ -459,6 +477,14 @@ class _WebMeta extends StatelessWidget {
         Text('·', style: style.copyWith(color: separator)),
         const SizedBox(width: 6),
         Text(size!, maxLines: 1, style: style),
+      ],
+      if (commentCount > 0) ...[
+        const SizedBox(width: 4),
+        Text('·', style: style.copyWith(color: separator)),
+        const SizedBox(width: 4),
+        RaftIcon(RaftGlyph.messageSquare, size: 12, color: style.color),
+        const SizedBox(width: 4),
+        Text('$commentCount', maxLines: 1, style: style),
       ],
       const SizedBox(width: 6),
       SizedBox.square(

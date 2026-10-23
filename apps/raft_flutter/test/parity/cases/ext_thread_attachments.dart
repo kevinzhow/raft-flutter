@@ -104,6 +104,12 @@ Map<String, dynamic> _routes(ParityContext ctx) {
       'truncated': d['truncated'],
     };
   }
+  // The reference server has attachment comments on (`attachment_comments_v0`).
+  routes['POST /feature-flags/evaluate'] = {
+    'evaluations': [
+      {'key': 'attachment_comments_v0', 'enabled': true},
+    ],
+  };
   final htmlId = _map(fx['html'])['id'];
   routes['GET /attachments/$htmlId/html-preview-url'] = {
     'url':

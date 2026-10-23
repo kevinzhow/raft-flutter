@@ -46,6 +46,13 @@ class _Client extends RaftClient {
         origin: 'https://example.invalid',
         sessionStore: MemorySessionStore(),
       );
+  // Attachment comments are on (flag `attachment_comments_v0`).
+  @override
+  Future<dynamic> post(String path, {dynamic data}) async => {
+    'evaluations': [
+      {'key': 'attachment_comments_v0', 'enabled': true},
+    ],
+  };
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     if (path.endsWith('/enabled')) return {'enabled': true};

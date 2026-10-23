@@ -200,8 +200,29 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
     }
   }
 
-  Map<String, dynamic>? get activeAnchor =>
-      anchorCleared ? null : widget.pendingAnchor;
+  /// The anchor the next comment carries: the one the preview captured
+  /// (Web `pendingAnchor` of the shell), else the owner's.
+  Map<String, dynamic>? get activeAnchor {
+    final captured = RaftAttachmentCommentScope.read(context)?.pendingAnchor;
+    return captured ?? (anchorCleared ? null : widget.pendingAnchor);
+  }
+
+  void clearAnchor() {
+    RaftAttachmentCommentScope.read(context)?.clearAnchor();
+    setState(() => anchorCleared = true);
+  }
+
+  /// A comment's anchor card: show its location in the preview. On the phone
+  /// sheet the panel then folds away so the flash is visible (Web
+  /// `onAnchorJump`).
+  void jump(Map anchor) {
+    final session = RaftAttachmentCommentScope.read(context);
+    if (session == null || !session.jump(Map<String, dynamic>.from(anchor))) {
+      return;
+    }
+    final sheet = widget.sheet;
+    if (sheet != null && sheet.expanded) sheet.onToggle();
+  }
 
   Future<bool> send(
     WorkspaceController owner,
@@ -226,7 +247,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
     if (!accepts(owner, id, revision)) return false;
     await owner.refreshUnread();
     if (!accepts(owner, id, revision)) return false;
-    setState(() => anchorCleared = true);
+    clearAnchor();
     await load();
     return accepts(owner, id, revision);
   }
@@ -314,6 +335,8 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
             if (ka != kb) return ka.compareTo(kb);
             return '${a['createdAt']}'.compareTo('${b['createdAt']}');
           }));
+    // The comment session changes the anchor (a capture in the preview).
+    RaftAttachmentCommentScope.maybeOf(context);
     final anchor = activeAnchor;
     return RaftAttachmentCommentsPanel(
       filename: widget.filename,
@@ -333,6 +356,9 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
                   avatar: avatar(c),
                   anchorLabel: c['anchor'] is Map
                       ? attachmentAnchorLabel(context, c['anchor'] as Map)
+                      : null,
+                  onJump: c['anchor'] is Map
+                      ? () => jump(c['anchor'] as Map)
                       : null,
                   quote:
                       c['anchor'] is Map &&
@@ -355,7 +381,7 @@ class _AttachmentCommentsViewState extends State<AttachmentCommentsView> {
                 child: RaftCommentAnchorChip(
                   label: attachmentAnchorLabel(context, anchor),
                   removeLabel: raftText(context, 'Remove anchor'),
-                  onRemove: () => setState(() => anchorCleared = true),
+                  onRemove: clearAnchor,
                 ),
               ),
         onSendWithMentions: (text, mentions) =>

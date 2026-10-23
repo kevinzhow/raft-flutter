@@ -39,7 +39,7 @@ Status: FIXED = changed on this branch with a fixture-backed test; LEFT = not ch
 | 11 | channel | hidden `#all` in `channel:updated` | `channelDomain.ts:121-130` | merged as a private channel | wrong | `#all` stays in the sidebar as a lock channel after an admin hides it | FIXED |
 | 12 | channel | `message_display_prefs:updated` | `socketBridge.ts:705-709` | only the open settings sheet | missing | "Collapse long messages" from another device not applied | FIXED |
 | 13 | message | action card `sourceServerId: null` | `shared actionCards.ts:546-550` | null treated as same server | wrong | Confirm enabled on a card Web makes read-only; server error | FIXED |
-| 14 | message | upload ceiling with direct upload enabled | `directAttachmentUpload.ts:331-366` | accepted `maxBytes` up to 200 MB, posted multipart (server caps 90 MB) | wrong | 90-200 MB files fail with 413 | FIXED (cap at 90 MB; direct-upload sessions LEFT) |
+| 14 | message | upload ceiling with direct upload enabled | `directAttachmentUpload.ts:331-366` | accepted `maxBytes` up to 200 MB, posted multipart (server caps 90 MB) | wrong | 90-200 MB files fail with 413 | FIXED (server `maxBytes`; direct-upload sessions follow, docs/parity.md WP-FILES) |
 | 15 | message | provisional task chip keys (`taskClaimedByName`, `taskTitle`, `taskId`) | taskStore rows | keys the server never sends | stale | First-frame chip lacks assignee, shows message text as title | FIXED |
 | 16 | message | optimistic `senderName` | `MessageInput.tsx:2122` | `user.name` | stale | Pending row shows handle, flips to display name on echo | FIXED |
 | 17 | message | external sender subtitle (`externalAuthor.provider`) | `MessageItem.tsx:3000` | none | missing-fallback | Slack senders have no provider subtitle | FIXED |
@@ -63,7 +63,7 @@ Status: FIXED = changed on this branch with a fixture-backed test; LEFT = not ch
 
 ## Left, with reasons
 
-- Features Web has and Flutter does not (not stale reads): attachment `commentRef` chip and `commentCount` badge, direct-upload sessions, agent read receipts (`scope_read:updated`), hosted external runtime (`hostedRuntime`, retry), `lastRuntimeError` banner, Slack `bridge` indicator, server profile avatar upload, `computer:restart:done` feedback, mobile push registrations, server-side system notifications contract. Each needs a product decision or a raft_ui widget.
+- Features Web has and Flutter does not (not stale reads): agent read receipts (`scope_read:updated`), hosted external runtime (`hostedRuntime`, retry), `lastRuntimeError` banner, Slack `bridge` indicator, server profile avatar upload, `computer:restart:done` feedback, mobile push registrations, server-side system notifications contract. Each needs a product decision or a raft_ui widget.
 - raft_ui follow-ups: `RaftTaskStatus` label, profile identity avatar slot and Left/Removed badge slot, member-row name badge and Slack section, sidebar quiet "new" dot. Avoided here to keep `ds-audit` counts and widget previews unchanged.
 - Low-confidence or harmless: followed-thread unread double count on replayed `thread:updated`, DM merge-vs-replace semantics on `channel:updated`, agent model-label catalog on the Computer page, activity sender-name precedence, HistoryLimit banner using the entitlement plan.
 
