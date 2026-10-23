@@ -294,6 +294,36 @@ class RaftCloseButton extends StatelessWidget {
   }
 }
 
+/// The quiet icon action beside [RaftCloseButton] in a panel bar that opens the
+/// message's thread (Web `PanelAction` with the raft-ui `ThreadIcon`).
+class RaftThreadViewButton extends StatelessWidget {
+  const RaftThreadViewButton({
+    super.key,
+    required this.onPressed,
+    this.tooltip = 'View in thread',
+  });
+  final VoidCallback? onPressed;
+  final String tooltip;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final color = t.brutal ? Colors.black : t.colors['foreground-muted']!;
+    return RaftRecipeButton(
+      variant: RaftButtonRecipeVariant.ghost,
+      size: RaftButtonRecipeSize.iconSm,
+      tooltip: raftText(context, tooltip),
+      onPressed: onPressed,
+      foreground: color,
+      brutalSurface: (t, hovered) => BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.black, width: 2),
+        boxShadow: RaftShadowSet.brutalSm,
+      ),
+      child: RaftThreadIcon(size: 14, color: color),
+    );
+  }
+}
+
 /// `--shadow-brutal-sm: 2px 2px 0px #141111` (Web index.css @theme).
 abstract final class RaftShadowSet {
   static const brutalSm = [

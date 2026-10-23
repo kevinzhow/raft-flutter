@@ -17,6 +17,7 @@ import 'chat_view.dart' show ChatTaskOpener;
 import 'route_transition_gate.dart';
 import 'task_surface.dart';
 import 'task_surface_controller.dart';
+import 'task_view_in_thread.dart';
 import 'mobile_workspace_pages.dart';
 
 /// Accepted task-card facts are tied to the authority that supplied the row.
@@ -247,6 +248,24 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
     w.notifyListeners();
   }
 
+  /// Web TaskModalBar "View in thread" (null while the task has no thread).
+  VoidCallback? viewInThread(TaskSurfaceController? task) {
+    if (task == null || legacy || !taskHasThreadToView(w, task.task)) {
+      return null;
+    }
+    return () {
+      if (identity != currentIdentity) return;
+      unawaited(
+        viewTaskInThread(
+          w,
+          task.task,
+          compact: RaftAdaptiveWorkspace.compactOf(context),
+          closeTask: close,
+        ),
+      );
+    };
+  }
+
   void back() {
     if (identity != currentIdentity) return;
     if (RaftAdaptiveWorkspace.compactOf(context)) {
@@ -324,6 +343,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
                     onTask: widget.onTask,
                     onViewBilling: widget.onViewBilling,
                     onBack: back,
+                    onViewInThread: viewInThread(task),
                     legacyPresentation: RaftLegacyTaskPresentation.mobileModal,
                   ),
                 ),
@@ -382,6 +402,7 @@ class _WorkspaceTaskHostState extends State<WorkspaceTaskHost> {
                   onTask: widget.onTask,
                   onViewBilling: widget.onViewBilling,
                   onBack: back,
+                  onViewInThread: viewInThread(task),
                   legacyPresentation: presentation,
                 ),
               ),

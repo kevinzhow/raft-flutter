@@ -109,7 +109,8 @@ class RaftTaskStatusEditor extends StatelessWidget {
 
 /// raft-ui TaskCard (taskCard recipe) as composed by the product TaskCard
 /// (packages/web/src/components/task/TaskCard.tsx): meta row, title,
-/// description, then `mt-2 flex justify-end` with the status editor.
+/// description, then `mt-2 flex items-center gap-2` with the status editor at
+/// the start (v1.21.23; its menu opens left-aligned).
 class RaftTaskCard extends StatelessWidget {
   const RaftTaskCard({
     super.key,
@@ -233,7 +234,7 @@ class RaftTaskCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8), // mt-2
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: Alignment.centerLeft,
                 // The badge is inline content of a block wrapper: it sits on
                 // the line box of the inherited document text (16px / 1.5).
                 child: RaftInlineLineBox(
@@ -243,6 +244,7 @@ class RaftTaskCard extends StatelessWidget {
                           status: status,
                           options: statusOptions,
                           onSelect: onStatus!,
+                          alignRight: false,
                         )
                       : RaftTaskStatus(status: status),
                 ),

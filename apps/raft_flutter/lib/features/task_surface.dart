@@ -18,6 +18,7 @@ class SourceTaskSurface extends StatefulWidget {
     required this.onViewBilling,
     this.onCleanupDelete,
     this.onBack,
+    this.onViewInThread,
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
   });
@@ -32,6 +33,9 @@ class SourceTaskSurface extends StatefulWidget {
   final VoidCallback? onViewBilling;
   final VoidCallback? onCleanupDelete;
   final VoidCallback? onBack;
+
+  /// "View in thread" of the task bar; null when the task has no thread.
+  final VoidCallback? onViewInThread;
   final RaftLegacyTaskPresentation legacyPresentation;
   final bool page;
   @override
@@ -135,6 +139,7 @@ class _SourceTaskSurfaceState extends State<SourceTaskSurface> {
         historyError: o.historyError,
         onClose: widget.onClose,
         onBack: widget.onBack,
+        onViewInThread: widget.onViewInThread,
         onRetry: o.parentReady ? o.refresh : o.start,
         onLoadAssignees: o.loadAssignees,
         onUpdate: o.update,

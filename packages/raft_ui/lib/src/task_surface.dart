@@ -70,7 +70,13 @@ class RaftTaskSurface extends StatefulWidget {
     this.legacyPresentation = RaftLegacyTaskPresentation.modal,
     this.page = false,
     this.displayNameFor,
+    this.onViewInThread,
   });
+
+  /// Leaves the task for the ordinary thread of its message (Web TaskModalBar
+  /// "View in thread"); null when the task has no thread to show (legacy tasks,
+  /// or a task whose message is itself a thread reply).
+  final VoidCallback? onViewInThread;
 
   /// Display name of a known person (`type` is `user` or `agent`), as Web
   /// resolves it from the channel members; null falls back to `@handle`.
@@ -375,6 +381,16 @@ class _RaftTaskSurfaceState extends State<RaftTaskSurface> {
               ],
             ),
           ),
+          if (widget.onViewInThread != null && !widget.legacy)
+            RaftTooltip(
+              message: raftText(context, 'View in thread'),
+              excludeFromSemantics: true,
+              child: RaftThreadViewButton(
+                key: const ValueKey('task-modal-view-in-thread'),
+                tooltip: 'View in thread',
+                onPressed: widget.onViewInThread,
+              ),
+            ),
           if (showClose)
             // Web `CloseButton` (brutal: bordered, white, shadow-brutal-sm);
             // icon-only, so it carries its name as a tooltip.
