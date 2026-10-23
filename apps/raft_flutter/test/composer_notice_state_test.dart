@@ -63,6 +63,15 @@ class _Chat {
     await pumpFor(30);
   }
 
+  /// Removes the uploads still in flight, so the transfer's idle deadline
+  /// (Web `uploadLegacyAttachmentWithIdleTimeout`) does not outlive the test.
+  Future<void> dropUploads() async {
+    for (final upload in w.uploads().toList()) {
+      w.removeUpload(upload);
+    }
+    await pumpFor(30);
+  }
+
   /// Sends with Enter (the Send button is disabled while files are not
   /// sendable; Web's handleSubmit runs from the keyboard).
   Future<void> tapSend() async {
@@ -103,9 +112,8 @@ Future<_Chat> _open(WidgetTester tester) async {
   };
   await tester.pumpWidget(
     MaterialApp(
-      theme: raftTheme(
-        RaftFamily.elegant,
-      ).copyWith(platform: TargetPlatform.linux),
+      theme: raftTheme(RaftFamily.elegant)
+          .copyWith(platform: TargetPlatform.linux),
       home: Scaffold(
         body: RepaintBoundary(
           key: _shotKey,
@@ -148,6 +156,7 @@ void main() {
     // A second attachment starts uploading: the old notice must not return.
     await chat.attach('b.png');
     expect(find.text(_waiting), findsNothing);
+    await chat.dropUploads();
   });
 
   testWidgets('removing the attachment clears it', (tester) async {
@@ -217,6 +226,7 @@ void main() {
     // The upload is still running, but the notice belonged to the old visit.
     expect(chat.w.uploads(), isNotEmpty);
     expect(find.text(_waiting), findsNothing);
+    await chat.dropUploads();
   });
 
   // Evidence for the screenshot case (set RAFT_NOTICE_SHOTS to a directory).

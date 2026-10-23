@@ -122,7 +122,10 @@ void main() {
             f.adapter.calls.where(
               (call) =>
                   call.path == '/v2/messages' ||
-                  call.path.contains('/attachments/upload'),
+                  // Uploads are POSTs; reading upload capabilities or
+                  // recoverable sessions is not an upload.
+                  (call.method == 'POST' &&
+                      call.path.contains('/attachments/upload')),
             ),
             isEmpty,
           );
@@ -214,7 +217,7 @@ void main() {
       expect(
         f.adapter.calls.where(
           (c) =>
-              c.path.contains('/attachments/upload') ||
+              (c.method == 'POST' && c.path.contains('/attachments/upload')) ||
               c.path == '/v2/messages' ||
               c.path.contains('/messages/forward'),
         ),
