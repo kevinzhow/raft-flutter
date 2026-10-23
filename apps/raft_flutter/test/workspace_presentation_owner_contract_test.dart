@@ -356,7 +356,9 @@ void main() {
     page.setConversationPresentation(owner, main: true, thread: true);
     page.setChatTabPresentation(owner, false);
     page.setChatTabPresentation(owner, true);
-    expect(observed, [0, 1, 0, 1]);
+    // The second admission posts; the fourth joins that request while it is in
+    // flight (one read POST per conversation, Source flushPendingRead).
+    expect(observed, [0, 1, 0, 0]);
     expect(source.dispatch, [
       'set-conversation',
       'set-conversation',
