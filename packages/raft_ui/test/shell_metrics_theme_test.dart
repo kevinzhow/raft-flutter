@@ -60,8 +60,40 @@ void main() {
       // Guards the pairing: if a future edit drops railShort, Brutal would fall
       // back to 64 on short viewports and lose the measured 50.
       final brutal = _tokens(brutalThemePackId);
-      expect(brutal.size('size.railShort', fallback: brutal.size('size.rail', fallback: 56)), 50);
+      expect(
+        brutal.size(
+          'size.railShort',
+          fallback: brutal.size('size.rail', fallback: 56),
+        ),
+        50,
+      );
       expect(brutal.size('size.rail', fallback: 56), 64);
+    });
+
+    test('navigation rows: a57b9dab heights per look and viewport', () {
+      double row(String id, double width, double height) =>
+          RaftConversationNavigationRecipe(
+            _tokens(id),
+            kind: RaftConversationNavKind.channel,
+          ).rowHeight(viewportWidth: width, viewportHeight: height);
+      // (desktop tall, desktop short, phone tall, phone short)
+      final expected = {
+        raftThemePackId: [34.0, 34.0, 34.0, 34.0],
+        elegantThemePackId: [34.0, 30.0, 34.0, 30.0],
+        brutalThemePackId: [32.0, 32.0, 40.0, 32.0],
+      };
+      for (final MapEntry(key: id, value: heights) in expected.entries) {
+        expect(
+          [
+            row(id, 1280, 800),
+            row(id, 1280, 600),
+            row(id, 390, 844),
+            row(id, 390, 600),
+          ],
+          heights,
+          reason: id,
+        );
+      }
     });
   });
 }

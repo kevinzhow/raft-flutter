@@ -157,11 +157,12 @@ Elegant 的 `stroke.control = 0` 配合 `control.edge = ring`（§5 #1）与 `sh
 | `size.control.onFrame` | 36 | 32 † | 32 † |
 | `size.field` | 44 | 36 † | 40 † |
 | `size.panelHeader` | 56 | 56 | 62 |
-| `size.rail` | 56 | 56 | 64（矮屏 50） |
+| `size.rail` / `railShort`（矮屏 ≤ 600） | 56 / 56 | 56 / 56 | 64 / 50 |
 | `size.railGlyph` | 16 | 16 | 18 |
 | `size.navRow` / `navRowCompact` | 34 / — | 34 / 30 | 40 / 32 |
+| `size.navRowWide`（桌面宽 ≥ 768，非矮屏） | 34 | 34 | 32 |
 | `size.menuRow` / `menuRowCompact` | 32 / — | 31.5 / 27.5 | 36 / 28 |
-| `size.drawer` | 380 | 380 | 420 † |
+| `size.drawer` | 380 | 380 | 380 |
 | `space.controlX` | 12 | 6 | 8 |
 | `space.itemX` | 10 | 10 | 12 |
 | `space.inset.panel` | 16 | 26 † | 8 |

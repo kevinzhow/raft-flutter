@@ -172,6 +172,8 @@ GEOMETRY_RAFT = {
     # Shorter rows on short viewports (contract §3.3). Raft keeps one row height
     # and leaves these at the regular value; the family packs lower them.
     'size.navRowCompact': 34, 'size.menuRowCompact': 32,
+    # Navigation row at desktop width (>= 768). Raft keeps the regular row.
+    'size.navRowWide': 34,
     'space.controlX': 12, 'space.itemX': 10, 'space.inset.panel': 16,
     # Gap between separate segments (the `separate` frame). Raft frames its
     # segments in a track, so this only takes effect for the family packs.

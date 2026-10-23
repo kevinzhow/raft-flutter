@@ -77,6 +77,8 @@ GEOMETRY_ELEGANT = {
     'size.menuRow': 31.5, 'size.menuRowCompact': 27.5, 'size.drawer': 380,
     # a57b9dab keeps Elegant's rail at one width on short viewports.
     'size.railShort': 56,
+    # a57b9dab: Elegant keeps its regular row at desktop width.
+    'size.navRowWide': 34,
     'space.controlX': 6, 'space.itemX': 10, 'space.inset.panel': 26,
     # a57b9dab `gap-1.5` between segments, at --spacing 0.25rem.
     'space.segmentGap': 6,
@@ -99,6 +101,8 @@ GEOMETRY_BRUTAL = {
     'size.drawer': 380,
     # a57b9dab: Brutal narrows its rail to 50 below 600px tall.
     'size.railShort': 50,
+    # a57b9dab: Brutal uses its compact row at desktop width.
+    'size.navRowWide': 32,
     'space.controlX': 8, 'space.itemX': 12, 'space.inset.panel': 8,
     # a57b9dab `gap-1` between segments.
     'space.segmentGap': 4,

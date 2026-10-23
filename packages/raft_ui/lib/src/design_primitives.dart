@@ -100,16 +100,9 @@ abstract final class RaftLayoutMetrics {
       viewportHeight <= 600
       ? RaftMetrics.compactPanelHeader
       : RaftMetrics.panelHeader;
-  /// The rail's width, from the theme's `size.rail` / `size.railShort` tokens.
-  ///
-  /// Measured on a57b9dab's `RaftLayoutMetrics.railWidth`:
-  ///   `t.brutal ? (viewportHeight <= 600 ? 50 : 64) : 56`
-  /// so Elegant is 56 at every height, Brutal 64 (50 on short viewports). The
-  /// literal 56 that lived here was Raft's value, which meant Brutal painted
-  /// Elegant's narrower rail.
-  ///
-  /// The 600px threshold is a form rule (when a viewport counts as short), not a
-  /// theme value, so it belongs here rather than in the contract.
+
+  /// `size.rail`, or `size.railShort` on short viewports (a57b9dab: Brutal
+  /// 64/50, others 56). The 600px threshold is form, not a theme value.
   static double railWidth(RaftTokens t, double viewportHeight) {
     final rail = t.size('size.rail', fallback: 56);
     if (viewportHeight <= 600) {
@@ -117,6 +110,7 @@ abstract final class RaftLayoutMetrics {
     }
     return rail;
   }
+
   static const double desktopBreakpoint = 768, threadOverlayBreakpoint = 1024;
   // index.css900–940: actual thread-layout container + portrait xl rule.
   static const threadSplitContainerWidth = 680.0;

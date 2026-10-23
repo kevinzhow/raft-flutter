@@ -518,32 +518,22 @@ class RaftConversationNavigationRecipe {
   // Resolved mounted ChannelRow cascade (including original md:py-1.5
   // Elegant precedence): desktop Br32/El34, short Br32/El30,
   // tall mobile Br40/El34. Direct-message AvatarSlot is a separate contract.
-  /// A navigation row's height, from the theme's `size.navRow` /
-  /// `size.navRowCompact` tokens.
-  ///
-  /// Measured on a57b9dab's conversation `rowHeight`:
-  ///   `tokens.brutal
-  ///      ? (viewportWidth >= desktopBreakpoint || viewportHeight <= 600 ? 32 : 40)
-  ///      : (viewportHeight <= 600 ? 30 : 34)`
-  ///
-  /// The two conditions are not the same rule. For every look a short viewport
-  /// means the compact row; for Brutal *only*, a desktop width also uses the
-  /// compact row (32 rather than 40). Applying the desktop clause to all themes --
-  /// which my first attempt did -- gave Elegant 32 on desktop instead of 34.
-  ///
-  /// Compact therefore cannot be a single boolean derived from the viewport; it is
-  /// the short-viewport rule for everyone, plus the desktop clause for the look
-  /// whose pack makes its regular row taller than its compact one.
+  /// A navigation row's height: `size.navRowCompact` on short viewports,
+  /// `size.navRowWide` at desktop width, otherwise `size.navRow`.
+  /// a57b9dab: Brutal 32 at desktop width or short, else 40; Elegant 30 short,
+  /// else 34.
   double rowHeight({
     required double viewportWidth,
     required double viewportHeight,
   }) {
     final regular = tokens.size('size.navRow', fallback: 34);
-    final compact = tokens.size('size.navRowCompact', fallback: 30);
-    // A pack that keeps one row height has no desktop clause to apply.
-    final desktopUsesCompact =
-        regular > compact && viewportWidth >= RaftLayoutMetrics.desktopBreakpoint;
-    return viewportHeight <= 600 || desktopUsesCompact ? compact : regular;
+    if (viewportHeight <= 600) {
+      return tokens.size('size.navRowCompact', fallback: regular);
+    }
+    if (viewportWidth >= RaftLayoutMetrics.desktopBreakpoint) {
+      return tokens.size('size.navRowWide', fallback: regular);
+    }
+    return regular;
   }
 
   // SidebarItemCount solid/accent merges Sidebar count and Badge recipes.

@@ -254,6 +254,7 @@ const Set<String> raftGeometryTokens = {
   'size.menuRowCompact',
   'size.navRow',
   'size.navRowCompact',
+  'size.navRowWide',
   'size.panelHeader',
   'size.rail',
   'size.railGlyph',
