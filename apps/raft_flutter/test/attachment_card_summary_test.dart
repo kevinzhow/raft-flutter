@@ -111,26 +111,34 @@ void main() {
       expect(summaries.cached('a'), isNotNull);
     });
 
-    test(
-      'a failure or a refusal is not cached: the next card asks again',
-      () async {
-        var asked = 0;
-        final summaries = AttachmentPreviewSummaries.testing((path) async {
-          asked++;
-          if (asked == 1) {
-            throw const RaftApiException('boom');
-          }
-          if (asked == 2) {
-            return {'status': 'unsupported', 'reason': 'unavailable'};
-          }
-          return _diff;
-        });
-        expect(await summaries.fetch('a'), isNull);
-        expect(await summaries.fetch('a'), isNull);
-        expect((await summaries.fetch('a'))!.isDiff, true);
-        expect(asked, 3);
-      },
-    );
+    test('a settled refusal is cached like a summary (Web)', () async {
+      var asked = 0;
+      final summaries = AttachmentPreviewSummaries.testing((path) async {
+        asked++;
+        return {'status': 'unsupported', 'reason': 'too_large'};
+      });
+      expect(await summaries.fetch('a'), isNull);
+      expect(await summaries.fetch('a'), isNull);
+      expect(asked, 1);
+    });
+
+    test('a failure or a transient refusal is not cached: the next card asks again', () async {
+      var asked = 0;
+      final summaries = AttachmentPreviewSummaries.testing((path) async {
+        asked++;
+        if (asked == 1) {
+          throw const RaftApiException('boom');
+        }
+        if (asked == 2) {
+          return {'status': 'unsupported', 'reason': 'unavailable'};
+        }
+        return _diff;
+      });
+      expect(await summaries.fetch('a'), isNull);
+      expect(await summaries.fetch('a'), isNull);
+      expect((await summaries.fetch('a'))!.isDiff, true);
+      expect(asked, 3);
+    });
   });
 
   group('cards', () {

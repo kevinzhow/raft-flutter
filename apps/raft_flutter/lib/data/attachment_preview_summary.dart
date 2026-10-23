@@ -92,18 +92,21 @@ class AttachmentPreviewSummaries {
   ) => AttachmentPreviewSummaries._(query);
 
   final Future<dynamic> Function(String path) _query;
-  final _cache = <String, AttachmentPreviewSummary>{};
+  // A null value is a settled answer without a summary (a refusal or a payload
+  // this client cannot read); it is cached like a summary.
+  final _cache = <String, AttachmentPreviewSummary?>{};
   final _flights = <String, Future<AttachmentPreviewSummary?>>{};
 
   AttachmentPreviewSummary? cached(String attachmentId) => _cache[attachmentId];
 
   /// The summary, or null when there is none (refused, unreadable, failed).
-  /// A refusal other than the transient `unavailable` is final for the session
-  /// only in the sense that it is not asked again while the card is alive;
-  /// failures are not cached.
+  /// Like Web, every answer the server gives is kept for the session except
+  /// `unsupported` with reason `unavailable` (transient: server capacity, not
+  /// the file); transport failures are not cached.
   Future<AttachmentPreviewSummary?> fetch(String attachmentId) {
-    final known = _cache[attachmentId];
-    if (known != null) return Future.value(known);
+    if (_cache.containsKey(attachmentId)) {
+      return Future.value(_cache[attachmentId]);
+    }
     return _flights[attachmentId] ??= _load(attachmentId).whenComplete(() {
       // A block body: returning the removed future would make this wait for itself.
       _flights.remove(attachmentId);
@@ -112,10 +115,13 @@ class AttachmentPreviewSummaries {
 
   Future<AttachmentPreviewSummary?> _load(String attachmentId) async {
     try {
-      final summary = AttachmentPreviewSummary.parse(
-        await _query('/attachments/$attachmentId/preview'),
-      );
-      if (summary != null) _cache[attachmentId] = summary;
+      final response = await _query('/attachments/$attachmentId/preview');
+      final summary = AttachmentPreviewSummary.parse(response);
+      final transient =
+          response is Map &&
+          response['status'] == 'unsupported' &&
+          response['reason'] == 'unavailable';
+      if (!transient) _cache[attachmentId] = summary;
       return summary;
     } on RaftApiException {
       return null;

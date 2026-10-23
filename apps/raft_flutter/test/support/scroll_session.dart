@@ -29,7 +29,8 @@ class FakeServer implements HttpClientAdapter {
   /// reads (the real one, when the app builds its own cache).
   final DateTime Function() signClock;
   final Map<String, FutureOr<dynamic> Function(RequestOptions)> routes = {};
-  final List<(RegExp, FutureOr<dynamic> Function(RequestOptions))> patterns = [];
+  final List<(RegExp, FutureOr<dynamic> Function(RequestOptions))> patterns =
+      [];
   final misses = <String, int>{};
 
   /// Per-limiter request budget (requests per window) the fake server
@@ -95,7 +96,9 @@ class FakeServer implements HttpClientAdapter {
     if (route == null) {
       misses.update(key, (n) => n + 1, ifAbsent: () => 1);
     }
-    final body = route == null ? {'error': 'Unexpected endpoint'} : await route(o);
+    final body = route == null
+        ? {'error': 'Unexpected endpoint'}
+        : await route(o);
     return ResponseBody.fromString(
       jsonEncode(body),
       route == null ? 404 : 200,
@@ -128,7 +131,8 @@ class FakeStorage implements HttpClientAdapter {
       final limited = server?.admit(o);
       if (limited != null) return limited;
     }
-    final media = o.uri.path.contains('/media/') || o.uri.path.contains('/vid-');
+    final media =
+        o.uri.path.contains('/media/') || o.uri.path.contains('/vid-');
     final bytes = media ? Uint8List.fromList(List.filled(2048, 7)) : png;
     bytesServed += bytes.length;
     return ResponseBody.fromBytes(
@@ -190,7 +194,11 @@ List<Map<String, dynamic>> attachmentHistory(
         'senderId': 'alice',
         'senderType': 'user',
         'content': 'Message $i',
-        'createdAt': DateTime.utc(2026, 10, 1).add(Duration(minutes: i)).toIso8601String(),
+        'createdAt': DateTime.utc(
+          2026,
+          10,
+          1,
+        ).add(Duration(minutes: i)).toIso8601String(),
         'attachments': switch (i % 8) {
           0 || 1 => [for (var a = 0; a < 1 + i % 3; a++) image('img-$i-$a', i)],
           2 => [image('raw-$i', i, thumbnail: false)],
@@ -235,7 +243,8 @@ void installAttachmentRoutes(
 }) {
   final byId = <String, Map<String, dynamic>>{
     for (final row in rows)
-      for (final a in (row['attachments'] as List).cast<Map<String, dynamic>>()) a['id']: a,
+      for (final a in (row['attachments'] as List).cast<Map<String, dynamic>>())
+        a['id']: a,
   };
   String urlFor(String id) => local
       ? 'https://example.invalid/api/attachments/$id?token=t&serverId=s1&disposition=inline'
@@ -247,10 +256,21 @@ void installAttachmentRoutes(
     return {
       'urls': [
         for (final id in ids)
-          if (byId.containsKey(id)) {'id': id, 'url': urlFor(id), 'expiresAt': null},
+          if (byId.containsKey(id))
+            {'id': id, 'url': urlFor(id), 'expiresAt': null},
       ],
     };
   };
+  // The document cards' summary line (`report-N.pdf`): the server's answer for
+  // a PDF it can preview.
+  server.patterns.add((
+    RegExp(r'^GET /attachments/[^/]+/preview$'),
+    (o) => {
+      'status': 'ok',
+      'data': {'kind': 'pdf'},
+      'truncated': false,
+    },
+  ));
   server.patterns.add((
     RegExp(r'^GET /attachments/[^/]+/url$'),
     (o) {
@@ -259,7 +279,10 @@ void installAttachmentRoutes(
         'url': urlFor(id),
         'expiresAt': local
             ? null
-            : server.signClock().add(const Duration(seconds: 300)).toIso8601String(),
+            : server
+                  .signClock()
+                  .add(const Duration(seconds: 300))
+                  .toIso8601String(),
       };
     },
   ));
@@ -268,9 +291,11 @@ void installAttachmentRoutes(
 /// The persistent image-bytes store (the app installs a disk cache), in memory.
 class MemoryImageStore implements AttachmentImageByteStore {
   final entries = <String, Uint8List>{};
-  String _k(AttachmentImageStoreKey k) => '${k.identity}|${k.channelId}|${k.entry}';
+  String _k(AttachmentImageStoreKey k) =>
+      '${k.identity}|${k.channelId}|${k.entry}';
   @override
-  Future<Uint8List?> read(AttachmentImageStoreKey key) async => entries[_k(key)];
+  Future<Uint8List?> read(AttachmentImageStoreKey key) async =>
+      entries[_k(key)];
   @override
   Future<void> write(AttachmentImageStoreKey key, Uint8List bytes) async =>
       entries[_k(key)] = bytes;
@@ -360,7 +385,12 @@ class ScrollSession {
     final step = pixels / frames;
     for (var i = 0; i < frames; i++) {
       final v = viewport;
-      v.jumpTo((v.offset + step).clamp(v.position.minScrollExtent, v.position.maxScrollExtent));
+      v.jumpTo(
+        (v.offset + step).clamp(
+          v.position.minScrollExtent,
+          v.position.maxScrollExtent,
+        ),
+      );
       await tester.pump(const Duration(milliseconds: 50));
     }
   }
@@ -383,7 +413,9 @@ Future<void> withScrollSession(
   AttachmentUrlCache Function(DateTime Function() now)? makeCache,
 }) async {
   SharedPreferences.setMockInitialValues({});
-  tester.view.physicalSize = desktop ? const Size(1280, 800) : const Size(420, 860);
+  tester.view.physicalSize = desktop
+      ? const Size(1280, 800)
+      : const Size(420, 860);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   DateTime now() => tester.binding.clock.now();
@@ -437,7 +469,9 @@ Future<void> withScrollSession(
   client.selectServer('s1');
   // The product's transfer client shares the API client's limiter view.
   if (withGovernor) {
-    storageDio.interceptors.add(RateLimitInterceptor(client.governor, storageDio));
+    storageDio.interceptors.add(
+      RateLimitInterceptor(client.governor, storageDio),
+    );
   }
   final cache = makeCache?.call(now) ?? AttachmentUrlCache(now: now);
   final w = WorkspaceController(
@@ -450,7 +484,10 @@ Future<void> withScrollSession(
   w.channel = RaftChannel({'id': 'c1', 'name': 'test', 'joined': true});
   w.channels = [w.channel!];
   w.messageDomain.ledger.switchServer('s1');
-  w.messageDomain.ledger.ingest(rows, expectedGeneration: w.messageDomain.ledger.generation);
+  w.messageDomain.ledger.ingest(
+    rows,
+    expectedGeneration: w.messageDomain.ledger.generation,
+  );
   w.messageDomain.visibleIds['c1'] = rows.map((r) => r['id'] as String).toSet();
   await tester.pumpWidget(
     MaterialApp(
