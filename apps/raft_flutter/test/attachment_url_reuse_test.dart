@@ -21,10 +21,24 @@ class _Client extends RaftClient {
         origin: 'https://example.invalid',
         sessionStore: MemorySessionStore(),
       );
+
+  /// Single signed-URL reads (`GET /attachments/:id/url`).
   final reads = <String>[];
   final batches = <List>[];
+
+  /// A document card's summary line (`GET /attachments/:id/preview`): not a
+  /// signed URL, so it is kept apart from [reads].
+  final previews = <String>[];
   @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
+    if (path.endsWith('/preview')) {
+      previews.add(path);
+      return {
+        'status': 'ok',
+        'data': {'kind': 'pdf'},
+        'truncated': false,
+      };
+    }
     reads.add(path);
     return {
       'url': 'https://storage.example.invalid/${reads.length}',
@@ -175,11 +189,7 @@ void main() {
   testWidgets('hover and press sign no URL; only the open does', (
     tester,
   ) async {
-    final (client, _, _) = await mount(
-      tester,
-      messageId: 'host',
-      pdf: true,
-    );
+    final (client, _, _) = await mount(tester, messageId: 'host', pdf: true);
     expect(client.reads, isEmpty, reason: 'nothing is requested on build');
     expect(client.batches, isEmpty);
     final card = find.byType(RaftAttachmentCard);
