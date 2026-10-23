@@ -178,6 +178,16 @@ class _ProviderConnectionsState
     );
   }
 
+  /// Web ManagedConnectionRow `handleToggle`: `PATCH {enabled}`, then the
+  /// catalog is read again.
+  Future<void> toggle(Map<String, dynamic> connection) =>
+      _web('The provider connection could not be updated.', () async {
+        await w.client.patch(
+          '/provider-connections/${connection['id']}',
+          data: {'enabled': connection['enabled'] != true},
+        );
+      });
+
   Future<void> rotate(Map<String, dynamic> connection) async {
     await form(
       'Rotate provider credential',
@@ -196,8 +206,7 @@ class _ProviderConnectionsState
           data: {'apiKey': v['apiKey']},
         );
       }),
-      description:
-          'The new credential replaces the existing one. Agents must use the new credential version.',
+      description: 'The new credential replaces the existing one. Agents must use the new credential version.',
       submit: 'Rotate',
     );
   }
@@ -334,126 +343,126 @@ class _ProviderConnectionsState
     final submitted =
         await scopedDialog<bool>(
           form: true,
-          (
-            dialog,
-          ) => _LoadedDialog<({List<Map<String, dynamic>> candidates, List<String> models})>(
-            load: () => _verificationInputs(connection),
-            builder: (dialogContext, inputs, failure) => inputs == null
-                ? RaftFormDialog(
-                    title: 'Verify on a computer',
-                    fields: const [],
-                    description: failure == null
-                        ? 'Loading…'
-                        : _loadFailure(
-                            failure,
-                            'Verification could not be started.',
-                          ),
-                    submitLabel: 'Verify',
-                    onSubmit: (_) async => throw const RaftUserError(
-                      'Verification could not be started.',
-                    ),
-                  )
-                : RaftFormDialog(
-                    title: 'Verify on a computer',
-                    fields: [
-                      RaftFormField(
-                        'computerId',
-                        'Computer',
-                        choices: {
-                          for (final m in inputs.candidates)
-                            '${m['id']}': '${m['name']}',
-                        },
-                      ),
-                      RaftFormField(
-                        'model',
-                        'Model',
-                        initial: inputs.models.firstOrNull ?? '',
-                        required: true,
-                        help: inputs.models.isEmpty
-                            ? 'Enter the model supported by this provider.'
-                            : 'Available: ${inputs.models.join(', ')}',
-                      ),
-                    ],
-                    onSubmit: (v) async {
-                      if (!accepts(generation) ||
-                          sourceAuthority != authority) {
-                        throw StateError(
-                          'The active workspace changed. Reopen this form.',
-                        );
-                      }
-                      try {
-                        final fingerprint =
-                            '${v['computerId']}\u0000${v['model']}';
-                        if (requestFingerprint != fingerprint) {
-                          requestFingerprint = fingerprint;
-                          requestId = w.client.newRandomId();
-                        }
-                        result = managementMap(
-                          await w.client.request(
-                            'POST',
-                            '/provider-connections/${connection['id']}/probes',
-                            receiveTimeout: const Duration(seconds: 50),
-                            data: {
-                              'probeRequestId': requestId,
-                              'requestDigest': providerProbeRequestDigest(
-                                connectionId: connection['id'],
-                                // ignore: raft_lints/avoid_render_index_assertion -- Submit values of the form dialog: every field id is present in the submitted map.
-                                computerId: v['computerId']!,
-                                // ignore: raft_lints/avoid_render_index_assertion -- Submit values of the form dialog: every field id is present in the submitted map.
-                                model: v['model']!,
+          (dialog) =>
+              _LoadedDialog<
+                ({List<Map<String, dynamic>> candidates, List<String> models})
+              >(
+                load: () => _verificationInputs(connection),
+                builder: (dialogContext, inputs, failure) => inputs == null
+                    ? RaftFormDialog(
+                        title: 'Verify on a computer',
+                        fields: const [],
+                        description: failure == null
+                            ? 'Loading…'
+                            : _loadFailure(
+                                failure,
+                                'Verification could not be started.',
                               ),
-                              'computerId': v['computerId'],
-                              'runtime': 'builtin',
-                              'model': v['model'],
-                              'probeKind': 'canary',
+                        submitLabel: 'Verify',
+                        onSubmit: (_) async => throw const RaftUserError(
+                          'Verification could not be started.',
+                        ),
+                      )
+                    : RaftFormDialog(
+                        title: 'Verify on a computer',
+                        fields: [
+                          RaftFormField(
+                            'computerId',
+                            'Computer',
+                            choices: {
+                              for (final m in inputs.candidates)
+                                '${m['id']}': '${m['name']}',
                             },
                           ),
-                        );
-                        final receipt = managementMap(result['probe']);
-                        if (receipt['probeRequestId'] != requestId ||
-                            receipt['connectionId'] != connection['id'] ||
-                            receipt['computerId'] != v['computerId'] ||
-                            receipt['runtime'] != 'builtin' ||
-                            receipt['model'] != v['model'] ||
-                            receipt['probeKind'] != 'canary') {
-                          result = {};
-                          throw const RaftUserError(
-                            'Verification could not be started.',
-                          );
-                        }
-                        if (receipt['outcome'] == 'success' &&
-                            (receipt['verifiedAt'] is! String ||
-                                receipt['closedAt'] is! String)) {
-                          result = {};
-                          throw const RaftUserError(
-                            'Verification could not be started.',
-                          );
-                        }
-                      } catch (e) {
-                        if (accepts(generation) &&
-                            sourceAuthority == authority &&
-                            invalidateDeniedMutation(e) &&
-                            dialogContext.mounted) {
-                          Navigator.of(dialogContext).pop(false);
-                        }
-                        // Web `settings.providers.verifyError`; 401/403 stay
-                        // untouched for the page's authority handling.
-                        if (e is RaftUserError ||
-                            e is RaftApiException &&
-                                const [401, 403].contains(e.status)) {
-                          rethrow;
-                        }
-                        logUserError(e, where: 'provider verify');
-                        throw const RaftUserError(
-                          'Verification could not be started.',
-                        );
-                      }
-                    },
-                    submitLabel: 'Verify',
-                    description:
-                        'Run one canary request through the selected computer. This may incur the provider’s normal usage charges.',
-                  ),
-          ),
+                          RaftFormField(
+                            'model',
+                            'Model',
+                            initial: inputs.models.firstOrNull ?? '',
+                            required: true,
+                            help: inputs.models.isEmpty
+                                ? 'Enter the model supported by this provider.'
+                                : 'Available: ${inputs.models.join(', ')}',
+                          ),
+                        ],
+                        onSubmit: (v) async {
+                          if (!accepts(generation) ||
+                              sourceAuthority != authority) {
+                            throw StateError(
+                              'The active workspace changed. Reopen this form.',
+                            );
+                          }
+                          try {
+                            final fingerprint =
+                                '${v['computerId']}\u0000${v['model']}';
+                            if (requestFingerprint != fingerprint) {
+                              requestFingerprint = fingerprint;
+                              requestId = w.client.newRandomId();
+                            }
+                            result = managementMap(
+                              await w.client.request(
+                                'POST',
+                                '/provider-connections/${connection['id']}/probes',
+                                receiveTimeout: const Duration(seconds: 50),
+                                data: {
+                                  'probeRequestId': requestId,
+                                  'requestDigest': providerProbeRequestDigest(
+                                    connectionId: connection['id'],
+                                    // ignore: raft_lints/avoid_render_index_assertion -- Submit values of the form dialog: every field id is present in the submitted map.
+                                    computerId: v['computerId']!,
+                                    // ignore: raft_lints/avoid_render_index_assertion -- Submit values of the form dialog: every field id is present in the submitted map.
+                                    model: v['model']!,
+                                  ),
+                                  'computerId': v['computerId'],
+                                  'runtime': 'builtin',
+                                  'model': v['model'],
+                                  'probeKind': 'canary',
+                                },
+                              ),
+                            );
+                            final receipt = managementMap(result['probe']);
+                            if (receipt['probeRequestId'] != requestId ||
+                                receipt['connectionId'] != connection['id'] ||
+                                receipt['computerId'] != v['computerId'] ||
+                                receipt['runtime'] != 'builtin' ||
+                                receipt['model'] != v['model'] ||
+                                receipt['probeKind'] != 'canary') {
+                              result = {};
+                              throw const RaftUserError(
+                                'Verification could not be started.',
+                              );
+                            }
+                            if (receipt['outcome'] == 'success' &&
+                                (receipt['verifiedAt'] is! String ||
+                                    receipt['closedAt'] is! String)) {
+                              result = {};
+                              throw const RaftUserError(
+                                'Verification could not be started.',
+                              );
+                            }
+                          } catch (e) {
+                            if (accepts(generation) &&
+                                sourceAuthority == authority &&
+                                invalidateDeniedMutation(e) &&
+                                dialogContext.mounted) {
+                              Navigator.of(dialogContext).pop(false);
+                            }
+                            // Web `settings.providers.verifyError`; 401/403 stay
+                            // untouched for the page's authority handling.
+                            if (e is RaftUserError ||
+                                e is RaftApiException &&
+                                    const [401, 403].contains(e.status)) {
+                              rethrow;
+                            }
+                            logUserError(e, where: 'provider verify');
+                            throw const RaftUserError(
+                              'Verification could not be started.',
+                            );
+                          }
+                        },
+                        submitLabel: 'Verify',
+                        description: 'Run one canary request through the selected computer. This may incur the provider’s normal usage charges.',
+                      ),
+              ),
         ) ==
         true;
     if (submitted && mounted) {
@@ -598,6 +607,18 @@ class _ProviderConnectionsState
                                 () => run(() => edit(connection)),
                               ),
                             ),
+                            KeyedSubtree(
+                              key: ValueKey(
+                                'provider-toggle-${connection['id']}',
+                              ),
+                              child: action(
+                                connection['enabled'] == true
+                                    ? 'Disable connection'
+                                    : 'Enable connection',
+                                () => run(() => toggle(connection)),
+                                glyph: RaftGlyph.power,
+                              ),
+                            ),
                             action(
                               'Assigned agents',
                               () => run(
@@ -627,14 +648,11 @@ class _ProviderConnectionsState
                                 await confirm(
                                   'Delete ${connection['name']}?',
                                   'Remove this connection and its encrypted credential. Assigned agents must be detached first.',
-                                  () => _web(
-                                    'The provider connection could not be updated.',
-                                    () async {
-                                      await w.client.delete(
-                                        '/provider-connections/${connection['id']}',
-                                      );
-                                    },
-                                  ),
+                                  () => _web('The provider connection could not be updated.', () async {
+                                    await w.client.delete(
+                                      '/provider-connections/${connection['id']}',
+                                    );
+                                  }),
                                   submit: 'Delete',
                                   destructive: true,
                                 );

@@ -5451,12 +5451,12 @@
    "kind": "endpoint",
    "id": "GET /provider-connections",
    "area": "agents-computers-runtimes",
-   "capability": "List provider connections (settings page, and as a saved-provider picker in agent create/edit)",
+   "capability": "List provider connections (settings page, and as the saved-provider picker in agent create/edit)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Settings > Provider connections list | RuntimeConfigFields 'Saved providers' select when runtime=builtin (CreateAgentDialog / Edit runtime config) via useProviderConnections",
    "gate": "settings list: manageExternalAuth; picker: any agent creator/editor",
-   "flutterEntry": "provider_views.dart ProviderConnectionsView list (settings only)",
+   "flutterEntry": "provider_views.dart ProviderConnectionsView list; the saved providers of the Built-in form are the 'Saved providers' group of its provider option source (runtime_form_dialog.dart, provider.saved_connection)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/provider_views.dart",
@@ -5465,11 +5465,15 @@
     {
      "file": "apps/raft_flutter/lib/features/workspace_settings.dart",
      "needle": "ProviderConnectionsView("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/runtime_form_dialog.dart",
+     "needle": "Saved providers"
     }
    ],
-   "justification": "Only the settings list exists. Flutter agent create/edit have no 'Saved providers' picker (managed connection), so agents cannot be bound to a saved provider connection from the app.",
-   "impact": "Admins cannot assign managed provider credentials to built-in-runtime agents from the app.",
-   "size": "M"
+   "justification": "The settings list reads the catalog directly. In agent create/edit the v2 runtime form offers the saved connections itself (option group 'Saved providers', value connection:<id>); picking one makes the connection own the provider, key, base URL and image-input fields. Checked against a local v1.21.23 server: a saved connection is listed in the Built-in form, the created agent holds provider {kind: connection, connectionId} and the connection counts it as assigned.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -5597,13 +5601,13 @@
    "area": "agents-computers-runtimes",
    "capability": "Load the v1 schema-backed runtime form definition (Built-in / Kimi SDK create and edit forms)",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "CreateAgentDialog / Edit runtime config (RuntimeConfigFields schemaBacked mode via useRuntimeFormDefinitionCatalog)",
    "gate": "runtime option carries formDefinitionRef; applies when runtime_form_v2_web is off or runtime lacks v2 marker",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Flutter only uses the v2 form protocol (runtime-forms/v2) for create and for the Built-in/Pi/Kimi edit paths. It never calls the v1 definitions route, so runtimes whose admission option has only formDefinitionRef (no runtimeFormV2.protocolVersion=2) depend on the v2 route supporting them (not verified).",
-   "impact": "Possible gap creating/editing Built-in or Kimi SDK agents on servers where v1 is the only supported form.",
+   "justification": "Owner decision: Flutter uses the v2 runtime form protocol (runtime-forms/v2) for create and edit and never the v1 schema-backed path. Web uses v1 only while runtime_form_v2_web (default off) is off or a runtime lacks the v2 marker; the v2 route serves every runtime the app can create (checked against a local v1.21.23 server: claude, codex, builtin, pi, opencode, kimi-sdk, gemini and grok all answer a v2 form with live or static option sources).",
+   "impact": "",
    "size": "M"
   },
   {
@@ -5612,13 +5616,13 @@
    "area": "agents-computers-runtimes",
    "capability": "Load option sources (provider/model lists) for a v1 runtime form definition",
    "background": false,
-   "status": "missing",
+   "status": "na",
    "webEntry": "RuntimeConfigFields schemaBacked provider/model selects (useRuntimeFormDefinition.ts)",
    "gate": "as above",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "Same as the v1 definitions route: Flutter uses v2 option sources only.",
-   "impact": "Same as above.",
+   "justification": "Owner decision: Flutter uses the v2 runtime form protocol (runtime-forms/v2) for create and edit and never the v1 schema-backed path. Web uses v1 only while runtime_form_v2_web (default off) is off or a runtime lacks the v2 marker; the v2 route serves every runtime the app can create (checked against a local v1.21.23 server: claude, codex, builtin, pi, opencode, kimi-sdk, gemini and grok all answer a v2 form with live or static option sources).",
+   "impact": "",
    "size": "M"
   },
   {
@@ -5795,10 +5799,10 @@
    "area": "agents-computers-runtimes",
    "capability": "Edit a provider connection (name, endpoint, image input, new API key) and Enable/Disable it",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row pencil 'Edit connection' (EditProviderConnectionModal) | row toggle 'Enable connection'/'Disable connection' | also reachable from the agent runtime-config editor ('Edit saved provider')",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
-   "flutterEntry": "provider_edit_dialog.dart EditProviderConnectionDialog from provider_views.dart 'Edit connection'",
+   "flutterEntry": "provider_edit_dialog.dart EditProviderConnectionDialog from provider_views.dart 'Edit connection'; provider_views.dart 'Enable connection' / 'Disable connection' (PATCH {enabled}); 'Edit saved provider' beside the saved-provider picker of the v2 form (runtime_form_dialog.dart)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/provider_edit_dialog.dart",
@@ -5807,11 +5811,19 @@
     {
      "file": "apps/raft_flutter/lib/features/provider_views.dart",
      "needle": "Edit connection"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/provider_views.dart",
+     "needle": "'enabled': connection['enabled'] != true"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/runtime_form_dialog.dart",
+     "needle": "editSavedProvider"
     }
    ],
-   "justification": "Edit dialog (name/endpoint/image input/new key) exists. The Enable/Disable toggle (PATCH {enabled}) does not exist in Flutter, and 'Edit saved provider' from agent create/edit cannot be reached because Flutter agent forms have no saved-provider picker.",
-   "impact": "Admins cannot disable a leaked or unwanted connection from the app, only edit/delete it.",
-   "size": "S"
+   "justification": "Edit (name, endpoint, image input, new key), the enable/disable switch on each row (a failed switch says 'The provider connection could not be updated.', never the server text) and 'Edit saved provider' from the agent form are all there.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -6143,14 +6155,14 @@
    "area": "agents-computers-runtimes",
    "capability": "Send a test message through a provider connection ('Test connection' > model + message > 'Send test')",
    "background": false,
-   "status": "missing",
-   "webEntry": "Settings > 'Provider connections' (ProviderConnectionsSettings.tsx) > row paper-plane icon 'Test connection' (ProviderConnectionTestModal)",
+   "status": "na",
+   "webEntry": "ProviderConnectionsSettings.tsx ConnectionRow shows the 'Test connection' button only while legacyTestVisible (= !featureEnabled), but the whole section returns null when !featureEnabled, so the button can never be on screen",
    "gate": "manageExternalAuth capability for add/edit/test/verify/enable/delete",
    "flutterEntry": "",
    "flutterRefs": [],
-   "justification": "No Flutter call or UI; Flutter only offers 'Verify on a computer' (probes) which is a different server-side check.",
-   "impact": "Admins cannot do a quick server-side credential smoke test from the app.",
-   "size": "S"
+   "justification": "Dead on Web v1.21.23: the button needs the provider_connections_v0 flag off, and the section does not render with the flag off. The server agrees: with the flag on (the only state where connections exist) POST /provider-connections/:id/test answers 410 provider_connection_retired ('verify on a Computer instead'), checked on a local v1.21.23 server. Flutter offers 'Verify on a computer' (probes), the Web path that replaced it.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -6737,7 +6749,7 @@
      "needle": "Environment Variables"
     }
    ],
-   "justification": "Flutter renders the server v2 runtime form for every runtime; Web's legacy fields (saved providers, built-in/Pi provider, local plugins) have no Flutter counterpart.",
+   "justification": "Flutter renders the server v2 runtime form for every runtime, which carries the saved-provider picker (Saved providers group, Edit saved provider), the built-in and Pi provider fields and local plugins; Web's legacy fields are not used.",
    "impact": "",
    "size": ""
   },
