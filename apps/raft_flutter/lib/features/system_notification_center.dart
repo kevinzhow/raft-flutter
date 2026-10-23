@@ -247,12 +247,14 @@ class _SystemNotificationBellState extends State<SystemNotificationBell>
     if (state == AppLifecycleState.resumed) {
       changed();
       // Alt-tab many times a minute reads the machines and agents once.
+      // Web also refreshes the pending joint invites on window focus; here they
+      // share the same once-per-window budget, so alt-tabbing does not repeat
+      // the read (the 60 s poll still picks up new invites).
       if (resumeRefresh.due()) {
         unawaited(store.refresh());
         unawaited(store.refreshUsageLimit());
+        unawaited(store.refreshJointInvites());
       }
-      // Web refreshes the pending joint invites on window focus.
-      unawaited(store.refreshJointInvites());
     }
   }
 
