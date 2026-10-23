@@ -103,6 +103,12 @@
  "routes": {
   "GET /channels/threads/followers": {
    "threads": []
+  },
+  "GET /channels/channel-colvalley-muted/notification-settings": {
+   "activityMuted": true,
+   "muteFromSeq": null,
+   "activityMuteSupported": true,
+   "prefsVersion": 1
   }
  },
  "thread": {

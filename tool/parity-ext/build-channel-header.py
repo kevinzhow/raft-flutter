@@ -74,7 +74,10 @@ fixture = {
          'peerAvatarUrl': None, 'peerGravatarHash': None},
     ],
     # Endpoints the mounted panels read after the first render (both providers).
-    'routes': {'GET /channels/threads/followers': {'threads': []}},
+    'routes': {'GET /channels/threads/followers': {'threads': []},
+               # ChatPanel reads the viewer's mute state from the preferences route.
+               'GET /channels/channel-colvalley-muted/notification-settings': {
+                   'activityMuted': True, 'muteFromSeq': None, 'activityMuteSupported': True, 'prefsVersion': 1}},
     'thread': {'parentChannelId': 'channel-colvalley', 'parentMessageId': 'msg-colvalley-thread-parent',
                'threadChannelId': 'thread-colvalley-1'},
 }
