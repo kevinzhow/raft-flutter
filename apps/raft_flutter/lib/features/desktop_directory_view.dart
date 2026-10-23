@@ -12,6 +12,7 @@ import 'computer_detail_view.dart'
     show computerAvailableVersion, computerDiskLow, computerRowStatus;
 import 'fleet_views.dart' show showFleetRegistration;
 import 'managed_agent_launcher.dart';
+import 'member_row_menu.dart';
 import 'sender_avatar_projection.dart';
 import 'workspace_menu_invite.dart';
 
@@ -44,6 +45,9 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   WorkspaceEntityDirectory? _directory;
   final agentMenu = RaftMenuController();
   bool agentsExpanded = true, humansExpanded = true;
+
+  /// The row whose context menu is open (it keeps its pressed fill).
+  String? menuRow;
   final collapsedMachineGroups = <String, bool>{};
   WorkspaceController? _listened;
   late String _authority;
@@ -188,6 +192,33 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     ),
   );
 
+  /// Sidebar.tsx member-human / member-agent context menu (right click or
+  /// long press): Message, and for a managed agent Start / Stop and
+  /// Restart / Reset.
+  Future<void> openMenu(
+    Offset at,
+    DesktopContentTarget target,
+    Map<String, dynamic> value,
+  ) {
+    final captured = authority, key = '${target.kind.name}:${target.id}';
+    setState(() => menuRow = key);
+    return openMemberRowMenu(
+      context,
+      at: at,
+      w: w,
+      target: target,
+      value: value,
+      onMessage: (target) async {
+        if (captured == authority && mounted) {
+          await widget.onOpenDm?.call(target);
+        }
+      },
+      onClosed: () {
+        if (mounted && menuRow == key) setState(() => menuRow = null);
+      },
+    );
+  }
+
   Widget row(Map<String, dynamic> value, DesktopContentKind kind) {
     final id = kind == DesktopContentKind.human
         ? value['userId'] ?? value['id']
@@ -221,6 +252,10 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
           : null,
       conversationKind: RaftConversationNavKind.directory,
       selected: selected,
+      menuOpen: menuRow == '${kind.name}:$id',
+      onContextMenu: kind == DesktopContentKind.computer
+          ? null
+          : (at) => openMenu(at, target, value),
       tag: kind == DesktopContentKind.human && value['role'] == 'guest'
           ? RaftSidebarTag(raftText(context, 'Guest'))
           : null,

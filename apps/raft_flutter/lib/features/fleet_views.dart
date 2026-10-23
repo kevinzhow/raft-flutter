@@ -1755,3 +1755,113 @@ class _FleetInspectionState extends State<FleetInspection> {
           ),
   );
 }
+
+/// What a Members row of a managed agent can do without opening its profile
+/// (Web Sidebar `member-agent` context menu).
+enum MemberAgentCommand { start, stop, restartReset }
+
+/// Whether the Members row menu offers Start, Stop and Restart / Reset for
+/// [agent]: an external agent has no managed runtime, and the viewer needs
+/// `controlAgentRuntime` (Sidebar.tsx `capabilities.controlAgentRuntime &&
+/// !isExternalAgent`).
+bool memberAgentRuntimeControllable(
+  WorkspaceController w,
+  Map<String, dynamic> agent,
+) =>
+    agent['external'] != true &&
+    agent['runtime'] != 'external' &&
+    (agent['creatorType'] == 'user' &&
+            agent['creatorId'] == w.client.user?.id ||
+        w.can('controlAgentRuntime'));
+
+/// Web Sidebar `toggleContextAgentRuntime` / `resetContextAgent`: Start posts
+/// at once, Stop asks for a confirmation, Restart / Reset opens the reset
+/// dialog. Each runs under the account and workspace it was opened in.
+Future<void> runMemberAgentCommand(
+  BuildContext context,
+  WorkspaceController w,
+  Map<String, dynamic> agent,
+  MemberAgentCommand command,
+) async {
+  final id = agent['id'];
+  if (id is! String || !context.mounted) return;
+  final captured = _FleetScope(w);
+  final owned =
+      agent['creatorType'] == 'user' && agent['creatorId'] == w.client.user?.id;
+  bool allowed(String capability) =>
+      context.mounted &&
+      captured.current(w) &&
+      (owned || w.can(capability)) &&
+      agent['external'] != true &&
+      agent['runtime'] != 'external';
+  if (!allowed('controlAgentRuntime')) return;
+  final name = nonEmptyOr(agent['displayName'], agent['name']);
+  final base = '/agents/$id';
+  void refresh() => unawaited(
+    w.services.entityDirectory.refresh(WorkspaceEntityKind.agents, force: true),
+  );
+  switch (command) {
+    case MemberAgentCommand.start:
+      try {
+        await w.command('POST', '$base/start', data: {});
+      } catch (_) {
+        // Web `void startAgent(id)`: a failed start shows nothing.
+      }
+      if (captured.current(w)) refresh();
+    case MemberAgentCommand.stop:
+      await _fleetDialog<bool>(
+        context,
+        w,
+        () => allowed('controlAgentRuntime'),
+        (_) => RaftConfirmDialog(
+          surfaceKey: const ValueKey('agent-dialog'),
+          title: raftText(context, 'Stop Agent'),
+          message: raftFormat(
+            context,
+            'Are you sure you want to stop "{name}"? The agent will stop processing messages.',
+            {'name': name},
+          ),
+          confirmLabel: raftText(context, 'Stop Agent'),
+          loadingLabel: raftText(context, 'Stopping…'),
+          confirmVariant: RaftButtonRecipeVariant.warning,
+          onConfirm: () async {
+            if (!allowed('controlAgentRuntime')) {
+              throw const RaftApiException('Fleet access changed.');
+            }
+            await withWebError(
+              'Failed to stop agent',
+              () => w.command('POST', '$base/stop', data: {}),
+              where: 'agent stop',
+            );
+            if (captured.current(w)) refresh();
+          },
+        ),
+      );
+    case MemberAgentCommand.restartReset:
+      await _fleetDialog<bool>(
+        context,
+        w,
+        () => allowed('controlAgentRuntime'),
+        (_) => RaftResetAgentDialog(
+          agentName: name,
+          canFullReset: allowed('resetAgentWorkspace'),
+          // Web: a plain member may only restart / reset the model.
+          memberRuntimeOnly: w.server?.string('role') == 'member',
+          onConfirm: (mode) async {
+            final capability = mode == 'full'
+                ? 'resetAgentWorkspace'
+                : 'controlAgentRuntime';
+            if (!allowed(capability)) {
+              throw const RaftApiException('This action is not available.');
+            }
+            await withWebError(
+              'Failed to reset agent',
+              () => w.command('POST', '$base/reset', data: {'mode': mode}),
+              where: 'agent reset',
+            );
+            if (captured.current(w)) refresh();
+          },
+        ),
+      );
+  }
+}

@@ -80,7 +80,7 @@ class RaftThreadUnreadJumpPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final muted = t.brutal ? Colors.black : t.colors['foreground-muted']!;
+    final muted = t.colors['foreground-muted']!;
     Widget segment({
       required Widget child,
       required EdgeInsets padding,

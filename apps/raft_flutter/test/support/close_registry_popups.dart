@@ -42,6 +42,7 @@ const popupSurfaces = <CloseSurface>[
     fold: {_esc, _scrim, _sys},
     desktop: {_esc, _scrim, _sys},
     files: [
+      'lib/features/member_row_menu.dart',
       'lib/features/workspace_view_sidebar_menus.dart',
       '../../packages/raft_ui/lib/src/sidebar_menus.dart',
     ],

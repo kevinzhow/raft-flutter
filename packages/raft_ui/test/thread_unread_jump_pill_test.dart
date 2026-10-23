@@ -62,7 +62,10 @@ void main() {
       expect(t.getRect(bottom).left - t.getRect(back).right, 8);
       expect(t.getRect(bottom).center.dy, t.getRect(back).center.dy);
       // The top pill sits 12 px under the top edge, centred.
-      expect(t.getRect(top).top - t.getTopLeft(find.byType(Stack).first).dy, 12);
+      expect(
+        t.getRect(top).top - t.getTopLeft(find.byType(Stack).first).dy,
+        12,
+      );
       expect(t.getCenter(top).dx, 300);
 
       await t.tap(find.byKey(const ValueKey('thread-unread-jump')).first);
