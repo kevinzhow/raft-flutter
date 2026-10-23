@@ -4880,20 +4880,24 @@
    "kind": "endpoint",
    "id": "DELETE /agents/:id",
    "area": "agents-computers-runtimes",
-   "capability": "Delete an agent (confirm; external agents get separate warning copy)",
+   "capability": "Archive an agent (the former delete): keep or delete its workspace; 409 archive_migration_active",
    "background": false,
    "status": "covered",
-   "webEntry": "Profile > Actions 'Delete Agent' (ConfirmDialog)",
+   "webEntry": "Profile > Actions 'Archive Agent' (AgentArchiveDialog)",
    "gate": "canManageAgent (editAgents or creator); server also checks deleteAgents/creator",
-   "flutterEntry": "fleet_views.dart remove() ('Delete Agent' confirm, gate allowed('deleteAgents'))",
+   "flutterEntry": "fleet_views.dart archive() (RaftAgentArchiveDialog, gate allowed('deleteAgents')) -> features/agent_archive_requests.dart archiveAgent()",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "Delete Agent"
+     "needle": "RaftAgentArchiveDialog"
     },
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
      "needle": "allowed('deleteAgents')"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_archive_requests.dart",
+     "needle": "data: {'workspace': choice.name}"
     }
    ],
    "justification": "",
@@ -6387,16 +6391,16 @@
    "kind": "ui",
    "id": "ui:agents.actions-delete-stop-confirm",
    "area": "agents-computers-runtimes",
-   "capability": "Delete Agent and Stop Agent confirmation dialogs",
+   "capability": "Archive Agent and Stop Agent dialogs",
    "background": false,
    "status": "covered",
-   "webEntry": "ConfirmDialogs in AgentDetailPanel",
-   "gate": "delete: canManageAgent; stop: canControlAgentRuntime",
-   "flutterEntry": "fleet_views.dart webConfirm Delete Agent / Stop Agent",
+   "webEntry": "AgentArchiveDialog / ConfirmDialog in AgentDetailPanel",
+   "gate": "archive: canManageAgent + deleteAgents or creator; stop: canControlAgentRuntime",
+   "flutterEntry": "fleet_views.dart archive() RaftAgentArchiveDialog / webConfirm Stop Agent",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
-     "needle": "Are you sure you want to delete"
+     "needle": "RaftAgentArchiveDialog"
     },
     {
      "file": "apps/raft_flutter/lib/features/fleet_views.dart",
@@ -16876,14 +16880,19 @@
    "area": "agents-computers-runtimes",
    "capability": "Read the archive state of a deleted (archived) agent and its workspace",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "components/agentArchive/archiveApi.ts getAgentArchive (archive dialog and Archived agents list)",
-   "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Agent deletion became archiving; planned in WP-AGT.",
-   "impact": "The app still deletes through DELETE /agents/:id without the keep/delete workspace choice.",
-   "size": "M"
+   "gate": "archived agent + inspect (private surfaces)",
+   "flutterEntry": "agent_archive_section.dart (AgentArchiveSection), agent_detail_view.dart 'Last on {name}' (features/agent_archive_requests.dart fetchAgentArchive)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_archive_requests.dart",
+     "needle": "'/agents/$agentId/archive'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -16891,14 +16900,19 @@
    "area": "agents-computers-runtimes",
    "capability": "Delete the kept workspace of an archived agent",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "archiveApi.ts deleteArchivedWorkspace (Archived agents list)",
-   "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Planned in WP-AGT.",
-   "impact": "An archived agent keeps its workspace until the owner deletes it on Web.",
-   "size": "S"
+   "gate": "deleteAgents or creator; workspace on_computer and no pending op",
+   "flutterEntry": "agent_archive_section.dart _confirmDeleteWorkspace (features/agent_archive_requests.dart)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_archive_requests.dart",
+     "needle": "'/agents/$agentId/archive/workspace'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -16906,14 +16920,19 @@
    "area": "agents-computers-runtimes",
    "capability": "List archived agents (Settings > Archived agents)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "components/settings/ArchivedAgentsSection.tsx",
-   "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Planned in WP-AGT.",
-   "impact": "Archived agents are not listed in the app.",
-   "size": "M"
+   "gate": "server members (not guests)",
+   "flutterEntry": "archived_agents_section.dart (rendered by server_views.dart)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_archive_requests.dart",
+     "needle": "'/agents/archived'"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",

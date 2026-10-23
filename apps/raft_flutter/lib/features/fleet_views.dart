@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/agent_archive.dart';
+import 'agent_archive_requests.dart';
 import '../data/user_error.dart';
 import '../data/web_error.dart';
 import '../data/workspace_controller.dart';
@@ -628,6 +630,10 @@ class _FleetDetailState extends State<FleetDetail> {
   late final String id;
   int request = 0;
   bool get current => mounted && !closingForAuthority && scope.current(w);
+
+  /// The agent left the shared list: its detail was re-read once to learn
+  /// whether it is archived (read-only profile) or gone.
+  bool _removedRead = false;
   String get base =>
       widget.computers ? '/servers/$serverId/machines/$id' : '/agents/$id';
   bool get external => row['external'] == true || row['runtime'] == 'external';
@@ -719,13 +725,21 @@ class _FleetDetailState extends State<FleetDetail> {
       closeProfile();
       return;
     }
-    if (!widget.computers && directory.agentDeleted(id)) {
+    final missing =
+        !widget.computers && directory.agentDeleted(id) ||
+        listed && directory.state(kind).loaded && directoryRow == null;
+    if (!widget.computers && missing) {
+      // Web `AgentById`: an archived agent keeps a read-only profile. Read it
+      // once; a profile that is really gone closes (loadDetail).
+      if (!_removedRead) {
+        _removedRead = true;
+        unawaited(loadDetail());
+      }
+    } else if (missing) {
       closeProfile();
       return;
-    }
-    if (listed && directory.state(kind).loaded && directoryRow == null) {
-      closeProfile();
-      return;
+    } else {
+      _removedRead = false;
     }
     final next = compose();
     final nextMachines =
@@ -803,7 +817,7 @@ class _FleetDetailState extends State<FleetDetail> {
     try {
       final result = await w.query(base);
       if (!current || ticket != request) return;
-      if (result is! Map || result['id'] != id || result['deletedAt'] != null) {
+      if (result is! Map || result['id'] != id) {
         // Web `AgentById`: an id the server does not hold renders the
         // "Agent unavailable" panel (it does not navigate away).
         setState(() => gone = true);
@@ -819,6 +833,11 @@ class _FleetDetailState extends State<FleetDetail> {
     } on RaftApiException catch (e) {
       if (!current || ticket != request) return;
       if (e.status == 404 || e.status == 403) {
+        // An agent that left the list and cannot be read is gone: close.
+        if (_removedRead) {
+          closeProfile();
+          return;
+        }
         setState(() => gone = true);
         return;
       }
@@ -1062,45 +1081,61 @@ class _FleetDetailState extends State<FleetDetail> {
     );
   }
 
-  Future<void> remove() async {
-    bool removed = false;
-    if (!widget.computers) {
-      // AgentDetailPanel `ConfirmDialog` "Delete Agent" (external agents get
-      // their own copy: the external runtime is left alone).
-      final name = nonEmptyOr(row['displayName'], row['name']);
-      await webConfirm(
-        title: raftText(context, 'Delete Agent'),
-        message: raftFormat(
-          context,
-          external
-              ? 'Are you sure you want to delete "{name}"? This removes the Raft agent identity, credentials, and associated Raft data. It will not stop, uninstall, or clean up the external runtime, local profile, or harness.'
-              : 'Are you sure you want to delete "{name}"? This will remove all associated data and cannot be undone.',
-          {'name': name},
+  /// AgentArchiveDialog: archiving is the former delete. Agents with a
+  /// workspace on a Computer choose whether it stays there or is deleted; the
+  /// profile stays open as the read-only archived profile.
+  Future<void> archive() async {
+    if (!current) return;
+    final machineId = row['machineId'];
+    // The Computer list may still be in flight when the dialog opens: the
+    // option copy names the Computer as soon as it lands.
+    String computerName() {
+      final rows =
+          machines ??
+          w.services.entityDirectory.rows(WorkspaceEntityKind.computers);
+      return '${rows.where((m) => m['id'] == machineId).firstOrNull?['name'] ?? ''}';
+    }
+
+    var archived = false;
+    await _fleetDialog<bool>(
+      context,
+      w,
+      () => allowed('deleteAgents'),
+      (_) => ListenableBuilder(
+        listenable: w.services.entityDirectory,
+        builder: (_, _) => RaftAgentArchiveDialog(
+          agentName: nonEmptyOr(row['displayName'], row['name']),
+          computer: computerName(),
+          hasComputerWorkspace: machineId is String && !external,
+          onConfirm: (deleteWorkspace) async {
+            require('deleteAgents');
+            await archiveAgent(
+              w,
+              id,
+              deleteWorkspace
+                  ? AgentArchiveWorkspaceChoice.delete
+                  : AgentArchiveWorkspaceChoice.keep,
+            );
+            archived = true;
+          },
         ),
-        confirmLabel: raftText(context, 'Delete Agent'),
-        loadingLabel: raftText(context, 'Deleting…'),
-        variant: RaftButtonRecipeVariant.danger,
-        operation: () async {
-          require('deleteAgents');
-          await w.command('DELETE', base);
-          removed = true;
-        },
-      );
-      if (removed) closeProfile();
+      ),
+    );
+    if (archived) await load();
+  }
+
+  /// Computers only: agents are archived ([archive]).
+  Future<void> remove() async {
+    if (!widget.computers) {
+      await archive();
       return;
     }
-    await confirm(
-      widget.computers ? 'Delete computer?' : 'Delete agent?',
-      widget.computers
-          ? 'Disconnect this computer from the workspace. Its agents can no longer use this connection.'
-          : 'Delete this agent and stop its managed runtime. This cannot be undone.',
-      () async {
-        require(widget.computers ? 'removeMachines' : 'deleteAgents');
-        await w.command('DELETE', base);
-        removed = true;
-      },
-      destructive: true,
-    );
+    var removed = false;
+    await confirm('Delete computer?', 'Disconnect this computer from the workspace. Its agents can no longer use this connection.', () async {
+      require('removeMachines');
+      await w.command('DELETE', base);
+      removed = true;
+    }, destructive: true);
     if (removed) closeProfile();
   }
 
@@ -1402,6 +1437,7 @@ class _FleetDetailState extends State<FleetDetail> {
         },
         onRestartReset: () => action(restartReset),
         onDelete: access.canManage && allowed('deleteAgents') ? remove : null,
+        canArchive: !access.boundedPublic && allowed('deleteAgents'),
         onMessage: !access.boundedPublic && row['deletedAt'] == null
             ? () => action(message)
             : null,

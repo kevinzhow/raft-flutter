@@ -61,8 +61,8 @@ class WorkspaceEntityLoadState {
 /// Source agentDetailAvailability.ts:21–42, including deliberate public
 /// channel/remote projections. An id-only route is never an entity snapshot.
 bool canRenderWorkspaceAgent(Map<String, dynamic>? row, String? serverId) {
+  // An archived (deleted) agent still has a read-only profile.
   if (row == null ||
-      row['deletedAt'] != null ||
       row['id'] is! String ||
       row['name'] is! String ||
       row['status'] is! String) {

@@ -915,6 +915,36 @@ Widget archivedChannelsPreview() => Padding(
   ),
 );
 
+@RaftPreviews('Archived agents', size: Size(640, 360))
+Widget archivedAgentsPreview() => Padding(
+  padding: const EdgeInsets.all(16),
+  child: RaftArchivedAgentsSection(
+    rows: const [
+      RaftArchivedAgentRow(
+        id: 'a',
+        name: 'Cindy',
+        metadata: 'Archived Oct 20, 2026, 17:00 · Workspace on Studio Mac',
+        canViewWorkspace: true,
+      ),
+      RaftArchivedAgentRow(
+        id: 'b',
+        name: 'Scout',
+        metadata: 'Archived Oct 2, 2026, 23:30 · Workspace deleted',
+      ),
+    ],
+    onOpen: (_) {},
+    onViewWorkspace: (_) {},
+  ),
+);
+
+@RaftPreviews('Archive agent dialog', size: Size(480, 460))
+Widget archiveAgentDialogPreview() => RaftAgentArchiveDialog(
+  agentName: 'Cindy',
+  computer: 'Studio Mac',
+  hasComputerWorkspace: true,
+  onConfirm: (_) async {},
+);
+
 @RaftPreviews('Setup resume bar', size: Size(390, 160))
 Widget setupResumeBarPreview() => Align(
   alignment: Alignment.bottomCenter,

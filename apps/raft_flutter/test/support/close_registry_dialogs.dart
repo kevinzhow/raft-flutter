@@ -41,6 +41,7 @@ const dialogSurfaces = <CloseSurface>[
     desktop: {_x, _esc, _sys},
     files: [
       'lib/features/administration_view.dart',
+      'lib/features/agent_archive_section.dart',
       'lib/features/channel_members.dart',
       'lib/features/channel_settings.dart',
       'lib/features/connected_app_editor.dart',

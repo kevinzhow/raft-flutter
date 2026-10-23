@@ -18,7 +18,9 @@ import '../data/runtime_error.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'agent_archive_requests.dart';
 import 'agent_apps_view.dart';
+import 'agent_archive_section.dart';
 import 'agent_hosted_model.dart';
 import 'agent_migration_section.dart';
 import 'agent_profile_rules.dart';
@@ -95,6 +97,7 @@ class AgentDetailActions {
     this.onStartStop,
     this.onRestartReset,
     this.onDelete,
+    this.canArchive = false,
     this.onMessage,
     this.canMigrate = false,
     this.onPermissions,
@@ -103,6 +106,10 @@ class AgentDetailActions {
 
   /// Keep the Back chevron at md+ (`backButtonVisibility="always"`).
   final bool backAlways;
+
+  /// The viewer may archive the agent and delete an archived agent's
+  /// workspace (Web `canArchiveAgent`: deleteAgents or the human creator).
+  final bool canArchive;
 
   /// Mount the Agent migration section (Web `AgentMigrationSection`: the
   /// viewer manages a non-external agent that has a computer and
@@ -256,17 +263,24 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   /// `dms` are the legacy ids of Chat, `integrations` of Apps), the rest in
   /// their default order.
   List<AgentDetailTab> get tabs {
-    final visible = [
-      AgentDetailTab.profile,
-      if (_canViewPrivate) ...[
-        AgentDetailTab.activity,
-        AgentDetailTab.chat,
-        AgentDetailTab.reminders,
-        AgentDetailTab.workspace,
-        AgentDetailTab.apps,
-      ],
-      if (_canManage) AgentDetailTab.mcp,
-    ];
+    // An archived agent keeps its profile and a read-only workspace.
+    final archived = a['deletedAt'] != null;
+    final visible = archived
+        ? [
+            AgentDetailTab.profile,
+            if (_canViewPrivate) AgentDetailTab.workspace,
+          ]
+        : [
+            AgentDetailTab.profile,
+            if (_canViewPrivate) ...[
+              AgentDetailTab.activity,
+              AgentDetailTab.chat,
+              AgentDetailTab.reminders,
+              AgentDetailTab.workspace,
+              AgentDetailTab.apps,
+            ],
+            if (_canManage) AgentDetailTab.mcp,
+          ];
     final stored = widget.controller.sidebarOrder['agentPanelTabOrder'];
     final ordered = <AgentDetailTab>[];
     for (final raw in stored is List ? stored : const []) {
@@ -289,6 +303,23 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   bool diagnosticCopied = false;
   Timer? diagnosticTimer;
 
+  /// Web `useArchivedAgentMachineName`: the Computer an archived agent last
+  /// ran on (its archive record); advisory, any failure keeps the plain
+  /// "No computer assigned".
+  String? archivedMachine;
+  String? archivedMachineFor;
+
+  Future<void> loadArchivedMachine() async {
+    final id = '${a['id']}';
+    if (a['deletedAt'] == null || _bounded || archivedMachineFor == id) return;
+    archivedMachineFor = id;
+    try {
+      final archive = await fetchAgentArchive(widget.controller, id);
+      if (!mounted || archivedMachineFor != id) return;
+      setState(() => archivedMachine = archive?.machineName);
+    } catch (_) {}
+  }
+
   /// GET /agents/:id/external-status (external agents): the setup state the
   /// presence line and the External setup block share.
   Map<String, dynamic>? externalStatus;
@@ -301,6 +332,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     super.initState();
     _adoptCachedExternalStatus();
     unawaited(loadExternalStatus());
+    unawaited(loadArchivedMachine());
   }
 
   /// A revisit shows the last accepted setup state at its first frame (the
@@ -325,10 +357,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         externalStatus = null;
         externalStatusError = null;
         externalStatusFor = null;
+        archivedMachine = null;
+        archivedMachineFor = null;
         _adoptCachedExternalStatus();
       }
       unawaited(loadExternalStatus());
     }
+    unawaited(loadArchivedMachine());
   }
 
   Future<void> loadExternalStatus() async {
@@ -799,7 +834,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         ],
       ],
       // AgentDetailPanel Actions: `CopyButton` "Copy Diagnostic Info" (outline,
-      // Clipboard / Check icon), between Restart / Reset and Delete.
+      // Clipboard / Check icon), between Restart / Reset and Archive.
       RaftButton(
         key: const ValueKey('agent-copy-diagnostic'),
         label: raftText(
@@ -825,8 +860,9 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         ),
       if (widget.actions.onDelete != null)
         RaftButton(
-          label: raftText(context, 'Delete Agent'),
-          glyph: RaftGlyph.trash2,
+          key: const ValueKey('agent-archive-button'),
+          label: raftText(context, 'Archive Agent'),
+          glyph: RaftGlyph.archive,
           tone: RaftButtonRecipeVariant.danger,
           size: RaftButtonRecipeSize.md,
           expand: true,
@@ -961,6 +997,15 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                       // v1.21.12: the machine link is plain `text-sm
                       // text-foreground-muted` (no `font-mono font-semibold`).
                       style: RaftPanelText.profileValue(t),
+                    )
+                  : archivedMachine != null
+                  // An archived agent has no Computer; say where it last ran.
+                  ? RaftCssText(
+                      raftFormat(context, 'Last on {name}', {
+                        'name': archivedMachine,
+                      }),
+                      key: const ValueKey('agent-archived-last-computer'),
+                      style: RaftPanelText.muted(t),
                     )
                   : RaftCssText(
                       raftText(context, 'No computer assigned'),
@@ -1129,7 +1174,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         ),
         // Web AgentDetailPanel `{canViewPrivateAgentSurfaces && <AgentSkills
         // embedded />}`, between the profile info and Actions.
-        if (_canViewPrivate)
+        if (_canViewPrivate && a['deletedAt'] == null)
           AgentSkillsSection(
             controller: widget.controller,
             agentId: '${a['id']}',
@@ -1142,6 +1187,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             agent: a,
             machines: widget.machines ?? const [],
             now: widget.clock,
+          ),
+        // Web `agent.deletedAt && canViewPrivateAgentSurfaces`.
+        if (a['deletedAt'] != null && _canViewPrivate)
+          AgentArchiveSection(
+            controller: widget.controller,
+            agentId: agentId,
+            canManage: !_bounded && widget.actions.canArchive,
           ),
         if (canEdit && buttons.isNotEmpty)
           RaftPanelSection(
@@ -1964,6 +2016,21 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   /// Folders whose listing is in flight (`loadingDirs`).
   final loadingDirs = <String>{};
 
+  /// The server's `code` of the last failed root listing: an archived agent's
+  /// workspace says why it cannot be read (`loadErrorMessageId`).
+  String? errorCode;
+
+  /// `isFinalLoadError`: nothing to retry and no Computer path to show.
+  bool get errorFinal => errorCode == 'archive_workspace_unavailable';
+
+  String get errorText => switch (errorCode) {
+    'archive_workspace_unavailable' =>
+      'This workspace was deleted from its Computer, so there is nothing to browse.',
+    'machine_offline' || 'daemon_offline' =>
+      'The Computer that holds this workspace is offline. Files can be browsed again when it reconnects.',
+    _ => 'Failed to load files',
+  };
+
   Future<List<Map<String, dynamic>>> list(String dir) async {
     final result = await w.query(
       '/agents/${widget.agentId}/workspace-files',
@@ -1995,7 +2062,15 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   Future<void> fetch() async {
     // Refresh in place: the tree and the folders the member opened stay
     // exactly as shown until each listing is replaced.
-    final root = await list('');
+    final List<Map<String, dynamic>> root;
+    try {
+      root = await list('');
+      errorCode = null;
+    } on RaftApiException catch (e) {
+      final code = e.details['code'];
+      errorCode = code is String ? code : null;
+      rethrow;
+    }
     final open = expanded.toList();
     final refreshed = await Future.wait([
       for (final dir in open)
@@ -2161,8 +2236,9 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
       path: path,
       nodes: [...nodes('', 0), ?hint('', 0)],
       loading: loading,
-      // Web: one fixed message, not the server's text.
-      error: loadError == null ? null : 'Failed to load files',
+      // Web: fixed catalog messages, not the server's text.
+      error: loadError == null ? null : errorText,
+      errorFinal: loadError != null && errorFinal,
       showHidden: showHidden,
       onCopyPath: () => Clipboard.setData(ClipboardData(text: path)),
       onToggleHidden: toggleHidden,

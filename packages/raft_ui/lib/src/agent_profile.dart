@@ -1878,12 +1878,18 @@ class RaftWorkspaceTreeView extends StatelessWidget {
     required this.nodes,
     this.loading = false,
     this.error,
+    this.errorFinal = false,
     this.showHidden = false,
     this.onCopyPath,
     this.onToggleHidden,
     this.onRefresh,
     this.preview,
   });
+
+  /// `isFinalLoadError`: a failure a retry cannot fix and that leaves no
+  /// Computer path to show (an archived workspace deleted from its Computer):
+  /// no path bar and no Retry.
+  final bool errorFinal;
 
   /// Right pane of the `md:` split layout (an open file); when the panel is
   /// wide and this is null the pane shows "Select a file to view".
@@ -1905,30 +1911,32 @@ class RaftWorkspaceTreeView extends StatelessWidget {
       t.colors['foreground-placeholder']!,
     );
     final wide = MediaQuery.sizeOf(context).width >= 768;
-    final pathBar = Container(
-      height: 37,
-      alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(border: Border(bottom: hairline)),
-      child: Row(
-        children: [
-          Flexible(
-            child: RaftCssText(
-              path,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: RaftPanelText.monoCaption(t),
+    final pathBar = errorFinal
+        ? const SizedBox.shrink()
+        : Container(
+            height: 37,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(border: Border(bottom: hairline)),
+            child: Row(
+              children: [
+                Flexible(
+                  child: RaftCssText(
+                    path,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: RaftPanelText.monoCaption(t),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                RaftInlineIconButton(
+                  glyph: RaftGlyph.copy,
+                  tooltip: raftText(context, 'Copy path'),
+                  onPressed: onCopyPath,
+                ),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          RaftInlineIconButton(
-            glyph: RaftGlyph.copy,
-            tooltip: raftText(context, 'Copy path'),
-            onPressed: onCopyPath,
-          ),
-        ],
-      ),
-    );
+          );
     final treeHeader = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(border: Border(bottom: hairline)),
@@ -2008,13 +2016,15 @@ class RaftWorkspaceTreeView extends StatelessWidget {
                               : t.muted,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      RaftRecipeButton(
-                        label: raftText(context, 'Retry'),
-                        variant: RaftButtonRecipeVariant.outline,
-                        size: RaftButtonRecipeSize.sm,
-                        onPressed: onRefresh,
-                      ),
+                      if (!errorFinal) ...[
+                        const SizedBox(height: 8),
+                        RaftRecipeButton(
+                          label: raftText(context, 'Retry'),
+                          variant: RaftButtonRecipeVariant.outline,
+                          size: RaftButtonRecipeSize.sm,
+                          onPressed: onRefresh,
+                        ),
+                      ],
                     ],
                   ),
                 ),

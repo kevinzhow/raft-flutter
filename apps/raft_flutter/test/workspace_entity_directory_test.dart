@@ -216,9 +216,11 @@ void main() {
         }, 's'),
         isTrue,
       );
+      // v1.21.23 agentDetailAvailability: an archived agent keeps a
+      // read-only profile.
       expect(
         canRenderWorkspaceAgent({...agent, 'deletedAt': 'now'}, 's'),
-        isFalse,
+        isTrue,
       );
       expect(
         canRenderWorkspaceAgent({

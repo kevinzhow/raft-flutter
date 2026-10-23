@@ -161,7 +161,7 @@ void main() {
       );
       expect(find.text('Activity'), findsOneWidget);
       expect(find.text('Copy Diagnostic Info'), findsOneWidget);
-      expect(find.text('Delete Agent'), findsOneWidget);
+      expect(find.text('Archive Agent'), findsOneWidget);
       expect(
         find.byKey(const Key('agent-profile-inline-start-stop')),
         findsOneWidget,
@@ -214,7 +214,7 @@ void main() {
       );
       expect(find.text('Activity'), findsNothing);
       expect(find.text('Copy Diagnostic Info'), findsNothing);
-      expect(find.text('Delete Agent'), findsNothing);
+      expect(find.text('Archive Agent'), findsNothing);
       expect(
         find.byKey(const Key('agent-profile-inline-start-stop')),
         findsOneWidget,
@@ -244,7 +244,7 @@ void main() {
         );
         expect(find.text('Stop Agent'), findsNothing);
         expect(find.text('Start Agent'), findsNothing);
-        expect(find.text('Delete Agent'), findsNothing);
+        expect(find.text('Archive Agent'), findsNothing);
         expect(find.text('Copy Diagnostic Info'), findsNothing);
       },
     );
@@ -258,7 +258,7 @@ void main() {
         agent: localAgent(creatorId: 'bob'),
       );
       expect(find.text('Activity'), findsOneWidget);
-      expect(find.text('Delete Agent'), findsOneWidget);
+      expect(find.text('Archive Agent'), findsOneWidget);
       expect(find.textContaining('RUNTIME CONFIG'), findsOneWidget);
       expect(
         find.byKey(const Key('agent-profile-inline-start-stop')),
@@ -377,7 +377,7 @@ void main() {
     expect(find.text('八戒'), findsWidgets);
     expect(find.text('停止 Agent'), findsNothing);
     expect(find.text('重启 / 重置'), findsNothing);
-    expect(find.text('删除 Agent'), findsNothing);
+    expect(find.text('归档 Agent'), findsNothing);
     expect(find.text('复制诊断信息'), findsNothing);
     expect(find.text('未分配计算机'), findsNothing);
     expect(find.text('未分配创建者'), findsNothing);
@@ -491,7 +491,7 @@ void expectPublicProfile(WidgetTester tester, {required String? from}) {
   expect(find.text('Stop Agent'), findsNothing);
   expect(find.text('Start Agent'), findsNothing);
   expect(find.text('Restart / Reset'), findsNothing);
-  expect(find.text('Delete Agent'), findsNothing);
+  expect(find.text('Archive Agent'), findsNothing);
   expect(find.text('Copy Diagnostic Info'), findsNothing);
   expect(find.text('Direct Message'), findsNothing);
   expect(find.text('No computer assigned'), findsNothing);

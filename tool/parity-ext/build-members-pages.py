@@ -290,10 +290,11 @@ for platform in ('desktop', 'phone'):
                    android_key='agent-dialog',
                    interactions=[click('[data-testid="agent-profile-inline-start-stop"]'), wait(200)],
                    android_interactions=[tap('agent-profile-inline-start-stop')])
-    agent_main(platform, 'agent.delete-confirm', 'Agent profile: delete agent confirmation',
+    # v1.21.23: deleting an agent is archiving it (AgentArchiveDialog); the case id keeps its name.
+    agent_main(platform, 'agent.delete-confirm', 'Agent profile: archive agent confirmation',
                selector=DLG if not phone else VIEW, android_key='agent-dialog' if not phone else None,
-               interactions=[click('button:has-text("Delete Agent")'), wait(200)],
-               android_interactions=[tap_text('Delete Agent', 'fleet-detail')])
+               interactions=[click('button:has-text("Archive Agent")'), wait(200)],
+               android_interactions=[tap_text('Archive Agent', 'fleet-detail')])
 
     # ---- 7.20 agent unavailable (terminated / no access)
     agent_main(platform, 'agent.unavailable', 'Agent unavailable (terminated or no access)', agent='agent-gone',
