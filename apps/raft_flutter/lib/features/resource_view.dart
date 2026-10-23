@@ -37,7 +37,10 @@ import 'server_task_scope.dart';
 import 'saved_page_scope.dart';
 import '../data/task_board_reconcile.dart';
 import '../data/task_view_mode_preference.dart';
+import 'activity_card_row.dart';
 import 'activity_first_unread.dart';
+import 'activity_list_row.dart';
+import 'activity_rollout_flags.dart';
 import 'activity_find_scope.dart';
 import 'create_task_dialog.dart';
 import 'desktop_navigation_policy.dart' show DesktopContentTarget;
@@ -2241,6 +2244,9 @@ class _ResourceViewState extends State<ResourceView> {
           if (enabledActivity && filter == 'done') {
             doneActivityItems = List.of(rows);
           }
+          if (enabledActivity && filter != 'saved' && filter != 'done') {
+            unawaited(SavedCountStore.of(w).checkActivityRows(rows));
+          }
           dragFeedbackRevision.value++;
           if (enabledActivity && filter == 'saved' && value is Map) {
             savedActivityTotal =
@@ -2833,19 +2839,20 @@ class _ResourceViewState extends State<ResourceView> {
     if (advanced.groupByChannel) {
       return groupedActivity(viewFilter: value, windowRows: window.rows);
     }
+    final listed = activityPinnedFirst(w, window.rows);
     return ListView.separated(
       key: PageStorageKey(('resource-list', 'activity', value)),
       primary: false,
-      padding: raftScrollPadding(
-        context,
-        RaftResourceMetrics.activityListInset,
-      ),
+      padding: activityListLayout
+          ? EdgeInsets.zero
+          : raftScrollPadding(context, RaftResourceMetrics.activityListInset),
       controller: activityScrolls[value],
-      itemCount: window.rows.length,
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: RaftConversationCardRecipe.gap),
+      itemCount: listed.length,
+      separatorBuilder: (_, _) => SizedBox(
+        height: activityListLayout ? 0 : RaftConversationCardRecipe.gap,
+      ),
       itemBuilder: (_, i) =>
-          activityCard(window.rows[i], authority, viewFilter: value),
+          listedActivityCard(listed, i, authority, viewFilter: value),
     );
   }
 
@@ -2866,15 +2873,18 @@ class _ResourceViewState extends State<ResourceView> {
       physics: mobileActivityRefresh
           ? const AlwaysScrollableScrollPhysics()
           : null,
-      padding: raftScrollPadding(context, const EdgeInsets.all(16)),
+      padding: activityListLayout
+          ? EdgeInsets.zero
+          : raftScrollPadding(context, const EdgeInsets.all(16)),
       // SavedPanel loads the next page when its sentinel comes
       // within `rootMargin: 240px` of the scroller.
       scrollCacheExtent: widget.section == 'saved'
           ? const ScrollCacheExtent.pixels(240)
           : null,
       itemCount: shown.length + (hasMore ? 1 : 0),
-      separatorBuilder: (_, _) =>
-          const SizedBox(height: RaftConversationCardRecipe.gap),
+      separatorBuilder: (_, _) => SizedBox(
+        height: activityListLayout ? 0 : RaftConversationCardRecipe.gap,
+      ),
       itemBuilder: (context, index) => index == shown.length
           ? widget.section == 'saved'
                 ? savedSentinel()
@@ -2884,7 +2894,9 @@ class _ResourceViewState extends State<ResourceView> {
                   )
           : KeyedSubtree(
               key: listUpdates.keyOf(rowKey(shown[index])),
-              child: item(shown[index]),
+              child: widget.section == 'activity'
+                  ? listedActivityCard(shown, index, authority)
+                  : item(shown[index]),
             ),
       findItemIndexCallback: listUpdates.indexOf,
     );
@@ -4153,223 +4165,64 @@ class _ResourceViewState extends State<ResourceView> {
     await load(keep: true, quietErrors: true);
   }
 
+  /// The conversation list (`activity_conversation_list_v0`) fills the page
+  /// edge to edge: no inset around it and no gap between its rows.
+  bool get activityListLayout =>
+      widget.section == 'activity' &&
+      ActivityRolloutFlags.peek(w)?.activityConversationList == true;
+
+  /// The Activity row at [index] of [rows], with its section heading and
+  /// hairline when the conversation list is on.
+  Widget listedActivityCard(
+    List<Map<String, dynamic>> rows,
+    int index,
+    String scope, {
+    String? viewFilter,
+  }) {
+    final section = activityListSectionAt(w, rows, index);
+    return activityCard(
+      rows[index],
+      scope,
+      viewFilter: viewFilter,
+      section: section,
+      separator: index > 0 && section == null,
+    );
+  }
+
   Widget activityCard(
     Map<String, dynamic> row,
     String scope, {
     String? viewFilter,
+    ActivityListSection? section,
+    bool separator = false,
   }) {
     final filter = viewFilter ?? this.filter;
     final pin = activityGestureMatches(scope);
-    final recipe = RaftConversationCardRecipe(RaftTokens.of(context));
-    final thread = row['kind'] == 'thread';
-    final dm = row['kind'] == 'dm' || row['channelType'] == 'dm';
-    final unread = (row['unreadCount'] as num? ?? 0).toInt();
-    final title = thread
-        ? '${row['parentMessagePreview'] ?? ''}'
-        : activityRowTitle(row, w.dms);
-    final senderType =
-        row[thread ? 'latestActivitySenderType' : 'lastMessageSenderType'];
-    final senderId =
-        row[thread ? 'latestActivitySenderId' : 'lastMessageSenderId'];
-    final sender = senderType == 'system' || senderId == 'system'
-        ? raftText(context, 'System')
-        : '${row[thread ? 'latestActivitySenderName' : 'lastMessageSenderName'] ?? stableSender('activity:$senderType:$senderId', () => directorySenderLabel(senderId, senderType))}';
-    final preview =
-        '${thread ? row['latestActivityPreview'] ?? '' : row['lastMessagePreview'] ?? row['messagePreview'] ?? ''}';
-    return Builder(
-      builder: (cardContext) => ConstrainedBox(
-        constraints: pin && activityGestureHeights[rowKey(row)] != null
-            // ignore: raft_lints/avoid_render_index_assertion -- Guarded by `activityGestureHeights[rowKey(row)] != null` on the line above.
-            ? BoxConstraints(minHeight: activityGestureHeights[rowKey(row)]!)
-            : const BoxConstraints(),
-        child: RaftConversationCard(
-          key: thread
-              ? ValueKey('activity-thread-${row['threadChannelId']}')
-              : ValueKey(
-                  'activity-${row['kind']}-${row['channelId'] ?? row['messageId']}',
-                ),
-          selected: activityRowSelected(row),
-          onOpen: () => openConversation(row, scope),
-          onActivate: widget.onActivityCanonical == null
-              ? null
-              : (detail) => activateActivity(
-                  row,
-                  scope,
-                  detail,
-                  (cardContext.findRenderObject() as RenderBox?)?.size.height,
-                ),
-          onPointerActivate: widget.onActivityCanonical == null
-              ? null
-              : (detail) => activateActivity(
-                  row,
-                  scope,
-                  detail,
-                  (cardContext.findRenderObject() as RenderBox?)?.size.height,
-                  pointer: true,
-                ),
-          doubleClickInterval: pin
-              ? activityGestureInterval!
-              : doubleClickInterval,
-          onContextMenu: (at) => activityMenu(row, scope, at),
-          popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
-          actions: enabledActivity && filter == 'saved'
-              ? null
-              : row['kind'] == 'mention_action'
-              ? null
-              // ThreadsInbox row action: ghost icon-sm Check 14 (RotateCcw 14 to
-              // restore). Follow/unfollow is only in the context menu.
-              : RaftIconButton(
-                  glyph: filter == 'done'
-                      ? RaftGlyph.rotateCcw
-                      : RaftGlyph.check,
-                  visualSize: 28,
-                  minimumTargetSize: 28,
-                  tooltip: filter == 'done'
-                      ? 'Restore conversation'
-                      : 'Mark conversation done',
-                  onPressed: () => activityAction(
-                    row,
-                    filter == 'done' ? 'undone' : 'done',
-                    scope,
-                  ),
-                ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (thread)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: RaftCssText(
-                    activityThreadSubtitle(row, [...w.channels, ...w.dms]),
-                    style: recipe.metadata.copyWith(
-                      fontSize: 11,
-                      height: 12 / 11,
-                      color: recipe.titleIconColor,
-                    ),
-                  ),
-                ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: RaftCssText.rich(
-                      TextSpan(
-                        children: [
-                          // ThreadsInbox's icon is inline, not a separate flex
-                          // column: wrapped title lines return to the row's edge.
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.baseline,
-                            baseline: TextBaseline.alphabetic,
-                            child: Transform.translate(
-                              offset: const Offset(0, 2),
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: thread
-                                    ? RaftThreadIcon(
-                                        size: 13,
-                                        color: recipe.titleIconColor,
-                                      )
-                                    : dm
-                                    ? RaftDirectMessageIcon(
-                                        size: 13,
-                                        color: recipe.titleIconColor,
-                                      )
-                                    : RaftIcon(
-                                        RaftGlyph.hash,
-                                        size: 13,
-                                        color: recipe.titleIconColor,
-                                      ),
-                              ),
-                            ),
-                          ),
-                          TextSpan(text: title),
-                        ],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: recipe.titleStyle(unread > 0),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  RaftConversationTimestamp(
-                    child: RaftCssText(
-                      relativeTime(
-                        row['lastActivityAt'] ?? row['lastMessageAt'],
-                      ),
-                      style: recipe.timestamp,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              RaftCssText.rich(
-                TextSpan(
-                  children: [
-                    if (sender.isNotEmpty)
-                      TextSpan(
-                        text: '$sender: ',
-                        style: recipe.body.copyWith(
-                          color: recipe.senderColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    TextSpan(text: preview),
-                  ],
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: recipe.body.copyWith(
-                  color: recipe.titleColor(unread > 0),
-                ),
-              ),
-              const SizedBox(height: 4),
-              ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 20),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    if (row['taskNumber'] != null &&
-                        row['taskStatus'] is String) ...[
-                      RaftTaskStatus(status: row['taskStatus']),
-                      if (thread)
-                        RaftCssText(
-                          activityTaskLabel(row),
-                          style: recipe.metadata,
-                        ),
-                    ],
-                    if (thread)
-                      RaftResourceBadge(
-                        label:
-                            '${row['replyCount'] ?? 0} ${raftText(context, 'replies')}',
-                        appearance: RaftBadgeRecipeAppearance.outline,
-                        variant: RaftBadgeRecipeVariant.muted,
-                      ),
-                    if (thread && row['isFollowing'] == false)
-                      RaftResourceBadge(
-                        label: raftText(context, 'Unfollowed'),
-                        appearance: RaftBadgeRecipeAppearance.outline,
-                        variant: RaftBadgeRecipeVariant.muted,
-                      ),
-                    // shouldShowMentionBadge: mention with unread messages.
-                    if (row['hasMention'] == true && unread > 0)
-                      RaftResourceBadge(
-                        label: raftText(context, 'you'),
-                        glyph: RaftGlyph.atSign,
-                        variant: RaftBadgeRecipeVariant.primary,
-                      ),
-                    if (unread > 0)
-                      RaftResourceBadge(
-                        label: '$unread ${raftText(context, 'new')}',
-                        variant: RaftBadgeRecipeVariant.accent,
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    return ActivityCardRow(
+      row: row,
+      host: ActivityRowHost(
+        controller: w,
+        filter: filter,
+        interval: pin ? activityGestureInterval! : doubleClickInterval,
+        pinnedHeight: pin ? activityGestureHeights[rowKey(row)] : null,
+        selected: activityRowSelected(row),
+        canonical: widget.onActivityCanonical != null,
+        popupOpen: menuRowKey != null && menuRowKey == rowKey(row),
+        savedView: enabledActivity && filter == 'saved',
+        listLayout:
+            ActivityRolloutFlags.peek(w)?.activityConversationList == true,
+        section: section,
+        separator: separator,
+        open: () => openConversation(row, scope),
+        activate: (detail, height, {bool pointer = false}) =>
+            activateActivity(row, scope, detail, height, pointer: pointer),
+        menu: (at) => activityMenu(row, scope, at),
+        action: (action) => activityAction(row, action, scope),
+        relativeTime: relativeTime,
+        stableSender: stableSender,
+        directorySenderLabel: directorySenderLabel,
+        agents: rowAgents,
+        people: rowPeople,
       ),
     );
   }
@@ -5060,7 +4913,9 @@ class _ResourceViewState extends State<ResourceView> {
     if (widget.section == 'activity' && activityGestureCurrent) {
       return ActivityRowWindow.from(rows).retaining(activityGestureRows!);
     }
-    if (widget.section != 'tasks') return rows;
+    if (widget.section != 'tasks') {
+      return widget.section == 'activity' ? activityPinnedFirst(w, rows) : rows;
+    }
     return rows.where(matchesTask).toList()..sort((a, b) {
       final order = raftTaskStatuses
           .indexOf('${a['status']}')

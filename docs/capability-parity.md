@@ -7,18 +7,18 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 792 (362 endpoint/network keys, 430 client-side).
+Total capabilities: 793 (362 endpoint/network keys, 431 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 591 |
+| ✅ covered | 593 |
 | ⚠️ partial | 57 |
-| ❌ missing | 74 |
+| ❌ missing | 73 |
 | ➖ na | 70 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
-| Messages | 61 | 7 | 13 | 1 |
+| Messages | 62 | 7 | 12 | 1 |
 | Threads | 16 | 1 | 0 | 1 |
 | Channels | 27 | 6 | 1 | 1 |
 | DMs | 6 | 0 | 0 | 0 |
@@ -30,7 +30,7 @@ Total capabilities: 792 (362 endpoint/network keys, 430 client-side).
 | Tasks | 35 | 0 | 0 | 5 |
 | Files and attachments | 15 | 8 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
-| Notifications | 29 | 2 | 0 | 6 |
+| Notifications | 30 | 2 | 0 | 6 |
 | Account and profile | 42 | 2 | 0 | 6 |
 | Onboarding and auth | 35 | 0 | 0 | 7 |
 | Joint channels | 6 | 4 | 1 | 0 |
@@ -76,7 +76,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Re-confirm an action card whose state is reconfirm_required (card button 'Reconfirm') | `POST /actions/:id/reconfirm` | ActionCard verb button labelled 'Reconfirm' when metadata.state == reconfirm_required[gate: canOperateCard (viewer must hold the permission for the card action) and not frozen / read-only source] | message_action_card.dart confirm() calls apply('reconfirm') from the card verb button |  |
 | ✅ | Sidebar "Mark All as Read" over the channel and its threads (flag sidebar_mark_all_read_v0; 404 sidebar_mark_all_read_disabled when off) | `POST /channels/:id/conversation-read-all` | messageStore markConversationRead[gate: flag sidebar_mark_all_read_v0 + thread_unread_badge_v0] | Sidebar channel row menu 'Mark All as Read' (workspace_view_sidebar_menus.dart _readItem -> SidebarReadToggle.run -> markConversationRead, features/sidebar_read_all.dart); a 404 sidebar_mark_all_read_disabled re-evaluates the flags and falls back to read-all |  |
 | ✅ | Save (bookmark) a message | `POST /channels/saved` | MessageHoverToolbar bookmark \| context menu 'Save Message'[gate: none (any member who can see the message; guests blocked server-side)] | chat_view.dart saveMessage() -> SavedCountStore.setSaved (optimistic) |  |
-| ❌ | Mark which Activity items' messages are already saved (so the menu shows 'Remove from Saved') (bg) | `POST /channels/saved/check` | ThreadsInbox checkSaved(items) after Activity list loads (automatic)[gate: none] |  | Impact: A saved message older than the first 20 saved items can show 'Save Message' instead of 'Remove from Saved' after opening it from Activity; rare. Flutter never calls /channels/saved/check; SavedCountStore only learns saved ids from the first Saved page (20 rows) and local saves. Size S |
+| ✅ | Mark which Activity items' messages are already saved (so the menu shows 'Remove from Saved') (bg) | `POST /channels/saved/check` | ThreadsInbox checkSaved(items) after Activity list loads (automatic)[gate: Activity sidebar inbox (activity_sidebar_inbox_v0)] | saved_sidebar_entry.dart SavedCountStore.check / checkActivityRows, called when the Activity page (all, unread, mentions, DMs views) loads its rows | Web v1.21.23 no longer calls checkSaved from Activity (the helper stays in savedStore, unused): the app keeps the call with the Activity Done/Saved/DMs views it keeps (plan decision 5, open). |
 | ✅ | Translate visible messages automatically or on demand (Translate menu item, Retry) | `POST /message-translations:batch` | MessageItem translation indicator (Show original / Show translation / Retry) and context menu 'Translate' (manual mode); auto mode batches visible rows[gate: server translation enabled + user translation mode auto/manual + target language] | message_translation_store.dart batch; chat_view.dart translation indicator and menu 'Translate' |  |
 | ✅ | Add an emoji reaction to a message (hover toolbar picker, context-menu quick row, clicking an existing reaction chip, mobile + chip) | `POST /messages/:id/reactions` | MessageHoverToolbar > 'Add Reaction' picker \| context menu quick-reaction row \| reaction chip click \| mobile '+' chip[gate: canReact: not system message, not guest, channel joined/viewable, not archived/read-only] | chat_view.dart react()/openReactionPicker/RaftQuickReactionPicker + context menu onReact -> reaction_repository.toggleReaction |  |
 | ⚠️ | Forward selected messages to up to 10 destinations with an optional note | `POST /messages/forward` | SelectModeToolbar > Forward -> ForwardComposerDialog (Desktop/Mobile): search targets, multi-select, note, Send forward; join-before-forward banner; Joint-channel exposure warning[gate: selected messages must be ordinary (no system, action cards, nested forwards), same conversation, same server; guests cannot enter selection] | forward_composer_page.dart (targets search, multi-select, note, preview step, retry remaining destinations) via forward_messages_dialog.dart / chat_view.dart forwardSelection | Impact: Users forwarding into un-joined or Joint channels get no consent step or exposure warning; occasional. Flutter joins un-joined public channels silently on Send; Web shows a 'Join selected public channels' banner/button and a confirm-on-second-Send step, and shows a Joint-channel exposure warning banner ('Joint channel destinations may expose this forwarded snapshot...'). Neither banner exists in Flutter (grep finds no such strings). Size S |
@@ -691,6 +691,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | App/tab unread badge reflecting Activity unread total | `ui:channels.unread-badge-app-icon` | mobileAppBadge.ts (PWA badge) / LeftRail Activity badge | Native equivalents: macos_dock_unread.dart, background_inbox.dart, mobile tab activity badge |  |
 | ✅ | Dismissed Notification Center entries stay hidden until their fingerprint changes | `ui:global-ui.pref-notification-dismissals` | components/layout/dismissedNotificationStore.ts (slock:notification-center:dismissed:{server}) | data/system_notification_store.dart (raft:notification-center:dismissed:) |  |
 | ✅ | Composer-adjacent banner asking to enable browser/desktop notifications ('Enable', dismiss, Settings > Notifications) | `ui:messages.composer-notification-activation-banner` | NotificationActivationBanner[gate: Native macOS/iOS/Android first permission; eligible joined channel or DM composer] | features/notification_activation_banner.dart; explicit native opt-in | Native OS permission is requested only by the Enable action. Dismissal lasts for the app session with a three-second Settings confirmation. Refusal is persisted; foreground/focus reconciles system changes. Windows/Linux have no prompt and no banner. |
+| ✅ | Activity as a conversation list: one avatar row per conversation with preview and unread count, sidebar-pinned conversations first under Pinned / All conversations headings | `ui:notifications.activity-conversation-list` | components/thread/ThreadsInbox.tsx InboxRow layout="list"; inboxPinnedConversation.ts[gate: flag activity_conversation_list_v0] | resource_view.dart activityCard -> activity_card_row.dart ActivityCardRow -> activity_list_row.dart ActivityListRowView -> RaftConversationListRow; activityPinnedFirst orders the rows |  |
 | ✅ | 'N new updates' pill when new rows arrive while scrolled down; click scrolls to top | `ui:notifications.activity-new-updates-pill` | ThreadsInbox.tsx thread.newUpdates button | resource_view.dart '{count} new updates' pill |  |
 | ✅ | Activity row context menu: Mark as Read/Unread, Done, Follow/Unfollow (threads); hover Done / Restore button; mention_action rows offer Mark as Unread and local Done | `ui:notifications.activity-row-menu` | InboxContextMenu.tsx + ThreadsInbox.tsx conversation-card-actions[gate: thread follow only on thread rows] | resource_view.dart activityMenu + RaftConversationCard actions |  |
 | ✅ | Activity search box (Ctrl/Cmd+F in the sidebar variant) and sort Newest / Oldest | `ui:notifications.activity-search-sort` | ThreadsInbox.tsx search input + sort Select | resource_view.dart RaftActivitySearchInput + onSort |  |

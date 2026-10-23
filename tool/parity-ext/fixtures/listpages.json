@@ -537,6 +537,16 @@
     "$status": 500
    }
   },
+  "activity-conversation-list": {
+   "POST /feature-flags/evaluate": {
+    "evaluations": [
+     {
+      "key": "activity_conversation_list_v0",
+      "enabled": true
+     }
+    ]
+   }
+  },
   "saved-empty": {
    "GET /channels/saved": {
     "saved": [],

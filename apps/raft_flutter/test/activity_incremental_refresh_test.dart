@@ -58,6 +58,10 @@ class ActivityClient extends RaftClient {
         'user': {'id': 'alice'},
       };
     }
+    // The rollout flags are read with the page; they are not under test.
+    if (path == '/feature-flags/evaluate') {
+      return responses['$method $path'] ?? {'evaluations': []};
+    }
     posts.add('$method $path');
     bodies.add(data);
     if (responses.containsKey('$method $path')) return responses['$method $path'];

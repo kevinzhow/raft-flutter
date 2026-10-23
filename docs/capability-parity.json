@@ -317,14 +317,23 @@
    "area": "messages",
    "capability": "Mark which Activity items' messages are already saved (so the menu shows 'Remove from Saved')",
    "background": true,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "ThreadsInbox checkSaved(items) after Activity list loads (automatic)",
-   "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter never calls /channels/saved/check; SavedCountStore only learns saved ids from the first Saved page (20 rows) and local saves.",
-   "impact": "A saved message older than the first 20 saved items can show 'Save Message' instead of 'Remove from Saved' after opening it from Activity; rare.",
-   "size": "S"
+   "gate": "Activity sidebar inbox (activity_sidebar_inbox_v0)",
+   "flutterEntry": "saved_sidebar_entry.dart SavedCountStore.check / checkActivityRows, called when the Activity page (all, unread, mentions, DMs views) loads its rows",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/saved_sidebar_entry.dart",
+     "needle": "/channels/saved/check"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "needle": "checkActivityRows"
+    }
+   ],
+   "justification": "Web v1.21.23 no longer calls checkSaved from Activity (the helper stays in savedStore, unused): the app keeps the call with the Activity Done/Saved/DMs views it keeps (plan decision 5, open).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -1890,7 +1899,7 @@
      "needle": "'/channels/${thread ? 'threads' : 'inbox'}/$action'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
      "needle": "'Mark conversation done'"
     }
    ],
@@ -1938,7 +1947,7 @@
      "needle": "'/channels/${thread ? 'threads' : 'inbox'}/$action'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
      "needle": "'Restore conversation'"
     }
    ],
@@ -11929,7 +11938,7 @@
      "needle": "/channels/${thread ? 'threads' : 'inbox'}/$action"
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
      "needle": "Mark conversation done"
     }
    ],
@@ -11977,7 +11986,7 @@
      "needle": "/channels/${thread ? 'threads' : 'inbox'}/$action"
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
      "needle": "Restore conversation"
     }
    ],
@@ -12067,6 +12076,30 @@
     {
      "file": "packages/raft_ui/lib/src/sidebar_thread_unread.dart",
      "needle": "class RaftSidebarThreadUnreadCount"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
+   "id": "ui:notifications.activity-conversation-list",
+   "area": "notifications",
+   "capability": "Activity as a conversation list: one avatar row per conversation with preview and unread count, sidebar-pinned conversations first under Pinned / All conversations headings",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/thread/ThreadsInbox.tsx InboxRow layout=\"list\"; inboxPinnedConversation.ts",
+   "gate": "flag activity_conversation_list_v0",
+   "flutterEntry": "resource_view.dart activityCard -> activity_card_row.dart ActivityCardRow -> activity_list_row.dart ActivityListRowView -> RaftConversationListRow; activityPinnedFirst orders the rows",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/activity_list_row.dart",
+     "needle": "class ActivityListRowView"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/conversation_list_row.dart",
+     "needle": "class RaftConversationListRow"
     }
    ],
    "justification": "",
@@ -12193,7 +12226,7 @@
      "needle": "'Unfollow' : 'Follow'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/resource_view.dart",
+     "file": "apps/raft_flutter/lib/features/activity_card_row.dart",
      "needle": "Mark conversation done"
     }
    ],

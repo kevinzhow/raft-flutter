@@ -20,6 +20,7 @@ import 'package:raft_flutter/data/system_notification_projection.dart';
 import 'package:raft_flutter/data/system_notification_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/data/workspace_entity_directory.dart';
+import 'package:raft_flutter/features/activity_rollout_flags.dart';
 import 'package:raft_flutter/features/add_computer_dialog.dart';
 import 'package:raft_flutter/features/add_members_dialog.dart';
 import 'package:raft_flutter/features/create_joint_channel_dialog.dart';
@@ -537,6 +538,16 @@ class _JointDialogHostState extends State<_JointDialogHost> {
 Widget _panel(ParityContext ctx) {
   final panel = ctx.props['panel'] as String;
   final w = _workspace(ctx, panel);
+  // The shell asks for the rollout flags as it draws the sidebar; here nothing does.
+  ActivityRolloutFlags.of(w);
+  final pinned = ctx.props['pinned'] as String?;
+  if (pinned != null) {
+    w.sidebarOrder = {
+      'pinned': [
+        {'kind': 'channel', 'id': pinned},
+      ],
+    };
+  }
   final width = (ctx.props['w'] as num? ?? 342).toDouble();
   final height = (ctx.props['h'] as num? ?? 620).toDouble();
   final now = parityNow(ctx);

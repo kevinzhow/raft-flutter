@@ -52,6 +52,10 @@ class Client extends RaftClient {
     bool acceptServerExit = false,
     Duration? receiveTimeout,
   }) {
+    // The rollout flags are read once the page is up; they are not under test.
+    if (path == '/feature-flags/evaluate') {
+      return Future.value({'evaluations': []});
+    }
     posts.add((path: path, data: data));
     final response = Completer<dynamic>();
     pending.add(response);

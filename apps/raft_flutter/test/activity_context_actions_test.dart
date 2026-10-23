@@ -162,14 +162,18 @@ void main() {
             find.widgetWithText(RaftMenuButtonItem, 'Mark as Unread'),
           )
           .onPressed!;
-      final requests = client.posts.length;
+      // Reading the new server's rows may ask which are saved; that is not the
+      // retained action.
+      int actions() =>
+          client.posts.where((p) => p != 'POST /channels/saved/check').length;
+      final requests = actions();
       client.selectServer('s2');
       w.notifyListeners();
       await tester.pumpAndSettle();
       expect(find.byType(RaftSidebarContextMenu), findsNothing);
       stale();
       await tester.pumpAndSettle();
-      expect(client.posts.length, requests);
+      expect(actions(), requests);
       expect(tester.takeException(), isNull);
     },
   );

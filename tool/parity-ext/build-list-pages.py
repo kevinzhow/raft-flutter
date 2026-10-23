@@ -125,6 +125,9 @@ FIXTURE = {
         'activity-empty': {'GET /channels/inbox': INBOX_EMPTY},
         'activity-loading': {'GET /channels/inbox': {'$pending': True}},
         'activity-error': {'GET /channels/inbox': {'$status': 500}},
+        # activity_conversation_list_v0 on (the app evaluates it; the Web host sets the flag from `flags`).
+        'activity-conversation-list': {'POST /feature-flags/evaluate': {
+            'evaluations': [{'key': 'activity_conversation_list_v0', 'enabled': True}]}},
         'saved-empty': {'GET /channels/saved': {'saved': [], 'hasMore': False, 'total': 0}},
         'saved-loading': {'GET /channels/saved': {'$pending': True}},
         'saved-error': {'GET /channels/saved': {'$status': 500}},
@@ -237,6 +240,16 @@ for plat in ('phone', 'desktop'):
         hint=ACT_HINT, props=base, interactions=[{'type': 'wait', 'ms': 850},
                                                  {'type': 'rightclick', 'target': ROW},
                                                  {'type': 'wait', 'ms': 300}], viewport_capture=True)
+
+# Activity as a conversation list (Web v1.21.23 `activity_conversation_list_v0`): one avatar row per
+# conversation; the pinned variant pins the fixture's channel in the sidebar order.
+add('activity.desktop-conversation-list', 'Activity (desktop): conversation list', 'panel', platform='desktop',
+    hint=ACT_HINT, props={'panel': 'activity', 'flags': 'list'}, route_set='activity-conversation-list',
+    interactions=[{'type': 'wait', 'ms': 850}])
+add('activity.desktop-conversation-list-pinned', 'Activity (desktop): conversation list, a pinned channel first',
+    'panel', platform='desktop', hint=ACT_HINT,
+    props={'panel': 'activity', 'flags': 'list', 'pinned': 'channel-android'},
+    route_set='activity-conversation-list', interactions=[{'type': 'wait', 'ms': 850}])
 
 # --------------------------------------------------------------------------- Saved (5.09 5.10 5.11)
 SAVED_HINT = SRC + 'saved/SavedPanel.tsx'

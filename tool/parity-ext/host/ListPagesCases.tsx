@@ -79,6 +79,12 @@ function parityExtLpPrime(props: ParityExtLpProps) {
   const inbox = routes["GET /channels/inbox"] as typeof activityResultsFixture;
   const saved = routes["GET /channels/saved"] as typeof savedMessagesFixture;
   if (panel === "activity") {
+    // activity_conversation_list_v0 (and a sidebar-pinned channel) from the case props.
+    setServerFeatureFlagForTests(fxServer.id, "activity_conversation_list_v0", (props.params.get("flags") ?? "").split(",").includes("list"));
+    const pinnedChannel = props.params.get("pinned");
+    if (pinnedChannel) {
+      useServerStore.setState((s) => ({ sidebarOrder: { ...s.sidebarOrder, pinned: [{ kind: "channel", id: pinnedChannel }] } }) as never);
+    }
     useInboxStore.setState({
       items: (results ? inbox.items : []) as never,
       filter: (props.params.get("filter") ?? "all") as never,

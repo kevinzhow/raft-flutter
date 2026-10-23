@@ -29,6 +29,8 @@ const extListPageKeys = [
   'activity.desktop-filter-unread',
   'activity.desktop-filter-mentions',
   'activity.desktop-context-menu',
+  'activity.desktop-conversation-list',
+  'activity.desktop-conversation-list-pinned',
   'saved.desktop-list',
   'saved.phone-empty',
   'saved.phone-loading',
