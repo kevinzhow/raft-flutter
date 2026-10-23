@@ -380,10 +380,10 @@
    "area": "messages",
    "capability": "Forward selected messages to up to 10 destinations with an optional note",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "SelectModeToolbar > Forward -> ForwardComposerDialog (Desktop/Mobile): search targets, multi-select, note, Send forward; join-before-forward banner; Joint-channel exposure warning",
    "gate": "selected messages must be ordinary (no system, action cards, nested forwards), same conversation, same server; guests cannot enter selection",
-   "flutterEntry": "forward_composer_page.dart (targets search, multi-select, note, preview step, retry remaining destinations) via forward_messages_dialog.dart / chat_view.dart forwardSelection",
+   "flutterEntry": "forward_composer_page.dart (targets search, multi-select, note, preview step, retry remaining destinations; join banner + Join, Send held until joined, Joint-channel exposure warning via forward_warnings.dart) via forward_messages_dialog.dart / chat_view.dart forwardSelection",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/forward_composer_page.dart",
@@ -392,11 +392,15 @@
     {
      "file": "apps/raft_flutter/lib/features/forward_composer_page.dart",
      "needle": "Select multiple"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/forward_warnings.dart",
+     "needle": "Join {targets} before forwarding."
     }
    ],
-   "justification": "Flutter joins un-joined public channels silently on Send; Web shows a 'Join selected public channels' banner/button and a confirm-on-second-Send step, and shows a Joint-channel exposure warning banner ('Joint channel destinations may expose this forwarded snapshot...'). Neither banner exists in Flutter (grep finds no such strings).",
-   "impact": "Users forwarding into un-joined or Joint channels get no consent step or exposure warning; occasional.",
-   "size": "S"
+   "justification": "Web v1.21.23 has no confirm-on-second-Send step: message.forwardComposer.joinWarning is defined in the catalog but nothing renders it. The behaviour is the join banner (Join button) with Send disabled until the public channels are joined, plus the Joint-channel exposure banner; Flutter matches that.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -1204,14 +1208,19 @@
    "area": "messages",
    "capability": "Forward dialog banner: 'Join {targets} before forwarding' with Join button",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "ForwardComposerWarnings joinTargetCount banner",
    "gate": "destinations not joined",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter forward_composer_page.dart joins on Send without the banner/confirmation.",
-   "impact": "Occasional forward into un-joined public channels.",
-   "size": "S"
+   "flutterEntry": "forward_warnings.dart forwardWarningBanners (banner + Join), wired into forward_composer_page.dart (desktop dialog and phone note page)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/forward_warnings.dart",
+     "needle": "forward-join-selected-channels"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -1219,14 +1228,19 @@
    "area": "messages",
    "capability": "Forward dialog warning that Joint channel destinations may expose the forwarded snapshot outside this server",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "ForwardComposerWarnings hasJointDestination banner",
    "gate": "a selected destination is a Joint channel",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "String 'Joint channel destinations may expose...' does not exist in Flutter.",
-   "impact": "Privacy consent when forwarding into Joint channels.",
-   "size": "S"
+   "flutterEntry": "forward_warnings.dart forwardWarningBanners (hasJointDestination)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/forward_warnings.dart",
+     "needle": "Joint channel destinations may expose"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

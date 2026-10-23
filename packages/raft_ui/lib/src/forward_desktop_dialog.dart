@@ -47,10 +47,14 @@ class RaftForwardDesktopDialog extends StatelessWidget {
     this.onClear,
     this.showClear = false,
     this.error,
+    this.warnings = const [],
   });
 
   final String title, subtitle, selectedLabel, noteLabel;
   final String? clearLabel, error;
+
+  /// Banners above the preview (Web `{warnings}`: join, Joint Channel).
+  final List<Widget> warnings;
 
   /// The header close action.
   final Widget close;
@@ -206,7 +210,16 @@ class RaftForwardDesktopDialog extends StatelessWidget {
                               padding: const EdgeInsets.all(12),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [preview],
+                                children: [
+                                  for (final warning in warnings)
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 12,
+                                      ),
+                                      child: warning,
+                                    ),
+                                  preview,
+                                ],
                               ),
                             ),
                           ),

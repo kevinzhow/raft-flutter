@@ -16,6 +16,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'channel_footer_states.dart' show jointChannelReadOnly;
 import 'forward_messages_dialog.dart';
+import 'forward_warnings.dart';
 import 'private_route_guard.dart';
 import 'sender_avatar_projection.dart';
 
@@ -30,9 +31,16 @@ class _Destination {
   final String key, label;
   final RaftChannel? channel;
   final Map<String, dynamic>? search;
+
+  /// Web `resolvedChannelId`: the join banner's Join took this public channel.
+  bool joined = false;
   String? get channelId =>
       channel?.id ??
       (search?['channelId'] is String ? search!['channelId'] : null);
+
+  /// Web `hasJointDestination` input: a Joint Channel, listed or searched.
+  bool get isJoint =>
+      channel?.type == 'joint' || search?['channelType'] == 'joint';
 }
 
 /// `targetLabel`: `@peer` for DMs, `#name` otherwise.
@@ -182,6 +190,10 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
   late bool multi = widget.desktop;
   bool preview = false, loading = false, failed = false;
   bool busy = false;
+
+  /// Web `joinInFlight`: the join banner's Join is running.
+  bool joining = false;
+  bool get locked => busy || joining;
   // The failed forward. Bound to the destination selection it failed for: Web
   // resets the note composer (and its banner) when the destinations change,
   // so a banner about other destinations must not stay. A new send clears it.
@@ -269,8 +281,62 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     }
   }
 
+  /// Web `channelLocalMembership`: the user is already in this channel.
+  bool locallyJoined(Object? channelId) =>
+      channelId is String &&
+      w.channels.any((c) => c.id == channelId && c.joined);
+
+  /// Web `joinTargets`: selected public channels from search that still need a
+  /// join before the forward.
+  List<_Destination> get joinTargets => [
+    for (final d in selected.values)
+      if (d.search?['requiredAction'] == 'join_channel' &&
+          !d.joined &&
+          !locallyJoined(d.search?['channelId']))
+        d,
+  ];
+
+  bool get hasJointDestination => selected.values.any((d) => d.isJoint);
+
+  /// Web `joinSelectedChannels`: join every pending public channel at once,
+  /// then report the ones that failed.
+  Future<void> joinSelected() async {
+    final targets = joinTargets;
+    if (!current || locked || targets.isEmpty) return;
+    setState(() => joining = true);
+    final outcomes = await Future.wait([
+      for (final d in targets)
+        () async {
+          final id = d.search?['channelId'];
+          if (id is! String) return false;
+          try {
+            await w.command('POST', '/channels/$id/join');
+            return true;
+          } catch (e) {
+            logUserError(e, where: 'forward join channel');
+            return false;
+          }
+        }(),
+    ]);
+    if (!mounted || !current) return;
+    final labels = [for (final d in targets) d.label];
+    final failed = outcomes.where((ok) => !ok).length;
+    setState(() {
+      joining = false;
+      for (final (i, d) in targets.indexed) {
+        if (outcomes[i]) d.joined = true;
+      }
+    });
+    if (failed > 0) {
+      showRaftToast(
+        context,
+        forwardJoinFailureMessage(context, labels: labels, failed: failed),
+      );
+    }
+  }
+
   void choose(_Destination d) {
-    if (busy) return;
+    if (locked) return;
     // The row (tabIndex 0) takes focus from the search input on Web, which
     // also closes the soft keyboard.
     searchFocus.unfocus();
@@ -288,9 +354,11 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     });
   }
 
-  /// Joins / opens a DM for search rows that need it, then forwards.
+  /// Opens a DM for search rows that need it, then forwards.
   Future<bool> send() async {
-    if (!current || busy || selected.isEmpty) return false;
+    if (!current || locked || selected.isEmpty || joinTargets.isNotEmpty) {
+      return false;
+    }
     setState(() {
       busy = true;
       errorNotice.clear();
@@ -303,10 +371,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
             d.channelId != null && target['requiredAction'] == null) {
           continue;
         }
-        if (target['requiredAction'] == 'join_channel' &&
-            target['channelId'] is String) {
-          await w.command('POST', '/channels/${target['channelId']}/join');
-        } else if (target['requiredAction'] == 'create_dm') {
+        if (target['requiredAction'] == 'create_dm') {
           final created = await w.command(
             'POST',
             '/channels/dm',
@@ -366,9 +431,9 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
 
   @override
   Widget build(BuildContext context) => PopScope(
-    canPop: !busy,
+    canPop: !locked,
     onPopInvokedWithResult: (didPop, _) {
-      if (!didPop && preview && !busy) setState(() => preview = false);
+      if (!didPop && preview && !locked) setState(() => preview = false);
     },
     child: widget.desktop
         ? desktopDialog()
@@ -431,6 +496,24 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
     };
   }
 
+  /// ForwardComposerWarnings: the join banner and the Joint Channel warning.
+  List<Widget> warningBanners() => forwardWarningBanners(
+    context,
+    joinLabels: [for (final d in joinTargets) d.label],
+    joining: joining,
+    onJoin: joinSelected,
+    hasJointDestination: hasJointDestination,
+  );
+
+  /// The Send button's tooltip: Web `submitDisabledReason`, else "Send forward".
+  String submitTooltip() =>
+      forwardSubmitDisabledReason(
+        context,
+        hasSelection: selected.isNotEmpty,
+        joinReady: joinTargets.isEmpty,
+      ) ??
+      raftText(context, 'Send forward');
+
   /// ForwardComposerDesktop.tsx: the two-pane dialog card.
   Widget desktopDialog() {
     final query = search.text.trim();
@@ -442,7 +525,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       }),
       close: RaftCloseButton(
         tooltip: 'Close forward composer',
-        onPressed: busy ? null : () => Navigator.of(context).pop(false),
+        onPressed: locked ? null : () => Navigator.of(context).pop(false),
       ),
       search: RaftForwardDesktopSearch(
         controller: search,
@@ -455,7 +538,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
       }),
       showClear: selected.isNotEmpty,
       clearLabel: raftText(context, 'Clear'),
-      onClear: busy ? null : () => setState(selected.clear),
+      onClear: locked ? null : () => setState(selected.clear),
       rows: query.isEmpty
           ? [
               for (final c in forwardRecentTargets(w.channels, w.dms))
@@ -463,6 +546,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
             ]
           : searchRows(),
       error: error,
+      warnings: warningBanners(),
       preview: RaftForwardedBundle(
         metadata: previewMetadata,
         formatTimestamp: forwardStamp(),
@@ -475,11 +559,11 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
         variant: RaftComposerVariant.compact,
         hint: raftText(context, 'Add a note'),
         hasAttachments: true,
-        canSend: selected.isNotEmpty,
+        canSend: selected.isNotEmpty && joinTargets.isEmpty,
         bottomSafeInset: 0,
-        enabled: !busy,
+        enabled: !locked,
         submitBusy: busy,
-        submitTooltip: raftText(context, 'Send forward'),
+        submitTooltip: submitTooltip(),
         initialDraft: note.text,
         onDraftChanged: (text) => note.text = text,
         onSend: (text) {
@@ -504,7 +588,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
               ? RaftForwardIconAction(
                   glyph: RaftGlyph.undo2,
                   tooltip: raftText(context, 'Cancel'),
-                  onPressed: busy
+                  onPressed: locked
                       ? null
                       : () => setState(() {
                           selected.clear();
@@ -514,7 +598,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
               : RaftForwardIconAction(
                   glyph: RaftGlyph.arrowLeft,
                   tooltip: raftText(context, 'Close forward target selection'),
-                  onPressed: busy
+                  onPressed: locked
                       ? null
                       : () => Navigator.of(context).pop(false),
                 ),
@@ -525,7 +609,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
                   glyph: RaftGlyph.check,
                   accent: true,
                   tooltip: raftText(context, 'Done'),
-                  onPressed: selected.isEmpty || busy
+                  onPressed: selected.isEmpty || locked
                       ? null
                       : () => setState(() => preview = true),
                 )
@@ -599,6 +683,13 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
               r['canForwardNow'] != true && r['requiredAction'] == null;
           final type = r['type'];
           final action = r['requiredAction'];
+          // Web `resolvedChannelId`: a joined channel or an existing DM no
+          // longer reads "Not joined" / "New DM".
+          final resolved =
+              selected[key]?.joined == true ||
+              (action == 'join_channel' && locallyJoined(r['channelId'])) ||
+              (action == 'create_dm' &&
+                  w.dms.any((c) => c.json['peerId'] == r['id']));
           return RaftForwardTargetRow(
             key: ValueKey('forward-search-target-$type-${r['id']}'),
             icon: forwardTargetIcon(
@@ -619,7 +710,8 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
             checkboxDisabled:
                 !selected.containsKey(key) && selected.length >= 10,
             unavailable: unavailable,
-            trailing: action == 'join_channel' || action == 'create_dm'
+            trailing:
+                !resolved && (action == 'join_channel' || action == 'create_dm')
                 ? RaftForwardTargetBadge(
                     glyph: action == 'join_channel'
                         ? RaftGlyph.logIn
@@ -676,7 +768,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
           leading: RaftForwardIconAction(
             glyph: RaftGlyph.arrowLeft,
             tooltip: raftText(context, 'Back to destinations'),
-            onPressed: busy ? null : () => setState(() => preview = false),
+            onPressed: locked ? null : () => setState(() => preview = false),
           ),
           title: raftText(context, 'Add a note'),
           subtitle: raftFormat(context, 'Send to {targets}', {
@@ -686,6 +778,7 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
         Expanded(
           child: RaftForwardPreviewStep(
             error: error,
+            warnings: warningBanners(),
             previewLabel: raftText(context, 'Message preview'),
             preview: RaftForwardedBundle(
               metadata: previewMetadata,
@@ -702,10 +795,11 @@ class _ForwardComposerPageState extends State<ForwardComposerPage> {
               hint: raftText(context, 'Add a note'),
               autofocus: true,
               hasAttachments: true,
+              canSend: joinTargets.isEmpty,
               bottomSafeInset: 0,
-              enabled: !busy && attempt == null,
+              enabled: !locked && attempt == null,
               submitBusy: busy,
-              submitTooltip: raftText(context, 'Send forward'),
+              submitTooltip: submitTooltip(),
               initialDraft: note.text,
               onDraftChanged: (text) => note.text = text,
               onSend: (text) {
