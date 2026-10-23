@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:sqlite3/sqlite3.dart' show SqliteException;
 import 'package:drift/isolate.dart' show DriftRemoteException;
+import 'package:raft_client/raft_client.dart' show RaftApiException;
 
 import 'history_capacity.dart';
 import 'message_history.dart' show HistoryReadRetired;
@@ -19,7 +20,8 @@ enum LocalErrorNotice {
   retired('Local history changed while loading. Try again.'),
   full(
     'Device message storage is full. Increase the message history limit in Storage settings.',
-  );
+  ),
+  syncFailed('Message history could not be synced.');
 
   const LocalErrorNotice(this.message);
   final String message;
@@ -58,6 +60,8 @@ class LocalErrorDiagnostics {
         ? LocalErrorNotice.retired
         : cause is HistoryCapacityExceeded
         ? LocalErrorNotice.full
+        : cause is RaftApiException
+        ? LocalErrorNotice.syncFailed
         : LocalErrorNotice.saveFailed;
     record(cause, trace, operation: operation, notice: notice);
     return notice.message;
@@ -99,7 +103,9 @@ class LocalErrorDiagnostics {
       source = source.remoteCause;
     }
     final fields = <String, Object?>{
-      'code': 'local-storage.${notice.name}',
+      'code': notice == LocalErrorNotice.syncFailed
+          ? 'message-history.syncFailed'
+          : 'local-storage.${notice.name}',
       'operation': operation.name,
       'type': _type(source),
       if (!identical(source, cause)) 'wrapperType': _type(cause),
@@ -107,6 +113,9 @@ class LocalErrorDiagnostics {
         'sqliteResultCode': source.resultCode,
         'sqliteExtendedCode': source.extendedResultCode,
       },
+      if (source case RaftApiException(status: final int status)
+          when status >= 100 && status <= 599)
+        'httpStatus': status,
       'frames': _frames(trace),
       if (remoteFrames.isNotEmpty)
         'remoteFrames': remoteFrames.toSet().take(12).toList(),

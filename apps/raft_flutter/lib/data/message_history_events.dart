@@ -22,11 +22,15 @@ class MessageHistoryEvents {
   ) {
     final w = host.messageDomain;
     if (cause is HistoryCapacityExceeded) return;
+    if (cause is RaftApiException && cause.staleScope) return;
     final message = MessageHistoryPages.saveError(
       cause,
       trace: trace,
       operation: operation,
     );
+    // An unvisited conversation may need authorized HTTP reads. Keep a failed
+    // background lookup for replay without misreporting a device write error.
+    if (cause is RaftApiException) return;
     if (w.presentation.error != null) return;
     w.presentation.assignError(message);
     w.context.changed();
@@ -300,14 +304,22 @@ class MessageHistoryEvents {
     var highest = BigInt.zero;
     for (final entry in grouped.entries) {
       if (!current()) return false;
-      final scope = await _scope(
-        w,
-        db,
-        entry.key,
-        current,
-        row: entry.value.first,
-        updateOnly: updateOnly,
-      );
+      MessageHistoryScope? scope;
+      try {
+        scope = await _scope(
+          w,
+          db,
+          entry.key,
+          current,
+          row: entry.value.first,
+          updateOnly: updateOnly,
+        );
+      } on RaftApiException {
+        // An empty later replay cannot prove these scopes were persisted or
+        // revoked. Retain their identities until they are resolved.
+        unresolved?.call();
+        rethrow;
+      }
       if (!current()) return false;
       if (scope == null) {
         if (updateOnly) continue;
