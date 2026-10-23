@@ -319,6 +319,12 @@ class ImageZoomSurfaceState extends State<ImageZoomSurface>
   void _animateTo(ImageZoomState target) {
     _from = imageZoomStateOf(widget.controller.value);
     _to = _clamped(target);
+    // Web ImageZoom: reduced motion jumps to the zoom instead of animating.
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _stopAnimation();
+      widget.controller.value = imageZoomMatrix(_to!);
+      return;
+    }
     _animation.forward(from: 0);
   }
 

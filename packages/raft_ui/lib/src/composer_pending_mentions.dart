@@ -1,3 +1,5 @@
+import 'reduced_motion.dart';
+
 import 'package:flutter/material.dart';
 
 import 'banner.dart';
@@ -300,7 +302,7 @@ class RaftPendingMentionActionStrip extends StatelessWidget {
     return AnimatedOpacity(
       key: ValueKey('pending-mention-${action.resolutionId}'),
       opacity: removing.contains(action.resolutionId) ? 0 : 1,
-      duration: const Duration(milliseconds: 300),
+      duration: raftMotionDuration(context, const Duration(milliseconds: 300)),
       child: wide
           ? Row(
               children: [

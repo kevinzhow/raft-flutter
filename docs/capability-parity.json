@@ -15658,19 +15658,27 @@
    "area": "global-ui",
    "capability": "Respect OS reduced-motion setting for animations",
    "background": false,
-   "status": "partial",
-   "webEntry": "index.css @media (prefers-reduced-motion) and components/ImageZoom.ts",
+   "status": "covered",
+   "webEntry": "index.css @media (prefers-reduced-motion) for the reaction-count bump, the onboarding reveals / pops, the notification-activation progress and the bulk-model step; components/ImageZoom.ts (jumps instead of animating); three Tailwind `motion-reduce:transition-none` spots (bulk-model height, machine agent row, recovery-guide chevron). Web applies it to those sites only, not app-wide.",
    "gate": "",
-   "flutterEntry": "MediaQuery.disableAnimationsOf honoured in a few places (mounted_reaction_recipe.dart, chat_composition.dart, source_channel_files_view.dart, mobile_workspace_pages.dart) but not app-wide",
+   "flutterEntry": "MediaQuery.disableAnimationsOf at every Web site (mounted_reaction_recipe.dart, bulk_model_step_body.dart, attachment_image_zoom.dart ImageZoomSurface._animateTo jumps, settings_administration.dart chevron) and wider than Web: raft_ui's reduced_motion.dart raftMotionDuration (the lightbox and preview-shell side panels, the composer attachment remove and pending-mention fades), the typing dots hold still (flutter_chat_ui is_typing.dart), the timeline scrollbar hover fade, media browser, sidebar disclosure, switches, tooltips and hover cards",
    "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/reduced_motion.dart",
+     "needle": "Duration raftMotionDuration("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/attachment_image_zoom.dart",
+     "needle": "Web ImageZoom: reduced motion jumps to the zoom"
+    },
     {
      "file": "packages/raft_ui/lib/src/mounted_reaction_recipe.dart",
      "needle": "disableAnimationsOf"
     }
    ],
-   "justification": "Breadth unverified; many raft_ui transitions have no reduced-motion branch.",
-   "impact": "Users with vestibular sensitivity; low frequency.",
-   "size": "M"
+   "justification": "Web's breadth was verified in the v1.21.23 source: a handful of CSS animations, ImageZoom and three transition-none spots; the app honours the system setting at all of them and at the one-off transitions listed. Whether the setting reaches the app is up to each platform's Flutter embedder (checked in widget tests, not on devices).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -15681,7 +15689,7 @@
    "status": "partial",
    "webEntry": "Web: automatic via deploy + AppRefreshRequired flow above; desktop shell updates natively",
    "gate": "",
-   "flutterEntry": "AppUpdateService build-manifest check drives a red dot; macOS/Windows 'Update now' (Sparkle/WinSparkle), Linux AppImage 'Update now' (zsync delta download, restart to finish), other platforms 'View release' opens the release page",
+   "flutterEntry": "AppUpdateService build-manifest check drives a red dot on Android (android-arm64 manifest), macOS, Windows and the Linux AppImage; macOS/Windows 'Update now' (Sparkle/WinSparkle), Linux AppImage 'Update now' (zsync delta download, restart to finish), Android and the other builds 'View release' opens the release page",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_settings.dart",
@@ -15692,9 +15700,9 @@
      "needle": "class AppUpdateService"
     }
    ],
-   "justification": "Linux/Android/iOS require manual install of the release.",
-   "impact": "Linux/Android sideload users get the dot but must download manually; store users get store updates.",
-   "size": "M"
+   "justification": "Checked for v1.21.23: discovery already exists on every platform that has a release channel in this repository. iOS is distributed outside GitHub releases and a distro Linux package updates through its package manager, so neither has a manifest to compare. What stays manual is the Android install: an in-app APK download and install would need REQUEST_INSTALL_PACKAGES, a signature check and the system confirmation, and the repository's own policy (AGENTS.md) forbids implicit installs; it is a product decision, not a parity gap, because Web has no in-app updater.",
+   "impact": "Android sideload users see the dot and install the APK from the release page themselves; store users get store updates.",
+   "size": "S"
   },
   {
    "kind": "ui",
@@ -16201,27 +16209,35 @@
    "area": "global-ui",
    "capability": "Drag-resizable panels with remembered widths: sidebar (180-320), thread column (360..60% viewport), profile panel (300-600), legacy task panel, search rail (+ compact), agent workspace file tree",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "hooks/useResizablePanel.ts (localStorage slock:sidebarWidth, slock:threadPanelWidth, slock:profilePanelWidth, slock:legacyTaskPanelWidth, slock:searchPanelWidth, slock:searchPanelCompactWidth, slock:workspaceTreeWidth, slock:publicServer:*) + lib/panelBounds.ts",
    "gate": "",
-   "flutterEntry": "workspace_view.dart persists sidebarWidth, threadWidth, masterWideWidth, masterCompactWidth (raft.layout.*); the public server page persists its channel, settings and thread widths (public_server_panels.dart, the Web slock:publicServer:* keys). Profile panel is a fixed 380 (adaptive_workspace.dart profileWidth) with no resize/persist; no agent file-tree width",
+   "flutterEntry": "workspace_view.dart persists sidebarWidth, threadWidth, masterWideWidth, masterCompactWidth (raft.layout.*); the profile panel docks at panel_width_store.dart profilePanelWidth (300..600, 380, raft.layout.profileWidth) with a drag handle on its edge (adaptive_workspace.dart profile-resize-handle); the legacy task panel keeps slock:legacyTaskPanelWidth (workspace_task_host.dart); the agent file tree is a RaftSplitPane at workspaceTreeWidth (160..600, 256); the public server page persists its channel, settings and thread widths (public_server_panels.dart, the Web slock:publicServer:* keys)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
      "needle": "raft.layout.threadWidth"
     },
     {
+     "file": "apps/raft_flutter/lib/features/panel_width_store.dart",
+     "needle": "class PanelWidthStore"
+    },
+    {
      "file": "packages/raft_ui/lib/src/adaptive_workspace.dart",
-     "needle": "this.profileWidth = 380"
+     "needle": "profile-resize-handle"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/split_pane.dart",
+     "needle": "class RaftSplitPane"
     },
     {
      "file": "apps/raft_flutter/lib/features/public_server_panels.dart",
      "needle": "slock:publicServer:threadPanelWidth"
     }
    ],
-   "justification": "Sidebar, thread and Activity/Search master columns and the public page columns resize and persist; profile panel, legacy task panel and agent file tree widths do not.",
-   "impact": "Desktop users with wide profile/agent panels; cosmetic.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -16360,20 +16376,23 @@
    "area": "global-ui",
    "capability": "Clicking a Raft https link (https://app.raft.build/s/:slug/channel|dm/:id?msg=..., invite, settings) in the browser/chat apps opens it in the installed app",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "Web is the destination of those URLs; permalinks are produced by MessageItem.tsx handleCopyLink -> buildMessagePermalink (shared/raftPermalinks.ts)",
    "gate": "",
-   "flutterEntry": "Flutter registers only the custom scheme raft:// (raft://v1/servers/..., raft://v1/join/..., raft://oauth/callback) in AndroidManifest/Info.plist; no Android App Links / iOS Universal Links / macOS associated domains for app.raft.build, so https links open the website",
+   "flutterEntry": "App side done and switched off: platform/raft_app_links.dart RaftAppLinks (compile-time RAFT_APP_LINKS, default false) says which https links of the production hosts the app takes (message links and invites) and content_coordinator.dart routes them like raft:// links (invite page, content authorization, kept until the account is restored); AndroidManifest.xml carries the autoVerify filter commented out; no entitlement. docs/deployment.md lists what the Raft domain must host (assetlinks.json, apple-app-site-association).",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/platform/content_target.dart",
      "needle": "static ContentTarget? parse("
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/raft_app_links.dart",
+     "needle": "abstract final class RaftAppLinks"
     }
    ],
-   "justification": "android/app/src/main/AndroidManifest.xml has no https intent-filter; ios/macos Info.plist declare URL schemes only.",
-   "impact": "Every mobile user who taps a shared message link or invite link: lands in the browser/web app instead of the native app; frequent.",
-   "size": "M",
-   "topGap": 3
+   "justification": "Waiting on the Raft platform owner: https links can only open the app once https://app.raft.build/.well-known/assetlinks.json and apple-app-site-association are served (not in this repository), plus an Apple signing team for the entitlements. Owner decision 6 (2026-10) is still open; until then no filter or entitlement is enabled and https links open the browser.",
+   "impact": "Every mobile user who taps a shared message link or invite link lands in the browser instead of the native app; frequent. Needs the domain files, not app work.",
+   "size": "S"
   },
   {
    "kind": "ui",

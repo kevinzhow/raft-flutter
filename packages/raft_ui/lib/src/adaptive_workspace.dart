@@ -33,6 +33,8 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
     this.thread,
     this.profile,
     this.profileWidth = 380,
+    this.onProfileWidthChanged,
+    this.profileResizeLabel = 'Resize profile',
     this.onPresentationChanged,
     this.sidebarVisible = true,
     this.mobileNavigation,
@@ -87,6 +89,12 @@ class RaftAdaptiveWorkspace extends StatefulWidget {
   /// when folded.
   final Widget? profile;
   final double profileWidth;
+
+  /// Web `ProfilePanel` is drag-resizable between 300 and 600; the host stores
+  /// the width once a drag ends (or a keyboard step lands).
+  final ValueChanged<double>? onProfileWidthChanged;
+  final String profileResizeLabel;
+  static const profileMinWidth = 300.0, profileMaxWidth = 600.0;
   final void Function(bool mainVisible, bool threadVisible)?
   onPresentationChanged;
 
@@ -181,7 +189,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   bool columns(double conversationWidth, double threadSize) =>
       widget.thread != null &&
       widget.profile != null &&
-      conversationWidth - threadSize - widget.profileWidth >= 320;
+      conversationWidth - threadSize - profileWidth >= 320;
 
   /// Focus mode is in effect: a side thread, no profile panel beside it.
   bool focusedThread(bool split) =>
@@ -297,7 +305,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
               panel(const Key('workspace-thread-panel'), threadSize, thread()),
               panel(
                 const Key('workspace-profile-panel'),
-                widget.profileWidth,
+                profileWidth,
                 profile(),
               ),
             ] else if (split && profileOverThread)
@@ -317,7 +325,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
             else if (split && widget.profile != null)
               panel(
                 const Key('workspace-profile-panel'),
-                widget.profileWidth,
+                profileWidth,
                 profile(),
               ),
           ],
@@ -336,6 +344,12 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
   Widget? retainedSidebar;
   late double sidebarWidth = widget.sidebarWidth.clamp(180, 320);
   late double threadWidth = widget.threadWidth;
+  late double profileWidth = clampProfile(widget.profileWidth);
+
+  static double clampProfile(double value) => value.clamp(
+    RaftAdaptiveWorkspace.profileMinWidth,
+    RaftAdaptiveWorkspace.profileMaxWidth,
+  );
 
   @override
   void didUpdateWidget(RaftAdaptiveWorkspace oldWidget) {
@@ -353,12 +367,18 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
     if (oldWidget.threadWidth != widget.threadWidth) {
       threadWidth = widget.threadWidth;
     }
+    if (oldWidget.profileWidth != widget.profileWidth) {
+      profileWidth = clampProfile(widget.profileWidth);
+    }
   }
 
   void resizeSidebar(double value) {
     setState(() => sidebarWidth = value.clamp(180, 320));
     widget.onPanelWidthsChanged?.call(sidebarWidth, threadWidth);
   }
+
+  void resizeProfile(double value) =>
+      setState(() => profileWidth = clampProfile(value));
 
   void resizeThread(double value, double maximum) {
     setState(() => threadWidth = value.clamp(360, maximum));
@@ -547,7 +567,7 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
             Positioned(
               right:
                   (columns(conversationWidth, actualThread)
-                      ? widget.profileWidth
+                      ? profileWidth
                       : 0) +
                   actualThread -
                   4 +
@@ -563,6 +583,33 @@ class _RaftAdaptiveWorkspaceState extends State<RaftAdaptiveWorkspace> {
                 value: actualThread,
                 reversed: true,
                 onChanged: (value) => resizeThread(value, threadMax),
+              ),
+            ),
+          // The profile panel docked at the far edge (beside the thread, or
+          // alone): its own edge is the handle.
+          if (sideThread &&
+              widget.profile != null &&
+              (widget.thread == null ||
+                  columns(conversationWidth, actualThread)))
+            Positioned(
+              right:
+                  profileWidth -
+                  4 +
+                  widget.trailingExtent +
+                  (onRight
+                      ? railWidth + (widget.sidebarVisible ? sidebarWidth : 0)
+                      : 0),
+              top: 0,
+              bottom: 0,
+              width: 8,
+              child: RaftPanelResizeHandle(
+                key: const Key('profile-resize-handle'),
+                label: widget.profileResizeLabel,
+                value: profileWidth,
+                reversed: true,
+                onChanged: resizeProfile,
+                onChangeEnd: () =>
+                    widget.onProfileWidthChanged?.call(profileWidth),
               ),
             ),
         ],

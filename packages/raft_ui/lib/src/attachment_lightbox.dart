@@ -1,3 +1,5 @@
+import 'reduced_motion.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -368,7 +370,10 @@ class RaftAttachmentLightbox extends StatelessWidget {
         children: [
           Expanded(child: stage),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: raftMotionDuration(
+              context,
+              const Duration(milliseconds: 300),
+            ),
             curve: Curves.easeInOut,
             width: asideOpen ? raftLightboxAsideWidth : 0,
             child: asideOpen

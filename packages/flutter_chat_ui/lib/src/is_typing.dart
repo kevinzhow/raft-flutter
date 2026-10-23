@@ -33,6 +33,25 @@ class IsTypingIndicator extends StatefulWidget {
 class _IsTypingIndicatorState extends State<IsTypingIndicator>
     with TickerProviderStateMixin {
   late List<AnimationController> _controllers;
+  late List<CurvedAnimation> _curves;
+  bool _reduced = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduced motion: the dots hold still instead of bouncing for as long as
+    // someone is typing.
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    if (reduced == _reduced) return;
+    _reduced = reduced;
+    if (reduced) {
+      for (final controller in _controllers) {
+        controller.stop();
+      }
+    } else if (!_controllers.any((controller) => controller.isAnimating)) {
+      _controllers[0].forward();
+    }
+  }
 
   @override
   void initState() {
@@ -41,6 +60,11 @@ class _IsTypingIndicatorState extends State<IsTypingIndicator>
       3,
       (index) => AnimationController(vsync: this, duration: widget.duration),
     );
+
+    _curves = [
+      for (final controller in _controllers)
+        CurvedAnimation(parent: controller, curve: Curves.easeOut),
+    ];
 
     _controllers[0].forward();
 
@@ -71,6 +95,9 @@ class _IsTypingIndicatorState extends State<IsTypingIndicator>
 
   @override
   void dispose() {
+    for (final curve in _curves) {
+      curve.dispose();
+    }
     for (final controller in _controllers) {
       controller.dispose();
     }
@@ -88,14 +115,21 @@ class _IsTypingIndicatorState extends State<IsTypingIndicator>
         mainAxisAlignment: MainAxisAlignment.center,
         spacing: widget.spacing,
         children: List.generate(3, (index) {
+          if (_reduced) {
+            return Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: BoxDecoration(
+                color: dotColor,
+                shape: BoxShape.circle,
+              ),
+            );
+          }
           return SlideTransition(
-            position: Tween<Offset>(begin: Offset(0, 0), end: Offset(0, -0.5))
-                .animate(
-                  CurvedAnimation(
-                    parent: _controllers[index],
-                    curve: Curves.easeOut,
-                  ),
-                ),
+            position: Tween<Offset>(
+              begin: Offset(0, 0),
+              end: Offset(0, -0.5),
+            ).animate(_curves[index]),
             child: Container(
               width: widget.size,
               height: widget.size,

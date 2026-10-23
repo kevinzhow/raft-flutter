@@ -198,6 +198,8 @@ export 'src/mounted_task_chip.dart';
 
 export 'src/popover_surface.dart';
 export 'src/conversation_finder.dart';
+export 'src/reduced_motion.dart';
+export 'src/split_pane.dart';
 export 'src/quick_switcher.dart';
 export 'src/announcement_markdown.dart';
 export 'src/announcement_modal.dart';

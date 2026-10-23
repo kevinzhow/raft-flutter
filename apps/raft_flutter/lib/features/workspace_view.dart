@@ -70,6 +70,7 @@ import 'member_profile_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
+import 'panel_width_store.dart';
 import 'sidebar_conversation_finder.dart';
 import 'sidebar_projection.dart';
 import 'activity_first_unread.dart';
@@ -1816,6 +1817,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
                           onPanelWidthsChanged: savePanels,
                           sidebarResizeLabel: tr('Resize sidebar'),
                           threadResizeLabel: tr('Resize thread'),
+                          profileWidth: profilePanelWidth.value,
+                          onProfileWidthChanged: profilePanelWidth.save,
+                          profileResizeLabel: tr('Resize profile'),
                           sidebarVisible: DesktopNavigationPolicy.forSection(
                             route,
                           ).usesConversationSidebar,

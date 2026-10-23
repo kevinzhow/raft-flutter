@@ -40,6 +40,7 @@ import 'message_body.dart' show RaftMessageBody;
 import 'product_empty_state.dart';
 import 'recipe_surface.dart'
     show RaftCssBoxDecoration, RaftCssOverflowY, RaftRecipeBox, raftCssText;
+import 'split_pane.dart';
 import 'theme.dart';
 import 'tooltip.dart';
 import 'status_bar.dart';
@@ -1967,12 +1968,23 @@ class RaftWorkspaceTreeView extends StatelessWidget {
     this.onToggleHidden,
     this.onRefresh,
     this.preview,
+    this.treeWidth = 256,
+    this.onTreeWidthChanged,
+    this.treeResizeLabel = 'Resize file tree',
   });
 
   /// `isFinalLoadError`: a failure a retry cannot fix and that leaves no
   /// Computer path to show (an archived workspace deleted from its Computer):
   /// no path bar and no Retry.
   final bool errorFinal;
+
+  /// Web `useResizablePanel("slock:workspaceTreeWidth", 160..600, 256)`: the
+  /// tree column of the `md:` split. The host stores the width once a drag
+  /// ends.
+  final double treeWidth;
+  final ValueChanged<double>? onTreeWidthChanged;
+  final String treeResizeLabel;
+  static const treeMinWidth = 160.0, treeMaxWidth = 600.0;
 
   /// Right pane of the `md:` split layout (an open file); when the panel is
   /// wide and this is null the pane shows "Select a file to view".
@@ -2170,58 +2182,57 @@ class RaftWorkspaceTreeView extends StatelessWidget {
         children: [
           ColoredBox(color: panel, child: pathBar),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 256,
-                  decoration: BoxDecoration(
-                    color: panel,
-                    border: Border(
-                      right: t.brutal
-                          ? const BorderSide(color: Colors.black, width: 2)
-                          : BorderSide(color: t.colors['line-muted']!),
+            child: RaftSplitPane(
+              width: treeWidth,
+              minWidth: treeMinWidth,
+              maxWidth: treeMaxWidth,
+              onWidthChanged: onTreeWidthChanged,
+              resizeLabel: treeResizeLabel,
+              start: Container(
+                decoration: BoxDecoration(
+                  color: panel,
+                  border: Border(
+                    right: t.brutal
+                        ? const BorderSide(color: Colors.black, width: 2)
+                        : BorderSide(color: t.colors['line-muted']!),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [treeHeader, treeList],
+                ),
+              ),
+              end:
+                  preview ??
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Opacity(
+                          opacity: .3,
+                          child: RaftIcon(
+                            RaftGlyph.file,
+                            size: 32,
+                            color: t.brutal
+                                ? Colors.black.withValues(alpha: .3)
+                                : placeholder,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        RaftCssText(
+                          raftText(context, 'Select a file to view'),
+                          style: RaftTypography.mono(
+                            t,
+                            size: 14,
+                            line: 20,
+                            color: t.brutal
+                                ? Colors.black.withValues(alpha: .3)
+                                : placeholder,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [treeHeader, treeList],
-                  ),
-                ),
-                Expanded(
-                  child:
-                      preview ??
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Opacity(
-                              opacity: .3,
-                              child: RaftIcon(
-                                RaftGlyph.file,
-                                size: 32,
-                                color: t.brutal
-                                    ? Colors.black.withValues(alpha: .3)
-                                    : placeholder,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            RaftCssText(
-                              raftText(context, 'Select a file to view'),
-                              style: RaftTypography.mono(
-                                t,
-                                size: 14,
-                                line: 20,
-                                color: t.brutal
-                                    ? Colors.black.withValues(alpha: .3)
-                                    : placeholder,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                ),
-              ],
             ),
           ),
         ],

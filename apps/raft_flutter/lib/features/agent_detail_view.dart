@@ -41,6 +41,7 @@ import 'agent_runtime_labels.dart'
     show isRuntimeDeprecated, runtimeLabelWithStatus;
 import 'agent_metadata_projection.dart';
 import 'mcp_views.dart';
+import 'panel_width_store.dart';
 import 'agent_avatar_dialog.dart' show agentProfileAvatarUrl;
 import 'resource_cards.dart' show resourceRelativeTime;
 
@@ -2473,6 +2474,9 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
       error: loadError == null ? null : errorText,
       errorFinal: loadError != null && errorFinal,
       showHidden: showHidden,
+      treeWidth: workspaceTreeWidth.value,
+      onTreeWidthChanged: workspaceTreeWidth.save,
+      treeResizeLabel: raftText(context, 'Resize file tree'),
       onCopyPath: () => Clipboard.setData(ClipboardData(text: path)),
       onToggleHidden: toggleHidden,
       onRefresh: reload,

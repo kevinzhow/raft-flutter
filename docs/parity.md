@@ -2015,3 +2015,16 @@ the window when the gap fills (BP-READ-021, BP-RT-030). Owner decision
 Channel `seq` is sparse in the sync core, so a jump does not prove a missing
 message; the client heals real gaps through the heartbeat, `rooms:joined` and
 resume reads instead.
+
+## Navigation, search and platform vs Web v1.21.23 (cindy/w23-nav): open differences
+
+Not owner decisions yet; each is listed so a reviewer can accept or send it back.
+
+* **Rail memory is wide-layout only.** Web restores the last location of Chat, Tasks, Members, Computers and Settings on every rail press; the app does the same on the desktop rail and keeps the phone tab bar opening tab roots (`docs/source-navigation-contract.md`, PUSH rule 7, owner decision 2026-10-11). A remembered conversation restores its thread beside it but not a `?msg=` highlight.
+* **"Find a conversation" shows on pointer desktops.** Web shows it in the Electron shell only; the desktop app is that shell's counterpart, so Linux, macOS and Windows windows in the wide layout get it, touch platforms and the phone Home list do not. The results float over the sidebar list as in Web; the visual-parity harness hides the box because its browser reference has none.
+* **Window title text is the OS window name, not a strip label.** `#channel | Workspace | Raft` reaches the task switcher and window list through `setTitle`; the title bar strip stays text-free (`docs/desktop-title-bar.md`). The macOS and Windows handlers were written on a Linux machine and are not compiled there. Pages outside a workspace (the Chinese community page, public pages) keep "Raft" until they send a title of their own.
+* **Cross-workspace message links.** A channel link into another workspace of a joint channel opens the local channel (or thread) through `GET /messages/context/:id`, like Web; DM links of another workspace and links with no readable local projection (404) open in the browser as before.
+* **Search continuation time format.** "Searched messages back to {time}" formats the time as medium date plus short time in the display language (`d MMM y, h:mm a` / `y年M月d日 HH:mm`); Web uses the browser's `Intl` medium/short style, which can differ in punctuation.
+* **Reduced motion is wider than Web.** Web applies `prefers-reduced-motion` to a handful of CSS animations, ImageZoom and three `motion-reduce` spots; the app honours the system setting at all of those and at every one-off transition and looping animation it owns.
+* **Update discovery needed no new code.** Android, macOS, Windows and the Linux AppImage already compare a build manifest and show the dot; iOS and distro Linux packages have no release channel here, and an in-app Android install is a product decision (see `ui:global-ui.app-update-discovery`).
+* **Raft https links do not open the app yet.** The app side is built and switched off (`RAFT_APP_LINKS`), waiting on the Raft domain's `assetlinks.json` and `apple-app-site-association` (owner decision 6, still open); `docs/deployment.md` lists what the domain must host.

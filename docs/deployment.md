@@ -9,6 +9,16 @@ This repository builds the **client**. You need a Raft server for it to talk to;
 - Android blocks cleartext HTTP except for three development hosts (`network_security_config.xml`); a public deployment must use HTTPS. Android backup is disabled and local state is excluded from cloud and device-transfer backups.
 - The `raft:` URL scheme (OAuth callback and content links) is registered on Android, macOS, iOS and in the Linux desktop entry.
 
+## Raft https links open the app (not enabled)
+
+Today a tapped `https://app.raft.build/...` link opens the browser: only the `raft:` scheme is registered. The app-side handling for https links is in the code but **off** (`lib/platform/raft_app_links.dart`, compile-time `--dart-define=RAFT_APP_LINKS=true`, default false), and no intent filter or entitlement is enabled, because it cannot work without files served by the Raft domain, which this repository does not own. What the domain has to host (served over HTTPS as `application/json`, with **no redirects**, at the exact paths):
+
+- **Android App Links**: `https://app.raft.build/.well-known/assetlinks.json` with one statement `{"relation": ["delegate_permission/common.handle_all_urls"], "target": {"namespace": "android_app", "package_name": "app.raft.raft_flutter", "sha256_cert_fingerprints": [<SHA-256 of the release signing certificate, uppercase hex with colons>]}}`. The debug key must not be listed. The release certificate is the CI keystore ([Release CI](release-ci.md)); `tool/android-install --check-only` prints an APK's certificate digest.
+- **iOS Universal Links and macOS associated domains**: `https://app.raft.build/.well-known/apple-app-site-association` (no file extension) with `{"applinks": {"details": [{"appIDs": ["<TEAM_ID>.app.raft.raftFlutter"], "components": [{"/": "/s/*/channel/*"}, {"/": "/s/*/dm/*"}, {"/": "/join/*"}]}]}}`. The apps then need the `com.apple.developer.associated-domains` entitlement `applinks:app.raft.build` (`ios/Runner/Runner.entitlements`, the macOS entitlements) and a signing team; neither exists yet.
+- The legacy production host `app.slock.ai` needs the same two files if it should open the app too; staging never claims links.
+
+Then, in one change: uncomment the `autoVerify` filter in `AndroidManifest.xml`, add the entitlements, and build with `RAFT_APP_LINKS=true`. The app takes `/s/<slug>/channel|dm/<id>` (with `?msg=` and `?thread=`) and `/join/<token>` of those hosts; a message link goes through the same authorization as a notification tap, an invite opens the invite page, and a link that arrives before the account is restored waits for it. A link into another workspace of the same account reports "unavailable" (the app does not switch workspace for a link), and any other path stays in the browser. Status: waiting on the platform owner for the domain files (owner decision 6 is still open).
+
 ## Build release artifacts
 
 Run from `apps/raft_flutter` with `../../tool/flutter` and the pinned SDK. Release builds use `--target=lib/main.dart` (the default) and must not include the test defines used by the native test scripts.

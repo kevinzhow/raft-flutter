@@ -1,3 +1,5 @@
+import 'reduced_motion.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -188,7 +190,10 @@ class _RaftAttachmentPreviewShellState
         children: [
           Expanded(child: body),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
+            duration: raftMotionDuration(
+              context,
+              const Duration(milliseconds: 300),
+            ),
             curve: Curves.easeInOut,
             width: open ? raftLightboxAsideWidth : 0,
             child: !mounted_
@@ -221,7 +226,10 @@ class _RaftAttachmentPreviewShellState
           background: t.brutal ? Colors.white : t.panel,
           child: AnimatedContainer(
             key: const ValueKey('attachment-comments-sheet'),
-            duration: const Duration(milliseconds: 300),
+            duration: raftMotionDuration(
+              context,
+              const Duration(milliseconds: 300),
+            ),
             curve: Curves.easeInOut,
             height: height,
             decoration: BoxDecoration(

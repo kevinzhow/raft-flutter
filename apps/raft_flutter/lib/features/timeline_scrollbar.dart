@@ -77,10 +77,12 @@ class _RaftTimelineScrollbarState
   // ds-allow: platform scrollbar chrome; mirrors the Material desktop Scrollbar this replaces (material/scrollbar.dart)
   static const _radius = Radius.circular(8);
 
+  // ds-allow: platform scrollbar chrome; mirrors the Material desktop Scrollbar this replaces (material/scrollbar.dart)
+  static const _hoverDuration = Duration(milliseconds: 200);
+
   late final AnimationController hover = AnimationController(
     vsync: this,
-    // ds-allow: platform scrollbar chrome; mirrors the Material desktop Scrollbar this replaces (material/scrollbar.dart)
-    duration: const Duration(milliseconds: 200),
+    duration: _hoverDuration,
   )..addListener(updateScrollbarPainter);
   bool hovering = false;
   late ColorScheme colors;
@@ -106,6 +108,10 @@ class _RaftTimelineScrollbarState
     // ds-allow: platform scrollbar chrome; mirrors the Material desktop Scrollbar this replaces (material/scrollbar.dart)
     colors = Theme.of(context).colorScheme;
     theme = ScrollbarTheme.of(context);
+    // The hover fade is a change of state, not motion, when it is reduced.
+    hover.duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : _hoverDuration;
     super.didChangeDependencies();
   }
 

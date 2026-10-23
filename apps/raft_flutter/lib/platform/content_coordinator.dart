@@ -5,6 +5,7 @@ import 'dart:io' show stderr;
 import 'package:flutter/widgets.dart'
     show WidgetsBinding, WidgetsBindingObserver, AppLifecycleState;
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import 'package:app_links/app_links.dart';
@@ -19,6 +20,7 @@ import 'app_window.dart';
 import 'live_session_recovery.dart';
 import 'content_target.dart';
 import 'content_links.dart';
+import 'raft_app_links.dart';
 import 'native_notifications.dart';
 import 'background_inbox.dart';
 import 'background_notifications.dart';
@@ -37,10 +39,15 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     this.onIncomingShare,
     MacOSDockUnread? dockUnread,
     WindowsTray? tray,
+    this.appLinks = RaftAppLinks.enabled,
   }) : _providedTray = tray,
        _providedDockUnread = dockUnread,
        notifications = notifications ?? NativeNotificationService();
   final NativeNotificationService notifications;
+
+  /// Raft https links open the app (see [RaftAppLinks]); off until the domain
+  /// serves the association files.
+  final bool appLinks;
   final MacOSDockUnread? _providedDockUnread;
   final WindowsTray? _providedTray;
   late final tray =
@@ -79,6 +86,10 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   bool _closed = false;
   bool _workspaceBindingResolved = false;
   Uri? _pendingLink;
+
+  /// The content link kept until the account is restored.
+  @visibleForTesting
+  Uri? get pendingLink => _pendingLink;
   String? _pendingTap;
   bool _pendingTapInitial = false;
   final Set<String> _delivered = {};
@@ -283,7 +294,8 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     }
     if (notifications.receiveWindowsActivation(uri)) return;
     // raft://v1/join/<token>: an invite opens the invite page, signed in or not.
-    if (uri.scheme == 'raft' && uri.host == 'v1') {
+    final appLink = RaftAppLinks.accepts(uri, on: appLinks);
+    if (uri.scheme == 'raft' && uri.host == 'v1' || appLink) {
       final invite = InviteLink.fromLocation(uri);
       if (invite != null && uri.toString().length <= 2048) {
         InviteRequests.instance.open(invite);
@@ -293,8 +305,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     final w = _workspace;
     if (w == null || w.client.user == null) {
       // Only a bounded content URI can wait for normal account restoration.
-      if (uri.scheme == 'raft' &&
-          uri.host == 'v1' &&
+      if ((uri.scheme == 'raft' && uri.host == 'v1' || appLink) &&
           uri.toString().length <= 2048) {
         _pendingLink = uri;
       }

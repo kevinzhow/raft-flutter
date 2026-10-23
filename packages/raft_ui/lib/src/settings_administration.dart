@@ -571,7 +571,10 @@ class _RaftAdminPrincipalPickerState extends State<RaftAdminPrincipalPicker> {
               const SizedBox(width: 8),
               AnimatedRotation(
                 turns: open ? .25 : 0,
-                duration: const Duration(milliseconds: 150),
+                duration: raftMotionDuration(
+                  context,
+                  const Duration(milliseconds: 150),
+                ),
                 child: RaftIcon(
                   RaftGlyph.chevronRight,
                   size: 14,

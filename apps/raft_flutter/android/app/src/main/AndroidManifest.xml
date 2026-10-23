@@ -62,6 +62,18 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="raft" android:host="v1" android:pathPrefix="/join/" />
             </intent-filter>
+            <!-- Raft https links open the app (Android App Links): NOT enabled.
+                 It needs https://app.raft.build/.well-known/assetlinks.json for
+                 this package and the release key, and the dart define RAFT_APP_LINKS=true
+                 (lib/platform/raft_app_links.dart, docs/deployment.md). Then:
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="app.raft.build" android:pathPrefix="/s/" />
+                <data android:scheme="https" android:host="app.raft.build" android:pathPrefix="/join/" />
+            </intent-filter>
+            -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <action android:name="android.intent.action.SEND_MULTIPLE" />

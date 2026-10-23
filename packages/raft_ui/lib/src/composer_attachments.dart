@@ -3,6 +3,7 @@
 // `<ComposerAttachments>` and the failed-upload alert rows) over the raft-ui
 // `composerAttachment` recipe. The app owns the upload lifecycle and passes a
 // view model; this file never reads files, network or controllers.
+import 'reduced_motion.dart';
 import 'hover_region.dart';
 
 import 'dart:typed_data';
@@ -353,8 +354,10 @@ class _AttachmentChipState extends State<_AttachmentChip> {
       ignoring: !visible,
       child: AnimatedOpacity(
         opacity: visible ? 1 : 0,
-        duration:
-            remove.transitionDuration ?? const Duration(milliseconds: 150),
+        duration: raftMotionDuration(
+          context,
+          remove.transitionDuration ?? const Duration(milliseconds: 150),
+        ),
         curve: remove.transitionCurve ?? Curves.ease,
         child: Semantics(
           button: true,
