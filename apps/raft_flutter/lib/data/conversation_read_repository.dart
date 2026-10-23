@@ -371,8 +371,6 @@ class ConversationReadRepository {
             if (caughtUp ||
                 state != null && state['readStateVersion'] > held.version) {
               queue.dropReceipt(id);
-            } else {
-              next[id] = held.unreadCount;
             }
           }
           // Source rememberLocalReadSuppression: for 30 s after a local read
@@ -385,6 +383,11 @@ class ConversationReadRepository {
             nextMentions.add(id);
           }
           if (entry['hasNew'] == true) nextNew.add(id);
+        }
+        // Held answers keep their count, rows or no rows (Web applies them
+        // after the snapshot).
+        for (final held in queue.receipts) {
+          next[held.key] = held.value.unreadCount;
         }
         unread = next;
         mentions = nextMentions;

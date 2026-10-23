@@ -400,4 +400,18 @@ void main() {
     await w.refreshUnread();
     expect(w.conversationReads.unread['c'], 0);
   });
+
+  test('[BP-READ-033] a held mark-as-unread answer survives a snapshot that carries no frontier for the conversation', () async {
+    final c = _Client();
+    final w = await _open(c);
+    await w.selectChannel(w.channels.single);
+    c.unreadAnswer = {'unreadCount': 2, 'readStateVersion': 6, 'maxReadSeq': 0};
+    c.unreadSnapshot = {
+      'channels': {'c': 0},
+    };
+    await w.conversationReads.markUnread('c');
+    expect(w.conversationReads.unread['c'], 2);
+    await w.refreshUnread();
+    expect(w.conversationReads.unread['c'], 2);
+  });
 }

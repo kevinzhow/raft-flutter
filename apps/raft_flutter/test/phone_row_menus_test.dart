@@ -424,18 +424,29 @@ void main() {
     expect(w.conversationReads.unread['d1'] ?? 0, 0);
   });
 
-  testWidgets('Mark as Unread shows the unread state before the reply', (
-    tester,
-  ) async {
-    await setup(tester);
-    await longPress(tester, row('c1'));
-    expect(find.text('Mark as Unread'), findsOneWidget);
-    await tester.tap(find.text('Mark as Unread'));
-    await tester.pump();
-    expect(w.conversationReads.unread['c1'], greaterThan(0));
-    await tester.pumpAndSettle();
-    expect(posts.map((p) => p['path']), contains('/channels/c1/unread'));
-  });
+  testWidgets(
+    'Mark as Unread shows no invented badge: the unread state is the server answer',
+    (tester) async {
+      await setup(tester);
+      final gate = Completer<void>();
+      api.routes['POST /channels/c1/unread'] = (o) async {
+        posts.add({'path': o.path});
+        await gate.future;
+        return {'unreadCount': 2, 'readStateVersion': 3, 'maxReadSeq': '4'};
+      };
+      await longPress(tester, row('c1'));
+      expect(find.text('Mark as Unread'), findsOneWidget);
+      await tester.tap(find.text('Mark as Unread'));
+      await tester.pump();
+      // Web v1.21.23 markUnread: nothing is shown before the server finds an
+      // eligible message.
+      expect(w.conversationReads.unread['c1'] ?? 0, 0);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(posts.map((p) => p['path']), contains('/channels/c1/unread'));
+      expect(w.conversationReads.unread['c1'], 2);
+    },
+  );
 
   testWidgets('human DM Pin uses a human ref, agent DM an agent ref', (
     tester,
