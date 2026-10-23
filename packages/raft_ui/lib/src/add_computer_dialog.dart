@@ -18,6 +18,8 @@ class RaftAddComputerConnection {
   final String hostname;
   final String? os;
   final bool requiresConfirmation;
+  bool get loadingDetails =>
+      hostname.trim().isEmpty || (os ?? '').trim().isEmpty;
 }
 
 class RaftAddComputerDialog extends StatefulWidget {
@@ -93,6 +95,7 @@ class RaftAddComputerDialog extends StatefulWidget {
 class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   bool waiting = false, registering = false;
   bool confirmedComputerMatch = false, saving = false;
+  bool nameEdited = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next register attempt starts; the dialog state is dropped when it closes.
   String error = '';
   String platform = 'mac-linux';
@@ -101,6 +104,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   bool get connectedStep => widget.connected != null;
   bool get canFinish =>
       connectedStep &&
+      !widget.connected!.loadingDetails &&
       !(widget.connected!.requiresConfirmation && !confirmedComputerMatch);
 
   @override
@@ -113,8 +117,10 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   void didUpdateWidget(RaftAddComputerDialog old) {
     super.didUpdateWidget(old);
     if (old.connected == null && widget.connected != null) {
-      name.text = widget.connected!.hostname;
       confirmedComputerMatch = false;
+    }
+    if (!nameEdited && old.connected?.hostname != widget.connected?.hostname) {
+      name.text = widget.connected?.hostname ?? '';
     }
   }
 
@@ -147,16 +153,46 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
   }
 
   Future<void> cancel() async {
-    await widget.cancel();
-    if (mounted) Navigator.of(context).pop();
+    if (saving) return;
+    setState(() {
+      saving = true;
+      error = '';
+    });
+    try {
+      await widget.cancel();
+      if (mounted) Navigator.of(context).pop();
+    } catch (failure) {
+      if (mounted) {
+        setState(
+          () => error = RaftErrorScope.of(context)(
+            failure,
+            fallback: 'Could not finish computer setup.',
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 
   Future<void> done() async {
     if (!canFinish || saving) return;
-    setState(() => saving = true);
+    setState(() {
+      saving = true;
+      error = '';
+    });
     try {
       await widget.done(name.text.trim());
       if (mounted) Navigator.of(context).pop();
+    } catch (failure) {
+      if (mounted) {
+        setState(
+          () => error = RaftErrorScope.of(context)(
+            failure,
+            fallback: 'Could not finish computer setup.',
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => saving = false);
     }
@@ -208,29 +244,33 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
     );
   }
 
+  List<Widget> _errorBanner() => [
+    if (error.isNotEmpty) ...[
+      // Web `<Banner intent="warning" className="mb-4 font-bold">`; a quota
+      // error ("... limit reached") adds the inline View Plans link.
+      RaftBanner(
+        description: raftText(context, error),
+        descriptionWeight: FontWeight.w700,
+        descriptionTail: error.contains('limit reached')
+            ? (
+                label: raftText(context, 'View Plans'),
+                onPressed: () {
+                  Navigator.of(context).maybePop();
+                  widget.onViewPlans?.call();
+                },
+              )
+            : null,
+        descriptionTailWeight: FontWeight.w700,
+      ),
+      const SizedBox(height: 16),
+    ],
+  ];
+
   Widget _typeStep(RaftTokens t) => Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      if (error.isNotEmpty) ...[
-        // Web `<Banner intent="warning" className="mb-4 font-bold">`; a quota
-        // error ("... limit reached") adds the inline View Plans link.
-        RaftBanner(
-          description: raftText(context, error),
-          descriptionWeight: FontWeight.w700,
-          descriptionTail: error.contains('limit reached')
-              ? (
-                  label: raftText(context, 'View Plans'),
-                  onPressed: () {
-                    Navigator.of(context).maybePop();
-                    widget.onViewPlans?.call();
-                  },
-                )
-              : null,
-          descriptionTailWeight: FontWeight.w700,
-        ),
-        const SizedBox(height: 16),
-      ],
+      ..._errorBanner(),
       Row(
         children: [
           Expanded(
@@ -261,6 +301,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
             label: 'Cancel',
             variant: RaftButtonRecipeVariant.outline,
             size: RaftButtonRecipeSize.md,
+            disabled: saving,
             onPressed: cancel,
           ),
           const SizedBox(width: 12),
@@ -269,7 +310,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
             label: registering ? 'Setting up…' : 'Next',
             variant: RaftButtonRecipeVariant.accent,
             size: RaftButtonRecipeSize.md,
-            disabled: registering,
+            disabled: registering || saving,
             onPressed: next,
           ),
         ],
@@ -283,6 +324,7 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        ..._errorBanner(),
         RaftComputerCommandGuide(
           platform: platform,
           onPlatform: (v) => setState(() => platform = v),
@@ -315,9 +357,10 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             RaftRecipeButton(
-              label: 'Cancel',
+              label: saving ? 'Canceling...' : 'Cancel',
               variant: RaftButtonRecipeVariant.outline,
               size: RaftButtonRecipeSize.md,
+              disabled: saving,
               onPressed: cancel,
             ),
             const SizedBox(width: 12),
@@ -339,20 +382,30 @@ class _RaftAddComputerDialogState extends State<RaftAddComputerDialog> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RaftBanner(
-          status: RaftBannerRecipeStatus.success,
-          title: 'Computer connected successfully!',
-          description: '${m?.hostname ?? ''} — ${m?.os ?? 'Unknown OS'}',
-        ),
+        ..._errorBanner(),
+        if (m!.loadingDetails)
+          const RaftBanner(
+            key: ValueKey('add-computer-details-loading'),
+            status: RaftBannerRecipeStatus.info,
+            description: 'Loading computer details...',
+          )
+        else
+          RaftBanner(
+            status: RaftBannerRecipeStatus.success,
+            title: 'Computer connected successfully!',
+            description: '${m.hostname} — ${m.os}',
+          ),
         const SizedBox(height: 16),
         RaftRecipeInput(
           controller: name,
-          placeholder: m?.hostname ?? 'My Mac',
+          placeholder: m.hostname.trim().isEmpty ? 'Computer name' : m.hostname,
           autofocus: true,
+          enabled: !saving,
+          onChanged: (_) => nameEdited = true,
         ),
         const SizedBox(height: 16),
-        if (m?.requiresConfirmation == true) ...[
-          _confirmComputer(t, m!),
+        if (m.requiresConfirmation) ...[
+          _confirmComputer(t, m),
           const SizedBox(height: 16),
         ],
         Align(

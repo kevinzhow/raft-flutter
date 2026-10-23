@@ -140,6 +140,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
   bool preAdmissionLive = false, preAdmissionLoading = false;
   bool moreOpen = false, busy = false, validationAttempted = false;
   bool runtimesRescanning = false;
+  bool runtimeOptionsLoading = false;
   // ignore: raft_lints/avoid_imperative_notice_state -- Cleared when the next submit starts or the name is edited; the dialog state is dropped when it closes.
   String? error;
   int machineTicket = 0;
@@ -147,6 +148,7 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
   /// A failed runtime rescan: it describes the computer it ran on, so it ends
   /// with a retry, a successful rescan or a switch to another computer.
   late final rescanError = CauseNotice(scope: () => machineTicket);
+  late final runtimeOptionsError = CauseNotice(scope: () => machineTicket);
 
   @override
   void initState() {
@@ -237,6 +239,8 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
       runtime = null;
       form = null;
       runtimeOptions = [];
+      runtimeOptionsLoading = true;
+      runtimeOptionsError.clear();
       preAdmissionModels = null;
       preAdmissionModel = '';
     });
@@ -260,8 +264,21 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
             .firstOrNull;
         selectRuntime((initial ?? options.first)['runtimeId']);
       }
-    } catch (_) {
-      // No admission catalog: the runtime stays unselected ("Select...").
+    } catch (failure) {
+      if (currentAuthority && ticket == machineTicket) {
+        setState(
+          () => runtimeOptionsError.raise(
+            userErrorText(
+              failure,
+              fallback: 'Could not load runtimes. Try again.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (currentAuthority && ticket == machineTicket) {
+        setState(() => runtimeOptionsLoading = false);
+      }
     }
   }
 
@@ -620,6 +637,15 @@ class _CreateAgentDialogState extends State<CreateAgentDialog> {
                   w.setSection('billing');
                 }
               : null,
+        ),
+      if (runtimeOptionsLoading)
+        const Center(key: Key('runtime-options-loading'), child: RaftSpinner())
+      else if (runtimeOptionsError.message case final message?)
+        RaftAgentBanner(
+          status: RaftAgentBannerStatus.warning,
+          description: message,
+          action: 'Retry',
+          onAction: () => selectMachine(machineId!),
         ),
       if (!widget.onboarding)
         RaftStableField(

@@ -2308,6 +2308,24 @@
      "gapKind": "case-missing",
      "size": "S",
      "justification": "The confirmation checkbox prevents renaming an ambiguous or resumed Computer until acknowledged. SDK preview and behavior tests exist; no paired Web capture is registered."
+    },
+    {
+     "state": "loading",
+     "variant": "connected identity awaiting hostname or OS",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "The accepted Computer identity continues to receive directory updates and recovery polls until metadata arrives. The dialog shows loading, preserves user input and prevents incomplete completion. Widget tests and a loading preview cover this state."
+    },
+    {
+     "state": "error",
+     "variant": "name save or placeholder cleanup rejected",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "Failed completion or cancellation remains visible and can be retried without deleting the connected Computer. Widget tests cover retry and reopening; the pinned Web implementation suppresses these failures."
     }
    ]
   },
@@ -3118,6 +3136,32 @@
      "gapKind": "case-missing",
      "size": "S",
      "justification": "Three-theme desktop/phone widget regressions cover opt-in, session dismissal and settings navigation; paired pixel captures are not included. Native OS allow/deny acceptance is recorded separately in the PR."
+    }
+   ]
+  },
+  {
+   "id": "agents.runtime-discovery",
+   "title": "Create Agent runtime discovery",
+   "webEntry": "packages/web/src/components/agent/CreateAgentDialog.tsx",
+   "flutterEntry": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
+   "states": [
+    {
+     "state": "loading",
+     "variant": "runtime options request pending",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "Runtime discovery has an explicit progress indicator while the request is pending; the runtime remains unselected until the response. Behavior is tested without claiming paired Web pixel parity."
+    },
+    {
+     "state": "error",
+     "variant": "runtime discovery failed with retry",
+     "web": "no",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "intentional",
+     "justification": "A transient runtime-options failure is shown with Retry. Retrying reloads options, clears the error and allows normal runtime selection; covered by widget tests."
     }
    ]
   }

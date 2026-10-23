@@ -3,7 +3,9 @@
 // Web AddMachineDialog.tsx + ComputerCommandGuide.tsx).
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
+import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/user_error.dart';
@@ -89,23 +91,47 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
   /// Watch the accepted directory, including an event accepted while the
   /// registration HTTP response was still pending.
   void _directoryChanged() {
-    if (!current || connected != null || registeredId == null) return;
-    final match = resolveComputerConnectionMatch(
-      w.services.entityDirectory.rows(WorkspaceEntityKind.computers),
-      registeredId!,
-      baseline,
-    );
+    if (!current || registeredId == null) return;
+    final rows = w.services.entityDirectory.rows(WorkspaceEntityKind.computers);
+    if (connected case final selected?) {
+      // Latch identity, not a snapshot of a partially hydrated online row.
+      final latest = rows
+          .where((row) => row['id'] == selected['id'])
+          .firstOrNull;
+      if (latest != null && !mapEquals(latest, selected)) {
+        setState(() => connected = Map<String, dynamic>.from(latest));
+      }
+      _watchDetails();
+      return;
+    }
+    final match = resolveComputerConnectionMatch(rows, registeredId!, baseline);
     if (match == null) return;
-    poll?.dispose();
-    poll = null;
     setState(() {
       connected = Map<String, dynamic>.from(match.machine);
       requiresConfirmation = match.requiresConfirmation;
     });
+    _watchDetails();
+  }
+
+  bool get _detailsPending =>
+      connected == null ||
+      '${connected!['hostname'] ?? ''}'.trim().isEmpty ||
+      '${connected!['os'] ?? ''}'.trim().isEmpty;
+
+  void _watchDetails() {
+    if (_detailsPending) {
+      poll ??= RaftForegroundPeriodic(
+        const Duration(seconds: 3),
+        _recoverConnection,
+      );
+    } else {
+      poll?.dispose();
+      poll = null;
+    }
   }
 
   void _recoverConnection() {
-    if (!current || connected != null || registeredId == null) return;
+    if (!current || !_detailsPending || registeredId == null) return;
     unawaited(
       w.services.entityDirectory.refresh(WorkspaceEntityKind.computers),
     );
@@ -142,11 +168,8 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
       }
       registeredId = machine['id'] as String;
       _directoryChanged();
-      if (connected == null) {
-        poll = RaftForegroundPeriodic(
-          const Duration(seconds: 3),
-          _recoverConnection,
-        );
+      if (_detailsPending) {
+        _watchDetails();
         _recoverConnection();
       }
     } on RaftComputerActionError {
@@ -165,20 +188,33 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
 
   Future<void> cancel() async {
     final id = registeredId;
-    if (!current) return;
+    // A failed cleanup can be retried, but a canceled attempt cannot adopt
+    // a later connection or issue commands under a different authority.
+    if (!mounted || retired || openedAuthority != authority) return;
     canceled = true;
     poll?.dispose();
     poll = null;
     if (id != null && connected?['id'] != id) {
-      await _removePlaceholder(id, w.server!.id);
+      await _removePlaceholder(id, w.server!.id, bestEffort: false);
     }
   }
 
-  Future<void> _removePlaceholder(String id, String serverId) async {
+  Future<void> _removePlaceholder(
+    String id,
+    String serverId, {
+    bool bestEffort = true,
+  }) async {
     try {
       await w.command('DELETE', '/servers/$serverId/machines/$id');
-    } catch (_) {
-      // Best effort, like the Web dialog.
+    } catch (error) {
+      // A successful previous DELETE may have lost its response.
+      if (error is RaftApiException && error.status == 404) return;
+      if (!bestEffort) {
+        throw RaftComputerActionError(
+          userErrorText(error, fallback: 'Could not finish computer setup.'),
+        );
+      }
+      // Only a late registration response after disposal is best effort.
     }
   }
 
@@ -193,12 +229,16 @@ class _AddComputerDialogState extends State<AddComputerDialog> {
           '/servers/$serverId/machines/$id',
           data: {'name': name},
         );
-      } catch (_) {}
+      } catch (error) {
+        throw RaftComputerActionError(
+          userErrorText(error, fallback: 'Could not save computer name.'),
+        );
+      }
     }
     if (!current) return;
     final placeholder = registeredId;
     if (placeholder != null && placeholder != id) {
-      await _removePlaceholder(placeholder, serverId);
+      await _removePlaceholder(placeholder, serverId, bestEffort: false);
     }
     if (!current) return;
     unawaited(

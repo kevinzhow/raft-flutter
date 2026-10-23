@@ -25,9 +25,13 @@ class _Workspace extends WorkspaceController {
   Map<String, dynamic>? billing;
   Object? claudeModels;
   bool longOpenCodeModels = false;
+  Completer<dynamic>? runtimeOptionsRead;
+  bool failRuntimeOptions = false;
   final posts = <Map<String, dynamic>>[];
+  final reads = <String>[];
   @override
   Future<dynamic> query(String path, {Map<String, dynamic>? query}) async {
+    reads.add(path);
     if (path == '/servers/s/machines') return {'machines': machines};
     if (path == '/billing/subscription' && billing != null) return billing;
     if (path.endsWith('/runtime-models/claude') && claudeModels != null) {
@@ -40,6 +44,14 @@ class _Workspace extends WorkspaceController {
       }
     }
     if (path.endsWith('/runtime-options') && runtimes.isNotEmpty) {
+      if (failRuntimeOptions) {
+        throw RaftApiException.response(
+          'Runtime discovery failed.',
+          status: 503,
+          body: {'error': 'Runtime discovery failed.'},
+        );
+      }
+      if (runtimeOptionsRead case final pending?) return pending.future;
       return {
         'options': [
           for (final r in runtimes)
@@ -95,6 +107,7 @@ void main() {
     WidgetTester t, {
     String? name,
     String? description,
+    bool settle = true,
   }) async {
     late Future<Map<String, dynamic>?> result;
     await t.binding.setSurfaceSize(const Size(390, 1400));
@@ -117,9 +130,71 @@ void main() {
       ),
     );
     await t.tap(find.text('open'));
-    await t.pumpAndSettle();
+    if (settle) {
+      await t.pumpAndSettle();
+    } else {
+      await t.pump(const Duration(milliseconds: 300));
+    }
     return result;
   }
+
+  testWidgets('runtime discovery shows loading until its options arrive', (
+    t,
+  ) async {
+    w
+      ..machines = [
+        {
+          ..._machine,
+          'runtimes': ['codex'],
+        },
+      ]
+      ..runtimes = ['codex'];
+    final pending = w.runtimeOptionsRead = Completer<dynamic>();
+    try {
+      await open(t, name: 'Alice', settle: false);
+      await t.pump();
+      expect(find.byKey(const Key('runtime-options-loading')), findsOneWidget);
+    } finally {
+      pending.complete({
+        'options': [
+          {'runtimeId': 'codex', 'canSelectInThisContext': true},
+        ],
+      });
+      await t.pumpAndSettle();
+    }
+    expect(find.byKey(const Key('runtime-options-loading')), findsNothing);
+    expect(find.text('Codex CLI'), findsOneWidget);
+  });
+
+  testWidgets('runtime discovery failure offers a working retry', (t) async {
+    w
+      ..machines = [
+        {
+          ..._machine,
+          'runtimes': ['codex'],
+        },
+      ]
+      ..runtimes = ['codex']
+      ..failRuntimeOptions = true;
+    await open(t, name: 'Alice');
+    expect(find.textContaining('Runtime discovery failed.'), findsOneWidget);
+    w.failRuntimeOptions = false;
+    await t.tapOnText(find.textRange.ofSubstring('Retry'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('Runtime discovery failed.'), findsNothing);
+    expect(find.text('Codex CLI'), findsOneWidget);
+    expect(w.posts, isEmpty);
+    expect(
+      w.reads.where((path) => path.endsWith('/runtime-options')),
+      hasLength(2),
+    );
+    await t.tap(find.text('Create Agent'));
+    await t.pumpAndSettle();
+    expect(w.posts, hasLength(1));
+    await open(t, name: 'Alice-Retry');
+    expect(find.textContaining('Runtime discovery failed.'), findsNothing);
+    expect(find.text('Codex CLI'), findsOneWidget);
+  });
 
   testWidgets('zero computers shows the connect-a-computer branch', (t) async {
     await open(t);
