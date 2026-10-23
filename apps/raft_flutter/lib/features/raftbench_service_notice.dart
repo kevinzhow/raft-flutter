@@ -25,6 +25,7 @@ class RaftbenchServiceDmNotice extends StatelessWidget {
     key: const ValueKey('raftbench-service-dm-notice'),
     color: RaftTokens.of(context).canvas,
     child: Padding(
+      // ds-allow: Web `px-3 pt-2 pb-3` host of the footer Banner
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: RaftBanner(
         status: RaftBannerRecipeStatus.info,

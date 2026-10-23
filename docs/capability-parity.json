@@ -2447,14 +2447,14 @@
    "status": "covered",
    "webEntry": "Channel settings drawer 'Unarchive Channel' | archived banner 'Unarchive' link in the channel footer | Settings > Server > Archived channels 'Unarchive' | create-channel name-collision banner 'Unarchive'",
    "gate": "archiveChannels capability",
-   "flutterEntry": "channel_settings.dart unarchive action | chat_view.dart archived footer 'Unarchive' | archived_channels_section.dart | create_channel_dialog.dart collision banner",
+   "flutterEntry": "channel_settings.dart unarchive action | channel_footer_widgets.dart archived footer 'Unarchive' | archived_channels_section.dart | create_channel_dialog.dart collision banner",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/archived_channels_section.dart",
      "needle": "/channels/${channel.id}/unarchive"
     },
     {
-     "file": "apps/raft_flutter/lib/features/chat_view.dart",
+     "file": "apps/raft_flutter/lib/features/channel_footer_widgets.dart",
      "needle": "RaftChannelArchivedFooter("
     }
    ],
@@ -16951,13 +16951,18 @@
    "area": "billing",
    "capability": "Hosted runtime spend for the billing cost card and the agent Cost area",
    "background": false,
-   "status": "missing",
+   "status": "partial",
    "webEntry": "raftbench/costMetrics.ts and the settings cost card",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Planned in WP-CLOUD.",
-   "impact": "No hosted runtime cost card.",
+   "flutterEntry": "raftbench_overview_controller.dart load() (RaftBench \"Cloud agent cost\" comparison)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_overview_controller.dart",
+     "needle": "'/billing/hosted-runtime-usage'"
+    }
+   ],
+   "justification": "RaftBench reads the daily buckets for its two-week spend comparison. The billing cost card and the agent Cost area that also read this endpoint are planned in WP-CLOUD.",
+   "impact": "No hosted runtime cost card in Billing or the agent page.",
    "size": "S"
   },
   {
@@ -17001,14 +17006,19 @@
    "area": "server-settings-admin",
    "capability": "RaftBench overview dashboard (owner/admin, flag raftbench_overview_v0)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/HostedAnalysis.tsx",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). The plan recommends recording RaftBench as an intentional difference; the owner has not answered yet (plan section 3 item 4), so the row stays a gap.",
-   "impact": "Invisible unless the server enables raftbench_overview_v0 for an approved server; owners of such servers use Web.",
-   "size": "L"
+   "flutterEntry": "raftbench_hosted_controller.dart load() (5 s read, revision-guarded writes), raftbench_page.dart, raftbench_hosted_analysis.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart",
+     "needle": "'/raftbench'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -17016,14 +17026,19 @@
    "area": "server-settings-admin",
    "capability": "List RaftBench service agents",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/HostedAnalysis.tsx",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Same owner decision as GET /raftbench.",
-   "impact": "See GET /raftbench.",
-   "size": "S"
+   "flutterEntry": "raftbench_hosted_controller.dart load() service-agent list; raftbench_hosted_analysis.dart agent card",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart",
+     "needle": "'/raftbench/agents'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -17031,14 +17046,19 @@
    "area": "server-settings-admin",
    "capability": "Create the hosted analysis agent for RaftBench",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/HostedAnalysis.tsx",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Same owner decision as GET /raftbench.",
-   "impact": "See GET /raftbench.",
-   "size": "S"
+   "flutterEntry": "raftbench_hosted_controller.dart createServiceAgent()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart",
+     "needle": "'POST',\n        '/raftbench/agents'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -17046,14 +17066,19 @@
    "area": "server-settings-admin",
    "capability": "Save the RaftBench configuration",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/HostedAnalysis.tsx",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Same owner decision as GET /raftbench.",
-   "impact": "See GET /raftbench.",
-   "size": "S"
+   "flutterEntry": "raftbench_hosted_controller.dart save() (enable / disable / apply)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart",
+     "needle": "'PUT',\n        '/raftbench'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -17061,14 +17086,19 @@
    "area": "server-settings-admin",
    "capability": "Assign the RaftBench service agent",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/HostedAnalysis.tsx",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Same owner decision as GET /raftbench.",
-   "impact": "See GET /raftbench.",
-   "size": "S"
+   "flutterEntry": "raftbench_hosted_controller.dart assignAgent()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_hosted_controller.dart",
+     "needle": "'/raftbench/assignment'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -17076,14 +17106,19 @@
    "area": "server-settings-admin",
    "capability": "Task metrics per period for the RaftBench dashboard",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/periodMetrics.ts",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Same owner decision as GET /raftbench.",
-   "impact": "See GET /raftbench.",
-   "size": "S"
+   "flutterEntry": "raftbench_overview_controller.dart load()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_overview_controller.dart",
+     "needle": "'/tasks/server/period-metrics'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -17091,14 +17126,19 @@
    "area": "server-settings-admin",
    "capability": "Task snapshot metrics for the RaftBench dashboard",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "raftbench/periodMetrics.ts",
    "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Same owner decision as GET /raftbench.",
-   "impact": "See GET /raftbench.",
-   "size": "S"
+   "flutterEntry": "raftbench_overview_controller.dart load()",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/raftbench_overview_controller.dart",
+     "needle": "'/tasks/server/snapshot-metrics'"
+    }
+   ],
+   "justification": "Web v1.21.23 RaftBench (Settings > RaftBench for an owner or admin on a server with raftbench_overview_v0), ported in WP-BENCH.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",

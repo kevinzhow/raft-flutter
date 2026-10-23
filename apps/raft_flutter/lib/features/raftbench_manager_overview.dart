@@ -457,7 +457,8 @@ class _Overview extends StatelessWidget {
   }
 }
 
-/// `grid grid-cols-2 gap-3 sm:grid-cols-3` (`grid-cols-1` with [single]).
+/// `grid grid-cols-2 gap-3 sm:grid-cols-3` (`grid-cols-1` with [single]): the
+/// items of a row are as tall as the tallest of that row.
 class _Grid extends StatelessWidget {
   const _Grid({
     required this.columns,
@@ -469,17 +470,28 @@ class _Grid extends StatelessWidget {
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) {
-      // Tailwind `sm` is 640.
-      final wide = raftBreakpointWidth(context) >= 640;
-      final count = wide ? columns : (single ? 1 : 2);
-      final width = (box.maxWidth - 12 * (count - 1)) / count;
-      return Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [for (final c in children) SizedBox(width: width, child: c)],
-      );
-    },
-  );
+  Widget build(BuildContext context) {
+    // Tailwind `sm` is 640.
+    final wide = raftBreakpointWidth(context) >= 640;
+    final count = wide ? columns : (single ? 1 : 2);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 12,
+      children: [
+        for (var i = 0; i < children.length; i += count)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 12,
+              children: [
+                for (var j = i; j < i + count; j++)
+                  Expanded(
+                    child: j < children.length ? children[j] : const SizedBox(),
+                  ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
 }

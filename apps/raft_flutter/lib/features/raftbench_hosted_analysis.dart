@@ -413,7 +413,7 @@ class _Analysis extends StatelessWidget {
     String tr(String s) => raftText(context, s);
     final c = controller, data = c.data;
     final wide = raftBreakpointWidth(context) >= 640;
-    final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+    final today = c.now().toUtc().toIso8601String().substring(0, 10);
     return RaftbenchDetails(
       open: data?.enabled != true,
       summaryStyle: ty.callout(weight: FontWeight.w600),

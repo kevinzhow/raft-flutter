@@ -69,15 +69,11 @@ class _Rules extends StatelessWidget {
     return RaftbenchDetails(
       key: const ValueKey('raftbench-legacy-rules'),
       summaryStyle: ty.callout(weight: FontWeight.w600),
-      summary: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: t.colors['line-hairline']!),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(tr('Legacy phrase and repetition rules')),
+      summaryBox: BoxDecoration(
+        border: Border.all(color: t.colors['line-hairline']!),
+        borderRadius: BorderRadius.circular(10),
       ),
+      summary: Text(tr('Legacy phrase and repetition rules')),
       child: Padding(
         padding: const EdgeInsets.only(top: 16),
         child: Column(

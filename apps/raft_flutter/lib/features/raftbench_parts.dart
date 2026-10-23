@@ -158,6 +158,7 @@ class RaftbenchDetails extends StatefulWidget {
     this.open,
     this.onToggle,
     this.summaryStyle,
+    this.summaryBox,
   });
   final Widget summary;
   final Widget child;
@@ -168,6 +169,10 @@ class RaftbenchDetails extends StatefulWidget {
   final bool? open;
   final ValueChanged<bool>? onToggle;
   final TextStyle? summaryStyle;
+
+  /// A summary that is itself a box (`rounded-container border p-3`): the
+  /// marker sits inside it.
+  final BoxDecoration? summaryBox;
 
   @override
   State<RaftbenchDetails> createState() => _RaftbenchDetailsState();
@@ -202,32 +207,39 @@ class _RaftbenchDetailsState extends State<RaftbenchDetails> {
             },
             child: MouseRegion(
               cursor: SystemMouseCursors.click,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    // The marker sits on the first line's baseline box.
-                    padding: EdgeInsets.only(
-                      top:
-                          ((style.height ?? 1.4) * (style.fontSize ?? 14) - 8) /
-                          2,
-                      right: 6,
-                    ),
-                    child: CustomPaint(
-                      size: const Size(8, 8),
-                      painter: _TrianglePainter(
-                        open: open,
-                        color: style.color ?? t.ink,
+              child: Container(
+                decoration: widget.summaryBox,
+                padding: widget.summaryBox == null
+                    ? null
+                    : const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      // The marker sits on the first line's baseline box.
+                      padding: EdgeInsets.only(
+                        top:
+                            ((style.height ?? 1.4) * (style.fontSize ?? 14) -
+                                8) /
+                            2,
+                        right: 6,
+                      ),
+                      child: CustomPaint(
+                        size: const Size(8, 8),
+                        painter: _TrianglePainter(
+                          open: open,
+                          color: style.color ?? t.ink,
+                        ),
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: DefaultTextStyle.merge(
-                      style: widget.summaryStyle,
-                      child: widget.summary,
+                    Expanded(
+                      child: DefaultTextStyle.merge(
+                        style: widget.summaryStyle,
+                        child: widget.summary,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

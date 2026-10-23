@@ -48,6 +48,13 @@ MsRoutes _routes(ParityContext ctx) {
               as Map?) ??
           const {},
     ),
+    // RaftBench route sets (fixtures/raftbench.json).
+    ...Map<String, dynamic>.from(
+      ((((ctx.fixtures['ext:raftbench'] as Map?)?['routeSets'])
+                  as Map?)?[ctx.props['routeSet']]
+              as Map?) ??
+          const {},
+    ),
   };
   return {
     for (final MapEntry(:key, :value) in merged.entries)
@@ -77,6 +84,7 @@ Widget _page(ParityContext ctx) {
     'providers': 'provider_connections_v0',
     'bridge': 'slack_bridge_v0',
     'analytics': 'product_analytics_settings_v0',
+    'raftbench': 'raftbench_overview_v0',
   };
   final enabled = {
     for (final MapEntry(:key, :value) in flagKeys.entries)
@@ -97,18 +105,24 @@ Widget _page(ParityContext ctx) {
           const {},
     ),
   };
-  final (w, fixtureClient) = fixture.workspace({
-    'GET /servers/visual-server': (_) => serverJson,
-    // The official spec's /api/agents rows (fxAgentDetailAgents).
-    'GET /agents': (_) => fixture.agents,
-    'POST /feature-flags/evaluate': (data) => {
-      'evaluations': [
-        for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
-          {'key': key, 'enabled': enabled.contains(key)},
-      ],
+  final (w, fixtureClient) = fixture.workspace(
+    channels: ctx.props['tab'] == 'raftbench'
+        ? const ['design', 'androidArtifacts']
+        : const ['design'],
+    {
+      'GET /servers/visual-server': (_) => serverJson,
+      // The official spec's /api/agents rows (fxAgentDetailAgents).
+      'GET /agents': (_) => fixture.agents,
+      'POST /feature-flags/evaluate': (data) => {
+        'evaluations': [
+          for (final key in (data is Map ? data['keys'] as List? : null) ?? [])
+            {'key': key, 'enabled': enabled.contains(key)},
+        ],
+      },
+      ..._routes(ctx),
     },
-    ..._routes(ctx),
-  }, fallback: (method, path, data) => _fx(ctx)['fallback']);
+    fallback: (method, path, data) => _fx(ctx)['fallback'],
+  );
   // WP6 per-case signed-in user preferences (host/Wp6Cases.tsx
   // PARITY_EXT_WP6_USER_PREFS).
   // The official visual user (VisualTestingCases.tsx) translates manually.
@@ -146,7 +160,8 @@ Widget _page(ParityContext ctx) {
     w.channels = [
       ...w.channels,
       for (final c
-          in (ctx.fixtures['ext:auth-pages'] as Map)['archivedChannels'] as List)
+          in (ctx.fixtures['ext:auth-pages'] as Map)['archivedChannels']
+              as List)
         RaftChannel({
           ...base,
           ...Map<String, dynamic>.from(c as Map),

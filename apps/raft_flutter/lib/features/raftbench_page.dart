@@ -27,9 +27,14 @@ class RaftbenchPage extends StatefulWidget {
     super.key,
     required this.controller,
     required this.flag,
+    this.now,
   });
   final WorkspaceController controller;
   final RaftbenchFlagController flag;
+
+  /// The clock the page reads (windows, the default start date); tests and
+  /// the parity harness freeze it.
+  final DateTime Function()? now;
 
   @override
   State<RaftbenchPage> createState() => _RaftbenchPageState();
@@ -104,6 +109,7 @@ class _RaftbenchPageState extends State<RaftbenchPage> {
       key: ValueKey(pageIdentity(w)),
       controller: w,
       analysisAllowed: flag.analysisAllowed,
+      now: widget.now,
     );
   }
 }
@@ -118,6 +124,7 @@ class _Scroll extends StatelessWidget {
   Widget build(BuildContext context) => ColoredBox(
     color: RaftTokens.of(context).canvas,
     child: SingleChildScrollView(
+      key: const ValueKey('raftbench-scroll'),
       controller: controller,
       primary: false,
       padding: raftScrollPadding(
@@ -139,9 +146,11 @@ class _AdminPage extends StatefulWidget {
     super.key,
     required this.controller,
     required this.analysisAllowed,
+    this.now,
   });
   final WorkspaceController controller;
   final bool analysisAllowed;
+  final DateTime Function()? now;
 
   @override
   State<_AdminPage> createState() => _AdminPageState();
@@ -175,6 +184,7 @@ class _AdminPageState extends State<_AdminPage> {
       identity: () => pageIdentity(w),
       roleAllowed: role,
       analysisAllowed: () => widget.analysisAllowed,
+      now: widget.now,
       onEnabled: (enabled) {
         if (consented != enabled && mounted) {
           setState(() => consented = enabled);
@@ -185,6 +195,7 @@ class _AdminPageState extends State<_AdminPage> {
       request: _request,
       identity: () => pageIdentity(w),
       roleAllowed: role,
+      now: widget.now,
     );
     w.addListener(_changed);
     unawaited(w.refreshChannels());
@@ -262,6 +273,7 @@ class _AdminPageState extends State<_AdminPage> {
         request: _request,
         identity: () => pageIdentity(w),
         roleAllowed: () => canUseRaftBench(w.server?.string('role')),
+        now: widget.now,
         channelId: scope == raftbenchWorkspaceScope || scope.isEmpty
             ? null
             : scope,
@@ -299,7 +311,14 @@ class _AdminPageState extends State<_AdminPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: ty.callout(weight: FontWeight.w700)),
-                    Text(cue, style: ty.caption(weight: FontWeight.w400)),
+                    // The cue is an inline span: its line box takes the 24px of
+                    // the parent's line height, not the caption's 16.
+                    Text(
+                      cue,
+                      style: ty
+                          .caption(weight: FontWeight.w400)
+                          .copyWith(height: 24 / 12),
+                    ),
                   ],
                 ),
               ),
@@ -395,6 +414,7 @@ class _AdminPageState extends State<_AdminPage> {
                     RaftSelectField<String>(
                       value: scope.isEmpty ? null : scope,
                       label: tr('Task metrics and phrase-scan scope'),
+                      height: 40,
                       placeholder: 'Select a channel',
                       items: [
                         DropdownMenuItem(

@@ -284,10 +284,18 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
               'raftbench',
               'RaftBench',
               RaftGlyph.activity,
-              (_) => RaftbenchPage(controller: w, flag: raftbench),
+              (_) => RaftbenchPage(
+                controller: w,
+                flag: raftbench,
+                now: widget.now,
+              ),
               group: WorkspaceSettings.workspace,
               scroll: false,
               attached: false,
+              // Web mounts the page in `Panel edge="inset"` on the canvas, its
+              // PanelHeader on the same surface.
+              ownHeader: true,
+              contentColor: (t) => t.canvas,
             ),
           if (w.can('viewBilling'))
             RaftSettingsDestination(

@@ -33,11 +33,7 @@ class _Case {
   final api = RaftbenchApi();
   final opened = <(String, String)>[];
   late final RaftbenchRulesController controller;
-  _Case({
-    bool consented = true,
-    bool allowed = true,
-    String scope = raftbenchWorkspaceScope,
-  }) {
+  _Case({this.consented = true, this.allowed = true}) {
     api.routes['GET /messages/channel/c1'] = (_) => {
       'messages': [
         _row(
@@ -85,12 +81,9 @@ class _Case {
       roleAllowed: () => true,
       now: () => raftbenchNow,
     );
-    this.scope = scope;
-    this.consented = consented;
-    this.allowed = allowed;
   }
-  late String scope;
-  late bool consented, allowed;
+  final scope = raftbenchWorkspaceScope;
+  bool consented, allowed;
   static const options = [
     RaftbenchOption('c1', 'general', activityAt: '2026-10-23T10:00:00Z'),
     RaftbenchOption('c2', 'ops', activityAt: '2026-10-23T11:00:00Z'),
