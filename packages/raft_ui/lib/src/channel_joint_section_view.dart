@@ -77,14 +77,13 @@ class RaftChannelJointSectionView extends StatelessWidget {
     final hairline = t.brutal
         ? Colors.black.withValues(alpha: .1)
         : t.colors['line-muted']!;
+    // v1.21.23 `SectionEyebrow tone="muted"`: a small muted sentence-case
+    // heading (the uppercase eyebrow went with the old themes).
     final eyebrow = raftCssTextStyle(
-      family: t.headingFont,
-      step: RaftTextSteps.xs,
-      weight: FontWeight.w700,
-      color: t.brutal
-          ? Colors.black.withValues(alpha: .6)
-          : t.colors['foreground-muted'],
-      trackingEm: .025,
+      family: t.bodyFont,
+      step: RaftTextSteps.sm,
+      weight: FontWeight.w500,
+      color: t.colors['foreground-muted'],
     );
     final hint = t.colors['foreground-hint'];
     final rule = raftText(
@@ -175,7 +174,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  raftText(context, 'Connected servers').toUpperCase(),
+                  raftText(context, 'Connected servers'),
                   style: eyebrow,
                 ),
               ),
@@ -262,7 +261,7 @@ class RaftChannelJointSectionView extends StatelessWidget {
             Divider(height: 1, thickness: 1, color: hairline),
             const SizedBox(height: 16),
             Text(
-              raftText(context, 'Channel connection invitation').toUpperCase(),
+              raftText(context, 'Channel connection invitation'),
               style: eyebrow,
             ),
             const SizedBox(height: 12),

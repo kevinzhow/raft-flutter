@@ -321,6 +321,72 @@
     "removeChannelMembers": true,
     "changeChannelMemberRoles": true
    }
+  },
+  {
+   "id": "channel-cs-joint",
+   "serverId": "visual-server",
+   "name": "partners",
+   "description": "Shared with partner servers",
+   "type": "joint",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "activityMuteSupported": true,
+   "channelCapabilities": {
+    "editChannelMetadata": true,
+    "archiveChannels": true,
+    "deleteChannels": true,
+    "changeChannelVisibility": true,
+    "manageGuestAccess": true,
+    "federateChannels": true,
+    "addChannelMembers": false,
+    "removeChannelMembers": true,
+    "changeChannelMemberRoles": true
+   },
+   "jointChannelId": "joint-cs-1",
+   "jointRole": "host",
+   "jointPeerServerId": "server-acme",
+   "jointPeerServerName": "Acme Partners",
+   "jointPeerServerSlug": "acme-partners",
+   "jointPeerStatus": "active",
+   "jointServers": [
+    {
+     "serverId": "visual-server",
+     "serverName": "Visual Server",
+     "serverSlug": "visual-server",
+     "role": "host",
+     "status": "active",
+     "isCurrentServer": true,
+     "plan": "free"
+    },
+    {
+     "serverId": "server-acme",
+     "serverName": "Acme Partners",
+     "serverSlug": "acme-partners",
+     "role": "participant",
+     "status": "active",
+     "isCurrentServer": false,
+     "plan": "paid"
+    },
+    {
+     "serverId": "server-globex",
+     "serverName": "Globex",
+     "serverSlug": "globex",
+     "role": null,
+     "status": "pending",
+     "plan": "free"
+    }
+   ],
+   "jointPendingInvites": [
+    {
+     "id": "invite-globex",
+     "jointChannelId": "joint-cs-1",
+     "fromServerId": "visual-server",
+     "toServerId": "server-globex",
+     "serverName": "Globex",
+     "serverSlug": "globex",
+     "status": "pending"
+    }
+   ]
   }
  ],
  "dms": [
@@ -2703,6 +2769,129 @@
    "prefsVersion": 0
   },
   "GET /channels/channel-cs-loading/message-display-settings": {
+   "collapseLongMessages": true,
+   "prefsVersion": 0
+  },
+  "GET /channels/channel-cs-joint/members": {
+   "agents": [
+    {
+     "id": "agent-cindy",
+     "serverId": "visual-server",
+     "name": "Cindy",
+     "displayName": "Cindy",
+     "avatarUrl": "pixel:robot",
+     "description": "Keeps visual testing release notes aligned.",
+     "status": "active",
+     "serverRole": "member",
+     "channelRole": "member",
+     "effectiveChannelRole": "member",
+     "channelAdminBasis": null,
+     "canChangeChannelRole": false,
+     "model": "gpt-5-codex",
+     "runtime": "codex",
+     "reasoningEffort": "medium",
+     "executionMode": "byoc",
+     "envVars": {},
+     "machineId": "computer-mbp",
+     "sessionId": "session-agent-cindy",
+     "runtimeProfile": null,
+     "creatorType": "user",
+     "creatorId": "visual-user",
+     "creator": null,
+     "createdAgents": [],
+     "deletedAt": null,
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "activity": "working",
+     "activityDetail": "Capturing visual testing baselines"
+    },
+    {
+     "id": "agent-product-ux",
+     "serverId": "visual-server",
+     "name": "Product-UX-Designer",
+     "displayName": "Product UX Designer",
+     "avatarUrl": "pixel:robot",
+     "description": "Turns product feedback into UX specs.",
+     "status": "active",
+     "serverRole": "member",
+     "channelRole": "member",
+     "effectiveChannelRole": "member",
+     "channelAdminBasis": null,
+     "canChangeChannelRole": false,
+     "model": "gpt-5-codex",
+     "runtime": "codex",
+     "reasoningEffort": "medium",
+     "executionMode": "byoc",
+     "envVars": {},
+     "machineId": "computer-mbp",
+     "sessionId": "session-agent-product-ux",
+     "runtimeProfile": null,
+     "creatorType": "user",
+     "creatorId": "visual-user",
+     "creator": null,
+     "createdAgents": [],
+     "deletedAt": null,
+     "createdAt": "2026-06-18T00:00:00.000Z",
+     "activity": "online",
+     "activityDetail": "Reviewing screenshots"
+    }
+   ],
+   "humans": [
+    {
+     "id": "visual-user",
+     "serverId": "visual-server",
+     "name": "artin",
+     "displayName": "artin",
+     "description": "Owner",
+     "avatarUrl": null,
+     "gravatarHash": "",
+     "role": "owner",
+     "serverRole": "owner",
+     "channelRole": "member",
+     "effectiveChannelRole": "admin",
+     "channelAdminBasis": "server_role",
+     "canChangeChannelRole": false
+    },
+    {
+     "id": "visual-human-designer",
+     "serverId": "visual-server",
+     "name": "designer",
+     "displayName": "Designer",
+     "description": "Product design",
+     "avatarUrl": null,
+     "gravatarHash": "",
+     "role": "member",
+     "serverRole": "member",
+     "channelRole": "member",
+     "effectiveChannelRole": "member",
+     "channelAdminBasis": null,
+     "canChangeChannelRole": false
+    },
+    {
+     "id": "visual-human-jiacheng",
+     "serverId": "visual-server",
+     "name": "jiacheng",
+     "displayName": "Jiacheng",
+     "description": "Android",
+     "avatarUrl": null,
+     "gravatarHash": "",
+     "role": "member",
+     "serverRole": "member",
+     "channelRole": "member",
+     "effectiveChannelRole": "member",
+     "channelAdminBasis": null,
+     "canChangeChannelRole": false
+    }
+   ],
+   "externalMembers": []
+  },
+  "GET /tasks/channel/channel-cs-joint": [],
+  "GET /channels/channel-cs-joint/notification-settings": {
+   "activityMuted": false,
+   "muteFromSeq": null,
+   "activityMuteSupported": true,
+   "prefsVersion": 0
+  },
+  "GET /channels/channel-cs-joint/message-display-settings": {
    "collapseLongMessages": true,
    "prefsVersion": 0
   },

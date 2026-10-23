@@ -1527,7 +1527,7 @@ class _ChannelSettingsState extends State<ChannelSettings> {
           : private
           ? 'Private'
           : c.type == 'joint'
-          ? 'Joint channel'
+          ? 'Joint Channel'
           : 'Public',
       badgeTone: dm
           ? RaftBadgeRecipeVariant.muted

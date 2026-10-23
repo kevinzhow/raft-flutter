@@ -185,6 +185,23 @@ C = {
     'many': channel('channel-cs-many', many=True),
     'loading': channel('channel-cs-loading'),
 }
+# RFC 075: a joint channel (Web EditChannelDialog `channel-settings-joint-section`): the Connected servers
+# list with plan and status badges, Resend Invite (this server has an invitation out), the invitation form,
+# and Disconnect Channel in place of Delete Channel.
+C['joint'] = channel('channel-cs-joint', name='partners', description='Shared with partner servers', ctype='joint',
+                     jointChannelId='joint-cs-1', jointRole='host', jointPeerServerId='server-acme',
+                     jointPeerServerName='Acme Partners', jointPeerServerSlug='acme-partners',
+                     jointPeerStatus='active',
+                     jointServers=[
+                         {'serverId': SID, 'serverName': 'Visual Server', 'serverSlug': 'visual-server',
+                          'role': 'host', 'status': 'active', 'isCurrentServer': True, 'plan': 'free'},
+                         {'serverId': 'server-acme', 'serverName': 'Acme Partners', 'serverSlug': 'acme-partners',
+                          'role': 'participant', 'status': 'active', 'isCurrentServer': False, 'plan': 'paid'},
+                         {'serverId': 'server-globex', 'serverName': 'Globex', 'serverSlug': 'globex',
+                          'role': None, 'status': 'pending', 'plan': 'free'}],
+                     jointPendingInvites=[{'id': 'invite-globex', 'jointChannelId': 'joint-cs-1',
+                                           'fromServerId': SID, 'toServerId': 'server-globex',
+                                           'serverName': 'Globex', 'serverSlug': 'globex', 'status': 'pending'}])
 C['dm-agent'] = dm('dm-cs-agent-cindy', 'agent', 'agent-cindy', 'Cindy', 'Cindy', 'pixel:robot')
 C['dm-human'] = dm('dm-cs-human-designer', 'user', 'visual-human-designer', 'designer', 'Designer', None)
 
@@ -277,6 +294,7 @@ for platform in ['desktop', 'mobile']:
 
 add('desktop', 'owner-newline', 'description with an authored newline', C['newline'])
 add('desktop', 'owner-nodesc', 'no description', C['nodesc'])
+add('desktop', 'joint', 'joint channel (connected servers, invitation, Disconnect)', C['joint'], height=1500)
 add('desktop', 'owner-longdesc', 'long single-line description', C['longdesc'])
 add('desktop', 'owner-prefs', 'pin, mute on, collapse off', C['prefs'], pinned=True)
 add('desktop', 'owner-guest', 'Guest access section (server_guest flag on)', C['guest'], guest=True)
