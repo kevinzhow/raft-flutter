@@ -965,6 +965,7 @@ class _AttachmentViewState extends State<AttachmentView> {
         authorized: () => authorized,
         pending: widget.messageId == null,
         onOpenPreview: open,
+        onDownload: download,
         frameProbe: widget.frameProbe,
         heroActive: heroActive,
         posterListenable: videoPoster,

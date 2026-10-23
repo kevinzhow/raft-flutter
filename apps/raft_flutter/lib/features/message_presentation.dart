@@ -25,6 +25,7 @@ import 'private_route_guard.dart';
 import 'profile_preview.dart';
 import 'composer_directory.dart' show cachedExternalMembers;
 import 'external_mentions.dart';
+import 'forwarded_source.dart';
 import '../data/feature_flag_client_facts.dart';
 
 /// Full MessageDTO uses `user`; legacy/native human rows use `human`.
@@ -805,13 +806,19 @@ class MessagePresentation extends StatelessWidget {
     }
     if (message.json['actionMetadata'] is Map &&
         message.json['actionMetadata']['kind'] == 'forwarded-bundle') {
-      return RaftForwardedBundle(
+      final card = RaftForwardedBundle(
         key: ValueKey('forwarded-${message.id}'),
         metadata: Map<String, dynamic>.from(message.json['actionMetadata']),
         exportMode: exportMode,
         // Web ForwardedBundleCard: useTimeFormatter().formatShortDateTime
         // ("Jun 22, 10:30 AM") in the account's zone and hour cycle.
         formatTimestamp: forwardedTimestamp(context),
+        onOpenSource: exportMode || !localAuthority
+            ? null
+            : (item) {
+                final href = forwardedSourceHref(controller.channels, item);
+                if (href != null) unawaited(open(context, href));
+              },
         attachmentBuilder:
             exportAttachmentBuilder ??
             (metadata) => AttachmentView(
@@ -824,13 +831,27 @@ class MessagePresentation extends StatelessWidget {
               exportMode: exportMode,
             ),
       );
+      final note = forwardedNote(message.json['actionMetadata'], text);
+      if (note.isEmpty) return card;
+      // Web MessageItem: the forwarding note is the message body, above the card.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          body(context, content: note),
+          card,
+        ],
+      );
     }
+    return body(context);
+  }
+
+  Widget body(BuildContext context, {String? content}) {
     return RaftMessageBody(
       mountedMessage: true,
       messagePipeline: true,
       // A compact timeline row already announces this text in its label.
       compactSemantics: RaftMessageSemanticsScope.maybeOf(context) != null,
-      content: text,
+      content: content ?? text,
       foregroundColor: foregroundColor,
       searchHighlight: searchHighlight,
       exportMode: exportMode,

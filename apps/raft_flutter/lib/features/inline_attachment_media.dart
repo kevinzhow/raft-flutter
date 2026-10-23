@@ -442,11 +442,15 @@ class InlineVideoAttachment extends StatefulWidget {
     this.frameScheduler,
     this.heroActive = false,
     this.posterListenable,
+    this.onDownload,
   });
   final WorkspaceController controller;
   final Map<String, dynamic> metadata;
   final String? channelId;
   final bool Function() authorized;
+
+  /// The Download action of a card whose preview could not be made.
+  final VoidCallback? onDownload;
 
   /// Fetches the poster (the server thumbnail); the shared client by default.
   final AttachmentFiles? files;
@@ -596,6 +600,9 @@ class _InlineVideoAttachmentState extends State<InlineVideoAttachment> {
             : shape.duration,
         loading: widget.pending,
         onOpen: widget.pending ? null : widget.onOpenPreview,
+        failure: widget.pending ? null : poster.failure,
+        onRetry: poster.retry,
+        onDownload: widget.onDownload,
         heroTag: MediaBrowser.heroTagFor('${metadata['id']}'),
         heroEnabled: widget.heroActive,
       ),

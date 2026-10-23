@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/painting.dart';
+import 'package:raft_ui/raft_ui.dart' show RaftVideoPreviewFailure;
 
 import '../data/attachment_image_repository.dart';
 import '../data/workspace_controller.dart';
@@ -51,6 +52,7 @@ class VideoCardPoster {
   /// Whether the card is within `margin` of the viewport.
   final bool Function({double margin}) nearViewport;
   final void Function() onChanged;
+
   /// The probe of this card; the platform's when null.
   final VideoFrameProbe? probeOverride;
   final VideoFrameScheduler scheduler;
@@ -80,8 +82,31 @@ class VideoCardPoster {
   /// The shape from the message itself, else the remembered or read one.
   VideoShape? shape;
 
-  /// The first frame could not be read (the card keeps its placeholder).
+  /// The first frame could not be read (the card says so, see [failure]).
   bool failed = false;
+
+  /// Whether the file is one the platform cannot decode (Download is the only
+  /// help) or the read failed for a reason a Retry can fix.
+  bool unsupported = false;
+
+  RaftVideoPreviewFailure? get failure => !failed
+      ? null
+      : unsupported
+      ? RaftVideoPreviewFailure.unsupported
+      : RaftVideoPreviewFailure.unavailable;
+
+  /// Retry on a failed card: forgets the failure and reads the frame again,
+  /// which signs the link again (Web `useRefreshingMediaUrl.retry`).
+  void retry() {
+    if (disposed || !failed) return;
+    _sessions.frameFailed.remove(_mediaKey);
+    controller.attachmentMedia.invalidateUrl('${_meta['id']}');
+    failed = false;
+    unsupported = false;
+    _boundKey = null;
+    sync(box: _box, devicePixelRatio: _dpr);
+    onChanged();
+  }
 
   /// A frame read is queued or running for this card.
   bool get reading => _job != null;
@@ -254,7 +279,9 @@ class VideoCardPoster {
     if (persist) {
       final disk = controller.attachmentMedia.diskCache;
       if (disk != null) {
-        unawaited(disk.write(_shapeKey(), learnt.toBytes()).catchError((Object _) {}));
+        unawaited(
+          disk.write(_shapeKey(), learnt.toBytes()).catchError((Object _) {}),
+        );
       }
     }
   }
@@ -321,6 +348,11 @@ class VideoCardPoster {
             }
             _sessions.frameFailed.add(_mediaKey);
             failed = true;
+            // The probe's reason picks the card's wording; it is never shown.
+            // ignore: raft_lints/avoid_caught_exception_text -- Compared with two fixed reasons, not displayed.
+            final reason = error is VideoFrameException ? error.message : null;
+            unsupported =
+                reason == 'unsupported' || reason == 'no video stream';
             _lease = null;
             _leaseKey = null;
             lease.release();
@@ -351,11 +383,8 @@ class VideoCardPoster {
           id,
           channelId: channelId(),
         );
-        Future<VideoFrameInfo> read(Uri url) => platform.probe(
-          id: jobId,
-          url: url,
-          maxEdge: frameEdge,
-        );
+        Future<VideoFrameInfo> read(Uri url) =>
+            platform.probe(id: jobId, url: url, maxEdge: frameEdge);
         try {
           return await read(source.url!);
         } on VideoFrameException catch (error) {
@@ -368,7 +397,8 @@ class VideoCardPoster {
           return await read(await source.refresh!());
         }
       },
-      wanted: () => !disposed && authorized() && nearViewport(margin: keepMargin),
+      wanted: () =>
+          !disposed && authorized() && nearViewport(margin: keepMargin),
     );
     _job = job;
     unawaited(cancel.whenCancel.then<void>((_) => job.cancel()));

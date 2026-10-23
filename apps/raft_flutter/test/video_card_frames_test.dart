@@ -161,7 +161,6 @@ void main() {
   });
   tearDown(() => directory.deleteSync(recursive: true));
 
-
   /// Unmounts the card and lets go of the workspace (once).
   Future<void> finish(
     WidgetTester tester,
@@ -257,9 +256,7 @@ void main() {
     tester.view.physicalSize = window;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final (client, w) = workspace(
-      store ?? AttachmentDiskCache(root),
-      metadata);
+    final (client, w) = workspace(store ?? AttachmentDiskCache(root), metadata);
     mounted.add((client, w));
     addTearDown(() => done(tester));
     await tester.pumpWidget(
@@ -277,34 +274,38 @@ void main() {
   );
 
   group('phone card', () {
-    testWidgets('has no player: poster at the real shape, play button, length', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(180, 320)))!;
-      probe = FakeProbe(picture, size: const Size(720, 1280));
-      final players = _Players();
-      InlineMediaTestHooks.playerFactory = players.call;
-      addTearDown(() => InlineMediaTestHooks.playerFactory = null);
-      final (_, w) = await mount(
-        tester,
-        {...noThumbnail, 'width': 720, 'height': 1280,
+    testWidgets(
+      'has no player: poster at the real shape, play button, length',
+      (tester) async {
+        picture = (await tester.runAsync(() => png(180, 320)))!;
+        probe = FakeProbe(picture, size: const Size(720, 1280));
+        final players = _Players();
+        InlineMediaTestHooks.playerFactory = players.call;
+        addTearDown(() => InlineMediaTestHooks.playerFactory = null);
+        final (_, w) = await mount(tester, {
+          ...noThumbnail,
+          'width': 720,
+          'height': 1280,
         });
-      // Before the frame: the neutral placeholder at the declared shape, with
-      // the play button already there (never black, never a spinner).
-      expect(find.byType(RaftInlineVideo), findsNothing);
-      expect(find.byKey(const Key('inline-video-placeholder')), findsOneWidget,
+        // Before the frame: the neutral placeholder at the declared shape, with
+        // the play button already there (never black, never a spinner).
+        expect(find.byType(RaftInlineVideo), findsNothing);
+        expect(
+          find.byKey(const Key('inline-video-placeholder')),
+          findsOneWidget,
         );
-      expect(find.byKey(const Key('inline-video-play')), findsOneWidget);
-      final first = boxOf(tester);
-      expect(first.width / first.height, closeTo(720 / 1280, .01));
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      expect(probe.calls, hasLength(1));
-      expect(boxOf(tester), first, reason: 'declared size: no layout change');
-      expect(find.text('1:23'), findsOneWidget, reason: 'the length');
-      expect(players.made, 0);
-      expect(w.attachmentMedia.playerSessions.created, 0);
-      await done(tester);
-    },
+        expect(find.byKey(const Key('inline-video-play')), findsOneWidget);
+        final first = boxOf(tester);
+        expect(first.width / first.height, closeTo(720 / 1280, .01));
+        await tester.pump(const Duration(milliseconds: 300));
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        expect(probe.calls, hasLength(1));
+        expect(boxOf(tester), first, reason: 'declared size: no layout change');
+        expect(find.text('1:23'), findsOneWidget, reason: 'the length');
+        expect(players.made, 0);
+        expect(w.attachmentMedia.playerSessions.created, 0);
+        await done(tester);
+      },
     );
 
     for (final (name, width, height) in [
@@ -315,9 +316,7 @@ void main() {
       testWidgets('$name: the box has the video shape', (tester) async {
         picture = (await tester.runAsync(() => png(64, 64)))!;
         probe = FakeProbe(picture, size: Size(width * 1.0, height * 1.0));
-        await mount(
-          tester,
-          {...noThumbnail, 'width': width, 'height': height});
+        await mount(tester, {...noThumbnail, 'width': width, 'height': height});
         final box = boxOf(tester);
         expect(box.width, 278, reason: 'the card width on a 390 dp screen');
         expect(box.width / box.height, closeTo(width / height, .01));
@@ -330,9 +329,7 @@ void main() {
     ) async {
       picture = (await tester.runAsync(() => png(64, 64)))!;
       probe = FakeProbe(picture, size: const Size(450, 1600));
-      await mount(
-        tester,
-        {...noThumbnail, 'width': 450, 'height': 1600});
+      await mount(tester, {...noThumbnail, 'width': 450, 'height': 1600});
       final box = boxOf(tester);
       expect(box.height, closeTo(844 * .6, 1));
       expect(box.width, 278);
@@ -412,8 +409,8 @@ void main() {
         w.dispose();
         await client.dispose();
       });
-      Future<void> show(bool active) => tester.pumpWidget(
-        host(card(w, noThumbnail, heroActive: active)));
+      Future<void> show(bool active) =>
+          tester.pumpWidget(host(card(w, noThumbnail, heroActive: active)));
       await show(false);
       await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
       RaftMediaHero hero() => tester.widget<RaftMediaHero>(
@@ -436,16 +433,17 @@ void main() {
     ) async {
       picture = (await tester.runAsync(() => png(320, 180)))!;
       probe = FakeProbe(picture, size: const Size(1280, 720));
-      await mount(
-        tester,
-        noThumbnail, window: const Size(900, 700));
+      await mount(tester, noThumbnail, window: const Size(900, 700));
       expect(find.byType(RaftInlineVideo), findsNothing);
       expect(find.byType(RaftVideoPosterCard), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 300));
       await pumpUntil(tester, () => find.byType(Image).evaluate().isNotEmpty);
       expect(probe.calls, hasLength(1));
       final box = boxOf(tester);
-      expect(box.width / box.height, closeTo(16 / 9, .02), reason: 'landscape poster keeps its shape',
+      expect(
+        box.width / box.height,
+        closeTo(16 / 9, .02),
+        reason: 'landscape poster keeps its shape',
       );
       await done(tester);
     });
@@ -458,15 +456,18 @@ void main() {
       picture = (await tester.runAsync(() => png(320, 180)))!;
       probe = FakeProbe(picture);
       final files = CountingFiles(picture);
-      await mount(
-        tester,
-        {...noThumbnail, 'thumbnailUrl': thumbnailUrl,
+      await mount(tester, {
+        ...noThumbnail,
+        'thumbnailUrl': thumbnailUrl,
       }, files: files);
       await tester.pump(const Duration(milliseconds: 400));
       await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
       await tester.pump(const Duration(milliseconds: 500));
       expect(files.urls, [thumbnailUrl]);
-      expect(probe.calls, isEmpty, reason: 'extraction only without a thumbnail',
+      expect(
+        probe.calls,
+        isEmpty,
+        reason: 'extraction only without a thumbnail',
       );
       await done(tester);
     });
@@ -493,11 +494,11 @@ void main() {
       final withThumbnail = {...noThumbnail, 'thumbnailUrl': thumbnailUrl};
       final (client, w) = workspace(AttachmentDiskCache(root), withThumbnail);
       final files = CountingFiles(picture);
-      await tester.pumpWidget(
-        host(card(w, withThumbnail, files: files)));
+      await tester.pumpWidget(host(card(w, withThumbnail, files: files)));
       await tester.pump(const Duration(milliseconds: 400));
       await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      expect(files.urls, [thumbnailUrl,
+      expect(files.urls, [
+        thumbnailUrl,
       ], reason: 'the server thumbnail is used');
       expect(probe.calls, hasLength(1), reason: 'no second frame read');
       await tester.pumpWidget(const SizedBox());
@@ -507,109 +508,107 @@ void main() {
   });
 
   group('the shape is remembered', () {
-    testWidgets('a second view in the session has its final box in the first frame', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(64, 64)))!;
-      probe = FakeProbe(picture, size: const Size(720, 1280));
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
-      addTearDown(() async {
-        w.dispose();
-        await client.dispose();
-      });
-      await tester.pumpWidget(host(card(w, noThumbnail)));
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      final settled = boxOf(tester);
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpWidget(host(card(w, noThumbnail, id: 'again')));
-      expect(boxOf(tester), settled, reason: 'no 16:9 flash, no layout jump');
-      expect(find.text('1:23'), findsOneWidget);
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      expect(probe.calls, hasLength(1), reason: 'not read again');
-      await tester.pumpWidget(const SizedBox());
-    },
+    testWidgets(
+      'a second view in the session has its final box in the first frame',
+      (tester) async {
+        picture = (await tester.runAsync(() => png(64, 64)))!;
+        probe = FakeProbe(picture, size: const Size(720, 1280));
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
+        addTearDown(() async {
+          w.dispose();
+          await client.dispose();
+        });
+        await tester.pumpWidget(host(card(w, noThumbnail)));
+        await tester.pump(const Duration(milliseconds: 300));
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        final settled = boxOf(tester);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(host(card(w, noThumbnail, id: 'again')));
+        expect(boxOf(tester), settled, reason: 'no 16:9 flash, no layout jump');
+        expect(find.text('1:23'), findsOneWidget);
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        expect(probe.calls, hasLength(1), reason: 'not read again');
+        await tester.pumpWidget(const SizedBox());
+      },
     );
 
-    testWidgets('after a restart the stored shape and frame are used, nothing read', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(64, 64)))!;
-      probe = FakeProbe(picture, size: const Size(720, 1280));
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final store = AttachmentDiskCache(root);
-      final (firstClient, first) = workspace(store, noThumbnail);
-      await tester.pumpWidget(host(card(first, noThumbnail)));
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      await storedEntries(tester, store, 2);
-      await tester.pumpWidget(const SizedBox());
-      first.dispose();
-      await firstClient.dispose();
+    testWidgets(
+      'after a restart the stored shape and frame are used, nothing read',
+      (tester) async {
+        picture = (await tester.runAsync(() => png(64, 64)))!;
+        probe = FakeProbe(picture, size: const Size(720, 1280));
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final store = AttachmentDiskCache(root);
+        final (firstClient, first) = workspace(store, noThumbnail);
+        await tester.pumpWidget(host(card(first, noThumbnail)));
+        await tester.pump(const Duration(milliseconds: 300));
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        await storedEntries(tester, store, 2);
+        await tester.pumpWidget(const SizedBox());
+        first.dispose();
+        await firstClient.dispose();
 
-      final restarted = FakeProbe(picture, size: const Size(1, 1));
-      final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
-      await tester.pumpWidget(
-        host(card(w, noThumbnail, frames: restarted)));
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      await pumpUntil(tester, () {
-        final box = boxOf(tester);
-        return (box.width / box.height - 720 / 1280).abs() < .01;
-      }, reason: 'the stored shape');
-      expect(find.text('1:23'), findsOneWidget);
-      await tester.pump(const Duration(milliseconds: 600));
-      expect(restarted.calls, isEmpty, reason: 'the stored frame serves it');
-      expect(client.resolutions, 0, reason: 'nothing signed either');
-      await tester.pumpWidget(const SizedBox());
-      w.dispose();
-      await client.dispose();
-    },
+        final restarted = FakeProbe(picture, size: const Size(1, 1));
+        final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
+        await tester.pumpWidget(host(card(w, noThumbnail, frames: restarted)));
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        await pumpUntil(tester, () {
+          final box = boxOf(tester);
+          return (box.width / box.height - 720 / 1280).abs() < .01;
+        }, reason: 'the stored shape');
+        expect(find.text('1:23'), findsOneWidget);
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(restarted.calls, isEmpty, reason: 'the stored frame serves it');
+        expect(client.resolutions, 0, reason: 'nothing signed either');
+        await tester.pumpWidget(const SizedBox());
+        w.dispose();
+        await client.dispose();
+      },
     );
   });
 
   group('failures', () {
-    testWidgets('a failed read keeps the neutral placeholder and is not retried', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(64, 64)))!;
-      probe = FakeProbe(picture)
-        ..failWith = const VideoFrameException(VideoFrameFailure.failed);
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
-      addTearDown(() async {
-        w.dispose();
-        await client.dispose();
-      });
-      await tester.pumpWidget(host(card(w, noThumbnail)));
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => probe.calls.isNotEmpty);
-      for (var i = 0; i < 20; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
-        );
+    testWidgets(
+      'a failed read says so, offers Retry and is not retried by itself',
+      (tester) async {
+        picture = (await tester.runAsync(() => png(64, 64)))!;
+        probe = FakeProbe(picture)
+          ..failWith = const VideoFrameException(VideoFrameFailure.failed);
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
+        addTearDown(() async {
+          w.dispose();
+          await client.dispose();
+        });
+        await tester.pumpWidget(host(card(w, noThumbnail)));
         await tester.pump(const Duration(milliseconds: 300));
-      }
-      expect(find.byKey(const Key('inline-video-placeholder')), findsOneWidget,
-        );
-      expect(find.byKey(const Key('inline-video-play')), findsOneWidget);
-      final placeholder = tester.widget<ColoredBox>(
-        find.byKey(const Key('inline-video-placeholder')),
-      );
-      expect(placeholder.color, isNot(Colors.black), reason: 'never black');
-      expect(posterImage(), findsNothing);
-      // Built again (the list drops and rebuilds rows): still one read.
-      await tester.pumpWidget(const SizedBox());
-      await tester.pumpWidget(host(card(w, noThumbnail, id: 'b')));
-      await tester.pump(const Duration(seconds: 2));
-      expect(probe.calls, hasLength(1), reason: 'no retry loop');
-      expect(find.byKey(const Key('inline-video-placeholder')), findsOneWidget,
-        );
-      await tester.pumpWidget(const SizedBox());
-    },
+        await pumpUntil(tester, () => probe.calls.isNotEmpty);
+        for (var i = 0; i < 20; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 300));
+        }
+        // Web v1.21.23: the card says the preview failed and offers Retry.
+        expect(find.byKey(const Key('inline-video-failure')), findsOneWidget);
+        expect(find.text("Couldn't load this video preview."), findsOneWidget);
+        expect(find.byKey(const Key('inline-video-play')), findsNothing);
+        expect(posterImage(), findsNothing);
+        // Built again (the list drops and rebuilds rows): still one read.
+        await tester.pumpWidget(const SizedBox());
+        await tester.pumpWidget(host(card(w, noThumbnail, id: 'b')));
+        await tester.pump(const Duration(seconds: 2));
+        expect(probe.calls, hasLength(1), reason: 'no retry loop');
+        expect(find.byKey(const Key('inline-video-failure')), findsOneWidget);
+        await tester.pumpWidget(const SizedBox());
+      },
     );
 
     testWidgets('an expired signature is signed again once', (tester) async {
@@ -620,51 +619,60 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await pumpUntil(tester, () => probe.calls.length >= 2);
       await tester.pump(const Duration(seconds: 1));
-      expect(probe.calls, hasLength(2), reason: 'first signature, then a new one',
+      expect(
+        probe.calls,
+        hasLength(2),
+        reason: 'first signature, then a new one',
       );
       expect(client.resolutions, 2);
     });
   });
 
   group('concurrency and cancellation', () {
-    test('the scheduler runs two at a time, newest first, and drops the unwanted', () async {
-      final scheduler = VideoFrameScheduler();
-      final gates = <Completer<void>>[];
-      final order = <int>[];
-      var wanted = true;
-      VideoFrameJob<int> job(int n, {bool Function()? want}) =>
-          scheduler.submit<int>((_) async {
-            order.add(n);
-            final gate = Completer<void>();
-            gates.add(gate);
-            await gate.future;
-            return n;
-          }, wanted: want);
-      final jobs = [
-        for (var n = 0; n < 5; n++) job(n, want: n == 3 ? () => wanted : null),
-      ];
-      await Future<void>.delayed(Duration.zero);
-      expect(scheduler.running, 2);
-      expect(order, [0, 1], reason: 'free slots go to the first at hand');
-      wanted = false;
-      jobs[4].cancel();
-      expect(await jobs[4].result.then<Object>((_) => 'ran', onError: (Object e) => e,
+    test(
+      'the scheduler runs two at a time, newest first, and drops the unwanted',
+      () async {
+        final scheduler = VideoFrameScheduler();
+        final gates = <Completer<void>>[];
+        final order = <int>[];
+        var wanted = true;
+        VideoFrameJob<int> job(int n, {bool Function()? want}) =>
+            scheduler.submit<int>((_) async {
+              order.add(n);
+              final gate = Completer<void>();
+              gates.add(gate);
+              await gate.future;
+              return n;
+            }, wanted: want);
+        final jobs = [
+          for (var n = 0; n < 5; n++)
+            job(n, want: n == 3 ? () => wanted : null),
+        ];
+        await Future<void>.delayed(Duration.zero);
+        expect(scheduler.running, 2);
+        expect(order, [0, 1], reason: 'free slots go to the first at hand');
+        wanted = false;
+        jobs[4].cancel();
+        expect(
+          await jobs[4].result.then<Object>(
+            (_) => 'ran',
+            onError: (Object e) => e,
           ),
           isA<VideoFrameException>(),
         );
-      gates[0].complete();
-      await Future<void>.delayed(Duration.zero);
-      // Newest first: 4 was cancelled, 3 is unwanted now, so 2 starts.
-      expect(order, [0, 1, 2]);
-      expect(scheduler.peak, 2);
-      gates[1].complete();
-      gates[2].complete();
-      expect(await jobs[2].result, 2);
-      await Future<void>.delayed(Duration.zero);
-      expect(order, [0, 1, 2], reason: 'the unwanted job never starts');
-      expect(scheduler.running, 0);
-      expect(scheduler.queued, 0);
-    },
+        gates[0].complete();
+        await Future<void>.delayed(Duration.zero);
+        // Newest first: 4 was cancelled, 3 is unwanted now, so 2 starts.
+        expect(order, [0, 1, 2]);
+        expect(scheduler.peak, 2);
+        gates[1].complete();
+        gates[2].complete();
+        expect(await jobs[2].result, 2);
+        await Future<void>.delayed(Duration.zero);
+        expect(order, [0, 1, 2], reason: 'the unwanted job never starts');
+        expect(scheduler.running, 0);
+        expect(scheduler.queued, 0);
+      },
     );
 
     test('cancelling a running job tells the work to stop', () async {
@@ -687,238 +695,258 @@ void main() {
       expect(scheduler.running, 0);
     });
 
-    testWidgets('a column of cards reads two frames at a time; scrolling away cancels', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(64, 64)))!;
-      probe = FakeProbe(picture, size: const Size(1280, 720))
-        ..hold = Completer<void>();
-      tester.view.physicalSize = const Size(390, 420);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final clips = [
-        for (var i = 0; i < 12; i++) {...noThumbnail, 'id': 'clip$i'},
-      ];
-      final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
-      final scroll = ScrollController();
-      addTearDown(() async {
-        await tester.pumpWidget(const SizedBox());
-        scroll.dispose();
-        w.dispose();
-        await client.dispose();
-      });
-      final scheduler = VideoFrameScheduler();
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: Scaffold(
-            body: ListView(
-              controller: scroll,
-              children: [
-                for (final clip in clips)
-                  card(
-                    w,
-                    clip, id: '${clip['id']}',
-                    scheduler: scheduler),
-              ],
+    testWidgets(
+      'a column of cards reads two frames at a time; scrolling away cancels',
+      (tester) async {
+        picture = (await tester.runAsync(() => png(64, 64)))!;
+        probe = FakeProbe(picture, size: const Size(1280, 720))
+          ..hold = Completer<void>();
+        tester.view.physicalSize = const Size(390, 420);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final clips = [
+          for (var i = 0; i < 12; i++) {...noThumbnail, 'id': 'clip$i'},
+        ];
+        final (client, w) = workspace(AttachmentDiskCache(root), noThumbnail);
+        final scroll = ScrollController();
+        addTearDown(() async {
+          await tester.pumpWidget(const SizedBox());
+          scroll.dispose();
+          w.dispose();
+          await client.dispose();
+        });
+        final scheduler = VideoFrameScheduler();
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: raftTheme(RaftFamily.elegant),
+            home: Scaffold(
+              body: ListView(
+                controller: scroll,
+                children: [
+                  for (final clip in clips)
+                    card(w, clip, id: '${clip['id']}', scheduler: scheduler),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 400));
-      await pumpUntil(tester, () => probe.calls.length >= 2);
-      // More time: a third read must not start while two are held.
-      for (var i = 0; i < 10; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
         );
+        await tester.pump(const Duration(milliseconds: 400));
+        await pumpUntil(tester, () => probe.calls.length >= 2);
+        // More time: a third read must not start while two are held.
+        for (var i = 0; i < 10; i++) {
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 10)),
+          );
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(probe.peak, 2);
+        expect(probe.calls.length, 2);
+        expect(scheduler.peak, 2);
+        // Scroll the first cards far away: their reads are cancelled.
+        scroll.jumpTo(scroll.position.maxScrollExtent);
+        await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
-      }
-      expect(probe.peak, 2);
-      expect(probe.calls.length, 2);
-      expect(scheduler.peak, 2);
-      // Scroll the first cards far away: their reads are cancelled.
-      scroll.jumpTo(scroll.position.maxScrollExtent);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 50)),
-      );
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(probe.cancelled, hasLength(2), reason: 'the two reads left behind',
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
         );
-      expect(probe.peak, lessThanOrEqualTo(2));
-      probe.hold!.complete();
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 50)),
-      );
-      await tester.pump(const Duration(milliseconds: 400));
-      expect(probe.peak, lessThanOrEqualTo(2));
-    },
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(
+          probe.cancelled,
+          hasLength(2),
+          reason: 'the two reads left behind',
+        );
+        expect(probe.peak, lessThanOrEqualTo(2));
+        probe.hold!.complete();
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(probe.peak, lessThanOrEqualTo(2));
+      },
     );
   });
 
   group('private cache', () {
-    testWidgets('the poster and the shape live in the private namespace; Clear cache and sign-out remove them', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(64, 64)))!;
-      probe = FakeProbe(picture, size: const Size(720, 1280));
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final store = AttachmentDiskCache(root);
-      final (client, w) = workspace(store, noThumbnail);
-      await tester.pumpWidget(host(card(w, noThumbnail)));
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      await storedEntries(tester, store, 2);
-      final privateBytes = await tester.runAsync(
-        () => store.sizeBytes(namespace: AttachmentCacheNamespace.attachments),
-      );
-      final publicBytes = await tester.runAsync(
-        () => store.sizeBytes(namespace: AttachmentCacheNamespace.public),
-      );
-      expect(privateBytes, greaterThan(0), reason: 'counted in Settings > Storage',
+    testWidgets(
+      'the poster and the shape live in the private namespace; Clear cache and sign-out remove them',
+      (tester) async {
+        picture = (await tester.runAsync(() => png(64, 64)))!;
+        probe = FakeProbe(picture, size: const Size(720, 1280));
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        final store = AttachmentDiskCache(root);
+        final (client, w) = workspace(store, noThumbnail);
+        await tester.pumpWidget(host(card(w, noThumbnail)));
+        await tester.pump(const Duration(milliseconds: 300));
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        await storedEntries(tester, store, 2);
+        final privateBytes = await tester.runAsync(
+          () =>
+              store.sizeBytes(namespace: AttachmentCacheNamespace.attachments),
         );
-      expect(publicBytes, 0, reason: 'never in the public namespace');
-      expect(
-        await tester.runAsync(
-          () => store.entryCount(namespace: AttachmentCacheNamespace.attachments,
+        final publicBytes = await tester.runAsync(
+          () => store.sizeBytes(namespace: AttachmentCacheNamespace.public),
+        );
+        expect(
+          privateBytes,
+          greaterThan(0),
+          reason: 'counted in Settings > Storage',
+        );
+        expect(publicBytes, 0, reason: 'never in the public namespace');
+        expect(
+          await tester.runAsync(
+            () => store.entryCount(
+              namespace: AttachmentCacheNamespace.attachments,
             ),
-        ),
-        2,
-        reason: 'the frame and the shape',
-      );
+          ),
+          2,
+          reason: 'the frame and the shape',
+        );
 
-      // The card is gone (a picture a widget holds stays through Clear cache).
-      await tester.pumpWidget(const SizedBox());
-      // Clear cache (Settings > Storage) goes through the disk hook.
-      final clearing = CacheClear();
-      clearing.installAppLayers(cache: store);
-      final result = await tester.runAsync(clearing.run);
-      expect(result!.ok, isTrue);
-      expect(
-        await tester.runAsync(
-          () => store.entryCount(namespace: AttachmentCacheNamespace.attachments,
+        // The card is gone (a picture a widget holds stays through Clear cache).
+        await tester.pumpWidget(const SizedBox());
+        // Clear cache (Settings > Storage) goes through the disk hook.
+        final clearing = CacheClear();
+        clearing.installAppLayers(cache: store);
+        final result = await tester.runAsync(clearing.run);
+        expect(result!.ok, isTrue);
+        expect(
+          await tester.runAsync(
+            () => store.entryCount(
+              namespace: AttachmentCacheNamespace.attachments,
             ),
-        ),
-        0,
-      );
+          ),
+          0,
+        );
 
-      // The card reads the frame again after it was cleared.
-      w.attachmentMedia.trimRebuildable();
-      await tester.pumpWidget(host(card(w, noThumbnail, id: 'b')));
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => probe.calls.length == 2);
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      await storedEntries(tester, store, 2);
+        // The card reads the frame again after it was cleared.
+        w.attachmentMedia.trimRebuildable();
+        await tester.pumpWidget(host(card(w, noThumbnail, id: 'b')));
+        await tester.pump(const Duration(milliseconds: 300));
+        await pumpUntil(tester, () => probe.calls.length == 2);
+        await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+        await storedEntries(tester, store, 2);
 
-      // Sign-out removes the account's entries, the frame included.
-      await tester.pumpWidget(const SizedBox());
-      await tester.runAsync(
-        () => store.purgeAccount(client.origin, client.user!.id),
-      );
-      expect(
+        // Sign-out removes the account's entries, the frame included.
+        await tester.pumpWidget(const SizedBox());
         await tester.runAsync(
-          () => store.entryCount(namespace: AttachmentCacheNamespace.attachments,
+          () => store.purgeAccount(client.origin, client.user!.id),
+        );
+        expect(
+          await tester.runAsync(
+            () => store.entryCount(
+              namespace: AttachmentCacheNamespace.attachments,
             ),
-        ),
-        0,
-      );
-      w.dispose();
-      await client.dispose();
-    },
+          ),
+          0,
+        );
+        w.dispose();
+        await client.dispose();
+      },
     );
   });
 
   group('tap opens the viewer', () {
     for (final width in [390.0, 1100.0]) {
       testWidgets(
-        '$width: the viewer plays at once, and the card flies its poster', (
-      tester) async {
-      picture = (await tester.runAsync(() => png(180, 320)))!;
-      probe = FakeProbe(picture, size: const Size(720, 1280));
-      final players = <_Player>[];
-      InlineMediaTestHooks.playerFactory = () {
-        final player = _Player();
-        players.add(player);
-        return player;
-      };
-      addTearDown(() => InlineMediaTestHooks.playerFactory = null);
-      tester.view.physicalSize = Size(width, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-      final video = {...noThumbnail, 'width': 720, 'height': 1280};
-      final (client, w) = workspace(AttachmentDiskCache(root), video);
-      final files = CountingFiles(picture);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: raftTheme(RaftFamily.elegant),
-          home: Scaffold(
-            body: Align(
-              alignment: Alignment.topLeft,
-              child: AttachmentView(
-                controller: w,
-                files: files,
-                messageId: 'host',
-                metadata: video,
-                galleryItems: [video],
-                frameProbe: probe,
+        '$width: the viewer plays at once, and the card flies its poster',
+        (tester) async {
+          picture = (await tester.runAsync(() => png(180, 320)))!;
+          probe = FakeProbe(picture, size: const Size(720, 1280));
+          final players = <_Player>[];
+          InlineMediaTestHooks.playerFactory = () {
+            final player = _Player();
+            players.add(player);
+            return player;
+          };
+          addTearDown(() => InlineMediaTestHooks.playerFactory = null);
+          tester.view.physicalSize = Size(width, 844);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.reset);
+          final video = {...noThumbnail, 'width': 720, 'height': 1280};
+          final (client, w) = workspace(AttachmentDiskCache(root), video);
+          final files = CountingFiles(picture);
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: raftTheme(RaftFamily.elegant),
+              home: Scaffold(
+                body: Align(
+                  alignment: Alignment.topLeft,
+                  child: AttachmentView(
+                    controller: w,
+                    files: files,
+                    messageId: 'host',
+                    metadata: video,
+                    galleryItems: [video],
+                    frameProbe: probe,
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      );
-      await tester.pump(const Duration(milliseconds: 300));
-      await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
-      expect(players, isEmpty, reason: 'a timeline card never has a player',
           );
-      expect(find.byType(RaftInlineVideo), findsNothing);
+          await tester.pump(const Duration(milliseconds: 300));
+          await pumpUntil(tester, () => posterImage().evaluate().isNotEmpty);
+          expect(
+            players,
+            isEmpty,
+            reason: 'a timeline card never has a player',
+          );
+          expect(find.byType(RaftInlineVideo), findsNothing);
 
-      await tester.tap(find.byKey(const Key('inline-video-poster-card')));
-      await tester.pump();
-      final shuttle = find.byKey(const ValueKey('media-hero-shuttle'));
-      for (var i = 0; i < 200 && shuttle.evaluate().isEmpty; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 10)),
-        );
-        await tester.pump(const Duration(milliseconds: 16));
-      }
-      expect(find.byType(MediaBrowser), findsOneWidget);
-      expect(shuttle, findsOneWidget, reason: 'the poster flies from the card',
+          await tester.tap(find.byKey(const Key('inline-video-poster-card')));
+          await tester.pump();
+          final shuttle = find.byKey(const ValueKey('media-hero-shuttle'));
+          for (var i = 0; i < 200 && shuttle.evaluate().isEmpty; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 10)),
+            );
+            await tester.pump(const Duration(milliseconds: 16));
+          }
+          expect(find.byType(MediaBrowser), findsOneWidget);
+          expect(
+            shuttle,
+            findsOneWidget,
+            reason: 'the poster flies from the card',
           );
-      for (var i = 0; i < 30; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 15)),
-        );
-        await tester.pump(const Duration(milliseconds: 60));
-      }
-      expect(shuttle, findsNothing);
-      expect(players, hasLength(1), reason: 'the viewer made the only player',
+          for (var i = 0; i < 30; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 15)),
+            );
+            await tester.pump(const Duration(milliseconds: 60));
+          }
+          expect(shuttle, findsNothing);
+          expect(
+            players,
+            hasLength(1),
+            reason: 'the viewer made the only player',
           );
-      expect(players.single.calls, ['open', 'toggle',
+          expect(players.single.calls, [
+            'open',
+            'toggle',
           ], reason: 'plays at once');
-      expect(players.single.playing, isTrue);
-      final heroes = tester
-          .widgetList<RaftMediaHero>(
-            find.byType(RaftMediaHero, skipOffstage: false),
-          )
-          .where((hero) => hero.enabled);
-      expect(heroes, hasLength(2), reason: 'the card and the stage');
-      tester.widget<MediaBrowser>(find.byType(MediaBrowser)).onClose();
-      for (var i = 0; i < 20; i++) {
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 15)),
-        );
-        await tester.pump(const Duration(milliseconds: 60));
-      }
-      expect(find.byType(MediaBrowser), findsNothing);
+          expect(players.single.playing, isTrue);
+          final heroes = tester
+              .widgetList<RaftMediaHero>(
+                find.byType(RaftMediaHero, skipOffstage: false),
+              )
+              .where((hero) => hero.enabled);
+          expect(heroes, hasLength(2), reason: 'the card and the stage');
+          tester.widget<MediaBrowser>(find.byType(MediaBrowser)).onClose();
+          for (var i = 0; i < 20; i++) {
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 15)),
+            );
+            await tester.pump(const Duration(milliseconds: 60));
+          }
+          expect(find.byType(MediaBrowser), findsNothing);
           expect(players.single.disposed, isTrue);
           expect(w.attachmentMedia.playerSessions.length, 0);
           await tester.pumpWidget(const SizedBox());
-      w.dispose();
-      await client.dispose();
-    },
+          w.dispose();
+          await client.dispose();
+        },
       );
     }
   });

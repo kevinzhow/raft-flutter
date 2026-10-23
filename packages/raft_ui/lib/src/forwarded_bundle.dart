@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'attachment_card.dart';
 import 'collapsible.dart';
+import 'design_primitives.dart' show RaftInteractive;
 import 'icons.dart';
 import 'theme.dart';
 import 'rich_card_tokens.dart';
 import 'localization.dart';
 import 'message_body.dart';
 import 'message_row_recipe.dart' show RaftMessageBodyMargin;
+import 'tooltip.dart' show RaftTooltip;
 
 /// Only recipient-projected fields are retained. Source pointers, capability
 /// URLs and internal attachment projection IDs never become displayed text.
@@ -22,7 +24,15 @@ class RaftForwardedItem {
     this.thread = false,
     this.parent = false,
     this.attachments = const [],
+    this.openable = false,
+    this.item = const {},
   });
+
+  /// Web `canOpenSourceLabel`: the source message is public and still has a
+  /// place to open. [item] holds the ids that open it; it only ever feeds the
+  /// open callback, never the display.
+  final bool openable;
+  final Map<String, dynamic> item;
   final String content, author;
   final int index;
   final DateTime? createdAt;
@@ -30,6 +40,25 @@ class RaftForwardedItem {
   final String? sourceLabel;
   final bool thread, parent;
   final List<Map<String, dynamic>> attachments;
+}
+
+/// Web `canOpenSourceLabel` (ForwardedBundleCard.tsx).
+bool _canOpenSource(Map item) {
+  if (item['provenanceState'] == 'original_unavailable') return false;
+  final id = item['sourceMessageId'];
+  if (id is! String || id.isEmpty) return false;
+  final target = item['sourceTargetSnapshot'];
+  if (target is! Map ||
+      target['type'] == 'dm' ||
+      target['labelVisibility'] != 'public') {
+    return false;
+  }
+  bool has(String key) =>
+      item[key] is String && (item[key] as String).isNotEmpty;
+  if (target['type'] == 'thread') {
+    return has('sourceThreadId') && has('parentChannelId');
+  }
+  return has('sourceTargetId');
 }
 
 List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
@@ -105,6 +134,18 @@ List<RaftForwardedItem> raftForwardedItems(Map<String, dynamic> metadata) {
         thread: thread,
         parent: item['sourceIsThreadParent'] == true,
         attachments: attachments,
+        openable: _canOpenSource(item),
+        item: {
+          // Only what opening the source needs: no attachment pointers.
+          for (final key in const [
+            'sourceMessageId',
+            'sourceTargetId',
+            'sourceThreadId',
+            'parentChannelId',
+          ])
+            if (item[key] is String) key: item[key],
+          if (target is Map) 'sourceTargetSnapshot': {'type': target['type']},
+        },
       ),
     );
   }
@@ -147,8 +188,13 @@ class RaftForwardedBundle extends StatefulWidget {
     this.formatTimestamp,
     this.exportMode = false,
     this.headerLine,
+    this.onOpenSource,
   });
   final Map<String, dynamic> metadata;
+
+  /// Web `onOpenSource`: the source label of the first item opens the message
+  /// it was forwarded from. Receives [RaftForwardedItem.item].
+  final void Function(Map<String, dynamic> item)? onOpenSource;
 
   /// Line box of the header's count and source text. Null keeps the in-feed
   /// 20px (the message row's leading); the note page mounts the card outside a
@@ -181,6 +227,50 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
     constraints: BoxConstraints(minHeight: style.fontSize! * style.height!),
     child: Text(text, style: style),
   );
+
+  /// The "from #channel" text; a button that opens the source message when it
+  /// can (Web `MessageForwardedBundleSource` inside an `AttachmentTooltip`).
+  Widget _source(
+    BuildContext context,
+    RaftForwardedItem first,
+    ForwardedSnapshotRecipe recipe,
+  ) {
+    final style = widget.headerLine == null
+        ? recipe.source
+        : recipe.source.copyWith(height: widget.headerLine! / 11);
+    final label = raftFormat(
+      context,
+      first.thread && !first.sourceLabel!.endsWith(' · thread')
+          ? 'from {target} · thread'
+          : 'from {target}',
+      {'target': first.sourceLabel!},
+    );
+    Text text(TextStyle style) => Text(
+      label,
+      style: style,
+      textAlign: TextAlign.right,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+    final open = widget.onOpenSource;
+    if (open == null || !first.openable || widget.exportMode) {
+      return text(style);
+    }
+    final hint = raftText(context, 'Open source message');
+    return RaftTooltip(
+      message: hint,
+      child: RaftInteractive(
+        key: const Key('forwarded-bundle-source'),
+        onPressed: () => open(first.item),
+        semanticLabel: hint,
+        builder: (_, state) => text(
+          state.hovered
+              ? style.copyWith(decoration: TextDecoration.underline)
+              : style,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -392,26 +482,7 @@ class _RaftForwardedBundleState extends State<RaftForwardedBundle> {
                     ),
                     if (first.sourceLabel != null) ...[
                       const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          raftFormat(
-                            context,
-                            first.thread &&
-                                    !first.sourceLabel!.endsWith(' · thread')
-                                ? 'from {target} · thread'
-                                : 'from {target}',
-                            {'target': first.sourceLabel!},
-                          ),
-                          style: widget.headerLine == null
-                              ? recipe.source
-                              : recipe.source.copyWith(
-                                  height: widget.headerLine! / 11,
-                                ),
-                          textAlign: TextAlign.right,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      Flexible(child: _source(context, first, recipe)),
                     ],
                   ],
                 ),

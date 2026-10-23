@@ -342,6 +342,11 @@ class _CardBox extends StatelessWidget {
 ///
 /// [heroTag] / [heroEnabled] put the picture on the card-to-viewer flight (see
 /// [RaftMediaHero]); the flight shows [poster] only, never a player.
+/// Why a video card shows no preview (Web `useRefreshingMediaUrl`'s
+/// `InlineMediaFailure`): the link or network failed (Retry helps), or the
+/// platform cannot decode the file (only Download does).
+enum RaftVideoPreviewFailure { unavailable, unsupported }
+
 class RaftVideoPosterCard extends StatelessWidget {
   const RaftVideoPosterCard({
     super.key,
@@ -354,9 +359,17 @@ class RaftVideoPosterCard extends StatelessWidget {
     this.heroTag,
     this.heroEnabled = false,
     this.maxHeightFraction = .6,
+    this.failure,
+    this.onRetry,
+    this.onDownload,
   });
   final String filename;
   final ImageProvider? poster;
+
+  /// The preview could not be made: the card says so and offers Retry (when
+  /// the failure is [RaftVideoPreviewFailure.unavailable]) and Download.
+  final RaftVideoPreviewFailure? failure;
+  final VoidCallback? onRetry, onDownload;
 
   /// Width over height of the displayed picture, when known.
   final double? aspectRatio;
@@ -430,7 +443,7 @@ class RaftVideoPosterCard extends StatelessWidget {
                   style: s.root,
                   tokens: rt,
                   clip: true,
-                  child: _picture(context, t),
+                  child: _picture(context, t, s),
                 ),
               ),
             );
@@ -440,7 +453,11 @@ class RaftVideoPosterCard extends StatelessWidget {
     );
   }
 
-  Widget _picture(BuildContext context, RaftTokens t) {
+  Widget _picture(
+    BuildContext context,
+    RaftTokens t,
+    RaftMessageVideoPreviewRecipeStyle s,
+  ) {
     final image = poster;
     final Widget picture = image == null
         ? ColoredBox(
@@ -467,6 +484,7 @@ class RaftVideoPosterCard extends StatelessWidget {
             child: picture,
           );
     final length = duration;
+    if (failure != null) return _failed(context, t, s);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -508,6 +526,94 @@ class RaftVideoPosterCard extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+
+  /// Web `MessageVideoPreviewFallback` with the failure content: a warning, what
+  /// went wrong, then Retry and Download to view.
+  Widget _failed(
+    BuildContext context,
+    RaftTokens t,
+    RaftMessageVideoPreviewRecipeStyle s,
+  ) {
+    final rt = t.recipeTokens;
+    final unsupported = failure == RaftVideoPreviewFailure.unsupported;
+    Widget action(
+      String label,
+      RaftGlyph glyph,
+      VoidCallback? onTap,
+      String semantic,
+    ) => RaftInteractive(
+      onPressed: onTap,
+      semanticLabel: semantic,
+      builder: (_, _) => RaftRecipeBox(
+        style: s.failureAction,
+        tokens: rt,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RaftIcon(glyph, size: 13),
+            const SizedBox(width: 4),
+            Text(label),
+          ],
+        ),
+      ),
+    );
+    final download = action(
+      raftText(context, 'Download to view'),
+      RaftGlyph.download,
+      onDownload,
+      raftFormat(context, 'Download {filename}', {'filename': filename}),
+    );
+    return RaftRecipeBox(
+      key: const Key('inline-video-failure'),
+      style: s.fallback,
+      tokens: rt,
+      child: Center(
+        child: RaftRecipeBox(
+          style: s.failureContent,
+          tokens: rt,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RaftRecipeBox(
+                style: s.failureIcon,
+                tokens: rt,
+                child: const RaftIcon(RaftGlyph.alertTriangle, size: 24),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                unsupported
+                    ? raftText(
+                        context,
+                        'This video may use a codec this browser cannot preview.',
+                      )
+                    : raftText(context, "Couldn't load this video preview."),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              if (unsupported)
+                download
+              else
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  children: [
+                    action(
+                      raftText(context, 'Retry'),
+                      RaftGlyph.rotateCcw,
+                      onRetry,
+                      raftFormat(context, 'Retry loading {filename}', {
+                        'filename': filename,
+                      }),
+                    ),
+                    download,
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
