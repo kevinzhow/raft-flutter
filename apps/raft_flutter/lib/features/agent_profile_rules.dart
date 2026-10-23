@@ -94,3 +94,9 @@ AgentProfileAccess agentProfileAccess({
     sourceServerLabel: agentSourceServerLabel(agent, currentServerId),
   );
 }
+
+/// Web PixelAvatar `isCustomAvatar`: an uploaded image, not `pixel:*` artwork.
+bool isCustomAgentAvatar(String? avatarUrl) =>
+    avatarUrl != null &&
+    avatarUrl.isNotEmpty &&
+    !avatarUrl.startsWith('pixel:');

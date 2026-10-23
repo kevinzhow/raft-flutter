@@ -607,10 +607,16 @@ class RaftPanelTabBar<T> extends StatefulWidget {
     required this.tabs,
     required this.value,
     required this.onChanged,
+    this.onReorder,
   });
   final List<RaftPanelTab<T>> tabs;
   final T value;
   final ValueChanged<T> onChanged;
+
+  /// `SortableTabsList onReorder`: a tab dragged onto another takes its place;
+  /// receives the whole new order. A pointer drags at once, a finger after a
+  /// long press (so the strip still scrolls). Null keeps the tabs fixed.
+  final ValueChanged<List<T>>? onReorder;
   @override
   State<RaftPanelTabBar<T>> createState() => _RaftPanelTabBarState<T>();
 }
@@ -714,7 +720,10 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
                 ? Row(
                     children: [
                       for (var i = 0; i < widget.tabs.length; i++)
-                        _tab(widget.tabs[i], i, style, base, rt, t),
+                        _reorderable(
+                          widget.tabs[i],
+                          _tab(widget.tabs[i], i, style, base, rt, t),
+                        ),
                     ],
                   )
                 // Elegant `tabs-list`: `h-12 gap-1 px-5`, no rule of its own
@@ -730,7 +739,10 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
                       children: [
                         for (var i = 0; i < widget.tabs.length; i++) ...[
                           if (i > 0) const SizedBox(width: 4),
-                          _elegantTab(widget.tabs[i], style, rt, t),
+                          _reorderable(
+                            widget.tabs[i],
+                            _elegantTab(widget.tabs[i], style, rt, t),
+                          ),
                         ],
                       ],
                     ),
@@ -835,6 +847,88 @@ class _RaftPanelTabBarState<T> extends State<RaftPanelTabBar<T>> {
           ),
         ),
       ),
+    );
+  }
+
+  /// The tab being dragged over (its drop side is marked).
+  T? dropTarget;
+
+  List<T> _moved(T moving, T onto) {
+    final ids = [for (final tab in widget.tabs) tab.id];
+    final from = ids.indexOf(moving), to = ids.indexOf(onto);
+    if (from < 0 || to < 0 || from == to) return ids;
+    ids.insert(to, ids.removeAt(from));
+    return ids;
+  }
+
+  Widget _reorderable(RaftPanelTab<T> tab, Widget child) {
+    final onReorder = widget.onReorder;
+    if (onReorder == null) return child;
+    final t = RaftTokens.of(context);
+    final touch = RaftInteraction.of(context).touch;
+    // The lifted tab: its label on a raised chip (the tab itself stays in
+    // place, so its key is never built twice).
+    final feedback = Material(
+      color: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: t.colors['layer-panel'],
+          border: Border.all(color: t.colors['line-strong']!),
+          boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x33000000))],
+        ),
+        child: RaftCssText(
+          tab.label,
+          style: raftCssText.merge(
+            RaftTypography.heading(
+              t,
+              size: 13,
+              line: 19.5,
+              weight: FontWeight.w500,
+              color: t.strong,
+            ),
+          ),
+        ),
+      ),
+    );
+    return DragTarget<Object>(
+      onWillAcceptWithDetails: (details) => details.data != tab.id,
+      onMove: (_) {
+        if (dropTarget != tab.id) setState(() => dropTarget = tab.id);
+      },
+      onLeave: (_) {
+        if (dropTarget == tab.id) setState(() => dropTarget = null);
+      },
+      onAcceptWithDetails: (details) {
+        setState(() => dropTarget = null);
+        onReorder(_moved(details.data as T, tab.id));
+      },
+      builder: (context, candidates, _) {
+        final marked = dropTarget == tab.id && candidates.isNotEmpty;
+        final source = touch
+            ? LongPressDraggable<Object>(
+                data: tab.id as Object,
+                feedback: feedback,
+                child: child,
+              )
+            : Draggable<Object>(
+                data: tab.id as Object,
+                feedback: feedback,
+                child: child,
+              );
+        return DecoratedBox(
+          key: ValueKey(
+            'panel-tab-slot-${tab.id is Enum ? (tab.id as Enum).name : tab.id}',
+          ),
+          position: DecorationPosition.foreground,
+          decoration: BoxDecoration(
+            border: marked
+                ? Border(left: BorderSide(color: t.strong, width: 2))
+                : null,
+          ),
+          child: source,
+        );
+      },
     );
   }
 

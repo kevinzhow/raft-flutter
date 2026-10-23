@@ -22,6 +22,7 @@ import 'package:flutter/services.dart';
 import 'system_inset.dart';
 import 'avatar_content.dart';
 import 'icons.dart';
+import 'profile_link.dart';
 import 'inline_badge_editor.dart';
 import 'localization.dart';
 import 'panel_layout.dart';
@@ -34,6 +35,8 @@ import 'recipes/recipe_utilities.g.dart';
 import 'recipes/spinner.g.dart';
 import 'recipes/token_binding.dart';
 import 'list_items.dart';
+import 'sized_image.dart' show RaftSizedImage;
+import 'message_body.dart' show RaftMessageBody;
 import 'product_empty_state.dart';
 import 'recipe_surface.dart'
     show RaftCssBoxDecoration, RaftCssOverflowY, RaftRecipeBox, raftCssText;
@@ -1659,9 +1662,17 @@ class RaftReminderItem {
     required this.relative,
     required this.dateTime,
     this.recurrence,
+    this.msgRef,
+    this.onOpenMessage,
   });
   final String title, relative, dateTime;
   final String? recurrence;
+
+  /// The message the reminder was set from (`#channel:shortid`), shown as a
+  /// chip; it opens that message when [onOpenMessage] is set (the server sent
+  /// a `msgPermalink`), else it is plain text.
+  final String? msgRef;
+  final VoidCallback? onOpenMessage;
 }
 
 /// AgentRemindersSection variant="tab": `px-5 py-5`, `space-y-3` of
@@ -1811,9 +1822,61 @@ class RaftReminderListView extends StatelessWidget {
                 ),
             ],
           ),
+          if (r.msgRef != null && r.msgRef!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _msgRef(t, r),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  /// `inline-flex max-w-full items-center gap-1 truncate border border-line-muted
+  /// bg-layer-panel px-1.5 py-0.5 font-mono text-[11px]`: a link when the
+  /// reminder carries a permalink.
+  Widget _msgRef(RaftTokens t, RaftReminderItem r) {
+    final link = r.onOpenMessage != null;
+    final chip = Container(
+      key: const ValueKey('reminder-msg-ref'),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: t.brutal ? Colors.white : t.colors['layer-panel'],
+        border: Border.all(
+          color: t.brutal ? Colors.black : t.colors['line-muted']!,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RaftIcon(
+            RaftGlyph.link2,
+            size: 11,
+            color: link ? t.strong : t.colors['foreground-muted'],
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: RaftCssText(
+              r.msgRef!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RaftTypography.mono(
+                t,
+                size: 11,
+                line: 16,
+                color: link ? t.strong : t.colors['foreground-muted'],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    return link
+        ? RaftProfileLink(onPressed: r.onOpenMessage!, child: chip)
+        : chip;
   }
 }
 
@@ -2266,8 +2329,12 @@ class RaftWorkspaceTreeView extends StatelessWidget {
   }
 }
 
-/// A plain file preview with a back row (AgentWorkspace right pane, compact).
-class RaftWorkspaceFilePreview extends StatelessWidget {
+/// AgentWorkspace right pane: a file header (back row on a phone, the path and,
+/// for Markdown, the Raw / Preview toggle), the content and a bottom bar with
+/// the file size and modification time. Text shows as mono source; a `.md`
+/// file previews rendered (the default, like Web); an image the server sent
+/// base64 shows as a picture; any other binary file says it cannot be shown.
+class RaftWorkspaceFilePreview extends StatefulWidget {
   const RaftWorkspaceFilePreview({
     super.key,
     required this.path,
@@ -2276,6 +2343,10 @@ class RaftWorkspaceFilePreview extends StatelessWidget {
     this.embedded = false,
     this.error,
     this.loading = false,
+    this.imageBytes,
+    this.binary = false,
+    this.sizeLabel,
+    this.modifiedLabel,
   });
   final String path, content;
   final VoidCallback? onBack;
@@ -2291,14 +2362,78 @@ class RaftWorkspaceFilePreview extends StatelessWidget {
   /// Kept for call sites: the desktop right pane and the phone page share one
   /// layout (the back arrow shows when [onBack] is set).
   final bool embedded;
+
+  /// `isWorkspaceImagePreview`: the decoded picture of a base64 image file.
+  final Uint8List? imageBytes;
+
+  /// A binary file that is not a picture: "Binary file — cannot display".
+  final bool binary;
+
+  /// The bottom bar (`formatSize`, `formatShortDateTime`); hidden when null.
+  final String? sizeLabel, modifiedLabel;
+
+  @override
+  State<RaftWorkspaceFilePreview> createState() =>
+      _RaftWorkspaceFilePreviewState();
+}
+
+class _RaftWorkspaceFilePreviewState extends State<RaftWorkspaceFilePreview> {
+  /// `viewMode`: Web keeps it across files and starts on the preview.
+  bool preview = true;
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    if (loading) return Center(child: _loadingText(context, t));
-    if (error != null) return Center(child: _errorText(context, t));
+    if (widget.loading) return Center(child: _loadingText(context, t));
+    if (widget.error != null) return Center(child: _errorText(context, t));
+    final markdown = widget.path.endsWith('.md');
+    final ink = t.brutal ? Colors.black : t.strong;
+    final hairline = BorderSide(
+      color: raftPanelInk(t, .1, t.colors['line-muted']!),
+    );
+    final mono = RaftTypography.mono(t, size: 14, line: 20, color: ink);
     // AgentWorkspace.tsx right pane (the phone shows it alone with a back
     // arrow; `md:hidden` / `compact`): header `gap-2 border-b bg-layer-panel
     // px-4 py-2`, `p-4` content.
+    final Widget body;
+    if (widget.imageBytes != null) {
+      body = Center(
+        child: RaftSizedImage.memory(
+          widget.imageBytes!,
+          key: const ValueKey('workspace-file-image'),
+          fit: BoxFit.contain,
+          evictOnDispose: true,
+          semanticLabel: widget.path,
+        ),
+      );
+    } else if (widget.binary) {
+      body = Center(
+        child: RaftCssText(
+          raftText(context, 'Binary file — cannot display'),
+          key: const ValueKey('workspace-file-binary'),
+          style: RaftTypography.mono(
+            t,
+            size: 14,
+            line: 20,
+            color: raftPanelInk(t, .4, t.colors['foreground-placeholder']!),
+          ),
+        ),
+      );
+    } else if (markdown && preview) {
+      body = SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: RaftMessageBody(
+          key: const ValueKey('workspace-file-markdown'),
+          content: widget.content,
+          documentMode: true,
+        ),
+      );
+    } else {
+      body = SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: SelectableText(widget.content, style: mono),
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -2306,53 +2441,74 @@ class RaftWorkspaceFilePreview extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: t.brutal ? Colors.white : t.colors['layer-panel'],
-            border: Border(
-              bottom: BorderSide(
-                color: raftPanelInk(t, .1, t.colors['line-muted']!),
-              ),
-            ),
+            border: Border(bottom: hairline),
           ),
           child: Row(
             children: [
-              if (onBack != null) ...[
+              if (widget.onBack != null) ...[
                 RaftInlineIconButton(
                   glyph: RaftGlyph.arrowLeft,
                   size: 16,
                   tooltip: raftText(context, 'Back'),
-                  onPressed: onBack,
+                  onPressed: widget.onBack,
                 ),
                 const SizedBox(width: 8),
               ],
               Expanded(
                 child: RaftCssText(
-                  path,
+                  widget.path,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: RaftTypography.mono(
                     t,
                     size: 14,
                     line: 20,
-                    color: t.brutal ? Colors.black : t.strong,
+                    color: ink,
                   ).copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
+              if (markdown) ...[
+                const SizedBox(width: 8),
+                RaftSegmentedControl<bool>(
+                  key: const ValueKey('workspace-file-view-mode'),
+                  label: raftText(context, 'Workspace file view mode'),
+                  value: preview,
+                  onChanged: (value) => setState(() => preview = value),
+                  items: [
+                    RaftSegmentedOption(
+                      value: false,
+                      label: raftText(context, 'Raw'),
+                      itemKey: const ValueKey('workspace-file-view-raw'),
+                    ),
+                    RaftSegmentedOption(
+                      value: true,
+                      label: raftText(context, 'Preview'),
+                      itemKey: const ValueKey('workspace-file-view-preview'),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: SelectableText(
-              content,
-              style: RaftTypography.mono(
-                t,
-                size: 14,
-                line: 20,
-                color: t.brutal ? Colors.black : t.strong,
-              ),
+        Expanded(child: body),
+        if (widget.sizeLabel != null || widget.modifiedLabel != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: t.brutal ? Colors.white : t.colors['layer-panel'],
+              border: Border(top: hairline),
+            ),
+            child: Row(
+              children: [
+                for (final text in [widget.sizeLabel, widget.modifiedLabel])
+                  if (text != null && text.isNotEmpty) ...[
+                    RaftCssText(text, style: RaftPanelText.monoCaption(t)),
+                    const SizedBox(width: 12),
+                  ],
+              ],
             ),
           ),
-        ),
       ],
     );
   }
@@ -2372,7 +2528,7 @@ class RaftWorkspaceFilePreview extends StatelessWidget {
     child: Semantics(
       liveRegion: true,
       child: RaftCssText(
-        raftText(context, error!),
+        raftText(context, widget.error!),
         textAlign: TextAlign.center,
         style: RaftTypography.mono(
           t,

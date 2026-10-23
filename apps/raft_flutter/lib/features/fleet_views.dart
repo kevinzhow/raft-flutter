@@ -6,8 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/agent_archive.dart';
+import '../data/raft_location.dart';
+import '../data/raft_permalink.dart';
+import '../platform/content_links.dart';
 import 'agent_archive_requests.dart';
 import '../data/user_error.dart';
 import '../data/web_error.dart';
@@ -18,6 +22,7 @@ import 'managed_agent_launcher.dart';
 import 'agent_scopes_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_profile_rules.dart';
+import 'quoted_message_preview.dart' show openRaftPermalink;
 import 'agent_metadata_projection.dart';
 import 'report_issue.dart';
 import 'agent_runtime_editor.dart';
@@ -904,15 +909,70 @@ class _FleetDetailState extends State<FleetDetail> {
         ? {'id': existing.id}
         : await w.client.post('/channels/dm', data: {'agentId': id});
     if (!current || value is! Map || value['id'] is! String) return;
+    await _leaveFor(() => w.jumpToMessage(value['id'], null));
+  }
+
+  /// Leaves the profile for a conversation: a profile slot closes itself
+  /// first (its Back would pop the page just opened), a route page pops.
+  Future<void> _leaveFor(Future<void> Function() open) async {
     final leave = widget.onLeaveForMessage;
     if (leave != null) {
       leave();
-      await w.jumpToMessage(value['id'], null);
+      await open();
       return;
     }
-    await w.jumpToMessage(value['id'], null);
+    await open();
     if (mounted && widget.onClose == null) Navigator.of(context).maybePop();
     widget.onClose?.call();
+  }
+
+  /// Chat tab channel row (Web `nav.toChannel`).
+  Future<void> openChannel(String channelId) async {
+    if (!current) return;
+    await _leaveFor(() => w.jumpToMessage(channelId, null));
+  }
+
+  /// Reminder chip (Web `handleOpenReminderMsgRef`): the message the reminder
+  /// was set from, in its thread, DM or channel. A link outside the app opens
+  /// in the browser.
+  Future<void> openReminderMessage(String permalink) async {
+    if (!current) return;
+    final link = parseRaftPermalink(
+      permalink,
+      hostnames: [ContentLinks.originFor(w.client.origin).host],
+    );
+    if (link == null) {
+      final uri = Uri.tryParse(permalink);
+      if (uri != null && (uri.scheme == 'https' || uri.scheme == 'http')) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      return;
+    }
+    await _leaveFor(() => openRaftPermalink(w, link));
+  }
+
+  /// Info > Computer (Web `nav.toMachine`): the profile closes and the
+  /// Computer opens in the workspace.
+  void openComputer(String machineId) {
+    if (!current || !w.can('viewMachines')) return;
+    w.navigation.navigate(
+      RaftLocation.at(
+        serverSlug: w.location.serverSlug,
+        route: RaftRoute.computer,
+        entityId: machineId,
+      ),
+    );
+    w.closeThread(navigate: false);
+    w.notifyListeners();
+  }
+
+  /// Info > Creator: their profile replaces this one.
+  void openCreator(String type, String creatorId) {
+    if (!current) return;
+    w.openProfile(
+      type == 'human' ? RaftProfileKind.human : RaftProfileKind.agent,
+      creatorId,
+    );
   }
 
   /// ResetAgentDialog: one entry point, the mode is chosen in the dialog and
@@ -1438,6 +1498,10 @@ class _FleetDetailState extends State<FleetDetail> {
         onRestartReset: () => action(restartReset),
         onDelete: access.canManage && allowed('deleteAgents') ? remove : null,
         canArchive: !access.boundedPublic && allowed('deleteAgents'),
+        onOpenChannel: (id) => unawaited(openChannel(id)),
+        onOpenMessage: (link) => unawaited(openReminderMessage(link)),
+        onOpenComputer: openComputer,
+        onOpenCreator: openCreator,
         onMessage: !access.boundedPublic && row['deletedAt'] == null
             ? () => action(message)
             : null,

@@ -173,35 +173,17 @@ void main() {
     testWidgets('deprecated runtimes carry Web\'s "(deprecated)" status', (
       tester,
     ) async {
-      // formatRuntimeLabelWithStatus: the Runtime badge and the Created Agents
-      // subtitles say "(deprecated)" for a deprecated runtime and nothing else.
+      // formatRuntimeLabelWithStatus: the Runtime badge says "(deprecated)" for
+      // a deprecated runtime and nothing else.
       await openFleet(
         tester,
         role: 'member',
         agent: {
           ...localAgent(creatorId: 'alice'),
           'runtime': 'copilot',
-          'createdAgents': [
-            {
-              'id': 'k1',
-              'name': 'kid',
-              'displayName': 'Kid',
-              'runtime': 'kimi',
-              'status': 'active',
-            },
-            {
-              'id': 'c1',
-              'name': 'cc',
-              'displayName': 'Cc',
-              'runtime': 'claude',
-              'status': 'active',
-            },
-          ],
         },
       );
       expect(find.text('Copilot CLI (deprecated)'), findsOneWidget);
-      expect(find.text('Kimi CLI (deprecated)'), findsOneWidget);
-      expect(find.text('Claude Code'), findsOneWidget);
     });
 
     testWidgets('a member who did not create the agent does not manage it', (
@@ -224,7 +206,8 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('No computer assigned'), findsOneWidget);
-      expect(find.textContaining('CREATED AGENTS'), findsOneWidget);
+      // v1.21.23: an agent profile has no Created Agents section.
+      expect(find.textContaining('CREATED AGENTS'), findsNothing);
     });
 
     testWidgets(
@@ -237,7 +220,8 @@ void main() {
         );
         expect(find.text('Activity'), findsNothing);
         expect(find.text('No computer assigned'), findsOneWidget);
-        expect(find.textContaining('CREATED AGENTS'), findsOneWidget);
+        // v1.21.23: an agent profile has no Created Agents section.
+        expect(find.textContaining('CREATED AGENTS'), findsNothing);
         expect(
           find.byKey(const Key('agent-profile-inline-start-stop')),
           findsNothing,

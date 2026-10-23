@@ -5,6 +5,7 @@
 // tab's content. FleetDetail keeps the data loading, authority fencing and
 // lifecycle commands and hands them to this view.
 import 'dart:async';
+import 'dart:convert' show base64Decode;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +21,8 @@ import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_archive_requests.dart';
 import 'agent_apps_view.dart';
+import 'agent_diagnostic_info.dart';
+import 'feedback_attachment_preview.dart' show showFeedbackImage;
 import 'agent_archive_section.dart';
 import 'agent_hosted_model.dart';
 import 'agent_migration_section.dart';
@@ -81,6 +84,13 @@ class SourceProfileLoadingPanel extends StatelessWidget {
   );
 }
 
+/// AgentWorkspace `formatSize`.
+String workspaceFileSize(int bytes) => bytes < 1024
+    ? '$bytes B'
+    : bytes < 1024 * 1024
+    ? '${(bytes / 1024).toStringAsFixed(1)} KB'
+    : '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+
 enum AgentDetailTab { profile, activity, chat, reminders, workspace, apps, mcp }
 
 /// Lifecycle and edit commands owned by FleetDetail.
@@ -98,6 +108,10 @@ class AgentDetailActions {
     this.onRestartReset,
     this.onDelete,
     this.canArchive = false,
+    this.onOpenComputer,
+    this.onOpenCreator,
+    this.onOpenChannel,
+    this.onOpenMessage,
     this.onMessage,
     this.canMigrate = false,
     this.onPermissions,
@@ -115,6 +129,13 @@ class AgentDetailActions {
   /// viewer manages a non-external agent that has a computer and
   /// `agent_migration_v0` is on).
   final bool canMigrate;
+  /// Info rows: the Computer name opens that Computer; the creator opens
+  /// their profile (`human` or `agent`).
+  final ValueChanged<String>? onOpenComputer, onOpenChannel;
+  final void Function(String type, String id)? onOpenCreator;
+
+  /// A reminder's message permalink: jump back to that message.
+  final ValueChanged<String>? onOpenMessage;
   final VoidCallback? onBack,
       onClose,
       onEditName,
@@ -241,23 +262,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   bool get _canControlRuntime => widget.canControlRuntime && !_bounded;
   bool get _canMessage => !_bounded && widget.actions.onMessage != null;
 
-  /// Web `CreatedAgentStatusDot` -> useAgentDisplayState(agentId): the live
-  /// directory row, else the created-agent row's own status.
-  AgentAmbientDisplay _createdAgentDisplay(Map c) {
-    final now = (widget.clock ?? DateTime.now)();
-    final live = widget.controller.services.entityDirectory.agent('${c['id']}');
-    if (live != null) return agentRowAmbientDisplay(live, now: now);
-    return resolveAgentAmbientDisplay(
-      identity: AgentPresentationIdentity(
-        id: '${c['id']}',
-        status: c['status'] is String ? c['status'] as String : 'offline',
-        runtime: c['runtime'] as String?,
-        external: c['external'] == true || c['runtime'] == 'external',
-      ),
-      now: now,
-    );
-  }
-
   /// AGENT_PANEL_TABS filtered by visibility, then ordered like raft-ui
   /// `reconcileTabOrder`: the server's `agentPanelTabOrder` first (`channels` /
   /// `dms` are the legacy ids of Chat, `integrations` of Apps), the rest in
@@ -333,6 +337,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     _adoptCachedExternalStatus();
     unawaited(loadExternalStatus());
     unawaited(loadArchivedMachine());
+    unawaited(loadExternalDiagnostics());
   }
 
   /// A revisit shows the last accepted setup state at its first frame (the
@@ -359,11 +364,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         externalStatusFor = null;
         archivedMachine = null;
         archivedMachineFor = null;
+        externalDiagnostics = null;
+        externalDiagnosticsFor = null;
         _adoptCachedExternalStatus();
       }
       unawaited(loadExternalStatus());
     }
     unawaited(loadArchivedMachine());
+    unawaited(loadExternalDiagnostics());
   }
 
   Future<void> loadExternalStatus() async {
@@ -401,29 +409,71 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     super.dispose();
   }
 
-  /// `buildAgentDiagnosticInfo`: the agent's identity, runtime, computer and
-  /// live state as plain lines.
+  /// External agents: `GET /agents/:id/external-diagnostics`, keyed by agent
+  /// (a switch never shows the previous agent's facts). Null while loading or
+  /// when the read failed; the text then says "unavailable".
+  Map<String, dynamic>? externalDiagnostics;
+  String? externalDiagnosticsFor;
+
+  Future<void> loadExternalDiagnostics() async {
+    final id = '${a['id']}';
+    if (!external || _bounded || !_canViewPrivate || a['deletedAt'] != null) {
+      return;
+    }
+    if (externalDiagnosticsFor == id) return;
+    externalDiagnosticsFor = id;
+    try {
+      final view = admittedExternalDiagnostics(
+        await widget.controller.query('/agents/$id/external-diagnostics'),
+      );
+      if (!mounted || externalDiagnosticsFor != id) return;
+      setState(() => externalDiagnostics = view);
+    } catch (_) {
+      // A failed read counts as unavailable.
+    }
+  }
+
+  /// `buildAgentDiagnosticInfo`: managed agents carry their identity, runtime,
+  /// Computer and live state; external agents the external diagnostics.
   String get diagnosticInfo {
-    final m = machine;
-    final lines = <String, Object?>{
-      'Agent': displayName,
-      'Handle': a['name'],
-      'Agent ID': a['id'],
-      'Server ID': widget.controller.server?.id,
-      'Status': a['status'],
-      'Activity': activity,
-      'Runtime': a['runtime'],
-      'Model': a['model'],
-      'Reasoning effort': a['reasoningEffort'],
-      'Computer': m?['name'],
-      'Computer ID': a['machineId'],
-      'Computer status': m?['status'],
-      'Session ID': a['sessionId'],
-    };
-    return [
-      for (final e in lines.entries)
-        if (e.value != null && '${e.value}'.isNotEmpty) '${e.key}: ${e.value}',
-    ].join('\n');
+    final id = '${a['id']}';
+    final log = agentCachedActivityEntries(widget.controller, id);
+    final stamp = log.isEmpty ? null : log.last['timestamp'];
+    final display = _display;
+    return buildAgentDiagnosticInfo(
+      agent: a,
+      title: raftText(context, 'Raft Diagnostic Info'),
+      serverId: widget.controller.server?.id,
+      machine: machine,
+      activity: display.activity,
+      detailKind: display.detailKind,
+      activityDetail: display.detail,
+      lastActivityAtMs: stamp is num ? stamp.toInt() : null,
+      errorMessage: _canViewPrivate ? runtimeErrorDiagnostic : null,
+      externalDiagnostics: externalDiagnostics,
+    );
+  }
+
+  /// The raw diagnostic kept for the copy text even when the banner shows the
+  /// classified catalog message (Web `diagnosticErrorMessage`).
+  String? get runtimeErrorDiagnostic {
+    final display = _display;
+    if (display.activity != 'error' && a['lastRuntimeError'] == null) {
+      return null;
+    }
+    final raw = display.activity == 'error'
+        ? display.detail
+        : '${(a['lastRuntimeError'] as Map?)?['message'] ?? ''}';
+    final typed = a['lastRuntimeError'];
+    if (typed is Map &&
+        typed['errorClass'] != null &&
+        typed['errorReason'] != null) {
+      return [
+        raw,
+        'class=${typed['errorClass']} reason=${typed['errorReason']} fingerprint=${typed['fingerprint']}',
+      ].where((line) => line.isNotEmpty).join('\n');
+    }
+    return raw;
   }
 
   Future<void> copyDiagnosticInfo() async {
@@ -540,6 +590,21 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             tabs: [for (final id in visible) _tabSpec(context, id)],
             value: current,
             onChanged: (v) => setState(() => tab = v),
+            // Web `SortableTabsList`: the new order of the visible tabs is the
+            // server's `agentPanelTabOrder`.
+            onReorder: (order) {
+              unawaited(
+                widget.controller.updateSidebarOrder({
+                  // Web's id of the Apps tab is `integrations`.
+                  'agentPanelTabOrder': [
+                    for (final id in order)
+                      id == AgentDetailTab.apps ? 'integrations' : id.name,
+                  ],
+                }),
+              );
+              // The order applies at once (the PATCH follows).
+              setState(() {});
+            },
           ),
           Expanded(
             child: RaftSectionPager<AgentDetailTab>(
@@ -646,12 +711,14 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
         controller: w,
         agentId: agentId,
         clock: widget.clock,
+        onOpenChannel: widget.actions.onOpenChannel,
       ),
       AgentDetailTab.reminders => AgentRemindersTab(
         key: ValueKey('agent-reminders-$agentId'),
         controller: w,
         agentId: agentId,
         clock: widget.clock,
+        onOpenMessage: widget.actions.onOpenMessage,
       ),
       AgentDetailTab.workspace => AgentWorkspaceTab(
         key: ValueKey('agent-workspace-$agentId'),
@@ -742,6 +809,42 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     return (color, text);
   }
 
+  /// An Info value that navigates: a hover-underlined button with the full
+  /// text as its tooltip, or the plain value when nothing can open it.
+  Widget _profileLink({
+    required Key key,
+    required VoidCallback? onPressed,
+    required String tooltip,
+    required Widget child,
+  }) => onPressed == null
+      ? child
+      : RaftTooltip(
+          message: tooltip,
+          child: RaftProfileLink(key: key, onPressed: onPressed, child: child),
+        );
+
+  /// Web `viewAvatar`: a custom (uploaded) avatar opens enlarged for people
+  /// who cannot change it.
+  Future<void> viewAvatar() async {
+    final url = agentProfileAvatarUrl(
+      widget.controller.client.origin,
+      a['avatarUrl'] as String?,
+    );
+    if (url == null) return;
+    try {
+      final bytes = await RaftImageBytes.instance.load(url);
+      if (!mounted) return;
+      await showFeedbackImage(
+        context,
+        filename: displayName,
+        contentType: 'image/png',
+        bytes: bytes,
+      );
+    } catch (_) {
+      if (mounted) showRaftToast(context, 'Failed to load file');
+    }
+  }
+
   Widget _profile(BuildContext context) {
     final t = RaftTokens.of(context);
     final canEdit = _canManage && a['deletedAt'] == null;
@@ -809,9 +912,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
       if (a['envVars'] is Map)
         for (final e in (a['envVars'] as Map).entries) '${e.key}': '${e.value}',
     };
-    final created = (a['createdAgents'] as List? ?? const [])
-        .whereType<Map>()
-        .toList();
     final buttons = <Widget>[
       if (!external) ...[
         if (_canControlRuntime) ...[
@@ -901,7 +1001,17 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             a['avatarUrl'] as String?,
           ),
           avatarButton: canEdit,
-          onAvatar: canEdit ? widget.actions.onEditAvatar : null,
+          // Web: a manager changes the avatar; anyone else with a custom
+          // (uploaded) avatar can enlarge it. An archived agent's is static.
+          onAvatar: canEdit
+              ? widget.actions.onEditAvatar
+              : a['deletedAt'] == null &&
+                    isCustomAgentAvatar(a['avatarUrl'] as String?)
+              ? viewAvatar
+              : null,
+          avatarLabel: canEdit
+              ? null
+              : raftText(context, 'View avatar'),
           onEditName: canEdit ? widget.actions.onEditName : null,
           statusColor:
               externalPresence?.$1 ?? raftActivityDotColor(t, activity),
@@ -990,13 +1100,20 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                   : pending
                   ? const SizedBox.shrink()
                   : m != null
-                  ? RaftCssText(
-                      '${m['name']}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      // v1.21.12: the machine link is plain `text-sm
-                      // text-foreground-muted` (no `font-mono font-semibold`).
-                      style: RaftPanelText.profileValue(t),
+                  ? _profileLink(
+                      key: const ValueKey('agent-computer-link'),
+                      onPressed: widget.actions.onOpenComputer == null
+                          ? null
+                          : () => widget.actions.onOpenComputer!('${m['id']}'),
+                      tooltip: '${m['name']}',
+                      child: RaftCssText(
+                        '${m['name']}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        // v1.21.12: the machine link is plain `text-sm
+                        // text-foreground-muted` (no `font-mono font-semibold`).
+                        style: RaftPanelText.profileValue(t),
+                      ),
                     )
                   : archivedMachine != null
                   // An archived agent has no Computer; say where it last ran.
@@ -1040,11 +1157,29 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             RaftInfoRow(
               label: raftText(context, 'Creator'),
               child: creator is Map
-                  ? RaftCreatorLink(
-                      name: nonEmptyOr(creator['displayName'], creator['name']),
-                      handle: '${creator['name']}',
-                      human: creator['type'] == 'human',
-                      avatarUrl: creator['avatarUrl'] as String?,
+                  ? _profileLink(
+                      key: const ValueKey('agent-creator-link'),
+                      onPressed:
+                          widget.actions.onOpenCreator == null ||
+                              creator['id'] is! String
+                          ? null
+                          : () => widget.actions.onOpenCreator!(
+                              creator['type'] == 'human' ? 'human' : 'agent',
+                              creator['id'] as String,
+                            ),
+                      tooltip: nonEmptyOr(
+                        creator['displayName'],
+                        creator['name'],
+                      ),
+                      child: RaftCreatorLink(
+                        name: nonEmptyOr(
+                          creator['displayName'],
+                          creator['name'],
+                        ),
+                        handle: '${creator['name']}',
+                        human: creator['type'] == 'human',
+                        avatarUrl: creator['avatarUrl'] as String?,
+                      ),
                     )
                   : RaftCssText(
                       raftText(context, 'No creator assigned'),
@@ -1134,44 +1269,32 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
                     ),
                   ),
                 ),
+              // Web (Claude only): the custom provider's API URL and the
+              // command override, in machine type, else "Default".
+              if (runtime == 'claude') ...[
+                for (final (label, value) in [
+                  ('Provider', config.providerApiUrl),
+                  ('Command', config.commandText),
+                ])
+                  RaftInfoRow(
+                    key: ValueKey('agent-runtime-${label.toLowerCase()}'),
+                    label: raftText(context, label),
+                    child: value.isEmpty
+                        ? RaftCssText(
+                            raftText(context, 'Default'),
+                            style: RaftPanelText.muted(t),
+                          )
+                        : RaftCssText(
+                            value,
+                            style: RaftPanelText.profileMono(t),
+                          ),
+                  ),
+              ],
               if (env.isNotEmpty) RaftEnvVarsBlock(vars: env),
             ],
           ),
-        if (!_bounded)
-          RaftPanelSection(
-            children: [
-              RaftSectionHeader(
-                label: raftText(context, 'Created Agents'),
-              count: created.length,
-            ),
-            if (created.isNotEmpty)
-              RaftGapColumn(
-                children: [
-                  for (final c in created)
-                    RaftAvatarListRow(
-                      avatar: RaftAvatarSlot(
-                        name: agentRowName(c),
-                        avatarUrl: c['avatarUrl'] as String?,
-                        slot: RaftAvatarSlotContext.surfaceList,
-                      ),
-                      name: agentRowName(c),
-                      subtitle: runtimeLabelWithStatus(
-                        context,
-                        '${c['runtime'] ?? ''}',
-                      ),
-                      rightContent: [
-                        RaftActivityDot(
-                          color: raftActivityDotColor(
-                            t,
-                            _createdAgentDisplay(c).activity,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-          ],
-        ),
+        // v1.21.23: no "Created Agents" section on an agent profile (a
+        // person's profile keeps it).
         // Web AgentDetailPanel `{canViewPrivateAgentSurfaces && <AgentSkills
         // embedded />}`, between the profile info and Actions.
         if (_canViewPrivate && a['deletedAt'] == null)
@@ -1337,8 +1460,10 @@ class _WorkspaceSnapshot extends _AgentTabSnapshot {
   /// `DirTruncation` per listing (`''` is the root): the server cut it short.
   final truncation = <String, ({int shown, int? omitted})>{};
 
-  /// Last read content per file, shown at once when the file opens again.
-  final contents = <String, String>{};
+  /// Last read per file (`/workspace-files/read` body), shown at once when the
+  /// file opens again.
+  final contents = <String, Map<String, dynamic>>{};
+  Map<String, dynamic>? openMeta;
 }
 
 mixin _AgentTabLoader<T extends StatefulWidget> on State<T> {
@@ -1704,10 +1829,14 @@ class AgentChatTab extends StatefulWidget {
     required this.controller,
     required this.agentId,
     this.clock,
+    this.onOpenChannel,
   });
   final WorkspaceController controller;
   final String agentId;
   final DateTime Function()? clock;
+
+  /// A channel row opens that channel (Web `nav.toChannel`).
+  final ValueChanged<String>? onOpenChannel;
   @override
   State<AgentChatTab> createState() => _AgentChatTabState();
 }
@@ -1805,6 +1934,9 @@ class _AgentChatTabState extends State<AgentChatTab> with _AgentTabLoader {
               type: '${c['type'] ?? 'channel'}',
               activityMuted: c['activityMuted'] == true,
               muteFromSeq: c['muteFromSeq'],
+              onTap: widget.onOpenChannel == null
+                  ? null
+                  : () => widget.onOpenChannel!('${c['id']}'),
             ),
       ],
       dms: [
@@ -1846,10 +1978,14 @@ class AgentRemindersTab extends StatefulWidget {
     required this.controller,
     required this.agentId,
     this.clock,
+    this.onOpenMessage,
   });
   final WorkspaceController controller;
   final String agentId;
   final DateTime Function()? clock;
+
+  /// Opens the message a reminder was set from, given its `msgPermalink`.
+  final ValueChanged<String>? onOpenMessage;
   @override
   State<AgentRemindersTab> createState() => _AgentRemindersTabState();
 }
@@ -1963,6 +2099,13 @@ class _AgentRemindersTabState extends State<AgentRemindersTab>
             recurrence: r['recurrence'] is Map
                 ? '${(r['recurrence'] as Map)['description'] ?? ''}'
                 : null,
+            msgRef: r['msgRef'] is String ? r['msgRef'] as String : null,
+            onOpenMessage:
+                widget.onOpenMessage == null ||
+                    r['msgPermalink'] is! String ||
+                    (r['msgPermalink'] as String).isEmpty
+                ? null
+                : () => widget.onOpenMessage!(r['msgPermalink'] as String),
           ),
       ],
     );
@@ -2001,6 +2144,10 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
   set openFile(String? value) => snapshot.openFile = value;
   String? get openContent => snapshot.openContent;
   set openContent(String? value) => snapshot.openContent = value;
+
+  /// The open file's read body (binary / encoding / mime / size / time).
+  Map<String, dynamic>? get openMeta => snapshot.openMeta;
+  set openMeta(Map<String, dynamic>? value) => snapshot.openMeta = value;
   @override
   String get loadFailedFallback => 'Failed to load files';
 
@@ -2099,6 +2246,7 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
         ..truncation.clear();
       openFile = null;
       openContent = null;
+      openMeta = null;
       openError = null;
     });
     reload();
@@ -2137,7 +2285,8 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
     final known = snapshot.contents[path];
     setState(() {
       openFile = path;
-      openContent = known ?? '';
+      openMeta = known;
+      openContent = known == null ? '' : '${known['content'] ?? ''}';
       openError = null;
       // Web `loadingFile`: nothing read before, so the pane shows "Loading...".
       openLoading = known == null;
@@ -2164,11 +2313,14 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
       return;
     }
     if (!mounted) return;
-    final content = result is Map ? '${result['content'] ?? ''}' : '$result';
-    snapshot.contents[path] = content;
+    final file = result is Map
+        ? Map<String, dynamic>.from(result)
+        : <String, dynamic>{'content': '$result'};
+    snapshot.contents[path] = file;
     if (ticket != openTicket || openFile != path) return;
     setState(() {
-      openContent = content;
+      openMeta = file;
+      openContent = '${file['content'] ?? ''}';
       openLoading = false;
     });
   }
@@ -2217,6 +2369,32 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
     ],
   ];
 
+  Map<String, dynamic>? _imageFrom;
+  Uint8List? _imageBytes;
+
+  /// `isWorkspaceImagePreview`: a binary file the server sent base64 with an
+  /// `image/*` type, decoded once per read.
+  Uint8List? get _openImage {
+    final meta = openMeta;
+    if (meta == null) return null;
+    if (identical(meta, _imageFrom)) return _imageBytes;
+    _imageFrom = meta;
+    _imageBytes = null;
+    final content = meta['content'];
+    if (meta['binary'] == true &&
+        meta['encoding'] == 'base64' &&
+        content is String &&
+        content.isNotEmpty &&
+        '${meta['mimeType'] ?? ''}'.startsWith('image/')) {
+      try {
+        _imageBytes = base64Decode(content);
+      } on FormatException {
+        _imageBytes = null;
+      }
+    }
+    return _imageBytes;
+  }
+
   @override
   Widget build(BuildContext context) {
     final path = '~/.slock/agents/${widget.agentId}/';
@@ -2232,6 +2410,17 @@ class _AgentWorkspaceTabState extends State<AgentWorkspaceTab>
               content: openContent ?? '',
               error: openError,
               loading: openLoading,
+              imageBytes: _openImage,
+              binary: openMeta?['binary'] == true,
+              sizeLabel: openMeta?['size'] is num
+                  ? workspaceFileSize((openMeta!['size'] as num).toInt())
+                  : null,
+              modifiedLabel: openMeta?['modifiedAt'] == null
+                  ? null
+                  : agentTimeFormatter(
+                      context,
+                      w,
+                    ).shortDateTime(openMeta!['modifiedAt']),
             ),
       path: path,
       nodes: [...nodes('', 0), ?hint('', 0)],

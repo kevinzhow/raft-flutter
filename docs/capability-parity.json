@@ -5145,25 +5145,25 @@
    "kind": "endpoint",
    "id": "GET /agents/:id/agent-dms",
    "area": "agents-computers-runtimes",
-   "capability": "List an agent's DM conversations (Chat tab > Agent DMs, each row opens that DM)",
+   "capability": "List an agent's DM conversations (Chat tab > Agent DMs: activity-only cards)",
    "background": false,
-   "status": "partial",
-   "webEntry": "AgentDetailPanel > 'Chat' tab > 'Agent DMs' section (AgentDMConversationList rows navigate to the DM)",
+   "status": "covered",
+   "webEntry": "AgentDetailPanel > 'Chat' tab > 'Agent DMs' section (AgentDMConversationList of ConversationPreviewCard cards; the footer says 'Activity only', no click handler)",
    "gate": "tab visible only to canViewAgentPrivateSurfaces (editAgents or creator)",
-   "flutterEntry": "agent_detail_view.dart AgentChatTab > RaftAgentChatView DMs section (same gate via widget.canViewPrivate)",
+   "flutterEntry": "agent_detail_view.dart AgentChatTab > RaftAgentChatView DMs section: activity-only cards like Web's AgentDMConversationCard (not clickable there either)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "/agent-dms"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "RaftAgentDmRow("
+     "file": "packages/raft_ui/lib/src/agent_chat_view.dart",
+     "needle": "footer: 'Activity only'"
     }
    ],
-   "justification": "List renders but RaftAgentDmRow is built without an onTap, so tapping a DM does nothing (Web opens the DM).",
-   "impact": "Admins/creators browsing an agent's DMs cannot jump into one from the profile.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -5171,10 +5171,10 @@
    "area": "agents-computers-runtimes",
    "capability": "List channels an agent belongs to (Chat tab > Channels, rows open the channel, 'Show all N channels' expander, muted/private/joint badges)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentDetailPanel > 'Chat' tab > 'Channels' section",
    "gate": "tab visible only to canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart AgentChatTab > RaftAgentChatView channels section (expander and badges present)",
+   "flutterEntry": "agent_detail_view.dart AgentChatTab: channel rows call actions.onOpenChannel (fleet_views.dart openChannel)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
@@ -5182,13 +5182,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "RaftAgentChannelRow("
+     "needle": "onOpenChannel"
     }
    ],
-   "justification": "Rows render with mute/private/joint badges and 'Show all' expander, but no onTap is passed, so tapping a channel does not navigate (Web: nav.toChannel).",
-   "impact": "Admins/creators cannot open a channel from the agent's profile.",
-   "size": "S",
-   "topGap": 10
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -5236,14 +5235,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Load external-agent presence/status/push diagnostics for the 'Copy Diagnostic Info' text",
    "background": true,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "AgentDetailPanel (background effect) feeding buildAgentDiagnosticInfo for external agents (Copy Diagnostic Info / Copy info)",
    "gate": "external agent + canViewPrivateAgentSurfaces",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter's diagnostic copy never fetches external diagnostics, so the copied text lacks the external presence/push section.",
-   "impact": "Support/debug text for external agents is less complete; low frequency.",
-   "size": "S"
+   "flutterEntry": "agent_detail_view.dart loadExternalDiagnostics -> features/agent_diagnostic_info.dart buildAgentDiagnosticInfo (Copy Diagnostic Info text of an external agent)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "/external-diagnostics"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_diagnostic_info.dart",
+     "needle": "externalDiagnostics: unavailable"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -5412,7 +5420,7 @@
    "status": "partial",
    "webEntry": "AgentDetailPanel > 'Workspace' tab (AgentWorkspace.tsx): tree, 'Refresh', hidden-files toggle, copy-path button (not shown for hosted agents)",
    "gate": "tab visible to canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab > RaftWorkspaceTreeView (refresh, hidden toggle, copy path)",
+   "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab > RaftWorkspaceTreeView (refresh, hidden toggle, copy path, truncation hint, archived error states)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
@@ -5423,8 +5431,8 @@
      "needle": "RaftWorkspaceTreeView("
     }
    ],
-   "justification": "Tree, refresh, hidden toggle and copy-path exist. Missing vs Web: no truncation hint for capped hosted listings, copy-path is shown even for hosted external agents (Web hides it), folder listings are not lazy-loaded per directory with loading rows.",
-   "impact": "Low; hosted-agent users see a path that does not exist locally and no 'listing truncated' notice.",
+   "justification": "Copy-path is shown even for hosted external agents (Web hides it); folder listings are lazy-loaded per directory.",
+   "impact": "Low.",
    "size": "S"
   },
   {
@@ -5433,23 +5441,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Open a workspace file in the viewer (Raw/Preview markdown toggle, image preview, binary notice)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentWorkspace right pane: file header with back arrow, 'Raw'/'Preview' segmented control for .md, inline image preview, 'cannot display binary' notice",
    "gate": "tab visible to canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab.open() > RaftWorkspaceFilePreview (plain selectable monospace text)",
+   "flutterEntry": "agent_detail_view.dart AgentWorkspaceTab > RaftWorkspaceFilePreview (Raw / Preview for .md, base64 image picture, binary notice, size and time bar)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "/workspace-files/read"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "RaftWorkspaceFilePreview("
+     "file": "packages/raft_ui/lib/src/agent_profile.dart",
+     "needle": "workspace-file-view-mode"
     }
    ],
-   "justification": "Only raw text is shown. Missing: markdown 'Preview' rendering and Raw/Preview toggle, image file preview (data: base64), binary-file notice (agent.workspace.binaryCannotDisplay).",
-   "impact": "Anyone reading agent notes/memory.md or screenshots in the workspace sees raw markdown or garbage instead of rendered content.",
-   "size": "M"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",
@@ -6489,43 +6497,43 @@
    "area": "agents-computers-runtimes",
    "capability": "Avatar tile: managers click to change avatar; others click to view the avatar full size ('View avatar' lightbox)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Profile header avatar Button (changeAvatar for canManage; viewAvatar lightbox for custom avatars otherwise)",
    "gate": "manage: editAgents/creator; view: any custom avatar, agent not deleted",
-   "flutterEntry": "agent_detail_view.dart RaftProfileIdentity avatarButton: canEdit only",
+   "flutterEntry": "agent_detail_view.dart: a manager changes the avatar; anyone else with an uploaded avatar enlarges it (viewAvatar -> showFeedbackImage)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "avatarButton: canEdit"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "Future<void> viewAvatar()"
     }
    ],
-   "justification": "Change-avatar works; the read-only 'View avatar' lightbox for non-managers is missing (string exists only in the zh catalog).",
-   "impact": "Members who cannot edit cannot enlarge an agent's custom avatar.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
    "id": "ui:agents.chat-tab-open",
    "area": "agents-computers-runtimes",
-   "capability": "Agent Chat tab rows open the channel / DM, 'Show all N channels' expander",
+   "capability": "Agent Chat tab channel rows open the channel; 'Show all N channels' expander (DM cards are activity-only in Web)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Chat tab: channel row button (nav.toChannel), AgentDMConversationList rows (open DM), ShowMoreToggle",
    "gate": "canViewAgentPrivateSurfaces",
-   "flutterEntry": "raft_ui agent_chat_view.dart RaftAgentChatView (expander yes, row taps not wired in agent_detail_view.dart)",
+   "flutterEntry": "agent_detail_view.dart AgentChatTab: channel rows open the channel (Web DM cards are activity-only), 'Show all N channels' expander",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "RaftAgentChatView("
-    },
-    {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "RaftAgentChannelRow("
+     "needle": "onOpenChannel"
     }
    ],
-   "justification": "Expander and badges exist; rows have no navigation.",
-   "impact": "See GET /agents/:id/agent-dms and /channels.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -6711,21 +6719,16 @@
    "kind": "ui",
    "id": "ui:agents.created-agents-list",
    "area": "agents-computers-runtimes",
-   "capability": "'Created Agents' list rows open the created agent's profile (with live status dot)",
+   "capability": "'Created Agents' list on an agent profile (removed in Web v1.21.23)",
    "background": false,
-   "status": "partial",
+   "status": "na",
    "webEntry": "AgentCreatedAgentsSection AvatarListRow onClick -> openProfile('agent', id)",
    "gate": "operational info visible (not remote-joint)",
-   "flutterEntry": "agent_detail_view.dart RaftAvatarListRow rows with activity dot, no onTap",
-   "flutterRefs": [
-    {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "'Created Agents'"
-    }
-   ],
-   "justification": "Rows and status dots render but tapping a row does nothing.",
-   "impact": "Minor navigation convenience.",
-   "size": "S"
+   "flutterEntry": "removed",
+   "flutterRefs": [],
+   "justification": "Web v1.21.23 removed the Created Agents section from the agent profile (a person's profile keeps it).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -6757,19 +6760,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Drag to reorder agent profile tabs (saved to server sidebarOrder.agentPanelTabOrder)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentDetailPanel SortableTabsList drag-reorder -> updateSidebarOrder({agentPanelTabOrder})",
    "gate": "any viewer of private tabs",
-   "flutterEntry": "agent_detail_view.dart tabs getter reads the stored order only",
+   "flutterEntry": "agent_detail_view.dart RaftPanelTabBar(onReorder) -> updateSidebarOrder({agentPanelTabOrder})",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
      "needle": "agentPanelTabOrder"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/panel_layout.dart",
+     "needle": "onReorder"
     }
    ],
-   "justification": "Flutter honours the order saved on Web but offers no way to reorder tabs.",
-   "impact": "Cosmetic preference; low.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -6971,14 +6978,19 @@
    "area": "agents-computers-runtimes",
    "capability": "Profile > Info > Computer name opens that computer's detail",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "Info 'Computer' row button -> nav.toMachine(id) (closes profile/thread)",
    "gate": "any viewer who can see the computer",
-   "flutterEntry": "agent_detail_view.dart shows the computer name as plain text",
-   "flutterRefs": [],
-   "justification": "Computer name is rendered with RaftCssText and no tap handler.",
-   "impact": "Admins jump from agent to its computer by going back to the Computers list.",
-   "size": "S"
+   "flutterEntry": "agent_detail_view.dart Info > Computer (RaftProfileLink -> actions.onOpenComputer, fleet_views.dart openComputer)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "agent-computer-link"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -6986,14 +6998,19 @@
    "area": "agents-computers-runtimes",
    "capability": "Profile > Info > Creator opens the creator's profile",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "Info 'Creator' row button -> openProfile(human|agent, id)",
    "gate": "any viewer",
-   "flutterEntry": "agent_detail_view.dart RaftCreatorLink (no onTap parameter exists)",
-   "flutterRefs": [],
-   "justification": "RaftCreatorLink renders avatar/name but is not tappable.",
-   "impact": "Minor navigation convenience.",
-   "size": "S"
+   "flutterEntry": "agent_detail_view.dart Info > Creator (RaftProfileLink -> actions.onOpenCreator, fleet_views.dart openCreator)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "agent-creator-link"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -7056,14 +7073,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Click a reminder's message reference to jump to that message/thread",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "AgentRemindersSection onOpenMsgRef -> parseRaftPermalink -> nav.toMessage/toThreadMessage/toDmMessage",
    "gate": "canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart RaftReminderItem has no message-ref field",
-   "flutterRefs": [],
-   "justification": "Reminder rows show title/time/recurrence only; the source message link is not shown or tappable.",
-   "impact": "Admins cannot jump from a reminder to the message that created it.",
-   "size": "S"
+   "flutterEntry": "agent_detail_view.dart AgentRemindersTab: the message chip calls actions.onOpenMessage (fleet_views.dart openReminderMessage)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "msgPermalink"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/fleet_views.dart",
+     "needle": "openReminderMessage"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -7119,10 +7145,10 @@
    "area": "agents-computers-runtimes",
    "capability": "Runtime Config rows: Runtime (with usage chip), Model, Reasoning, Mode, Provider URL and Command (Claude), deprecated-runtime warning, env var chips",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "Profile > Runtime Config description list",
    "gate": "non-external agents",
-   "flutterEntry": "agent_detail_view.dart Runtime Config section (Runtime w/ usage chip and deprecated-runtime banner, Model, Reasoning, Mode, env vars)",
+   "flutterEntry": "agent_detail_view.dart Runtime Config section (Runtime w/ usage chip and deprecated-runtime banner, Model, Reasoning, Mode, Provider URL and Command for Claude, env vars)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
@@ -7134,12 +7160,12 @@
     },
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "This agent uses a deprecated runtime"
+     "needle": "agent-runtime-"
     }
    ],
-   "justification": "Missing the Provider (API URL) and Command rows for Claude agents. The deprecated-runtime warning banner under the Runtime row is done.",
-   "impact": "Low; shown only in edit modal in Flutter.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -7291,14 +7317,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Workspace file viewer: markdown Raw/Preview toggle, image preview, binary notice, truncation notice for hosted listings",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "AgentWorkspace right pane (SegmentedControl 'Raw'/'Preview', <img>, 'cannot display' notice, TruncationHint)",
    "gate": "canViewAgentPrivateSurfaces",
-   "flutterEntry": "raft_ui RaftWorkspaceFilePreview renders plain text only",
-   "flutterRefs": [],
-   "justification": "See GET workspace-files/read.",
-   "impact": "Readers of notes/screenshots in agent workspaces.",
-   "size": "M"
+   "flutterEntry": "agent_workspace file viewer: RaftWorkspaceFilePreview (markdown Raw/Preview, image, binary notice) and the listing truncation hint",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "workspaceFileSize"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
+     "needle": "Showing the first {shown} items"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
