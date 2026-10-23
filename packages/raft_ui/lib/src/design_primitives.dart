@@ -3,6 +3,7 @@ import 'raft_underline.dart';
 import 'anchored_popup.dart';
 import 'dismiss_scope.dart';
 import 'tooltip.dart';
+import 'tap_slop.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'large_content_viewer.dart';
 import 'search_result_surface.dart';
@@ -1181,13 +1182,22 @@ class RaftIconButton extends StatelessWidget {
   final bool busy, shadow;
   @override
   Widget build(BuildContext context) {
+    // Only the source's 24px icon path consumes the shared layout minimum.
+    // Larger icons retain their existing layout; explicit minima always win.
+    final smallTouch =
+        visualSize == RaftMetrics.buttonXs &&
+        RaftDensityScope.of(context) == RaftDensity.touch;
     final button = RaftControl(
       shadow: shadow,
       onPressed: onPressed,
       tooltip: tooltip == null ? null : raftText(context, tooltip!),
       visualHeight: visualSize,
       visualWidth: visualSize,
-      minimumTargetSize: minimumTargetSize,
+      minimumTargetSize:
+          minimumTargetSize ??
+          (smallTouch
+              ? RaftTokens.of(context).size('size.touchLayoutMin', fallback: 0)
+              : null),
       variant: variant,
       busy: busy,
       semanticLabel: busy ? raftText(context, tooltip ?? 'Loading') : null,
@@ -1196,18 +1206,28 @@ class RaftIconButton extends StatelessWidget {
           : RaftIcon(glyph, size: glyphSize ?? (visualSize <= 28 ? 14 : 16)),
     );
     final label = tooltip;
-    if (label == null) return button;
     // An icon button is fixed chrome: at large text sizes a long press shows
     // its icon and label large (Large Content Viewer).
-    return RaftChrome(
-      child: RaftLargeContentViewer(
-        label: raftText(context, label),
-        enabled: onPressed != null && !busy,
-        onActivate: onPressed,
-        iconBuilder: (context, size) => RaftIcon(glyph, size: size),
-        child: button,
-      ),
-    );
+    Widget result = label == null
+        ? button
+        : RaftChrome(
+            child: RaftLargeContentViewer(
+              label: raftText(context, label),
+              enabled: onPressed != null && !busy,
+              onActivate: onPressed,
+              iconBuilder: (context, size) => RaftIcon(glyph, size: size),
+              child: button,
+            ),
+          );
+    if (smallTouch) {
+      // Wrap tooltip and large-content-viewer boxes too. The anchor lets an
+      // enclosing RaftTapSlopHost route touches outside a narrow toolbar row.
+      result = RaftTapSlopAnchor(
+        minSize: const Size.square(RaftMetrics.touchTarget),
+        child: RaftTouchTarget(child: result),
+      );
+    }
+    return result;
   }
 }
 

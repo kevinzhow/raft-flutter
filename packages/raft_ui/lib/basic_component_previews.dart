@@ -94,6 +94,12 @@ class _DesignControlsState extends State<_DesignControls> {
         Wrap(
           spacing: 12,
           children: [
+            RaftIconButton(
+              glyph: RaftGlyph.plus,
+              visualSize: RaftMetrics.buttonXs,
+              tooltip: 'Add',
+              onPressed: () => setState(() => clicks++),
+            ),
             const RaftButton(label: 'Disabled'),
             RaftButton(label: 'Loading', busy: true, onPressed: () {}),
             RaftIconButton(
