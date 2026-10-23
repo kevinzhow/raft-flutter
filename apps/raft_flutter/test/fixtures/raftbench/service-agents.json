@@ -1,0 +1,16 @@
+{
+  "agents": [
+    {
+      "agentId": "7a1e3c40-9d2b-4f56-8e0a-1b2c3d4e5f60",
+      "name": "raftbench-service",
+      "state": "active",
+      "ready": true
+    },
+    {
+      "agentId": "9b2f4d61-7e3a-4c58-9f1b-2c3d4e5f6a71",
+      "name": "raftbench-service-a1b2c3",
+      "state": "provisioning",
+      "ready": false
+    }
+  ]
+}

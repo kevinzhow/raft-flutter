@@ -1,0 +1,22 @@
+{
+  "historyFrom": null,
+  "coverage": null,
+  "progress": {
+    "readMessages": 0,
+    "completedBatches": 0,
+    "scannedThroughAt": null
+  },
+  "enabled": false,
+  "revision": 0,
+  "channelIds": [],
+  "agentId": null,
+  "provisioning": null,
+  "intervalMinutes": 15,
+  "run": null,
+  "pagination": {
+    "page": 1,
+    "pageCount": 1,
+    "total": 0,
+    "pageSize": 5
+  }
+}
