@@ -554,6 +554,10 @@
         "id": "thread"
       },
       {
+        "event": "join",
+        "id": "c1"
+      },
+      {
         "event": "notify",
         "channel": "c1",
         "thread": "thread",
@@ -649,6 +653,10 @@
           "thread-row"
         ],
         "error": null
+      },
+      {
+        "event": "leave",
+        "id": "thread"
       },
       {
         "event": "notify",

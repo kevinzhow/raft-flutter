@@ -112,6 +112,8 @@ class _Client extends RaftClient {
   @override
   void joinChannel(String id) => trace.add('join', {'id': id});
   @override
+  void leaveChannel(String id) => trace.add('leave', {'id': id});
+  @override
   Future<dynamic> get(String path, {Map<String, dynamic>? query}) async {
     trace.add('api.get', {'path': path});
     if (path.startsWith('/messages/channel/')) {
