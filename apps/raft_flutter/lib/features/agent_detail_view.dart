@@ -20,6 +20,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
 import 'agent_archive_requests.dart';
+import 'agent_activity_pane.dart';
 import 'agent_apps_view.dart';
 import 'agent_diagnostic_info.dart';
 import 'feedback_attachment_preview.dart' show showFeedbackImage;
@@ -406,6 +407,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
   @override
   void dispose() {
     diagnosticTimer?.cancel();
+    _errorCopiedTimer?.cancel();
     super.dispose();
   }
 
@@ -586,6 +588,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
               widget.error!,
               onDismiss: widget.onDismissError,
             ),
+          ?_runtimeErrorBanner(context, current),
           RaftPanelTabBar<AgentDetailTab>(
             tabs: [for (final id in visible) _tabSpec(context, id)],
             value: current,
@@ -700,11 +703,15 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     final agentId = a['id'] as String;
     return switch (id) {
       AgentDetailTab.profile => _profile(context),
-      AgentDetailTab.activity => AgentActivityTab(
-        key: ValueKey('agent-activity-$agentId'),
+      AgentDetailTab.activity => AgentActivityPane(
+        key: ValueKey('agent-activity-pane-$agentId'),
         controller: w,
         agentId: agentId,
+        machineId: a['machineId'] as String?,
+        activity: _display.activity,
+        activityText: _statusText(context),
         initialEntries: widget.initialTrajectoryLog,
+        onOpenComputer: widget.actions.onOpenComputer,
       ),
       AgentDetailTab.chat => AgentChatTab(
         key: ValueKey('agent-chat-$agentId'),
@@ -845,18 +852,80 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     }
   }
 
-  Widget _profile(BuildContext context) {
-    final t = RaftTokens.of(context);
-    final canEdit = _canManage && a['deletedAt'] == null;
+  /// Web AgentDetailPanel: a known runtime error shows its catalog message
+  /// (`agent.runtimeError.*`); an unclassified one keeps the diagnostic text.
+  RuntimeErrorKind? get _runtimeKind {
     final display = _display;
-    // Web AgentDetailPanel: a known runtime error shows its catalog message
-    // (`agent.runtimeError.*`); an unclassified one keeps the diagnostic text.
-    final runtimeKind = display.activity == 'error'
+    return display.activity == 'error'
         ? classifyTypedRuntimeError(a['lastRuntimeError']) ??
               (display.detail.isNotEmpty
                   ? classifyRuntimeError(display.detail)
                   : null)
         : null;
+  }
+
+  bool _errorCopied = false;
+  Timer? _errorCopiedTimer;
+
+  Future<void> _copyErrorInfo() async {
+    await Clipboard.setData(ClipboardData(text: diagnosticInfo));
+    if (!mounted) return;
+    setState(() => _errorCopied = true);
+    _errorCopiedTimer?.cancel();
+    _errorCopiedTimer = Timer(const Duration(milliseconds: 2000), () {
+      if (mounted) setState(() => _errorCopied = false);
+    });
+  }
+
+  /// Web runtime error banner (`hasRuntimeError`): the agent is in `error` or
+  /// carries a `lastRuntimeError`. The error detail reaches every member over
+  /// the socket, so people who may not see private surfaces get a generic line
+  /// and no actions.
+  Widget? _runtimeErrorBanner(BuildContext context, AgentDetailTab current) {
+    final display = _display;
+    final typed = a['lastRuntimeError'];
+    if (display.activity != 'error' && typed is! Map) return null;
+    final fallback = raftText(context, 'Agent encountered an error');
+    if (!_canViewPrivate) return RaftRuntimeErrorBanner(message: fallback);
+    final raw = display.activity == 'error'
+        ? display.detail
+        : '${typed is Map ? typed['message'] ?? '' : ''}';
+    final kind =
+        classifyTypedRuntimeError(typed) ??
+        (raw.isNotEmpty ? classifyRuntimeError(raw) : null);
+    final lookup = kind == RuntimeErrorKind.notInstalled
+        ? runtimeLookupDisplayForReason(agentRowSpawnLookupReason(a))
+        : null;
+    final runtime = '${a['runtime'] ?? ''}';
+    final text = lookup != null && lookup != RuntimeLookupDisplay.confirmedMissing
+        ? raftFormat(context, runtimeLookupText(lookup), {
+            'runtimeName':
+                runtimeInfos.where((r) => r.id == runtime).firstOrNull?.name ??
+                runtime,
+          })
+        : kind != null
+        ? raftText(context, runtimeErrorText(kind))
+        : agentActivityText(
+            'error',
+            raw,
+            null,
+            translate: (source, values) => raftFormat(context, source, values),
+          );
+    return RaftRuntimeErrorBanner(
+      message: text,
+      copied: _errorCopied,
+      onCopy: _copyErrorInfo,
+      onViewLogs: current == AgentDetailTab.activity
+          ? null
+          : () => setState(() => tab = AgentDetailTab.activity),
+    );
+  }
+
+  /// The agent's status line (header and Activity overview): the classified
+  /// runtime error, the spawn-failure reason or the activity text.
+  String _statusText(BuildContext context) {
+    final display = _display;
+    final runtimeKind = _runtimeKind;
     // Web: "not installed" keeps the install copy only when the start
     // failure's typed carrier confirms the miss; a timed-out, denied or failed
     // lookup, and an old daemon that sends no reason, never say "install it".
@@ -872,8 +941,7 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             (source, values) => raftFormat(context, source, values),
           )
         : null;
-    final status =
-        _canViewPrivate &&
+    return _canViewPrivate &&
             lookup != null &&
             lookup != RuntimeLookupDisplay.confirmedMissing
         ? raftFormat(context, runtimeLookupText(lookup), {
@@ -894,6 +962,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             _canViewPrivate ? display.detailKind : null,
             translate: (source, values) => raftFormat(context, source, values),
           );
+  }
+
+  Widget _profile(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final canEdit = _canManage && a['deletedAt'] == null;
+    final status = _statusText(context);
     final agentId = '${a['id']}';
     final externalPresence = _externalPresence(context, t);
     final role = a['serverRole'];
@@ -1787,6 +1861,8 @@ class _AgentActivityTabState extends State<AgentActivityTab>
             'text' => raftText(context, 'Output'),
             _ => '${entry['title'] ?? ''}',
           },
+          // Web: a `system` row carries the subagent badge too.
+          badge: kind == 'system' ? badge : null,
           detail: text,
           expandable: text.length > 200,
           // Reference pills only in the structured-metadata kinds; Output and

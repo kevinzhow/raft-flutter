@@ -1817,6 +1817,58 @@
    ]
   },
   {
+   "id": "agent.activity-overview",
+   "title": "Agent detail: Activity tab Overview (flag activity_overview_web_v0)",
+   "webEntry": "packages/web/src/components/agent/AgentActivityOverview.tsx",
+   "flutterEntry": "apps/raft_flutter/lib/features/agent_activity_overview.dart",
+   "states": [
+    {
+     "state": "loading",
+     "variant": "Now card alone",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "justification": "Both show the Now card without turn lines until the first read lands; no parity case yet (the server flag is off by default on the local stack).",
+     "gapKind": "case-missing",
+     "size": "S"
+    },
+    {
+     "state": "empty",
+     "variant": "no turns yet / no activity",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "justification": "No turns with raw activity: \"No overview yet\" with Open computer / Show raw log; no raw activity: \"No activity yet\". Covered by widget tests (agent_activity_overview_test.dart); no parity case yet.",
+     "gapKind": "case-missing",
+     "size": "S"
+    },
+    {
+     "state": "error",
+     "variant": "read failed + Retry",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "justification": "\"Couldn't load the overview.\" with Retry, kept when turns are already shown; widget-tested, no parity case yet.",
+     "gapKind": "case-missing",
+     "size": "S"
+    },
+    {
+     "state": "partial",
+     "variant": "turn blocks",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "justification": "Outcome badges, trigger, actions, problems, last reply and Show earlier turns; widget-tested, no parity case yet.",
+     "gapKind": "case-missing",
+     "size": "S"
+    }
+   ]
+  },
+  {
    "id": "agent.chat",
    "title": "Agent detail: Chat tab",
    "webEntry": "packages/web/src/components/agent/AgentDetailPanel.tsx (AgentChatTab)",

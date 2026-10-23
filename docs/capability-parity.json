@@ -7197,23 +7197,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Runtime error banner on the profile (classified error text, 'Copy info' diagnostics button, 'View logs' jump to Activity tab)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "AgentDetailPanel hasRuntimeError strip under header: error text + Copy info + View logs",
    "gate": "text for all viewers (generic fallback); Copy info/View logs need canViewAgentPrivateSurfaces",
-   "flutterEntry": "agent_detail_view.dart folds the classified runtime error into the status line (runtimeErrorText); no banner",
+   "flutterEntry": "agent_detail_view.dart _runtimeErrorBanner -> raft_ui RaftRuntimeErrorBanner (classified text, Copy info, View logs)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "classifyTypedRuntimeError"
+     "needle": "_runtimeErrorBanner"
     },
     {
-     "file": "apps/raft_flutter/lib/features/agent_detail_view.dart",
-     "needle": "agent-copy-diagnostic"
+     "file": "packages/raft_ui/lib/src/runtime_error_banner.dart",
+     "needle": "runtime-error-view-logs"
     }
    ],
-   "justification": "Error text appears in the status line and 'Copy Diagnostic Info' exists in Actions, but there is no dedicated banner with 'Copy info' and 'View logs' shortcuts (docs/field-parity.md line 66 lists lastRuntimeError banner as Web-only).",
-   "impact": "Admins debugging a failing agent need extra taps to reach logs/diagnostics.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -16900,14 +16900,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Agent Activity overview: paged summaries of what an agent did",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "AgentActivityOverview (flag activity_overview_web_v0)",
-   "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Planned in WP-AGT; the server flag is off by default.",
-   "impact": "No Overview tab on the agent profile; invisible on servers without the flag.",
-   "size": "M"
+   "gate": "feature flag activity_overview_web_v0 (default off); canViewAgentPrivateSurfaces",
+   "flutterEntry": "agent_activity_pane.dart (flag activity_overview_web_v0, Overview / Raw log toggle) -> agent_activity_overview.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/agent_activity_overview.dart",
+     "needle": "/activity-summaries"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/agent_activity_pane.dart",
+     "needle": "activity_overview_web_v0"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",

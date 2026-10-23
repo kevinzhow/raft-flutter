@@ -915,6 +915,19 @@ Widget archivedChannelsPreview() => Padding(
   ),
 );
 
+@RaftPreviews('Runtime error banner', size: Size(520, 120))
+Widget runtimeErrorBannerPreview() => Column(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    RaftRuntimeErrorBanner(
+      message: 'Runtime authentication failed.',
+      onCopy: () {},
+      onViewLogs: () {},
+    ),
+    const RaftRuntimeErrorBanner(message: 'Agent encountered an error'),
+  ],
+);
+
 @RaftPreviews('Archived agents', size: Size(640, 360))
 Widget archivedAgentsPreview() => Padding(
   padding: const EdgeInsets.all(16),

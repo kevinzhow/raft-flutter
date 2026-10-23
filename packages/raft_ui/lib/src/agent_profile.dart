@@ -598,6 +598,14 @@ abstract final class RaftPanelText {
   /// theme-brutal:text-black`.
   static TextStyle profileValue(RaftTokens t) => RaftInfoRow.valueStyle(t);
 
+  /// [value] in bold (a heading line of a profile block).
+  static TextStyle bold(RaftTokens t) =>
+      value(t).copyWith(fontWeight: FontWeight.w700);
+
+  /// [profileMono] in bold (a time range heading).
+  static TextStyle boldMono(RaftTokens t) =>
+      profileMono(t).copyWith(fontWeight: FontWeight.w700);
+
   /// `italic text-foreground-placeholder theme-brutal:text-black/40` in a
   /// profile value (Web v1.21.12 human description).
   static TextStyle profilePlaceholder(RaftTokens t) => profileValue(t).copyWith(
@@ -1314,6 +1322,18 @@ class _RaftActivityRowState extends State<_RaftActivityRow> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Flexible(child: RaftCssText(e.title, style: primary)),
+                  // Web ExpandableEntry: the Subagent badge follows the title
+                  // and precedes the chevron.
+                  if (e.badge != null) ...[
+                    const SizedBox(width: 6),
+                    RaftRecipeBadge(
+                      e.badge!,
+                      appearance: RaftBadgeRecipeAppearance.outline,
+                      variant: RaftBadgeRecipeVariant.default_,
+                      uppercase: true,
+                      mono: true,
+                    ),
+                  ],
                   const SizedBox(width: 4),
                   Transform.rotate(
                     angle: expanded ? 1.5708 : 0,

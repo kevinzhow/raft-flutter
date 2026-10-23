@@ -11,8 +11,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// A workspace whose reads answer from [routes] (path -> body or a thunk) and
 /// whose writes are recorded in [calls]. No real HTTP.
 class AgentPanelWorkspace extends WorkspaceController {
-  AgentPanelWorkspace(super.client, {this.routes = const {}, this.readFile});
+  AgentPanelWorkspace(
+    super.client, {
+    this.routes = const {},
+    this.readFile,
+    this.queryRoutes = const {},
+  });
   final Map<String, Object? Function()> routes;
+
+  /// Reads that depend on the query (paging): path -> body.
+  final Map<String, Object? Function(Map<String, dynamic>? query)> queryRoutes;
+  final queries = <(String, Map<String, dynamic>?)>[];
 
   /// `GET /agents/a/workspace-files/read?path=`: the body for one file.
   final Object? Function(String path)? readFile;
@@ -23,6 +32,9 @@ class AgentPanelWorkspace extends WorkspaceController {
     if (path.endsWith('/workspace-files/read') && readFile != null) {
       return readFile!('${query?['path']}');
     }
+    queries.add((path, query));
+    final withQuery = queryRoutes[path];
+    if (withQuery != null) return withQuery(query);
     final route = routes[path];
     if (route == null) return [];
     return route();
@@ -47,6 +59,9 @@ class AgentPanelClient extends RaftClient {
 
   /// Writes the app sends straight through the client (the sidebar order).
   final writes = <(String, String, dynamic)>[];
+
+  /// Feature flags `POST /feature-flags/evaluate` answers as enabled.
+  final flags = <String>{};
   @override
   Future<dynamic> request(
     String method,
@@ -62,6 +77,13 @@ class AgentPanelClient extends RaftClient {
     Duration? receiveTimeout,
   }) async {
     writes.add((method, path, data));
+    if (path == '/feature-flags/evaluate') {
+      return {
+        'evaluations': [
+          for (final key in flags) {'key': key, 'enabled': true},
+        ],
+      };
+    }
     return <String, dynamic>{};
   }
 
@@ -107,6 +129,11 @@ Future<(AgentPanelWorkspace, AgentPanelClient)> pumpAgentPanel(
   Map<String, dynamic> agent = agentPanelAgent,
   Map<String, Object? Function()> routes = const {},
   Object? Function(String path)? readFile,
+  Map<String, Object? Function(Map<String, dynamic>? query)> queryRoutes =
+      const {},
+  Set<String> flags = const {},
+  Map<String, dynamic>? liveActivity,
+  bool settle = true,
   AgentDetailActions actions = const AgentDetailActions(),
   bool canManage = true,
   bool canViewPrivate = true,
@@ -118,9 +145,15 @@ Future<(AgentPanelWorkspace, AgentPanelClient)> pumpAgentPanel(
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  final client = AgentPanelClient()..selectServer('s');
-  final w = AgentPanelWorkspace(client, routes: routes, readFile: readFile)
-    ..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'});
+  final client = AgentPanelClient()
+    ..selectServer('s')
+    ..flags.addAll(flags);
+  final w = AgentPanelWorkspace(
+    client,
+    routes: routes,
+    readFile: readFile,
+    queryRoutes: queryRoutes,
+  )..server = RaftRecord({'id': 's', 'name': 'Fixture', 'role': 'owner'});
   addTearDown(() async {
     w.dispose();
     await client.stream.close();
@@ -135,6 +168,7 @@ Future<(AgentPanelWorkspace, AgentPanelClient)> pumpAgentPanel(
           machines: agentPanelMachines,
           actions: actions,
           initialTab: tab,
+          liveActivity: liveActivity,
           canManage: canManage,
           canViewPrivate: canViewPrivate,
           canControlRuntime: canManage,
@@ -142,6 +176,10 @@ Future<(AgentPanelWorkspace, AgentPanelClient)> pumpAgentPanel(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return (w, client);
 }
