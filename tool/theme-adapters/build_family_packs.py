@@ -265,6 +265,10 @@ def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
         if spec['column'] == 'elegantDark':
             colors['switch-shadow-bottom'] = (
                 'rgb(243.444675 243.444675 247.22862 / 0.039203)')
+            # semantic_colors.g.dart:1111 uses the same calibrated float for
+            # ink-4. Rounding its alpha/RGB changes small ghost-hover pixels.
+            colors['ink-4'] = (
+                'rgb(243.444675 243.444675 247.22862 / 0.039203)')
         return {
             'colors': colors,
             'geometry': geometry_with_type(spec['geometry'], type_metrics),

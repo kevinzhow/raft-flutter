@@ -304,6 +304,16 @@ Elegant / Brutal 为 **48**，Brutal 深色仍使用 Elegant 深色。
 官方0.7.1默认图标按钮是32px，伪元素扩大命中区而不占布局；
 产品显式24px尺寸保持不变，不将它当成官方默认尺寸的像素对照。
 
+24px图标同时读取现有 `press.effect` 和 `control.edge`：`offsetShadow` 的
+描边、圆角和硬阴影分别取 `stroke.control`、`radius.controlSmall`、`xs/sm/md`；
+普通、悬停、按下的阴影对应 `sm/md/xs`。位移沿用 a57b9dab
+`_RaftControlState.build`：悬停上移1px、按下右下各移1px；减弱动画时不移动。
+此1px经 Cindy4430babb 确认为该结构内部常量，不新增数值令牌。
+这些是 a57b9dab 的原有行为，
+不影响其他尺寸或交互结构。
+深色 `ink-4` 沿用 a57b9dab 的浮点RGBA（alpha0.039203，
+RGB0.954685/0.954685/0.969524）；展示表中的0.04和整数RGB不作为绘制精度。
+
 ## 4. 结构选项
 
 下表是契约的第 ③ 层。`实现点` 指每一份实现要改写的位置（`a57b9dab` 行号，便于从 git 恢复）。

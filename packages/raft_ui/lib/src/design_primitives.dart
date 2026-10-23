@@ -4,6 +4,7 @@ import 'anchored_popup.dart';
 import 'dismiss_scope.dart';
 import 'tooltip.dart';
 import 'tap_slop.dart';
+import 'small_icon_recipe.dart';
 import 'text_scaling.dart' show RaftChrome, RaftScaled;
 import 'large_content_viewer.dart';
 import 'search_result_surface.dart';
@@ -456,6 +457,23 @@ class RaftControlRecipe {
   final double visualHeight;
   bool get transformsOnInteraction => true;
 
+  /// A surface transform that leaves layout and hit bounds unchanged.
+  Matrix4 interactionTransform({
+    required bool hovered,
+    required bool pressed,
+    required bool reducedMotion,
+  }) {
+    final scale =
+        transformsOnInteraction &&
+            pressed &&
+            !reducedMotion &&
+            kind != RaftControlKind.textLink &&
+            kind != RaftControlKind.savedAction
+        ? .985
+        : 1.0;
+    return Matrix4.diagonal3Values(scale, scale, 1);
+  }
+
   /// Optional CSS outline, independent of selected borders/rings/shadows.
   double get focusOutlineWidth => 0;
   double get focusOutlineOffset => 0;
@@ -906,14 +924,6 @@ class _RaftControlState extends State<RaftControl> {
           visualHeight: widget.visualHeight,
           highContrast: MediaQuery.highContrastOf(context),
         );
-    final scale =
-        recipe.transformsOnInteraction &&
-            pressed &&
-            !reducedMotion &&
-            widget.kind != RaftControlKind.textLink &&
-            widget.kind != RaftControlKind.savedAction
-        ? .985
-        : 1.0;
     final bg = recipe.backgroundForInteraction(
       hovered: hovered,
       pressed: pressed,
@@ -1026,8 +1036,11 @@ class _RaftControlState extends State<RaftControl> {
                         : null,
                     width: widget.visualWidth,
                     transformAlignment: Alignment.center,
-                    transform: Matrix4.diagonal3Values(scale, scale, 1)
-                      ..setTranslationRaw(0, 0, 0),
+                    transform: recipe.interactionTransform(
+                      hovered: hovered,
+                      pressed: pressed,
+                      reducedMotion: reducedMotion,
+                    ),
                     decoration: RaftCssBoxDecoration(
                       color: bg,
                       borderRadius: recipe.radius,
@@ -1199,6 +1212,14 @@ class RaftIconButton extends StatelessWidget {
               ? RaftTokens.of(context).size('size.touchLayoutMin', fallback: 0)
               : null),
       variant: variant,
+      recipe: visualSize == RaftMetrics.buttonXs
+          ? RaftSmallIconRecipe(
+              RaftTokens.of(context),
+              variant: variant,
+              visualHeight: visualSize,
+              highContrast: MediaQuery.highContrastOf(context),
+            )
+          : null,
       busy: busy,
       semanticLabel: busy ? raftText(context, tooltip ?? 'Loading') : null,
       child: busy
