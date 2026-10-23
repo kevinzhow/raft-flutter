@@ -220,29 +220,6 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     },
   );
 
-  /// SidebarReadToggleMenuItem: Mark as Read posts read-all and clears the
-  /// count; Mark as Unread waits for the server's count (no invented badge).
-  /// A failure only reloads the unread counts (no message).
-  Future<void> _toggleRead(String id) async {
-    final unread = (w.conversationReads.unread[id] ?? 0) > 0;
-    try {
-      if (!unread) return await w.conversationReads.markUnread(id);
-      final receipt = await w.command('POST', '/channels/$id/read-all');
-      if (!mounted) return;
-      final principal = w.client.user?.id, serverId = w.client.serverId;
-      if (principal != null && serverId != null) {
-        w.conversationReads.acceptReadAllAck(
-          id,
-          receipt,
-          serverId: serverId,
-          principalId: principal,
-        );
-      }
-    } catch (_) {
-      if (mounted && unread) unawaited(w.refreshUnread());
-    }
-  }
-
   /// Sidebar.tsx `toggleChannelActivityMute`: optimistic, PATCH, adopt the
   /// reply; a failure restores the row (when still untouched) and toasts.
   Future<void> _toggleMute(RaftChannel c) async {
@@ -460,17 +437,19 @@ extension _SidebarContextMenus on _WorkspaceViewState {
     submenu: true,
   );
 
-  RaftSidebarMenuItem _readItem(String? dmOrChannelId, VoidCallback close) =>
-      _item(
-        (w.conversationReads.unread[dmOrChannelId] ?? 0) > 0
-            ? 'Mark as Read'
-            : 'Mark as Unread',
-        (w.conversationReads.unread[dmOrChannelId] ?? 0) > 0
-            ? RaftGlyph.messageSquareCheck
-            : RaftGlyph.messageSquareDot,
-        close,
-        () => _toggleRead(dmOrChannelId!),
-      );
+  RaftSidebarMenuItem _readItem(
+    String? dmOrChannelId,
+    VoidCallback close, {
+    bool channel = false,
+  }) {
+    final toggle = SidebarReadToggle(w, '$dmOrChannelId', channel: channel);
+    return _item(
+      toggle.label,
+      toggle.unread ? RaftGlyph.messageSquareCheck : RaftGlyph.messageSquareDot,
+      close,
+      toggle.run,
+    );
+  }
 
   Future<void> openChannelMenu(Offset at, RaftChannel c) {
     if (c.type == 'dm') return openDmMenu(at, c);
@@ -486,7 +465,7 @@ extension _SidebarContextMenus on _WorkspaceViewState {
       (close) => [
         _moveItem(),
         const RaftSidebarMenuDivider(),
-        _readItem(c.id, close),
+        _readItem(c.id, close, channel: c.joined),
         _item(
           pinned ? 'Unpin' : 'Pin',
           pinned ? RaftGlyph.pinOff : RaftGlyph.pin,

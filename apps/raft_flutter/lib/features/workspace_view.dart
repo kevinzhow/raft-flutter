@@ -23,6 +23,8 @@ import '../data/raft_navigation_history.dart';
 import '../data/navigation_registry.dart';
 import '../data/workspace_navigation.dart';
 import '../data/source_server_unread.dart';
+import 'sidebar_read_all.dart';
+import 'sidebar_thread_unread.dart';
 import 'workspace_menu_invite.dart';
 import '../data/personal_presentation.dart';
 import '../data/device_preferences.dart';
@@ -3548,6 +3550,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
     final agent = peer.agent, name = peer.name;
     final description = custom || (pinned && agent) ? '' : peer.description;
     final source = peer.avatar;
+    final threads = SidebarThreadUnread.of(
+      w,
+    ).forChannel(c.id, joined: c.joined);
     return RaftNavItem(
       key: ValueKey('sidebar-channel-${c.id}'),
       leading: c.type == 'dm'
@@ -3587,8 +3592,16 @@ class _WorkspaceViewState extends State<WorkspaceView>
       hasDraft: (w.drafts[c.id] ?? '').isNotEmpty,
       mention:
           c.type != 'dm' &&
-          w.conversationReads.mentions.contains(c.id) &&
-          (w.conversationReads.unread[c.id] ?? 0) > 0,
+          (w.conversationReads.mentions.contains(c.id) &&
+                  (w.conversationReads.unread[c.id] ?? 0) > 0 ||
+              threads.hasMention),
+      threadUnread: threads.count,
+      threadUnreadLabel: raftText(
+        context,
+        threads.count == 1
+            ? 'thread with new replies'
+            : 'threads with new replies',
+      ),
       onTap: () => chooseChannel(c, expectedScope: scope),
     );
   }

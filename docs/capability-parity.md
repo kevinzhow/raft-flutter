@@ -7,18 +7,18 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 790 (362 endpoint/network keys, 428 client-side).
+Total capabilities: 791 (362 endpoint/network keys, 429 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 585 |
+| ✅ covered | 587 |
 | ⚠️ partial | 60 |
-| ❌ missing | 75 |
+| ❌ missing | 74 |
 | ➖ na | 70 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
-| Messages | 59 | 7 | 14 | 1 |
+| Messages | 60 | 7 | 13 | 1 |
 | Threads | 16 | 1 | 0 | 1 |
 | Channels | 27 | 6 | 1 | 1 |
 | DMs | 6 | 0 | 0 | 0 |
@@ -30,7 +30,7 @@ Total capabilities: 790 (362 endpoint/network keys, 428 client-side).
 | Tasks | 35 | 0 | 0 | 5 |
 | Files and attachments | 15 | 8 | 7 | 0 |
 | Search | 17 | 1 | 0 | 1 |
-| Notifications | 28 | 2 | 0 | 6 |
+| Notifications | 29 | 2 | 0 | 6 |
 | Account and profile | 42 | 2 | 0 | 6 |
 | Onboarding and auth | 35 | 0 | 0 | 7 |
 | Joint channels | 6 | 4 | 1 | 0 |
@@ -74,7 +74,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Execute an inline action card server-side (Approve agent login, Install marketplace app, Register app, Update app registration, Recover app owner) | `POST /actions/:id/execute` | ActionCard verb button ('Approve Login' / 'Install App' / 'Register App' / 'Update App' / 'Recover Owner') for integration:* actions[gate: canOperateCard, not frozen, source server not read-only] | message_action_card.dart confirm() -> apply('execute') for _inlineActions |  |
 | ✅ | Mark an action card executed after the dialog-driven create succeeded (channel:create, agent:create, channel:add_member) | `POST /actions/:id/mark-executed` | ActionCard > markExecuted after CreateChannelDialog / CreateAgentDialog / AddMembersDialog onCreated[gate: canOperateCard; createChannels/createAgents/add-member permissions] | message_action_card.dart mark() after RaftFormDialog / AddMembersDialog success |  |
 | ✅ | Re-confirm an action card whose state is reconfirm_required (card button 'Reconfirm') | `POST /actions/:id/reconfirm` | ActionCard verb button labelled 'Reconfirm' when metadata.state == reconfirm_required[gate: canOperateCard (viewer must hold the permission for the card action) and not frozen / read-only source] | message_action_card.dart confirm() calls apply('reconfirm') from the card verb button |  |
-| ❌ | Sidebar "Mark All as Read" over the channel and its threads (flag sidebar_mark_all_read_v0; 404 sidebar_mark_all_read_disabled when off) | `POST /channels/:id/conversation-read-all` | messageStore markConversationRead[gate: none] |  | Impact: Marking a channel and its threads read takes one action per thread; invisible on servers without the flag. New in Web v1.21.23 (pin move). Planned in WP-ACT (flag gated). Size S |
+| ✅ | Sidebar "Mark All as Read" over the channel and its threads (flag sidebar_mark_all_read_v0; 404 sidebar_mark_all_read_disabled when off) | `POST /channels/:id/conversation-read-all` | messageStore markConversationRead[gate: flag sidebar_mark_all_read_v0 + thread_unread_badge_v0] | Sidebar channel row menu 'Mark All as Read' (workspace_view_sidebar_menus.dart _readItem -> SidebarReadToggle.run -> markConversationRead, features/sidebar_read_all.dart); a 404 sidebar_mark_all_read_disabled re-evaluates the flags and falls back to read-all |  |
 | ✅ | Save (bookmark) a message | `POST /channels/saved` | MessageHoverToolbar bookmark \| context menu 'Save Message'[gate: none (any member who can see the message; guests blocked server-side)] | chat_view.dart saveMessage() -> SavedCountStore.setSaved (optimistic) |  |
 | ❌ | Mark which Activity items' messages are already saved (so the menu shows 'Remove from Saved') (bg) | `POST /channels/saved/check` | ThreadsInbox checkSaved(items) after Activity list loads (automatic)[gate: none] |  | Impact: A saved message older than the first 20 saved items can show 'Save Message' instead of 'Remove from Saved' after opening it from Activity; rare. Flutter never calls /channels/saved/check; SavedCountStore only learns saved ids from the first Saved page (20 rows) and local saves. Size S |
 | ✅ | Translate visible messages automatically or on demand (Translate menu item, Retry) | `POST /message-translations:batch` | MessageItem translation indicator (Show original / Show translation / Retry) and context menu 'Translate' (manual mode); auto mode batches visible rows[gate: server translation enabled + user translation mode auto/manual + target language] | message_translation_store.dart batch; chat_view.dart translation indicator and menu 'Translate' |  |
@@ -182,11 +182,11 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Archive a channel | `POST /channels/:id/archive` | Sidebar channel row context menu 'Archive' (confirm 'Archive Channel') \| Channel settings drawer 'Archive Channel'[gate: archiveChannels capability (channel-level first); not #all, not joint, not already archived] | workspace_view_sidebar_menus.dart _confirmArchive (row menu, key sidebar-menu-archive) \| channel_settings.dart archive action |  |
 | ✅ | Join a public channel | `POST /channels/:id/join` | Channel footer CTA 'Join #<channel>' (guests: when guestJoinable, with explanation text)[gate: non-member; guests only when channel.guestJoinable] | chat_view.dart RaftChannelJoinFooter (w.joinOpenChannel); forward picker joins |  |
 | ✅ | Leave a channel | `POST /channels/:id/leave` | Channel settings drawer > actions > 'Leave channel' > confirm[gate: joined; not #all; not archived] | channel_settings.dart 'Leave Channel' action (channel-overflow-leave) > confirm |  |
-| ✅ | Mark a channel/DM read (all messages) | `POST /channels/:id/read-all` | Sidebar row context menu 'Mark as Read' \| opening a channel with unread \| Activity row 'Mark as Read'[gate: any member] | workspace_view_sidebar_menus.dart _toggleRead; source_read_all_transport.dart |  |
+| ✅ | Mark a channel/DM read (all messages) | `POST /channels/:id/read-all` | Sidebar row context menu 'Mark as Read' \| opening a channel with unread \| Activity row 'Mark as Read'[gate: any member] | features/sidebar_read_all.dart SidebarReadToggle.run (row menu); source_read_all_transport.dart |  |
 | ✅ | After an SOS stop, resume all agents with a correction prompt | `POST /channels/:id/resume-all-agents` | SOSDialog step 2: guidance textarea > 'Resume all agents' (or 'Keep stopped')[gate: same as stop-all-agents] | RaftSosDialog onResume in channel_sos.dart showChannelSos() |  |
 | ✅ | Emergency-stop every agent in a channel (SOS) | `POST /channels/:id/stop-all-agents` | Channel settings drawer > actions group > 'Stop agents' > SOSDialog confirm (ChatPanel SOSDialog)[gate: joined && controlAgentRuntime capability; hidden for #all (no settings drawer)] | channel_settings.dart 'Stop Agents' action (channel-overflow-stop-agents) > RaftSosDialog | Minor gate difference: Flutter also hides the action on archived channels; Web still offers it. |
 | ✅ | Unarchive a channel | `POST /channels/:id/unarchive` | Channel settings drawer 'Unarchive Channel' \| archived banner 'Unarchive' link in the channel footer \| Settings > Server > Archived channels 'Unarchive' \| create-channel name-collision banner 'Unarchive'[gate: archiveChannels capability] | channel_settings.dart unarchive action \| chat_view.dart archived footer 'Unarchive' \| archived_channels_section.dart \| create_channel_dialog.dart collision banner |  |
-| ✅ | Mark a channel/DM/thread as unread | `POST /channels/:id/unread` | Sidebar row context menu 'Mark as Unread' (channels, DMs, agent DMs, pinned humans) \| Activity row context menu 'Mark as Unread' (and group rows)[gate: any member; thread rows only while following] | workspace_view_sidebar_menus.dart _toggleRead (row menu) \| resource_view.dart toggleActivityRead (Activity row menu) |  |
+| ✅ | Mark a channel/DM/thread as unread | `POST /channels/:id/unread` | Sidebar row context menu 'Mark as Unread' (channels, DMs, agent DMs, pinned humans) \| Activity row context menu 'Mark as Unread' (and group rows)[gate: any member; thread rows only while following] | features/sidebar_read_all.dart SidebarReadToggle.run (row menu) \| resource_view.dart toggleActivityRead (Activity row menu) |  |
 | ✅ | Channel footer states replacing the composer: archived notice with Unarchive link, joint read-only (View Billing), joint grace banner, guest read-only, Join channel CTA | `ui:channels.archived-and-guest-footers` | ChatPanel.tsx footer chain (the read-only-by-quota branch is unreachable on Web too: every plan has maxChannels -1) | channel_footer_states.dart + chat_view.dart footers |  |
 | ✅ | Settings > Server 'Archived channels' list: type + archived date, open channel, Unarchive | `ui:channels.archived-channels-section` | ArchivedChannelsSection.tsx in SettingsPanel[gate: archiveChannels] | archived_channels_section.dart (rendered by server_views.dart) |  |
 | ⚠️ | Reorder the Chat / Tasks / Files tabs by drag (order stored as channelPanelTabOrder) | `ui:channels.chat-tabs-reorder` | ChatPanel.tsx SortableTabsList onReorder -> reorderTabs | conversation_panel.dart reads sidebarOrder['channelPanelTabOrder'] and renders tabs in that order, but RaftConversationTabs is given no reorder wrapper, so users cannot change it | Impact: Users who prefer Files/Tasks first; cosmetic. Order from another client is honoured; Flutter cannot set it. Size S |
@@ -686,6 +686,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Dismiss a usage-limit attention incident | `POST /servers/:id/system-notifications-v2/:id/dismiss` | useUsageLimitAttention.dismiss[gate: flag usage_limit_attention_v0 on the current server] | system_notification_store.dart _receipt(... 'dismiss') |  |
 | ✅ | Mark a usage-limit attention incident as seen (clears the unseen count) | `POST /servers/:id/system-notifications-v2/:id/seen` | useUsageLimitAttention.markSeen[gate: flag usage_limit_attention_v0 on the current server] | system_notification_store.dart _receipt(... 'seen') |  |
 | ✅ | Double-click the Activity entry (mobile sidebar) or the Activity header title to jump to / focus the next unread item | `ui:channels.sidebar-activity-entry-jump-unread` | Sidebar.tsx Activity entry onDoubleClick -> focusFirstUnreadInboxItem; ThreadsInbox header title double-click -> focusNextUnread (tooltip 'Double-click to jump to the next unread item') | activity_first_unread.dart: the rail Activity item and the phone-sidebar Activity entry (mouse double-click) arm the first-unread mark; the Activity header double-click marks the next unread row; the second click of the double-click does not select again |  |
+| ✅ | Followed threads with new replies roll up onto their parent channel's sidebar badge (`5 · [thread] 1`) and its @ mark | `ui:channels.sidebar-thread-unread-badge` | Sidebar.tsx ChannelRow (useParentThreadUnread, ChannelUnreadSegments); utils/threadUnreadByParent.ts[gate: flag thread_unread_badge_v0] | workspace_view.dart channelItem -> SidebarThreadUnread.forChannel (features/sidebar_thread_unread.dart, data/thread_unread_by_parent.dart) -> RaftNavItem threadUnread -> RaftSidebarThreadUnreadCount |  |
 | ✅ | App/tab unread badge reflecting Activity unread total | `ui:channels.unread-badge-app-icon` | mobileAppBadge.ts (PWA badge) / LeftRail Activity badge | Native equivalents: macos_dock_unread.dart, background_inbox.dart, mobile tab activity badge |  |
 | ✅ | Dismissed Notification Center entries stay hidden until their fingerprint changes | `ui:global-ui.pref-notification-dismissals` | components/layout/dismissedNotificationStore.ts (slock:notification-center:dismissed:{server}) | data/system_notification_store.dart (raft:notification-center:dismissed:) |  |
 | ✅ | Composer-adjacent banner asking to enable browser/desktop notifications ('Enable', dismiss, Settings > Notifications) | `ui:messages.composer-notification-activation-banner` | NotificationActivationBanner[gate: Native macOS/iOS/Android first permission; eligible joined channel or DM composer] | features/notification_activation_banner.dart; explicit native opt-in | Native OS permission is requested only by the Enable action. Dismissal lasts for the app session with a three-second Settings confirmation. Refusal is persisted; foreground/focus reconciles system changes. Windows/Linux have no prompt and no banner. |

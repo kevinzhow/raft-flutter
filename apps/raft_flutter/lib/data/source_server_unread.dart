@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:raft_client/raft_client.dart' show RaftEvent;
+import 'package:raft_sync/raft_sync.dart' show readNotificationPrefsUpdate;
 
 import 'workspace_controller.dart';
 
@@ -37,6 +40,31 @@ class SourceServerUnreadStore extends ChangeNotifier {
 
   DateTime? _startedAt;
   int _reading = 0;
+  Future<void>? _inFlight;
+  String? _inFlightScope;
+
+  /// Sidebar.tsx's 2-minute catch-all sweep: the socket cannot tell the
+  /// selected server about the other servers, so their badges are re-read on
+  /// this interval (live edges refresh sooner).
+  static const sweepInterval = Duration(minutes: 2);
+  Timer? _sweep;
+  StreamSubscription<RaftEvent>? _prefsEvents;
+
+  /// Armed by the first read, which the shell starts once the member and
+  /// servers are known (Sidebar.tsx's effect needs both): the interval sweep
+  /// and the server-level notification-prefs refresh
+  /// (`SERVER_NOTIFICATION_PREFS_UPDATED_EVENT`: channel-level prefs do not
+  /// touch the summary).
+  void _keepFresh() {
+    if (_disposed) return;
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- Web's 120 s catch-all sweep of the other servers' unread badges: one coalesced GET, no UI work, cancelled in dispose.
+    _sweep ??= Timer.periodic(sweepInterval, (_) => unawaited(refresh()));
+    _prefsEvents ??= workspace.client.events.listen((event) {
+      if (event.name != 'notification_prefs:updated') return;
+      final update = readNotificationPrefsUpdate(event.payload);
+      if (update != null && update['type'] == 'server') unawaited(refresh());
+    });
+  }
 
   /// The time source of the freshness guard; tests that pump fake time
   /// replace it.
@@ -57,8 +85,23 @@ class SourceServerUnreadStore extends ChangeNotifier {
     return refresh();
   }
 
-  Future<void> refresh() async {
+  /// Concurrent callers share one read (Web `coalesce`).
+  Future<void> refresh() {
     synchronize();
+    _keepFresh();
+    final pending = _inFlight;
+    if (pending != null && _inFlightScope == _scope) return pending;
+    _inFlightScope = _scope;
+    final read = _inFlight = _read();
+    unawaited(
+      read.whenComplete(() {
+        if (identical(_inFlight, read)) _inFlight = null;
+      }),
+    );
+    return read;
+  }
+
+  Future<void> _read() async {
     final authority = _scope, ticket = ++_request;
     _startedAt = clock();
     _reading++;
@@ -101,6 +144,8 @@ class SourceServerUnreadStore extends ChangeNotifier {
   void dispose() {
     _disposed = true;
     ++_request;
+    _sweep?.cancel();
+    unawaited(_prefsEvents?.cancel());
     super.dispose();
   }
 }

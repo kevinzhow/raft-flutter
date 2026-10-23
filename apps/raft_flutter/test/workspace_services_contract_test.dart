@@ -137,7 +137,7 @@ class _Followed extends FollowedThreadsStore {
   _Followed()
     : super(
         scope: () => null,
-        query: (_) async => {'threads': <dynamic>[]},
+        query: (_, {query}) async => {'threads': <dynamic>[]},
         command: (_, _) async => {},
       );
   int disposals = 0;

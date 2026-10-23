@@ -2379,15 +2379,15 @@
    "status": "covered",
    "webEntry": "Sidebar row context menu 'Mark as Read' | opening a channel with unread | Activity row 'Mark as Read'",
    "gate": "any member",
-   "flutterEntry": "workspace_view_sidebar_menus.dart _toggleRead; source_read_all_transport.dart",
+   "flutterEntry": "features/sidebar_read_all.dart SidebarReadToggle.run (row menu); source_read_all_transport.dart",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/source_read_all_transport.dart",
      "needle": "/read-all"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
-     "needle": "Mark as Read"
+     "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",
+     "needle": "'Mark as Read'"
     }
    ],
    "justification": "",
@@ -2471,10 +2471,10 @@
    "status": "covered",
    "webEntry": "Sidebar row context menu 'Mark as Unread' (channels, DMs, agent DMs, pinned humans) | Activity row context menu 'Mark as Unread' (and group rows)",
    "gate": "any member; thread rows only while following",
-   "flutterEntry": "workspace_view_sidebar_menus.dart _toggleRead (row menu) | resource_view.dart toggleActivityRead (Activity row menu)",
+   "flutterEntry": "features/sidebar_read_all.dart SidebarReadToggle.run (row menu) | resource_view.dart toggleActivityRead (Activity row menu)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
+     "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",
      "needle": "w.conversationReads.markUnread(id)"
     },
     {
@@ -2681,8 +2681,8 @@
      "needle": "Future<void> openChannelMenu"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
-     "needle": "'Mark as Read'\n            : 'Mark as Unread'"
+     "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",
+     "needle": "'Mark as Unread'"
     }
    ],
    "justification": "",
@@ -12051,6 +12051,30 @@
   },
   {
    "kind": "ui",
+   "id": "ui:channels.sidebar-thread-unread-badge",
+   "area": "notifications",
+   "capability": "Followed threads with new replies roll up onto their parent channel's sidebar badge (`5 · [thread] 1`) and its @ mark",
+   "background": false,
+   "status": "covered",
+   "webEntry": "Sidebar.tsx ChannelRow (useParentThreadUnread, ChannelUnreadSegments); utils/threadUnreadByParent.ts",
+   "gate": "flag thread_unread_badge_v0",
+   "flutterEntry": "workspace_view.dart channelItem -> SidebarThreadUnread.forChannel (features/sidebar_thread_unread.dart, data/thread_unread_by_parent.dart) -> RaftNavItem threadUnread -> RaftSidebarThreadUnreadCount",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/sidebar_thread_unread.dart",
+     "needle": "class SidebarThreadUnread"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/sidebar_thread_unread.dart",
+     "needle": "class RaftSidebarThreadUnreadCount"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
    "id": "ui:channels.unread-badge-app-icon",
    "area": "notifications",
    "capability": "App/tab unread badge reflecting Activity unread total",
@@ -17126,14 +17150,23 @@
    "area": "messages",
    "capability": "Sidebar \"Mark All as Read\" over the channel and its threads (flag sidebar_mark_all_read_v0; 404 sidebar_mark_all_read_disabled when off)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "messageStore markConversationRead",
-   "gate": "none",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "New in Web v1.21.23 (pin move). Planned in WP-ACT (flag gated).",
-   "impact": "Marking a channel and its threads read takes one action per thread; invisible on servers without the flag.",
-   "size": "S"
+   "gate": "flag sidebar_mark_all_read_v0 + thread_unread_badge_v0",
+   "flutterEntry": "Sidebar channel row menu 'Mark All as Read' (workspace_view_sidebar_menus.dart _readItem -> SidebarReadToggle.run -> markConversationRead, features/sidebar_read_all.dart); a 404 sidebar_mark_all_read_disabled re-evaluates the flags and falls back to read-all",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/sidebar_read_all.dart",
+     "needle": "conversation-read-all"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/workspace_view_sidebar_menus.dart",
+     "needle": "SidebarReadToggle"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "endpoint",

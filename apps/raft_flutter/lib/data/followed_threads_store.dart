@@ -35,12 +35,23 @@ class FollowedThreadsStore extends ChangeNotifier {
 
   static const path = '/channels/threads/followed';
 
+  /// Rows per request (the server accepts 1 to 200) and the most requests one
+  /// reload makes, so a runaway cursor cannot loop.
+  static const pageSize = 200, maxPages = 100;
+
+  /// The query of the page after [cursor] (the first page when null).
+  static Map<String, dynamic> pageQuery(String? cursor) => {
+    'limit': pageSize,
+    'cursor': ?cursor,
+  };
+
   /// Source FOLLOWED_THREADS_REFRESH_DELAY_MS: replies into threads that are
   /// not in the list (the server auto-followed them) share one reload.
   static const refreshDelay = Duration(milliseconds: 1500);
 
   final WorkspaceEntityScope? Function() _readScope;
-  final Future<dynamic> Function(String path) query;
+  final Future<dynamic> Function(String path, {Map<String, dynamic>? query})
+  query;
   final Future<dynamic> Function(String path, Map<String, dynamic> data)
   command;
   final Listenable? authority;
@@ -178,17 +189,29 @@ class FollowedThreadsStore extends ChangeNotifier {
 
   Future<void> _load(WorkspaceEntityScope scope, int epoch) async {
     try {
-      final value = await Future.sync(() => query(path));
-      if (!_accepts(scope, epoch)) return;
-      final raw = value is Map ? value['threads'] : null;
-      if (raw is! List) {
-        throw const FormatException('Invalid followed threads response.');
+      final rows = <Map<String, dynamic>>[];
+      // Newest activity first, `pageSize` rows a request; a server before
+      // `limit` returns the whole list at once and names no `next`.
+      String? cursor;
+      for (var page = 0; page < maxPages; page++) {
+        final value = await Future.sync(
+          () => query(path, query: pageQuery(cursor)),
+        );
+        if (!_accepts(scope, epoch)) return;
+        final raw = value is Map ? value['threads'] : null;
+        if (raw is! List) {
+          throw const FormatException('Invalid followed threads response.');
+        }
+        rows.addAll([
+          for (final row in raw)
+            if (row is Map && row['parentMessageId'] is String)
+              Map<String, dynamic>.from(row),
+        ]);
+        final next = value['next'];
+        if (next is! String || next.isEmpty || next == cursor) break;
+        cursor = next;
       }
-      _setRows([
-        for (final row in raw)
-          if (row is Map && row['parentMessageId'] is String)
-            Map<String, dynamic>.from(row),
-      ]);
+      _setRows(rows);
       for (final entry in _overrides.entries.toList()) {
         if (!_inFlight.contains(entry.key) &&
             _byParent.containsKey(entry.key) == entry.value.following) {

@@ -88,7 +88,7 @@ class _Following extends FollowedThreadsStore {
   _Following(this.trace)
     : super(
         scope: () => null,
-        query: (_) async => {},
+        query: (_, {query}) async => {},
         command: (_, _) async => {},
       );
   final List<String> trace;

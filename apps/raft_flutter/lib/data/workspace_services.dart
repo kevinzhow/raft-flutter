@@ -57,7 +57,7 @@ class WorkspaceServices {
         followedThreads ??
         FollowedThreadsStore(
           scope: entityScope,
-          query: (path) => authority.query(path),
+          query: (path, {query}) => authority.query(path, query: query),
           command: (path, data) => authority.command('POST', path, data: data),
           authority: authority,
           events: authority.client.events,
@@ -209,7 +209,18 @@ class WorkspaceServices {
     _readReceipts?.dispose();
     _announcements?.dispose();
     _announcementGate?.dispose();
+    for (final dispose in _disposers.reversed) {
+      dispose();
+    }
+    _disposers.clear();
   }
+
+  final _disposers = <void Function()>[];
+
+  /// Presentation-owned notifiers that live as long as this session (the
+  /// unread flags and roll-ups, which are created on first use) are disposed
+  /// with it.
+  void disposeWithSession(void Function() dispose) => _disposers.add(dispose);
 
   void retireChannelFiles() => _channelFilesStores.clear();
 

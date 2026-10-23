@@ -26,6 +26,7 @@ import 'text_input_refresh.dart';
 import 'composer_suggestions.dart';
 import 'collapsible.dart';
 import 'sidebar_indicators.dart';
+import 'sidebar_thread_unread.dart';
 import 'mouse_double_click.dart';
 import 'name_description_row.dart';
 
@@ -924,6 +925,8 @@ class RaftNavItem extends StatelessWidget {
     this.hasDraft = false,
     this.mention = false,
     this.quietNew = false,
+    this.threadUnread = 0,
+    this.threadUnreadLabel = '',
     this.providerBadge,
     this.onDoubleClick,
     this.ignoreSecondClick = false,
@@ -968,6 +971,13 @@ class RaftNavItem extends StatelessWidget {
   /// exact count. Lights only a quiet dot (Sidebar.tsx `showQuietNewDot`).
   final bool quietNew;
 
+  /// Followed threads under this channel with new replies
+  /// (`thread_unread_badge_v0`): a separate segment of the same badge, so a
+  /// channel with only thread unread still lights it. [threadUnreadLabel] is
+  /// its screen-reader copy.
+  final int threadUnread;
+  final String threadUnreadLabel;
+
   /// Bridge provider chip after the channel name (Slack: `bridge.provider`).
   final String? providerBadge;
 
@@ -1004,7 +1014,9 @@ class RaftNavItem extends StatelessWidget {
   bool get _mutedIcon => _channel && joined && activityMuted;
   bool get _mention => mention && _channel && joined;
   bool get _quietNew => quietNew && _channel && !joined && unread <= 0;
-  bool get _loudUnread => unread > 0 && (!_channel || joined && !_mutedIcon);
+  bool get _threadSegment => threadUnread > 0 && _channel && joined;
+  bool get _loudUnread =>
+      (unread > 0 || _threadSegment) && (!_channel || joined && !_mutedIcon);
   bool get _dimmed => _channel && !selected && !joined;
   Color? _titleColor(BuildContext context, RaftTokens t) => _dimmed
       ? t.brutal
@@ -1280,6 +1292,16 @@ class RaftNavItem extends StatelessWidget {
             ],
             if (trailing != null)
               trailing!
+            else if (_threadSegment)
+              Padding(
+                padding: EdgeInsets.only(left: _mention ? 4 : 0),
+                child: RaftSidebarThreadUnreadCount(
+                  unread: unread,
+                  threads: threadUnread,
+                  label: threadUnreadLabel,
+                  loud: _loudUnread,
+                ),
+              )
             else if (unread > 0 && _channel && !_loudUnread)
               Padding(
                 padding: EdgeInsets.only(left: _mention ? 4 : 0),
@@ -1324,10 +1346,14 @@ class RaftNavItem extends StatelessWidget {
               'count': unread,
             })
           : semanticLabel,
+      if (_threadSegment) '$threadUnread $threadUnreadLabel',
       if (_mutedIcon) raftText(context, 'Activity muted'),
       if (_quietNew) raftText(context, 'New messages'),
       if (_channel && !joined) raftText(context, 'Not joined'),
-      if (hasDraft && unread <= 0 && conversationKind != null)
+      if (hasDraft &&
+          unread <= 0 &&
+          !_threadSegment &&
+          conversationKind != null)
         raftText(context, 'Draft'),
     ].join(', ');
     final item = Semantics(
