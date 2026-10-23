@@ -2,8 +2,6 @@
 // confirmed flag): enabled, disabled, and the fail-closed undetermined state.
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raftbench_flag_controller.dart';
