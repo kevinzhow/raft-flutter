@@ -94,6 +94,13 @@ class AuditSurface {
 
 final auditSurfaces = <AuditSurface>[
   AuditSurface(
+    'computerConnectionLoadingPreview',
+    'Loading connected computer details',
+    computerConnectionLoadingPreview,
+    Size(390, 844),
+    representative: true,
+  ),
+  AuditSurface(
     'computerConnectionConfirmationPreview',
     'Confirm the connected computer',
     computerConnectionConfirmationPreview,
