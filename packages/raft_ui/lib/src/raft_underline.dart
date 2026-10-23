@@ -67,6 +67,8 @@ class RaftBackgroundSpan extends TextSpan {
     super.text,
     super.children,
     super.style,
+    super.recognizer,
+    super.mouseCursor,
     required this.background,
   });
 

@@ -1,9 +1,8 @@
-import 'dart:math' as math;
-
 import 'interaction.dart';
 import 'hover_region.dart';
 import 'mermaid_toolbar_recipe.dart';
-import 'markdown_autolink.dart';
+import 'message_markdown.dart';
+import 'message_tokens.dart';
 import 'message_reference_chip.dart';
 
 import 'dart:async';
@@ -63,6 +62,7 @@ import 'icons.dart';
 import 'lru_cache.dart';
 import 'message_list_marker.dart';
 import 'message_content_tokens.dart';
+export 'message_tokens.dart' show RaftTextReference, raftResolveMentionHandle;
 import 'raft_underline.dart';
 import 'sized_image.dart';
 import 'mermaid_fullscreen.dart';
@@ -74,279 +74,7 @@ import 'message_semantics.dart';
 import 'theme.dart';
 import 'tooltip.dart' show RaftTooltip;
 
-/// A reference is interactive only when its identity is supplied by the
-/// current workspace projection. User text never supplies a target identity.
-class RaftTextReference {
-  const RaftTextReference({
-    required this.text,
-    required this.href,
-    this.identityBacked = false,
-  });
-  final String text, href;
-  final bool identityBacked;
-}
-
-/// Protect code, authored links and URLs before adding identity-backed links.
-/// Explicit task refs can be resolved asynchronously; bare numbers stay text.
-String raftMessageReferences(
-  String source, {
-  List<RaftTextReference> references = const [],
-  String Function(int number)? taskHref,
-  bool Function(int number)? knownTaskNumber,
-}) {
-  // Free-text `@name` handles the message can resolve (Web `isKnownHandle`).
-  final knownHandles = {
-    for (final r in references)
-      if (r.text.startsWith('@') && r.text.length > 1) r.text.substring(1),
-  };
-  String plain(String text) {
-    final matches = <({int start, int end, String label, String href})>[];
-    for (final ref in references) {
-      if (ref.text.isEmpty) continue;
-      final pattern = RegExp(RegExp.escape(ref.text));
-      for (final m in pattern.allMatches(text)) {
-        final left = m.start == 0 ? '' : text.substring(m.start - 1, m.start);
-        final right = m.end == text.length
-            ? ''
-            : text.substring(m.end, m.end + 1);
-        // Conservative free-text grammar also protects emails and longer names.
-        if (!ref.identityBacked &&
-            left.isNotEmpty &&
-            RegExp(r'[\p{L}\p{N}_@/]', unicode: true).hasMatch(left)) {
-          continue;
-        }
-        final next = m.end == text.length
-            ? ''
-            : String.fromCharCode(
-                text
-                    .substring(m.end, math.min(m.end + 2, text.length))
-                    .runes
-                    .first,
-              );
-        if (next.isNotEmpty &&
-            _handleContinuation.hasMatch(next) &&
-            !_raftMentionBoundaryAllowed(
-              ref,
-              text,
-              m.start,
-              next,
-              knownHandles,
-            )) {
-          continue;
-        }
-        if (right == '.' &&
-            m.end + 1 < text.length &&
-            RegExp(
-              r'[\p{L}\p{N}_]',
-              unicode: true,
-            ).hasMatch(text.substring(m.end + 1, m.end + 2))) {
-          continue;
-        }
-        if (ref.text.startsWith('@') &&
-            (right == '~' || text.substring(0, m.start).endsWith('dm:'))) {
-          continue;
-        }
-        // `#chan:shortId` / `dm:@peer:shortId` belong to the thread-ref
-        // pass (Web runs it first); a plain `#design:` is still a channel.
-        if ((ref.text.startsWith('#') || ref.text.startsWith('dm:')) &&
-            (right == '~' ||
-                (right == ':' &&
-                    RegExp(
-                      r'^:[0-9a-f]{6,8}(?![0-9a-z])',
-                      caseSensitive: false,
-                    ).hasMatch(text.substring(m.end))))) {
-          continue;
-        }
-        matches.add((start: m.start, end: m.end, label: m[0]!, href: ref.href));
-      }
-    }
-    if (taskHref != null) {
-      // Web createRaftBareTaskRefRegex: `task #N` always, bare `#N` only for
-      // a known task.
-      for (final m in RegExp(
-        r'(?:^|(?<=[^\w/]))(task\s+)?#([1-9][0-9]*)\b',
-        caseSensitive: false,
-      ).allMatches(text)) {
-        final number = int.parse(m[2]!);
-        if (m[1] == null && !(knownTaskNumber?.call(number) ?? false)) {
-          continue;
-        }
-        final start = m.end - m[2]!.length - 1;
-        matches.add((
-          start: start,
-          end: m.end,
-          label: '#${m[2]}',
-          href: taskHref(number),
-        ));
-      }
-    }
-    matches.sort(
-      (a, b) => a.start != b.start
-          ? a.start.compareTo(b.start)
-          : b.end.compareTo(a.end),
-    );
-    final result = StringBuffer();
-    var cursor = 0;
-    for (final m in matches) {
-      if (m.start < cursor) continue;
-      result.write(text.substring(cursor, m.start));
-      final label = m.label
-          .replaceAll(r'\', r'\\')
-          .replaceAll('[', r'\[')
-          .replaceAll(']', r'\]');
-      result.write('[$label](<${m.href}>)');
-      cursor = m.end;
-    }
-    result.write(text.substring(cursor));
-    return result.toString();
-  }
-
-  final out = StringBuffer();
-  var cursor = 0;
-  for (final range in raftProtectedMarkdownRanges(source)) {
-    out.write(plain(source.substring(cursor, range.$1)));
-    out.write(source.substring(range.$1, range.$2));
-    cursor = range.$2;
-  }
-  out.write(plain(source.substring(cursor)));
-  return out.toString();
-}
-
-final _handleContinuation = RegExp(r'[\p{L}\p{N}_-]', unicode: true);
-final _cjkSuffixStart = RegExp(
-  r'^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]',
-  unicode: true,
-);
-final _nonCjkHandleEnd = RegExp(r'[\p{Script=Latin}\p{N}_-]$', unicode: true);
-
-/// Web `resolveRaftMentionHandle`: resolve a free-text mention [token] (the
-/// run of letters, digits, `_` and `-` after `@`) against known handles. An
-/// exact match wins. Otherwise the token is split only where the writing
-/// system changes, a Latin letter, digit, `_` or `-` followed by Han, kana or
-/// hangul (`@ops的`, `@opsさん`, `@ops와`); nothing is guessed inside one
-/// script. A split that is a guess (two valid splits, or a longer known name
-/// that is also a prefix of the token) stays unresolved. Returns the handle
-/// and the glued suffix, or null.
-({String handle, String suffix})? raftResolveMentionHandle(
-  String token,
-  bool Function(String handle) isKnownHandle,
-) {
-  if (isKnownHandle(token)) return (handle: token, suffix: '');
-  final chars = token.runes.map(String.fromCharCode).toList();
-  final splits = <({int length, String handle, String suffix})>[];
-  for (var length = 1; length < chars.length; length += 1) {
-    final handle = chars.sublist(0, length).join();
-    final suffix = chars.sublist(length).join();
-    if (!_nonCjkHandleEnd.hasMatch(handle)) continue;
-    if (!_cjkSuffixStart.hasMatch(suffix)) continue;
-    if (isKnownHandle(handle)) {
-      splits.add((length: length, handle: handle, suffix: suffix));
-    }
-  }
-  // `ops` and `ops君a` for `@ops君a的`: two members fit, so the split is a guess.
-  if (splits.length != 1) return null;
-  final split = splits.single;
-  // A longer member name also fits (`ops` and `ops君` for `@ops君的`).
-  for (var longer = split.length + 1; longer < chars.length; longer += 1) {
-    if (isKnownHandle(chars.sublist(0, longer).join())) return null;
-  }
-  return (handle: split.handle, suffix: split.suffix);
-}
-
-/// Whether a reference may end right before [next], a character that would
-/// otherwise continue the handle. A composer-resolved (identity-backed)
-/// mention may be followed by Han, kana or hangul (`@Mona的`), never by Latin
-/// letters, digits, `_` or `-`. Free text resolves through
-/// [raftResolveMentionHandle].
-bool _raftMentionBoundaryAllowed(
-  RaftTextReference ref,
-  String text,
-  int start,
-  String next,
-  Set<String> knownHandles,
-) {
-  if (!ref.text.startsWith('@')) return false;
-  if (ref.identityBacked) return _cjkSuffixStart.hasMatch(next);
-  final token = RegExp(
-    r'^[\p{L}\p{N}_-]+',
-    unicode: true,
-  ).firstMatch(text.substring(start + 1))?[0];
-  if (token == null) return false;
-  return raftResolveMentionHandle(token, knownHandles.contains)?.handle ==
-      ref.text.substring(1);
-}
-
-final _protectedStart = RegExp(
-  r'(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1|`+[^`]*`+|!?\[|'
-  r'https?://[^\s<>()]+(?:\([^\s<>()]*\)[^\s<>()]*)*',
-);
-
-/// Web `protectMarkdownInlineLinks` for the `[` at [labelStart]: the end of
-/// the whole `[label](destination)` (exclusive), honouring backslash escapes in
-/// the label and balanced parentheses in the destination, or null when the
-/// bracket does not open an inline link.
-int? _inlineLinkEnd(String source, int labelStart) {
-  var labelEnd = labelStart + 1;
-  while (labelEnd < source.length) {
-    final c = source[labelEnd];
-    if (c == r'\') {
-      labelEnd += 2;
-      continue;
-    }
-    if (c == ']') break;
-    labelEnd += 1;
-  }
-  if (labelEnd >= source.length ||
-      labelEnd + 1 >= source.length ||
-      source[labelEnd + 1] != '(') {
-    return null;
-  }
-  var end = labelEnd + 2;
-  var depth = 1;
-  while (end < source.length) {
-    final c = source[end];
-    if (c == r'\') {
-      end += 2;
-      continue;
-    }
-    if (c == '(') {
-      depth += 1;
-    } else if (c == ')') {
-      depth -= 1;
-      if (depth == 0) break;
-    }
-    end += 1;
-  }
-  return depth == 0 && end < source.length ? end + 1 : null;
-}
-
-/// The ranges [raftMessageReferences] must not touch: code, authored inline
-/// links and images (label and destination: Web v1.21.12 no longer chips a
-/// mention, channel or task inside a link label) and bare URLs.
-List<(int, int)> raftProtectedMarkdownRanges(String source) {
-  final ranges = <(int, int)>[];
-  var from = 0;
-  while (from < source.length) {
-    final m = _protectedStart.allMatches(source, from).firstOrNull;
-    if (m == null) break;
-    final text = m[0]!;
-    if (text == '[' || text == '![') {
-      final end = _inlineLinkEnd(source, m.end - 1);
-      if (end == null) {
-        from = m.end;
-        continue;
-      }
-      ranges.add((m.start, end));
-      from = end;
-      continue;
-    }
-    ranges.add((m.start, m.end));
-    from = m.end;
-  }
-  return ranges;
-}
-
-/// Inputs of [raftMessageReferences] that change its output. Task closures
+/// Inputs of the reference pass that change its output. Task closures
 /// are reduced to their answers for the numbers this text can reference.
 @immutable
 class _ReferencesKey {
@@ -423,14 +151,15 @@ List<_BodyChunk> _splitBody(String prepared) {
     while (end < lines.length && !close.hasMatch(lines[end])) {
       end++;
     }
-    if (end == lines.length) {
-      markdown.writeln(lines[i]);
-      continue;
-    }
+    // An unclosed fence is code to the end of the message (CommonMark; Web
+    // shows it as a code block while the agent is still writing it).
+    final unclosed = end == lines.length;
+    var last = end;
+    if (unclosed && last > i + 1 && lines[last - 1].isEmpty) last -= 1;
     flush();
     chunks.add(
       _BodyChunk.code(
-        lines.sublist(i + 1, end).join('\n'),
+        lines.sublist(i + 1, last).join('\n'),
         start[2],
         mermaid: start[2]!.toLowerCase() == 'mermaid',
       ),
@@ -446,7 +175,7 @@ List<_BodyChunk> _splitBody(String prepared) {
 /// that ends in code even when another row follows. A Mermaid diagram is not
 /// a `pre`.
 bool raftBodyEndsInCode(String content) {
-  final chunks = _splitBody(raftMessageReferences(content));
+  final chunks = _splitBody(content);
   for (final chunk in chunks.reversed) {
     if (chunk.markdown && chunk.text.trim().isEmpty) continue;
     return chunk.language != null && !chunk.mermaid;
@@ -454,30 +183,46 @@ bool raftBodyEndsInCode(String content) {
   return false;
 }
 
-/// Reference preparation and block splitting are pure functions of the
-/// message text and its reference projection, so a row that is scrolled away
-/// and back (or rebuilt by an unrelated update) does not redo them.
-final _bodyChunkCache = RaftLruCache<_ReferencesKey, List<_BodyChunk>>(1024);
+/// Block splitting is a pure function of the message text, so a row that is
+/// scrolled away and back (or rebuilt by an unrelated update) does not redo it.
+final _bodyChunkCache = RaftLruCache<String, List<_BodyChunk>>(1024);
 
 /// Capacities cover a full 500-message channel window (two Markdown runs
 /// per message) so scrolling it end to end does not evict what the next
 /// pass needs.
 ///
-/// Parsed Markdown trees keyed by their exact source. Every message body uses
-/// the same parser configuration (GitHub flavoured, reference sentinels).
-/// A tree is shared only when MarkdownBuilder cannot change it: the builder
-/// appends a placeholder to an empty list item after visiting it, which
-/// would alter a second build, so such sources are parsed per build.
+/// Parsed Markdown trees keyed by their exact source, parser mode and the
+/// reference projection the message passes ran with. A tree is shared only
+/// when MarkdownBuilder cannot change it: the builder appends a placeholder to
+/// an empty list item after visiting it, which would alter a second build, so
+/// such sources are parsed per build.
 @visibleForTesting
-final raftMarkdownAstCache = RaftLruCache<String, List<md.Node>?>(1024);
+final raftMarkdownAstCache = RaftLruCache<Object, List<md.Node>?>(1024);
 
-List<md.Node> _parseMarkdownSource(String data) => raftFlattenNestedLinks(
-  md.Document(
-    inlineSyntaxes: [RaftBareUrlSyntax()],
-    extensionSet: md.ExtensionSet.gitHubFlavored,
-    encodeHtml: false,
-  ).parseLines(const LineSplitter().convert(data)),
-);
+@immutable
+class _TreeKey {
+  const _TreeKey(this.text, this.mode, this.refs);
+  final String text;
+  final RaftMarkdownMode mode;
+  final _ReferencesKey? refs;
+  @override
+  bool operator ==(Object other) =>
+      other is _TreeKey &&
+      other.text == text &&
+      other.mode == mode &&
+      other.refs == refs;
+  @override
+  int get hashCode => Object.hash(text, mode, refs);
+}
+
+/// Everything a tree depends on besides its source.
+@immutable
+class _TreeInputs {
+  const _TreeInputs(this.mode, this.context, this.key);
+  final RaftMarkdownMode mode;
+  final RaftTokenContext context;
+  final _ReferencesKey? key;
+}
 
 bool _hasEmptyListItem(List<md.Node>? nodes) =>
     nodes != null &&
@@ -488,12 +233,48 @@ bool _hasEmptyListItem(List<md.Node>? nodes) =>
               _hasEmptyListItem(n.children)),
     );
 
-List<md.Node> _parseMarkdown(String data) =>
-    raftMarkdownAstCache.putIfAbsent(data, () {
-      final nodes = _parseMarkdownSource(data);
-      return _hasEmptyListItem(nodes) ? null : nodes;
-    }) ??
-    _parseMarkdownSource(data);
+_TreeInputs _treeInputs(
+  String content, {
+  required bool documentMode,
+  required bool messagePipeline,
+  required List<RaftTextReference> references,
+  required String Function(int)? taskHref,
+  required bool Function(int)? knownTaskNumber,
+}) {
+  final context = RaftTokenContext(
+    references: references,
+    taskHref: taskHref,
+    knownTaskNumber: knownTaskNumber,
+    message: messagePipeline,
+  );
+  return _TreeInputs(
+    documentMode
+        ? RaftMarkdownMode.document
+        : messagePipeline
+        ? RaftMarkdownMode.message
+        : RaftMarkdownMode.compact,
+    context,
+    context.active
+        ? _ReferencesKey(content, references, taskHref, knownTaskNumber)
+        : null,
+  );
+}
+
+List<md.Node> _buildTree(String text, _TreeInputs inputs) =>
+    raftApplyMessageTokens(
+      raftParseMarkdown(text, inputs.mode),
+      inputs.context,
+    );
+
+List<md.Node> _parseMarkdown(String text, _TreeInputs inputs) =>
+    raftMarkdownAstCache.putIfAbsent(
+      _TreeKey(text, inputs.mode, inputs.key),
+      () {
+        final nodes = _buildTree(text, inputs);
+        return _hasEmptyListItem(nodes) ? null : nodes;
+      },
+    ) ??
+    _buildTree(text, inputs);
 
 /// What [RaftMessageBody] derives from a bare Markdown string with no
 /// references: its body chunks and the parsed tree of each prose chunk. Pure
@@ -509,12 +290,15 @@ class RaftPreparedBody {
 }
 
 RaftPreparedBody raftPrepareBody(String content) {
-  final chunks = _splitBody(raftMessageReferences(content));
+  final chunks = _splitBody(content);
   return RaftPreparedBody._(chunks, [
     for (final chunk in chunks)
       if (chunk.markdown)
         () {
-          final nodes = _parseMarkdownSource(chunk.text);
+          final nodes = raftParseMarkdown(
+            chunk.text,
+            RaftMarkdownMode.document,
+          );
           return _hasEmptyListItem(nodes) ? null : nodes;
         }()
       else
@@ -535,14 +319,14 @@ class RaftJoinedSelection extends StatelessWidget {
 /// Seeds the caches [RaftMessageBody] reads, so building [content] parses
 /// nothing.
 void raftAdoptPreparedBody(String content, RaftPreparedBody body) {
-  _bodyChunkCache.putIfAbsent(
-    _ReferencesKey(content, const [], null, null),
-    () => body._chunks,
-  );
+  _bodyChunkCache.putIfAbsent(content, () => body._chunks);
   for (var i = 0; i < body._chunks.length; i++) {
     final tree = body._trees[i];
     if (tree != null) {
-      raftMarkdownAstCache.putIfAbsent(body._chunks[i].text, () => tree);
+      raftMarkdownAstCache.putIfAbsent(
+        _TreeKey(body._chunks[i].text, RaftMarkdownMode.document, null),
+        () => tree,
+      );
     }
   }
 }
@@ -616,7 +400,13 @@ class RaftMessageBody extends StatelessWidget {
     this.searchHighlight,
     this.permalinkAppearance,
     this.permalinkKey,
+    this.messagePipeline = false,
   });
+
+  /// Web `MessageItem`: the body goes through the message passes (tokens,
+  /// `<target>` refs, repair of generated Markdown), not just the shared
+  /// Markdown renderer.
+  final bool messagePipeline;
 
   /// Changes whenever [permalinkAppearance] would answer differently (the
   /// markdown subtree only rebuilds on a changed key).
@@ -644,18 +434,19 @@ class RaftMessageBody extends StatelessWidget {
     String Function(int)? taskHref,
     bool Function(int)? knownTaskNumber,
     double fontSize = 14,
+    bool messagePipeline = false,
   }) {
-    final key = _ReferencesKey(content, references, taskHref, knownTaskNumber);
+    final inputs = _treeInputs(
+      content,
+      documentMode: false,
+      messagePipeline: messagePipeline,
+      references: references,
+      taskHref: taskHref,
+      knownTaskNumber: knownTaskNumber,
+    );
     final chunks = _bodyChunkCache.putIfAbsent(
-      key,
-      () => _splitBody(
-        raftMessageReferences(
-          content,
-          references: references,
-          taskHref: taskHref,
-          knownTaskNumber: knownTaskNumber,
-        ),
-      ),
+      content,
+      () => _splitBody(content),
     );
     final code = RaftCodeRecipe(tokens);
     final style = code.textStyle.copyWith(
@@ -664,7 +455,7 @@ class RaftMessageBody extends StatelessWidget {
     );
     for (final chunk in chunks) {
       if (chunk.markdown) {
-        _parseMarkdown(chunk.text);
+        _parseMarkdown(chunk.text, inputs);
       } else if (!chunk.mermaid) {
         raftCodeSpan(chunk.text, chunk.language, style, dark: tokens.dark);
       }
@@ -711,17 +502,17 @@ class RaftMessageBody extends StatelessWidget {
     // export render stays inert.
     final onLink =
         this.onLink ?? (exportMode ? null : RaftLinkScope.handlerOf(context));
-    final key = _ReferencesKey(content, references, taskHref, knownTaskNumber);
+    final inputs = _treeInputs(
+      content,
+      documentMode: documentMode,
+      messagePipeline: messagePipeline,
+      references: references,
+      taskHref: taskHref,
+      knownTaskNumber: knownTaskNumber,
+    );
     final chunks = _bodyChunkCache.putIfAbsent(
-      key,
-      () => _splitBody(
-        raftMessageReferences(
-          content,
-          references: references,
-          taskHref: taskHref,
-          knownTaskNumber: knownTaskNumber,
-        ),
-      ),
+      content,
+      () => _splitBody(content),
     );
     final highlight = raftNormalizeSearchHighlight(searchHighlight);
     final recipe = MessageContentRecipe(
@@ -771,7 +562,7 @@ class RaftMessageBody extends StatelessWidget {
     // A compact row's label announces the prose; only its links stay.
     Widget compactProse(String markdown, Widget block) => compactSemantics
         ? RaftMessageProseSemantics(
-            links: raftMessageSemanticsLinks(markdown),
+            links: raftTreeSemanticsLinks(_parseMarkdown(markdown, inputs)),
             onLink: onLink,
             child: block,
           )
@@ -787,6 +578,7 @@ class RaftMessageBody extends StatelessWidget {
             chunk.text,
             _RaftMarkdown(
               data: chunk.text,
+              treeInputs: inputs,
               styleSheet: resolveStyleSheets().$1,
               resolvedStyleSheet: resolveStyleSheets().$2,
               joinSelection: proseSelection,
@@ -1066,6 +858,7 @@ Widget _joinBlocks(Widget widget) {
 class _RaftMarkdown extends MarkdownBody {
   const _RaftMarkdown({
     required super.data,
+    required this.treeInputs,
     required MarkdownStyleSheet super.styleSheet,
     required this.resolvedStyleSheet,
     required this.searchHighlight,
@@ -1080,6 +873,9 @@ class _RaftMarkdown extends MarkdownBody {
   /// Inside a message selection area: wrap the blocks so a copy keeps its
   /// lines ([_joinBlocks]).
   final bool joinSelection;
+
+  /// What the tree for [data] depends on besides its source.
+  final _TreeInputs treeInputs;
 
   /// MarkdownBody's effective sheet: Material fallback merged with
   /// [styleSheet].
@@ -1198,9 +994,10 @@ class _RaftMarkdownState extends State<MarkdownWidget>
   void didUpdateWidget(MarkdownWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.data != oldWidget.data ||
+        markdown.treeInputs.key !=
+            (oldWidget as _RaftMarkdown).treeInputs.key ||
         widget.styleSheet != oldWidget.styleSheet ||
-        markdown.searchHighlight !=
-            (oldWidget as _RaftMarkdown).searchHighlight ||
+        markdown.searchHighlight != oldWidget.searchHighlight ||
         markdown.builderKey != oldWidget.builderKey) {
       rebuildChildren();
     }
@@ -1248,9 +1045,9 @@ class _RaftMarkdownState extends State<MarkdownWidget>
           softLineBreak: true,
         ).build(
           markdown.searchHighlight.isEmpty
-              ? _parseMarkdown(widget.data)
+              ? _parseMarkdown(widget.data, markdown.treeInputs)
               : _highlightSearchNodes(
-                  _parseMarkdown(widget.data),
+                  _parseMarkdown(widget.data, markdown.treeInputs),
                   markdown.searchHighlight,
                 ),
         );
@@ -1952,13 +1749,28 @@ class _MessageLinkBuilder extends MarkdownElementBuilder {
       ..onTap = onLink == null ? null : () => onLink!(href);
     recognizers?.add(recognizer);
     final children = (element.children as List?) ?? const [];
+    final style = linkStyle.copyWith(decoration: TextDecoration.none);
+    // A thread-search mark is a piece of its own (see
+    // [_highlightSearchNodes]); it stays a link and a single leaf span, which
+    // flutter_markdown keeps as it is.
+    final only = children.length == 1 ? children[0] : null;
+    if (only is md.Element && only.tag == 'mark') {
+      return Text.rich(
+        _searchMarkSpan(
+          context,
+          only.textContent,
+          style,
+          recognizer: recognizer,
+        ),
+      );
+    }
     return Text.rich(
       TextSpan(
         children: [
           for (final child in children)
             TextSpan(
               text: (child as md.Node).textContent,
-              style: linkStyle.copyWith(decoration: TextDecoration.none),
+              style: style,
               recognizer: recognizer,
               mouseCursor: SystemMouseCursors.click,
               semanticsLabel: child.textContent,
@@ -2427,10 +2239,17 @@ List<(String, bool)>? _searchFragments(String text, String query) {
 ///
 /// The fill is a [RaftBackgroundSpan] (painted below the selection highlight),
 /// never a [TextStyle.backgroundColor].
-InlineSpan _searchMarkSpan(BuildContext context, String text, TextStyle base) {
+InlineSpan _searchMarkSpan(
+  BuildContext context,
+  String text,
+  TextStyle base, {
+  GestureRecognizer? recognizer,
+}) {
   final t = RaftTokens.of(context);
   return RaftBackgroundSpan(
     text: text,
+    recognizer: recognizer,
+    mouseCursor: recognizer == null ? null : SystemMouseCursors.click,
     background: (t.brutal
         ? t.product.softSignal.withValues(alpha: .7)
         : t.colors['primary-soft'])!,
@@ -2459,17 +2278,26 @@ List<InlineSpan> _searchSpans(
 }
 
 /// Copies [nodes] with every text occurrence of [query] wrapped in a `mark`
-/// element. Links, mentions and block code keep their text (Web leaves the
-/// controlled `<a>` / `<span>` HTML and fenced code untouched); inline code is
-/// marked by its own builder.
+/// element. Mentions, refs and block code keep their text; link labels are
+/// marked (Web `highlightThreadSearchInTree`); inline code is marked by its own
+/// builder.
 List<md.Node> _highlightSearchNodes(
   List<md.Node> nodes,
   String query, {
   bool plain = false,
 }) => [
   for (final node in nodes)
-    if (node is md.Text && !plain)
+    if (node is md.Text && !plain && node is! RaftClaimedText)
       ..._markText(node.text, query)
+    else if (node is md.Element &&
+        node.tag == 'a' &&
+        !_plainSearchElement(node) &&
+        !plain &&
+        node.children != null)
+      // flutter_markdown flattens the spans a builder nests; a link with a
+      // mark in its label is one link element per piece instead.
+      for (final piece in _highlightSearchNodes(node.children!, query))
+        md.Element(node.tag, [piece])..attributes.addAll(node.attributes)
     else if (node is md.Element)
       md.Element(
         node.tag,
@@ -2478,14 +2306,21 @@ List<md.Node> _highlightSearchNodes(
             : _highlightSearchNodes(
                 node.children!,
                 query,
-                plain: plain || _plainTags.contains(node.tag),
+                plain: plain || _plainSearchElement(node),
               ),
       )..attributes.addAll(node.attributes)
     else
       node,
 ];
 
-const _plainTags = {'a', 'pre', 'code'};
+/// Web `SKIP_CODE_AND_TOKENS`: code and the refs and mentions the message
+/// passes made keep their text; the label of an authored link is marked like
+/// any other text.
+bool _plainSearchElement(md.Element node) =>
+    node.tag == 'pre' ||
+    node.tag == 'code' ||
+    (node.tag == 'a' &&
+        (node.attributes['href'] ?? '').startsWith('raft-ref:'));
 
 List<md.Node> _markText(String text, String query) {
   final parts = _searchFragments(text, query);

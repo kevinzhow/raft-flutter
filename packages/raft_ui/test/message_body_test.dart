@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
 import 'package:raft_ui/test_themes.dart';
 
+import 'support/message_tokens.dart';
+
 void main() {
   test(
     'unknown mention type and dotted name do not reuse a shorter identity',
@@ -11,7 +13,7 @@ void main() {
       const refs = [
         RaftTextReference(text: '@Mona', href: 'raft-ref://mention/user/known'),
       ];
-      final output = raftMessageReferences(
+      final output = tokenized(
         '@Mona~unknown @Mona.com @Mona.',
         references: refs,
       );
@@ -29,7 +31,7 @@ void main() {
         RaftTextReference(text: '@Mona', href: 'raft-ref://mention/user/known'),
         RaftTextReference(text: '#team', href: 'raft-ref://channel/team-id'),
       ];
-      final value = raftMessageReferences(
+      final value = tokenized(
         'Hi @Mona #team task #27. x@Mona.com @MonaMore @unknown `@Mona task #27` [@Mona](https://example.org)\n```txt\n@Mona #team\n```',
         references: refs,
         taskHref: (n) => 'raft-ref://task/$n',
@@ -50,7 +52,7 @@ void main() {
         'then follow task #1487. '
         '[notes in #visual-testing](https://raft.build/visual-testing) '
         '[ping @artin](https://raft.build/mentions)';
-    final result = raftMessageReferences(
+    final result = tokenized(
       source,
       taskHref: (n) => 'raft-ref://task/$n',
       knownTaskNumber: (_) => false,
@@ -81,7 +83,7 @@ void main() {
       contains('[notes in #visual-testing](https://raft.build/visual-testing)'),
     );
     expect(result, contains('[ping @artin](https://raft.build/mentions)'));
-    final known = raftMessageReferences(
+    final known = tokenized(
       '[#1487](https://example.org)',
       taskHref: (n) => 'raft-ref://task/$n',
       knownTaskNumber: (n) => n == 1487,
@@ -92,8 +94,7 @@ void main() {
     const refs = [
       RaftTextReference(text: '@Mona', href: 'raft-ref://mention/user/known'),
     ];
-    String run(String source) =>
-        raftMessageReferences(source, references: refs);
+    String run(String source) => tokenized(source, references: refs);
     // Balanced parentheses stay inside the destination.
     expect(
       run('[a @Mona](https://x.org/a_(b)) @Mona'),
@@ -102,7 +103,7 @@ void main() {
     // An escaped bracket does not end the label.
     expect(
       run(r'[a \] @Mona](https://x.org) @Mona'),
-      r'[a \] @Mona](https://x.org) [@Mona](<raft-ref://mention/user/known>)',
+      '[a ] @Mona](https://x.org) [@Mona](<raft-ref://mention/user/known>)',
     );
     // Images are protected like links.
     expect(
@@ -335,7 +336,7 @@ void main() {
       ),
       RaftTextReference(text: '#team', href: 'raft-ref://channel/id'),
     ];
-    final value = raftMessageReferences(
+    final value = tokenized(
       '草案@Mona @Mona继续 dm:@Mona:abcdef #team:abcdef',
       references: refs,
     );
@@ -350,22 +351,19 @@ void main() {
     );
     for (final tail in ['的方案', 'さん', '와', ' 확인']) {
       expect(
-        raftMessageReferences('@Mona$tail', references: refs),
+        tokenized('@Mona$tail', references: refs),
         '[@Mona](<raft-ref://mention/user/known>)$tail',
       );
     }
     for (final tail in ['ica', '2', '_x', '-x']) {
-      expect(
-        raftMessageReferences('@Mona$tail', references: refs),
-        '@Mona$tail',
-      );
+      expect(tokenized('@Mona$tail', references: refs), '@Mona$tail');
     }
   });
   test('free-text mentions split only where Latin meets CJK', () {
     const refs = [
       RaftTextReference(text: '@ops', href: 'raft-ref://mention/user/ops'),
     ];
-    String run(String text) => raftMessageReferences(text, references: refs);
+    String run(String text) => tokenized(text, references: refs);
     expect(run('@ops的方案'), '[@ops](<raft-ref://mention/user/ops>)的方案');
     expect(run('@opsさん'), '[@ops](<raft-ref://mention/user/ops>)さん');
     expect(run('@ops와'), '[@ops](<raft-ref://mention/user/ops>)와');
@@ -377,7 +375,7 @@ void main() {
     expect(run('@opsx的'), '@opsx的');
     // A member that is literally named `ops的` wins over the split.
     expect(
-      raftMessageReferences(
+      tokenized(
         '@ops的',
         references: const [
           RaftTextReference(text: '@ops', href: 'raft-ref://mention/user/ops'),

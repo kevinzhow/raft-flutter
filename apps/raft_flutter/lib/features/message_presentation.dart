@@ -387,6 +387,7 @@ class MessagePresentation extends StatelessWidget {
   void prepareCache(RaftTokens tokens) => RaftMessageBody.prepareCache(
     content: text,
     tokens: tokens,
+    messagePipeline: true,
     references: references,
     fontSize: fontSize,
     taskHref: localAuthority
@@ -826,6 +827,7 @@ class MessagePresentation extends StatelessWidget {
     }
     return RaftMessageBody(
       mountedMessage: true,
+      messagePipeline: true,
       // A compact timeline row already announces this text in its label.
       compactSemantics: RaftMessageSemanticsScope.maybeOf(context) != null,
       content: text,

@@ -951,6 +951,7 @@ class _PublicServerViewState extends State<PublicServerView> {
     if (store != null && translation.needsRequest) store.want(row);
     Widget text(String content) => RaftMessageBody(
       mountedMessage: true,
+      messagePipeline: true,
       content: content,
       references: [...channelReferences, ...mentionReferences(m)],
       onLink: openReference,

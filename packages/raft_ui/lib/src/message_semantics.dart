@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
+import 'package:markdown/markdown.dart' as md;
 
 import 'localization.dart';
 import 'markdown_autolink.dart';
@@ -194,6 +195,27 @@ List<String> _plainLines(String markdown) {
   return lines;
 }
 
+/// The links of a parsed (and reference-resolved) body, in reading order:
+/// authored links, autolinks and identity references.
+List<RaftMessageSemanticsLink> raftTreeSemanticsLinks(List<md.Node> nodes) {
+  final found = <RaftMessageSemanticsLink>[];
+  void visit(md.Node node) {
+    if (node is! md.Element) return;
+    final href = node.attributes['href'];
+    if (node.tag == 'a' && href != null) {
+      final label = node.textContent.trim();
+      found.add((label: label.isEmpty ? href : label, href: href));
+      return;
+    }
+    for (final child in node.children ?? const <md.Node>[]) {
+      visit(child);
+    }
+  }
+
+  nodes.forEach(visit);
+  return found;
+}
+
 /// A link or identity reference rendered inside message prose.
 typedef RaftMessageSemanticsLink = ({String label, String href});
 
@@ -223,9 +245,8 @@ List<RaftMessageSemanticsLink> raftMessageSemanticsLinks(String markdown) {
     for (final m in _authoredLink.allMatches(text)) {
       if (m.start > 0 && text[m.start - 1] == '!') continue;
       taken.add((m.start, m.end));
-      final label = _unescape(
-        m[1]!.replaceAllMapped(_sentinel, (s) => s[2]!),
-      ).trim();
+      final label = _unescape(m[1]!.replaceAllMapped(_sentinel, (s) => s[2]!))
+          .trim();
       found.add((m.start, (label: label.isEmpty ? m[2]! : label, href: m[2]!)));
       // A reference nested in an authored label is its own link.
       for (final s in _sentinel.allMatches(m[1]!)) {
