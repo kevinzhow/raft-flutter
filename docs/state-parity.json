@@ -1355,10 +1355,21 @@
      "state": "error",
      "variant": "load more failed",
      "web": "yes",
-     "flutter": "missing",
+     "flutter": "yes",
      "parityCase": [],
      "status": "gap",
-     "justification": "Web shows \"Could not load more results.\" (search.loadMoreFailed) when a next page fails; no Flutter string, no case.",
+     "justification": "Flutter shows \"Could not load more results.\" with Retry under the loaded results (search_continue_footer.dart, widget-tested in search_continue_test.dart); there is still no visual parity case for it.",
+     "size": "S",
+     "gapKind": "case-missing"
+    },
+    {
+     "state": "partial",
+     "variant": "incomplete search: note, Continue searching, No matches yet",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [],
+     "status": "gap",
+     "justification": "Web v1.21.23 (MessageSearchContinueHint): a search that stopped at the scan budget shows the \"Searched messages back to\" note and Continue searching, or \"No matches yet\" when nothing was found. Flutter renders both (search_continue_footer.dart, widget-tested in search_continue_test.dart); there is no visual parity case yet because the shared fixtures carry no incomplete page.",
      "size": "S",
      "gapKind": "case-missing"
     }

@@ -7,20 +7,20 @@ Pixel parity, field parity (`docs/field-parity.md`) and the page inventory (`doc
 
 ## Summary
 
-Total capabilities: 791 (362 endpoint/network keys, 429 client-side).
+Total capabilities: 792 (362 endpoint/network keys, 430 client-side).
 
 | Status | Count |
 | --- | ---: |
-| ✅ covered | 645 |
-| ⚠️ partial | 34 |
+| ✅ covered | 648 |
+| ⚠️ partial | 33 |
 | ❌ missing | 38 |
-| ➖ na | 74 |
+| ➖ na | 73 |
 
 | Area | ✅ | ⚠️ | ❌ | ➖ |
 | --- | ---: | ---: | ---: | ---: |
 | Messages | 70 | 5 | 5 | 1 |
 | Threads | 16 | 1 | 0 | 1 |
-| Channels | 34 | 0 | 0 | 1 |
+| Channels | 35 | 0 | 0 | 0 |
 | DMs | 6 | 0 | 0 | 0 |
 | Members and roles | 22 | 1 | 0 | 0 |
 | Server settings and admin | 57 | 0 | 0 | 1 |
@@ -29,7 +29,7 @@ Total capabilities: 791 (362 endpoint/network keys, 429 client-side).
 | Integrations, apps, MCP | 78 | 0 | 4 | 9 |
 | Tasks | 35 | 0 | 0 | 5 |
 | Files and attachments | 15 | 8 | 7 | 0 |
-| Search | 17 | 1 | 0 | 1 |
+| Search | 19 | 0 | 0 | 1 |
 | Notifications | 28 | 2 | 0 | 6 |
 | Account and profile | 42 | 2 | 0 | 6 |
 | Onboarding and auth | 35 | 0 | 0 | 7 |
@@ -193,7 +193,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Settings Preferences: Pin channel (sidebar pin), Mute activity, Collapse long messages | `ui:channels.settings-preferences` | ChannelPreferencesSection.tsx (channels and DMs; DM has no Mute)[gate: Mute: joined channel/private/joint] | channel_settings.dart Preferences section (channel-settings-pin-switch, channel-overflow-mute-switch, channel-settings-collapse-switch) |  |
 | ✅ | Closing the settings drawer with an unsaved name/description draft asks Keep editing / Discard changes / Save and close | `ui:channels.settings-unsaved-guard` | ChannelOverflowMenu.tsx unsaved prompt (closeGuardRef) | channel_settings.dart RaftUnsavedChangesPrompt |  |
 | ✅ | Channel row context/long-press menu: Move to section, Mark as Read/Unread, Pin/Unpin, Mute/Unmute, Archive | `ui:channels.sidebar-channel-row-menu` | Sidebar.tsx ctxMenu type=channel (right-click / long-press)[gate: Mute: joined channel/private/joint; Archive: archiveChannels, not #all, not joint, not archived] | workspace_view_sidebar_menus.dart openChannelMenu |  |
-| ➖ | 'Find a conversation...' jump box above the sidebar list | `ui:channels.sidebar-conversation-finder` | SidebarConversationFinder.tsx, rendered only when isElectronDesktopShell()[gate: Electron desktop shell only] | Flutter has its own global quick switcher (quick_switcher_host.dart) which covers the same jump-by-name need | N/A: Web withdraws the box outside the Electron shell (Sidebar.tsx comment); Flutter's quick switcher is the native equivalent. |
+| ✅ | 'Find a conversation...' jump box above the sidebar list | `ui:channels.sidebar-conversation-finder` | SidebarConversationFinder.tsx, rendered only when isElectronDesktopShell()[gate: Desktop platforms (Web: Electron desktop shell only)] | sidebar_conversation_finder.dart SidebarConversationFinderBox above the chat sidebar list on desktop (see ui:search.sidebar-conversation-finder); the global quick switcher stays as the Cmd/Ctrl+K search |  |
 | ✅ | Custom sidebar sections: create (name + emoji), rename/change icon, delete, 'Move to section' submenu (Pinned / sections / New section / Remove from section) | `ui:channels.sidebar-custom-sections` | SidebarSectionDialog + SidebarSectionEmojiPicker; Sidebar.tsx moveItemToCustomSection/removeItemFromCustomSection; synced via PATCH sidebar-order | workspace_view_sidebar_menus.dart _showSectionDialog / _confirmDeleteSection / _moveSubmenu |  |
 | ✅ | Drag rows to reorder (manual sort) and drag between sections / into Pinned; drag sections to reorder them | `ui:channels.sidebar-drag-reorder` | Sidebar.tsx dnd-kit DndContext + SortableSidebarItem/SortableSidebarSection (sidebarDnd.ts) writes channelOrder/dmOrder/pinned/sectionPlacements/sectionOrder via PATCH sidebar-order[gate: none (any member)] | sidebar_reorder.dart + sidebar_drop.dart: a long press lifts a row of any section; the sections list the live projection (SidebarDrag.project), so the row moves faded to the slot under the pointer and the section it left closes up; the drop persists through updateSidebarOrder (pinned, sectionPlacements, channelOrder, dmOrder); a pointer held at the list edge scrolls it; section headers drag too |  |
 | ✅ | Row indicators: unread count badge, @mention marker, muted bell icon (dimmed), quiet 'new' dot, draft pencil, not-joined dimming, Slack provider badge, agent activity badge on avatar | `ui:channels.sidebar-row-indicators` | Sidebar.tsx ChannelRow / DmRow / AgentDmRow | workspace_view.dart channel row passes unread, joined, activityMuted, hasDraft, mention, quietNew (conversation reads newFlags) and providerBadge (bridge.provider); agent presence on avatar |  |
@@ -643,9 +643,10 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 
 | | Capability | Id | Web entry | Flutter entry | Notes |
 | --- | --- | --- | --- | --- | --- |
-| ✅ | Search messages with filters (From, Scope: @Me/Humans/Agents, Channel, Time, Sort) and pagination | `GET /messages/search` | MessageSearchPage / SearchOverlay filter chips + 'Load More' / 'Retry'[gate: membership-scoped results; plan history limit shows 'Upgrade to view'] | resource_view.dart section 'search' with search_filter_bar.dart filters and resource_filters.dart request builder; quick_switcher_host.dart |  |
+| ✅ | Search messages with filters (From, Scope: @Me/Humans/Agents, Channel, Time, Sort) and pagination | `GET /messages/search` | MessageSearchPage / SearchOverlay filter chips + 'Load More' / 'Continue searching' / 'Retry'[gate: membership-scoped results; plan history limit shows 'Upgrade to view'] | resource_view.dart section 'search' with search_filter_bar.dart filters and resource_filters.dart request builder (offset, or the server's nextCursor); search_continuation.dart; quick_switcher_host.dart |  |
 | ✅ | Search overlay / Search page keys: Arrow Up/Down moves the selected result, Enter opens it (Shift+Enter ignored), Escape closes the overlay or clears; IME composition is respected | `ui:global-ui.shortcut-search-results-nav` | components/search/MessageSearchPage.tsx handleRailKeyDown + SearchOverlay.tsx Escape handler | quick_switcher.dart keyEvent(): arrows, Enter (not Shift), Escape, plus Cmd/Ctrl+K re-focuses and selects the query; IME composing guard |  |
 | ✅ | Search: Clear All filters | `ui:search.clear-all-filters` | MessageSearchPage 'Clear All'[gate: any filter active] | search_filter_bar.dart 'Clear All' |  |
+| ✅ | A recent-sort text search that stopped at the server's scan budget says so ('Searched messages back to {time}...', 'No matches yet') and offers 'Continue searching' from the server cursor (MessageSearchContinueHint); a complete page pages by the same cursor; a failed page shows 'Could not load more results.' with Retry | `ui:search.continue-searching` | components/search/MessageSearchPage.tsx SearchContinuation (readSearchContinuation, loadMoreResults, incompleteSearchNote, search.continueSearching, search.incompleteNoMatchesYet, search.loadMoreFailed)[gate: full results page only (the overlay previews the first hits)] | search_continuation.dart SearchContinuation / SearchContinuations (one per accepted view), resource_filters.dart search(cursor:), resource_view.dart load(), resource_search.dart ResourceSearchResults + search_continue_footer.dart (note, 'Continue searching' / 'Load More' / 'Loading…', warning banner with Retry, 'No matches yet' empty state) |  |
 | ➖ | Drag a search result (channel, DM, computer, agent, human, message hit) into a workspace-mode panel to open it there | `ui:search.drag-result-to-workspace` | components/search/MessageSearchPage.tsx handleMessageResultDrag/handleEntityResultDrag -> onDragPanelRef (MainLayout.tsx dragWorkspaceSearchResult)[gate: Workspace mode (grid) enabled] |  | N/A: Web removed the workspace grid in v1.21.x. Flutter removed the mirrored entry, side-by-side view, per-column sessions, and the mode switch. |
 | ✅ | Search filter: Channel picker (also opened from a channel's search) | `ui:search.filter-channel` | MessageSearchPage 'Channel' picker[gate: none] | search_filter_bar.dart 'Filter by channel' |  |
 | ✅ | Search filter: From (sender picker with Me) | `ui:search.filter-from` | MessageSearchPage 'From' picker[gate: none] | search_filter_bar.dart 'From' |  |
@@ -659,7 +660,7 @@ Legend: ✅ covered (endpoint called and a reachable entry point with equivalent
 | ✅ | Right-click a channel/DM search result for an 'Open' menu | `ui:search.result-context-menu` | components/search/MessageSearchPage.tsx handleChannelResultContextMenu + ContextMenuPopup 'Open' | quick_switcher.dart _channelMenu via onSecondaryTapDown with 'Open' |  |
 | ✅ | Search result states: Load More, load-more failure, 'too broad' / 'timed out' guidance with Sort-by-newest action, Retry, empty states | `ui:search.result-states` | components/search/MessageSearchPage.tsx (search.loadMore, search.queryTooBroad*, search.searchTimedOut*, search.retry) | quick_switcher.dart / resource_search.dart messages 'Sort by newest', 'Retry', 'Add a channel, sender, or time filter...' |  |
 | ✅ | Results page: Load More, Retry on failure, search timed out / too broad guidance | `ui:search.results-load-more-retry` | MessageSearchPage[gate: none] | resource_view.dart infinite scroll + retry |  |
-| ⚠️ | 'Find a conversation...' jump box pinned above the chat sidebar (name-based fuzzy jump over channels, DMs, agents, people; Arrow/Enter/Escape; IME-safe) | `ui:search.sidebar-conversation-finder` | components/layout/SidebarConversationFinder.tsx rendered by Sidebar.tsx railMode==='chat' (sidebar.findConversationPlaceholder)[gate: Electron desktop shell only (web withdrew it 2026-09-11)] | No sidebar box in Flutter; the same name jump is available through Cmd/Ctrl+K quick switcher (desktop) and the Search row (phone). Recorded gap in docs/parity.md ('Electron-only Find a conversation sidebar box') | Impact: Desktop users who prefer the always-visible box over Cmd+K; low, equivalent path exists. Functionally reachable via quick switcher, but the persistent always-visible box is absent. Size S |
+| ✅ | 'Find a conversation...' jump box pinned above the chat sidebar (name-based fuzzy jump over channels, DMs, agents, people; Arrow/Enter/Escape; IME-safe) | `ui:search.sidebar-conversation-finder` | components/layout/SidebarConversationFinder.tsx rendered by Sidebar.tsx railMode==='chat' (sidebar.findConversationPlaceholder)[gate: Desktop platforms (Linux, macOS, Windows): Web shows it in the Electron shell only (the browser withdrew it 2026-09-11)] | sidebar_conversation_finder.dart SidebarFinderLayer / SidebarConversationFinderBox, mounted by workspace_view.dart above the chat sidebar list on the wide layout with pointer input (not on touch or the phone Home list); conversation_finder_model.dart is Web conversationFinderModel (channels, DMs, agents without a DM, people without a DM, never yourself; ranked like composer suggestions, 20 rows); Arrow keys / Enter / Escape, an outside press closes; a person or agent without a DM gets one (quick_switcher_host.dart openFinderResult) |  |
 | ✅ | Search sort: Relevant / Recent (auto Recent for too-broad queries) | `ui:search.sort-relevant-recent` | MessageSearchPage 'Sort' select, 'Sort by newest' hint[gate: sort disabled for empty query] | search_filter_bar.dart 'Sort search results' |  |
 | ✅ | Last search state (query, sender, channel, range, scopes, sort) is remembered per server+user and restored when Search reopens | `ui:search.state-persistence` | components/search/searchHome.ts persistSearchState/readSearchState (raft:search-state:{server}:{user}) | search_memory.dart SearchStateSnapshot persisted under raft:search-memory: |  |
 

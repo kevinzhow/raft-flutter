@@ -9,6 +9,7 @@ import '../data/recent_conversations.dart';
 import '../data/search_memory.dart';
 import '../data/workspace_controller.dart';
 import '../data/workspace_entity_directory.dart';
+import 'conversation_finder_model.dart';
 import 'private_route_guard.dart';
 import 'quick_switcher.dart';
 import 'quick_switcher_model.dart';
@@ -365,11 +366,30 @@ class QuickSwitcherHost {
       if (channel != null) await actions.openConversation(channel);
       return;
     }
-    final agent = entity.kind == 'agent';
+    await _openPeer(entity.id, entity.kind == 'agent', authority);
+  }
+
+  /// The sidebar "Find a conversation…" box opened [result]: a channel or DM
+  /// as it is, a person or agent without a DM through a new one. Only a
+  /// search records what was opened for "Frequently used".
+  Future<void> openFinderResult(ConversationMatch result) async {
+    final authority = directoryAuthority(w);
+    if (result.kind == 'channel' || result.kind == 'dm') {
+      final channel = [
+        ...w.channels,
+        ...w.dms,
+      ].where((c) => c.id == result.id).firstOrNull;
+      if (channel != null) await actions.openConversation(channel);
+      return;
+    }
+    await _openPeer(result.id, result.kind == 'agent', authority);
+  }
+
+  Future<void> _openPeer(String id, bool agent, String authority) async {
     final existing = w.dms
         .where(
           (c) =>
-              c.json['peerId'] == entity.id &&
+              c.json['peerId'] == id &&
               c.json['peerType'] == (agent ? 'agent' : 'user'),
         )
         .firstOrNull;
@@ -381,7 +401,7 @@ class QuickSwitcherHost {
       final result = await w.command(
         'POST',
         '/channels/dm',
-        data: {agent ? 'agentId' : 'userId': entity.id},
+        data: {agent ? 'agentId' : 'userId': id},
       );
       if (_disposed || authority != directoryAuthority(w)) return;
       if (result is Map && result['id'] is String) {
@@ -396,7 +416,7 @@ class QuickSwitcherHost {
       if (_disposed || authority != directoryAuthority(w)) return;
     }
     // Source falls back to the person's or agent's profile.
-    actions.openDirectory(agent ? RaftRoute.agent : RaftRoute.human, entity.id);
+    actions.openDirectory(agent ? RaftRoute.agent : RaftRoute.human, id);
   }
 
   Future<void> openMessage(Map<String, dynamic> row, String query) async {

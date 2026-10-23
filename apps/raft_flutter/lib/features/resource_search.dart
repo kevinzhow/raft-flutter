@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
@@ -6,6 +8,9 @@ import 'package:raft_ui/recipes.dart' as rui;
 import 'quick_switcher.dart' show QuickSwitcherFailure;
 import 'sender_avatar_projection.dart';
 import 'resource_cards.dart';
+import 'resource_filters.dart';
+import 'search_continuation.dart';
+import 'search_continue_footer.dart';
 import 'search_ranking.dart';
 
 /// Source searchEntities identity: channel, durable computer, live agent, human.
@@ -347,10 +352,11 @@ class ResourceSearchResults extends StatelessWidget {
     required this.onEntity,
     required this.hasMore,
     required this.onMore,
+    this.filters,
+    this.view,
     this.loading = false,
     this.failure,
     this.onRetry,
-    this.onSortRecent,
     this.agents = const [],
     this.members = const [],
     this.dms = const [],
@@ -367,16 +373,36 @@ class ResourceSearchResults extends StatelessWidget {
   final void Function(Map<String, dynamic>) onMessage;
   final void Function(SearchEntity) onEntity;
   final bool hasMore;
-  final VoidCallback onMore;
+
+  /// Reads the next page; completes when it is accepted or has failed.
+  final FutureOr<void> Function() onMore;
+
+  /// The page's request state and the view [rows] belong to: where an
+  /// incomplete search stopped ("Continue searching") and the sort the "too
+  /// broad" guidance can switch to.
+  final ResourceFilters? filters;
+  final String? view;
 
   /// The first read is in flight: "Searching…" summary and a messages skeleton.
   final bool loading;
 
   /// The read failed and no result is on screen: the failure card replaces the
-  /// empty state. [onSortRecent] is the "too broad" escape (null once sorted
-  /// by recent).
+  /// empty state; "too broad" offers the sort by recent (gone once sorted).
   final QuickSwitcherFailure? failure;
-  final VoidCallback? onRetry, onSortRecent;
+  final VoidCallback? onRetry;
+
+  SearchContinuation get continuation =>
+      filters?.searchContinuations.of(view) ?? SearchContinuation.none;
+
+  /// The "too broad" escape: sort by recent and search again; null once the
+  /// results are sorted that way.
+  VoidCallback? get onSortRecent =>
+      filters == null || filters!.searchSort == 'recent'
+      ? null
+      : () {
+          filters!.searchSort = 'recent';
+          onRetry?.call();
+        };
 
   Widget _failureCard(BuildContext context) {
     final kind = failure!;
@@ -687,8 +713,18 @@ class ResourceSearchResults extends StatelessWidget {
                 ]),
               ],
               // `showInitialSkeleton` needs no entity match; with one the
-              // heading shows alone until the messages arrive.
-              if (loading && failure == null && rows.isEmpty)
+              // heading shows alone until the messages arrive. An incomplete
+              // search with nothing found keeps its own empty state (and the
+              // button) while the next page is read or fails.
+              if (rows.isEmpty && entities.isEmpty && continuation.pending)
+                SliverToBoxAdapter(
+                  child: SearchIncompleteEmpty(
+                    continuation: continuation,
+                    onMore: onMore,
+                    failure: failure != null,
+                  ),
+                )
+              else if (loading && failure == null && rows.isEmpty)
                 section('Messages', [
                   if (entities.isEmpty)
                     (_) => const RaftQuickSwitcherSkeleton(),
@@ -703,7 +739,8 @@ class ResourceSearchResults extends StatelessWidget {
               if (rows.isEmpty &&
                   entities.isEmpty &&
                   !loading &&
-                  failure == null)
+                  failure == null &&
+                  !continuation.pending)
                 // `py-20` centred glyph, title and hint (MessageSearchPage).
                 SliverToBoxAdapter(
                   child: Padding(
@@ -724,9 +761,14 @@ class ResourceSearchResults extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (hasMore)
+              if ((hasMore || continuation.pending) &&
+                  !(rows.isEmpty && entities.isEmpty))
                 SliverToBoxAdapter(
-                  child: RaftSearchLoadMore(onPressed: onMore),
+                  child: SearchContinueFooter(
+                    continuation: continuation,
+                    onMore: onMore,
+                    failure: failure != null,
+                  ),
                 ),
             ],
           ),

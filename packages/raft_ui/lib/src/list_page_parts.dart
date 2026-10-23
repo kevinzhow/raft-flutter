@@ -355,3 +355,68 @@ class _RaftSearchHistoryTagState extends State<RaftSearchHistoryTag> {
     );
   }
 }
+
+/// MessageSearchPage's footer under the results: `flex flex-col items-center
+/// gap-2 px-4 py-4` around the incomplete note and the paging button (or the
+/// failed-page warning).
+class RaftSearchFooter extends StatelessWidget {
+  const RaftSearchFooter({super.key, required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 8,
+      children: children,
+    ),
+  );
+}
+
+/// `text-center text-caption text-foreground-hint`: the note that says how far
+/// an incomplete search got.
+class RaftSearchNote extends StatelessWidget {
+  const RaftSearchNote(this.text, {super.key});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: RaftTypography.body(
+        t,
+        size: 12,
+        line: 16,
+        color: t.colors['foreground-hint'] ?? t.muted,
+      ),
+    );
+  }
+}
+
+/// An empty search state with room around it (`py-16`), and the failed-page
+/// warning under it when the next page could not be read.
+class RaftSearchEmptyFrame extends StatelessWidget {
+  const RaftSearchEmptyFrame({super.key, required this.child, this.footer});
+  final Widget child;
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 64),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 16,
+      children: [
+        child,
+        if (footer != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: footer,
+          ),
+      ],
+    ),
+  );
+}

@@ -1400,7 +1400,7 @@ patched surfaces one by one, and the pinned tests covered only the surfaces
 that had already been reported (Settings, drawer, task).
 
 Remaining gaps: the OverflowSheet (Drawer) shell, the emoji picker popover
-(third-party grid), the Electron-only "Find a conversation" sidebar box, the
+(third-party grid), the
 toast action variant (the Web toast manager ignores `actionProps` here), the
 member / computers sidebar rails, and text rasterisation. Elegant (light) toasts
 differ by a constant 2 levels in the blue channel of the translucent fill (the

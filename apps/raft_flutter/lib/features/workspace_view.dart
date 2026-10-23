@@ -70,6 +70,7 @@ import 'member_profile_view.dart';
 import 'fleet_views.dart';
 import 'private_route_guard.dart';
 import 'server_setup_gate.dart';
+import 'sidebar_conversation_finder.dart';
 import 'sidebar_projection.dart';
 import 'activity_first_unread.dart';
 import 'sidebar_reorder.dart';
@@ -1819,7 +1820,12 @@ class _WorkspaceViewState extends State<WorkspaceView>
                             route,
                           ).usesConversationSidebar,
                           // Phones mount neither; only desktop widths consume them.
-                          sidebar: wide ? sidebar() : const SizedBox.shrink(),
+                          sidebar: wide
+                              ? SidebarFinderLayer(
+                                  host: quickSwitcher,
+                                  child: sidebar(),
+                                )
+                              : const SizedBox.shrink(),
                           navigationOnRight: navigationOnRight,
                           rail: wide
                               ? RailGestureExclusion(
@@ -3637,6 +3643,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
               RaftChatSidebarHeading(
                 label: tr('Chat'),
               ),
+            if (!mobileHome) const SidebarConversationFinderBox(),
             Expanded(
               child: GestureDetector(
                 // Sidebar.tsx `sidebar-scroll-surface onContextMenu`: rows,

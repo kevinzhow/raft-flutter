@@ -2780,17 +2780,17 @@
    "area": "channels",
    "capability": "'Find a conversation...' jump box above the sidebar list",
    "background": false,
-   "status": "na",
+   "status": "covered",
    "webEntry": "SidebarConversationFinder.tsx, rendered only when isElectronDesktopShell()",
-   "gate": "Electron desktop shell only",
-   "flutterEntry": "Flutter has its own global quick switcher (quick_switcher_host.dart) which covers the same jump-by-name need",
+   "gate": "Desktop platforms (Web: Electron desktop shell only)",
+   "flutterEntry": "sidebar_conversation_finder.dart SidebarConversationFinderBox above the chat sidebar list on desktop (see ui:search.sidebar-conversation-finder); the global quick switcher stays as the Cmd/Ctrl+K search",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/quick_switcher_host.dart",
-     "needle": "QuickSwitcher"
+     "file": "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart",
+     "needle": "class SidebarConversationFinderBox"
     }
    ],
-   "justification": "Web withdraws the box outside the Electron shell (Sidebar.tsx comment); Flutter's quick switcher is the native equivalent.",
+   "justification": "",
    "impact": "",
    "size": ""
   },
@@ -11503,9 +11503,9 @@
    "capability": "Search messages with filters (From, Scope: @Me/Humans/Agents, Channel, Time, Sort) and pagination",
    "background": false,
    "status": "covered",
-   "webEntry": "MessageSearchPage / SearchOverlay filter chips + 'Load More' / 'Retry'",
+   "webEntry": "MessageSearchPage / SearchOverlay filter chips + 'Load More' / 'Continue searching' / 'Retry'",
    "gate": "membership-scoped results; plan history limit shows 'Upgrade to view'",
-   "flutterEntry": "resource_view.dart section 'search' with search_filter_bar.dart filters and resource_filters.dart request builder; quick_switcher_host.dart",
+   "flutterEntry": "resource_view.dart section 'search' with search_filter_bar.dart filters and resource_filters.dart request builder (offset, or the server's nextCursor); search_continuation.dart; quick_switcher_host.dart",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/resource_view.dart",
@@ -11518,6 +11518,10 @@
     {
      "file": "apps/raft_flutter/lib/features/resource_filters.dart",
      "needle": "'mentionTarget': 'self'"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/search_continuation.dart",
+     "needle": "class SearchContinuation"
     }
    ],
    "justification": "",
@@ -11829,6 +11833,34 @@
   },
   {
    "kind": "ui",
+   "id": "ui:search.continue-searching",
+   "area": "search",
+   "capability": "A recent-sort text search that stopped at the server's scan budget says so ('Searched messages back to {time}...', 'No matches yet') and offers 'Continue searching' from the server cursor (MessageSearchContinueHint); a complete page pages by the same cursor; a failed page shows 'Could not load more results.' with Retry",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/search/MessageSearchPage.tsx SearchContinuation (readSearchContinuation, loadMoreResults, incompleteSearchNote, search.continueSearching, search.incompleteNoMatchesYet, search.loadMoreFailed)",
+   "gate": "full results page only (the overlay previews the first hits)",
+   "flutterEntry": "search_continuation.dart SearchContinuation / SearchContinuations (one per accepted view), resource_filters.dart search(cursor:), resource_view.dart load(), resource_search.dart ResourceSearchResults + search_continue_footer.dart (note, 'Continue searching' / 'Load More' / 'Loading…', warning banner with Retry, 'No matches yet' empty state)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/search_continuation.dart",
+     "needle": "class SearchContinuation"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/search_continue_footer.dart",
+     "needle": "class SearchContinueFooter"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/resource_filters.dart",
+     "needle": "..['cursor'] = cursor"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
    "id": "ui:search.results-load-more-retry",
    "area": "search",
    "capability": "Results page: Load More, Retry on failure, search timed out / too broad guidance",
@@ -11853,19 +11885,27 @@
    "area": "search",
    "capability": "'Find a conversation...' jump box pinned above the chat sidebar (name-based fuzzy jump over channels, DMs, agents, people; Arrow/Enter/Escape; IME-safe)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "components/layout/SidebarConversationFinder.tsx rendered by Sidebar.tsx railMode==='chat' (sidebar.findConversationPlaceholder)",
-   "gate": "Electron desktop shell only (web withdrew it 2026-09-11)",
-   "flutterEntry": "No sidebar box in Flutter; the same name jump is available through Cmd/Ctrl+K quick switcher (desktop) and the Search row (phone). Recorded gap in docs/parity.md ('Electron-only Find a conversation sidebar box')",
+   "gate": "Desktop platforms (Linux, macOS, Windows): Web shows it in the Electron shell only (the browser withdrew it 2026-09-11)",
+   "flutterEntry": "sidebar_conversation_finder.dart SidebarFinderLayer / SidebarConversationFinderBox, mounted by workspace_view.dart above the chat sidebar list on the wide layout with pointer input (not on touch or the phone Home list); conversation_finder_model.dart is Web conversationFinderModel (channels, DMs, agents without a DM, people without a DM, never yourself; ranked like composer suggestions, 20 rows); Arrow keys / Enter / Escape, an outside press closes; a person or agent without a DM gets one (quick_switcher_host.dart openFinderResult)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/quick_switcher.dart",
-     "needle": "class QuickSwitcher"
+     "file": "apps/raft_flutter/lib/features/sidebar_conversation_finder.dart",
+     "needle": "class SidebarFinderLayer"
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/conversation_finder_model.dart",
+     "needle": "List<ConversationMatch> buildFinderResults("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/quick_switcher_host.dart",
+     "needle": "Future<void> openFinderResult("
     }
    ],
-   "justification": "Functionally reachable via quick switcher, but the persistent always-visible box is absent.",
-   "impact": "Desktop users who prefer the always-visible box over Cmd+K; low, equivalent path exists.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

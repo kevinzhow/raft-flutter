@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../data/channel_activity_scope.dart';
+import 'search_continuation.dart';
 
 /// Mounted Web request contracts, pinned to source 26f77ef.
 class ResourceSender {
@@ -49,6 +50,9 @@ class ResourceFilters {
     },
   ]);
 
+  /// Where each accepted search view stopped (see [SearchContinuation]).
+  late final searchContinuations = SearchContinuations(() => timeRange);
+
   String? channelId;
   ResourceSender? sender;
   final Set<String> scopes = {};
@@ -88,7 +92,12 @@ class ResourceFilters {
     }
   }
 
-  Map<String, dynamic>? search(String text, {int offset = 0, DateTime? now}) {
+  Map<String, dynamic>? search(
+    String text, {
+    int offset = 0,
+    bool append = false,
+    DateTime? now,
+  }) {
     final q = text.trim();
     if (q.isEmpty && !hasSearchFilter) return null;
     final clock = (now ?? DateTime.now()).toLocal();
@@ -109,7 +118,7 @@ class ResourceFilters {
       value.millisecondsSinceEpoch,
       isUtc: true,
     ).toIso8601String();
-    return {
+    final params = <String, dynamic>{
       'q': q,
       'limit': 20,
       'offset': offset,
@@ -121,6 +130,28 @@ class ResourceFilters {
       if (after != null) 'after': iso(after),
       if (after != null) 'before': iso(clock),
     };
+    // A page after the first ([append]) continues from the server's cursor
+    // where the view has one: an offset would restart its scan from the
+    // newest message (and a search that found nothing has no offset to give).
+    final cursor = append
+        ? searchContinuations.of(viewKey('/messages/search', params)).cursor
+        : null;
+    if (cursor != null) {
+      params
+        ..remove('offset')
+        ..['cursor'] = cursor;
+    }
+    return params;
+  }
+
+  /// Whether more of [section] can be read after [answer] for [view]. A
+  /// search that stopped at the server's scan budget can go on even when it
+  /// found no further hit ([SearchContinuation]).
+  bool morePages(String section, String view, Object? answer) {
+    final more = answer is Map && answer['hasMore'] == true;
+    return section == 'search'
+        ? searchContinuations.accept(view, answer) || more
+        : more;
   }
 
   Map<String, dynamic> list(

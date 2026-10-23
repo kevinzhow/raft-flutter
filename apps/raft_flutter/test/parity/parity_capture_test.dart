@@ -16,6 +16,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:raft_flutter/features/sidebar_conversation_finder.dart';
 
 import '../flutter_test_config.dart' show RaftTestBinding;
 import 'case_map.dart';
@@ -25,6 +26,8 @@ void main() {
   // flutter_test's automated binding hides shadow blur (`debugDisableShadows`);
   // a device renders blurred shadows, so captures must too.
   RaftTestBinding.showShadows();
+  // The browser reference has no "Find a conversation" box (Electron only).
+  SidebarFinderLayer.hiddenForParity = true;
   final env = Platform.environment;
   final sharedDir = env['PARITY_SHARED_DIR'];
   final resultRoot = env['PARITY_RESULT_ROOT'];
