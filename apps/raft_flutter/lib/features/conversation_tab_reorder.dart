@@ -63,11 +63,12 @@ class _TabSlotState extends State<_TabSlot> {
     // The lifted tab: its label on a raised chip (the tab itself stays put).
     // It floats in the overlay, so its text carries its own style.
     final feedback = Container(
+      // ds-allow: the floating drag chip has no raft_ui recipe; it mirrors the tab's own padding
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: t.colors['layer-panel'],
         border: Border.all(color: t.colors['line-strong']!),
-        boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x33000000))],
+        boxShadow: t.shadows,
       ),
       child: Text(
         widget.tab.label,
@@ -108,6 +109,7 @@ class _TabSlotState extends State<_TabSlot> {
         position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           border: marked && candidates.isNotEmpty
+              // ds-allow: the 2px drop marker mirrors the tab strip's own drop indicator
               ? Border(left: BorderSide(color: t.strong, width: 2))
               : null,
         ),
