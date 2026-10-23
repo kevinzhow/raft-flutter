@@ -2631,15 +2631,15 @@
    "status": "covered",
    "webEntry": "ChannelOverflowMenu.tsx OverflowMenuTrigger search + settings icons",
    "gate": "",
-   "flutterEntry": "workspace_view.dart channelHeader / dmHeader (onSearch, onSettings)",
+   "flutterEntry": "workspace_channel_header.dart (channel) / workspace_view.dart dmHeader (onSearch, onSettings)",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "searchLabel: tr('Search this channel')"
+     "file": "apps/raft_flutter/lib/features/workspace_channel_header.dart",
+     "needle": "searchLabel: raftText(context, 'Search this channel')"
     },
     {
-     "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "settingsLabel: tr('Channel details and settings')"
+     "file": "apps/raft_flutter/lib/features/workspace_channel_header.dart",
+     "needle": "settingsLabel: raftText(context, 'Channel details and settings')"
     }
    ],
    "justification": "",

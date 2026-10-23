@@ -41,8 +41,9 @@ class WorkspaceChannelHeader extends StatelessWidget {
     try {
       await launch(url);
     } catch (_) {
-      if (context.mounted)
+      if (context.mounted) {
         showRaftToast(context, 'Could not open this address.');
+      }
     }
   }
 

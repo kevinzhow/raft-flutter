@@ -1,7 +1,5 @@
 // Web ChannelSlackBridgeField: pairing a channel with a Slack channel from the
 // channel's own settings and create form (RFC: Slack Bridge, channel scope).
-import 'dart:async';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -482,9 +480,7 @@ void main() {
       expect(field(), findsNothing);
     });
 
-    testWidgets('an archived channel never shows it', (
-      t,
-    ) async {
+    testWidgets('an archived channel never shows it', (t) async {
       await open(
         t,
         row: {

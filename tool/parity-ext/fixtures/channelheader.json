@@ -31,6 +31,26 @@
    "joined": true
   },
   {
+   "id": "channel-colvalley-link",
+   "serverId": "visual-server",
+   "name": "colvalley",
+   "description": "Release gates, notes at https://docs.example.com/release-notes (read first).",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true
+  },
+  {
+   "id": "channel-colvalley-muted",
+   "serverId": "visual-server",
+   "name": "colvalley",
+   "description": "Visual testing release gates",
+   "type": "channel",
+   "createdAt": "2026-06-18T00:00:00.000Z",
+   "joined": true,
+   "activityMuted": true,
+   "activityMuteSupported": true
+  },
+  {
    "id": "channel-colvalley-private",
    "serverId": "visual-server",
    "name": "colvalley-private",

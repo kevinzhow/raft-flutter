@@ -61,25 +61,23 @@ class _TabSlotState extends State<_TabSlot> {
     final t = RaftTokens.of(context);
     final id = widget.tab.id;
     // The lifted tab: its label on a raised chip (the tab itself stays put).
-    final feedback = Material(
-      color: Colors.transparent,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: t.colors['layer-panel'],
-          border: Border.all(color: t.colors['line-strong']!),
-          boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x33000000))],
-        ),
-        child: Text(
-          widget.tab.label,
-          style: RaftTypography.heading(
-            t,
-            size: 13,
-            line: 19.5,
-            weight: FontWeight.w500,
-            color: t.strong,
-          ),
-        ),
+    // It floats in the overlay, so its text carries its own style.
+    final feedback = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: t.colors['layer-panel'],
+        border: Border.all(color: t.colors['line-strong']!),
+        boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x33000000))],
+      ),
+      child: Text(
+        widget.tab.label,
+        style: RaftTypography.heading(
+          t,
+          size: 13,
+          line: 19.5,
+          weight: FontWeight.w500,
+          color: t.strong,
+        ).copyWith(decoration: TextDecoration.none),
       ),
     );
     final source = widget.touch
