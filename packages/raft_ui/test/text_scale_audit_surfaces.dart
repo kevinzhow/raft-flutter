@@ -1395,6 +1395,13 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'runtimeErrorBannerPreview',
+    'Runtime error banner',
+    runtimeErrorBannerPreview,
+    Size(520, 120),
+    representative: true,
+  ),
+  AuditSurface(
     'archivedChannelsPreview',
     'Archived channels',
     archivedChannelsPreview,

@@ -852,18 +852,6 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     }
   }
 
-  /// Web AgentDetailPanel: a known runtime error shows its catalog message
-  /// (`agent.runtimeError.*`); an unclassified one keeps the diagnostic text.
-  RuntimeErrorKind? get _runtimeKind {
-    final display = _display;
-    return display.activity == 'error'
-        ? classifyTypedRuntimeError(a['lastRuntimeError']) ??
-              (display.detail.isNotEmpty
-                  ? classifyRuntimeError(display.detail)
-                  : null)
-        : null;
-  }
-
   bool _errorCopied = false;
   Timer? _errorCopiedTimer;
 
@@ -921,18 +909,13 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
     );
   }
 
-  /// The agent's status line (header and Activity overview): the classified
-  /// runtime error, the spawn-failure reason or the activity text.
+  /// The agent's status line (header and Activity overview): the activity text
+  /// with a failed start's typed reason standing in for the daemon's detail
+  /// (Web `formatSpawnFailureDetail`). The classified runtime error text
+  /// (`agent.runtimeError.*`, the install / lookup copy) belongs to the banner
+  /// under the head, not here.
   String _statusText(BuildContext context) {
     final display = _display;
-    final runtimeKind = _runtimeKind;
-    // Web: "not installed" keeps the install copy only when the start
-    // failure's typed carrier confirms the miss; a timed-out, denied or failed
-    // lookup, and an old daemon that sends no reason, never say "install it".
-    final lookup = runtimeKind == RuntimeErrorKind.notInstalled
-        ? runtimeLookupDisplayForReason(agentRowSpawnLookupReason(a))
-        : null;
-    final lookupRuntime = '${a['runtime'] ?? ''}';
     final spawnText =
         _canViewPrivate && display.detailKind == 'runtime_unavailable'
         ? spawnFailureDetailText(
@@ -941,27 +924,12 @@ class _AgentDetailPanelState extends State<AgentDetailPanel> {
             (source, values) => raftFormat(context, source, values),
           )
         : null;
-    return _canViewPrivate &&
-            lookup != null &&
-            lookup != RuntimeLookupDisplay.confirmedMissing
-        ? raftFormat(context, runtimeLookupText(lookup), {
-            'runtimeName':
-                runtimeInfos
-                    .where((r) => r.id == lookupRuntime)
-                    .firstOrNull
-                    ?.name ??
-                lookupRuntime,
-          })
-        : _canViewPrivate && runtimeKind != null
-        ? raftText(context, runtimeErrorText(runtimeKind))
-        : agentActivityText(
-            display.activity,
-            // Web `formatSpawnFailureDetail`: a failed start's typed reason
-            // stands in for the daemon's detail.
-            _canViewPrivate ? spawnText ?? display.detail : '',
-            _canViewPrivate ? display.detailKind : null,
-            translate: (source, values) => raftFormat(context, source, values),
-          );
+    return agentActivityText(
+      display.activity,
+      _canViewPrivate ? spawnText ?? display.detail : '',
+      _canViewPrivate ? display.detailKind : null,
+      translate: (source, values) => raftFormat(context, source, values),
+    );
   }
 
   Widget _profile(BuildContext context) {
