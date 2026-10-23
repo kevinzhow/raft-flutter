@@ -270,7 +270,7 @@ void main() {
         }
 
         // An @mention chip opens that agent's profile.
-        final mention = find.textContaining('@cindy', findRichText: true).first;
+        final mention = find.textContaining('@Cindy', findRichText: true).first;
         await t.ensureVisible(mention);
         await frames(t, 4);
         final mentionOffset = chatOffset(t);
@@ -364,7 +364,7 @@ void main() {
       // chip opens the agent profile) rather than only closing the panel.
       await open('mh');
       expect(w.location.profile?.id, 'bob');
-      final mention = find.textContaining('@cindy', findRichText: true).first;
+      final mention = find.textContaining('@Cindy', findRichText: true).first;
       await t.ensureVisible(mention);
       await frames(t, 4);
       await t.tapAt(t.getCenter(mention));
