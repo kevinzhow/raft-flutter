@@ -133,7 +133,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     this.readDevice,
     this.writeDevice,
   }) : _readScope = scope {
-    _subscription = events?.listen(_event);
+    _subscription = events?.listen(receive);
   }
   final WorkspaceEntityScope? Function() _readScope;
   final Future<dynamic> Function(String path) query;
@@ -186,6 +186,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
   int _epoch = 0;
   bool _disposed = false;
   bool started = false;
+  bool _connectedBefore = false;
   Timer? _refresh;
 
   /// Client clock for the upgrade grace windows (tests move it).
@@ -213,6 +214,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     final next = _readScope();
     if (next == _scope) return false;
     _scope = next;
+    _connectedBefore = false;
     ++_epoch;
     _pending.clear();
     _agentReadUpdates.clear();
@@ -594,6 +596,24 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     }
   }
 
+  /// Reconnect and foreground recovery share one list authority, including
+  /// Computers whose edge events may have been missed while disconnected.
+  void revalidateLive() {
+    for (final kind in WorkspaceEntityKind.values) {
+      unawaited(refresh(kind, force: true));
+    }
+  }
+
+  /// Bounded status reconciliation; ordinary presence remains push-driven.
+  void revalidateStatus() {
+    for (final kind in [
+      WorkspaceEntityKind.agents,
+      WorkspaceEntityKind.computers,
+    ]) {
+      unawaited(refresh(kind));
+    }
+  }
+
   void _authorsChanged(WorkspaceEntityKind kind) {
     if (kind == WorkspaceEntityKind.computers) {
       _computerRevision++;
@@ -786,14 +806,31 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
     return id is String && id.isNotEmpty && row['name'] is String ? id : null;
   }
 
-  void _event(RaftEvent event) {
+  /// Accept one transport frame into the shared, scope-fenced directory.
+  void receive(RaftEvent event) {
     synchronize();
     final scope = _scope;
     if (_disposed || scope == null) return;
     final payload = event.payload is Map
         ? Map<String, dynamic>.from(event.payload as Map)
         : const <String, dynamic>{};
-    if (event.name == 'connected') _activitySeq.clear();
+    if (payload['serverId'] != null && payload['serverId'] != scope.serverId) {
+      return;
+    }
+    if (event.name == 'connected') {
+      _activitySeq.clear();
+      if (started) {
+        if (_connectedBefore) {
+          revalidateLive();
+        } else {
+          // Initial selection may still be loading; share those reads.
+          for (final kind in WorkspaceEntityKind.values) {
+            unawaited(refresh(kind));
+          }
+        }
+      }
+      _connectedBefore = true;
+    }
     final agents = scope.allows(WorkspaceEntityKind.agents);
     final computers = scope.allows(WorkspaceEntityKind.computers);
     switch (event.name) {
@@ -815,6 +852,7 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
             : 'other';
         final patch = <String, dynamic>{
           'activity': kind,
+          'activityKind': kind,
           'activityDetail': payload['detail'] is String
               ? payload['detail']
               : '',
@@ -928,13 +966,15 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
       // Source machineEvents applyStatus: statusVersion-gated patch. A stale or
       // duplicate frame is a no-op; an accepted transition (or an unknown
       // machine coming online) asks for the machines-and-agents recovery read.
-      case 'machine:status' when computers:
-        final id = payload['machineId'], status = payload['status'];
+      case 'machine:status' || 'daemon:status' when computers:
+        final daemonAlias = event.name == 'daemon:status';
+        final id = payload[daemonAlias ? 'daemonId' : 'machineId'];
+        final status = payload['status'];
         if (id is! String || status is! String) return;
         final version = payload['statusVersion'];
         final row = _rows[WorkspaceEntityKind.computers]?[id];
         if (row == null) {
-          if (status == 'online') {
+          if (status == 'online' && !daemonAlias) {
             _scheduleReload(const {
               WorkspaceEntityKind.computers,
               WorkspaceEntityKind.agents,
@@ -959,10 +999,12 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         _computerRevision++;
         _persist(WorkspaceEntityKind.computers);
         notifyListeners();
-        _scheduleReload(const {
-          WorkspaceEntityKind.computers,
-          WorkspaceEntityKind.agents,
-        });
+        if (!daemonAlias) {
+          _scheduleReload(const {
+            WorkspaceEntityKind.computers,
+            WorkspaceEntityKind.agents,
+          });
+        }
       // Source machineEvents applyCapabilities: patch only.
       case 'machine:capabilities' when computers:
         final id = payload['machineId'];
@@ -1011,12 +1053,6 @@ class WorkspaceEntityDirectory extends ChangeNotifier {
         final server = payload['serverId'];
         if (server is String && server != scope.serverId) return;
         _scheduleReload(const {WorkspaceEntityKind.members});
-      // Source loadConnectSnapshotSet re-reads machines on (re)connect. Agents
-      // are revalidated by the author directory's own reconnect path.
-      case 'connected' when computers:
-        if (_settled.contains(WorkspaceEntityKind.computers)) {
-          _scheduleReload(const {WorkspaceEntityKind.computers});
-        }
     }
   }
 

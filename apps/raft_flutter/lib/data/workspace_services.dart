@@ -9,6 +9,7 @@ import 'source_channel_files_store.dart';
 import 'thread_agent_followers.dart';
 import 'thread_search.dart';
 import 'workspace_entity_directory.dart';
+import 'live_connection_state.dart';
 
 /// Composition inputs; each constructed store sees only its own authority.
 abstract interface class WorkspaceServiceAuthority
@@ -68,6 +69,14 @@ class WorkspaceServices {
           readDevice: readEntities,
           writeDevice: writeEntities,
         );
+    liveConnection = source == null
+        ? LiveConnectionState(
+            client: authority.client,
+            scope: entityScope,
+            directory: this.entityDirectory,
+            disposed: isDisposed,
+          )
+        : null;
   }
 
   final WorkspaceServiceAuthority authority;
@@ -78,6 +87,7 @@ class WorkspaceServices {
   final String? Function(String channelId) _channelFilesAuthority;
   late final WorkspaceEntityDirectory entityDirectory;
   late final FollowedThreadsStore followedThreads;
+  late final LiveConnectionState? liveConnection;
 
   MessageTranslationStore get translations =>
       source?.translations ??
@@ -180,6 +190,7 @@ class WorkspaceServices {
   // Teardown stays in its existing phases around media and socket cleanup.
   // None of these methods constructs a lazy notifier or disposes source stores.
   void disposeOwnedStores() {
+    liveConnection?.dispose();
     if (ownsEntityDirectory) entityDirectory.dispose();
     if (ownsFollowedThreads) followedThreads.dispose();
     _translations?.dispose();

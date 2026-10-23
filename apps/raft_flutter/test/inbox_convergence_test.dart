@@ -658,10 +658,11 @@ void main() {
       tester,
     ) async {
       _fakeTime(tester);
-      final (_, _, client, n, _) = await open(tester);
+      final (_, _, client, n, coordinator) = await open(tester);
       client.ingress.add(const RaftEvent('notification:push', push));
       await _drain(tester);
       expect(n.sent, hasLength(1));
+      await tester.runAsync(coordinator.dispose);
     });
 
     testWidgets('is not shown when the app is opened while it waits', (

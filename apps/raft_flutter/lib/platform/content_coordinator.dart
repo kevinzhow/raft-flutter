@@ -16,6 +16,7 @@ import '../data/raft_location.dart';
 import '../data/raft_navigation_history.dart';
 import '../features/invite_accept_view.dart';
 import 'app_window.dart';
+import 'live_session_recovery.dart';
 import 'content_target.dart';
 import 'content_links.dart';
 import 'native_notifications.dart';
@@ -70,6 +71,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   bool get appForeground => _appForeground ?? !_isDesktop;
   void Function()? onForegroundChanged;
   WorkspaceController? _workspace;
+  LiveSessionRecovery? _liveRecovery;
   StreamSubscription<Uri>? _linkSubscription;
   StreamSubscription<RaftEvent>? _events;
   String? _scope;
@@ -87,6 +89,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
         ? null
         : WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     WidgetsBinding.instance.addObserver(this);
+    _liveRecovery = LiveSessionRecovery()..bind(_workspace);
     tray.onHidden = () => _setAppForeground(false);
     await tray.initialize(notifications.localize);
     if (_closed) return;
@@ -176,6 +179,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
     _workspace?.removeListener(_changed);
     _events?.cancel();
     _workspace = workspace;
+    _liveRecovery?.bind(workspace);
     if (!appForeground) workspace?.setForeground(false);
     desktop?.bind(workspace);
     dockUnread.bind(workspace);
@@ -720,6 +724,7 @@ class NativeContentCoordinator with WidgetsBindingObserver {
   Future<void> dispose() async {
     if (_closed) return;
     _closed = true;
+    _liveRecovery?.dispose();
     onForegroundChanged = null;
     WidgetsBinding.instance.removeObserver(this);
     desktop?.dispose();

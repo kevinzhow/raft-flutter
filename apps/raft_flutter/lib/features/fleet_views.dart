@@ -16,7 +16,6 @@ import 'managed_agent_launcher.dart';
 import 'agent_scopes_view.dart';
 import 'agent_detail_view.dart';
 import 'agent_profile_rules.dart';
-import 'agent_metadata_catalog.dart' show sourceAgentActivities;
 import 'agent_metadata_projection.dart';
 import 'report_issue.dart';
 import 'agent_runtime_editor.dart';
@@ -652,8 +651,6 @@ class _FleetDetailState extends State<FleetDetail> {
   /// GET /servers/:id/machines for the agent's Computer rows; null while
   /// in flight.
   List<Map<String, dynamic>>? machines;
-  Map<String, dynamic>? liveActivity;
-  BigInt? liveSeq;
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -776,29 +773,9 @@ class _FleetDetailState extends State<FleetDetail> {
         closeProfile();
         return;
       }
-      if (e.name == 'connected') liveSeq = null;
       if (widget.computers || e.payload is! Map) return;
       final p = e.payload as Map;
-      if (e.name == 'agent:activity' && p['agentId'] == id) {
-        // Web applySocketActivity: unknown activities and a serverSeq at or
-        // below the held one are dropped.
-        if (!sourceAgentActivities.contains(
-          p['activityKind'] ?? p['activity'],
-        )) {
-          return;
-        }
-        final seq = BigInt.tryParse('${p['serverSeq'] ?? ''}');
-        if (seq != null && liveSeq != null && seq <= liveSeq!) return;
-        if (seq != null) liveSeq = seq;
-        setState(
-          () => liveActivity = {
-            'activity': p['activity'],
-            'activityKind': p['activityKind'],
-            'detail': p['detail'],
-            'detailKind': p['detailKind'],
-          },
-        );
-      } else if (e.name == 'agent:updated' && (p['agentId'] ?? p['id']) == id) {
+      if (e.name == 'agent:updated' && (p['agentId'] ?? p['id']) == id) {
         // Only this agent's stored profile changed; the list itself is
         // re-read by the shared directory.
         timer?.cancel();
@@ -1391,7 +1368,6 @@ class _FleetDetailState extends State<FleetDetail> {
       controller: w,
       agent: row,
       machines: machines,
-      liveActivity: liveActivity,
       initialTab: widget.initialTab,
       clock: widget.clock,
       initialTrajectoryLog: widget.initialTrajectoryLog,
@@ -1413,9 +1389,7 @@ class _FleetDetailState extends State<FleetDetail> {
             ? editRuntime
             : null,
         onStartStop: () {
-          final starting =
-              agentRowAmbientDisplay(row, live: liveActivity).activity ==
-              'offline';
+          final starting = agentRowAmbientDisplay(row).activity == 'offline';
           unawaited(
             action(
               () => runtimeCommand(starting ? 'start' : 'stop'),

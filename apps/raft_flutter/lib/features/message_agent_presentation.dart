@@ -8,58 +8,29 @@ import 'agent_metadata_projection.dart';
 import 'message_reference_directory.dart';
 import 'private_route_guard.dart';
 
-/// Authorized directory/activity adapter for message metadata. Ambient presence
-/// persists until a real terminal event; it is separate from the 90s work ticker.
-/// It is scoped by the server-level [directoryAuthority]: channel switches and
-/// thread opens keep the accepted identities, and a directory revalidation
-/// keeps presenting them until the replacement is accepted.
+/// Message metadata borrows the workspace's accepted Agent state. Event
+/// admission and ordering belong to the shared directory, including for a
+/// message surface opened after the newest event arrived.
 class MessageAgentPresentation extends ChangeNotifier {
   MessageAgentPresentation(this.w, this.directory) {
-    projection = AgentAmbientProjection(currentScope);
     directory.addListener(changed);
     w.addListener(changed);
-    events = w.client.events.listen(event);
+    directory.store.addListener(_presenceChanged);
     changed();
   }
   final WorkspaceController w;
   final MessageReferenceDirectory directory;
-  late final AgentAmbientProjection projection;
-  StreamSubscription<RaftEvent>? events;
-  AgentAmbientSnapshot? snapshot;
-  int requestRevision = -1, acceptedRevision = -1;
   bool ended = false;
   Timer? externalExpiry;
   String? authority;
-  final identities = <String, AgentPresentationIdentity>{};
-
-  /// Facts behind the last whole-presentation notification.
   Object? notified;
-
-  /// Per-agent presence signals. Live activity and last-seen events notify
-  /// only the agent they concern, so a heartbeat rebuilds the avatars that
-  /// show that agent instead of every row of every mounted chat.
   final _presence = <String, _PresenceSignal>{};
+  final _presenceFacts = <String, Object?>{};
 
-  /// Notifies when [display] (or the last-seen part of [identity]) of agent
-  /// [id] changes through a realtime event. Whole-directory changes notify
-  /// this presentation itself.
-  Listenable presenceOf(String id) =>
-      _presence.putIfAbsent(id, _PresenceSignal.new);
-  void _presenceChanged(String id) => _presence[id]?.ping();
-
-  /// Notifies listeners only when the presented facts changed. Runs on every
-  /// workspace notification.
-  void _notifyIfChanged() {
-    final facts = (
-      authority,
-      authorityCurrent,
-      directory.loading,
-      requestRevision,
-      acceptedRevision,
-    );
-    if (facts == notified) return;
-    notified = facts;
-    notifyListeners();
+  /// A presence event rebuilds only avatars of the affected Agent.
+  Listenable presenceOf(String id) {
+    _presenceFacts.putIfAbsent(id, () => _facts(id));
+    return _presence.putIfAbsent(id, _PresenceSignal.new);
   }
 
   AgentPresentationScope get currentScope => (
@@ -68,188 +39,126 @@ class MessageAgentPresentation extends ChangeNotifier {
     server: w.server?.id ?? '',
     authorityRevision: w.client.generation,
   );
+
   bool get authorityCurrent =>
       !ended &&
       authority == directoryAuthority(w) &&
       directory.scope == authority &&
       w.can('viewAgents');
-  // Only an identity without settled data withdraws presentation; an in-place
-  // revalidation keeps it. The merge snapshot rejects an older REST receipt.
   bool get authorized => authorityCurrent && !directory.loading;
+
+  Map<String, dynamic>? _row(String id) {
+    if (!authorized) return null;
+    final live = directory.store.agent(id);
+    if (live != null) return live;
+    // Deleted authors still identify historical messages, without live presence.
+    return directory.agents.where((row) => row['id'] == id).firstOrNull;
+  }
+
+  AgentPresentationIdentity? identity(String id) {
+    final row = _row(id);
+    if (row == null) return null;
+    return AgentPresentationIdentity(
+      id: id,
+      status: row['status'] is String ? row['status'] as String : 'offline',
+      runtime: row['runtime'] as String?,
+      machineId: row['machineId'] as String?,
+      model: row['model'] as String?,
+      description: row['description'] as String?,
+      external: row['external'] == true || row['runtime'] == 'external',
+      deleted: row['deletedAt'] != null,
+      lastSeenAt: row['lastSeenAt'] is String
+          ? DateTime.tryParse(row['lastSeenAt'] as String)
+          : null,
+    );
+  }
+
+  AgentAmbientDisplay? display(String id) {
+    final row = _row(id);
+    return row == null ? null : agentRowAmbientDisplay(row);
+  }
+
+  Object? _facts(String id) {
+    final value = identity(id), ambient = display(id);
+    if (value == null || ambient == null) return null;
+    return (
+      value.status,
+      value.runtime,
+      value.machineId,
+      value.model,
+      value.description,
+      value.lastSeenAt,
+      value.deleted,
+      ambient.activity,
+      ambient.detailKind,
+      ambient.detail,
+      ambient.online,
+      ambient.external,
+      ambient.deactivated,
+    );
+  }
+
+  void _presenceChanged() {
+    if (ended) return;
+    for (final entry in _presence.entries) {
+      final facts = _facts(entry.key);
+      if (_presenceFacts[entry.key] == facts) continue;
+      _presenceFacts[entry.key] = facts;
+      entry.value.ping();
+    }
+    scheduleExternalExpiry();
+  }
 
   void changed() {
     if (ended) return;
-    final next = directoryAuthority(w);
-    if (authority != next) {
-      authority = next;
-      // The pure scope includes the explicit principal/server. A role or
-      // capability change also retires every prior projection here.
-      projection.adopt(currentScope);
-      projection.replaceAuthorizedDirectory(currentScope, const []);
-      identities.clear();
-      requestRevision = acceptedRevision = -1;
-      snapshot = null;
-    }
-    if (!authorityCurrent) {
-      externalExpiry?.cancel();
-      externalExpiry = null;
-      identities.clear();
-      projection.replaceAuthorizedDirectory(currentScope, const []);
-      _notifyIfChanged();
-      return;
-    }
-    if (requestRevision != directory.requestRevision) {
-      requestRevision = directory.requestRevision;
-      snapshot = projection.beginSnapshot();
-    }
-    if (!directory.loading && acceptedRevision != directory.acceptedRevision) {
-      acceptedRevision = directory.acceptedRevision;
-      final previous = Map<String, AgentPresentationIdentity>.from(identities);
-      identities.clear();
-      final activities = <String, AgentAmbientActivity>{};
-      for (final row in directory.agents) {
-        final id = row['id'];
-        if (id is! String) continue;
-        final status = row['status'] is String
-            ? row['status'] as String
-            : 'offline';
-        final incomingSeen = row['lastSeenAt'] is String
-            ? DateTime.tryParse(row['lastSeenAt'])
-            : null;
-        final previousSeen = previous[id]?.lastSeenAt;
-        final lastSeen =
-            previousSeen != null &&
-                (incomingSeen == null || previousSeen.isAfter(incomingSeen))
-            ? previousSeen
-            : incomingSeen;
-        identities[id] = AgentPresentationIdentity(
-          id: id,
-          status: status,
-          runtime: row['runtime'] as String?,
-          machineId: row['machineId'] as String?,
-          model: row['model'] as String?,
-          description: row['description'] as String?,
-          external: row['runtime'] == 'external',
-          lastSeenAt: lastSeen,
-          deleted: row['deletedAt'] != null,
-        );
-        activities[id] = normalizeAgentSnapshotActivity(
-          status: status,
-          activity: row['activity'] as String?,
-          activityKind: row['activityKind'] as String?,
-          detailKind: agentRowDetailKind(row),
-          detail: row['activityDetail'] is String
-              ? row['activityDetail'] as String
-              : '',
-        );
-      }
-      projection.replaceAuthorizedDirectory(currentScope, identities.values);
-      projection.hydrate(snapshot ?? projection.beginSnapshot(), activities);
-    }
-    scheduleExternalExpiry();
-    _notifyIfChanged();
+    authority = directoryAuthority(w);
+    final facts = (
+      authority,
+      authorityCurrent,
+      directory.loading,
+      directory.requestRevision,
+      directory.acceptedRevision,
+    );
+    _presenceChanged();
+    if (facts == notified) return;
+    notified = facts;
+    notifyListeners();
   }
 
+  /// External credential presence expires after 120 seconds. This is a
+  /// presentation deadline, not another copy of Agent state or a status pull.
   void scheduleExternalExpiry() {
     externalExpiry?.cancel();
     externalExpiry = null;
-    if (!authorityCurrent) return;
+    if (!authorized) return;
     final now = DateTime.now();
-    final ends = [
-      for (final row in identities.values)
-        if (row.external && !row.deleted && row.lastSeenAt != null)
-          row.lastSeenAt!.add(const Duration(milliseconds: 120000)),
+    final ends = <DateTime>[
+      for (final row in directory.agents)
+        if (identity('${row['id']}') case final value?)
+          if (value.external && !value.deleted && value.lastSeenAt != null)
+            value.lastSeenAt!.add(const Duration(milliseconds: 120000)),
     ].where((end) => end.isAfter(now)).toList()..sort();
     if (ends.isEmpty) return;
-    externalExpiry = Timer(ends.first.difference(now), () {
-      if (!ended && authorityCurrent) {
-        for (final row in identities.values) {
-          if (row.external) _presenceChanged(row.id);
-        }
-        scheduleExternalExpiry();
-      }
-    });
+    externalExpiry = Timer(ends.first.difference(now), _presenceChanged);
   }
 
-  void event(RaftEvent event) {
-    if (!authorityCurrent) return;
-    if (event.name == 'connected') {
-      projection.resetSequenceBaseline();
-      directory.refresh();
-      changed();
-      return;
-    }
-    if ((event.name != 'agent:activity' && event.name != 'agent:seen') ||
-        event.payload is! Map) {
-      return;
-    }
-    final value = event.payload as Map;
-    final id = value['agentId'];
-    if (id is! String ||
-        !identities.containsKey(id) ||
-        value['serverId'] != null && value['serverId'] != w.server?.id) {
-      return;
-    }
-    if (event.name == 'agent:seen') {
-      final seen = value['lastSeenAt'] is String
-          ? DateTime.tryParse(value['lastSeenAt'])
-          : null;
-      final old = identities[id]!;
-      if (seen == null ||
-          old.lastSeenAt != null && !seen.isAfter(old.lastSeenAt!)) {
-        return;
-      }
-      identities[id] = AgentPresentationIdentity(
-        id: old.id,
-        status: old.status,
-        runtime: old.runtime,
-        machineId: old.machineId,
-        model: old.model,
-        description: old.description,
-        external: old.external,
-        deleted: old.deleted,
-        lastSeenAt: seen,
-      );
-      projection.replaceAuthorizedDirectory(currentScope, identities.values);
-      scheduleExternalExpiry();
-      _presenceChanged(id);
-      return;
-    }
-    final result = projection.apply(
-      expected: currentScope,
-      agentId: id,
-      activity: value['activity'] as String?,
-      activityKind: value['activityKind'] as String?,
-      detail: value['detail'] is String ? value['detail'] as String : '',
-      detailKind: value['detailKind'] as String?,
-      serverSeq: int.tryParse('${value['serverSeq']}'),
-      launchId: value['launchId'] as String?,
-    );
-    if (result == AgentAmbientApply.applied) _presenceChanged(id);
-    if (result == AgentAmbientApply.conflict) {
-      // The shared directory revalidation owns the reconcile and its fence.
-      directory.refresh();
-      changed();
-    }
-  }
-
-  AgentPresentationIdentity? identity(String id) =>
-      authorized ? identities[id] : null;
-  AgentAmbientDisplay? display(String id) =>
-      authorized ? projection.display(id, DateTime.now()) : null;
+  /// Compatibility for focused ingress tests; production subscribes once in
+  /// the shared directory rather than once per rendered message surface.
+  @visibleForTesting
+  void event(RaftEvent event) => directory.store.receive(event);
 
   @override
   void dispose() {
     ended = true;
     externalExpiry?.cancel();
-    unawaited(events?.cancel());
+    directory.store.removeListener(_presenceChanged);
     directory.removeListener(changed);
     w.removeListener(changed);
-    identities.clear();
     for (final signal in _presence.values) {
       signal.dispose();
     }
     _presence.clear();
+    _presenceFacts.clear();
     super.dispose();
   }
 }

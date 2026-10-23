@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:raft_client/raft_client.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/workspace_controller.dart';
@@ -9,7 +8,6 @@ import '../data/workspace_entity_directory.dart';
 import 'desktop_navigation_policy.dart';
 import 'add_computer_dialog.dart';
 import 'agent_avatar_projection.dart';
-import 'agent_metadata_catalog.dart' show sourceAgentActivities;
 import 'computer_detail_view.dart'
     show computerAvailableVersion, computerDiskLow, computerRowStatus;
 import 'fleet_views.dart' show showFleetRegistration;
@@ -50,12 +48,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   WorkspaceController? _listened;
   late String _authority;
 
-  /// Live `agent:activity` per agent (Web agentStore.agentActivities): the
-  /// avatar badge follows it before the next directory read.
-  final liveActivity = <String, String>{};
-  final _liveSeq = <String, BigInt>{};
-  StreamSubscription<RaftEvent>? _events;
-
   /// Account, workspace, role and the visibility rules of this column. Rows
   /// themselves are a projection of the server-scoped entity directory, which
   /// fences its own data, so a channel change never touches this column.
@@ -92,22 +84,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
     _directory?.removeListener(directoryChanged);
     _listened = w..addListener(workspaceChanged);
     _directory = w.services.entityDirectory..addListener(directoryChanged);
-    _events?.cancel();
-    liveActivity.clear();
-    _liveSeq.clear();
-    _events = w.client.events.listen((e) {
-      final p = e.payload;
-      if (e.name == 'connected') _liveSeq.clear();
-      if (e.name != 'agent:activity' || p is! Map || !mounted) return;
-      final id = p['agentId'], activity = p['activityKind'] ?? p['activity'];
-      if (id is! String || !sourceAgentActivities.contains(activity)) return;
-      // Web applySocketActivity: a serverSeq at or below the held one is stale.
-      final seq = BigInt.tryParse('${p['serverSeq'] ?? ''}');
-      final last = _liveSeq[id];
-      if (seq != null && last != null && seq <= last) return;
-      if (seq != null) _liveSeq[id] = seq;
-      setState(() => liveActivity[id] = activity as String);
-    });
     w.services.entityDirectory.ensure(waitKinds, retryFailed: true);
   }
 
@@ -146,7 +122,6 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   void dispose() {
     _listened?.removeListener(workspaceChanged);
     _directory?.removeListener(directoryChanged);
-    _events?.cancel();
     agentMenu.dispose();
     super.dispose();
   }
@@ -258,9 +233,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
           ? const RaftIcon(RaftGlyph.monitor, size: 18)
           : RaftAvatar(
               name: name,
-              presence: agent
-                  ? agentRowPresence(value, live: liveActivity[id])
-                  : null,
+              presence: agent ? agentRowPresence(value) : null,
               mountedContext: RaftMountedAvatarContext.sidebarList,
               kind: kind == DesktopContentKind.agent
                   ? RaftAvatarKind.agent
@@ -336,9 +309,12 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
   /// rows (attached-by-me first, like sidebarMachineOrder.ts), and the
   /// skeleton / "No computers yet" states.
   Widget computersList(RaftTokens t, List<Map<String, dynamic>> rows) {
-    final loading = !w.services.entityDirectory.settled(WorkspaceEntityKind.computers);
+    final loading = !w.services.entityDirectory.settled(
+      WorkspaceEntityKind.computers,
+    );
     final error =
-        w.services.entityDirectory.state(WorkspaceEntityKind.computers).error != null;
+        w.services.entityDirectory.state(WorkspaceEntityKind.computers).error !=
+        null;
     final ordered = [
       ...rows.where((m) => m['computerAttachedByCurrentUser'] == true),
       ...rows.where((m) => m['computerAttachedByCurrentUser'] != true),
@@ -592,8 +568,7 @@ class _DesktopDirectoryViewState extends State<DesktopDirectoryView> {
               onRefresh: refreshDirectory,
               child: ListView.builder(
                 key: const Key('desktop-directory-list'),
-                physics:
-                    widget.mobileRoot || RaftInteraction.of(context).touch
+                physics: widget.mobileRoot || RaftInteraction.of(context).touch
                     ? const AlwaysScrollableScrollPhysics()
                     : null,
                 padding: directoryPadding(recipe),

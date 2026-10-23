@@ -10,6 +10,7 @@ import 'burst_reads.dart';
 import 'channel_revocation.dart';
 import 'source_activity_unread_store.dart';
 import 'workspace_domain_ports.dart';
+import 'workspace_member_events.dart';
 import 'workspace_entity_directory.dart';
 import 'workspace_session_bindings.dart';
 import 'workspace_session_context.dart';
@@ -94,7 +95,7 @@ class WorkspaceSession
   // ignore: raft_lints/avoid_unreleased_resource -- The composition root disposes this notifier at the original ordered disposal stage.
   final resumes = ValueNotifier<int>(0);
   late final StreamSubscription<RaftEvent> subscription;
-  bool _roomsJoinedPending = false, _connectedBefore = false;
+  bool _roomsJoinedPending = false;
   DateTime? _lastHeartbeat, _lastServerEvent;
   (int, BigInt)? _gapSyncedThrough;
   final _burstAt = BurstReads();
@@ -291,7 +292,7 @@ class WorkspaceSession
   void resetServerSelectionState() {
     directory.resetRowAuthority();
     // The new server's socket connects for the first time.
-    _connectedBefore = _roomsJoinedPending = false;
+    _roomsJoinedPending = false;
     _gapSyncedThrough = null;
     messages.resetNewer();
   }
@@ -370,7 +371,7 @@ class WorkspaceSession
     if (due('unread')) unawaited(directory.refreshUnread());
     if (due('sidebar')) directory.loadSidebar();
     if (entityDirectory.started && due('authors')) {
-      entityDirectory.revalidateAuthors();
+      entityDirectory.revalidateLive();
     }
     // Another session of this account may have joined or created a server;
     // the server tells only that server's room, so this is the one moment the
@@ -407,8 +408,8 @@ class WorkspaceSession
       return;
     }
     _lastServerEvent = DateTime.now();
-    // Presence patches are owned by the entity directory and the agent
-    // presentations; no workspace state changes, so nothing is notified.
+    // Presence patches are owned by the entity directory; presentation
+    // adapters observe that accepted state; no workspace state changes, so nothing is notified.
     if (presenceEvents.contains(event.name)) return;
     if (event.name == 'connected') {
       connected = true;
@@ -424,12 +425,7 @@ class WorkspaceSession
       if (due('membership')) entries.recoverMembership(coalesce: true);
       if (due('syncFlag')) entries.refreshMessageSyncFlag();
       if (due('sidebar')) directory.loadSidebar();
-      // A reconnect refreshes agents and members in place; the first connect
-      // reuses the reads the selection already started.
-      if (_connectedBefore && entityDirectory.started && due('authors')) {
-        entityDirectory.revalidateAuthors();
-      }
-      _connectedBefore = true;
+      // The shared entity directory owns reconnect revalidation for every surface.
     }
     if (event.name == 'rooms:joined') roomsJoined();
     if (event.name == 'heartbeat') {
@@ -455,11 +451,12 @@ class WorkspaceSession
       if (id != null) entries.revokeServer(id);
       entries.recoverMembership();
     }
-    if (event.name == 'server:member-updated') {
-      entries.applyMembershipRole(event.payload);
-      entries.recoverMembership();
-      directory.refreshChannels();
-    }
+    consumeWorkspaceMemberEvent(
+      event,
+      client: client,
+      entries: entries,
+      directory: directory,
+    );
     if (event.name == 'channel:members-updated' ||
         event.name == 'channel:authority-updated' ||
         event.name == 'channel:removed') {

@@ -225,3 +225,22 @@ Windows 使用同一 DesktopInboxNotifications 权威与生命周期。WindowsNo
 - **登出策略。** 会话只在服务器明确判定凭据无效时结束：`/auth/refresh`，或刷新成功后的 `/auth/me`，返回带服务器 JSON 错误体的 401。无 JSON 体的 401、任何 403、400/404/408/429/5xx、超时、连接错误、无法解析的 200 一律保留会话与凭据，显示非破坏性状态并退避重试；启动恢复失败（不是“没有已存凭据”）显示恢复页，不显示登录表单。实现在 `packages/raft_client/lib/src/session_policy.dart`，由 `logout_policy_test.dart` 固定。
 - **Android 边到边。** 背景绘制到系统栏下方，页面自己拥有底部内容边界：滚动页用 `raftScrollPadding`，底部栏用 `RaftBottomInsetSurface`，锚定菜单和弹层按所属 overlay 的 metrics 放置并限高；不加通用 SafeArea，嵌套滚动不重复加。回归在 `edge_to_edge_audit_test.dart`。
 - **保留但不活动的页面。** 用回调内部守卫排除输入、焦点和语义，不要传 `null` 回调：`null` 会套用控件的禁用透明度（0.6），页面滑动时表现为颜色闪变。
+
+## Live entity and recovery ownership
+
+`WorkspaceEntityDirectory` admits and orders Agent activity and Computer status
+once per workspace authority. Directory views, profile headers and message
+avatar adapters read those accepted rows; a newly mounted view shares the same
+sequence baseline. REST reconciliation replaces the common projection and
+therefore reaches every existing view. Message avatar adapters notify only the
+affected Agent's consumers. The separate recent-work ticker and trajectory log
+retain their own bounded history; they do not override ambient presence.
+
+The root `WorkspaceServices` owns `LiveConnectionState`. The native content
+coordinator binds one `LiveSessionRecovery` timer for that root, using
+`RaftForegroundPeriodic` so hidden windows and background apps stop ticking.
+Ten-second checks reconnect a connected socket only after both 90 seconds
+without a heartbeat and 120 seconds without inbound events. Visible, connected
+sessions also reconcile Agents and Computers every ten minutes. Reconnect and
+foreground recovery enter the shared directory, rather than rebuilding pages.
+Borrowed presentations do not own another connection watchdog.
