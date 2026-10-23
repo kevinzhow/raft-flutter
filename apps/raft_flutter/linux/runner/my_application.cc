@@ -20,6 +20,7 @@ struct _MyApplication {
 // Null when the window manager draws the title bar (the app cannot colour
 // that); see docs/desktop-title-bar.md.
 struct TitleBar {
+  GtkWindow* window;
   GtkWidget* header_bar;
   GtkCssProvider* css;
 };
@@ -98,6 +99,7 @@ static void my_application_activate(GApplication* application) {
   if (g_strcmp0(forced_header_bar, "1") == 0) use_header_bar = TRUE;
   if (g_strcmp0(forced_header_bar, "0") == 0) use_header_bar = FALSE;
   TitleBar* title_bar = g_new0(TitleBar, 1);
+  title_bar->window = window;
   // The window's name stays for the task switcher; the bar shows no title.
   gtk_window_set_title(window, "Raft");
   if (use_header_bar) {
@@ -233,6 +235,19 @@ static void my_application_activate(GApplication* application) {
               width != nullptr && fl_value_get_type(width) == FL_VALUE_TYPE_FLOAT
                   ? fl_value_get_float(width)
                   : 1);
+          fl_method_call_respond_success(call, nullptr, nullptr);
+        } else if (g_strcmp0(method, "setTitle") == 0) {
+          // The window's name for the task switcher and window lists (the
+          // Web document title); the header bar keeps its empty title.
+          FlValue* args = fl_method_call_get_args(call);
+          FlValue* title = args != nullptr &&
+                                   fl_value_get_type(args) == FL_VALUE_TYPE_MAP
+                               ? fl_value_lookup_string(args, "title")
+                               : nullptr;
+          if (title != nullptr &&
+              fl_value_get_type(title) == FL_VALUE_TYPE_STRING) {
+            gtk_window_set_title(bar->window, fl_value_get_string(title));
+          }
           fl_method_call_respond_success(call, nullptr, nullptr);
         } else {
           fl_method_call_respond_not_implemented(call, nullptr);

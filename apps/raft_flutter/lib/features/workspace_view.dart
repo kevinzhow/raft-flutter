@@ -1126,6 +1126,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
     String? searchChannelId,
     String? searchQuery,
     bool restoreSavedSearch = false,
+    bool fromRail = false,
   }) {
     if (!NavigationRegistry.knowsSection(section)) {
       NavigationRegistry.reportFallback(
@@ -1170,6 +1171,7 @@ class _WorkspaceViewState extends State<WorkspaceView>
       bridgeScope = null;
       syncBridgeFlag();
     }
+    if (fromRail && quickSwitcher.railMemory.enter(w, section)) return;
     w.setSection(section);
     if (section == 'search' && searchChannelId != null) {
       w.navigation.navigate(
@@ -2779,7 +2781,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
         w.location.route == RaftRoute.settings ? 'settings' : w.section,
       ).railMode,
       onSelected: (id) => wide
-          ? (id == 'search' ? openSearchFromRail() : select(id))
+          ? (id == 'search'
+                ? openSearchFromRail()
+                : select(id, fromRail: true))
           : selectRailDestination(id),
       workspaceName: w.server?.name ?? 'Raft',
       workspaceTooltip: tr('Switch workspace'),
@@ -2845,7 +2849,9 @@ class _WorkspaceViewState extends State<WorkspaceView>
       label: tr('Settings'),
       selected: w.location.route == RaftRoute.settings,
       onPressed: () =>
-          wide ? select('settings') : selectRailDestination('settings'),
+          wide
+          ? select('settings', fromRail: true)
+          : selectRailDestination('settings'),
       glyph: RaftGlyph.settings,
       attention: appUpdate?.hasUnseen ?? false,
     );

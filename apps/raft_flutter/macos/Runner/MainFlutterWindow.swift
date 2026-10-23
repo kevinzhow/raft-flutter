@@ -267,6 +267,13 @@ final class RaftTitleBar: NSObject {
           alpha: 1)
       }
       result(nil)
+    case "setTitle":
+      // The window's name for Mission Control, the Window menu and the Dock;
+      // titleVisibility stays hidden, so the strip shows no text.
+      if let args = call.arguments as? [String: Any], let title = args["title"] as? String {
+        window?.title = title
+      }
+      result(nil)
     case "startDragging":
       if let window = window, let event = NSApp.currentEvent,
         event.type == .leftMouseDown || event.type == .leftMouseDragged

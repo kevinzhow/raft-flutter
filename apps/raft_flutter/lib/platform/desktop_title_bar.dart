@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:raft_ui/raft_ui.dart';
 
+import '../data/workspace_controller.dart';
+import 'window_title.dart';
+
 /// Who paints the desktop title bar.
 enum DesktopTitleBarMode {
   /// Not a desktop window with a title bar the app can colour.
@@ -170,6 +173,20 @@ class DesktopTitleBarController {
     }
   }
 
+  String? _title;
+
+  /// Names the OS window (task switcher, window list, screen readers). The
+  /// strip itself stays text-free; repeated identical titles are dropped.
+  Future<void> setTitle(String title) async {
+    if (mode == DesktopTitleBarMode.none || title == _title) return;
+    _title = title;
+    try {
+      await _channel.invokeMethod<void>('setTitle', {'title': title});
+    } on MissingPluginException {
+      // An older bundle: the window keeps the title it was created with.
+    }
+  }
+
   Future<void> startDragging() => _fire('startDragging');
 
   Future<void> doubleClick() => _fire('doubleClick');
@@ -187,9 +204,18 @@ class DesktopTitleBarController {
 /// native caption colours plus a Flutter rule above [child]. Sits below the
 /// theme so it follows every theme change.
 class DesktopTitleBar extends StatefulWidget {
-  const DesktopTitleBar({super.key, this.controller, required this.child});
+  const DesktopTitleBar({
+    super.key,
+    this.controller,
+    this.workspace,
+    required this.child,
+  });
 
   final DesktopTitleBarController? controller;
+
+  /// The open workspace: the window is titled after its conversation (Web
+  /// `useBrowserDocumentTitle`), and plainly "Raft" without one.
+  final WorkspaceController? workspace;
   final Widget child;
 
   @override
@@ -204,6 +230,29 @@ class _DesktopTitleBarState extends State<DesktopTitleBar> {
   void initState() {
     super.initState();
     unawaited(_controller.start());
+    widget.workspace?.addListener(_syncTitle);
+    _syncTitle();
+  }
+
+  @override
+  void didUpdateWidget(DesktopTitleBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.workspace, widget.workspace)) {
+      oldWidget.workspace?.removeListener(_syncTitle);
+      widget.workspace?.addListener(_syncTitle);
+    }
+    _syncTitle();
+  }
+
+  @override
+  void dispose() {
+    widget.workspace?.removeListener(_syncTitle);
+    super.dispose();
+  }
+
+  void _syncTitle() {
+    if (_controller.mode == DesktopTitleBarMode.none) return;
+    unawaited(_controller.setTitle(workspaceWindowTitle(widget.workspace)));
   }
 
   @override

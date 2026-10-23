@@ -15761,14 +15761,27 @@
    "area": "global-ui",
    "capability": "Window/tab title tracks context: 'channel | server | Raft', 'channel - Thread | server | Raft', mirrored to the native window title by the desktop shell",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "utils/browserDocumentTitle.ts getServerRouteDocumentTitle/useBrowserDocumentTitle; desktopServerTitle.ts (window.setServerTitle capability)",
-   "gate": "",
-   "flutterEntry": "app_root.dart MaterialApp title is a fixed 'Raft'; no window-title updates found (docs/desktop-title-bar.md approves no title text in the strip, which is a visual decision, not the OS window title)",
+   "gate": "Desktop window (Linux, macOS, Windows)",
+   "flutterEntry": "platform/window_title.dart workspaceWindowTitle ('#channel | Workspace | Raft', '#channel - Thread | Workspace | Raft', 'Workspace | Raft', 'Raft' outside a workspace) pushed by DesktopTitleBar through the app.raft/titlebar setTitle method to the runner's window title (gtk_window_set_title, NSWindow.title, SetWindowTextW); the strip itself stays text-free (docs/desktop-title-bar.md)",
    "justification": "",
-   "impact": "Desktop users with several windows/alt-tab and screen-reader users; low, cosmetic.",
-   "size": "S",
-   "flutterRefs": []
+   "impact": "",
+   "size": "",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/platform/window_title.dart",
+     "needle": "String workspaceWindowTitle("
+    },
+    {
+     "file": "apps/raft_flutter/lib/platform/desktop_title_bar.dart",
+     "needle": "Future<void> setTitle(String title)"
+    },
+    {
+     "file": "apps/raft_flutter/linux/runner/my_application.cc",
+     "needle": "gtk_window_set_title(bar->window"
+    }
+   ]
   },
   {
    "kind": "ui",
@@ -16352,23 +16365,27 @@
    "area": "global-ui",
    "capability": "Tapping a Raft message permalink in a message opens it in-app (same server: jump to message/thread; other server: resolve through message context and open the local projection)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "components/message/MessageItem.tsx handleOpenPermalink (parseRaftPermalink; cross-server GET /messages/context/:id then nav.toMessage/toThreadMessage)",
    "gate": "",
-   "flutterEntry": "message_presentation.dart onLink: same-server links open via quoted_message_preview.dart openRaftPermalink; any other server's slug falls through to the external browser",
+   "flutterEntry": "message_presentation.dart onLink -> foreign_permalink.dart openPermalinkInApp: a link of this workspace opens via quoted_message_preview.dart openRaftPermalink; a channel link of another workspace is first resolved through GET /messages/context/:id (features/raft_permalink_resolution.dart resolveForeignPermalink) and opens the local projection (a reply opens its local thread); a 404 keeps the link external, any other failure toasts 'Could not resolve this message link. Please try again.'",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/message_presentation.dart",
-     "needle": "link.serverSlug == controller.server?.string('slug')"
+     "file": "apps/raft_flutter/lib/features/foreign_permalink.dart",
+     "needle": "Future<bool> openPermalinkInApp("
+    },
+    {
+     "file": "apps/raft_flutter/lib/features/raft_permalink_resolution.dart",
+     "needle": "Future<ForeignPermalink> resolveForeignPermalink("
     },
     {
      "file": "apps/raft_flutter/lib/data/raft_permalink.dart",
      "needle": "RaftPermalink? parseRaftPermalink("
     }
    ],
-   "justification": "Web resolves a permalink from another workspace (e.g. a joint-channel projection) to the user's local channel; Flutter opens it in the browser.",
-   "impact": "Users in joint channels or multi-server setups pasting cross-server permalinks; occasional.",
-   "size": "S"
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -16731,20 +16748,23 @@
    "area": "global-ui",
    "capability": "Re-selecting a rail tab (Chat/Tasks/Members/Computers/Settings) returns to the last location visited in that tab",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "hooks/useTabRouteMemory.ts readTabMemory/writeTabMemory (localStorage slock:tabMemory:v2:{slug}:{mode}) used by hooks/useSidebarTab.ts and LeftRail.tsx",
-   "gate": "",
-   "flutterEntry": "workspace_view.dart selectMobileTab()/select(): selecting a tab opens the tab root; no per-tab last-location memory found (only per-server surface memory, see last-location-resume)",
+   "gate": "Desktop rail (wide layout)",
+   "flutterEntry": "features/rail_location_memory.dart RailLocationMemory: recorded with every accepted location (quick_switcher_host.dart changed()), one slot per account, server and mode (chat, tasks, members, computers, settings), kept across restarts; workspace_view.dart select(fromRail: true) returns the wide rail to the slot. Search and Activity always start at their landing and never write a slot. The phone's tab bar always opens the tab root (docs/source-navigation-contract.md, PUSH rule 7, owner decision 2026-10-11).",
    "flutterRefs": [
     {
+     "file": "apps/raft_flutter/lib/features/rail_location_memory.dart",
+     "needle": "class RailLocationMemory"
+    },
+    {
      "file": "apps/raft_flutter/lib/features/workspace_view.dart",
-     "needle": "void selectMobileTab(String tab, String scope)"
+     "needle": "quickSwitcher.railMemory.enter(w, section)"
     }
    ],
-   "justification": "No per-rail-mode memory store in lib (grep tabMemory/railMemory finds nothing); docs/source-navigation-contract.md item 2 only states the intent.",
-   "impact": "All users switching between tabs and back; moderate, lands on root instead of the previous detail page.",
-   "size": "M",
-   "topGap": 12
+   "justification": "",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

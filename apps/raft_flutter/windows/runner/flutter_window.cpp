@@ -143,6 +143,29 @@ bool FlutterWindow::OnCreate() {
             }
           }
           result->Success();
+        } else if (call.method_name() == "setTitle") {
+          // The window's name for the taskbar and Alt+Tab (the caption text
+          // is drawn in the caption colour, so the bar stays empty).
+          const auto* arguments =
+              std::get_if<flutter::EncodableMap>(call.arguments());
+          if (arguments != nullptr) {
+            auto title = arguments->find(flutter::EncodableValue("title"));
+            if (title != arguments->end()) {
+              if (const auto* text = std::get_if<std::string>(&title->second)) {
+                const int length = MultiByteToWideChar(
+                    CP_UTF8, 0, text->data(), static_cast<int>(text->size()),
+                    nullptr, 0);
+                std::wstring wide(length > 0 ? length : 0, L'\0');
+                if (length > 0) {
+                  MultiByteToWideChar(CP_UTF8, 0, text->data(),
+                                      static_cast<int>(text->size()),
+                                      wide.data(), length);
+                  SetWindowTextW(window_handle, wide.c_str());
+                }
+              }
+            }
+          }
+          result->Success();
         } else {
           result->NotImplemented();
         }

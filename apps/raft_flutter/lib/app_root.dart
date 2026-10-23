@@ -2172,6 +2172,7 @@ class _RaftAppState extends State<RaftApp> with WidgetsBindingObserver {
               child: RepaintBoundary(
                 key: raftScreenshotKey,
                 child: DesktopTitleBar(
+                  workspace: workspace,
                   child: RaftTooltipProvider(
                     delay: const Duration(milliseconds: 600),
                     child: RaftViewportBreakpointScope(

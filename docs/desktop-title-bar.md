@@ -66,10 +66,21 @@ buttons take the rail foreground colour (the provider is screen-wide but every
 rule is scoped to `headerbar.raft-titlebar`; a translucent divider is blended over
 the strip first, since CSS gets one opaque colour). GTK keeps the bar's height, dragging,
 double-click and hides it in fullscreen. The window is named "Raft" for the task
-switcher. Limit: where the window manager draws the title bar itself (KDE,
+switcher, and after that by the open conversation (see below). Limit: where the window manager draws the title bar itself (KDE,
 Xfce, tiling WMs, non-GNOME X11) the app cannot paint it and the strip is not
 shown. `RAFT_LINUX_HEADER_BAR=1` forces the header bar (used for Xvfb
 captures); `=0` forces the window manager's bar.
+
+### Window title (all three)
+The strip shows no text, but the OS window has a name (task switcher, window
+list, Mission Control, screen readers). The app sends it through the same
+channel: `setTitle` with `{title}` (`platform/window_title.dart`,
+`DesktopTitleBarController.setTitle`; repeated identical titles are dropped).
+Web's document title is the model: `#channel | Workspace | Raft`,
+`#channel - Thread | Workspace | Raft` while a thread is open, `Workspace | Raft`
+on any other page and `Raft` outside a workspace. The runners set it with
+`gtk_window_set_title`, `NSWindow.title` and `SetWindowTextW`. The macOS and
+Windows handlers are not compiled on the Linux machine that wrote them.
 
 ### Windows
 `windows/runner/flutter_window.cpp`: `DwmSetWindowAttribute` with

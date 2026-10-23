@@ -12,6 +12,7 @@ import '../data/workspace_entity_directory.dart';
 import 'private_route_guard.dart';
 import 'quick_switcher.dart';
 import 'quick_switcher_model.dart';
+import 'rail_location_memory.dart';
 import 'resource_search.dart';
 import 'search_home.dart';
 
@@ -83,6 +84,10 @@ class QuickSwitcherHost {
   final QuickSwitcherActions actions;
   final RecentConversationStore recents;
   final SearchMemoryStore searchMemory;
+
+  /// Where each rail mode was last left (see [RailLocationMemory]); recorded
+  /// with the visits, from the first frame.
+  final railMemory = RailLocationMemory();
   final DateTime Function()? clock;
   RawDialogRoute<void>? route;
   String? openedAuthority, lastVisit, lastVisitScope;
@@ -124,6 +129,7 @@ class QuickSwitcherHost {
     if (_disposed) return;
     if (route != null && openedAuthority != directoryAuthority(w)) close();
     recordVisit();
+    railMemory.record(w);
   }
 
   /// Source useRecordRecentConversation: a conversation counts once it has

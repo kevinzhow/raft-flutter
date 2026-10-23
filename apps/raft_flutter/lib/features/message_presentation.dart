@@ -17,7 +17,7 @@ import 'management_support.dart'
     show cachedServerFlag, pageIdentity, rememberServerFlag;
 import '../platform/attachment_files.dart';
 import '../platform/content_links.dart';
-import 'quoted_message_preview.dart';
+import 'foreign_permalink.dart';
 import 'message_action_card.dart';
 import 'attachment_view.dart';
 import 'fleet_views.dart';
@@ -506,8 +506,7 @@ class MessagePresentation extends StatelessWidget {
       if (link != null &&
           localAuthority &&
           !exportMode &&
-          link.serverSlug == controller.server?.string('slug')) {
-        await openRaftPermalink(controller, link);
+          await openPermalinkInApp(context, controller, link)) {
         return;
       }
       onExternalLink(href);
