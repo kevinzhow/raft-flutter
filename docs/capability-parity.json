@@ -795,13 +795,22 @@
    "area": "messages",
    "capability": "Drag to reorder pending attachments before sending",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "MessageInput SortableAttachment (dnd-kit horizontalListSortingStrategy)",
    "gate": "pointer drag",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Pending attachment chips in raft_ui composer_attachments.dart have no reorder handler (grep 'reorder' finds none).",
-   "impact": "Users controlling attachment order in a multi-file message; low.",
+   "flutterEntry": "raft_ui RaftComposerAttachments(onReorder) over RaftReorderableWrap; composer_attachments_view.dart reorders the draft's files (the send order)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/composer_attachments_view.dart",
+     "needle": "onReorder"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/reorderable_wrap.dart",
+     "needle": "class RaftReorderableWrap"
+    }
+   ],
+   "justification": "Web SortableAttachment (dnd-kit PointerSensor distance 5, horizontal list strategy): a mouse drags at once past the slop, a finger long-presses first; the other chips shift while one is dragged and the order commits when the drag ends.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -10740,22 +10749,22 @@
    "area": "files-attachments",
    "capability": "Fetch document/diff preview data (CSV, XLSX, markdown, text, PDF, diff) used by attachment card summary lines and the preview modal",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageItem AttachmentCard (summary line: 'First N rows - M columns', diff '+N -M', via fetchAttachmentPreviewSummary) and openDocumentPreview modal",
    "gate": "server preview gate (attachment-preview/enabled)",
-   "flutterEntry": "attachment_preview_dialog.dart fetches the preview when the modal opens",
+   "flutterEntry": "attachment_preview_dialog.dart (the preview modal) and attachment_preview_summary.dart + attachment_card_summary.dart (the card's summary line: CSV rows/columns, kind of the other documents, diff file/hunk counts and +/- totals; one request per attachment per session)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/features/attachment_preview_dialog.dart",
      "needle": "/preview'"
     },
     {
-     "file": "apps/raft_flutter/lib/features/attachment_view.dart",
-     "needle": "'Diff preview'"
+     "file": "apps/raft_flutter/lib/data/attachment_preview_summary.dart",
+     "needle": "/preview'"
     }
    ],
-   "justification": "Preview modal is covered. The inline attachment-card summary (rows/columns count, diff file/hunk stats with +/-) is not fetched: attachment_view.dart shows static 'Document preview' / 'Diff preview' text (code comment says so).",
-   "impact": "Cosmetic: users do not see row/column or diff stats on the card before opening.",
+   "justification": "Web attachmentPreviewSummaryCache + MessageItem DocumentPreviewSummaryLine / DiffPatchStatsLine.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -11294,18 +11303,22 @@
    "area": "files-attachments",
    "capability": "Image lightbox keys: Left/Right arrows go to previous/next image (not while zoomed), 0 resets zoom, Escape closes",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "components/ImageLightbox.tsx handleKeyDown (ArrowLeft/ArrowRight/0) + ui/Lightbox.tsx Escape",
    "gate": "",
-   "flutterEntry": "raft_ui attachment_lightbox.dart binds Escape, Ctrl/Cmd+W and 0/Numpad0 (reset zoom); gallery prev/next are on-screen arrows only, no ArrowLeft/ArrowRight binding",
+   "flutterEntry": "media_browser.dart _shortcuts: ArrowLeft / ArrowRight (no wrap), Home / End, Escape; the lightbox binds 0 to reset the zoom (no arrows while zoomed)",
    "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/media_browser.dart",
+     "needle": "LogicalKeyboardKey.arrowLeft"
+    },
     {
      "file": "packages/raft_ui/lib/src/attachment_lightbox.dart",
      "needle": "LogicalKeyboardKey.digit0"
     }
    ],
-   "justification": "Arrow-key gallery navigation is missing (grep LogicalKeyboardKey.arrowLeft in attachment*.dart finds none).",
-   "impact": "Desktop users paging through several images in a message; mouse needed to move between images.",
+   "justification": "Implemented and tested (image_viewer_test 'ArrowLeft / ArrowRight switch; zoomed they do not'); the on-screen arrow buttons stay out by owner decision 2026-10-13 (docs/parity.md 'Image viewer: no gallery arrows').",
+   "impact": "",
    "size": "S"
   },
   {
@@ -11314,13 +11327,22 @@
    "area": "files-attachments",
    "capability": "Markdown file preview: 'Outline' heading navigation sidebar (xl screens)",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "attachmentPreviewSurfaces MarkdownPreviewPane > MarkdownOutlineNav (hidden below xl)",
    "gate": "viewport >= xl",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter document preview has no Outline panel (grep finds no outline in document_preview.dart).",
-   "impact": "Readers of long markdown attachments on wide desktop windows; low.",
+   "flutterEntry": "raft_ui markdown_outline.dart + RaftDocumentPreview: the Outline column from 1280 px wide; an item scrolls to its heading",
+   "flutterRefs": [
+    {
+     "file": "packages/raft_ui/lib/src/markdown_outline.dart",
+     "needle": "raftExtractMarkdownOutline"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/document_preview.dart",
+     "needle": "RaftMarkdownOutlineNav"
+    }
+   ],
+   "justification": "Web MarkdownOutline: same extraction (h1-h3, fences and indented code skipped, duplicate slugs -2, -3). The document keeps the app's own paper layout beside the column.",
+   "impact": "",
    "size": "S"
   },
   {

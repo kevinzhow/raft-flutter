@@ -40,6 +40,7 @@ export 'src/forwarded_bundle.dart';
 export 'src/composer_suggestions.dart';
 
 export 'src/document_preview.dart';
+export 'src/markdown_outline.dart';
 export 'src/preview_unavailable.dart';
 export 'src/markdown_blocks.dart' show raftSplitMarkdownBlocks;
 export 'src/html_preview.dart';

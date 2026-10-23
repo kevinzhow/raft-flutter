@@ -20,6 +20,7 @@ import 'recipes/token_binding.dart';
 import 'theme.dart';
 import 'tooltip.dart';
 import 'sized_image.dart';
+import 'reorderable_wrap.dart';
 
 /// Web `PendingFile.uploadStatus`: `validating` is the local selection check
 /// that runs before any transfer, `queued` is not shown separately.
@@ -156,8 +157,13 @@ class RaftComposerAttachments extends StatelessWidget {
     required this.onRemove,
     this.onRetry,
     this.onPreview,
+    this.onReorder,
   });
   final List<RaftComposerAttachment> items;
+
+  /// Web `handleAttachmentDragEnd`: the chips were dragged into a new order
+  /// (ids of every chip, in order). Null leaves them fixed.
+  final ValueChanged<List<String>>? onReorder;
   final ValueChanged<RaftComposerAttachment> onRemove;
   final ValueChanged<RaftComposerAttachment>? onRetry;
 
@@ -194,23 +200,24 @@ class RaftComposerAttachments extends StatelessWidget {
           if (chips.isNotEmpty)
             Padding(
               padding: root.padding,
-              child: Wrap(
+              child: RaftReorderableWrap<RaftComposerAttachment>(
                 spacing: (root.columnGap ?? gap) - hang.right,
                 runSpacing: (root.rowGap ?? gap) - hang.top,
-                children: [
-                  for (final item in chips)
-                    _AttachmentChip(
-                      key: ValueKey('composer-attachment-${item.id}'),
-                      item: item,
-                      onRemove: () => onRemove(item),
-                      onPreview:
-                          onPreview != null &&
-                              item.preview != null &&
-                              item.status == RaftComposerAttachmentStatus.ready
-                          ? () => onPreview!(item)
-                          : null,
-                    ),
-                ],
+                items: chips,
+                idOf: (item) => item.id,
+                onReorder: onReorder,
+                itemBuilder: (context, item) => _AttachmentChip(
+                  key: ValueKey('composer-attachment-${item.id}'),
+                  item: item,
+                  sortable: onReorder != null,
+                  onRemove: () => onRemove(item),
+                  onPreview:
+                      onPreview != null &&
+                          item.preview != null &&
+                          item.status == RaftComposerAttachmentStatus.ready
+                      ? () => onPreview!(item)
+                      : null,
+                ),
               ),
             ),
           for (final item in failures) ...[
@@ -254,8 +261,10 @@ class _AttachmentChip extends StatefulWidget {
     required this.item,
     required this.onRemove,
     this.onPreview,
+    this.sortable = false,
   });
   final RaftComposerAttachment item;
+  final bool sortable;
   final VoidCallback onRemove;
   final VoidCallback? onPreview;
   @override
@@ -286,6 +295,10 @@ class _AttachmentChipState extends State<_AttachmentChip> {
     }
     final preview = widget.onPreview;
     Widget content = body;
+    if (preview == null && widget.sortable) {
+      // Web `cursor-grab`: the chip body is the drag handle.
+      content = RaftHoverRegion(cursor: SystemMouseCursors.grab, child: body);
+    }
     if (preview != null) {
       content = Semantics(
         button: true,

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/upload_mime.dart';
 import '../data/upload_failure.dart';
+import '../data/upload_reorder.dart';
 import '../data/workspace_controller.dart';
 
 // Web MessageInput pending attachments (SortableAttachment + failed-upload
@@ -72,6 +75,17 @@ Widget? composerAttachmentsFor(
     onPreview: (item) {
       final draft = byId[item.id];
       if (draft != null) onPreview(draft);
+    },
+    // Web `SortableAttachment`: chips drag into a new send order.
+    onReorder: (ids) {
+      final scope = w.draftScope(thread: thread);
+      final keys = [for (final id in ids) ?int.tryParse(id)];
+      if (scope == null || !reorderUploadDrafts(drafts, keys)) return;
+      // Staged files are persisted in the new order.
+      if (drafts.any((d) => d.local != null)) {
+        unawaited(w.composer.saveScope(scope));
+      }
+      w.composer.uploads.changed(scope);
     },
   );
 }

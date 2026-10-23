@@ -53,6 +53,13 @@ const _parsedDocumentsKept = 4;
 @visibleForTesting
 void clearParsedMarkdownDocuments() => _parsedDocuments.clear();
 
+/// Lets the owner of a [RaftLazyMarkdownDocument] ask it to build every block
+/// (the outline reveals a heading that may sit in a block not built yet).
+class RaftLazyMarkdownHandle {
+  /// Set while a document is mounted; completes once every block is built.
+  Future<void> Function()? expandAll;
+}
+
 /// A long Markdown document as a lazily built list of blocks on one paper
 /// sheet (borders on the sides, top of the first block and bottom of the
 /// last). Only the blocks near the viewport are built and laid out, and the
@@ -64,8 +71,14 @@ class RaftLazyMarkdownDocument extends StatefulWidget {
     required this.recipe,
     required this.truncated,
     required this.shadow,
+    this.controller,
+    this.handle,
   });
   final String source;
+
+  /// The list's scroll controller, for the owner's outline navigation.
+  final ScrollController? controller;
+  final RaftLazyMarkdownHandle? handle;
   final DocumentAttachmentRecipe recipe;
   final bool truncated;
   final List<BoxShadow> shadow;
@@ -114,18 +127,47 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
   /// Select All was asked for: every block is built so the selection covers
   /// the whole document (as the single column did), until it is cleared.
   var expanded = false, selectAllPending = false;
+
+  /// An outline jump built every block: they stay built (a selection being
+  /// cleared must not drop the heading the reader is looking at).
+  var pinned = false;
   BuildContext? insideArea;
 
   @override
   void initState() {
     super.initState();
+    widget.handle?.expandAll = expandAll;
     load();
   }
 
   @override
   void didUpdateWidget(RaftLazyMarkdownDocument old) {
     super.didUpdateWidget(old);
+    if (!identical(old.handle, widget.handle)) {
+      old.handle?.expandAll = null;
+      widget.handle?.expandAll = expandAll;
+    }
     if (old.source != widget.source) load();
+  }
+
+  @override
+  void dispose() {
+    widget.handle?.expandAll = null;
+    super.dispose();
+  }
+
+  /// Builds every block (as Select All does) and waits for the frames that
+  /// lay them out. They stay built from then on ([pinned]).
+  Future<void> expandAll() async {
+    // The blocks come from the off-thread parse; until it lands only the
+    // first block exists.
+    for (var frames = 0; mounted && parsed == null && frames < 300; frames++) {
+      await SchedulerBinding.instance.endOfFrame;
+    }
+    pinned = true;
+    if (!expanded && mounted) setState(() => expanded = true);
+    await SchedulerBinding.instance.endOfFrame;
+    await SchedulerBinding.instance.endOfFrame;
   }
 
   void adopt(String source, RaftParsedMarkdown value) {
@@ -204,7 +246,7 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
 
   /// The selection was cleared: lazy again.
   void selectionCleared() {
-    if (!expanded || selectAllPending) return;
+    if (!expanded || selectAllPending || pinned) return;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (mounted && expanded && !selectAllPending) {
         setState(() => expanded = false);
@@ -235,6 +277,7 @@ class _RaftLazyMarkdownDocumentState extends State<RaftLazyMarkdownDocument> {
             builder: (context) {
               insideArea = context;
               return CustomScrollView(
+                controller: widget.controller,
                 scrollCacheExtent: expanded
                     ? const ScrollCacheExtent.pixels(_wholeDocument)
                     : null,

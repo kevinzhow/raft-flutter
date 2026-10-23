@@ -2008,3 +2008,9 @@ Not owner decisions yet; each is listed so a reviewer can accept or send it back
 * Unfinished-uploads banner wording: Web says "This browser no longer has the original file ... let the original tab finish uploading"; the app says "This app ... the original window". The behaviour is the same (list the viewer's active sessions of the channel, hide rows a pending chip owns, Cancel upload).
 * Unfinished direct uploads are not persisted across an app restart: like Web's draft cache they live with the running session, so after a restart the banner is the way to cancel them.
 * The presigned PUT does not follow redirects (browser XHR does); storage hosts answer the PUT directly.
+
+### WP-FILES 2/3: pending attachments, card summaries, Outline
+
+* Pending chips: a finger long-presses before it drags (Web's PointerSensor also starts on touch pointers, but a swipe on a phone then scrolls the page; the app keeps swipes free). Mouse and pen drag past a 5 px slop like Web.
+* Card summaries fetch `GET /attachments/:id/preview` for document and diff cards once the message exists, like Web; the answer is cached for the session and shared by concurrent cards. The preview modal still keeps its own on-disk cache, so opening a card does not reuse the summary response.
+* Markdown Outline: shown from 1280 px wide beside the app's existing document layout (the paper keeps the app's inset; Web's grid also caps the paper at 48rem). The column is level with the first block and keeps 24 px under the top while scrolling (Web's `sticky top-20`). A jump finds the heading paragraph by its text (the n-th for a repeated title), so a heading whose rendered text differs from its source (markup characters inside words) may not be found.

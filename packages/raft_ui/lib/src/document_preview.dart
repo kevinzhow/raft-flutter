@@ -4,6 +4,7 @@ import 'raft_selection_area.dart';
 
 import 'localization.dart';
 import 'lazy_markdown_document.dart';
+import 'markdown_outline.dart';
 import 'message_body.dart';
 import 'design_primitives.dart';
 import 'dialog_card.dart' show RaftShadowSet;
@@ -48,6 +49,87 @@ class RaftDocumentPreview extends StatefulWidget {
 
 class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
   int sheet = 0;
+
+  // Markdown outline: the document scrolls through [markdownScroll] and its
+  // headings are found inside [markdownBody] (Web `MarkdownOutlineNav` links).
+  final markdownScroll = ScrollController();
+  final markdownBody = GlobalKey();
+  final lazyMarkdown = RaftLazyMarkdownHandle();
+  String? _outlineSource;
+  List<RaftMarkdownOutlineItem> _outline = const [];
+
+  List<RaftMarkdownOutlineItem> outlineOf(String source) {
+    if (_outlineSource != source) {
+      _outline = raftExtractMarkdownOutline(source);
+      _outlineSource = source;
+    }
+    return _outline;
+  }
+
+  @override
+  void dispose() {
+    markdownScroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> revealHeading(RaftMarkdownOutlineItem item) async {
+    // A long document builds only the blocks near the viewport: build them
+    // all so the heading is laid out, then find it.
+    await lazyMarkdown.expandAll?.call();
+    await WidgetsBinding.instance.endOfFrame;
+    final root = markdownBody.currentContext?.findRenderObject();
+    if (!mounted || root == null || !markdownScroll.hasClients) return;
+    final paragraph = raftFindHeadingParagraph(
+      root,
+      item,
+      raftHeadingOccurrence(_outline, item),
+    );
+    if (paragraph != null) {
+      raftScrollToParagraph(markdownScroll.position, paragraph);
+    }
+  }
+
+  /// Web `MarkdownPreviewPane` at `xl`: the outline column beside the document.
+  Widget withOutline(
+    BuildContext context,
+    List<RaftMarkdownOutlineItem> outline,
+    Widget document,
+    double top,
+  ) => Align(
+    alignment: Alignment.topCenter,
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 1152),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: raftMarkdownOutlineWidth,
+            child: ListenableBuilder(
+              listenable: markdownScroll,
+              builder: (context, _) {
+                // Sticky: level with the first block, then 24px under the top.
+                final scrolled = markdownScroll.hasClients
+                    ? markdownScroll.offset
+                    : 0.0;
+                return SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    top: (top - scrolled).clamp(24.0, top),
+                    bottom: 24,
+                  ),
+                  child: RaftMarkdownOutlineNav(
+                    outline: outline,
+                    onSelect: (item) => revealHeading(item),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 24),
+          Expanded(child: document),
+        ],
+      ),
+    ),
+  );
 
   // The lazy text layout splits its source once per content, not per build.
   String? _linesSource;
@@ -348,21 +430,44 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
         child: Padding(padding: recipe.inset, child: child),
       ),
     );
+    final markdownSource = '${data['markdown'] ?? ''}';
+    final outline = kind == 'markdown'
+        ? outlineOf(markdownSource)
+        : const <RaftMarkdownOutlineItem>[];
+    final showOutline =
+        outline.isNotEmpty &&
+        MediaQuery.sizeOf(context).width >= raftMarkdownOutlineBreakpoint;
     if (kind == 'markdown' &&
-        '${data['markdown'] ?? ''}'.length > widget.lazyMarkdownChars) {
-      return RaftLazyMarkdownDocument(
-        source: '${data['markdown']}',
+        markdownSource.length > widget.lazyMarkdownChars) {
+      final lazy = RaftLazyMarkdownDocument(
+        key: markdownBody,
+        source: markdownSource,
         recipe: recipe,
         truncated: truncated,
         shadow: shadow,
+        controller: markdownScroll,
+        handle: lazyMarkdown,
       );
+      return showOutline
+          ? ColoredBox(
+              color: recipe.background,
+              child: withOutline(
+                context,
+                outline,
+                lazy,
+                recipe.markdownInset(MediaQuery.sizeOf(context).width).top,
+              ),
+            )
+          : lazy;
     }
     if (kind == 'markdown') {
       final width = MediaQuery.sizeOf(context).width;
-      return ColoredBox(
+      final document = ColoredBox(
         color: recipe.background,
         child: SingleChildScrollView(
+          controller: markdownScroll,
           child: Padding(
+            key: markdownBody,
             padding: recipe.markdownInset(width),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -405,6 +510,17 @@ class _RaftDocumentPreviewState extends State<RaftDocumentPreview> {
           ),
         ),
       );
+      return showOutline
+          ? ColoredBox(
+              color: recipe.background,
+              child: withOutline(
+                context,
+                outline,
+                document,
+                recipe.markdownInset(width).top,
+              ),
+            )
+          : document;
     }
     if (!tabular && '${data['text'] ?? ''}'.length > raftLazyTextLines) {
       final lines = linesOf('${data['text']}');

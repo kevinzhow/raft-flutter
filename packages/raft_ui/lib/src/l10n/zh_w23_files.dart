@@ -1,7 +1,7 @@
 // Chinese (zh) strings, see the catalog header in ../localization.dart.
 // English source text is the key. Part of `raftChinese` (merged by the generated zh_index.g.dart).
 // Web v1.21.23-source.1 zh-cn.ts wording: direct attachment upload (composer unfinished-uploads banner, direct PUT failure).
-// The ICU plural of recoverableUploadsTitle is split into its one/other English forms (raftText does not interpret ICU).
+// The ICU plurals of recoverableUploadsTitle, diffStats and documentSummaryFirst/Preview are split into its one/other English forms (raftText does not interpret ICU).
 // The banner description says "app"/"window" where Web says "browser"/"tab" (this is not a browser); the zh follows the same sentence.
 const Map<String, String> zhCatalogW23Files = <String, String>{
   // message.composer.recoverableUploadsTitle (one)
@@ -15,4 +15,16 @@ const Map<String, String> zhCatalogW23Files = <String, String>{
   "Cancel unfinished upload {file}": "取消未完成上传 {file}",
   // message.composer.uploadError.putFailed
   "Direct object upload failed with HTTP {status}.": "直传对象失败，HTTP {status}。",
+  // message.messageItem.diffStats: "{count} file(s)" already in zh_share_forward.dart
+  // message.messageItem.diffStats (hunkCount)
+  "{count} hunk": "{count} 个差异块",
+  "{count} hunks": "{count} 个差异块",
+  // message.messageItem.documentSummaryFirst (rowCount; "First {count} rows" already in zh_native_only.dart)
+  "First {count} row": "前 {count} 行",
+  // message.messageItem.documentSummaryPreview (rowCount)
+  "Preview {count} row": "预览 {count} 行",
+  "Preview {count} rows": "预览 {count} 行",
+  // documentSummaryFirst / documentSummaryPreview (columnCount)
+  "{count} column": "{count} 列",
+  "{count} columns": "{count} 列",
 };

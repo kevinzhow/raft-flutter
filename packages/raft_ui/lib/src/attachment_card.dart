@@ -31,6 +31,8 @@ class RaftAttachmentCard extends StatelessWidget {
     this.error,
     this.onRetry,
     this.summary,
+    this.summaryAdditions,
+    this.summaryDeletions,
     this.metaLabel,
     this.previewAffordance = false,
     this.previewPending = false,
@@ -40,6 +42,10 @@ class RaftAttachmentCard extends StatelessWidget {
 
   /// Web AttachmentChip summary line (e.g. "Document preview").
   final String? summary;
+
+  /// A diff card's `+N` / `-M` totals after the [summary] (Web
+  /// `MessageAttachmentDiffAddition` / `DiffDeletion`, 6px apart).
+  final int? summaryAdditions, summaryDeletions;
 
   /// Web `AttachmentMetaText` label (mime type, "HTML preview", …); when set,
   /// the meta row reads `label · size` and ends with the decorative
@@ -73,6 +79,15 @@ class RaftAttachmentCard extends StatelessWidget {
   /// `text-[10px]` summary / meta lines: Brutal resolves the utility's 1.4286
   /// line height (14.29px); Elegant inherits the message content's
   /// `leading-5.25` (21px).
+  /// `gap-1.5` then the coloured total.
+  static List<InlineSpan> _diffTotal(String text, Color? color) => [
+    const WidgetSpan(child: SizedBox(width: 6)),
+    TextSpan(
+      text: text,
+      style: TextStyle(color: color),
+    ),
+  ];
+
   static double metaLineHeight(RaftTokens t) => t.brutal ? 20 / 14 : 21 / 10;
 
   @override
@@ -165,8 +180,22 @@ class RaftAttachmentCard extends StatelessWidget {
                   message: summary!,
                   onlyWhenTruncated: true,
                   excludeFromSemantics: true,
-                  child: Text(
-                    summary!,
+                  child: Text.rich(
+                    TextSpan(
+                      text: summary!,
+                      children: [
+                        if (summaryAdditions != null)
+                          ..._diffTotal(
+                            '+$summaryAdditions',
+                            t.colors['success-strong'],
+                          ),
+                        if (summaryDeletions != null)
+                          ..._diffTotal(
+                            '-$summaryDeletions',
+                            t.colors['danger-strong'],
+                          ),
+                      ],
+                    ),
                     maxLines: grows ? null : 1,
                     overflow: grows ? TextOverflow.clip : TextOverflow.ellipsis,
                     style: component.metadata.copyWith(

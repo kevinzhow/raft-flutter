@@ -16,6 +16,7 @@ import '../data/attachment_image_repository.dart';
 import '../platform/attachment_files.dart';
 import '../platform/native_sharing.dart';
 import '../platform/video_frame_probe.dart';
+import 'attachment_card_summary.dart';
 import 'attachment_preview_dialog.dart';
 import 'attachment_html_preview.dart';
 import 'attachment_image_loader.dart';
@@ -115,6 +116,9 @@ class _AttachmentViewState extends State<AttachmentView> {
   CancelToken imageCancel = CancelToken();
   late AttachmentTransfers transfers;
 
+  /// Document and diff cards: the summary line fetched for the message.
+  AttachmentCardSummary? cardSummary;
+
   /// The list preview: thumbnail or original decoded at the reserved box.
   ImageProvider? imageProvider;
   final imagePresentation = ValueNotifier<int>(0);
@@ -198,6 +202,7 @@ class _AttachmentViewState extends State<AttachmentView> {
     metadataFingerprint = fingerprint();
     captureAuthority();
     transfers = newTransfers();
+    startCardSummary();
     w.addListener(scopeChanged);
     if (isImage && attachmentDeclaredShape(widget.metadata) == null) {
       // No size in the message: the one learnt before (this session or on
@@ -516,8 +521,33 @@ class _AttachmentViewState extends State<AttachmentView> {
     fadeIn = false;
     captureAuthority();
     transfers = newTransfers();
+    startCardSummary();
     w.addListener(scopeChanged);
     beginImage();
+  }
+
+  /// Web MessageItem: a document or diff card asks for its preview summary
+  /// once its message exists (an optimistic row has nothing to ask about).
+  void startCardSummary() {
+    cardSummary?.dispose();
+    final kind = attachmentPreviewKind(widget.metadata);
+    final lowerName = name.toLowerCase();
+    final type = mime.toLowerCase().split(';').first.trim();
+    final diff =
+        lowerName.endsWith('.diff') ||
+        lowerName.endsWith('.patch') ||
+        const [
+          'text/x-diff',
+          'text/x-patch',
+          'application/x-patch',
+        ].contains(type);
+    cardSummary = diff || kind == 'document' || kind == 'pdf'
+        ? AttachmentCardSummary.start(
+            w,
+            widget.metadata['id'] as String?,
+            fetch: widget.messageId != null && !widget.exportMode,
+          )
+        : null;
   }
 
   void exportReady() {
@@ -551,6 +581,7 @@ class _AttachmentViewState extends State<AttachmentView> {
   @override
   void dispose() {
     ++bindingRevision;
+    cardSummary?.dispose();
     hiddenTimer?.cancel();
     hiddenTimer = null;
     w.removeListener(scopeChanged);
@@ -865,7 +896,8 @@ class _AttachmentViewState extends State<AttachmentView> {
   /// Web MessageItem AttachmentChip branches: document previews (summary
   /// "Document preview", mime meta), HTML / video / audio previews, else a
   /// download card with the mime type.
-  ({String? summary, String meta, bool preview}) get webChip {
+  ({String? summary, String meta, bool preview, AttachmentCardText? text})
+  get webChip {
     final kind = attachmentPreviewKind(widget.metadata);
     final type = mime.toLowerCase().split(';').first.trim();
     final html =
@@ -878,6 +910,7 @@ class _AttachmentViewState extends State<AttachmentView> {
         summary: null,
         meta: raftText(context, 'Video preview'),
         preview: true,
+        text: null,
       );
     }
     if (kind == 'audio') {
@@ -885,6 +918,7 @@ class _AttachmentViewState extends State<AttachmentView> {
         summary: null,
         meta: raftText(context, 'Audio preview'),
         preview: true,
+        text: null,
       );
     }
     final lowerName = name.toLowerCase();
@@ -895,19 +929,23 @@ class _AttachmentViewState extends State<AttachmentView> {
           'text/x-patch',
           'application/x-patch',
         ].contains(type)) {
-      // DiffPatchStatsLine: the stats need the fetched preview; until then
-      // (and in this client) the summary line reads "Diff preview".
+      // DiffPatchStatsLine: "Diff preview" until the fetched preview gives
+      // the file / hunk counts and the +/- totals.
+      final text = AttachmentCardText.diff(context, cardSummary?.value);
       return (
-        summary: raftText(context, 'Diff preview'),
+        summary: text.summary,
         meta: mimeLabel ?? raftText(context, 'patch'),
         preview: false,
+        text: text,
       );
     }
     if (kind != null) {
+      final text = AttachmentCardText.document(context, cardSummary?.value);
       return (
-        summary: raftText(context, 'Document preview'),
-        meta: mimeLabel ?? raftText(context, 'document'),
+        summary: text.summary,
+        meta: text.meta ?? mimeLabel ?? raftText(context, 'document'),
         preview: true,
+        text: text,
       );
     }
     if (html) {
@@ -915,12 +953,14 @@ class _AttachmentViewState extends State<AttachmentView> {
         summary: null,
         meta: raftText(context, 'HTML preview'),
         preview: true,
+        text: null,
       );
     }
     return (
       summary: null,
       meta: mimeLabel ?? raftText(context, 'file'),
       preview: false,
+      text: null,
     );
   }
 
@@ -985,28 +1025,43 @@ class _AttachmentViewState extends State<AttachmentView> {
     return card(context);
   }
 
-  Widget card(BuildContext context) => RaftAttachmentCard(
-    summary: webChip.summary,
-    metaLabel: webChip.meta,
-    previewAffordance: webChip.preview,
-    exportMode: widget.exportMode,
-    filename: name,
-    mimeType: mime,
-    imageExtent: widget.imageExtent,
-    imageWidth: (widget.metadata['width'] as num?)?.toDouble(),
-    imageHeight: (widget.metadata['height'] as num?)?.toDouble(),
-    sizeBytes: (widget.metadata['sizeBytes'] as num?)?.toInt(),
-    // Image previews load behind a neutral placeholder box (Web's tinted
-    // image box): no spinner and no transfer text in list tiles.
-    busy: saving,
-    previewPending: loading,
-    error: error,
-    onRetry: loadImage,
-    downloadFailed: downloadFailed,
-    onOpen: open,
-    onCancel: saving ? transfers.cancel.cancel : null,
-    preview: imageProvider == null ? null : previewImage(imageProvider!),
-  );
+  Widget card(BuildContext context) {
+    final summary = cardSummary;
+    return summary == null
+        ? rawCard(context)
+        : ListenableBuilder(
+            listenable: summary,
+            builder: (context, _) => rawCard(context),
+          );
+  }
+
+  Widget rawCard(BuildContext context) {
+    final chip = webChip;
+    return RaftAttachmentCard(
+      summary: chip.summary,
+      summaryAdditions: chip.text?.additions,
+      summaryDeletions: chip.text?.deletions,
+      metaLabel: chip.meta,
+      previewAffordance: chip.preview,
+      exportMode: widget.exportMode,
+      filename: name,
+      mimeType: mime,
+      imageExtent: widget.imageExtent,
+      imageWidth: (widget.metadata['width'] as num?)?.toDouble(),
+      imageHeight: (widget.metadata['height'] as num?)?.toDouble(),
+      sizeBytes: (widget.metadata['sizeBytes'] as num?)?.toInt(),
+      // Image previews load behind a neutral placeholder box (Web's tinted
+      // image box): no spinner and no transfer text in list tiles.
+      busy: saving,
+      previewPending: loading,
+      error: error,
+      onRetry: loadImage,
+      downloadFailed: downloadFailed,
+      onOpen: open,
+      onCancel: saving ? transfers.cancel.cancel : null,
+      preview: imageProvider == null ? null : previewImage(imageProvider!),
+    );
+  }
 
   Widget previewImage(ImageProvider provider) {
     // ignore: raft_lints/avoid_raw_image_decode -- The provider comes from an AttachmentImageRepository lease: already decoded at the target size and shared with the message bubble.
