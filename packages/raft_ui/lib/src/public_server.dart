@@ -288,12 +288,28 @@ class RaftPublicBottomBanner extends StatelessWidget {
         ),
         // On phones the copy and the actions stay on one row (small text and
         // small buttons): stacked, the banner was ~105px tall on a 390px phone.
-        child: Row(
-          children: [
-            Expanded(child: copy),
-            const SizedBox(width: RaftSpace.x2),
-            buttons,
-          ],
+        child: LayoutBuilder(
+          builder: (context, box) => Row(
+            children: [
+              Expanded(child: copy),
+              const SizedBox(width: RaftSpace.x2),
+              // The copy keeps at least 120px beside the actions; wider
+              // actions (large text, long labels) shrink to fit instead of
+              // squeezing the sentence into a tall one-word column.
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: box.maxWidth.isFinite
+                      ? (box.maxWidth - RaftSpace.x2 - 120).clamp(0, 1e9)
+                      : double.infinity,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: buttons,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -337,6 +337,8 @@ void registerCloseViewerTests(TestPart part) {
       t.view.physicalSize = size;
       t.view.devicePixelRatio = 1;
       addTearDown(t.view.reset);
+      // A fresh page for every affordance: the phone starts on the list.
+      await t.pumpWidget(const SizedBox());
       await t.pumpWidget(
         MaterialApp(
           theme: raftTheme(RaftFamily.elegant),
@@ -351,6 +353,10 @@ void registerCloseViewerTests(TestPart part) {
           ),
         ),
       );
+      await t.pumpAndSettle();
+      // Phones show the channel list first (Web v1.21.23): open the channel.
+      final channel = find.byKey(const ValueKey('public-channel-c1'));
+      if (size.width < 640) await t.tap(channel);
       await t.pumpAndSettle();
       await t.tap(find.byKey(const ValueKey('public-thread-open-m2')));
       await t.pumpAndSettle();

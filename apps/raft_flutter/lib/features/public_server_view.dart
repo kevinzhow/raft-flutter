@@ -1453,32 +1453,40 @@ class _PublicServerViewState extends State<PublicServerView> {
         ],
       );
     }
-    return RaftPublicServerLayout(
-      rail: band >= 768 && server != null ? rail() : null,
-      columns: columns,
-      overlays: [
-        // The sign-in prompt is only true for a visitor who is not signed in.
-        if (selectionNotice && !authenticated)
-          RaftPublicFloatingBanner(
-            key: const ValueKey('public-server-selection-notice'),
-            top: true,
-            message: tr(
-              'You are viewing public channels without signing in. Sign in or create an account to continue in Raft.',
+    // Phones show one column at a time: system back leaves a channel for the
+    // channel list (an open thread closes first, through its own back entry).
+    return PopScope(
+      canPop: sm || settings || !phoneChannel || thread != null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) showChannelList();
+      },
+      child: RaftPublicServerLayout(
+        rail: band >= 768 && server != null ? rail() : null,
+        columns: columns,
+        overlays: [
+          // The sign-in prompt is only true for a visitor who is not signed in.
+          if (selectionNotice && !authenticated)
+            RaftPublicFloatingBanner(
+              key: const ValueKey('public-server-selection-notice'),
+              top: true,
+              message: tr(
+                'You are viewing public channels without signing in. Sign in or create an account to continue in Raft.',
+              ),
+              action: RaftSettingsRecipeButton(
+                label: tr('Sign in'),
+                size: RaftButtonRecipeSize.xs,
+                onPressed: widget.onSignIn,
+              ),
             ),
-            action: RaftSettingsRecipeButton(
-              label: tr('Sign in'),
-              size: RaftButtonRecipeSize.xs,
-              onPressed: widget.onSignIn,
+          if (joinError.isNotEmpty)
+            RaftPublicFloatingBanner(
+              key: const ValueKey('public-server-join-error'),
+              top: false,
+              warning: true,
+              message: joinError,
             ),
-          ),
-        if (joinError.isNotEmpty)
-          RaftPublicFloatingBanner(
-            key: const ValueKey('public-server-join-error'),
-            top: false,
-            warning: true,
-            message: joinError,
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

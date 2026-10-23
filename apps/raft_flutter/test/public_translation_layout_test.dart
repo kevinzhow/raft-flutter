@@ -296,6 +296,21 @@ void main() {
       expect(find.text('Bonjour tout le monde'), findsNothing);
     });
 
+    testWidgets('system back leaves the channel for the list first', (t) async {
+      await _mount(t, _Client(translation: false), size: const Size(620, 900));
+      await t.tap(find.byKey(const ValueKey('public-channel-c1')));
+      await t.pumpAndSettle();
+      expect(find.text('Bonjour tout le monde'), findsOneWidget);
+      // The page is the app's root here: a handled back reports true.
+      expect(await t.binding.handlePopRoute(), isTrue);
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('public-server-channel-sidebar')),
+        findsOneWidget,
+      );
+      expect(find.text('Bonjour tout le monde'), findsNothing);
+    });
+
     testWidgets('a link to a channel opens it directly', (t) async {
       await _mount(
         t,
