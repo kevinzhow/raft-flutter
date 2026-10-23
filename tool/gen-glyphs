@@ -64,6 +64,8 @@ LEGACY = [
 # (DIR = a lucide-react WEB_LUCIDE package) or a full `--import-sources`.
 FLUTTER_ADDED = [
     'bold', 'heading', 'italic', 'listOrdered', 'minimize2', 'strikethrough', 'table',
+    # CreateAgentDialog "Suggest a random name" (Dices), Web v1.21.23.
+    'dices',
 ]
 # Whole-icon fill (`<Bookmark fill="currentColor">` in Web, see citations).
 FILLED = {

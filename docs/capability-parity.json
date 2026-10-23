@@ -5857,8 +5857,8 @@
      "needle": "Create external agent"
     }
    ],
-   "justification": "Managed create covers computer/name/description/runtime/model/effort/mode/env/capacity/onboarding/action-card. Gaps: no last-used-config reuse (Web remembers runtime/model/computer per server), no random pixel avatar assigned on create, external create form has no 'Run on antiproton' hosted option, no channel auto-join create entry, legacy (non-v2) runtime fields incl. saved provider/built-in provider/Pi provider/local plugins absent from create.",
-   "impact": "Admins creating several similar agents re-enter runtime/model each time; hosted agents and in-channel create unavailable.",
+   "justification": "Managed create covers computer/name/description/runtime/model/effort/mode/env/capacity/onboarding/action-card, the remembered last computer/runtime/model, a suggested name with the dice button, the random pixel avatar and the dialog side of the channel Add members entry (autoJoinChannelName context line, prefilledNameNote). Gaps: the external create form has no 'Run on antiproton' hosted option; the Add members entry that opens the dialog and joins the channel is not wired yet; Web's legacy (non-v2) runtime fields are not used, Flutter renders the server's v2 runtime form (saved provider, built-in provider, Pi provider, local plugins are fields of that form).",
+   "impact": "Hosted agents and in-channel create unavailable.",
    "size": "M"
   },
   {
@@ -6631,14 +6631,23 @@
    "area": "agents-computers-runtimes",
    "capability": "Create Agent remembers last computer/runtime/model/custom model per server and preselects them",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "CreateAgentDialog readCreateAgentLastConfig / saved after successful create",
    "gate": "not onboarding/external",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter always starts from defaults.",
-   "impact": "Repeat creators re-pick runtime and model every time.",
-   "size": "S"
+   "flutterEntry": "create_agent_dialog.dart restores the remembered computer / runtime / model; create_agent_last_config.dart keeps the record in the device preference raft:create-agent:last-config:v1:<server id> (Web's localStorage key and JSON)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
+     "needle": "CreateAgentLastConfig.read("
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/create_agent_last_config.dart",
+     "needle": "raft:create-agent:last-config:v1:"
+    }
+   ],
+   "justification": "Written after a successful create; read when the dialog opens: the remembered computer when it is online, then its runtime when the computer still offers it, then its model when the runtime's form still lists it (or the source allows a custom value). A remembered value that is no longer available falls back to the defaults. Web applies the model to its legacy fields; Flutter applies it to the v2 form's `model` field (Web's v2 form does not use it).",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",
@@ -6666,18 +6675,47 @@
   },
   {
    "kind": "ui",
+   "id": "ui:agents.create-random-name",
+   "area": "agents-computers-runtimes",
+   "capability": "Create Agent starts with a suggested adjective-noun name and a dice button ('Suggest a random name') that rolls another, avoiding names already taken",
+   "background": false,
+   "status": "covered",
+   "webEntry": "CreateAgentDialog name StableField labelAccessory (Dices, data-testid create-agent-random-name) + shared suggestAgentName",
+   "gate": "not onboarding; a prefilled name (even empty) is kept",
+   "flutterEntry": "create_agent_dialog.dart name field label accessory (key create-agent-random-name) + data/agent_name_generator.dart",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
+     "needle": "create-agent-random-name"
+    },
+    {
+     "file": "apps/raft_flutter/lib/data/agent_name_generator.dart",
+     "needle": "String suggestAgentName("
+    }
+   ],
+   "justification": "Word lists copied from shared agentNameGenerator.ts (90 x 90 pairs); the taken names come from the agent directory, deleted agents do not hold their name.",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
    "id": "ui:agents.create-random-avatar",
    "area": "agents-computers-runtimes",
    "capability": "New agents get a random pixel avatar at creation",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "CreateAgentDialog createAgent({avatarUrl: pixel:<random>})",
    "gate": "createAgents",
-   "flutterEntry": "create_agent_dialog.dart sends no avatarUrl except onboarding 'pixel:mug'",
-   "flutterRefs": [],
-   "justification": "Agents created from Flutter have no avatar until edited (Web assigns a random preset).",
-   "impact": "Cosmetic; every Flutter-created agent looks identical.",
-   "size": "S"
+   "flutterEntry": "create_agent_dialog.dart sends avatarUrl 'pixel:<random preset>' (the 16 non-reserved presets, raftAgentAvatarChoices); onboarding keeps 'pixel:mug'",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/create_agent_dialog.dart",
+     "needle": "raftAgentAvatarChoices"
+    }
+   ],
+   "justification": "Same rule as Web: finch and mug are reserved, every other new agent gets one random preset at creation.",
+   "impact": "",
+   "size": ""
   },
   {
    "kind": "ui",

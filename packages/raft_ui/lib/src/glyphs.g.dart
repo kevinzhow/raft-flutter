@@ -204,6 +204,9 @@ enum RaftGlyph {
   /// lucide `credit-card` 1.55.0.
   /// Web: components/layout/Sidebar.tsx:9 (+3 more).
   creditCard(_creditCardV1_55_0, 'credit-card', '1.55.0'),
+  /// lucide `dices` 1.55.0.
+  /// Flutter-only glyph (message composer Markdown toolbar); no Web import uses it.
+  dices(_dicesV1_55_0, 'dices', '1.55.0'),
   /// lucide `download` 1.55.0.
   /// Web: components/ImageLightbox.tsx:6 (+10 more).
   download(_downloadV1_55_0, 'download', '1.55.0'),
@@ -922,6 +925,15 @@ const _creditCardV1_55_0 = <_LucideNode>[
   _LucideNode(_LucideKind.rect, [2.0, 5.0, 20.0, 14.0, 2.0, 2.0]),
   _LucideNode(_LucideKind.line, [2.0, 10.0, 22.0, 10.0]),
   _LucideNode.path('M6 14h2'),
+];
+// dices.js lucide-react 1.55.0 sha256 a019447ee8a0ff51
+const _dicesV1_55_0 = <_LucideNode>[
+  _LucideNode(_LucideKind.rect, [2.0, 10.0, 12.0, 12.0, 2.0, 2.0]),
+  _LucideNode.path('m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6'),
+  _LucideNode.path('M6 18h.01'),
+  _LucideNode.path('M10 14h.01'),
+  _LucideNode.path('M15 6h.01'),
+  _LucideNode.path('M18 9h.01'),
 ];
 // download.js lucide-react 1.55.0 sha256 2c0b6b6a4c192f37
 const _downloadV1_55_0 = <_LucideNode>[

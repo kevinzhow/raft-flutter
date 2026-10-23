@@ -285,7 +285,9 @@ ParityCase _createAgent(
               context,
               w,
               suggestedComputer: 'computer-mbp',
-              initialName: empty ? null : name ?? props['name'] as String?,
+              // Web: `prefilledName=""` for the empty case; only an absent
+              // prefill starts with a suggested name.
+              initialName: empty ? '' : name ?? props['name'] as String?,
               initialDescription: empty
                   ? null
                   : props['description'] as String?,

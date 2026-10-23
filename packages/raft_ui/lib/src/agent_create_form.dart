@@ -1104,6 +1104,57 @@ class RaftAgentFieldNote extends StatelessWidget {
   }
 }
 
+/// CreateAgentDialog `autoJoinChannelName` line: `rounded-container
+/// bg-info-soft px-3 py-2 text-footnote font-semibold text-foreground`, a plain
+/// persistent context line (not a Banner) that stays until submit. [text] is
+/// already localized.
+class RaftAgentContextLine extends StatelessWidget {
+  const RaftAgentContextLine(this.text, {super.key});
+  final String text;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 3 * _tw,
+        vertical: 2 * _tw,
+      ),
+      decoration: BoxDecoration(
+        color: t.colors['info-soft'],
+        borderRadius: BorderRadius.circular(t.radius),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13, // text-footnote
+          height: 18 / 13,
+          fontWeight: FontWeight.w600,
+          color: t.colors['foreground'],
+        ),
+      ),
+    );
+  }
+}
+
+/// CreateAgentDialog `prefilledNameNote`: `text-caption text-foreground-hint`
+/// paragraph under the name field. [text] is already localized.
+class RaftAgentHintNote extends StatelessWidget {
+  const RaftAgentHintNote(this.text, {super.key});
+  final String text;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12, // text-caption
+        height: 16 / 12,
+        color: t.colors['foreground-hint'] ?? t.muted,
+      ),
+    );
+  }
+}
+
 /// RuntimeConfigFields "More" toggle: `flex items-center gap-1 text-sm
 /// font-bold uppercase tracking-wide text-foreground-muted` with a 16px
 /// chevron; open content sits `mt-3 space-y-3` below.

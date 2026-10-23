@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:raft_ui/raft_ui.dart';
 
@@ -21,6 +23,9 @@ Future<Map<String, dynamic>?> showManagedAgentForm(
   String? actionCardMessageId,
   int? actionCardConfirmationVersion,
   VoidCallback? onConnectComputer,
+  String? autoJoinChannelName,
+  String? prefilledNameNote,
+  math.Random? random,
 }) async {
   final authority = workspaceAuthority(w);
   bool current() =>
@@ -49,6 +54,9 @@ Future<Map<String, dynamic>?> showManagedAgentForm(
         actionCardConfirmationVersion: actionCardConfirmationVersion,
         onCreated: (value) => created = value,
         onConnectComputer: onConnectComputer,
+        autoJoinChannelName: autoJoinChannelName,
+        prefilledNameNote: prefilledNameNote,
+        random: random,
       ),
     ),
   );

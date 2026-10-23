@@ -1280,7 +1280,8 @@
    "ListOrdered": "list-ordered@1.55.0",
    "Minimize2": "minimize-2@1.55.0",
    "Strikethrough": "strikethrough@1.55.0",
-   "Table": "table@1.55.0"
+   "Table": "table@1.55.0",
+   "Dices": "dices@1.55.0"
   }
  },
  "icons": {
@@ -2710,6 +2711,54 @@
      "tag": "path",
      "attrs": {
       "d": "M6 14h2"
+     }
+    }
+   ]
+  },
+  "dices@1.55.0": {
+   "icon": "dices",
+   "version": "1.55.0",
+   "sha256": "a019447ee8a0ff5198071db3106dc2d9d34fc4df5480ebeb5a968d6ca7129b1d",
+   "nodes": [
+    {
+     "tag": "rect",
+     "attrs": {
+      "width": "12",
+      "height": "12",
+      "x": "2",
+      "y": "10",
+      "rx": "2",
+      "ry": "2"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M6 18h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M10 14h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M15 6h.01"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M18 9h.01"
      }
     }
    ]
