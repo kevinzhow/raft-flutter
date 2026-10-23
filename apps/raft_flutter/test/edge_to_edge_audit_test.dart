@@ -290,6 +290,13 @@ RootFixture richFixture() {
     'status': 'ok',
     'data': {'kind': 'text', 'text': 'Fixture document'},
   };
+  // Attachment comments are on (flag `attachment_comments_v0`), so the preview
+  // shows its comments bar at the screen bottom.
+  f.overrides['POST /feature-flags/evaluate'] = (_) => {
+    'evaluations': [
+      {'key': 'attachment_comments_v0', 'enabled': true},
+    ],
+  };
   return f;
 }
 
