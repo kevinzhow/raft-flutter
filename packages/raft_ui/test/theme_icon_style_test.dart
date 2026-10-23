@@ -144,7 +144,10 @@ void main() {
           'extends': 'raft',
           'modes': {
             'light': {
-              'options': {'press.effect': 'offsetShadow'},
+              'options': {
+                'press.effect': 'offsetShadow',
+                'iconButton.surface': 'raised',
+              },
               'geometry': {'stroke.control': 3, 'radius.controlSmall': 7},
               'shadows': {'sm': '5px 6px 0px 0px #123456'},
             },
@@ -162,4 +165,78 @@ void main() {
       await t.pumpWidget(const SizedBox.shrink());
     },
   );
+  for (final configuration in [
+    (surface: 'generic', effect: 'offsetShadow'),
+    (surface: 'raised', effect: 'scale'),
+  ]) {
+    testWidgets(
+      '${configuration.surface} surface and ${configuration.effect} press are independent',
+      (t) async {
+        addTearDown(() => t.pumpWidget(const SizedBox.shrink()));
+        final pack = RaftThemePack.parse(
+          jsonEncode({
+            'format': raftThemePackFormat,
+            'id': 'user:mixed-icon',
+            'name': {'en': 'Mixed icon'},
+            'version': '1',
+            'extends': 'raft',
+            'modes': {
+              'light': {
+                'options': {
+                  'iconButton.surface': configuration.surface,
+                  'press.effect': configuration.effect,
+                },
+                'geometry': {'stroke.control': 2, 'radius.controlSmall': 7},
+                'shadows': {'sm': '5px 6px 0px 0px #123456'},
+              },
+              'dark': {},
+            },
+          }),
+        );
+        await t.pumpWidget(_host(pack: pack));
+        await t.pumpAndSettle();
+        final tokens = RaftTokens.of(t.element(find.byType(RaftIconButton)));
+        final generic = RaftControlRecipe(
+          tokens,
+          variant: RaftControlVariant.outline,
+          visualHeight: 24,
+        );
+        final raised = configuration.surface == 'raised';
+        expect(_paint(t).border!.top.width, raised ? 2 : 0);
+        expect(
+          _paint(t).borderRadius,
+          raised ? BorderRadius.circular(7) : generic.radius,
+        );
+        expect(
+          _paint(t).boxShadow,
+          raised
+              ? [
+                  const BoxShadow(
+                    offset: Offset(5, 6),
+                    color: Color(0xff123456),
+                  ),
+                ]
+              : generic.shadows(),
+        );
+        final mouse = await t.createGesture(kind: PointerDeviceKind.mouse);
+        await mouse.addPointer(location: Offset.zero);
+        await mouse.moveTo(t.getCenter(find.byType(RaftIconButton)));
+        await t.pumpAndSettle();
+        final down = await t.startGesture(
+          t.getCenter(find.byType(RaftIconButton)),
+        );
+        await t.pump(const Duration(milliseconds: 500));
+        final transform = t
+            .widget<AnimatedContainer>(find.byType(AnimatedContainer))
+            .transform!;
+        final offset = configuration.effect == 'offsetShadow';
+        expect(transform.entry(0, 0), offset ? 1 : .985);
+        expect(transform.entry(0, 3), offset ? 1 : 0);
+        expect(transform.entry(1, 3), offset ? 1 : 0);
+        await down.cancel();
+        await mouse.removePointer();
+        await t.pumpWidget(const SizedBox.shrink());
+      },
+    );
+  }
 }

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'design_primitives.dart';
 
 /// The a57b9dab small icon surface, expressed through structural theme data.
-/// Other interaction structures retain the existing generic control recipe.
+/// Surface and press options are independent; generic retains the base recipe.
 class RaftSmallIconRecipe extends RaftControlRecipe {
   const RaftSmallIconRecipe(
     super.tokens, {
@@ -14,6 +14,9 @@ class RaftSmallIconRecipe extends RaftControlRecipe {
 
   bool get _offsetShadow =>
       tokens.option('press.effect', or: 'overlay') == 'offsetShadow';
+
+  bool get _raised =>
+      tokens.option('iconButton.surface', or: 'generic') == 'raised';
 
   // a57b9dab _RaftControlState.build: this structure lifts by 1px on hover
   // and moves by (1,1) on press. Cindy4430babb approved the internal constant;
@@ -42,13 +45,13 @@ class RaftSmallIconRecipe extends RaftControlRecipe {
         );
 
   @override
-  Color get foreground => _offsetShadow ? tokens.strong : super.foreground;
+  Color get foreground => _raised ? tokens.strong : super.foreground;
 
   @override
-  Color get focusRing => _offsetShadow ? Colors.transparent : super.focusRing;
+  Color get focusRing => _raised ? Colors.transparent : super.focusRing;
 
   @override
-  Color get background => !_offsetShadow
+  Color get background => !_raised
       ? super.background
       : switch (variant) {
           RaftControlVariant.primary => tokens.primaryFill,
@@ -61,24 +64,22 @@ class RaftSmallIconRecipe extends RaftControlRecipe {
 
   @override
   Color backgroundFor({bool hovered = false}) =>
-      _offsetShadow ? background : super.backgroundFor(hovered: hovered);
+      _raised ? background : super.backgroundFor(hovered: hovered);
 
   @override
-  Gradient? get overlayGradient => _offsetShadow ? null : super.overlayGradient;
+  Gradient? get overlayGradient => _raised ? null : super.overlayGradient;
 
   @override
-  double get insetHighlightAlpha =>
-      _offsetShadow ? 0 : super.insetHighlightAlpha;
+  double get insetHighlightAlpha => _raised ? 0 : super.insetHighlightAlpha;
 
   @override
-  BorderRadius get radius => !_offsetShadow
+  BorderRadius get radius => !_raised
       ? super.radius
       : BorderRadius.circular(tokens.size('radius.controlSmall', fallback: 0));
 
   @override
   BorderSide side({bool hovered = false}) =>
-      _offsetShadow &&
-          tokens.option('control.edge', or: 'inkBorder') == 'inkBorder'
+      _raised && tokens.option('control.edge', or: 'inkBorder') == 'inkBorder'
       ? BorderSide(
           color: variant == RaftControlVariant.ghost && !hovered
               ? Colors.transparent
@@ -92,7 +93,7 @@ class RaftSmallIconRecipe extends RaftControlRecipe {
     bool hovered = false,
     bool pressed = false,
     bool focused = false,
-  }) => !_offsetShadow
+  }) => !_raised
       ? super.shadows(hovered: hovered, pressed: pressed, focused: focused)
       : variant == RaftControlVariant.ghost
       ? const []

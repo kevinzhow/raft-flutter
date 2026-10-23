@@ -27,7 +27,7 @@ dd6c1674 开始，交给 DeepDesign）。
    而收益只是名字好看一点。真正需要清掉的是**按主题名分支**，不是角色名。
 2. **几何、字体、阴影要从编译期常量变成主题数据**，新增约 50 个数值令牌。这是本项目的实质工作量，
    也是 Elegant/Brutal 复刻的主要部分。
-3. **结构差异收敛成 20 个枚举选项**，每个选项的实现只写一次，主题只选值。清单见 §4。
+3. **结构差异收敛成 22 个枚举选项**，每个选项的实现只写一次，主题只选值。清单见 §4。
    旧代码里约 1870 处 `.brutal` 读点，其中约 1066 处是取值三元式（变成数值令牌），
    约 48 处是 `if` 分支（变成结构选项），其余是注释、测试与转发。
 4. **主题包 = 一份 JSON**，DTCG 兼容 + 我们的扩展；只写要覆盖的项，没写的继承基准主题。
@@ -57,7 +57,7 @@ dd6c1674 开始，交给 DeepDesign）。
 | --- | --- | --- | --- |
 | ① 颜色 | “这个角色是什么颜色” | 角色 → Color | 159 个角色（附录全量） |
 | ② 数值 | “圆角多大、线多粗、多高、字多大” | 令牌 → num | 约 50 个（§3） |
-| ③ 结构选项 | “这一处用哪种画法” | 枚举 | 20 个（§4） |
+| ③ 结构选项 | “这一处用哪种画法” | 枚举 | 22 个（§4） |
 
 一个主题 = 这三层的取值。内置主题与用户主题的区别只有 `builtIn` 标记，没有别的路径。
 
@@ -304,13 +304,14 @@ Elegant / Brutal 为 **48**，Brutal 深色仍使用 Elegant 深色。
 官方0.7.1默认图标按钮是32px，伪元素扩大命中区而不占布局；
 产品显式24px尺寸保持不变，不将它当成官方默认尺寸的像素对照。
 
-24px图标同时读取现有 `press.effect` 和 `control.edge`：`offsetShadow` 的
-描边、圆角和硬阴影分别取 `stroke.control`、`radius.controlSmall`、`xs/sm/md`；
+24px图标外观读取 `iconButton.surface`（Cindy4bee37ed批准）：`generic` 沿用
+通用表面，`raised` 的
+描边还受 `control.edge` 控制；圆角和硬阴影等数据分别取 `stroke.control`、`radius.controlSmall`、`xs/sm/md`；
 普通、悬停、按下的阴影对应 `sm/md/xs`。位移沿用 a57b9dab
 `_RaftControlState.build`：悬停上移1px、按下右下各移1px；减弱动画时不移动。
 此1px经 Cindy4430babb 确认为该结构内部常量，不新增数值令牌。
 这些是 a57b9dab 的原有行为，
-不影响其他尺寸或交互结构。
+不影响其他尺寸；`press.effect` 独立控制位移，不选择颜色、边框或其他表面。
 深色 `ink-4` 沿用 a57b9dab 的浮点RGBA（alpha0.039203，
 RGB0.954685/0.954685/0.969524）；展示表中的0.04和整数RGB不作为绘制精度。
 
@@ -323,6 +324,7 @@ RGB0.954685/0.954685/0.969524）；展示表中的0.04和整数RGB不作为绘�
 | 1 | `control.edge` | `inkBorder` / `ring` / `none` | inkBorder | ring | inkBorder | `design_primitives.dart:722-806` |
 | 2 | `sticker.ring` | `none` / `dieCut` | dieCut（仅深色） | none | none | `raft/button.dart`、`mounted_avatar_recipe.dart` |
 | 3 | `emphasis.fill` | `solid` / `soft` | solid | soft | solid | `design_primitives.dart:216,531-536` |
+| 4a | `iconButton.surface` | `generic` / `raised` | generic | generic | raised（深色 generic） | `small_icon_recipe.dart`；仅24px图标，表面与按压结构独立 |
 | 4 | `press.effect` | `overlay` / `scale` / `offsetShadow` | overlay | scale | offsetShadow | `design_primitives.dart:1002-1135` |
 | 5 | `control.sheen` | `none` / `gradient` | none | gradient | none | `design_primitives.dart:615-657` |
 | 6 | `avatar.shape` | `square` / `circle` | square | circle | square | `components.dart:478`、`mounted_avatar_recipe.dart:94` |

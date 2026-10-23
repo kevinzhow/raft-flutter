@@ -16,7 +16,7 @@ AUTHORED (which cite the contract section they come from):
   docs/theme-contract/values.json   colours + elevation + type, generated from
                                     a57b9dab by tool/theme-contract/dump_theme_values.py
   docs/theme-contract.md §3.1–3.5   geometry per theme
-  docs/theme-contract.md §4         the 20 structural options per theme
+  docs/theme-contract.md §4         the structural options per theme
 
   python3 tool/theme-adapters/build_family_packs.py           # write the packs
   python3 tool/theme-adapters/build_family_packs.py --check   # exit 1 when stale
@@ -38,6 +38,7 @@ PACK_FORMAT = 'raft-theme/1'
 # build_raft_pack.py's OPTIONS_RAFT; these two are the same table's other columns.
 OPTIONS_ELEGANT = {
     'control.edge': 'ring', 'sticker.ring': 'none', 'emphasis.fill': 'soft',
+    'iconButton.surface': 'generic',
     'press.effect': 'scale', 'control.sheen': 'gradient', 'avatar.shape': 'circle',
     'indicator.border': 'none', 'switch.shape': 'pill', 'checkbox.mark': 'strokeCheck',
     'field.style': 'inset', 'tabs.selected': 'tint', 'segmented.selected': 'tint',
@@ -49,6 +50,7 @@ OPTIONS_ELEGANT = {
 }
 OPTIONS_BRUTAL = {
     'control.edge': 'inkBorder', 'sticker.ring': 'none', 'emphasis.fill': 'solid',
+    'iconButton.surface': 'raised',
     'press.effect': 'offsetShadow', 'control.sheen': 'none', 'avatar.shape': 'square',
     'indicator.border': 'ink', 'switch.shape': 'square', 'checkbox.mark': 'thickStroke',
     'field.style': 'border', 'tabs.selected': 'sticker', 'segmented.selected': 'sticker',

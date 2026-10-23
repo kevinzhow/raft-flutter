@@ -104,6 +104,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'sticker.ring': {'none', 'dieCut'},
   'emphasis.fill': {'solid', 'soft'},
   'press.effect': {'overlay', 'scale', 'offsetShadow'},
+  'iconButton.surface': {'generic', 'raised'},
   'control.sheen': {'none', 'gradient'},
   'avatar.shape': {'square', 'circle'},
   'indicator.border': {'none', 'ink'},

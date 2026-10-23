@@ -193,6 +193,7 @@ GEOMETRY_RAFT = {
 
 OPTIONS_RAFT = {
     'control.edge': 'inkBorder', 'sticker.ring': 'dieCut', 'emphasis.fill': 'solid',
+    'iconButton.surface': 'generic',
     'press.effect': 'overlay', 'control.sheen': 'none', 'avatar.shape': 'square',
     'indicator.border': 'none', 'switch.shape': 'pill', 'checkbox.mark': 'fillCheck',
     'field.style': 'border', 'tabs.selected': 'sticker', 'segmented.selected': 'sticker',
