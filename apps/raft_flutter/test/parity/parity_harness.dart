@@ -158,7 +158,8 @@ class ParityContext {
     'brutal-light' || 'brutal' => (pack: brutalThemePackId, dark: false),
     'elegant-light' || 'elegant' => (pack: elegantThemePackId, dark: false),
     'elegant-dark' || 'dark' => (pack: elegantThemePackId, dark: true),
-    'light' || 'raft' => (pack: raftThemePackId, dark: false),
+    'light' || 'raft' || 'raft-light' => (pack: raftThemePackId, dark: false),
+    'raft-dark' => (pack: raftThemePackId, dark: true),
     _ => throw ArgumentError.value(name, 'override', 'Unknown parity theme'),
   };
   if (override != null && override.isNotEmpty) return named(override);

@@ -382,6 +382,15 @@ const String raftThemePackJson = r'''{
         "palette-cream-950": "#191300"
       },
       "geometry": {
+        "size.switch.width.sm": 50,
+        "size.switch.width.md": 50,
+        "size.switch.height.sm": 30,
+        "size.switch.height.md": 30,
+        "size.switch.thumb.sm": 22,
+        "size.switch.thumb.md": 22,
+        "space.switchInset": 4,
+        "motion.switchSlideMs": 220,
+        "motion.switchColorMs": 150,
         "radius.sticker": 4.0,
         "radius.chip": 6.0,
         "radius.control": 8.0,
@@ -861,6 +870,15 @@ const String raftThemePackJson = r'''{
         "palette-cream-950": "#191300"
       },
       "geometry": {
+        "size.switch.width.sm": 50,
+        "size.switch.width.md": 50,
+        "size.switch.height.sm": 30,
+        "size.switch.height.md": 30,
+        "size.switch.thumb.sm": 22,
+        "size.switch.thumb.md": 22,
+        "space.switchInset": 4,
+        "motion.switchSlideMs": 220,
+        "motion.switchColorMs": 150,
         "radius.sticker": 4.0,
         "radius.chip": 6.0,
         "radius.control": 8.0,

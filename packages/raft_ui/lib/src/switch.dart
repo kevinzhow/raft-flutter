@@ -2,20 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'raft/switch.dart';
 
-enum RaftSwitchSize { sm, md }
+import 'switch_recipe.dart';
 
-/// Source visual dimensions of raft-ui 0.7.1 `Switch`: one 50x30 size ([RaftSwitchSize] is kept for call sites
-/// and no longer changes the geometry).
-@immutable
-class RaftSwitchRecipe {
-  const RaftSwitchRecipe({this.size = RaftSwitchSize.md});
-  final RaftSwitchSize size;
-  Size get visualSize =>
-      const Size(RaftSwitchMetrics.width, RaftSwitchMetrics.height);
-  double get thumbSize => RaftSwitchMetrics.thumb;
-  double get thumbInset => RaftSwitchMetrics.padding;
-  double get travel => RaftSwitchMetrics.travel;
-}
+export 'switch_recipe.dart' show RaftSwitchRecipe, RaftSwitchSize;
 
 /// Controlled source Switch. A disabled control never invokes [onChanged].
 class RaftSwitch extends StatelessWidget {
@@ -32,7 +21,7 @@ class RaftSwitch extends StatelessWidget {
   final bool value, enabled;
   final ValueChanged<bool>? onChanged;
 
-  /// Accepted for call sites; raft-ui 0.7.1 has the single 50x30 switch.
+  /// The source size variant. The Raft pack uses 50×30 at either size.
   final RaftSwitchSize size;
   final String? semanticLabel, semanticDescription;
   final double? minimumTargetSize;
@@ -40,6 +29,7 @@ class RaftSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) => RaftSwitchControl(
     value: value,
+    size: size,
     onChanged: onChanged,
     enabled: enabled,
     semanticLabel: semanticLabel,

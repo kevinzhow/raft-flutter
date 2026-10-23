@@ -87,7 +87,7 @@ def build_manifest():
                 'locale': 'en',
                 'variants': [{'id': 'default', 'name': 'Default',
                               # parityTheme: how test/parity/parity_harness.dart picks the Flutter theme
-                              'props': {'specimen': sp['id'], 'mode': mode, 'raftUi': s['raftUi'], 'parityTheme': mode}}],
+                              'props': {'specimen': sp['id'], 'mode': mode, 'raftUi': s['raftUi'], 'parityTheme': f'raft-{mode}'}}],
                 'capture': {'selector': f'[data-specimen="{sp["id"]}"]', 'crop': 'element',
                             'contract': 'component-bounds', 'androidKey': f'raft-ui-specimen-{sp["id"]}',
                             'interactions': [], 'androidInteractions': []},

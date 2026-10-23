@@ -247,6 +247,28 @@ P2 基准确认后逐项落值。
 列出该组件在本分支的调用点，在 `a57b9dab` 找到同一位置原来用的那个 widget 取其值；
 位置之间不一致就用变体或参数表达。组件名相同不等于外观相同。
 
+### 3.6.1 开关尺寸和时长
+
+令牌名经 Cindy 批准（2026-10-23）。Raft 数据来自官方 0.7.1 `switchRecipe`，
+Elegant / Brutal 来自 `a57b9dab` 的 `switch.dart:65-81` 和 `primitive_tokens.dart:12-13`。
+同一调用点保留 `sm` / `md` 变体；Raft 两种尺寸相同。
+
+| 令牌 | Raft | Elegant | Brutal 浅色 |
+| --- | --- | --- | --- |
+| `size.switch.width.sm` / `.md` | 50 / 50 | 28 / 36 | 28 / 36 |
+| `size.switch.height.sm` / `.md` | 30 / 30 | 16 / 20 | 16 / 20 |
+| `size.switch.thumb.sm` / `.md` | 22 / 22 | 12 / 16 | 10 / 14 |
+| `space.switchInset` | 4 | 2 | 3 |
+| `motion.switchSlideMs` | 220 | 180 | 180 |
+| `motion.switchColorMs` | 150 | 180 | 180 |
+
+`space.switchInset` 是**轨道外缘到拇指外缘的距离，包含边框**。
+Raft 的 4 来自 1.5 CSS 边框加 2.5 padding；不能再加一次边框。
+绘制仍保留原来的设备像素边框取整：padding 保持 2.5，拇指再按原捕获策略对齐像素，
+不把取整后的边框差额重复加到 padding。
+位移由 `width − thumb − 2 × inset` 计算，不另设令牌：Raft 为 20，
+Elegant / Brutal 为 12 / 16。Brutal 深色整套使用 Elegant 深色数据。
+
 ### 3.7 阴影
 
 阴影是 Elegant 与 Brutal 最大的观感差别（G1 第 1 条），但**不需要结构选项**，因为它纯是数据。

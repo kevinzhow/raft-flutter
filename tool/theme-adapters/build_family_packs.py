@@ -62,6 +62,11 @@ OPTIONS_BRUTAL = {
 # digits that the P2 baseline can now confirm or refute; they are carried as-is
 # until that reconciliation, which is its own change.
 GEOMETRY_ELEGANT = {
+    # a57b9dab switch.dart:65-81 and primitive_tokens.dart:12.
+    'size.switch.width.sm': 28, 'size.switch.width.md': 36,
+    'size.switch.height.sm': 16, 'size.switch.height.md': 20,
+    'size.switch.thumb.sm': 12, 'size.switch.thumb.md': 16,
+    'space.switchInset': 2, 'motion.switchSlideMs': 180, 'motion.switchColorMs': 180,
     'radius.sticker': 3, 'radius.chip': 4, 'radius.control': 6, 'radius.controlSmall': 4,
     'radius.container': 8, 'radius.dialog': 8, 'radius.sheet': 16, 'radius.tooltip': 6,
     'radius.item': 2, 'radius.pill': 999, 'radius.avatar': 999, 'radius.rail': 8,
@@ -84,6 +89,11 @@ GEOMETRY_ELEGANT = {
     'space.segmentGap': 6,
 }
 GEOMETRY_BRUTAL = {
+    # a57b9dab switch.dart:65-81 and primitive_tokens.dart:12.
+    'size.switch.width.sm': 28, 'size.switch.width.md': 36,
+    'size.switch.height.sm': 16, 'size.switch.height.md': 20,
+    'size.switch.thumb.sm': 10, 'size.switch.thumb.md': 14,
+    'space.switchInset': 3, 'motion.switchSlideMs': 180, 'motion.switchColorMs': 180,
     'radius.sticker': 0, 'radius.chip': 0, 'radius.control': 0, 'radius.controlSmall': 0,
     'radius.container': 0, 'radius.dialog': 0, 'radius.sheet': 0, 'radius.tooltip': 0,
     'radius.item': 0, 'radius.pill': 0, 'radius.avatar': 0, 'radius.rail': 0,
@@ -245,6 +255,12 @@ def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
     """
     def mode(spec: dict):
         colors, shadows, type_metrics = collect(values, spec['column'])
+        # a57b9dab component_colors.g.dart stores this subtle dark switch
+        # shadow in float sRGB. values.json's display-rounded .04 / #f3f3f7
+        # changes antialiased switch-edge pixels, so retain the source precision.
+        if spec['column'] == 'elegantDark':
+            colors['switch-shadow-bottom'] = (
+                'rgb(243.444675 243.444675 247.22862 / 0.039203)')
         return {
             'colors': colors,
             'geometry': geometry_with_type(spec['geometry'], type_metrics),

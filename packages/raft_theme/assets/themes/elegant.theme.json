@@ -207,6 +207,15 @@
         "switch-shadow-bottom": "rgb(0 0 0 / 0)"
       },
       "geometry": {
+        "size.switch.width.sm": 28,
+        "size.switch.width.md": 36,
+        "size.switch.height.sm": 16,
+        "size.switch.height.md": 20,
+        "size.switch.thumb.sm": 12,
+        "size.switch.thumb.md": 16,
+        "space.switchInset": 2,
+        "motion.switchSlideMs": 180,
+        "motion.switchColorMs": 180,
         "radius.sticker": 3,
         "radius.chip": 4,
         "radius.control": 6,
@@ -450,9 +459,18 @@
         "switch-thumb-checked": "#171715",
         "switch-thumb-disabled": "#424241",
         "switch-thumb-checked-disabled": "#292928",
-        "switch-shadow-bottom": "rgb(243 243 247 / 0.04)"
+        "switch-shadow-bottom": "rgb(243.444675 243.444675 247.22862 / 0.039203)"
       },
       "geometry": {
+        "size.switch.width.sm": 28,
+        "size.switch.width.md": 36,
+        "size.switch.height.sm": 16,
+        "size.switch.height.md": 20,
+        "size.switch.thumb.sm": 12,
+        "size.switch.thumb.md": 16,
+        "space.switchInset": 2,
+        "motion.switchSlideMs": 180,
+        "motion.switchColorMs": 180,
         "radius.sticker": 3,
         "radius.chip": 4,
         "radius.control": 6,

@@ -2907,6 +2907,7 @@ class RaftInteractive extends StatefulWidget {
     required this.builder,
     this.onPressed,
     this.onKeyboardActivate,
+    this.onShowHoverHighlight,
     this.busy = false,
     this.focusNode,
     this.focusOnPointer = true,
@@ -2925,6 +2926,9 @@ class RaftInteractive extends StatefulWidget {
   /// Optional keyboard/semantics activation. Pointer activation continues
   /// to call [onPressed]; without this callback all inputs call [onPressed].
   final VoidCallback? onKeyboardActivate;
+
+  /// Modality-gated hover paint, as supplied by [FocusableActionDetector].
+  final ValueChanged<bool>? onShowHoverHighlight;
   final bool busy, focusOnPointer, button;
   final bool? selected, checked;
   final FocusNode? focusNode;
@@ -3022,6 +3026,7 @@ class _RaftInteractiveState extends State<RaftInteractive> {
           mouseCursor: enabled
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
+          onShowHoverHighlight: widget.onShowHoverHighlight,
           onShowFocusHighlight: (_) => modeChanged(),
           onFocusChange: focusChanged,
           actions: {

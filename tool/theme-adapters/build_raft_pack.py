@@ -147,6 +147,11 @@ def stretch(families: list[str], mono: bool = False) -> str:
 # AUTHORED: the two tables below are the contract's decisions, not derived data.
 # §3.3–3.5 of docs/theme-contract.md lists where each number comes from.
 GEOMETRY_RAFT = {
+    # 0.7.1 switchRecipe (dist/index.mjs): border 1.5 + padding 2.5.
+    'size.switch.width.sm': 50, 'size.switch.width.md': 50,
+    'size.switch.height.sm': 30, 'size.switch.height.md': 30,
+    'size.switch.thumb.sm': 22, 'size.switch.thumb.md': 22,
+    'space.switchInset': 4, 'motion.switchSlideMs': 220, 'motion.switchColorMs': 150,
     'radius.sticker': 4, 'radius.chip': 6, 'radius.control': 8, 'radius.controlSmall': 8,
     'radius.container': 10, 'radius.dialog': 16, 'radius.sheet': 16, 'radius.tooltip': 6,
     'radius.item': 6, 'radius.pill': 999, 'radius.avatar': 4, 'radius.rail': 0,

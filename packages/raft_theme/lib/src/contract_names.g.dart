@@ -229,6 +229,8 @@ const Set<String> raftColorRoles = {
 
 /// Numeric tokens: radii, stroke widths, sizes, density and spacing.
 const Set<String> raftGeometryTokens = {
+  'motion.switchColorMs',
+  'motion.switchSlideMs',
   'radius.avatar',
   'radius.avatarInner',
   'radius.chip',
@@ -259,10 +261,17 @@ const Set<String> raftGeometryTokens = {
   'size.rail',
   'size.railGlyph',
   'size.railShort',
+  'size.switch.height.md',
+  'size.switch.height.sm',
+  'size.switch.thumb.md',
+  'size.switch.thumb.sm',
+  'size.switch.width.md',
+  'size.switch.width.sm',
   'space.controlX',
   'space.inset.panel',
   'space.itemX',
   'space.segmentGap',
+  'space.switchInset',
   'stroke.container',
   'stroke.control',
   'stroke.hairline',

@@ -29,10 +29,7 @@ void main() {
     expect(byName('brutal-light'), (pack: brutalThemePackId, dark: false));
     expect(byName('elegant-light'), (pack: elegantThemePackId, dark: false));
     expect(byName('elegant-dark'), (pack: elegantThemePackId, dark: true));
-    expect(
-      () => byName('elegant-black'),
-      throwsArgumentError,
-    );
+    expect(() => byName('elegant-black'), throwsArgumentError);
   });
 
   test('the two light looks are distinguishable, not just light', () {
@@ -64,5 +61,18 @@ void main() {
       ],
     };
     expect(parityThemeFor(brutal).pack, brutalThemePackId);
+  });
+  test('explicit Raft specimen modes never select the Elegant dark pack', () {
+    for (final dark in [false, true]) {
+      final visualCase = <String, dynamic>{
+        'id': 'components.raft-ui.switch.states.${dark ? 'dark' : 'light'}',
+        'variants': [
+          {
+            'props': {'parityTheme': dark ? 'raft-dark' : 'raft-light'},
+          },
+        ],
+      };
+      expect(parityThemeFor(visualCase), (pack: raftThemePackId, dark: dark));
+    }
   });
 }
