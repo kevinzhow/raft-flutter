@@ -1381,6 +1381,20 @@ final auditSurfaces = <AuditSurface>[
     representative: true,
   ),
   AuditSurface(
+    'archivedAgentsPreview',
+    'Archived agents',
+    archivedAgentsPreview,
+    Size(640, 360),
+    representative: true,
+  ),
+  AuditSurface(
+    'archiveAgentDialogPreview',
+    'Archive agent dialog',
+    archiveAgentDialogPreview,
+    Size(480, 460),
+    representative: true,
+  ),
+  AuditSurface(
     'archivedChannelsPreview',
     'Archived channels',
     archivedChannelsPreview,
