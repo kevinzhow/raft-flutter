@@ -64,6 +64,9 @@ LEGACY = [
 # (DIR = a lucide-react WEB_LUCIDE package) or a full `--import-sources`.
 FLUTTER_ADDED = [
     'bold', 'heading', 'italic', 'listOrdered', 'minimize2', 'strikethrough', 'table',
+    # Imported by Web v1.21.23 RaftBench (raftbench/*.tsx); vendored here until a full
+    # --import-sources can run against the raft-ui 0.7.0 that Web now ships.
+    'sparkles', 'wallet',
 ]
 # Whole-icon fill (`<Bookmark fill="currentColor">` in Web, see citations).
 FILLED = {

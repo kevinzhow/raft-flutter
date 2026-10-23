@@ -362,13 +362,14 @@ void main() {
           'channels': {'c1': 1},
         };
         api.routes['GET /channels/threads/followed'] = (_) => {'threads': []};
-        // Provider connections, IM bridges and Labs follow server flags.
+        // Provider connections, IM bridges, Labs and RaftBench follow server flags.
         api.routes['POST /feature-flags/evaluate'] = (_) => {
           'evaluations': [
             for (final key in [
               'slack_bridge_v0',
               'provider_connections_v0',
               'server_labs_ui_v0',
+              'raftbench_overview_v0',
             ])
               {'key': key, 'enabled': true},
           ],

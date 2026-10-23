@@ -218,6 +218,8 @@ class RaftLocation {
       'computers' when rest.length == 1 => RaftRoute.computers,
       'search' when rest.length == 1 => RaftRoute.search,
       'settings' => RaftRoute.settings,
+      // Web's /raftbench route: a Settings page here.
+      'raftbench' when rest.length == 1 => RaftRoute.settings,
       'activity' when rest.length == 1 => RaftRoute.activity,
       'inbox' when rest.length == 1 => RaftRoute.activity,
       'threads' when rest.length == 1 => RaftRoute.activity,
@@ -240,7 +242,9 @@ class RaftLocation {
           ? entity
           : null,
       List.unmodifiable(
-        route == RaftRoute.settings ? rest.skip(1) : <String>[],
+        route == RaftRoute.settings
+            ? (kind == 'raftbench' ? const ['raftbench'] : rest.skip(1))
+            : <String>[],
       ),
     );
   }

@@ -1280,7 +1280,9 @@
    "ListOrdered": "list-ordered@1.55.0",
    "Minimize2": "minimize-2@1.55.0",
    "Strikethrough": "strikethrough@1.55.0",
-   "Table": "table@1.55.0"
+   "Table": "table@1.55.0",
+   "Sparkles": "sparkles@1.55.0",
+   "Wallet": "wallet@1.55.0"
   }
  },
  "icons": {
@@ -5272,6 +5274,39 @@
     }
    ]
   },
+  "sparkles@1.55.0": {
+   "icon": "sparkles",
+   "version": "1.55.0",
+   "sha256": "30e6149632fb6e9eca5438b640a3c15460c5c2d7278d0c508a9e1b1363496cd2",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M20 2v4"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M22 4h-4"
+     }
+    },
+    {
+     "tag": "circle",
+     "attrs": {
+      "cx": "4",
+      "cy": "20",
+      "r": "2"
+     }
+    }
+   ]
+  },
   "square-check-big@1.55.0": {
    "icon": "square-check-big",
    "version": "1.55.0",
@@ -5999,6 +6034,25 @@
      "tag": "path",
      "attrs": {
       "d": "m16.5 9.5 5 5"
+     }
+    }
+   ]
+  },
+  "wallet@1.55.0": {
+   "icon": "wallet",
+   "version": "1.55.0",
+   "sha256": "3a1bd3a469712959d7f22c03cb67c8cf6ce8f31c4a9fd03a7d8aad32ba9027e5",
+   "nodes": [
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"
+     }
+    },
+    {
+     "tag": "path",
+     "attrs": {
+      "d": "M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"
      }
     }
    ]

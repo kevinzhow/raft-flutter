@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../data/mobile_tabbar_preferences.dart';
 import '../data/rail_side_preference.dart';
 import '../data/personal_presentation.dart';
+import '../data/raftbench_access.dart';
+import '../data/raftbench_flag_controller.dart';
 import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import '../platform/app_update.dart';
@@ -29,12 +31,18 @@ import 'labs_view.dart';
 import 'locale_settings_page.dart';
 import 'mobile_tabbar_settings_page.dart';
 import 'management_support.dart'
-    show pageIdentity, readPageSnapshot, writePageSnapshot;
+    show
+        cachedServerFlag,
+        pageIdentity,
+        readPageSnapshot,
+        rememberServerFlag,
+        writePageSnapshot;
 import 'mcp_views.dart';
 import 'network_settings.dart';
 import 'storage_settings.dart';
 import 'notification_settings_view.dart';
 import 'provider_views.dart';
+import 'raftbench_page.dart';
 import 'server_views.dart';
 import 'settings_page.dart';
 import 'source_feedback_view.dart';
@@ -134,10 +142,29 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
     if (mounted) setState(() {});
   }
 
+  /// `raftbench_overview_v0` for this identity: the Settings row follows it
+  /// (Sidebar.tsx `raftBenchEnabled && canUseRaftBench(role)`).
+  late final RaftbenchFlagController raftbench = RaftbenchFlagController(
+    request: widget.controller.client.request,
+    identity: () => pageIdentity(widget.controller),
+    serverId: () => widget.controller.server?.id,
+    cached: () => cachedServerFlag(widget.controller, raftbenchFlagKey),
+    remember: (enabled, identity) => rememberServerFlag(
+      widget.controller,
+      raftbenchFlagKey,
+      enabled,
+      identity,
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
     widget.appUpdate?.addListener(_updateChanged);
+    raftbench.addListener(_updateChanged);
+    if (canUseRaftBench(widget.controller.server?.string('role'))) {
+      raftbench.refresh();
+    }
     loadFeedbackUnread();
   }
 
@@ -153,6 +180,7 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
   @override
   void dispose() {
     widget.appUpdate?.removeListener(_updateChanged);
+    raftbench.dispose();
     super.dispose();
   }
 
@@ -247,6 +275,20 @@ class _WorkspaceSettingsState extends State<WorkspaceSettings> {
             group: WorkspaceSettings.workspace,
             scroll: false,
           ),
+          // Sidebar.tsx shows the row for an owner / admin on an enrolled
+          // server; the /raftbench URL itself still opens its own notice.
+          if ((raftbench.navEnabled &&
+                  canUseRaftBench(w.server?.string('role'))) ||
+              widget.initialTab == 'raftbench')
+            RaftSettingsDestination(
+              'raftbench',
+              'RaftBench',
+              RaftGlyph.activity,
+              (_) => RaftbenchPage(controller: w, flag: raftbench),
+              group: WorkspaceSettings.workspace,
+              scroll: false,
+              attached: false,
+            ),
           if (w.can('viewBilling'))
             RaftSettingsDestination(
               'billing',

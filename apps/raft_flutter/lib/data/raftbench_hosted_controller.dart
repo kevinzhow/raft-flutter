@@ -106,10 +106,10 @@ class RaftbenchHostedController extends ChangeNotifier {
     }
   }
 
+  /// The channels the page offers. An input synced while the page builds, so
+  /// it never notifies; the panel reads it in the same build.
   void setOptions(List<RaftbenchOption> next) {
-    if (_sameOptions(next)) return;
-    _options = next;
-    _changed();
+    if (!_sameOptions(next)) _options = next;
   }
 
   bool _sameOptions(List<RaftbenchOption> next) {
