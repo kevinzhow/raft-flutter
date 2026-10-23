@@ -5,6 +5,7 @@ import 'package:raft_client/raft_client.dart';
 import 'message_window_snapshot.dart';
 import 'message_history_pages.dart';
 import 'message_history_positions.dart';
+import 'thread_rooms.dart';
 import 'thread_search.dart';
 import 'thread_visit.dart';
 import 'thread_window_snapshot.dart';
@@ -55,7 +56,7 @@ class WorkspaceThreadCommands {
       throw const RaftApiException('The thread changed. Please retry.');
     }
     m.state.threadChannelId = value['threadChannelId'];
-    m.transport.client.joinChannel(m.state.threadChannelId!);
+    ThreadRooms.join(m);
     m.context.changed();
     return m.state.threadChannelId;
   }
@@ -267,7 +268,7 @@ class WorkspaceThreadCommands {
         if (!request.current) return;
         m.state.threadHistoryLimited = boundary.limited;
         m.state.threadHasMore = boundary.more;
-        m.transport.client.joinChannel(m.state.threadChannelId!);
+        ThreadRooms.join(m);
         m.state.threadLoading = false;
         m.messageWindows.cacheThread(
           request,
@@ -400,6 +401,7 @@ class WorkspaceThreadCommands {
         kind: m.presentation.location.panelNavigationKindTo(next),
       );
     }
+    ThreadRooms.leave(m);
     m.messageWindows.threadGeneration++;
     m.state.threadIdentity = null;
     m.state.threadVisit = null;

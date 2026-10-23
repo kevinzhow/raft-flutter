@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:raft_client/raft_client.dart';
 
+import 'thread_rooms.dart';
 import 'message_history.dart';
 import 'history_capacity.dart';
 import 'local_error_diagnostics.dart';
@@ -363,6 +364,7 @@ class MessageHistoryEvents {
         w.transport.client.serverId == null) {
       return;
     }
+    ThreadRooms.join(w);
     final db = MessageHistoryPages.storage(w.device.cache),
         current = _current(w);
     if (db == null) {

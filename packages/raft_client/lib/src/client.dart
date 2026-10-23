@@ -1807,6 +1807,10 @@ class RaftClient {
 
   void joinChannel(String channelId) =>
       _socket?.emit('join:channel', channelId);
+
+  /// Web ThreadPanel: a closed thread leaves its room.
+  void leaveChannel(String channelId) =>
+      _socket?.emit('leave:channel', channelId);
   Future<List<RaftRecord>> servers() async => (await get('/servers') as List)
       .map((e) => RaftRecord(Map<String, dynamic>.from(e)))
       .toList();

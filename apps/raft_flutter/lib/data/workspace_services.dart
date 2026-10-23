@@ -4,6 +4,7 @@ import 'announcement_store.dart';
 import 'followed_threads_store.dart';
 import 'message_translation_store.dart';
 import 'panel_caches.dart';
+import 'read_receipts.dart';
 import 'source_activity_unread_store.dart';
 import 'source_channel_files_store.dart';
 import 'thread_agent_followers.dart';
@@ -17,12 +18,14 @@ abstract interface class WorkspaceServiceAuthority
         MessageTranslationAuthority,
         ThreadSearchAuthority,
         ThreadAgentFollowersAuthority,
+        ReadReceiptsAuthority,
         ActivityUnreadAuthority {
   Future<dynamic> query(String path, {Map<String, dynamic>? query});
   Future<dynamic> command(String method, String path, {dynamic data});
   MessageTranslationStore get translations;
   ThreadSearch get threadSearch;
   ThreadAgentFollowers get threadFollowers;
+  ReadReceipts get readReceipts;
   AnnouncementStore get announcements;
   AnnouncementOnboardingGate get announcementGate;
   ServerBoundCache<String, Object> get agentTabCache;
@@ -103,6 +106,10 @@ class WorkspaceServices {
       (_threadFollowers ??= ThreadAgentFollowers(authority));
   ThreadAgentFollowers? _threadFollowers;
 
+  ReadReceipts get readReceipts =>
+      source?.readReceipts ?? (_readReceipts ??= ReadReceipts(authority));
+  ReadReceipts? _readReceipts;
+
   /// Extends the owner's existing session ingress without subscribing or
   /// constructing unused repositories. Borrowed presentations have no ingress.
   void Function(RaftEvent) withServiceEvents(void Function(RaftEvent) next) =>
@@ -110,6 +117,9 @@ class WorkspaceServices {
         if (isDisposed()) return;
         if (event.name == 'thread:followers-updated') {
           _threadFollowers?.consumeEvent(event);
+        }
+        if (event.name == 'scope_read:updated') {
+          _readReceipts?.consumeEvent(event);
         }
         next(event);
       };
@@ -196,6 +206,7 @@ class WorkspaceServices {
     _translations?.dispose();
     _threadSearch?.dispose();
     _threadFollowers?.dispose();
+    _readReceipts?.dispose();
     _announcements?.dispose();
     _announcementGate?.dispose();
   }

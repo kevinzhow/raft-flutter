@@ -7,6 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_flutter/data/followed_threads_store.dart';
 import 'package:raft_flutter/data/workspace_controller.dart';
 import 'package:raft_flutter/features/chat_view.dart';
 import 'package:raft_flutter/features/thread_actions.dart';
@@ -329,6 +330,12 @@ void main() {
       'threadChannelId': 't1',
       'replyCount': 1,
     });
+    // Source followedThreadsRefresh: the reload waits for its coalescing window.
+    await t.runAsync(
+      () => Future<void>.delayed(
+        FollowedThreadsStore.refreshDelay + const Duration(milliseconds: 100),
+      ),
+    );
     await _settle(t, () => w.followedThreads.isFollowing('m'));
     expect(_followItem(t).label, 'Unfollow Thread');
     expect(a.count(_followed), 2);

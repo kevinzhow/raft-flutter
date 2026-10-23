@@ -50,6 +50,7 @@ export 'workspace_message_windows.dart' show ReadingAnchor;
 import 'resource_snapshot_cache.dart';
 import 'workspace_entity_directory.dart';
 import 'followed_threads_store.dart';
+import 'read_receipts.dart';
 import 'raft_location.dart';
 import 'workspace_navigation.dart';
 import 'shared_draft_attachment.dart';
@@ -386,6 +387,8 @@ class WorkspaceController extends ChangeNotifier
   /// Web `useThreadAgentFollowerStore`: the agents following each thread.
   @override
   ThreadAgentFollowers get threadFollowers => services.threadFollowers;
+  @override
+  ReadReceipts get readReceipts => services.readReceipts;
 
   /// Web `useAnnouncementStore`: the account-level announcement queue,
   /// living as long as this account session.
@@ -1449,8 +1452,10 @@ class _WorkspaceSessionBindings
     refreshUnread: refreshUnread,
   );
   @override
-  void applyReadStateHint(Map fact) =>
-      applyReadStateUnreadHint(w._messages.summariesByChannel, fact);
+  void applyReadStateHint(Map fact) {
+    applyReadStateUnreadHint(w._messages.summariesByChannel, fact);
+    w.followedThreads.applyReadStateHint(fact);
+  }
   @override
   void acceptReactionViewer(dynamic payload, {required String serverId}) =>
       w.reactionViewer.accept(payload, serverId: serverId);

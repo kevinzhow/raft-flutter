@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:raft_client/raft_client.dart';
+import 'package:raft_sync/raft_sync.dart' show canonicalWireSeq;
 
 import 'workspace_entity_directory.dart' show WorkspaceEntityScope;
 
@@ -34,6 +35,10 @@ class FollowedThreadsStore extends ChangeNotifier {
 
   static const path = '/channels/threads/followed';
 
+  /// Source FOLLOWED_THREADS_REFRESH_DELAY_MS: replies into threads that are
+  /// not in the list (the server auto-followed them) share one reload.
+  static const refreshDelay = Duration(milliseconds: 1500);
+
   final WorkspaceEntityScope? Function() _readScope;
   final Future<dynamic> Function(String path) query;
   final Future<dynamic> Function(String path, Map<String, dynamic> data)
@@ -56,6 +61,7 @@ class FollowedThreadsStore extends ChangeNotifier {
   bool _loaded = false, _settled = false, _again = false, _connected = false;
   Object? _error;
   Future<void>? _pending;
+  Timer? _coalesced;
 
   /// Clears every row when the server-level identity changes.
   bool synchronize() {
@@ -69,6 +75,8 @@ class FollowedThreadsStore extends ChangeNotifier {
     _overrides.clear();
     _inFlight.clear();
     _pending = null;
+    _coalesced?.cancel();
+    _coalesced = null;
     _loaded = _settled = _again = _connected = false;
     _error = null;
     final epoch = _epoch;
@@ -332,12 +340,13 @@ class FollowedThreadsStore extends ChangeNotifier {
     if (index < 0) {
       final parent = payload['parentMessageId'];
       if (parent is String) _retireAcknowledged(parent);
-      unawaited(refresh());
+      _requestRefresh();
       return;
     }
     final row = _rows[index];
     final open = isOpen?.call(threadId) == true;
     final unread = payload['unreadCount'];
+    final reply = payload['latestReply'];
     final next = <String, dynamic>{
       ...row,
       if (payload['replyCount'] is num) 'replyCount': payload['replyCount'],
@@ -347,6 +356,15 @@ class FollowedThreadsStore extends ChangeNotifier {
         'unreadCount': unread is num
             ? unread
             : ((row['unreadCount'] as num?) ?? 0) + 1,
+      // Source thread:updated: a reply that mentions the member lights the
+      // thread's @ mark, and a reply into a fully read thread is its first
+      // unread one.
+      if (!open && _mentionsMember(reply)) 'hasMention': true,
+      if (!open &&
+          reply is Map &&
+          reply['id'] is String &&
+          ((row['unreadCount'] as num?) ?? 0) == 0)
+        'firstUnreadMessageId': reply['id'],
     };
     final rows = [..._rows]..[index] = next;
     final order = {for (var i = 0; i < rows.length; i++) rows[i]: i};
@@ -363,10 +381,55 @@ class FollowedThreadsStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _mentionsMember(dynamic reply) {
+    final me = _scope?.principal,
+        list = reply is Map ? reply['mentions'] : null;
+    return me != null &&
+        list is List &&
+        list.any((m) => m is Map && m['type'] == 'user' && m['id'] == me);
+  }
+
+  void _requestRefresh() {
+    if (_coalesced?.isActive == true) return;
+    // ignore: raft_lints/avoid_unreviewed_idle_work -- One-shot 1.5 s coalescing of followed-thread reloads (Web parity); cancelled by dispose and identity changes.
+    _coalesced = Timer(refreshDelay, () {
+      _coalesced = null;
+      if (!_disposed && started) unawaited(refresh());
+    });
+  }
+
+  /// Source applyServerThreadUnread, for an accepted `read_state:updated`
+  /// scope [fact] that carries the unread count left after the read. A read
+  /// only lowers unread, never raises it, and a zero that describes an older
+  /// frontier cannot erase a reply this device already knows about.
+  void applyReadStateHint(Map fact) {
+    synchronize();
+    final scope = fact['scopeId'], left = fact['unreadCount'];
+    if (_disposed || scope is! String || left is! int || left < 0) return;
+    final index = _rows.indexWhere((row) => row['threadChannelId'] == scope);
+    if (index < 0) return;
+    final row = _rows[index], current = row['unreadCount'];
+    if (current is! num || current <= left) return;
+    final latest = canonicalWireSeq(row['latestActivitySeq']);
+    final read = canonicalWireSeq(fact['maxReadSeq']);
+    if (left == 0 && latest != null && read != null && latest > read) return;
+    final rows = [..._rows]
+      ..[index] = {
+        ...row,
+        'unreadCount': left,
+        // A count, not a position: keep the jump target while anything is
+        // unread, drop it once nothing is.
+        if (left == 0) 'firstUnreadMessageId': null,
+      };
+    _setRows(rows);
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     if (_disposed) return;
     _disposed = true;
+    _coalesced?.cancel();
     ++_epoch;
     authority?.removeListener(_authorityChanged);
     _subscription?.cancel();
