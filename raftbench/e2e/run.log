@@ -1,0 +1,25 @@
+2026-10-23T16:45:49.756230Z signed in as owner on the chosen server
+2026-10-23T16:45:52.967558Z screenshot 01-desktop-light-en-disabled
+2026-10-23T16:45:54.325524Z screenshot 02-desktop-light-en-range-chosen
+2026-10-23T16:45:54.331546Z enabled through the app
+2026-10-23T16:45:55.034671Z screenshot 03-desktop-light-en-queued
+2026-10-23T16:46:07.615491Z screenshot 04-desktop-light-en-running-1
+2026-10-23T16:46:10.113398Z screenshot 04-desktop-light-en-running-2
+2026-10-23T16:47:22.762408Z run settled: Analysis complete after 87s
+2026-10-23T16:47:23.370313Z screenshot 05-desktop-light-en-result
+2026-10-23T16:47:23.371717Z findings: 13 evidence buttons
+2026-10-23T16:47:23.981407Z screenshot 06-desktop-light-en-findings
+2026-10-23T16:47:23.982735Z opening evidence: Evidence #general · 77288a91
+2026-10-23T16:47:25.773152Z opened /s/dev/channel/fa856afe-7254-42fa-81f1-0841eadbed55?msg=77288a91-9a7e-4c05-903d-5c10ba99f3c9
+2026-10-23T16:47:26.504193Z screenshot 07-desktop-light-en-evidence-opened
+2026-10-23T16:47:30.666465Z screenshot 08-desktop-dark-en
+2026-10-23T16:47:34.031603Z screenshot 09-desktop-dark-zh
+2026-10-23T16:47:37.266865Z screenshot 10-desktop-light-zh
+2026-10-23T16:47:40.666512Z screenshot 11-phone-light-zh
+2026-10-23T16:47:43.659760Z screenshot 12-phone-dark-zh
+2026-10-23T16:47:47.044334Z screenshot 13-phone-dark-en
+2026-10-23T16:47:50.040399Z screenshot 14-phone-light-en
+2026-10-23T16:47:53.426969Z screenshot 15-desktop-light-en
+2026-10-23T16:47:53.669797Z disabled through the app
+2026-10-23T16:47:54.165133Z screenshot 16-desktop-light-en-disabled-again
+2026-10-23T16:47:54.176491Z cleanup: already disabled
