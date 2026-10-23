@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 
 import '../../raft_ui.dart';
 
-import 'raftbench_date_field.dart';
 import 'raftbench_findings.dart';
 import 'raftbench_parts.dart';
 
