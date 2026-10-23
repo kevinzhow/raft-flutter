@@ -15,6 +15,7 @@ import 'mobile_route_gate.dart';
 export 'mobile_route_gate.dart' show MobileChatDirectRead;
 import 'message_timeline.dart';
 import 'history_reading_anchor.dart';
+import 'thread_unread_jump.dart';
 import 'message_history_gaps.dart';
 import '../data/message_history_memory.dart';
 import '../data/message_history_positions.dart';
@@ -3592,18 +3593,16 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
                   child: currentTimeline,
                 ),
                 MessageHistoryGapMonitor(controller: w, thread: widget.thread),
-                if (historyWindow || !atBottom || newMessageCount > 0)
-                  RaftTimelineBottomButton(
-                    label: bottomCount > 0
-                        ? raftFormat(
-                            context,
-                            // ThreadPanel.tsx:2619 uses its own shorter copy.
-                            thread ? '{count} new' : '{count} new messages',
-                            {'count': bottomCount},
-                          )
-                        : raftText(context, 'Back to bottom'),
-                    onPressed: returnToBottom,
-                  ),
+                ChatBottomControls(
+                  controller: w,
+                  thread: thread,
+                  rows: rows,
+                  hasNewer: historyWindow,
+                  scroll: viewport,
+                  showBottom: historyWindow || !atBottom || newMessageCount > 0,
+                  bottomCount: bottomCount,
+                  onBottom: returnToBottom,
+                ),
               ],
             ),
           ),

@@ -12075,6 +12075,30 @@
   },
   {
    "kind": "ui",
+   "id": "ui:messages.thread-unread-jump-pill",
+   "area": "messages",
+   "capability": "Channel-top 'Earliest unread thread (N)' / 'Next unread thread (N)' pill that scrolls to the parent of an unread followed thread and flashes it (dismissable)",
+   "background": false,
+   "status": "covered",
+   "webEntry": "components/message/ThreadUnreadJumpPill.tsx rendered by ChatPanel.tsx (channels only)",
+   "gate": "flag thread_unread_badge_v0",
+   "flutterEntry": "chat_view.dart ChatBottomControls (features/thread_unread_jump.dart): the built rows are measured against their viewport, RaftThreadUnreadJumpPill beside Back to bottom (below) or at the top (above); a click calls jumpToMessage",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/thread_unread_jump.dart",
+     "needle": "class ChatBottomControls"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/timeline_bottom_button.dart",
+     "needle": "class RaftThreadUnreadJumpPill"
+    }
+   ],
+   "justification": "",
+   "impact": "",
+   "size": ""
+  },
+  {
+   "kind": "ui",
    "id": "ui:channels.unread-badge-app-icon",
    "area": "notifications",
    "capability": "App/tab unread badge reflecting Activity unread total",
