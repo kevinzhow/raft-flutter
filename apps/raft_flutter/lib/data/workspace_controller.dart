@@ -722,9 +722,6 @@ class WorkspaceController extends ChangeNotifier
     _channels.putRow(row);
   }
 
-  static const multipartUploadSafeLimitBytes =
-      WorkspaceEditor.multipartUploadSafeLimitBytes;
-
   static int? uploadLimitFromCapabilities(dynamic value) =>
       WorkspaceEditor.uploadLimitFromCapabilities(value);
 

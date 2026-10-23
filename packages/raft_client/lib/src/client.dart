@@ -90,6 +90,9 @@ Map<String, dynamic> _errorDetails(Map? body) {
   const keys = {
     'code',
     'retryable',
+    // Contract errors of the direct-upload routes: the wait the server asked
+    // for (UPLOAD_OBJECT_NOT_FOUND, UPLOAD_VERIFICATION_IN_PROGRESS).
+    'retryAfterMs',
     'conversionJob',
     'conversionCommand',
     'uploadScope',
@@ -239,8 +242,30 @@ Map<String, dynamic> _errorDetails(Map? body) {
 
 class UploadCancellation {
   final CancelToken _token = CancelToken();
+  final _onCancelled = <void Function()>[];
   bool get cancelled => _token.isCancelled;
-  void cancel() => _token.cancel('User cancelled upload');
+  void cancel() {
+    if (cancelled) return;
+    _token.cancel('User cancelled upload');
+    final callbacks = [..._onCancelled];
+    _onCancelled.clear();
+    for (final callback in callbacks) {
+      callback();
+    }
+  }
+
+  /// Runs [callback] when this is cancelled (at once when it already is):
+  /// a transfer derived from this one is cancelled together with it.
+  void whenCancelled(void Function() callback) {
+    if (cancelled) {
+      callback();
+    } else {
+      _onCancelled.add(callback);
+    }
+  }
+
+  /// For a transfer the client does not send itself (a presigned storage PUT).
+  CancelToken get cancelToken => _token;
 }
 
 class RaftEvent {

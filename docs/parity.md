@@ -2000,3 +2000,11 @@ the window when the gap fills (BP-READ-021, BP-RT-030). Owner decision
 Channel `seq` is sparse in the sync core, so a jump does not prove a missing
 message; the client heals real gaps through the heartbeat, `rooms:joined` and
 resume reads instead.
+
+## Attachments and large files vs Web v1.21.23 (cindy/w23-files): differences
+
+Not owner decisions yet; each is listed so a reviewer can accept or send it back.
+
+* Unfinished-uploads banner wording: Web says "This browser no longer has the original file ... let the original tab finish uploading"; the app says "This app ... the original window". The behaviour is the same (list the viewer's active sessions of the channel, hide rows a pending chip owns, Cancel upload).
+* Unfinished direct uploads are not persisted across an app restart: like Web's draft cache they live with the running session, so after a restart the banner is the way to cancel them.
+* The presigned PUT does not follow redirects (browser XHR does); storage hosts answer the PUT directly.

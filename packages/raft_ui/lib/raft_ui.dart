@@ -135,6 +135,7 @@ export 'src/system_message.dart';
 
 export 'src/composer_recipe.dart';
 export 'src/composer_attachments.dart';
+export 'src/composer_recoverable_uploads.dart';
 export 'src/composer_drop_overlay.dart';
 export 'src/external_agent_setup.dart';
 export 'src/member_graph.dart';

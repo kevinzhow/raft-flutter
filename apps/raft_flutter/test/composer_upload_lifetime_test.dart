@@ -144,6 +144,16 @@ WorkspaceController _workspace(_Client client, {RootCache? cache}) {
   return w;
 }
 
+/// The upload route asks the server for its capabilities first (Web
+/// `uploadAttachmentFile`), so a transfer starts a few event-loop turns after
+/// the draft is attached.
+Future<void> started(int Function() transfers, int count) async {
+  for (var i = 0; i < 50 && transfers() < count; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+  expect(transfers(), greaterThanOrEqualTo(count));
+}
+
 void main() {
   test(
     'settled upload progress cannot overwrite its retry operation',
@@ -154,11 +164,13 @@ void main() {
       try {
         pending.add(w.attachUpload('retry.txt', Uint8List.fromList([1])));
         final draft = w.uploads().single;
+        await started(() => client.transfers.length, 1);
         client.transfers.first.response.completeError(
           const RaftApiException('Synthetic upload failure'),
         );
         await pending.first;
         pending.add(w.retryUpload(draft));
+        await started(() => client.transfers.length, 2);
         client.transfers.last.progress!(25, 100);
         client.transfers.first.progress!(99, 100);
         expect(
@@ -196,6 +208,7 @@ void main() {
           final pending = <Future<void>>[];
           try {
             pending.add(w.attachUpload('same.txt', Uint8List.fromList([1])));
+            await started(() => client.transfers.length, 1);
             final old = client.transfers.single;
             if (revokeChannel) {
               client.stream.add(
@@ -208,6 +221,7 @@ void main() {
               );
             }
             pending.add(w.attachUpload('same.txt', Uint8List.fromList([2])));
+            await started(() => client.transfers.length, 2);
             final next = w.uploads().single;
             var scopeNotifications = 0, workspaceNotifications = 0;
             final signal = w.draftChanges();
@@ -285,6 +299,7 @@ void main() {
         RaftRecord({'id': 's2', 'slug': 'second', 'role': 'owner'}),
       );
       pending.add(w.attachUpload('new.txt', Uint8List.fromList([3])));
+      await started(() => client.transfers.length, 2);
       final next = w.uploads().single;
       var notifications = 0;
       final signal = w.draftChanges();

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:raft_ui/raft_ui.dart';
 
 import '../data/upload_mime.dart';
+import '../data/upload_failure.dart';
 import '../data/workspace_controller.dart';
 
 // Web MessageInput pending attachments (SortableAttachment + failed-upload
@@ -37,7 +38,9 @@ RaftComposerAttachment composerAttachmentFor(
     progress: draft.progress > 0
         ? (draft.progress * 100).round().clamp(1, 99)
         : 0,
-    error: draft.error == null ? null : raftText(context, draft.error!),
+    error: draft.error == null
+        ? null
+        : raftFormat(context, draft.error!, directUploadOf(draft).errorValues),
     canRetry: draft.canRetry,
     quotaBlocked: isBillingUploadQuotaError(draft.error),
   );

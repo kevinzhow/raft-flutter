@@ -965,13 +965,22 @@
    "area": "messages",
    "capability": "Banner for unfinished uploads with per-file 'Cancel upload'",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "MessageInput composer-recoverable-uploads Banner",
    "gate": "direct upload sessions only",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Depends on direct-upload sessions (not implemented); only the Joint conversion section lists them.",
-   "impact": "Rare.",
+   "flutterEntry": "recoverable_uploads_banner.dart + raft_ui RaftComposerRecoverableUploads (warning banner above the composer)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/features/recoverable_uploads_banner.dart",
+     "needle": "recoverableUploadsFor"
+    },
+    {
+     "file": "packages/raft_ui/lib/src/composer_recoverable_uploads.dart",
+     "needle": "Cancel unfinished upload {file}"
+    }
+   ],
+   "justification": "Intentional wording difference: the description says 'app' and 'window' where Web says 'browser' and 'tab' (docs/parity.md 'Unfinished-uploads banner').",
+   "impact": "",
    "size": "S"
   },
   {
@@ -10659,22 +10668,22 @@
    "area": "files-attachments",
    "capability": "Cancel an unfinished direct upload session ('Cancel upload')",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageInput recoverable-uploads banner 'Cancel upload' | JointAttachmentUploadSection 'Cancel upload' | pending chip remove during upload",
    "gate": "channel member who owns the session",
-   "flutterEntry": "channel_conversion_section.dart cancelUpload() (conversion blocker list only)",
+   "flutterEntry": "composer unfinished-uploads banner 'Cancel upload' (recoverable_uploads_banner.dart), removing a chip that owns a session (UploadDraft.discardRemote), and the Joint conversion section",
    "flutterRefs": [
     {
-     "file": "apps/raft_flutter/lib/features/channel_conversion_section.dart",
-     "needle": "'/attachments/upload-sessions/${upload['uploadId']}'"
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "Future<void> cancel(String uploadId)"
     },
     {
      "file": "apps/raft_flutter/lib/features/channel_conversion_section.dart",
-     "needle": "'Cancel upload'"
+     "needle": "'/attachments/upload-sessions/${upload['uploadId']}'"
     }
    ],
-   "justification": "Only reachable from the Joint channel conversion section; no composer banner (Flutter has no direct-upload sessions of its own).",
-   "impact": "Rare.",
+   "justification": "Web MessageInput removeFile + RecoverableUploadCancelButton + JointAttachmentUploadSection.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -10783,22 +10792,22 @@
    "area": "files-attachments",
    "capability": "Read the plan's upload limits and direct-upload settings before attaching files",
    "background": true,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageInput addFiles (limit check) and directAttachmentUpload.ts uploadAttachmentFile (route between multipart and direct)",
    "gate": "none",
-   "flutterEntry": "workspace_controller.dart uploadLimitBytes() reads maxBytes for size checks",
+   "flutterEntry": "workspace_editor.dart uploadLimitBytes() (server-owned ceiling, no local clamp) and attachment_direct_upload.dart (route choice per upload)",
    "flutterRefs": [
     {
      "file": "apps/raft_flutter/lib/data/workspace_editor.dart",
      "needle": "'/attachments/upload-capabilities'"
     },
     {
-     "file": "apps/raft_flutter/lib/data/workspace_controller.dart",
-     "needle": "uploadLimitFromCapabilities"
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "'/attachments/upload-capabilities'"
     }
    ],
-   "justification": "Flutter reads only maxBytes and clamps to 90 MB; it ignores directUploadEnabled / directUploadThresholdBytes so large files cannot take the direct route (docs/field-parity.md:42).",
-   "impact": "Large-file uploaders on Flutter.",
+   "justification": "Web resolveAttachmentUploadLimitBytes + uploadAttachmentFile: the ceiling is maxBytes as the server states it, the direct route needs directUploadEnabled and a file at or above directUploadThresholdBytes.",
+   "impact": "",
    "size": "M"
   },
   {
@@ -10807,13 +10816,18 @@
    "area": "files-attachments",
    "capability": "Poll / recover a direct upload session status",
    "background": true,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "directAttachmentUpload.ts recoverExistingSession / waitForVerification (automatic)",
    "gate": "directUploadEnabled",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Part of the unimplemented direct-upload flow (see /complete).",
-   "impact": "Members attaching files between 90 MB and the plan maximum (up to 200 MB) get a limit error on Flutter but can send them on Web; Flutter clamps uploads to 90 MB and has no direct (presigned) upload sessions.",
+   "flutterEntry": "attachment_direct_upload.dart DirectAttachmentUploader._recover (a retry resumes the session its chip owns)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "Future<Map<String, dynamic>?> _recover"
+    }
+   ],
+   "justification": "Web recoverExistingSession.",
+   "impact": "",
    "size": "M"
   },
   {
@@ -10822,18 +10836,22 @@
    "area": "files-attachments",
    "capability": "List the viewer's unfinished direct-upload sessions in a channel (composer 'unfinished uploads' banner with Cancel; Joint conversion blockers)",
    "background": false,
-   "status": "partial",
+   "status": "covered",
    "webEntry": "MessageInput recoverable-uploads Banner ('One unfinished upload' + 'Cancel upload') | JointAttachmentUploadSection in channel settings",
    "gate": "channel member; direct upload enabled",
-   "flutterEntry": "channel_conversion_section.dart lists active uploads only when converting a channel to Joint",
+   "flutterEntry": "recoverable_uploads_banner.dart RecoverableUploads.refresh (composer banner) and the Joint conversion section",
    "flutterRefs": [
     {
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "/active"
+    },
+    {
      "file": "apps/raft_flutter/lib/features/channel_conversion_section.dart",
-     "needle": "/attachments/upload-sessions/${widget.channelId}/active"
+     "needle": "/active"
     }
    ],
-   "justification": "Only the channel-conversion section calls it; the composer-level recoverable-uploads banner does not exist because Flutter never starts direct-upload sessions.",
-   "impact": "Rarely visible: only users who started a large direct upload on Web and return to it.",
+   "justification": "Web listActiveAttachmentUploads: rows owned by a pending chip are hidden, a cancelled row stays hidden until the server stops listing it.",
+   "impact": "",
    "size": "S"
   },
   {
@@ -10939,15 +10957,18 @@
    "area": "files-attachments",
    "capability": "Create a direct (presigned) upload session for a large attachment",
    "background": true,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "directAttachmentUpload.ts createSession (automatic from composer for files over the direct threshold)",
    "gate": "directUploadEnabled and size >= directUploadThresholdBytes",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "Flutter only references the path in packages/raft_client/lib/src/server_rate_limits.dart; no session creation.",
-   "impact": "Members attaching files between 90 MB and the plan maximum (up to 200 MB) get a limit error on Flutter but can send them on Web; Flutter clamps uploads to 90 MB and has no direct (presigned) upload sessions.",
-   "size": "M",
-   "topGap": 4
+   "flutterEntry": "attachment_direct_upload.dart DirectAttachmentUploader._createSession, called by workspace_upload_route.dart uploadDraft for every composer draft at or above the advertised threshold",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "'/attachments/upload-sessions'"
+    }
+   ],
+   "justification": "Same flow as Web directAttachmentUpload.ts: capability probe, session (idempotent clientRequestId), presigned PUT without API credentials, complete; failing probe or an off server degrades to multipart.",
+   "impact": ""
   },
   {
    "kind": "endpoint",
@@ -10955,13 +10976,18 @@
    "area": "files-attachments",
    "capability": "Complete a direct (presigned) attachment upload session after the PUT",
    "background": true,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "directAttachmentUpload.ts completeSession (automatic during large-file upload from the composer)",
    "gate": "directUploadEnabled and file size >= directUploadThresholdBytes",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "No direct upload client in Flutter; docs/field-parity.md:14 and :66 record 'direct-upload sessions' as LEFT. Multipart is capped at 90 MB (workspace_controller.dart multipartUploadSafeLimitBytes).",
-   "impact": "Members attaching files between 90 MB and the plan max (up to 200 MB) get a limit error on Flutter but can send them on Web.",
+   "flutterEntry": "attachment_direct_upload.dart DirectAttachmentUploader._complete (3 attempts, honours retryAfterMs for UPLOAD_OBJECT_NOT_FOUND / UPLOAD_VERIFICATION_IN_PROGRESS)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "/complete"
+    }
+   ],
+   "justification": "Web completeUpload.",
+   "impact": "",
    "size": "M"
   },
   {
@@ -10990,13 +11016,18 @@
    "area": "files-attachments",
    "capability": "Direct (presigned PUT) upload of large attachments",
    "background": false,
-   "status": "missing",
+   "status": "covered",
    "webEntry": "directAttachmentUpload.ts, MessageInput composer for files above the direct-upload threshold",
    "gate": "",
-   "flutterEntry": "",
-   "flutterRefs": [],
-   "justification": "See POST /attachments/upload-sessions.",
-   "impact": "Members attaching files between 90 MB and the plan maximum get a limit error on Flutter.",
+   "flutterEntry": "attachment_direct_upload.dart (presigned PUT through a credential-free proxied Dio, byte progress, cancel)",
+   "flutterRefs": [
+    {
+     "file": "apps/raft_flutter/lib/data/attachment_direct_upload.dart",
+     "needle": "Future<int> presignedStoragePut"
+    }
+   ],
+   "justification": "The PUT carries only the signed headers and the file; it follows the system proxy and never sees the API token.",
+   "impact": "",
    "size": "M"
   },
   {

@@ -37,6 +37,14 @@ class _Client extends RaftClient {
   }
 }
 
+/// A transfer starts after the capability probe (Web `uploadAttachmentFile`).
+Future<void> started(int Function() responses, int count) async {
+  for (var i = 0; i < 50 && responses() < count; i++) {
+    await Future<void>.delayed(Duration.zero);
+  }
+  expect(responses(), count);
+}
+
 void main() {
   test('upload failure retains draft; retry succeeds; removed transfer cannot reappear', () async {
     final client = _Client();
@@ -44,6 +52,7 @@ void main() {
       ..channel = RaftChannel({'id': 'channel', 'name': 'general'});
     final pending = w.attachUpload('日本語.txt', Uint8List.fromList([1, 2, 3, 4]));
     final draft = w.uploads().single;
+    await started(() => client.responses.length, 1);
     expect(draft.progress, .5);
     expect(w.uploadsReady(), false);
     client.responses.single.completeError(
@@ -53,6 +62,7 @@ void main() {
     expect(draft.error, 'File storage unavailable.');
     final retry = w.retryUpload(draft);
     expect(draft.error, isNull);
+    await started(() => client.responses.length, 2);
     client.responses.last.complete([
       {'id': 'attachment'},
     ]);
@@ -61,6 +71,7 @@ void main() {
     expect(draft.id, 'attachment');
     final discarded = w.attachUpload('cancel.txt', Uint8List.fromList([1]));
     final removed = w.uploads().last;
+    await started(() => client.responses.length, 3);
     w.removeUpload(removed);
     expect(client.cancellations.last.cancelled, true);
     client.responses.last.complete([

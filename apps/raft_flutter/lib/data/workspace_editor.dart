@@ -7,13 +7,13 @@ import 'package:raft_client/raft_client.dart';
 import 'cause_notice.dart';
 import 'composer_visit_state.dart';
 import 'shared_draft_attachment.dart';
-import 'upload_mime.dart';
 import 'user_error.dart';
 import 'workspace_composer.dart';
 import 'workspace_domain_ports.dart';
 import 'workspace_editor_entrypoints.dart';
 import 'workspace_sends.dart';
 import 'workspace_session_context.dart';
+import 'workspace_upload_route.dart';
 import 'workspace_uploads.dart';
 
 /// Receiver-local editor behavior using the existing session composer.
@@ -93,7 +93,6 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
   sendWarnings = {};
   final CauseNotices<String> _composerNotices = CauseNotices<String>();
   late final ComposerVisitState _composerVisits;
-  static const multipartUploadSafeLimitBytes = 90 * 1024 * 1024;
 
   @override
   Map<String, String> get drafts =>
@@ -357,11 +356,9 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
   static int? uploadLimitFromCapabilities(dynamic value) {
     final max = value is Map ? value['maxBytes'] : null;
     if (max is! num || !max.isFinite || max <= 0) return null;
-    final bytes = max.toInt();
-    return value['directUploadEnabled'] == true &&
-            bytes > multipartUploadSafeLimitBytes
-        ? multipartUploadSafeLimitBytes
-        : bytes;
+    // Server-owned (Web `resolveAttachmentUploadLimitBytes`): with direct
+    // upload on, the plan limit itself; never a local clamp.
+    return max.toInt();
   }
 
   @override
@@ -414,24 +411,7 @@ class WorkspaceEditor implements WorkspaceEditorEntrypoints {
           authority == _uploadAuthority(),
       resolveThread: ensureThread,
       limit: entrypoints.uploadLimitBytes,
-      upload: (id, draft, progress) => draft.local != null
-          ? client.uploadStream(
-              id,
-              draft.local!.openRead,
-              draft.sizeBytes,
-              draft.filename,
-              cancellation: draft.cancel,
-              onProgress: progress,
-              mimeType: composerMimeType(draft.filename),
-            )
-          : client.upload(
-              id,
-              draft.bytes,
-              draft.filename,
-              cancellation: draft.cancel,
-              onProgress: progress,
-              mimeType: composerMimeType(draft.filename),
-            ),
+      upload: (id, draft, progress) => uploadDraft(client, id, draft, progress),
       persist: saveDraftScope,
       notice: (message) => _raiseComposerNotice(scope, message),
     );

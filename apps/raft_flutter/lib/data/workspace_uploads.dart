@@ -5,8 +5,8 @@ import 'dart:typed_data';
 import 'package:raft_client/raft_client.dart';
 
 import 'shared_draft_attachment.dart';
+import 'upload_failure.dart';
 import 'upload_mime.dart';
-import 'user_error.dart';
 
 class UploadDraft {
   UploadDraft(this.filename, this.bytes, {required this.key}) : local = null;
@@ -192,7 +192,7 @@ class WorkspaceUploads {
       draft.progress = 1;
       if (draft.local != null) await visit.persist(scope);
     } catch (e) {
-      if (current()) draft.error = uploadErrorText(e);
+      if (current()) recordUploadFailure(draft, e);
     } finally {
       // A removed, cancelled or replaced operation cannot settle its successor
       // and cannot notify a new session which happens to reuse the scope id.
@@ -206,6 +206,7 @@ class WorkspaceUploads {
   void remove(UploadDraft draft, ComposerUploadPersist persist) {
     _operations.remove(draft)?.cancellation.cancel();
     draft.cancel.cancel();
+    discardDirectUpload(draft);
     for (final entry in byScope.entries.toList()) {
       if (!entry.value.remove(draft)) continue;
       if (entry.value.isEmpty) byScope.remove(entry.key);
@@ -388,39 +389,7 @@ class WorkspaceUploads {
     }
   }
 
-  /// Web `utils/attachmentUploadErrorPresentation.ts`: the server's `UPLOAD_*`
-  /// code or text, the "storage timed out" mapping, else `uploadRetryHint`.
-  static String uploadErrorText(Object failure) => _isStorageTimeout(failure)
-      ? _storageTimedOut
-      : userErrorText(
-          failure,
-          fallback: 'File no longer available or upload failed. Tap to retry.',
-          codeText: _uploadCodeText,
-          where: 'upload attachment',
-        );
-
-  static const _storageTimedOut =
-      'The file reached Raft, but saving it timed out.';
-
-  /// Web `SERVER_UPLOAD_ERROR_MESSAGE_ID`.
-  static bool _isStorageTimeout(Object failure) =>
-      failure is RaftApiException &&
-      failure.message == 'Attachment storage timed out';
-
-  static const _uploadCodeText = {
-    'UPLOAD_COMPLETE_FAILED': 'The upload could not be completed.',
-    'UPLOAD_SESSION_EXPIRED': 'Upload session expired.',
-    'UPLOAD_SESSION_CANCELED': 'Upload session was canceled.',
-    'UPLOAD_OBJECT_MISMATCH': 'Uploaded object failed verification.',
-    'UPLOAD_SESSION_STATUS_FAILED': 'The upload session could not be checked.',
-    'UPLOAD_SESSION_CREATE_FAILED': 'The upload session could not be created.',
-    'UPLOAD_CAPABILITY_FAILED': 'Upload capability could not be checked.',
-    'UPLOAD_INVALID_REQUEST': 'The attachment is empty.',
-    'UPLOAD_TOO_LARGE': 'The attachment exceeds the plan limit.',
-    'UPLOAD_OBJECT_PUT_UNCERTAIN':
-        'The upload response was lost. Retry to safely resume this upload.',
-    'UPLOAD_STALLED': 'The upload stopped making progress. Check your connection and try again.',
-  };
+  static String uploadErrorText(Object failure) => uploadFailureText(failure);
 
   static String _limitLabel(int bytes) => bytes % (1024 * 1024) == 0
       ? '${bytes ~/ (1024 * 1024)}MB'

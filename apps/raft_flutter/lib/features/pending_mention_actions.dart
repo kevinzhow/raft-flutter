@@ -14,6 +14,7 @@ import '../data/user_error.dart';
 import '../data/workspace_controller.dart';
 import 'composer_attachments_view.dart';
 import 'public_avatar_url.dart';
+import 'recoverable_uploads_banner.dart';
 
 /// Web `formatMentionActionStatusNotice`: why a mention action did not apply.
 String mentionActionStatusNotice(BuildContext context, Map? result) {
@@ -273,6 +274,7 @@ Widget? raftComposerAccessory(
       .map((d) => d.error!)
       .firstOrNull;
   final mentions = w.pendingMentionsFor(thread: thread).isNotEmpty;
+  final recoverable = recoverableUploadsFor(context, w, thread: thread);
   // Web order: error, quota, delivery warning (DM), unresolved mentions
   // (channel), then the strip. Both warnings carry a dismiss X.
   final warnings = w.sendWarningsFor(thread: thread);
@@ -284,7 +286,8 @@ Widget? raftComposerAccessory(
       quota == null &&
       !stopped &&
       !unresolved &&
-      !mentions) {
+      !mentions &&
+      recoverable == null) {
     return null;
   }
   final banners = <Widget>[
@@ -325,6 +328,10 @@ Widget? raftComposerAccessory(
       ],
       if (banners.isNotEmpty && mentions) const RaftComposerGap(),
       if (mentions) PendingMentionActions(controller: w, thread: thread),
+      if (recoverable != null) ...[
+        if (banners.isNotEmpty || mentions) const RaftComposerGap(),
+        recoverable,
+      ],
     ],
   );
 }

@@ -530,13 +530,13 @@ void main() {
   });
 
   test(
-    'upload ceiling is capped to the multipart limit when direct upload is on',
+    'upload ceiling is the server maxBytes, with direct upload on or off',
     () {
       final direct = _fixture('messages-upload-capabilities-direct');
       expect(direct['maxBytes'], 209715200);
       expect(
         WorkspaceController.uploadLimitFromCapabilities(direct),
-        90 * 1024 * 1024,
+        209715200,
       );
       // Legacy-only server: maxBytes is already the multipart ceiling.
       expect(
