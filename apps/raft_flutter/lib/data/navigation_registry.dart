@@ -117,6 +117,7 @@ abstract final class NavigationRegistry {
           'else, no Web counterpart.',
     ),
     NavigationSettingsTab('server'),
+    NavigationSettingsTab('raftbench'),
     NavigationSettingsTab('billing'),
     NavigationSettingsTab('administration'),
     NavigationSettingsTab('im-bridges'),

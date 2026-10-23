@@ -489,6 +489,9 @@ enum RaftGlyph {
   /// lucide `face-slightly-smiling-plus` 1.55.0.
   /// Web: components/layout/SidebarSectionEmojiPicker.tsx:7 (+1 more).
   smilePlus(_faceSlightlySmilingPlusV1_55_0, 'face-slightly-smiling-plus', '1.55.0'),
+  /// lucide `sparkles` 1.55.0.
+  /// Flutter-only glyph (message composer Markdown toolbar); no Web import uses it.
+  sparkles(_sparklesV1_55_0, 'sparkles', '1.55.0'),
   /// lucide `square` 1.55.0.
   /// Web: components/agent/AgentDetailPanel.tsx:27 (+3 more).
   square(_squareV1_55_0, 'square', '1.55.0'),
@@ -568,6 +571,9 @@ enum RaftGlyph {
   /// lucide `volume-x` 1.55.0.
   /// Legacy Flutter name; no Web import uses it.
   volumeX(_volumeXV1_55_0, 'volume-x', '1.55.0'),
+  /// lucide `wallet` 1.55.0.
+  /// Flutter-only glyph (message composer Markdown toolbar); no Web import uses it.
+  wallet(_walletV1_55_0, 'wallet', '1.55.0'),
   /// lucide `wifi-off` 1.55.0.
   /// Web: components/layout/useSystemNotifications.tsx:4.
   wifiOff(_wifiOffV1_55_0, 'wifi-off', '1.55.0'),
@@ -1482,6 +1488,13 @@ const _smartphoneV1_55_0 = <_LucideNode>[
   _LucideNode(_LucideKind.rect, [5.0, 2.0, 14.0, 20.0, 2.0, 2.0]),
   _LucideNode.path('M12 18h.01'),
 ];
+// sparkles.js lucide-react 1.55.0 sha256 30e6149632fb6e9e
+const _sparklesV1_55_0 = <_LucideNode>[
+  _LucideNode.path('M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z'),
+  _LucideNode.path('M20 2v4'),
+  _LucideNode.path('M22 4h-4'),
+  _LucideNode(_LucideKind.circle, [4.0, 20.0, 2.0]),
+];
 // square-check-big.js lucide-react 1.55.0 sha256 8559843da2feac8b
 const _squareCheckBigV1_55_0 = <_LucideNode>[
   _LucideNode.path('M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344'),
@@ -1642,6 +1655,11 @@ const _volumeXV1_55_0 = <_LucideNode>[
   _LucideNode.path('M11 4.702a.7.7 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.7.7 0 0 0 11 19.298z'),
   _LucideNode.path('m16.5 14.5 5-5'),
   _LucideNode.path('m16.5 9.5 5 5'),
+];
+// wallet.js lucide-react 1.55.0 sha256 3a1bd3a469712959
+const _walletV1_55_0 = <_LucideNode>[
+  _LucideNode.path('M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1'),
+  _LucideNode.path('M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4'),
 ];
 // wifi-off.js lucide-react 1.55.0 sha256 b7174c20d9f12f9f
 const _wifiOffV1_55_0 = <_LucideNode>[

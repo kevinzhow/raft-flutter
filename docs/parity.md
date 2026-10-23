@@ -1991,6 +1991,21 @@ Not owner decisions yet; each is listed so a reviewer can accept or send it back
 * A native window has no per-page title: Web sets the document title of the Chinese community page; the app title bar keeps the app name.
 * The globe after the server name shows in the phone server selector only; the desktop top bar that carries it in Web is the shell package.
 
+## RaftBench vs Web v1.21.23 (cindy/w23-bench): open differences
+
+RaftBench (owner / admin, `raftbench_overview_v0`) is ported in full: tasks and cost, conversation
+insights with their settings, progress, findings and evidence, the collapsed legacy phrase rules and
+the service-agent DM notice. Kevin decided on 2026-10-23 to build it (the plan had suggested recording
+it as an intentional difference). What still differs, for a reviewer to accept or send back:
+
+* `/s/<slug>/raftbench` opens Settings > RaftBench (`settings/raftbench` inside the app); Web mounts the page as its own route under the Settings rail.
+* While the rollout flag has not resolved on a direct visit, the page is blank; Web shows "RaftBench is not enabled for this server" for that moment. The Settings row itself follows the remembered flag value, so a normal visit never sees either.
+* "Analyze messages since (UTC)" is a field that opens the platform date picker (Web: the browser's native date input). It shows `mm/dd/yyyy` (`yyyy/mm/dd` in Chinese) without the calendar glyph.
+* Channel checkboxes are raft-ui checkboxes (Web: native), the finding dot is a round status dot (Web: the pixel `Status`), and the `<details>` marker is a drawn triangle.
+* The brand colour of the progress bars is the primary-400 token until the raft-ui 0.7.0 token set lands; the text scale (title / headline / callout / footnote / caption) is Web's 0.7.0 scale written out in `raftbench_parts.dart`.
+* A failed dashboard read or save is the one generic message, like Web; the server's `raftbench_*` code is not shown. The hosted-agent model line polls every 60 seconds like Web.
+* Sparkles and Wallet glyphs are vendored by hand (`FLUTTER_ADDED` in `tool/gen-glyphs`) because a full `--import-sources` needs the raft-ui 0.7.0 pin.
+
 ## Live sequence jumps do not trigger a gap fetch: intended difference from Web (owner decision 2026-10-23)
 
 Web treats a live `message:new` whose `seq` is past the open window's tail as a

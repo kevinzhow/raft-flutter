@@ -50,6 +50,7 @@ import 'message_grouping.dart';
 import 'message_image_export.dart';
 import 'forward_messages_dialog.dart';
 import 'channel_footer_states.dart';
+import 'channel_footer_widgets.dart';
 import 'composer_directory.dart';
 import 'composer_attachment_input.dart';
 import 'composer_attachments_view.dart';
@@ -2883,33 +2884,14 @@ class _RaftChatViewState extends PhonePageState<RaftChatView> {
         ),
       );
     }
-    final guest = w.server?.string('role') == 'guest';
-    final footer = switch (channelFooterKind(w, now)) {
-      null || ChannelFooterKind.composer => null,
-      ChannelFooterKind.archived => RaftChannelArchivedFooter(
-        message: 'This channel is archived.',
-        linkLabel:
-            w.can('archiveChannels') && widget.onOpenChannelSettings != null
-            ? 'Unarchive'
-            : null,
-        onLink: widget.onOpenChannelSettings,
-      ),
-      ChannelFooterKind.jointLocked => RaftChannelBannerFooter(
-        message: "This Joint Channel is read-only because it has more than 2 free servers. It becomes writable again when one server's admin upgrades or a free server leaves.",
-        linkLabel: widget.onViewBilling == null ? null : 'View Billing',
-        onLink: widget.onViewBilling,
-      ),
-      ChannelFooterKind.guestReadOnly => const RaftChannelBannerFooter(
-        message: 'Guest access is read-only. You can read and follow updates, but you cannot post or react.',
-      ),
-      ChannelFooterKind.join => RaftChannelJoinFooter(
-        channelName: channel.name,
-        onJoin: _messages.joinOpenChannel,
-        explanation: guest
-            ? 'Joining adds this channel to your sidebar and follows its updates. It does not enable posting or reactions.'
-            : null,
-      ),
-    };
+    final footer = channelFooterReplacement(
+      context,
+      w,
+      now,
+      onOpenChannelSettings: widget.onOpenChannelSettings,
+      onViewBilling: widget.onViewBilling,
+      onJoin: _messages.joinOpenChannel,
+    );
     return (footer, grace);
   }
 

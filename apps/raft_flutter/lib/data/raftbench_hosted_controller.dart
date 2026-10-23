@@ -1,9 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:raft_ui/raft_ui.dart' show RaftForegroundPeriodic;
 
-import 'raftbench_models.dart';
+import 'package:raft_ui/raft_ui.dart'
+    show
+        RaftForegroundPeriodic,
+        RaftbenchDashboard,
+        RaftbenchHostedPanel,
+        RaftbenchOption,
+        RaftbenchRun,
+        RaftbenchServiceAgent,
+        raftbenchHistoryDays;
 
 /// One HTTP call of the signed-in session (`RaftClient.request`).
 typedef RaftbenchRequest = Future<dynamic> Function(
@@ -12,22 +19,6 @@ typedef RaftbenchRequest = Future<dynamic> Function(
   Object? data,
   Map<String, dynamic>? query,
 });
-
-/// A channel the analysis can read: id and display name (`#general`-style
-/// names are matched against evidence targets). [activityAt] (last message
-/// time) orders the legacy workspace scan; [unjoinedPublic] marks a public
-/// channel the viewer has not joined.
-class RaftbenchOption {
-  const RaftbenchOption(
-    this.value,
-    this.label, {
-    this.activityAt,
-    this.unjoinedPublic = false,
-  });
-  final String value, label;
-  final String? activityAt;
-  final bool unjoinedPublic;
-}
 
 /// The conversation-insights panel (Web `HostedAnalysis.tsx`): reads the
 /// server-owned dashboard every 5 seconds while the page is open, and writes
@@ -38,7 +29,8 @@ class RaftbenchOption {
 /// newer load or while a save is running is dropped. A failure to load or save
 /// is one generic state, as on the Web; the page never shows a partial result
 /// as if it were current.
-class RaftbenchHostedController extends ChangeNotifier {
+class RaftbenchHostedController extends ChangeNotifier
+    implements RaftbenchHostedPanel {
   RaftbenchHostedController({
     required this.request,
     required this.identity,
@@ -61,19 +53,26 @@ class RaftbenchHostedController extends ChangeNotifier {
 
   /// Whether the analysis is enabled, as the last dashboard said.
   final void Function(bool enabled) onEnabled;
+  @override
   final DateTime Function() now;
   final bool poll;
 
   static const maxSources = 50;
-  static const historyDays = [7, 30, 90];
 
   RaftbenchDashboard? _data;
+  @override
+  @override
+  @override
   bool loading = true, saving = false, failed = false;
+  @override
   int page = 1;
+  @override
   List<RaftbenchServiceAgent> serviceAgents = const [];
   List<RaftbenchOption> _options = const [];
   List<String>? _selection;
   String? _historyDate;
+  @override
+  @override
   String? modelAgentId, modelLabel;
 
   late final String _identity = identity();
@@ -86,7 +85,9 @@ class RaftbenchHostedController extends ChangeNotifier {
   RaftForegroundPeriodic? _poll, _modelPoll;
   String? _polledAgent;
 
+  @override
   RaftbenchDashboard? get data => analysisAllowed() ? _data : null;
+  @override
   List<RaftbenchOption> get options => _options;
   List<String>? get selection => _selection;
   String? get historyDate => _historyDate;
@@ -106,10 +107,10 @@ class RaftbenchHostedController extends ChangeNotifier {
     }
   }
 
+  /// The channels the page offers. An input synced while the page builds, so
+  /// it never notifies; the panel reads it in the same build.
   void setOptions(List<RaftbenchOption> next) {
-    if (_sameOptions(next)) return;
-    _options = next;
-    _changed();
+    if (!_sameOptions(next)) _options = next;
   }
 
   bool _sameOptions(List<RaftbenchOption> next) {
@@ -131,6 +132,7 @@ class RaftbenchHostedController extends ChangeNotifier {
 
   /// The channels to analyze: the user's choice, else the saved ones, else
   /// the first 50 visible.
+  @override
   List<String> get selected {
     final chosen = _selection;
     if (chosen != null) return chosen;
@@ -144,12 +146,14 @@ class RaftbenchHostedController extends ChangeNotifier {
       value.toUtc().toIso8601String().substring(0, 10);
 
   /// The analysis start date (UTC `yyyy-MM-dd`) the field shows.
+  @override
   String get dateValue =>
       _historyDate ??
       (data?.historyFrom == null
           ? _day(now().subtract(const Duration(days: 7)))
           : data!.historyFrom!.substring(0, 10));
 
+  @override
   bool get invalidHistory {
     final value = _historyDate;
     if (value == null) return false;
@@ -161,8 +165,10 @@ class RaftbenchHostedController extends ChangeNotifier {
   }
 
   /// Settings were edited and not applied yet.
+  @override
   bool get changed => _selection != null || _historyDate != null;
 
+  @override
   bool get emptyRange {
     final coverage = data?.coverage;
     return coverage != null &&
@@ -170,10 +176,13 @@ class RaftbenchHostedController extends ChangeNotifier {
         coverage.windowMessages == 0;
   }
 
+  @override
   String? get availableHistory => data?.coverage?.latestAt?.substring(0, 10);
 
+  @override
   RaftbenchRun? get run => data?.run;
 
+  @override
   bool get emptyScan {
     final run = this.run;
     return emptyRange &&
@@ -183,6 +192,7 @@ class RaftbenchHostedController extends ChangeNotifier {
         (run?.fetchedMessages ?? 0) == 0;
   }
 
+  @override
   bool get noMaterial {
     final run = this.run;
     return run?.report != null &&
@@ -192,6 +202,7 @@ class RaftbenchHostedController extends ChangeNotifier {
   }
 
   /// The analysis is on and a run is queued, reading or not yet created.
+  @override
   bool get busy {
     final data = this.data;
     if (data == null || !data.enabled || data.provisioning?.state == 'failed') {
@@ -203,6 +214,7 @@ class RaftbenchHostedController extends ChangeNotifier {
 
   /// A service-agent DM or assignment must not be offered while the settings
   /// are being edited on a configured analysis (Web `assignAgent` guard).
+  @override
   bool get assignmentBlocked =>
       saving ||
       selected.isEmpty ||
@@ -296,6 +308,7 @@ class RaftbenchHostedController extends ChangeNotifier {
 
   // Settings.
 
+  @override
   void toggleChannel(String id) {
     final current = selected;
     _selection = current.contains(id)
@@ -307,18 +320,21 @@ class RaftbenchHostedController extends ChangeNotifier {
     _changed();
   }
 
+  @override
   void setHistoryDate(String value) {
     _historyDate = value;
     _changed();
   }
 
   /// The "Past N days" shortcut: [days] before now, as a UTC date.
+  @override
   void chooseHistoryDays(int days) {
-    if (!historyDays.contains(days)) return;
+    if (!raftbenchHistoryDays.contains(days)) return;
     _historyDate = _day(now().subtract(Duration(days: days)));
     _changed();
   }
 
+  @override
   void setPage(int value) {
     page = value < 1 ? 1 : value;
     _changed();
@@ -381,20 +397,24 @@ class RaftbenchHostedController extends ChangeNotifier {
     }
   }
 
+  @override
   Future<void> toggleAnalysis() async {
     final snapshot = data;
     if (snapshot != null) await save(!snapshot.enabled);
   }
 
   /// Apply edited sources / range and restart (enabled stays on).
+  @override
   Future<void> applySettings() => save(true);
 
   /// Restart from the newest source day (the "outside window" shortcut).
+  @override
   Future<void> analyzeAvailableHistory() async {
     final day = availableHistory;
     if (day != null) await save(true, startDate: day);
   }
 
+  @override
   Future<void> createServiceAgent() async {
     if (!_current() || saving) return;
     saving = true;
@@ -424,6 +444,7 @@ class RaftbenchHostedController extends ChangeNotifier {
 
   /// Bind a ready service agent (`PUT /raftbench/assignment`). The first
   /// assignment also carries the sources and the start date.
+  @override
   Future<void> assignAgent(String agentId) async {
     final snapshot = data;
     if (!_current() || snapshot == null || assignmentBlocked) return;

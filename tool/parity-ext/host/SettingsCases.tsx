@@ -12,6 +12,7 @@
 // Data: tool/parity-ext/fixtures/settings.json (routes answered by the
 // generated provider spec; the Flutter provider reads the same file).
 import ParityExtReleaseNotesPanel from "../src/components/settings/ReleaseNotesPanel";
+import ParityExtRaftBenchPage from "../src/raftbench/RaftBenchPage";
 import parityExtSettingsFixture from "virtual:parity-ext/settings";
 
 type ParityExtSettingsProps = {
@@ -41,6 +42,7 @@ function parityExtSettingsProps(): ParityExtSettingsProps | null {
 
 function parityExtSettingsRoutePath(tab: string): string {
   if (tab === "release-notes") return `/s/${fxServer.slug}/release-notes`;
+  if (tab === "raftbench") return `/s/${fxServer.slug}/raftbench`;
   const slug = tab === "integrations" ? "applications" : tab === "mcp" ? "mcp-servers" : tab;
   return `/s/${fxServer.slug}/settings/${slug}`;
 }
@@ -77,6 +79,7 @@ function parityExtPrimeSettingsStores(props: ParityExtSettingsProps) {
   setServerFeatureFlagForTests(fxServer.id, "provider_connections_v0", props.flags.has("providers"));
   setServerFeatureFlagForTests(fxServer.id, "slack_bridge_v0", props.flags.has("bridge"));
   setServerFeatureFlagForTests(fxServer.id, "product_analytics_settings_v0", props.flags.has("analytics"));
+  setServerFeatureFlagForTests(fxServer.id, "raftbench_overview_v0", props.flags.has("raftbench"));
   if (props.routeSet === "admin-all-visible") {
     const channels = useChannelStore.getState().channels;
     if (!channels.some((channel) => channel.name === "all")) {
@@ -103,7 +106,7 @@ function ParityExtSettingsCaseView({ props }: { props: ParityExtSettingsProps })
           className="bg-layer-canvas-muted theme-brutal:bg-white"
           style={{ ...parityExtShellVars(), width: window.innerWidth, height: window.innerHeight, display: "flex", flexDirection: "column", overflow: "hidden" }}
         >
-          <SettingsPanel tab={props.tab} />
+          {props.tab === "raftbench" ? <ParityExtRaftBenchPage /> : <SettingsPanel tab={props.tab} />}
         </div>
       </main>
     );
@@ -131,7 +134,9 @@ function ParityExtSettingsCaseView({ props }: { props: ParityExtSettingsProps })
         >
           {props.tab === "release-notes"
             ? <ParityExtReleaseNotesPanel />
-            : <SettingsPanel tab={props.tab} />}
+            : props.tab === "raftbench"
+              ? <ParityExtRaftBenchPage />
+              : <SettingsPanel tab={props.tab} />}
         </div>
       </div>
     </main>

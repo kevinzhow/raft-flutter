@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_client/raft_client.dart';
 import 'package:raft_flutter/data/raftbench_overview_controller.dart';
+import 'package:raft_ui/raft_ui.dart';
 
 import 'support/raftbench_fixture.dart';
 

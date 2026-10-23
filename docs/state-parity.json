@@ -3164,6 +3164,62 @@
      "justification": "A transient runtime-options failure is shown with Retry. Retrying reloads options, clears the error and allows normal runtime selection; covered by widget tests."
     }
    ]
+  },
+  {
+   "id": "settings.raftbench",
+   "title": "Settings: RaftBench",
+   "webEntry": "packages/web/src/raftbench/RaftBenchPage.tsx (ManagerOverview.tsx, HostedAnalysis.tsx)",
+   "flutterEntry": "apps/raft_flutter/lib/features/raftbench_page.dart",
+   "states": [
+    {
+     "state": "loading",
+     "variant": "dashboard and aggregates pending",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [
+      "components.raftbench.page.loading*"
+     ],
+     "status": "covered",
+     "caseValidity": "unchecked"
+    },
+    {
+     "state": "empty",
+     "variant": "outside the range / no material / no completed tasks",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [
+      "components.raftbench.page.outside-window*",
+      "components.raftbench.page.disabled*"
+     ],
+     "status": "covered",
+     "caseValidity": "unchecked"
+    },
+    {
+     "state": "error",
+     "variant": "dashboard and aggregate reads failed; failed run",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [
+      "components.raftbench.page.error*",
+      "components.raftbench.page.failed*"
+     ],
+     "status": "covered",
+     "caseValidity": "unchecked"
+    },
+    {
+     "state": "partial",
+     "variant": "stale result, skipped window, running batch",
+     "web": "yes",
+     "flutter": "yes",
+     "parityCase": [
+      "components.raftbench.page.stale*",
+      "components.raftbench.page.skipped*",
+      "components.raftbench.page.running*"
+     ],
+     "status": "covered",
+     "caseValidity": "unchecked"
+    }
+   ]
   }
  ],
  "navigationCoverage": {
@@ -3292,6 +3348,9 @@
    ],
    "release-notes": [
     "settings.release-notes"
+   ],
+   "raftbench": [
+    "settings.raftbench"
    ]
   }
  }

@@ -508,6 +508,8 @@ class RaftRecipeCard extends StatelessWidget {
     this.padding = EdgeInsets.zero,
     this.maxWidth,
     this.background,
+    this.clip = false,
+    this.transparentBorder = false,
   });
   final Widget child;
   final EdgeInsets padding;
@@ -515,6 +517,13 @@ class RaftRecipeCard extends StatelessWidget {
 
   /// Call-site `bg-*` override of the Card fill.
   final Color? background;
+
+  /// Call-site `overflow-hidden`: the content is clipped to the rounded box.
+  final bool clip;
+
+  /// Call-site `border-transparent`: the border keeps its width (and takes
+  /// its layout space) but paints nothing.
+  final bool transparentBorder;
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
@@ -532,9 +541,27 @@ class RaftRecipeCard extends StatelessWidget {
         width: double.infinity,
         padding: padding,
         applyText: false,
-        decorationOverride: background == null
+        clip: clip,
+        decorationOverride: background == null && !transparentBorder
             ? null
-            : (d) => d.copyWith(color: background),
+            : (d) {
+                final border = d.border;
+                return d.copyWith(
+                  color: background ?? d.color,
+                  border: transparentBorder && border is Border
+                      ? Border(
+                          top: border.top.copyWith(color: Colors.transparent),
+                          right: border.right.copyWith(
+                            color: Colors.transparent,
+                          ),
+                          bottom: border.bottom.copyWith(
+                            color: Colors.transparent,
+                          ),
+                          left: border.left.copyWith(color: Colors.transparent),
+                        )
+                      : border,
+                );
+              },
         child: DefaultTextStyle.merge(
           style: root.textStyle(tokens),
           child: child,

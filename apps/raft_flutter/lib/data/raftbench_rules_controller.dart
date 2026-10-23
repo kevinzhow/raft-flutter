@@ -3,23 +3,23 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'raftbench_hosted_controller.dart'
-    show RaftbenchOption, RaftbenchRequest;
+import 'package:raft_ui/raft_ui.dart'
+    show
+        RaftbenchCueReview,
+        RaftbenchEvaluation,
+        RaftbenchEvidenceMessage,
+        RaftbenchFinding,
+        RaftbenchOption,
+        RaftbenchOverviewSnapshot,
+        RaftbenchReview,
+        RaftbenchRulesPanel,
+        RaftbenchSignal,
+        evaluateRaftbenchMessages,
+        raftbenchOverviewChannelLimit,
+        raftbenchWorkspaceScope;
+
+import 'raftbench_hosted_controller.dart' show RaftbenchRequest;
 import 'raftbench_live_messages.dart';
-import 'raftbench_rules.dart';
-
-const raftbenchWorkspaceScope = 'workspace';
-
-/// A reviewer's label and note for one cue; kept only until the scope changes
-/// or the scan is refreshed (nothing is sent anywhere).
-class RaftbenchCueReview {
-  const RaftbenchCueReview(this.status, this.note);
-  final RaftbenchReview status;
-  final String note;
-  static const unreviewed = RaftbenchCueReview(RaftbenchReview.needsReview, '');
-  RaftbenchCueReview copyWith({RaftbenchReview? status, String? note}) =>
-      RaftbenchCueReview(status ?? this.status, note ?? this.note);
-}
 
 class _Snapshot {
   const _Snapshot(this.scopeKey, this.value);
@@ -31,7 +31,8 @@ class _Snapshot {
 /// reads the latest 200 top-level messages of the chosen scope on request and
 /// evaluates them locally. Changing the scope, the identity or the consent
 /// drops the snapshot, the reviews and the selection.
-class RaftbenchRulesController extends ChangeNotifier {
+class RaftbenchRulesController extends ChangeNotifier
+    implements RaftbenchRulesPanel {
   RaftbenchRulesController({
     required this.request,
     required this.identity,
@@ -45,15 +46,23 @@ class RaftbenchRulesController extends ChangeNotifier {
   final DateTime Function() now;
 
   /// What the last [configure] call fixed.
+  @override
   String channelId = raftbenchWorkspaceScope;
+  @override
   List<RaftbenchOption> options = const [];
   bool consented = false, analysisAllowed = false;
 
+  @override
   int minimum = 3;
+  @override
   RaftbenchSignal? filter;
+  @override
   String drillChannelId = '';
   String selectedId = '';
+  @override
   Map<String, RaftbenchCueReview> reviews = const {};
+  @override
+  @override
   bool loading = false, failed = false;
 
   _Snapshot? _snapshot;
@@ -93,9 +102,11 @@ class RaftbenchRulesController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  @override
   RaftbenchOverviewSnapshot? get snapshot =>
       _snapshot?.scopeKey == _scopeKey ? _snapshot!.value : null;
 
+  @override
   RaftbenchEvaluation get evaluation {
     final value = snapshot;
     if (value == null) return RaftbenchEvaluation.empty;
@@ -107,6 +118,7 @@ class RaftbenchRulesController extends ChangeNotifier {
     return _evaluation!;
   }
 
+  @override
   List<RaftbenchFinding> get findings => [
     for (final f in evaluation.findings)
       if ((filter == null || f.kind == filter) &&
@@ -115,6 +127,7 @@ class RaftbenchRulesController extends ChangeNotifier {
         f,
   ];
 
+  @override
   RaftbenchFinding? get finding {
     final all = findings;
     for (final f in all) {
@@ -123,11 +136,13 @@ class RaftbenchRulesController extends ChangeNotifier {
     return all.isEmpty ? null : all.first;
   }
 
+  @override
   RaftbenchCueReview? get review {
     final f = finding;
     return f == null ? null : reviews[f.id] ?? RaftbenchCueReview.unreviewed;
   }
 
+  @override
   int get pendingCount => [
     for (final f in evaluation.findings)
       if ((reviews[f.id]?.status ?? RaftbenchReview.needsReview) ==
@@ -135,12 +150,14 @@ class RaftbenchRulesController extends ChangeNotifier {
         f,
   ].length;
 
+  @override
   Set<String> get evidenceIds => {
     for (final m in finding?.evidence ?? const []) m.id,
   };
 
   /// The matched messages plus up to four nearby ones (same channel, within
   /// two minutes of the matched span), oldest first.
+  @override
   List<RaftbenchEvidenceMessage> get evidence {
     final f = finding;
     if (f == null) return const [];
@@ -157,6 +174,7 @@ class RaftbenchRulesController extends ChangeNotifier {
     return [...f.evidence, ...nearby]..sort((a, b) => a.time.compareTo(b.time));
   }
 
+  @override
   bool get canScan =>
       consented &&
       analysisAllowed &&
@@ -164,6 +182,7 @@ class RaftbenchRulesController extends ChangeNotifier {
       options.isNotEmpty &&
       !loading;
 
+  @override
   Future<void> analyze() async {
     if (!consented || !analysisAllowed || channelId.isEmpty || !roleAllowed()) {
       return;
@@ -214,11 +233,13 @@ class RaftbenchRulesController extends ChangeNotifier {
     }
   }
 
+  @override
   void setFilter(RaftbenchSignal? kind) {
     filter = kind;
     _changed();
   }
 
+  @override
   void changeMinimum(String text) {
     final n = int.tryParse(text);
     if (n != null && n >= 2 && n <= 20) {
@@ -228,13 +249,16 @@ class RaftbenchRulesController extends ChangeNotifier {
     }
   }
 
+  @override
   void drillTo(String channel) {
     drillChannelId = channel;
     _changed();
   }
 
+  @override
   void clearDrill() => drillTo('');
 
+  @override
   void chooseFinding(String id) {
     selectedId = id;
     _changed();
@@ -247,11 +271,15 @@ class RaftbenchRulesController extends ChangeNotifier {
     _changed();
   }
 
+  @override
   void setNote(String note) => _review((r) => r.copyWith(note: note));
+  @override
   void confirm() =>
       _review((r) => r.copyWith(status: RaftbenchReview.confirmed));
+  @override
   void dismiss() =>
       _review((r) => r.copyWith(status: RaftbenchReview.dismissed));
+  @override
   void reopen() =>
       _review((r) => r.copyWith(status: RaftbenchReview.needsReview));
 
