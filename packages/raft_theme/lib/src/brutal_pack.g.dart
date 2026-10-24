@@ -655,7 +655,8 @@ const String brutalThemePackJson = r'''{
         "confirm.slug": "text",
         "confirm.explanation": "plain",
         "spinner.ringShape": "quarter",
-        "spinner.foreground": "fixed"
+        "spinner.foreground": "fixed",
+        "toast.style": "recipe"
       }
     },
     "dark": {
@@ -1304,7 +1305,8 @@ const String brutalThemePackJson = r'''{
         "confirm.slug": "text",
         "confirm.explanation": "plain",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "toast.style": "recipe"
       }
     }
   }

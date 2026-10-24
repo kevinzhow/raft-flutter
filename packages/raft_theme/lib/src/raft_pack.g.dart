@@ -886,7 +886,8 @@ const String raftThemePackJson = r'''{
         "confirm.slug": "chip",
         "confirm.explanation": "dangerBanner",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "toast.style": "hud"
       }
     },
     "dark": {
@@ -1713,7 +1714,8 @@ const String raftThemePackJson = r'''{
         "confirm.slug": "chip",
         "confirm.explanation": "dangerBanner",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "toast.style": "hud"
       }
     }
   }

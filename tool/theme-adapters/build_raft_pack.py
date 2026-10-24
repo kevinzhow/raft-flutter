@@ -426,6 +426,7 @@ OPTIONS_RAFT = {
     'banner.iconAlignment': 'start', 'banner.iconColor': 'foreground', 'confirm.slug': 'chip',
     'confirm.explanation': 'dangerBanner',
     'spinner.ringShape': 'sweep', 'spinner.foreground': 'inherited',
+    'toast.style': 'hud',
 }
 
 CASE_RAFT = {'dialogShellTitle': 'none','heading': 'none', 'label': 'none', 'badge': 'none'}

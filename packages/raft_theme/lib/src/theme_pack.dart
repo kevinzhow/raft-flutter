@@ -163,6 +163,9 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'button.hoverSurface': {'overlay', 'variant'},
   'button.linkDecoration': {'underline', 'none'},
   'button.linkPadding': {'none', 'size'},
+  // The toast surface: the elegant / brutal recipe (a glyph icon, recipe
+  // border and fill) or the raft-ui 0.7 neutral HUD (a status pixel).
+  'toast.style': {'recipe', 'hud'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

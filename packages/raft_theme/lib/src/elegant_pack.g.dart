@@ -659,7 +659,8 @@ const String elegantThemePackJson = r'''{
         "confirm.slug": "text",
         "confirm.explanation": "plain",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "toast.style": "recipe"
       }
     },
     "dark": {
@@ -1274,7 +1275,8 @@ const String elegantThemePackJson = r'''{
         "confirm.slug": "text",
         "confirm.explanation": "plain",
         "spinner.ringShape": "sweep",
-        "spinner.foreground": "inherited"
+        "spinner.foreground": "inherited",
+        "toast.style": "recipe"
       }
     }
   }

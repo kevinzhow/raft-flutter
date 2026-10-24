@@ -6,9 +6,12 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-import 'design_primitives.dart' show RaftLayoutMetrics;
+import 'design_primitives.dart' show RaftLayoutMetrics, RaftTouchTarget;
 import 'dialog_card.dart';
 import 'icons.dart';
+import 'raft/status.dart' show RaftStatus, RaftStatusSize;
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 import 'localization.dart';
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
@@ -52,6 +55,9 @@ class RaftToast extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context), rt = t.recipeTokens;
+    if (t.option('toast.style', or: 'recipe') == 'hud') {
+      return _buildHud(context, t);
+    }
     final hasClose = onClose != null;
     final s = RaftToastRecipe.resolve(
       theme: t.recipeTheme,
@@ -221,6 +227,127 @@ class RaftToast extends StatelessWidget {
     // its own base so it renders the same from any context.
     return DefaultTextStyle(
       style: titleStyle.copyWith(decoration: TextDecoration.none),
+      child: Semantics(
+        liveRegion: true,
+        container: true,
+        child: _ToastPaintSnap(child: root),
+      ),
+    );
+  }
+
+  /// raft-ui 0.7 `toastStyles` as the Web wraps it (LocalizedToastProvider):
+  /// the neutral HUD. `rounded-container bg-layer-hud text-foreground-on-hud
+  /// shadow-float`, content `px-4 py-3 gap-x-3` on the
+  /// `[auto_minmax(0,1fr)_auto]` grid, a 20px icon cell holding the 9px status
+  /// pixel (done / problem / information) instead of a glyph, a 14/20 normal
+  /// title, a 70% description and a bare 16px `X` as the dismiss control.
+  Widget _buildHud(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final hasClose = onClose != null;
+    final onHud = ui['foreground-on-hud'];
+    final title = t.scale(
+      RaftTypeScale.callout,
+      weight: FontWeight.w400,
+      color: onHud,
+    );
+    final pixel = switch (tone) {
+      RaftToastRecipeTone.success => ui['task-status-done'],
+      RaftToastRecipeTone.info => ui.info,
+      _ => ui.presence('error'),
+    };
+    final body = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(this.title, style: title),
+        if (description != null)
+          Text(
+            description!,
+            style: title.copyWith(color: ui['foreground-on-hud-muted']),
+          ),
+      ],
+    );
+    final close = hasClose
+        ? Semantics(
+            button: true,
+            label: raftText(context, 'Close'),
+            child: _ToastPaintSnap(
+              child: RaftTouchTarget(
+                child: GestureDetector(
+                  key: const Key('toast-close'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onClose,
+                  child: SizedBox.square(
+                    dimension: 16,
+                    child: RaftIcon(RaftGlyph.x, size: 16, color: onHud),
+                  ),
+                ),
+              ),
+            ),
+          )
+        : null;
+    // `toastAction`: a bold underlined `text-callout` link in the on-HUD ink.
+    final action = actionLabel == null
+        ? null
+        : RaftTouchTarget(
+            child: GestureDetector(
+              key: const Key('toast-action'),
+              behavior: HitTestBehavior.opaque,
+              onTap: onAction,
+              child: Text(
+                actionLabel!,
+                style: title.copyWith(
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.underline,
+                  decorationThickness: 1.5,
+                  decorationColor: onHud,
+                ),
+              ),
+            ),
+          );
+    // Titles-only toasts keep the grid's two empty tracks (24px of gap).
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icon) ...[
+          SizedBox.square(
+            dimension: 20,
+            child: Center(
+              child: RaftStatus(size: RaftStatusSize.md, color: pixel),
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Flexible(child: body),
+        const SizedBox(width: 12),
+        if (!icon) const SizedBox(width: 12),
+        if (close != null) close,
+        if (close != null && action != null) const SizedBox(width: 16),
+        if (action != null) action,
+      ],
+    );
+    final titleOnly = !icon && actionLabel == null && description == null;
+    final radius = t.size('radius.container', fallback: 10);
+    Widget root = DecoratedBox(
+      decoration: BoxDecoration(
+        color: ui['layer-hud'],
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          for (final layer in t.shadowLayers('shadow.float'))
+            if (!layer.inset) layer.toBoxShadow(),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        // `--toast-title-only-min-w: 7rem` (border box, so minus the padding).
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: titleOnly ? 112 - 32 : 0),
+          child: _ToastSnapWidth(child: row),
+        ),
+      ),
+    );
+    return DefaultTextStyle(
+      style: title.copyWith(decoration: TextDecoration.none),
       child: Semantics(
         liveRegion: true,
         container: true,

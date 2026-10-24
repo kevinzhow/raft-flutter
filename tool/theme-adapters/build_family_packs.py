@@ -65,6 +65,7 @@ OPTIONS_ELEGANT = {
     'banner.iconAlignment': 'center', 'banner.iconColor': 'intent', 'confirm.slug': 'text',
     'confirm.explanation': 'plain',
     'spinner.ringShape': 'sweep', 'spinner.foreground': 'inherited',
+    'toast.style': 'recipe',
 }
 OPTIONS_BRUTAL = {
     'mobileNav.boxLayout': 'natural', 'mobileNav.textLayout': 'natural',
@@ -91,6 +92,7 @@ OPTIONS_BRUTAL = {
     'banner.iconAlignment': 'center', 'banner.iconColor': 'foreground', 'confirm.slug': 'text',
     'confirm.explanation': 'plain',
     'spinner.ringShape': 'quarter', 'spinner.foreground': 'fixed',
+    'toast.style': 'recipe',
 }
 
 # AUTHORED: docs/theme-contract.md §3.1–3.3. Values marked † in the contract are
