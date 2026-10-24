@@ -690,6 +690,8 @@
         "activity.loadingCards": "inset",
         "search.failure": "card",
         "appearance.layout": "legacy",
+        "formSection.look": "legacy",
+        "formField.label": "recipe",
         "standalone.buttonSize": "md"
       }
     },
@@ -1348,6 +1350,8 @@
         "activity.loadingCards": "inset",
         "search.failure": "card",
         "appearance.layout": "legacy",
+        "formSection.look": "legacy",
+        "formField.label": "recipe",
         "standalone.buttonSize": "md"
       }
     }

@@ -22,6 +22,7 @@ import 'recipes/button_variants.g.dart';
 import 'settings_controls.dart' show RaftSettingsRecipeButton;
 import 'status_bar.dart';
 import 'text_scaling.dart' show RaftScaled;
+import 'page_tokens.dart';
 import 'theme.dart';
 
 /// The drawer popup of `OverflowSheet`: `inset-y-0 right-0 h-dvh w-full
@@ -325,27 +326,32 @@ class RaftOverflowGroupHeading extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     return Padding(
-      padding: EdgeInsets.only(top: 20, bottom: bottom),
+      // FormSection `py-4` (v1.21.23) / `mt-5`.
+      padding: EdgeInsets.only(top: t.formSectionWeb ? 16 : 20, bottom: bottom),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             raftText(context, title),
-            style: raftCssTextStyle(
-              family: t.bodyFont,
-              step: RaftTextSteps.base,
-              weight: FontWeight.w700,
-              color: t.strong,
+            style: t.formSectionTitle(
+              raftCssTextStyle(
+                family: t.bodyFont,
+                step: RaftTextSteps.base,
+                weight: FontWeight.w700,
+                color: t.strong,
+              ),
             ),
           ),
           if (description != null) ...[
-            const SizedBox(height: 4),
+            SizedBox(height: t.formSectionWeb ? 2 : 4),
             Text(
               raftText(context, description!),
-              style: raftCssTextStyle(
-                family: t.bodyFont,
-                step: RaftTextSteps.xs,
-                color: t.colors['foreground-muted'],
+              style: t.formSectionDescription(
+                raftCssTextStyle(
+                  family: t.bodyFont,
+                  step: RaftTextSteps.xs,
+                  color: t.colors['foreground-muted'],
+                ),
               ),
             ),
           ],
@@ -504,11 +510,13 @@ class RaftOverflowActions extends StatelessWidget {
         children: [
           Text(
             raftText(context, title),
-            style: raftCssTextStyle(
-              family: t.bodyFont,
-              step: RaftTextSteps.base,
-              weight: FontWeight.w700,
-              color: t.strong,
+            style: t.formSectionTitle(
+              raftCssTextStyle(
+                family: t.bodyFont,
+                step: RaftTextSteps.base,
+                weight: FontWeight.w700,
+                color: t.strong,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -587,11 +595,13 @@ class RaftMembersStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
     final muted = t.colors['foreground-muted']!;
-    final headingStyle = raftCssTextStyle(
-      family: t.bodyFont,
-      step: RaftTextSteps.base,
-      weight: FontWeight.w700,
-      color: t.strong,
+    final headingStyle = t.formSectionTitle(
+      raftCssTextStyle(
+        family: t.bodyFont,
+        step: RaftTextSteps.base,
+        weight: FontWeight.w700,
+        color: t.strong,
+      ),
     );
     final summaryStyle = raftCssTextStyle(
       family: t.bodyFont,

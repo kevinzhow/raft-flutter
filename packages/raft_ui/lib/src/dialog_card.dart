@@ -810,22 +810,46 @@ class RaftProductFormField extends StatelessWidget {
       tokens: tokens,
     );
     final labelBase = field.label.textStyle(tokens);
-    final labelStyle = raftCssTextStyle(
-      family: family ?? t.headingFont,
-      step: RaftTextSteps.sm,
-      weight: labelWeight ?? labelBase.fontWeight ?? FontWeight.w700,
-      color: labelBase.color,
-    );
+    // v1.21.23 FormField is the raft-ui Field: the label is 13/18 600
+    // `foreground-field-label` and the field's own 6px gap separates label,
+    // control and help; the pre-theme looks keep the recipe label with `mb-1`
+    // (formField.label).
+    final web = t.option('formField.label', or: 'tokens') == 'tokens';
+    final labelSize = t.size('type.fieldLabel.size', fallback: 13);
+    final labelStyle = web
+        ? RaftTypography.body(
+            t,
+            size: labelSize,
+            line: t.size('type.fieldLabel.line', fallback: 18),
+            weight: FontWeight.values[(t.size(
+                          'type.fieldLabel.weight',
+                          fallback: 600,
+                        ) /
+                        100 -
+                    1)
+                .round()
+                .clamp(0, 8)],
+            color: t.colors['foreground-field-label'],
+          ).copyWith(fontFamily: family ?? t.headingFont)
+        : raftCssTextStyle(
+            family: family ?? t.headingFont,
+            step: RaftTextSteps.sm,
+            weight: labelWeight ?? labelBase.fontWeight ?? FontWeight.w700,
+            color: labelBase.color,
+          );
     final text = raftText(context, label);
     final sub = labelRecipe.sub.textStyle(tokens);
     // Field root `flex flex-col gap-1` (recipe row-gap) + the label's `mb-1`.
     final gap = field.root.rowGap ?? 0;
+    final labelGap = web
+        ? t.size('space.fieldGap', fallback: 6)
+        : (4 + gap).toDouble();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 4 + gap),
+          padding: EdgeInsets.only(bottom: labelGap),
           child: Text.rich(
             TextSpan(
               children: [
@@ -834,7 +858,9 @@ class RaftProductFormField extends StatelessWidget {
                   TextSpan(
                     text: ' *',
                     style: TextStyle(
-                      color: labelRecipe.asterisk.color?.resolve(tokens),
+                      color: web
+                          ? t.colors['foreground-field-required']
+                          : labelRecipe.asterisk.color?.resolve(tokens),
                     ),
                   ),
                 if (optional)
@@ -855,7 +881,7 @@ class RaftProductFormField extends StatelessWidget {
         child,
         if (error != null || hint != null)
           Padding(
-            padding: EdgeInsets.only(top: 4 + gap),
+            padding: EdgeInsets.only(top: labelGap),
             child: RaftCssText(
               error ?? hint!,
               style: (error != null ? field.error : field.description)

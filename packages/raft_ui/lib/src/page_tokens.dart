@@ -34,6 +34,33 @@ extension RaftPageTokens on RaftTokens {
     color: color ?? colors['foreground-eyebrow'],
   );
 
+  /// raft-ui 0.7.0 FormSection: `title` = `font-sans text-footnote font-bold
+  /// text-foreground-muted`, `description` = `text-footnote text-foreground-hint`
+  /// (13/18). The pre-theme looks keep the call site's own [legacy] style
+  /// (`formSection.look`).
+  TextStyle formSectionTitle(TextStyle legacy) =>
+      option('formSection.look', or: 'web23') == 'web23'
+      ? RaftTypography.body(
+          this,
+          size: 13,
+          line: 18,
+          weight: FontWeight.w700,
+          color: colors['foreground-muted'],
+        )
+      : legacy;
+
+  TextStyle formSectionDescription(TextStyle legacy) =>
+      option('formSection.look', or: 'web23') == 'web23'
+      ? RaftTypography.body(
+          this,
+          size: 13,
+          line: 18,
+          color: colors['foreground-hint'],
+        )
+      : legacy;
+
+  bool get formSectionWeb => option('formSection.look', or: 'web23') == 'web23';
+
   /// TextLink v1.21.23: always underlined, ink primary.
   bool get textLinksUnderlined =>
       option('auth.links', or: 'underlined') == 'underlined';

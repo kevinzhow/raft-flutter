@@ -96,6 +96,12 @@ _OPTIONS = {
     # picker and the app icon (product additions) after the Web sections, or
     # the a57b9dab page.
     'appearance.layout': ('web23', 'legacy'),
+    # FormSection heading and description (0.7.0): footnote bold muted title and
+    # footnote hint description, or the call sites' own a57b9dab text steps.
+    'formSection.look': ('web23', 'legacy'),
+    # FormField label of the product forms (dialogs, settings): the raft-ui
+    # Field label of v1.21.23 or the recipe label with `mb-1` of a57b9dab.
+    'formField.label': ('tokens', 'recipe'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -120,6 +126,8 @@ OPTION_VALUES = {
     'activity.loadingCards': ('edge', 'inset'),
     'search.failure': ('banner', 'card'),
     'appearance.layout': ('web23', 'legacy'),
+    'formSection.look': ('web23', 'legacy'),
+    'formField.label': ('tokens', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

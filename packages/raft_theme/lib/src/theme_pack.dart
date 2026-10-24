@@ -182,6 +182,8 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'activity.loadingCards': {'edge', 'inset'},
   'search.failure': {'banner', 'card'},
   'appearance.layout': {'web23', 'legacy'},
+  'formSection.look': {'web23', 'legacy'},
+  'formField.label': {'tokens', 'recipe'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

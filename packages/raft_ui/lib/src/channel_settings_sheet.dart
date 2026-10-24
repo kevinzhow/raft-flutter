@@ -15,6 +15,7 @@ import 'localization.dart';
 import 'panel_layout.dart' show RaftPanelHeaderBar;
 import 'recipes/button_variants.g.dart';
 import 'switch.dart';
+import 'page_tokens.dart';
 import 'theme.dart';
 
 /// One `py-3` preference row: title `text-sm font-medium`, description
@@ -510,21 +511,25 @@ Widget raftSheetSection(
       children: [
         Text(
           raftText(context, s.title),
-          style: raftCssTextStyle(
-            family: family ?? t.headingFont,
-            step: RaftTextSteps.base,
-            weight: FontWeight.w700,
-            color: t.strong,
+          style: t.formSectionTitle(
+            raftCssTextStyle(
+              family: family ?? t.headingFont,
+              step: RaftTextSteps.base,
+              weight: FontWeight.w700,
+              color: t.strong,
+            ),
           ),
         ),
         if (s.description != null) ...[
           const SizedBox(height: 4),
           Text(
             raftText(context, s.description!),
-            style: raftCssTextStyle(
-              family: family ?? t.headingFont,
-              step: RaftTextSteps.xs,
-              color: muted,
+            style: t.formSectionDescription(
+              raftCssTextStyle(
+                family: family ?? t.headingFont,
+                step: RaftTextSteps.xs,
+                color: muted,
+              ),
             ),
           ),
         ],

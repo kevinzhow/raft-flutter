@@ -916,6 +916,8 @@
         "activity.loadingCards": "edge",
         "search.failure": "banner",
         "appearance.layout": "web23",
+        "formSection.look": "web23",
+        "formField.label": "tokens",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1786,6 +1788,8 @@
         "activity.loadingCards": "edge",
         "search.failure": "banner",
         "appearance.layout": "web23",
+        "formSection.look": "web23",
+        "formField.label": "tokens",
         "standalone.buttonSize": "lg"
       }
     }

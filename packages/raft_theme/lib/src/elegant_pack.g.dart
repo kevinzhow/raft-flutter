@@ -702,6 +702,8 @@ const String elegantThemePackJson = r'''{
         "activity.loadingCards": "inset",
         "search.failure": "card",
         "appearance.layout": "legacy",
+        "formSection.look": "legacy",
+        "formField.label": "recipe",
         "standalone.buttonSize": "md"
       }
     },
@@ -1360,6 +1362,8 @@ const String elegantThemePackJson = r'''{
         "activity.loadingCards": "inset",
         "search.failure": "card",
         "appearance.layout": "legacy",
+        "formSection.look": "legacy",
+        "formField.label": "recipe",
         "standalone.buttonSize": "md"
       }
     }
