@@ -21,7 +21,11 @@ class RaftPopoverSurfaceRecipe {
   const RaftPopoverSurfaceRecipe(this.tokens);
   final RaftTokens tokens;
   double get borderWidth => 0;
-  double get radius => 6;
+  double get radius => tokens.size('radius.popover', fallback: 6);
+
+  /// `ring-1 ring-line-seam`: an outer ring that reserves no layout.
+  double get ringWidth => tokens.size('stroke.popoverRing', fallback: 0);
+  Color get ringColor => tokens.colors['line-seam']!;
   Color get background => tokens.popover;
   Color get borderColor => tokens.colors['line-strong']!;
   RaftShadow get _shadow => tokens.themeShadows.xl;
@@ -79,6 +83,12 @@ class _PopoverOutside extends CustomPainter {
         paint.maskFilter = MaskFilter.blur(BlurStyle.normal, shadow.sigma);
       }
       canvas.drawRRect(expanded, paint);
+    }
+    if (recipe.ringWidth > 0) {
+      canvas.drawRRect(
+        shape.inflate(recipe.ringWidth),
+        Paint()..color = recipe.ringColor,
+      );
     }
     canvas.drawRRect(shape, Paint()..color = recipe.background);
     if (recipe.borderWidth > 0) {

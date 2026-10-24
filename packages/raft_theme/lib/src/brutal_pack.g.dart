@@ -569,6 +569,8 @@ const String brutalThemePackJson = r'''{
         "ratio.spinnerRingRadius": 0.5,
         "space.spinnerRingInset": 1,
         "opacity.spinnerArc": 1,
+        "radius.popover": 6,
+        "stroke.popoverRing": 0,
         "stroke.channelFooter": 1,
         "type.field.size": 16.0,
         "type.field.line": 24.0,
@@ -671,7 +673,8 @@ const String brutalThemePackJson = r'''{
         "menuItem.style": "recipe",
         "field.layout": "recipe",
         "inputGroup.style": "recipe",
-        "announcement.style": "recipe"
+        "announcement.style": "recipe",
+        "reaction.style": "recipe"
       }
     },
     "dark": {
@@ -1200,6 +1203,8 @@ const String brutalThemePackJson = r'''{
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
         "opacity.spinnerArc": 0.8,
+        "radius.popover": 6,
+        "stroke.popoverRing": 0,
         "stroke.channelFooter": 1,
         "type.field.size": 14.0,
         "type.field.line": 20.0,
@@ -1336,7 +1341,8 @@ const String brutalThemePackJson = r'''{
         "menuItem.style": "recipe",
         "field.layout": "recipe",
         "inputGroup.style": "recipe",
-        "announcement.style": "recipe"
+        "announcement.style": "recipe",
+        "reaction.style": "recipe"
       }
     }
   }

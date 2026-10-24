@@ -5,6 +5,7 @@ import 'hover_card.dart';
 import 'localization.dart';
 import 'popover_surface.dart';
 import 'recipe_surface.dart' show raftCssText;
+import 'raft/ui_tokens.dart';
 import 'theme.dart';
 import 'icons.dart';
 
@@ -15,8 +16,15 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
     super.tokens, {
     this.reacted = false,
     this.failure = false,
-  }) : super(variant: RaftControlVariant.ghost, visualHeight: 20);
+    this.raft = false,
+  }) : super(variant: RaftControlVariant.ghost, visualHeight: raft ? 24 : 20);
   final bool reacted, failure;
+
+  /// raft-ui 0.7 `messageReaction` (`h-6 rounded-chip pl-1.5 pr-2 bg-fill-muted`).
+  final bool raft;
+  static bool raftOf(RaftTokens t) =>
+      t.option('reaction.style', or: 'recipe') == 'raft';
+  double get height => raft ? 24 : 20;
   @override
   bool get transformsOnInteraction => false;
   @override
@@ -26,9 +34,13 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   @override
   Color get focusRing => tokens.colors['line-strong']!;
   @override
-  BorderRadius get radius => BorderRadius.circular(4);
+  BorderRadius get radius => BorderRadius.circular(
+    raft ? tokens.size('radius.chip', fallback: 6) : 4,
+  );
   @override
-  EdgeInsets get padding => const EdgeInsets.symmetric(horizontal: 6);
+  EdgeInsets get padding => raft
+      ? const EdgeInsets.only(left: 6, right: 8)
+      : const EdgeInsets.symmetric(horizontal: 6);
   @override
   Color get foreground => tokens.strong;
   @override
@@ -37,6 +49,17 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   Color get background => backgroundFor();
   @override
   Color backgroundFor({bool hovered = false}) {
+    if (raft) {
+      final ui = tokens.ui;
+      // `hover:press-overlay`, `data-pressed:bg-attention-soft`,
+      // `has-[error]:bg-warning-soft`.
+      final base = failure
+          ? ui['warning-soft']
+          : reacted
+          ? ui['attention-soft']
+          : ui.fillMuted;
+      return hovered ? Color.alphaBlend(ui.fillPressed, base) : base;
+    }
     if (hovered) {
       return reacted ? tokens.accentSoft : tokens.colors['fill-muted']!;
     }
@@ -50,7 +73,7 @@ class RaftMountedReactionRecipe extends RaftControlRecipe {
   TextStyle get textStyle => TextStyle(
     fontFamily: tokens.headingFont,
     fontSize: 12,
-    height: 1,
+    height: raft ? 16 / 12 : 1,
     fontWeight: FontWeight.w700,
     color: foreground,
   );
@@ -85,10 +108,12 @@ class RaftMountedReaction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final raft = RaftMountedReactionRecipe.raftOf(t);
     final recipe = RaftMountedReactionRecipe(
       t,
       reacted: reacted,
       failure: failure,
+      raft: raft,
     );
     final content = ExcludeSemantics(
       child: Row(
@@ -116,7 +141,7 @@ class RaftMountedReaction extends StatelessWidget {
       return Semantics(
         label: label,
         child: Container(
-          height: 20,
+          height: recipe.height,
           padding: recipe.padding,
           decoration: BoxDecoration(
             color: recipe.background,
@@ -129,10 +154,10 @@ class RaftMountedReaction extends StatelessWidget {
     return RaftControl(
       onPressed: onPressed,
       semanticLabel: label,
-      visualHeight: 20,
+      visualHeight: recipe.height,
       // Mounted MessageItem uses the same 20px flow/hit in both pointer modes.
       // Generic controls retain their independent native touch target policy.
-      minimumTargetSize: 20,
+      minimumTargetSize: recipe.height,
       shadow: true,
       padding: recipe.padding,
       recipe: recipe,
@@ -229,21 +254,32 @@ class RaftMountedReactionAdd extends StatelessWidget {
   final String label;
   final VoidCallback onPressed;
   @override
-  Widget build(BuildContext context) => RaftControl(
-    semanticLabel: label,
-    tooltip: label,
-    onPressed: onPressed,
-    visualHeight: 20,
-    minimumTargetSize: 20,
-    recipe: _ReactionAddRecipe(RaftTokens.of(context)),
-    child: const ExcludeSemantics(
-      child: RaftIcon(RaftGlyph.plus, size: 13, strokeWidth: 2.5),
-    ),
-  );
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final raft = RaftMountedReactionRecipe.raftOf(t);
+    return RaftControl(
+      semanticLabel: label,
+      tooltip: label,
+      onPressed: onPressed,
+      visualHeight: raft ? 24 : 20,
+      minimumTargetSize: raft ? 24 : 20,
+      recipe: _ReactionAddRecipe(t, raft: raft),
+      child: ExcludeSemantics(
+        // `addButton`: `px-1.5 [&_svg]:size-4` in `text-foreground-muted`.
+        child: raft
+            ? RaftIcon(RaftGlyph.plus, size: 16, color: t.ui.foregroundMuted)
+            : const RaftIcon(RaftGlyph.plus, size: 13, strokeWidth: 2.5),
+      ),
+    );
+  }
 }
 
 class _ReactionAddRecipe extends RaftMountedReactionRecipe {
-  const _ReactionAddRecipe(super.tokens);
+  const _ReactionAddRecipe(super.tokens, {super.raft});
+  @override
+  EdgeInsets get padding => raft
+      ? const EdgeInsets.symmetric(horizontal: 6)
+      : super.padding;
   @override
   Color backgroundFor({bool hovered = false}) =>
       super.backgroundFor(hovered: hovered);

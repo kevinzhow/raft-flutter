@@ -178,6 +178,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'field.layout': {'recipe', 'raft'},
   'inputGroup.style': {'recipe', 'raft'},
   'announcement.style': {'recipe', 'raft'},
+  'reaction.style': {'recipe', 'raft'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

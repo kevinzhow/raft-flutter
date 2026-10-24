@@ -14,6 +14,11 @@ from __future__ import annotations
 # ---------------------------------------------------------------- geometry
 # token: (Raft, Elegant and Brutal)
 _GEOMETRY = {
+    # PopoverSurface (menus, hover cards, popups): raft-ui 0.7 popover
+    # `rounded-container ring-1 ring-line-seam shadow-float`; a57b9dab drew a 6px
+    # corner without a ring.
+    'radius.popover': (10, 6),
+    'stroke.popoverRing': (1, 0),
     # ConversationPanelFooter: `bg-layer-canvas`, no rule above it (raft-ui 0.7
     # `conversationPanel.footer`); a57b9dab drew `border-t border-line-muted`.
     'stroke.channelFooter': (0, 1),
@@ -70,6 +75,10 @@ _OPTIONS = {
     # label, `text-headline` title, `text-subhead` muted copy, no footer rule;
     # the px-7 recipe card with an accent dot and a `text-2xl` title before.
     'announcement.style': ('raft', 'recipe'),
+    # Reaction chips (MessageReactionChip / AddButton): raft-ui 0.7 `messageReaction`
+    # (h-6, rounded-chip, pl-1.5 pr-2, bg-fill-muted, mono-meta bold count,
+    # attention-soft when mine, warning-soft on error); the mounted 20px chip before.
+    'reaction.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -88,6 +97,7 @@ OPTION_VALUES = {
     'field.layout': ('raft', 'recipe'),
     'inputGroup.style': ('raft', 'recipe'),
     'announcement.style': ('raft', 'recipe'),
+    'reaction.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

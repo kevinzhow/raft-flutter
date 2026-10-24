@@ -732,6 +732,8 @@ const String raftThemePackJson = r'''{
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
         "opacity.spinnerArc": 0.8,
+        "radius.popover": 10,
+        "stroke.popoverRing": 1,
         "stroke.channelFooter": 0
       },
       "type": {
@@ -902,7 +904,8 @@ const String raftThemePackJson = r'''{
         "menuItem.style": "raft",
         "field.layout": "raft",
         "inputGroup.style": "raft",
-        "announcement.style": "raft"
+        "announcement.style": "raft",
+        "reaction.style": "raft"
       }
     },
     "dark": {
@@ -1575,6 +1578,8 @@ const String raftThemePackJson = r'''{
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
         "opacity.spinnerArc": 0.8,
+        "radius.popover": 10,
+        "stroke.popoverRing": 1,
         "stroke.channelFooter": 0
       },
       "type": {
@@ -1745,7 +1750,8 @@ const String raftThemePackJson = r'''{
         "menuItem.style": "raft",
         "field.layout": "raft",
         "inputGroup.style": "raft",
-        "announcement.style": "raft"
+        "announcement.style": "raft",
+        "reaction.style": "raft"
       }
     }
   }
