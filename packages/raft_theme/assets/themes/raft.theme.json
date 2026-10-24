@@ -926,6 +926,8 @@
         "rootError.look": "web23",
         "onboarding.heading": "web23",
         "onboarding.preview": "sticker",
+        "publicServer.confirmTitle": "question",
+        "publicServer.accountTime": "yes",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1806,6 +1808,8 @@
         "rootError.look": "web23",
         "onboarding.heading": "web23",
         "onboarding.preview": "sticker",
+        "publicServer.confirmTitle": "question",
+        "publicServer.accountTime": "yes",
         "standalone.buttonSize": "lg"
       }
     }

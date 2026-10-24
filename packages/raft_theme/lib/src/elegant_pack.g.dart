@@ -712,6 +712,8 @@ const String elegantThemePackJson = r'''{
         "rootError.look": "legacy",
         "onboarding.heading": "legacy",
         "onboarding.preview": "brutal",
+        "publicServer.confirmTitle": "action",
+        "publicServer.accountTime": "no",
         "standalone.buttonSize": "md"
       }
     },
@@ -1380,6 +1382,8 @@ const String elegantThemePackJson = r'''{
         "rootError.look": "legacy",
         "onboarding.heading": "legacy",
         "onboarding.preview": "brutal",
+        "publicServer.confirmTitle": "action",
+        "publicServer.accountTime": "no",
         "standalone.buttonSize": "md"
       }
     }

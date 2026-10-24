@@ -115,6 +115,10 @@ _OPTIONS = {
     # Onboarding preview cards: rounded 1.5px line-strong cards (v1.21.23) or
     # the square 2px black boxes of a57b9dab.
     'onboarding.preview': ('sticker', 'brutal'),
+    # Public page: the Join confirm is titled as a question (v1.21.23); signed-in
+    # rows follow the account's time preferences.
+    'publicServer.confirmTitle': ('question', 'action'),
+    'publicServer.accountTime': ('yes', 'no'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -144,6 +148,8 @@ OPTION_VALUES = {
     'rootError.look': ('web23', 'legacy'),
     'onboarding.heading': ('web23', 'legacy'),
     'onboarding.preview': ('sticker', 'brutal'),
+    'publicServer.confirmTitle': ('question', 'action'),
+    'publicServer.accountTime': ('yes', 'no'),
 }
 
 # ---------------------------------------------------------------- colours

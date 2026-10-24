@@ -698,7 +698,15 @@ class _PublicServerViewState extends State<PublicServerView> {
     await RaftConfirmDialog.show(
       context,
       RaftConfirmDialog(
-        title: tr('Join as Guest'),
+        // v1.21.23 `pages.publicServer.joinConfirmTitle`; a57b9dab titled the
+        // dialog with the action (publicServer.confirmTitle).
+        title: RaftTokens.of(context).option(
+                  'publicServer.confirmTitle',
+                  or: 'question',
+                ) ==
+                'question'
+            ? tr('Join this server?')
+            : tr('Join as Guest'),
         message: raftFormat(
           context,
           'You will join {server} as a Guest. You can keep reading without joining by cancelling.',
@@ -745,16 +753,30 @@ class _PublicServerViewState extends State<PublicServerView> {
 
   // ---------------------------------------------------------------- build
 
-  /// Web's public page formats with the browser's zone and clock: the
-  /// account's time preferences are not applied to it.
-  SourceTimeFormatter get timeFormatter => SourceTimeFormatter(
-    locale: Localizations.localeOf(context).toLanguageTag(),
-    systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
-        ? SourceTimeFormat.twentyFourHour
-        : null,
-    todayLabel: tr('Today'),
-    yesterdayLabel: tr('Yesterday'),
-  );
+  /// A signed-in visitor's rows follow the account's zone and hour cycle (Web
+  /// `useTimeFormatter` reads the translation settings the account loads); a
+  /// signed-out visitor gets the browser's. The pre-theme looks never applied
+  /// the account's preferences here (publicServer.accountTime).
+  SourceTimeFormatter get timeFormatter {
+    final user = authenticated &&
+            RaftTokens.of(context).option('publicServer.accountTime', or: 'yes') ==
+                'yes'
+        ? widget.client.user
+        : null;
+    return SourceTimeFormatter(
+      locale: Localizations.localeOf(context).toLanguageTag(),
+      preferredTimezone:
+          user?.string('preferredTimezone') ?? user?.string('timezone'),
+      preferredTimeFormat: sourceTimeFormatPreference(
+        user?.string('preferredTimeFormat') ?? user?.string('timeFormat'),
+      ),
+      systemTimeFormat: MediaQuery.alwaysUse24HourFormatOf(context)
+          ? SourceTimeFormat.twentyFourHour
+          : null,
+      todayLabel: tr('Today'),
+      yesterdayLabel: tr('Yesterday'),
+    );
+  }
 
   /// `#channel` mentions of the public channels chip like Web's MessageItem
   /// (`channels={displayChannels}`); users and agents are not linkable here.
