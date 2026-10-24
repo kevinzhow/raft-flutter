@@ -257,7 +257,11 @@ class RaftSettingsPanelHeader extends StatelessWidget {
     if (t.option('panelAction.surface', or: 'outline') == 'ghost') {
       return RaftPanelHeaderBar(
         title: raftText(context, title),
-        iconSlot: !mobile && glyph != null
+        // v1.21.23 page heads carry no icon tile (pageHeader.icon).
+        iconSlot:
+            !mobile &&
+                glyph != null &&
+                t.option('pageHeader.icon', or: 'none') == 'tile'
             ? Container(
                 width: 27,
                 height: 27,

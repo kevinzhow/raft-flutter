@@ -712,7 +712,9 @@ class RaftTaskBoardColumn extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onToggle,
         child: Padding(
-          padding: r.trigger.padding,
+          padding: t.option('taskBoard.column', or: 'flat') == 'flat'
+              ? EdgeInsets.zero
+              : r.trigger.padding,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             spacing: r.heading.columnGap ?? 8,
@@ -734,6 +736,32 @@ class RaftTaskBoardColumn extends StatelessWidget {
         ),
       ),
     );
+    // raft-ui 0.7.0 taskBoardColumn: a flat 232px lane (no border, fill or
+    // padding), `min-h-8` trigger, `mb-2` under it while open; the pre-theme
+    // looks keep the bordered 320px lane card (taskBoard.column).
+    if (t.option('taskBoard.column', or: 'flat') == 'flat') {
+      return Container(
+        width: 232,
+        decoration: BoxDecoration(
+          color: dropActive ? t.colors['fill-pressed'] : null,
+          borderRadius: BorderRadius.circular(t.size('radius.container', fallback: 10)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 32),
+              child: Align(alignment: Alignment.centerLeft, child: trigger),
+            ),
+            if (!collapsed) ...[
+              const SizedBox(height: 8),
+              Flexible(child: body),
+            ],
+          ],
+        ),
+      );
+    }
     return RaftRecipeBox(
       style: r.root,
       tokens: rt,

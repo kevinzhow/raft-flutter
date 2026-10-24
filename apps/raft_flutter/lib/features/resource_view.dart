@@ -5294,7 +5294,14 @@ class _ResourceViewState extends State<ResourceView> {
           context,
           widget.section == 'activity' || widget.section == 'saved'
               ? RaftConversationCardRecipe(RaftTokens.of(context)).listInset
-              : const EdgeInsets.all(16),
+              : EdgeInsets.symmetric(
+                  horizontal:
+                      MediaQuery.sizeOf(context).width <
+                          RaftLayoutMetrics.desktopBreakpoint
+                      ? 16
+                      : t.size('space.tasksViewportInline', fallback: 20),
+                  vertical: 16,
+                ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

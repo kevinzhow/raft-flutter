@@ -28,6 +28,8 @@ _GEOMETRY = {
     # 14/20; a57b9dab drew 24/32 and a 24px line.
     'type.notFoundTitle.size': (22, 24), 'type.notFoundTitle.line': (28, 32),
     'type.notFoundBody.line': (20, 24),
+    # TasksPanelViewport `px-5 py-4` (max-md `px-4`); a57b9dab used 16 all round.
+    'space.tasksViewportInline': (20, 16),
     # SectionEyebrow: `text-footnote font-bold` (13/18); a57b9dab: 12/16.
     'type.sectionEyebrow.size': (13, 12), 'type.sectionEyebrow.line': (18, 16),
 }
@@ -63,6 +65,12 @@ _OPTIONS = {
     # Agent Workspace tab: v1.21.23 (canvas surfaces, seam rules, mono 13/20
     # rows, info-soft selection, hint / muted callout states) or a57b9dab's.
     'agentWorkspace.look': ('web23', 'legacy'),
+    # Icon tile at the left of a page head (Tasks, Saved, Activity, Settings, ...):
+    # v1.21.23 passes no icon, a57b9dab drew the 27 / 36px tile.
+    'pageHeader.icon': ('none', 'tile'),
+    # Tasks board lane: flat 232px column (raft-ui 0.7.0 taskBoardColumn) or the
+    # bordered 320px lane card of a57b9dab.
+    'taskBoard.column': ('flat', 'card'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }
@@ -79,6 +87,8 @@ OPTION_VALUES = {
     'publicServer.channelTile': ('sticker', 'plain'),
     'panelTabs.style': ('sticker', 'underline'),
     'agentWorkspace.look': ('web23', 'legacy'),
+    'pageHeader.icon': ('none', 'tile'),
+    'taskBoard.column': ('flat', 'card'),
 }
 
 # ---------------------------------------------------------------- colours

@@ -70,6 +70,20 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
       mobile: mobile,
       variant: variant,
     );
+    // v1.21.23 page heads (Tasks, Saved, Activity, Search, ...) carry no icon
+    // tile; the pre-theme looks keep it (pageHeader.icon).
+    final tile = t.option('pageHeader.icon', or: 'none') == 'tile';
+    if (!tile && !mobile && variant == RaftPanelHeaderVariant.tasks) {
+      return RaftPanelHeaderBar(
+        key: const Key('page-header-surface'),
+        title: title,
+        background: background,
+        subtitle: subtitle,
+        leftPadding: leftInset,
+        bottomRule: bottomRule,
+        actions: actions,
+      );
+    }
     if (mobile && variant == RaftPanelHeaderVariant.canonical) {
       // Below md Web renders the same AppPanelHeader grid: boxed Back, title
       // (+ meta), actions. The icon tile is `hidden md:flex` on these
@@ -142,7 +156,9 @@ class RaftPageHeader extends StatelessWidget implements PreferredSizeWidget {
         subtitle: subtitle,
         leftPadding: leftInset,
         bottomRule: bottomRule,
-        iconSlot: icon == null ? null : RaftPanelHeaderMutedTile(icon: icon!),
+        iconSlot: icon == null || !tile
+            ? null
+            : RaftPanelHeaderMutedTile(icon: icon!),
         actions: actions,
       );
     }

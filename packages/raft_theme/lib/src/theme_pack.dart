@@ -174,6 +174,8 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'publicServer.channelTile': {'sticker', 'plain'},
   'panelTabs.style': {'sticker', 'underline'},
   'agentWorkspace.look': {'web23', 'legacy'},
+  'pageHeader.icon': {'none', 'tile'},
+  'taskBoard.column': {'flat', 'card'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

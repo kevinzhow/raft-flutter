@@ -494,6 +494,7 @@ const Set<String> raftGeometryTokens = {
   'space.selectTriggerStart',
   'space.spinnerRingInset',
   'space.switchInset',
+  'space.tasksViewportInline',
   'stroke.bannerBorder',
   'stroke.bannerRing',
   'stroke.composerNotice',

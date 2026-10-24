@@ -583,6 +583,7 @@ const String brutalThemePackJson = r'''{
         "type.notFoundTitle.size": 24,
         "type.notFoundTitle.line": 32,
         "type.notFoundBody.line": 24,
+        "space.tasksViewportInline": 16,
         "type.sectionEyebrow.size": 12,
         "type.sectionEyebrow.line": 16,
         "type.field.size": 16.0,
@@ -682,6 +683,8 @@ const String brutalThemePackJson = r'''{
         "publicServer.channelTile": "plain",
         "panelTabs.style": "underline",
         "agentWorkspace.look": "legacy",
+        "pageHeader.icon": "tile",
+        "taskBoard.column": "card",
         "standalone.buttonSize": "md"
       }
     },
@@ -1225,6 +1228,7 @@ const String brutalThemePackJson = r'''{
         "type.notFoundTitle.size": 24,
         "type.notFoundTitle.line": 32,
         "type.notFoundBody.line": 24,
+        "space.tasksViewportInline": 16,
         "type.sectionEyebrow.size": 12,
         "type.sectionEyebrow.line": 16,
         "type.field.size": 14.0,
@@ -1358,6 +1362,8 @@ const String brutalThemePackJson = r'''{
         "publicServer.channelTile": "plain",
         "panelTabs.style": "underline",
         "agentWorkspace.look": "legacy",
+        "pageHeader.icon": "tile",
+        "taskBoard.column": "card",
         "standalone.buttonSize": "md"
       }
     }
