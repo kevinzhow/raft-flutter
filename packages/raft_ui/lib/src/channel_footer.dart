@@ -19,7 +19,14 @@ import 'theme.dart';
 /// `border-t border-line-muted bg-layer-panel` / brutal `border-t-2 border-black bg-white`.
 BoxDecoration _footerDecoration(RaftTokens t, {Color? color}) => BoxDecoration(
   color: color ?? t.panel,
-  border: Border(top: BorderSide(color: t.colors['line-muted']!, width: 1)),
+  border: t.size('stroke.channelFooter', fallback: 1) > 0
+      ? Border(
+          top: BorderSide(
+            color: t.colors['line-muted']!,
+            width: t.size('stroke.channelFooter', fallback: 1),
+          ),
+        )
+      : null,
 );
 
 /// The joint over-limit grace banner (`px-3 pt-3` host) above the footer.
@@ -145,10 +152,12 @@ class RaftChannelJoinFooter extends StatelessWidget {
         children: [
           RaftRecipeButton(
             variant: RaftButtonRecipeVariant.accent,
-            size: RaftButtonRecipeSize.md,
+            size: t.option('channelFooter.joinSize', or: 'md') == 'lg'
+                ? RaftButtonRecipeSize.lg
+                : RaftButtonRecipeSize.md,
             glyph: RaftGlyph.logIn,
             glyphSize: 14,
-            gap: 6,
+            gap: t.option('channelFooter.joinSize', or: 'md') == 'lg' ? null : 6,
             expand: true,
             fontWeight: FontWeight.w700,
             label:
@@ -167,7 +176,7 @@ class RaftChannelJoinFooter extends StatelessWidget {
                 size: 12,
                 line: 16,
                 weight: FontWeight.w500,
-                color: t.muted,
+                color: t.colors['foreground-channel-footer-note'] ?? t.muted,
               ),
             ),
         ],

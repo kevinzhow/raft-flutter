@@ -44,10 +44,14 @@ class RaftComposerRecipe {
         );
   BoxDecoration get hostDecoration => BoxDecoration(
     color: tokens.panel,
-    border: compact
+    // `ConversationPanelFooter` hosts the composer with `!border-0` in v1.21.23.
+    border: compact || tokens.size('stroke.channelFooter', fallback: 1) <= 0
         ? null
         : Border(
-            top: BorderSide(color: tokens.colors['line-muted']!, width: 1),
+            top: BorderSide(
+              color: tokens.colors['line-muted']!,
+              width: tokens.size('stroke.channelFooter', fallback: 1),
+            ),
           ),
   );
   EdgeInsets get shellInset => EdgeInsets.fromLTRB(

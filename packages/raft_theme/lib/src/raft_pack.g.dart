@@ -326,6 +326,7 @@ const String raftThemePackJson = r'''{
         "layer-select-disabled": "#f3f3f3",
         "line-select": "#141111",
         "line-select-disabled": "rgba(20 17 17 / 0.149)",
+        "foreground-channel-footer-note": "rgba(20 17 17 / 0.62)",
         "layer-button-primary-hover": "#ff99c3",
         "foreground-button-primary": "#141111",
         "layer-button-standard": "#ffffff",
@@ -730,7 +731,8 @@ const String raftThemePackJson = r'''{
         "stroke.spinnerRing": 0,
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
-        "opacity.spinnerArc": 0.8
+        "opacity.spinnerArc": 0.8,
+        "stroke.channelFooter": 0
       },
       "type": {
         "hero": [
@@ -887,7 +889,11 @@ const String raftThemePackJson = r'''{
         "confirm.explanation": "dangerBanner",
         "spinner.ringShape": "sweep",
         "spinner.foreground": "inherited",
-        "toast.style": "hud"
+        "toast.style": "hud",
+        "button.surface": "ported",
+        "banner.style": "raft",
+        "channelFooter.joinSize": "lg",
+        "composerAttachment.style": "raft"
       }
     },
     "dark": {
@@ -1154,6 +1160,7 @@ const String raftThemePackJson = r'''{
         "layer-select-disabled": "#32322f",
         "line-select": "#e5e5e2",
         "line-select-disabled": "rgba(250 250 247 / 0.102)",
+        "foreground-channel-footer-note": "#9e9e9b",
         "layer-button-primary-hover": "#ff99c3",
         "foreground-button-primary": "#141111",
         "layer-button-standard": "#242422",
@@ -1558,7 +1565,8 @@ const String raftThemePackJson = r'''{
         "stroke.spinnerRing": 0,
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
-        "opacity.spinnerArc": 0.8
+        "opacity.spinnerArc": 0.8,
+        "stroke.channelFooter": 0
       },
       "type": {
         "hero": [
@@ -1715,7 +1723,11 @@ const String raftThemePackJson = r'''{
         "confirm.explanation": "dangerBanner",
         "spinner.ringShape": "sweep",
         "spinner.foreground": "inherited",
-        "toast.style": "hud"
+        "toast.style": "hud",
+        "button.surface": "ported",
+        "banner.style": "raft",
+        "channelFooter.joinSize": "lg",
+        "composerAttachment.style": "raft"
       }
     }
   }

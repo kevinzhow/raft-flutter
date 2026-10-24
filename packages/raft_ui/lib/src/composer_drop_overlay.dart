@@ -4,6 +4,10 @@
 // the platform drop target and decides when it is active.
 import 'package:flutter/widgets.dart';
 
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
+
 import 'localization.dart';
 import 'theme.dart';
 
@@ -23,9 +27,50 @@ class RaftComposerDropOverlay extends StatelessWidget {
   });
   final String label;
 
+  /// raft-ui 0.7 `composerDropOverlay`: `rounded-container border-[1.5px]
+  /// border-dashed border-line-seam` over an opaque `info-soft` wash with the
+  /// label (`text-callout font-semibold`) centred bare.
+  Widget _buildRaft(BuildContext context, RaftTokens t) {
+    final ui = t.ui;
+    final width = raftControlBorderPx(context, 1.5);
+    final radius = t.size('radius.container', fallback: 10);
+    return IgnorePointer(
+      child: ExcludeSemantics(
+        child: CustomPaint(
+          key: const ValueKey('composer-drop-overlay'),
+          foregroundPainter: _DashedRoundedPainter(
+            color: ui.lineSeam,
+            width: width,
+            radius: radius,
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Color.alphaBlend(ui['info-soft'], ui.layerCard),
+              borderRadius: BorderRadius.circular(radius),
+            ),
+            child: Center(
+              child: Text(
+                raftText(context, label),
+                textAlign: TextAlign.center,
+                style: t.scale(
+                  RaftTypeScale.callout,
+                  weight: FontWeight.w600,
+                  color: ui.foreground,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    if (t.option('composerAttachment.style', or: 'recipe') == 'raft') {
+      return _buildRaft(context, t);
+    }
     final frame = t.accent;
     final fill = t.accentSoft.withValues(
       // Chromium quantises the `/50` alpha to 8 bits before blending:
@@ -121,4 +166,38 @@ class _DashedFramePainter extends CustomPainter {
   @override
   bool shouldRepaint(_DashedFramePainter old) =>
       old.color != color || old.width != width;
+}
+
+/// A dashed rounded border: dashes 3x the width along the whole outline, the gap
+/// adjusted so the path closes on a dash.
+class _DashedRoundedPainter extends CustomPainter {
+  _DashedRoundedPainter({
+    required this.color,
+    required this.width,
+    required this.radius,
+  });
+  final Color color;
+  final double width, radius;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = width
+      ..style = PaintingStyle.stroke;
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height).deflate(width / 2);
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(rect, Radius.circular(radius - width / 2)));
+    final dash = width * 3;
+    for (final metric in path.computeMetrics()) {
+      final count = (metric.length / (dash * 2)).round().clamp(1, 100000);
+      final step = metric.length / count;
+      for (var i = 0; i < count; i++) {
+        canvas.drawPath(metric.extractPath(i * step, i * step + dash), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedRoundedPainter old) =>
+      old.color != color || old.width != width || old.radius != radius;
 }

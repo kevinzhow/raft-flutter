@@ -14,7 +14,12 @@ RaftBannerRecipeStyle raftBannerSlots(
     ...source.description.properties,
     'color': CssColor(foreground.toARGB32(), null, foreground),
   };
-  if (size != RaftBannerRecipeSize.md)
+  // `banner.style`: the Raft banner (raft-ui 0.7 `banner`) paints every
+  // density from the same box (`rounded-container ring-1 ring-inset`) and only
+  // changes padding, gap and text size; the recipe look keeps the generated
+  // `sm` / `lg` rules.
+  final byToken = t.option('banner.style', or: 'recipe') == 'raft';
+  if (size != RaftBannerRecipeSize.md && !byToken)
     return RaftBannerRecipeStyle(
       root: source.root,
       title: source.title,
@@ -26,14 +31,13 @@ RaftBannerRecipeStyle raftBannerSlots(
       ),
       action: source.action,
     );
-  desc['font-size'] = CssNum(
-    t.size('type.bannerBody.size', fallback: 13),
-    'px',
-  );
-  desc['line-height'] = CssNum(
-    t.size('type.bannerBody.line', fallback: 16),
-    'px',
-  );
+  // raft-ui `banner` sizes: `sm` px-3 py-2 gap-x-2 text-footnote (13/18),
+  // `md` px-3.5 py-3, `lg` px-4 py-3.5; only `sm` changes the text.
+  final small = size == RaftBannerRecipeSize.sm;
+  final bodySize = small ? 13.0 : t.size('type.bannerBody.size', fallback: 13);
+  final bodyLine = small ? 18.0 : t.size('type.bannerBody.line', fallback: 16);
+  desc['font-size'] = CssNum(bodySize, 'px');
+  desc['line-height'] = CssNum(bodyLine, 'px');
   final root = {...source.root.properties};
   final color = t.colors['line-banner'] ?? t.line;
   final border = t.size('stroke.bannerBorder', fallback: 0);
@@ -53,8 +57,16 @@ RaftBannerRecipeStyle raftBannerSlots(
     root['border-$side-color'] = CssColor(color.toARGB32(), null, color);
     root['padding-$side'] = CssNum(
       side == 'left' || side == 'right'
-          ? t.size('space.bannerInline', fallback: 12)
-          : 12,
+          ? switch (size) {
+              RaftBannerRecipeSize.sm when byToken => 12,
+              RaftBannerRecipeSize.lg when byToken => 16,
+              _ => t.size('space.bannerInline', fallback: 12),
+            }
+          : switch (size) {
+              RaftBannerRecipeSize.sm when byToken => 8,
+              RaftBannerRecipeSize.lg when byToken => 14,
+              _ => 12,
+            },
       'px',
     );
   }
@@ -69,12 +81,12 @@ RaftBannerRecipeStyle raftBannerSlots(
       'px',
     );
   }
-  root['column-gap'] = CssNum(t.size('space.bannerGap', fallback: 8), 'px');
-  root['font-size'] = CssNum(
-    t.size('type.bannerBody.size', fallback: 13),
+  root['column-gap'] = CssNum(
+    small && byToken ? 8 : t.size('space.bannerGap', fallback: 8),
     'px',
   );
-  root['line-height'] = const CssNum(20, 'px');
+  root['font-size'] = CssNum(bodySize, 'px');
+  root['line-height'] = CssNum(small ? 18 : 20, 'px');
   root['letter-spacing'] = CssNum(
     t.size('type.bannerBody.tracking', fallback: 0),
     'px',

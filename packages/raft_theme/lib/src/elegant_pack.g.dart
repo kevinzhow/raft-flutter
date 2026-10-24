@@ -265,6 +265,7 @@ const String elegantThemePackJson = r'''{
         "layer-select-hover": "rgb(17 17 17 / 0.02)",
         "line-select": "#e5e5e2",
         "line-select-disabled": "#e5e5e2",
+        "foreground-channel-footer-note": "#3d3d3a",
         "layer-button-primary-hover": "#f3e4b3",
         "foreground-button-primary": "#655000",
         "layer-button-standard": "#191815",
@@ -572,6 +573,7 @@ const String elegantThemePackJson = r'''{
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
         "opacity.spinnerArc": 0.8,
+        "stroke.channelFooter": 1,
         "type.field.size": 14.0,
         "type.field.line": 20.0,
         "type.field.weight": 400.0,
@@ -660,7 +662,11 @@ const String elegantThemePackJson = r'''{
         "confirm.explanation": "plain",
         "spinner.ringShape": "sweep",
         "spinner.foreground": "inherited",
-        "toast.style": "recipe"
+        "toast.style": "recipe",
+        "button.surface": "recipe",
+        "banner.style": "recipe",
+        "channelFooter.joinSize": "md",
+        "composerAttachment.style": "recipe"
       }
     },
     "dark": {
@@ -872,6 +878,7 @@ const String elegantThemePackJson = r'''{
         "layer-select-hover": "rgb(239 239 238 / 0.02)",
         "line-select": "rgb(241 241 241 / 0.1)",
         "line-select-disabled": "rgb(241 241 241 / 0.1)",
+        "foreground-channel-footer-note": "#c4c4c1",
         "layer-button-primary-hover": "{palette.elegantButton.primary.hover.dark}",
         "foreground-button-primary": "#f6d56b",
         "layer-button-standard": "#fafaf7",
@@ -1188,6 +1195,7 @@ const String elegantThemePackJson = r'''{
         "ratio.spinnerRingRadius": 0.4166666666666667,
         "space.spinnerRingInset": 0,
         "opacity.spinnerArc": 0.8,
+        "stroke.channelFooter": 1,
         "type.field.size": 14.0,
         "type.field.line": 20.0,
         "type.field.weight": 400.0,
@@ -1276,7 +1284,11 @@ const String elegantThemePackJson = r'''{
         "confirm.explanation": "plain",
         "spinner.ringShape": "sweep",
         "spinner.foreground": "inherited",
-        "toast.style": "recipe"
+        "toast.style": "recipe",
+        "button.surface": "recipe",
+        "banner.style": "recipe",
+        "channelFooter.joinSize": "md",
+        "composerAttachment.style": "recipe"
       }
     }
   }

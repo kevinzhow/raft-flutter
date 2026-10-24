@@ -30,6 +30,7 @@ import pathlib
 import sys
 
 from button_contract import button_colors, button_palette
+import components_lane
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 VALUES = 'docs/theme-contract/values.json'
@@ -65,7 +66,6 @@ OPTIONS_ELEGANT = {
     'banner.iconAlignment': 'center', 'banner.iconColor': 'intent', 'confirm.slug': 'text',
     'confirm.explanation': 'plain',
     'spinner.ringShape': 'sweep', 'spinner.foreground': 'inherited',
-    'toast.style': 'recipe',
 }
 OPTIONS_BRUTAL = {
     'mobileNav.boxLayout': 'natural', 'mobileNav.textLayout': 'natural',
@@ -92,7 +92,6 @@ OPTIONS_BRUTAL = {
     'banner.iconAlignment': 'center', 'banner.iconColor': 'foreground', 'confirm.slug': 'text',
     'confirm.explanation': 'plain',
     'spinner.ringShape': 'quarter', 'spinner.foreground': 'fixed',
-    'toast.style': 'recipe',
 }
 
 # AUTHORED: docs/theme-contract.md §3.1–3.3. Values marked † in the contract are
@@ -557,6 +556,11 @@ GEOMETRY_BRUTAL.update({
     'space.spinnerRingInset': 1, 'opacity.spinnerArc': 1,
 })
 
+GEOMETRY_ELEGANT.update(components_lane.geometry_family())
+GEOMETRY_BRUTAL.update(components_lane.geometry_family())
+OPTIONS_ELEGANT.update(components_lane.options_family())
+OPTIONS_BRUTAL.update(components_lane.options_family())
+
 FONTS_ELEGANT = {
     'sans': {'family': 'Geist',
              'stack': ['Geist', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
@@ -789,6 +793,7 @@ def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
         shadows['shadow.buttonHover'] = shadows['md'] if spec['column'] == 'brutal' else normal
         shadows['shadow.buttonPressed'] = shadows['xs'] if spec['column'] == 'brutal' else normal
         shadows['shadow.buttonDangerOutline'] = normal if spec['column'] == 'elegantDark' else 'none'
+        components_lane.family_aliases(colors)
         colors.update(button_colors(spec['column'], colors))
         return {
             'colors': colors,

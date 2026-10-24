@@ -66,6 +66,8 @@ Widget _banner(ParityContext ctx) {
       small: variant == 'sm',
       bold: true,
       onRetry: variant == 'action' ? () {} : null,
+      // The Web host's own button copy.
+      retryLabel: 'Try again',
     ),
   );
 }

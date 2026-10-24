@@ -32,6 +32,12 @@ import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'recipes/card.g.dart';
+import 'raft/button.dart'
+    show RaftButtonMetrics, RaftButtonSize, RaftButtonVariant;
+import 'raft/button_colors.dart';
+import 'raft/button_surface.dart';
+import 'raft/ui_tokens.dart';
+import 'tokens/tokens.dart' show RaftTypeStyle;
 import 'recipes/field.g.dart' as field_recipe;
 import 'recipes/label.g.dart';
 import 'recipes/recipe_runtime.dart';
@@ -149,8 +155,128 @@ class RaftRecipeButton extends StatelessWidget {
     builder: (context, state) => _paint(context, state),
   );
 
+  /// The ported raft-ui `Button` surface (`raft/button.dart`) with this
+  /// call site's class overrides: the same fill, edge, ring and press motion
+  /// as [RaftButton], so a dialog button and a toolbar button agree.
+  Widget _paintPorted(BuildContext context, RaftInteractionState state) {
+    final t = RaftTokens.of(context);
+    final variantValue = RaftButtonVariant.fromRecipe(variant);
+    final sizeValue = RaftButtonSize.fromRecipe(size);
+    final base = RaftButtonMetrics.of(sizeValue, variantValue, t);
+    final step = textStep;
+    final metrics = RaftButtonMetrics(
+      height: base.height,
+      paddingX: base.paddingX,
+      iconStartPaddingLeft: base.iconStartPaddingLeft,
+      iconEndPaddingRight: base.iconEndPaddingRight,
+      text: step == null
+          ? base.text
+          : RaftTypeStyle(
+              step.$1,
+              step.$2,
+              fontWeight: base.text.fontWeight,
+            ),
+      // The recipe's `[&_svg:not([class*='size-'])]` rule wins over a glyph's
+      // own size attribute, so [glyphSize] only applies to the recipe surface.
+      icon: base.icon,
+      gap: gap ?? base.gap,
+      square: base.square,
+    );
+    final isDisabled = disabled || onPressed == null;
+    final colors = RaftButtonColors.themed(
+      t,
+      variantValue,
+      iconSize: sizeValue.isIcon,
+      highContrast: MediaQuery.highContrastOf(context),
+      disabled: isDisabled,
+      overlay: (state.hovered || state.pressed) && !isDisabled,
+    );
+    final fg = foreground ?? colors.foreground;
+    var text = t.scale(
+      metrics.text,
+      color: fg,
+      weight: fontWeight ?? raftFontWeight(t.size('type.button.weight', fallback: 700)),
+    );
+    if (underline) {
+      text = text.copyWith(
+        decoration: TextDecoration.underline,
+        decorationColor: fg,
+        decorationThickness: 1.5,
+      );
+    }
+    text = RaftControlTypography.of(context, text);
+    final wraps = autoHeight || RaftScaled.grows(context);
+    final iconWidget = glyph == null
+        ? null
+        : RaftIcon(glyph!, size: metrics.icon, color: fg);
+    Widget content =
+        child ??
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (iconWidget != null && !glyphTrailing) iconWidget,
+            if (iconWidget != null && label != null && !glyphTrailing)
+              SizedBox(width: metrics.gap),
+            if (label != null)
+              Flexible(
+                child: Text(
+                  raftText(context, label!),
+                  maxLines: wraps ? null : 1,
+                  softWrap: wraps,
+                  textAlign: TextAlign.center,
+                  overflow: wraps ? TextOverflow.clip : TextOverflow.ellipsis,
+                ),
+              ),
+            if (iconWidget != null && label != null && glyphTrailing)
+              SizedBox(width: metrics.gap),
+            if (iconWidget != null && glyphTrailing) iconWidget,
+          ],
+        );
+    content = DefaultTextStyle.merge(
+      style: text,
+      child: IconTheme.merge(
+        data: IconThemeData(color: fg, size: metrics.icon),
+        child: content,
+      ),
+    );
+    final inline = sizeValue == RaftButtonSize.inline;
+    final EdgeInsets resolvedPadding =
+        padding ??
+        (inline || metrics.square
+            ? EdgeInsets.zero
+            : EdgeInsets.symmetric(horizontal: metrics.paddingX));
+    final shown = state.focusVisible ||
+        (focusRing && (focusNode?.hasFocus ?? false));
+    Widget box = RaftButtonSurface(
+      variant: variantValue,
+      size: sizeValue,
+      metrics: metrics,
+      colors: colors,
+      state: RaftInteractionState(
+        hovered: state.hovered,
+        pressed: state.pressed,
+        focusVisible: shown,
+        enabled: state.enabled,
+      ),
+      disabled: isDisabled,
+      padding: resolvedPadding,
+      expand: expand,
+      child: content,
+    );
+    if (t.option('button.disabledSurface', or: 'muted') == 'opacity' &&
+        disabled) {
+      final o = disabledOpacity ?? t.size('opacity.buttonDisabled', fallback: 1);
+      if (o < 1) box = Opacity(opacity: o, child: box);
+    }
+    return box;
+  }
+
   Widget _paint(BuildContext context, RaftInteractionState state) {
     final t = RaftTokens.of(context);
+    if (t.option('button.surface', or: 'recipe') == 'ported') {
+      return _paintPorted(context, state);
+    }
     final tokens = RaftRecipeTokens(t);
     final root = RaftButtonRecipe.resolve(
       theme: raftRecipeThemeOf(t),

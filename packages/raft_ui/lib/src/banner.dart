@@ -110,6 +110,12 @@ class RaftBanner extends StatelessWidget {
       tokens: tokens,
     );
     final recipe = raftBannerSlots(t, source, size, status);
+    // raft-ui 0.7 `banner`: `BannerAction` is `col-start-(--banner-text-col)
+    // mt-2 flex flex-wrap gap-2`, a row under the copy; the description keeps
+    // its own `font-normal` whatever the caller put on the root.
+    final raft = t.option('banner.style', or: 'recipe') == 'raft';
+    final trailing = raft ? null : action;
+    final weight = raft ? null : descriptionWeight;
     final base = recipe.root.text(
       tokens,
       base: DefaultTextStyle.of(context).style,
@@ -123,6 +129,7 @@ class RaftBanner extends StatelessWidget {
           context,
           recipe,
           tokens,
+          trailing,
           Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -164,7 +171,7 @@ class RaftBanner extends StatelessWidget {
                   tailWeight: descriptionTailWeight,
                   style: recipe.description
                       .text(tokens, base: base)
-                      .copyWith(fontWeight: descriptionWeight),
+                      .copyWith(fontWeight: weight),
                   textAlign: textAlign,
                 )
               else
@@ -173,9 +180,22 @@ class RaftBanner extends StatelessWidget {
                   textAlign: textAlign,
                   style: recipe.description
                       .text(tokens, base: base)
-                      .copyWith(fontWeight: descriptionWeight),
+                      .copyWith(fontWeight: weight),
                 ),
               ?footer,
+              if (raft && action != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [action!],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -187,6 +207,7 @@ class RaftBanner extends StatelessWidget {
     BuildContext context,
     RaftBannerRecipeStyle recipe,
     RaftTokenResolver tokens,
+    Widget? action,
     Widget content,
   ) {
     if (glyph == null && action == null) {

@@ -29,6 +29,7 @@ import re
 import sys
 
 from button_contract import button_colors
+import components_lane
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOKENS = 'packages/raft_ui/lib/src/tokens'
@@ -426,8 +427,10 @@ OPTIONS_RAFT = {
     'banner.iconAlignment': 'start', 'banner.iconColor': 'foreground', 'confirm.slug': 'chip',
     'confirm.explanation': 'dangerBanner',
     'spinner.ringShape': 'sweep', 'spinner.foreground': 'inherited',
-    'toast.style': 'hud',
 }
+
+GEOMETRY_RAFT.update(components_lane.geometry_raft())
+OPTIONS_RAFT.update(components_lane.options_raft())
 
 CASE_RAFT = {'dialogShellTitle': 'none','heading': 'none', 'label': 'none', 'badge': 'none'}
 
@@ -511,6 +514,7 @@ def build() -> dict:
             'line-select': 'line-strong', 'line-select-disabled': 'line-hairline',
         }.items():
             out[target] = out[source]
+        components_lane.raft_aliases(out)
         out.update(button_colors('raftDark' if palette is dark else 'raftLight', out))
         return out
 

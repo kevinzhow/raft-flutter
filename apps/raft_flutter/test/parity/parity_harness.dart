@@ -82,9 +82,16 @@ class ParityContext {
     required this.caseJson,
     required this.fixtures,
     required this.dark,
+    this.againstWeb = false,
   });
 
   final Map<String, dynamic> caseJson;
+
+  /// The capture is compared with the Web render (the Raft look), not with the
+  /// frozen a57b9dab image of Elegant / Brutal. Only for fixes of a case's own
+  /// defects that the frozen reference shares (it was captured with the same
+  /// harness), which would otherwise move those looks away from it.
+  final bool againstWeb;
 
   /// shared/*.json keyed by file stem, e.g. `fixtureData`, `tasksFixture`.
   final Map<String, dynamic> fixtures;
@@ -299,6 +306,9 @@ Future<Map<String, dynamic>> captureParityCase(
     caseJson: visualCase,
     fixtures: fixtures,
     dark: dark,
+    againstWeb:
+        Platform.environment['PARITY_THEME_OVERRIDE']?.startsWith('raft') ??
+        false,
   );
   try {
     final size = Size(ctx.width, ctx.height);

@@ -163,9 +163,12 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'button.hoverSurface': {'overlay', 'variant'},
   'button.linkDecoration': {'underline', 'none'},
   'button.linkPadding': {'none', 'size'},
-  // The toast surface: the elegant / brutal recipe (a glyph icon, recipe
-  // border and fill) or the raft-ui 0.7 neutral HUD (a status pixel).
+  // Components lane (Web v1.21.23 shared components; tool/theme-adapters/components_lane.py).
   'toast.style': {'recipe', 'hud'},
+  'button.surface': {'recipe', 'ported'},
+  'banner.style': {'recipe', 'raft'},
+  'channelFooter.joinSize': {'md', 'lg'},
+  'composerAttachment.style': {'recipe', 'raft'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).
