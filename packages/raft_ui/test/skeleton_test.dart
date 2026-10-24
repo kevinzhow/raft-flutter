@@ -14,7 +14,7 @@ void main() {
     final key = GlobalKey();
     await tester.pumpWidget(
       MaterialApp(
-        theme: raftTheme(),
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: Scaffold(
@@ -81,7 +81,7 @@ void main() {
       final key = GlobalKey();
       await tester.pumpWidget(
         MaterialApp(
-          theme: raftTheme(),
+          theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
           home: RepaintBoundary(
             key: key,
             child: Align(
@@ -161,6 +161,7 @@ void main() {
     final key = GlobalKey();
     await tester.pumpWidget(
       MaterialApp(
+        theme: raftTheme(pack: packForThemeId(elegantThemePackId)),
         home: MediaQuery(
           data: const MediaQueryData(disableAnimations: true),
           child: Center(
@@ -186,5 +187,35 @@ void main() {
       expect(bytes.getUint8((10 * image.width + 50) * 4), 229);
       image.dispose();
     });
+  });
+
+  testWidgets('Raft skeleton is a flat fill-muted sticker block', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: raftTheme(),
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: const Center(child: RaftSkeleton(width: 100, height: 20)),
+        ),
+      ),
+    );
+    await tester.pump();
+    final box = tester.widget<Container>(
+      find
+          .descendant(
+            of: find.byType(RaftSkeleton),
+            matching: find.byType(Container),
+          )
+          .first,
+    );
+    final decoration = box.decoration! as BoxDecoration;
+    final t = RaftTokens.of(tester.element(find.byType(RaftSkeleton)));
+    expect(decoration.color, t.colors['fill-muted']);
+    expect(
+      decoration.borderRadius,
+      BorderRadius.circular(t.size('radius.sticker', fallback: 4)),
+    );
   });
 }
