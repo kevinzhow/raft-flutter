@@ -183,6 +183,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'document.style': {'recipe', 'raft'},
   'messageToolbar.style': {'recipe', 'raft'},
   'tooltip.style': {'recipe', 'raft'},
+  'avatar.humanFallback': {'initials', 'icon'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

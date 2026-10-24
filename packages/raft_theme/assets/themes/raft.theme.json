@@ -896,7 +896,8 @@
         "lightbox.style": "raft",
         "document.style": "raft",
         "messageToolbar.style": "raft",
-        "tooltip.style": "raft"
+        "tooltip.style": "raft",
+        "avatar.humanFallback": "icon"
       }
     },
     "dark": {
@@ -1746,7 +1747,8 @@
         "lightbox.style": "raft",
         "document.style": "raft",
         "messageToolbar.style": "raft",
-        "tooltip.style": "raft"
+        "tooltip.style": "raft",
+        "avatar.humanFallback": "icon"
       }
     }
   }

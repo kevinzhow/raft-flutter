@@ -146,7 +146,11 @@ class RaftMountedAvatarFallback extends StatelessWidget {
     );
     final size = r.avatarSize;
     final text = switch (identity) {
-      RaftMountedAvatarIdentity.human => raftAvatarInitials(initials),
+      RaftMountedAvatarIdentity.human =>
+        RaftTokens.of(context).option('avatar.humanFallback', or: 'initials') ==
+                'icon'
+            ? ''
+            : raftAvatarInitials(initials),
       RaftMountedAvatarIdentity.agent => raftAvatarInitials(initials, max: 1),
       RaftMountedAvatarIdentity.server =>
         initials.trim().isEmpty ? 'S' : raftAvatarInitials(initials, max: 1),

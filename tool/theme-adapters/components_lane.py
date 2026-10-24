@@ -93,6 +93,9 @@ _OPTIONS = {
     # Tooltip: raft-ui 0.7 `tooltip` (`rounded-chip bg-layer-hud shadow-float`, the
     # pack's float elevation); the hard-coded Elegant triple shadow before.
     'tooltip.style': ('raft', 'recipe'),
+    # A person without a picture: AvatarSlot's Gravatar fallback is the person glyph
+    # in v1.21.23; a57b9dab drew the initials.
+    'avatar.humanFallback': ('icon', 'initials'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -116,6 +119,7 @@ OPTION_VALUES = {
     'document.style': ('raft', 'recipe'),
     'messageToolbar.style': ('raft', 'recipe'),
     'tooltip.style': ('raft', 'recipe'),
+    'avatar.humanFallback': ('icon', 'initials'),
 }
 
 # ---------------------------------------------------------------- colours

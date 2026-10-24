@@ -678,7 +678,8 @@ const String brutalThemePackJson = r'''{
         "lightbox.style": "recipe",
         "document.style": "recipe",
         "messageToolbar.style": "recipe",
-        "tooltip.style": "recipe"
+        "tooltip.style": "recipe",
+        "avatar.humanFallback": "initials"
       }
     },
     "dark": {
@@ -1350,7 +1351,8 @@ const String brutalThemePackJson = r'''{
         "lightbox.style": "recipe",
         "document.style": "recipe",
         "messageToolbar.style": "recipe",
-        "tooltip.style": "recipe"
+        "tooltip.style": "recipe",
+        "avatar.humanFallback": "initials"
       }
     }
   }

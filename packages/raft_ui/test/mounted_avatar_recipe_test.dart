@@ -143,15 +143,22 @@ void main() {
         await tester.pumpWidget(
           host(const RaftMountedAvatarFrame(name: 'Public human'), dark),
         );
-        expect(find.text('PH'), findsOneWidget);
-        expect(find.byType(RaftAvatarPlaceholder), findsNothing);
         final t = RaftTokens.of(
           tester.element(find.byType(RaftMountedAvatarFrame)),
         );
-        expect(
-          tester.widget<Text>(find.text('PH')).style!.color,
-          t.ui.stickerInk,
-        );
+        if (t.option('avatar.humanFallback', or: 'initials') == 'icon') {
+          // v1.21.23 AvatarSlot: a person without a picture is the Gravatar
+          // fallback, the person glyph (the Raft look).
+          expect(find.text('PH'), findsNothing);
+          expect(find.byType(RaftAvatarPlaceholder), findsOneWidget);
+        } else {
+          expect(find.text('PH'), findsOneWidget);
+          expect(find.byType(RaftAvatarPlaceholder), findsNothing);
+          expect(
+            tester.widget<Text>(find.text('PH')).style!.color,
+            t.ui.stickerInk,
+          );
+        }
         for (final gravatar in [false, true]) {
           await tester.pumpWidget(
             host(
