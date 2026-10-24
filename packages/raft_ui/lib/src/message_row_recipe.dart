@@ -274,20 +274,24 @@ class RaftMessageRowRecipe {
   double get translationLift => 1;
   double get footerGap =>
       6; // Mounted MessageItemFooter overrides generic Elegant desktop mt10.
-  double get toolbarTop => 4;
+  /// raft-ui 0.7 `messageItem` toolbar (`messageToolbar.style`).
+  bool get raftToolbar =>
+      tokens.option('messageToolbar.style', or: 'recipe') == 'raft';
+  double get toolbarTop => raftToolbar ? -18 : 4;
 
   /// MessageHoverToolbar overrides the recipe's `right-[29px]`: `right-2`,
   /// `max-md:right-0.5` (brutal: `-right-1.5`, its narrow row wraps the
   /// padding box in extra inset).
-  double get toolbarRight => !mobile ? 8 : 2;
-  double get toolbarButtonExtent => 28;
+  double get toolbarRight => raftToolbar ? 12 : (!mobile ? 8 : 2);
+  double get toolbarButtonExtent => raftToolbar ? 32 : 28;
   double get toolbarGap => 2;
-  EdgeInsets get toolbarPadding =>
-      const EdgeInsets.symmetric(horizontal: 4, vertical: 2);
+  EdgeInsets get toolbarPadding => raftToolbar
+      ? const EdgeInsets.all(3)
+      : const EdgeInsets.symmetric(horizontal: 4, vertical: 2);
   Color get background => highlighted
       ? tokens.colors['info']!.withValues(alpha: .1)
       : attention
-      ? (tokens.colors['ink-2']!)
+      ? (tokens.colors[raftToolbar ? 'fill-pressed' : 'ink-2']!)
       : Colors.transparent;
   Color get border => Colors.transparent;
   TextStyle get body => TextStyle(
@@ -355,7 +359,21 @@ class RaftMessageRowRecipe {
           ),
         )
       : null;
-  BoxDecoration get toolbarDecoration => BoxDecoration(
+  BoxDecoration get toolbarDecoration => raftToolbar
+      ? BoxDecoration(
+          color: tokens.popover,
+          borderRadius: BorderRadius.circular(
+            tokens.size('radius.control', fallback: 8),
+          ),
+          boxShadow: [
+            // CSS lists the ring first (top); a BoxShadow list paints last on top.
+            for (final layer in tokens.shadowLayers('shadow.float').reversed)
+              if (!layer.inset) layer.toBoxShadow(),
+            BoxShadow(color: tokens.colors['line-seam']!, spreadRadius: 1),
+          ],
+        )
+      : _legacyToolbarDecoration;
+  BoxDecoration get _legacyToolbarDecoration => BoxDecoration(
     color: tokens.panel,
     border: Border.all(
       color: tokens.dark ? Colors.transparent : tokens.colors['line-muted']!,
@@ -925,7 +943,11 @@ class _RaftMessageRowState extends State<RaftMessageRow> {
             widget.timestamp,
             maxLines: 1,
             softWrap: false,
-            style: recipe.time,
+            // `opacity-[calc(1-var(--mi-toolbar-opacity,0))]`: the time gives its
+            // place to the hover toolbar.
+            style: recipe.raftToolbar && recipe.toolbarVisible
+                ? recipe.time.copyWith(color: Colors.transparent)
+                : recipe.time,
           ),
         ],
       ),
@@ -1323,7 +1345,8 @@ class RaftMessageToolbarAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final extent = 28.0;
+    final raft = t.option('messageToolbar.style', or: 'recipe') == 'raft';
+    final extent = raft ? 32.0 : 28.0;
     return RaftControl(
       onPressed: onPressed,
       tooltip: label,
@@ -1333,8 +1356,13 @@ class RaftMessageToolbarAction extends StatelessWidget {
       minimumTargetSize: extent,
       padding: EdgeInsets.zero,
       shadow: true,
-      recipe: _MessageActionRecipe(t, active: active, popupOpen: popupOpen),
-      child: SizedBox.square(dimension: 13, child: icon),
+      recipe: _MessageActionRecipe(
+        t,
+        active: active,
+        popupOpen: popupOpen,
+        raft: raft,
+      ),
+      child: SizedBox.square(dimension: raft ? 18 : 13, child: icon),
     );
   }
 }
@@ -1344,23 +1372,30 @@ class _MessageActionRecipe extends RaftControlRecipe {
     super.tokens, {
     required this.active,
     required this.popupOpen,
+    this.raft = false,
   }) : super(variant: RaftControlVariant.ghost);
-  final bool active, popupOpen;
+  final bool active, popupOpen, raft;
   @override
   bool get transformsOnInteraction => false;
   @override
-  BorderRadius get radius => BorderRadius.circular(6);
+  BorderRadius get radius => BorderRadius.circular(
+    raft ? tokens.size('radius.control', fallback: 8) : 6,
+  );
   @override
   Color get foreground => foregroundFor();
   @override
-  Color foregroundFor({bool hovered = false}) => active
+  Color foregroundFor({bool hovered = false}) => raft
+      // `text-foreground-muted data-active:text-foreground`.
+      ? tokens.colors[active ? 'foreground' : 'foreground-muted']!
+      : active
       ? tokens.colors['accent-strong']!
       : hovered || popupOpen
       ? tokens.strong
       : tokens.colors['foreground-icon']!;
   @override
-  Color backgroundFor({bool hovered = false}) =>
-      hovered || popupOpen ? tokens.colors['fill-muted']! : Colors.transparent;
+  Color backgroundFor({bool hovered = false}) => hovered || popupOpen
+      ? tokens.colors[raft ? 'fill-pressed' : 'fill-muted']!
+      : Colors.transparent;
   @override
   Color get focusRing => tokens.colors['primary-500']!;
   @override

@@ -86,6 +86,10 @@ _OPTIONS = {
     # Document previews (csv / xlsx / text panes): raft-ui 0.7 card (rounded-container,
     # hairlines, fill-muted header and stripes, mono-meta cells); square panes before.
     'document.style': ('raft', 'recipe'),
+    # Message hover toolbar: raft-ui 0.7 `messageItem` (`-top-[18px] right-3`, p-[3px],
+    # 32px buttons with 18px glyphs, ring-1 line-seam + shadow-float, a fill-pressed
+    # row wash); the 28px strip inside the row before.
+    'messageToolbar.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -107,6 +111,7 @@ OPTION_VALUES = {
     'reaction.style': ('raft', 'recipe'),
     'lightbox.style': ('raft', 'recipe'),
     'document.style': ('raft', 'recipe'),
+    'messageToolbar.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours
