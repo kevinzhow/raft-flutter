@@ -901,7 +901,8 @@ const String raftThemePackJson = r'''{
         "progress.style": "raft",
         "menuItem.style": "raft",
         "field.layout": "raft",
-        "inputGroup.style": "raft"
+        "inputGroup.style": "raft",
+        "announcement.style": "raft"
       }
     },
     "dark": {
@@ -1743,7 +1744,8 @@ const String raftThemePackJson = r'''{
         "progress.style": "raft",
         "menuItem.style": "raft",
         "field.layout": "raft",
-        "inputGroup.style": "raft"
+        "inputGroup.style": "raft",
+        "announcement.style": "raft"
       }
     }
   }

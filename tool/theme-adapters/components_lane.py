@@ -66,6 +66,10 @@ _OPTIONS = {
     # line-strong border, rounded-control, a fill-muted addon with a hairline, the
     # field type step); the generated group recipe before.
     'inputGroup.style': ('raft', 'recipe'),
+    # AnnouncementDialog (raft-ui wip `announcement`): px-5 py-5 body, a status-pixel
+    # label, `text-headline` title, `text-subhead` muted copy, no footer rule;
+    # the px-7 recipe card with an accent dot and a `text-2xl` title before.
+    'announcement.style': ('raft', 'recipe'),
 }
 
 # Allowed values per option, merged into raftStructuralOptions (theme_pack.dart).
@@ -83,6 +87,7 @@ OPTION_VALUES = {
     'menuItem.style': ('raft', 'recipe'),
     'field.layout': ('raft', 'recipe'),
     'inputGroup.style': ('raft', 'recipe'),
+    'announcement.style': ('raft', 'recipe'),
 }
 
 # ---------------------------------------------------------------- colours

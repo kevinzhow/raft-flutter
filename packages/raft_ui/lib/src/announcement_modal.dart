@@ -21,7 +21,10 @@ import 'panel_layout.dart' show RaftCssText;
 import 'recipe_surface.dart';
 import 'recipes/button_variants.g.dart';
 import 'sized_image.dart';
+import 'raft/status.dart' show RaftStatus, RaftStatusSize;
+import 'raft/ui_tokens.dart';
 import 'theme.dart';
+import 'tokens/tokens.dart' show RaftTypeScale;
 
 /// The announcement's picture (`image { assetId, alt }`): [url] is the public
 /// `GET /announcements/images/:id`.
@@ -216,22 +219,31 @@ class RaftAnnouncementCard extends StatelessWidget {
       media.size.height - 32 - media.viewInsets.bottom,
     );
     final ink = t.semantic.foreground;
-    final titleStyle = slots.title
-        .text(rt)
-        .copyWith(
-          // `text-2xl font-bold tracking-tight normal-case`.
-          color: ink,
-          fontSize: 24,
-          height: 32 / 24,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.6,
-          leadingDistribution: TextLeadingDistribution.even,
-        );
-    final bodyStyle = raftCssTextStyle(
-      family: t.bodyFont,
-      step: (14, 22.75), // text-sm/relaxed
-      color: ink,
-    ).copyWith(fontFamilyFallback: t.fontFallback);
+    // raft-ui wip `announcement`: `text-headline` title, `text-subhead
+    // text-foreground-muted` copy, `px-5 pt-5 pb-5` body, no footer rule.
+    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
+    final titleStyle = raft
+        ? t.scale(RaftTypeScale.headline, weight: FontWeight.w700)
+        : slots.title
+              .text(rt)
+              .copyWith(
+                // `text-2xl font-bold tracking-tight normal-case`.
+                color: ink,
+                fontSize: 24,
+                height: 32 / 24,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.6,
+                leadingDistribution: TextLeadingDistribution.even,
+              );
+    final bodyStyle = raft
+        ? t
+              .scale(RaftTypeScale.subhead, color: t.ui.foregroundMuted)
+              .copyWith(fontFamilyFallback: t.fontFallback)
+        : raftCssTextStyle(
+            family: t.bodyFont,
+            step: (14, 22.75), // text-sm/relaxed
+            color: ink,
+          ).copyWith(fontFamilyFallback: t.fontFallback);
     final rule = BorderSide(color: t.semantic.lineMuted, width: 1);
     final picture = image;
     final content = Column(
@@ -243,8 +255,10 @@ class RaftAnnouncementCard extends StatelessWidget {
             constraints: BoxConstraints(maxHeight: media.size.height * .7),
             child: SingleChildScrollView(
               key: const ValueKey('announcement-body'),
-              // `px-7 pt-6 pb-5`.
-              padding: const EdgeInsets.fromLTRB(28, 24, 28, 20),
+              // `px-7 pt-6 pb-5` (`px-5 pt-5 pb-5` in the Raft look).
+              padding: raft
+                  ? const EdgeInsets.all(20)
+                  : const EdgeInsets.fromLTRB(28, 24, 28, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -286,9 +300,11 @@ class RaftAnnouncementCard extends StatelessWidget {
         ),
         Container(
           key: const ValueKey('announcement-footer'),
-          // `border-t px-7 py-4`.
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-          decoration: BoxDecoration(border: Border(top: rule)),
+          // `border-t px-7 py-4` (`px-5 pt-0 pb-5`, no rule, in the Raft look).
+          padding: raft
+              ? const EdgeInsets.fromLTRB(20, 0, 20, 20)
+              : const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          decoration: raft ? null : BoxDecoration(border: Border(top: rule)),
           child: _Footer(
             secondary: ctaLabel == null
                 ? null
@@ -356,26 +372,38 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
     return Row(
       children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: t.colors['accent'],
-            shape: BoxShape.circle,
+        if (raft)
+          // `size-[9px] rounded-[2px] border-[1.5px] border-sticker-ink bg-attention-400`.
+          RaftStatus(size: RaftStatusSize.md, color: t.ui['attention-400'])
+        else
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: t.colors['accent'],
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
         const SizedBox(width: 8),
         Expanded(
           child: RaftCssText(
             text,
             key: const ValueKey('announcement-label'),
-            style: raftCssTextStyle(
-              family: t.bodyFont,
-              step: RaftTextSteps.xs,
-              color: t.semantic.foregroundMuted,
-            ).copyWith(fontFamilyFallback: t.fontFallback),
+            style: raft
+                ? t
+                      .scale(
+                        RaftTypeScale.caption,
+                        color: t.ui.foregroundMuted,
+                      )
+                      .copyWith(fontFamilyFallback: t.fontFallback)
+                : raftCssTextStyle(
+                    family: t.bodyFont,
+                    step: RaftTextSteps.xs,
+                    color: t.semantic.foregroundMuted,
+                  ).copyWith(fontFamilyFallback: t.fontFallback),
           ),
         ),
       ],
@@ -393,8 +421,14 @@ class _Picture extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
-    final border = Border.all(color: t.semantic.lineMuted, width: 1);
-    final radius = BorderRadius.circular(8);
+    final raft = t.option('announcement.style', or: 'recipe') == 'raft';
+    final border = Border.all(
+      color: raft ? t.ui.lineHairline : t.semantic.lineMuted,
+      width: 1,
+    );
+    final radius = BorderRadius.circular(
+      raft ? t.size('radius.container', fallback: 10) : 8,
+    );
     return Container(
       key: const ValueKey('announcement-picture'),
       height: 176,

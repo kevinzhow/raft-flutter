@@ -658,7 +658,8 @@
         "progress.style": "recipe",
         "menuItem.style": "recipe",
         "field.layout": "recipe",
-        "inputGroup.style": "recipe"
+        "inputGroup.style": "recipe",
+        "announcement.style": "recipe"
       }
     },
     "dark": {
@@ -1322,7 +1323,8 @@
         "progress.style": "recipe",
         "menuItem.style": "recipe",
         "field.layout": "recipe",
-        "inputGroup.style": "recipe"
+        "inputGroup.style": "recipe",
+        "announcement.style": "recipe"
       }
     }
   }
