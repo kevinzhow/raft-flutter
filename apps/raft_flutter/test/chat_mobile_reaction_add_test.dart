@@ -64,7 +64,8 @@ void main() {
         await t.pump();
         final add = find.byKey(const ValueKey('message-reaction-add'));
         expect(add, findsOneWidget);
-        expect(t.getSize(add).height, 20);
+        // raft-ui 0.7 `messageReaction` addButton: `h-6`.
+        expect(t.getSize(add).height, 24);
         await t.tap(add);
         await t.pump();
         expect(find.byType(RaftQuickReactionPicker), findsOneWidget);

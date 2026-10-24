@@ -146,7 +146,8 @@ void main() {
     expect(styleOf(tester, 'a@b.c').color, t.colors['foreground-muted']);
     final name = styleOf(tester, 'Helper');
     expect(name.fontWeight, FontWeight.w600);
-    expect(name.color, t.colors['foreground-muted']);
+    // raft-ui 0.7 `ListRowTitle` (the Raft look): 16/24 600 in the row's ink.
+    expect(name.color, t.colors['foreground']);
     expect(styleOf(tester, 'Claude').color, t.colors['foreground-hint']);
   });
 

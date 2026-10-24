@@ -642,6 +642,7 @@ class _PendingAttachment extends StatelessWidget {
             child: RaftRecipeButton(
               variant: RaftButtonRecipeVariant.outline,
               size: RaftButtonRecipeSize.iconXs,
+              squareExtent: 24,
               glyph: RaftGlyph.x,
               glyphSize: 12,
               tooltip: '${raftText(context, 'Remove')} ${file.name}',

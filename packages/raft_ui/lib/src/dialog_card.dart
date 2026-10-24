@@ -105,7 +105,13 @@ class RaftRecipeButton extends StatelessWidget {
     this.disabledOpacity,
     this.underline = false,
     this.autoHeight = false,
+    this.squareExtent,
   });
+
+  /// A product icon button that is smaller than the raft-ui icon size (the
+  /// feedback attachment's remove badge): the ported surface keeps its recipe
+  /// look at this extent instead of the 32px `icon-xs`.
+  final double? squareExtent;
 
   /// Callsite `underline`.
   final bool underline;
@@ -165,7 +171,7 @@ class RaftRecipeButton extends StatelessWidget {
     final base = RaftButtonMetrics.of(sizeValue, variantValue, t);
     final step = textStep;
     final metrics = RaftButtonMetrics(
-      height: base.height,
+      height: squareExtent ?? base.height,
       paddingX: base.paddingX,
       iconStartPaddingLeft: base.iconStartPaddingLeft,
       iconEndPaddingRight: base.iconEndPaddingRight,
