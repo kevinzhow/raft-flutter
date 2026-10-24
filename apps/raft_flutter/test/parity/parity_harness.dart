@@ -165,6 +165,7 @@ class ParityContext {
 }) {
   ({String pack, bool dark}) named(String name) => switch (name) {
     'brutal-light' || 'brutal' => (pack: brutalThemePackId, dark: false),
+    'brutal-dark' => (pack: brutalThemePackId, dark: true),
     'elegant-light' || 'elegant' => (pack: elegantThemePackId, dark: false),
     'elegant-dark' || 'dark' => (pack: elegantThemePackId, dark: true),
     'light' || 'raft' || 'raft-light' => (pack: raftThemePackId, dark: false),
@@ -273,6 +274,13 @@ Future<Map<String, dynamic>> captureParityCase(
   required Directory outputDir,
   required Map<String, dynamic> runInfo,
 }) async {
+  // The React provider uses Playwright's emulated deviceScaleFactor for every
+  // capture. Keep the CSS paint policy local to a case, including solo runs.
+  final previousBorderSnap = RaftBorderSnap.emulatedDeviceScaleFactor;
+  RaftBorderSnap.emulatedDeviceScaleFactor = true;
+  addTearDown(
+    () => RaftBorderSnap.emulatedDeviceScaleFactor = previousBorderSnap,
+  );
   final selection = parityThemeFor(
     visualCase,
     override: Platform.environment['PARITY_THEME_OVERRIDE'],

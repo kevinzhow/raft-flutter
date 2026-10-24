@@ -36,7 +36,7 @@ void main() {
       await t.pumpAndSettle();
       final nav = t.getRect(find.byType(RaftMobileNav));
       expect(nav.bottom, 810);
-      expect(nav.height, 68);
+      expect(nav.height, 52);
       await t.runAsync(() async {
         final boundary =
             capture.currentContext!.findRenderObject()!
@@ -53,7 +53,7 @@ void main() {
           );
         }
 
-        // The nav remains a centered capsule, without a full-width rule.
+        // The docked source bar ends above the independently owned system inset.
         expect(pixel(1, 809), isNot(Colors.black));
 
         final png = await image.toByteData(format: ui.ImageByteFormat.png);
@@ -65,7 +65,9 @@ void main() {
         image.dispose();
       });
       final tasks = find.byWidgetPredicate(
-        (w) => w is RaftControl && w.semanticLabel == 'Tasks',
+        (w) =>
+            (w is RaftControl && w.semanticLabel == 'Tasks') ||
+            (w is RaftInteractive && w.semanticLabel == 'Tasks'),
       );
       await t.tap(tasks);
       await t.pump();

@@ -18,6 +18,12 @@ import 'theme.dart';
 import 'text_scaling.dart';
 import 'large_content_viewer.dart';
 
+import 'raft/blink_snap.dart';
+import 'raft/css_box.dart' show raftControlBorderPx;
+import 'panel_layout.dart' show RaftCssText, RaftCssFocusOutline;
+
+part 'mobile_navigation_docked.dart';
+
 @immutable
 class RaftMobileNavItem {
   const RaftMobileNavItem({
@@ -237,6 +243,19 @@ class RaftMobileNav extends StatelessWidget {
       viewportHeight: viewportHeight ?? MediaQuery.sizeOf(context).height,
     );
     final inset = bottomInset ?? MediaQuery.viewPaddingOf(context).bottom;
+    if (t.option('mobileNav.style', or: 'docked') == 'docked') {
+      return RaftChrome(
+        child: RaftLargeContentScope(
+          child: _DockedMobileNav(
+            items: items,
+            selectedId: selectedId,
+            onSelected: onSelected,
+            bottomInset: inset,
+            viewportHeight: recipe.viewportHeight,
+          ),
+        ),
+      );
+    }
     final touch = RaftDensityScope.of(context) == RaftDensity.touch;
     // Fixed chrome: label text is bounded (RaftChrome) and, once that hides
     // growth, a long press shows the item large (Large Content Viewer).

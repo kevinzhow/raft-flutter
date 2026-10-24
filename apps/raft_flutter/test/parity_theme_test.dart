@@ -27,6 +27,7 @@ void main() {
 
   test('supplemental runs select all three looks', () {
     expect(byName('brutal-light'), (pack: brutalThemePackId, dark: false));
+    expect(byName('brutal-dark'), (pack: brutalThemePackId, dark: true));
     expect(byName('elegant-light'), (pack: elegantThemePackId, dark: false));
     expect(byName('elegant-dark'), (pack: elegantThemePackId, dark: true));
     expect(() => byName('elegant-black'), throwsArgumentError);

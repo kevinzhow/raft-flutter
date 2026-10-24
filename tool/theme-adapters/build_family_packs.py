@@ -39,6 +39,8 @@ PACK_FORMAT = 'raft-theme/1'
 # AUTHORED: docs/theme-contract.md §4, one row per option. Raft's values live in
 # build_raft_pack.py's OPTIONS_RAFT; these two are the same table's other columns.
 OPTIONS_ELEGANT = {
+    'mobileNav.boxLayout': 'natural', 'mobileNav.textLayout': 'natural',
+    'mobileNav.selection': 'cell',
     'button.hoverSurface': 'variant',
     'button.linkDecoration': 'none',
     'button.linkPadding': 'size',
@@ -65,6 +67,8 @@ OPTIONS_ELEGANT = {
     'spinner.ringShape': 'sweep', 'spinner.foreground': 'inherited',
 }
 OPTIONS_BRUTAL = {
+    'mobileNav.boxLayout': 'natural', 'mobileNav.textLayout': 'natural',
+    'mobileNav.selection': 'cell',
     'button.hoverSurface': 'variant',
     'button.linkDecoration': 'none',
     'button.linkPadding': 'size',
@@ -93,6 +97,30 @@ OPTIONS_BRUTAL = {
 # digits that the P2 baseline can now confirm or refute; they are carried as-is
 # until that reconciliation, which is its own change.
 GEOMETRY_ELEGANT = {
+    # MobileNav: Web v1.21.23 / a57b9dab mobile_navigation.dart.
+    'space.mobileNavInline': 0,
+    'space.mobileNavTop': 0,
+    'stroke.mobileNavTop': 2,
+    'stroke.mobileNavBottom': 2,
+    'stroke.mobileNavDivider': 2,
+    'size.mobileNavGlyph': 18,
+    'size.mobileNavItem': 51,
+    'size.mobileNavItemCompact': 31,
+    'size.mobileNavGlyphHideHeight': 600,
+    'space.mobileNavItemTop': 8,
+    'space.mobileNavGlyphLabel': 2,
+    'type.mobileNavLabel.size': 10,
+    'type.mobileNavLabel.line': 15,
+    'type.mobileNavLabel.weight': 400,
+    'type.mobileNavLabelSelected.weight': 400,
+    'type.mobileNavLabel.tracking': 0.5,
+    'size.mobileNavStickerWidth': 56,
+    'size.mobileNavStickerHeight': 30,
+    'radius.mobileNavSticker': 0,
+    'stroke.mobileNavSticker': 0,
+    'stroke.mobileNavStickerRing': 0,
+    'size.mobileNavSafeMax': 34,
+
     'size.fieldInput': 38, 'size.fieldSelect': 36,
     'type.fieldLabel.size': 14, 'type.fieldLabel.line': 20, 'type.fieldLabel.weight': 700,
     'space.fieldGap': 6, 'space.fieldLabelAccessoryOutset': 0,
@@ -253,6 +281,30 @@ GEOMETRY_ELEGANT = {
     'space.segmentGap': 6,
 }
 GEOMETRY_BRUTAL = {
+    # MobileNav: Web v1.21.23 / a57b9dab mobile_navigation.dart.
+    'space.mobileNavInline': 0,
+    'space.mobileNavTop': 0,
+    'stroke.mobileNavTop': 2,
+    'stroke.mobileNavBottom': 2,
+    'stroke.mobileNavDivider': 2,
+    'size.mobileNavGlyph': 18,
+    'size.mobileNavItem': 51,
+    'size.mobileNavItemCompact': 31,
+    'size.mobileNavGlyphHideHeight': 600,
+    'space.mobileNavItemTop': 8,
+    'space.mobileNavGlyphLabel': 2,
+    'type.mobileNavLabel.size': 10,
+    'type.mobileNavLabel.line': 15,
+    'type.mobileNavLabel.weight': 400,
+    'type.mobileNavLabelSelected.weight': 400,
+    'type.mobileNavLabel.tracking': 0.5,
+    'size.mobileNavStickerWidth': 56,
+    'size.mobileNavStickerHeight': 30,
+    'radius.mobileNavSticker': 0,
+    'stroke.mobileNavSticker': 0,
+    'stroke.mobileNavStickerRing': 0,
+    'size.mobileNavSafeMax': 34,
+
     'size.fieldInput': 44, 'size.fieldSelect': 44,
     'type.fieldLabel.size': 14, 'type.fieldLabel.line': 20, 'type.fieldLabel.weight': 700,
     'space.fieldGap': 4, 'space.fieldLabelAccessoryOutset': 0,
@@ -648,6 +700,18 @@ def pack(pack_id: str, name_en: str, name_zh: str, values: dict,
         colors['layer-section-header-mobile'] = (colors['color-soft-signal']
                                    if spec['column'] == 'brutal'
                                    else colors['layer-panel'])
+        # Frozen a57 docked cells; dark Brutal uses the entire Elegant spec.
+        colors['layer-mobile-nav'] = colors['layer-panel']
+        colors['layer-mobile-nav-system'] = '#00000000'
+        colors['line-mobile-nav'] = colors['ink']
+        colors['line-mobile-nav-divider'] = colors['line-strong']
+        colors['foreground-mobile-nav'] = 'rgba(0 0 0 / 0.55)'
+        colors['foreground-mobile-nav-selected'] = colors['ink']
+        colors['foreground-mobile-nav-glyph-selected'] = colors['ink']
+        colors['layer-mobile-nav-selected'] = colors['primary-400']
+        colors['line-mobile-nav-selected'] = '#00000000'
+        colors['line-mobile-nav-selected-ring'] = '#00000000'
+        colors['layer-mobile-nav-pressed'] = colors['ink-6']
         colors['line-composer'] = colors['ink' if spec['column'] == 'brutal' else 'ink-6']
         colors['foreground-composer-task'] = ('{palette.composerTaskLabel}'
             if spec['column'] == 'brutal' else colors['foreground-strong'])

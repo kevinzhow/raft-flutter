@@ -149,6 +149,30 @@ def stretch(families: list[str], mono: bool = False) -> str:
 # AUTHORED: the two tables below are the contract's decisions, not derived data.
 # §3.3–3.5 of docs/theme-contract.md lists where each number comes from.
 GEOMETRY_RAFT = {
+    # MobileNav: Web v1.21.23 / a57b9dab mobile_navigation.dart.
+    'space.mobileNavInline': 8,
+    'space.mobileNavTop': 6,
+    'stroke.mobileNavTop': 1,
+    'stroke.mobileNavBottom': 0,
+    'stroke.mobileNavDivider': 0,
+    'size.mobileNavGlyph': 22,
+    'size.mobileNavItem': 45,
+    'size.mobileNavItemCompact': 45,
+    'size.mobileNavGlyphHideHeight': 0,
+    'space.mobileNavItemTop': 4,
+    'space.mobileNavGlyphLabel': 7,
+    'type.mobileNavLabel.size': 10,
+    'type.mobileNavLabel.line': 12,
+    'type.mobileNavLabel.weight': 600,
+    'type.mobileNavLabelSelected.weight': 700,
+    'type.mobileNavLabel.tracking': 0,
+    'size.mobileNavStickerWidth': 56,
+    'size.mobileNavStickerHeight': 30,
+    'radius.mobileNavSticker': 8,
+    'stroke.mobileNavSticker': 1.5,
+    'stroke.mobileNavStickerRing': 1.5,
+    'size.mobileNavSafeMax': 34,
+
     # Shared Button source metrics, Cindy a0741fbf/c1ec691c.
     'size.control.xs': 32,
     'type.button.xs.size': 13,
@@ -377,6 +401,7 @@ GEOMETRY_RAFT.update({
 })
 
 OPTIONS_RAFT = {
+    'mobileNav.boxLayout': 'css', 'mobileNav.textLayout': 'css',
     'button.hoverSurface': 'overlay',
     'button.linkDecoration': 'underline',
     'button.linkPadding': 'none',
@@ -393,7 +418,8 @@ OPTIONS_RAFT = {
     'field.style': 'border', 'tabs.selected': 'sticker', 'segmented.selected': 'sticker',
     # 0.7.1 wraps the segments in a rounded, padded track.
     'segmented.frame': 'framed',
-    'mobileNav.style': 'docked', 'mobileNav.labels': 'iconsOnly', 'header.layout': 'overlay',
+    'mobileNav.selection': 'iconSticker',
+    'mobileNav.style': 'docked', 'mobileNav.labels': 'withLabels', 'header.layout': 'overlay',
     'panel.edge': 'seam', 'nav.selection': 'sticker', 'tooltip.arrow': 'yes',
     'code.innerBorder': 'dashed', 'spinner.style': 'pixel',
     'dialog.close': 'ghost', 'dialog.cancelSurface': 'ghost',
@@ -431,6 +457,17 @@ def build() -> dict:
             if token.startswith(('palette-', 'deprecated-', 'color-')):
                 continue
             out.setdefault(token, value)
+        for target, source in {
+            'layer-mobile-nav': 'layer-card', 'layer-mobile-nav-system': 'layer-card', 'line-mobile-nav': 'line-seam',
+            'line-mobile-nav-divider': 'line-seam',
+            'foreground-mobile-nav': 'foreground-hint',
+            'foreground-mobile-nav-selected': 'foreground',
+            'foreground-mobile-nav-glyph-selected': 'sticker-ink',
+            'layer-mobile-nav-selected': 'brand-400', 'line-mobile-nav-selected': 'sticker-ink',
+            'line-mobile-nav-selected-ring': 'sticker-edge',
+            'layer-mobile-nav-pressed': 'fill-pressed',
+        }.items():
+            out[target] = out[source]
         out['line-composer'] = out['line-strong']
         out['foreground-composer-task'] = out['foreground']
         out['layer-composer-task-checked'] = out['foreground']

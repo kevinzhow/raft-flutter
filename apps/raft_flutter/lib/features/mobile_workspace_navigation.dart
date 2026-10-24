@@ -157,9 +157,12 @@ class WorkspaceMobileTabBar extends StatelessWidget {
       // The bar is the only consumer of the bottom system inset on tab roots.
       // It reads the stable system bar height (viewPadding), never the
       // keyboard-aware padding, so it cannot follow or outlive the keyboard.
-      navigation = Padding(
-        padding: EdgeInsets.only(bottom: raftSystemBottomInset(context)),
-        child: navigation,
+      navigation = ColoredBox(
+        color: RaftTokens.of(context).colors['layer-mobile-nav-system']!,
+        child: Padding(
+          padding: EdgeInsets.only(bottom: raftSystemBottomInset(context)),
+          child: navigation,
+        ),
       );
       // The in-flow bar paints beneath the system navigation / home indicator;
       // the floating capsule has no strip fill.

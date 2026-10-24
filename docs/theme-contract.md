@@ -360,8 +360,8 @@ RGB0.954685/0.954685/0.969524）；展示表中的0.04和整数RGB不作为绘�
 | 10 | `field.style` | `border` / `inset` | border | inset | border | `theme.dart:255-315`、`RaftFieldRecipe` |
 | 11 | `tabs.selected` | `sticker` / `tint` / `underline` | sticker | tint | sticker | `design_primitives.dart:578-592` |
 | 12 | `segmented.selected` | `sticker` / `tint` | sticker | tint | sticker | `design_primitives.dart:780-806` |
-| 13 | `mobileNav.style` | `floatingCapsule` / `docked` | docked | floatingCapsule | docked | `mobile_navigation.dart:287-445` |
-| 14 | `mobileNav.labels` | `iconsOnly` / `withLabels` | iconsOnly | iconsOnly | withLabels | 同上 |
+| 13 | `mobileNav.style` | `floatingCapsule` / `docked` | docked | floatingCapsule | docked | `mobile_navigation.dart`, `mobile_navigation_docked.dart` |
+| 14 | `mobileNav.labels` | `iconsOnly` / `withLabels` | withLabels | iconsOnly | withLabels | 同上 |
 | 15 | `header.layout` | `overlay` / `inFlow` | overlay | overlay | inFlow | `design_primitives.dart:138-186` |
 | 16 | `panel.edge` | `seam` / `border` | seam | seam | border | `adaptive_workspace.dart:658-670` |
 | 17 | `nav.selection` | `sticker` / `softFill` / `outline` | sticker | softFill | sticker | `components.dart:524,735` |
@@ -550,7 +550,8 @@ Raft 包已经落地，生成器一次产出三份、由同一个 `--check` 守�
 | 层 | 方法 | 门槛 |
 | --- | --- | --- |
 | 令牌 | 三套包的值与来源逐值相等（单元测试）；附录漂移由 `tool/tests/test_theme_values.py` 拦，全量检查与 `tool/preflight` 都会跑 `dump_theme_values.py --check` | 100% 相等 |
-| 组件 | 15 个 raft-ui specimen（工具已在，`tool/parity-ui`）：Raft 对官方 React；Elegant/Brutal 对 `a57b9dab` 旧版渲染 | 官方 pass 线（>99%） |
+| 组件 | 15 个 raft-ui specimen（工具已在，`tool/parity-ui`）：Raft 对官方 React；Elegant/Brutal 对 `a57b9dab` 旧版渲染 | 官方通过线（96%；以工具的 basic-pass / pass / same 判定为准） |
+| App 框架 | 手机、平板、桌面的框架截图；每套主题与明暗模式分别对照其冻结基准 | 同上；必须保留未覆盖和未通过项 |
 | 页面 | 现有的 parity case（官方 Web 用例 + 扩展用例）在 5 个尺寸（320/390/768/1024/1280）+ 矮窗下逐页对照 | 同上；布局断言（谁并排、谁盖住）单独跑 |
 | 用户主题 | 极端测试主题（全红、超大圆角、无描边）跑全量截图，抓漏网写死值 | 无未主题化区域 |
 
@@ -1043,3 +1044,32 @@ Brutal 浅色 0；保留原来的字距，不能借运动选项选择字号配�
 
 `layer-select-hover`：Raft 仍用 layer-card，Elegant／Brutal 深色引用原 ink-2，
 Brutal 浅色保持 layer-panel。该颜色角色与运动选项无关。
+
+### MobileNav source restoration (2026-10-24)
+
+`mobileNav.style` selects arrangement and `mobileNav.labels` selects label visibility.
+`mobileNav.selection = iconSticker | cell` selects whether the selected surface
+wraps only the icon or the entire item; it does not select geometry or typography.
+Raft uses iconSticker, legacy packs use cell (floating Elegant keeps its pill).
+The `space.mobileNav*`, `size.mobileNav*`, `stroke.mobileNav*`,
+`radius.mobileNavSticker`, `type.mobileNavLabel*` entries come from the locked
+Web MainLayout MobileTabBar and raft-ui 0.7.0 mobile-nav recipe, or frozen
+`a57b9dab:mobile_navigation.dart` for legacy appearances. Color roles
+`layer-mobile-nav`, `line-mobile-nav`, `line-mobile-nav-divider`, `foreground-mobile-nav`,
+`foreground-mobile-nav-selected`, `foreground-mobile-nav-glyph-selected`,
+`layer-mobile-nav-selected`, `line-mobile-nav-selected`,
+`line-mobile-nav-selected-ring`, `layer-mobile-nav-pressed` reference existing
+source colors. MainLayout overrides the generic minimum 8px safe padding with
+`min(env(safe-area-inset-bottom),34px)`; native shell owns the physical system inset.
+Measured Chromium used CSS border width rounds positive fractions down at normal zoom
+(1.5px is 1px at DPR3 too); the specified value remains in pack data.
+
+`mobileNav.boxLayout = css | natural` controls source box/glyph pixel snapping;
+`mobileNav.textLayout = css | natural` controls source text line boxes. Raft
+uses the existing Blink box and CSS text primitives; legacy packs keep natural
+Flutter painting independently of selection surface, colors and typography.
+
+`layer-mobile-nav-system` paints the native shell's stable bottom system inset
+(Raft layer-card, legacy transparent). It adds no inset and does not follow the
+keyboard. `line-mobile-nav-divider` preserves the legacy line-strong separators
+separately from the pure-black outer borders.

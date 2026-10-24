@@ -157,8 +157,8 @@ void main() {
             bottomInset: 0,
           ),
         );
-        final tasks = find.byType(RaftControl).at(1);
-        final members = find.byType(RaftControl).at(2);
+        final tasks = find.byType(RaftLargeContentViewer).at(1);
+        final members = find.byType(RaftLargeContentViewer).at(2);
         final g = await t.startGesture(t.getCenter(tasks));
         await t.pump(const Duration(milliseconds: 700));
         expect(viewer, findsOneWidget);

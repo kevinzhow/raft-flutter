@@ -32,8 +32,6 @@ final Map<String, ParityCase> uiRaftSpecimenCases = {
 /// `<div data-specimen class="box-content bg-layer-canvas p-4 text-foreground" style="width: 358px">`: the capture
 /// target. 358 content + 2 x 16 padding; the height is the content's.
 Widget _specimenFrame(ParityContext ctx, String id, RaftSpecimenBuilder body) {
-  // The React reference is captured with an emulated device scale factor (see RaftBorderSnap).
-  RaftBorderSnap.emulatedDeviceScaleFactor = true;
   return Align(
     alignment: Alignment.topLeft,
     child: ctx.target(

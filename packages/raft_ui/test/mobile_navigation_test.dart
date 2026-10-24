@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:raft_ui/raft_ui.dart';
+import 'package:raft_theme/raft_theme.dart';
 import 'package:raft_ui/test_themes.dart';
 
 const tabs = [
@@ -16,12 +17,13 @@ const tabs = [
     glyph: RaftGlyph.settings,
   ),
 ];
-Widget host(Widget child, {bool dark = false}) => MaterialApp(
-  theme: raftTheme(dark: dark),
-  home: Scaffold(
-    body: RaftDensityScope(density: RaftDensity.desktop, child: child),
-  ),
-);
+Widget host(Widget child, {bool dark = false, bool floating = false}) =>
+    MaterialApp(
+      theme: raftTheme(dark: dark, pack: floating ? builtInElegantTheme : null),
+      home: Scaffold(
+        body: RaftDensityScope(density: RaftDensity.desktop, child: child),
+      ),
+    );
 void main() {
   for (final dark in raftThemeMatrix([false, true])) {
     testWidgets(
@@ -78,7 +80,9 @@ void main() {
           ),
         );
         final homeControl = find.byWidgetPredicate(
-          (w) => w is RaftControl && w.semanticLabel == 'Home',
+          (w) =>
+              (w is RaftControl && w.semanticLabel == 'Home') ||
+              (w is RaftInteractive && w.semanticLabel == 'Home'),
         );
         await tester.tap(homeControl);
         expect(ids, ['chat']);
@@ -114,6 +118,7 @@ void main() {
               ),
             ),
             dark: dark,
+            floating: true,
           ),
         );
         await tester.pumpAndSettle();
@@ -126,7 +131,10 @@ void main() {
         try {
           for (var index = 0; index < tabs.length; index++) {
             final control = find.byWidgetPredicate(
-              (w) => w is RaftControl && w.semanticLabel == tabs[index].label,
+              (w) =>
+                  (w is RaftControl && w.semanticLabel == tabs[index].label) ||
+                  (w is RaftInteractive &&
+                      w.semanticLabel == tabs[index].label),
             );
             final target = tester.getRect(control);
             targets.add(target);
@@ -184,6 +192,7 @@ void main() {
             ),
           ),
         ),
+        floating: true,
       ),
     );
     await tester.pumpAndSettle();
@@ -220,6 +229,7 @@ void main() {
             ),
           ),
         ),
+        floating: true,
       ),
     );
     expect(find.text('Members'), findsNothing);
