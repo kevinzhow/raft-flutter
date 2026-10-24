@@ -119,6 +119,9 @@ _OPTIONS = {
     # rows follow the account's time preferences.
     'publicServer.confirmTitle': ('question', 'action'),
     'publicServer.accountTime': ('yes', 'no'),
+    # Agent Activity tab raw log: hairline-strung two-line rows with square
+    # pixels and no diagnostics header (v1.21.23) or the a57b9dab list.
+    'agentActivity.look': ('web23', 'legacy'),
     # The one button of the not-found page: `size="lg"` (44) in v1.21.23.
     'standalone.buttonSize': ('lg', 'md'),
 }

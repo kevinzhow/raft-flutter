@@ -710,6 +710,7 @@ const String brutalThemePackJson = r'''{
         "onboarding.preview": "brutal",
         "publicServer.confirmTitle": "action",
         "publicServer.accountTime": "no",
+        "agentActivity.look": "legacy",
         "standalone.buttonSize": "md"
       }
     },
@@ -1414,6 +1415,7 @@ const String brutalThemePackJson = r'''{
         "onboarding.preview": "brutal",
         "publicServer.confirmTitle": "action",
         "publicServer.accountTime": "no",
+        "agentActivity.look": "legacy",
         "standalone.buttonSize": "md"
       }
     }

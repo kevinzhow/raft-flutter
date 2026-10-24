@@ -189,6 +189,7 @@ const Map<String, Set<String>> raftStructuralOptions = {
   'onboarding.preview': {'sticker', 'brutal'},
   'publicServer.confirmTitle': {'question', 'action'},
   'publicServer.accountTime': {'yes', 'no'},
+  'agentActivity.look': {'web23', 'legacy'},
 };
 
 /// The type-scale slots a pack may fill (§3.4 of the contract).

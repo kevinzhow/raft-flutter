@@ -941,6 +941,7 @@ const String raftThemePackJson = r'''{
         "onboarding.preview": "sticker",
         "publicServer.confirmTitle": "question",
         "publicServer.accountTime": "yes",
+        "agentActivity.look": "web23",
         "standalone.buttonSize": "lg"
       }
     },
@@ -1823,6 +1824,7 @@ const String raftThemePackJson = r'''{
         "onboarding.preview": "sticker",
         "publicServer.confirmTitle": "question",
         "publicServer.accountTime": "yes",
+        "agentActivity.look": "web23",
         "standalone.buttonSize": "lg"
       }
     }

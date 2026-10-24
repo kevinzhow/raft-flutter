@@ -1170,6 +1170,39 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
   @override
   Widget build(BuildContext context) {
     final t = RaftTokens.of(context);
+    // v1.21.23 RawActivityLog: no diagnostics header, a hairline-strung list of
+    // square presence pixels (`px-4 py-3`, rows `py-1.5`); a57b9dab kept the
+    // diagnostics header and the 1-line rows (agentActivity.look).
+    if (t.option('agentActivity.look', or: 'web23') == 'web23') {
+      return ColoredBox(
+        color: t.colors['layer-canvas']!,
+        child: entries.isEmpty
+            ? RaftProductEmptyState(
+                title: raftText(context, 'No activity yet'),
+                description: raftText(
+                  context,
+                  'Start the agent to see its activity log.',
+                ),
+                icon: (context, size, color) =>
+                    RaftIcon(RaftGlyph.activity, size: size, color: color),
+              )
+            : ListView(
+                controller: scroll,
+                padding: raftScrollPadding(
+                  context,
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                children: [
+                  for (var i = 0; i < entries.length; i++)
+                    _RaftWebActivityRow(
+                      entries[i],
+                      first: i == 0,
+                      last: i == entries.length - 1,
+                    ),
+                ],
+              ),
+      );
+    }
     return ColoredBox(
       color: t.colors['layer-panel']!,
       child: Column(
@@ -1231,6 +1264,155 @@ class _RaftActivityLogViewState extends State<RaftActivityLogView> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// One v1.21.23 `LogItem`: `grid grid-cols-[9px_1fr_auto] gap-x-3 py-1.5`, a
+/// square presence pixel on a hairline (`before:left-1`), the title in Space
+/// Mono 13/20 muted, the detail 2px below in mono 12/16 hint and the time on
+/// the right (mono 12/20 hint).
+class _RaftWebActivityRow extends StatefulWidget {
+  const _RaftWebActivityRow(
+    this.entry, {
+    required this.first,
+    required this.last,
+  });
+  final RaftActivityLogEntry entry;
+  final bool first, last;
+  @override
+  State<_RaftWebActivityRow> createState() => _RaftWebActivityRowState();
+}
+
+class _RaftWebActivityRowState extends State<_RaftWebActivityRow> {
+  bool expanded = false;
+  @override
+  Widget build(BuildContext context) {
+    final t = RaftTokens.of(context);
+    final e = widget.entry;
+    final c = t.colors;
+    final title = RaftTypography.mono(
+      t,
+      size: 13,
+      line: 20,
+      color: c['foreground-muted'],
+    );
+    final detailStyle = RaftTypography.mono(
+      t,
+      size: 12,
+      line: 16,
+      color: c['foreground-hint'],
+    );
+    final detail = e.detail ?? e.inlineDetail;
+    final titleRow = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(child: RaftCssText(e.title, style: title)),
+        if (e.badge != null) ...[
+          const SizedBox(width: 6),
+          RaftRecipeBadge(
+            e.badge!,
+            appearance: RaftBadgeRecipeAppearance.outline,
+            variant: RaftBadgeRecipeVariant.default_,
+            mono: true,
+          ),
+        ],
+        if (e.expandable) ...[
+          const SizedBox(width: 4),
+          Transform.rotate(
+            angle: expanded ? 1.5708 : 0,
+            child: RaftIcon(
+              RaftGlyph.chevronRight,
+              size: 14,
+              color: c['foreground-muted'],
+            ),
+          ),
+        ],
+      ],
+    );
+    final body = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 9,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 5.5),
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: e.dot,
+                  borderRadius: BorderRadius.circular(2),
+                  border: Border.all(color: c['sticker-ink']!, width: 1.5),
+                  // `shadow-[0_0_0_2px_var(--layer-canvas)]` knocks the pixel
+                  // out of the hairline.
+                  boxShadow: [
+                    BoxShadow(color: c['layer-canvas']!, spreadRadius: 2),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                e.expandable
+                    ? GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => setState(() => expanded = !expanded),
+                        child: titleRow,
+                      )
+                    : titleRow,
+                if (detail != null && detail.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: RaftCssText(
+                      detail,
+                      style: detailStyle,
+                      maxLines: e.expandable && !expanded ? 2 : null,
+                      overflow: e.expandable && !expanded
+                          ? TextOverflow.ellipsis
+                          : null,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          RaftCssText(
+            e.time.toUpperCase(),
+            style: RaftTypography.mono(
+              t,
+              size: 12,
+              line: 20,
+              color: c['foreground-hint'],
+            ),
+          ),
+        ],
+      ),
+    );
+    final line = widget.first && widget.last
+        ? null
+        : BoxDecoration(
+            border: Border(left: BorderSide(color: c['line-hairline']!)),
+          );
+    return Stack(
+      children: [
+        if (line != null)
+          Positioned(
+            left: 4,
+            top: widget.first ? 16 : 0,
+            bottom: widget.last ? null : 0,
+            height: widget.last ? 16 : null,
+            width: 1,
+            child: DecoratedBox(decoration: line),
+          ),
+        body,
+      ],
     );
   }
 }
